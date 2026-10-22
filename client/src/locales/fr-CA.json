@@ -376,6 +376,7 @@
   "help.learnMoreAfter": "{text} {learnMore}",
   "help.title": "Aide",
   "help.titleWithGuide": "Aide · {guide}",
+  "help.version": "Version {version} · compilation {build} · {date}",
   "help.yourAccess": "Ce que vous pouvez faire ici se trouve dans <link>Votre compte</link>.",
   "home.card.costsWaiting": "Coûts en attente",
   "home.card.expiring": "Expire bientôt",
@@ -809,6 +810,7 @@
   "layout.openNavigation": "Ouvrir la navigation",
   "layout.signOut": "Se déconnecter",
   "layout.signedInAsWithInitials": "{initials}, connecté en tant que {email}",
+  "layout.signedInAsWithNewVersion": "{initials}, connecté en tant que {email}, une nouvelle version est prête",
   "layout.skipToContent": "Aller au contenu",
   "layout.unknownUser": "inconnu",
   "layout.unverified.message": "Confirmez votre adresse courriel pour sécuriser votre compte.",
@@ -1960,5 +1962,13 @@
   "timeZones.label": "{zone} ({city})",
   "unsaved.leave": "Quitter",
   "unsaved.stay": "Rester",
-  "unsaved.title": "Quitter sans enregistrer?"
+  "unsaved.title": "Quitter sans enregistrer?",
+  "version.alsoLater": "Elle se charge aussi d’elle-même quand vous ouvrez une autre page.",
+  "version.button": "Nouvelle version",
+  "version.note": "Une nouvelle version est prête. Elle se charge d’elle-même quand vous ouvrez une autre page.",
+  "version.ready": "Une nouvelle version est prête",
+  "version.reload": "Recharger",
+  "version.reloadNow": "Recharger maintenant",
+  "version.signedOut": "Une nouvelle version est prête. Elle se charge quand vous ouvrez une autre page.",
+  "version.urgent": "<b>Une nouvelle version est prête, et cet onglet ne peut plus enregistrer de modifications.</b> Copiez ce que vous avez saisi, puis rechargez."
 }

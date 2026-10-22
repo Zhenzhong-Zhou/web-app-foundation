@@ -29,9 +29,11 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { useLanguage } from '../i18n/use-language';
+import { formatDate } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { rem } from '../theme/rem';
 import { useTextSize } from '../theme/text-size';
+import { BUILD } from '../version/build';
 import { guideGroups } from './guide-groups';
 import { GuideView } from './guide-view';
 import { type GuideName, GUIDES, loadGuide } from './guides';
@@ -176,6 +178,8 @@ export function HelpFrame({
             aria-labelledby={HELP_HEADING_ID}
             // Focus goes back to what opened Help: the state sees to it.
             disableRestoreFocus
+            // Help, as on a computer: no amber line (ADR-081).
+            slotProps={{ paper: { component: 'div' } }}
           >
             <PanelBody help={help} phone />
           </Dialog>
@@ -225,7 +229,10 @@ export function HelpFrame({
   );
 }
 
-/** The header with Close, the guide, and the list of guides at its foot. */
+/**
+ * The header with Close, the guide, and the list of guides and the version
+ * at its foot.
+ */
 function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
   const intl = useIntl();
   const { locale } = useLanguage();
@@ -383,8 +390,37 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
         ) : null}
 
         <AllGuides help={help} />
+        <VersionFoot />
       </Box>
     </>
+  );
+}
+
+/**
+ * The version this tab runs, last, small and grey: what someone helping
+ * asks for first, and the build a tab left open is still on (ADR-081).
+ */
+function VersionFoot() {
+  const intl = useIntl();
+  return (
+    <Typography
+      variant="caption"
+      component="p"
+      color="text.secondary"
+      sx={{ mt: 3, pt: 1.5, borderTop: 1, borderColor: 'divider' }}
+    >
+      {intl.formatMessage(
+        {
+          id: 'help.version',
+          defaultMessage: 'Version {version} · build {build} · {date}',
+        },
+        {
+          version: BUILD.version,
+          build: BUILD.build.slice(0, 7),
+          date: formatDate(BUILD.builtAt),
+        },
+      )}
+    </Typography>
   );
 }
 

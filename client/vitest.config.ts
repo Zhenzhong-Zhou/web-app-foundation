@@ -24,6 +24,16 @@ process.env.TZ = 'Asia/Tokyo';
  */
 export default defineConfig({
   plugins: [react()],
+  // The build a component test runs as (ADR-081), which vite.config.ts's
+  // version-file plugin names in the app; the test handlers' /version.json
+  // names the same one.
+  define: {
+    __BUILD__: JSON.stringify({
+      build: '983c1d8f0e5a4b7c9d2e6f1a3b5c7d9e0f2a4b6c',
+      builtAt: '2026-10-22T03:00:00.000Z',
+      version: '0.7.0',
+    }),
+  },
   test: {
     environment: 'jsdom',
     globals: true,

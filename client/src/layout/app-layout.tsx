@@ -2,9 +2,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import KeyboardDoubleArrowLeft from '@mui/icons-material/KeyboardDoubleArrowLeft';
 import KeyboardDoubleArrowRight from '@mui/icons-material/KeyboardDoubleArrowRight';
 import MenuIcon from '@mui/icons-material/Menu';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import {
   Alert,
   AppBar,
+  Badge,
   Box,
   Button,
   Container,
@@ -40,10 +42,16 @@ import { HelpFrame } from '../help/help-panel';
 import { HelpProvider } from '../help/help-provider';
 import { useHelp } from '../help/use-help';
 import { api } from '../lib/api';
+import { SEPARATOR } from '../lib/format';
 import { initialsOf } from '../lib/person-initials';
 import { LookupBox } from '../search/lookup-box';
 import { OrganizationDeletionBanner } from '../settings/organization-deletion-banner';
+import { rem } from '../theme/rem';
 import { useTextSize } from '../theme/text-size';
+import { NewVersionBanner } from '../version/new-version-banner';
+import { NewVersionButton } from '../version/new-version-button';
+import { reloadPage } from '../version/reload-page';
+import { useNewVersion } from '../version/version-check';
 import { IdleGuard } from './idle-guard';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
@@ -201,6 +209,28 @@ function Frame() {
   const textSize = useTextSize();
   const tight = narrow && textSize === 'larger';
 
+  /**
+   * A newer build, before its saves would be refused (ADR-081): "New
+   * version" beside Help on a computer; on a phone, whose bar has no room
+   * for a seventh target at 320 px, a dot on the account button and the
+   * new version first in its menu. Neither changes the bar's height. Once
+   * saves would be refused, the amber banner takes their place.
+   */
+  const version = useNewVersion();
+  const quiet = version.newer && !version.urgent;
+  const dot = quiet && phone;
+
+  /** Who the account button names. */
+  const account = {
+    initials: initialsOf(session?.user.name ?? null, session?.user.email),
+    email:
+      session?.user.email ??
+      intl.formatMessage({
+        id: 'layout.unknownUser',
+        defaultMessage: 'unknown',
+      }),
+  };
+
   const orgName =
     session?.organization?.name ??
     intl.formatMessage({
@@ -290,6 +320,30 @@ function Frame() {
             borderColor: 'divider',
           }}
         >
+          {/* A newer build's arrival, said once and politely, on a phone
+              and a computer alike (ADR-081). */}
+          <Box
+            aria-live="polite"
+            sx={{
+              position: 'absolute',
+              width: '1px',
+              height: '1px',
+              margin: '-1px',
+              padding: 0,
+              border: 0,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              clip: 'rect(0 0 0 0)',
+            }}
+          >
+            {version.newer &&
+              intl.formatMessage({
+                id: 'version.note',
+                defaultMessage:
+                  'A new version is ready. It loads by itself when you open another page.',
+              })}
+          </Box>
+
           {/* No flexWrap. A bar that wraps changes height with the window and
               drags the page with it. */}
           {/* Closer on a phone, so six targets fit at 320 px (ADR-079).
@@ -360,6 +414,8 @@ function Frame() {
               <LookupBox />
             </Box>
 
+            {quiet && !phone && <NewVersionButton />}
+
             {/* Beside the bell (ADR-079), where the welcome says it is. */}
             <HelpButton />
 
@@ -377,33 +433,40 @@ function Frame() {
             >
               <IconButton
                 edge="end"
-                aria-label={intl.formatMessage(
-                  {
-                    id: 'layout.signedInAsWithInitials',
-                    defaultMessage: '{initials}, signed in as {email}',
-                  },
-                  {
-                    initials: initialsOf(
-                      session?.user.name ?? null,
-                      session?.user.email,
-                    ),
-                    email:
-                      session?.user.email ??
-                      intl.formatMessage({
-                        id: 'layout.unknownUser',
-                        defaultMessage: 'unknown',
-                      }),
-                  },
-                )}
+                aria-label={
+                  dot
+                    ? intl.formatMessage(
+                        {
+                          id: 'layout.signedInAsWithNewVersion',
+                          defaultMessage:
+                            '{initials}, signed in as {email}, a new version is ready',
+                        },
+                        account,
+                      )
+                    : intl.formatMessage(
+                        {
+                          id: 'layout.signedInAsWithInitials',
+                          defaultMessage: '{initials}, signed in as {email}',
+                        },
+                        account,
+                      )
+                }
                 onClick={(event) => setMenu(event.currentTarget)}
               >
-                <PersonAvatar
-                  userId={session?.user.id ?? null}
-                  name={session?.user.name ?? null}
-                  email={session?.user.email}
-                  photoFileId={session?.user.photoFileId}
-                  size={32}
-                />
+                <Badge
+                  variant="dot"
+                  color="info"
+                  overlap="circular"
+                  invisible={!dot}
+                >
+                  <PersonAvatar
+                    userId={session?.user.id ?? null}
+                    name={session?.user.name ?? null}
+                    email={session?.user.email}
+                    photoFileId={session?.user.photoFileId}
+                    size={32}
+                  />
+                </Badge>
               </IconButton>
             </Tooltip>
 
@@ -411,6 +474,46 @@ function Frame() {
                 the rail now (ADR-055); this keeps who is signed in and how
                 the app reads to them. */}
             <Menu anchorEl={menu} open={!!menu} onClose={() => setMenu(null)}>
+              {/* The phone's place for the new version: first, so it takes
+                  the menu's focus as it opens (ADR-081). */}
+              {dot && (
+                <MenuItem
+                  onClick={reloadPage}
+                  sx={{
+                    gap: 1.25,
+                    alignItems: 'flex-start',
+                    whiteSpace: 'normal',
+                    maxWidth: rem(320),
+                    bgcolor: 'tone.info.bg',
+                    color: 'tone.info.fg',
+                    '&:hover, &.Mui-focusVisible': { bgcolor: 'tone.info.bg' },
+                  }}
+                >
+                  <RefreshIcon fontSize="small" sx={{ mt: 0.25 }} />
+                  <Box>
+                    <strong>
+                      {intl.formatMessage({
+                        id: 'version.ready',
+                        defaultMessage: 'A new version is ready',
+                      })}
+                    </strong>
+                    {SEPARATOR}
+                    {intl.formatMessage({
+                      id: 'version.reloadNow',
+                      defaultMessage: 'Reload now',
+                    })}
+                    <Typography variant="body2">
+                      {intl.formatMessage({
+                        id: 'version.alsoLater',
+                        defaultMessage:
+                          'It also loads by itself when you open another page.',
+                      })}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              )}
+              {dot && <Divider />}
+
               {/* Who is signed in: not a menu item, so it takes a hover (a
                   disabled item takes none). The email is cut at the name's
                   width, whole in its tooltip (ADR-063). */}
@@ -543,6 +646,8 @@ function Frame() {
             sx={{ py: { xs: 2, sm: 4 }, '&:focus': { outline: 'none' } }}
           >
             <Stack spacing={3}>
+              {/* First: its saves would be refused (ADR-081). */}
+              <NewVersionBanner where="page" />
               <UnverifiedBanner covered={unverifiedCovered} />
               <DeletionBanner />
               <OrganizationDeletionBanner />

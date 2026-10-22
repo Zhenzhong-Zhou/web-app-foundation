@@ -376,6 +376,7 @@
   "help.learnMoreAfter": "{text}{learnMore}",
   "help.title": "帮助",
   "help.titleWithGuide": "帮助 · {guide}",
+  "help.version": "版本 {version} · 构建 {build} · {date}",
   "help.yourAccess": "您在这里可以做什么，写在<link>我的账户</link>里。",
   "home.card.costsWaiting": "待定成本",
   "home.card.expiring": "即将过期",
@@ -809,6 +810,7 @@
   "layout.openNavigation": "打开导航",
   "layout.signOut": "退出登录",
   "layout.signedInAsWithInitials": "{initials}，当前登录：{email}",
+  "layout.signedInAsWithNewVersion": "{initials}，当前登录：{email}，有新版本",
   "layout.skipToContent": "跳到主要内容",
   "layout.unknownUser": "未知",
   "layout.unverified.message": "请确认您的电子邮箱地址，以保护您的账户。",
@@ -1960,5 +1962,13 @@
   "timeZones.label": "{zone}（{city}）",
   "unsaved.leave": "离开",
   "unsaved.stay": "留下",
-  "unsaved.title": "不保存就离开？"
+  "unsaved.title": "不保存就离开？",
+  "version.alsoLater": "您打开其他页面时也会自动加载。",
+  "version.button": "新版本",
+  "version.note": "新版本已就绪。您打开其他页面时会自动加载。",
+  "version.ready": "新版本已就绪",
+  "version.reload": "重新加载",
+  "version.reloadNow": "立即重新加载",
+  "version.signedOut": "新版本已就绪。打开其他页面时即会加载。",
+  "version.urgent": "<b>新版本已就绪，此标签页已无法保存更改。</b>请先复制您输入的内容，再重新加载。"
 }

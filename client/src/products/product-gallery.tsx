@@ -781,7 +781,11 @@ function Viewer({
       onClose={onClose}
       aria-label={describe(index)}
       slotProps={{
-        paper: { sx: { bgcolor: 'rgba(12, 15, 20, 0.96)', color: '#FFFFFF' } },
+        paper: {
+          // It only shows a picture: no amber line (ADR-081).
+          component: 'div',
+          sx: { bgcolor: 'rgba(12, 15, 20, 0.96)', color: '#FFFFFF' },
+        },
       }}
     >
       <Stack

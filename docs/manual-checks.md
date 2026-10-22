@@ -2004,6 +2004,64 @@ The pages, in a private window unless a check says otherwise.
   pill; at 390 px they wrap under his name rather than widen the card. Tom's
   own page shows the same two, a little apart.
 
+## 34. Old tabs after a deploy (ADR-081)
+
+A deploy, by hand, is either a real one with a tab left open across it, or
+DevTools → Sources → Overrides on `/version.json`, saved with another
+`build` than the tab's (`dev` on the dev server, which never counts as
+newer): the same `apiRevision` for a new version, one higher for one whose
+saves would be refused. Then switch to another tab and back, which reads
+the file, or wait ten minutes.
+
+- **MC-3401** *(ADR-081)* A new version on a computer. Signed in, on
+  Orders, deploy: New version appears just before Help, a pill in the
+  info tone, and the top bar keeps its height, so nothing on the page
+  moves. A screen reader says once, politely, A new version is ready. It
+  loads by itself when you open another page. New version opens that note
+  with Reload now, which loads the page. On an order, switching from Items
+  to History, or on Orders a filter, loads nothing; Inventory in the rail
+  loads in full (the Network tab shows the document again). On New order
+  with a line added, Inventory asks Leave without saving? first: Stay keeps
+  everything; Leave loads Inventory in full, with no browser Leave site?
+  after the app's.
+- **MC-3402** *(ADR-081)* A new version on a phone. At 390 px, and at 320
+  px with Larger text, deploy: no new button, a dot on the account button,
+  whose name a screen reader reads as …, signed in as …, a new version is
+  ready, and the bar still fits its six targets. The account menu's first
+  item reads A new version is ready · Reload now, It also loads by itself
+  when you open another page., and loads the page. In 中文, 新版本已就绪 ·
+  立即重新加载, 您打开其他页面时也会自动加载。
+- **MC-3403** *(ADR-081)* Signed out. On sign-in, register, forgot
+  password and an invitation's link, deploy: under the language and text
+  size, an info banner says A new version is ready. It loads when you open
+  another page., with Reload and no close. In Français, Une nouvelle
+  version est prête. Elle se charge quand vous ouvrez une autre page.; in
+  中文, 新版本已就绪。打开其他页面时即会加载。
+- **MC-3404** *(ADR-081)* Amber, once saves would be refused. Signed in,
+  deploy with `apiRevision` one higher: an amber banner tops the page,
+  above any other, A new version is ready, and this tab can no longer save
+  changes. Copy anything you’ve typed, then reload., its first sentence in
+  bold, with Reload; New version and the phone's dot are gone. Receive on
+  a purchase order opens with the same line at its very top, above its
+  title; a dialog already open gains it as the file is read; on a phone in
+  中文 Invite, full screen, shows 新版本已就绪，此标签页已无法保存更改。 at
+  its top. A product's image opened at full size, Help, and the lookup on
+  a phone show no line. The signed-out pages' banner turns amber too.
+- **MC-3405** *(ADR-081)* Help names the version the tab runs. Open Help
+  and scroll to its foot: under a thin line, in small grey text, Version
+  0.7.0 · build 983c1d8 · 22 Oct 2026, the release, the build's first
+  seven characters and the day it was built, in the reader's own date
+  format (Oct 22, 2026 in a US browser). In 中文 版本 0.7.0 · 构建 983c1d8
+  · 2026年10月22日; in Français Version 0.7.0 · compilation 983c1d8 · 22
+  oct. 2026. On the dev server it reads build dev. After a deploy, the
+  build is the commit `/api/health` names, and an old tab's Help still
+  names its own.
+- **MC-3406** *(ADR-081)* The version file. `npm run build` in `client/`
+  writes `dist/version.json` with `build` (the commit checked out),
+  `builtAt`, `version` (as `client/package.json` says) and `apiRevision`;
+  `npm run dev` answers `/version.json` with the build `dev`, and
+  `/version.json?123` the same.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -2583,3 +2641,5 @@ first.
   move its holders, say an Owner can: MC-3317 changed.
 - 2026-10-21: a made role's chip told from a built-in one by its shape,
   not by colour alone (WCAG 1.4.1): MC-3312 and MC-3327 changed.
+- 2026-10-22: ADR-081, a new version noticed: section 34, MC-3401 to
+  MC-3406.

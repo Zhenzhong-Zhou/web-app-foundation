@@ -221,6 +221,36 @@ describe('Help', () => {
     expect(screen.getByTestId('where')).toHaveTextContent('/orders');
   });
 
+  it('ends with the version this tab runs, in the reader’s language (ADR-081)', async () => {
+    renderFrame('/orders');
+    await userEvent.click(screen.getByRole('button', { name: 'Help' }));
+
+    // The release, the build's first seven, and the day it was built.
+    expect(
+      await within(help()).findByText(
+        'Version 0.7.0 · build 983c1d8 · Oct 22, 2026',
+      ),
+    ).toBeVisible();
+  });
+
+  it('gives the version in Chinese too', async () => {
+    localStorage.setItem('language', 'zh-Hans');
+    try {
+      renderFrame('/orders');
+      await userEvent.click(
+        await screen.findByRole('button', { name: '帮助' }),
+      );
+
+      expect(
+        await within(
+          screen.getByRole('complementary', { name: '帮助' }),
+        ).findByText('版本 0.7.0 · 构建 983c1d8 · 2026年10月22日'),
+      ).toBeVisible();
+    } finally {
+      localStorage.clear();
+    }
+  });
+
   it("follows a guide's link to its page, and that page's guide at the section", async () => {
     renderFrame('/orders');
     await userEvent.click(screen.getByRole('button', { name: 'Help' }));

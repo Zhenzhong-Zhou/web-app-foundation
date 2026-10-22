@@ -3,6 +3,7 @@ import type { ReactNode, Ref, SubmitEvent } from 'react';
 
 import { LanguageSelect } from '../components/language-select';
 import { TextSizeSelect } from '../components/text-size-select';
+import { NewVersionBanner } from '../version/new-version-banner';
 
 /**
  * The frame every unauthenticated screen shares. Extracted at five, not two —
@@ -47,6 +48,11 @@ export function AuthLayout({
       >
         <LanguageSelect />
         <TextSizeSelect />
+      </Box>
+      {/* A newer build, said here since these pages have no top bar
+          (ADR-081). After the language, which stays first. */}
+      <Box sx={{ mb: 2, '&:empty': { display: 'none' } }}>
+        <NewVersionBanner where="signedOut" />
       </Box>
       {notice && <Box sx={{ mb: 2 }}>{notice}</Box>}
       <Paper sx={{ p: 4 }} elevation={0} variant="outlined">

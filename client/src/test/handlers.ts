@@ -1,5 +1,8 @@
 import { http, HttpResponse } from 'msw';
 
+import { API_REVISION } from '../api/revision.gen';
+import { BUILD } from '../version/build';
+
 /**
  * The API as the server actually behaves, not as a component wishes it would.
  *
@@ -73,6 +76,11 @@ export const handlers = [
   // Registration open, as in development and the test suites (ADR-078).
   http.get(`${BASE}/auth/registration`, () =>
     HttpResponse.json({ registration: 'open' }),
+  ),
+  // The static host's version file, naming the build the tests run as: no
+  // deploy has happened (ADR-081).
+  http.get('/version.json', () =>
+    HttpResponse.json({ ...BUILD, apiRevision: API_REVISION }),
   ),
   // Record pages report an opening (ADR-058); nothing to check in most
   // specs, so it is answered here once.

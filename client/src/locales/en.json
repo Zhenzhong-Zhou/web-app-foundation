@@ -376,6 +376,7 @@
   "help.learnMoreAfter": "{text} {learnMore}",
   "help.title": "Help",
   "help.titleWithGuide": "Help · {guide}",
+  "help.version": "Version {version} · build {build} · {date}",
   "help.yourAccess": "What you can do here is on <link>Your account</link>.",
   "home.card.costsWaiting": "Costs waiting",
   "home.card.expiring": "Expiring soon",
@@ -809,6 +810,7 @@
   "layout.openNavigation": "Open navigation",
   "layout.signOut": "Sign out",
   "layout.signedInAsWithInitials": "{initials}, signed in as {email}",
+  "layout.signedInAsWithNewVersion": "{initials}, signed in as {email}, a new version is ready",
   "layout.skipToContent": "Skip to content",
   "layout.unknownUser": "unknown",
   "layout.unverified.message": "Confirm your email address to secure your account.",
@@ -1960,5 +1962,13 @@
   "timeZones.label": "{zone} ({city})",
   "unsaved.leave": "Leave",
   "unsaved.stay": "Stay",
-  "unsaved.title": "Leave without saving?"
+  "unsaved.title": "Leave without saving?",
+  "version.alsoLater": "It also loads by itself when you open another page.",
+  "version.button": "New version",
+  "version.note": "A new version is ready. It loads by itself when you open another page.",
+  "version.ready": "A new version is ready",
+  "version.reload": "Reload",
+  "version.reloadNow": "Reload now",
+  "version.signedOut": "A new version is ready. It loads when you open another page.",
+  "version.urgent": "<b>A new version is ready, and this tab can no longer save changes.</b> Copy anything you’ve typed, then reload."
 }
