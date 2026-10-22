@@ -1891,7 +1891,7 @@
   "settings.org.timeZone.screens": "Les heures à l’écran restent dans le fuseau horaire de chaque personne. Ce changement ne modifie jamais un document déjà imprimé.",
   "settings.org.timeZone.stillUtc": "Encore en UTC, le fuseau horaire de départ de toute organisation. Choisissez celui de l’entreprise : le soir, dans les Amériques, il est déjà demain en UTC.",
   "settings.org.timeZone.title": "Fuseau horaire",
-  "settings.org.timeZone.useComputer": "Utiliser celui de cet appareil : {zone}",
+  "settings.org.timeZone.useComputer": "Utiliser celui de cet appareil : {zone}",
   "settings.rates.convertedInto": "Converti en {currency}.",
   "settings.rates.correct": "Corriger",
   "settings.rates.correctTitle": "Corriger un taux",

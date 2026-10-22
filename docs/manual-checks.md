@@ -2031,7 +2031,8 @@ first.
   not the page from the top.
 - **MC-R26** *(French guillemets)* In Français on a phone (390 px), read
   the note under Numbering, « Imprimé ainsi », and Security's « Rester
-  connecté »: a « never ends a line with its words on the next.
+  connecté »: a « never ends a line with its words on the next. Profile's
+  Utiliser celui de cet appareil : … never starts a line with its colon.
 - **MC-R25** *(shipping on a phone)* At 320 px and 390 px with Larger
   text, open Ship on SO-DEMO-2, choose the location that holds its lot,
   and Choose lots: the line's Ship field sits under its words at the
@@ -2542,3 +2543,5 @@ first.
 - 2026-10-21: Home's date line keeps its space before the organization in
   English: MC-R32.
 - 2026-10-21: a step done reads after a space, in English too: MC-R33.
+- 2026-10-21: the time zone's French colon held to its words: MC-R26
+  extended.
