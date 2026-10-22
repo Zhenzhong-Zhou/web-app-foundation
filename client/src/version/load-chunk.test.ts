@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { API_REVISION } from '../api/revision.gen';
 import { server } from '../test/setup';
 import { BUILD } from './build';
-import { ChunkLoadError, loadChunk, loadPage } from './load-chunk';
+import { ChunkLoadError, loadChunk, loadChunkOrReload } from './load-chunk';
 import { reloadPage } from './reload-page';
 import { checkVersion } from './version-check';
 
@@ -85,11 +85,11 @@ describe('loadChunk', () => {
   });
 });
 
-describe('loadPage', () => {
+describe('loadChunkOrReload', () => {
   it('loads the page being opened in full from a newer build, and waits for it', async () => {
     serve('a1b2c3d');
     let settled = false;
-    void loadPage(chunk(2)).finally(() => {
+    void loadChunkOrReload(chunk(2)).finally(() => {
       settled = true;
     });
 
@@ -103,26 +103,26 @@ describe('loadPage', () => {
   it('loads in full once a minute at most for a build, so it never loops', async () => {
     serve('a1b2c3d');
     const now = Date.now();
-    void loadPage(chunk(2));
+    void loadChunkOrReload(chunk(2));
     await vi.advanceTimersByTimeAsync(1000);
     await vi.waitFor(() => expect(reloadPage).toHaveBeenCalledTimes(1));
 
     // The load brought the same failure back: this time it says so.
-    expect(await outcome(loadPage(chunk(2)))).toMatchObject({
+    expect(await outcome(loadChunkOrReload(chunk(2)))).toMatchObject({
       failure: 'newer',
     });
     expect(reloadPage).toHaveBeenCalledTimes(1);
 
     // A minute on, it may load again.
     vi.spyOn(Date, 'now').mockReturnValue(now + 61_000);
-    void loadPage(chunk(2));
+    void loadChunkOrReload(chunk(2));
     await vi.advanceTimersByTimeAsync(1000);
     await vi.waitFor(() => expect(reloadPage).toHaveBeenCalledTimes(2));
   });
 
   it('hands the error boundary anything but a newer build, loading nothing', async () => {
     server.use(http.get('/version.json', () => HttpResponse.error()));
-    expect(await outcome(loadPage(chunk(2)))).toMatchObject({
+    expect(await outcome(loadChunkOrReload(chunk(2)))).toMatchObject({
       failure: 'offline',
     });
     expect(reloadPage).not.toHaveBeenCalled();

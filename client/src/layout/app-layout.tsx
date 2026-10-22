@@ -41,6 +41,7 @@ import { HelpButton } from '../help/help-button';
 import { HelpFrame } from '../help/help-panel';
 import { HelpProvider } from '../help/help-provider';
 import { useHelp } from '../help/use-help';
+import { LanguageFailureBanner } from '../i18n/language-failure';
 import { api } from '../lib/api';
 import { SEPARATOR } from '../lib/format';
 import { initialsOf } from '../lib/person-initials';
@@ -649,6 +650,8 @@ function Frame() {
             <Stack spacing={3}>
               {/* First: its saves would be refused (ADR-081). */}
               <NewVersionBanner where="page" />
+              {/* The account's language, in English for now (ADR-081). */}
+              <LanguageFailureBanner />
               <UnverifiedBanner covered={unverifiedCovered} />
               <DeletionBanner />
               <OrganizationDeletionBanner />

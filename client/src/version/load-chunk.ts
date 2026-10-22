@@ -67,13 +67,14 @@ export async function loadChunk<T>(load: () => Promise<T>): Promise<T> {
 const AGAIN_AFTER_MS = 60_000;
 
 /**
- * A page's chunk (lazyNamed). When a newer build is why it failed, the
- * page being opened loads in full from it, once a minute at most for that
- * build, and the route keeps its loading state until the browser has;
- * otherwise the failure goes to the error boundary, which shows the status
- * page for it.
+ * A page's chunk (lazyNamed), or a language's (loadMessages). When a newer
+ * build is why it failed, the page being opened loads in full from it,
+ * once a minute at most for that build, and the route or the language
+ * keeps its loading state until the browser has; otherwise the failure
+ * goes to its caller: the error boundary, which shows the status page for
+ * it, or the language provider, which says so.
  */
-export async function loadPage<T>(load: () => Promise<T>): Promise<T> {
+export async function loadChunkOrReload<T>(load: () => Promise<T>): Promise<T> {
   try {
     return await loadChunk(load);
   } catch (error) {

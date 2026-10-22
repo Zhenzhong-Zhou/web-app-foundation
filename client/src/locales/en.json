@@ -770,6 +770,8 @@
   "invoices.voided": "Invoice voided",
   "invoices.voidedNoDate": "Voided: {reason}. The credit note below reverses it in full.",
   "invoices.voidedOn": "Voided {date}: {reason}. The credit note below reverses it in full.",
+  "language.failed": "Couldn’t load {language}. Check your connection and try again.",
+  "language.failedAtStart": "Couldn’t load {language}, so the app is in English for now.",
   "language.label": "Language",
   "language.notChosen": "Not chosen",
   "layout.closeNavigation": "Close navigation",

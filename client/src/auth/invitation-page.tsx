@@ -136,7 +136,7 @@ function Invitation({
         if (preview && !started.current) {
           started.current = true;
           if (!signedIn && preview.locale !== locale) {
-            setLocale(preview.locale);
+            void setLocale(preview.locale);
           }
         }
       })
@@ -146,7 +146,7 @@ function Invitation({
         // that language, never a failed page in place of a form half done.
         if (readIn.current) {
           onLanguageKept(true);
-          setLocale(readIn.current);
+          void setLocale(readIn.current);
           return;
         }
         setFailure(messageFor(caught));

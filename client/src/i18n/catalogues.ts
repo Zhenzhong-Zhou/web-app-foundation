@@ -1,7 +1,7 @@
 import type { MessageFormatElement } from 'react-intl';
 
 import type { Locale } from '../lib/locales';
-import { loadChunk } from '../version/load-chunk';
+import { loadChunkOrReload } from '../version/load-chunk';
 import english from './compiled/en.json';
 
 /**
@@ -28,9 +28,13 @@ const LOADERS: Record<Exclude<Locale, 'en'>, () => Promise<unknown>> = {
  * A language's messages over the English ones: a message the catalogue
  * lacks reads in English, never as its id. `npm run i18n:check` keeps that
  * from reaching a release; this keeps it from reaching a screen. Its chunk
- * loads as every chunk does (loadChunk, ADR-081).
+ * loads as a page's does (ADR-081): when a newer build is why it failed,
+ * the page loads in full from it rather than saying so.
  */
 export async function loadMessages(locale: Locale): Promise<Messages> {
   if (locale === 'en') return ENGLISH;
-  return { ...ENGLISH, ...((await loadChunk(LOADERS[locale])) as Messages) };
+  return {
+    ...ENGLISH,
+    ...((await loadChunkOrReload(LOADERS[locale])) as Messages),
+  };
 }

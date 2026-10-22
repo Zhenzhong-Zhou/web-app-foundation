@@ -12,11 +12,14 @@ import type { PreferenceControl } from './preference-control';
  * The language the app speaks to you (ADR-054): in the account menu beside
  * the colour mode, on the signed-out pages, and on the Account page.
  *
- * The screens switch at once and this device remembers the choice. Signed
- * in, it is saved to the account too, so it follows you to another device,
- * and the session is read again, so every picker shows what the account now
- * holds. If that save fails, this device has still switched, and the next
- * choice saves again — a preference, not a record worth a dialog.
+ * The screens switch as soon as the language has loaded, and this device
+ * remembers the choice. Signed in, it is saved to the account too, so it
+ * follows you to another device, and the session is read again, so every
+ * picker shows what the account now holds. If that save fails, this device
+ * has still switched, and the next choice saves again — a preference, not
+ * a record worth a dialog. A language that will not load saves nothing
+ * anywhere until it does, after Try again in the toast that says so
+ * (ADR-081).
  *
  * `account` shows the account's own choice instead of this device's (#119).
  * An account with none chosen gets its emails in English when a colleague's
@@ -67,16 +70,15 @@ export function LanguageSelect({
         const next = event.target.value;
         if (!isLocale(next) || next === chosen) return;
 
-        setLocale(next);
-
-        if (session) {
+        void setLocale(next).then((switched) => {
+          if (!switched || !session) return;
           void api('/account/profile', {
             method: 'PATCH',
             body: JSON.stringify({ locale: next }),
           })
             .then(refresh)
             .catch(() => undefined);
-        }
+        });
       }}
     >
       {SUPPORTED_LOCALES.map((tag) => (

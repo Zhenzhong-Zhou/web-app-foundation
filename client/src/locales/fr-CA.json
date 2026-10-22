@@ -770,6 +770,8 @@
   "invoices.voided": "Facture annulée",
   "invoices.voidedNoDate": "Annulée : {reason}. La note de crédit ci-dessous l’annule entièrement.",
   "invoices.voidedOn": "Annulée le {date} : {reason}. La note de crédit ci-dessous l’annule entièrement.",
+  "language.failed": "Impossible de charger {language}. Vérifiez votre connexion et réessayez.",
+  "language.failedAtStart": "Impossible de charger {language}; l’application est donc en anglais pour le moment.",
   "language.label": "Langue",
   "language.notChosen": "Non choisie",
   "layout.closeNavigation": "Fermer la navigation",

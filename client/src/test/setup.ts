@@ -60,6 +60,15 @@ vi.mock('@testing-library/react', async (importOriginal) => {
  */
 vi.mock('../version/reload-page', () => ({ reloadPage: vi.fn() }));
 
+/**
+ * A language's catalogue, loaded as ever, so a spec can make one fail
+ * (ADR-081). Here for the same reason: the providers above load it.
+ */
+vi.mock('../i18n/catalogues', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../i18n/catalogues')>();
+  return { ...actual, loadMessages: vi.fn(actual.loadMessages) };
+});
+
 beforeAll(() => {
   /**
    * `error` rather than `warn`: an unhandled request means a component called

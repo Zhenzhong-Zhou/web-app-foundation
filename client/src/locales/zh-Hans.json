@@ -770,6 +770,8 @@
   "invoices.voided": "发票已作废",
   "invoices.voidedNoDate": "已作废：{reason}。下方的贷项通知单将其全额冲销。",
   "invoices.voidedOn": "已于 {date} 作废：{reason}。下方的贷项通知单将其全额冲销。",
+  "language.failed": "无法加载{language}。请检查网络连接，然后重试。",
+  "language.failedAtStart": "无法加载{language}，应用暂时以英文显示。",
   "language.label": "语言",
   "language.notChosen": "未选择",
   "layout.closeNavigation": "关闭导航",

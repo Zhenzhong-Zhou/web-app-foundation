@@ -1,6 +1,6 @@
 import { type ComponentType, lazy } from 'react';
 
-import { loadPage } from '../version/load-chunk';
+import { loadChunkOrReload } from '../version/load-chunk';
 
 /**
  * lazy() for a named export.
@@ -17,14 +17,14 @@ import { loadPage } from '../version/load-chunk';
  * decide what to split, so a loader passed through a variable silently ends up
  * in the main chunk.
  *
- * It loads through loadPage (ADR-081): tried again after a second, then
- * the version file says why it failed.
+ * It loads through loadChunkOrReload (ADR-081): tried again after a
+ * second, then the version file says why it failed.
  */
 export function lazyNamed<
   M extends Record<string, ComponentType>,
   K extends keyof M & string,
 >(load: () => Promise<M>, name: K) {
   return lazy(() =>
-    loadPage(load).then((module) => ({ default: module[name] })),
+    loadChunkOrReload(load).then((module) => ({ default: module[name] })),
   );
 }

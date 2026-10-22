@@ -2155,11 +2155,46 @@ revision back afterwards: `git status` shows nothing changed.
   Back online, the order loads by itself, without a load in full (no new
   document in the Network tab), as a page that won't load does (MC-3407).
 
+A language that won't load is made by hand in DevTools → Network request
+blocking with `*compiled/zh-Hans*`, the Chinese catalogue on the dev
+server (`*assets/zh-Hans-*` in a build), which leaves Help's Chinese
+guides alone. Each try waits a second and tries once more first.
+
+- **MC-3418** *(ADR-081)* Switching. Signed in, in English, block the
+  catalogue and choose 简体中文 in the account menu: the screens stay in
+  English, and at the foot of the screen Couldn’t load 简体中文. Check your
+  connection and try again., with Try again and Close; a minute later it
+  is still there. Reload: still English, and Your account's Language still
+  reads what it did, since nothing was saved. Choose 简体中文 again, unblock,
+  and press Try again in the message: the app is in 中文, and a reload and
+  Your account keep it. In Français, Impossible de charger 简体中文. Vérifiez
+  votre connexion et réessayez.; Close puts it away and changes nothing.
+  On the sign-in page the same.
+- **MC-3419** *(ADR-081)* At start. In 中文, signed in, block the
+  catalogue and reload: the app in English rather than a blank page, an
+  amber banner topping the page, Couldn’t load 简体中文, so the app is in
+  English for now., with Try again and no close, and no message at the
+  foot of the screen. A screen reader reads 简体中文 in Chinese. Signed out,
+  the same banner under the language and text size. Unblock and Try
+  again: the app in 中文, the banner gone. Blocked and reloaded again, Your
+  account's Language reads 简体中文; choosing English there puts the banner
+  away, and the next reload starts in English.
+- **MC-3420** *(ADR-081)* After a deploy. In English, deploy without
+  switching tabs, block the catalogue and choose 简体中文: the page loads in
+  full by itself (a new document in the Network tab), still in English,
+  since nothing was saved. Choose 简体中文 again within a minute, still
+  blocked: MC-3418's message, and nothing loads by itself.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R36** *(a language that won't load)* In 中文, block
+  `*compiled/zh-Hans*` (DevTools → Network request blocking) and reload:
+  the app in English with a banner saying why, never a blank page. In
+  English, choosing 简体中文 while it is blocked says so at the foot of the
+  screen, and a reload is still in English.
 - **MC-R35** *(Home's failure line)* Offline (DevTools → Network), open
   Home: it says Could not reach the server., as every other page does,
   never the browser's Failed to fetch; in 中文 无法连接服务器。
@@ -2747,3 +2782,5 @@ first.
   refusals on screen: MC-3412 to MC-3417.
 - 2026-10-22: ADR-081, the bell rests in an outdated tab: MC-3412
   extended.
+- 2026-10-22: ADR-081, a language that won't load says so: MC-3418 to
+  MC-3420, and MC-R36.

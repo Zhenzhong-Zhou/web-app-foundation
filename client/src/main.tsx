@@ -12,6 +12,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App.tsx';
 import { AuthProvider } from './auth/auth-provider';
 import { ToastProvider } from './components/toast-provider';
+import { LanguageFailureToast } from './i18n/language-failure';
 import { LanguageProvider } from './i18n/language-provider';
 import { LocalizedTheme } from './i18n/localized-theme';
 import { initTextSize } from './theme/text-size';
@@ -50,6 +51,10 @@ createRoot(document.getElementById('root')!).render(
             navigation a save often triggers. */}
         <ToastProvider>
           <RouterProvider router={router} />
+          {/* A language that would not load: the provider above says so
+              through its context, and this, inside the theme, shows it
+              (ADR-081). Before the confirmation, which shows over it. */}
+          <LanguageFailureToast />
         </ToastProvider>
       </LocalizedTheme>
     </LanguageProvider>
