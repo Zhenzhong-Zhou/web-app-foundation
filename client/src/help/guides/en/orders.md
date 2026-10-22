@@ -2,6 +2,8 @@
 
 An order is what you buy from a supplier or sell to a customer. A purchase brings stock in; a sale sends it out.
 
+> An order shows no prices, totals or PDFs to someone whose roles don’t include **See prices on orders**: to see them, ask someone who may change roles.
+
 ## Raise an order {#raise}
 
 1. Press **Raise an order**.

@@ -2,6 +2,8 @@
 
 Une commande, c’est ce que vous achetez à un fournisseur ou vendez à un client. Un achat fait entrer du stock; une vente le fait sortir.
 
+> Une commande n’affiche ni prix, ni totaux, ni PDF à une personne dont les rôles n’incluent pas **Voir les prix des commandes** : pour les voir, demandez à quelqu’un qui peut changer les rôles.
+
 ## Créer une commande {#raise}
 
 1. Appuyez sur **Créer une commande**.

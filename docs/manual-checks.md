@@ -1896,7 +1896,11 @@ The pages, in a private window unless a check says otherwise.
   no Pro forma invoice, and Invoices and credits is not among its tabs. As
   Fatima Haddad (Sales), SO-DEMO-1 shows its prices, totals, Pro forma
   invoice and its invoices and credits, as for a Viewer. At 390 px the
-  same, the Items table no wider than its columns.
+  same, the Items table no wider than its columns. As Tom Becker, Help on
+  PO-DEMO-1: the Orders guide's note under its first lines says an order
+  shows no prices, totals or PDFs to someone whose roles don’t include See
+  prices on orders, and whom to ask; in Français, Voir les prix des
+  commandes; in 中文, 查看订单价格.
 - **MC-3319** *(ADR-080)* A screen asks only for what its reader may
   read, and says why where a field cannot be filled. With the Network tab
   open, as Fatima Haddad (Sales): Inventory and Movements open without a
@@ -2491,3 +2495,5 @@ first.
   on the server and the client: MC-R30, and MC-3304 changed.
 - 2026-10-21: French gives a role with attribuer everywhere, the server's
   refusal and the Roles guide as the screens: MC-3303 changed.
+- 2026-10-21: the Orders guide says why an order may show no prices:
+  MC-3318 extended.
