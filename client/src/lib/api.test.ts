@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { API_REVISION } from '../api/revision.gen';
@@ -193,6 +193,27 @@ describe('the API revision (ADR-081)', () => {
       outdated: true,
     });
     expect(messageFor(error)).toBe(INSTALLING);
+  });
+
+  it('lets the refusal through after five seconds when the version file does not answer', async () => {
+    server.use(
+      http.get('/version.json', async () => {
+        await delay('infinite');
+        return HttpResponse.json({ ...BUILD, apiRevision: API_REVISION });
+      }),
+    );
+    refuseAsOutdated();
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const refused = failureOf('/things/refused');
+      await vi.advanceTimersByTimeAsync(5_000);
+      const error = await refused;
+      expect(error.code).toBe('client_outdated');
+      expect(messageFor(error)).toBe(INSTALLING);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('forgets the refusal once a request is served again, as after a rollback', async () => {

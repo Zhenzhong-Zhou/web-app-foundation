@@ -18,6 +18,7 @@ import type { Notification } from '../api/types.gen';
 import { api } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { rem } from '../theme/rem';
+import { useNewVersion } from '../version/version-check';
 
 /** How often the badge re-checks while the app is open. */
 const POLL_MS = 60_000;
@@ -56,6 +57,10 @@ function linkFor(entry: Notification): string | null {
  * A minute, not a second. Nothing here is time-critical — a variance flagged
  * at close and a sign-in from an unfamiliar browser are both worth knowing
  * within the minute, and neither is worth a socket.
+ *
+ * Nothing at all while the API refuses this tab as outdated (ADR-081):
+ * every ask would be refused, and each a line in the log. A reload, from
+ * the new version, asks again.
  */
 export function NotificationBell() {
   const intl = useIntl();
@@ -64,8 +69,10 @@ export function NotificationBell() {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [count, setCount] = useState(0);
   const [entries, setEntries] = useState<Notification[] | null>(null);
+  const { outdated } = useNewVersion();
 
   useEffect(() => {
+    if (outdated) return;
     let ignore = false;
 
     /**
@@ -118,7 +125,7 @@ export function NotificationBell() {
       stop();
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, []);
+  }, [outdated]);
 
   async function open(event: MouseEvent<HTMLElement>) {
     setAnchor(event.currentTarget);

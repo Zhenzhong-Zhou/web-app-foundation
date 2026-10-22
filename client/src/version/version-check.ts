@@ -38,6 +38,13 @@ const EVERY_MS = 10 * 60_000;
 /** How often while the new version is on its way, until it is out. */
 const ON_ITS_WAY_EVERY_MS = 30_000;
 
+/**
+ * How long a read of the file may take: a refusal and a chunk that would
+ * not load wait for it before anything shows, so one that hangs counts as
+ * unreadable rather than holding them.
+ */
+const READ_TIMEOUT_MS = 5_000;
+
 const NONE: NewVersion = { newer: false, urgent: false, outdated: false };
 
 let known = NONE;
@@ -154,18 +161,24 @@ async function read(): Promise<VersionRead> {
  * The file, asked for past every cache. `no-store` keeps the browser's out
  * of it; Render's edge ignores that but not a query string it has not seen,
  * so each read has one of its own. The host answers a file it lacks with
- * index.html, which is not the file.
+ * index.html, which is not the file. Given up after five seconds, its body
+ * included.
  */
 async function fetchFile(): Promise<VersionFile | null> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), READ_TIMEOUT_MS);
   try {
     const response = await fetch(`/version.json?${Date.now()}`, {
       cache: 'no-store',
+      signal: controller.signal,
     });
     if (!response.ok) return null;
     const file: unknown = await response.json();
     return isVersionFile(file) ? file : null;
   } catch {
     return null;
+  } finally {
+    window.clearTimeout(timer);
   }
 }
 

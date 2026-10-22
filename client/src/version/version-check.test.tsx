@@ -1,6 +1,6 @@
 import { act, render, renderHook, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { Link, MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -121,14 +121,48 @@ describe('checkVersion', () => {
     expect(asked).toEqual([
       {
         url: expect.stringMatching(/^\/version\.json\?\d+$/),
-        init: { cache: 'no-store' },
+        init: { cache: 'no-store', signal: expect.any(AbortSignal) },
       },
       {
         url: expect.stringMatching(/^\/version\.json\?\d+$/),
-        init: { cache: 'no-store' },
+        init: { cache: 'no-store', signal: expect.any(AbortSignal) },
       },
     ]);
     expect(asked[1].url).not.toBe(asked[0].url);
+  });
+
+  // A refusal and a chunk that would not load wait for the read before
+  // anything shows, so a file that never answers must not hold them.
+  it('gives up on a read after five seconds, as unreadable, and changes nothing', async () => {
+    serve('a1b2c3d');
+    const { result } = renderHook(() => useNewVersion());
+    await act(() => checkVersion());
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      server.use(
+        http.get('/version.json', async () => {
+          await delay('infinite');
+          return HttpResponse.json({ ...BUILD, apiRevision: API_REVISION });
+        }),
+      );
+      let settled = false;
+      const read = checkVersion().finally(() => {
+        settled = true;
+      });
+
+      await vi.advanceTimersByTimeAsync(4_999);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(await read).toBe('unreadable');
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(result.current).toEqual({
+      newer: true,
+      urgent: false,
+      outdated: false,
+    });
   });
 });
 

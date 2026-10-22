@@ -2119,7 +2119,9 @@ revision back afterwards: `git status` shows nothing changed.
   still there, A new version is being installed, This page tries again by
   itself in a minute., and no button; the Network tab shows Products read
   again each minute, and `version.json` every 30 seconds. Nothing signs
-  out, and no page says Could not reach the server.
+  out, and no page says Could not reach the server. The bell asks
+  `unread-count` once more, is refused, and then asks nothing; put the
+  revision back and reload, and it asks again each minute.
 - **MC-3413** *(ADR-081)* Then the new version is out. Still outdated, add
   the override of `/version.json`: within 30 seconds Products becomes A
   new version is ready, A new version came out while this tab was open.
@@ -2743,3 +2745,5 @@ first.
   MC-3411 added, MC-3401 changed.
 - 2026-10-22: ADR-081, the API revision sent, and an outdated tab's
   refusals on screen: MC-3412 to MC-3417.
+- 2026-10-22: ADR-081, the bell rests in an outdated tab: MC-3412
+  extended.
