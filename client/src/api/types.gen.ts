@@ -3138,6 +3138,7 @@ export type Health = {
   uptime: number;
   timestamp: string;
   commit: string | null;
+  version: string;
   apiRevision: number;
 };
 

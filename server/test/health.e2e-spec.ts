@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 
+import { version } from '../package.json';
 import { createTestApp, httpServer } from './utils/create-test-app';
 
 describe('Health (e2e)', () => {
@@ -19,6 +20,11 @@ describe('Health (e2e)', () => {
   it('GET /health returns 200', async () => {
     const res = await request(httpServer(app)).get('/health').expect(200);
     expect(res.body).toMatchObject({ status: 'ok' });
+  });
+
+  it('GET /health names the release, as package.json does', async () => {
+    const res = await request(httpServer(app)).get('/health').expect(200);
+    expect(res.body).toMatchObject({ version });
   });
 
   it('GET /v1/health is 404 — operational routes are unversioned (ADR-013)', () => {

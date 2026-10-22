@@ -11,6 +11,8 @@ export class Health {
   timestamp!: string;
   /** The deployed commit, when the host says. */
   commit!: string | null;
+  /** The release, as server/package.json names it. */
+  version!: string;
   /** The API revision within /v1 this build serves (ADR-081). */
   apiRevision!: number;
 }

@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { Controller, Get, Inject, VERSION_NEUTRAL } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Pool } from 'pg';
@@ -6,6 +9,19 @@ import { API_REVISION } from '../common/api-revision';
 import { Public } from '../core/auth/public.decorator';
 import { PG_POOL } from '../database/database.module';
 import type { Health, Readiness } from './dto/health-response.dto';
+
+/**
+ * The release, as server/package.json names it (handoff, "At each
+ * release"). Read from the file, once: npm_package_version exists only
+ * when npm starts the process, not under `node dist/main`. Two levels up
+ * from src/health and from dist/health alike; a JSON import would fall
+ * outside the build's rootDir.
+ */
+const VERSION = (
+  JSON.parse(
+    readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf8'),
+  ) as { version: string }
+).version;
 
 /**
  * ADR-013: operational endpoints are excluded from API versioning.
@@ -36,6 +52,7 @@ export class HealthController {
        * metadata, and its absence is normal, not a misconfiguration.
        */
       commit: process.env.RENDER_GIT_COMMIT ?? null,
+      version: VERSION,
       apiRevision: API_REVISION,
     };
   }

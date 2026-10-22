@@ -19700,6 +19700,9 @@
               "null"
             ]
           },
+          "version": {
+            "type": "string"
+          },
           "apiRevision": {
             "type": "number"
           }
@@ -19709,6 +19712,7 @@
           "uptime",
           "timestamp",
           "commit",
+          "version",
           "apiRevision"
         ]
       },
