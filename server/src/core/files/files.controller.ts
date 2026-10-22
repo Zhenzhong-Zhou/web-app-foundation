@@ -20,7 +20,6 @@ import { t } from '../../i18n/translate';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
 import { PERMISSIONS } from '../authorization/permissions';
-import { PermissionsService } from '../authorization/permissions.service';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
 import type { UploadedFileEnvelope } from './dto/file-response.dto';
 import { ReadFileDto } from './dto/read-file.dto';
@@ -48,10 +47,7 @@ function receive(kind: OrganizationFileKind) {
  */
 @Controller({ path: 'files', version: '1' })
 export class FilesController {
-  constructor(
-    private readonly files: FilesService,
-    private readonly permissions: PermissionsService,
-  ) {}
+  constructor(private readonly files: FilesService) {}
 
   @Post('logo')
   @RequirePermissions(PERMISSIONS.ORGANIZATIONS_UPDATE)
