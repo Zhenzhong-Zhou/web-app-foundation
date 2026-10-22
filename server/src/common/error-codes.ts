@@ -119,6 +119,17 @@ export const ERROR_CODES = {
    * marks the Name field, and the message says which.
    */
   roleNameUnavailable: 'role_name_unavailable',
+  /**
+   * The client sent an API revision below the server's (ADR-081): a tab
+   * open across a deploy that changed the API. Refused before anything is
+   * read or saved, and the screen offers Reload.
+   */
+  clientOutdated: 'client_outdated',
+  /**
+   * The client sent an API revision above the server's (ADR-081): the API
+   * not deployed yet, or rolled back. Sent with Retry-After.
+   */
+  apiUpdating: 'api_updating',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

@@ -2,6 +2,7 @@ import { Controller, Get, Inject, VERSION_NEUTRAL } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Pool } from 'pg';
 
+import { API_REVISION } from '../common/api-revision';
 import { Public } from '../core/auth/public.decorator';
 import { PG_POOL } from '../database/database.module';
 import type { Health, Readiness } from './dto/health-response.dto';
@@ -35,6 +36,7 @@ export class HealthController {
        * metadata, and its absence is normal, not a misconfiguration.
        */
       commit: process.env.RENDER_GIT_COMMIT ?? null,
+      apiRevision: API_REVISION,
     };
   }
 

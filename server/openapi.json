@@ -8058,7 +8058,7 @@
   "info": {
     "title": "web-app-foundation API",
     "description": "",
-    "version": "1",
+    "version": "1.1",
     "contact": {}
   },
   "tags": [],
@@ -19699,13 +19699,17 @@
               "string",
               "null"
             ]
+          },
+          "apiRevision": {
+            "type": "number"
           }
         },
         "required": [
           "status",
           "uptime",
           "timestamp",
-          "commit"
+          "commit",
+          "apiRevision"
         ]
       },
       "Readiness": {
@@ -19909,7 +19913,9 @@
           "role_changed",
           "role_held",
           "permission_requires",
-          "role_name_unavailable"
+          "role_name_unavailable",
+          "client_outdated",
+          "api_updating"
         ]
       },
       "ApiVocabulary": {

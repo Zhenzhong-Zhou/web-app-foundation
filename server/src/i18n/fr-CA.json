@@ -333,6 +333,8 @@
   "boms.statusBomVerbDuplicate": "Une recette à l’état {status, select, draft {brouillon} active {actif} archived {archivé} other {{status}}} ne peut pas être {verb, select, edited {modifiée} other {{verb}}} — dupliquez-la plutôt dans un nouveau brouillon",
   "boms.suchBom": "Recette introuvable",
   "boms.suchLineBom": "Ligne introuvable dans cette recette",
+  "common.apiUpdating": "Une nouvelle version est en cours d’installation. Réessayez dans une minute; rien n’a été enregistré.",
+  "common.clientOutdated": "Cet onglet utilise une ancienne version de l’application, donc rien n’a été enregistré. Copiez ce que vous avez saisi, puis rechargez.",
   "common.internalError": "Erreur interne du serveur",
   "common.missingCsrfHeaderHeader": "En-tête {CSRF_HEADER} manquant sur une requête qui modifie des données",
   "costs.currencyBaseCurrencyRate": "{currency} est la devise de base. Un taux convertit les autres devises vers elle.",

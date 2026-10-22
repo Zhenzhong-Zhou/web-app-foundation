@@ -5,6 +5,7 @@ import {
   SwaggerModule,
 } from '@nestjs/swagger';
 
+import { API_REVISION } from '../common/api-revision';
 import { ApiVocabulary } from './api-vocabulary';
 import { ErrorBody } from './error-body';
 
@@ -16,7 +17,8 @@ import { ErrorBody } from './error-body';
 export function apiDocument(app: INestApplication): OpenAPIObject {
   const config = new DocumentBuilder()
     .setTitle('web-app-foundation API')
-    .setVersion('1')
+    // /v1, then the revision within it (ADR-081).
+    .setVersion(`1.${API_REVISION}`)
     .setOpenAPIVersion('3.1.0')
     .build();
 

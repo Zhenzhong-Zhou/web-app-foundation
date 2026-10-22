@@ -3138,6 +3138,7 @@ export type Health = {
   uptime: number;
   timestamp: string;
   commit: string | null;
+  apiRevision: number;
 };
 
 export type Readiness = {
@@ -3331,6 +3332,8 @@ export const ErrorCode = {
   ROLE_HELD: 'role_held',
   PERMISSION_REQUIRES: 'permission_requires',
   ROLE_NAME_UNAVAILABLE: 'role_name_unavailable',
+  CLIENT_OUTDATED: 'client_outdated',
+  API_UPDATING: 'api_updating',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

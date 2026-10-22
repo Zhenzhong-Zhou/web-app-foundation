@@ -11,6 +11,8 @@ export class Health {
   timestamp!: string;
   /** The deployed commit, when the host says. */
   commit!: string | null;
+  /** The API revision within /v1 this build serves (ADR-081). */
+  apiRevision!: number;
 }
 
 /** GET /health/ready: the database answers too. */
