@@ -1,9 +1,6 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-import type { VolumeManifest } from '../src/database/seed-volume';
 import { RateLimited, signIn } from './client';
 import { runLoad } from './load';
+import { readManifest } from './manifest';
 import { growthFor, type Result, writeReport } from './report';
 import {
   concurrencyCheck,
@@ -20,14 +17,12 @@ import {
  * Usage, from `server/`, with the server running against a volume seed:
  *
  *     npm run perf
- *     npm run perf -- --url http://localhost:3000 --skip-stress
+ *     npm run perf -- --scale large --url http://localhost:3000 --skip-stress
  *
  * Budgets at 10 connections fail the run at small scale and are shown at
  * large; the concurrency check fails it at either; the stress run at 100
  * connections only reports. See perf/README.md for how to start the server.
  */
-
-const MANIFEST = join(__dirname, 'volume.json');
 
 interface Phase {
   name: 'budget' | 'stress';
@@ -59,12 +54,11 @@ async function main(): Promise<number> {
   ).replace(/\/$/, '');
   const skipStress = args.includes('--skip-stress');
 
-  if (!existsSync(MANIFEST)) {
-    console.error(`No ${MANIFEST}: run npm run seed:volume first.`);
+  const manifest = readManifest(valueOf(args, '--scale'));
+  if (typeof manifest === 'string') {
+    console.error(manifest);
     return 1;
   }
-
-  const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8')) as VolumeManifest;
 
   const ready = await fetch(`${baseUrl}/health/ready`).catch(() => null);
   if (ready?.status !== 200) {

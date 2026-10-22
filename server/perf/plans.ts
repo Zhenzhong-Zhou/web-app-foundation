@@ -1,10 +1,4 @@
-import {
-  appendFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { type INestApplicationContext, Logger } from '@nestjs/common';
@@ -33,6 +27,7 @@ import { AvailabilityService } from '../src/modules/stock/availability.service';
 import { LotTraceService } from '../src/modules/stock/lot-trace.service';
 import { StockReadsService } from '../src/modules/stock/stock-reads.service';
 import { type Captured, QueryCapture } from './capture';
+import { readManifest } from './manifest';
 import { toUnits } from './quantity';
 import { REPORTS } from './report';
 
@@ -47,14 +42,12 @@ import { REPORTS } from './report';
  * Usage, from `server/`, against the volume seed's database (README):
  *
  *     NODE_ENV=test DATABASE_URL_TEST=$PERF_DB npm run perf:plans
- *     ... npm run perf:plans -- --min-rows 50000
+ *     ... npm run perf:plans -- --scale large --min-rows 50000
  *
  * Large means at least --min-rows rows (default 10,000) by the planner's own
  * estimate, after a fresh ANALYZE. Below that a sequential scan is often the
  * right plan, and failing on it would teach people to ignore the check.
  */
-
-const MANIFEST = join(__dirname, 'volume.json');
 
 /** The thirty days before today, as days and as instants (ADR-057). */
 const NOW = Date.now();
@@ -111,12 +104,12 @@ async function main(): Promise<number> {
   const logger = new Logger('PlanCheck');
   const minRows = Number(valueOf(process.argv, '--min-rows') ?? 10_000);
 
-  if (!existsSync(MANIFEST)) {
-    logger.error(`No ${MANIFEST}: run npm run seed:volume first.`);
+  const manifest = readManifest(valueOf(process.argv, '--scale'));
+  if (typeof manifest === 'string') {
+    logger.error(manifest);
     return 1;
   }
 
-  const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8')) as VolumeManifest;
   const org = manifest.organizations[0];
 
   const capture = new QueryCapture();

@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname } from 'node:path';
 
 import { ConsoleLogger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
@@ -13,7 +13,7 @@ import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
 import { invitations, memberships, roles, users } from './schema';
 import { runInTenantContext } from './tenant-context';
 import { Random } from './volume/random';
-import { type Scale, SCALES, VOLUMES } from './volume/scale';
+import { manifestPath, type Scale, SCALES, VOLUMES } from './volume/scale';
 import { servicesOf } from './volume/services';
 import { type Anchors, OrganizationWriter } from './volume/write-organization';
 
@@ -32,13 +32,11 @@ import { type Anchors, OrganizationWriter } from './volume/write-organization';
  *
  * Every run registers new organizations, stamped with the time, so nothing
  * collides with an earlier run. What perf needs to sign in and find its way
- * — emails, the password, a few ids — is written to perf/volume.json.
+ * — emails, the password, a few ids — is written to
+ * perf/volume-<scale>.json.
  */
 
 const PASSWORD = 'volume-password-2026';
-
-/** Beside the perf scripts that read it; gitignored. */
-const MANIFEST = resolve(__dirname, '..', '..', 'perf', 'volume.json');
 
 /** Counted per organization once seeding ends, for the manifest. */
 const COUNTED = [
@@ -212,8 +210,9 @@ async function seedVolume(): Promise<void> {
       })),
     };
 
-    mkdirSync(dirname(MANIFEST), { recursive: true });
-    writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
+    const manifestFile = manifestPath(options.scale);
+    mkdirSync(dirname(manifestFile), { recursive: true });
+    writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
 
     const minutes = ((Date.now() - started) / 60_000).toFixed(1);
     const first = manifest.organizations[0].counts;
@@ -222,7 +221,7 @@ async function seedVolume(): Promise<void> {
       `Done in ${minutes} min. Each organization holds about ${first.orders} orders, ${first.lots} lots, ${first.invoices} invoices and ${first.stock_movements} stock movements.`,
     );
     logger.log(
-      `Sign in as ${accounts[0].email} with password ${PASSWORD}. Manifest: ${MANIFEST}`,
+      `Sign in as ${accounts[0].email} with password ${PASSWORD}. Manifest: ${manifestFile}`,
     );
   } finally {
     await app.close();

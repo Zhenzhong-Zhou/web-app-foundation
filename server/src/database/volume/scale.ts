@@ -1,6 +1,17 @@
+import { resolve } from 'node:path';
+
 export const SCALES = ['small', 'large'] as const;
 
 export type Scale = (typeof SCALES)[number];
+
+/**
+ * Where seed:volume writes what perf needs to sign in and find its way,
+ * beside the perf scripts and gitignored: a file per scale, so seeding one
+ * leaves the other's in place (ADR-081).
+ */
+export function manifestPath(scale: Scale): string {
+  return resolve(__dirname, '..', '..', '..', 'perf', `volume-${scale}.json`);
+}
 
 /** The year the seed writes, a week at a time. */
 export const WEEKS = 52;

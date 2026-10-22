@@ -159,7 +159,7 @@ jobs:
         with:
           path: |
             server/perf/volume.dump
-            server/perf/volume.json
+            server/perf/volume-${{ env.SCALE }}.json
           key: ${{ steps.key.outputs.prefix }}${{ github.run_id }}
           restore-keys: ${{ steps.key.outputs.prefix }}
 
@@ -197,7 +197,7 @@ jobs:
         with:
           path: |
             server/perf/volume.dump
-            server/perf/volume.json
+            server/perf/volume-${{ env.SCALE }}.json
           key: ${{ steps.key.outputs.prefix }}${{ github.run_id }}
 
       # The built server, as production runs it, in the background.
@@ -220,15 +220,15 @@ jobs:
         if: env.MODE != 'plans'
         run: |
           if [ "$MODE" = budgets ]; then
-            npm run perf -- --skip-stress
+            npm run perf -- --scale "$SCALE" --skip-stress
           else
-            npm run perf
+            npm run perf -- --scale "$SCALE"
           fi
 
       # Runs even when a budget failed: the plans are often why.
       - name: Query plans
         if: success() || steps.perf.outcome == 'failure'
-        run: npm run perf:plans
+        run: npm run perf:plans -- --scale "$SCALE"
 
       - uses: actions/upload-artifact@v7
         if: always()

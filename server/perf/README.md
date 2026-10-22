@@ -63,9 +63,9 @@ Why each setting is there:
 `seed:volume` takes `--scale small|large`, `--organizations n` (default 5)
 and `--seed n` (default 51; the same seed writes the same data). Small takes
 about 7 minutes; large an hour or more, since every service call is its own
-transaction. It writes `perf/volume.json`, which `perf` and `perf:plans` read
-to sign in and find their way; copy it aside (`volume-small.json`) before
-seeding the other scale.
+transaction. It writes `perf/volume-<scale>.json`, which `perf` and
+`perf:plans` read to sign in and find their way, by their own `--scale`
+(small when not given). Seeding one scale leaves the other's in place.
 
 For large, give it a database of its own and skip the commit flush while
 seeding. It is safe for a throwaway database and several times faster, but
@@ -84,11 +84,20 @@ docker exec foundation-postgres psql -U app -d foundation_perf_large \
   -c 'alter database foundation_perf_large reset synchronous_commit'
 ```
 
+Then measure it as above, with `$PERF_DB_LARGE` for the database and
+`--scale large` on both commands:
+
+```bash
+npm run perf -- --scale large
+NODE_ENV=test DATABASE_URL_TEST=$PERF_DB_LARGE npm run perf:plans -- --scale large
+```
+
 `caffeinate` keeps the Mac awake but cannot stop a closed lid from sleeping
 it. A sleep pauses the seed, which carries on when the Mac wakes.
 
-`npm run perf` takes `--url` (default `PERF_URL`, then
-`http://localhost:3000`) and `--skip-stress` for a quicker run.
+`npm run perf` takes `--scale small|large` (default small), `--url`
+(default `PERF_URL`, then `http://localhost:3000`) and `--skip-stress` for a
+quicker run.
 
 ## What a run measures
 
@@ -123,13 +132,13 @@ shows.
 ## The plan check
 
 `npm run perf:plans` calls the real list and ledger services in the first
-seeded organization, records the SQL they send, and runs
-`EXPLAIN (ANALYZE, BUFFERS)` on each statement in a transaction it rolls
-back. It fails on a sequential scan of a table the planner estimates at
-10,000 rows or more (`--min-rows` to change). A scan that is the decision
-rather than an accident goes in the allow-list in `perf/plans.ts`, with
-the reason; lot search is the one there today. Every plan goes to
-`perf/reports/<time>-<scale>-plans.json`.
+seeded organization of its `--scale` (small by default), records the SQL
+they send, and runs `EXPLAIN (ANALYZE, BUFFERS)` on each statement in a
+transaction it rolls back. It fails on a sequential scan of a table the
+planner estimates at 10,000 rows or more (`--min-rows` to change). A scan
+that is the decision rather than an accident goes in the allow-list in
+`perf/plans.ts`, with the reason; lot search is the one there today. Every
+plan goes to `perf/reports/<time>-<scale>-plans.json`.
 
 ## Reports
 
