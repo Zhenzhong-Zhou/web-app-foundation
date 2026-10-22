@@ -148,16 +148,20 @@ export function MembersSection({
       </IconButton>
     ) : null;
 
+  // After a space, so a screen reader hears "Ana you", not "Anayou".
   const you = (member: Member) =>
     member.id === selfId && (
-      <Typography
-        component="span"
-        variant="caption"
-        color="text.secondary"
-        sx={{ ml: 1 }}
-      >
-        {intl.formatMessage({ id: 'members.you', defaultMessage: 'you' })}
-      </Typography>
+      <>
+        {' '}
+        <Typography
+          component="span"
+          variant="caption"
+          color="text.secondary"
+          sx={{ ml: 0.5 }}
+        >
+          {intl.formatMessage({ id: 'members.you', defaultMessage: 'you' })}
+        </Typography>
+      </>
     );
 
   const heading = (

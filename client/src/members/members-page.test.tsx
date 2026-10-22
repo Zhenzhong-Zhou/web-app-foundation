@@ -105,6 +105,14 @@ describe('MembersPage', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('marks the reader’s own row, read apart from their name', async () => {
+    renderAs(['users.view', 'roles.view']);
+
+    // The avatar's initials come first in the row's name.
+    const row = await screen.findByRole('row', { name: /\bAna you\b/ });
+    expect(within(row).getByText('you')).toBeVisible();
+  });
+
   it('offers Remove on others’ rows only, to someone who may remove members', async () => {
     renderAs(['users.view', 'roles.view', 'users.delete']);
 
