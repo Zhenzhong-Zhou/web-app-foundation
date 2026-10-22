@@ -480,7 +480,7 @@
   "files.photo.type": "Une photo doit être une image PNG, JPEG ou WebP",
   "files.quota.full": "Cela dépasserait les {limit} Mo de fichiers de votre organisation. Supprimez-en avant d’en ajouter d’autres.",
   "files.upload.missing": "Choisissez un fichier à téléverser",
-  "invitations.alreadyAMember": "Cette adresse appartient déjà à un membre de cette organisation. Pour lui donner un autre accès, changez plutôt son rôle.",
+  "invitations.alreadyAMember": "Cette adresse appartient déjà à un membre de cette organisation. Pour lui donner un autre accès, changez plutôt ses rôles.",
   "invitations.alreadyInvited": "Cette adresse a déjà été invitée. Renvoyez plutôt l’invitation.",
   "invitations.alreadyInvitedEnded": "Cette adresse a déjà été invitée, et son lien a pris fin. Renvoyez l’invitation pour le relancer.",
   "invitations.alreadyInvitedNotSent": "Cette adresse a déjà été invitée, mais le courriel n’est pas parti. Renvoyez l’invitation, ou copiez son lien.",

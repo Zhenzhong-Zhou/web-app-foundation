@@ -74,7 +74,7 @@ const M = defineMessages({
   teamTitle: { id: 'home.start.team', defaultMessage: 'Invite your team' },
   teamHint: {
     id: 'home.start.team.hint',
-    defaultMessage: 'People who work here, each with their role. Optional.',
+    defaultMessage: 'People who work here, each with their roles. Optional.',
   },
   teamAction: {
     id: 'home.start.team.action',

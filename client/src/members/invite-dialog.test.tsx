@@ -258,7 +258,7 @@ describe('InviteDialog (ADR-077)', () => {
       http.post('/api/v1/invitations', () =>
         refusal(409, {
           message:
-            'That address already belongs to a member of this organization. To give them other access, change their role instead.',
+            'That address already belongs to a member of this organization. To give them other access, change their roles instead.',
           code: 'already_a_member',
         }),
       ),
@@ -269,7 +269,7 @@ describe('InviteDialog (ADR-077)', () => {
     await send(user, 'Send invitation');
     expect(
       await screen.findByText(
-        'That address already belongs to a member of this organization. To give them other access, change their role instead.',
+        'That address already belongs to a member of this organization. To give them other access, change their roles instead.',
       ),
     ).toBeVisible();
   });

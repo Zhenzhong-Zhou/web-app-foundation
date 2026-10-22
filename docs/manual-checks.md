@@ -1977,6 +1977,14 @@ The pages, in a private window unless a check says otherwise.
   Admin cannot change Sales (it lacks price lists), and a refused page
   (MC-3320) names the same two. Home's welcome card says the same to a
   newcomer.
+- **MC-3326** *(ADR-080)* A member's roles are plural wherever they are
+  named. As Daniel Okafor (Admin), with the app in Français, Account →
+  Your access reads … changer les rôles des membres. Invite an address
+  already a member: … change their roles instead.; in Français … changez
+  plutôt ses rôles. As Tom Becker, open the audit log by its address
+  (`/audit`): Your roles don’t include the audit log.; in Français Vos
+  rôles ne donnent pas accès au journal d’audit. On a new organization,
+  Getting started's Invite your team says each with their roles.
 
 ## Regressions
 
@@ -2515,3 +2523,4 @@ first.
   MC-3316 changed.
 - 2026-10-21: a role nobody holds says where to give it: MC-3309
   extended.
+- 2026-10-21: the words that still gave a member one role: MC-3326.

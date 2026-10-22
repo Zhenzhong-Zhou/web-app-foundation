@@ -30,6 +30,6 @@ Everyone can see what they did themselves: **See all your work** on [Your accoun
 
 ## If something is refused {#refused}
 
-- Without access, the page says your role does not include the audit log. Ask someone who may change roles.
+- Without access, the page says your roles don’t include the audit log. Ask someone who may change roles.
 
 See also [People](/people).

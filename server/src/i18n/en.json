@@ -480,7 +480,7 @@
   "files.photo.type": "A photo must be a PNG, JPEG or WebP image",
   "files.quota.full": "This would take your organization past its {limit} MB of files. Remove some before adding more.",
   "files.upload.missing": "Choose a file to upload",
-  "invitations.alreadyAMember": "That address already belongs to a member of this organization. To give them other access, change their role instead.",
+  "invitations.alreadyAMember": "That address already belongs to a member of this organization. To give them other access, change their roles instead.",
   "invitations.alreadyInvited": "That address has already been invited. Resend the invitation instead.",
   "invitations.alreadyInvitedEnded": "That address has already been invited, and its link has ended. Resend the invitation to start it again.",
   "invitations.alreadyInvitedNotSent": "That address has already been invited, but the email did not go. Resend the invitation, or copy its link.",

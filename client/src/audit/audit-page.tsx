@@ -151,8 +151,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
         <Alert severity="info">
           {intl.formatMessage({
             id: 'audit.noAccess',
-            defaultMessage:
-              'Your role does not include access to the audit log.',
+            defaultMessage: 'Your roles don’t include the audit log.',
           })}
         </Alert>
       </Stack>

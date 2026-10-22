@@ -191,7 +191,7 @@ export class InvitationsService {
               t({
                 id: 'invitations.alreadyAMember',
                 defaultMessage:
-                  'That address already belongs to a member of this organization. To give them other access, change their role instead.',
+                  'That address already belongs to a member of this organization. To give them other access, change their roles instead.',
               }),
               ERROR_CODES.alreadyAMember,
             ),
