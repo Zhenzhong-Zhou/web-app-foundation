@@ -37,6 +37,7 @@ import {
   type HeldRole,
   nameRoles,
   roleRef,
+  rolesOfInvitation,
   rolesOfInvitations,
 } from '../authorization/member-roles';
 import { roleName, roleWords, systemRoleOf } from '../authorization/role-words';
@@ -517,8 +518,7 @@ export class InvitationsService {
             eq(invitations.organizationId, organizationId),
           ),
         );
-      const named = await rolesOfInvitations(tx, [id]);
-      return [row, named.get(id) ?? []] as const;
+      return [row, await rolesOfInvitation(tx, id)] as const;
     });
 
     try {
@@ -627,7 +627,7 @@ async function pendingIn(tx: Transaction, organizationId: string, id: string) {
       t({ id: 'invitations.notFound', defaultMessage: 'No such invitation' }),
     );
   }
-  const named = (await rolesOfInvitations(tx, [id])).get(id) ?? [];
+  const named = await rolesOfInvitation(tx, id);
   return { ...invitation, roleIds: named.map((role) => role.id) };
 }
 

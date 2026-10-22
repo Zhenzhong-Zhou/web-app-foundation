@@ -10,7 +10,7 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { type AuditRecord, AuditService } from '../audit/audit.service';
 import type { RoleRef } from '../authorization/dto/role-response.dto';
-import { roleRef, rolesOfMembers } from '../authorization/member-roles';
+import { withRoleRefs } from '../authorization/member-roles';
 import type { Permission } from '../authorization/permissions';
 import { FILE_STORAGE, type FileStorage, keyOf } from '../files/file-storage';
 
@@ -177,18 +177,11 @@ const PERSON_COLUMNS = {
 type PersonRow = Omit<Person, 'active'> & { lastActiveAt: Date | null };
 
 /** Each person's roles beside them, read where the roles are (ADR-080). */
-async function withRoles(
+function withRoles(
   tx: Transaction,
   rows: (Omit<PersonRow, 'roles'> & { membershipId: string })[],
 ): Promise<PersonRow[]> {
-  const held = await rolesOfMembers(
-    tx,
-    rows.map((row) => row.membershipId),
-  );
-  return rows.map(({ membershipId, ...row }) => ({
-    ...row,
-    roles: (held.get(membershipId) ?? []).map(roleRef),
-  }));
+  return withRoleRefs(tx, rows);
 }
 
 /** As the caller may see it: the exact time only with audit.view. */

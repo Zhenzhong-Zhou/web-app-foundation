@@ -57,7 +57,7 @@ import {
   ONLY_AN_OWNER_CHANGES_AN_OWNER,
   refuseBeyond,
 } from './giving';
-import { grantsOf, roleRef, rolesOfMembers, setRoles } from './member-roles';
+import { grantsOf, setRoles, withRoleRefs } from './member-roles';
 import { isOwnerRole } from './owner';
 import {
   ALL_PERMISSIONS,
@@ -160,14 +160,7 @@ export class RolesService {
           ),
         )
         .orderBy(asc(users.name), asc(users.id));
-      const held = await rolesOfMembers(
-        tx,
-        rows.map((holder) => holder.membershipId),
-      );
-      const holders = rows.map(({ membershipId, ...holder }) => ({
-        ...holder,
-        roles: (held.get(membershipId) ?? []).map(roleRef),
-      }));
+      const holders = await withRoleRefs(tx, rows);
       return { ...summary, holders, updatedAt: row.updatedAt };
     });
   }

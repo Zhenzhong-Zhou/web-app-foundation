@@ -55,6 +55,35 @@ export function rolesOfMembers(
   );
 }
 
+/** One membership's roles, the same way. */
+export async function rolesOfMember(
+  executor: Executor,
+  membershipId: string,
+): Promise<HeldRole[]> {
+  return (
+    (await rolesOfMembers(executor, [membershipId])).get(membershipId) ?? []
+  );
+}
+
+/**
+ * Rows naming a membership, each with that member's roles beside it as
+ * the API sends them, and the membership id gone: Members, People and a
+ * role's holders.
+ */
+export async function withRoleRefs<Row extends { membershipId: string }>(
+  executor: Executor,
+  rows: readonly Row[],
+): Promise<(Omit<Row, 'membershipId'> & { roles: RoleRef[] })[]> {
+  const held = await rolesOfMembers(
+    executor,
+    rows.map((row) => row.membershipId),
+  );
+  return rows.map(({ membershipId, ...row }) => ({
+    ...row,
+    roles: (held.get(membershipId) ?? []).map(roleRef),
+  }));
+}
+
 /** The roles each invitation names, by invitation id, the same way. */
 export function rolesOfInvitations(
   executor: Executor,
@@ -69,6 +98,16 @@ export function rolesOfInvitations(
           .innerJoin(roles, eq(roles.id, invitationRoles.roleId))
           .where(inArray(invitationRoles.invitationId, [...invitationIds]))
           .orderBy(asc(roles.id)),
+  );
+}
+
+/** One invitation's roles, the same way. */
+export async function rolesOfInvitation(
+  executor: Executor,
+  invitationId: string,
+): Promise<HeldRole[]> {
+  return (
+    (await rolesOfInvitations(executor, [invitationId])).get(invitationId) ?? []
   );
 }
 

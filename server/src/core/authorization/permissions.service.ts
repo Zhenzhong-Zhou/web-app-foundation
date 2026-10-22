@@ -24,7 +24,7 @@ import {
 } from '../../database/schema';
 import { t } from '../../i18n/translate';
 import type { RequestContext } from '../auth/request-context';
-import { grantsOfMember, rolesOfMembers } from './member-roles';
+import { grantsOfMember, rolesOfMember } from './member-roles';
 import { holdsOwner } from './owner';
 import { type Permission, PERMISSIONS, quotedLine } from './permissions';
 import { roleName } from './role-words';
@@ -211,11 +211,7 @@ export class PermissionsService {
     const membershipId = context.membershipId;
     const none: Promise<never[]> = Promise.resolve([]);
     const [roles, askers] = await Promise.all([
-      membershipId
-        ? rolesOfMembers(this.db, [membershipId]).then(
-            (of) => of.get(membershipId) ?? [],
-          )
-        : none,
+      membershipId ? rolesOfMember(this.db, membershipId) : none,
       context.organizationId
         ? this.whoCanGive(
             { userId: context.userId, organizationId: context.organizationId },

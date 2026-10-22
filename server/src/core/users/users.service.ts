@@ -33,8 +33,8 @@ import {
 import {
   giveRoles,
   roleRef,
-  rolesOfMembers,
   setRoles,
+  withRoleRefs,
 } from '../authorization/member-roles';
 import type { Permission } from '../authorization/permissions';
 import type { CreateUserDto } from './dto/create-user.dto';
@@ -83,17 +83,7 @@ export class UsersService {
         lastActiveAt: memberships.lastActiveAt,
       },
     );
-    const held = await this.tenantDb.transaction((tx) =>
-      rolesOfMembers(
-        tx,
-        rows.map((row) => row.membershipId),
-      ),
-    );
-
-    return rows.map(({ membershipId, ...member }) => ({
-      ...member,
-      roles: (held.get(membershipId) ?? []).map(roleRef),
-    }));
+    return this.tenantDb.transaction((tx) => withRoleRefs(tx, rows));
   }
 
   /**

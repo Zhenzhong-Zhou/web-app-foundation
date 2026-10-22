@@ -7,7 +7,7 @@ import type {
   MemberAccess,
   MemberRole,
 } from './dto/member-access-response.dto';
-import { type HeldRole, rolesOfMembers } from './member-roles';
+import { type HeldRole, rolesOfMember } from './member-roles';
 import { ALL_PERMISSIONS, type Permission } from './permissions';
 import { PermissionsService } from './permissions.service';
 
@@ -33,12 +33,9 @@ export class MemberAccessService {
     const membershipId = context.membershipId;
     if (!membershipId) throw notWorkingHere();
 
-    const roles =
-      (
-        await this.tenantDb.transaction((tx) =>
-          rolesOfMembers(tx, [membershipId]),
-        )
-      ).get(membershipId) ?? [];
+    const roles = await this.tenantDb.transaction((tx) =>
+      rolesOfMember(tx, membershipId),
+    );
     if (roles.length === 0) throw notWorkingHere();
 
     return this.given(context, roles.map(memberRole), held);

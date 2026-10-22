@@ -33,7 +33,7 @@ import { AuthTokenService } from '../auth/auth-token.service';
 import { PasswordService } from '../auth/password.service';
 import type { RequestContext } from '../auth/request-context';
 import { type NewSession, SessionService } from '../auth/session.service';
-import { giveRoles, rolesOfInvitations } from '../authorization/member-roles';
+import { giveRoles, rolesOfInvitation } from '../authorization/member-roles';
 import {
   roleName,
   roleWords,
@@ -148,9 +148,7 @@ export class InvitationAcceptanceService {
       .where(eq(invitations.id, invitationId));
     if (!row || row.acceptedAt || row.revokedAt) return null;
 
-    const named =
-      (await rolesOfInvitations(this.db, [invitationId])).get(invitationId) ??
-      [];
+    const named = await rolesOfInvitation(this.db, invitationId);
 
     const [account] = await this.db
       .select({ id: users.id })
@@ -394,10 +392,10 @@ export class InvitationAcceptanceService {
       : [];
     if (!row || row.acceptedAt || row.revokedAt) throw ended();
 
-    const named = await rolesOfInvitations(this.db, [row.id]);
+    const named = await rolesOfInvitation(this.db, row.id);
     return {
       ...row,
-      roleIds: (named.get(row.id) ?? []).map((role) => role.id),
+      roleIds: named.map((role) => role.id),
       organizationDeleting: row.deletionScheduledAt !== null,
     };
   }
@@ -556,10 +554,7 @@ export class InvitationAcceptanceService {
         .where(and(eq(invitations.id, invitation.id), isNull(users.deletedAt)));
       if (!facts) return;
 
-      const named =
-        (await rolesOfInvitations(this.db, [invitation.id])).get(
-          invitation.id,
-        ) ?? [];
+      const named = await rolesOfInvitation(this.db, invitation.id);
 
       await this.notifications.emit([
         {

@@ -4,7 +4,7 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import { AppModule } from '../app.module';
 import { AuthService } from '../core/auth/auth.service';
-import { rolesOfMembers } from '../core/authorization/member-roles';
+import { rolesOfMember } from '../core/authorization/member-roles';
 import { holdsOwner } from '../core/authorization/owner';
 import { SYSTEM_ROLES } from '../core/authorization/permissions';
 import { OrganizationsService } from '../core/organizations/organizations.service';
@@ -900,14 +900,12 @@ async function existingAccount(
     .where(eq(users.email, email));
   if (!row) return undefined;
 
-  const held = await rolesOfMembers(db, [row.membershipId]);
+  const held = await rolesOfMember(db, row.membershipId);
   return {
     userId: row.userId,
     organizationId: row.organizationId,
     email,
-    role: (held.get(row.membershipId) ?? [])
-      .map((role) => role.name)
-      .join(', '),
+    role: held.map((role) => role.name).join(', '),
     isOwner: row.isOwner,
   };
 }

@@ -9,7 +9,7 @@ import {
   MemberAccessService,
   memberRole,
 } from '../../core/authorization/member-access.service';
-import { rolesOfMembers } from '../../core/authorization/member-roles';
+import { rolesOfMember } from '../../core/authorization/member-roles';
 import type { Permission } from '../../core/authorization/permissions';
 import { inviterStillHere } from '../../core/invitations/inviter';
 import type { Transaction } from '../../database/database.module';
@@ -231,7 +231,7 @@ export class WelcomeService {
         );
       if (!row) return undefined;
 
-      const held = (await rolesOfMembers(tx, [row.id])).get(row.id) ?? [];
+      const held = await rolesOfMember(tx, row.id);
       return { ...row, roles: held.map(memberRole) };
     });
   }
