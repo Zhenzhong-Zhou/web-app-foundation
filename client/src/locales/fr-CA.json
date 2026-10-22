@@ -411,7 +411,7 @@
   "home.noOrganization.start.byInvitation": "Les nouvelles organisations commencent par une invitation. Si on vous a envoyé un lien pour en créer une, ouvrez-le en étant connecté avec ce compte.",
   "home.noOrganization.start.nameHelp": "Tel qu’il apparaît sur vos factures. Vous pourrez le changer plus tard, dans Paramètres.",
   "home.noOrganization.start.title": "Créer une organisation",
-  "home.organization": " · {name}",
+  "home.organization": "· {name}",
   "home.seeAll": "Tout voir ({count})",
   "home.start.dismiss": "Masquer",
   "home.start.done": " (fait)",

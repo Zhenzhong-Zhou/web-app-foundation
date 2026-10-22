@@ -254,11 +254,17 @@ function OrganizationHome() {
               // The organization's date, which the cards count from.
               timeZone: zone,
             })}
-            {session?.organization?.name &&
-              intl.formatMessage(
-                { id: 'home.organization', defaultMessage: ' · {name}' },
-                { name: session.organization.name },
-              )}
+            {/* The space outside the message: extraction trims a
+                message's own, and English lost it. */}
+            {session?.organization?.name && (
+              <>
+                {' '}
+                {intl.formatMessage(
+                  { id: 'home.organization', defaultMessage: '· {name}' },
+                  { name: session.organization.name },
+                )}
+              </>
+            )}
           </Typography>
           <Button variant="text" startIcon={<RefreshIcon />} onClick={load}>
             {intl.formatMessage({

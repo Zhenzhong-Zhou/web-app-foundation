@@ -1991,6 +1991,9 @@ The pages, in a private window unless a check says otherwise.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R32** *(Home's date line)* In English, Home's line under the
+  greeting reads Thursday, October 22 · Demo …, a space either side of the
+  dot, as it does in Français and 中文.
 - **MC-R31** *(your own row on Members)* With VoiceOver, on Members at
   1280 px and at 390 px, your own row reads your name, then you, as two
   words (Anika Sharma you, in Français Anika Sharma vous, in 中文 李静 您,
@@ -2532,3 +2535,5 @@ first.
 - 2026-10-21: your own row on Members reads your name and you apart:
   MC-R31.
 - 2026-10-21: Members marks your row 您 in Chinese: MC-R31 extended.
+- 2026-10-21: Home's date line keeps its space before the organization in
+  English: MC-R32.

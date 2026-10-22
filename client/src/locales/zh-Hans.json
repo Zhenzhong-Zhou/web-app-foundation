@@ -411,7 +411,7 @@
   "home.noOrganization.start.byInvitation": "新组织需要从邀请开始。如果有人发给您创建组织的链接，请用这个账户登录后打开它。",
   "home.noOrganization.start.nameHelp": "会显示在发票上。以后可以在“设置”里修改。",
   "home.noOrganization.start.title": "创建组织",
-  "home.organization": " · {name}",
+  "home.organization": "· {name}",
   "home.seeAll": "查看全部 {count} 项",
   "home.start.dismiss": "隐藏",
   "home.start.done": "（已完成）",
