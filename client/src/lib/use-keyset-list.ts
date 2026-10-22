@@ -12,6 +12,11 @@ type Read<T> = {
   entries: T[] | null;
   cursor: string | null;
   error: string | null;
+  /**
+   * The first page's failure itself, for a page to tell a refusal for its
+   * API revision from any other (ADR-081).
+   */
+  failure: unknown;
 };
 
 const NOTHING_READ = {
@@ -20,6 +25,7 @@ const NOTHING_READ = {
   entries: null,
   cursor: null,
   error: null,
+  failure: null,
 } as const;
 
 /** `before` added to a path that may already carry a query. */
@@ -96,11 +102,18 @@ export function useKeysetList<T>(path: string | null) {
           entries: page.entries,
           cursor: page.nextCursor,
           error: null,
+          failure: null,
         });
       })
       .catch((caught: unknown) => {
         if (ignore) return;
-        setRead({ ...NOTHING_READ, path, reloads, error: messageFor(caught) });
+        setRead({
+          ...NOTHING_READ,
+          path,
+          reloads,
+          error: messageFor(caught),
+          failure: caught,
+        });
       });
 
     return () => {
@@ -155,6 +168,7 @@ export function useKeysetList<T>(path: string | null) {
   return {
     entries: current.entries,
     error: current.error,
+    failure: current.failure,
     /** True until the first page has either answered or failed. */
     loading: current.entries === null && current.error === null,
     hasMore: current.cursor !== null,

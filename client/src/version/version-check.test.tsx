@@ -11,6 +11,8 @@ import { reloadPage } from './reload-page';
 import {
   checkVersion,
   loadNewerOnce,
+  noteOutdated,
+  noteServed,
   useNewVersion,
   useReloadAtNextPage,
   useVersionReads,
@@ -26,10 +28,11 @@ function serve(build: string, apiRevision = API_REVISION) {
 }
 
 // Each test starts with this tab's own build on the server, as nothing has
-// been deployed, whatever the one before it read, and no load in full
-// noted for this tab.
+// been deployed, whatever the one before it read, no load in full noted
+// for this tab, and the API serving it.
 beforeEach(() => {
   sessionStorage.clear();
+  noteServed();
   return checkVersion();
 });
 
@@ -38,7 +41,11 @@ describe('checkVersion', () => {
     const { result } = renderHook(() => useNewVersion());
 
     expect(await checkVersion()).toBe('same');
-    expect(result.current).toEqual({ newer: false, urgent: false });
+    expect(result.current).toEqual({
+      newer: false,
+      urgent: false,
+      outdated: false,
+    });
   });
 
   it('finds a newer build, not urgent while its API revision is the same', async () => {
@@ -46,7 +53,11 @@ describe('checkVersion', () => {
     const { result } = renderHook(() => useNewVersion());
 
     expect(await act(() => checkVersion())).toBe('newer');
-    expect(result.current).toEqual({ newer: true, urgent: false });
+    expect(result.current).toEqual({
+      newer: true,
+      urgent: false,
+      outdated: false,
+    });
   });
 
   it('finds it urgent once its API revision is above this tab’s', async () => {
@@ -54,7 +65,11 @@ describe('checkVersion', () => {
     const { result } = renderHook(() => useNewVersion());
 
     await act(() => checkVersion());
-    expect(result.current).toEqual({ newer: true, urgent: true });
+    expect(result.current).toEqual({
+      newer: true,
+      urgent: true,
+      outdated: false,
+    });
   });
 
   it('never counts the dev server’s build as newer', async () => {
@@ -87,7 +102,11 @@ describe('checkVersion', () => {
     );
     expect(await checkVersion()).toBe('unreadable');
 
-    expect(result.current).toEqual({ newer: true, urgent: false });
+    expect(result.current).toEqual({
+      newer: true,
+      urgent: false,
+      outdated: false,
+    });
   });
 
   it('asks past every cache, with a query of its own each time', async () => {
@@ -110,6 +129,81 @@ describe('checkVersion', () => {
       },
     ]);
     expect(asked[1].url).not.toBe(asked[0].url);
+  });
+});
+
+describe('noteOutdated', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('reads the file at once, and makes a newer build urgent though its revision is the same', async () => {
+    serve('a1b2c3d');
+    const { result } = renderHook(() => useNewVersion());
+
+    expect(await act(() => noteOutdated())).toBe('newer');
+    expect(result.current).toEqual({
+      newer: true,
+      urgent: true,
+      outdated: true,
+    });
+  });
+
+  it('reads the file every 30 seconds while the new version is on its way, and stops once it is out', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    let reads = 0;
+    let build = BUILD.build;
+    server.use(
+      http.get('/version.json', () => {
+        reads += 1;
+        return HttpResponse.json({
+          ...BUILD,
+          build,
+          apiRevision: API_REVISION + 1,
+        });
+      }),
+    );
+    const { result } = renderHook(() => useNewVersion());
+
+    // The API went first: the file still names this tab's build.
+    expect(await act(() => noteOutdated())).toBe('same');
+    expect(result.current).toEqual({
+      newer: false,
+      urgent: false,
+      outdated: true,
+    });
+    expect(reads).toBe(1);
+
+    await act(() => vi.advanceTimersByTimeAsync(30_000));
+    await vi.waitFor(() => expect(reads).toBe(2));
+
+    // The static site has deployed.
+    build = 'a1b2c3d';
+    await act(() => vi.advanceTimersByTimeAsync(30_000));
+    await vi.waitFor(() =>
+      expect(result.current).toEqual({
+        newer: true,
+        urgent: true,
+        outdated: true,
+      }),
+    );
+    expect(reads).toBe(3);
+
+    await act(() => vi.advanceTimersByTimeAsync(90_000));
+    expect(reads).toBe(3);
+  });
+
+  it('forgets it once the API serves this tab again, as after a rollback', async () => {
+    serve('a1b2c3d');
+    const { result } = renderHook(() => useNewVersion());
+    await act(() => noteOutdated());
+
+    act(() => noteServed());
+    expect(result.current).toEqual({
+      newer: true,
+      urgent: false,
+      outdated: false,
+    });
   });
 });
 

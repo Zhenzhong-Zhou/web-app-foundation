@@ -110,10 +110,11 @@ export const handlers = [
  * rather than constructing a bare status, because `api()` reads `message` out
  * of the body and a response without one surfaces as "Request failed (409)" —
  * which would make a test pass while the real message never rendered.
+ * `code` for a refusal that carries one (conventions.md, "Error codes").
  */
-export function apiError(status: number, message: string) {
+export function apiError(status: number, message: string, code?: string) {
   return HttpResponse.json(
-    { statusCode: status, message, requestId: 'test-request' },
+    { statusCode: status, message, requestId: 'test-request', code },
     { status },
   );
 }

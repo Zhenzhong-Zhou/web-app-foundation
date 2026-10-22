@@ -28,6 +28,7 @@ function renderHome(refresh = () => Promise.resolve()) {
         loading: false,
         error: null,
         refresh,
+        signedOut: () => undefined,
       }}
     >
       <MemoryRouter>

@@ -2102,6 +2102,57 @@ waits a second and tries once more before it says anything.
   each still reloading when pressed. Deploy again with another `build`:
   the next page loads in full once more.
 
+An outdated tab is made by hand on the server: raise `API_REVISION` by one
+in `server/src/common/api-revision.ts` alone and restart it, without `npm
+run api`, so the client still sends the revision before. On the dev
+server the version file names `dev`, the tab's own build, so the new
+version is still on its way, as when the API deploys first; an override
+of `/version.json` with another `build` stands for it being out. Put the
+revision back afterwards: `git status` shows nothing changed.
+
+- **MC-3412** *(ADR-081)* Outdated, the new version on its way. Signed in
+  on a purchase order, then raise the revision. In Receive, fill the
+  fields and press Receive: under them, A new version is being installed.
+  Try again in a minute; nothing was saved., with no Reload, and
+  everything typed stays. In 中文 新版本正在安装。请一分钟后再试；没有保存任何内容。
+  Close it and open Products from the rail: in its place, with the rail
+  still there, A new version is being installed, This page tries again by
+  itself in a minute., and no button; the Network tab shows Products read
+  again each minute, and `version.json` every 30 seconds. Nothing signs
+  out, and no page says Could not reach the server.
+- **MC-3413** *(ADR-081)* Then the new version is out. Still outdated, add
+  the override of `/version.json`: within 30 seconds Products becomes A
+  new version is ready, A new version came out while this tab was open.
+  Reload to use it; nothing is lost., with Reload, under the amber banner.
+  Open Receive again and press Receive: the amber line tops the dialog,
+  and the refusal reads This tab is running an older version of the app,
+  so nothing was saved. Copy anything you typed, then reload., with Reload
+  beside it; what was typed stays. A dialog already showing the 503's
+  words gains the same, and its Reload, as the file is read. Adding a
+  photo on a product says the same refusal in its row.
+- **MC-3414** *(ADR-081)* Opening an outdated tab. Outdated, with no
+  override, reload the page: no app, and on its own A new version is being
+  installed, which tries again by itself in a minute; with the override,
+  A new version is ready, with Reload. Never Could not reach the server.
+- **MC-3415** *(ADR-081)* Sign-out still works. Outdated, switch to
+  another tab and back, which reads the session: the page stays as it
+  was. Sign out from the account menu: the sign-in page, and the session
+  ended (its row gone from another device's Sessions). The same for Not
+  you? Sign out on an invitation's link opened signed in.
+- **MC-3416** *(ADR-081)* The API not yet deployed. Revision put back, set
+  `API_REVISION` in `client/src/api/revision.gen.ts` to one higher instead,
+  which the dev server picks up: a save in a dialog says A new version is
+  being installed. Try again in a minute; nothing was saved., with no
+  Reload and nothing amber; a page opened says it is being installed and
+  tries again by itself. Put it back: within a minute the page loads by
+  itself.
+- **MC-3417** *(ADR-081)* A record that won't load, offline. Open an order,
+  then go back to Orders, go Offline (DevTools → Network) and open another
+  order: Can't reach the server, the line about the connection, This page
+  tries again by itself when your connection comes back., and Try again.
+  Back online, the order loads by itself, without a load in full (no new
+  document in the Network tab), as a page that won't load does (MC-3407).
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -2690,3 +2741,5 @@ first.
   MC-3410, and MC-R35 for Home's failure line.
 - 2026-10-22: ADR-081, the reload at the next page once per new version:
   MC-3411 added, MC-3401 changed.
+- 2026-10-22: ADR-081, the API revision sent, and an outdated tab's
+  refusals on screen: MC-3412 to MC-3417.

@@ -18,7 +18,8 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { SessionSummary } from '../api/types.gen';
 import { PageHeader } from '../components/page-header';
-import { api, messageFor } from '../lib/api';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { api, isRevisionRefusal, messageFor } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
@@ -50,6 +51,7 @@ export function SessionsPage() {
   const {
     data: sessions,
     error,
+    failure,
     setError,
     loading,
     reload,
@@ -141,6 +143,12 @@ export function SessionsPage() {
       })}
     </Typography>
   );
+
+  if (isRevisionRefusal(failure) && !sessions) {
+    return (
+      <RevisionRefusalPage failure={failure} onRetry={() => void reload()} />
+    );
+  }
 
   return (
     // Heading and description draw immediately; only the list holds space and

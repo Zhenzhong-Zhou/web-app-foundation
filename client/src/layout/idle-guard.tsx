@@ -33,7 +33,7 @@ const CHANNEL = 'waf-session';
  */
 export function IdleGuard() {
   const intl = useIntl();
-  const { session, refresh } = useAuth();
+  const { session, signedOut } = useAuth();
   const limit = session?.idleLimitMs ?? null;
   const [left, setLeft] = useState<number | null>(null);
   // Set to now when the timer starts, in the effect: not during render.
@@ -53,10 +53,12 @@ export function IdleGuard() {
         await api('/auth/logout', { method: 'POST' }).catch(() => undefined);
       }
       // No session: the app's guard sends this tab to the sign-in page,
-      // and remembers where it was.
-      await refresh();
+      // and remembers where it was. Not read again, since an outdated
+      // tab's read would be refused (ADR-081); the server ends a session
+      // left past its limit anyway.
+      signedOut();
     },
-    [limit, refresh],
+    [limit, signedOut],
   );
 
   const stay = useCallback(() => {

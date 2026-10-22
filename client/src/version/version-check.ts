@@ -9,8 +9,18 @@ import { reloadPage } from './reload-page';
 export interface NewVersion {
   /** The file names another build, not the dev server's. */
   newer: boolean;
-  /** And its API revision is above this tab's: its saves would be refused. */
+  /**
+   * And its saves would be refused: its API revision is above this tab's,
+   * or the API has already refused this tab as outdated.
+   */
   urgent: boolean;
+  /**
+   * The API refused this tab as outdated (`client_outdated`), and has not
+   * served it since. While the file still names this tab's own build, the
+   * new version is on its way: the API deploys first, and a reload would
+   * load the same build.
+   */
+  outdated: boolean;
 }
 
 /** How a read of the file came out, for a caller that asked (ADR-081). */
@@ -25,7 +35,10 @@ interface VersionFile {
 /** How often the file is read while the tab is in front. */
 const EVERY_MS = 10 * 60_000;
 
-const NONE: NewVersion = { newer: false, urgent: false };
+/** How often while the new version is on its way, until it is out. */
+const ON_ITS_WAY_EVERY_MS = 30_000;
+
+const NONE: NewVersion = { newer: false, urgent: false, outdated: false };
 
 let known = NONE;
 const listeners = new Set<() => void>();
@@ -42,8 +55,73 @@ export function useNewVersion(): NewVersion {
   return useSyncExternalStore(subscribe, snapshot);
 }
 
+/** The same, outside a component: what a refusal's words depend on. */
+export const newVersionNow = snapshot;
+
 /** The build the file last named, when newer than this tab's. */
 let newest: string | null = null;
+
+/** What the file last said, and what the API last said of this tab. */
+let file = { newer: false, revisionAbove: false };
+let outdated = false;
+
+let onItsWayTimer: number | undefined;
+
+/**
+ * Tells the screens when what is known changes. While the new version is
+ * on its way, the file is read again every 30 seconds until it is out; in
+ * the background nothing is asked, and coming back to the front reads it
+ * (useVersionReads), which carries on from there.
+ */
+function publish() {
+  const next: NewVersion = {
+    newer: file.newer,
+    urgent: file.newer && (file.revisionAbove || outdated),
+    outdated,
+  };
+  if (
+    next.newer !== known.newer ||
+    next.urgent !== known.urgent ||
+    next.outdated !== known.outdated
+  ) {
+    known = next;
+    for (const listener of listeners) listener();
+  }
+
+  if (outdated && !file.newer) {
+    onItsWayTimer ??= window.setTimeout(() => {
+      onItsWayTimer = undefined;
+      if (document.visibilityState === 'visible') void checkVersion();
+    }, ON_ITS_WAY_EVERY_MS);
+  } else {
+    window.clearTimeout(onItsWayTimer);
+    onItsWayTimer = undefined;
+  }
+}
+
+/**
+ * The API refused this tab as outdated (ADR-081), from `api()` and the
+ * image upload: its saves are refused from now on, so a newer build is
+ * urgent, and the file is read again at once to know whether one is out.
+ * Resolves once it has been, so the refusal reaches the screen with it.
+ */
+export function noteOutdated(): Promise<VersionRead> {
+  if (!outdated) {
+    outdated = true;
+    publish();
+  }
+  return checkVersion();
+}
+
+/**
+ * The API served this tab: its revision is the API's again, as after a
+ * rollback took the API back to it.
+ */
+export function noteServed(): void {
+  if (!outdated) return;
+  outdated = false;
+  publish();
+}
 
 let reading: Promise<VersionRead> | null = null;
 
@@ -61,17 +139,15 @@ export function checkVersion(): Promise<VersionRead> {
 }
 
 async function read(): Promise<VersionRead> {
-  const file = await fetchFile();
-  if (!file) return 'unreadable';
-
-  const newer = file.build !== BUILD.build && file.build !== 'dev';
-  const urgent = newer && file.apiRevision > API_REVISION;
-  newest = newer ? file.build : null;
-  if (newer !== known.newer || urgent !== known.urgent) {
-    known = { newer, urgent };
-    for (const listener of listeners) listener();
+  const found = await fetchFile();
+  if (found) {
+    const newer = found.build !== BUILD.build && found.build !== 'dev';
+    file = { newer, revisionAbove: newer && found.apiRevision > API_REVISION };
+    newest = newer ? found.build : null;
   }
-  return newer ? 'newer' : 'same';
+  publish();
+  if (!found) return 'unreadable';
+  return file.newer ? 'newer' : 'same';
 }
 
 /**

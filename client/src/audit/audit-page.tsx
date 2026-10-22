@@ -26,7 +26,8 @@ import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { When, Who } from '../components/who-and-when';
-import { api, withQuery } from '../lib/api';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { api, isRevisionRefusal, withQuery } from '../lib/api';
 import { withInstants } from '../lib/date-range';
 import { NO_VALUE, SEPARATOR } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -88,10 +89,18 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
     });
   }
 
-  const { entries, error, loading, hasMore, loadingMore, loadMore } =
-    useKeysetList<AuditRecord>(
-      canView ? pathFor(`${base}?limit=${PAGE_SIZE}`) : null,
-    );
+  const {
+    entries,
+    error,
+    failure,
+    loading,
+    hasMore,
+    loadingMore,
+    loadMore,
+    reload,
+  } = useKeysetList<AuditRecord>(
+    canView ? pathFor(`${base}?limit=${PAGE_SIZE}`) : null,
+  );
   const showSkeleton = useDelayedFlag(loading);
 
   /**
@@ -156,6 +165,10 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
         </Alert>
       </Stack>
     );
+  }
+
+  if (isRevisionRefusal(failure) && !entries) {
+    return <RevisionRefusalPage failure={failure} onRetry={reload} />;
   }
 
   return (

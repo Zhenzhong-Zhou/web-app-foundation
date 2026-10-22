@@ -26,6 +26,8 @@ import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { isRevisionRefusal } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { rem } from '../theme/rem';
@@ -47,7 +49,13 @@ export function RolesPage() {
   const can = useCan();
   const theme = useTheme();
   const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
-  const { data: roles, error, loading } = useResource<Role[]>('/roles');
+  const {
+    data: roles,
+    error,
+    failure,
+    loading,
+    reload,
+  } = useResource<Role[]>('/roles');
   const showSkeleton = useDelayedFlag(loading);
 
   // A role deleted from its page took its Delete with it: focus starts
@@ -71,6 +79,12 @@ export function RolesPage() {
       {intl.formatMessage(ROLE_WORDS.makeRole)}
     </Button>
   );
+
+  if (isRevisionRefusal(failure) && !roles) {
+    return (
+      <RevisionRefusalPage failure={failure} onRetry={() => void reload()} />
+    );
+  }
 
   return (
     <Stack spacing={3}>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { ErrorDetails } from '../api/types.gen';
 import { useToast } from '../components/use-toast';
+import { useNewVersion } from '../version/version-check';
 import { ApiError, messageFor } from './api';
 
 /**
@@ -25,6 +26,10 @@ import { ApiError, messageFor } from './api';
  * hasCode in lib/api.ts, for a dialog that can offer the way out, such as a
  * link to the setting that is missing. Set and cleared with `error`, as
  * `errorDetails` is, what a few codes carry beside it (ADR-073).
+ *
+ * `error` is worded as the dialog renders, not when the refusal came: an
+ * outdated tab's refusal says the new version is being installed until
+ * the version file names it, and then what the server said (ADR-081).
  */
 export function useSubmit<T = unknown>(
   onDone: () => void | Promise<void>,
@@ -32,11 +37,14 @@ export function useSubmit<T = unknown>(
 ) {
   const [submitting, setSubmitting] = useState(false);
   const [failure, setFailure] = useState<{
-    message: string;
+    caught: unknown;
     code: string | null;
     details: ErrorDetails | null;
   } | null>(null);
   const toast = useToast();
+  // Rendered again when what is known of a new version changes, since
+  // `error`'s words depend on it.
+  useNewVersion();
 
   /** Clears state when a dialog closes, so reopening starts clean. */
   function reset() {
@@ -54,7 +62,7 @@ export function useSubmit<T = unknown>(
     } catch (caught) {
       const refusal = caught instanceof ApiError ? caught : null;
       setFailure({
-        message: messageFor(caught),
+        caught,
         code: refusal?.code ?? null,
         details: refusal?.details ?? null,
       });
@@ -71,7 +79,7 @@ export function useSubmit<T = unknown>(
 
   return {
     submitting,
-    error: failure?.message ?? null,
+    error: failure ? messageFor(failure.caught) : null,
     errorCode: failure?.code ?? null,
     errorDetails: failure?.details ?? null,
     reset,

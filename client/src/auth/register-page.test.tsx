@@ -18,6 +18,7 @@ function renderAt(path: '/register' | '/login') {
         loading: false,
         error: null,
         refresh: () => Promise.resolve(),
+        signedOut: () => undefined,
       }}
     >
       <MemoryRouter initialEntries={[path]}>

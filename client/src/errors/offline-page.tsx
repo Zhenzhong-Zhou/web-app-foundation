@@ -10,14 +10,23 @@ import { StatusPage } from './status-page';
  * connection dropped (ADR-081). Try again loads the page in full, and so
  * does the browser saying the connection is back, which the page says, so
  * nobody has to be there to press it.
+ *
+ * A record page whose read got no answer (LoadFailure) shows it too, with
+ * `onRetry` reading the record again in place of the load in full, so the
+ * two "Can't reach the server" pages behave alike.
  */
-export function OfflinePage() {
+export function OfflinePage({
+  onRetry = reloadPage,
+}: {
+  onRetry?: () => void;
+}) {
   const intl = useIntl();
 
   useEffect(() => {
-    window.addEventListener('online', reloadPage);
-    return () => window.removeEventListener('online', reloadPage);
-  }, []);
+    const retry = () => onRetry();
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
+  }, [onRetry]);
 
   return (
     <StatusPage
@@ -37,7 +46,7 @@ export function OfflinePage() {
           'This page tries again by itself when your connection comes back.',
       })}
       actions={
-        <Button variant="contained" onClick={reloadPage}>
+        <Button variant="contained" onClick={() => onRetry()}>
           {intl.formatMessage({
             id: 'status.tryAgain',
             defaultMessage: 'Try again',

@@ -28,8 +28,9 @@ import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
-import { api, messageFor } from '../lib/api';
+import { api, isRevisionRefusal, messageFor } from '../lib/api';
 import {
   displayQuantity,
   formatDate,
@@ -110,6 +111,8 @@ export function StockValuePage() {
   const [valuation, setValuation] = useState<StockValuation | null>(null);
   const [waiting, setWaiting] = useState<NeedsCostPage | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The failure itself, for a refusal for this tab's API revision (ADR-081).
+  const [failure, setFailure] = useState<unknown>(null);
   const [costing, setCosting] = useState<NeedsCostEntry | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -132,8 +135,10 @@ export function StockValuePage() {
       setValuation(value.valuation);
       setWaiting(page);
       setError(null);
+      setFailure(null);
     } catch (caught) {
       setError(messageFor(caught));
+      setFailure(caught);
     }
   }, [fetchAll]);
 
@@ -147,7 +152,9 @@ export function StockValuePage() {
         setWaiting(page);
       })
       .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
+        if (ignore) return;
+        setError(messageFor(caught));
+        setFailure(caught);
       });
 
     return () => {
@@ -175,6 +182,12 @@ export function StockValuePage() {
   }
 
   const currency = valuation?.currency ?? null;
+
+  if (isRevisionRefusal(failure) && !valuation) {
+    return (
+      <RevisionRefusalPage failure={failure} onRetry={() => void load()} />
+    );
+  }
 
   return (
     <Stack spacing={3}>

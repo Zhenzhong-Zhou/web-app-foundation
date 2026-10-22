@@ -138,7 +138,7 @@ export function SignOutLink({
   onFailed,
   children,
 }: {
-  onSignedOut: () => Promise<void>;
+  onSignedOut: () => void;
   onFailed: (message: string) => void;
   children: ReactNode;
 }) {
@@ -208,7 +208,7 @@ export function OtherAddress({
   /** The address the invitation is for. */
   email: string;
   signedInAs: string;
-  onSignedOut: () => Promise<void>;
+  onSignedOut: () => void;
 }) {
   const intl = useIntl();
   const [submitting, setSubmitting] = useState(false);
@@ -224,7 +224,7 @@ export function OtherAddress({
       setSubmitting(false);
       return;
     }
-    await onSignedOut();
+    onSignedOut();
   }
 
   return (
@@ -536,7 +536,7 @@ export function AcceptSignedIn({
     email: string;
     /** A refusal met just after signing in on this page. */
     refusal: string | null;
-    onSignedOut: () => Promise<void>;
+    onSignedOut: () => void;
   }) {
   const [error, setError] = useState<string | null>(refusal);
   const [submitting, setSubmitting] = useState(false);

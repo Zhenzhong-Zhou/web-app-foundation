@@ -29,8 +29,9 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { ProductCover } from '../components/product-cover';
 import { SortHeader } from '../components/sort-header';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { flagFromAddress } from '../lib/address-filter';
-import { api, messageFor } from '../lib/api';
+import { api, isRevisionRefusal, messageFor } from '../lib/api';
 import {
   displayQuantity,
   itemName,
@@ -193,6 +194,7 @@ export function InventoryPage() {
   const {
     entries: rows,
     error: listError,
+    failure,
     loading,
     hasMore,
     loadingMore,
@@ -250,6 +252,10 @@ export function InventoryPage() {
       ignore = true;
     };
   }, [canSeeLocations]);
+
+  if (isRevisionRefusal(failure) && !rows) {
+    return <RevisionRefusalPage failure={failure} onRetry={reload} />;
+  }
 
   return (
     <Stack spacing={3}>

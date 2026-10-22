@@ -92,7 +92,7 @@ function Invitation({
 }) {
   const intl = useIntl();
   const navigate = useNavigate();
-  const { session, refresh } = useAuth();
+  const { session, refresh, signedOut } = useAuth();
   const { locale, setLocale } = useLanguage();
   const [params] = useSearchParams();
   const [token] = useState(() => params.get('token'));
@@ -324,7 +324,7 @@ function Invitation({
         <OtherAddress
           email={invitation.email}
           signedInAs={session.user.email}
-          onSignedOut={refresh}
+          onSignedOut={signedOut}
         />
       );
     }
@@ -372,7 +372,7 @@ function Invitation({
         accept={accept}
         onAccepted={joined}
         onRefused={refused}
-        onSignedOut={refresh}
+        onSignedOut={signedOut}
       />
     );
   }

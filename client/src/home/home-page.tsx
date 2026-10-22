@@ -19,8 +19,9 @@ import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { StatusChip } from '../components/status-chip';
 import { UndoSnackbar } from '../components/undo-snackbar';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { useCoverUnverifiedBanner } from '../layout/use-cover-unverified-banner';
-import { api, messageFor } from '../lib/api';
+import { api, isRevisionRefusal, messageFor } from '../lib/api';
 import { daysUntil } from '../lib/expiry';
 import { formatDay } from '../lib/format';
 import {
@@ -64,6 +65,8 @@ function OrganizationHome() {
   const can = useCan();
   const [home, setHome] = useState<HomeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The failure itself, for a refusal for this tab's API revision (ADR-081).
+  const [failure, setFailure] = useState<unknown>(null);
   // The welcome just dismissed, a moment to undo it (ADR-079).
   const [undoing, setUndoing] = useState(false);
   const dismissing = useRef<Promise<unknown> | null>(null);
@@ -85,8 +88,12 @@ function OrganizationHome() {
       .then((response) => {
         setHome(response);
         setError(null);
+        setFailure(null);
       })
-      .catch((caught: unknown) => setError(messageFor(caught)));
+      .catch((caught: unknown) => {
+        setError(messageFor(caught));
+        setFailure(caught);
+      });
   }, []);
 
   useEffect(() => {
@@ -203,6 +210,10 @@ function OrganizationHome() {
       }),
     },
   ].filter((item): item is { to: string; label: string } => Boolean(item));
+
+  if (isRevisionRefusal(failure) && !home) {
+    return <RevisionRefusalPage failure={failure} onRetry={load} />;
+  }
 
   return (
     <Stack spacing={3} sx={{ maxWidth: 1140 }}>

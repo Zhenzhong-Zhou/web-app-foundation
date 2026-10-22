@@ -1,6 +1,9 @@
-import { Alert, Box } from '@mui/material';
+import { Alert, Box, Button } from '@mui/material';
 import { Children, type ReactNode } from 'react';
 import { useIntl } from 'react-intl';
+
+import { reloadPage } from '../version/reload-page';
+import { useNewVersion } from '../version/version-check';
 
 /**
  * The error line above a form's fields.
@@ -17,6 +20,12 @@ import { useIntl } from 'react-intl';
  * `id` goes on the message itself, not the alert, for a field to point at
  * with aria-describedby (#120): the alert's own label, "Error", would be
  * read as the description instead of the words.
+ *
+ * Reload joins the way out once the API has refused this tab as outdated
+ * and the new version is out (ADR-081): every save it tries is refused
+ * from then on, so reloading is the way on, whatever the line says. What
+ * was typed stays, for the person to copy first. Not while the new version
+ * is still on its way, when a reload would load the same build.
  */
 export function FormError({
   message,
@@ -28,6 +37,8 @@ export function FormError({
   id?: string;
 }) {
   const intl = useIntl();
+  const { outdated, newer } = useNewVersion();
+  const reload = outdated && newer;
 
   return (
     <Alert
@@ -40,8 +51,18 @@ export function FormError({
       <span id={id}>{message}</span>
       {/* Only when something is there: several conditional children are an
           array, truthy even when every one is false. */}
-      {Children.toArray(children).length > 0 && (
-        <Box sx={{ mt: 0.5 }}>{children}</Box>
+      {(Children.toArray(children).length > 0 || reload) && (
+        <Box sx={{ mt: 0.5 }}>
+          {children}
+          {reload && (
+            <Button variant="text" color="inherit" onClick={reloadPage}>
+              {intl.formatMessage({
+                id: 'version.reload',
+                defaultMessage: 'Reload',
+              })}
+            </Button>
+          )}
+        </Box>
       )}
     </Alert>
   );

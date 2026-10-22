@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 import { useLanguage } from '../i18n/use-language';
-import { api, ApiError } from '../lib/api';
+import { api, ApiError, isRevisionRefusal } from '../lib/api';
 import { isLocale } from '../lib/locales';
 import { setOrganizationTimeZone } from '../lib/time-zone';
 import { setBrand } from '../theme/brand-store';
@@ -61,8 +61,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // One object rather than three useState calls: loading, session and error
   // always change together, and separate setters can render a combination
   // that never actually occurs.
+  //
+  // A read refused for this tab's API revision leaves the app as it is,
+  // signed in or out (ADR-081): it says nothing about the session, and the
+  // refusal has made a newer build urgent. Read as an error, it would put
+  // the boot screen over the app, whose Try again met the same refusal.
+  // Only a boot screen already up shows it.
   const refresh = useCallback(async () => {
-    setState({ ...(await resolveSession()), loading: false });
+    const resolved = await resolveSession();
+    setState((current) =>
+      isRevisionRefusal(resolved.error) && !current.error
+        ? current
+        : { ...resolved, loading: false },
+    );
+  }, []);
+
+  const signedOut = useCallback(() => {
+    setState({ session: null, error: null, loading: false });
   }, []);
 
   useEffect(() => {
@@ -152,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [branding]);
 
   return (
-    <AuthContext.Provider value={{ ...state, refresh }}>
+    <AuthContext.Provider value={{ ...state, refresh, signedOut }}>
       {children}
     </AuthContext.Provider>
   );

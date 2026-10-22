@@ -1,8 +1,16 @@
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { API_REVISION } from '../api/revision.gen';
+import { apiError } from '../test/handlers';
 import { server } from '../test/setup';
-import { api, ApiError } from './api';
+import { BUILD } from '../version/build';
+import {
+  checkVersion,
+  newVersionNow,
+  noteServed,
+} from '../version/version-check';
+import { api, ApiError, download, messageFor } from './api';
 
 /** The error api() throws for a request, for asserting on its fields. */
 async function failureOf(path: string): Promise<ApiError> {
@@ -104,5 +112,106 @@ describe('api', () => {
 
     expect(error.message).toBe('Set the address first');
     expect(error.code).toBe('organization_address_missing');
+  });
+});
+
+describe('the API revision (ADR-081)', () => {
+  const OUTDATED =
+    'This tab is running an older version of the app, so nothing was saved. Copy anything you typed, then reload.';
+  const INSTALLING =
+    'A new version is being installed. Try again in a minute; nothing was saved.';
+
+  /** The API, deployed with a revision above this tab's. */
+  const refuseAsOutdated = () =>
+    server.use(
+      http.get('/api/v1/things/refused', () =>
+        apiError(409, OUTDATED, 'client_outdated'),
+      ),
+    );
+
+  beforeEach(async () => {
+    noteServed();
+    await checkVersion();
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('goes with every request, api() and download() alike', async () => {
+    const sent: (string | null)[] = [];
+    server.use(
+      http.get('/api/v1/things', ({ request }) => {
+        sent.push(request.headers.get('X-Api-Revision'));
+        return HttpResponse.json([]);
+      }),
+      http.get('/api/v1/things/export', ({ request }) => {
+        sent.push(request.headers.get('X-Api-Revision'));
+        return new HttpResponse('Name\r\n', {
+          headers: { 'Content-Disposition': 'attachment; filename="t.csv"' },
+        });
+      }),
+    );
+    // jsdom has no object URLs, and saves nothing.
+    URL.createObjectURL = vi.fn(() => 'blob:export');
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(
+      () => undefined,
+    );
+
+    await api('/things');
+    await download('/things/export');
+    expect(sent).toEqual([String(API_REVISION), String(API_REVISION)]);
+  });
+
+  it('notes an outdated refusal, and reads the version file, before the caller hears of it', async () => {
+    server.use(
+      http.get('/version.json', () =>
+        HttpResponse.json({
+          ...BUILD,
+          build: 'a1b2c3d',
+          apiRevision: API_REVISION + 1,
+        }),
+      ),
+    );
+    refuseAsOutdated();
+
+    const error = await failureOf('/things/refused');
+    expect(error.code).toBe('client_outdated');
+    expect(newVersionNow()).toEqual({
+      newer: true,
+      urgent: true,
+      outdated: true,
+    });
+    expect(messageFor(error)).toBe(OUTDATED);
+  });
+
+  it('says the new version is being installed while the file still names this build', async () => {
+    refuseAsOutdated();
+
+    const error = await failureOf('/things/refused');
+    expect(newVersionNow()).toEqual({
+      newer: false,
+      urgent: false,
+      outdated: true,
+    });
+    expect(messageFor(error)).toBe(INSTALLING);
+  });
+
+  it('forgets the refusal once a request is served again, as after a rollback', async () => {
+    refuseAsOutdated();
+    await failureOf('/things/refused');
+
+    await api('/products/variants');
+    expect(newVersionNow().outdated).toBe(false);
+  });
+
+  it('keeps the server’s words for a 503, and notes nothing', async () => {
+    server.use(
+      http.get('/api/v1/things/refused', () =>
+        apiError(503, INSTALLING, 'api_updating'),
+      ),
+    );
+
+    const error = await failureOf('/things/refused');
+    expect(messageFor(error)).toBe(INSTALLING);
+    expect(newVersionNow().outdated).toBe(false);
   });
 });

@@ -15,6 +15,11 @@ export interface AuthState {
   /** Boot failed for a reason other than "not signed in". */
   error: Error | null;
   refresh: () => Promise<void>;
+  /**
+   * A sign-out has ended the session, this tab's or another's: no session,
+   * without asking, since an outdated tab's read would be refused (ADR-081).
+   */
+  signedOut: () => void;
 }
 
 export const AuthContext = createContext<AuthState | null>(null);

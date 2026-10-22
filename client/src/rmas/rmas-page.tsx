@@ -22,7 +22,9 @@ import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { fromAddress } from '../lib/address-filter';
+import { isRevisionRefusal } from '../lib/api';
 import type { ReturnAuthorizationStatus } from '../lib/api-names';
 import { type DayRange, withInstants } from '../lib/date-range';
 import { formatDate } from '../lib/format';
@@ -77,14 +79,20 @@ export function RmasPage() {
   const {
     entries: rows,
     error,
+    failure,
     loading,
     hasMore,
     loadingMore,
     loadMore,
+    reload,
   } = useKeysetList<ReturnAuthorizationSummary>(
     withInstants(withSearch(query(filter), search), range),
   );
   const showSkeleton = useDelayedFlag(loading);
+
+  if (isRevisionRefusal(failure) && !rows) {
+    return <RevisionRefusalPage failure={failure} onRetry={reload} />;
+  }
 
   return (
     <Stack spacing={3}>

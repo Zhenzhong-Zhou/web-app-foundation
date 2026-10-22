@@ -24,6 +24,8 @@ import { FilterRow } from '../components/filter-row';
 import { PageHeader } from '../components/page-header';
 import { ProductCover } from '../components/product-cover';
 import { StatusChip } from '../components/status-chip';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { isRevisionRefusal } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
@@ -43,6 +45,7 @@ export function ProductsPage() {
   const {
     data: items,
     error,
+    failure,
     loading,
     reload,
   } = useResource<ProductSummary[]>('/products');
@@ -68,6 +71,12 @@ export function ProductsPage() {
         (!needle || item.name.toLocaleLowerCase().includes(needle)),
     );
   }, [items, search, discontinuedOnly]);
+
+  if (isRevisionRefusal(failure) && !items) {
+    return (
+      <RevisionRefusalPage failure={failure} onRetry={() => void reload()} />
+    );
+  }
 
   return (
     <Stack spacing={3}>

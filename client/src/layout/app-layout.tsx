@@ -164,7 +164,7 @@ export function AppLayout() {
 function Frame() {
   const intl = useIntl();
   const location = useLocation();
-  const { session, refresh } = useAuth();
+  const { session, signedOut } = useAuth();
   const theme = useTheme();
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   const [drawer, setDrawer] = useState(false);
@@ -571,12 +571,13 @@ function Frame() {
 
               {/* The row is deleted server-side before the cookie is cleared,
                   so a failure leaves the user visibly signed in — the safe
-                  direction to fail (ADR-011). refresh() then 401s and
-                  Protected redirects. */}
+                  direction to fail (ADR-011). Once it is gone, Protected
+                  redirects, with no read of the session: an outdated tab's
+                  would be refused, though its sign-out is served (ADR-081). */}
               <MenuItem
                 onClick={() => {
                   setMenu(null);
-                  void api('/auth/logout', { method: 'POST' }).then(refresh);
+                  void api('/auth/logout', { method: 'POST' }).then(signedOut);
                 }}
               >
                 {intl.formatMessage({

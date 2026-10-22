@@ -20,8 +20,9 @@ import type { ExchangeRate, OrganizationProfile } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
-import { api, messageFor } from '../lib/api';
+import { api, isRevisionRefusal, messageFor } from '../lib/api';
 import { formatDay, formatQuantity } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -65,6 +66,8 @@ export function ExchangeRatesPage() {
   const can = useCan();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The failure itself, for a refusal for this tab's API revision (ADR-081).
+  const [failure, setFailure] = useState<unknown>(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<ExchangeRate | null>(null);
 
@@ -76,8 +79,10 @@ export function ExchangeRatesPage() {
     try {
       setLoaded(await fetchAll());
       setError(null);
+      setFailure(null);
     } catch (caught) {
       setError(messageFor(caught));
+      setFailure(caught);
     }
   }, []);
 
@@ -89,7 +94,9 @@ export function ExchangeRatesPage() {
         if (!ignore) setLoaded(result);
       })
       .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
+        if (ignore) return;
+        setError(messageFor(caught));
+        setFailure(caught);
       });
 
     return () => {
@@ -98,6 +105,12 @@ export function ExchangeRatesPage() {
   }, []);
 
   const baseCurrency = loaded?.baseCurrency ?? null;
+
+  if (isRevisionRefusal(failure) && !loaded) {
+    return (
+      <RevisionRefusalPage failure={failure} onRetry={() => void load()} />
+    );
+  }
 
   return (
     <Stack spacing={3}>

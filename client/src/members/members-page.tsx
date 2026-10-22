@@ -21,7 +21,8 @@ import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { useToast } from '../components/use-toast';
-import { api, ApiError, messageFor } from '../lib/api';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { api, ApiError, isRevisionRefusal, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { refusalLabel } from './invitation-words';
@@ -45,6 +46,8 @@ export function MembersPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // The failure itself, for a refusal for this tab's API revision (ADR-081).
+  const [failure, setFailure] = useState<unknown>(null);
   // The Invite dialog, where it opens, and a count that mounts it afresh
   // for each opening.
   const [invite, setInvite] = useState<{ start: InviteView; key: number }>({
@@ -93,8 +96,10 @@ export function MembersPage() {
       setRoles(nextRoles);
       setInvitations(nextInvitations);
       setError(null);
+      setFailure(null);
     } catch (caught) {
       setError(messageFor(caught));
+      setFailure(caught);
     }
   }, [read]);
 
@@ -109,7 +114,9 @@ export function MembersPage() {
         setInvitations(nextInvitations);
       })
       .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
+        if (ignore) return;
+        setError(messageFor(caught));
+        setFailure(caught);
       });
 
     return () => {
@@ -192,6 +199,12 @@ export function MembersPage() {
     } finally {
       setRowBusy(null);
     }
+  }
+
+  if (isRevisionRefusal(failure) && !members) {
+    return (
+      <RevisionRefusalPage failure={failure} onRetry={() => void load()} />
+    );
   }
 
   return (

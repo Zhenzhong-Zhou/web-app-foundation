@@ -6,6 +6,8 @@ import type { Location } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { isRevisionRefusal } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
@@ -30,6 +32,7 @@ export function LocationsPage() {
   const {
     data: items,
     error,
+    failure,
     loading,
     reload,
   } = useResource<Location[]>('/locations');
@@ -43,6 +46,12 @@ export function LocationsPage() {
   const showSkeleton = useDelayedFlag(loading);
 
   const roots = items ? childrenOf(items, null) : [];
+
+  if (isRevisionRefusal(failure) && !items) {
+    return (
+      <RevisionRefusalPage failure={failure} onRetry={() => void reload()} />
+    );
+  }
 
   return (
     <Stack spacing={3}>

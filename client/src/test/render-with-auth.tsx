@@ -32,6 +32,7 @@ export function renderWithAuth(
     loading: false,
     error: null,
     refresh,
+    signedOut: () => undefined,
   };
 
   return render(
@@ -65,6 +66,7 @@ export function renderWithChangingAuth(
             setOptions(refreshed);
             return Promise.resolve();
           },
+          signedOut: () => undefined,
         }}
       >
         {ui}

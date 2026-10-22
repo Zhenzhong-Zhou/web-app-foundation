@@ -1,3 +1,7 @@
+import { API_REVISION } from '../api/revision.gen';
+import { hasCode } from '../lib/api';
+import { noteOutdated } from '../version/version-check';
+
 /** What a product image upload reports as it goes. */
 export type UploadState =
   { stage: 'uploading'; percent: number } | { stage: 'sizing' };
@@ -7,6 +11,10 @@ export type UploadState =
  * gone and then that the server is making its sizes. XMLHttpRequest, not
  * fetch: only it reports an upload's progress. Resolves with the file's
  * id; rejects with the server's own message when it refuses one.
+ *
+ * A write outside api(), so it sends what api() sends: the CSRF header and
+ * the API revision, and an outdated tab's refusal is noted as api() notes
+ * it (ADR-081).
  */
 export function uploadProductImage(
   file: File,
@@ -17,6 +25,7 @@ export function uploadProductImage(
     request.open('POST', '/api/v1/files/product-image');
     // The CSRF guard's header, as api() sends on every write.
     request.setRequestHeader('X-Requested-With', 'fetch');
+    request.setRequestHeader('X-Api-Revision', String(API_REVISION));
     request.withCredentials = true;
 
     request.upload.onprogress = (event) => {
@@ -29,14 +38,17 @@ export function uploadProductImage(
     };
     request.upload.onload = () => onState({ stage: 'sizing' });
 
-    request.onload = () => {
+    request.onload = async () => {
       const response = parse(request.responseText);
       if (request.status === 201 && response?.file?.id) {
         resolve(response.file.id);
-      } else {
-        // Empty when the server said nothing usable: the caller words it.
-        reject(new Error(messageOf(response) ?? ''));
+        return;
       }
+      if (hasCode(response?.code ?? null, 'client_outdated')) {
+        await noteOutdated();
+      }
+      // Empty when the server said nothing usable: the caller words it.
+      reject(new Error(messageOf(response) ?? ''));
     };
     request.onerror = () => reject(new Error(''));
 
@@ -49,6 +61,7 @@ export function uploadProductImage(
 interface Response {
   file?: { id?: string };
   message?: string | string[];
+  code?: string;
 }
 
 function parse(text: string): Response | null {

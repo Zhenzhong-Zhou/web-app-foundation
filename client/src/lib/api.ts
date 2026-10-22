@@ -1,5 +1,11 @@
+import { API_REVISION } from '../api/revision.gen';
 import type { ErrorCode, ErrorDetails } from '../api/types.gen';
 import { intl } from '../i18n/intl';
+import {
+  newVersionNow,
+  noteOutdated,
+  noteServed,
+} from '../version/version-check';
 
 const BASE = '/api/v1';
 
@@ -51,6 +57,20 @@ export function hasCode(errorCode: string | null, code: ErrorCode): boolean {
 }
 
 /**
+ * Whether a refusal is about this tab's API revision rather than what it
+ * sent (ADR-081): `client_outdated`, the tab older than the API, or
+ * `api_updating`, the API not yet deployed or rolled back. Nothing was
+ * read, so a page refused this way shows why rather than an error.
+ */
+export function isRevisionRefusal(caught: unknown): caught is ApiError {
+  return (
+    caught instanceof ApiError &&
+    (hasCode(caught.code ?? null, 'client_outdated') ||
+      hasCode(caught.code ?? null, 'api_updating'))
+  );
+}
+
+/**
  * What a failed request says to the person who made it: the server's own
  * message, or one fixed line when no answer came back at all. One definition,
  * so a dropped connection reads the same on every screen.
@@ -59,12 +79,26 @@ export function hasCode(errorCode: string | null, code: ErrorCode): boolean {
  * forgot-password keeps its own, which must not repeat what the server says.
  */
 export function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : intl().formatMessage({
-        id: 'common.serverUnreachable',
-        defaultMessage: 'Could not reach the server.',
-      });
+  if (!(caught instanceof ApiError)) {
+    return intl().formatMessage({
+      id: 'common.serverUnreachable',
+      defaultMessage: 'Could not reach the server.',
+    });
+  }
+  // Outdated while the version file still names this tab's build: the API
+  // deployed first, and a reload would load the same build, so the words
+  // are the 503's until the new version is out (ADR-081).
+  if (
+    hasCode(caught.code ?? null, 'client_outdated') &&
+    !newVersionNow().newer
+  ) {
+    return intl().formatMessage({
+      id: 'version.installing',
+      defaultMessage:
+        'A new version is being installed. Try again in a minute; nothing was saved.',
+    });
+  }
+  return caught.message;
 }
 
 /**
@@ -101,7 +135,8 @@ type ApiInit = Omit<RequestInit, 'headers'> & {
 };
 
 /**
- * Every request carries the session cookie and the CSRF header.
+ * Every request carries the session cookie, the CSRF header and the API
+ * revision this client was built for.
  *
  * `credentials: 'include'` is redundant same-origin — fetch has defaulted to
  * 'same-origin' for years. It is set so that pointing BASE at another origin
@@ -110,6 +145,9 @@ type ApiInit = Omit<RequestInit, 'headers'> & {
  * X-Requested-With satisfies ADR-014: presence is the proof, the value is
  * never read. Sent on every method, because a conditional default is a
  * conditional someone eventually gets wrong.
+ *
+ * X-Api-Revision lets the API refuse a tab open across a deploy that
+ * changed it, before anything is read (ADR-081).
  */
 export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
   const response = await send(path, init);
@@ -177,6 +215,7 @@ async function send(path: string, init: ApiInit): Promise<Response> {
         ? {}
         : { 'Content-Type': 'application/json' }),
       'X-Requested-With': 'XMLHttpRequest',
+      'X-Api-Revision': String(API_REVISION),
       ...init.headers,
     },
   });
@@ -201,7 +240,7 @@ async function send(path: string, init: ApiInit): Promise<Response> {
           { status: response.status },
         ));
 
-    throw new ApiError(
+    const error = new ApiError(
       message,
       response.status,
       body?.requestId,
@@ -209,7 +248,13 @@ async function send(path: string, init: ApiInit): Promise<Response> {
       body?.code,
       body?.details,
     );
+    // Here once rather than in each caller, since most refusals land in a
+    // silent catch, the background session read first of all: the version
+    // file read, and a newer build made urgent, before the screen hears.
+    if (hasCode(error.code ?? null, 'client_outdated')) await noteOutdated();
+    throw error;
   }
 
+  noteServed();
   return response;
 }
