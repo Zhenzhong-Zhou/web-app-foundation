@@ -22,10 +22,12 @@ with this one, this one is current.
   deploys section; `seed:volume` caught up with ADR-080 and the access
   query timed. Riding along: the status tones' contrast (#172's review),
   references kept whole, Home's tiles in even rows,
-  `eslint-plugin-compat` and ADR-051's two `perf/` follow-ups. Then that
-  review of the whole app, once (`/production-readiness`: deploys,
-  backups and a restore tried, monitoring, security, performance, email,
-  support, browsers and China). After them, in this order unless a
+  `eslint-plugin-compat` and ADR-051's two `perf/` follow-ups. Then
+  **ADR-082, low stock** (Bob's order, 22 October 2026; its questions in
+  Open decisions). Then that review of the whole app, once
+  (`/production-readiness`: deploys, backups and a restore tried,
+  monitoring, security, performance, email, support, browsers and China).
+  After them, in this order unless a
   trigger brings one forward, each with its entry in Open decisions: one
   person in two organizations, then a practice organization (ADR-077,
   *Deferred*); a public demo; plans and billing; the operator's console
@@ -429,6 +431,8 @@ with this one, this one is current.
 
 ### Still to do, by hand
 
+- **`/favicon.svg`:** `index.html` asks for it and nothing serves it (a 404
+  locally, `index.html` on Render). The line stays; Bob adds the file.
 - **After #176, if not yet done:** delete `tmp/adr-080` and the branch,
   then `npm run seed` and `npm run seed:demo`; show Roles and the editor
   in 中文 on a phone to someone who reads only Chinese.
@@ -548,7 +552,9 @@ with this one, this one is current.
 - **From #172's reviews, not its PR's.** MUI's derived `error.light`,
   `error.dark` and `success.dark` below contrast ride along in ADR-081.
   To file as an issue: the Returns list heading each return with the
-  reader's day, not the organization's (ADR-072). Refactors, each when its
+  reader's day, not the organization's (ADR-072). From ADR-081's
+  inventory, also to file: the bell's list says "Nothing yet." when it
+  failed to load; the unverified banner's Resend never shows a failure. Refactors, each when its
   screen is next touched: a shared select that draws its empty choice
   ("Everywhere", "All actions", "Top level") in words rather than as a
   blank box, about nine of them; and a shared heading row whose actions

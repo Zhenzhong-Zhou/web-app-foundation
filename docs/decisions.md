@@ -10699,6 +10699,16 @@ Checked before drafting, as the working agreements ask:
     `.png` as a plain 404.
   - Hashed assets are sent `max-age=0`, so a browser asks again for every
     chunk on every load.
+- **Found by the build's inventory** (step 3, 22 October 2026), and settled
+  with Bob before any code: sign-out was refused to an outdated tab; for
+  the minutes between the API's deploy and the client's, a tab is outdated
+  while the version file still names its own build; a phone's top bar at
+  320 px has no room for another button; seventy dialogs share no wrapper,
+  though the theme's dialog defaults reach them all; a listener that
+  prevented `vite:preloadError`'s default would make a failed import
+  resolve to nothing; the request log writes a 409 at warn and a 503 at
+  error with a stack; the product image upload is a write outside `api()`;
+  and switching language saves the choice before its catalogue has loaded.
 
 **Decision — a version file.** The client's build writes `version.json`
 beside `index.html`: the build (the commit Render builds,
@@ -10717,30 +10727,36 @@ for it everywhere, "new version", in each language: in the top bar, the
 banners, the status page, Help and the refusals, so nobody wonders whether
 two words mean two things. Once the file names a newer build:
 
-- **Signed in, a button in the top bar.** "New version", with an icon,
-  beside Help; on a phone, the icon with a dot. The top bar's height
-  never changes, so nothing on the page moves under someone's hand, as a
-  banner appearing at the top would. It opens a short note, "A new version
-  is ready. It loads by itself when you open another page", with Reload
-  now. Its arrival is announced once to screen readers.
+- **Signed in, in the top bar.** On a computer, "New version", a button
+  with an icon beside Help, opening a short note: "A new version is ready.
+  It loads by itself when you open another page", with Reload now. On a
+  phone, whose top bar has no room for another button at 320 px, a dot on
+  the account button, and the new version first in its menu: "A new
+  version is ready · Reload now". The top bar's height never changes, so
+  nothing on the page moves under someone's hand, as a banner appearing at
+  the top would. Its arrival is announced once to screen readers.
 - **Signed out, a banner.** Nobody is mid-task there, and those pages have
   no top bar: "A new version is ready. It loads when you open another
   page", with Reload.
 - **Amber when saves would be refused.** When the new version's API
   revision is above the tab's, its saves will be refused (below), so a
   banner at the top of the page takes the button's place, and the same
-  line shows at the top of every dialog open or opened, since a dialog
-  that fills a phone's screen covers the page: "A new version is ready, and
-  this tab can no longer save changes. Copy anything you've typed, then
-  reload." Rare and urgent, it may move the page.
+  line shows at the very top of every dialog open or opened, above its
+  title, since a dialog that fills a phone's screen covers the page: "A new
+  version is ready, and this tab can no longer save changes. Copy anything
+  you've typed, then reload." It is added once, through the theme's dialog
+  defaults, not in each of the seventy; a dialog that only shows something
+  (the image viewer) leaves it out. Rare and urgent, it may move the page.
 - **The next page.** Opening another page means its path changing; a tab
-  or a filter kept in the address does not count. That page then loads in
-  full from the new version. The unsaved-changes prompt runs first, so
-  nothing typed is lost to the reload.
+  or a filter kept in the address does not count. Once that page has
+  rendered, it loads in full from the new version. The unsaved-changes
+  prompt runs first, so nothing typed is lost, and because the reload
+  follows the move rather than racing it, the browser's own "Leave site?"
+  never follows the app's.
 
 **Decision — a load that fails says why.** Any chunk that fails to load,
-a page, a catalogue or a guide, and any `vite:preloadError`, is tried once
-more after a second. Then the version file decides:
+a page, a catalogue or a guide, is tried once more after a second. Then the
+version file decides:
 
 - **It cannot be read:** the offline status page, whose Try again reloads
   the page. It also tries again by itself when the browser says the
@@ -10754,6 +10770,10 @@ more after a second. Then the version file decides:
 
 Help, which loads its guides beside the page, says "This guide has a new
 version. Reload to read it" rather than reloading under someone reading.
+All three kinds load through one loader, so a failed preload reaches it as
+its import's rejection, and nothing listens for `vite:preloadError`: a
+listener that prevented its default would turn the failure into an import
+that quietly resolves to nothing.
 
 **Decision — the API revision.** One number in
 `server/src/common/api-revision.ts`, starting at 1, is the API's revision
@@ -10761,22 +10781,35 @@ within `/v1` (amends ADR-013). The API document carries it as its
 `info.version`, `1.<revision>`, and `npm run api` writes it into
 `client/src/api/` with the types, so the contract check fails a client and
 a server that disagree (amends ADR-068). `api()` sends it as
-`X-Api-Revision`, and the server compares it first, before the session is
-read or the body validated:
+`X-Api-Revision`, as does the product image upload, a write outside
+`api()`. The server compares it first, before the session is read or the
+body validated (a body that is not JSON at all is refused by the parser
+before it, as today):
 
 - **Lower than the server's:** 409 `client_outdated`, "This tab is running
   an older version of the app, so nothing was saved. Copy anything you
   typed, then reload." A page whose read is refused shows the new version
   status page; a dialog keeps what was typed and offers Reload beside the
-  refusal. A refused `/auth/me` is never read as signed out.
+  refusal. A refused session read leaves the app as it is and makes the
+  check urgent: it is never read as signed out, nor as "Could not reach
+  the server". If the version file still names the tab's own build, the
+  new version is still on its way, since the API deploys first: the tab
+  says what the 503 says, a page tries again by itself, and the file is
+  read every 30 seconds until the new build is out.
 - **Higher than the server's,** the API not yet deployed or rolled back:
   503 `api_updating` with `Retry-After: 60`, "A new version is being
   installed. Try again in a minute; nothing was saved."
 - **No header,** from a test, a script, a PDF or export link, or one day an
   integration: served as today.
+- **Sign-out** is always served, whatever the revision: ending a session
+  must never fail, on a shared computer least of all, and it sends nothing
+  to misread.
 
-Each refusal is logged once, at info, with its route and both revisions,
-so after a deploy the log says how many open tabs it met. `/health` adds
+Each refusal is logged once, at info and without a stack, with its route
+and both revisions, so after a deploy the log says how many open tabs it
+met; the request log and the exception filter, which would write a 409 at
+warn and a 503 at error with its stack, leave these two codes to that
+line. `/health` adds
 the revision beside the commit.
 
 **Decision — when the revision rises.** An additive change keeps it: a
@@ -10820,7 +10853,9 @@ apart.
 **Decision — a language that fails to load says so.** Switching tries
 once more, then stays in the current language and says "Couldn't load
 简体中文. Check your connection and try again", with Try again in the
-message itself, which stays until it is closed. At start, a stored
+message itself, which stays until it is closed. The catalogue loads first;
+only once it has does the choice go to the account and the device, so a
+failed load changes nothing saved. At start, a stored
 language whose catalogue fails falls back to English, with a banner naming
 the language and Try again, rather than a blank page. If the version file
 names a newer build, the page reloads instead (amends ADR-054).
@@ -10888,21 +10923,26 @@ demo: what it shows follows a deploy, not data.
 - **References kept whole.** A document's number (`SO-DEMO-1`,
   `PO-000009`) never breaks at its hyphen; a line breaks between a
   reference and its words instead.
+- **Home's failure line in words.** Home showed a dropped connection as
+  "Failed to fetch", skipping the words every other page gives it.
 - **Home's tiles in even rows.** With eight tiles, Home showed seven and
   one alone. The tiles share their rows evenly: as many rows as the width
   needs, the tiles spread across them, so eight read as two rows of four,
   and a phone shows two to a row.
 
 **Tests.** The server's e2e suite: each refusal, a request without the
-header served, and the refusal made before the body is read. Component
-tests: the version check, the top bar's button and the banners, the amber
-line in a dialog, a reload at the next page and not before, each way a
-load fails, the offline page trying again by itself, a refusal in a
-dialog and on a page, a catalogue that fails. Playwright replaces `version.json`, the
-static host's file and never the API's, to stand for a deploy, and aborts
-a page's chunk to stand for a dropped connection: the banner appears, a
-move between pages reloads, a dropped connection says so. Its rule that
-nothing is mocked is about the API, and stays; conventions.md says so.
+header served, sign-out served to an outdated tab, and the refusal made
+before the body is validated. Component tests: the version check, the top
+bar's button and the phone's dot, the banners, the amber line in a dialog,
+a reload at the next page and not before, each way a load fails, the
+offline page trying again by itself, a refusal in a dialog and on a page,
+a tab outdated before its new version is out, a refused session read, and
+a catalogue that fails with nothing saved by it. Playwright replaces
+`version.json`, the static host's file and never the API's, to stand for
+a deploy, and aborts a page's chunk to stand for a dropped connection: the
+top bar's button appears, a move between pages reloads, a dropped
+connection says so. Its rule that nothing is mocked is about the API, and
+stays; conventions.md says so.
 
 **Considered and not done.**
 
@@ -10942,21 +10982,22 @@ nothing is mocked is about the API, and stays; conventions.md says so.
   `client/src/api/`. E2e tests as above.
 - CI: oasdiff in the contract check, squawk on new migrations, `perf/`
   type-checked; `/code-review`'s rules for the revision and for keys a
-  released `ON CONFLICT` names; `scripts/verify.sh` runs the first two where Docker is up.
+  released `ON CONFLICT` names; `scripts/verify.sh` runs the first two
+  where Docker is up.
   A workflow that deploys the static site once the API names the commit.
 - Client: the version file and the build id from a Vite plugin; the
   version check; the top bar's button, the banner on the signed-out pages,
   the amber banner and the amber line in dialogs; one way every chunk
-  loads and fails (pages, catalogues, guides), and the `vite:preloadError`
-  listener; the offline page trying again by itself; `api()` sending the
-  revision, and the two refusals on pages and in dialogs; the language's
-  failure paths; the tones, references kept whole and Home's even rows;
+  loads and fails (pages, catalogues, guides); the offline page trying
+  again by itself; `api()` and the image upload sending the revision, and
+  the two refusals on pages and in dialogs; the language's failure paths;
+  the tones, references kept whole, Home's failure line and its even rows;
   `eslint-plugin-compat`. Designed on the canvas first: the button and its
   note, the amber banner and the signed-out one, on a computer and a phone
   in English and 中文, and the amber line in a phone's full-screen dialog;
   the offline, new version and crash pages, and Help's guide; a dialog
-  told before typing, a refusal after, and a page refused; a language that
-  fails; Home's tiles and references.
+  told before typing, a refusal after, the new version on its way, and a
+  page refused; a language that fails; Home's tiles and references.
 - `.claude/skills/production-readiness/SKILL.md`, and its first run.
 - `seed:volume`, `perf:plans` and a manifest per scale.
 - Docs: `docs/runbooks/render.md` (the settings above); manual checks
@@ -11112,6 +11153,18 @@ they exist so the reasoning is not rediscovered from scratch.
   trial. Not on the invitation, which only starts the trial; seat limits
   are counted at inviting (ADR-077). ADR-070's "closed by us" waits on
   it. Trigger: the first paying customer.
+- **Low stock** — next after ADR-081, as ADR-082 (Bob, 22 October 2026),
+  before the whole-app `/production-readiness` review. Nothing warns when
+  stock runs short; the only mention was a placeholder dashboard's "low
+  stock" in the Resolved table, and ADR-058 built Home without it. To
+  decide: a reorder point per SKU, and perhaps a reorder quantity, set on
+  the product page; what it is compared with (on hand, available to
+  promise as ADR-045 computes it at available locations, or that plus what
+  open purchase orders bring); where it shows (a tile and card on Home
+  with Raise a purchase order, a filter on the inventory list, perhaps a
+  daily bell); who may set it and who is told (ADR-080's permissions);
+  per location later; and the seeds (demo products below their point, the
+  Home query timed on `seed:volume`).
 - **Feature flags and staged rollouts.** A change that reaches some
   organizations before all: a flag per feature, turned on per
   organization by the operator, and a release that turns it on in stages,
