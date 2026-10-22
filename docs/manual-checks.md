@@ -1796,35 +1796,34 @@ The pages, in a private window unless a check says otherwise.
   and Move everyone to…. As Tom Becker, Warehouse's page has none of
   these buttons: Warehouse changes no role and reads no audit log. In
   the audit log, a role named in Member's roles changed opens its page.
-- **MC-3309** *(ADR-080)* Making a role. As the demo Owner, Make a
-  role: Start from offers Warehouse, Sales, Finance, Production and Stock
-  look-up, each with its few words, then A copy of a role and Nothing
-  ticked; nothing is ticked but the three every role holds. Choose
-  Warehouse: its boxes tick, Name reads Warehouse, and What Warehouse can
-  do beside the boxes says what they allow; at 390 px it is below them.
-  Open Orders and tick Raise an order: See prices on orders, See customers
-  and suppliers and See the product catalogue tick with it, and the line
-  above the areas says so; untick See purchase and sales orders and
-  everything that needs it unticks, said the same way. See prices on orders
-  says what leaving it out does; Edit, confirm or cancel an order says it is
-  also told when a line closes short. Tick Read the audit log under People
-  and the organization: See prices on orders and See purchase and sales
-  orders tick with it, since the log keeps what orders were priced at.
-  People and the organization shows
-  its first three ticked and greyed, with why, and no Make a role or Close
-  the organization. Tick all and Clear on Stock and locations each change
-  that area's boxes, and anything elsewhere that needs them. Name it
-  sales: refused under Name, There’s already a role called sales.; admin:
-  Admin is a built-in role. Choose another name. Name it Dock crew, Save
-  role: Dock crew's page, Nobody holds Dock crew. Give it to someone on
-  Members., Members a link to Members; in Français Attribuez-le à
-  quelqu’un dans Membres., in 中文 可以在成员页面把它授予某人。 As Tom
-  Becker, who changes no roles, the page says Nobody holds … alone. Make a
-  copy on Viewer's page: Start from is A copy of a role, Viewer, its boxes
-  Viewer's, Name Viewer (copy). In Français and 中文 the boxes read in that
-  language, and the summary as Your access would. A role named toString,
-  given to someone, reads toString on Roles, Members, Invite and People,
-  and every one of those pages opens.
+- **MC-3309** *(ADR-080)* Making a role. As the demo Owner, Make a role:
+  Start from offers Warehouse, Sales, Finance, Production and Stock look-up,
+  each with its few words, then A copy of a role and Nothing ticked; nothing
+  is ticked but the three every role holds. Choose Warehouse: its boxes
+  tick, Name reads Warehouse, and What Warehouse can do beside the boxes
+  says what they allow; at 390 px it is below them. Open Orders and tick
+  Raise an order: See prices on orders and See customers and suppliers tick
+  with it (Warehouse already sees the catalogue), and the line above the
+  areas says so; untick See purchase and sales orders and everything that
+  needs it unticks, said the same way. See prices on orders says what
+  leaving it out does; Edit, confirm or cancel an order says it is also told
+  when a line closes short. Tick Read the audit log under People and the
+  organization: See prices on orders and See purchase and sales orders tick
+  with it, since the log keeps what orders were priced at. People and the
+  organization shows its first three ticked and greyed, with why, and no
+  Make a role or Close the organization. Tick all and Clear on Stock and
+  locations each change that area's boxes, and anything elsewhere that needs
+  them. Name it sales: refused under Name, There’s already a role called
+  sales.; admin: Admin is a built-in role. Choose another name. Name it Dock
+  crew, Save role: Dock crew's page, Nobody holds Dock crew. Give it to
+  someone on Members., Members a link to Members; in Français Attribuez-le à
+  quelqu’un dans Membres., in 中文 可以在成员页面把它授予某人。 As Tom Becker, who changes
+  no roles, the page says Nobody holds … alone. Make a copy on Viewer's
+  page: Start from is A copy of a role, Viewer, its boxes Viewer's, Name
+  Viewer (copy). In Français and 中文 the boxes read in that language, and the
+  summary as Your access would. A role named toString, given to someone,
+  reads toString on Roles, Members, Invite and People, and every one of
+  those pages opens.
 - **MC-3310** *(ADR-080)* Changing a role, and two at once. Edit Dock
   crew, tick Correct a count, then go to Roles in the menu: Leave without
   saving? asks first; Stay keeps the change. In another browser, as a
@@ -2577,3 +2576,4 @@ first.
   MC-3309 extended.
 - 2026-10-21: Move everyone only on a role the reader may give, and Delete
   reading the role again once someone holds it: MC-3311 extended.
+- 2026-10-21: MC-3309's Raise an order ticks what the editor says it does.
