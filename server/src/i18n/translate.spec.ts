@@ -92,6 +92,21 @@ describe('values', () => {
     expect(translate(mixed, 'zh-Hans')).toContain('CAD和USD');
   });
 
+  it('joins three in British English, with no comma before the and', () => {
+    const mixed = t(
+      {
+        id: 'orders.saleInvoicedOneCurrency',
+        defaultMessage:
+          'A sale is invoiced in one currency, and this one has {currencies}. Price every item in one of them',
+      },
+      { currencies: ['CAD', 'EUR', 'USD'] },
+    );
+
+    expect(mixed.message).toContain('this one has CAD, EUR and USD.');
+    expect(translate(mixed, 'en')).toContain('CAD, EUR and USD.');
+    expect(translate(mixed, 'fr-CA')).toContain('CAD, EUR et USD');
+  });
+
   // ADR-080: a member's roles, a built-in one translated, a made one as
   // named, in one list.
   it('joins a list whose items are messages of their own', () => {

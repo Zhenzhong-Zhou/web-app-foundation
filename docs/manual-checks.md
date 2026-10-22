@@ -1746,7 +1746,7 @@ The pages, in a private window unless a check says otherwise.
   demo Owner in another browser, change Daniel's role to Warehouse on
   Members. Save correction is refused with Your role, Warehouse, doesn’t
   include “Correct a count when the system is wrong”. Demo Owner, Anika
-  Sharma, and 李静 can change your roles. (an Admin holds all Warehouse
+  Sharma and 李静 can change your roles. (an Admin holds all Warehouse
   does, and the reader is never named), never Correcting a count needs
   stock.adjust. Change Daniel back to Admin. A release sent with a
   licence override by a role without it is refused in the same words. As
@@ -1965,6 +1965,13 @@ The pages, in a private window unless a check says otherwise.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R30** *(lists in British English)* With the browser's language set
+  to English (United States) and the app in English, a list of three reads
+  with no comma before its "and", while dates keep the American order. As
+  the demo Owner, Organization → Profile, Close this organization…: Still
+  needed: the download (or “I don’t need a copy”), the name and your
+  password. MC-3304's correction refused to Daniel Okafor names Demo Owner,
+  Anika Sharma and 李静. In Français … et …, in 中文 …、…和…, as before.
 - **MC-R29** *(the account menu from the keyboard, #151)* With the keyboard
   alone, open the account menu and arrow down to Colour mode: Enter opens
   its choices, the arrow keys move through them and Enter chooses; the
@@ -2478,3 +2485,5 @@ first.
 - 2026-10-21: ADR-080, the guides: Roles, new, and Members and Your
   account changed, in three languages; the glossary's permission, made
   role, Move everyone to… and Remove from the organization: MC-3324.
+- 2026-10-21: English lists are British, with no comma before the "and",
+  on the server and the client: MC-R30, and MC-3304 changed.

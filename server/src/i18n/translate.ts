@@ -67,6 +67,17 @@ const CATALOGUES: Record<Locale, Record<string, string>> = {
   'zh-Hans': chinese,
 };
 
+/**
+ * A list joined the way the language joins one. English is British, as
+ * the copy is, so no comma before the "and": "Owner, Olu Ade and Ada
+ * Byrne". The client's lists say the same (`makeIntl`).
+ */
+export function joinList(items: readonly string[], locale: Locale): string {
+  return new Intl.ListFormat(locale === 'en' ? 'en-GB' : locale, {
+    type: 'conjunction',
+  }).format(items);
+}
+
 /** Parsed once per language and message, then reused. */
 const formatters = new Map<string, IntlMessageFormat>();
 
@@ -87,10 +98,11 @@ function render(
   const flatten = (value: MessageValue) => {
     if (isTranslatable(value)) return nested(value);
     if (Array.isArray(value)) {
-      return new Intl.ListFormat(locale, { type: 'conjunction' }).format(
+      return joinList(
         (value as readonly (string | Translatable)[]).map((item) =>
           isTranslatable(item) ? nested(item) : item,
         ),
+        locale,
       );
     }
     return value as string | number | boolean | null | undefined;

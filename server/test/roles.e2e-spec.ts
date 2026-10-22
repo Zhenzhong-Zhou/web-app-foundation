@@ -865,7 +865,7 @@ describe('Roles (e2e)', () => {
         '“See what stock, lots and batches cost, and exchange rates”';
 
       expect(await refused(packer.agent)).toBe(
-        `Your role, Packers, doesn’t include ${costs}. Owner, Olu Ade, and Ada Byrne can change your roles.`,
+        `Your role, Packers, doesn’t include ${costs}. Owner, Olu Ade and Ada Byrne can change your roles.`,
       );
       expect(await refused(packer.agent, 'fr-CA')).toBe(
         `Votre rôle, Packers, ne comprend pas «\u00a0${french['permissions.costs.view']}\u00a0». Owner, Olu Ade et Ada Byrne peuvent modifier vos rôles.`,

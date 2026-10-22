@@ -1,6 +1,11 @@
 import type { Locale } from '../../common/locales';
 import { canonicalTimeZone, dayIn } from '../../common/today';
-import { t, type Translatable, translate } from '../../i18n/translate';
+import {
+  joinList,
+  t,
+  type Translatable,
+  translate,
+} from '../../i18n/translate';
 import {
   type Permission,
   PERMISSION_DESCRIPTIONS,
@@ -150,9 +155,7 @@ function valueOf(
     const parts = value
       .map((item) => valueOf(key, item, reading)?.text)
       .filter((text): text is string => Boolean(text));
-    return parts.length > 0
-      ? { text: new Intl.ListFormat(locale).format(parts) }
-      : null;
+    return parts.length > 0 ? { text: joinList(parts, locale) } : null;
   }
   if (read === 'reference' || isNamed(value)) {
     return referenceOf(key, value, reading);

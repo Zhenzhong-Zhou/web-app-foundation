@@ -197,6 +197,20 @@ describe('wordEntry, a person', () => {
   });
 });
 
+/** A list reads as British English writes one, as the copy does. */
+describe('wordEntry, a list', () => {
+  it('joins three with no comma before the and', () => {
+    const [detail] = wordEntry(
+      entry({ requiredNameLanguages: ['en', 'fr-CA', 'zh-Hans'] }),
+      IN_ENGLISH,
+    ).details;
+
+    expect(detail.value?.text).toBe(
+      'English, Canadian French and Simplified Chinese',
+    );
+  });
+});
+
 /** A shipment has no page: it links to its order (ADR-076). */
 describe('wordEntry, a shipment', () => {
   const ORDER = '01a15178-4bc8-7967-a6f1-d72516cc29ae';
