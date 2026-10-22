@@ -1965,6 +1965,14 @@ The pages, in a private window unless a check says otherwise.
   Partir de, Entrepôt and Ventes, a no-break space before each colon; in
   中文, 角色 reads 从哪里开始, 仓库 and 销售, with Warehouse as a name that
   stays as written.
+- **MC-3325** *(ADR-080)* Whom to ask names only who could help. On a
+  freshly seeded demo, as Chloé Tremblay (Viewer), Account → Your access
+  ends To do more, ask Demo Owner, Anika Sharma or Daniel Okafor. As the
+  demo Owner, give Tom Becker Sales as well as Warehouse; as Tom, Your
+  access asks Demo Owner or Anika Sharma alone, with no Admin, since
+  Admin cannot change Sales (it lacks price lists), and a refused page
+  (MC-3320) names the same two. Home's welcome card says the same to a
+  newcomer.
 
 ## Regressions
 
@@ -2497,3 +2505,5 @@ first.
   refusal and the Roles guide as the screens: MC-3303 changed.
 - 2026-10-21: the Orders guide says why an order may show no prices:
   MC-3318 extended.
+- 2026-10-21: whom to ask, on Home and Your access, names only who could
+  change the reader's roles, as a refusal does: MC-3325.

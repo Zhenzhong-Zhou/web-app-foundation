@@ -10,7 +10,6 @@ import {
   isNull,
   ne,
   or,
-  type SQL,
   sql,
 } from 'drizzle-orm';
 
@@ -72,68 +71,59 @@ export class PermissionsService {
   /**
    * Everyone in an organization who may do this, through any of their
    * roles, each once, those who joined first first: whoever is told of
-   * something, and whom to ask for more.
+   * something.
    */
-  holdersOf(
-    organizationId: string,
-    permission: Permission,
-    options: { except?: string; limit?: number } = {},
-  ): Promise<Holder[]> {
-    const conditions: SQL[] = [
-      eq(memberships.organizationId, organizationId),
-      isNull(users.deletedAt),
-      exists(
-        this.db
-          .select({ key: permissions.key })
-          .from(membershipRoles)
-          .innerJoin(
-            rolePermissions,
-            eq(rolePermissions.roleId, membershipRoles.roleId),
-          )
-          .innerJoin(
-            permissions,
-            eq(permissions.id, rolePermissions.permissionId),
-          )
-          .where(
-            and(
-              eq(membershipRoles.membershipId, memberships.id),
-              eq(permissions.key, permission),
-            ),
-          ),
-      ),
-    ];
-    if (options.except) conditions.push(ne(memberships.userId, options.except));
-
-    const query = this.db
+  holdersOf(organizationId: string, permission: Permission): Promise<Holder[]> {
+    return this.db
       .select({ id: users.id, name: users.name })
       .from(memberships)
       .innerJoin(users, eq(users.id, memberships.userId))
-      .where(and(...conditions))
+      .where(
+        and(
+          eq(memberships.organizationId, organizationId),
+          isNull(users.deletedAt),
+          exists(
+            this.db
+              .select({ key: permissions.key })
+              .from(membershipRoles)
+              .innerJoin(
+                rolePermissions,
+                eq(rolePermissions.roleId, membershipRoles.roleId),
+              )
+              .innerJoin(
+                permissions,
+                eq(permissions.id, rolePermissions.permissionId),
+              )
+              .where(
+                and(
+                  eq(membershipRoles.membershipId, memberships.id),
+                  eq(permissions.key, permission),
+                ),
+              ),
+          ),
+        ),
+      )
       .orderBy(asc(memberships.createdAt), asc(memberships.id));
-
-    return options.limit ? query.limit(options.limit) : query;
   }
 
   /**
-   * Whom to ask for more (ADR-079): whoever may change roles, those who
-   * joined first first, never the reader; nobody for a reader who may
-   * change roles themself.
+   * Whom to ask for more (ADR-079): whoever could change the reader's
+   * roles, as a refusal names them (whoCanGive), so Home, Account and a
+   * refusal name the same people; nobody for a reader who may change
+   * roles themself.
    */
   whomToAsk(
     context: Pick<RequestContext, 'userId'> & { organizationId: string },
     held: ReadonlySet<Permission>,
   ): Promise<Holder[]> {
     if (held.has(PERMISSIONS.ROLES_ASSIGN)) return Promise.resolve([]);
-    return this.holdersOf(context.organizationId, PERMISSIONS.ROLES_ASSIGN, {
-      except: context.userId,
-      limit: WHOM_TO_ASK,
-    });
+    return this.whoCanGive(context, held, []);
   }
 
   /**
-   * Whom a refusal names (ADR-080): up to three who could give the reader
-   * what they lack, the Owners first, then those who joined first, never
-   * the reader. Giving it takes roles.assign and what is lacking, and
+   * Whom a refusal names (ADR-080), and with nothing lacking whom to ask:
+   * up to three who could give the reader what they lack, the Owners
+   * first, then those who joined first, never the reader. Giving it takes roles.assign and what is lacking, and
    * changing the reader's roles at all takes everything those roles
    * already grant (giving.ts), so a refused Admin is told of the Owners
    * rather than of the other Admins, who lack it too. An Owner always

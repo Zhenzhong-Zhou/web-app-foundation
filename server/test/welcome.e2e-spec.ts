@@ -752,6 +752,29 @@ describe('The welcome (e2e)', () => {
       ).toMatchObject({ holdsEverything: true, whomToAsk: [] });
     });
 
+    // ADR-080: changing someone's roles takes all those roles grant, so an
+    // Admin, who sees no price lists, cannot help someone who does.
+    it('names only whoever could change the reader’s roles, as a refusal does', async () => {
+      const alpha = await organization('alpha');
+      await join(alpha, 'ana@example.com', 'Admin', { name: 'Ana Ruiz' });
+      await customRole(app, alpha.organizationId, 'Pricing', [
+        'users.view',
+        'roles.view',
+        'organizations.view',
+        'price_lists.view',
+      ]);
+      const sam = await join(alpha, 'sam@example.com', 'Pricing');
+
+      expect(
+        (await welcome(sam.agent))?.access.whomToAsk.map((each) => each.name),
+      ).toEqual(['Owner']);
+
+      const refused = await sam.agent.get('/v1/stock').expect(403);
+      expect(body<{ message: string }>(refused).message).toMatch(
+        /\. Owner can change your roles\.$/,
+      );
+    });
+
     it('says whoever holds every permission may do everything, whatever the role is called', async () => {
       const alpha = await organization('alpha');
       await customRole(app, alpha.organizationId, 'Partner', ALL_PERMISSIONS);
