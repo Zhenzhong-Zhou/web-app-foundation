@@ -99,6 +99,8 @@ Karpathy's observations on LLM coding pitfalls
   `docs/conventions.md` and `docs/principles.md`.
 - `/usability-walkthrough`: walks a task through the running app as a
   persona and reports what gets in the way.
+- `/production-readiness`: reviews whether the deployed app is ready for
+  real users, report only.
 
 Every feature branch runs, for any PR that changes what a person sees,
 `/usability-walkthrough` as one of its personas
