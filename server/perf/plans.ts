@@ -8,8 +8,10 @@ import type { Pool } from 'pg';
 import { AppModule } from '../src/app.module';
 import {
   ALL_PERMISSIONS,
+  PERMISSIONS,
   SYSTEM_ROLE_PERMISSIONS,
 } from '../src/core/authorization/permissions';
+import { PermissionsService } from '../src/core/authorization/permissions.service';
 import { PG_POOL } from '../src/database/database.tokens';
 import type { VolumeManifest } from '../src/database/seed-volume';
 import { runInTenantContext } from '../src/database/tenant-context';
@@ -110,6 +112,14 @@ async function main(): Promise<number> {
     return 1;
   }
 
+  // A filter on the organization then matches every row, so a full scan is
+  // the right plan and a failure here says nothing about a busier database.
+  if (manifest.organizations.length === 1) {
+    logger.warn(
+      'The manifest lists one organization, so every row is its own and a sequential scan is often the right plan. Seed with --organizations 2 or more (5 by default) for plans that mean something.',
+    );
+  }
+
   const org = manifest.organizations[0];
 
   const capture = new QueryCapture();
@@ -190,6 +200,7 @@ async function buildProbes(
   const lookups = app.get(LookupService);
   const home = app.get(HomeService);
   const recent = app.get(RecentService);
+  const access = app.get(PermissionsService);
 
   const firstOrders = await orders.list({ status: 'all' });
   const deepOrders = await cursorAfter(
@@ -206,6 +217,11 @@ async function buildProbes(
   );
   const deepStock = await cursorAfter((before) => stock.list({ before }), 20);
   if (!shelf) throw new Error('No lot-tracked stock: was this volume-seeded?');
+  // A manifest written before the team (ADR-081) names nobody, and the
+  // access probe would then send nothing and drop out without a word.
+  if (!org.threeRoleMembershipId) {
+    throw new Error('No member holding three made roles: seed again.');
+  }
 
   // An open sale to preview: what earliest expiry first reads before a ship.
   const sale = await firstSale(orders, stock);
@@ -304,6 +320,18 @@ async function buildProbes(
     {
       name: 'recently opened',
       run: () => recent.list(org.userId, kindsVisibleWith(EVERY_PERMISSION), 6),
+    },
+    // Access (ADR-080): what a member holding three made roles may do, read
+    // on every request they make, and who may update an order, as a
+    // notification finds whom to tell.
+    {
+      name: 'access: three roles',
+      run: () => access.listForMember(org.threeRoleMembershipId),
+    },
+    {
+      name: 'access: holders',
+      run: () =>
+        access.holdersOf(org.organizationId, [PERMISSIONS.ORDERS_UPDATE]),
     },
     // Dates and sorting (ADR-057): each sort read through its index on
     // (organization_id, value, id), its page 2 after a (value, id) cursor,

@@ -136,11 +136,14 @@ shows.
 
 ## The plan check
 
-`npm run perf:plans` calls the real list and ledger services in the first
-seeded organization of its `--scale` (small by default), records the SQL
-they send, and runs `EXPLAIN (ANALYZE, BUFFERS)` on each statement in a
-transaction it rolls back. It fails on a sequential scan of a table the
-planner estimates at 10,000 rows or more (`--min-rows` to change). A scan
+`npm run perf:plans` calls the real list and ledger services, and the
+access query (ADR-080), in the first seeded organization of its `--scale`
+(small by default), records the SQL they send, and runs
+`EXPLAIN (ANALYZE, BUFFERS)` on each statement in a transaction it rolls
+back. It fails on a sequential scan of a table the planner estimates at
+10,000 rows or more (`--min-rows` to change). It warns when the manifest
+lists one organization: every row is then that organization's, so a full
+scan is the right plan and says nothing about a busier database. A scan
 that is the decision rather than an accident goes in the allow-list in
 `perf/plans.ts`, with the reason; lot search is the one there today. Every
 plan goes to `perf/reports/<time>-<scale>-plans.json`.
