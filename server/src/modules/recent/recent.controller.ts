@@ -33,10 +33,6 @@ export class RecentController {
     private readonly permissions: PermissionsService,
   ) {}
 
-  private async held(user: RequestContext) {
-    return new Set(await this.permissions.listForMember(user.membershipId));
-  }
-
   @Get()
   async list(
     @CurrentUser() user: RequestContext,
@@ -45,7 +41,7 @@ export class RecentController {
     return {
       recent: await this.recent.list(
         user.userId,
-        kindsVisibleWith(await this.held(user)),
+        kindsVisibleWith(await this.permissions.heldBy(user.membershipId)),
         query.limit ?? 6,
       ),
     };
@@ -58,11 +54,7 @@ export class RecentController {
     @CurrentUser() user: RequestContext,
     @Body() dto: RecordOpenedDto,
   ): Promise<void> {
-    const held = await this.held(user);
-    const needed = RECENT_PERMISSION[dto.kind];
-    if (!held.has(needed)) {
-      throw await this.permissions.refusal(user, held, [needed]);
-    }
+    await this.permissions.demand(user, [RECENT_PERMISSION[dto.kind]]);
     await this.recent.record(user.userId, dto.kind, dto.id);
   }
 

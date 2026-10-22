@@ -167,7 +167,7 @@ export class RolesController {
     language: string | undefined,
   ): Promise<RoleReader> {
     return {
-      held: new Set(await this.permissions.listForMember(user.membershipId)),
+      held: await this.permissions.heldBy(user.membershipId),
       locale: localeOf(language),
     };
   }

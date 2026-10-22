@@ -34,9 +34,7 @@ export class HomeController {
 
   @Get()
   async get(@CurrentUser() user: RequestContext): Promise<HomeResponse> {
-    const held = new Set(
-      await this.permissions.listForMember(user.membershipId),
-    );
+    const held = await this.permissions.heldBy(user.membershipId);
     return this.home.home(user, held);
   }
 

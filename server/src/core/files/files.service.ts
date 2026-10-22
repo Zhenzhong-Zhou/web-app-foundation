@@ -25,7 +25,6 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { RequestContext } from '../auth/request-context';
-import type { Permission } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
 import { dispositionOf } from './content-disposition';
 import { KIND_RULES } from './file-kinds';
@@ -243,13 +242,7 @@ export class FilesService {
   async find(
     id: string,
     size: FileSize,
-    reader?: {
-      context: Pick<
-        RequestContext,
-        'userId' | 'organizationId' | 'membershipId'
-      >;
-      held: ReadonlySet<Permission>;
-    },
+    reader?: Pick<RequestContext, 'userId' | 'organizationId' | 'membershipId'>,
   ): Promise<Servable> {
     const row = await this.tenantDb.transaction(async (tx, organizationId) => {
       const [found] = await tx
@@ -274,9 +267,7 @@ export class FilesService {
     if (view && !reader) {
       throw new Error(`File ${row.id} asks ${view}, and no reader was given`);
     }
-    if (view && reader && !reader.held.has(view)) {
-      throw await this.permissions.refusal(reader.context, reader.held, [view]);
-    }
+    if (view && reader) await this.permissions.demand(reader, [view]);
 
     // A logo has only `full`; any size asked of it is that.
     const kept: FileSize = row.sizes[size] ? size : 'full';

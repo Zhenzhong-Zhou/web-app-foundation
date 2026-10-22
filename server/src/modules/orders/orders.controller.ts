@@ -57,9 +57,7 @@ export class OrdersController {
 
   /** What of an order's money the reader may see (ADR-080). */
   private async sight(user: RequestContext): Promise<OrderSight> {
-    return sightOf(
-      new Set(await this.permissions.listForMember(user.membershipId)),
-    );
+    return sightOf(await this.permissions.heldBy(user.membershipId));
   }
 
   /**

@@ -40,18 +40,9 @@ export class AdjustmentGuard implements CanActivate {
         t({ id: 'stock.role', defaultMessage: 'No role' }),
       );
 
-    // Resolved per request, never cached (ADR-016).
-    const held = new Set(
-      await this.permissions.listForMember(ctx.membershipId),
-    );
-
-    if (!held.has(PERMISSIONS.STOCK_ADJUST)) {
-      // In the reader's words, as the route's own guard refuses (#148).
-      throw await this.permissions.refusal(ctx, held, [
-        PERMISSIONS.STOCK_ADJUST,
-      ]);
-    }
-
+    // Resolved per request, never cached (ADR-016), and refused in the
+    // reader's words, as the route's own guard refuses (#148).
+    await this.permissions.demand(ctx, [PERMISSIONS.STOCK_ADJUST]);
     return true;
   }
 }

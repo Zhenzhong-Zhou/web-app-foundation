@@ -69,18 +69,10 @@ export class PermissionGuard implements CanActivate {
       );
     }
 
-    const held = new Set(
-      await this.permissions.listForMember(requestContext.membershipId),
-    );
-    const missing = required.filter((key) => !held.has(key));
-
-    if (missing.length > 0) {
-      // Says, in the reader's words, which of their roles lack what, and
-      // whom to ask (#148): they are authenticated, so this is useful
-      // rather than a disclosure, and it beats "it says 403".
-      throw await this.permissions.refusal(requestContext, held, missing);
-    }
-
+    // Refused in the reader's words, which of their roles lack what, and
+    // whom to ask (#148): they are authenticated, so this is useful
+    // rather than a disclosure, and it beats "it says 403".
+    await this.permissions.demand(requestContext, required);
     return true;
   }
 }

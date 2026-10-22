@@ -68,6 +68,29 @@ export class PermissionsService {
     return grantsOfMember(this.db, membershipId);
   }
 
+  /** The same, as a set to ask of. */
+  async heldBy(membershipId: string | null): Promise<ReadonlySet<Permission>> {
+    return new Set(await this.listForMember(membershipId));
+  }
+
+  /**
+   * Refuses, in the reader's words (#148), unless they hold every one of
+   * these: the guard's check, and that of a route asking for more only of
+   * some bodies or some records. What they hold, for a caller that asks
+   * more of it.
+   */
+  async demand(
+    context: Pick<RequestContext, 'userId' | 'organizationId' | 'membershipId'>,
+    required: readonly Permission[],
+  ): Promise<ReadonlySet<Permission>> {
+    const held = await this.heldBy(context.membershipId);
+    const missing = required.filter((key) => !held.has(key));
+    if (missing.length > 0) {
+      throw await this.refusal(context, held, missing);
+    }
+    return held;
+  }
+
   /**
    * Everyone in an organization who may do this, through any of their
    * roles, each once, those who joined first first: whoever is told of

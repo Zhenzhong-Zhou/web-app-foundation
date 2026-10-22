@@ -86,13 +86,7 @@ export class FilesController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<StreamableFile | undefined> {
-    const held = new Set(
-      await this.permissions.listForMember(user.membershipId),
-    );
-    const file = await this.files.find(id, query.size ?? 'full', {
-      context: user,
-      held,
-    });
+    const file = await this.files.find(id, query.size ?? 'full', user);
 
     response.setHeader('Cache-Control', 'private, max-age=31536000, immutable');
     response.setHeader('ETag', file.etag);
