@@ -1725,7 +1725,9 @@ The pages, in a private window unless a check says otherwise.
   Your roles don’t include everything Fatima Haddad’s roles can do, so you
   can’t change their roles. Change Tom Becker's to Owner: Only an Owner can
   assign the Owner role, as before. In Français, Vos rôles n’incluent pas
-  toutes les permissions de Sales; …; in 中文, 您的角色不包含Sales的全部权限，….
+  toutes les permissions de Sales; vous ne pouvez donc pas l’attribuer.,
+  attribuer as the screens and the Roles guide say it; in 中文,
+  您的角色不包含Sales的全部权限，….
   As the demo Owner the same changes are made, each one entry under
   Member’s roles changed, from and to.
 - **MC-3304** *(ADR-080, #148)* A refusal says, in your words, what your
@@ -2487,3 +2489,5 @@ first.
   role, Move everyone to… and Remove from the organization: MC-3324.
 - 2026-10-21: English lists are British, with no comma before the "and",
   on the server and the client: MC-R30, and MC-3304 changed.
+- 2026-10-21: French gives a role with attribuer everywhere, the server's
+  refusal and the Roles guide as the screens: MC-3303 changed.

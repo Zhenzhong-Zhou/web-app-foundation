@@ -895,7 +895,7 @@
   "rmas.suchReturn": "Retour introuvable",
   "rmas.suchReturnAuthorization": "Autorisation de retour introuvable",
   "roles.builtIn": "Propriétaire, Administrateur et Lecteur sont propres à l’application : on ne peut ni les modifier ni les supprimer. Faites-en une copie pour en adapter un.",
-  "roles.cannotGive": "Vos rôles n’incluent pas toutes les permissions de {roles}; vous ne pouvez donc pas {count, plural, one {le donner} other {les donner}}.",
+  "roles.cannotGive": "Vos rôles n’incluent pas toutes les permissions de {roles}; vous ne pouvez donc pas {count, plural, one {l’attribuer} other {les attribuer}}.",
   "roles.cannotMove": "{count, plural, one {{names} détient des rôles} other {{names} détiennent des rôles}} qui permettent plus que les vôtres; vous ne pouvez donc pas les déplacer.",
   "roles.changed": "{name} a enregistré {role} pendant que vous le modifiiez. Vos modifications n’ont pas été enregistrées. Rechargez la page pour voir les siennes, puis refaites les vôtres.",
   "roles.description.admin": "Le travail courant : stock, commandes, production et brouillons de factures. Peut inviter et retirer des membres.",

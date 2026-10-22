@@ -28,7 +28,7 @@ Un propriétaire ne détient aucun autre rôle, puisque Propriétaire inclut dé
 
 ## Vous n’attribuez que ce que vous détenez {#give}
 
-Vous pouvez attribuer un rôle seulement si vos propres rôles, ensemble, incluent tout ce qu’il permet. Modifier les rôles d’un membre ou le retirer demande la même chose de ses rôles. Ainsi, personne ne peut donner plus qu’il n’a, et seul un propriétaire peut nommer quelqu’un propriétaire.
+Vous pouvez attribuer un rôle seulement si vos propres rôles, ensemble, incluent tout ce qu’il permet. Modifier les rôles d’un membre ou le retirer demande la même chose de ses rôles. Ainsi, personne ne peut attribuer plus qu’il ne détient, et seul un propriétaire peut nommer quelqu’un propriétaire.
 
 Dans Membres et dans Inviter, un rôle que vous ne pouvez pas attribuer est grisé, avec la raison.
 

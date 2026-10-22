@@ -126,7 +126,10 @@ describe('values', () => {
     expect(refused.message).toBe(
       'Your roles don’t include everything Viewer and Warehouse lead can do, so you can’t give them.',
     );
-    expect(translate(refused, 'fr-CA')).toContain('Lecteur et Warehouse lead');
+    // A role is attribué in French, as on the screens and in the guides.
+    expect(translate(refused, 'fr-CA')).toContain(
+      'les permissions de Lecteur et Warehouse lead; vous ne pouvez donc pas les attribuer.',
+    );
     expect(translate(refused, 'zh-Hans')).toContain('查看者和Warehouse lead');
   });
 

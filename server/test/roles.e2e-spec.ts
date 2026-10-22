@@ -630,7 +630,7 @@ describe('Roles (e2e)', () => {
         ],
         [
           'fr-CA',
-          'Vos rôles n’incluent pas toutes les permissions de Finance; vous ne pouvez donc pas le donner.',
+          'Vos rôles n’incluent pas toutes les permissions de Finance; vous ne pouvez donc pas l’attribuer.',
         ],
         ['zh-Hans', '您的角色不包含Finance的全部权限，因此您不能授予此角色。'],
       ]) {
