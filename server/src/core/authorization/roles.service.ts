@@ -48,7 +48,6 @@ import {
   beyond,
   countOwners,
   giverHolds,
-  type GrantingRole,
   grantingRoles,
   grantingRolesOfMembers,
   includesOwner,
@@ -139,28 +138,10 @@ export class RolesService {
     return this.db.transaction(async (tx, organizationId) => {
       const row = await roleIn(tx, organizationId, roleId);
       const [summary] = await this.summaries(tx, organizationId, [row], reader);
-      const rows = await tx
-        .select({
-          membershipId: memberships.id,
-          id: users.id,
-          name: users.name,
-          email: users.email,
-          photoFileId: users.photoFileId,
-        })
-        .from(membershipRoles)
-        .innerJoin(
-          memberships,
-          eq(memberships.id, membershipRoles.membershipId),
-        )
-        .innerJoin(users, eq(users.id, memberships.userId))
-        .where(
-          and(
-            eq(membershipRoles.organizationId, organizationId),
-            eq(membershipRoles.roleId, roleId),
-          ),
-        )
-        .orderBy(asc(users.name), asc(users.id));
-      const holders = await withRoleRefs(tx, rows);
+      const holders = await withRoleRefs(
+        tx,
+        await holdersOf(tx, organizationId, roleId),
+      );
       return { ...summary, holders, updatedAt: row.updatedAt };
     });
   }
@@ -409,7 +390,15 @@ export class RolesService {
       const held = await giverHolds(tx, context.membershipId!);
       refuseBeyond(held, [to]);
 
-      const members = await holdersOf(tx, organizationId, roleId);
+      const holders = await holdersOf(tx, organizationId, roleId);
+      const theirs = await grantingRolesOfMembers(
+        tx,
+        holders.map((holder) => holder.membershipId),
+      );
+      const members = holders.map((holder) => ({
+        ...holder,
+        roles: theirs.get(holder.membershipId) ?? [],
+      }));
       const outside = members.filter(
         (member) => beyond(held, member.roles).length > 0,
       );
@@ -447,7 +436,7 @@ export class RolesService {
           ? [to.id]
           : [...before.filter((id) => id !== roleId && id !== to.id), to.id];
         await setRoles(tx, { id: member.membershipId, organizationId }, after);
-        moved.push({ userId: member.userId, from: before, to: after });
+        moved.push({ userId: member.id, from: before, to: after });
       }
       return moved;
     });
@@ -535,26 +524,17 @@ async function roleIn(
 }
 
 /**
- * Who holds a role, each with every role they hold and what each grants:
- * Move everyone weighs them all.
+ * Who holds a role, by name: a role's page lists them, and Move everyone
+ * weighs and moves them.
  */
-async function holdersOf(
-  tx: Transaction,
-  organizationId: string,
-  roleId: string,
-): Promise<
-  {
-    membershipId: string;
-    userId: string;
-    name: string;
-    roles: GrantingRole[];
-  }[]
-> {
-  const rows = await tx
+function holdersOf(tx: Transaction, organizationId: string, roleId: string) {
+  return tx
     .select({
       membershipId: memberships.id,
-      userId: memberships.userId,
+      id: users.id,
       name: users.name,
+      email: users.email,
+      photoFileId: users.photoFileId,
     })
     .from(membershipRoles)
     .innerJoin(memberships, eq(memberships.id, membershipRoles.membershipId))
@@ -566,15 +546,6 @@ async function holdersOf(
       ),
     )
     .orderBy(asc(users.name), asc(users.id));
-
-  const held = await grantingRolesOfMembers(
-    tx,
-    rows.map((row) => row.membershipId),
-  );
-  return rows.map((row) => ({
-    ...row,
-    roles: held.get(row.membershipId) ?? [],
-  }));
 }
 
 /**
