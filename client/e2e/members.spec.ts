@@ -307,21 +307,30 @@ test.describe('members’ roles', () => {
     await signInAs(page, freshOrg.api);
     await page.goto('/members');
 
-    const more = page.getByRole('button', { name: 'More for Wang Fang' });
+    const more = page.getByRole('button', {
+      name: 'More for Wang Fang',
+      exact: true,
+    });
     await more.click();
-    await page.getByRole('menuitem', { name: 'Change roles' }).click();
+    await page
+      .getByRole('menuitem', { name: 'Change roles', exact: true })
+      .click();
     const dialog = page.getByRole('dialog', {
       name: 'Change Wang Fang’s roles',
     });
     await expect(
       dialog.getByRole('checkbox', { name: 'Viewer', exact: true }),
     ).toBeChecked();
-    await dialog.getByRole('checkbox', { name: 'Warehouse lead' }).check();
+    await dialog
+      .getByRole('checkbox', { name: 'Warehouse lead', exact: true })
+      .check();
     // What they could do, with both: Warehouse adds receiving to Viewer's.
     await expect(
       dialog.getByRole('region', { name: 'With these roles, Wang Fang can' }),
     ).toContainText('receive what was ordered');
-    await dialog.getByRole('button', { name: 'Save roles' }).click();
+    await dialog
+      .getByRole('button', { name: 'Save roles', exact: true })
+      .click();
 
     await expect(page.getByText('Wang Fang’s roles changed')).toBeVisible();
     const row = page
@@ -347,17 +356,27 @@ test.describe('members’ roles', () => {
 
     // Not on your own row: leaving is Account's.
     await expect(
-      page.getByRole('button', { name: 'More for E2E Owner' }),
+      page.getByRole('button', { name: 'More for E2E Owner', exact: true }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'More for E2E Owner' }).click();
+    await page
+      .getByRole('button', { name: 'More for E2E Owner', exact: true })
+      .click();
     await expect(
-      page.getByRole('menuitem', { name: 'Remove from the organization' }),
+      page.getByRole('menuitem', {
+        name: 'Remove from the organization',
+        exact: true,
+      }),
     ).toHaveCount(0);
     await page.keyboard.press('Escape');
 
-    await page.getByRole('button', { name: 'More for Sam Lee' }).click();
     await page
-      .getByRole('menuitem', { name: 'Remove from the organization' })
+      .getByRole('button', { name: 'More for Sam Lee', exact: true })
+      .click();
+    await page
+      .getByRole('menuitem', {
+        name: 'Remove from the organization',
+        exact: true,
+      })
       .click();
     const dialog = page.getByRole('dialog', {
       name: `Remove Sam Lee from ${freshOrg.organizationName}?`,

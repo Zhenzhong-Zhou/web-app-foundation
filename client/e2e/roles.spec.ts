@@ -100,8 +100,10 @@ test('an Owner makes a role from a template, gives it, and its holder meets it o
     .getByRole('menuitem', { name: 'Change roles', exact: true })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Change Wang Fang’s roles' });
-  await dialog.getByRole('checkbox', { name: /^Dock crew/ }).check();
-  await dialog.getByRole('checkbox', { name: /^Viewer/ }).uncheck();
+  await dialog
+    .getByRole('checkbox', { name: 'Dock crew', exact: true })
+    .check();
+  await dialog.getByRole('checkbox', { name: 'Viewer', exact: true }).uncheck();
   await expect(dialog.getByText(/receive what was ordered/)).toBeVisible();
   await dialog.getByRole('button', { name: 'Save roles', exact: true }).click();
   await expect(dialog).toBeHidden();
