@@ -10,9 +10,10 @@ with this one, this one is current.
 
 - **Next: ADR-081, old tabs after a deploy** (#175,
   `adr-081-old-tabs`), planned in this chat and built by Claude Code from
-  the brief in `tmp/adr-081/`. No migration. A version file, and an
-  "Updated" banner, amber once the tab's saves would be refused, with a
-  reload at the next page; a failed load told apart (offline, a newer
+  the brief in `tmp/adr-081/`. No migration. A version file, and "New
+  version" in the top bar (a banner when signed out, amber on the page and
+  in dialogs once the tab's saves would be refused), with a reload at the
+  next page; a failed load told apart (offline, a newer
   build, a crash); an API revision the client sends, an outdated one
   refused, and a breaking change caught in CI (oasdiff); the API deployed
   before the client; migrations that work with the release still running

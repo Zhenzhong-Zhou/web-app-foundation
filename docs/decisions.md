@@ -10684,46 +10684,76 @@ Checked before drafting, as the working agreements ask:
   October 2026, the entry chunk of the build before #176 still came back
   as JavaScript (`docs/runbooks/render.md`). A tab open across a deploy
   keeps loading its own pages; what changes under it is the API.
+- **Found by the skill's first run** (`/production-readiness deploys`, on
+  22 October 2026, before anything else was built):
+  - Migration 0067 broke the running release too, another way: it replaced
+    `document_sequences`' primary key, which the release still serving
+    named in its `ON CONFLICT`, and made two columns required with no
+    default. Until #136 went live, nothing could take a number.
+  - On #176's deploy the static site was live 44 seconds after the merge,
+    before CI had finished and before the API.
+  - Render's edge keeps every file for five minutes (`s-maxage=300`) and
+    ignores a request's `no-cache`, though a new query string misses it.
+    A missing `.json`, `.svg` or `.woff2`, or a path without an extension,
+    comes back as `index.html` with a 200; a missing `.js`, `.css` or
+    `.png` as a plain 404.
+  - Hashed assets are sent `max-age=0`, so a browser asks again for every
+    chunk on every load.
 
 **Decision — a version file.** The client's build writes `version.json`
 beside `index.html`: the build (the commit Render builds,
 `RENDER_GIT_COMMIT`, else git's, else the time), when it was built, and
 the API revision below. The build compiles its own id in. A tab reads the
-file, past every cache, when it comes back to the front, every ten minutes
-while it is in front, and after any load that fails or request refused as
-outdated. On the dev server the file names `dev`, which never differs, so
-nothing fires.
+file when it comes back to the front, every ten minutes while it is in
+front, and after any load that fails or request refused as outdated, with
+`cache: 'no-store'` and a query string of its own each time, since Render's
+edge ignores the first but not the second. Anything but the version's
+JSON, such as the `index.html` the host returns for a file it lacks, reads
+as unreadable, never as a build. On the dev server the file names `dev`,
+which never differs, so nothing fires.
 
-**Decision — "Updated", and a reload at the next page.** Once the file
-names a newer build, every page shows a banner at its top, signed in and
-on the signed-out pages: "The app was updated. Reload when you're ready,
-or it reloads by itself when you open another page", with Reload. It is
-announced once to screen readers and has no close button, since it ends
-at the next page.
+**Decision — "New version", and a reload at the next page.** One name
+for it everywhere, "new version", in each language: in the top bar, the
+banners, the status page, Help and the refusals, so nobody wonders whether
+two words mean two things. Once the file names a newer build:
 
-- **Amber when saves would be refused.** When the newer build's API
-  revision is above the tab's, its saves will be refused (below), so the
-  banner says so before anything more is typed: "The app was updated, and
+- **Signed in, a button in the top bar.** "New version", with an icon,
+  beside Help; on a phone, the icon with a dot. The top bar's height
+  never changes, so nothing on the page moves under someone's hand, as a
+  banner appearing at the top would. It opens a short note, "A new version
+  is ready. It loads by itself when you open another page", with Reload
+  now. Its arrival is announced once to screen readers.
+- **Signed out, a banner.** Nobody is mid-task there, and those pages have
+  no top bar: "A new version is ready. It loads when you open another
+  page", with Reload.
+- **Amber when saves would be refused.** When the new version's API
+  revision is above the tab's, its saves will be refused (below), so a
+  banner at the top of the page takes the button's place, and the same
+  line shows at the top of every dialog open or opened, since a dialog
+  that fills a phone's screen covers the page: "A new version is ready, and
   this tab can no longer save changes. Copy anything you've typed, then
-  reload."
+  reload." Rare and urgent, it may move the page.
 - **The next page.** Opening another page means its path changing; a tab
   or a filter kept in the address does not count. That page then loads in
-  full from the new build. The unsaved-changes prompt runs first, so
+  full from the new version. The unsaved-changes prompt runs first, so
   nothing typed is lost to the reload.
 
 **Decision — a load that fails says why.** Any chunk that fails to load,
 a page, a catalogue or a guide, and any `vite:preloadError`, is tried once
 more after a second. Then the version file decides:
 
-- **It cannot be read:** the offline status page, as it is; its Try again
-  reloads the page.
+- **It cannot be read:** the offline status page, whose Try again reloads
+  the page. It also tries again by itself when the browser says the
+  connection is back, and says so: "This page tries again by itself when
+  your connection comes back."
 - **It names a newer build:** the page being opened loads in full from the
-  new build, once. If it fails again within a minute, "A new version is
-  available" shows with Reload, so it can never loop.
+  new version, once. If it fails again within a minute, "A new version is
+  ready" shows, "A new version came out while this tab was open. Reload to
+  use it; nothing is lost", with Reload, so it can never loop.
 - **It names this build:** the crash page with its reference, as now.
 
-Help, which loads its guides beside the page, says "This guide was
-updated. Reload to read it" rather than reloading under someone reading.
+Help, which loads its guides beside the page, says "This guide has a new
+version. Reload to read it" rather than reloading under someone reading.
 
 **Decision — the API revision.** One number in
 `server/src/common/api-revision.ts`, starting at 1, is the API's revision
@@ -10740,8 +10770,8 @@ read or the body validated:
   status page; a dialog keeps what was typed and offers Reload beside the
   refusal. A refused `/auth/me` is never read as signed out.
 - **Higher than the server's,** the API not yet deployed or rolled back:
-  503 `api_updating` with `Retry-After: 60`, "The app is being updated.
-  Try again in a minute; nothing was saved."
+  503 `api_updating` with `Retry-After: 60`, "A new version is being
+  installed. Try again in a minute; nothing was saved."
 - **No header,** from a test, a script, a PDF or export link, or one day an
   integration: served as today.
 
@@ -10757,7 +10787,7 @@ changed, a route removed, a value removed from a list a request takes.
 Where old tabs matter more than the effort, the old shape is kept working
 for a while instead, logged until nothing sends it, as ADR-052's lenient
 mode did (amends ADR-052: one of two ways now, not the way). CI holds the
-rule: the contract job compares `server/openapi.json` with `main`'s using
+rule: its contract check compares `server/openapi.json` with `main`'s using
 oasdiff, a pinned container image rather than a dependency, and fails a
 breaking change that left `info.version` where it was. `/code-review`
 checks it by reading too.
@@ -10774,31 +10804,38 @@ so nothing here ties the deploy to Render.
 **Decision — migrations that work with the release still running.** A
 migration runs while the previous release still serves, so it leaves
 working the schema that release reads: in one deploy, add, never take
-away. Dropping or renaming a column or a table, changing a type, or making
-a column required without a default waits for a later migration, once no
-released code reads the old shape: expand, then contract, which ADR-052
-already asked of large tables. CI runs squawk, a Postgres migration
-linter, on each new migration, pinned and run through `npx` as the
-Markdown check is, and fails those statements unless an ignore comment
-beside one says why the running release does not read what it changes.
-`/code-review` checks it too. ADR-080's 0073 would have been two
-migrations, a deploy apart.
+away. Dropping or renaming a column or a table, changing a type, making a
+column required without a default, or replacing or dropping a key or a
+unique index that a released query's `ON CONFLICT` names waits for a later
+migration, once no released code reads the old shape: expand, then
+contract, which ADR-052 already asked of large tables. CI runs squawk, a
+Postgres migration linter, on each new migration, pinned and run through
+`npx` as the Markdown check is, and fails those statements unless an
+ignore comment beside one says why the running release does not read what
+it changes. Squawk cannot know which key a released query names, so
+`/code-review` checks that one by reading, and the rest too. ADR-080's
+0073 and ADR-073's 0067 would each have been two migrations, a deploy
+apart.
 
 **Decision — a language that fails to load says so.** Switching tries
 once more, then stays in the current language and says "Couldn't load
-简体中文. Check your connection and try again." At start, a stored
+简体中文. Check your connection and try again", with Try again in the
+message itself, which stays until it is closed. At start, a stored
 language whose catalogue fails falls back to English, with a banner naming
 the language and Try again, rather than a blank page. If the version file
 names a newer build, the page reloads instead (amends ADR-054).
 
 **Decision — Render's settings, by hand, in `docs/runbooks/render.md`.**
-The old-files answer (above). Cache headers, checked with `curl -I` first
-and set only where Render's own differ: `/assets/*` for a year and
-immutable; `index.html` and `version.json` never cached. The web
-service's health check path, `/health/ready`, so traffic moves to a new
-release only once it answers with its database up. The static site's
-auto-deploy off, with its deploy hook in GitHub's secrets. A rollback
-always takes both services back together.
+The old-files answer (above). Cache headers, set where Render's own
+differ: `/assets/*` for a year and immutable, rather than asked for again
+on every load; `index.html` and `version.json` never cached, the browser's
+and Render's edge alike, checked with `curl -sI` and its
+`cf-cache-status`. The web service's health check path, `/health/ready`,
+so traffic moves to a new release only once it answers with its database
+up. The web service deploying after CI's checks pass, where Render offers
+it, so a `main` whose CI fails deploys neither the API nor, after it, the
+client. The static site's auto-deploy off, with its deploy hook in
+GitHub's secrets. A rollback always takes both services back together.
 
 **Decision — `/production-readiness`, a review before real users.** A
 Claude Code project skill in `/code-review`'s shape: report only, on the
@@ -10858,9 +10895,10 @@ demo: what it shows follows a deploy, not data.
 
 **Tests.** The server's e2e suite: each refusal, a request without the
 header served, and the refusal made before the body is read. Component
-tests: the version check and the banner's two tones, a reload at the next
-page and not before, each way a load fails, a refusal in a dialog and on a
-page, a catalogue that fails. Playwright replaces `version.json`, the
+tests: the version check, the top bar's button and the banners, the amber
+line in a dialog, a reload at the next page and not before, each way a
+load fails, the offline page trying again by itself, a refusal in a
+dialog and on a page, a catalogue that fails. Playwright replaces `version.json`, the
 static host's file and never the API's, to stand for a deploy, and aborts
 a page's chunk to stand for a dropped connection: the banner appears, a
 move between pages reloads, a dropped connection says so. Its rule that
@@ -10870,6 +10908,9 @@ nothing is mocked is about the API, and stays; conventions.md says so.
 
 - **Reloading the moment a newer build appears.** It takes whatever
   someone is typing.
+- **A blue banner on every page while signed in,** as first drawn. Appearing
+  at the top while someone works, it moved the page under their hand; the
+  top bar's button moves nothing.
 - **Refusing every client built before the server.** Every deploy would
   refuse every open tab, the additive ones included.
 - **Sending old tabs to the old release,** as Vercel's skew protection
@@ -10899,20 +10940,23 @@ nothing is mocked is about the API, and stays; conventions.md says so.
   `error-codes.ts`) and logging each; `/health` with the revision; the
   document's `info.version`; `npm run api` writing the revision into
   `client/src/api/`. E2e tests as above.
-- CI: oasdiff in the contract job, squawk on new migrations, `perf/`
-  type-checked; `scripts/verify.sh` runs the first two where Docker is up.
+- CI: oasdiff in the contract check, squawk on new migrations, `perf/`
+  type-checked; `/code-review`'s rules for the revision and for keys a
+  released `ON CONFLICT` names; `scripts/verify.sh` runs the first two where Docker is up.
   A workflow that deploys the static site once the API names the commit.
 - Client: the version file and the build id from a Vite plugin; the
-  version check and the banner, in the app's layout and on the signed-out
-  pages; one way every chunk loads and fails (pages, catalogues, guides),
-  and the `vite:preloadError` listener; `api()` sending the revision, and
-  the two refusals on pages and in dialogs; the language's failure paths;
-  the tones, references kept whole and Home's even rows;
-  `eslint-plugin-compat`. Designed on the canvas first: the banner, blue
-  and amber, on a computer and a phone, in English and 中文, and on
-  sign-in; the offline, new version and crash pages, and Help's guide; a
-  refusal in a dialog and on a page; a language that fails; Home's tiles
-  and references.
+  version check; the top bar's button, the banner on the signed-out pages,
+  the amber banner and the amber line in dialogs; one way every chunk
+  loads and fails (pages, catalogues, guides), and the `vite:preloadError`
+  listener; the offline page trying again by itself; `api()` sending the
+  revision, and the two refusals on pages and in dialogs; the language's
+  failure paths; the tones, references kept whole and Home's even rows;
+  `eslint-plugin-compat`. Designed on the canvas first: the button and its
+  note, the amber banner and the signed-out one, on a computer and a phone
+  in English and 中文, and the amber line in a phone's full-screen dialog;
+  the offline, new version and crash pages, and Help's guide; a dialog
+  told before typing, a refusal after, and a page refused; a language that
+  fails; Home's tiles and references.
 - `.claude/skills/production-readiness/SKILL.md`, and its first run.
 - `seed:volume`, `perf:plans` and a manifest per scale.
 - Docs: `docs/runbooks/render.md` (the settings above); manual checks

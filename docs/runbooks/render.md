@@ -65,9 +65,10 @@ plan or host:
    from Render's, and the test says nothing: check at the next deploy
    instead.
 3. **The test:** open the old entry chunk at `/assets/<name>`. JavaScript
-   means kept. The app's page means gone: the `/*` rewrite answers a
-   missing file with `index.html` and a 200, so look at what comes back,
-   not the status.
+   means kept; a plain "Not Found" means gone. Render answers a missing
+   `.js`, `.css` or `.png` with a 404, but a missing `.json`, `.svg` or
+   `.woff2`, or a path without an extension, with `index.html` and a 200
+   (the `/*` rewrite): for those, look at what comes back, not the status.
 
 ## Registration and organization invitations (ADR-078)
 
