@@ -2020,10 +2020,11 @@ the file, or wait ten minutes.
   loads by itself when you open another page. New version opens that note
   with Reload now, which loads the page. On an order, switching from Items
   to History, or on Orders a filter, loads nothing; Inventory in the rail
-  loads in full (the Network tab shows the document again). On New order
-  with a line added, Inventory asks Leave without saving? first: Stay keeps
-  everything; Leave loads Inventory in full, with no browser Leave site?
-  after the app's.
+  loads in full (the Network tab shows the document again). Deploy once
+  more with another `build`, since a tab loads in full once per new
+  version (MC-3411): on New order with a line added, Inventory asks Leave
+  without saving? first: Stay keeps everything; Leave loads Inventory in
+  full, with no browser Leave site? after the app's.
 - **MC-3402** *(ADR-081)* A new version on a phone. At 390 px, and at 320
   px with Larger text, deploy: no new button, a dot on the account button,
   whose name a screen reader reads as …, signed in as …, a new version is
@@ -2092,6 +2093,14 @@ waits a second and tries once more before it says anything.
   stays as it is. In 中文 这份指南有新版本。请重新加载后阅读。 Offline instead,
   This guide could not be opened. Check your connection, then try again.,
   with Try again.
+- **MC-3411** *(ADR-081)* Once per new version. On the dev server the
+  load in full comes back on the same build, as a tab does while Render's
+  edge still serves the old `index.html`. Deploy, open Inventory: it loads
+  in full once. Then Orders, Movements and Inventory again load nothing
+  more (no new document in the Network tab), and New version stays beside
+  Help, or the amber banner on the page with `apiRevision` one higher,
+  each still reloading when pressed. Deploy again with another `build`:
+  the next page loads in full once more.
 
 ## Regressions
 
@@ -2679,3 +2688,5 @@ first.
   MC-3406.
 - 2026-10-22: ADR-081, a page that won't load says why: MC-3407 to
   MC-3410, and MC-R35 for Home's failure line.
+- 2026-10-22: ADR-081, the reload at the next page once per new version:
+  MC-3411 added, MC-3401 changed.

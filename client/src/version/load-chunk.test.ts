@@ -4,12 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { API_REVISION } from '../api/revision.gen';
 import { server } from '../test/setup';
 import { BUILD } from './build';
-import {
-  ChunkLoadError,
-  loadChunk,
-  loadNewerOnce,
-  loadPage,
-} from './load-chunk';
+import { ChunkLoadError, loadChunk, loadPage } from './load-chunk';
 import { reloadPage } from './reload-page';
 import { checkVersion } from './version-check';
 
@@ -105,54 +100,31 @@ describe('loadPage', () => {
     expect(settled).toBe(false);
   });
 
+  it('loads in full once a minute at most for a build, so it never loops', async () => {
+    serve('a1b2c3d');
+    const now = Date.now();
+    void loadPage(chunk(2));
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.waitFor(() => expect(reloadPage).toHaveBeenCalledTimes(1));
+
+    // The load brought the same failure back: this time it says so.
+    expect(await outcome(loadPage(chunk(2)))).toMatchObject({
+      failure: 'newer',
+    });
+    expect(reloadPage).toHaveBeenCalledTimes(1);
+
+    // A minute on, it may load again.
+    vi.spyOn(Date, 'now').mockReturnValue(now + 61_000);
+    void loadPage(chunk(2));
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.waitFor(() => expect(reloadPage).toHaveBeenCalledTimes(2));
+  });
+
   it('hands the error boundary anything but a newer build, loading nothing', async () => {
     server.use(http.get('/version.json', () => HttpResponse.error()));
     expect(await outcome(loadPage(chunk(2)))).toMatchObject({
       failure: 'offline',
     });
-    expect(reloadPage).not.toHaveBeenCalled();
-  });
-});
-
-describe('loadNewerOnce', () => {
-  const now = Date.now();
-  const at = (later: number) =>
-    vi.spyOn(Date, 'now').mockReturnValue(now + later);
-
-  it('loads in full once per newer build within a minute, so it never loops', async () => {
-    serve('a1b2c3d');
-    await checkVersion();
-
-    at(0);
-    expect(loadNewerOnce()).toBe(true);
-    // The load brought the same failure back: this time it says so.
-    at(30_000);
-    expect(loadNewerOnce()).toBe(false);
-    expect(reloadPage).toHaveBeenCalledTimes(1);
-
-    // A minute on, or another build, and it may load again.
-    at(61_000);
-    expect(loadNewerOnce()).toBe(true);
-    serve('e4f5a6b');
-    await checkVersion();
-    at(62_000);
-    expect(loadNewerOnce()).toBe(true);
-    expect(reloadPage).toHaveBeenCalledTimes(3);
-  });
-
-  it('loads nothing while no newer build is known', () => {
-    expect(loadNewerOnce()).toBe(false);
-    expect(reloadPage).not.toHaveBeenCalled();
-  });
-
-  it('loads nothing where storage is refused, since nothing would stop a loop', async () => {
-    serve('a1b2c3d');
-    await checkVersion();
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new DOMException('The operation is insecure.', 'SecurityError');
-    });
-
-    expect(loadNewerOnce()).toBe(false);
     expect(reloadPage).not.toHaveBeenCalled();
   });
 });

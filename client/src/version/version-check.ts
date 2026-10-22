@@ -45,11 +45,6 @@ export function useNewVersion(): NewVersion {
 /** The build the file last named, when newer than this tab's. */
 let newest: string | null = null;
 
-/** The newer build a load in full would bring, as last read. */
-export function newerBuild(): string | null {
-  return newest;
-}
-
 let reading: Promise<VersionRead> | null = null;
 
 /**
@@ -142,6 +137,41 @@ export function useVersionReads(): void {
   }, []);
 }
 
+/** This tab's last load in full for a newer build, in sessionStorage. */
+const LOADED_KEY = 'newVersionLoaded';
+
+/**
+ * Loads the page in full from the newer build the file last named, once
+ * per build (ADR-081): not again for that build while this tab's last load
+ * for it is younger than `againAfterMs`, for good unless a caller says
+ * otherwise. A load that comes back still on this tab's build, as Render's
+ * edge can serve the old index.html for five minutes, then stays as it is
+ * rather than loading again and again. Kept in sessionStorage, which
+ * outlives the load; where storage is refused, nothing loads by itself,
+ * since nothing would stop it repeating. Whether it did.
+ */
+export function loadNewerOnce(againAfterMs = Infinity): boolean {
+  const build = newest;
+  if (!build) return false;
+  try {
+    const last = JSON.parse(sessionStorage.getItem(LOADED_KEY) ?? 'null') as {
+      build: string;
+      at: number;
+    } | null;
+    if (last?.build === build && Date.now() - last.at < againAfterMs) {
+      return false;
+    }
+    sessionStorage.setItem(
+      LOADED_KEY,
+      JSON.stringify({ build, at: Date.now() }),
+    );
+  } catch {
+    return false;
+  }
+  reloadPage();
+  return true;
+}
+
 /**
  * Once a newer build is known, the next page opened loads in full from it
  * (ADR-081), never the one someone is typing in. Opening another page means
@@ -151,6 +181,10 @@ export function useVersionReads(): void {
  * the unsaved-changes prompt has already run, and the old page has gone
  * with its own "Leave site?" listener: the browser's never follows the
  * app's.
+ *
+ * Once per newer build: if the load comes back on the old build, later
+ * pages load nothing more for it, and New version, or the amber banner,
+ * stays for the person to use.
  */
 export function useReloadAtNextPage(): void {
   const { pathname } = useLocation();
@@ -159,6 +193,6 @@ export function useReloadAtNextPage(): void {
   useEffect(() => {
     if (shown.current === pathname) return;
     shown.current = pathname;
-    if (known.newer) reloadPage();
+    if (known.newer) loadNewerOnce();
   }, [pathname]);
 }

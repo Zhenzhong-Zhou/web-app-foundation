@@ -1,5 +1,4 @@
-import { reloadPage } from './reload-page';
-import { checkVersion, newerBuild, type VersionRead } from './version-check';
+import { checkVersion, loadNewerOnce, type VersionRead } from './version-check';
 
 /**
  * Why a chunk would not load, once tried twice and the version file read
@@ -60,46 +59,19 @@ export async function loadChunk<T>(load: () => Promise<T>): Promise<T> {
   }
 }
 
-/** This tab's last load in full for a newer build, in sessionStorage. */
-const LOADED_KEY = 'newVersionLoaded';
-
-/** How long a load in full for one build stops another for it. */
-const ONCE_WITHIN_MS = 60_000;
-
 /**
- * Loads the page in full from the newer build the file named, unless this
- * tab already did so for that build within a minute: a load that brings
- * the same failure back then says so, rather than loading again and
- * again. Kept in sessionStorage, which outlives the load; where storage is
- * refused, nothing loads, since nothing would stop a loop. Whether it did.
+ * How long a page's load in full for one build stops another for it: a
+ * load that brings the same failure back then says so, rather than
+ * loading again and again.
  */
-export function loadNewerOnce(): boolean {
-  const build = newerBuild();
-  if (!build) return false;
-  try {
-    const last = JSON.parse(sessionStorage.getItem(LOADED_KEY) ?? 'null') as {
-      build: string;
-      at: number;
-    } | null;
-    if (last?.build === build && Date.now() - last.at < ONCE_WITHIN_MS) {
-      return false;
-    }
-    sessionStorage.setItem(
-      LOADED_KEY,
-      JSON.stringify({ build, at: Date.now() }),
-    );
-  } catch {
-    return false;
-  }
-  reloadPage();
-  return true;
-}
+const AGAIN_AFTER_MS = 60_000;
 
 /**
  * A page's chunk (lazyNamed). When a newer build is why it failed, the
- * page being opened loads in full from it, and the route keeps its
- * loading state until the browser has; otherwise the failure goes to the
- * error boundary, which shows the status page for it.
+ * page being opened loads in full from it, once a minute at most for that
+ * build, and the route keeps its loading state until the browser has;
+ * otherwise the failure goes to the error boundary, which shows the status
+ * page for it.
  */
 export async function loadPage<T>(load: () => Promise<T>): Promise<T> {
   try {
@@ -108,7 +80,7 @@ export async function loadPage<T>(load: () => Promise<T>): Promise<T> {
     if (
       error instanceof ChunkLoadError &&
       error.failure === 'newer' &&
-      loadNewerOnce()
+      loadNewerOnce(AGAIN_AFTER_MS)
     ) {
       return new Promise<never>(() => undefined);
     }

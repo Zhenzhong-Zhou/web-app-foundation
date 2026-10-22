@@ -10,6 +10,7 @@ import { BUILD } from './build';
 import { reloadPage } from './reload-page';
 import {
   checkVersion,
+  loadNewerOnce,
   useNewVersion,
   useReloadAtNextPage,
   useVersionReads,
@@ -25,8 +26,12 @@ function serve(build: string, apiRevision = API_REVISION) {
 }
 
 // Each test starts with this tab's own build on the server, as nothing has
-// been deployed, whatever the one before it read.
-beforeEach(() => checkVersion());
+// been deployed, whatever the one before it read, and no load in full
+// noted for this tab.
+beforeEach(() => {
+  sessionStorage.clear();
+  return checkVersion();
+});
 
 describe('checkVersion', () => {
   it('finds nothing new while the file names this build', async () => {
@@ -149,6 +154,60 @@ describe('useVersionReads', () => {
   });
 });
 
+describe('loadNewerOnce', () => {
+  afterEach(() => vi.mocked(reloadPage).mockClear());
+
+  const now = Date.now();
+  const at = (later: number) =>
+    vi.spyOn(Date, 'now').mockReturnValue(now + later);
+
+  it('loads in full once per newer build, and never again for it', async () => {
+    serve('a1b2c3d');
+    await checkVersion();
+
+    at(0);
+    expect(loadNewerOnce()).toBe(true);
+    at(10 * 60_000);
+    expect(loadNewerOnce()).toBe(false);
+    expect(reloadPage).toHaveBeenCalledTimes(1);
+
+    // Another build, and it may load again.
+    serve('e4f5a6b');
+    await checkVersion();
+    expect(loadNewerOnce()).toBe(true);
+    expect(reloadPage).toHaveBeenCalledTimes(2);
+  });
+
+  it('loads again for the same build once the time a caller gives has passed', async () => {
+    serve('a1b2c3d');
+    await checkVersion();
+
+    at(0);
+    expect(loadNewerOnce(60_000)).toBe(true);
+    at(30_000);
+    expect(loadNewerOnce(60_000)).toBe(false);
+    at(61_000);
+    expect(loadNewerOnce(60_000)).toBe(true);
+    expect(reloadPage).toHaveBeenCalledTimes(2);
+  });
+
+  it('loads nothing while no newer build is known', () => {
+    expect(loadNewerOnce()).toBe(false);
+    expect(reloadPage).not.toHaveBeenCalled();
+  });
+
+  it('loads nothing where storage is refused, since nothing would stop it repeating', async () => {
+    serve('a1b2c3d');
+    await checkVersion();
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('The operation is insecure.', 'SecurityError');
+    });
+
+    expect(loadNewerOnce()).toBe(false);
+    expect(reloadPage).not.toHaveBeenCalled();
+  });
+});
+
 describe('useReloadAtNextPage', () => {
   function Page() {
     useReloadAtNextPage();
@@ -196,6 +255,34 @@ describe('useReloadAtNextPage', () => {
     await user.click(screen.getByRole('link', { name: 'Inventory' }));
     expect(screen.getByText('/inventory')).toBeInTheDocument();
     expect(reloadPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads in full once per new version: back on the old build, later pages leave it to the person', async () => {
+    serve('a1b2c3d');
+    await checkVersion();
+    const user = userEvent.setup();
+    const first = renderAt('/orders');
+
+    await user.click(screen.getByRole('link', { name: 'Inventory' }));
+    expect(reloadPage).toHaveBeenCalledTimes(1);
+
+    // The load came back on this tab's build, as Render's edge can serve
+    // the old index.html for five minutes, and the file still names the
+    // new one: another page loads nothing more.
+    first.unmount();
+    renderAt('/inventory');
+    await checkVersion();
+    await user.click(screen.getByRole('link', { name: 'Open orders' }));
+    expect(screen.getByText('/orders?status=open')).toBeInTheDocument();
+    await user.click(screen.getByRole('link', { name: 'Inventory' }));
+    expect(screen.getByText('/inventory')).toBeInTheDocument();
+    expect(reloadPage).toHaveBeenCalledTimes(1);
+
+    // A version newer still: the next page loads in full for it, once.
+    serve('e4f5a6b');
+    await checkVersion();
+    await user.click(screen.getByRole('link', { name: 'Open orders' }));
+    expect(reloadPage).toHaveBeenCalledTimes(2);
   });
 
   it('keeps a filter in the address on the same page', async () => {
