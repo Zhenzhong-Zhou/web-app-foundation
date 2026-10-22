@@ -13,6 +13,7 @@ import { useId } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import type { Role, RoleTemplate } from '../api/types.gen';
+import { chosenCardSx } from '../components/chosen-card';
 import { rem } from '../theme/rem';
 import { nameOf } from './role-words';
 
@@ -144,18 +145,7 @@ export function StartFrom({
                   </Typography>
                 </Box>
               }
-              sx={{
-                m: 0,
-                alignItems: 'flex-start',
-                border: chosen ? 2 : 1,
-                borderColor: chosen ? 'primary.main' : 'divider',
-                // Drawn as Invite's chosen card is (ADR-055).
-                bgcolor: chosen ? 'surface.chosen' : undefined,
-                borderRadius: 1,
-                px: chosen ? 1.25 : 1.375,
-                py: chosen ? 0.375 : 0.5,
-                '& .MuiRadio-root': { mt: 0.25 },
-              }}
+              sx={chosenCardSx(chosen)}
             />
           );
         })}

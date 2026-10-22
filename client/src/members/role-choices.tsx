@@ -12,6 +12,7 @@ import { useId } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { Role } from '../api/types.gen';
+import { chosenCardSx } from '../components/chosen-card';
 import { ROLE_WORDS } from '../roles/role-words';
 import { isOwnerRole, roleLabel, toggled } from './role-names';
 
@@ -151,19 +152,7 @@ export function RoleChoices({
                   )}
                 </Box>
               }
-              sx={{
-                m: 0,
-                alignItems: 'flex-start',
-                border: chosen ? 2 : 1,
-                borderColor: chosen ? 'primary.main' : 'divider',
-                // The accent, lightly, as a chosen card is drawn (ADR-055).
-                bgcolor: chosen ? 'surface.chosen' : undefined,
-                borderRadius: 1,
-                // Two pixels of border chosen, one otherwise: the text stays put.
-                px: chosen ? 1.25 : 1.375,
-                py: chosen ? 0.375 : 0.5,
-                '& .MuiCheckbox-root': { mt: 0.25 },
-              }}
+              sx={chosenCardSx(chosen)}
             />
           );
         })}
