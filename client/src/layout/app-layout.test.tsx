@@ -12,8 +12,6 @@ import { reloadPage } from '../version/reload-page';
 import { checkVersion } from '../version/version-check';
 import { AppLayout } from './app-layout';
 
-vi.mock('../version/reload-page', () => ({ reloadPage: vi.fn() }));
-
 function renderFrame() {
   return renderWithAuth(
     <MemoryRouter initialEntries={['/orders']}>

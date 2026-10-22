@@ -11,20 +11,25 @@ import {
 import { describe, expect, it, vi } from 'vitest';
 
 import { renderWithAuth } from '../test/render-with-auth';
+import { ChunkLoadError } from '../version/load-chunk';
+import { reloadPage } from '../version/reload-page';
 import { HelpButton } from './help-button';
 import { HelpFrame } from './help-panel';
 import { HelpProvider } from './help-provider';
 import { LearnMore } from './learn-more';
 
-/** How many guide loads to fail before they work again, as offline. */
-const failing = vi.hoisted(() => ({ loads: 0 }));
+/**
+ * How many guide loads to fail before they work again, and how: offline
+ * unless a test says otherwise.
+ */
+const failing = vi.hoisted(() => ({ loads: 0, error: null as unknown }));
 vi.mock('./guides', async (original) => {
   const actual = await original<typeof import('./guides')>();
   return {
     ...actual,
     loadGuide: (...args: Parameters<typeof actual.loadGuide>) =>
       failing.loads-- > 0
-        ? Promise.reject(new Error('Failed to fetch'))
+        ? Promise.reject(failing.error ?? new Error('Failed to fetch'))
         : actual.loadGuide(...args),
   };
 });
@@ -129,6 +134,26 @@ describe('Help', () => {
     expect(
       await within(help()).findByRole('heading', { level: 2, name: 'Orders' }),
     ).toBeVisible();
+  });
+
+  it('says a guide has a new version, never reloading under the reader', async () => {
+    vi.mocked(reloadPage).mockClear();
+    failing.loads = 1;
+    failing.error = new ChunkLoadError('newer', new TypeError('Failed'));
+    renderFrame('/orders');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Help' }));
+    const status = await within(help()).findByRole('status');
+    expect(status).toHaveTextContent(
+      'This guide has a new version. Reload to read it.',
+    );
+    expect(reloadPage).not.toHaveBeenCalled();
+
+    await userEvent.click(
+      within(status).getByRole('button', { name: 'Reload' }),
+    );
+    expect(reloadPage).toHaveBeenCalledTimes(1);
+    failing.error = null;
   });
 
   it('closes on Esc and on Close, and focus goes back to the button', async () => {

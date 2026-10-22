@@ -2062,11 +2062,45 @@ the file, or wait ten minutes.
   `npm run dev` answers `/version.json` with the build `dev`, and
   `/version.json?123` the same.
 
+A page that won't load is made by hand in DevTools → Network: Offline for
+a dropped connection, or Network request blocking with a pattern for one
+chunk (`*inventory-page*` for Inventory's on the dev server). Each way
+waits a second and tries once more before it says anything.
+
+- **MC-3407** *(ADR-081)* Offline. Signed in, on Orders, go Offline and
+  open Inventory from the rail: in its place, with the rail still there,
+  Can't reach the server, the line about the connection, This page tries
+  again by itself when your connection comes back., and Try again. Go back
+  online (No throttling): Inventory loads by itself, in full. Reload on
+  Orders, block `*inventory-page*` and `*version.json*`, and open
+  Inventory: the same page; unblock both, and Try again loads Inventory.
+  In 中文 无法连接服务器 and
+  网络恢复后，此页面会自动重试。
+- **MC-3408** *(ADR-081)* After a deploy. On Orders, deploy without
+  switching tabs, so the tab has not read the file yet, and block
+  Inventory's chunk. Inventory from the rail loads in full by itself (the
+  Network tab shows the document again); with the chunk still blocked, it
+  then says A new version is ready, A new version came out while this tab
+  was open. Reload to use it; nothing is lost., with Reload, and loads
+  nothing more by itself. Unblock it and Reload: Inventory.
+- **MC-3409** *(ADR-081)* This build, broken. Nothing deployed, block
+  Inventory's chunk alone: Something went wrong, with Reload, Go back, Go
+  home and a reference, never a new version.
+- **MC-3410** *(ADR-081)* Help's guide. Deploy, block `*guides*`, and open
+  Help on a page whose guide this tab has not shown yet: This guide has a
+  new version. Reload to read it., with Reload, and the page beside it
+  stays as it is. In 中文 这份指南有新版本。请重新加载后阅读。 Offline instead,
+  This guide could not be opened. Check your connection, then try again.,
+  with Try again.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R35** *(Home's failure line)* Offline (DevTools → Network), open
+  Home: it says Could not reach the server., as every other page does,
+  never the browser's Failed to fetch; in 中文 无法连接服务器。
 - **MC-R34** *(the menu on a phone)* At 390 px with VoiceOver, Open
   navigation: the menu is read as a dialog named Navigation (导航 in
   中文), and Close navigation closes it.
@@ -2643,3 +2677,5 @@ first.
   not by colour alone (WCAG 1.4.1): MC-3312 and MC-3327 changed.
 - 2026-10-22: ADR-081, a new version noticed: section 34, MC-3401 to
   MC-3406.
+- 2026-10-22: ADR-081, a page that won't load says why: MC-3407 to
+  MC-3410, and MC-R35 for Home's failure line.

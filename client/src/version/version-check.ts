@@ -42,6 +42,14 @@ export function useNewVersion(): NewVersion {
   return useSyncExternalStore(subscribe, snapshot);
 }
 
+/** The build the file last named, when newer than this tab's. */
+let newest: string | null = null;
+
+/** The newer build a load in full would bring, as last read. */
+export function newerBuild(): string | null {
+  return newest;
+}
+
 let reading: Promise<VersionRead> | null = null;
 
 /**
@@ -63,6 +71,7 @@ async function read(): Promise<VersionRead> {
 
   const newer = file.build !== BUILD.build && file.build !== 'dev';
   const urgent = newer && file.apiRevision > API_REVISION;
+  newest = newer ? file.build : null;
   if (newer !== known.newer || urgent !== known.urgent) {
     known = { newer, urgent };
     for (const listener of listeners) listener();

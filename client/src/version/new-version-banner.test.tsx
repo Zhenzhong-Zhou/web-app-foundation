@@ -11,8 +11,6 @@ import { BUILD } from './build';
 import { reloadPage } from './reload-page';
 import { checkVersion } from './version-check';
 
-vi.mock('./reload-page', () => ({ reloadPage: vi.fn() }));
-
 /** A deploy: the static host's version.json names another build. */
 async function deploy(apiRevision = API_REVISION) {
   server.use(

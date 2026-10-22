@@ -117,6 +117,16 @@ describe('HomePage', () => {
     expect(screen.queryByRole('link', { name: 'Raise an order' })).toBeNull();
   });
 
+  it('says a dropped connection in words, not the browser’s', async () => {
+    server.use(http.get('/api/v1/home', () => HttpResponse.error()));
+    renderWithAuth(routed(<HomePage />));
+
+    expect(
+      await screen.findByText('Could not reach the server.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Failed to fetch/)).toBeNull();
+  });
+
   it('leads a new organization with Getting started, Skip only on the team step', async () => {
     serve({
       gettingStarted: {

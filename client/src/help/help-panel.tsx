@@ -34,6 +34,8 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { rem } from '../theme/rem';
 import { useTextSize } from '../theme/text-size';
 import { BUILD } from '../version/build';
+import { ChunkLoadError } from '../version/load-chunk';
+import { reloadPage } from '../version/reload-page';
 import { guideGroups } from './guide-groups';
 import { GuideView } from './guide-view';
 import { type GuideName, GUIDES, loadGuide } from './guides';
@@ -67,6 +69,10 @@ const M = defineMessages({
     id: 'help.failed',
     defaultMessage:
       'This guide could not be opened. Check your connection, then try again.',
+  },
+  newVersion: {
+    id: 'help.newVersion',
+    defaultMessage: 'This guide has a new version. Reload to read it.',
   },
 });
 
@@ -242,6 +248,8 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
   const [loaded, setLoaded] = useState<{
     key: string;
     text: string | null;
+    /** It failed since a new version came out (ADR-081). */
+    newer?: boolean;
   } | null>(null);
   const key = `${guide} ${locale} ${attempt}`;
 
@@ -251,8 +259,11 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
       (text) => {
         if (!ignore) setLoaded({ key, text });
       },
-      () => {
-        if (!ignore) setLoaded({ key, text: null });
+      (error: unknown) => {
+        if (ignore) return;
+        const newer =
+          error instanceof ChunkLoadError && error.failure === 'newer';
+        setLoaded({ key, text: null, newer });
       },
     );
     return () => {
@@ -367,6 +378,23 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
       >
         {parsed ? (
           <GuideView guide={parsed} onFollow={help.follow} />
+        ) : current?.newer ? (
+          // Said, never done: a load in full under someone reading would
+          // take the page they are reading it beside (ADR-081).
+          <Alert
+            severity="info"
+            role="status"
+            action={
+              <Button variant="text" color="inherit" onClick={reloadPage}>
+                {intl.formatMessage({
+                  id: 'version.reload',
+                  defaultMessage: 'Reload',
+                })}
+              </Button>
+            }
+          >
+            {intl.formatMessage(M.newVersion)}
+          </Alert>
         ) : current ? (
           <Alert
             severity="error"

@@ -52,6 +52,14 @@ vi.mock('@testing-library/react', async (importOriginal) => {
   };
 });
 
+/**
+ * A load in full, a stand-in in every spec (ADR-081): jsdom loads no
+ * pages. Here rather than in each spec, since the providers above import
+ * the modules that call it (the catalogues load through the chunk loader)
+ * before a spec's own vi.mock could reach them.
+ */
+vi.mock('../version/reload-page', () => ({ reloadPage: vi.fn() }));
+
 beforeAll(() => {
   /**
    * `error` rather than `warn`: an unhandled request means a component called

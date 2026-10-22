@@ -3,6 +3,7 @@ import { matchPath } from 'react-router-dom';
 
 import { NAV_LABELS } from '../layout/navigation';
 import type { Locale } from '../lib/locales';
+import { loadChunk } from '../version/load-chunk';
 
 export interface Guide {
   /** The routes it explains, written as the route list writes them. */
@@ -183,9 +184,12 @@ const FILES = import.meta.glob<string>('./guides/*/*.md', {
   import: 'default',
 });
 
-/** A guide in the reader's language, or in English if that file is missing. */
+/**
+ * A guide in the reader's language, or in English if that file is missing,
+ * loaded as every chunk is (loadChunk, ADR-081).
+ */
 export function loadGuide(guide: GuideName, locale: Locale): Promise<string> {
   const load =
     FILES[`./guides/${locale}/${guide}.md`] ?? FILES[`./guides/en/${guide}.md`];
-  return load();
+  return loadChunk(load);
 }

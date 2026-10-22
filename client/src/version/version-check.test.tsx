@@ -15,8 +15,6 @@ import {
   useVersionReads,
 } from './version-check';
 
-vi.mock('./reload-page', () => ({ reloadPage: vi.fn() }));
-
 /** The static host's version.json, as after a deploy of `build`. */
 function serve(build: string, apiRevision = API_REVISION) {
   server.use(

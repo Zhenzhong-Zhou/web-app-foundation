@@ -2,9 +2,12 @@ import { Button, Typography } from '@mui/material';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 
+import { NewVersionPage } from '../errors/new-version-page';
+import { OfflinePage } from '../errors/offline-page';
 import { GoHome } from '../errors/status-actions';
 import { StatusPage } from '../errors/status-page';
 import { ApiError } from '../lib/api';
+import { ChunkLoadError } from '../version/load-chunk';
 
 interface Props {
   children: ReactNode;
@@ -26,9 +29,11 @@ interface State {
 /**
  * A page that throws while rendering shows "Something went wrong" as a
  * status page (conventions.md, "Status pages"), inside the layout, with a
- * reference to quote, Reload, Go back and Go home. A stale chunk after a
- * deploy is not a failure: it says a new version is available, and Reload
- * is the fix.
+ * reference to quote, Reload, Go back and Go home. A page whose chunk would
+ * not load says why, from what the loader found rather than the browser's
+ * words (ADR-081): the connection dropped, the offline page; a new version
+ * came out, the new version page, once loading it in full has been tried;
+ * this build, the crash page, since that is a real failure.
  *
  * It clears when resetKey changes, as react-error-boundary's resetKeys and
  * React Router's error pages do: without that, the failure outlived the
@@ -65,23 +70,17 @@ export class ErrorBoundary extends Component<Props, State> {
     const { error, reference } = this.state;
     if (!error) return this.props.children;
 
-    const isStaleChunk =
-      !(error instanceof ApiError) &&
-      /dynamically imported module|Importing a module script failed/i.test(
-        error.message,
-      );
-
-    return <Failure updated={isStaleChunk} reference={reference} />;
+    if (error instanceof ChunkLoadError && error.failure === 'offline') {
+      return <OfflinePage />;
+    }
+    if (error instanceof ChunkLoadError && error.failure === 'newer') {
+      return <NewVersionPage />;
+    }
+    return <Failure reference={reference} />;
   }
 }
 
-function Failure({
-  updated,
-  reference,
-}: {
-  updated: boolean;
-  reference: string | null;
-}) {
+function Failure({ reference }: { reference: string | null }) {
   const intl = useIntl();
   const reload = (
     <Button variant="contained" onClick={() => window.location.reload()}>
@@ -91,24 +90,6 @@ function Failure({
       />
     </Button>
   );
-
-  if (updated) {
-    return (
-      <StatusPage
-        kind="updated"
-        title={intl.formatMessage({
-          id: 'components.errorBoundary.newVersion',
-          defaultMessage: 'A new version is available',
-        })}
-        message={intl.formatMessage({
-          id: 'components.errorBoundary.updated',
-          defaultMessage:
-            'The app was updated while this tab was open. Reload to pick up the new version — nothing is lost.',
-        })}
-        actions={reload}
-      />
-    );
-  }
 
   return (
     <StatusPage

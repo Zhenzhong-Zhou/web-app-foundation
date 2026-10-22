@@ -20,7 +20,7 @@ import { useAuth } from '../auth/use-auth';
 import { StatusChip } from '../components/status-chip';
 import { UndoSnackbar } from '../components/undo-snackbar';
 import { useCoverUnverifiedBanner } from '../layout/use-cover-unverified-banner';
-import { api } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { daysUntil } from '../lib/expiry';
 import { formatDay } from '../lib/format';
 import {
@@ -86,9 +86,7 @@ function OrganizationHome() {
         setHome(response);
         setError(null);
       })
-      .catch((caught: unknown) =>
-        setError(caught instanceof Error ? caught.message : String(caught)),
-      );
+      .catch((caught: unknown) => setError(messageFor(caught)));
   }, []);
 
   useEffect(() => {

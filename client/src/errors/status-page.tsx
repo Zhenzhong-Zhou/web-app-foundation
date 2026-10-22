@@ -32,15 +32,17 @@ const LOOK: Record<
 
 /**
  * One shape for every "this page can't show you that": an icon, a short
- * title (the page's one heading), one sentence of what to do, one or two
- * actions, and a reference where a failure needs reporting. Shown where the
- * page would be, so the rail and the lookup stay usable around it; signed
- * out, `standalone` centres it on its own.
+ * title (the page's one heading), one sentence of what to do, a smaller
+ * line where the page does something by itself, one or two actions, and a
+ * reference where a failure needs reporting. Shown where the page would
+ * be, so the rail and the lookup stay usable around it; signed out,
+ * `standalone` centres it on its own.
  */
 export function StatusPage({
   kind,
   title,
   message,
+  note,
   actions,
   reference,
   standalone = false,
@@ -48,6 +50,7 @@ export function StatusPage({
   kind: StatusKind;
   title: string;
   message: string;
+  note?: string;
   actions: ReactNode;
   reference?: ReactNode;
   standalone?: boolean;
@@ -81,6 +84,11 @@ export function StatusPage({
       <Typography color="text.secondary" sx={{ fontSize: rem(TYPE.section) }}>
         {message}
       </Typography>
+      {note && (
+        <Typography variant="body2" color="text.secondary">
+          {note}
+        </Typography>
+      )}
       <Stack
         direction="row"
         sx={{ gap: 1.25, flexWrap: 'wrap', justifyContent: 'center', pt: 0.5 }}
