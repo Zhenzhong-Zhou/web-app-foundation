@@ -21,13 +21,8 @@ describe('invitationMail', () => {
     to: 'wang.fang@example.com',
     inviter: { name: 'Mei Lin', email: 'mei.lin@example.com' },
     organizationName: 'Northside Naturals',
-    roles: [
-      {
-        name: 'Admin',
-        description: 'Day-to-day work.',
-        system: 'Admin' as const,
-      },
-    ],
+    roles: [{ name: 'Admin', description: 'Day-to-day work.' }],
+    system: 'Admin' as const,
     note: null,
     timeZone: 'America/Vancouver',
     lastDay: '2026-10-26',
@@ -59,17 +54,17 @@ describe('invitationMail', () => {
     const warehouse = {
       name: 'Warehouse lead',
       description: 'Receives and ships.',
-      system: null,
     };
-    const sales = { name: 'Sales', description: null, system: null };
+    const sales = { name: 'Sales', description: null };
+    const made = { ...context, system: 'other' as const };
 
     expect(
-      invitationMail({ ...context, roles: [warehouse], appName: null }).text,
+      invitationMail({ ...made, roles: [warehouse], appName: null }).text,
     ).toContain(
       'invited you to join as Warehouse lead.\n\nReceives and ships.',
     );
 
-    const both = { ...context, roles: [warehouse, sales], appName: null };
+    const both = { ...made, roles: [warehouse, sales], appName: null };
     const { text } = invitationMail(both);
     expect(text).toContain('invited you to join as Warehouse lead and Sales.');
     expect(text).toContain('Warehouse lead: Receives and ships.');

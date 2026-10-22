@@ -40,7 +40,7 @@ import {
   rolesOfInvitation,
   rolesOfInvitations,
 } from '../authorization/member-roles';
-import { roleName, roleWords, systemRoleOf } from '../authorization/role-words';
+import { roleName, roleWords, systemOf } from '../authorization/role-words';
 import { timeZoneOf } from '../organizations/time-zone';
 import type { CreateInvitationDto } from './dto/create-invitation.dto';
 import type {
@@ -530,10 +530,8 @@ export class InvitationsService {
             ? { name: facts.inviterName, email: facts.inviterEmail }
             : null,
           organizationName: facts.organizationName,
-          roles: named.map((role) => ({
-            ...roleWords(role, facts.locale),
-            system: systemRoleOf(role),
-          })),
+          roles: named.map((role) => roleWords(role, facts.locale)),
+          system: systemOf(named),
           note: facts.note,
           // In the organization's zone (ADR-072), as every page says it.
           timeZone: requestTimeZone(),

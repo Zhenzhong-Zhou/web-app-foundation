@@ -17,15 +17,10 @@ export interface InvitationMailContext {
    */
   inviter: { name: string; email: string } | null;
   organizationName: string;
-  /**
-   * The roles in words, in the invitation's language, each with which
-   * built-in role it is, for the lead's article (ADR-080).
-   */
-  roles: {
-    name: string;
-    description: string | null;
-    system: SystemRole | null;
-  }[];
+  /** The roles in words, in the invitation's language. */
+  roles: { name: string; description: string | null }[];
+  /** What the lead's article goes by (systemOf, ADR-080). */
+  system: SystemRole | 'other';
   note: string | null;
   /** The organization's zone, which the last day is in (ADR-072). */
   timeZone: string;
@@ -68,11 +63,8 @@ export function invitationMail(context: InvitationMailContext): Mail {
       { organization },
     ),
   );
-  // The article by which built-in role it names alone, never by its
-  // words; a made role, or several, take none (ADR-080).
   const roles = context.roles.map((role) => role.name);
-  const system =
-    (context.roles.length === 1 && context.roles[0].system) || 'other';
+  const system = context.system;
   const lead = say(
     context.inviter
       ? t(
