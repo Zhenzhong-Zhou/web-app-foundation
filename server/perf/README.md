@@ -67,6 +67,11 @@ transaction. It writes `perf/volume-<scale>.json`, which `perf` and
 `perf:plans` read to sign in and find their way, by their own `--scale`
 (small when not given). Seeding one scale leaves the other's in place.
 
+Each organization also gets a team (ADR-081): 15 members at small and 150
+at large, the Owner and the newcomer among them, holding one to three roles
+of the 4 or 12 its Owner made, and a few invitations pending. The manifest
+names one member holding three made roles, for the access query's plan.
+
 For large, give it a database of its own and skip the commit flush while
 seeding. It is safe for a throwaway database and several times faster, but
 must be undone before measuring, or writes would look faster than

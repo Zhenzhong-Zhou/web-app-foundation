@@ -35,6 +35,13 @@ export interface Volume {
   suppliers: number;
   customers: number;
 
+  /**
+   * Everyone who works here, the Owner and the newcomer among them, and
+   * the roles the Owner made for them (ADR-080, ADR-081).
+   */
+  members: number;
+  madeRoles: number;
+
   /** Bins under the one site: raw materials apart from finished goods. */
   materialBins: number;
   goodsBins: number;
@@ -72,6 +79,9 @@ const SMALL: Volume = {
   suppliers: 60,
   customers: 240,
 
+  members: 15,
+  madeRoles: 4,
+
   materialBins: 4,
   goodsBins: 20,
 
@@ -94,13 +104,16 @@ const SMALL: Volume = {
 /**
  * Ten times small in everything that is a count. Shares stay the same: a
  * larger customer is more of the same business, not a different one. Bins
- * grow five times, since a warehouse grows by aisles rather than by tenfold.
+ * grow five times, since a warehouse grows by aisles rather than by tenfold,
+ * and made roles three times, since more people share the same few jobs.
  */
 const LARGE: Volume = {
   ...SMALL,
   products: 5_000,
   suppliers: 600,
   customers: 2_400,
+  members: 150,
+  madeRoles: 12,
   materialBins: 20,
   goodsBins: 100,
   recipes: 250,
