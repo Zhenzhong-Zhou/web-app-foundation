@@ -30,8 +30,9 @@ export class MemberAccess {
    */
   holdsEverything!: boolean;
   /**
-   * Up to three members who may change roles, those who joined first
-   * first, never the reader; none for a reader who may change roles.
+   * Up to three members who could change the reader's roles, as a refusal
+   * names them: the Owners first, then those who joined first, never the
+   * reader; none for a reader who may change roles.
    */
   whomToAsk!: Colleague[];
 }
