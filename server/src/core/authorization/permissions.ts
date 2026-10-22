@@ -415,6 +415,9 @@ export const PERMISSION_NEEDS: Partial<
   'organizations.update': ['organizations.view'],
   'organizations.export': ['organizations.view'],
   'organizations.delete': ['organizations.view'],
+  // The log keeps what an order's lines were priced at, and a pro forma's
+  // total, which only whoever sees prices on orders may read (ADR-080).
+  'audit.view': ['orders.view_prices'],
   'products.create': ['products.view'],
   'products.update': ['products.view'],
   'product_licences.create': ['product_licences.view'],

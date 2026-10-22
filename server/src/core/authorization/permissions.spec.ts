@@ -127,10 +127,14 @@ describe('permissions', () => {
     });
 
     it('gives every change and every act a need, a view needing nothing', () => {
+      // But the audit log, which keeps what orders were priced at.
+      const viewNeeds: Partial<Record<string, string[]>> = {
+        'audit.view': ['orders.view_prices'],
+      };
       for (const permission of ALL_PERMISSIONS) {
         const needs = PERMISSION_NEEDS[permission] ?? [];
         if (permission.endsWith('.view')) {
-          expect(needs, permission).toEqual([]);
+          expect(needs, permission).toEqual(viewNeeds[permission] ?? []);
         } else {
           expect(needs.length, permission).toBeGreaterThan(0);
         }

@@ -1807,7 +1807,10 @@ The pages, in a private window unless a check says otherwise.
   above the areas says so; untick See purchase and sales orders and
   everything that needs it unticks, said the same way. See prices on orders
   says what leaving it out does; Edit, confirm or cancel an order says it is
-  also told when a line closes short. People and the organization shows
+  also told when a line closes short. Tick Read the audit log under People
+  and the organization: See prices on orders and See purchase and sales
+  orders tick with it, since the log keeps what orders were priced at.
+  People and the organization shows
   its first three ticked and greyed, with why, and no Make a role or Close
   the organization. Tick all and Clear on Stock and locations each change
   that area's boxes, and anything elsewhere that needs them. Name it
@@ -2560,3 +2563,4 @@ first.
 - 2026-10-21: People's roles drawn as Members' are: MC-3327.
 - 2026-10-21: a joined notification stored before several roles still
   reads in every language: MC-3306 extended.
+- 2026-10-21: the audit log needs prices on orders: MC-3309 extended.

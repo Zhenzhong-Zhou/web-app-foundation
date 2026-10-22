@@ -333,6 +333,15 @@ describe('Roles (e2e)', () => {
       expect(needs.message).toBe(
         '“Receive stock against an order” needs “See purchase and sales orders” and “See warehouses, zones and bins” too.',
       );
+      // The audit log keeps orders' prices, so it brings them with it.
+      const audit = body<Refusal>(
+        await alpha.agent
+          .post('/v1/roles')
+          .send({ name: 'Auditors', permissions: ['audit.view'] })
+          .expect(400),
+      );
+      expect(audit.code).toBe('permission_requires');
+      expect(audit.message).toMatch(/needs “See prices on orders” too\.$/);
 
       const taken = body<Refusal>(
         await alpha.agent
