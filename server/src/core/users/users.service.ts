@@ -19,13 +19,15 @@ import { RequestContext } from '../auth/request-context';
 import type { RoleRef } from '../authorization/dto/role-response.dto';
 import {
   beyond,
-  cannotGive,
   countOwners,
   giverHolds,
   type GrantingRole,
-  grantingRoles,
+  grantingRolesOfMembers,
   includesOwner,
+  LAST_OWNER_CHANGE,
   lockOwners,
+  ONLY_AN_OWNER_CHANGES_AN_OWNER,
+  refuseBeyond,
   rolesToGive,
 } from '../authorization/giving';
 import {
@@ -198,23 +200,9 @@ export class UsersService {
       const added = target.filter(
         (role) => !current.some((kept) => kept.id === role.id),
       );
-      const addedBeyond = beyond(held, added);
-      if (includesOwner(addedBeyond)) {
-        throw new ForbiddenException(
-          t({
-            id: 'users.ownerAssign',
-            defaultMessage: 'Only an Owner can assign the Owner role',
-          }),
-        );
-      }
-      if (addedBeyond.length > 0) {
-        throw new ForbiddenException(cannotGive(addedBeyond));
-      }
+      refuseBeyond(held, added);
       this.assertMayChange(held, current, membership.name, {
-        owner: t({
-          id: 'users.ownerChange',
-          defaultMessage: "Only an Owner can change an Owner's role",
-        }),
+        owner: ONLY_AN_OWNER_CHANGES_AN_OWNER,
         beyond: (member) =>
           t(
             {
@@ -233,12 +221,7 @@ export class UsersService {
         !includesOwner(target) &&
         (await countOwners(tx, organizationId)) <= 1
       ) {
-        throw new ConflictException(
-          t({
-            id: 'users.lastOwnerChange',
-            defaultMessage: 'Transfer ownership before changing this role',
-          }),
-        );
+        throw new ConflictException(LAST_OWNER_CHANGE);
       }
 
       await setRoles(tx, { id: membership.id, organizationId }, roleIds);
@@ -357,12 +340,12 @@ export class UsersService {
       );
     }
 
-    const heldIds = (
-      (await rolesOfMembers(tx, [membership.id])).get(membership.id) ?? []
-    ).map((role) => role.id);
     return {
       membership,
-      current: (await grantingRoles(tx, organizationId, heldIds)) ?? [],
+      current:
+        (await grantingRolesOfMembers(tx, [membership.id])).get(
+          membership.id,
+        ) ?? [],
       held: await giverHolds(tx, context.membershipId!),
     };
   }

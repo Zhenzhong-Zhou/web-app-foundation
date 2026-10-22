@@ -27,11 +27,10 @@ import { recordContext } from '../audit/audit-context';
 import { AuthTokenService } from '../auth/auth-token.service';
 import type { RequestContext } from '../auth/request-context';
 import {
-  beyond,
   cannotGive,
   giverHolds,
   type GrantingRole,
-  includesOwner,
+  refuseBeyond,
   rolesToGive,
 } from '../authorization/giving';
 import {
@@ -650,11 +649,7 @@ async function grantable(
   },
 ): Promise<GrantingRole[]> {
   const given = await rolesToGive(tx, organizationId, roleIds);
-  const outside = beyond(await giverHolds(tx, context.membershipId!), given);
-  if (includesOwner(outside)) throw new ForbiddenException(refusals.owner);
-  if (outside.length > 0) {
-    throw new ForbiddenException(refusals.beyond(outside));
-  }
+  refuseBeyond(await giverHolds(tx, context.membershipId!), given, refusals);
   return given;
 }
 

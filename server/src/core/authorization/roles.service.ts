@@ -46,13 +46,16 @@ import type { CreateRoleDto, UpdateRoleDto } from './dto/role.dto';
 import type { Role, RoleCatalogue, RoleDetail } from './dto/role-response.dto';
 import {
   beyond,
-  cannotGive,
   countOwners,
   giverHolds,
   type GrantingRole,
   grantingRoles,
+  grantingRolesOfMembers,
   includesOwner,
+  LAST_OWNER_CHANGE,
   lockOwners,
+  ONLY_AN_OWNER_CHANGES_AN_OWNER,
+  refuseBeyond,
 } from './giving';
 import { grantsOf, roleRef, rolesOfMembers, setRoles } from './member-roles';
 import { isOwnerRole } from './owner';
@@ -409,36 +412,16 @@ export class RolesService {
           ),
         );
       }
-      const [to] = (await grantingRoles(tx, organizationId, [toRoleId])) ?? [];
-      if (!to) {
-        throw new BadRequestException(
-          t({ id: 'users.unknownRole', defaultMessage: 'Unknown role' }),
-        );
-      }
-
+      const [to] = await grantingRoles(tx, organizationId, [toRoleId]);
       const held = await giverHolds(tx, context.membershipId!);
-      if (beyond(held, [to]).length > 0) {
-        throw new ForbiddenException(
-          isOwnerRole(to)
-            ? t({
-                id: 'users.ownerAssign',
-                defaultMessage: 'Only an Owner can assign the Owner role',
-              })
-            : cannotGive([to]),
-        );
-      }
+      refuseBeyond(held, [to]);
 
       const members = await holdersOf(tx, organizationId, roleId);
       const outside = members.filter(
         (member) => beyond(held, member.roles).length > 0,
       );
       if (outside.some((member) => includesOwner(member.roles))) {
-        throw new ForbiddenException(
-          t({
-            id: 'users.ownerChange',
-            defaultMessage: "Only an Owner can change an Owner's role",
-          }),
-        );
+        throw new ForbiddenException(ONLY_AN_OWNER_CHANGES_AN_OWNER);
       }
       if (outside.length > 0) {
         throw new ForbiddenException(
@@ -461,12 +444,7 @@ export class RolesService {
         members.length > 0 &&
         (await countOwners(tx, organizationId)) <= members.length
       ) {
-        throw new ConflictException(
-          t({
-            id: 'users.lastOwnerChange',
-            defaultMessage: 'Transfer ownership before changing this role',
-          }),
-        );
+        throw new ConflictException(LAST_OWNER_CHANGE);
       }
 
       const moved: MovedMember[] = [];
@@ -596,21 +574,14 @@ async function holdersOf(
     )
     .orderBy(asc(users.name), asc(users.id));
 
-  const held = await rolesOfMembers(
+  const held = await grantingRolesOfMembers(
     tx,
     rows.map((row) => row.membershipId),
   );
-  return Promise.all(
-    rows.map(async (row) => ({
-      ...row,
-      roles:
-        (await grantingRoles(
-          tx,
-          organizationId,
-          (held.get(row.membershipId) ?? []).map((role) => role.id),
-        )) ?? [],
-    })),
-  );
+  return rows.map((row) => ({
+    ...row,
+    roles: held.get(row.membershipId) ?? [],
+  }));
 }
 
 /**

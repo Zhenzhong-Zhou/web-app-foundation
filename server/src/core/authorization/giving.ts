@@ -1,10 +1,15 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
 import { memberships, roles } from '../../database/schema';
 import { t, type Translatable } from '../../i18n/translate';
-import { grantsOf, grantsOfMember, type HeldRole } from './member-roles';
+import {
+  grantsOf,
+  grantsOfMember,
+  type HeldRole,
+  rolesOfMembers,
+} from './member-roles';
 import { holdsOwner, isOwnerRole } from './owner';
 import type { Permission } from './permissions';
 import { roleName } from './role-words';
@@ -34,15 +39,30 @@ export async function giverHolds(
   return new Set(await grantsOfMember(tx, membershipId));
 }
 
+/** ADR-016's Owner refusals, which keep their words (ADR-080). */
+export const ONLY_AN_OWNER_GIVES_OWNER = t({
+  id: 'users.ownerAssign',
+  defaultMessage: 'Only an Owner can assign the Owner role',
+});
+export const ONLY_AN_OWNER_CHANGES_AN_OWNER = t({
+  id: 'users.ownerChange',
+  defaultMessage: "Only an Owner can change an Owner's role",
+});
+export const LAST_OWNER_CHANGE = t({
+  id: 'users.lastOwnerChange',
+  defaultMessage: 'Transfer ownership before changing this role',
+});
+
 /**
  * These roles of the organization's, with what each grants, in the order
- * asked; undefined for an id it has none of, which the caller refuses.
+ * asked. An id it has none of is malformed, as a body naming another
+ * organization's record is (400).
  */
 export async function grantingRoles(
   tx: Transaction,
   organizationId: string,
   roleIds: readonly string[],
-): Promise<GrantingRole[] | undefined> {
+): Promise<GrantingRole[]> {
   if (roleIds.length === 0) return [];
   const found = await tx
     .select({
@@ -58,7 +78,11 @@ export async function grantingRoles(
         inArray(roles.id, [...roleIds]),
       ),
     );
-  if (found.length !== new Set(roleIds).size) return undefined;
+  if (found.length !== new Set(roleIds).size) {
+    throw new BadRequestException(
+      t({ id: 'users.unknownRole', defaultMessage: 'Unknown role' }),
+    );
+  }
 
   const granted = await grantsOf(
     tx,
@@ -72,10 +96,32 @@ export async function grantingRoles(
 }
 
 /**
+ * Each member's roles, with what each grants, read in two queries however
+ * many members there are: the roles, then the grants of all of them.
+ */
+export async function grantingRolesOfMembers(
+  tx: Transaction,
+  membershipIds: readonly string[],
+): Promise<Map<string, GrantingRole[]>> {
+  const held = await rolesOfMembers(tx, membershipIds);
+  const granted = await grantsOf(tx, [
+    ...new Set([...held.values()].flat().map((role) => role.id)),
+  ]);
+  return new Map(
+    [...held].map(([membershipId, roles]) => [
+      membershipId,
+      roles.map((role) => ({
+        ...role,
+        permissions: granted.get(role.id) ?? [],
+      })),
+    ]),
+  );
+}
+
+/**
  * The roles a member is to hold, or an invitation to name (ADR-080): each
  * this organization's, and Owner alone, since it already holds
- * everything. Malformed otherwise, as a body naming another
- * organization's record is (400).
+ * everything. Malformed otherwise (400).
  */
 export async function rolesToGive(
   tx: Transaction,
@@ -83,11 +129,6 @@ export async function rolesToGive(
   roleIds: readonly string[],
 ): Promise<GrantingRole[]> {
   const given = await grantingRoles(tx, organizationId, roleIds);
-  if (!given) {
-    throw new BadRequestException(
-      t({ id: 'users.unknownRole', defaultMessage: 'Unknown role' }),
-    );
-  }
   if (includesOwner(given) && given.length > 1) {
     throw new BadRequestException(
       t({
@@ -98,6 +139,25 @@ export async function rolesToGive(
     );
   }
   return given;
+}
+
+/**
+ * Refuses to give roles beyond what the giver holds: Owner in ADR-016's
+ * words, any other by name (cannotGive), unless the caller words it.
+ */
+export function refuseBeyond(
+  held: ReadonlySet<Permission>,
+  given: readonly GrantingRole[],
+  refusals: {
+    owner: Translatable;
+    beyond: (roles: readonly GrantingRole[]) => Translatable;
+  } = { owner: ONLY_AN_OWNER_GIVES_OWNER, beyond: cannotGive },
+): void {
+  const outside = beyond(held, given);
+  if (includesOwner(outside)) throw new ForbiddenException(refusals.owner);
+  if (outside.length > 0) {
+    throw new ForbiddenException(refusals.beyond(outside));
+  }
 }
 
 /** The roles among these that grant something the giver does not hold. */
