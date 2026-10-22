@@ -1848,13 +1848,15 @@ The pages, in a private window unless a check says otherwise.
   everyone to…, and the page behind lists them.
 - **MC-3312** *(ADR-080)* Members with several roles. As the demo Owner,
   Settings → Members: its line says a member can hold several roles, and
-  Roles opens Settings → Roles. Each member's roles stand side by side,
-  a built-in one plain and one made here on the accent's tint (Tom Becker:
-  Warehouse; Fatima Haddad: Sales). Each row has More for … with Change
-  roles, and Remove from the organization on every row but your own. As
-  Chloé Tremblay (Viewer), no row has a menu. At 390 px in 中文 each member
-  is a card, with the face, the name, the address, the roles and
-  「… 的更多操作」, and nothing scrolls sideways at Larger text.
+  Roles opens Settings → Roles. Each member's roles stand side by side, a
+  built-in one a plain pill and one made here on the accent's tint with
+  square corners (Tom Becker: Warehouse; Fatima Haddad: Sales), told apart
+  by their shape with the colours off too (the system's greyscale or colour
+  filters). Each row has More for … with Change roles, and Remove from the
+  organization on every row but your own. As Chloé Tremblay (Viewer), no row
+  has a menu. At 390 px in 中文 each member is a card, with the face, the
+  name, the address, the roles and 「… 的更多操作」, and nothing scrolls sideways
+  at Larger text.
 - **MC-3313** *(ADR-080)* Change roles. As Daniel Okafor (Admin), More for
   Chloé Tremblay, then Change roles: the dialog lists every role with its
   line; Owner is off with Only an Owner can make someone an Owner., and
@@ -1997,10 +1999,10 @@ The pages, in a private window unless a check says otherwise.
   Getting started's Invite your team says each with their roles.
 - **MC-3327** *(ADR-080)* People shows roles as Members does. As the demo
   Owner, give Tom Becker Sales as well as Warehouse, then open People: his
-  card has Warehouse and Sales side by side, on the accent's tint as made
-  roles are on Members, and Chloé Tremblay's Viewer plain; at 390 px they
-  wrap under his name rather than widen the card. Tom's own page shows
-  the same two, a little apart.
+  card has Warehouse and Sales side by side, square-cornered on the accent's
+  tint as made roles are on Members, and Chloé Tremblay's Viewer a plain
+  pill; at 390 px they wrap under his name rather than widen the card. Tom's
+  own page shows the same two, a little apart.
 
 ## Regressions
 
@@ -2579,3 +2581,5 @@ first.
 - 2026-10-21: MC-3309's Raise an order ticks what the editor says it does.
 - 2026-10-21: an invitation you cannot resend, and a role with nowhere to
   move its holders, say an Owner can: MC-3317 changed.
+- 2026-10-21: a made role's chip told from a built-in one by its shape,
+  not by colour alone (WCAG 1.4.1): MC-3312 and MC-3327 changed.
