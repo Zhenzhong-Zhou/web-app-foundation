@@ -1811,10 +1811,13 @@ The pages, in a private window unless a check says otherwise.
   that area's boxes, and anything elsewhere that needs them. Name it
   sales: refused under Name, There’s already a role called sales.; admin:
   Admin is a built-in role. Choose another name. Name it Dock crew, Save
-  role: Dock crew's page, Nobody holds Dock crew. Make a copy on Viewer's
-  page: Start from is A copy of a role, Viewer, its boxes Viewer's, Name
-  Viewer (copy). In Français and 中文 the boxes read in that language, and
-  the summary as Your access would.
+  role: Dock crew's page, Nobody holds Dock crew. Give it to someone on
+  Members., Members a link to Members; in Français Attribuez-le à
+  quelqu’un dans Membres., in 中文 可以在成员页面把它授予某人。 As Tom
+  Becker, who changes no roles, the page says Nobody holds … alone. Make a
+  copy on Viewer's page: Start from is A copy of a role, Viewer, its boxes
+  Viewer's, Name Viewer (copy). In Français and 中文 the boxes read in that
+  language, and the summary as Your access would.
 - **MC-3310** *(ADR-080)* Changing a role, and two at once. Edit Dock
   crew, tick Correct a count, then go to Roles in the menu: Leave without
   saving? asks first; Stay keeps the change. In another browser, as a
@@ -2510,3 +2513,5 @@ first.
   change the reader's roles, as a refusal does: MC-3325.
 - 2026-10-21: a role you cannot give says an Owner can: MC-3313 and
   MC-3316 changed.
+- 2026-10-21: a role nobody holds says where to give it: MC-3309
+  extended.

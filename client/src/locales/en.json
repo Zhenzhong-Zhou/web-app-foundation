@@ -1637,6 +1637,7 @@
   "roles.editor.unsaved": "{named, select, yes {Your changes to {role} aren’t saved yet.} other {The role you’re making isn’t saved yet.}}",
   "roles.editor.viewPrices": "Without it, orders show no prices and their PDFs can’t be opened. Packing slips never show prices.",
   "roles.heldBy.count": "{count, plural, =0 {Nobody} one {# member} other {# members}}",
+  "roles.holders.give": "Give it to someone on <link>Members</link>.",
   "roles.holders.heading": "Held by <muted>{count}</muted>",
   "roles.holders.none": "Nobody holds {role}.",
   "roles.holders.roles": "Their roles",

@@ -1637,6 +1637,7 @@
   "roles.editor.unsaved": "{named, select, yes {您对{role}的更改尚未保存。} other {您正在新建的角色尚未保存。}}",
   "roles.editor.viewPrices": "没有此项时，订单不显示价格，也不能打开订单的 PDF。装箱单从不显示价格。",
   "roles.heldBy.count": "{count, plural, =0 {无人} other {# 名成员}}",
+  "roles.holders.give": "可以在<link>成员</link>页面把它授予某人。",
   "roles.holders.heading": "持有者 <muted>{count}</muted>",
   "roles.holders.none": "没有人持有{role}。",
   "roles.holders.roles": "其角色",

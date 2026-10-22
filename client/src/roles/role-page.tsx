@@ -102,6 +102,7 @@ export function RolePage() {
     ),
   ];
   const mayMove = can('roles.assign') && role.holderCount > 0;
+  const mayGive = can('roles.assign') && role.mayGive;
 
   return (
     <Stack spacing={3}>
@@ -235,7 +236,7 @@ export function RolePage() {
         </Section>
       )}
 
-      <Holders role={role} phone={phone} />
+      <Holders role={role} phone={phone} mayGive={mayGive} />
 
       {mayMove && roles && (
         <MoveEveryoneDialog
@@ -293,8 +294,19 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/** Who holds the role, each with every role they hold. */
-function Holders({ role, phone }: { role: RoleDetail; phone: boolean }) {
+/**
+ * Who holds the role, each with every role they hold. Held by nobody, as
+ * a role just made is, it says where to give it, to whoever may.
+ */
+function Holders({
+  role,
+  phone,
+  mayGive,
+}: {
+  role: RoleDetail;
+  phone: boolean;
+  mayGive: boolean;
+}) {
   const intl = useIntl();
   const headingId = useId();
   const name = nameOf(role);
@@ -356,6 +368,26 @@ function Holders({ role, phone }: { role: RoleDetail; phone: boolean }) {
                 defaultMessage: 'Nobody holds {role}.',
               },
               { role: name },
+            )}
+            {mayGive && (
+              <>
+                {' '}
+                <FormattedMessage
+                  id="roles.holders.give"
+                  defaultMessage="Give it to someone on <link>Members</link>."
+                  values={{
+                    link: (chunks: ReactNode[]) => (
+                      <Link
+                        component={RouterLink}
+                        to="/members"
+                        underline="always"
+                      >
+                        {chunks}
+                      </Link>
+                    ),
+                  }}
+                />
+              </>
             )}
           </Typography>
         </Stack>
