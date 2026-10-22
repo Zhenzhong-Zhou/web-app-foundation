@@ -53,7 +53,7 @@ import {
 } from '../lib/validation';
 import { rem } from '../theme/rem';
 import { PermissionArea } from './permission-area';
-import { startingWith, tick, untick } from './role-grants';
+import { lockedIn, offered, startingWith, tick, untick } from './role-grants';
 import { nameOf, ROLE_WORDS, useQuoted } from './role-words';
 import { type Start, StartFrom } from './start-from';
 
@@ -126,7 +126,6 @@ export function EditRolePage() {
   const can = useCan();
   const { id = '' } = useParams();
   const catalogue = useResource<RoleCatalogue>('/roles/catalogue');
-  const roles = useResource<Role[]>('/roles');
   const role = useResource<RoleDetail>(`/roles/${id}`);
   // Read again after someone else's save: the editor starts again from it.
   const [version, setVersion] = useState(0);
@@ -149,9 +148,10 @@ export function EditRolePage() {
       />
     );
   }
-  const failed = catalogue.error ?? roles.error;
-  if (failed) return <Alert severity="error">{failed}</Alert>;
-  if (!catalogue.data || !roles.data || !role.data) return <Waiting />;
+  if (catalogue.error) {
+    return <Alert severity="error">{catalogue.error}</Alert>;
+  }
+  if (!catalogue.data || !role.data) return <Waiting />;
   if (role.data.builtIn) {
     return <Navigate to={`/settings/roles/${role.data.id}`} replace />;
   }
@@ -159,7 +159,8 @@ export function EditRolePage() {
     <RoleEditor
       key={`role-${version}`}
       catalogue={catalogue.data}
-      roles={roles.data}
+      // Start from, which alone reads the roles, is for making one.
+      roles={[]}
       editing={role.data}
       copyId={null}
       onReload={async () => {
@@ -193,9 +194,7 @@ function openAreas(
   catalogue: readonly CataloguePermission[],
   granted: ReadonlySet<Permission>,
 ): Set<Area> {
-  const locked = new Set(
-    catalogue.filter((each) => each.locked).map((each) => each.key),
-  );
+  const locked = lockedIn(catalogue);
   return new Set(
     AREAS.filter((area) =>
       permissionsIn(area).some((key) => granted.has(key) && !locked.has(key)),
@@ -366,9 +365,7 @@ function RoleEditor({
   }
 
   function wholeArea(area: Area, ticked: boolean) {
-    const keys = permissionsIn(area).filter((key) =>
-      permissions.some((each) => each.key === key && each.offered),
-    );
+    const keys = permissionsIn(area).filter((key) => offered(permissions, key));
     const change = ticked
       ? tick(permissions, granted, keys)
       : untick(permissions, granted, keys);

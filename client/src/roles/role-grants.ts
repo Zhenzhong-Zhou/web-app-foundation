@@ -40,9 +40,7 @@ export function untick(
   granted: ReadonlySet<Permission>,
   keys: readonly Permission[],
 ): Change {
-  const locked = new Set(
-    catalogue.filter((each) => each.locked).map((each) => each.key),
-  );
+  const locked = lockedIn(catalogue);
   const next = new Set(granted);
   const waiting = keys.filter((key) => !locked.has(key));
   for (let key = waiting.pop(); key; key = waiting.pop()) {
@@ -64,11 +62,17 @@ export function startingWith(
   return tick(
     catalogue,
     new Set(),
-    [
-      ...catalogue.filter((each) => each.locked).map((each) => each.key),
-      ...keys,
-    ].filter((key) => offered(catalogue, key)),
+    [...lockedIn(catalogue), ...keys].filter((key) => offered(catalogue, key)),
   ).granted;
+}
+
+/** The three every role holds, ticked and locked. */
+export function lockedIn(
+  catalogue: readonly CataloguePermission[],
+): Set<Permission> {
+  return new Set(
+    catalogue.filter((each) => each.locked).map((each) => each.key),
+  );
 }
 
 /**
