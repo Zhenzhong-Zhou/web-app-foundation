@@ -571,6 +571,12 @@ with this one, this one is current.
 
 ### Still to do, in code
 
+- **The brand's next PR** (Panivo, 品桥 in Chinese). `brand-name-and-icon`
+  gave the tab its icon and every tab the name `VITE_APP_NAME` sets, in
+  every language, so in 中文 Inventory's reads 库存 · Panivo. Waiting
+  for that PR: the mark at sign-in and in the rail, the tab's name by
+  language (品桥 in 中文), and the brand's colours. The masters are in
+  `docs/brand/`.
 - **ADR-079's limits.** Help still slides over the page in windows under
   about 1140 px, or under about 1265 px at Large text and 1330 px at
   Larger, where a control under it can be focused out of sight (WCAG

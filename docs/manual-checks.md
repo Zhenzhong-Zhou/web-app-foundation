@@ -2293,8 +2293,8 @@ a private window.
   picture of the page. On Android, Chrome → ⋮ → Add to home screen: the P
   again, not a letter Chrome made up.
 - **MC-3502** The name in the tab. The sign-in page's tab reads Panivo,
-  and so does Home's. Inventory's reads Inventory · Panivo, and every page
-  in the rail ends the same way, Settings → Organization too; an order,
+  and so does Home's. Inventory's reads Inventory · Panivo, and every other
+  page in the rail ends the same way, Settings → Organization too; an order,
   SO-DEMO-1 · Orders. In 中文 the page's name is Chinese and Panivo stays
   as it is. Bookmark Inventory: the bookmark says Inventory · Panivo.
   Empty `VITE_APP_NAME` and restart: every tab ends web-app-foundation,
