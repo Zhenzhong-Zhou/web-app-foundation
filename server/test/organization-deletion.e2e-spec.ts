@@ -28,11 +28,14 @@ import {
   accountEvents,
   auditLog,
   files,
+  membershipRoles,
+  memberships,
   organizations,
   roles,
   sessions,
   users,
 } from '../src/database/schema';
+import english from '../src/i18n/en.json';
 import french from '../src/i18n/fr-CA.json';
 import {
   addMember,
@@ -201,6 +204,60 @@ describe('Organization deletion (e2e)', () => {
       const kept = [...zip.keys()].filter((name) => name.startsWith('files/'));
       expect(kept).toEqual([`files/${logo.id}-${logo.original_name}`]);
       expect(zip.get(kept[0])!.length).toBeGreaterThan(0);
+    });
+
+    it('writes who holds which role by id in membership_roles.csv, a comma in a role’s name and all (#180)', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const owner = await roleIdNamed(app, alpha.organizationId, 'Owner');
+      // Read from members.csv alone, "Owner, Sales, North" could be three
+      // roles as well as two.
+      const made = await customRole(app, alpha.organizationId, 'Sales, North', [
+        'stock.view',
+      ]);
+      const [membership] = await db
+        .select({ id: memberships.id })
+        .from(memberships)
+        .where(eq(memberships.userId, alpha.userId));
+      await db.insert(membershipRoles).values({
+        organizationId: alpha.organizationId,
+        membershipId: membership.id,
+        roleId: made,
+      });
+
+      const zip = await exportOf(alpha.agent);
+
+      const held = readCsv(zip.get('membership_roles.csv')!);
+      // Every column as stored, but the member by the user_id members.csv
+      // carries rather than a membership_id no file does.
+      expect(Object.keys(held[0])).toEqual([
+        'id',
+        'organization_id',
+        'user_id',
+        'role_id',
+        'created_at',
+      ]);
+      const inOrder = [owner, made].sort();
+      expect(held.map((row) => [row.user_id, row.role_id])).toEqual(
+        inOrder.map((role) => [alpha.userId, role]),
+      );
+
+      // Each joins: the member to members.csv, the role to roles.csv.
+      const [member] = readCsv(zip.get('members.csv')!);
+      expect(member.user_id).toBe(alpha.userId);
+      const names = new Map(
+        readCsv(zip.get('roles.csv')!).map((row) => [row.id, row.name]),
+      );
+      expect(held.map((row) => names.get(row.role_id))).toEqual(
+        inOrder.map((role) => (role === owner ? 'Owner' : 'Sales, North')),
+      );
+      // members.csv still names them, for reading, in the same order.
+      expect(member.role).toBe(
+        held.map((row) => names.get(row.role_id)).join(', '),
+      );
+
+      expect(zip.get('README.txt')!.toString('utf8')).toContain(
+        english['organization.export.glossary.memberRoles'],
+      );
     });
 
     it('writes a built-in role’s line in its language, and a made role’s as written (ADR-080)', async () => {

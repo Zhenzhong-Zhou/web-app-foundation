@@ -1703,7 +1703,8 @@ The pages, in a private window unless a check says otherwise.
   demo Owner, Download everything: `members.csv` names each member's role
   as Members does; `invitations.csv` has no `role_id`, and
   `invitation_roles.csv` names each invitation's role by `invitation_id`
-  and `role_id`, as the README's glossary says, in English, Français and
+  and `role_id`, and `membership_roles.csv` each member's by `user_id` and
+  `role_id`, as the README's glossary says, in English, Français and
   中文.
 - **MC-3302** *(ADR-080)* Prices on orders, a permission of their own now,
   change nothing for the built-in roles. Run `npm run seed` in `server/`,
@@ -2308,6 +2309,16 @@ a private window.
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R50** *(each member's roles in the export, #180)* As the demo
+  Owner, make a role named Sales, North in Settings → Roles, give it to a
+  member beside the role they hold, then Download everything:
+  `members.csv` names both in that member's `role` column, and
+  `membership_roles.csv` has a row for each, by `user_id` and `role_id`,
+  one of them the id `roles.csv` names Sales, North: two roles, where the
+  column alone could as well be three. The README's glossary says to count
+  and join by `membership_roles.csv`, in English, Français and 中文. Found
+  by `/code-review` on #176.
 
 - **MC-R48** *(typographic apostrophes in English, #184)* In English, as
   Tom Becker open a sale's invoice by its address, as MC-3320 does: You
@@ -3028,3 +3039,5 @@ first.
   MC-R47.
 - 2026-10-23: #184, typographic apostrophes in English, and the
   catalogues' check holding them: MC-R48.
+- 2026-10-23: #180, each member's roles in `membership_roles.csv`:
+  MC-3301 extended, and MC-R50.

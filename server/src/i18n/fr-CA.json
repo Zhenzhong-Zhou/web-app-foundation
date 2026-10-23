@@ -730,6 +730,7 @@
   "organization.export.glossary.issued": "issued_at, voided_at, void_reason — quand le document a été émis, quand il a été annulé, et pourquoi.",
   "organization.export.glossary.language": "language, second_language — les langues dans lesquelles le document s’imprime : en, fr-CA ou zh-Hans.",
   "organization.export.glossary.lots": "lot_id, code, expires_at — un lot de marchandises, le code imprimé dessus et sa date d’expiration.",
+  "organization.export.glossary.memberRoles": "Dans membership_roles.csv, les rôles de chaque membre, une ligne pour chacun : user_id, le membre dans members.csv, et role_id, le rôle dans roles.csv. La colonne role de members.csv les nomme pour la lecture, séparés par des virgules, que le nom d’un rôle peut aussi contenir : comptez et joignez à partir de membership_roles.csv.",
   "organization.export.glossary.movements": "from_location_id, to_location_id, reason — dans stock_movements.csv, d’où le stock est parti, où il est arrivé, et pourquoi.",
   "organization.export.glossary.number": "number — le numéro imprimé sur le document, comme INV-000001 ou CN-000001.",
   "organization.export.glossary.numbering": "document_numbering, document_sequences — comment chaque type de document est numéroté, et le compteur de chaque année, mois ou jour; un numéro déjà attribué reste sur son document.",
