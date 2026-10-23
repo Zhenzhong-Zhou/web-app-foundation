@@ -2309,6 +2309,13 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R53** *(options under a heading, a group of their list, #196)* In
+  the search box type DEMO; in Chrome's DevTools, Accessibility, the list
+  holds a group named Orders with its results in it as options, and one
+  group for each other heading. Settings → Organization's time zone list
+  holds This device and All time zones the same way. Both look as before.
+  Found by #196's axe pass.
+
 - **MC-R49** *(colours given as a path, #196)* In light and in dark:
   Home's detail lines, SO-DEMO-1's notes under its figures (not counting 1
   voided shipment) and the bell's times are grey, not the main text
@@ -3044,3 +3051,5 @@ first.
   catalogues' check holding them: MC-R48.
 - 2026-10-23: #196, colours given as a path drawn again, grey and amber:
   MC-R49.
+- 2026-10-23: #196's comparison, options under a heading as a group of
+  their list: MC-R53.

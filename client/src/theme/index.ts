@@ -4,11 +4,13 @@ import {
   type Theme,
   type ThemeOptions,
 } from '@mui/material/styles';
+import { createElement } from 'react';
 
 import type { Locale } from '../lib/locales';
 import { returnFocus } from '../lib/open-dialog';
 import { VersionPaper } from '../version/version-paper';
 import { type Brand, DEFAULT_BRAND } from './brand-store';
+import { OptionGroup } from './option-group';
 import { rem } from './rem';
 import {
   CHOSEN_WEIGHT,
@@ -302,8 +304,14 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
      * An option under the pointer or the keyboard, and the one chosen: in
      * the lookup and the pickers, their secondary lines in the main text
      * colour (mutedAsMain). A bell entry the keyboard is on, likewise.
+     *
+     * Options under a heading are the listbox's group, named by it
+     * (option-group.tsx): the lookup's kinds, the time zone's This device.
      */
     MuiAutocomplete: {
+      defaultProps: {
+        renderGroup: (params) => createElement(OptionGroup, params),
+      },
       styleOverrides: {
         option: ({ theme }) => ({
           '&.Mui-focused, &[aria-selected="true"]': mutedAsMain(theme),

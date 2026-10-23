@@ -1,6 +1,6 @@
 import { Autocomplete, Menu, MenuItem, TextField } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
@@ -53,6 +53,35 @@ describe('muted text on a focused or selected entry', () => {
     );
     expect(mutedIn(screen.getByRole('menuitem', { name: 'Shipped' }))).not.toBe(
       MAIN,
+    );
+  });
+});
+
+// The listbox, its groups and their options, as WAI-ARIA's grouped listbox
+// has them; MUI's own took the options out of the listbox (#196).
+describe('options under a heading', () => {
+  it('are a group of the listbox, named by the heading', async () => {
+    render(
+      <ThemeProvider theme={themeFor('en')}>
+        <Autocomplete
+          options={['Paris', 'Lyon', 'Tokyo']}
+          groupBy={(city) => (city === 'Tokyo' ? 'Japan' : 'France')}
+          renderInput={(params) => <TextField {...params} label="City" />}
+        />
+      </ThemeProvider>,
+    );
+    await userEvent.click(screen.getByRole('combobox', { name: 'City' }));
+
+    const france = within(screen.getByRole('listbox')).getByRole('group', {
+      name: 'France',
+    });
+    expect(
+      within(france)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['Paris', 'Lyon']);
+    expect(screen.getByRole('group', { name: 'Japan' })).toContainElement(
+      screen.getByRole('option', { name: 'Tokyo' }),
     );
   });
 });
