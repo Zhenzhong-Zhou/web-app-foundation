@@ -126,6 +126,15 @@ describe('a page’s read refused', () => {
     );
   }
 
+  /**
+   * Until the page has set its minute's retry (#206). It is set in an
+   * effect, which React runs in a task after the heading is drawn, so on a
+   * slow runner a clock advanced as soon as the heading shows passes before
+   * the interval exists, and nothing ever reads again. The retry is the
+   * only interval these pages set.
+   */
+  const retryArmed = () => vi.waitFor(() => expect(vi.getTimerCount()).toBe(1));
+
   it('as outdated, with the new version out: the new version page where the page would be', async () => {
     deployed();
     server.use(http.get('/api/v1/products', () => outdatedRefusal()));
@@ -180,6 +189,7 @@ describe('a page’s read refused', () => {
     expect(
       screen.getByText('This page tries again by itself in a minute.'),
     ).toBeVisible();
+    await retryArmed();
 
     // The API has deployed.
     server.use(http.get('/api/v1/products', () => HttpResponse.json([])));
@@ -204,6 +214,10 @@ describe('a page’s read refused', () => {
       name: 'A new version is being installed',
     });
     expect(reads).toBe(1);
+    // It listens for the tab in the same effect: hidden and shown again
+    // before that has run, the page starts as on opening, without the read
+    // that coming back makes.
+    await retryArmed();
 
     const showTab = (state: DocumentVisibilityState) => {
       vi.spyOn(document, 'visibilityState', 'get').mockReturnValue(state);
@@ -212,6 +226,7 @@ describe('a page’s read refused', () => {
       });
     };
     showTab('hidden');
+    expect(vi.getTimerCount()).toBe(0);
     act(() => vi.advanceTimersByTime(5 * 60_000));
     expect(reads).toBe(1);
 
