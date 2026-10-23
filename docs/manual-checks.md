@@ -2275,6 +2275,24 @@ as `docs/runbooks/render.md`, "Deploys", has them.
   the rail loads in full, and Help's foot names the commit `/api/health`
   names (MC-3405).
 
+## 35. The product's name and icon
+
+The name is a setting, `VITE_APP_NAME=Panivo`: in the repository's `.env`
+locally (restart `npm run dev` after changing it), and in the static
+site's environment on Render, read when it builds. The icon's masters are
+in `docs/brand/`. Browsers keep an icon long after it changes, so check in
+a private window.
+
+- **MC-3501** The icon. On a computer, open the app in Chrome, Edge,
+  Firefox and Safari: the tab shows the P, a navy stem and a purple bowl,
+  sharp at the tab's size. With the system in dark mode, reload: the stem
+  turns white and the bowl a lighter purple, except in Safari before 26,
+  which draws the ICO and keeps the colours of light mode. Bookmark the
+  page: the bookmark shows the same P. On an iPhone, Safari → Share → Add
+  to Home Screen: the P on white in the iPhone's rounded square, not a
+  picture of the page. On Android, Chrome → ⋮ → Add to home screen: the P
+  again, not a letter Chrome made up.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -2930,3 +2948,5 @@ first.
   rewritten, and MC-R42.
 - 2026-10-23: ADR-081's review, secondary text drawn grey where this
   branch added it (R6): MC-3407 extended; MC-3405 now holds.
+- 2026-10-23: the product's icon in the tab, and its masters in
+  `docs/brand/`: section 35, MC-3501.
