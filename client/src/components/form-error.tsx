@@ -4,6 +4,7 @@ import { useIntl } from 'react-intl';
 
 import { reloadPage } from '../version/reload-page';
 import { useNewVersion } from '../version/version-check';
+import { ReferencesWhole } from './reference';
 
 /**
  * The error line above a form's fields.
@@ -48,7 +49,11 @@ export function FormError({
         defaultMessage: 'Error',
       })}
     >
-      <span id={id}>{message}</span>
+      {/* Usually the server's words, a refusal naming SO-DEMO-1 or a SKU:
+          their references kept whole by their hyphens (ADR-081). */}
+      <span id={id}>
+        <ReferencesWhole text={message} />
+      </span>
       {/* Only when something is there: several conditional children are an
           array, truthy even when every one is false. */}
       {(Children.toArray(children).length > 0 || reload) && (

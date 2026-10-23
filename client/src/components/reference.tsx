@@ -43,10 +43,10 @@ const HYPHENATED =
 
 /**
  * Words the server finished, where nothing marks which is the reference: a
- * notification's title, a Home row's detail, the audit log, a toast. Each
- * word with a hyphen in it is kept whole as a Reference, so a date
- * (2026-10-22) and a hyphenated name (Saint-Laurent) are too, which loses
- * them nothing.
+ * notification's title, a Home row's detail, the audit log, a toast, a
+ * refusal. Each word with a hyphen in it is kept whole as a Reference, so a
+ * date (2026-10-22) and a hyphenated name (Saint-Laurent) are too, which
+ * loses them nothing.
  */
 export function ReferencesWhole({ text }: { text: string }) {
   // split() with a capturing group puts each match at an odd index.

@@ -2212,7 +2212,10 @@ words sit beside it; one alone, or first in its line, needs nothing.
   reference's SO-DEMO-1 to the next line whole when it must. Copy
   SO-DEMO-1 from Home and paste it into the lookup: it finds the order.
   With VoiceOver, a Home row reads as one line, SO-DEMO-1 among its words,
-  never split off on its own (MC-R38).
+  never split off on its own (MC-R38). A refusal the same: edit Harbour
+  Health, give it the code COOP-BSL and Save: Code COOP-BSL is already
+  used by another partner, wrapping between words, never inside COOP-BSL;
+  Cancel, and its code is still HARBOUR.
 
 ## Regressions
 
@@ -2826,3 +2829,5 @@ first.
   for #172's review.
 - 2026-10-22: ADR-081, references kept whole: MC-3422, and MC-R38 for
   Home's rows read aloud.
+- 2026-10-22: ADR-081, references kept whole in refusals: MC-3422
+  extended.
