@@ -7394,6 +7394,17 @@ twice and merged into one neither response matched, an account history
 the document called an object, columns typed as text that only ever
 held a known list, and rows sent whole across most modules.
 
+*Amended (#194):* `npm run api:spec` builds into `server/dist-openapi/`
+(`tsconfig.openapi.json`), not `dist/`. Both builds clean their output
+first, so with `npm run start:dev` running, each deleted what the other
+had just written: the dev server stopped on Cannot find module until it
+was restarted, and the script could lose its own file the same way. The
+directory sits beside `dist/`, so every path read from `__dirname` (the
+document written to `server/openapi.json`, `package.json`, the fonts)
+lands where it does in the app; its incremental state is kept inside it,
+and it emits no declarations, which `npm run typecheck` would read.
+`api-spec-build.spec.ts` holds the configuration to that.
+
 ---
 
 ## ADR-069 — Deleting your account, and leaving an organization (amends ADR-012)
