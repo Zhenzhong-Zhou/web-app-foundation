@@ -1,7 +1,13 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
+import { isCheckViolation } from '../../database/errors';
 import { contacts } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
@@ -44,52 +50,62 @@ export class PartnerContactsService {
   async create(partnerId: string, input: CreateContactDto) {
     await this.partners.findById(partnerId);
 
-    if (!input.isPrimary) {
-      const [created] = await this.tenantDb
-        .insert(contacts, { ...input, partnerId })
-        .returning();
+    try {
+      if (!input.isPrimary) {
+        const [created] = await this.tenantDb
+          .insert(contacts, { ...input, partnerId })
+          .returning();
 
-      this.logger.log(`Contact ${created.id} created for partner ${partnerId}`);
-      return created;
+        this.logger.log(
+          `Contact ${created.id} created for partner ${partnerId}`,
+        );
+        return created;
+      }
+
+      return await this.tenantDb.transaction(async (tx, organizationId) => {
+        await this.clearPrimary(tx, organizationId, partnerId);
+
+        const [created] = await tx
+          .insert(contacts)
+          .values({ ...input, partnerId, organizationId })
+          .returning();
+
+        this.logger.log(
+          `Contact ${created.id} created as primary for ${partnerId}`,
+        );
+        return created;
+      });
+    } catch (error) {
+      this.translate(error);
     }
-
-    return this.tenantDb.transaction(async (tx, organizationId) => {
-      await this.clearPrimary(tx, organizationId, partnerId);
-
-      const [created] = await tx
-        .insert(contacts)
-        .values({ ...input, partnerId, organizationId })
-        .returning();
-
-      this.logger.log(
-        `Contact ${created.id} created as primary for ${partnerId}`,
-      );
-      return created;
-    });
   }
 
   async update(partnerId: string, contactId: string, input: UpdateContactDto) {
     await this.findOwned(partnerId, contactId);
 
-    if (!input.isPrimary) {
-      await this.tenantDb.update(contacts, input, eq(contacts.id, contactId));
-      this.logger.log(`Contact ${contactId} updated`);
-      return;
+    try {
+      if (!input.isPrimary) {
+        await this.tenantDb.update(contacts, input, eq(contacts.id, contactId));
+        this.logger.log(`Contact ${contactId} updated`);
+        return;
+      }
+
+      await this.tenantDb.transaction(async (tx, organizationId) => {
+        await this.clearPrimary(tx, organizationId, partnerId);
+
+        await tx
+          .update(contacts)
+          .set(input)
+          .where(
+            and(
+              eq(contacts.organizationId, organizationId),
+              eq(contacts.id, contactId),
+            ),
+          );
+      });
+    } catch (error) {
+      this.translate(error);
     }
-
-    await this.tenantDb.transaction(async (tx, organizationId) => {
-      await this.clearPrimary(tx, organizationId, partnerId);
-
-      await tx
-        .update(contacts)
-        .set(input)
-        .where(
-          and(
-            eq(contacts.organizationId, organizationId),
-            eq(contacts.id, contactId),
-          ),
-        );
-    });
 
     this.logger.log(`Contact ${contactId} updated and made primary`);
   }
@@ -148,5 +164,23 @@ export class PartnerContactsService {
           eq(contacts.isPrimary, true),
         ),
       );
+  }
+
+  /**
+   * The database holds the rule, not the DTO: an update may send one of the
+   * two and rely on the other already stored, so only the row as written can
+   * say whether either is left (#138).
+   */
+  private translate(error: unknown): never {
+    if (isCheckViolation(error, 'contacts_reachable_check')) {
+      throw new BadRequestException(
+        t({
+          id: 'partners.giveEmailOrPhone',
+          defaultMessage:
+            'Give an email or a phone, so the contact can be reached',
+        }),
+      );
+    }
+    throw error;
   }
 }

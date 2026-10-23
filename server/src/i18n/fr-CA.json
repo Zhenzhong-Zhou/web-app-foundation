@@ -756,6 +756,7 @@
   "organizations.notFound": "Organisation introuvable",
   "organizations.secondNeedsFirst": "Une deuxième langue des documents exige une première",
   "partners.codeCodeUsedAnother": "Le code {code} est déjà utilisé par un autre partenaire",
+  "partners.giveEmailOrPhone": "Indiquez un courriel ou un téléphone, pour que le contact puisse être joint",
   "partners.makeAnotherAddressDefault": "Faites d’une autre adresse l’adresse par défaut avant de retirer celle-ci",
   "partners.suchAddress": "Adresse introuvable",
   "partners.suchContact": "Contact introuvable",

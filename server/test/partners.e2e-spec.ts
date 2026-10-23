@@ -507,21 +507,57 @@ describe('Partners (e2e)', () => {
       ).partner;
     }
 
-    it('requires an email or a phone', async () => {
+    it('requires an email or a phone, and says so in the reader’s language', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const created = await createPartnerIn(alpha);
+      const refused = {
+        en: 'Give an email or a phone, so the contact can be reached',
+        'fr-CA':
+          'Indiquez un courriel ou un téléphone, pour que le contact puisse être joint',
+        'zh-Hans': '请填写电子邮箱或电话，以便联系到对方',
+      };
 
       /**
        * Enforced by a check constraint, not by the DTO — an update may supply
        * one and rely on the other already being stored, so the rule cannot
-       * live in validation. A contact with neither is a name in a box.
+       * live in validation. A contact with neither is a name in a box, and
+       * the refusal is a 400 in words, never a 500 (#138).
        */
-      await alpha.agent
+      for (const [language, message] of Object.entries(refused)) {
+        const res = await alpha.agent
+          .post(`/v1/partners/${created.id}/contacts`)
+          .set('Accept-Language', language)
+          .send({ name: 'Unreachable Person' })
+          .expect(400);
+        expect(body<{ message: string }>(res).message).toBe(message);
+      }
+
+      const primary = await alpha.agent
         .post(`/v1/partners/${created.id}/contacts`)
-        .send({ name: 'Unreachable Person' })
-        .expect(500);
+        .send({ name: 'Unreachable Person', isPrimary: true })
+        .expect(400);
+      expect(body<{ message: string }>(primary).message).toBe(refused.en);
 
       expect(await db.select().from(contacts)).toHaveLength(0);
+
+      // An update that clears the last of the two, made primary or not.
+      const only = body<{ contact: { id: string } }>(
+        await alpha.agent
+          .post(`/v1/partners/${created.id}/contacts`)
+          .send(contact)
+          .expect(201),
+      ).contact;
+
+      for (const isPrimary of [false, true]) {
+        const res = await alpha.agent
+          .patch(`/v1/partners/${created.id}/contacts/${only.id}`)
+          .send({ email: null, isPrimary })
+          .expect(400);
+        expect(body<{ message: string }>(res).message).toBe(refused.en);
+      }
+
+      const [kept] = await db.select().from(contacts);
+      expect(kept).toMatchObject({ email: contact.email, isPrimary: false });
     });
 
     it('allows one person at two partners', async () => {
