@@ -14,6 +14,7 @@ import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 
 import type { Location, Partner, StockRow } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
+import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { groupedNumberMessage, nameAndCode, toApiDecimal } from '../lib/format';
@@ -269,17 +270,9 @@ export function MoveStockDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && (
-              <Alert
-                severity="error"
-                aria-label={intl.formatMessage({
-                  id: 'components.formError.label',
-                  defaultMessage: 'Error',
-                })}
-              >
-                {error}
-              </Alert>
-            )}
+            {/* Its references kept whole, and Reload for an outdated tab,
+                as every refusal's line has them (ADR-081). */}
+            {error && <FormError message={error} />}
 
             {/* Shown rather than chosen: the person is acting on the pile they
                 were looking at, and re-picking it invites acting on a

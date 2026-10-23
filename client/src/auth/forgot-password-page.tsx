@@ -3,9 +3,11 @@ import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { api, ApiError } from '../lib/api';
+import { api } from '../lib/api';
+import { useFailureWords } from '../lib/use-failure-words';
 import { EMAIL_MAX_LENGTH } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
+import { forgotMessageFor } from './auth-message';
 
 /**
  * Answers identically whether or not the address exists (ADR-017), so the UI
@@ -16,7 +18,9 @@ export function ForgotPasswordPage() {
   const intl = useIntl();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // A failure as it came, worded as the page renders (ADR-081).
+  const [error, setError] = useState<unknown>(null);
+  const errorWords = useFailureWords(error, forgotMessageFor);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: SubmitEvent) {
@@ -31,19 +35,8 @@ export function ForgotPasswordPage() {
       });
       setSent(true);
     } catch (caught) {
-      // Only transport and rate-limit failures reach here; a missing account
-      // is a 202 like any other.
-      setError(
-        caught instanceof ApiError && caught.status === 429
-          ? intl.formatMessage({
-              id: 'auth.forgot.tooManyRequests',
-              defaultMessage: 'Too many requests. Try again later.',
-            })
-          : intl.formatMessage({
-              id: 'common.serverUnreachable',
-              defaultMessage: 'Could not reach the server.',
-            }),
-      );
+      // A missing account is a 202 like any other, never a failure here.
+      setError(caught);
       setSubmitting(false);
     }
   }
@@ -81,7 +74,7 @@ export function ForgotPasswordPage() {
       })}
       onSubmit={handleSubmit}
     >
-      {error && <Alert severity="error">{error}</Alert>}
+      {errorWords && <Alert severity="error">{errorWords}</Alert>}
 
       <TextField
         id="email"

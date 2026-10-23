@@ -2123,8 +2123,8 @@ revision back afterwards: `git status` shows nothing changed.
   Products and `version.json` are read again at once. Orders → New
   order says the same in the form's place, never Could not load partners
   and products. In a private window, Sign in says A new version is being
-  installed. Try again in a minute; nothing was saved.; so does a photo
-  added on a product, in its row. Nothing signs
+  installed. Try again in a minute; nothing was saved.; so do Forgot your
+  password there, and a photo added on a product, in its row. Nothing signs
   out, and no page says Could not reach the server. The bell asks
   `unread-count` once more, is refused, and then asks nothing; put the
   revision back and reload, and it asks again each minute.
@@ -2223,7 +2223,9 @@ words sit beside it; one alone, or first in its line, needs nothing.
   never split off on its own (MC-R38). A refusal the same: edit Harbour
   Health, give it the code COOP-BSL and Save: Code COOP-BSL is already
   used by another partner, wrapping between words, never inside COOP-BSL;
-  Cancel, and its code is still HARBOUR.
+  Cancel, and its code is still HARBOUR. Inventory → a row's Ship out, for
+  more than can be taken while some is held for an order, the same: never
+  inside the SKU or the order's number.
 
 Home's tiles take as few rows as the page's width needs, shared evenly
 across them. The demo Owner has eight tiles; Daniel Okafor, an Admin,
@@ -2884,3 +2886,5 @@ first.
   S2, S5): MC-3412 and MC-3413 extended.
 - 2026-10-23: ADR-081's reviews, the image upload refused as api() refuses
   (S3): MC-3412 and MC-3413 extended.
+- 2026-10-23: ADR-081's reviews, refusals in words on Forgot your password
+  and in Move stock (R3, R5): MC-3412 and MC-3422 extended.

@@ -2,8 +2,10 @@ import { Box, Link } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import { forgotMessageFor } from '../auth/auth-message';
 import { useAuth } from '../auth/use-auth';
-import { api, ApiError } from '../lib/api';
+import { api } from '../lib/api';
+import { useFailureWords } from '../lib/use-failure-words';
 
 /**
  * The way on from a refused password, on a screen that confirms a change
@@ -24,7 +26,9 @@ export function ForgottenPasswordHint() {
   const { session } = useAuth();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // A failure as it came, worded as the hint renders (ADR-081).
+  const [error, setError] = useState<unknown>(null);
+  const errorWords = useFailureWords(error, forgotMessageFor);
   const confirmation = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -44,19 +48,8 @@ export function ForgottenPasswordHint() {
       });
       setSent(true);
     } catch (caught) {
-      // As the Forgot your password page says it: only a refused rate or
-      // an unreachable server can fail it.
-      setError(
-        caught instanceof ApiError && caught.status === 429
-          ? intl.formatMessage({
-              id: 'auth.forgot.tooManyRequests',
-              defaultMessage: 'Too many requests. Try again later.',
-            })
-          : intl.formatMessage({
-              id: 'common.serverUnreachable',
-              defaultMessage: 'Could not reach the server.',
-            }),
-      );
+      // Worded as the Forgot your password page words it.
+      setError(caught);
     } finally {
       setSending(false);
     }
@@ -103,9 +96,9 @@ export function ForgottenPasswordHint() {
       )}
       {/* On a line of its own, not joined by a space, which some
           languages do not put between sentences. */}
-      {error && (
+      {errorWords && (
         <Box component="span" sx={{ display: 'block' }}>
-          {error}
+          {errorWords}
         </Box>
       )}
     </>
