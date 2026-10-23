@@ -663,7 +663,7 @@ function Frame() {
 function UnverifiedBanner({ covered }: { covered: boolean }) {
   const intl = useIntl();
   const { session } = useAuth();
-  const { sent, sending, resend } = useResendConfirmation();
+  const { sent, sending, error, resend } = useResendConfirmation();
 
   if (!session || session.user.emailVerified || covered) return null;
 
@@ -699,6 +699,13 @@ function UnverifiedBanner({ covered }: { covered: boolean }) {
         id: 'layout.unverified.message',
         defaultMessage: 'Confirm your email address to secure your account.',
       })}
+      {/* Said, never swallowed (#190): a person told nothing waits for an
+          email that was never sent. Resend stays, to ask again. */}
+      {error && (
+        <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 600 }}>
+          {error}
+        </Typography>
+      )}
     </Alert>
   );
 }

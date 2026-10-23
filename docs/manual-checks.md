@@ -2309,6 +2309,15 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R44** *(Resend on the confirm-your-email banner, #190)* Signed in
+  unconfirmed, on any page but Home, block
+  `/api/v1/auth/verify-email/resend` in the browser's Network tab and
+  press Resend on the banner: under its line, Could not reach the server.,
+  and Resend still there, never Sent nor nothing at all. Unblock it, then
+  press Resend and reload three times over: the fourth within five
+  minutes says the server's own words about too many requests, in the
+  same place. Found by ADR-081's inventory.
+
 - **MC-R43** *(the bell's list that failed to load, #189)* With the API
   stopped, or `/api/v1/notifications` blocked in the browser's Network
   tab, open the bell: it says Could not load notifications., with Try
@@ -2972,3 +2981,5 @@ first.
   setting index.html's title reads: MC-3502.
 - 2026-10-23: #189, the bell's list that failed to load says so:
   MC-3412 and MC-3413 extended, and MC-R43.
+- 2026-10-23: #190, Resend on the confirm-your-email banner says why it
+  failed: MC-R44.
