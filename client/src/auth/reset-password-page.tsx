@@ -8,7 +8,8 @@ import {
 } from 'react-router-dom';
 
 import { PasswordField } from '../components/password-field';
-import { api, messageFor } from '../lib/api';
+import { api } from '../lib/api';
+import { useFailureWords } from '../lib/use-failure-words';
 import {
   looksLikeToken,
   PASSWORD_MAX_LENGTH,
@@ -33,7 +34,9 @@ export function ResetPasswordPage() {
   const token = params.get('token');
 
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  // A refusal as it came, worded as the page renders (ADR-081).
+  const [error, setError] = useState<unknown>(null);
+  const errorWords = useFailureWords(error);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: SubmitEvent) {
@@ -56,7 +59,7 @@ export function ResetPasswordPage() {
       // password just chosen is when a manager reliably captures it.
       navigate('/login', { replace: true });
     } catch (caught) {
-      setError(messageFor(caught));
+      setError(caught);
       setSubmitting(false);
     }
   }
@@ -93,7 +96,7 @@ export function ResetPasswordPage() {
       })}
       onSubmit={handleSubmit}
     >
-      {error && <Alert severity="error">{error}</Alert>}
+      {errorWords && <Alert severity="error">{errorWords}</Alert>}
 
       <PasswordField
         id="password"

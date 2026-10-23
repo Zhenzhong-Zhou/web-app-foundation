@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import type { Partner } from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
+import { deploy, outdatedRefusal } from '../test/version';
 import { CreateOrderPage } from './create-order-page';
 
 /**
@@ -92,5 +93,28 @@ describe('CreateOrderPage Deliver to', () => {
     await raise(user);
 
     expect(sent.body).toMatchObject({ deliverToId: null });
+  });
+});
+
+/**
+ * Its partners and products refused for this tab's API revision, as every
+ * page's read is (ADR-081): why, in the form's place, never "Could not load
+ * partners and products".
+ */
+describe('CreateOrderPage refused as outdated', () => {
+  it('says a new version is ready once it is out, with Reload', async () => {
+    server.use(http.get('/api/v1/partners', () => outdatedRefusal()));
+    await deploy({ urgent: true });
+    renderPage();
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'A new version is ready',
+      }),
+    ).toBeVisible();
+    expect(
+      screen.queryByText('Could not load partners and products.'),
+    ).toBeNull();
   });
 });

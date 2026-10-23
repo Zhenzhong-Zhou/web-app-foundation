@@ -22,7 +22,7 @@ import { StatusChip } from '../components/status-chip';
 import { UndoSnackbar } from '../components/undo-snackbar';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { useCoverUnverifiedBanner } from '../layout/use-cover-unverified-banner';
-import { api, isRevisionRefusal, messageFor } from '../lib/api';
+import { api, isRevisionRefusal } from '../lib/api';
 import { daysUntil } from '../lib/expiry';
 import { formatDay } from '../lib/format';
 import {
@@ -32,6 +32,7 @@ import {
 } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
 import { useExpiryDays } from '../lib/use-expiry-days';
+import { useFailureWords } from '../lib/use-failure-words';
 import { rem } from '../theme/rem';
 import { TYPE } from '../theme/tokens';
 import { evenRowsSx } from './even-rows';
@@ -66,9 +67,10 @@ function OrganizationHome() {
   const { session } = useAuth();
   const can = useCan();
   const [home, setHome] = useState<HomeResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  // The failure itself, for a refusal for this tab's API revision (ADR-081).
-  const [failure, setFailure] = useState<unknown>(null);
+  // A read's failure as it came, worded as the page renders (ADR-081), or
+  // the page's own words.
+  const [error, setError] = useState<unknown>(null);
+  const errorWords = useFailureWords(error);
   // The welcome just dismissed, a moment to undo it (ADR-079).
   const [undoing, setUndoing] = useState(false);
   const dismissing = useRef<Promise<unknown> | null>(null);
@@ -90,11 +92,9 @@ function OrganizationHome() {
       .then((response) => {
         setHome(response);
         setError(null);
-        setFailure(null);
       })
       .catch((caught: unknown) => {
-        setError(messageFor(caught));
-        setFailure(caught);
+        setError(caught);
       });
   }, []);
 
@@ -213,8 +213,8 @@ function OrganizationHome() {
     },
   ].filter((item): item is { to: string; label: string } => Boolean(item));
 
-  if (isRevisionRefusal(failure) && !home) {
-    return <RevisionRefusalPage failure={failure} onRetry={load} />;
+  if (!home && isRevisionRefusal(error)) {
+    return <RevisionRefusalPage failure={error} onRetry={load} />;
   }
 
   return (
@@ -325,7 +325,7 @@ function OrganizationHome() {
         </Typography>
       )}
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {errorWords && <Alert severity="error">{errorWords}</Alert>}
 
       {!home ? (
         <Skeleton variant="rounded" height={120} />

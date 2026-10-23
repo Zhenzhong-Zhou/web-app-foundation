@@ -22,10 +22,11 @@ import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
-import { api, isRevisionRefusal, messageFor } from '../lib/api';
+import { api, isRevisionRefusal } from '../lib/api';
 import { formatDay, formatQuantity } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useFailureWords } from '../lib/use-failure-words';
 import { ExchangeRateDialog } from './exchange-rate-dialog';
 
 /**
@@ -65,9 +66,10 @@ export function ExchangeRatesPage() {
   const intl = useIntl();
   const can = useCan();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  // The failure itself, for a refusal for this tab's API revision (ADR-081).
-  const [failure, setFailure] = useState<unknown>(null);
+  // A read's failure as it came, worded as the page renders (ADR-081), or
+  // the page's own words.
+  const [error, setError] = useState<unknown>(null);
+  const errorWords = useFailureWords(error);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<ExchangeRate | null>(null);
 
@@ -79,10 +81,8 @@ export function ExchangeRatesPage() {
     try {
       setLoaded(await fetchAll());
       setError(null);
-      setFailure(null);
     } catch (caught) {
-      setError(messageFor(caught));
-      setFailure(caught);
+      setError(caught);
     }
   }, []);
 
@@ -95,8 +95,7 @@ export function ExchangeRatesPage() {
       })
       .catch((caught: unknown) => {
         if (ignore) return;
-        setError(messageFor(caught));
-        setFailure(caught);
+        setError(caught);
       });
 
     return () => {
@@ -106,10 +105,8 @@ export function ExchangeRatesPage() {
 
   const baseCurrency = loaded?.baseCurrency ?? null;
 
-  if (isRevisionRefusal(failure) && !loaded) {
-    return (
-      <RevisionRefusalPage failure={failure} onRetry={() => void load()} />
-    );
+  if (!loaded && isRevisionRefusal(error)) {
+    return <RevisionRefusalPage failure={error} onRetry={() => void load()} />;
   }
 
   return (
@@ -145,7 +142,7 @@ export function ExchangeRatesPage() {
         }
       />
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {errorWords && <Alert severity="error">{errorWords}</Alert>}
 
       {loaded && !baseCurrency && (
         <Alert severity="info">

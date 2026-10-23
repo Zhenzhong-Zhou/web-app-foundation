@@ -26,7 +26,6 @@ import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { isRevisionRefusal } from '../lib/api';
 import { type DayRange, withDays } from '../lib/date-range';
 import { formatCredit, formatDay, NO_VALUE } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -60,7 +59,7 @@ export function CreditNotesPage() {
   const {
     entries: rows,
     error,
-    failure,
+    refused,
     loading,
     hasMore,
     loadingMore,
@@ -69,8 +68,8 @@ export function CreditNotesPage() {
   } = useKeysetList<CreditNoteSummary>(path);
   const showSkeleton = useDelayedFlag(loading);
 
-  if (isRevisionRefusal(failure) && !rows) {
-    return <RevisionRefusalPage failure={failure} onRetry={reload} />;
+  if (refused) {
+    return <RevisionRefusalPage failure={refused} onRetry={reload} />;
   }
 
   return (

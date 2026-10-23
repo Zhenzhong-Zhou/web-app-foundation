@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '../test/setup';
+import { deploy, OUTDATED, outdatedRefusal } from '../test/version';
 import { useKeysetList } from './use-keyset-list';
 
 type Row = { id: string };
@@ -249,5 +250,35 @@ describe('useKeysetList', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(result.current.entries).toBeNull();
     expect(result.current.hasMore).toBe(false);
+  });
+
+  /** An outdated tab's refusal (ADR-081), as useResource has it. */
+  describe('refused for this tab’s API revision', () => {
+    const INSTALLING =
+      'A new version is being installed. Try again in a minute; nothing was saved.';
+
+    it('reports a first page refused, with no rows to show', async () => {
+      server.use(http.get(`${BASE}/things`, () => outdatedRefusal()));
+
+      const { result } = renderHook(() => useKeysetList<Row>('/things'));
+
+      await waitFor(() => expect(result.current.refused).not.toBeNull());
+      expect(result.current.entries).toBeNull();
+    });
+
+    it('keeps the rows when Load more is refused, its words following the new version as it comes out', async () => {
+      pagedThings();
+      const { result } = renderHook(() => useKeysetList<Row>('/things'));
+      await waitFor(() => expect(result.current.hasMore).toBe(true));
+
+      server.use(http.get(`${BASE}/things`, () => outdatedRefusal()));
+      await act(() => result.current.loadMore());
+      expect(result.current.refused).toBeNull();
+      expect(ids(result.current.entries)).toEqual(['a1', 'a2']);
+      expect(result.current.error).toBe(INSTALLING);
+
+      await deploy({ urgent: true });
+      expect(result.current.error).toBe(OUTDATED);
+    });
   });
 });

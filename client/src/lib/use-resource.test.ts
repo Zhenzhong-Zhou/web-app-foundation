@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '../test/setup';
+import { deploy, OUTDATED, outdatedRefusal } from '../test/version';
 import { useResource } from './use-resource';
 
 type Thing = { id: string; name: string };
@@ -137,5 +138,45 @@ describe('useResource', () => {
 
     expect(result.current.error).toBe('That action was refused.');
     expect(result.current.data?.name).toBe('First');
+  });
+
+  /**
+   * An outdated tab's refusal (ADR-081): the first read refused leaves the
+   * page to say why, and the words follow what is known of the new
+   * version, not what was known when the refusal came.
+   */
+  describe('refused for this tab’s API revision', () => {
+    const INSTALLING =
+      'A new version is being installed. Try again in a minute; nothing was saved.';
+
+    it('reports a first read refused, with nothing to show', async () => {
+      server.use(http.get(`${BASE}/things/a`, () => outdatedRefusal()));
+
+      const { result } = renderHook(() => useResource<Thing>('/things/a'));
+
+      await waitFor(() => expect(result.current.refused).not.toBeNull());
+      expect(result.current.refused?.code).toBe('client_outdated');
+      expect(result.current.data).toBeNull();
+    });
+
+    it('keeps the data on a refused reload, its words following the new version as it comes out', async () => {
+      server.use(
+        http.get(`${BASE}/things/a`, () =>
+          HttpResponse.json({ id: 'a', name: 'First' }),
+        ),
+      );
+      const { result } = renderHook(() => useResource<Thing>('/things/a'));
+      await waitFor(() => expect(result.current.data?.name).toBe('First'));
+
+      // The API deployed first: the file still names this tab's build.
+      server.use(http.get(`${BASE}/things/a`, () => outdatedRefusal()));
+      await act(() => result.current.reload());
+      expect(result.current.refused).toBeNull();
+      expect(result.current.data?.name).toBe('First');
+      expect(result.current.error).toBe(INSTALLING);
+
+      await deploy({ urgent: true });
+      expect(result.current.error).toBe(OUTDATED);
+    });
   });
 });

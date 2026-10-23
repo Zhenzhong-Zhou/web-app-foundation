@@ -77,6 +77,10 @@ export function isRevisionRefusal(caught: unknown): caught is ApiError {
  *
  * Login and register add rate-limit wording on top (authMessageFor), and
  * forgot-password keeps its own, which must not repeat what the server says.
+ *
+ * Worded as it is called, from what is known of a new version then
+ * (ADR-081, below). Words that stay on screen are better worded as the
+ * screen renders, through useFailureWords, which calls this.
  */
 export function messageFor(caught: unknown): string {
   if (!(caught instanceof ApiError)) {

@@ -16,7 +16,6 @@ import { PageHeader } from '../components/page-header';
 import { PersonAvatar } from '../components/person-avatar';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { isRevisionRefusal } from '../lib/api';
 import { formatDayShort } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
 import { useResource } from '../lib/use-resource';
@@ -45,7 +44,7 @@ export function PeoplePage() {
   const {
     data: people,
     error,
-    failure,
+    refused,
     reload,
   } = useResource<Person[]>('/people');
   const [search, setSearch] = useState('');
@@ -72,9 +71,9 @@ export function PeoplePage() {
     );
   }, [people, search]);
 
-  if (isRevisionRefusal(failure) && !people) {
+  if (refused) {
     return (
-      <RevisionRefusalPage failure={failure} onRetry={() => void reload()} />
+      <RevisionRefusalPage failure={refused} onRetry={() => void reload()} />
     );
   }
 

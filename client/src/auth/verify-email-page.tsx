@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
-import { api, messageFor } from '../lib/api';
+import { api } from '../lib/api';
+import { useFailureWords } from '../lib/use-failure-words';
 import { looksLikeToken } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
 import { useAuth } from './use-auth';
@@ -21,7 +22,9 @@ export function VerifyEmailPage() {
   const [token] = useState(() => params.get('token'));
 
   const [status, setStatus] = useState<Status>('checking');
-  const [message, setMessage] = useState<string | null>(null);
+  // A refusal as it came, worded as the page renders (ADR-081).
+  const [failure, setFailure] = useState<unknown>(null);
+  const message = useFailureWords(failure);
   const attempted = useRef(false);
 
   useEffect(() => {
@@ -44,7 +47,7 @@ export function VerifyEmailPage() {
         setStatus('verified');
       } catch (caught) {
         setStatus('failed');
-        setMessage(messageFor(caught));
+        setFailure(caught);
       } finally {
         // Strip the token either way: it ends up in browser history and in
         // the Referer header of any outbound request this page makes.

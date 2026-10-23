@@ -28,7 +28,7 @@ import { PageHeader } from '../components/page-header';
 import { ReferencesWhole } from '../components/reference';
 import { When, Who } from '../components/who-and-when';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { api, isRevisionRefusal, withQuery } from '../lib/api';
+import { api, withQuery } from '../lib/api';
 import { withInstants } from '../lib/date-range';
 import { NO_VALUE, SEPARATOR } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -93,7 +93,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
   const {
     entries,
     error,
-    failure,
+    refused,
     loading,
     hasMore,
     loadingMore,
@@ -168,8 +168,8 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
     );
   }
 
-  if (isRevisionRefusal(failure) && !entries) {
-    return <RevisionRefusalPage failure={failure} onRetry={reload} />;
+  if (refused) {
+    return <RevisionRefusalPage failure={refused} onRetry={reload} />;
   }
 
   return (

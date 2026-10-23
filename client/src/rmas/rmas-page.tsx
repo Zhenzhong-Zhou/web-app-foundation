@@ -24,7 +24,6 @@ import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { fromAddress } from '../lib/address-filter';
-import { isRevisionRefusal } from '../lib/api';
 import type { ReturnAuthorizationStatus } from '../lib/api-names';
 import { type DayRange, withInstants } from '../lib/date-range';
 import { formatDate } from '../lib/format';
@@ -79,7 +78,7 @@ export function RmasPage() {
   const {
     entries: rows,
     error,
-    failure,
+    refused,
     loading,
     hasMore,
     loadingMore,
@@ -90,8 +89,8 @@ export function RmasPage() {
   );
   const showSkeleton = useDelayedFlag(loading);
 
-  if (isRevisionRefusal(failure) && !rows) {
-    return <RevisionRefusalPage failure={failure} onRetry={reload} />;
+  if (refused) {
+    return <RevisionRefusalPage failure={refused} onRetry={reload} />;
   }
 
   return (

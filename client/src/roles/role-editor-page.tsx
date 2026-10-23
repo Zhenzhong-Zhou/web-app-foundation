@@ -43,7 +43,7 @@ import { LoadFailure } from '../errors/load-failure';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { GoHome } from '../errors/status-actions';
 import { StatusPage } from '../errors/status-page';
-import { api, hasCode, isRevisionRefusal } from '../lib/api';
+import { api, hasCode } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
@@ -105,7 +105,7 @@ export function NewRolePage() {
   const roles = useResource<Role[]>('/roles');
 
   if (!can('roles.create')) return <OwnersOnly />;
-  const refused = [catalogue.failure, roles.failure].find(isRevisionRefusal);
+  const refused = catalogue.refused ?? roles.refused;
   if (refused) {
     return (
       <RevisionRefusalPage

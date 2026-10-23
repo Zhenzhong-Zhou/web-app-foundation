@@ -27,7 +27,6 @@ import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { isRevisionRefusal } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { rem } from '../theme/rem';
@@ -52,7 +51,7 @@ export function RolesPage() {
   const {
     data: roles,
     error,
-    failure,
+    refused,
     loading,
     reload,
   } = useResource<Role[]>('/roles');
@@ -80,9 +79,9 @@ export function RolesPage() {
     </Button>
   );
 
-  if (isRevisionRefusal(failure) && !roles) {
+  if (refused) {
     return (
-      <RevisionRefusalPage failure={failure} onRetry={() => void reload()} />
+      <RevisionRefusalPage failure={refused} onRetry={() => void reload()} />
     );
   }
 

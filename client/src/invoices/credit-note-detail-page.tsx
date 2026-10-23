@@ -21,7 +21,6 @@ import { PageHeader } from '../components/page-header';
 import { PdfActions } from '../components/pdf-actions';
 import { Reference } from '../components/reference';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { isRevisionRefusal } from '../lib/api';
 import {
   displayQuantity,
   formatDay,
@@ -43,7 +42,7 @@ import { oneLine } from './one-line';
 export function CreditNoteDetailPage() {
   const intl = useIntl();
   const { id } = useParams<{ id: string }>();
-  const { data, error, failure, loading, reload } = useResource<{
+  const { data, error, refused, loading, reload } = useResource<{
     creditNote: CreditNoteDetail;
   }>(`/credit-notes/${id}`);
   const note = data?.creditNote ?? null;
@@ -51,9 +50,9 @@ export function CreditNoteDetailPage() {
   const showSkeleton = useDelayedFlag(loading);
 
   if (!note) {
-    if (isRevisionRefusal(failure)) {
+    if (refused) {
       return (
-        <RevisionRefusalPage failure={failure} onRetry={() => void reload()} />
+        <RevisionRefusalPage failure={refused} onRetry={() => void reload()} />
       );
     }
     if (error) return <Alert severity="error">{error}</Alert>;

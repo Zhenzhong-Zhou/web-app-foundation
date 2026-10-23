@@ -24,7 +24,6 @@ import { FilterRow } from '../components/filter-row';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { isRevisionRefusal } from '../lib/api';
 import { NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -51,7 +50,7 @@ export function PartnersPage() {
   const {
     data: items,
     error,
-    failure,
+    refused,
     loading,
     reload,
   } = useResource<Partner[]>('/partners');
@@ -84,9 +83,9 @@ export function PartnersPage() {
     );
   }, [items, search, retiredOnly]);
 
-  if (isRevisionRefusal(failure) && !items) {
+  if (refused) {
     return (
-      <RevisionRefusalPage failure={failure} onRetry={() => void reload()} />
+      <RevisionRefusalPage failure={refused} onRetry={() => void reload()} />
     );
   }
 

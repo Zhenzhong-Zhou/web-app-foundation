@@ -21,7 +21,6 @@ import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { isRevisionRefusal } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
@@ -39,7 +38,7 @@ import { describeCharges } from './tax-rate';
 export function TaxCodesPage() {
   const intl = useIntl();
   const can = useCan();
-  const { data, error, failure, loading, reload } = useResource<{
+  const { data, error, refused, loading, reload } = useResource<{
     taxCodes: TaxCode[];
   }>('/tax-codes');
   const codes = data?.taxCodes ?? null;
@@ -51,9 +50,9 @@ export function TaxCodesPage() {
   const canCreate = can('tax_codes.create');
   const canUpdate = can('tax_codes.update');
 
-  if (isRevisionRefusal(failure) && !data) {
+  if (refused) {
     return (
-      <RevisionRefusalPage failure={failure} onRetry={() => void reload()} />
+      <RevisionRefusalPage failure={refused} onRetry={() => void reload()} />
     );
   }
 

@@ -2120,7 +2120,10 @@ revision back afterwards: `git status` shows nothing changed.
   itself in a minute., and no button; the Network tab shows Products read
   again each minute, and `version.json` every 30 seconds. Switch to another
   tab for a few minutes and back: nothing was asked meanwhile, and
-  Products and `version.json` are read again at once. Nothing signs
+  Products and `version.json` are read again at once. Orders → New
+  order says the same in the form's place, never Could not load partners
+  and products. In a private window, Sign in says A new version is being
+  installed. Try again in a minute; nothing was saved. Nothing signs
   out, and no page says Could not reach the server. The bell asks
   `unread-count` once more, is refused, and then asks nothing; put the
   revision back and reload, and it asks again each minute.
@@ -2132,8 +2135,10 @@ revision back afterwards: `git status` shows nothing changed.
   and the refusal reads This tab is running an older version of the app,
   so nothing was saved. Copy anything you typed, then reload., with Reload
   beside it; what was typed stays. A dialog already showing the 503's
-  words gains the same, and its Reload, as the file is read. Adding a
-  photo on a product says the same refusal in its row.
+  words gains the same, and its Reload, as the file is read, and so does
+  the private window's Sign in, its line now This tab is running an older
+  version of the app…, without pressing anything. Adding a photo on a
+  product says the same refusal in its row.
 - **MC-3414** *(ADR-081)* Opening an outdated tab. Outdated, with no
   override, reload the page: no app, and on its own A new version is being
   installed, which tries again by itself in a minute; with the override,
@@ -2874,3 +2879,5 @@ first.
 - 2026-10-22: ADR-081, the client deployed after the API: MC-3424.
 - 2026-10-23: ADR-081's reviews, reads only while the tab is in front
   (S8, S9): MC-3412 extended, and MC-R40.
+- 2026-10-23: ADR-081's reviews, one place for an outdated refusal (S1,
+  S2, S5): MC-3412 and MC-3413 extended.
