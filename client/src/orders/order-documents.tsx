@@ -186,7 +186,7 @@ export function OrderDocuments({ order }: { order: OrderDetail }) {
         </Table>
       </TableContainer>
 
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage(
           {
             id: 'orders.documents.notYet',
@@ -212,7 +212,7 @@ export function OrderDocuments({ order }: { order: OrderDetail }) {
               { count: order.unsettledReturns },
             )}
           />
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
             {intl.formatMessage({
               id: 'orders.summary.unsettled.help',
               defaultMessage:

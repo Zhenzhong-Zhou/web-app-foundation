@@ -181,7 +181,7 @@ export function ChangeRolesDialog({
                     />
                   </Typography>
                 ) : none ? (
-                  <Typography id={noneId} color="text.secondary">
+                  <Typography id={noneId} sx={{ color: 'text.secondary' }}>
                     {intl.formatMessage({
                       id: 'members.changeRoles.nothing',
                       defaultMessage: 'Nothing, until a role is ticked.',

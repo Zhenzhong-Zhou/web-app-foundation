@@ -409,7 +409,7 @@ export function InvoiceDetailPage() {
                       <Typography
                         component="span"
                         variant="body2"
-                        color="warning.main"
+                        sx={{ color: 'warning.main' }}
                       >
                         {intl.formatMessage({
                           id: 'invoices.tax.noneYet',
@@ -474,7 +474,7 @@ export function InvoiceDetailPage() {
             strong
           />
           {isDraft && (
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'invoices.previewNote',
                 defaultMessage:
@@ -496,7 +496,7 @@ export function InvoiceDetailPage() {
         </Typography>
       )}
       {!canEdit && invoice.note && (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {invoice.note}
         </Typography>
       )}

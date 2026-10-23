@@ -106,7 +106,7 @@ export function InvitedSection({
           }}
         />
       </Typography>
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'members.invited.lead',
           defaultMessage:
@@ -141,7 +141,7 @@ export function InvitedSection({
                 >
                   {invitation.email}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   {intl.formatMessage(
                     {
                       id: 'members.invited.roleAndBy',
@@ -213,7 +213,10 @@ export function InvitedSection({
                       >
                         {invitation.email}
                       </Box>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography
+                        variant="body2"
+                        sx={{ color: 'text.secondary' }}
+                      >
                         {invitedByLabel(invitation, selfId, intl)}
                       </Typography>
                     </TableCell>

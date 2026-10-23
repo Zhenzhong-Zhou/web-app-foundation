@@ -179,7 +179,7 @@ export function AddVariantDialog({
                 flipping it on a variant that already holds stock leaves every
                 row violating the invariant in one direction or the other, so
                 it is set once (ADR-023). */}
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'products.tracksLots.fixed',
                 defaultMessage: 'Lot tracking cannot be changed later.',

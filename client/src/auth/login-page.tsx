@@ -170,8 +170,7 @@ export function LoginPage() {
             <Typography
               component="span"
               variant="body2"
-              color="text.secondary"
-              sx={{ display: 'block' }}
+              sx={{ color: 'text.secondary', display: 'block' }}
             >
               {intl.formatMessage({
                 id: 'auth.keepSignedInHint',
@@ -214,7 +213,7 @@ export function LoginPage() {
         </Link>
       )}
       {registration === 'invitation' && (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           <FormattedMessage
             id="auth.login.byInvitation"
             defaultMessage="New here? Accounts start from an invitation. <link>How to get one</link>"

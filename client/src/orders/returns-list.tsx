@@ -167,7 +167,7 @@ export function ReturnsList({
             </Stack>
 
             {entry.note && (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {entry.note}
               </Typography>
             )}

@@ -280,12 +280,12 @@ export function NotificationBell() {
               </Typography>
 
               {entry.body && (
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                   {entry.body}
                 </Typography>
               )}
 
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 {relativeTime(entry.createdAt)}
               </Typography>
             </Stack>

@@ -169,7 +169,7 @@ export function BrandingForm({
         defaultMessage: 'Save branding',
       })}
     >
-      <Typography color="text.secondary">
+      <Typography sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'settings.branding.intro',
           defaultMessage:
@@ -211,7 +211,7 @@ export function BrandingForm({
             </Button>
           )}
         </Stack>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'settings.branding.logo.hint',
             defaultMessage:

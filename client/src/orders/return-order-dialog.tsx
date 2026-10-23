@@ -387,8 +387,7 @@ export function ReturnOrderDialog({
                     <Typography
                       component="span"
                       variant="body2"
-                      color="text.secondary"
-                      sx={{ ml: 0.5 }}
+                      sx={{ color: 'text.secondary', ml: 0.5 }}
                     >
                       {intl.formatMessage(
                         {
@@ -409,7 +408,10 @@ export function ReturnOrderDialog({
                   {chosenRma &&
                     rmaLines &&
                     (authorized ? (
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography
+                        variant="body2"
+                        sx={{ color: 'text.secondary' }}
+                      >
                         {intl.formatMessage(
                           {
                             id: 'orders.return.rmaAllows',
@@ -426,7 +428,10 @@ export function ReturnOrderDialog({
                         )}
                       </Typography>
                     ) : (
-                      <Typography variant="body2" color="warning.main">
+                      <Typography
+                        variant="body2"
+                        sx={{ color: 'warning.main' }}
+                      >
                         {intl.formatMessage(
                           {
                             id: 'orders.return.notOnRma',
@@ -560,7 +565,7 @@ export function ReturnOrderDialog({
             })}
 
             {lines?.length === 0 && (
-              <Typography color="text.secondary">
+              <Typography sx={{ color: 'text.secondary' }}>
                 {intl.formatMessage({
                   id: 'orders.return.nothingShipped',
                   defaultMessage:
@@ -588,7 +593,7 @@ export function ReturnOrderDialog({
               slotProps={{ htmlInput: { maxLength: 1000 } }}
             />
 
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'orders.return.notRestocked',
                 defaultMessage:

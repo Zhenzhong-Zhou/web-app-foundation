@@ -91,7 +91,7 @@ export function AccountPhoto() {
         )}
       </Stack>
       {error && <Alert severity="error">{error}</Alert>}
-      <Typography variant="caption" color="text.secondary">
+      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'account.photo.rules',
           defaultMessage: 'PNG, JPEG or WebP, up to 5 MB.',

@@ -92,7 +92,7 @@ export function IdleSignOutForm({
         defaultMessage: 'Save',
       })}
     >
-      <Typography color="text.secondary">
+      <Typography sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'settings.security.intro',
           defaultMessage:

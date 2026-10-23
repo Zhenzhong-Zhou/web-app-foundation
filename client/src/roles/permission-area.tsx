@@ -122,7 +122,11 @@ export function PermissionArea({
               }}
             />
             <Box component="span">{label}</Box>
-            <Typography component="span" variant="body2" color="text.secondary">
+            <Typography
+              component="span"
+              variant="body2"
+              sx={{ color: 'text.secondary' }}
+            >
               {intl.formatMessage(
                 {
                   id: 'roles.editor.areaCount',
@@ -170,7 +174,11 @@ export function PermissionArea({
       <Collapse in={open} id={`${id}-boxes`}>
         <Stack spacing={0.5} sx={{ pb: 1.5, pl: { sm: 4 } }}>
           {anyLocked && (
-            <Typography id={lockedId} variant="body2" color="text.secondary">
+            <Typography
+              id={lockedId}
+              variant="body2"
+              sx={{ color: 'text.secondary' }}
+            >
               {intl.formatMessage(WORDS.locked)}
             </Typography>
           )}
@@ -228,9 +236,8 @@ export function PermissionArea({
                   <Typography
                     id={lineId}
                     variant="body2"
-                    color="text.secondary"
                     // Under the line, past the box.
-                    sx={{ pl: 4.25, mt: -0.5 }}
+                    sx={{ color: 'text.secondary', pl: 4.25, mt: -0.5 }}
                   >
                     {/* A line each, so no language's way of joining
                         sentences is assumed. */}

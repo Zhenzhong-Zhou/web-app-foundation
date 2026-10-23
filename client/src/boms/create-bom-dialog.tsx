@@ -234,7 +234,7 @@ export function CreateBomDialog({
             {/* Stated because the alternative — entering per-unit amounts —
                 is what people reach for, and it forces a division that
                 reappears as stock drift (ADR-029). */}
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'boms.batchAmountsNote',
                 defaultMessage:

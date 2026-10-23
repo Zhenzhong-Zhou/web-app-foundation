@@ -77,7 +77,7 @@ export function LotFields({
               <Typography variant="body2">{option.code}</Typography>
               {/* The expiry is how someone spots the other mistake: a code
                   that exists but belongs to another delivery. */}
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 {option.expiresAt
                   ? intl.formatMessage(
                       {

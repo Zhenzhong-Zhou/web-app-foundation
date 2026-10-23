@@ -569,7 +569,7 @@ export function InventoryPage() {
               defaultMessage: 'Promised to customers',
             })}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {intl.formatMessage({
               id: 'inventory.promised.intro',
               defaultMessage:

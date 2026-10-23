@@ -22,7 +22,7 @@ export function LabelledValue({
 }) {
   return (
     <Stack spacing={0.5}>
-      <Typography variant="caption" color="text.secondary">
+      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
         {label}
       </Typography>
       <Typography variant="body1">{value}</Typography>

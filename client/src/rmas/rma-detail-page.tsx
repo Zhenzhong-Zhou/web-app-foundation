@@ -276,7 +276,7 @@ export function RmaDetailPage() {
         </Alert>
       )}
       {rma.note && (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {rma.note}
         </Typography>
       )}
@@ -288,7 +288,7 @@ export function RmaDetailPage() {
           spacing={1}
           sx={{ alignItems: 'baseline', flexWrap: 'wrap' }}
         >
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {intl.formatMessage({
               id: 'rmas.sendBackTo',
               defaultMessage: 'Send back to',
@@ -435,7 +435,7 @@ export function RmaDetailPage() {
       )}
 
       {open && rma.expectsGoods && (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage(
             {
               id: 'rmas.goodsComeBack',

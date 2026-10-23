@@ -138,7 +138,7 @@ export function PageHeader({
 
           {/* Present but not a link, so the path is complete and the current
               page is visibly where you are. */}
-          <Typography variant="body2" color="text.primary">
+          <Typography variant="body2" sx={{ color: 'text.primary' }}>
             {title}
           </Typography>
         </Breadcrumbs>
@@ -221,8 +221,10 @@ export function PageHeader({
       {subtitle && (
         <Typography
           variant="body2"
-          color="text.secondary"
-          sx={{ '& a.MuiLink-root': { textDecoration: 'underline' } }}
+          sx={{
+            color: 'text.secondary',
+            '& a.MuiLink-root': { textDecoration: 'underline' },
+          }}
         >
           {subtitle}
         </Typography>

@@ -210,7 +210,7 @@ export function FirstWeek({
             defaultMessage: 'Your first week',
           })}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage(
             {
               id: 'home.welcome.progress',
@@ -287,7 +287,7 @@ function Item({
             ref={sentRef}
             tabIndex={-1}
             variant="body2"
-            color="text.secondary"
+            sx={{ color: 'text.secondary' }}
           >
             {intl.formatMessage({
               id: 'layout.unverified.sent',
@@ -365,7 +365,7 @@ function Item({
             )}
           </Typography>
           {detail && (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {detail}
             </Typography>
           )}

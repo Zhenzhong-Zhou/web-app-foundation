@@ -112,9 +112,8 @@ export function RunCostPanel({ runId }: { runId: string }) {
 
         <Typography
           variant="caption"
-          color="text.secondary"
           component="p"
-          sx={{ mt: 1 }}
+          sx={{ color: 'text.secondary', mt: 1 }}
         >
           {intl.formatMessage({
             id: 'costs.run.whatWeSupplied',

@@ -94,7 +94,7 @@ export function RolesPage() {
         actions={makeButton || undefined}
       />
 
-      <Typography color="text.secondary" sx={{ maxWidth: rem(760) }}>
+      <Typography sx={{ color: 'text.secondary', maxWidth: rem(760) }}>
         {intl.formatMessage({
           id: 'roles.lead',
           defaultMessage:
@@ -177,7 +177,7 @@ function RoleSection({
           }}
         />
       </Typography>
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {lead}
       </Typography>
     </Stack>
@@ -243,7 +243,7 @@ function RoleSection({
             {role.description && (
               <Typography variant="body2">{role.description}</Typography>
             )}
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {heldByLabel(role.holderCount, intl)}
             </Typography>
           </Stack>

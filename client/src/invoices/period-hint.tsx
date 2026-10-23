@@ -63,7 +63,7 @@ function OtherPeriodHint({
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
       <TodayIcon fontSize="small" color="action" sx={{ mt: 0.25 }} />
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {reset === 'daily'
           ? intl.formatMessage(
               {

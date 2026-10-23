@@ -98,8 +98,11 @@ export function RecentCard() {
           >
             <Typography
               variant="caption"
-              color="text.secondary"
-              sx={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}
+              sx={{
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
             >
               {intl.formatMessage(RECENT_KIND_LABELS[entry.kind])}
             </Typography>
@@ -111,7 +114,7 @@ export function RecentCard() {
             >
               {recentTitle(intl, entry)}
             </Link>
-            <Typography variant="body2" color="text.secondary" noWrap>
+            <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
               {entry.detail
                 ? intl.formatMessage(
                     {

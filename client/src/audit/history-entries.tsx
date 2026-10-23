@@ -67,7 +67,7 @@ export function HistoryEntries({ resourceId }: { resourceId: string }) {
           // Not an error. Changes made before auditing covered this record,
           // or before its variant and receipt events were keyed to it, have
           // no rows here.
-          <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', py: 2 }}>
             {intl.formatMessage({
               id: 'audit.history.empty',
               defaultMessage: 'No recorded changes.',
@@ -101,7 +101,10 @@ export function HistoryEntries({ resourceId }: { resourceId: string }) {
                   <Typography variant="body2">{entry.actionName}</Typography>
 
                   {entry.details.length > 0 && (
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography
+                      variant="body2"
+                      sx={{ color: 'text.secondary' }}
+                    >
                       <AuditDetails details={entry.details} />
                     </Typography>
                   )}
@@ -111,9 +114,9 @@ export function HistoryEntries({ resourceId }: { resourceId: string }) {
                     keeps its id and loses its email (ADR-012). */}
                   <Typography
                     variant="caption"
-                    color="text.secondary"
                     title={entry.actorEmail ?? undefined}
                     sx={{
+                      color: 'text.secondary',
                       display: 'block',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -130,9 +133,8 @@ export function HistoryEntries({ resourceId }: { resourceId: string }) {
                   </Typography>
                   <Typography
                     variant="caption"
-                    color="text.secondary"
                     title={formatMoment(entry.createdAt)}
-                    sx={{ display: 'block' }}
+                    sx={{ color: 'text.secondary', display: 'block' }}
                   >
                     {[
                       formatWhen(entry.createdAt),

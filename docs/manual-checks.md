@@ -2309,6 +2309,20 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R49** *(colours given as a path, #196)* In light and in dark:
+  Home's detail lines, SO-DEMO-1's notes under its figures (not counting 1
+  voided shipment) and the bell's times are grey, not the main text
+  colour, and the order's crumb, SO-DEMO-1, is darker than Orders before
+  it. Take a return's Not on … line, Close this organization's download
+  again line, for an export more than a day old, and a draft invoice's
+  None yet under Tax are amber. In the search box, type DEMO and press ↓:
+  the highlighted result's grey line turns the main text colour, and back
+  to grey once the highlight moves on; Settings → Organization's time
+  zone list does the same, and its chosen zone keeps the main text
+  colour. Open the bell's menu and press ↓: the entry the keyboard is on
+  has its time in the main text colour, the others' stay grey. Found
+  while building ADR-081.
+
 - **MC-R48** *(typographic apostrophes in English, #184)* In English, as
   Tom Becker open a sale's invoice by its address, as MC-3320 does: You
   don’t have access to this. Open
@@ -3028,3 +3042,5 @@ first.
   MC-R47.
 - 2026-10-23: #184, typographic apostrophes in English, and the
   catalogues' check holding them: MC-R48.
+- 2026-10-23: #196, colours given as a path drawn again, grey and amber:
+  MC-R49.

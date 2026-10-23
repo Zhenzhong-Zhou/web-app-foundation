@@ -179,7 +179,7 @@ export function LeaveOrDelete({
             defaultMessage: 'Your data and your account',
           })}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'account.ending.intro',
             defaultMessage:
@@ -351,7 +351,7 @@ export function LeaveOrDelete({
                     'Then your name, email, photo and history are removed. What you did in each organization stays, under Deleted User. Every other device is signed out now, and you will get an email with the date.',
                 })}
               </Typography>
-              <Typography color="text.secondary">
+              <Typography sx={{ color: 'text.secondary' }}>
                 {intl.formatMessage({
                   id: 'account.deletion.explain.copy',
                   defaultMessage:

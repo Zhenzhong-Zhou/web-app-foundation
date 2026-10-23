@@ -272,7 +272,7 @@ export function MembersPage() {
         />
       )}
 
-      <Typography color="text.secondary">
+      <Typography sx={{ color: 'text.secondary' }}>
         <FormattedMessage
           id="members.intro"
           defaultMessage="Everyone here signs in with their own email and password. A member can hold several roles, and may do whatever any of them allows: <link>Roles</link> says what each one can do."

@@ -92,7 +92,7 @@ export function AccountPage() {
                 defaultMessage: 'Sign-in and security',
               })}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'account.security.intro',
                 defaultMessage:

@@ -115,7 +115,7 @@ function DownloadEverything({
               'One ZIP with a spreadsheet file for every kind of record: orders, stock and lots, production, invoices and credit notes with their lines and tax, partners, price lists, the audit log. Every uploaded file comes with it, such as the logo and product images.',
           })}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'settings.export.who',
             defaultMessage:
@@ -251,7 +251,7 @@ function CloseOrganization({
                 { organization: organization.name },
               )}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'settings.close.export',
                 defaultMessage:

@@ -118,7 +118,7 @@ export function MovementHistoryDialog({
           {/* Scoped to the lot when the row has one, otherwise to the variant.
               Either way it spans locations: stock that moved away is the part
               of the story a per-shelf view loses. */}
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {row?.lotCode
               ? intl.formatMessage(
                   {
@@ -208,7 +208,7 @@ export function MovementHistoryDialog({
                             <Typography
                               variant="caption"
                               component="div"
-                              color="text.secondary"
+                              sx={{ color: 'text.secondary' }}
                             >
                               {movement.note}
                             </Typography>
@@ -229,7 +229,7 @@ export function MovementHistoryDialog({
               </Table>
             </TableContainer>
           ) : (
-            <Typography color="text.secondary" sx={{ py: 3 }}>
+            <Typography sx={{ color: 'text.secondary', py: 3 }}>
               {intl.formatMessage({
                 id: 'account.activity.empty',
                 defaultMessage: 'Nothing recorded yet.',

@@ -151,8 +151,7 @@ export function WelcomeCard({
         <Typography
           component="figcaption"
           variant="body2"
-          color="text.secondary"
-          sx={{ fontWeight: 600 }}
+          sx={{ color: 'text.secondary', fontWeight: 600 }}
         >
           {welcome.inviter ? (
             <FormattedMessage
@@ -197,7 +196,7 @@ export function WelcomeCard({
   );
 
   const startLine = startShows && (
-    <Typography color="text.secondary">
+    <Typography sx={{ color: 'text.secondary' }}>
       {intl.formatMessage({
         id: 'home.welcome.startBelow',
         defaultMessage:
@@ -256,7 +255,7 @@ export function WelcomeCard({
               { organization, name: session?.user.name ?? '' },
             )}
           </Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+          <Typography sx={{ color: 'text.secondary', mt: 0.5 }}>
             {intl.formatMessage(
               { id: 'home.welcome.lead', defaultMessage: '{who} {until}' },
               { who, until },

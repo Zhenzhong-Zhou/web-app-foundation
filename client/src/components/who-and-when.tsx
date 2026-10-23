@@ -45,8 +45,12 @@ export function NameAndEmail({
         <Tooltip title={email} placement="bottom-start">
           <Typography
             variant="caption"
-            color="text.secondary"
-            sx={{ ...ONE_LINE, width: 0, minWidth: '100%' }}
+            sx={{
+              color: 'text.secondary',
+              ...ONE_LINE,
+              width: 0,
+              minWidth: '100%',
+            }}
           >
             {email}
           </Typography>
@@ -110,7 +114,7 @@ export function When({ at }: { at: string }) {
       <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
         {formatWhen(at)}
       </Typography>
-      <Typography variant="caption" color="text.secondary">
+      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
         {relativeTime(at)}
       </Typography>
     </Box>

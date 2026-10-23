@@ -156,7 +156,7 @@ export function CreatePartnerDialog({
               slotProps={{ htmlInput: { maxLength: 1000 } }}
             />
 
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'partners.create.oneList',
                 defaultMessage:

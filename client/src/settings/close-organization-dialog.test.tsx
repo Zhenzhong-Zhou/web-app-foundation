@@ -1,3 +1,4 @@
+import { ThemeProvider } from '@mui/material/styles';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -6,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { OrganizationLastExport } from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
+import { themeFor } from '../theme';
 import { CloseOrganizationDialog } from './close-organization-dialog';
 
 /** GET /organization, with its last export, and every request sent. */
@@ -129,6 +131,32 @@ describe('CloseOrganizationDialog', () => {
     expect(
       within(dialog).getByRole('link', { name: 'Download everything (ZIP)' }),
     ).toHaveAttribute('href', '/api/v1/organization/export?locale=en');
+  });
+
+  // In sx, since Typography's color prop takes a palette name, not a path:
+  // color="warning.dark" drew the main text colour, not amber (#196).
+  it('draws the line asking again in the warning colour', async () => {
+    organizationWith({
+      exportedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      exportedBy: 'Mei Lin',
+      exportedById: 'user-2',
+      fresh: false,
+    });
+    renderWithAuth(
+      <ThemeProvider theme={themeFor('en')}>
+        <CloseOrganizationDialog
+          open
+          alone={false}
+          onClose={() => undefined}
+          onScheduled={() => undefined}
+        />
+      </ThemeProvider>,
+    );
+
+    expect(
+      getComputedStyle(await screen.findByText(/That’s more than a day old/))
+        .color,
+    ).toBe('var(--mui-palette-warning-main)');
   });
 
   it('deletes the account too, for the only member', async () => {

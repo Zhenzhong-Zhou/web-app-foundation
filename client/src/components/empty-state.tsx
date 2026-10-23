@@ -29,7 +29,7 @@ export function EmptyState({
 }) {
   return (
     <Stack spacing={1.5} sx={{ p: 3, alignItems: 'flex-start' }}>
-      <Typography color="text.secondary">{children}</Typography>
+      <Typography sx={{ color: 'text.secondary' }}>{children}</Typography>
       {(action || learnMore) && (
         <Stack direction="row" useFlexGap spacing={1} sx={{ flexWrap: 'wrap' }}>
           {action}

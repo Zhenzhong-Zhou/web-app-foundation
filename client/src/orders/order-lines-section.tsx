@@ -354,8 +354,8 @@ export function OrderLinesSection({
                         {line.priceSource === 'list' && line.priceListName && (
                           <Typography
                             variant="caption"
-                            color="text.secondary"
                             component="div"
+                            sx={{ color: 'text.secondary' }}
                           >
                             {intl.formatMessage(
                               {
@@ -413,7 +413,7 @@ export function OrderLinesSection({
               silently excludes a line is what somebody reconciles against
               (ADR-035). */}
             {!order.totalsComplete && (
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 {order.totals?.length
                   ? intl.formatMessage({
                       id: 'orders.lines.partialTotal',
@@ -433,7 +433,7 @@ export function OrderLinesSection({
       {/* Returns sit beside shipped rather than reducing what is
           outstanding (ADR-043), which reads as a mismatch until said. */}
       {order.lines.some((line) => Number(line.quantityReturned) > 0) && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1 }}>
           {intl.formatMessage({
             id: 'orders.lines.returnsNote',
             defaultMessage:
@@ -443,7 +443,7 @@ export function OrderLinesSection({
       )}
 
       {order.status === 'draft' && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1 }}>
           {order.direction === 'sale'
             ? intl.formatMessage({
                 id: 'orders.lines.draftSale',

@@ -417,7 +417,7 @@ export function CreateRunDialog({
             {/* The distinction people get wrong: a manufacturer who buys every
                 input and delivers finished goods is a purchase order, not a
                 run — nothing of ours was consumed (ADR-030). */}
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'production.create.manufacturerNote',
                 defaultMessage:

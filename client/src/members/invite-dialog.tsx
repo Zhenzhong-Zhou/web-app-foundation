@@ -469,7 +469,7 @@ function InviteForm({
               </Button>
             )}
             {invited && notYours && (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {invited.roles.some(isOwnerRole)
                   ? intl.formatMessage({
                       id: 'members.invite.ownersInvitation',
@@ -750,7 +750,7 @@ function LinkCopied({
               },
             )}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {view.replaces === 'emailed'
               ? intl.formatMessage({
                   id: 'members.invite.copied.replacesEmailed',

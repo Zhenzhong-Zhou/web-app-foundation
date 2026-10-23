@@ -164,7 +164,7 @@ export function OrganizationPage() {
           {panel(
             'profile',
             <>
-              <Typography color="text.secondary">
+              <Typography sx={{ color: 'text.secondary' }}>
                 {intl.formatMessage({
                   id: 'settings.org.intro',
                   defaultMessage:
@@ -445,7 +445,7 @@ function ExpiryDaysForm({
         defaultMessage: 'Save expiry',
       })}
     >
-      <Typography color="text.secondary">
+      <Typography sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'settings.org.expiry.intro',
           defaultMessage:
@@ -540,7 +540,7 @@ function LogoOnDocumentsForm({
             'Print the logo on invoices, credit notes and packing slips',
         })}
       />
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'settings.org.printLogo.help',
           defaultMessage:
@@ -633,7 +633,7 @@ function PaperSizeForm({
           />
         ))}
       </RadioGroup>
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'settings.org.paper.help',
           defaultMessage:
@@ -947,7 +947,7 @@ function LicencePolicyForm({
       })}
       saveDisabled={unchanged}
     >
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'settings.org.licence.intro',
           defaultMessage:

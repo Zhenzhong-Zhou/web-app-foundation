@@ -125,7 +125,11 @@ export function WhatYouCanDo({
             <Box component="span" sx={{ fontWeight: 600 }}>
               {title}
             </Box>
-            <Typography component="span" variant="body2" color="text.secondary">
+            <Typography
+              component="span"
+              variant="body2"
+              sx={{ color: 'text.secondary' }}
+            >
               {intl.formatMessage(
                 {
                   id: 'account.access.folded',

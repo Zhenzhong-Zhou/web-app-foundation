@@ -108,8 +108,7 @@ export function KeepSignedIn({
           <Typography
             component="span"
             variant="body2"
-            color="text.secondary"
-            sx={{ display: 'block' }}
+            sx={{ color: 'text.secondary', display: 'block' }}
           >
             {long
               ? intl.formatMessage({
@@ -174,14 +173,14 @@ export function Ended() {
         defaultMessage: 'This invitation has ended',
       })}
     >
-      <Typography color="text.secondary">
+      <Typography sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'invitation.ended.body',
           defaultMessage:
             'It was used already, its 7 days are over, or it was taken back. Ask the person who invited you to send a new one.',
         })}
       </Typography>
-      <Typography color="text.secondary">
+      <Typography sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'invitation.ended.joined',
           defaultMessage: 'Already joined? Sign in as usual.',
@@ -238,7 +237,7 @@ export function OtherAddress({
       )}
     >
       {error && <Alert severity="error">{error}</Alert>}
-      <Typography color="text.secondary">
+      <Typography sx={{ color: 'text.secondary' }}>
         {intl.formatMessage(
           {
             id: 'invitation.otherAddress.body',
@@ -620,7 +619,7 @@ export function KeepAccountFirst({
   return (
     <InvitationLayout title={title}>
       {error && <Alert severity="error">{error}</Alert>}
-      <Typography color="text.secondary">{children}</Typography>
+      <Typography sx={{ color: 'text.secondary' }}>{children}</Typography>
       <Box>
         <Button
           variant="contained"
@@ -633,7 +632,7 @@ export function KeepAccountFirst({
           })}
         </Button>
       </Box>
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {after}
       </Typography>
     </InvitationLayout>

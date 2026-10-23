@@ -139,7 +139,7 @@ export function PeoplePage() {
       {error && <Alert severity="error">{error}</Alert>}
 
       {people && shown.length === 0 && (
-        <Typography color="text.secondary">
+        <Typography sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'people.none',
             defaultMessage: 'Nobody matches that search.',
@@ -211,8 +211,8 @@ export function PeoplePage() {
                 component={RouterLink}
                 to={`/people/${person.id}`}
                 underline="hover"
-                color="text.primary"
                 sx={{
+                  color: 'text.primary',
                   mt: 0.5,
                   fontWeight: 600,
                   display: '-webkit-box',

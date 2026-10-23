@@ -130,12 +130,12 @@ export function PersonPage() {
           />
           <Typography
             variant="body2"
-            color="text.secondary"
             title={
               person.lastActiveAt
                 ? new Date(person.lastActiveAt).toLocaleString()
                 : undefined
             }
+            sx={{ color: 'text.secondary' }}
           >
             {activeLabel(person, intl)}
           </Typography>
@@ -149,7 +149,7 @@ export function PersonPage() {
           )}
           <RoleChips roles={person.roles} />
           {!filledIn && (
-            <Typography color="text.secondary" sx={{ pt: 1 }}>
+            <Typography sx={{ color: 'text.secondary', pt: 1 }}>
               {intl.formatMessage(
                 {
                   id: 'people.nothingFilledIn',
@@ -174,7 +174,7 @@ export function PersonPage() {
                     borderColor: 'divider',
                   }}
                 >
-                  <Typography component="dt" color="text.secondary">
+                  <Typography component="dt" sx={{ color: 'text.secondary' }}>
                     {label}
                   </Typography>
                   <Typography
@@ -198,7 +198,7 @@ export function PersonPage() {
               defaultMessage: 'Recent activity',
             })}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {intl.formatMessage(
               {
                 id: 'people.recentActivityWhy',
@@ -209,7 +209,7 @@ export function PersonPage() {
             )}
           </Typography>
           {person.recentActivity.length === 0 ? (
-            <Typography sx={{ pt: 2 }} color="text.secondary">
+            <Typography sx={{ color: 'text.secondary', pt: 2 }}>
               {intl.formatMessage({
                 id: 'people.noActivity',
                 defaultMessage: 'Nothing yet.',
@@ -228,8 +228,11 @@ export function PersonPage() {
                   </Typography>
                   <Typography
                     variant="body2"
-                    color="text.secondary"
-                    sx={{ whiteSpace: 'nowrap', pl: 2 }}
+                    sx={{
+                      color: 'text.secondary',
+                      whiteSpace: 'nowrap',
+                      pl: 2,
+                    }}
                   >
                     {relativeTime(entry.createdAt)}
                   </Typography>

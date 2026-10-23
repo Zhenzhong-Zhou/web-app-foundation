@@ -88,6 +88,18 @@ const TONE_OF_COLOR: Record<string, ToneName> = {
 const TOUCH = '@media (pointer: coarse)';
 
 /**
+ * Muted text drawn in the main text colour, inside the element this is set
+ * on. MUI's tint for an option the keyboard is on, or one selected, takes
+ * muted text below AA (4.13 : 1 on a selected option the keyboard is on,
+ * in dark mode), so there a secondary line reads as the main one: the
+ * tint, not the line, shows which entry it is (#196). Every muted line
+ * reads the one variable, so this reaches them without a rule on a screen.
+ */
+const mutedAsMain = (theme: Theme) => ({
+  '--mui-palette-text-secondary': paletteOf(theme).text.primary,
+});
+
+/**
  * CSS variables rather than runtime palette switching: the mode changes by
  * swapping a class on <html>, so nothing re-renders and there is no flash of
  * the wrong theme mid-toggle.
@@ -285,6 +297,23 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
      */
     MuiDialogActions: {
       styleOverrides: { root: { flexWrap: 'wrap', rowGap: 8 } },
+    },
+    /**
+     * An option under the pointer or the keyboard, and the one chosen: in
+     * the lookup and the pickers, their secondary lines in the main text
+     * colour (mutedAsMain). A bell entry the keyboard is on, likewise.
+     */
+    MuiAutocomplete: {
+      styleOverrides: {
+        option: ({ theme }) => ({
+          '&.Mui-focused, &[aria-selected="true"]': mutedAsMain(theme),
+        }),
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: ({ theme }) => ({ '&.Mui-focusVisible': mutedAsMain(theme) }),
+      },
     },
     /**
      * A banner's actions drop below its message when the two do not fit

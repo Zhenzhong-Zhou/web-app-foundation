@@ -253,7 +253,7 @@ function NumberingSummary({ numbering }: { numbering: Numbering }) {
                 'Invoices and credit notes are not kept in date order.',
             })}
       </Typography>
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'settings.numbering.ownerOnly',
           defaultMessage: 'An Owner can change it.',
@@ -574,7 +574,7 @@ function NumberingForm({
         sx={{ width: rem(110) }}
       />
       {numbering[key].last && (
-        <Typography variant="caption" color="text.secondary" noWrap>
+        <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
           {intl.formatMessage(
             { id: 'settings.numbering.last', defaultMessage: 'Last: {number}' },
             { number: numbering[key].last },
@@ -605,7 +605,7 @@ function NumberingForm({
           {valid ? printed(key) : NO_VALUE}
         </Box>
         {valid && nextStart && (
-          <Typography variant="caption" color="text.secondary" noWrap>
+          <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
             {intl.formatMessage(
               {
                 id: 'settings.numbering.fromNextPeriod',
@@ -709,7 +709,7 @@ function NumberingForm({
             )}
           </Stack>
         )}
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'settings.numbering.formats',
             defaultMessage: 'Start from a common format:',
@@ -748,7 +748,7 @@ function NumberingForm({
             );
           })}
         </Stack>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'settings.numbering.dateTokens',
             defaultMessage: 'Or add the date where the cursor is:',
@@ -818,7 +818,7 @@ function NumberingForm({
         })}
         saveDisabled={!dirty || blocked}
       >
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'settings.numbering.intro',
             defaultMessage:
@@ -863,7 +863,10 @@ function NumberingForm({
                     <Typography sx={{ fontWeight: 600 }}>
                       {seriesName(key)}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                      variant="caption"
+                      sx={{ color: 'text.secondary' }}
+                    >
                       {intl.formatMessage(RESET_LABEL[drafts[key].reset])}
                     </Typography>
                   </Stack>
@@ -926,7 +929,7 @@ function NumberingForm({
 
         <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
           <TodayIcon fontSize="small" color="action" sx={{ mt: 0.25 }} />
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {intl.formatMessage(
               {
                 id: 'settings.numbering.ownDate',
@@ -954,7 +957,7 @@ function NumberingForm({
                     'Keep invoices and credit notes in date order',
                 })}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {intl.formatMessage({
                   id: 'settings.numbering.dateOrder.help',
                   defaultMessage:
@@ -1008,7 +1011,10 @@ function NumberingForm({
                     )}
                   </Typography>
                   {numbering[key].last && (
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography
+                      variant="body2"
+                      sx={{ color: 'text.secondary' }}
+                    >
                       {intl.formatMessage(
                         {
                           id: 'settings.numbering.confirm.last',
@@ -1023,7 +1029,7 @@ function NumberingForm({
                 </Box>
               ))}
             </Stack>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'settings.numbering.confirm.note',
                 defaultMessage:

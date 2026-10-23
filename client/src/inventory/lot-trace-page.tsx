@@ -134,7 +134,7 @@ export function LotSearchPage() {
       {error && <Alert severity="error">{error}</Alert>}
 
       {matches?.length === 0 && (
-        <Typography color="text.secondary">
+        <Typography sx={{ color: 'text.secondary' }}>
           {intl.formatMessage(
             {
               id: 'inventory.trace.noMatch',
@@ -417,7 +417,7 @@ export function LotTracePage() {
           defaultMessage: 'Who received it',
         })}
       >
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'inventory.trace.receivedBy.intro',
             defaultMessage:
@@ -476,7 +476,7 @@ export function LotTracePage() {
                   {row.partnerName}
                 </Onward>
               ) : (
-                <Typography component="span" color="text.secondary">
+                <Typography component="span" sx={{ color: 'text.secondary' }}>
                   {intl.formatMessage({
                     id: 'inventory.trace.noRecipient',
                     defaultMessage: 'No recipient recorded',
@@ -705,7 +705,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function Empty({ children }: { children: ReactNode }) {
   return (
-    <Typography variant="body2" color="text.secondary">
+    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
       {children}
     </Typography>
   );

@@ -47,7 +47,9 @@ export function YourAccess() {
                   {roleLabel(role.name)}
                 </Typography>
                 {description && (
-                  <Typography color="text.secondary">{description}</Typography>
+                  <Typography sx={{ color: 'text.secondary' }}>
+                    {description}
+                  </Typography>
                 )}
               </Box>
             );

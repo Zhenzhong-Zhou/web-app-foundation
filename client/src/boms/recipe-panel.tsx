@@ -348,7 +348,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
                 color={STATUS_COLOR[selected.status]}
               />
 
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {licenceFor(selected.licenceId)
                   ? intl.formatMessage(
                       {

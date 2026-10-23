@@ -519,7 +519,10 @@ export function ReleaseRunDialog({
                   )}
 
                   {!picking && (
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography
+                      variant="body2"
+                      sx={{ color: 'text.secondary' }}
+                    >
                       {line.lots.some((lot) => lot.taken)
                         ? line.lots
                             .filter((lot) => lot.taken)
@@ -671,7 +674,9 @@ export function ReleaseRunDialog({
                       return (
                         <Typography
                           variant="caption"
-                          color={matches ? 'text.secondary' : 'error'}
+                          sx={{
+                            color: matches ? 'text.secondary' : 'error.main',
+                          }}
                         >
                           {matches
                             ? intl.formatMessage(
@@ -707,7 +712,7 @@ export function ReleaseRunDialog({
             })}
 
             {needsRecipe && (
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 {intl.formatMessage({
                   id: 'production.release.earliestFirst',
                   defaultMessage:
@@ -726,7 +731,7 @@ export function ReleaseRunDialog({
 
             {/* Said plainly because "released" sounds terminal and is not:
                 material has moved but nothing has been used up yet. */}
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'production.release.nothingConsumed',
                 defaultMessage:
@@ -794,7 +799,7 @@ function LicencePanel({
 
   if (status === 'current') {
     return (
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage(
           {
             id: 'production.licence.current',

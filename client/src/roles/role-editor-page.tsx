@@ -456,7 +456,7 @@ function RoleEditor({
         {summaryTitle}
       </Typography>
       <AccessList permissions={[...granted]} stacked />
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage(WORDS.summaryNote)}
       </Typography>
     </Stack>
@@ -583,7 +583,7 @@ function RoleEditor({
               />
             ))}
           </Box>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {intl.formatMessage(WORDS.owners)}
           </Typography>
         </Stack>

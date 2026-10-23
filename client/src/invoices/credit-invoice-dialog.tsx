@@ -336,11 +336,17 @@ export function CreditInvoiceDialog({
                       <TableRow key={line.id}>
                         <TableCell>
                           {line.sku}
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography
+                            variant="body2"
+                            sx={{ color: 'text.secondary' }}
+                          >
                             {line.description}
                           </Typography>
                           {rma && rmaLine && (
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography
+                              variant="body2"
+                              sx={{ color: 'text.secondary' }}
+                            >
                               {rma.expectsGoods
                                 ? intl.formatMessage(
                                     {
@@ -448,7 +454,7 @@ export function CreditInvoiceDialog({
               </Table>
             </TableContainer>
 
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'invoices.credit.priceRule',
                 defaultMessage:

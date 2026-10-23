@@ -186,7 +186,7 @@ export function TranslationsDialog({
 
         <DialogContent>
           <Stack spacing={3} sx={{ pt: 1 }}>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage(
                 {
                   id: 'products.translations.intro',

@@ -148,7 +148,7 @@ export function ShipmentsList({
       {invoiceError && <Alert severity="error">{invoiceError}</Alert>}
 
       {shipments.length === 0 && (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'orders.shipments.empty',
             defaultMessage: 'Nothing has shipped against this order yet.',
@@ -275,7 +275,7 @@ export function ShipmentsList({
             </Stack>
 
             {shipment.voidedAt && (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {intl.formatMessage(
                   {
                     id: 'orders.shipments.voidedNote',
@@ -291,7 +291,7 @@ export function ShipmentsList({
             )}
 
             {shipment.note && (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {shipment.note}
               </Typography>
             )}

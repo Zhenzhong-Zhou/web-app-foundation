@@ -42,7 +42,7 @@ export function AccessList({
           <Typography component="span" sx={{ fontWeight: 600 }}>
             {label}
           </Typography>
-          <Typography component="span" color="text.secondary">
+          <Typography component="span" sx={{ color: 'text.secondary' }}>
             {sentence}
           </Typography>
         </Box>

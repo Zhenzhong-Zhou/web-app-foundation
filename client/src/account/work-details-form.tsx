@@ -110,14 +110,14 @@ export function WorkDetailsForm() {
             { organization: session.organization.name },
           )}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'account.details.intro',
             defaultMessage:
               'Shown to the people you work with, on the People page. Each is optional.',
           })}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'account.details.seen',
             defaultMessage:

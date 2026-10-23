@@ -91,7 +91,7 @@ export function StatusPage({
       <Typography variant="h4" component="h1">
         {title}
       </Typography>
-      <Typography color="text.secondary" sx={{ fontSize: rem(TYPE.section) }}>
+      <Typography sx={{ color: 'text.secondary', fontSize: rem(TYPE.section) }}>
         {message}
       </Typography>
       {note && (

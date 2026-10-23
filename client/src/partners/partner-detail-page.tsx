@@ -261,7 +261,7 @@ export function PartnerDetailPage() {
                 )}
               </Stack>
 
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {formatAddress(address)}
               </Typography>
             </Box>
@@ -341,7 +341,7 @@ export function PartnerDetailPage() {
                 )}
               </Stack>
 
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {[contact.role, contact.email, contact.phone]
                   .filter(Boolean)
                   .join(' · ')}
@@ -484,7 +484,7 @@ function Section<T>({
         {rows.length ? (
           <Stack divider={<Divider />}>{rows.map(renderRow)}</Stack>
         ) : (
-          <Typography color="text.secondary" sx={{ p: 3 }}>
+          <Typography sx={{ color: 'text.secondary', p: 3 }}>
             {empty}
           </Typography>
         )}

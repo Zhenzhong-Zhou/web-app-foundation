@@ -138,8 +138,7 @@ export function StartFrom({
                   <Typography
                     component="span"
                     variant="body2"
-                    color="text.secondary"
-                    sx={{ display: 'block' }}
+                    sx={{ color: 'text.secondary', display: 'block' }}
                   >
                     {intl.formatMessage(TAGLINES[choice.key])}
                   </Typography>
@@ -151,7 +150,11 @@ export function StartFrom({
         })}
       </RadioGroup>
       <Stack spacing={1.5} sx={{ mt: 1 }}>
-        <Typography id={`${id}-help`} variant="body2" color="text.secondary">
+        <Typography
+          id={`${id}-help`}
+          variant="body2"
+          sx={{ color: 'text.secondary' }}
+        >
           {intl.formatMessage(WORDS.help)}
         </Typography>
         {value === 'copy' && (
