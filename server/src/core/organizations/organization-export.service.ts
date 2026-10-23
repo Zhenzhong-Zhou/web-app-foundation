@@ -149,8 +149,9 @@ export class OrganizationExportService {
             'organization',
             sql`select * from organizations where id = ${organizationId}`,
           );
-          // Each member's role by name, from membership_roles (ADR-080),
-          // which is exported here rather than as a file of its own.
+          // Each member's roles by name, for reading (ADR-080). A made
+          // role's name may hold a comma, so membership_roles.csv holds them
+          // as ids, the file to count and join by (#180).
           csv(
             'members',
             sql`select u.id as user_id, u.name, u.email,
@@ -181,7 +182,9 @@ export class OrganizationExportService {
               table,
               table === 'roles'
                 ? rolesOf(organizationId, locale)
-                : sql`select * from ${sql.identifier(table)}
+                : table === 'membership_roles'
+                  ? membershipRolesOf(organizationId)
+                  : sql`select * from ${sql.identifier(table)}
               where organization_id = ${organizationId}
               order by 1`,
             );
@@ -313,6 +316,21 @@ function rolesOf(organizationId: string, locale: Locale): SQL {
   return sql`select ${sql.join(columns, sql`, `)} from roles
     where organization_id = ${organizationId}
     order by 1`;
+}
+
+/**
+ * membership_roles.csv (#180): the roles each member holds, a row for each,
+ * every column as stored but membership_id, which no file carries, given as
+ * the member's user_id, which members.csv does. In members.csv's order, and
+ * each member's roles in the order its role column names them.
+ */
+function membershipRolesOf(organizationId: string): SQL {
+  return sql`select mr.id, mr.organization_id, m.user_id, mr.role_id,
+      mr.created_at
+    from membership_roles mr
+    join memberships m on m.id = mr.membership_id
+    where mr.organization_id = ${organizationId}
+    order by m.created_at, m.id, mr.role_id`;
 }
 
 /** The largest size a file is kept in. */
@@ -574,6 +592,11 @@ const GLOSSARY = [
     id: 'organization.export.glossary.roles',
     defaultMessage:
       'In roles.csv, each role: name, as the organization named it, the three built in under their English names, Owner, Admin and Viewer; description, what it is for, a built-in role’s in the language of this README; updated_by, who saved a role the organization made last, a user_id. What each role may do is in role_permissions.csv.',
+  }),
+  t({
+    id: 'organization.export.glossary.memberRoles',
+    defaultMessage:
+      'In membership_roles.csv, the roles each member holds, a row for each: user_id, the member in members.csv, and role_id, the role in roles.csv. The role column of members.csv names them for reading, joined with commas, which a role’s own name may also hold: count and join by membership_roles.csv.',
   }),
   t({
     id: 'organization.export.glossary.flags',
