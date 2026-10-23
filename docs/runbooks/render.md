@@ -77,11 +77,10 @@ use; the reasons are in the sections named.
 - **The database expires 30 days after it was created.** It then stops
   answering, and Render deletes it after a 14-day grace period unless it is
   moved to a paid instance type. Note the creation date in the handoff.
-  On 22 October 2026 Render showed the current one, Free, as created
-  about 28 September 2026, and its page said "Your database will expire
-  on October 28, 2026": it stops answering then and is deleted about 11
-  November. Until the database is paid for, this comes back every 30
-  days.
+  The current one, Free, was created on 22 October 2026, and its page
+  says "Your database will expire on November 21, 2026": it stops
+  answering then and is deleted about 5 December. Until the database is
+  paid for, this comes back every 30 days.
 - **The web service sleeps after 15 minutes without a request,** and the
   next request waits about a minute while it starts. The hourly jobs run
   inside it, so while it sleeps they do not: licence reminders (ADR-064)
@@ -123,24 +122,26 @@ cancels an older one, waiting or deploying, so only the newest commit's
 client goes live; and CI on `main` keeps one run waiting, so of several
 merges in quick succession only the newest is checked and deployed.
 
-### As Render showed it on 22 October 2026
+### As Render shows it since 23 October 2026
 
 | Setting            | Web service (the API)                     | Static site (the client)                         |
 |--------------------|-------------------------------------------|--------------------------------------------------|
 | Address            | `https://web-app-foundation.onrender.com` | `https://web-app-foundation-client.onrender.com` |
 | Instance           | Free                                      | Free                                             |
-| Auto-Deploy        | On Commit                                 | On Commit                                        |
-| Deploy Hook        | not noted                                 | there                                            |
+| Auto-Deploy        | Off                                       | Off                                              |
+| Deploy Hook        | in GitHub as `RENDER_API_DEPLOY_HOOK`     | in GitHub as `RENDER_CLIENT_DEPLOY_HOOK`         |
 | Start Command      | `node dist/main`                          |                                                  |
 | Pre-Deploy Command | empty                                     |                                                  |
-| Health Check Path  | `/health/ready`, set by Bob that day      |                                                  |
+| Health Check Path  | `/health/ready`, set on 22 October 2026   |                                                  |
+| Headers            |                                           | the three rules below                            |
 
 The database is Free too (above). With no Pre-Deploy Command, the
 migrations run in the build command (README, "Deployment") while the
 previous release still serves, which is why ADR-081's migrations add and
 never take away in one deploy.
 
-What the static site sent, from `curl -sI` the same day:
+What the static site sent, from `curl -sI`, on 22 October 2026, before
+the header rules:
 
 | Path                        | `cache-control`                             | `cf-cache-status` |
 |-----------------------------|---------------------------------------------|-------------------|
@@ -150,19 +151,38 @@ What the static site sent, from `curl -sI` the same day:
 | `/version.json`             | the same, as `index.html`: not yet built    | `MISS`            |
 | `/api/health`               | none                                        | `BYPASS`          |
 
-So Render's edge can keep `index.html` for five minutes after a deploy.
-It ignores a request's `no-cache`, though a new query string misses it,
-which is why the version check adds one of its own. A tab that loads in
-full in those minutes can get the old build back; the client loads in
+And on 23 October 2026, after ADR-081's merge, with the three rules (one
+run):
+
+| Path                        | `cache-control`                             | `cf-cache-status` |
+|-----------------------------|---------------------------------------------|-------------------|
+| `/`                         | `public, max-age=0, s-maxage=300`           | `HIT`             |
+| `/index.html`               | `no-cache`                                  | `EXPIRED`         |
+| `/version.json`             | `no-cache`                                  | `EXPIRED`         |
+| `/orders`                   | `public, max-age=0, s-maxage=300`           | `EXPIRED`         |
+| `/assets/index-Bl7LQjt0.js` | `public, max-age=31536000, immutable`       | `EXPIRED`         |
+
+So the rules do what they say for the paths they name: a hashed asset is
+kept a year, and `index.html` and the version file are asked for again
+every time. `/` and every deep link, such as `/orders`, are `index.html`
+through the `/*` rewrite, and the `/index.html` rule does not reach them:
+they keep Render's default, which lets its edge keep them for five
+minutes, and `/` came back `HIT`. After a deploy, then, someone opening
+`/` or a link into the app may get the old build's page for up to five
+minutes. Render's edge also ignores a request's `no-cache`, though a new
+query string misses it, which is why the version check adds one of its
+own. A tab that loads the old page sees the newer version file, loads in
 full once per new version and then waits (manual checks, MC-3411), so it
-never loops. Hashed assets are sent `max-age=0`, so a browser asks again
-for every chunk on every load. `/api/health` goes through the `/api/*`
+never loops. A rule for `/*` would reach them, but it overlaps
+`/assets/*`, and Render's docs do not say which wins: that is for the
+whole-app review (handoff). `/api/health` goes through the `/api/*`
 rewrite uncached, so the workflow never reads an old answer.
 
 ### Setting it up, by hand, in this order
 
 Before the pull request that adds `deploy.yml` merges, so that its merge
-deploys this way:
+deploys this way. All five were done on 22 October 2026; the header rules
+took effect at once, without a deploy.
 
 1. **The deploy hooks, as secrets.** Render → the web service → Settings →
    Deploy Hook: copy it. GitHub → the repository → Settings → Secrets and
@@ -216,11 +236,16 @@ After the merge's deploy:
    ```bash
    site=https://web-app-foundation-client.onrender.com
    asset=$(curl -s "$site/?$(date +%s)" | grep -o '/assets/index-[A-Za-z0-9_-]*\.js' | head -1)
-   for path in / /index.html /version.json /orders "$asset"; do
-     echo "== $path"
-     curl -sI "$site$path" | grep -iE '^(cache-control|cf-cache-status):'
+   for p in / /index.html /version.json /orders "$asset"; do
+     echo "== $p"
+     curl -sI "$site$p" | grep -iE '^(cache-control|cf-cache-status):'
    done
    ```
+
+   The loop's name is `p`, not `path`: in zsh, the Mac's shell, `path` is
+   the list of folders programs are found in, so a loop over `path` loses
+   `curl` and `grep` (and the rest of that window's commands; open a new
+   one).
 
    `/` and `/orders` are `index.html` too, through the `/*` rewrite:
    whether the `/index.html` rule reaches them is part of what this
@@ -229,6 +254,15 @@ After the merge's deploy:
    whatever the header says. Record what came back here, with the date,
    either way.
 3. **A tab kept open across the deploy:** manual checks, MC-3424.
+
+On 23 October 2026, for #199's merge (1620e99): Deploy #1 deployed the
+API by its hook; the wait saw 983c1d8 three times, then 1620e99 after 1
+minute 43; then it deployed the static site. `/api/health` and
+`/version.json` both named 1620e99, version 0.7.0, API revision 1. The
+second run, Deploy #2, for CI's scheduled run at 7:01, was skipped, as
+designed: it tests a commit already deployed. The free API took about 50 seconds to wake for
+the first request. The headers are the second table above, from one run;
+the second run, and MC-3424, wait for the next deploy.
 
 ### When the wait times out
 

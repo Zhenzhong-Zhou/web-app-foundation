@@ -1,39 +1,48 @@
-# web-app-foundation — handoff, 22 October 2026
+# web-app-foundation — handoff, 23 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 22 October 2026: read this first
+## Now, 23 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **Next: merge ADR-081, old tabs after a deploy** (#199,
-  `adr-081-old-tabs`), planned in this chat, built by Claude Code from the
-  brief in `tmp/adr-081/` and reviewed; it fixes #175 and #173. No
-  migration. A version file, and "New version" in the top bar (a dot on
-  the account button on a phone, a banner when signed out, amber on the
-  page and atop every dialog once the tab's saves would be refused), with
-  one reload at the next page; a failed load told apart (offline, a newer
-  build, a crash); an API revision the client sends, an outdated one
-  refused, and a breaking change caught in CI (oasdiff); the API deployed
-  before the client, by a workflow, once CI passes; migrations checked
-  against the release still running (squawk); a language that fails to
-  load says so in its own words; the release and build at Help's foot and
-  on `/health`; the `/production-readiness` skill; `seed:volume` caught up
-  with ADR-080 and the access query timed. Riding along: the status tones'
-  contrast, references kept whole, Home's tiles in even rows,
-  `eslint-plugin-compat`, a manifest per scale. What building settled is in
-  ADR-081's as-built amendment. **Before the merge, by hand,** and in this
-  order: replace the free database (it expires on 28 October 2026); the
-  two deploy hooks as secrets, `API_HEALTH_URL`, and both services'
-  Auto-Deploy Off; the three cache-header rules. **After it:** watch the
-  Deploy run, record the headers, MC-3424. The list, with each step's
-  check, is in #199's description and `docs/runbooks/render.md`.
-- **The order after it** (Bob, 22 October 2026): **#196**, MUI 9's
-  Typography colours, as a PR of its own, since it changes how every
-  screen looks; then **ADR-082, low stock** (its questions in Open
-  decisions); then the review of the whole app, once
+- **Next: #196, MUI 9's Typography colours** (`fix-196-typography-colours`),
+  its own PR, since it changes how every screen looks; planned in this chat
+  and built by Claude Code from the brief in `tmp/fix-196/`. MUI 9's
+  Typography takes a colour prop only by a palette name, so
+  `color="text.secondary"` and three others, 218 places in 102 files, have
+  drawn the primary text colour since 2 September. Decided (Bob, 23
+  October 2026; ADR-055's amendment): MUI's own codemod,
+  `@mui/codemod@9.5.0 v9.0.0/system-props`, moves each path into `sx`; a
+  path inside an expression, which the codemod leaves, moves by hand;
+  `warning.dark` becomes `warning.main`; a lint rule refuses a dotted
+  colour prop; the main screens pictured before and after, in both modes,
+  and axe. Riding along: Deploy run by hand (`workflow_dispatch`, `main`'s
+  newest commit whose CI passed), and `i18n-review.mjs export --since`, so
+  a reviewer gets only what changed. The README's phone section and
+  `render.md`'s zsh fix came in its first commit. No migration; nothing
+  for the seeds.
+- **ADR-081, old tabs after a deploy:** merged in #199 (1620e99) on 23
+  October 2026, fixing #175 and #173; what building settled is in its
+  as-built amendment. Done by hand on 22 October, before the merge: the
+  free database replaced (all 75 migrations; the Backup run green once its
+  secret lost `?sslmode=no-verify`); both deploy hooks as secrets,
+  `API_HEALTH_URL`, Auto-Deploy Off on both services; the three header
+  rules, which took effect at once, without a deploy. The merge's Deploy
+  run (#1) deployed the API at 1620e99 by its hook; the wait saw 983c1d8
+  three times, then 1620e99 after 1 minute 43; then the static site.
+  `/api/health` and `/version.json` both named 1620e99, version 0.7.0, API
+  revision 1. Deploy #2, for CI's scheduled run at 7:01, was skipped, as
+  designed. The free API took about 50 seconds to wake for the first
+  request. The headers, and what they mean for `/` and deep links, are in
+  `render.md`, "Deploys". MC-3424 waits for the next deploy (*Still to do,
+  by hand*).
+- **The order after it** (Bob, 22 October 2026): **#196** (above), with
+  the brand's name, Panivo / 品桥, and the tab icon as a small PR of its
+  own beside it (#201); then **ADR-082, low stock**
+  (its questions in Open decisions); then the review of the whole app, once
   (`/production-readiness` with its device pass: deploys, backups and a
   restore tried, monitoring, security, performance, email, support,
   browsers and China, tablets and foldables, the iPhone Duo closed and
@@ -47,13 +56,22 @@ with this one, this one is current.
   one forward, each with its entry in Open decisions: one person in two
   organizations, then a practice organization (ADR-077, *Deferred*); a
   public demo; plans and billing; the operator's console and support
-  access.
+  access. The rest of the brand comes after #196 (*Still to do, in
+  code*).
 - **Meanwhile, in Claude Code's cloud sessions** (Bob's $250 credit, which
-  ends in early November): small fixes that need no brief, one branch and
-  PR each, merged after ADR-081: #189, #190, #193, #194, #195, #184. Not
-  #186 or #187 (they need the large seed) or #183 (better debugged on the
-  Mac). The cloud's Node is 22 and its Postgres 16, so its environment
-  installs Node 26, and the session runs `docker compose up -d`.
+  ends in early November): small fixes that need no brief, one session,
+  branch and PR each, every prompt ending with a DONE line. #189 is pushed
+  as `fix-189-bell-failed-load` (c9d87bd, its PR to open; MC-R43). Then
+  #190, #193, #194 and #195, which barely overlap, with the regression
+  checks MC-R44 to MC-R47 named in their prompts, since sessions started
+  together would each take the next free number; then #184 (MC-R48),
+  which touches many files, once they have merged and before #196 starts
+  (#196's is MC-R49). Merge one at a time; a PR GitHub calls conflicting
+  goes back to its session to rebase on `main`. Not #186 or #187 (they
+  need the large seed) or #183 (better debugged on the Mac). The cloud's
+  Node is 22 and its Postgres 16, so its environment installs Node 26,
+  and the session runs `docker compose up -d`, pulling from
+  `mirror.gcr.io` when Docker Hub refuses.
 - **ADR-080, job roles** (`adr-080-job-roles`): merged in #176. Roles an
   organization makes, from a template or a copy, several to a member and
   added together; the built-in three fixed; a role given only by someone
@@ -452,17 +470,22 @@ with this one, this one is current.
 
 ### Still to do, by hand
 
-- **Panivo on Render** (`brand-name-and-icon`): the static site's
+- **Panivo on Render** (#201, `brand-name-and-icon`): the static site's
   Environment, `VITE_APP_NAME=Panivo`, and the web service's `MAIL_FROM`,
   `Panivo <the address it has now>` (runbooks/render.md, "Building the
   services from nothing"). The static site reads the name only when it
   builds, so set it before the merge's deploy, or deploy again after.
   Then MC-3501 and MC-3502 on the live app, in a private window.
 - **The Chinese review:** Bob's mother has the export made at `b933b912`
-  (22 October 2026). Since then two lines were added,
-  `language.failedNewVersion` and `language.loadingAgain`, and two removed;
-  see what moved with `git diff b933b912 -- '*zh-Hans*'`. Send her a fresh
-  export after each merge, so each review stays small; her corrections
+  (22 October 2026); her corrections were not back on 23 October. Let her
+  finish that file: the import matches each correction by its message id,
+  so it lands on whatever the catalogues hold by then, and a corrected row
+  whose message has since gone is named, and nothing written until it is
+  cleared. Since `b933b912`, `language.failedNewVersion` and
+  `language.loadingAgain` were added and two removed, and #189 adds
+  `layout.notifications.loadFailed`; #196 changes no words. Her next round
+  is only what changed, which #196 adds:
+  `node scripts/i18n-review.mjs export --since b933b912`. Her corrections
   go into the words-and-translations fix-up. The export covers the two
   catalogues only: not Help's guides (#150; until then she reads them in
   Help, in 中文) and not MUI's or the browser's own words, which aren't
@@ -471,28 +494,29 @@ with this one, this one is current.
 - **After #176, if not yet done:** delete `tmp/adr-080` and the branch,
   then `npm run seed` and `npm run seed:demo`; show Roles and the editor
   in 中文 on a phone to someone who reads only Chinese.
-- **Render's free database expires on 28 October 2026,** as its page said
-  on 22 October (created about 28 September; deleted about 11 November).
-  The 12 November this line gave before was wrong, and the "Done on 13
-  October" below does not match the database Render shows. Replace
-  it before ADR-081 merges, and in any case by 27 October: its deploy
-  runs migrations, and its checks after the deploy need the API up. Each
-  free database lasts 30 days, so until a paid one this comes back
-  monthly. Move to a paid
-  database, or create a free one again, empty, by the steps in
-  `docs/runbooks/render.md`. Before any real customer: a paid database and
-  web service, backups to the Canadian bucket, and every development
-  secret replaced (the runbook's "Before real customers' data"). Done on
-  13 October 2026: the free database was deleted and
-  created again, which retired the password pasted in a chat and left no
-  older rows for the pinyin backfill; 55 migrations applied; the
-  environment's keys checked, with `MAIL_USER` and `MAIL_PASSWORD` removed
-  (nothing reads them). A logo uploaded on Branding proved `FILE_STORAGE=s3`,
-  and showed `FILES_S3_ENDPOINT` ending in `/waf-files`, which stored every
-  file under a `waf-files/` folder inside the bucket. Corrected to the
-  account's address alone, the stray folder deleted, the logo uploaded
-  again to `<organization id>/…`, and GitHub's `BACKUP_S3_ENDPOINT` set
-  again the same way. The server now refuses such an endpoint at boot.
+- **Render's free database** (`foundation-db`) was created on 22 October
+  2026; its page says it expires on 21 November 2026, and Render deletes
+  it about 5 December. Replace it by about 19 November, by
+  `docs/runbooks/render.md`, "Replacing the database", and record the new
+  dates here. Each free database lasts 30 days, so until a paid one this
+  comes back monthly. The one before was created about 28 September and
+  expired on 28 October (the 12 November an older line gave was wrong);
+  the one before that was recreated on 13 October to retire a password
+  pasted in a chat, the day `FILES_S3_ENDPOINT` was found ending in the
+  bucket (`render.md`, "What runs where"). Before any real customer: a
+  paid database and web service, backups to the Canadian bucket, and
+  every development secret replaced (the runbook's "Before real
+  customers' data").
+- **At the next deploy,** the first PR merged after 1620e99 (likely #189):
+  MC-3424, with the tab of the live app kept open for it. Then run
+  `render.md`'s headers loop once more and record whether `/index.html`
+  and `/version.json` ever answer `HIT`.
+- **Render's edge and `/`:** `/` and every deep link come through the `/*`
+  rewrite, which the `/index.html` header rule does not reach, so after a
+  deploy Render's edge may serve the old `index.html` there for up to
+  five minutes (`render.md`, "Deploys"). The client copes (ADR-081); a
+  rule that reaches them is for the whole-app `/production-readiness`
+  review.
 - **Before v0.7.0:** walk sections 23 and 24 of `docs/manual-checks.md`
   (MC-2301 to MC-2303, leaving and deleting; MC-2401 to MC-2406, closing
   an organization); have the French and Chinese
@@ -574,9 +598,14 @@ with this one, this one is current.
 - **The brand's next PR** (Panivo, 品桥 in Chinese). `brand-name-and-icon`
   gave the tab its icon and every tab the name `VITE_APP_NAME` sets, in
   every language, so in 中文 Inventory's reads 库存 · Panivo. Waiting
-  for that PR: the mark at sign-in and in the rail, the tab's name by
-  language (品桥 in 中文), and the brand's colours. The masters are in
-  `docs/brand/`.
+  for that PR, after #196: the mark at sign-in, in the rail, in emails
+  and on PDFs; the tab's name by language (品桥 in 中文); the brand's
+  colours, and whether ADR-055's brand layer changes. Bob brings the
+  files then; the masters are in `docs/brand/`. From #201's
+  `/production-readiness`: the ICO holds the light mark only, so its navy
+  stem is about 1 : 1 on a dark Windows taskbar or Safari's dark tab bar
+  (Safari 16.4 to 18 draws the ICO); and with no web manifest, which icon
+  Android's Add to home screen takes is uncertain (MC-3501 shows it).
 - **ADR-079's limits.** Help still slides over the page in windows under
   about 1140 px, or under about 1265 px at Large text and 1330 px at
   Larger, where a control under it can be focused out of sight (WCAG
@@ -738,11 +767,12 @@ and price lists proposing the price of a new line.
   Wholesale CAD list (the organization default). It also leaves an RMA
   received and credited on SO-DEMO-1, a voided shipment, and PO-DEMO-2
   bought in USD at a rate of 1.37.
-- **Render is up.** The database `foundation-db` is on the **Free plan**:
-  no backups of its own, and it expires 30 days after creation — note the
-  date here. Used only to test with until real data; then a paid plan
-  (ADR-053, phase 2). Migrations 0000–0037 confirmed; 0038 with the #20
-  deploy.
+- **Render is up,** deployed by `deploy.yml` since ADR-081, the API first,
+  then the static site. The database `foundation-db` is on the **Free
+  plan**: no backups of its own, and it expires 30 days after creation (21
+  November 2026 for the current one: *Still to do, by hand*). Used only to
+  test with until real data; then a paid plan (ADR-053, phase 2). All 75
+  migrations, through 0074, applied on 22 October 2026.
 
 ## Next, in order (as of 8 October 2026)
 
@@ -1471,6 +1501,13 @@ in ADR-050's amendment.
   The review step runs in two prompts: the reviews and walkthroughs,
   stopping for Bob's choices, then the fixes, the full verify, the push
   and the PR.
+- **Cloud sessions** (Claude Code on the web, from October 2026): one new
+  session per issue, from `main`, each cloning the repository fresh, so
+  nothing is pulled first. The prompt names the branch, the author, the
+  regression check's number when several run at once, and asks for
+  `scripts/verify.sh --quick`, a pull request with "Fixes #N", and a last
+  line saying DONE or BLOCKED. PRs merge one at a time; one GitHub calls
+  conflicting goes back to its session to rebase on `main`.
 - **An mbox is applied from Bob's downloads,** by its full name:
   `git am ~/Downloads/0001-<subject>.mbox`. Downloads land in
   `~/Downloads` itself, not a folder, so each file is named, never a glob.

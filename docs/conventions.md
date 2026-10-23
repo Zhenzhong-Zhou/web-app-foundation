@@ -592,9 +592,11 @@ theme. A component asks the palette by name (`color: 'text.secondary'`,
 value, a font size or a radius the tokens already name. A value the design needs
 and the tokens lack becomes a token first.
 
-- **Typography's `color` prop takes a palette name** (`textSecondary`,
-  `primary`), never a path: MUI 9 ignores `color="text.secondary"` there
-  and draws primary text (#196). A path goes in `sx`.
+- **A colour given as a path goes in `sx`:**
+  `sx={{ color: 'text.secondary' }}`. A `color` prop takes only a name
+  (`primary`, `error`, `inherit`): MUI 9 ignores a path in Typography's
+  prop and draws primary text (#196), and lint refuses one on any
+  component.
 - **Two layers.** Brand (the accent, the radius) is what a rebrand, and later an
   organization, changes. Semantic (surfaces, text, borders, the five status
   tones) never takes the brand's colour.

@@ -5250,6 +5250,34 @@ a phone's screen; in a table cell it stays on one line. Banners, header
 buttons, dialog footers and date ranges wrap, so no page scrolls
 sideways at 320px.
 
+**Amendment (October 2026) — a colour given as a path goes in `sx`
+(#196).** MUI 9's Typography takes its `color` prop only as a palette name
+(`primary`, `error`, `textSecondary`) and ignores a path, which TypeScript
+still accepts as a string. So from the first MUI 9 commit (2 September
+2026) `color="text.secondary"`, in 214 places, drew the primary text
+colour, and the muted line under a heading, a figure's note and a list's
+detail read as loudly as what they explain; two warning lines were not
+amber. The text hierarchy above is meant, and is put back:
+
+- **MUI's own codemod,** `@mui/codemod@9.5.0` `v9.0.0/system-props`,
+  moves every colour given as a path into `sx`, merging into an `sx`
+  already there: `sx={{ color: 'text.secondary' }}`, as the client
+  already writes colours elsewhere. A named colour stays a prop. A path
+  inside an expression, which the codemod leaves, moves by hand.
+- **The one `warning.dark` becomes `warning.main`,** the warning intent:
+  MUI's derived shades are not tokens, and fell below contrast where
+  ADR-081 met them.
+- **A lint rule refuses a `color` prop with a dot in it,** however it is
+  written, on any component, since the type cannot.
+- **Checked by eye and by axe:** the main screens pictured before and
+  after, in both modes, at desktop and phone width.
+
+Rejected: a variant per path in the theme's `MuiTypography`, which would
+be one file, but keeps working by our hand a spelling MUI 9 dropped, and
+would fail as quietly at the next major; and renaming each to its palette
+name (`textSecondary`), which leaves one colour with two spellings, the
+prop's and `sx`'s.
+
 ---
 
 ## ADR-056 — Search: one lookup in the top bar, and a search on every list

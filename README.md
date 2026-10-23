@@ -138,6 +138,24 @@ npm run dev
 No real SMTP provider is needed in development. All outbound mail is captured by
 Mailpit — open the inbox above to click verification and password-reset links.
 
+### From a phone on the same Wi-Fi
+
+1. In `client/`, start the dev server with `npm run dev -- --host`. Vite
+   prints a Network address, such as `http://192.168.1.23:5173`.
+2. Open that address on the phone: the IP address, not the Mac's name
+   (`….local`), which Vite refuses with "Blocked request".
+3. If the phone can't reach it, allow `node` in the Mac's firewall
+   (System Settings → Network → Firewall → Options), or press Allow when
+   macOS asks the first time.
+4. On an iPhone, Safari needs nothing more. Any other app (Chrome,
+   WeChat's browser) needs Local Network: Settings → Privacy & Security →
+   Local Network → that app on.
+
+The API needs nothing: the phone's requests go through Vite's `/api` proxy
+on the Mac. Mailpit's links name `localhost`, so open them on the Mac. On an
+iPhone Duo, walk each screen closed and open, and unfold it with a page
+open, since the layout changes under it.
+
 ---
 
 ## Commands
