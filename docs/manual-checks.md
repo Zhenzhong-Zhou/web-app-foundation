@@ -2309,6 +2309,12 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R52** *(money too long for a JavaScript number, #130)* On draft
+  SO-DEMO-3, Add item: any item, quantity 1, priced 98765432109876.5432
+  CAD, the most digits a price holds. The line's price and total, and the
+  order's total, each read $98,765,432,109,876.54, never .55: the amount
+  is written from its digits, not through a JavaScript number (ADR-025).
+
 - **MC-R48** *(typographic apostrophes in English, #184)* In English, as
   Tom Becker open a sale's invoice by its address, as MC-3320 does: You
   don’t have access to this. Open
@@ -3028,3 +3034,5 @@ first.
   MC-R47.
 - 2026-10-23: #184, typographic apostrophes in English, and the
   catalogues' check holding them: MC-R48.
+- 2026-10-23: #130, money on screen written from its digits, never a
+  JavaScript number: MC-R52.
