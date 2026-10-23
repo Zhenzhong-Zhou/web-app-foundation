@@ -1440,7 +1440,6 @@
   "products.gallery.download": "下载",
   "products.gallery.empty": "将照片拖到这里",
   "products.gallery.failed": "未添加",
-  "products.gallery.failedUnknown": "无法上传，请重试。",
   "products.gallery.full": "{count} / {max}。请先移除一张再添加。",
   "products.gallery.hint": "PNG、JPEG 或 WebP，每张最大 20 MB，最多 {max} 张。可将照片拖到这里、粘贴，或在手机上用相机拍摄。拖动缩略图或使用其菜单可更改顺序。",
   "products.gallery.makeCover": "设为封面",

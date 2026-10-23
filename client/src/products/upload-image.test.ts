@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { API_REVISION } from '../api/revision.gen';
+import { ApiError } from '../lib/api';
 import { server } from '../test/setup';
 import { OUTDATED, outdatedRefusal } from '../test/version';
 import { newVersionNow } from '../version/version-check';
@@ -29,14 +30,28 @@ describe('uploadProductImage', () => {
     expect(headers!.get('X-Requested-With')).toBeTruthy();
   });
 
-  it('notes a refusal as outdated before it rejects with the server’s words', async () => {
+  it('notes a refusal as outdated, then rejects with the ApiError api() would', async () => {
     server.use(
       http.post('/api/v1/files/product-image', () => outdatedRefusal()),
     );
 
-    await expect(uploadProductImage(photo(), () => undefined)).rejects.toThrow(
-      OUTDATED,
-    );
+    const refusal: unknown = await uploadProductImage(
+      photo(),
+      () => undefined,
+    ).catch((caught: unknown) => caught);
+    expect(refusal).toBeInstanceOf(ApiError);
+    expect((refusal as ApiError).message).toBe(OUTDATED);
+    expect((refusal as ApiError).code).toBe('client_outdated');
     expect(newVersionNow().outdated).toBe(true);
+  });
+
+  it('rejects as fetch does when no answer comes back', async () => {
+    server.use(
+      http.post('/api/v1/files/product-image', () => HttpResponse.error()),
+    );
+
+    await expect(
+      uploadProductImage(photo(), () => undefined),
+    ).rejects.toBeInstanceOf(TypeError);
   });
 });

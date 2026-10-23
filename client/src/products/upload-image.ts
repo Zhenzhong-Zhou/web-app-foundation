@@ -1,6 +1,4 @@
-import { API_REVISION } from '../api/revision.gen';
-import { hasCode } from '../lib/api';
-import { noteOutdated } from '../version/version-check';
+import { apiHeaders, refusalFrom } from '../lib/api';
 
 /** What a product image upload reports as it goes. */
 export type UploadState =
@@ -10,11 +8,12 @@ export type UploadState =
  * Uploads one photo as a product image (ADR-059), reporting how much has
  * gone and then that the server is making its sizes. XMLHttpRequest, not
  * fetch: only it reports an upload's progress. Resolves with the file's
- * id; rejects with the server's own message when it refuses one.
+ * id.
  *
- * A write outside api(), so it sends what api() sends: the CSRF header and
- * the API revision, and an outdated tab's refusal is noted as api() notes
- * it (ADR-081).
+ * A write outside api(), so it sends what api() sends (apiHeaders) and
+ * fails as api() fails: a refusal as the same ApiError, an outdated tab's
+ * noted as api() notes it (ADR-081), and no answer at all as fetch's
+ * TypeError, so the screen words each as it words any other.
  */
 export function uploadProductImage(
   file: File,
@@ -23,9 +22,9 @@ export function uploadProductImage(
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open('POST', '/api/v1/files/product-image');
-    // The CSRF guard's header, as api() sends on every write.
-    request.setRequestHeader('X-Requested-With', 'fetch');
-    request.setRequestHeader('X-Api-Revision', String(API_REVISION));
+    for (const [name, value] of Object.entries(apiHeaders())) {
+      request.setRequestHeader(name, value);
+    }
     request.withCredentials = true;
 
     request.upload.onprogress = (event) => {
@@ -44,13 +43,15 @@ export function uploadProductImage(
         resolve(response.file.id);
         return;
       }
-      if (hasCode(response?.code ?? null, 'client_outdated')) {
-        await noteOutdated();
-      }
-      // Empty when the server said nothing usable: the caller words it.
-      reject(new Error(messageOf(response) ?? ''));
+      reject(
+        await refusalFrom(
+          request.status,
+          response,
+          request.getResponseHeader('Retry-After'),
+        ),
+      );
     };
-    request.onerror = () => reject(new Error(''));
+    request.onerror = () => reject(new TypeError('Failed to fetch'));
 
     const form = new FormData();
     form.append('file', file);
@@ -61,6 +62,7 @@ export function uploadProductImage(
 interface Response {
   file?: { id?: string };
   message?: string | string[];
+  requestId?: string;
   code?: string;
 }
 
@@ -70,10 +72,4 @@ function parse(text: string): Response | null {
   } catch {
     return null;
   }
-}
-
-function messageOf(response: Response | null): string | null {
-  const message = response?.message;
-  if (Array.isArray(message)) return message.join(' ');
-  return message ?? null;
 }

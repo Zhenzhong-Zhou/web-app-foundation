@@ -112,10 +112,10 @@ export function messageFor(caught: unknown): string {
  * HTTP date by the standard, and nothing here sends one, so anything that is
  * not a positive number of seconds reads as unknown rather than as a guess.
  */
-function retryAfter(response: Response): number | undefined {
-  if (response.status !== 429) return undefined;
+function retryAfter(status: number, header: string | null): number | undefined {
+  if (status !== 429) return undefined;
 
-  const seconds = Number(response.headers.get('Retry-After'));
+  const seconds = Number(header);
   return Number.isFinite(seconds) && seconds > 0
     ? Math.ceil(seconds)
     : undefined;
@@ -207,56 +207,89 @@ export function withQuery(
   return `${path}${path.includes('?') ? '&' : '?'}${query}`;
 }
 
+/**
+ * What every request to the API carries besides its body: the reader's
+ * language, the CSRF header and this client's API revision (api() above).
+ * Exported for the one write outside api(), the product image upload, an
+ * XMLHttpRequest for its progress (ADR-059).
+ */
+export function apiHeaders(): Record<string, string> {
+  return {
+    ...(requestLanguage ? { 'Accept-Language': requestLanguage } : {}),
+    'X-Requested-With': 'XMLHttpRequest',
+    'X-Api-Revision': String(API_REVISION),
+  };
+}
+
+/** What the exception filter answers a refusal with. */
+interface ErrorResponse {
+  message?: string | string[];
+  requestId?: string;
+  code?: string;
+  details?: ErrorDetails;
+}
+
+/**
+ * A failed answer as the ApiError every caller catches, from its status,
+ * its body (null when it was not JSON) and its Retry-After header. An
+ * outdated tab's refusal is noted here, once rather than in each caller,
+ * since most land in a silent catch, the background session read first of
+ * all: the version file read, and a newer build made urgent, before the
+ * screen hears (ADR-081). Exported for the image upload, as apiHeaders is.
+ */
+export async function refusalFrom(
+  status: number,
+  body: ErrorResponse | null,
+  retryAfterHeader: string | null,
+): Promise<ApiError> {
+  // ValidationPipe returns message as an array; everything else as a string.
+  const message = Array.isArray(body?.message)
+    ? body.message.join(', ')
+    : (body?.message ??
+      intl().formatMessage(
+        {
+          id: 'common.requestFailed',
+          defaultMessage: 'Request failed ({status})',
+        },
+        { status },
+      ));
+
+  const error = new ApiError(
+    message,
+    status,
+    body?.requestId,
+    retryAfter(status, retryAfterHeader),
+    body?.code,
+    body?.details,
+  );
+  if (hasCode(error.code ?? null, 'client_outdated')) await noteOutdated();
+  return error;
+}
+
 /** The request every call makes, and the error every failure throws. */
 async function send(path: string, init: ApiInit): Promise<Response> {
   const response = await fetch(`${BASE}${path}`, {
     ...init,
     credentials: 'include',
     headers: {
-      ...(requestLanguage ? { 'Accept-Language': requestLanguage } : {}),
+      ...apiHeaders(),
       // A file goes as multipart, whose boundary the browser writes itself.
       ...(init.body instanceof FormData
         ? {}
         : { 'Content-Type': 'application/json' }),
-      'X-Requested-With': 'XMLHttpRequest',
-      'X-Api-Revision': String(API_REVISION),
       ...init.headers,
     },
   });
 
   if (!response.ok) {
-    // ValidationPipe returns message as an array; everything else as a string.
-    const body = (await response.json().catch(() => null)) as {
-      message?: string | string[];
-      requestId?: string;
-      code?: string;
-      details?: ErrorDetails;
-    } | null;
-
-    const message = Array.isArray(body?.message)
-      ? body.message.join(', ')
-      : (body?.message ??
-        intl().formatMessage(
-          {
-            id: 'common.requestFailed',
-            defaultMessage: 'Request failed ({status})',
-          },
-          { status: response.status },
-        ));
-
-    const error = new ApiError(
-      message,
+    const body = (await response
+      .json()
+      .catch(() => null)) as ErrorResponse | null;
+    throw await refusalFrom(
       response.status,
-      body?.requestId,
-      retryAfter(response),
-      body?.code,
-      body?.details,
+      body,
+      response.headers.get('Retry-After'),
     );
-    // Here once rather than in each caller, since most refusals land in a
-    // silent catch, the background session read first of all: the version
-    // file read, and a newer build made urgent, before the screen hears.
-    if (hasCode(error.code ?? null, 'client_outdated')) await noteOutdated();
-    throw error;
   }
 
   noteServed();

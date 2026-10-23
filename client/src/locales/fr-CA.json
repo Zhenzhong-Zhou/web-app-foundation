@@ -1440,7 +1440,6 @@
   "products.gallery.download": "Télécharger",
   "products.gallery.empty": "Glissez des photos ici",
   "products.gallery.failed": "Non ajoutée",
-  "products.gallery.failedUnknown": "Le téléversement a échoué. Réessayez.",
   "products.gallery.full": "{count} sur {max}. Retirez-en une pour en ajouter une autre.",
   "products.gallery.hint": "PNG, JPEG ou WebP, jusqu’à 20 Mo chacune, jusqu’à {max}. Glissez des photos ici, collez-en une ou, sur un téléphone, utilisez l’appareil photo. Glissez une vignette, ou utilisez son menu, pour changer l’ordre.",
   "products.gallery.makeCover": "Choisir comme couverture",

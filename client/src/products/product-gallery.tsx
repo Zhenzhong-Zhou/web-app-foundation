@@ -31,6 +31,7 @@ import { useIntl } from 'react-intl';
 import type { ProductImage } from '../api/types.gen';
 import { UndoSnackbar } from '../components/undo-snackbar';
 import { api, messageFor } from '../lib/api';
+import { useFailureWords } from '../lib/use-failure-words';
 import { rem } from '../theme/rem';
 import { uploadProductImage, type UploadState } from './upload-image';
 
@@ -45,7 +46,19 @@ const UNDO_MS = 5000;
 interface Upload {
   key: string;
   name: string;
-  state: UploadState | { stage: 'failed'; message: string };
+  state: UploadState | { stage: 'failed'; failure: unknown };
+}
+
+/**
+ * Why an upload was not added, worded as the row renders: an outdated
+ * tab's refusal says what is true now, not when it came (ADR-081).
+ */
+function UploadFailure({ failure }: { failure: unknown }) {
+  return (
+    <Typography variant="body2" color="error">
+      {useFailureWords(failure)}
+    </Typography>
+  );
 }
 
 const src = (fileId: string, size: 'thumb' | 'display' | 'full') =>
@@ -126,11 +139,7 @@ export function ProductGallery({
         setImages(next);
         setUploads((all) => all.filter((upload) => upload.key !== key));
       } catch (caught) {
-        const message =
-          caught instanceof Error && caught.message
-            ? caught.message
-            : messageFor(caught);
-        update({ stage: 'failed', message });
+        update({ stage: 'failed', failure: caught });
       }
     },
     [productId],
@@ -315,13 +324,7 @@ export function ProductGallery({
             </Typography>
           </Stack>
           {upload.state.stage === 'failed' ? (
-            <Typography variant="body2" color="error">
-              {upload.state.message ||
-                intl.formatMessage({
-                  id: 'products.gallery.failedUnknown',
-                  defaultMessage: 'It could not be uploaded. Try again.',
-                })}
-            </Typography>
+            <UploadFailure failure={upload.state.failure} />
           ) : (
             <LinearProgress
               variant={
