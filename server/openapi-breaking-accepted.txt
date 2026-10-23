@@ -1,0 +1,12 @@
+# Breaking changes oasdiff reports that were reviewed and accepted, each
+# with why no open tab is refused or misread for it (ADR-081). One line
+# each: the method and the path, then the change in oasdiff's words, then
+# why. scripts/check-api-breaking.sh gives this file to oasdiff's
+# --err-ignore, which lets through a change whose method, path and words
+# one line holds. Lines that start with # are notes for the reader.
+#
+# Once main has a change, oasdiff no longer reports it: its line can go.
+
+PUT /v1/products/{id}/images the `fileIds` request property's maxItems was set to `8` -- the limit held already, @ArrayMaxSize refusing a ninth; @nestjs/swagger 12.0.3 now writes it into the document.
+PUT /v1/products/{id}/translations the `translations` request property's maxItems was set to `3` -- the limit held already, @ArrayMaxSize refusing a fourth language; @nestjs/swagger 12.0.3 now writes it into the document.
+PUT /v1/products/{id}/variants/{variantId}/translations the `translations` request property's maxItems was set to `3` -- the limit held already, @ArrayMaxSize refusing a fourth language; @nestjs/swagger 12.0.3 now writes it into the document.

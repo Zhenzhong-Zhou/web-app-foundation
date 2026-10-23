@@ -58,25 +58,40 @@ contract() {
   fi
 }
 
+# A check that exits 3 when it cannot run, having said why: reported and
+# gone on from, as Docker not running is. Any other failure stops here.
+may_skip() {
+  local status=0
+  "$@" || status=$?
+  if [[ $status -eq 3 ]]; then
+    echo 'Skipped, as it says above.'
+    return 0
+  fi
+  return "$status"
+}
+
 against_main() {
-  local main=origin/main have_main=true
-  git rev-parse --verify --quiet "$main^{commit}" > /dev/null || have_main=false
+  local main=origin/main base
+  # Where this branch left main, not main's tip: a branch behind main would
+  # see what main has added since as taken away, and be told to raise the
+  # API revision for nothing. CI compares with main as the change merges.
+  base="$(git merge-base "$main" HEAD 2> /dev/null || true)"
 
   step 'Against origin/main: a breaking API change raises the revision'
-  if ! $have_main; then
+  if [[ -z "$base" ]]; then
     echo "Skipped: no $main to compare with. git fetch origin main, then run again."
   elif ! docker info > /dev/null 2>&1; then
     echo 'Skipped: Docker is not running, and oasdiff runs in a container.'
     echo 'CI runs it on the pull request.'
   else
-    scripts/check-api-breaking.sh "$main"
+    may_skip scripts/check-api-breaking.sh "$base"
   fi
 
   step 'Against origin/main: new migrations leave the running release working'
-  if ! $have_main; then
+  if [[ -z "$base" ]]; then
     echo "Skipped: no $main to compare with. git fetch origin main, then run again."
   else
-    scripts/check-migrations.sh "$main"
+    may_skip scripts/check-migrations.sh "$base"
   fi
 }
 

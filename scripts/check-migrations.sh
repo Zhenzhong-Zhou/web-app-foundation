@@ -14,7 +14,10 @@
 # commit. Run through npx at a pinned version, as the Markdown check runs
 # markdownlint-cli2. CI runs it on pull requests, against main as the
 # change merges into it (ci.yml, against-main); scripts/verify.sh runs it
-# too.
+# too, against where the branch left main.
+#
+# Exits 3 when it cannot run, squawk neither cached nor to be fetched,
+# which scripts/verify.sh reports and goes on from.
 #
 # Written for the bash that ships with macOS (3.2).
 
@@ -39,5 +42,15 @@ if [[ -z "$added" ]]; then
 fi
 
 # 2.68.0, released on 8 October 2026.
+squawk='squawk-cli@2.68.0'
+
+# Offline, npx stops with npm's own network error, which reads as a fault
+# in the migrations.
+if ! npx --yes "$squawk" --version > /dev/null 2>&1; then
+  echo "Could not run: $squawk is not cached and could not be fetched" >&2
+  echo '(offline, or the registry is down). CI runs it on the pull request.' >&2
+  exit 3
+fi
+
 # shellcheck disable=SC2086
-npx --yes squawk-cli@2.68.0 --config server/.squawk.toml $added
+npx --yes "$squawk" --config server/.squawk.toml $added
