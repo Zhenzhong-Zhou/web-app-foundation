@@ -198,6 +198,14 @@ It starts its own API and client on ports 3200/5373 against the dev database,
 so the dev servers can stay as they are; compare a run before and after a
 visual change.
 
+To compare, copy `client/screenshots/out/` aside before the change and again
+after it, say to `tmp/<branch>/before/` and `after/`, then from `client/`
+`npm run screenshots:compare -- ../tmp/<branch>/before ../tmp/<branch>/after`.
+It writes one page, `compare.html` in the folder holding both, with each
+picture before beside after, grouped by page, language, mode and width, and
+pairs whose files are the same bytes marked identical. It uses only Node's own
+modules, and the page opens from that folder without a server.
+
 `docs/manual-checks.md` is the list to walk through by hand before a release and
 after a feature lands; every change that alters what a person sees or a rule they
 work under updates it.
