@@ -162,6 +162,20 @@ describe('the API revision (ADR-081)', () => {
     expect(messageFor(error)).toBe(OUTDATED);
   });
 
+  it('leaves a tab outdated when signing out, which is served whatever the revision', async () => {
+    refuseAsOutdated();
+    server.use(
+      http.post(
+        '/api/v1/auth/logout',
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+
+    await failureOf('/things/refused');
+    await api('/auth/logout', { method: 'POST' });
+    expect(newVersionNow().outdated).toBe(true);
+  });
+
   it('says the new version is being installed while the file still names this build', async () => {
     refuseAsOutdated();
 

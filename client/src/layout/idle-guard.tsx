@@ -13,6 +13,7 @@ import { useAuth } from '../auth/use-auth';
 import { api } from '../lib/api';
 import { SIGNED_OUT_REASON } from '../lib/session-keys';
 import { hasUnsavedChanges } from '../lib/unsaved-registry';
+import { newVersionNow } from '../version/version-check';
 
 /** How long before the limit the warning shows. */
 const WARN_MS = 60_000;
@@ -22,6 +23,17 @@ const PING_MS = 60_000;
 const ACTIVITY = ['click', 'keydown', 'scroll', 'wheel', 'touchstart'] as const;
 /** Where every tab of the app hears the others. */
 const CHANNEL = 'waf-session';
+
+/**
+ * Tells the server the person is active, a real request, so its idle timer
+ * agrees with this one. Not while the API refuses this tab as outdated
+ * (ADR-081): refused before the session is read, it would extend nothing,
+ * and be a line in the log each minute, as the bell's ask would.
+ */
+function ping() {
+  if (newVersionNow().outdated) return;
+  void api('/auth/me').catch(() => undefined);
+}
 
 /**
  * Signs out after the session's idle limit, when it has one short enough
@@ -66,8 +78,7 @@ export function IdleGuard() {
     pinged.current = Date.now();
     setLeft(null);
     channel.current?.postMessage({ type: 'active', at: last.current });
-    // A real request, so the server's timer agrees with this one.
-    void api('/auth/me').catch(() => undefined);
+    ping();
   }, []);
 
   useEffect(() => {
@@ -89,7 +100,7 @@ export function IdleGuard() {
       }
       if (now - pinged.current > PING_MS) {
         pinged.current = now;
-        void api('/auth/me').catch(() => undefined);
+        ping();
       }
     };
     const onMessage = (event: MessageEvent<{ type: string; at?: number }>) => {

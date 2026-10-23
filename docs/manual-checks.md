@@ -2127,7 +2127,9 @@ revision back afterwards: `git status` shows nothing changed.
   password there, and a photo added on a product, in its row. Nothing signs
   out, and no page says Could not reach the server. The bell asks
   `unread-count` once more, is refused, and then asks nothing; put the
-  revision back and reload, and it asks again each minute.
+  revision back and reload, and it asks again each minute. Signed in
+  without Keep me signed in, typing on a page asks `auth/me` nothing more
+  either.
 - **MC-3413** *(ADR-081)* Then the new version is out. Still outdated, add
   the override of `/version.json`: within 30 seconds Products becomes A
   new version is ready, A new version came out while this tab was open.
@@ -2147,8 +2149,10 @@ revision back afterwards: `git status` shows nothing changed.
 - **MC-3415** *(ADR-081)* Sign-out still works. Outdated, switch to
   another tab and back, which reads the session: the page stays as it
   was. Sign out from the account menu: the sign-in page, and the session
-  ended (its row gone from another device's Sessions). The same for Not
-  you? Sign out on an invitation's link opened signed in.
+  ended (its row gone from another device's Sessions); the Network tab
+  goes on reading `version.json` every 30 seconds there, since the tab is
+  still outdated. The same for Not you? Sign out on an invitation's link
+  opened signed in.
 - **MC-3416** *(ADR-081)* The API not yet deployed. Revision put back, set
   `API_REVISION` in `client/src/api/revision.gen.ts` to one higher instead,
   which the dev server picks up: a save in a dialog says A new version is
@@ -2888,3 +2892,5 @@ first.
   (S3): MC-3412 and MC-3413 extended.
 - 2026-10-23: ADR-081's reviews, refusals in words on Forgot your password
   and in Move stock (R3, R5): MC-3412 and MC-3422 extended.
+- 2026-10-23: ADR-081's reviews, an outdated tab through sign-out and
+  idle pings (R4, R8): MC-3412 and MC-3415 extended.

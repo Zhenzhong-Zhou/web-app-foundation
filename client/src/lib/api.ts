@@ -292,6 +292,9 @@ async function send(path: string, init: ApiInit): Promise<Response> {
     );
   }
 
-  noteServed();
+  // Sign-out is served whatever the revision (ADR-081), so being served it
+  // says nothing of this tab's: an outdated tab stays outdated on the
+  // sign-in page, reading the version file until the new one is out.
+  if (path !== '/auth/logout') noteServed();
   return response;
 }
