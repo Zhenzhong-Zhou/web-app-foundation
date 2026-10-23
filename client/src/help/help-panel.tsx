@@ -28,6 +28,7 @@ import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { Reload } from '../errors/status-actions';
 import { useLanguage } from '../i18n/use-language';
 import { formatDate } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -35,7 +36,6 @@ import { rem } from '../theme/rem';
 import { useTextSize } from '../theme/text-size';
 import { BUILD } from '../version/build';
 import { ChunkLoadError } from '../version/load-chunk';
-import { reloadPage } from '../version/reload-page';
 import { guideGroups } from './guide-groups';
 import { GuideView } from './guide-view';
 import { type GuideName, GUIDES, loadGuide } from './guides';
@@ -381,18 +381,7 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
         ) : current?.newer ? (
           // Said, never done: a load in full under someone reading would
           // take the page they are reading it beside (ADR-081).
-          <Alert
-            severity="info"
-            role="status"
-            action={
-              <Button variant="text" color="inherit" onClick={reloadPage}>
-                {intl.formatMessage({
-                  id: 'version.reload',
-                  defaultMessage: 'Reload',
-                })}
-              </Button>
-            }
-          >
+          <Alert severity="info" role="status" action={<Reload />}>
             {intl.formatMessage(M.newVersion)}
           </Alert>
         ) : current ? (

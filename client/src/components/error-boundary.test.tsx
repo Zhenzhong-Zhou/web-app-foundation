@@ -75,6 +75,19 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Orders')).toBeInTheDocument();
   });
 
+  it('loads the page in full on Reload, as every Reload does', async () => {
+    render(
+      <MemoryRouter>
+        <ErrorBoundary resetKey="/orders/1">
+          <Page broken />
+        </ErrorBoundary>
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reload' }));
+    expect(reloadPage).toHaveBeenCalledTimes(1);
+  });
+
   describe('a page that won’t load says why (ADR-081)', () => {
     it('the connection dropped: tries again on Try again, and by itself when it comes back', async () => {
       unloaded(new ChunkLoadError('offline', browsers));

@@ -4,7 +4,7 @@ import { FormattedMessage, useIntl } from 'react-intl';
 
 import { NewVersionPage } from '../errors/new-version-page';
 import { OfflinePage } from '../errors/offline-page';
-import { GoHome } from '../errors/status-actions';
+import { GoHome, Reload } from '../errors/status-actions';
 import { StatusPage } from '../errors/status-page';
 import { ApiError } from '../lib/api';
 import { ChunkLoadError } from '../version/load-chunk';
@@ -82,14 +82,6 @@ export class ErrorBoundary extends Component<Props, State> {
 
 function Failure({ reference }: { reference: string | null }) {
   const intl = useIntl();
-  const reload = (
-    <Button variant="contained" onClick={() => window.location.reload()}>
-      <FormattedMessage
-        id="components.errorBoundary.reload"
-        defaultMessage="Reload"
-      />
-    </Button>
-  );
 
   return (
     <StatusPage
@@ -105,7 +97,7 @@ function Failure({ reference }: { reference: string | null }) {
       })}
       actions={
         <>
-          {reload}
+          <Reload primary />
           {/* Where they came from, when there is somewhere to go back to. */}
           {window.history.length > 1 && (
             <Button variant="outlined" onClick={() => window.history.back()}>

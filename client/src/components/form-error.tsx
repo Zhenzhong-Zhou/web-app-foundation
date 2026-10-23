@@ -1,8 +1,8 @@
-import { Alert, Box, Button } from '@mui/material';
+import { Alert, Box } from '@mui/material';
 import { Children, type ReactNode } from 'react';
 import { useIntl } from 'react-intl';
 
-import { reloadPage } from '../version/reload-page';
+import { Reload } from '../errors/status-actions';
 import { useNewVersion } from '../version/version-check';
 import { ReferencesWhole } from './reference';
 
@@ -59,14 +59,7 @@ export function FormError({
       {(Children.toArray(children).length > 0 || reload) && (
         <Box sx={{ mt: 0.5 }}>
           {children}
-          {reload && (
-            <Button variant="text" color="inherit" onClick={reloadPage}>
-              {intl.formatMessage({
-                id: 'version.reload',
-                defaultMessage: 'Reload',
-              })}
-            </Button>
-          )}
+          {reload && <Reload />}
         </Box>
       )}
     </Alert>

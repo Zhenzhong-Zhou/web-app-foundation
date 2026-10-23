@@ -14,6 +14,7 @@ import { useIntl } from 'react-intl';
 
 import { SettingsSection } from '../components/settings-section';
 import { api } from '../lib/api';
+import { HIDDEN } from '../lib/hidden';
 import {
   allTimeZones,
   browserTimeZone,
@@ -297,23 +298,8 @@ export function TimeZoneForm({
             })}
       </Typography>
 
-      {/* Polite, and only on a new choice: the clock above ticks silently.
-          One pixel, written as '1px': in sx a bare 1 is 100%, which made
-          this box as wide as the window and the page scroll sideways. */}
-      <Box
-        aria-live="polite"
-        sx={{
-          position: 'absolute',
-          width: '1px',
-          height: '1px',
-          margin: '-1px',
-          padding: 0,
-          border: 0,
-          overflow: 'hidden',
-          whiteSpace: 'nowrap',
-          clip: 'rect(0 0 0 0)',
-        }}
-      >
+      {/* Polite, and only on a new choice: the clock above ticks silently. */}
+      <Box aria-live="polite" sx={HIDDEN}>
         {announced}
       </Box>
     </SettingsSection>

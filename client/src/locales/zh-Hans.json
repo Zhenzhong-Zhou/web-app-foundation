@@ -290,7 +290,6 @@
   "components.documentLanguages.second.help": "用于双语单据：每个标签都以两种语言显示。",
   "components.errorBoundary.goBack": "返回上一页",
   "components.errorBoundary.reference": "参考编号：{requestId}",
-  "components.errorBoundary.reload": "重新加载",
   "components.errorBoundary.title": "出错了",
   "components.expiry.expired": "{days, plural, other {已过期 # 天}}",
   "components.expiry.inDays": "{days, plural, =0 {今天过期} other {# 天后过期}}",

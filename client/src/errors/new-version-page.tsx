@@ -1,7 +1,6 @@
-import { Button } from '@mui/material';
 import { useIntl } from 'react-intl';
 
-import { reloadPage } from '../version/reload-page';
+import { Reload } from './status-actions';
 import { StatusPage } from './status-page';
 
 /**
@@ -27,14 +26,7 @@ export function NewVersionPage({ standalone }: { standalone?: boolean }) {
         defaultMessage:
           'A new version came out while this tab was open. Reload to use it; nothing is lost.',
       })}
-      actions={
-        <Button variant="contained" onClick={reloadPage}>
-          {intl.formatMessage({
-            id: 'version.reload',
-            defaultMessage: 'Reload',
-          })}
-        </Button>
-      }
+      actions={<Reload primary />}
     />
   );
 }

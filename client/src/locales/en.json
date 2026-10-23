@@ -290,7 +290,6 @@
   "components.documentLanguages.second.help": "For a bilingual sheet: each label in both.",
   "components.errorBoundary.goBack": "Go back",
   "components.errorBoundary.reference": "Reference: {requestId}",
-  "components.errorBoundary.reload": "Reload",
   "components.errorBoundary.title": "Something went wrong",
   "components.expiry.expired": "{days, plural, one {Expired # day ago} other {Expired # days ago}}",
   "components.expiry.inDays": "{days, plural, =0 {Expires today} one {Expires in # day} other {Expires in # days}}",

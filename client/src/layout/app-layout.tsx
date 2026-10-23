@@ -44,6 +44,7 @@ import { useHelp } from '../help/use-help';
 import { LanguageFailureBanner } from '../i18n/language-failure';
 import { api } from '../lib/api';
 import { SEPARATOR } from '../lib/format';
+import { HIDDEN } from '../lib/hidden';
 import { initialsOf } from '../lib/person-initials';
 import { LookupBox } from '../search/lookup-box';
 import { OrganizationDeletionBanner } from '../settings/organization-deletion-banner';
@@ -323,20 +324,7 @@ function Frame() {
         >
           {/* A newer build's arrival, said once and politely, on a phone
               and a computer alike (ADR-081). */}
-          <Box
-            aria-live="polite"
-            sx={{
-              position: 'absolute',
-              width: '1px',
-              height: '1px',
-              margin: '-1px',
-              padding: 0,
-              border: 0,
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              clip: 'rect(0 0 0 0)',
-            }}
-          >
+          <Box aria-live="polite" sx={HIDDEN}>
             {version.newer &&
               intl.formatMessage({
                 id: 'version.note',

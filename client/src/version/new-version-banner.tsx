@@ -1,9 +1,9 @@
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { Alert, Button } from '@mui/material';
+import { Alert } from '@mui/material';
 import type { ReactNode } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 
-import { reloadPage } from './reload-page';
+import { Reload } from '../errors/status-actions';
 import { useNewVersion } from './version-check';
 
 /**
@@ -32,14 +32,7 @@ export function NewVersionBanner({
       severity={urgent ? 'warning' : 'info'}
       role="status"
       icon={urgent ? undefined : <RefreshIcon />}
-      action={
-        <Button variant="text" color="inherit" onClick={reloadPage}>
-          {intl.formatMessage({
-            id: 'version.reload',
-            defaultMessage: 'Reload',
-          })}
-        </Button>
-      }
+      action={<Reload />}
       sx={where === 'dialog' ? { borderRadius: 0, flexShrink: 0 } : undefined}
     >
       {urgent ? (

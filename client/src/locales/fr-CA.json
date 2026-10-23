@@ -290,7 +290,6 @@
   "components.documentLanguages.second.help": "Pour un document bilingue : chaque libellé dans les deux langues.",
   "components.errorBoundary.goBack": "Revenir en arrière",
   "components.errorBoundary.reference": "Référence : {requestId}",
-  "components.errorBoundary.reload": "Recharger",
   "components.errorBoundary.title": "Une erreur s’est produite",
   "components.expiry.expired": "{days, plural, one {Expiré depuis # jour} other {Expiré depuis # jours}}",
   "components.expiry.inDays": "{days, plural, =0 {Expire aujourd’hui} one {Expire dans # jour} other {Expire dans # jours}}",
