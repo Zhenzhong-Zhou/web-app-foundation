@@ -2309,6 +2309,15 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R47** *(`npm run api` beside the dev server, #194)* With
+  `npm run start:dev` running in `server/`, change any file in `src/`
+  and run `npm run api` in another terminal: it writes `openapi.json` and
+  the client's types on its first run, and the dev server restarts and
+  keeps answering, `curl localhost:3000/health` 200, with no Cannot find
+  module in its log. Run it twice more, changing a file each time: the
+  same. `dist/` is left as the dev server built it; the document's build
+  is in `dist-openapi/`. Found while building ADR-081.
+
 - **MC-R46** *(a list that failed to load, #195)* With the API stopped,
   or `/api/v1/orders` blocked in the browser's Network tab, open Orders:
   the red line, with Try again, and nothing under it, never Nothing open.
@@ -3006,3 +3015,5 @@ first.
   MC-R45.
 - 2026-10-23: #195, a list that failed to load shows only the failure,
   with Try again: MC-R46.
+- 2026-10-23: #194, `npm run api` builds apart from the dev server:
+  MC-R47.

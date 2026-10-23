@@ -10,7 +10,13 @@ export default tseslint.config(
     // scripts/ holds plain CommonJS build helpers and a shell script. There is
     // no tsconfig they belong to, and projectService errors on any file it
     // cannot place.
-    ignores: ['eslint.config.mjs', 'dist/**', 'coverage/**', 'scripts/**'],
+    ignores: [
+      'eslint.config.mjs',
+      'dist/**',
+      'dist-openapi/**',
+      'coverage/**',
+      'scripts/**',
+    ],
   },
 
   eslint.configs.recommended,

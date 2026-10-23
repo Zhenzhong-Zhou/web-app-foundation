@@ -11,7 +11,7 @@
   "scripts": {
     "prebuild": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true});require('node:fs').rmSync('tsconfig.build.tsbuildinfo',{force:true})\"",
     "build": "nest build",
-    "api:spec": "nest build && node dist/openapi/write-openapi.js",
+    "api:spec": "nest build -p tsconfig.openapi.json && node dist-openapi/openapi/write-openapi.js",
     "api": "npm run api:spec && npm --prefix ../client run api:types",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "format": "prettier --write .",

@@ -1,5 +1,6 @@
 src/database/migrations/meta
 dist
+dist-openapi
 coverage
 perf/reports
 perf/volume*.json
