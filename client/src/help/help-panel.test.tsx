@@ -251,11 +251,13 @@ describe('Help', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Help' }));
 
     // The release, the build's first seven, and the day it was built.
-    expect(
-      await within(help()).findByText(
-        'Version 0.7.0 · build 983c1d8 · Oct 22, 2026',
-      ),
-    ).toBeVisible();
+    const foot = await within(help()).findByText(
+      'Version 0.7.0 · build 983c1d8 · Oct 22, 2026',
+    );
+    expect(foot).toBeVisible();
+    // In small grey text: Typography's color prop takes a palette name, not
+    // a path, so the colour is given in sx (#196).
+    expect(getComputedStyle(foot).color).toBe('rgba(0, 0, 0, 0.6)');
   });
 
   it('gives the version in Chinese too', async () => {

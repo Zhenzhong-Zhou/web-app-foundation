@@ -423,8 +423,14 @@ function VersionFoot() {
     <Typography
       variant="caption"
       component="p"
-      color="text.secondary"
-      sx={{ mt: 3, pt: 1.5, borderTop: 1, borderColor: 'divider' }}
+      // In sx: Typography's color takes a palette name, not a path (#196).
+      sx={{
+        mt: 3,
+        pt: 1.5,
+        borderTop: 1,
+        borderColor: 'divider',
+        color: 'text.secondary',
+      }}
     >
       {intl.formatMessage(
         {

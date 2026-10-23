@@ -95,7 +95,9 @@ export function StatusPage({
         {message}
       </Typography>
       {note && (
-        <Typography variant="body2" color="text.secondary">
+        // In sx: Typography's color takes a palette name, not a path, and
+        // drew text.secondary as the plain text colour (#196).
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {note}
         </Typography>
       )}

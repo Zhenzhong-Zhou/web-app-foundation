@@ -2074,8 +2074,9 @@ waits a second and tries once more before it says anything.
 
 - **MC-3407** *(ADR-081)* Offline. Signed in, on Orders, go Offline and
   open Inventory from the rail: in its place, with the rail still there,
-  Can't reach the server, the line about the connection, This page tries
-  again by itself when your connection comes back., and Try again. Go back
+  Can't reach the server, the line about the connection, in smaller grey
+  text under it This page tries again by itself when your connection
+  comes back., and Try again. Go back
   online (No throttling): Inventory loads by itself, in full. Reload on
   Orders, block `*inventory-page*` and `*version.json*`, and open
   Inventory: the same page; unblock both, and Try again loads Inventory.
@@ -2927,3 +2928,5 @@ first.
 - 2026-10-23: ADR-081's walkthroughs and review, a language that won't
   load says so in its own words (W4, W5, U1, U2): MC-3418 to MC-3420
   rewritten, and MC-R42.
+- 2026-10-23: ADR-081's review, secondary text drawn grey where this
+  branch added it (R6): MC-3407 extended; MC-3405 now holds.
