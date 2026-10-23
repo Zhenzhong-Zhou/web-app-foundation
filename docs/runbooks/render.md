@@ -31,6 +31,9 @@ goes for `BACKUP_S3_ENDPOINT` in GitHub's secrets, which nothing checks.
 - **The database expires 30 days after it was created.** It then stops
   answering, and Render deletes it after a 14-day grace period unless it is
   moved to a paid instance type. Note the creation date in the handoff.
+  On 22 October 2026 Render showed the current one, Free, as created
+  about 28 September 2026: it stops answering about 28 October and is
+  deleted about 11 November.
 - **The web service sleeps after 15 minutes without a request,** and the
   next request waits about a minute while it starts. The hourly jobs run
   inside it, so while it sleeps they do not: licence reminders (ADR-064)
@@ -41,6 +44,166 @@ goes for `BACKUP_S3_ENDPOINT` in GitHub's secrets, which nothing checks.
   active per workspace.
 
 For development and testing, all of that is acceptable.
+
+## Deploys (ADR-081)
+
+Neither service deploys itself. Once CI passes on a push to `main`,
+`.github/workflows/deploy.yml` deploys the API at that commit through its
+deploy hook, waits until `/api/health` names the commit, and only then
+deploys the static site at the same commit. A `main` whose CI fails
+deploys neither, and if the API's deploy fails, the client stays where it
+was, matching it.
+
+Why not Render's own auto-deploy, which both services had until ADR-081:
+
+- **The order.** On #176's deploy the static site took 40.5 seconds and
+  the API 1 minute 30, so for about 50 seconds the new client met the old
+  API.
+- **"After CI checks pass" cannot hold it.** Render then deploys only once
+  every check on the commit has passed, and a workflow that waits for the
+  API is one of those checks: each would wait for the other.
+- **The root directory.** The web service builds from `server/`, and
+  Render auto-deploys a service only when a push changes files under its
+  root directory: after a push that changes only `client/`, the API would
+  never name the commit.
+
+Each deploy therefore redeploys the API, even when only the client changed:
+about a minute and a half, with nothing for the migrations or the seed to
+do. A push CI skips, docs only, deploys nothing; Help's guides, the one
+Markdown that ships, run CI (`ci.yml`'s `paths`). A newer push cancels an
+older run still waiting, so only the newest commit's client goes live.
+
+### As Render showed it on 22 October 2026
+
+| Setting            | Web service (the API)                     | Static site (the client)                         |
+|--------------------|-------------------------------------------|--------------------------------------------------|
+| Address            | `https://web-app-foundation.onrender.com` | `https://web-app-foundation-client.onrender.com` |
+| Instance           | Free                                      | Free                                             |
+| Auto-Deploy        | On Commit                                 | On Commit                                        |
+| Deploy Hook        | not noted                                 | there                                            |
+| Start Command      | `node dist/main`                          |                                                  |
+| Pre-Deploy Command | empty                                     |                                                  |
+| Health Check Path  | `/health/ready`, set by Bob that day      |                                                  |
+
+The database is Free too (above). With no Pre-Deploy Command, the
+migrations run in the build command (README, "Deployment") while the
+previous release still serves, which is why ADR-081's migrations add and
+never take away in one deploy.
+
+What the static site sent, from `curl -sI` the same day:
+
+| Path                        | `cache-control`                             | `cf-cache-status` |
+|-----------------------------|---------------------------------------------|-------------------|
+| `/`                         | `public, max-age=0, s-maxage=300`           | `EXPIRED`         |
+| `/index.html`               | `public, max-age=0, s-maxage=300`           | `MISS`            |
+| `/assets/index-UEWwBcVJ.js` | `public, max-age=0, s-maxage=300`           | `MISS`            |
+| `/version.json`             | the same, as `index.html`: not yet built    | `MISS`            |
+| `/api/health`               | none                                        | `BYPASS`          |
+
+So Render's edge can keep `index.html` for five minutes after a deploy.
+It ignores a request's `no-cache`, though a new query string misses it,
+which is why the version check adds one of its own. A tab that loads in
+full in those minutes can get the old build back; the client loads in
+full once per new version and then waits (manual checks, MC-3411), so it
+never loops. Hashed assets are sent `max-age=0`, so a browser asks again
+for every chunk on every load. `/api/health` goes through the `/api/*`
+rewrite uncached, so the workflow never reads an old answer.
+
+### Setting it up, by hand, in this order
+
+Before the pull request that adds `deploy.yml` merges, so that its merge
+deploys this way:
+
+1. **The deploy hooks, as secrets.** Render → the web service → Settings →
+   Deploy Hook: copy it. GitHub → the repository → Settings → Secrets and
+   variables → Actions → Secrets → New repository secret:
+   `RENDER_API_DEPLOY_HOOK`. Then the static site's, as
+   `RENDER_CLIENT_DEPLOY_HOOK`. A hook deploys without signing in, so
+   treat it as a key: never paste it anywhere else, and if it ever is,
+   Regenerate it in Render and update the secret.
+2. **The health URL, as a variable.** The same page → Variables → New
+   repository variable: `API_HEALTH_URL` =
+   `https://web-app-foundation-client.onrender.com/api/health`, the API
+   as the client reaches it.
+3. **Auto-Deploy off, on both.** Render → the web service → Settings →
+   Auto-Deploy: Off. Then the static site the same. Not "After CI checks
+   pass" on either (above). Until the merge, a push to `main` deploys
+   nothing; after it, only through the workflow. Manual Deploy works
+   throughout.
+4. **The Health Check Path,** `/health/ready`: set on 22 October 2026.
+   Render moves traffic to a new release only once it answers there with
+   its database up, which is what makes `/health`'s commit mean the new
+   release is serving.
+5. **The cache headers.** Render → the static site → Headers, three rules
+   that do not overlap, since Render's docs do not say which wins when two
+   match one path (so not `/*`):
+
+   | Path            | Name            | Value                                 |
+   |-----------------|-----------------|---------------------------------------|
+   | `/assets/*`     | `Cache-Control` | `public, max-age=31536000, immutable` |
+   | `/index.html`   | `Cache-Control` | `no-cache`                            |
+   | `/version.json` | `Cache-Control` | `no-cache`                            |
+
+   A file in `/assets/` is named by its content, so a changed one gets a
+   new name and the browser can keep the old for a year. `index.html`
+   names the build's files and `version.json` says which build is out,
+   so both are asked for again every time.
+
+After the merge's deploy:
+
+1. **The order.** Actions → Deploy, the run for the merge: Deploy the
+   API, the wait ending "The API names …", then Deploy the static site.
+   The two must name the same commit:
+
+   ```bash
+   site=https://web-app-foundation-client.onrender.com
+   curl -s "$site/api/health"
+   curl -s "$site/version.json?$(date +%s)"
+   ```
+
+2. **The headers,** each path twice, a few seconds apart:
+
+   ```bash
+   site=https://web-app-foundation-client.onrender.com
+   asset=$(curl -s "$site/?$(date +%s)" | grep -o '/assets/index-[A-Za-z0-9_-]*\.js' | head -1)
+   for path in / /index.html /version.json /orders "$asset"; do
+     echo "== $path"
+     curl -sI "$site$path" | grep -iE '^(cache-control|cf-cache-status):'
+   done
+   ```
+
+   `/` and `/orders` are `index.html` too, through the `/*` rewrite:
+   whether the `/index.html` rule reaches them is part of what this
+   shows. A second answer of `HIT` for `/`, `/index.html` or
+   `/version.json` means Render's edge still holds it for five minutes
+   whatever the header says. Record what came back here, with the date,
+   either way.
+3. **A tab kept open across the deploy:** manual checks, MC-3424.
+
+### When the wait times out
+
+The run fails after 20 minutes if the API never names the commit: its
+deploy failed (Render → the web service → Events, and its log), it is
+slow, or `API_HEALTH_URL` is wrong. The static site is left as it was.
+Once the API is up at that commit, Actions → the failed run → Re-run
+jobs, which deploys both again; or by hand, Render → the static site →
+Manual Deploy → Deploy a specific commit, the same commit. Never the
+static site first.
+
+### A rollback
+
+The API first, then the static site, both back to the same commit:
+Render → the web service → Events → the deploy to go back to → Rollback;
+once `/api/health` names its commit, the same on the static site. If the
+change rolled back had raised `API_REVISION`, a tab running the newer
+client is refused for the minutes between with 503 `api_updating`, "A
+new version is being installed. Try again in a minute; nothing was
+saved."; once the static site is back, its version file names another
+build, and the tab loads it at its next page. A rollback takes no
+migration back: the older release runs on the newer schema, which
+ADR-081's rule for migrations (add, never take away, in one deploy) keeps
+working. The next push to `main` that passes CI deploys both forward
+again.
 
 ## Old files after a deploy (ADR-081)
 

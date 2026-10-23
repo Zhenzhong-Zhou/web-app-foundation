@@ -2230,6 +2230,22 @@ seven (no Costs waiting).
   px a tile no longer fits twice across, and each has the row to itself.
   At no width does the page scroll sideways (MC-R39).
 
+A real deploy is a push to `main` that passes CI, with Render's settings
+as `docs/runbooks/render.md`, "Deploys", has them.
+
+- **MC-3424** *(ADR-081)* A tab kept open across a real deploy. Before the
+  push, sign in on the live app and leave one tab on Orders and one in a
+  purchase order's Receive with a quantity typed. Actions → Deploy, for
+  that commit, deploys the API, waits until The API names it, and only
+  then deploys the static site; `/api/health`'s `commit` and
+  `/version.json`'s `build` then name the same commit. Back in the tabs,
+  Receive saves and Orders still works. A tab opened before ADR-081 went
+  live stops there: its build has no version check and sends no revision,
+  which the API serves as today. From the next deploy on, coming back to
+  the Orders tab shows New version beside Help (MC-3401), Inventory from
+  the rail loads in full, and Help's foot names the commit `/api/health`
+  names (MC-3405).
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -2848,3 +2864,4 @@ first.
 - 2026-10-22: ADR-081, references kept whole in refusals: MC-3422
   extended.
 - 2026-10-22: ADR-081, Home's tiles in even rows: MC-3423, and MC-R39.
+- 2026-10-22: ADR-081, the client deployed after the API: MC-3424.

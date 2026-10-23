@@ -1,0 +1,97 @@
+name: Deploy
+
+# ADR-081: the API first, then the client, and neither unless CI passed on
+# main. Both Render services have Auto-Deploy off, since Render's own
+# cannot keep that order (docs/runbooks/render.md, "Deploys"): the API's
+# root directory is server/, so after a push that changes only client/ its
+# commit would never move, and "After CI checks pass" waits for every check
+# on the commit, this workflow's own included.
+#
+# When CI passes on a push to main, this deploys the API at that commit
+# through its deploy hook, waits until /health names the commit, then
+# deploys the static site at the same commit. A push CI skips (docs only)
+# changes nothing either service serves, so nothing deploys.
+#
+# Reads the repository variable API_HEALTH_URL (the static site's address
+# with /api/health) and the secrets RENDER_API_DEPLOY_HOOK and
+# RENDER_CLIENT_DEPLOY_HOOK (each service's Settings → Deploy Hook). With
+# any of them unset, as on a fork, it says so and deploys nothing.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+# Nothing is checked out: the hooks and the health URL are all it uses.
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: The API, then the client
+    # A push to main that passed. Not CI's nightly run or one started by
+    # hand, which test a commit already deployed, and never a pull request
+    # from a branch that happens to be called main.
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # One at a time, and a newer run cancels an older one still waiting:
+    # only the newest commit's client should deploy, and an older run
+    # finishing late would put an older client live after a newer API.
+    # Unlike CI, which never cancels on main (ci.yml). On the job, not the
+    # workflow, so a run skipped above never cancels one deploying.
+    concurrency:
+      group: deploy
+      cancel-in-progress: true
+    env:
+      COMMIT: ${{ github.event.workflow_run.head_sha }}
+      API_HEALTH_URL: ${{ vars.API_HEALTH_URL }}
+      RENDER_API_DEPLOY_HOOK: ${{ secrets.RENDER_API_DEPLOY_HOOK }}
+      RENDER_CLIENT_DEPLOY_HOOK: ${{ secrets.RENDER_CLIENT_DEPLOY_HOOK }}
+    steps:
+      - name: Check the settings
+        id: settings
+        run: |
+          missing=''
+          for name in API_HEALTH_URL RENDER_API_DEPLOY_HOOK RENDER_CLIENT_DEPLOY_HOOK; do
+            [ -n "${!name}" ] || missing="${missing:+$missing, }$name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice title=Nothing deployed::Unset: $missing. Each is set by hand (docs/runbooks/render.md, Deploys); on a fork, leave them unset."
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      # The commit CI passed, not the branch's newest: each hook ends in
+      # ?key=…, and ref names the commit Render deploys.
+      - name: Deploy the API
+        if: steps.settings.outputs.ready == 'true'
+        run: curl -fsS -m 30 -X POST "$RENDER_API_DEPLOY_HOOK&ref=$COMMIT"
+
+      # Every 20 seconds for up to 20 minutes. Render moves traffic to the
+      # new release once it answers its Health Check Path, /health/ready,
+      # so the commit changing means the new release is the one answering.
+      # Each request may take up to 90 seconds: a free web service asleep
+      # takes about a minute to wake.
+      - name: Wait until the API names the commit
+        if: steps.settings.outputs.ready == 'true'
+        run: |
+          deadline=$((SECONDS + 20 * 60))
+          while :; do
+            named=$(curl -fsS -m 90 "$API_HEALTH_URL" | jq -r '.commit // empty' 2> /dev/null || true)
+            if [ "$named" = "$COMMIT" ]; then
+              echo "The API names $COMMIT."
+              exit 0
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error title=The API did not deploy::After 20 minutes the API still names ${named:-no commit}, not $COMMIT: its deploy failed or is slow (Render → the web service → Events), or, naming no commit, API_HEALTH_URL is wrong. The static site was left as it was, matching it. Once the API names the commit, re-run this job, or deploy the static site by hand at that commit (docs/runbooks/render.md, Deploys)."
+              exit 1
+            fi
+            echo "The API names ${named:-no commit yet}; asking again in 20 seconds."
+            sleep 20
+          done
+
+      - name: Deploy the static site
+        if: steps.settings.outputs.ready == 'true'
+        run: curl -fsS -m 30 -X POST "$RENDER_CLIENT_DEPLOY_HOOK&ref=$COMMIT"

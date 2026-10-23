@@ -1,16 +1,20 @@
 name: CI
 
 # Docs-only changes skip CI: prose cannot break the build, and the suites
-# take minutes. A Markdown file anywhere counts as docs.
+# take minutes. A Markdown file anywhere counts as docs, except Help's
+# guides, which ship in the client and are checked with it (ADR-079): the
+# deploy follows CI on main (deploy.yml, ADR-081), so a guide changed
+# alone would otherwise never go live. A later pattern overrides an
+# earlier one.
 on:
   push:
     branches: [main]
-    paths-ignore: ['docs/**', '**/*.md']
+    paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**']
   pull_request:
     # labeled, so adding full-e2e to a pull request runs every browser on it
     # without another push.
     types: [opened, synchronize, reopened, labeled]
-    paths-ignore: ['docs/**', '**/*.md']
+    paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**']
   # Every browser nightly, so a WebKit, Firefox or iPhone regression from a
   # day of merges shows the next morning rather than at the next release.
   schedule:
