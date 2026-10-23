@@ -101,6 +101,15 @@ deploys the static site at the same commit. A `main` whose CI fails
 deploys neither, and if the API's deploy fails, the client stays where it
 was, matching it.
 
+**Deploying by hand:** Actions → Deploy → Run workflow deploys `main`'s
+newest commit whose CI passed on a push, in the same order, and says in
+its first step which commit and which CI run. A missed deploy (a run
+cancelled, a hook unset, a wait that timed out) is put right there, not
+in Render, so the API still goes first and nothing deploys that CI has not
+passed. With the commit already live, the wait ends at once. A run by
+hand and one after CI share the workflow's concurrency group, so they
+never deploy at once: the newer cancels the older.
+
 Why not Render's own auto-deploy, which both services had until ADR-081:
 
 - **The order.** On #176's deploy the static site took 40.5 seconds and
@@ -270,9 +279,10 @@ The run fails after 20 minutes if the API never names the commit: its
 deploy failed (Render → the web service → Events, and its log), it is
 slow, or `API_HEALTH_URL` is wrong. The static site is left as it was.
 Once the API is up at that commit, Actions → the failed run → Re-run
-jobs, which deploys both again; or by hand, Render → the static site →
-Manual Deploy → Deploy a specific commit, the same commit. Never the
-static site first.
+jobs, which deploys both again; or Actions → Deploy → Run workflow, which
+deploys `main`'s newest commit whose CI passed on a push, the same one
+unless a newer has passed since. Not Render's Manual Deploy, which can put
+the static site first.
 
 ### A rollback
 

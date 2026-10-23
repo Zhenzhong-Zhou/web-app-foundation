@@ -12,6 +12,11 @@ name: Deploy
 # deploys the static site at the same commit. A push CI skips (docs only)
 # changes nothing either service serves, so nothing deploys.
 #
+# Actions → Deploy → Run workflow deploys main's newest commit whose CI
+# passed on a push, the same way. A missed deploy (a run cancelled, a hook
+# unset, a wait that timed out) is put right here, not in Render, so the
+# API still goes first and the commit is still one CI passed.
+#
 # Reads the repository variable API_HEALTH_URL (the static site's address
 # with /api/health) and the secrets RENDER_API_DEPLOY_HOOK and
 # RENDER_CLIENT_DEPLOY_HOOK (each service's Settings → Deploy Hook). With
@@ -21,18 +26,24 @@ on:
     workflows: [CI]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
 
-# Nothing is checked out: the hooks and the health URL are all it uses.
+# Nothing is checked out: the hooks, the health URL and, run by hand, CI's
+# runs are all it uses.
 permissions:
   contents: read
+  actions: read
 
 jobs:
   deploy:
     name: The API, then the client
-    # A push to main that passed. Not CI's nightly run or one started by
-    # hand, which test a commit already deployed, and never a pull request
-    # from a branch that happens to be called main.
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    # Run by hand, or after CI on a push to main that passed. Not CI's
+    # nightly run or one started by hand, which test a commit already
+    # deployed, and never a pull request from a branch that happens to be
+    # called main.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # One at a time, and a newer run cancels an older one, waiting or under
@@ -41,16 +52,36 @@ jobs:
     # while it waited for the API leaves the newer run to deploy both.
     # Unlike CI, which never cancels a run in progress on main (ci.yml). On
     # the job, not the workflow, so a run skipped above never cancels one
-    # deploying.
+    # deploying. A run by hand is in the same group, so it and one after CI
+    # never deploy at once.
     concurrency:
       group: deploy
       cancel-in-progress: true
     env:
+      # After CI, the commit it passed; run by hand, empty until the first
+      # step sets it.
       COMMIT: ${{ github.event.workflow_run.head_sha }}
       API_HEALTH_URL: ${{ vars.API_HEALTH_URL }}
       RENDER_API_DEPLOY_HOOK: ${{ secrets.RENDER_API_DEPLOY_HOOK }}
       RENDER_CLIENT_DEPLOY_HOOK: ${{ secrets.RENDER_CLIENT_DEPLOY_HOOK }}
     steps:
+      # By hand: the commit a run after CI would have deployed, that of CI's
+      # newest run on a push to main that passed. Written to GITHUB_ENV, it
+      # replaces the job's empty COMMIT for every step after this one.
+      - name: Find main's newest commit that passed CI
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main --event push --status success --limit 1 --json headSha,databaseId,displayTitle --jq '.[0] // empty')
+          if [ -z "$run" ]; then
+            echo "::error title=Nothing to deploy::No run of CI on a push to main has passed, so there is no commit to deploy. Once one passes, its own Deploy run deploys it."
+            exit 1
+          fi
+          commit=$(jq -r .headSha <<< "$run")
+          echo "Deploying $commit, \"$(jq -r .displayTitle <<< "$run")\", which CI passed in $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$(jq -r .databaseId <<< "$run")."
+          echo "COMMIT=$commit" >> "$GITHUB_ENV"
+
       - name: Check the settings
         id: settings
         run: |
@@ -87,7 +118,7 @@ jobs:
               exit 0
             fi
             if [ "$SECONDS" -ge "$deadline" ]; then
-              echo "::error title=The API did not deploy::After 20 minutes the API still names ${named:-no commit}, not $COMMIT: its deploy failed or is slow (Render → the web service → Events), or, naming no commit, API_HEALTH_URL is wrong. The static site was left as it was, matching it. Once the API names the commit, re-run this job, or deploy the static site by hand at that commit (docs/runbooks/render.md, Deploys)."
+              echo "::error title=The API did not deploy::After 20 minutes the API still names ${named:-no commit}, not $COMMIT: its deploy failed or is slow (Render → the web service → Events), or, naming no commit, API_HEALTH_URL is wrong. The static site was left as it was, matching it. Once the API names the commit, re-run this job, or run Deploy by hand (docs/runbooks/render.md, When the wait times out)."
               exit 1
             fi
             echo "The API names ${named:-no commit yet}; asking again in 20 seconds."

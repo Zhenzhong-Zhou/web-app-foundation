@@ -2278,6 +2278,12 @@ as `docs/runbooks/render.md`, "Deploys", has them.
   the Orders tab shows New version beside Help (MC-3401), Inventory from
   the rail loads in full, and Help's foot names the commit `/api/health`
   names (MC-3405).
+- **MC-3425** *(ADR-081)* Deploy by hand. Once merged, since GitHub offers
+  Run workflow only for a workflow on the default branch: Actions → Deploy
+  → Run workflow, on `main`. Its first step names the commit already live
+  and the CI run that passed it; the API deploys, the wait ends at once,
+  saying The API names that commit, and the static site deploys.
+  `/api/health`'s `commit` and `/version.json`'s `build` still name it.
 
 ## 35. The product's name and icon
 
@@ -3062,3 +3068,4 @@ first.
   their list: MC-R53.
 - 2026-10-23: #196's comparison, the bell's Mark all read and Try again
   reached by the keyboard: MC-R54.
+- 2026-10-23: #196's ride-along, Deploy run by hand: MC-3425.
