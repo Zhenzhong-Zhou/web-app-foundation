@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   Link,
   Paper,
@@ -21,6 +20,7 @@ import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
+import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
@@ -60,6 +60,7 @@ export function CreditNotesPage() {
     entries: rows,
     error,
     refused,
+    failed,
     loading,
     hasMore,
     loadingMore,
@@ -113,108 +114,110 @@ export function CreditNotesPage() {
         <DateRangeFilter label={creditDate} value={range} onChange={setRange} />
       </FilterRow>
 
-      {error && <Alert severity="error">{error}</Alert>}
+      <ListError error={error} onRetry={failed ? reload : undefined} />
 
-      <Paper variant="outlined">
-        {loading ? (
-          <Stack sx={{ p: 2 }} spacing={1}>
-            {showSkeleton ? <Skeleton height={48} /> : null}
-          </Stack>
-        ) : rows?.length === 0 ? (
-          <EmptyState learnMore={{ guide: 'invoices', section: 'credit' }}>
-            {search || range.from || range.to
-              ? intl.formatMessage({
-                  id: 'inventory.noMatch',
-                  defaultMessage: 'Nothing matches that search.',
-                })
-              : intl.formatMessage({
-                  id: 'creditNotes.empty',
-                  defaultMessage:
-                    'No credit notes yet. Open an issued invoice to credit part of it.',
-                })}
-          </EmptyState>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'invoices.number',
-                      defaultMessage: 'Number',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'invoices.invoice',
-                      defaultMessage: 'Invoice',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'invoices.customer',
-                      defaultMessage: 'Customer',
-                    })}
-                  </TableCell>
-                  <SortHeader
-                    label={creditDate}
-                    active={sort?.key === 'creditDate'}
-                    order={sort?.order ?? 'asc'}
-                    onSort={() => toggle('creditDate')}
-                  />
-                  <SortHeader
-                    align="right"
-                    label={amount}
-                    active={sort?.key === 'total'}
-                    order={sort?.order ?? 'asc'}
-                    onSort={() => toggle('total')}
-                  />
-                  <TableCell />
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {rows?.map((row) => (
-                  <TableRow key={row.id} hover>
+      {!failed && (
+        <Paper variant="outlined">
+          {loading ? (
+            <Stack sx={{ p: 2 }} spacing={1}>
+              {showSkeleton ? <Skeleton height={48} /> : null}
+            </Stack>
+          ) : rows?.length === 0 ? (
+            <EmptyState learnMore={{ guide: 'invoices', section: 'credit' }}>
+              {search || range.from || range.to
+                ? intl.formatMessage({
+                    id: 'inventory.noMatch',
+                    defaultMessage: 'Nothing matches that search.',
+                  })
+                : intl.formatMessage({
+                    id: 'creditNotes.empty',
+                    defaultMessage:
+                      'No credit notes yet. Open an issued invoice to credit part of it.',
+                  })}
+            </EmptyState>
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
                     <TableCell>
-                      <Link
-                        component={RouterLink}
-                        to={`/credit-notes/${row.id}`}
-                      >
-                        {row.number}
-                      </Link>
+                      {intl.formatMessage({
+                        id: 'invoices.number',
+                        defaultMessage: 'Number',
+                      })}
                     </TableCell>
                     <TableCell>
-                      <Link
-                        component={RouterLink}
-                        to={`/invoices/${row.invoiceId}`}
-                      >
-                        {row.invoiceNumber ?? NO_VALUE}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{row.partnerName}</TableCell>
-                    <TableCell>{formatDay(row.creditDate)}</TableCell>
-                    <TableCell align="right">
-                      {formatCredit(row.total, row.currency)}
+                      {intl.formatMessage({
+                        id: 'invoices.invoice',
+                        defaultMessage: 'Invoice',
+                      })}
                     </TableCell>
                     <TableCell>
-                      {row.isVoid && (
-                        <StatusChip
-                          tone="critical"
-                          label={intl.formatMessage({
-                            id: 'invoices.creditNote.voids',
-                            defaultMessage: 'Voids invoice',
-                          })}
-                        />
-                      )}
+                      {intl.formatMessage({
+                        id: 'invoices.customer',
+                        defaultMessage: 'Customer',
+                      })}
                     </TableCell>
+                    <SortHeader
+                      label={creditDate}
+                      active={sort?.key === 'creditDate'}
+                      order={sort?.order ?? 'asc'}
+                      onSort={() => toggle('creditDate')}
+                    />
+                    <SortHeader
+                      align="right"
+                      label={amount}
+                      active={sort?.key === 'total'}
+                      order={sort?.order ?? 'asc'}
+                      onSort={() => toggle('total')}
+                    />
+                    <TableCell />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
+                </TableHead>
+
+                <TableBody>
+                  {rows?.map((row) => (
+                    <TableRow key={row.id} hover>
+                      <TableCell>
+                        <Link
+                          component={RouterLink}
+                          to={`/credit-notes/${row.id}`}
+                        >
+                          {row.number}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          component={RouterLink}
+                          to={`/invoices/${row.invoiceId}`}
+                        >
+                          {row.invoiceNumber ?? NO_VALUE}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{row.partnerName}</TableCell>
+                      <TableCell>{formatDay(row.creditDate)}</TableCell>
+                      <TableCell align="right">
+                        {formatCredit(row.total, row.currency)}
+                      </TableCell>
+                      <TableCell>
+                        {row.isVoid && (
+                          <StatusChip
+                            tone="critical"
+                            label={intl.formatMessage({
+                              id: 'invoices.creditNote.voids',
+                              defaultMessage: 'Voids invoice',
+                            })}
+                          />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Paper>
+      )}
 
       <LoadMoreButton
         hasMore={hasMore}

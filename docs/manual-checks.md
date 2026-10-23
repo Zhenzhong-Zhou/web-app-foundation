@@ -2309,6 +2309,16 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R46** *(a list that failed to load, #195)* With the API stopped,
+  or `/api/v1/orders` blocked in the browser's Network tab, open Orders:
+  the red line, with Try again, and nothing under it, never Nothing open.
+  nor an empty table. Unblock it and press Try again: the orders. The same
+  on Inventory, Movements, Invoices, Credit notes, Returns, Production,
+  the audit log, a record's History, and an inventory row's History
+  dialog. A Load more that fails keeps the rows, with the red line above
+  them and no Try again. In Français Réessayer, in 中文 重试. Found while
+  building ADR-081.
+
 - **MC-R45** *(a request's fields on its own log line only, #193)* With
   `npm run start:dev` in `server/`, ask
   `curl -H 'X-Api-Revision: 2' -H 'X-Request-Id: mc-r45' 'localhost:3000/v1/orders?search=Wang'`:
@@ -2994,3 +3004,5 @@ first.
   failed: MC-R44.
 - 2026-10-23: #193, a request's URL and headers on its own log line only:
   MC-R45.
+- 2026-10-23: #195, a list that failed to load shows only the failure,
+  with Try again: MC-R46.

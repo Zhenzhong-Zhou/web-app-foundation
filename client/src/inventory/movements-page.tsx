@@ -1,5 +1,4 @@
 import {
-  Alert,
   Autocomplete,
   Box,
   Chip,
@@ -23,6 +22,7 @@ import type { Location, Movement, VariantOption } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { ExportButton } from '../components/export-button';
+import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -99,6 +99,7 @@ export function MovementsPage() {
     entries,
     error,
     refused,
+    failed,
     loading,
     hasMore,
     loadingMore,
@@ -157,7 +158,7 @@ export function MovementsPage() {
         }
       />
 
-      {error && <Alert severity="error">{error}</Alert>}
+      <ListError error={error} onRetry={failed ? reload : undefined} />
 
       <DateRangeFilter
         label={intl.formatMessage({
@@ -237,133 +238,135 @@ export function MovementsPage() {
         </TextField>
       </Stack>
 
-      <Paper variant="outlined">
-        {loading ? (
-          <Stack sx={{ p: 2 }} spacing={1}>
-            {showSkeleton ? (
-              <>
-                <Skeleton height={40} />
-                <Skeleton height={40} />
-                <Skeleton height={40} />
-              </>
-            ) : null}
-          </Stack>
-        ) : entries?.length ? (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    {intl.formatMessage(MOVEMENT_HEADINGS.when)}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage(MOVEMENT_HEADINGS.item)}
-                  </TableCell>
-                  <TableCell align="right">
-                    {intl.formatMessage(MOVEMENT_HEADINGS.change)}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage(MOVEMENT_HEADINGS.where)}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage(MOVEMENT_HEADINGS.why)}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage(MOVEMENT_HEADINGS.by)}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
+      {!failed && (
+        <Paper variant="outlined">
+          {loading ? (
+            <Stack sx={{ p: 2 }} spacing={1}>
+              {showSkeleton ? (
+                <>
+                  <Skeleton height={40} />
+                  <Skeleton height={40} />
+                  <Skeleton height={40} />
+                </>
+              ) : null}
+            </Stack>
+          ) : entries?.length ? (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>
+                      {intl.formatMessage(MOVEMENT_HEADINGS.when)}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage(MOVEMENT_HEADINGS.item)}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage(MOVEMENT_HEADINGS.change)}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage(MOVEMENT_HEADINGS.where)}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage(MOVEMENT_HEADINGS.why)}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage(MOVEMENT_HEADINGS.by)}
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
 
-              <TableBody>
-                {entries.map((movement) => {
-                  const { sign, where } = describeMovement(movement);
+                <TableBody>
+                  {entries.map((movement) => {
+                    const { sign, where } = describeMovement(movement);
 
-                  return (
-                    <TableRow key={movement.id} hover>
-                      <TableCell>
-                        <span title={formatMoment(movement.createdAt)}>
-                          {relativeTime(movement.createdAt)}
-                        </span>
-                      </TableCell>
+                    return (
+                      <TableRow key={movement.id} hover>
+                        <TableCell>
+                          <span title={formatMoment(movement.createdAt)}>
+                            {relativeTime(movement.createdAt)}
+                          </span>
+                        </TableCell>
 
-                      {/* Snapshotted on the row (ADR-023), so a rename does not
+                        {/* Snapshotted on the row (ADR-023), so a rename does not
                         rewrite what this movement said at the time. */}
-                      <TableCell>
-                        {movement.sku}
-                        {movement.lotCode && (
-                          <Chip
-                            label={movement.lotCode}
-                            size="small"
-                            sx={{ ml: 1 }}
-                          />
-                        )}
-                      </TableCell>
+                        <TableCell>
+                          {movement.sku}
+                          {movement.lotCode && (
+                            <Chip
+                              label={movement.lotCode}
+                              size="small"
+                              sx={{ ml: 1 }}
+                            />
+                          )}
+                        </TableCell>
 
-                      {/* Rendered as it arrived, with only its decimal
+                        {/* Rendered as it arrived, with only its decimal
                         separator the language's (formatQuantity). Parsing it
                         would put a numeric through a JS double, the precision
                         loss ADR-025 exists to avoid. */}
-                      <TableCell align="right">
-                        {sign}
-                        {formatQuantity(movement.quantity)}
-                      </TableCell>
+                        <TableCell align="right">
+                          {sign}
+                          {formatQuantity(movement.quantity)}
+                        </TableCell>
 
-                      <TableCell>{where}</TableCell>
+                        <TableCell>{where}</TableCell>
 
-                      <TableCell>
-                        <Chip
-                          label={reasonLabel(movement.reason, intl)}
-                          size="small"
-                        />
-                        {/* A margin, not a space: a space would be text, and
+                        <TableCell>
+                          <Chip
+                            label={reasonLabel(movement.reason, intl)}
+                            size="small"
+                          />
+                          {/* A margin, not a space: a space would be text, and
                           text here would be English (ADR-054). */}
-                        {movement.reasonDetail && (
-                          <Box component="span" sx={{ ml: 0.5 }}>
-                            {reasonDetailLabel(movement.reasonDetail, intl)}
-                          </Box>
-                        )}
-                        {/* Required on an adjustment, because a person asserting
+                          {movement.reasonDetail && (
+                            <Box component="span" sx={{ ml: 0.5 }}>
+                              {reasonDetailLabel(movement.reasonDetail, intl)}
+                            </Box>
+                          )}
+                          {/* Required on an adjustment, because a person asserting
                           the system is wrong has to say what they found
                           (ADR-023). This is where it gets read. */}
-                        {movement.note && (
-                          <Typography
-                            variant="caption"
-                            component="div"
-                            color="text.secondary"
-                          >
-                            {movement.note}
-                          </Typography>
-                        )}
-                      </TableCell>
+                          {movement.note && (
+                            <Typography
+                              variant="caption"
+                              component="div"
+                              color="text.secondary"
+                            >
+                              {movement.note}
+                            </Typography>
+                          )}
+                        </TableCell>
 
-                      {/* Null when the actor was anonymised (ADR-012). The row
+                        {/* Null when the actor was anonymised (ADR-012). The row
                         survives its author, which is what RESTRICT on actor_id
                         is for. */}
-                      <TableCell>
-                        {movement.actorEmail ??
-                          intl.formatMessage(MOVEMENT_HEADINGS.deletedUser)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Typography color="text.secondary" sx={{ p: 3 }}>
-            {variant || locationId || reason
-              ? intl.formatMessage({
-                  id: 'inventory.movements.noMatch',
-                  defaultMessage: 'Nothing matches those filters.',
-                })
-              : intl.formatMessage({
-                  id: 'inventory.movements.empty',
-                  defaultMessage:
-                    'Nothing has moved yet. Receiving stock is what puts the first row here.',
-                })}
-          </Typography>
-        )}
-      </Paper>
+                        <TableCell>
+                          {movement.actorEmail ??
+                            intl.formatMessage(MOVEMENT_HEADINGS.deletedUser)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Typography color="text.secondary" sx={{ p: 3 }}>
+              {variant || locationId || reason
+                ? intl.formatMessage({
+                    id: 'inventory.movements.noMatch',
+                    defaultMessage: 'Nothing matches those filters.',
+                  })
+                : intl.formatMessage({
+                    id: 'inventory.movements.empty',
+                    defaultMessage:
+                      'Nothing has moved yet. Receiving stock is what puts the first row here.',
+                  })}
+            </Typography>
+          )}
+        </Paper>
+      )}
 
       <LoadMoreButton
         hasMore={hasMore}

@@ -25,6 +25,7 @@ import { EmptyState } from '../components/empty-state';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
+import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { ProductCover } from '../components/product-cover';
@@ -195,6 +196,7 @@ export function InventoryPage() {
     entries: rows,
     error: listError,
     refused,
+    failed,
     loading,
     hasMore,
     loadingMore,
@@ -309,7 +311,7 @@ export function InventoryPage() {
         }
       />
 
-      {error && <Alert severity="error">{error}</Alert>}
+      <ListError error={error} onRetry={failed ? reload : undefined} />
 
       {locations && !leaves.length && (
         <Alert severity="info">
@@ -395,154 +397,157 @@ export function InventoryPage() {
         )}
       </FilterRow>
 
-      <Paper variant="outlined">
-        {loading ? (
-          <Stack sx={{ p: 2 }} spacing={1}>
-            {showSkeleton ? (
-              <>
-                <Skeleton height={48} />
-                <Skeleton height={48} />
-              </>
-            ) : null}
-          </Stack>
-        ) : rows?.length ? (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'products.sku',
-                      defaultMessage: 'SKU',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'inventory.item',
-                      defaultMessage: 'Item',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'inventory.location',
-                      defaultMessage: 'Location',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'inventory.lot',
-                      defaultMessage: 'Lot',
-                    })}
-                  </TableCell>
-                  <SortHeader
-                    label={intl.formatMessage({
-                      id: 'inventory.lot.expires',
-                      defaultMessage: 'Expires',
-                    })}
-                    active={sort?.key === 'expiry'}
-                    order={sort?.order ?? 'asc'}
-                    onSort={() => toggle('expiry')}
-                  />
-                  <TableCell align="right">
-                    {intl.formatMessage({
-                      id: 'inventory.quantity',
-                      defaultMessage: 'Quantity',
-                    })}
-                  </TableCell>
-                  {/* The actions column. Headerless because a column of menu
+      {!failed && (
+        <Paper variant="outlined">
+          {loading ? (
+            <Stack sx={{ p: 2 }} spacing={1}>
+              {showSkeleton ? (
+                <>
+                  <Skeleton height={48} />
+                  <Skeleton height={48} />
+                </>
+              ) : null}
+            </Stack>
+          ) : rows?.length ? (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'products.sku',
+                        defaultMessage: 'SKU',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.item',
+                        defaultMessage: 'Item',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.location',
+                        defaultMessage: 'Location',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.lot',
+                        defaultMessage: 'Lot',
+                      })}
+                    </TableCell>
+                    <SortHeader
+                      label={intl.formatMessage({
+                        id: 'inventory.lot.expires',
+                        defaultMessage: 'Expires',
+                      })}
+                      active={sort?.key === 'expiry'}
+                      order={sort?.order ?? 'asc'}
+                      onSort={() => toggle('expiry')}
+                    />
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'inventory.quantity',
+                        defaultMessage: 'Quantity',
+                      })}
+                    </TableCell>
+                    {/* The actions column. Headerless because a column of menu
                     buttons has no name worth reading out. */}
-                  <TableCell padding="checkbox" />
-                </TableRow>
-              </TableHead>
+                    <TableCell padding="checkbox" />
+                  </TableRow>
+                </TableHead>
 
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.id} hover>
-                    <TableCell>{row.sku}</TableCell>
-                    {/* The product, with the variant when it has a name of
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow key={row.id} hover>
+                      <TableCell>{row.sku}</TableCell>
+                      {/* The product, with the variant when it has a name of
                       its own — "Focus (60ct)" — as the packing slip and the
                       variant picker already say it. */}
-                    <TableCell>
-                      <Stack
-                        direction="row"
-                        spacing={1.5}
-                        sx={{ alignItems: 'center' }}
-                      >
-                        <ProductCover
-                          fileId={row.coverFileId}
-                          name={row.productName}
-                        />
-                        <span>
-                          {itemName(row.productName, row.variantName)}
-                        </span>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>{row.locationName}</TableCell>
-                    <TableCell>
-                      {row.lotCode ? (
-                        <Chip label={row.lotCode} size="small" />
-                      ) : (
-                        NO_VALUE
-                      )}
-                    </TableCell>
-                    {/* Days left within 90 days, red within 30, the date
+                      <TableCell>
+                        <Stack
+                          direction="row"
+                          spacing={1.5}
+                          sx={{ alignItems: 'center' }}
+                        >
+                          <ProductCover
+                            fileId={row.coverFileId}
+                            name={row.productName}
+                          />
+                          <span>
+                            {itemName(row.productName, row.variantName)}
+                          </span>
+                        </Stack>
+                      </TableCell>
+                      <TableCell>{row.locationName}</TableCell>
+                      <TableCell>
+                        {row.lotCode ? (
+                          <Chip label={row.lotCode} size="small" />
+                        ) : (
+                          NO_VALUE
+                        )}
+                      </TableCell>
+                      {/* Days left within 90 days, red within 30, the date
                         beside it (ADR-055). */}
-                    <TableCell>
-                      <ExpiryChip expiresAt={row.lotExpiresAt} />
-                    </TableCell>
-                    {/* Read without padding zeros, grouped the language's way
+                      <TableCell>
+                        <ExpiryChip expiresAt={row.lotExpiresAt} />
+                      </TableCell>
+                      {/* Read without padding zeros, grouped the language's way
                       (displayQuantity), but never parsed: a numeric through
                       a JS double is the loss ADR-025 exists to avoid. */}
-                    <TableCell align="right">
-                      {displayWithUnit(row.quantity, row.unitOfMeasure, intl)}
-                    </TableCell>
+                      <TableCell align="right">
+                        {displayWithUnit(row.quantity, row.unitOfMeasure, intl)}
+                      </TableCell>
 
-                    {/* For everyone here: History and Trace lot only
+                      {/* For everyone here: History and Trace lot only
                       read. The menu holds what this member may do. */}
-                    <TableCell padding="checkbox">
-                      <StockActions
-                        row={row}
-                        canMove={can('stock.move')}
-                        canAdjust={canAdjust}
-                        onSelect={(mode, selected) =>
-                          setMoving({ mode, row: selected })
-                        }
-                        onHistory={setViewing}
-                        onEditLot={setEditingLot}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          <EmptyState learnMore={{ guide: 'inventory', section: 'receive' }}>
-            {needsCost && !expiring
-              ? intl.formatMessage({
-                  id: 'inventory.noneNeedsCost',
-                  defaultMessage: 'Everything here has a cost.',
-                })
-              : expiring
-                ? intl.formatMessage(
-                    {
-                      id: 'inventory.noneExpiring',
-                      defaultMessage: 'No lot here expires within {days} days.',
-                    },
-                    { days: expiringWithin },
-                  )
-                : search
-                  ? intl.formatMessage({
-                      id: 'inventory.noMatch',
-                      defaultMessage: 'Nothing matches that search.',
-                    })
-                  : intl.formatMessage({
-                      id: 'inventory.empty',
-                      defaultMessage: 'Nothing here yet.',
-                    })}
-          </EmptyState>
-        )}
-      </Paper>
+                      <TableCell padding="checkbox">
+                        <StockActions
+                          row={row}
+                          canMove={can('stock.move')}
+                          canAdjust={canAdjust}
+                          onSelect={(mode, selected) =>
+                            setMoving({ mode, row: selected })
+                          }
+                          onHistory={setViewing}
+                          onEditLot={setEditingLot}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <EmptyState learnMore={{ guide: 'inventory', section: 'receive' }}>
+              {needsCost && !expiring
+                ? intl.formatMessage({
+                    id: 'inventory.noneNeedsCost',
+                    defaultMessage: 'Everything here has a cost.',
+                  })
+                : expiring
+                  ? intl.formatMessage(
+                      {
+                        id: 'inventory.noneExpiring',
+                        defaultMessage:
+                          'No lot here expires within {days} days.',
+                      },
+                      { days: expiringWithin },
+                    )
+                  : search
+                    ? intl.formatMessage({
+                        id: 'inventory.noMatch',
+                        defaultMessage: 'Nothing matches that search.',
+                      })
+                    : intl.formatMessage({
+                        id: 'inventory.empty',
+                        defaultMessage: 'Nothing here yet.',
+                      })}
+            </EmptyState>
+          )}
+        </Paper>
+      )}
 
       <LoadMoreButton
         hasMore={hasMore}

@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   Link,
   Paper,
@@ -20,6 +19,7 @@ import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { FilterRow } from '../components/filter-row';
+import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
@@ -62,6 +62,7 @@ export function ProductionOrdersPage() {
     entries: items,
     error,
     refused,
+    failed,
     loading,
     hasMore,
     loadingMore,
@@ -134,7 +135,7 @@ export function ProductionOrdersPage() {
         />
       </FilterRow>
 
-      {error && <Alert severity="error">{error}</Alert>}
+      <ListError error={error} onRetry={failed ? reload : undefined} />
 
       {loading && showSkeleton && <Skeleton height={160} />}
 

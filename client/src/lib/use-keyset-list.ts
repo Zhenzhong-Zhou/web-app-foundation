@@ -73,6 +73,10 @@ function withBefore(path: string, cursor: string): string {
  * page refused for this tab's API revision, with no rows to show: the page
  * shows why in their place (RevisionRefusalPage). A refused Load more keeps
  * the rows, with the error beside them.
+ *
+ * `failed` is a first page that failed, so there are no rows: the page
+ * shows the error, with Try again, and no empty state, which would say
+ * there is nothing when nothing was read (#195).
  */
 export function useKeysetList<T>(path: string | null) {
   const [reloads, setReloads] = useState(0);
@@ -167,6 +171,7 @@ export function useKeysetList<T>(path: string | null) {
       current.entries === null && isRevisionRefusal(current.failure)
         ? current.failure
         : null,
+    failed: current.entries === null && current.failure !== null,
     /** True until the first page has either answered or failed. */
     loading: current.entries === null && error === null,
     hasMore: current.cursor !== null,

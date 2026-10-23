@@ -72,7 +72,7 @@ export function MovementHistoryDialog({
   const intl = useIntl();
   // Mounted only while a row is open (see InventoryPage), so each open
   // starts fresh and closing needs nothing reset.
-  const { entries, error, hasMore, loadingMore, loadMore } =
+  const { entries, error, failed, hasMore, loadingMore, loadMore, reload } =
     useKeysetList<Movement>(row ? `/stock/movements?${queryFor(row)}` : null);
 
   return (
@@ -100,7 +100,20 @@ export function MovementHistoryDialog({
 
       <DialogContent>
         <Stack spacing={2}>
-          {error && <FormError message={error} />}
+          {/* A first read that failed shows only why, never the empty
+              line under it (#195). */}
+          {error && (
+            <FormError message={error}>
+              {failed && (
+                <Button variant="text" color="inherit" onClick={reload}>
+                  {intl.formatMessage({
+                    id: 'common.tryAgain',
+                    defaultMessage: 'Try again',
+                  })}
+                </Button>
+              )}
+            </FormError>
+          )}
 
           {/* Scoped to the lot when the row has one, otherwise to the variant.
               Either way it spans locations: stock that moved away is the part
@@ -125,7 +138,7 @@ export function MovementHistoryDialog({
                 )}
           </Typography>
 
-          {entries === null && !error ? (
+          {failed ? null : entries === null ? (
             <Stack spacing={1}>
               <Skeleton height={40} />
               <Skeleton height={40} />

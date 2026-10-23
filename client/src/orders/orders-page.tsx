@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   Chip,
   Link,
@@ -23,6 +22,7 @@ import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
+import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
@@ -128,6 +128,7 @@ export function OrdersPage() {
     entries: items,
     error,
     refused,
+    failed,
     loading,
     hasMore,
     loadingMore,
@@ -213,168 +214,173 @@ export function OrdersPage() {
         </Stack>
       )}
 
-      {error && <Alert severity="error">{error}</Alert>}
+      <ListError error={error} onRetry={failed ? reload : undefined} />
 
-      <Paper variant="outlined">
-        {loading ? (
-          <Stack sx={{ p: 2 }} spacing={1}>
-            {showSkeleton ? (
-              <>
-                <Skeleton height={48} />
-                <Skeleton height={48} />
-              </>
-            ) : null}
-          </Stack>
-        ) : items?.length ? (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'orders.number',
-                      defaultMessage: 'Number',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'orders.partner',
-                      defaultMessage: 'Partner',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'orders.direction',
-                      defaultMessage: 'Direction',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'orders.reference',
-                      defaultMessage: 'Reference',
-                    })}
-                  </TableCell>
-                  <SortHeader
-                    label={expected}
-                    active={sort?.key === 'expectedAt'}
-                    order={sort?.order ?? 'asc'}
-                    onSort={() => toggle('expectedAt')}
-                  />
-                  <TableCell align="right">
-                    {intl.formatMessage({
-                      id: 'orders.fulfilled',
-                      defaultMessage: 'Fulfilled',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'common.status',
-                      defaultMessage: 'Status',
-                    })}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {items.map((order) => (
-                  <TableRow key={order.id} hover>
-                    {/* Ours, which every order has (ADR-071): the link. */}
+      {!failed && (
+        <Paper variant="outlined">
+          {loading ? (
+            <Stack sx={{ p: 2 }} spacing={1}>
+              {showSkeleton ? (
+                <>
+                  <Skeleton height={48} />
+                  <Skeleton height={48} />
+                </>
+              ) : null}
+            </Stack>
+          ) : items?.length ? (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
                     <TableCell>
-                      <Link component={RouterLink} to={`/orders/${order.id}`}>
-                        {order.number}
-                      </Link>
+                      {intl.formatMessage({
+                        id: 'orders.number',
+                        defaultMessage: 'Number',
+                      })}
                     </TableCell>
-                    <TableCell>{order.partnerName}</TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'orders.partner',
+                        defaultMessage: 'Partner',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'orders.direction',
+                        defaultMessage: 'Direction',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'orders.reference',
+                        defaultMessage: 'Reference',
+                      })}
+                    </TableCell>
+                    <SortHeader
+                      label={expected}
+                      active={sort?.key === 'expectedAt'}
+                      order={sort?.order ?? 'asc'}
+                      onSort={() => toggle('expectedAt')}
+                    />
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'orders.fulfilled',
+                        defaultMessage: 'Fulfilled',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'common.status',
+                        defaultMessage: 'Status',
+                      })}
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
 
-                    {/* Which way the goods go, in a person's words — the first
+                <TableBody>
+                  {items.map((order) => (
+                    <TableRow key={order.id} hover>
+                      {/* Ours, which every order has (ADR-071): the link. */}
+                      <TableCell>
+                        <Link component={RouterLink} to={`/orders/${order.id}`}>
+                          {order.number}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{order.partnerName}</TableCell>
+
+                      {/* Which way the goods go, in a person's words — the first
                       thing anyone scanning this list wants to know. */}
-                    <TableCell>
-                      {order.direction === 'purchase'
-                        ? intl.formatMessage({
-                            id: 'orders.direction.buying',
-                            defaultMessage: 'Buying',
-                          })
-                        : intl.formatMessage({
-                            id: 'orders.direction.selling',
-                            defaultMessage: 'Selling',
-                          })}
-                      {/* Beside the direction rather than instead of it: a
+                      <TableCell>
+                        {order.direction === 'purchase'
+                          ? intl.formatMessage({
+                              id: 'orders.direction.buying',
+                              defaultMessage: 'Buying',
+                            })
+                          : intl.formatMessage({
+                              id: 'orders.direction.selling',
+                              defaultMessage: 'Selling',
+                            })}
+                        {/* Beside the direction rather than instead of it: a
                         sample is still stock leaving (ADR-042). */}
-                      {order.isSample && (
-                        <Chip
-                          label={intl.formatMessage({
-                            id: 'orders.sample',
-                            defaultMessage: 'Sample',
-                          })}
-                          size="small"
-                          variant="outlined"
-                          sx={{ ml: 1 }}
-                        />
-                      )}
-                    </TableCell>
+                        {order.isSample && (
+                          <Chip
+                            label={intl.formatMessage({
+                              id: 'orders.sample',
+                              defaultMessage: 'Sample',
+                            })}
+                            size="small"
+                            variant="outlined"
+                            sx={{ ml: 1 }}
+                          />
+                        )}
+                      </TableCell>
 
-                    {/* Their number, not ours. Nullable, because an order placed
+                      {/* Their number, not ours. Nullable, because an order placed
                       by phone has none. */}
-                    <TableCell>{order.reference ?? NO_VALUE}</TableCell>
+                      <TableCell>{order.reference ?? NO_VALUE}</TableCell>
 
-                    <TableCell>
-                      {order.expectedAt
-                        ? formatDay(order.expectedAt)
-                        : NO_VALUE}
-                    </TableCell>
+                      <TableCell>
+                        {order.expectedAt
+                          ? formatDay(order.expectedAt)
+                          : NO_VALUE}
+                      </TableCell>
 
-                    {/* Rendered as Postgres computed them, only the decimal
+                      {/* Rendered as Postgres computed them, only the decimal
                       separator the language's. Parsing a numeric(18,4) into a
                       JS number to make a percentage is how a quantity loses
                       its last decimal place (ADR-025). */}
-                    <TableCell align="right">
-                      {intl.formatMessage(
-                        {
-                          id: 'orders.fulfilledOfOrdered',
-                          defaultMessage: '{fulfilled} / {ordered}',
-                        },
-                        {
-                          fulfilled: displayQuantity(order.quantityFulfilled),
-                          ordered: displayQuantity(order.quantityOrdered),
-                        },
-                      )}
-                    </TableCell>
+                      <TableCell align="right">
+                        {intl.formatMessage(
+                          {
+                            id: 'orders.fulfilledOfOrdered',
+                            defaultMessage: '{fulfilled} / {ordered}',
+                          },
+                          {
+                            fulfilled: displayQuantity(order.quantityFulfilled),
+                            ordered: displayQuantity(order.quantityOrdered),
+                          },
+                        )}
+                      </TableCell>
 
-                    <TableCell>
-                      {/* Its tone from the one table (ADR-055), its words
+                      <TableCell>
+                        {/* Its tone from the one table (ADR-055), its words
                           from the catalogue rather than CSS capitalisation. */}
-                      <StatusChip
-                        tone={STATUS_TONES.order[order.status]}
-                        label={orderStatusLabel(order.status, order.direction)}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          // No Raise an order here: the page header already offers it, and
-          // a second button for the same act is one too many.
-          <EmptyState learnMore={{ guide: 'orders', section: 'raise' }}>
-            {search || range.from || range.to
-              ? intl.formatMessage({
-                  id: 'inventory.noMatch',
-                  defaultMessage: 'Nothing matches that search.',
-                })
-              : filter === 'open'
+                        <StatusChip
+                          tone={STATUS_TONES.order[order.status]}
+                          label={orderStatusLabel(
+                            order.status,
+                            order.direction,
+                          )}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            // No Raise an order here: the page header already offers it, and
+            // a second button for the same act is one too many.
+            <EmptyState learnMore={{ guide: 'orders', section: 'raise' }}>
+              {search || range.from || range.to
                 ? intl.formatMessage({
-                    id: 'orders.empty.open',
-                    defaultMessage:
-                      'Nothing open. Raising an order records what you asked a partner for — receiving against it is what puts the stock on a shelf.',
+                    id: 'inventory.noMatch',
+                    defaultMessage: 'Nothing matches that search.',
                   })
-                : intl.formatMessage({
-                    id: 'orders.empty.filtered',
-                    defaultMessage: 'No orders match that filter.',
-                  })}
-          </EmptyState>
-        )}
-      </Paper>
+                : filter === 'open'
+                  ? intl.formatMessage({
+                      id: 'orders.empty.open',
+                      defaultMessage:
+                        'Nothing open. Raising an order records what you asked a partner for — receiving against it is what puts the stock on a shelf.',
+                    })
+                  : intl.formatMessage({
+                      id: 'orders.empty.filtered',
+                      defaultMessage: 'No orders match that filter.',
+                    })}
+            </EmptyState>
+          )}
+        </Paper>
+      )}
 
       <LoadMoreButton
         hasMore={hasMore}

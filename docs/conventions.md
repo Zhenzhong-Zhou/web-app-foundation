@@ -640,6 +640,10 @@ Use these rather than writing the thing again on a page:
   counts. Never a column of full-width fields.
 - **`EmptyState`** inside the list's panel when it is empty: the first-time
   message with no filter, "nothing matches" with one.
+- **`ListError`** above a list whose read failed. When the first page failed
+  (`useKeysetList`'s `failed`), it carries Try again and the panel is not
+  drawn, so the page never says both that it failed and that there is
+  nothing (#195); a failed Load more keeps its rows, without Try again.
 - **`Reference`** around a document's number, a SKU or a lot code placed in a
   message (`{ sku: <Reference>{sku}</Reference> }`), so it never breaks at its
   hyphen; **`ReferencesWhole`** for text the server wrote, which keeps every
