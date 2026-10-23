@@ -1943,7 +1943,7 @@ The pages, in a private window unless a check says otherwise.
   Release greyed. In Français and 中文 each line reads in that language.
 - **MC-3320** *(ADR-080, #148)* A page you may not open says why in the
   server's words. As Tom Becker, open a sale's invoice by its address
-  (`/invoices/<id>`, copied as the demo Owner): You don't have access to
+  (`/invoices/<id>`, copied as the demo Owner): You don’t have access to
   this, then Your role, Warehouse, doesn’t include “See invoices and
   credit notes”. … can change your roles., never Your role does not
   include this. In Français and 中文 the same, in that language.
@@ -2074,7 +2074,7 @@ waits a second and tries once more before it says anything.
 
 - **MC-3407** *(ADR-081)* Offline. Signed in, on Orders, go Offline and
   open Inventory from the rail: in its place, with the rail still there,
-  Can't reach the server, the line about the connection, in smaller grey
+  Can’t reach the server, the line about the connection, in smaller grey
   text under it This page tries again by itself when your connection
   comes back., and Try again. Go back
   online (No throttling): Inventory loads by itself, in full. Reload on
@@ -2171,7 +2171,7 @@ revision back afterwards: `git status` shows nothing changed.
   itself.
 - **MC-3417** *(ADR-081)* A record that won't load, offline. Open an order,
   then go back to Orders, go Offline (DevTools → Network) and open another
-  order: Can't reach the server, the line about the connection, This page
+  order: Can’t reach the server, the line about the connection, This page
   tries again by itself when your connection comes back., and Try again.
   Back online, the order loads by itself, without a load in full (no new
   document in the Network tab), as a page that won't load does (MC-3407).
@@ -2222,7 +2222,7 @@ menu's Colour mode.
 - **MC-3421** *(ADR-081)* The status pages' discs and Home's empty line.
   An unknown address (`/no-such-page`): the search icon dark blue on a
   pale blue disc. MC-3409's Something went wrong: the warning sign dark
-  red on a pale red disc. MC-3407's Can't reach the server: the cloud dark
+  red on a pale red disc. MC-3407's Can’t reach the server: the cloud dark
   grey on a pale grey disc. In dark mode each the other way round, a light
   icon on a dark tint, and each icon stands clear of its disc. Then, in an
   organization of your own (registered locally, `REGISTRATION=open`) with
@@ -2308,6 +2308,15 @@ a private window.
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R48** *(typographic apostrophes in English, #184)* In English, as
+  Tom Becker open a sale's invoice by its address, as MC-3320 does: You
+  don’t have access to this. Open
+  `/orders/00000000-0000-7000-8000-000000000000`: This order doesn’t
+  exist. Offline, open Inventory: Can’t reach the server. Your account's
+  Email field says Changing your email address isn’t available yet., and
+  SO-DEMO-1, with its RMA, says Returns don’t reopen an item. Each with ’,
+  never a straight apostrophe. Found by the usability walkthrough on #176.
 
 - **MC-R47** *(`npm run api` beside the dev server, #194)* With
   `npm run start:dev` running in `server/`, change any file in `src/`
@@ -3017,3 +3026,5 @@ first.
   with Try again: MC-R46.
 - 2026-10-23: #194, `npm run api` builds apart from the dev server:
   MC-R47.
+- 2026-10-23: #184, typographic apostrophes in English, and the
+  catalogues' check holding them: MC-R48.

@@ -437,7 +437,7 @@ export function OrderLinesSection({
           {intl.formatMessage({
             id: 'orders.lines.returnsNote',
             defaultMessage:
-              "Returns don't reopen an item. To send replacements, raise a new sale.",
+              'Returns don’t reopen an item. To send replacements, raise a new sale.',
           })}
         </Typography>
       )}

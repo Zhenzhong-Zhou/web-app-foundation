@@ -282,7 +282,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
         >
           {intl.formatMessage({
             id: 'audit.onePerson',
-            defaultMessage: "Showing one person's activity only.",
+            defaultMessage: 'Showing one person’s activity only.',
           })}
         </Alert>
       )}

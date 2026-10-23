@@ -116,7 +116,7 @@ export function PartnerDetailPage() {
         message={error}
         missingTitle={intl.formatMessage({
           id: 'status.missing.partner',
-          defaultMessage: "This partner doesn't exist",
+          defaultMessage: 'This partner doesn’t exist',
         })}
         list={{
           to: '/partners',

@@ -136,7 +136,7 @@ export function InvoiceLineDialog({
                 priceError ??
                 intl.formatMessage({
                   id: 'invoices.line.price.help',
-                  defaultMessage: "Defaults to the order's price.",
+                  defaultMessage: 'Defaults to the order’s price.',
                 })
               }
               slotProps={{ htmlInput: { inputMode: 'decimal' } }}

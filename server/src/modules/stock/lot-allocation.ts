@@ -144,7 +144,7 @@ export async function allocateFefo(
             {
               id: 'stock.lots.runShort',
               defaultMessage:
-                "Not enough {sku} was issued to this run to consume {quantity}: {shortBy} short. Move the missing units to the run's location first.",
+                'Not enough {sku} was issued to this run to consume {quantity}: {shortBy} short. Move the missing units to the run’s location first.',
             },
             { sku: query.sku, quantity: query.quantity, shortBy },
           )

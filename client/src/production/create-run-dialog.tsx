@@ -296,7 +296,7 @@ export function CreateRunDialog({
               helperText={intl.formatMessage({
                 id: 'production.create.reference.help',
                 defaultMessage:
-                  "A batch number or the maker's works order. Optional.",
+                  'A batch number or the maker’s works order. Optional.',
               })}
             />
 

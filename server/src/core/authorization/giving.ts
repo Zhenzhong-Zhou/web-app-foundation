@@ -46,7 +46,7 @@ export const ONLY_AN_OWNER_GIVES_OWNER = t({
 });
 export const ONLY_AN_OWNER_CHANGES_AN_OWNER = t({
   id: 'users.ownerChange',
-  defaultMessage: "Only an Owner can change an Owner's role",
+  defaultMessage: 'Only an Owner can change an Owner’s role',
 });
 export const LAST_OWNER_CHANGE = t({
   id: 'users.lastOwnerChange',

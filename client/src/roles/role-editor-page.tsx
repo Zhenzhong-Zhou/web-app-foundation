@@ -151,7 +151,7 @@ export function EditRolePage() {
         message={role.error}
         missingTitle={intl.formatMessage({
           id: 'status.missing.role',
-          defaultMessage: "This role doesn't exist",
+          defaultMessage: 'This role doesn’t exist',
         })}
         list={{
           to: '/settings/roles',

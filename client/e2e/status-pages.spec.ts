@@ -32,7 +32,7 @@ test('an order that does not exist says so, with the way to Orders', async ({
   await page.goto('/orders/00000000-0000-7000-8000-000000000000');
 
   await expect(
-    page.getByRole('heading', { level: 1, name: "This order doesn't exist" }),
+    page.getByRole('heading', { level: 1, name: 'This order doesn’t exist' }),
   ).toBeVisible();
   await page.getByRole('link', { name: 'Go to Orders' }).click();
   await expect(page).toHaveURL(/\/orders$/);
@@ -63,7 +63,7 @@ test.describe('a page that won’t load', () => {
 
     await openInventory(page);
     await expect(
-      page.getByRole('heading', { level: 1, name: "Can't reach the server" }),
+      page.getByRole('heading', { level: 1, name: 'Can’t reach the server' }),
     ).toBeVisible();
     await expect(
       page.getByText(

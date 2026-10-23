@@ -255,7 +255,7 @@ describe('ProductionOrderDetailPage', () => {
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: "This production run doesn't exist",
+        name: 'This production run doesn’t exist',
       }),
     ).toBeInTheDocument();
     expect(

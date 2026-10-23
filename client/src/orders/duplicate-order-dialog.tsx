@@ -157,7 +157,7 @@ export function DuplicateOrderDialog({
               {intl.formatMessage({
                 id: 'orders.duplicate.notCopied',
                 defaultMessage:
-                  "The reference and expected date are not copied. A supplier's PO number belongs to the order it was issued against.",
+                  'The reference and expected date are not copied. A supplier’s PO number belongs to the order it was issued against.',
               })}
             </Alert>
 

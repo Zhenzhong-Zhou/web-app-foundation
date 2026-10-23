@@ -153,7 +153,7 @@ export function PersonPage() {
               {intl.formatMessage(
                 {
                   id: 'people.nothingFilledIn',
-                  defaultMessage: "{name} hasn't added their work details yet.",
+                  defaultMessage: '{name} hasn’t added their work details yet.',
                 },
                 { name: firstName },
               )}
@@ -245,7 +245,7 @@ export function PersonPage() {
             {intl.formatMessage(
               {
                 id: 'people.seeAll',
-                defaultMessage: "See all of {name}'s activity",
+                defaultMessage: 'See all of {name}’s activity',
               },
               { name: firstName },
             )}

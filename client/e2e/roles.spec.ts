@@ -246,7 +246,7 @@ for (const key of TEMPLATES) {
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await page.waitForLoadState('networkidle');
       await expect(
-        page.getByRole('heading', { name: "You don't have access to this" }),
+        page.getByRole('heading', { name: 'You don’t have access to this' }),
       ).toHaveCount(0);
     }
 

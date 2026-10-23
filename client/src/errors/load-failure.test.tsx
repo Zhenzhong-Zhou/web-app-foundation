@@ -14,7 +14,7 @@ function renderFailure(failure: unknown, onRetry = vi.fn()) {
       <LoadFailure
         failure={failure}
         message="The server's own words"
-        missingTitle="This order doesn't exist"
+        missingTitle="This order doesn’t exist"
         list={{ to: '/orders', label: 'Orders' }}
         onRetry={onRetry}
       />
@@ -29,7 +29,7 @@ describe('LoadFailure', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: "This order doesn't exist",
+        name: 'This order doesn’t exist',
       }),
     ).toBeTruthy();
     expect(
@@ -49,7 +49,7 @@ describe('LoadFailure', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: "You don't have access to this",
+        name: 'You don’t have access to this',
       }),
     ).toBeTruthy();
     expect(screen.getByText(words)).toBeTruthy();
@@ -60,7 +60,7 @@ describe('LoadFailure', () => {
   it('says the server is out of reach when nothing answered, with Try again', async () => {
     const onRetry = renderFailure(new TypeError('Failed to fetch'));
     expect(
-      screen.getByRole('heading', { level: 1, name: "Can't reach the server" }),
+      screen.getByRole('heading', { level: 1, name: 'Can’t reach the server' }),
     ).toBeTruthy();
     screen.getByRole('button', { name: 'Try again' }).click();
     expect(onRetry).toHaveBeenCalled();
