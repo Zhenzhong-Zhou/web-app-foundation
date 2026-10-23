@@ -47,13 +47,22 @@ done; a check older than a change of host, plan or region is stale.
 ### Deploys and old tabs (ADR-081)
 
 - **What is live.** `curl -s $PRODUCTION_URL/api/health` names the commit
-  and the API revision; compare with `git rev-parse origin/main` and
-  `server/src/common/api-revision.ts`. A live commit behind `main` is a
-  deploy that failed or never ran: find out which.
-- **The order.** The static site deploys only after the API names the
-  commit: the deploy workflow in `.github/workflows/`, its last runs
-  (`gh run list --workflow <file> -L 5`), and, by hand, the static site's
-  Auto-Deploy off and its deploy hook in GitHub's secrets.
+  and the API revision; compare the commit with the newest one on `main`
+  that CI ran on (`gh run list --workflow ci.yml --branch main --event push
+  -L 1 --json headSha,conclusion`), and the revision with
+  `server/src/common/api-revision.ts`. A push of docs alone runs no CI and
+  deploys nothing (`ci.yml`'s `paths`), so `main` ahead of the live commit
+  by such pushes is as it should be. Behind CI's newest commit, a run that
+  failed deployed nothing: say so; one that passed is a deploy that failed
+  or never ran: find out which.
+- **The order.** Both services deploy only through the deploy workflow
+  (`deploy.yml`): the API at the commit CI passed, then the static site
+  once `/api/health` names it. Its last runs (`gh run list --workflow
+  deploy.yml -L 5`), each deploying both or saying why it deployed
+  nothing; `gh secret list` naming `RENDER_API_DEPLOY_HOOK` and
+  `RENDER_CLIENT_DEPLOY_HOOK`, and `gh variable list` naming
+  `API_HEALTH_URL` (names only, never values); and, by hand, Auto-Deploy
+  off on the web service and on the static site (`render.md`, Deploys).
 - **The version file and caching.** `curl -sI` on `/version.json`,
   `/index.html` and one `/assets/*.js` named in the live `index.html`:
   the first two never cached, the asset for a year and immutable
