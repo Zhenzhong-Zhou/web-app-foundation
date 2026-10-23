@@ -806,6 +806,7 @@
   "layout.navigation": "Navigation",
   "layout.noOrganization": "No organization",
   "layout.notifications.empty": "Nothing yet.",
+  "layout.notifications.loadFailed": "Could not load notifications.",
   "layout.notifications.markAllRead": "Mark all read",
   "layout.notifications.title": "Notifications",
   "layout.notifications.unread": "Notifications, {count} unread",
