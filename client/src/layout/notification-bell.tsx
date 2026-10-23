@@ -1,6 +1,8 @@
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import {
+  Alert,
   Badge,
+  Box,
   Button,
   Divider,
   IconButton,
@@ -16,8 +18,10 @@ import { useNavigate } from 'react-router-dom';
 
 import type { Notification } from '../api/types.gen';
 import { ReferencesWhole } from '../components/reference';
-import { api } from '../lib/api';
+import { Reload } from '../errors/status-actions';
+import { api, isRevisionRefusal } from '../lib/api';
 import { relativeTime } from '../lib/format';
+import { useFailureWords } from '../lib/use-failure-words';
 import { useWhileVisible } from '../lib/use-while-visible';
 import { rem } from '../theme/rem';
 import { useNewVersion } from '../version/version-check';
@@ -71,7 +75,11 @@ export function NotificationBell() {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [count, setCount] = useState(0);
   const [entries, setEntries] = useState<Notification[] | null>(null);
-  const { outdated } = useNewVersion();
+  const [failure, setFailure] = useState<unknown>(null);
+  const { newer, outdated } = useNewVersion();
+  const refusalWords = useFailureWords(
+    isRevisionRefusal(failure) ? failure : null,
+  );
 
   async function askCount() {
     try {
@@ -92,16 +100,23 @@ export function NotificationBell() {
   // count is right when looked at (ADR-063).
   useWhileVisible(outdated ? null : askCount, POLL_MS);
 
-  async function open(event: MouseEvent<HTMLElement>) {
-    setAnchor(event.currentTarget);
+  async function load() {
     setEntries(null);
+    setFailure(null);
 
     try {
       const page = await api<{ entries: Notification[] }>('/notifications');
       setEntries(page.entries);
-    } catch {
-      setEntries([]);
+    } catch (caught) {
+      // Said, never shown as an empty list (#189): "Nothing yet." would
+      // tell someone with notifications that they have none.
+      setFailure(caught);
     }
+  }
+
+  function open(event: MouseEvent<HTMLElement>) {
+    setAnchor(event.currentTarget);
+    void load();
   }
 
   async function choose(entry: Notification) {
@@ -155,7 +170,7 @@ export function NotificationBell() {
                 )
               : title
           }
-          onClick={(event) => void open(event)}
+          onClick={open}
         >
           {/* Nothing rather than 0: a Badge hiding a 0 still holds the
               last number it showed, once anything around it renders
@@ -194,7 +209,37 @@ export function NotificationBell() {
 
         <Divider />
 
-        {entries === null && (
+        {failure !== null && (
+          <Box sx={{ px: 2, py: 1 }}>
+            {refusalWords ? (
+              // An outdated tab (ADR-081): asking again would be refused
+              // again, so Reload once the new version is out, and nothing
+              // while it is still being installed.
+              <Alert severity="warning" action={newer ? <Reload /> : null}>
+                {refusalWords}
+              </Alert>
+            ) : (
+              <Alert
+                severity="error"
+                action={
+                  <Button variant="text" onClick={() => void load()}>
+                    {intl.formatMessage({
+                      id: 'common.tryAgain',
+                      defaultMessage: 'Try again',
+                    })}
+                  </Button>
+                }
+              >
+                {intl.formatMessage({
+                  id: 'layout.notifications.loadFailed',
+                  defaultMessage: 'Could not load notifications.',
+                })}
+              </Alert>
+            )}
+          </Box>
+        )}
+
+        {entries === null && failure === null && (
           <MenuItem disabled>
             <Typography variant="body2">
               {intl.formatMessage({
