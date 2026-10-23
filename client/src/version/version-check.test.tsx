@@ -17,6 +17,7 @@ import {
   useNewVersion,
   useReloadAtNextPage,
   useVersionReads,
+  VersionWatch,
 } from './version-check';
 
 describe('checkVersion', () => {
@@ -208,6 +209,25 @@ describe('noteOutdated', () => {
 
     await act(() => vi.advanceTimersByTimeAsync(90_000));
     expect(reads).toBe(3);
+  });
+
+  it('reads nothing more for a later refusal once a newer build is known', async () => {
+    let reads = 0;
+    server.use(
+      http.get('/version.json', () => {
+        reads += 1;
+        return HttpResponse.json({
+          ...BUILD,
+          build: 'a1b2c3d',
+          apiRevision: API_REVISION,
+        });
+      }),
+    );
+    await act(() => noteOutdated());
+    expect(reads).toBe(1);
+
+    expect(await act(() => noteOutdated())).toBe('newer');
+    expect(reads).toBe(1);
   });
 
   it('forgets it once the API serves this tab again, as after a rollback', async () => {
@@ -405,5 +425,35 @@ describe('useReloadAtNextPage', () => {
     await user.click(screen.getByRole('link', { name: 'Open orders' }));
     expect(screen.getByText('/orders?status=open')).toBeInTheDocument();
     expect(reloadPage).not.toHaveBeenCalled();
+  });
+});
+
+describe('VersionWatch', () => {
+  afterEach(() => vi.mocked(reloadPage).mockClear());
+
+  it('reads the file as the app starts, and loads the next page in full once a newer build is out', async () => {
+    let reads = 0;
+    server.use(
+      http.get('/version.json', () => {
+        reads += 1;
+        return HttpResponse.json({
+          ...BUILD,
+          build: 'a1b2c3d',
+          apiRevision: API_REVISION,
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/orders']}>
+        <VersionWatch />
+        <Link to="/inventory">Inventory</Link>
+      </MemoryRouter>,
+    );
+    await vi.waitFor(() => expect(reads).toBe(1));
+    await act(() => checkVersion());
+
+    await user.click(screen.getByRole('link', { name: 'Inventory' }));
+    expect(reloadPage).toHaveBeenCalledTimes(1);
   });
 });

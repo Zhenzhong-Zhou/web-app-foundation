@@ -16,6 +16,7 @@ import { LanguageFailureToast } from './i18n/language-failure';
 import { LanguageProvider } from './i18n/language-provider';
 import { LocalizedTheme } from './i18n/localized-theme';
 import { initTextSize } from './theme/text-size';
+import { VersionWatch } from './version/version-check';
 
 // This device's text size (ADR-075), before anything renders, so the first
 // paint is already at it rather than Standard for a moment.
@@ -31,6 +32,9 @@ const router = createBrowserRouter([
     path: '*',
     element: (
       <AuthProvider>
+        {/* A newer build noticed, signed in or out, and loaded at the next
+            page (ADR-081). */}
+        <VersionWatch />
         <App />
       </AuthProvider>
     ),

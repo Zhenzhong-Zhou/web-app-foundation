@@ -22,7 +22,6 @@ import { AppLayout } from './layout/app-layout';
 import { isRevisionRefusal } from './lib/api';
 import { useDelayedFlag } from './lib/use-delayed-flag';
 import { SIGNED_IN_ROUTES } from './routes';
-import { useReloadAtNextPage, useVersionReads } from './version/version-check';
 
 /** Needs a session. Remembers where the caller was headed. */
 function Protected({ children }: { children: ReactNode }) {
@@ -81,10 +80,6 @@ export default function App() {
   const intl = useIntl();
   const { loading, error, refresh } = useAuth();
   const showSpinner = useDelayedFlag(loading);
-  // A newer build noticed, signed in or out, and loaded at the next page
-  // (ADR-081).
-  useVersionReads();
-  useReloadAtNextPage();
 
   if (loading) {
     return showSpinner ? (

@@ -65,11 +65,12 @@ export function useNewVersion(): NewVersion {
 /** The same, outside a component: what a refusal's words depend on. */
 export const newVersionNow = snapshot;
 
-/** The build the file last named, when newer than this tab's. */
-let newest: string | null = null;
-
-/** What the file last said, and what the API last said of this tab. */
-let file = { newer: false, revisionAbove: false };
+/**
+ * The newer build the file last named, and whether its API revision is
+ * above this tab's; null while it names this tab's own build.
+ */
+let newer: { build: string; revisionAbove: boolean } | null = null;
+/** The API refused this tab as outdated, and has not served it since. */
 let outdated = false;
 
 let onItsWayTimer: number | undefined;
@@ -82,8 +83,8 @@ let onItsWayTimer: number | undefined;
  */
 function publish() {
   const next: NewVersion = {
-    newer: file.newer,
-    urgent: file.newer && (file.revisionAbove || outdated),
+    newer: newer !== null,
+    urgent: newer !== null && (newer.revisionAbove || outdated),
     outdated,
   };
   if (
@@ -95,7 +96,7 @@ function publish() {
     for (const listener of listeners) listener();
   }
 
-  if (outdated && !file.newer) {
+  if (outdated && !newer) {
     onItsWayTimer ??= window.setTimeout(() => {
       onItsWayTimer = undefined;
       if (document.visibilityState === 'visible') void checkVersion();
@@ -111,8 +112,11 @@ function publish() {
  * image upload: its saves are refused from now on, so a newer build is
  * urgent, and the file is read again at once to know whether one is out.
  * Resolves once it has been, so the refusal reaches the screen with it.
+ * Once a newer build is known, a later refusal has nothing more to learn
+ * from the file, and waits for nothing.
  */
 export function noteOutdated(): Promise<VersionRead> {
+  if (outdated && newer) return Promise.resolve('newer');
   if (!outdated) {
     outdated = true;
     publish();
@@ -148,13 +152,17 @@ export function checkVersion(): Promise<VersionRead> {
 async function read(): Promise<VersionRead> {
   const found = await fetchFile();
   if (found) {
-    const newer = found.build !== BUILD.build && found.build !== 'dev';
-    file = { newer, revisionAbove: newer && found.apiRevision > API_REVISION };
-    newest = newer ? found.build : null;
+    newer =
+      found.build !== BUILD.build && found.build !== 'dev'
+        ? {
+            build: found.build,
+            revisionAbove: found.apiRevision > API_REVISION,
+          }
+        : null;
   }
   publish();
   if (!found) return 'unreadable';
-  return file.newer ? 'newer' : 'same';
+  return newer ? 'newer' : 'same';
 }
 
 /**
@@ -173,8 +181,8 @@ async function fetchFile(): Promise<VersionFile | null> {
       signal: controller.signal,
     });
     if (!response.ok) return null;
-    const file: unknown = await response.json();
-    return isVersionFile(file) ? file : null;
+    const body: unknown = await response.json();
+    return isVersionFile(body) ? body : null;
   } catch {
     return null;
   } finally {
@@ -240,7 +248,7 @@ const LOADED_KEY = 'newVersionLoaded';
  * since nothing would stop it repeating. Whether it did.
  */
 export function loadNewerOnce(againAfterMs = Infinity): boolean {
-  const build = newest;
+  const build = newer?.build;
   if (!build) return false;
   try {
     const last = JSON.parse(sessionStorage.getItem(LOADED_KEY) ?? 'null') as {
@@ -284,4 +292,16 @@ export function useReloadAtNextPage(): void {
     shown.current = pathname;
     if (known.newer) loadNewerOnce();
   }, [pathname]);
+}
+
+/**
+ * The version check's reads, and the load in full at the next page, signed
+ * in or out (ADR-081). A leaf of its own beside the app, drawing nothing:
+ * the next page needs the location, and only this re-renders when it
+ * changes, not the app and every route under it.
+ */
+export function VersionWatch(): null {
+  useVersionReads();
+  useReloadAtNextPage();
+  return null;
 }
