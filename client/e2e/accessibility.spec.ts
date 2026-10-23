@@ -60,9 +60,48 @@ interface Seed {
 
 const heading = (page: Page) => page.getByRole('heading', { level: 1 });
 
+/**
+ * The entry the keyboard is on, in a menu or a list. MUI tints it, and on
+ * that tint muted text falls below AA, so the theme draws it in the main
+ * text colour there (#196); these rows let axe measure it.
+ */
+const keyboardOn = (page: Page) => page.locator('.Mui-focusVisible');
+
+const joined = (page: Page) =>
+  page.getByRole('menuitem', { name: /E2E Joiner joined/ });
+
 const SCREENS: Screen[] = [
   { name: 'home', path: () => '/', ready: heading },
+  {
+    name: 'the bell’s menu, the keyboard on an entry',
+    path: () => '/',
+    open: async (page) => {
+      await page.getByRole('button', { name: /^Notifications/ }).focus();
+      await page.keyboard.press('Enter');
+      await expect(joined(page)).toBeVisible();
+      await page.keyboard.press('ArrowDown');
+      await expect(joined(page)).toBeFocused();
+    },
+    ready: (page) => joined(page).and(keyboardOn(page)),
+  },
   { name: 'inventory', path: () => '/inventory', ready: heading },
+  {
+    name: 'the lookup, the keyboard on a result',
+    path: () => '/inventory',
+    open: async (page) => {
+      const box = page.getByRole('combobox', { name: 'Search everything' });
+      await box.fill('A11Y-LOT');
+      await expect(
+        page.getByRole('option', { name: /A11Y-LOT-1/ }),
+      ).toBeVisible();
+      // The first result is highlighted already, though not by the
+      // keyboard; down to Show all and back up puts the keyboard on it.
+      await box.press('ArrowDown');
+      await box.press('ArrowUp');
+    },
+    ready: (page) =>
+      page.getByRole('option', { name: /A11Y-LOT-1/ }).and(keyboardOn(page)),
+  },
   { name: 'movements', path: () => '/movements', ready: heading },
   { name: 'orders', path: () => '/orders', ready: heading },
   {
@@ -137,6 +176,24 @@ const SCREENS: Screen[] = [
     path: () => '/settings/organization',
     ready: heading,
   },
+  {
+    // On the chosen zone: chosen and under the keyboard is the darkest of
+    // MUI's tints (tokens.test.ts).
+    name: 'the time zone’s list, the keyboard on the chosen zone',
+    path: () => '/settings/organization',
+    open: async (page) => {
+      const zone = page.getByRole('combobox', { name: 'Time zone' });
+      await zone.focus();
+      // It opens with the chosen zone highlighted; down and back up puts
+      // the keyboard on it.
+      await zone.press('ArrowDown');
+      await expect(page.getByRole('option', { selected: true })).toBeVisible();
+      await zone.press('ArrowDown');
+      await zone.press('ArrowUp');
+    },
+    ready: (page) =>
+      page.getByRole('option', { selected: true }).and(keyboardOn(page)),
+  },
   { name: 'members', path: () => '/members', ready: heading },
   {
     name: 'the Invite dialog',
@@ -182,6 +239,9 @@ async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
   // Someone on Members' Invited (ADR-077), which needs a verified inviter.
   await verifyEmail(api, ownerEmail);
   await inviteByLink(api, uniqueEmail('a11y'));
+  // Someone who has joined, so the bell has an entry, with its time.
+  const { token } = await inviteByLink(api, uniqueEmail('a11y-joined'));
+  await (await joinByLink(token, 'E2E Joiner')).dispose();
 
   const product = await createProduct(api, { tracksLots: true });
   // A weight, so the variant's chevron is drawn and axe checks that it is
