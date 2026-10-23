@@ -806,6 +806,7 @@
   "layout.navigation": "导航",
   "layout.noOrganization": "无组织",
   "layout.notifications.empty": "暂无通知。",
+  "layout.notifications.loadFailed": "无法加载通知。",
   "layout.notifications.markAllRead": "全部标为已读",
   "layout.notifications.title": "通知",
   "layout.notifications.unread": "通知，{count} 条未读",

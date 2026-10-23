@@ -1,13 +1,14 @@
-import { act, screen } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useState } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
+import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
-import { outdatedRefusal } from '../test/version';
+import { OUTDATED, outdatedRefusal, serveVersion } from '../test/version';
 import { newVersionNow, noteServed } from '../version/version-check';
 import { NotificationBell } from './notification-bell';
 
@@ -95,7 +96,56 @@ describe('NotificationBell', () => {
     ).toBeVisible();
   });
 
+  it('says a list that failed to load did, with Try again, never Nothing yet (#189)', async () => {
+    let reads = 0;
+    server.use(
+      http.get('/api/v1/notifications', () => {
+        reads += 1;
+        return reads === 1
+          ? apiError(500, 'Internal server error')
+          : HttpResponse.json({ entries: [], nextCursor: null });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Notifications' }));
+    const failed = await screen.findByRole('alert');
+    expect(failed).toHaveTextContent('Could not load notifications.');
+    expect(screen.queryByText('Nothing yet.')).toBeNull();
+
+    await user.click(within(failed).getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Nothing yet.')).toBeVisible();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   describe('in a tab the API refuses as outdated (ADR-081)', () => {
+    it('says so when the menu opens, with Reload once the new version is out, never Nothing yet (#189)', async () => {
+      serveVersion({ urgent: true });
+      server.use(http.get('/api/v1/notifications', () => outdatedRefusal()));
+      const user = userEvent.setup();
+      renderWithAuth(
+        <MemoryRouter>
+          <NotificationBell />
+        </MemoryRouter>,
+      );
+
+      await user.click(screen.getByRole('button', { name: 'Notifications' }));
+      const refusal = await screen.findByRole('alert');
+      expect(refusal).toHaveTextContent(OUTDATED);
+      expect(
+        within(refusal).getByRole('button', { name: 'Reload' }),
+      ).toBeVisible();
+      expect(
+        within(refusal).queryByRole('button', { name: 'Try again' }),
+      ).toBeNull();
+      expect(screen.queryByText('Nothing yet.')).toBeNull();
+    });
+
     it('stops asking, since every ask would be refused, and asks again once served, as after a reload', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
       let asks = 0;

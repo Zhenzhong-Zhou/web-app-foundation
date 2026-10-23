@@ -2132,7 +2132,10 @@ revision back afterwards: `git status` shows nothing changed.
   password there, and a photo added on a product, in its row. Nothing signs
   out, and no page says Could not reach the server. The bell asks
   `unread-count` once more, is refused, and then asks nothing; put the
-  revision back and reload, and it asks again each minute. Signed in
+  revision back and reload, and it asks again each minute. Open the bell:
+  it asks for the list once, and says A new version is being installed.
+  Try again in a minute; nothing was saved., with no button, never
+  Nothing yet. Signed in
   without Keep me signed in, typing on a page asks `auth/me` nothing more
   either.
 - **MC-3413** *(ADR-081)* Then the new version is out. Still outdated, add
@@ -2147,6 +2150,7 @@ revision back afterwards: `git status` shows nothing changed.
   the private window's Sign in, its line now This tab is running an older
   version of the app…, without pressing anything, and so does the
   photo's row. Adding another photo says the same refusal in its row.
+  The bell's menu, opened, says the same refusal, with Reload.
 - **MC-3414** *(ADR-081)* Opening an outdated tab. Outdated, with no
   override, reload the page: no app, and on its own A new version is being
   installed, which tries again by itself in a minute; with the override,
@@ -2304,6 +2308,13 @@ a private window.
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R43** *(the bell's list that failed to load, #189)* With the API
+  stopped, or `/api/v1/notifications` blocked in the browser's Network
+  tab, open the bell: it says Could not load notifications., with Try
+  again, never Nothing yet. Unblock it and press Try again: the list, or
+  Nothing yet. if there is none. In Français Impossible de charger les
+  notifications., in 中文 无法加载通知。. Found by ADR-081's inventory.
 
 - **MC-R42** *(a language that won't load, in its own words)* In 中文,
   with the Chinese catalogue blocked, the banner the app starts with, and
@@ -2959,3 +2970,5 @@ first.
   `docs/brand/`: section 35, MC-3501.
 - 2026-10-23: a list page's tab ends with the product's name, the
   setting index.html's title reads: MC-3502.
+- 2026-10-23: #189, the bell's list that failed to load says so:
+  MC-3412 and MC-3413 extended, and MC-R43.
