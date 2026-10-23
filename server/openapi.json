@@ -11418,6 +11418,7 @@
         "properties": {
           "translations": {
             "uniqueItems": true,
+            "maxItems": 3,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProductTranslationDto"
@@ -11455,6 +11456,7 @@
         "properties": {
           "translations": {
             "uniqueItems": true,
+            "maxItems": 3,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/VariantTranslationDto"
@@ -11496,6 +11498,7 @@
         "properties": {
           "fileIds": {
             "uniqueItems": true,
+            "maxItems": 8,
             "type": "array",
             "items": {
               "type": "string",
