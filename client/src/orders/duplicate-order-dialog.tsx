@@ -13,6 +13,7 @@ import { useIntl } from 'react-intl';
 import type { OrderDetail } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 
@@ -126,7 +127,7 @@ export function DuplicateOrderDialog({
                         defaultMessage:
                           'The original used {reference}. The copy needs its own.',
                       },
-                      { reference: order.reference },
+                      { reference: <Reference>{order.reference}</Reference> },
                     )
                   : intl.formatMessage({
                       id: 'orders.duplicate.reference.optional',

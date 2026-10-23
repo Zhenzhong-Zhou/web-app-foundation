@@ -1,10 +1,13 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { CurrentSession } from '../api/types.gen';
 import { browserTimeZone, organizationTimeZone } from '../lib/time-zone';
 import { server } from '../test/setup';
+import { outdatedRefusal, serveVersion } from '../test/version';
+import { newVersionNow } from '../version/version-check';
 import { AuthProvider } from './auth-provider';
 import { useAuth } from './use-auth';
 
@@ -44,16 +47,22 @@ const REID = { name: 'Reid Supply Co.', timeZone: 'America/Toronto' };
 
 /**
  * GET /auth/me answering with each reply in turn, the last one from then
- * on: a session, null for signed out, or 'down' for no answer at all.
+ * on: a session, null for signed out, 'down' for no answer at all, or
+ * 'outdated' for this tab refused as older than the API (ADR-081).
  * Returns the requests, as they arrive.
  */
-function answer(...replies: (CurrentSession | null | 'down')[]): Request[] {
+function answer(
+  ...replies: (CurrentSession | null | 'down' | 'outdated')[]
+): Request[] {
   const requests: Request[] = [];
   server.use(
     http.get('/api/v1/auth/me', ({ request }) => {
       requests.push(request);
       const reply = replies[Math.min(requests.length, replies.length) - 1];
       if (reply === 'down') return HttpResponse.error();
+      if (reply === 'outdated') {
+        return outdatedRefusal();
+      }
       if (reply === null) {
         return HttpResponse.json({ message: 'Sign in' }, { status: 401 });
       }
@@ -278,5 +287,61 @@ describe('AuthProvider', () => {
     // Still listening, and free to read again.
     focusWindow();
     expect(await screen.findByText('Reid Supply Co.')).toBeInTheDocument();
+  });
+});
+
+describe('AuthProvider, for a tab the API refuses as outdated (ADR-081)', () => {
+  /** What after an action reads the session again, and a sign-out. */
+  function Actions() {
+    const { refresh, signedOut } = useAuth();
+    return (
+      <>
+        <button type="button" onClick={() => void refresh()}>
+          Read again
+        </button>
+        <button type="button" onClick={signedOut}>
+          Signed out
+        </button>
+      </>
+    );
+  }
+
+  function renderWithActions() {
+    render(
+      <AuthProvider>
+        <Shown />
+        <Actions />
+      </AuthProvider>,
+    );
+  }
+
+  it('leaves the app as it is when a read after an action is refused, and makes the new version urgent', async () => {
+    serveVersion();
+    const requests = answer(session(ALPHA), 'outdated');
+    renderWithActions();
+    await screen.findByText('Alpha Co');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Read again' }));
+    await waitFor(() => expect(requests).toHaveLength(2));
+    await waitFor(() => expect(newVersionNow().urgent).toBe(true));
+
+    // Neither signed out nor the boot screen, whose Try again would meet
+    // the same refusal.
+    expect(screen.getByText('Alpha Co')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Could not reach the server'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('ends the session at a sign-out without reading it, since the read would be refused', async () => {
+    const requests = answer(session(ALPHA), 'outdated');
+    renderWithActions();
+    await screen.findByText('Alpha Co');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Signed out' }));
+    expect(
+      screen.getByText('Signed out', { selector: 'p' }),
+    ).toBeInTheDocument();
+    expect(requests).toHaveLength(1);
   });
 });

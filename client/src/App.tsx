@@ -17,7 +17,9 @@ import { ResetPasswordPage } from './auth/reset-password-page';
 import { useAuth } from './auth/use-auth';
 import { VerifyEmailPage } from './auth/verify-email-page';
 import { NotFoundRoute } from './errors/not-found-page';
+import { RevisionRefusalPage } from './errors/revision-refusal-page';
 import { AppLayout } from './layout/app-layout';
+import { isRevisionRefusal } from './lib/api';
 import { useDelayedFlag } from './lib/use-delayed-flag';
 import { SIGNED_IN_ROUTES } from './routes';
 
@@ -99,7 +101,20 @@ export default function App() {
    * request that failed. Without it the only way out of this screen is knowing
    * to press F5, and there is nothing in the browser for a user to clear:
    * the session is an httpOnly cookie and the client persists nothing.
+   *
+   * Refused for this tab's API revision, the server was reached, and says
+   * why (ADR-081): a new version is ready, or being installed, which tries
+   * again by itself.
    */
+  if (isRevisionRefusal(error)) {
+    return (
+      <RevisionRefusalPage
+        failure={error}
+        onRetry={() => void refresh()}
+        standalone
+      />
+    );
+  }
   if (error) {
     return (
       <Stack

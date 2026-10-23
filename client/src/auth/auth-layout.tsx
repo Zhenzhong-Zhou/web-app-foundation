@@ -3,6 +3,8 @@ import type { ReactNode, Ref, SubmitEvent } from 'react';
 
 import { LanguageSelect } from '../components/language-select';
 import { TextSizeSelect } from '../components/text-size-select';
+import { LanguageFailureBanner } from '../i18n/language-failure';
+import { NewVersionBanner } from '../version/new-version-banner';
 
 /**
  * The frame every unauthenticated screen shares. Extracted at five, not two —
@@ -48,6 +50,13 @@ export function AuthLayout({
         <LanguageSelect />
         <TextSizeSelect />
       </Box>
+      {/* A newer build, said here since these pages have no top bar, and
+          a language that would not load (ADR-081). After the language,
+          which stays first. */}
+      <Stack spacing={2} sx={{ mb: 2, '&:empty': { display: 'none' } }}>
+        <LanguageFailureBanner />
+        <NewVersionBanner where="signedOut" />
+      </Stack>
       {notice && <Box sx={{ mb: 2 }}>{notice}</Box>}
       <Paper sx={{ p: 4 }} elevation={0} variant="outlined">
         {above && <Box sx={{ mb: 2 }}>{above}</Box>}

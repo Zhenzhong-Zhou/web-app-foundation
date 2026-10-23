@@ -28,8 +28,9 @@ import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
-import { api, messageFor } from '../lib/api';
+import { api, isRevisionRefusal } from '../lib/api';
 import {
   displayQuantity,
   formatDate,
@@ -39,6 +40,7 @@ import {
 } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useFailureWords } from '../lib/use-failure-words';
 import { SetCostDialog } from './set-cost-dialog';
 
 interface NeedsCostPage {
@@ -109,7 +111,10 @@ export function StockValuePage() {
   const can = useCan();
   const [valuation, setValuation] = useState<StockValuation | null>(null);
   const [waiting, setWaiting] = useState<NeedsCostPage | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // A read's failure as it came, worded as the page renders (ADR-081), or
+  // the page's own words.
+  const [error, setError] = useState<unknown>(null);
+  const errorWords = useFailureWords(error);
   const [costing, setCosting] = useState<NeedsCostEntry | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -133,7 +138,7 @@ export function StockValuePage() {
       setWaiting(page);
       setError(null);
     } catch (caught) {
-      setError(messageFor(caught));
+      setError(caught);
     }
   }, [fetchAll]);
 
@@ -147,7 +152,8 @@ export function StockValuePage() {
         setWaiting(page);
       })
       .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
+        if (ignore) return;
+        setError(caught);
       });
 
     return () => {
@@ -168,13 +174,17 @@ export function StockValuePage() {
         nextCursor: next.nextCursor,
       });
     } catch (caught) {
-      setError(messageFor(caught));
+      setError(caught);
     } finally {
       setLoadingMore(false);
     }
   }
 
   const currency = valuation?.currency ?? null;
+
+  if (!valuation && isRevisionRefusal(error)) {
+    return <RevisionRefusalPage failure={error} onRetry={() => void load()} />;
+  }
 
   return (
     <Stack spacing={3}>
@@ -198,7 +208,7 @@ export function StockValuePage() {
         actions={<ExportButton path="/costs/valuation/export" />}
       />
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {errorWords && <Alert severity="error">{errorWords}</Alert>}
 
       {valuation && !currency && (
         <Alert severity="info">

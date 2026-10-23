@@ -16,6 +16,7 @@ import {
   type ErrorCode,
   type ErrorDetails,
 } from '../error-codes';
+import { ApiRevisionMiddleware } from '../middleware/api-revision.middleware';
 
 interface ErrorBody {
   statusCode: number;
@@ -73,8 +74,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
     // 5xx means a bug — log the full error with its stack. 4xx is the client
-    // being told no, which is normal traffic and not worth an error log.
-    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+    // being told no, which is normal traffic and not worth an error log. So
+    // is a client newer than the API told to wait, whose 503 is logged where
+    // it was refused (ADR-081).
+    if (
+      status >= HttpStatus.INTERNAL_SERVER_ERROR &&
+      !ApiRevisionMiddleware.refused(req)
+    ) {
       this.logger.error(
         `${req.method} ${body.path} -> ${status}`,
         exception instanceof Error ? exception.stack : String(exception),

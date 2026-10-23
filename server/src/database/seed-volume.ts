@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname } from 'node:path';
 
 import { ConsoleLogger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
@@ -9,16 +9,19 @@ import { AppModule } from '../app.module';
 import { AuthService } from '../core/auth/auth.service';
 import { PasswordService } from '../core/auth/password.service';
 import { giveRoles, nameRoles } from '../core/authorization/member-roles';
+import { RolesService } from '../core/authorization/roles.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
 import { invitations, memberships, roles, users } from './schema';
 import { runInTenantContext } from './tenant-context';
 import { Random } from './volume/random';
-import { type Scale, SCALES, VOLUMES } from './volume/scale';
+import { manifestPath, type Scale, SCALES, VOLUMES } from './volume/scale';
 import { servicesOf } from './volume/services';
 import { type Anchors, OrganizationWriter } from './volume/write-organization';
+import { type TeamAnchors, writeTeam } from './volume/write-team';
 
 /**
- * A year of data for several organizations, for measuring (ADR-051).
+ * A year of data for several organizations, for measuring (ADR-051), and
+ * the team each one's Owner works with (ADR-081).
  *
  * Separate from seed:demo, which tells a story on one product, and never
  * part of `seed`, which runs on every deploy. Through the same services the
@@ -32,16 +35,15 @@ import { type Anchors, OrganizationWriter } from './volume/write-organization';
  *
  * Every run registers new organizations, stamped with the time, so nothing
  * collides with an earlier run. What perf needs to sign in and find its way
- * — emails, the password, a few ids — is written to perf/volume.json.
+ * — emails, the password, a few ids — is written to
+ * perf/volume-<scale>.json.
  */
 
 const PASSWORD = 'volume-password-2026';
 
-/** Beside the perf scripts that read it; gitignored. */
-const MANIFEST = resolve(__dirname, '..', '..', 'perf', 'volume.json');
-
 /** Counted per organization once seeding ends, for the manifest. */
 const COUNTED = [
+  'memberships',
   'products',
   'partners',
   'orders',
@@ -79,7 +81,8 @@ export interface VolumeManifest {
   seededAt: string;
   password: string;
   organizations: (Account &
-    Anchors & { newcomerUserId: string; counts: Record<string, number> })[];
+    Anchors &
+    TeamAnchors & { newcomerUserId: string; counts: Record<string, number> })[];
 }
 
 async function seedVolume(): Promise<void> {
@@ -183,10 +186,27 @@ async function seedVolume(): Promise<void> {
       (result) => (result as PromiseFulfilledResult<Anchors>).value,
     );
 
-    // Last, so they join after the year the Owner made.
+    // Last, so they join after the year the Owner made: the team, then
+    // the newcomer, the last of all to join.
     const passwordHash = await app.get(PasswordService).hash(PASSWORD);
+    const rolesService = app.get(RolesService);
+    const teams: TeamAnchors[] = [];
     const newcomers: string[] = [];
-    for (const account of accounts) {
+    for (const [index, account] of accounts.entries()) {
+      teams.push(
+        await runInTenantContext(
+          { userId: account.userId, organizationId: account.organizationId },
+          () =>
+            writeTeam(
+              rolesService,
+              db,
+              volume,
+              new Random(options.seed + index),
+              account,
+              passwordHash,
+            ),
+        ),
+      );
       newcomers.push(await addNewcomer(db, account, passwordHash));
     }
 
@@ -207,22 +227,24 @@ async function seedVolume(): Promise<void> {
       organizations: accounts.map((account, index) => ({
         ...account,
         ...anchors[index],
+        ...teams[index],
         newcomerUserId: newcomers[index],
         counts: counts.get(account.organizationId) ?? {},
       })),
     };
 
-    mkdirSync(dirname(MANIFEST), { recursive: true });
-    writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
+    const manifestFile = manifestPath(options.scale);
+    mkdirSync(dirname(manifestFile), { recursive: true });
+    writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
 
     const minutes = ((Date.now() - started) / 60_000).toFixed(1);
     const first = manifest.organizations[0].counts;
 
     logger.log(
-      `Done in ${minutes} min. Each organization holds about ${first.orders} orders, ${first.lots} lots, ${first.invoices} invoices and ${first.stock_movements} stock movements.`,
+      `Done in ${minutes} min. Each organization holds about ${first.memberships} members, ${first.orders} orders, ${first.lots} lots, ${first.invoices} invoices and ${first.stock_movements} stock movements.`,
     );
     logger.log(
-      `Sign in as ${accounts[0].email} with password ${PASSWORD}. Manifest: ${MANIFEST}`,
+      `Sign in as ${accounts[0].email} with password ${PASSWORD}. Manifest: ${manifestFile}`,
     );
   } finally {
     await app.close();

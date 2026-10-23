@@ -16,6 +16,7 @@ import type { InvoiceDetail, InvoiceEnvelope } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api, hasCode } from '../lib/api';
 import { formatMoney } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
@@ -179,7 +180,9 @@ export function IssueInvoiceDialog({
                   },
                   {
                     skus: intl.formatList(
-                      untaxed.map((line) => line.sku),
+                      untaxed.map((line) => (
+                        <Reference key={line.id}>{line.sku}</Reference>
+                      )),
                       { type: 'conjunction', style: 'narrow' },
                     ),
                     count: untaxed.length,

@@ -1,5 +1,8 @@
 import { http, HttpResponse } from 'msw';
 
+import { API_REVISION } from '../api/revision.gen';
+import { BUILD } from '../version/build';
+
 /**
  * The API as the server actually behaves, not as a component wishes it would.
  *
@@ -74,6 +77,11 @@ export const handlers = [
   http.get(`${BASE}/auth/registration`, () =>
     HttpResponse.json({ registration: 'open' }),
   ),
+  // The static host's version file, naming the build the tests run as: no
+  // deploy has happened (ADR-081).
+  http.get('/version.json', () =>
+    HttpResponse.json({ ...BUILD, apiRevision: API_REVISION }),
+  ),
   // Record pages report an opening (ADR-058); nothing to check in most
   // specs, so it is answered here once.
   http.post(`${BASE}/recent`, () => new HttpResponse(null, { status: 204 })),
@@ -102,10 +110,11 @@ export const handlers = [
  * rather than constructing a bare status, because `api()` reads `message` out
  * of the body and a response without one surfaces as "Request failed (409)" —
  * which would make a test pass while the real message never rendered.
+ * `code` for a refusal that carries one (conventions.md, "Error codes").
  */
-export function apiError(status: number, message: string) {
+export function apiError(status: number, message: string, code?: string) {
   return HttpResponse.json(
-    { statusCode: status, message, requestId: 'test-request' },
+    { statusCode: status, message, requestId: 'test-request', code },
     { status },
   );
 }

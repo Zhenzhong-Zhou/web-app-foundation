@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { api, messageFor } from './api';
+import { api, isRevisionRefusal } from './api';
+import { useFailureWords } from './use-failure-words';
 
 /** What every keyset endpoint returns (ADR-018). */
 export type KeysetPage<T> = { entries: T[]; nextCursor: string | null };
@@ -11,7 +12,8 @@ type Read<T> = {
   reloads: number;
   entries: T[] | null;
   cursor: string | null;
-  error: string | null;
+  /** The last read's failure as it came, worded as the page renders. */
+  failure: unknown;
 };
 
 const NOTHING_READ = {
@@ -19,7 +21,7 @@ const NOTHING_READ = {
   reloads: 0,
   entries: null,
   cursor: null,
-  error: null,
+  failure: null,
 } as const;
 
 /** `before` added to a path that may already carry a query. */
@@ -65,6 +67,12 @@ function withBefore(path: string, cursor: string): string {
  * up until the new first page lands, as production orders did after planning
  * a run: blanking a list to a skeleton to show one more row is worse.
  * Either way, a late answer can tell it is late.
+ *
+ * `error` is worded as the page renders, so an outdated tab's refusal says
+ * what is true now, not when it came (ADR-081). `refused` is the first
+ * page refused for this tab's API revision, with no rows to show: the page
+ * shows why in their place (RevisionRefusalPage). A refused Load more keeps
+ * the rows, with the error beside them.
  */
 export function useKeysetList<T>(path: string | null) {
   const [reloads, setReloads] = useState(0);
@@ -95,12 +103,12 @@ export function useKeysetList<T>(path: string | null) {
           reloads,
           entries: page.entries,
           cursor: page.nextCursor,
-          error: null,
+          failure: null,
         });
       })
       .catch((caught: unknown) => {
         if (ignore) return;
-        setRead({ ...NOTHING_READ, path, reloads, error: messageFor(caught) });
+        setRead({ ...NOTHING_READ, path, reloads, failure: caught });
       });
 
     return () => {
@@ -129,15 +137,13 @@ export function useKeysetList<T>(path: string | null) {
               ...latest,
               entries: [...(latest.entries ?? []), ...page.entries],
               cursor: page.nextCursor,
-              error: null,
+              failure: null,
             }
           : latest,
       );
     } catch (caught) {
       setRead((latest) =>
-        stillCurrent(latest)
-          ? { ...latest, error: messageFor(caught) }
-          : latest,
+        stillCurrent(latest) ? { ...latest, failure: caught } : latest,
       );
     } finally {
       setLoadingMore(false);
@@ -152,11 +158,17 @@ export function useKeysetList<T>(path: string | null) {
    */
   const reload = useCallback(() => setReloads((count) => count + 1), []);
 
+  const error = useFailureWords(current.failure);
+
   return {
     entries: current.entries,
-    error: current.error,
+    error,
+    refused:
+      current.entries === null && isRevisionRefusal(current.failure)
+        ? current.failure
+        : null,
     /** True until the first page has either answered or failed. */
-    loading: current.entries === null && current.error === null,
+    loading: current.entries === null && error === null,
     hasMore: current.cursor !== null,
     loadingMore,
     loadMore,

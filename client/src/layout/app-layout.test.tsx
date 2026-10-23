@@ -1,11 +1,14 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
+import { deploy } from '../test/version';
+import { reloadPage } from '../version/reload-page';
+import { checkVersion } from '../version/version-check';
 import { AppLayout } from './app-layout';
 
 function renderFrame() {
@@ -162,5 +165,143 @@ describe('the account menu’s preferences', () => {
 
     await user.keyboard(' ');
     expect(await screen.findByRole('listbox')).toBeVisible();
+  });
+});
+
+/**
+ * A newer build in the frame (ADR-081): "New version" beside Help on a
+ * computer, a dot on the account button on a phone, both moving nothing,
+ * and amber at the top of the page once its saves would be refused.
+ */
+describe('a new version', () => {
+  beforeEach(() => {
+    server.use(
+      http.get('/api/v1/notifications/unread-count', () =>
+        HttpResponse.json({ count: 0 }),
+      ),
+    );
+  });
+  afterEach(() => {
+    vi.mocked(reloadPage).mockClear();
+    vi.unstubAllGlobals();
+  });
+
+  const NOTE =
+    'A new version is ready. It loads by itself when you open another page.';
+
+  /** Every width query matches, as at 390 px; jsdom has no matchMedia. */
+  const onAPhone = () =>
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('max-width'),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+
+  it('shows nothing while the server has this tab’s build', async () => {
+    renderFrame();
+    await act(() => checkVersion());
+
+    expect(
+      screen.queryByRole('button', { name: 'New version' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByText(NOTE)).not.toBeInTheDocument();
+  });
+
+  it('puts New version beside Help on a computer, whose note offers Reload now', async () => {
+    const user = userEvent.setup();
+    renderFrame();
+    await deploy();
+
+    const bar = within(screen.getByRole('banner'));
+    const button = bar.getByRole('button', { name: 'New version' });
+    expect(button.nextElementSibling).toBe(
+      bar.getByRole('button', { name: 'Help' }),
+    );
+    // Said once to a screen reader, and no banner moves the page.
+    expect(screen.getByText(NOTE)).toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+
+    await user.click(button);
+    const note = await screen.findByRole('dialog', { name: 'New version' });
+    expect(within(note).getByText(NOTE)).toBeVisible();
+    await user.click(within(note).getByRole('button', { name: 'Reload now' }));
+    expect(reloadPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('on a phone, puts a dot on the account button and the new version first in its menu', async () => {
+    onAPhone();
+    const user = userEvent.setup();
+    renderFrame();
+    await deploy();
+
+    expect(
+      screen.queryByRole('button', { name: 'New version' }),
+    ).not.toBeInTheDocument();
+    const account = screen.getByRole('button', {
+      name: 'OW, signed in as owner@alpha.example.com, a new version is ready',
+    });
+    expect(
+      account.querySelector('.MuiBadge-dot:not(.MuiBadge-invisible)'),
+    ).not.toBeNull();
+
+    await user.click(account);
+    const first = within(screen.getByRole('menu')).getAllByRole('menuitem')[0];
+    expect(first).toHaveTextContent(
+      'A new version is ready · Reload nowIt also loads by itself when you open another page.',
+    );
+    await user.click(first);
+    expect(reloadPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('turns amber once its saves would be refused, first on the page, in place of the button and the dot', async () => {
+    const user = userEvent.setup();
+    renderFrame();
+    await deploy({ urgent: true });
+
+    const banner = screen.getByRole('status');
+    expect(banner).toHaveTextContent(
+      'A new version is ready, and this tab can no longer save changes. Copy anything you’ve typed, then reload.',
+    );
+    expect(
+      banner.compareDocumentPosition(
+        screen.getByRole('heading', { name: 'Orders' }),
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'New version' }),
+    ).not.toBeInTheDocument();
+
+    await user.click(within(banner).getByRole('button', { name: 'Reload' }));
+    expect(reloadPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('says to a screen reader that the tab can no longer save, once it turns urgent', async () => {
+    renderFrame();
+    const announcement = screen
+      .getByRole('banner')
+      .querySelector('[aria-live="polite"]')!;
+
+    await deploy();
+    expect(announcement).toHaveTextContent(NOTE);
+
+    await deploy({ urgent: true });
+    expect(announcement).toHaveTextContent(
+      'A new version is ready, and this tab can no longer save changes. Copy anything you’ve typed, then reload.',
+    );
+  });
+
+  it('on a phone, amber leaves the account button without its dot', async () => {
+    onAPhone();
+    renderFrame();
+    await deploy({ urgent: true });
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: 'OW, signed in as owner@alpha.example.com',
+      }),
+    ).toBeInTheDocument();
   });
 });

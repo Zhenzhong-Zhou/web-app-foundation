@@ -19,6 +19,8 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 import type { CreditNoteDetail } from '../api/types.gen';
 import { PageHeader } from '../components/page-header';
 import { PdfActions } from '../components/pdf-actions';
+import { Reference } from '../components/reference';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import {
   displayQuantity,
   formatDay,
@@ -40,7 +42,7 @@ import { oneLine } from './one-line';
 export function CreditNoteDetailPage() {
   const intl = useIntl();
   const { id } = useParams<{ id: string }>();
-  const { data, error, loading } = useResource<{
+  const { data, error, refused, loading, reload } = useResource<{
     creditNote: CreditNoteDetail;
   }>(`/credit-notes/${id}`);
   const note = data?.creditNote ?? null;
@@ -48,6 +50,11 @@ export function CreditNoteDetailPage() {
   const showSkeleton = useDelayedFlag(loading);
 
   if (!note) {
+    if (refused) {
+      return (
+        <RevisionRefusalPage failure={refused} onRetry={() => void reload()} />
+      );
+    }
     if (error) return <Alert severity="error">{error}</Alert>;
     return showSkeleton ? <Skeleton height={240} /> : null;
   }
@@ -114,7 +121,7 @@ export function CreditNoteDetailPage() {
               id="invoices.creditNote.reversesOn"
               defaultMessage="Reverses <link>{number}</link> of {date}. Reason: {reason}"
               values={{
-                number: note.invoiceNumber,
+                number: <Reference>{note.invoiceNumber}</Reference>,
                 date: invoiceDate,
                 reason: note.reason,
                 link,
@@ -124,7 +131,11 @@ export function CreditNoteDetailPage() {
             <FormattedMessage
               id="invoices.creditNote.reverses"
               defaultMessage="Reverses <link>{number}</link>. Reason: {reason}"
-              values={{ number: note.invoiceNumber, reason: note.reason, link }}
+              values={{
+                number: <Reference>{note.invoiceNumber}</Reference>,
+                reason: note.reason,
+                link,
+              }}
             />
           )
         ) : note.invoiceDate ? (
@@ -132,7 +143,7 @@ export function CreditNoteDetailPage() {
             id="invoices.creditNote.againstOn"
             defaultMessage="Credits against <link>{number}</link> of {date}. Reason: {reason}"
             values={{
-              number: note.invoiceNumber,
+              number: <Reference>{note.invoiceNumber}</Reference>,
               date: invoiceDate,
               reason: note.reason,
               link,
@@ -142,7 +153,11 @@ export function CreditNoteDetailPage() {
           <FormattedMessage
             id="invoices.creditNote.against"
             defaultMessage="Credits against <link>{number}</link>. Reason: {reason}"
-            values={{ number: note.invoiceNumber, reason: note.reason, link }}
+            values={{
+              number: <Reference>{note.invoiceNumber}</Reference>,
+              reason: note.reason,
+              link,
+            }}
           />
         )}
       </Alert>

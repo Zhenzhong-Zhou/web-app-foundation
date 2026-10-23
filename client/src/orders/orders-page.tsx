@@ -27,6 +27,7 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { fromAddress } from '../lib/address-filter';
 import type { OrderDirection } from '../lib/api-names';
 import { type DayRange, withDays } from '../lib/date-range';
@@ -126,12 +127,18 @@ export function OrdersPage() {
   const {
     entries: items,
     error,
+    refused,
     loading,
     hasMore,
     loadingMore,
     loadMore,
+    reload,
   } = useKeysetList<OrderSummary>(path);
   const showSkeleton = useDelayedFlag(loading);
+
+  if (refused) {
+    return <RevisionRefusalPage failure={refused} onRetry={reload} />;
+  }
 
   return (
     <Stack spacing={3}>

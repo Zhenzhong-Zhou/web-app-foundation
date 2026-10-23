@@ -21,6 +21,7 @@ import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -37,13 +38,19 @@ export function PriceListsPage() {
   const intl = useIntl();
   const can = useCan();
   const navigate = useNavigate();
-  const { data, error, loading } = useResource<{ priceLists: PriceList[] }>(
-    '/price-lists',
-  );
+  const { data, error, refused, loading, reload } = useResource<{
+    priceLists: PriceList[];
+  }>('/price-lists');
   const lists = data?.priceLists ?? null;
   const [creating, setCreating] = useState(false);
 
   const showSkeleton = useDelayedFlag(loading);
+
+  if (refused) {
+    return (
+      <RevisionRefusalPage failure={refused} onRetry={() => void reload()} />
+    );
+  }
 
   return (
     <Stack spacing={3}>

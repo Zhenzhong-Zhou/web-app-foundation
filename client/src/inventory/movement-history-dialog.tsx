@@ -21,6 +21,7 @@ import { useIntl } from 'react-intl';
 import type { Movement, StockRow } from '../api/types.gen';
 import { FormError } from '../components/form-error';
 import { LoadMoreButton } from '../components/load-more-button';
+import { Reference } from '../components/reference';
 import { formatMoment, formatQuantity, relativeTime } from '../lib/format';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { describeMovement } from './describe-movement';
@@ -83,14 +84,17 @@ export function MovementHistoryDialog({
                 id: 'inventory.history.titleWithLot',
                 defaultMessage: 'History for {sku} · lot {lot}',
               },
-              { sku: row.sku, lot: row.lotCode },
+              {
+                sku: <Reference>{row.sku}</Reference>,
+                lot: <Reference>{row.lotCode}</Reference>,
+              },
             )
           : intl.formatMessage(
               {
                 id: 'inventory.history.title',
                 defaultMessage: 'History for {sku}',
               },
-              { sku: row?.sku },
+              { sku: <Reference>{row?.sku}</Reference> },
             )}
       </DialogTitle>
 
@@ -109,7 +113,7 @@ export function MovementHistoryDialog({
                     defaultMessage:
                       'Every movement of lot {lot}, newest first. Nothing here can be edited or removed — a correction is another movement that says so.',
                   },
-                  { lot: row.lotCode },
+                  { lot: <Reference>{row.lotCode}</Reference> },
                 )
               : intl.formatMessage(
                   {
@@ -117,7 +121,7 @@ export function MovementHistoryDialog({
                     defaultMessage:
                       'Every movement of {sku}, newest first. Nothing here can be edited or removed — a correction is another movement that says so.',
                   },
-                  { sku: row?.sku },
+                  { sku: <Reference>{row?.sku}</Reference> },
                 )}
           </Typography>
 

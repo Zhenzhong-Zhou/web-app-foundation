@@ -25,6 +25,7 @@ import { addressBody, addressValues } from '../components/address-values';
 import { CurrencyField } from '../components/currency-field';
 import { PageHeader } from '../components/page-header';
 import { SettingsSection } from '../components/settings-section';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api } from '../lib/api';
 import type { LicencePolicy, PaperSize } from '../lib/api-names';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -80,7 +81,7 @@ export function OrganizationPage() {
   const intl = useIntl();
   const can = useCan();
   const { refresh } = useAuth();
-  const { data, error, reload } = useResource<{
+  const { data, error, refused, reload } = useResource<{
     organization: OrganizationProfile;
   }>('/organization');
   const organization = data?.organization ?? null;
@@ -110,6 +111,12 @@ export function OrganizationPage() {
       {children}
     </Stack>
   );
+
+  if (refused) {
+    return (
+      <RevisionRefusalPage failure={refused} onRetry={() => void reload()} />
+    );
+  }
 
   return (
     <Stack spacing={3}>

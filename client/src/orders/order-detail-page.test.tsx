@@ -663,7 +663,9 @@ describe('OrderDetailPage header', () => {
       'href',
       '/partners/partner-1',
     );
-    expect(screen.getByText(/their reference ACME-77/)).toBeInTheDocument();
+    expect(screen.getByText(/their reference/)).toHaveTextContent(
+      /their reference ACME-77/,
+    );
   });
 
   // Warehouse's reader (ADR-080): the partner's page would refuse them.

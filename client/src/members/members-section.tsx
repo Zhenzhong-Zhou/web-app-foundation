@@ -24,13 +24,13 @@ import type { Member, Role } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { PersonAvatar } from '../components/person-avatar';
 import { formatMoment } from '../lib/format';
+import { HIDDEN } from '../lib/hidden';
 import { openDialog } from '../lib/open-dialog';
 import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { activeLabel } from '../people/people-types';
 import { RoleChips } from '../roles/role-chips';
 import { CannotChangeDialog } from './cannot-change-dialog';
 import { ChangeRolesDialog } from './change-roles-dialog';
-import { HIDDEN } from './hidden';
 import { RemoveMemberDialog } from './remove-member-dialog';
 import { mayGiveAll } from './role-names';
 

@@ -19,6 +19,7 @@ import { useIntl } from 'react-intl';
 import type { ProductLicence } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { formatDay, NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -41,6 +42,7 @@ export function LicencesPage() {
   const {
     data: licences,
     error,
+    refused,
     loading,
     reload,
   } = useResource<ProductLicence[]>('/product-licences');
@@ -51,6 +53,12 @@ export function LicencesPage() {
 
   const canCreate = can('product_licences.create');
   const canUpdate = can('product_licences.update');
+
+  if (refused) {
+    return (
+      <RevisionRefusalPage failure={refused} onRetry={() => void reload()} />
+    );
+  }
 
   return (
     <Stack spacing={3}>

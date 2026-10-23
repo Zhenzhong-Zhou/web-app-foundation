@@ -28,10 +28,14 @@ import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { Reload } from '../errors/status-actions';
 import { useLanguage } from '../i18n/use-language';
+import { formatDate } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { rem } from '../theme/rem';
 import { useTextSize } from '../theme/text-size';
+import { BUILD } from '../version/build';
+import { ChunkLoadError } from '../version/load-chunk';
 import { guideGroups } from './guide-groups';
 import { GuideView } from './guide-view';
 import { type GuideName, GUIDES, loadGuide } from './guides';
@@ -65,6 +69,10 @@ const M = defineMessages({
     id: 'help.failed',
     defaultMessage:
       'This guide could not be opened. Check your connection, then try again.',
+  },
+  newVersion: {
+    id: 'help.newVersion',
+    defaultMessage: 'This guide has a new version. Reload to read it.',
   },
 });
 
@@ -176,6 +184,8 @@ export function HelpFrame({
             aria-labelledby={HELP_HEADING_ID}
             // Focus goes back to what opened Help: the state sees to it.
             disableRestoreFocus
+            // Help, as on a computer: no amber line (ADR-081).
+            slotProps={{ paper: { component: 'div' } }}
           >
             <PanelBody help={help} phone />
           </Dialog>
@@ -225,7 +235,10 @@ export function HelpFrame({
   );
 }
 
-/** The header with Close, the guide, and the list of guides at its foot. */
+/**
+ * The header with Close, the guide, and the list of guides and the version
+ * at its foot.
+ */
 function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
   const intl = useIntl();
   const { locale } = useLanguage();
@@ -235,6 +248,8 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
   const [loaded, setLoaded] = useState<{
     key: string;
     text: string | null;
+    /** It failed since a new version came out (ADR-081). */
+    newer?: boolean;
   } | null>(null);
   const key = `${guide} ${locale} ${attempt}`;
 
@@ -244,8 +259,11 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
       (text) => {
         if (!ignore) setLoaded({ key, text });
       },
-      () => {
-        if (!ignore) setLoaded({ key, text: null });
+      (error: unknown) => {
+        if (ignore) return;
+        const newer =
+          error instanceof ChunkLoadError && error.failure === 'newer';
+        setLoaded({ key, text: null, newer });
       },
     );
     return () => {
@@ -360,6 +378,12 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
       >
         {parsed ? (
           <GuideView guide={parsed} onFollow={help.follow} />
+        ) : current?.newer ? (
+          // Said, never done: a load in full under someone reading would
+          // take the page they are reading it beside (ADR-081).
+          <Alert severity="info" role="status" action={<Reload />}>
+            {intl.formatMessage(M.newVersion)}
+          </Alert>
         ) : current ? (
           <Alert
             severity="error"
@@ -383,8 +407,43 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
         ) : null}
 
         <AllGuides help={help} />
+        <VersionFoot />
       </Box>
     </>
+  );
+}
+
+/**
+ * The version this tab runs, last, small and grey: what someone helping
+ * asks for first, and the build a tab left open is still on (ADR-081).
+ */
+function VersionFoot() {
+  const intl = useIntl();
+  return (
+    <Typography
+      variant="caption"
+      component="p"
+      // In sx: Typography's color takes a palette name, not a path (#196).
+      sx={{
+        mt: 3,
+        pt: 1.5,
+        borderTop: 1,
+        borderColor: 'divider',
+        color: 'text.secondary',
+      }}
+    >
+      {intl.formatMessage(
+        {
+          id: 'help.version',
+          defaultMessage: 'Version {version} · build {build} · {date}',
+        },
+        {
+          version: BUILD.version,
+          build: BUILD.build.slice(0, 7),
+          date: formatDate(BUILD.builtAt),
+        },
+      )}
+    </Typography>
   );
 }
 

@@ -1,0 +1,58 @@
+# Squawk, the Postgres migration linter, on each migration added since
+# main (scripts/check-migrations.sh, ADR-081). A migration runs while the
+# previous release still serves, so in one deploy it adds and never takes
+# away what that release reads. Squawk's default rules stay on, among them
+# those for what ADR-081 lists: dropping or renaming a column or a table
+# (ban-drop-column, ban-drop-table, renaming-column, renaming-table),
+# changing a type (changing-column-type), and a column required without a
+# default (adding-required-field, adding-not-nullable-field,
+# ban-drop-default). Those that drizzle-kit's ordinary output trips are
+# off, below.
+#
+# A statement the running release does not read takes squawk's ignore
+# comment on the line above it, and a comment saying why:
+#
+#   -- The release still serving stopped reading memberships.role_id
+#   -- when the one before moved roles to membership_roles (ADR-080).
+#   -- squawk-ignore ban-drop-column
+#   ALTER TABLE "memberships" DROP COLUMN "role_id";
+#
+# Squawk cannot tell a key or unique index that a released ON CONFLICT
+# names from any other, so /code-review checks that by reading.
+
+pg_version = "18.0"
+
+# drizzle-kit migrate applies every pending migration in one transaction.
+assume_in_transaction = true
+
+# Off, each because drizzle-kit writes what it flags for an ordinary
+# change. Most are about how long a lock is held, not what the running
+# release reads.
+excluded_rules = [
+  # Indexes are built and dropped inside that transaction, where
+  # CONCURRENTLY is refused.
+  "require-concurrent-index-creation",
+  "require-concurrent-index-deletion",
+  # A foreign key or a check is added in one statement, never NOT VALID
+  # and validated later.
+  "constraint-missing-not-valid",
+  "adding-foreign-key-constraint",
+  # No migration sets a timeout; one would belong to the migrator's
+  # connection, not to each file.
+  "require-lock-timeout",
+  "require-statement-timeout",
+  # A check or a foreign key changes by being dropped and added again,
+  # which the running release never notices. A dropped key would matter,
+  # but squawk cannot tell it from a check (above).
+  "ban-drop-constraint",
+  # A column made optional is the first half of expand, then contract.
+  "ban-drop-not-null",
+  # The schema's own choices: integer for small counts and sizes, char(2)
+  # and char(3) for country and currency codes.
+  "prefer-bigint-over-int",
+  "ban-char-field",
+  # drizzle-kit names a foreign key after both tables and columns, often
+  # past 63 bytes. Postgres shortens the name the same way in every
+  # statement, so a later one that names it still finds it.
+  "identifier-too-long",
+]

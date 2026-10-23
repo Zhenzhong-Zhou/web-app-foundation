@@ -21,9 +21,11 @@ import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { useToast } from '../components/use-toast';
-import { api, ApiError, messageFor } from '../lib/api';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { api, ApiError, isRevisionRefusal, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useFailureWords } from '../lib/use-failure-words';
 import { refusalLabel } from './invitation-words';
 import { InviteDialog } from './invite-dialog';
 import { copyToClipboard, type InviteView } from './invite-view';
@@ -44,7 +46,10 @@ export function MembersPage() {
   const [members, setMembers] = useState<Member[] | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  // A read's failure as it came, worded as the page renders (ADR-081), or
+  // the page's own words.
+  const [error, setError] = useState<unknown>(null);
+  const errorWords = useFailureWords(error);
   // The Invite dialog, where it opens, and a count that mounts it afresh
   // for each opening.
   const [invite, setInvite] = useState<{ start: InviteView; key: number }>({
@@ -94,7 +99,7 @@ export function MembersPage() {
       setInvitations(nextInvitations);
       setError(null);
     } catch (caught) {
-      setError(messageFor(caught));
+      setError(caught);
     }
   }, [read]);
 
@@ -109,7 +114,8 @@ export function MembersPage() {
         setInvitations(nextInvitations);
       })
       .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
+        if (ignore) return;
+        setError(caught);
       });
 
     return () => {
@@ -192,6 +198,10 @@ export function MembersPage() {
     } finally {
       setRowBusy(null);
     }
+  }
+
+  if (!members && isRevisionRefusal(error)) {
+    return <RevisionRefusalPage failure={error} onRetry={() => void load()} />;
   }
 
   return (
@@ -280,7 +290,7 @@ export function MembersPage() {
         />
       </Typography>
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {errorWords && <Alert severity="error">{errorWords}</Alert>}
 
       {/* None pending, no heading: Invite is how to add someone. */}
       {invitations.length > 0 && (

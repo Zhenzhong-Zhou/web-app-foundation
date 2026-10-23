@@ -114,6 +114,8 @@ export function LookupBox() {
         onClose={() => setOpen(false)}
         fullScreen
         aria-label={label}
+        // The lookup, not a dialog to the person: no amber line (ADR-081).
+        slotProps={{ paper: { component: 'div' } }}
       >
         <Box sx={{ p: 2 }}>
           <LookupField autoFocus onDone={() => setOpen(false)} />

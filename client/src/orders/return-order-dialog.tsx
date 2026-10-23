@@ -27,6 +27,7 @@ import type {
 } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api, ApiError } from '../lib/api';
 import {
   formatDay,
@@ -416,7 +417,7 @@ export function ReturnOrderDialog({
                               '{rma} authorizes {quantity}, {received} back against it so far',
                           },
                           {
-                            rma: chosenRma.number,
+                            rma: <Reference>{chosenRma.number}</Reference>,
                             quantity: formatQuantity(authorized.quantity),
                             received: formatQuantity(
                               authorized.quantityReceived,
@@ -432,7 +433,7 @@ export function ReturnOrderDialog({
                             defaultMessage:
                               'Not on {rma} — leave it empty, or receive it without the RMA',
                           },
-                          { rma: chosenRma.number },
+                          { rma: <Reference>{chosenRma.number}</Reference> },
                         )}
                       </Typography>
                     ))}

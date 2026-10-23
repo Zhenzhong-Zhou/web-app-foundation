@@ -25,7 +25,9 @@ import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { ReferencesWhole } from '../components/reference';
 import { When, Who } from '../components/who-and-when';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api, withQuery } from '../lib/api';
 import { withInstants } from '../lib/date-range';
 import { NO_VALUE, SEPARATOR } from '../lib/format';
@@ -88,10 +90,18 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
     });
   }
 
-  const { entries, error, loading, hasMore, loadingMore, loadMore } =
-    useKeysetList<AuditRecord>(
-      canView ? pathFor(`${base}?limit=${PAGE_SIZE}`) : null,
-    );
+  const {
+    entries,
+    error,
+    refused,
+    loading,
+    hasMore,
+    loadingMore,
+    loadMore,
+    reload,
+  } = useKeysetList<AuditRecord>(
+    canView ? pathFor(`${base}?limit=${PAGE_SIZE}`) : null,
+  );
   const showSkeleton = useDelayedFlag(loading);
 
   /**
@@ -156,6 +166,10 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
         </Alert>
       </Stack>
     );
+  }
+
+  if (refused) {
+    return <RevisionRefusalPage failure={refused} onRetry={reload} />;
   }
 
   return (
@@ -367,7 +381,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
                             sx={{ fontWeight: 600 }}
                           >
                             {SEPARATOR}
-                            {entry.resourceLabel}
+                            <ReferencesWhole text={entry.resourceLabel} />
                           </Typography>
                         )}
                         {/* component="div": the default <p> inside a cell

@@ -1,5 +1,11 @@
+import { API_REVISION } from '../api/revision.gen';
 import type { ErrorCode, ErrorDetails } from '../api/types.gen';
 import { intl } from '../i18n/intl';
+import {
+  newVersionNow,
+  noteOutdated,
+  noteServed,
+} from '../version/version-check';
 
 const BASE = '/api/v1';
 
@@ -51,20 +57,52 @@ export function hasCode(errorCode: string | null, code: ErrorCode): boolean {
 }
 
 /**
+ * Whether a refusal is about this tab's API revision rather than what it
+ * sent (ADR-081): `client_outdated`, the tab older than the API, or
+ * `api_updating`, the API not yet deployed or rolled back. Nothing was
+ * read, so a page refused this way shows why rather than an error.
+ */
+export function isRevisionRefusal(caught: unknown): caught is ApiError {
+  return (
+    caught instanceof ApiError &&
+    (hasCode(caught.code ?? null, 'client_outdated') ||
+      hasCode(caught.code ?? null, 'api_updating'))
+  );
+}
+
+/**
  * What a failed request says to the person who made it: the server's own
  * message, or one fixed line when no answer came back at all. One definition,
  * so a dropped connection reads the same on every screen.
  *
  * Login and register add rate-limit wording on top (authMessageFor), and
  * forgot-password keeps its own, which must not repeat what the server says.
+ *
+ * Worded as it is called, from what is known of a new version then
+ * (ADR-081, below). Words that stay on screen are better worded as the
+ * screen renders, through useFailureWords, which calls this.
  */
 export function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : intl().formatMessage({
-        id: 'common.serverUnreachable',
-        defaultMessage: 'Could not reach the server.',
-      });
+  if (!(caught instanceof ApiError)) {
+    return intl().formatMessage({
+      id: 'common.serverUnreachable',
+      defaultMessage: 'Could not reach the server.',
+    });
+  }
+  // Outdated while the version file still names this tab's build: the API
+  // deployed first, and a reload would load the same build, so the words
+  // are the 503's until the new version is out (ADR-081).
+  if (
+    hasCode(caught.code ?? null, 'client_outdated') &&
+    !newVersionNow().newer
+  ) {
+    return intl().formatMessage({
+      id: 'version.installing',
+      defaultMessage:
+        'A new version is being installed. Try again in a minute; nothing was saved.',
+    });
+  }
+  return caught.message;
 }
 
 /**
@@ -74,10 +112,10 @@ export function messageFor(caught: unknown): string {
  * HTTP date by the standard, and nothing here sends one, so anything that is
  * not a positive number of seconds reads as unknown rather than as a guess.
  */
-function retryAfter(response: Response): number | undefined {
-  if (response.status !== 429) return undefined;
+function retryAfter(status: number, header: string | null): number | undefined {
+  if (status !== 429) return undefined;
 
-  const seconds = Number(response.headers.get('Retry-After'));
+  const seconds = Number(header);
   return Number.isFinite(seconds) && seconds > 0
     ? Math.ceil(seconds)
     : undefined;
@@ -101,7 +139,8 @@ type ApiInit = Omit<RequestInit, 'headers'> & {
 };
 
 /**
- * Every request carries the session cookie and the CSRF header.
+ * Every request carries the session cookie, the CSRF header and the API
+ * revision this client was built for.
  *
  * `credentials: 'include'` is redundant same-origin — fetch has defaulted to
  * 'same-origin' for years. It is set so that pointing BASE at another origin
@@ -110,6 +149,9 @@ type ApiInit = Omit<RequestInit, 'headers'> & {
  * X-Requested-With satisfies ADR-014: presence is the proof, the value is
  * never read. Sent on every method, because a conditional default is a
  * conditional someone eventually gets wrong.
+ *
+ * X-Api-Revision lets the API refuse a tab open across a deploy that
+ * changed it, before anything is read (ADR-081).
  */
 export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
   const response = await send(path, init);
@@ -165,51 +207,94 @@ export function withQuery(
   return `${path}${path.includes('?') ? '&' : '?'}${query}`;
 }
 
+/**
+ * What every request to the API carries besides its body: the reader's
+ * language, the CSRF header and this client's API revision (api() above).
+ * Exported for the one write outside api(), the product image upload, an
+ * XMLHttpRequest for its progress (ADR-059).
+ */
+export function apiHeaders(): Record<string, string> {
+  return {
+    ...(requestLanguage ? { 'Accept-Language': requestLanguage } : {}),
+    'X-Requested-With': 'XMLHttpRequest',
+    'X-Api-Revision': String(API_REVISION),
+  };
+}
+
+/** What the exception filter answers a refusal with. */
+interface ErrorResponse {
+  message?: string | string[];
+  requestId?: string;
+  code?: string;
+  details?: ErrorDetails;
+}
+
+/**
+ * A failed answer as the ApiError every caller catches, from its status,
+ * its body (null when it was not JSON) and its Retry-After header. An
+ * outdated tab's refusal is noted here, once rather than in each caller,
+ * since most land in a silent catch, the background session read first of
+ * all: the version file read, and a newer build made urgent, before the
+ * screen hears (ADR-081). Exported for the image upload, as apiHeaders is.
+ */
+export async function refusalFrom(
+  status: number,
+  body: ErrorResponse | null,
+  retryAfterHeader: string | null,
+): Promise<ApiError> {
+  // ValidationPipe returns message as an array; everything else as a string.
+  const message = Array.isArray(body?.message)
+    ? body.message.join(', ')
+    : (body?.message ??
+      intl().formatMessage(
+        {
+          id: 'common.requestFailed',
+          defaultMessage: 'Request failed ({status})',
+        },
+        { status },
+      ));
+
+  const error = new ApiError(
+    message,
+    status,
+    body?.requestId,
+    retryAfter(status, retryAfterHeader),
+    body?.code,
+    body?.details,
+  );
+  if (hasCode(error.code ?? null, 'client_outdated')) await noteOutdated();
+  return error;
+}
+
 /** The request every call makes, and the error every failure throws. */
 async function send(path: string, init: ApiInit): Promise<Response> {
   const response = await fetch(`${BASE}${path}`, {
     ...init,
     credentials: 'include',
     headers: {
-      ...(requestLanguage ? { 'Accept-Language': requestLanguage } : {}),
+      ...apiHeaders(),
       // A file goes as multipart, whose boundary the browser writes itself.
       ...(init.body instanceof FormData
         ? {}
         : { 'Content-Type': 'application/json' }),
-      'X-Requested-With': 'XMLHttpRequest',
       ...init.headers,
     },
   });
 
   if (!response.ok) {
-    // ValidationPipe returns message as an array; everything else as a string.
-    const body = (await response.json().catch(() => null)) as {
-      message?: string | string[];
-      requestId?: string;
-      code?: string;
-      details?: ErrorDetails;
-    } | null;
-
-    const message = Array.isArray(body?.message)
-      ? body.message.join(', ')
-      : (body?.message ??
-        intl().formatMessage(
-          {
-            id: 'common.requestFailed',
-            defaultMessage: 'Request failed ({status})',
-          },
-          { status: response.status },
-        ));
-
-    throw new ApiError(
-      message,
+    const body = (await response
+      .json()
+      .catch(() => null)) as ErrorResponse | null;
+    throw await refusalFrom(
       response.status,
-      body?.requestId,
-      retryAfter(response),
-      body?.code,
-      body?.details,
+      body,
+      response.headers.get('Retry-After'),
     );
   }
 
+  // Sign-out is served whatever the revision (ADR-081), so being served it
+  // says nothing of this tab's: an outdated tab stays outdated on the
+  // sign-in page, reading the version file until the new one is out.
+  if (path !== '/auth/logout') noteServed();
   return response;
 }

@@ -15,6 +15,7 @@ import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { PersonAvatar } from '../components/person-avatar';
 import { StatusChip } from '../components/status-chip';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { formatDayShort } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
 import { useResource } from '../lib/use-resource';
@@ -40,7 +41,12 @@ const ONE_LINE = {
 export function PeoplePage() {
   const intl = useIntl();
   const { session } = useAuth();
-  const { data: people, error } = useResource<Person[]>('/people');
+  const {
+    data: people,
+    error,
+    refused,
+    reload,
+  } = useResource<Person[]>('/people');
   const [search, setSearch] = useState('');
   const today = organizationToday();
   const joined = useMemo(
@@ -64,6 +70,12 @@ export function PeoplePage() {
         .some((value) => value.toLowerCase().includes(wanted)),
     );
   }, [people, search]);
+
+  if (refused) {
+    return (
+      <RevisionRefusalPage failure={refused} onRetry={() => void reload()} />
+    );
+  }
 
   return (
     <Stack spacing={3}>

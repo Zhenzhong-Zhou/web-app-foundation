@@ -11,6 +11,7 @@ import {
   signInAs,
   uniqueEmail,
 } from './support/api';
+import { deploy } from './support/version';
 
 /**
  * The text size (ADR-075): a percentage on <html>, so every rem in the app
@@ -248,7 +249,10 @@ test('at Larger on a phone, Home with its cards fits', async ({
 /**
  * Every target in the top bar, 44px each way (ADR-075, ADR-079): on a
  * phone, ☰, the organization, search, Help, the bell and the account; on a
- * computer, the organization, the search box, Help, the bell and the account.
+ * computer, the organization, the search box, New version, Help, the bell
+ * and the account. With a new version out, the bar at its fullest: a
+ * phone's says so with a dot on the account button, no seventh target
+ * (ADR-081).
  */
 for (const size of ['standard', 'larger'] as const) {
   for (const [where, viewport] of [
@@ -264,6 +268,7 @@ for (const size of ['standard', 'larger'] as const) {
       // Its own organization, with no logo, so the mark is its name or
       // its initials.
       await signInAs(page, freshOrg.api);
+      await deploy(page);
       await page.setViewportSize(viewport);
       if (size === 'larger') {
         await page.addInitScript(() =>
@@ -297,12 +302,13 @@ for (const size of ['standard', 'larger'] as const) {
             bar.getByRole('button', { name: 'Search everything', exact: true }),
             bar.getByRole('button', { name: 'Help', exact: true }),
             bar.getByRole('button', { name: 'Notifications', exact: true }),
-            bar.getByRole('button', { name: /signed in as/ }),
+            bar.getByRole('button', { name: /signed in as .*new version/ }),
           ]
         : [
             mark,
             // The box, not the input inside it: the box takes the tap.
             bar.locator('.MuiInputBase-root'),
+            bar.getByRole('button', { name: 'New version', exact: true }),
             bar.getByRole('button', { name: 'Help', exact: true }),
             bar.getByRole('button', { name: 'Notifications', exact: true }),
             bar.getByRole('button', { name: /signed in as/ }),

@@ -2,6 +2,7 @@ import { Button, Chip, Stack, Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
 
 import type { Location } from '../api/types.gen';
+import { Reference } from '../components/reference';
 import { StatusChip } from '../components/status-chip';
 import { SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -66,7 +67,7 @@ export function LocationNode({
           {location.code && (
             <Typography component="span" color="text.secondary">
               {SEPARATOR}
-              {location.code}
+              <Reference>{location.code}</Reference>
             </Typography>
           )}
           {/* Where goods are delivered and sent back (ADR-071). */}

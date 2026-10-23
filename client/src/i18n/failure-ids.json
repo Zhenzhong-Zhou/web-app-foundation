@@ -1,0 +1,9 @@
+[
+  "common.close",
+  "common.tryAgain",
+  "language.failed",
+  "language.failedAtStart",
+  "language.failedNewVersion",
+  "language.loadingAgain",
+  "version.reload"
+]

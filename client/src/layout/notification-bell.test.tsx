@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useState } from 'react';
@@ -7,6 +7,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
+import { outdatedRefusal } from '../test/version';
+import { newVersionNow, noteServed } from '../version/version-check';
 import { NotificationBell } from './notification-bell';
 
 /** The frame around the bell, rendering again as the top bar's does. */
@@ -91,5 +93,39 @@ describe('NotificationBell', () => {
     expect(
       await screen.findByRole('heading', { name: 'Their page' }),
     ).toBeVisible();
+  });
+
+  describe('in a tab the API refuses as outdated (ADR-081)', () => {
+    it('stops asking, since every ask would be refused, and asks again once served, as after a reload', async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+      let asks = 0;
+      server.use(
+        http.get('/api/v1/notifications/unread-count', () => {
+          asks += 1;
+          // The API deploys between the first ask and the second.
+          return asks === 2
+            ? outdatedRefusal()
+            : HttpResponse.json({ count: 0 });
+        }),
+      );
+      renderWithAuth(
+        <MemoryRouter>
+          <NotificationBell />
+        </MemoryRouter>,
+      );
+      await vi.waitFor(() => expect(asks).toBe(1));
+
+      act(() => vi.advanceTimersByTime(60_000));
+      await vi.waitFor(() => expect(newVersionNow().outdated).toBe(true));
+      act(() => vi.advanceTimersByTime(10 * 60_000));
+      expect(asks).toBe(2);
+
+      // Served again, as a tab loaded from the new version is: it asks at
+      // once, and each minute after.
+      act(() => noteServed());
+      await vi.waitFor(() => expect(asks).toBe(3));
+      act(() => vi.advanceTimersByTime(60_000));
+      await vi.waitFor(() => expect(asks).toBe(4));
+    });
   });
 });

@@ -1,8 +1,13 @@
-import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { delay, http, HttpResponse } from 'msw';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { API_REVISION } from '../api/revision.gen';
+import { apiError } from '../test/handlers';
 import { server } from '../test/setup';
-import { api, ApiError } from './api';
+import { OUTDATED, outdatedRefusal, serveVersion } from '../test/version';
+import { BUILD } from '../version/build';
+import { newVersionNow } from '../version/version-check';
+import { api, ApiError, download, messageFor } from './api';
 
 /** The error api() throws for a request, for asserting on its fields. */
 async function failureOf(path: string): Promise<ApiError> {
@@ -104,5 +109,123 @@ describe('api', () => {
 
     expect(error.message).toBe('Set the address first');
     expect(error.code).toBe('organization_address_missing');
+  });
+});
+
+describe('the API revision (ADR-081)', () => {
+  const INSTALLING =
+    'A new version is being installed. Try again in a minute; nothing was saved.';
+
+  /** The API, deployed with a revision above this tab's. */
+  const refuseAsOutdated = () =>
+    server.use(http.get('/api/v1/things/refused', () => outdatedRefusal()));
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('goes with every request, api() and download() alike', async () => {
+    const sent: (string | null)[] = [];
+    server.use(
+      http.get('/api/v1/things', ({ request }) => {
+        sent.push(request.headers.get('X-Api-Revision'));
+        return HttpResponse.json([]);
+      }),
+      http.get('/api/v1/things/export', ({ request }) => {
+        sent.push(request.headers.get('X-Api-Revision'));
+        return new HttpResponse('Name\r\n', {
+          headers: { 'Content-Disposition': 'attachment; filename="t.csv"' },
+        });
+      }),
+    );
+    // jsdom has no object URLs, and saves nothing.
+    URL.createObjectURL = vi.fn(() => 'blob:export');
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(
+      () => undefined,
+    );
+
+    await api('/things');
+    await download('/things/export');
+    expect(sent).toEqual([String(API_REVISION), String(API_REVISION)]);
+  });
+
+  it('notes an outdated refusal, and reads the version file, before the caller hears of it', async () => {
+    serveVersion({ urgent: true });
+    refuseAsOutdated();
+
+    const error = await failureOf('/things/refused');
+    expect(error.code).toBe('client_outdated');
+    expect(newVersionNow()).toEqual({
+      newer: true,
+      urgent: true,
+      outdated: true,
+    });
+    expect(messageFor(error)).toBe(OUTDATED);
+  });
+
+  it('leaves a tab outdated when signing out, which is served whatever the revision', async () => {
+    refuseAsOutdated();
+    server.use(
+      http.post(
+        '/api/v1/auth/logout',
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+
+    await failureOf('/things/refused');
+    await api('/auth/logout', { method: 'POST' });
+    expect(newVersionNow().outdated).toBe(true);
+  });
+
+  it('says the new version is being installed while the file still names this build', async () => {
+    refuseAsOutdated();
+
+    const error = await failureOf('/things/refused');
+    expect(newVersionNow()).toEqual({
+      newer: false,
+      urgent: false,
+      outdated: true,
+    });
+    expect(messageFor(error)).toBe(INSTALLING);
+  });
+
+  it('lets the refusal through after five seconds when the version file does not answer', async () => {
+    server.use(
+      http.get('/version.json', async () => {
+        await delay('infinite');
+        return HttpResponse.json({ ...BUILD, apiRevision: API_REVISION });
+      }),
+    );
+    refuseAsOutdated();
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const refused = failureOf('/things/refused');
+      await vi.advanceTimersByTimeAsync(5_000);
+      const error = await refused;
+      expect(error.code).toBe('client_outdated');
+      expect(messageFor(error)).toBe(INSTALLING);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('forgets the refusal once a request is served again, as after a rollback', async () => {
+    refuseAsOutdated();
+    await failureOf('/things/refused');
+
+    await api('/products/variants');
+    expect(newVersionNow().outdated).toBe(false);
+  });
+
+  it('keeps the server’s words for a 503, and notes nothing', async () => {
+    server.use(
+      http.get('/api/v1/things/refused', () =>
+        apiError(503, INSTALLING, 'api_updating'),
+      ),
+    );
+
+    const error = await failureOf('/things/refused');
+    expect(messageFor(error)).toBe(INSTALLING);
+    expect(newVersionNow().outdated).toBe(false);
   });
 });

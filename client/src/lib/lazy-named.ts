@@ -1,5 +1,7 @@
 import { type ComponentType, lazy } from 'react';
 
+import { loadChunkOrReload } from '../version/load-chunk';
+
 /**
  * lazy() for a named export.
  *
@@ -14,10 +16,15 @@ import { type ComponentType, lazy } from 'react';
  * The import must stay an inline arrow: the bundler reads the literal path to
  * decide what to split, so a loader passed through a variable silently ends up
  * in the main chunk.
+ *
+ * It loads through loadChunkOrReload (ADR-081): tried again after a
+ * second, then the version file says why it failed.
  */
 export function lazyNamed<
   M extends Record<string, ComponentType>,
   K extends keyof M & string,
 >(load: () => Promise<M>, name: K) {
-  return lazy(() => load().then((module) => ({ default: module[name] })));
+  return lazy(() =>
+    loadChunkOrReload(load).then((module) => ({ default: module[name] })),
+  );
 }

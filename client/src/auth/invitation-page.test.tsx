@@ -92,6 +92,7 @@ function reads(invitation: InvitationPreview | null) {
  * The page at its link, with a session that refresh() sets to `after`,
  * as the real provider reads it again from the server; given as a
  * function, read at each refresh, for a server a test's handler changes.
+ * A sign-out leaves none, as the real provider's does.
  */
 function open({
   session = null,
@@ -112,6 +113,7 @@ function open({
             setCurrent(typeof after === 'function' ? after() : after);
             return Promise.resolve();
           },
+          signedOut: () => setCurrent(null),
         }}
       >
         <MemoryRouter initialEntries={[`/invitation?token=${TOKEN}`]}>

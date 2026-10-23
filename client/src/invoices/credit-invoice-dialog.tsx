@@ -24,6 +24,7 @@ import type {
 } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api, messageFor } from '../lib/api';
 import {
   formatMoney,
@@ -264,14 +265,17 @@ export function CreditInvoiceDialog({
                   id: 'invoices.credit.titleForRma',
                   defaultMessage: 'Credit {number} for {rma}',
                 },
-                { number: invoice.number, rma: rma.number },
+                {
+                  number: <Reference>{invoice.number}</Reference>,
+                  rma: <Reference>{rma.number}</Reference>,
+                },
               )
             : intl.formatMessage(
                 {
                   id: 'invoices.credit.title',
                   defaultMessage: 'Credit {number}',
                 },
-                { number: invoice.number },
+                { number: <Reference>{invoice.number}</Reference> },
               )}
         </DialogTitle>
 
@@ -345,7 +349,7 @@ export function CreditInvoiceDialog({
                                         '{rma}: {authorized} authorized, {back} back, {credited} credited',
                                     },
                                     {
-                                      rma: rma.number,
+                                      rma: <Reference>{rma.number}</Reference>,
                                       authorized: formatQuantity(
                                         rmaLine.quantity,
                                       ),
@@ -364,7 +368,7 @@ export function CreditInvoiceDialog({
                                         '{rma}: {authorized} authorized, {credited} credited',
                                     },
                                     {
-                                      rma: rma.number,
+                                      rma: <Reference>{rma.number}</Reference>,
                                       authorized: formatQuantity(
                                         rmaLine.quantity,
                                       ),

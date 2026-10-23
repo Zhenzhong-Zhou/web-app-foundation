@@ -33,6 +33,7 @@ import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { PdfActions } from '../components/pdf-actions';
+import { Reference } from '../components/reference';
 import { StatusChip } from '../components/status-chip';
 import { LoadFailure } from '../errors/load-failure';
 import { api } from '../lib/api';
@@ -228,7 +229,7 @@ export function InvoiceDetailPage() {
                   id: 'invoices.orderNumber',
                   defaultMessage: 'Order {number}',
                 },
-                { number: invoice.orderNumber },
+                { number: <Reference>{invoice.orderNumber}</Reference> },
               )}
             </Link>
             {invoice.invoiceDate && (

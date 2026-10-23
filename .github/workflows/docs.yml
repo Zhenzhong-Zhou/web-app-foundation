@@ -1,7 +1,7 @@
 name: Docs
 
 # Markdown gets its own workflow because CI skips docs-only changes
-# (ci.yml's paths-ignore): a check inside ci.yml would never run on the
+# (ci.yml's paths): a check inside ci.yml would never run on the
 # pull requests that need it. This one runs only when Markdown, its rules,
 # or this file change, and takes seconds.
 on:

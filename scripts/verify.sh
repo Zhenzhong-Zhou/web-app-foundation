@@ -16,6 +16,11 @@
 # server/openapi.json and client/src/api/, and stops if either changed,
 # leaving the fresh files in place to commit.
 #
+# So do the two checks CI makes of a pull request against main (ADR-081),
+# here against origin/main as last fetched: a breaking API change raises
+# the revision (oasdiff, in Docker), and each new migration leaves the
+# running release working (squawk). Each says why when it cannot run.
+#
 # Not run here, though CI runs it: npm run seed:demo, which would add a demo
 # organization to the dev database on every run. Run it after changing a
 # service the demo calls (handoff, Moving code).
@@ -53,6 +58,43 @@ contract() {
   fi
 }
 
+# A check that exits 3 when it cannot run, having said why: reported and
+# gone on from, as Docker not running is. Any other failure stops here.
+may_skip() {
+  local status=0
+  "$@" || status=$?
+  if [[ $status -eq 3 ]]; then
+    echo 'Skipped, as it says above.'
+    return 0
+  fi
+  return "$status"
+}
+
+against_main() {
+  local main=origin/main base
+  # Where this branch left main, not main's tip: a branch behind main would
+  # see what main has added since as taken away, and be told to raise the
+  # API revision for nothing. CI compares with main as the change merges.
+  base="$(git merge-base "$main" HEAD 2> /dev/null || true)"
+
+  step 'Against origin/main: a breaking API change raises the revision'
+  if [[ -z "$base" ]]; then
+    echo "Skipped: no $main to compare with. git fetch origin main, then run again."
+  elif ! docker info > /dev/null 2>&1; then
+    echo 'Skipped: Docker is not running, and oasdiff runs in a container.'
+    echo 'CI runs it on the pull request.'
+  else
+    may_skip scripts/check-api-breaking.sh "$base"
+  fi
+
+  step 'Against origin/main: new migrations leave the running release working'
+  if [[ -z "$base" ]]; then
+    echo "Skipped: no $main to compare with. git fetch origin main, then run again."
+  else
+    may_skip scripts/check-migrations.sh "$base"
+  fi
+}
+
 markdown
 
 if $quick; then
@@ -61,6 +103,7 @@ if $quick; then
     && npm run checks && npm run build && npm test)
 
   contract
+  against_main
 
   step 'Client: format, lint, catalogues, build, unit tests'
   (cd client && npm run verify)
@@ -69,6 +112,7 @@ else
   (cd server && npm run verify)
 
   contract
+  against_main
 
   step 'Client: format, lint, catalogues, build, unit tests, Playwright'
   (cd client && npm run verify:all)

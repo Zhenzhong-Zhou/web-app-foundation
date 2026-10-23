@@ -17,10 +17,12 @@ import { Link as RouterLink } from 'react-router-dom';
 import type { HomeCard, HomeResponse, HomeRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
+import { ReferencesWhole } from '../components/reference';
 import { StatusChip } from '../components/status-chip';
 import { UndoSnackbar } from '../components/undo-snackbar';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { useCoverUnverifiedBanner } from '../layout/use-cover-unverified-banner';
-import { api } from '../lib/api';
+import { api, isRevisionRefusal } from '../lib/api';
 import { daysUntil } from '../lib/expiry';
 import { formatDay } from '../lib/format';
 import {
@@ -30,8 +32,10 @@ import {
 } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
 import { useExpiryDays } from '../lib/use-expiry-days';
+import { useFailureWords } from '../lib/use-failure-words';
 import { rem } from '../theme/rem';
 import { TYPE } from '../theme/tokens';
+import { evenRowsSx } from './even-rows';
 import { GettingStarted } from './getting-started';
 import { greeting } from './greeting';
 import { CARDS } from './home-cards';
@@ -63,7 +67,10 @@ function OrganizationHome() {
   const { session } = useAuth();
   const can = useCan();
   const [home, setHome] = useState<HomeResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // A read's failure as it came, worded as the page renders (ADR-081), or
+  // the page's own words.
+  const [error, setError] = useState<unknown>(null);
+  const errorWords = useFailureWords(error);
   // The welcome just dismissed, a moment to undo it (ADR-079).
   const [undoing, setUndoing] = useState(false);
   const dismissing = useRef<Promise<unknown> | null>(null);
@@ -86,9 +93,9 @@ function OrganizationHome() {
         setHome(response);
         setError(null);
       })
-      .catch((caught: unknown) =>
-        setError(caught instanceof Error ? caught.message : String(caught)),
-      );
+      .catch((caught: unknown) => {
+        setError(caught);
+      });
   }, []);
 
   useEffect(() => {
@@ -206,6 +213,10 @@ function OrganizationHome() {
     },
   ].filter((item): item is { to: string; label: string } => Boolean(item));
 
+  if (!home && isRevisionRefusal(error)) {
+    return <RevisionRefusalPage failure={error} onRetry={load} />;
+  }
+
   return (
     <Stack spacing={3} sx={{ maxWidth: 1140 }}>
       <Stack
@@ -314,7 +325,7 @@ function OrganizationHome() {
         </Typography>
       )}
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {errorWords && <Alert severity="error">{errorWords}</Alert>}
 
       {!home ? (
         <Skeleton variant="rounded" height={120} />
@@ -353,17 +364,15 @@ function OrganizationHome() {
             />
           )}
 
+          {/* In even rows, measured against the page's width rather than
+              the screen's (ADR-081). */}
           {showCards && cards.length > 0 && (
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(auto-fit, minmax(min(${rem(150)}, 100%), 1fr))`,
-                gap: 1.5,
-              }}
-            >
-              {cards.map((card) => (
-                <CountTile key={card.kind} card={card} />
-              ))}
+            <Box sx={{ containerType: 'inline-size' }}>
+              <Box sx={evenRowsSx(cards.length)}>
+                {cards.map((card) => (
+                  <CountTile key={card.kind} card={card} />
+                ))}
+              </Box>
             </Box>
           )}
 
@@ -542,9 +551,16 @@ function CardPanel({ card, today }: { card: HomeCard; today: string }) {
         )}
       </Stack>
       {card.rows.length === 0 ? (
+        // The positive tone's text, which reads on a card in both modes
+        // (ADR-081). In sx: Typography's color prop takes a palette name,
+        // not a path such as this.
         <Typography
-          sx={{ py: 1, borderTop: 1, borderColor: 'divider' }}
-          color="success.dark"
+          sx={{
+            py: 1,
+            borderTop: 1,
+            borderColor: 'divider',
+            color: 'tone.positive.fg',
+          }}
         >
           {intl.formatMessage(meta.empty, { days: expiringWithin })}
         </Typography>
@@ -644,10 +660,17 @@ function RowLine({
             {row.title}
           </Typography>
         )}
+        {/* A space rather than a margin, so the line may break between the
+            title and the detail; the detail's references, the customer's
+            SO-DEMO-1, found by their hyphens in the server's words and kept
+            whole (ADR-081). */}
         {row.detail && (
-          <Typography component="span" color="text.secondary" sx={{ ml: 1 }}>
-            {row.detail}
-          </Typography>
+          <>
+            {' '}
+            <Typography component="span" color="text.secondary">
+              <ReferencesWhole text={row.detail} />
+            </Typography>
+          </>
         )}
       </Box>
       {chip ? (

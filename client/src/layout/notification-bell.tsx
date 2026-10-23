@@ -10,14 +10,17 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { type MouseEvent, useEffect, useState } from 'react';
+import { type MouseEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
 import type { Notification } from '../api/types.gen';
+import { ReferencesWhole } from '../components/reference';
 import { api } from '../lib/api';
 import { relativeTime } from '../lib/format';
+import { useWhileVisible } from '../lib/use-while-visible';
 import { rem } from '../theme/rem';
+import { useNewVersion } from '../version/version-check';
 
 /** How often the badge re-checks while the app is open. */
 const POLL_MS = 60_000;
@@ -56,6 +59,10 @@ function linkFor(entry: Notification): string | null {
  * A minute, not a second. Nothing here is time-critical — a variance flagged
  * at close and a sign-in from an unfamiliar browser are both worth knowing
  * within the minute, and neither is worth a socket.
+ *
+ * Nothing at all while the API refuses this tab as outdated (ADR-081):
+ * every ask would be refused, and each a line in the log. A reload, from
+ * the new version, asks again.
  */
 export function NotificationBell() {
   const intl = useIntl();
@@ -64,61 +71,26 @@ export function NotificationBell() {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [count, setCount] = useState(0);
   const [entries, setEntries] = useState<Notification[] | null>(null);
+  const { outdated } = useNewVersion();
 
-  useEffect(() => {
-    let ignore = false;
-
-    /**
-     * Inline rather than a useCallback the effect calls: setState reached
-     * synchronously from an effect body triggers cascading renders, and the
-     * guard has to sit after the await either way.
-     */
-    async function tick() {
-      try {
-        // Marked as background (ADR-063): the bell asking moves neither the
-        // person's last active nor their session's idle timer.
-        const { count: unread } = await api<{ count: number }>(
-          '/notifications/unread-count',
-          { headers: { 'X-Background': '1' } },
-        );
-        if (!ignore) setCount(unread);
-      } catch {
-        // Silent. A bell that cannot reach the server should look like a bell
-        // with nothing in it, not an error on every page in the app.
-      }
+  async function askCount() {
+    try {
+      // Marked as background (ADR-063): the bell asking moves neither the
+      // person's last active nor their session's idle timer.
+      const { count: unread } = await api<{ count: number }>(
+        '/notifications/unread-count',
+        { headers: { 'X-Background': '1' } },
+      );
+      setCount(unread);
+    } catch {
+      // Silent. A bell that cannot reach the server should look like a bell
+      // with nothing in it, not an error on every page in the app.
     }
+  }
 
-    /**
-     * Only while the tab is seen: a hidden tab asks nothing, and the moment
-     * it is seen again it asks at once, so the count is right when looked
-     * at (ADR-063).
-     */
-    let timer: number | undefined;
-    function start() {
-      void tick();
-      timer = window.setInterval(() => void tick(), POLL_MS);
-    }
-    function stop() {
-      window.clearInterval(timer);
-      timer = undefined;
-    }
-    function onVisibility() {
-      if (document.visibilityState === 'visible') {
-        if (timer === undefined) start();
-      } else {
-        stop();
-      }
-    }
-
-    if (document.visibilityState === 'visible') start();
-    document.addEventListener('visibilitychange', onVisibility);
-
-    return () => {
-      ignore = true;
-      stop();
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, []);
+  // Only while the tab is seen, and at once when it is seen again, so the
+  // count is right when looked at (ADR-063).
+  useWhileVisible(outdated ? null : askCount, POLL_MS);
 
   async function open(event: MouseEvent<HTMLElement>) {
     setAnchor(event.currentTarget);
@@ -257,7 +229,9 @@ export function NotificationBell() {
                 // column of its own for one bit of information.
                 sx={{ fontWeight: entry.readAt ? 400 : 600 }}
               >
-                {entry.title}
+                {/* The server's words: its SKU or licence number kept
+                    whole by its hyphens (ADR-081). */}
+                <ReferencesWhole text={entry.title} />
               </Typography>
 
               {entry.body && (

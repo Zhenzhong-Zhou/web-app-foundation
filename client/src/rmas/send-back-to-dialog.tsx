@@ -5,6 +5,7 @@ import { useIntl } from 'react-intl';
 import type { Location, ReturnAuthorizationDetail } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api, messageFor } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import { SiteSelect } from '../locations/site-select';
@@ -104,7 +105,7 @@ export function SendBackToDialog({
               id: 'rmas.sendBackTo.title',
               defaultMessage: 'Where {number} comes back to',
             },
-            { number: rma.number },
+            { number: <Reference>{rma.number}</Reference> },
           )}
         </DialogTitle>
 

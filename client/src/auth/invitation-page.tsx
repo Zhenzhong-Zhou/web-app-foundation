@@ -92,7 +92,7 @@ function Invitation({
 }) {
   const intl = useIntl();
   const navigate = useNavigate();
-  const { session, refresh } = useAuth();
+  const { session, refresh, signedOut } = useAuth();
   const { locale, setLocale } = useLanguage();
   const [params] = useSearchParams();
   const [token] = useState(() => params.get('token'));
@@ -136,7 +136,7 @@ function Invitation({
         if (preview && !started.current) {
           started.current = true;
           if (!signedIn && preview.locale !== locale) {
-            setLocale(preview.locale);
+            void setLocale(preview.locale);
           }
         }
       })
@@ -146,7 +146,7 @@ function Invitation({
         // that language, never a failed page in place of a form half done.
         if (readIn.current) {
           onLanguageKept(true);
-          setLocale(readIn.current);
+          void setLocale(readIn.current);
           return;
         }
         setFailure(messageFor(caught));
@@ -324,7 +324,7 @@ function Invitation({
         <OtherAddress
           email={invitation.email}
           signedInAs={session.user.email}
-          onSignedOut={refresh}
+          onSignedOut={signedOut}
         />
       );
     }
@@ -372,7 +372,7 @@ function Invitation({
         accept={accept}
         onAccepted={joined}
         onRefused={refused}
-        onSignedOut={refresh}
+        onSignedOut={signedOut}
       />
     );
   }

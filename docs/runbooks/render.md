@@ -1,8 +1,8 @@
 # Render: the free tier now, a paid plan before real data
 
-What the deployment runs on, what the free tier costs it, how to replace
-the free database when it expires, and what changes before real customers'
-data. Render's limits as checked on 13 October 2026 at render.com/docs/free;
+What the deployment runs on, how to build it from nothing, what the free
+tier costs it, how to replace the free database every month, and what
+changes before real customers' data. Render's limits as checked on 13 October 2026 at render.com/docs/free;
 check again before relying on a number.
 
 **Never paste a database URL, a password or a key into a chat, an issue or
@@ -26,11 +26,57 @@ where they are.
 every file one folder down; the server now refuses it at boot. The same
 goes for `BACKUP_S3_ENDPOINT` in GitHub's secrets, which nothing checks.
 
+## Building the services from nothing
+
+If a service is lost, or the account moves, this makes all three again.
+The database comes first, the static site last. Each setting is the one in
+use; the reasons are in the sections named.
+
+1. **The database:** "Replacing the database", step 2.
+2. **The web service** (the API). Render → **New** → **Web Service** → the
+   GitHub repository:
+   - **Branch** `main`; **Root Directory** `server`; **Runtime** Node, whose
+     version Render reads from `.node-version`;
+   - **Build Command:** the README's, under Deployment (it migrates and
+     seeds on every deploy);
+   - **Start Command:** `node dist/main`;
+   - **Region** Oregon (US West), the database's; **Instance Type** Free;
+   - **Environment:** every variable `.env.example` names for production.
+     The ones that point elsewhere: `DATABASE_URL` (the database's Internal
+     URL), `CLIENT_URL` (the static site's address), the mail settings and
+     `RESEND_API_KEY`, `FILE_STORAGE` with the `FILES_*` settings for R2
+     ("What runs where"), `REGISTRATION=invitation` and, optionally,
+     `OPERATOR_EMAIL` ("Registration and organization invitations"). The
+     server refuses to boot on a wrong value, and the deploy log says which;
+   - **Health Check Path** `/health/ready`; **Auto-Deploy** Off; its
+     **Deploy Hook** into GitHub as `RENDER_API_DEPLOY_HOOK` ("Deploys").
+3. **The static site** (the client). Render → **New** → **Static Site** →
+   the same repository:
+   - **Branch** `main`; **Root Directory** `client`; **Build Command**
+     `npm ci && npm run build`; **Publish Directory** `dist`;
+   - **Environment:** `VITE_APP_NAME`, the name in the browser's tab;
+   - **Redirects/Rewrites:** the README's two rules, `/api/*` to the web
+     service's own address first, then `/*` to `/index.html`;
+   - **Headers:** the three rules ("Deploys", "Setting it up");
+   - **Auto-Deploy** Off; its **Deploy Hook** into GitHub as
+     `RENDER_CLIENT_DEPLOY_HOOK`.
+4. **GitHub:** the variable `API_HEALTH_URL` ("Deploys") and the backup
+   secrets (restore.md, section 1).
+5. **The first deploy:** Manual Deploy on the web service, then, once
+   `/api/health/ready` answers, on the static site. After that, a push to
+   `main` that passes CI deploys both through `deploy.yml`.
+6. **Yourself:** `npm run org:invite` ("Inviting an organization").
+
 ## What the free tier costs the app
 
 - **The database expires 30 days after it was created.** It then stops
   answering, and Render deletes it after a 14-day grace period unless it is
   moved to a paid instance type. Note the creation date in the handoff.
+  On 22 October 2026 Render showed the current one, Free, as created
+  about 28 September 2026, and its page said "Your database will expire
+  on October 28, 2026": it stops answering then and is deleted about 11
+  November. Until the database is paid for, this comes back every 30
+  days.
 - **The web service sleeps after 15 minutes without a request,** and the
   next request waits about a minute while it starts. The hourly jobs run
   inside it, so while it sleeps they do not: licence reminders (ADR-064)
@@ -41,6 +87,196 @@ goes for `BACKUP_S3_ENDPOINT` in GitHub's secrets, which nothing checks.
   active per workspace.
 
 For development and testing, all of that is acceptable.
+
+## Deploys (ADR-081)
+
+Neither service deploys itself. Once CI passes on a push to `main`,
+`.github/workflows/deploy.yml` deploys the API at that commit through its
+deploy hook, waits until `/api/health` names the commit, and only then
+deploys the static site at the same commit. A `main` whose CI fails
+deploys neither, and if the API's deploy fails, the client stays where it
+was, matching it.
+
+Why not Render's own auto-deploy, which both services had until ADR-081:
+
+- **The order.** On #176's deploy the static site took 40.5 seconds and
+  the API 1 minute 30, so for about 50 seconds the new client met the old
+  API.
+- **"After CI checks pass" cannot hold it.** Render then deploys only once
+  every check on the commit has passed, and a workflow that waits for the
+  API is one of those checks: each would wait for the other.
+- **The root directory.** The web service builds from `server/`, and
+  Render auto-deploys a service only when a push changes files under its
+  root directory: after a push that changes only `client/`, the API would
+  never name the commit.
+
+Each deploy therefore redeploys the API, even when only the client changed:
+about a minute and a half, with nothing for the migrations or the seed to
+do. A push CI skips, docs only, deploys nothing; Help's guides, the one
+Markdown that ships, run CI (`ci.yml`'s `paths`). A newer push's run
+cancels an older one, waiting or deploying, so only the newest commit's
+client goes live; and CI on `main` keeps one run waiting, so of several
+merges in quick succession only the newest is checked and deployed.
+
+### As Render showed it on 22 October 2026
+
+| Setting            | Web service (the API)                     | Static site (the client)                         |
+|--------------------|-------------------------------------------|--------------------------------------------------|
+| Address            | `https://web-app-foundation.onrender.com` | `https://web-app-foundation-client.onrender.com` |
+| Instance           | Free                                      | Free                                             |
+| Auto-Deploy        | On Commit                                 | On Commit                                        |
+| Deploy Hook        | not noted                                 | there                                            |
+| Start Command      | `node dist/main`                          |                                                  |
+| Pre-Deploy Command | empty                                     |                                                  |
+| Health Check Path  | `/health/ready`, set by Bob that day      |                                                  |
+
+The database is Free too (above). With no Pre-Deploy Command, the
+migrations run in the build command (README, "Deployment") while the
+previous release still serves, which is why ADR-081's migrations add and
+never take away in one deploy.
+
+What the static site sent, from `curl -sI` the same day:
+
+| Path                        | `cache-control`                             | `cf-cache-status` |
+|-----------------------------|---------------------------------------------|-------------------|
+| `/`                         | `public, max-age=0, s-maxage=300`           | `EXPIRED`         |
+| `/index.html`               | `public, max-age=0, s-maxage=300`           | `MISS`            |
+| `/assets/index-UEWwBcVJ.js` | `public, max-age=0, s-maxage=300`           | `MISS`            |
+| `/version.json`             | the same, as `index.html`: not yet built    | `MISS`            |
+| `/api/health`               | none                                        | `BYPASS`          |
+
+So Render's edge can keep `index.html` for five minutes after a deploy.
+It ignores a request's `no-cache`, though a new query string misses it,
+which is why the version check adds one of its own. A tab that loads in
+full in those minutes can get the old build back; the client loads in
+full once per new version and then waits (manual checks, MC-3411), so it
+never loops. Hashed assets are sent `max-age=0`, so a browser asks again
+for every chunk on every load. `/api/health` goes through the `/api/*`
+rewrite uncached, so the workflow never reads an old answer.
+
+### Setting it up, by hand, in this order
+
+Before the pull request that adds `deploy.yml` merges, so that its merge
+deploys this way:
+
+1. **The deploy hooks, as secrets.** Render → the web service → Settings →
+   Deploy Hook: copy it. GitHub → the repository → Settings → Secrets and
+   variables → Actions → Secrets → New repository secret:
+   `RENDER_API_DEPLOY_HOOK`. Then the static site's, as
+   `RENDER_CLIENT_DEPLOY_HOOK`. A hook deploys without signing in, so
+   treat it as a key: never paste it anywhere else, and if it ever is,
+   Regenerate it in Render and update the secret.
+2. **The health URL, as a variable.** The same page → Variables → New
+   repository variable: `API_HEALTH_URL` =
+   `https://web-app-foundation-client.onrender.com/api/health`, the API
+   as the client reaches it.
+3. **Auto-Deploy off, on both.** Render → the web service → Settings →
+   Auto-Deploy: Off. Then the static site the same. Not "After CI checks
+   pass" on either (above). Until the merge, a push to `main` deploys
+   nothing; after it, only through the workflow. Manual Deploy works
+   throughout.
+4. **The Health Check Path,** `/health/ready`: set on 22 October 2026.
+   Render moves traffic to a new release only once it answers there with
+   its database up, which is what makes `/health`'s commit mean the new
+   release is serving.
+5. **The cache headers.** Render → the static site → Headers, three rules
+   that do not overlap, since Render's docs do not say which wins when two
+   match one path (so not `/*`):
+
+   | Path            | Name            | Value                                 |
+   |-----------------|-----------------|---------------------------------------|
+   | `/assets/*`     | `Cache-Control` | `public, max-age=31536000, immutable` |
+   | `/index.html`   | `Cache-Control` | `no-cache`                            |
+   | `/version.json` | `Cache-Control` | `no-cache`                            |
+
+   A file in `/assets/` is named by its content, so a changed one gets a
+   new name and the browser can keep the old for a year. `index.html`
+   names the build's files and `version.json` says which build is out,
+   so both are asked for again every time.
+
+After the merge's deploy:
+
+1. **The order.** Actions → Deploy, the run for the merge: Deploy the
+   API, the wait ending "The API names …", then Deploy the static site.
+   The two must name the same commit:
+
+   ```bash
+   site=https://web-app-foundation-client.onrender.com
+   curl -s "$site/api/health"
+   curl -s "$site/version.json?$(date +%s)"
+   ```
+
+2. **The headers,** each path twice, a few seconds apart:
+
+   ```bash
+   site=https://web-app-foundation-client.onrender.com
+   asset=$(curl -s "$site/?$(date +%s)" | grep -o '/assets/index-[A-Za-z0-9_-]*\.js' | head -1)
+   for path in / /index.html /version.json /orders "$asset"; do
+     echo "== $path"
+     curl -sI "$site$path" | grep -iE '^(cache-control|cf-cache-status):'
+   done
+   ```
+
+   `/` and `/orders` are `index.html` too, through the `/*` rewrite:
+   whether the `/index.html` rule reaches them is part of what this
+   shows. A second answer of `HIT` for `/`, `/index.html` or
+   `/version.json` means Render's edge still holds it for five minutes
+   whatever the header says. Record what came back here, with the date,
+   either way.
+3. **A tab kept open across the deploy:** manual checks, MC-3424.
+
+### When the wait times out
+
+The run fails after 20 minutes if the API never names the commit: its
+deploy failed (Render → the web service → Events, and its log), it is
+slow, or `API_HEALTH_URL` is wrong. The static site is left as it was.
+Once the API is up at that commit, Actions → the failed run → Re-run
+jobs, which deploys both again; or by hand, Render → the static site →
+Manual Deploy → Deploy a specific commit, the same commit. Never the
+static site first.
+
+### A rollback
+
+The API first, then the static site, both back to the same commit:
+Render → the web service → Events → the deploy to go back to → Rollback;
+once `/api/health` names its commit, the same on the static site. If the
+change rolled back had raised `API_REVISION`, a tab running the newer
+client is refused for the minutes between with 503 `api_updating`, "A
+new version is being installed. Try again in a minute; nothing was
+saved."; once the static site is back, its version file names another
+build, and the tab loads it at its next page. A rollback takes no
+migration back: the older release runs on the newer schema, which
+ADR-081's rule for migrations (add, never take away, in one deploy) keeps
+working. The next push to `main` that passes CI deploys both forward
+again.
+
+## Old files after a deploy (ADR-081)
+
+**Render keeps the previous build's files.** Checked on 21 October 2026,
+after #176 deployed: the live `index.html` loaded `index-UEWwBcVJ.js`, the
+entry chunk a local build of `main` at 983c1d8 makes, and
+`/assets/index-CScCP7eR.js`, the entry chunk of the build before it
+(3f54efe), still came back as JavaScript. So a tab left open across a
+deploy keeps loading its own pages; what changes under it is the API,
+which ADR-081's revision handles.
+
+Render's static-site docs do not say how long it keeps them, and its
+"Clear build cache & deploy" is described as refreshing stale static
+assets: use it only when a build needs it. Check again after a change of
+plan or host:
+
+1. Build the commit before the last deploy in a git worktree, and the
+   current one, each with `npm ci && npm run build` in `client/`; each
+   `dist/index.html` names its entry chunk.
+2. **The control:** the live page's source must name the entry chunk your
+   build of the current commit made. If it does not, your build differs
+   from Render's, and the test says nothing: check at the next deploy
+   instead.
+3. **The test:** open the old entry chunk at `/assets/<name>`. JavaScript
+   means kept; a plain "Not Found" means gone. Render answers a missing
+   `.js`, `.css` or `.png` with a 404, but a missing `.json`, `.svg` or
+   `.woff2`, or a path without an extension, with `index.html` and a 200
+   (the `/*` rewrite): for those, look at what comes back, not the status.
 
 ## Registration and organization invitations (ADR-078)
 
@@ -72,8 +308,9 @@ database's migrations stop before 0069, and writes nothing.
 2. **The app's address** is the static site's, `CLIENT_URL` as the web
    service has it, such as `https://<your site>.onrender.com`.
 3. **The database's address** is the database's External Database URL,
-   from its Connect panel, with `?sslmode=no-verify` on the end, as the
-   backup secret has it. Paste it at the prompt: it is not shown and not
+   from its Connect panel, with `?sslmode=no-verify` on the end. Node's
+   Postgres client, which this command uses, reads that; `pg_dump` and
+   `psql` refuse it, so nowhere else adds it. Paste it at the prompt: it is not shown and not
    kept in the shell's history. The command never reads `.env`, so it
    cannot write to the development database by mistake; never put the
    production address there. If it times out, check that the database's
@@ -98,37 +335,90 @@ run it.
 An organization invited onto the free database goes with it when the
 database expires: a real customer waits for the paid one.
 
-## When the free database expires
+## Replacing the database
+
+A free database stops answering 30 days after it was created, and Render
+deletes it 14 days after that. Its page says the date ("Your database will
+expire on …"), and Render emails before it. Until the database is paid
+for, this comes back every month: replace it a day or two early, not
+after, since the live app is down in between.
 
 Start empty. Nothing on the free database is real data; restoring the last
 backup instead is "The host is gone" in restore.md, if a test needs the old
-rows.
+rows. Do every step in one sitting: the live app is down from step 1 until
+step 4.
 
-1. **New database:** Render → New → Postgres, Free, version 18, the same
-   region as the web service (private hostnames resolve only within a
-   region). Only one free database may be active, so delete the expired one
-   first if Render asks.
-2. **The API:** web service → Environment → `DATABASE_URL` = the new
-   database's **Internal** URL. Save, and let it redeploy. The deploy runs
-   every migration and the seed.
-3. **Backups:** GitHub → Settings → Secrets → Actions →
-   `BACKUP_DATABASE_URL` = the new **External** URL with
-   `?sslmode=no-verify`. Run Actions → **Backup** once by hand.
-4. **Check the migrations:** one row per migration, so the count is the
-   number of files in `server/src/database/migrations/` that end in `.sql`:
+1. **Delete the old database.** Render → the database (`foundation-db`) →
+   Settings → at the bottom, **Delete Database**, typing its name to
+   confirm. Only one free database may exist at a time, so this comes
+   first.
+2. **Create the new one.** Render → **New** → **Postgres**:
+   - **Name:** `foundation-db` (the same name is fine);
+   - **Database** and **User:** empty, so Render makes them;
+   - **Region:** Oregon (US West), the web service's region, since an
+     Internal URL resolves only within its region;
+   - **PostgreSQL Version:** 18;
+   - **Instance Type:** Free.
+
+   **Create Database**, then wait until its status says Available.
+3. **Point the API at it.** The new database → **Connect** → copy the
+   **Internal Database URL**. The web service → **Environment** →
+   `DATABASE_URL` → paste → **Save**. Then **Manual Deploy** → **Deploy
+   latest commit**: Auto-Deploy is off since ADR-081 (if Save offers to
+   rebuild and deploy, that does the same). The build runs every migration
+   and the seed; the log ends with the service live. The static site needs
+   nothing.
+4. **Check it answers.** It may take a minute while the service wakes:
 
    ```bash
-   docker exec -it foundation-postgres psql "<External URL>" -c "select count(*) from drizzle.__drizzle_migrations;"
+   curl -s https://web-app-foundation-client.onrender.com/api/health/ready
    ```
 
-5. **Files:** logos and photos uploaded against the old database are still
+   Done when it says `{"status":"ready","database":"up"}`.
+5. **Backups, the same day,** or that night's scheduled backup fails. The
+   new database → **Connect** → copy the **External Database URL**, exactly
+   as Render gives it: `backup.sh` asks for SSL itself
+   (`PGSSLMODE=require`), and `pg_dump` refuses `sslmode=no-verify`.
+   GitHub → the repository → Settings → Secrets and variables → Actions →
+   `BACKUP_DATABASE_URL` → **Update** → paste. Then Actions → **Backup** →
+   **Run workflow**. Done when the run is green.
+6. **Count the migrations,** with that same External URL, pasted at the
+   prompt so it stays out of the shell's history. One row per migration,
+   so the count is the number of files in `server/src/database/migrations/`
+   that end in `.sql` (75 at ADR-081):
+
+   ```bash
+   read -s "DB?Paste the External URL, then Enter: "; echo
+   docker exec -it foundation-postgres psql "${DB}?sslmode=require" -c "select count(*) from drizzle.__drizzle_migrations;"
+   unset DB
+   ```
+
+7. **Your organization again.** Everything on the old database went with
+   it, accounts included: invite yourself with `npm run org:invite`
+   ("Inviting an organization", above), the database's address being the
+   External URL from step 5 with `?sslmode=no-verify` added, for Node's
+   client.
+8. **Files:** logos and photos uploaded against the old database are still
    in `waf-files`, and nothing points at them; the hourly purge only removes
    files the database knows of. If they were test uploads, empty the bucket
    in R2 (leave `waf-backups` alone).
-6. **The handoff:** the new creation date, so the next expiry is known.
+9. **Record the dates** in the handoff's line about the database: created
+   today, stops answering 30 days later, deleted 14 days after that.
 
 Nothing else needs running: a fresh database has no older rows, so the
 pinyin backfill is not needed, and new credentials retire the old ones.
+
+### If a step fails
+
+| What you see | What it usually is |
+| --- | --- |
+| The deploy fails at `npm run migrate` | `DATABASE_URL` is the External URL, or the database is in another region: use the Internal URL from the same region |
+| `/api/health/ready` says the database is `down` | the deploy hasn't finished, or the URL was saved without a deploy: deploy by hand again |
+| Backup says `invalid sslmode value: "no-verify"` | the secret ends in `?sslmode=no-verify`: paste the External URL as Render gives it |
+| Backup fails to connect | the secret is the Internal URL: use the External one |
+| `psql: invalid connection option "<postgresql…` | the `<` and `>` around the URL were kept: leave them out |
+| `org:invite` or `psql` times out | the database's **Access Control** doesn't let your address in: add it there |
+| Render won't create a free database | the old one still exists: step 1 first |
 
 ## Before real customers' data
 

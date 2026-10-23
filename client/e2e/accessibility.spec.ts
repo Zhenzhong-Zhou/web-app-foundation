@@ -15,6 +15,7 @@ import {
   uniqueEmail,
 } from './support/api';
 import { verifyEmail } from './support/mail';
+import { deploy } from './support/version';
 
 /**
  * WCAG 2.2 AA on the main screens, in both colour modes (ADR-055, step 6).
@@ -39,6 +40,14 @@ interface Screen {
   path: (seed: Seed) => string;
   ready: (page: Page) => ReturnType<Page['getByRole']>;
   open?: (page: Page) => Promise<void>;
+  /** A new version out before the screen loads (ADR-081). */
+  version?: 'newer' | 'urgent';
+  /**
+   * A page's chunk that will not load while version.json still names this
+   * build: a real failure, so the crash page (ADR-081). Both are the static
+   * host's files, never the API's.
+   */
+  broken?: string;
 }
 
 interface Seed {
@@ -66,6 +75,37 @@ const SCREENS: Screen[] = [
       page
         .getByRole('complementary', { name: 'Help', exact: true })
         .getByRole('heading', { level: 2, name: 'Orders', exact: true }),
+  },
+  {
+    // The top bar's button and its note (ADR-081).
+    name: 'a new version, its note open',
+    version: 'newer',
+    path: () => '/orders',
+    open: async (page) => {
+      await page
+        .getByRole('button', { name: 'New version', exact: true })
+        .click();
+      // It grows in: axe measures its colours once it has.
+      await expect(page.getByRole('dialog', { name: 'New version' })).toHaveCSS(
+        'opacity',
+        '1',
+      );
+    },
+    ready: (page) => page.getByRole('dialog', { name: 'New version' }),
+  },
+  {
+    name: 'a new version whose saves would be refused, the amber banner',
+    version: 'urgent',
+    path: () => '/orders',
+    ready: (page) =>
+      page.getByRole('status').filter({ hasText: 'can no longer save' }),
+  },
+  {
+    name: 'the crash page',
+    broken: '**/src/inventory/inventory-page.tsx*',
+    path: () => '/inventory',
+    ready: (page) =>
+      page.getByRole('heading', { level: 1, name: 'Something went wrong' }),
   },
   {
     name: 'an order',
@@ -238,6 +278,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
       const found: Record<string, string[]> = {};
 
       for (const screen of SCREENS) {
+        if (screen.version) {
+          await deploy(page, { urgent: screen.version === 'urgent' });
+        }
+        if (screen.broken) {
+          await page.route(screen.broken, (route) => route.abort('failed'));
+        }
         await page.goto(screen.path(data));
         if (screen.open) {
           await expect(heading(page)).toBeVisible();
@@ -249,6 +295,8 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
         const list = await violations(page);
         if (list.length > 0) found[screen.name] = list;
+        if (screen.version) await page.unroute('**/version.json?*');
+        if (screen.broken) await page.unroute(screen.broken);
       }
 
       // All screens at once, so one run reports everything to fix.

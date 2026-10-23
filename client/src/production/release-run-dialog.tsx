@@ -15,7 +15,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useState } from 'react';
+import { Fragment, type SubmitEvent, useEffect, useState } from 'react';
 import { type IntlShape, useIntl } from 'react-intl';
 
 import type {
@@ -27,6 +27,7 @@ import type {
 } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { fromScaled, sumDecimals, toScaled } from '../lib/decimal';
 import {
@@ -468,7 +469,7 @@ export function ReleaseRunDialog({
                           defaultMessage: '{sku} — needs {amount}',
                         },
                         {
-                          sku: line.sku,
+                          sku: <Reference>{line.sku}</Reference>,
                           amount: withUnit(
                             line.quantity,
                             line.unitOfMeasure,
@@ -522,32 +523,34 @@ export function ReleaseRunDialog({
                       {line.lots.some((lot) => lot.taken)
                         ? line.lots
                             .filter((lot) => lot.taken)
-                            .map((lot) =>
-                              lot.expiresAt
-                                ? intl.formatMessage(
-                                    {
-                                      id: 'orders.ship.lotTakeExpiring',
-                                      defaultMessage:
-                                        '{code} (expires {day}): {quantity}',
-                                    },
-                                    {
-                                      code: lot.code,
-                                      day: formatDay(lot.expiresAt),
-                                      quantity: formatQuantity(lot.take),
-                                    },
-                                  )
-                                : intl.formatMessage(
-                                    {
-                                      id: 'orders.ship.lotTake',
-                                      defaultMessage: '{code}: {quantity}',
-                                    },
-                                    {
-                                      code: lot.code,
-                                      quantity: formatQuantity(lot.take),
-                                    },
-                                  ),
-                            )
-                            .join(SEPARATOR)
+                            .map((lot, index) => (
+                              <Fragment key={lot.lotId}>
+                                {index > 0 && SEPARATOR}
+                                {lot.expiresAt
+                                  ? intl.formatMessage(
+                                      {
+                                        id: 'orders.ship.lotTakeExpiring',
+                                        defaultMessage:
+                                          '{code} (expires {day}): {quantity}',
+                                      },
+                                      {
+                                        code: <Reference>{lot.code}</Reference>,
+                                        day: formatDay(lot.expiresAt),
+                                        quantity: formatQuantity(lot.take),
+                                      },
+                                    )
+                                  : intl.formatMessage(
+                                      {
+                                        id: 'orders.ship.lotTake',
+                                        defaultMessage: '{code}: {quantity}',
+                                      },
+                                      {
+                                        code: <Reference>{lot.code}</Reference>,
+                                        quantity: formatQuantity(lot.take),
+                                      },
+                                    )}
+                              </Fragment>
+                            ))
                         : intl.formatMessage({
                             id: 'orders.ship.noLots',
                             defaultMessage:

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { browserTimeZone } from '../lib/time-zone';
 import { server } from '../test/setup';
+import { deploy, OUTDATED, outdatedRefusal } from '../test/version';
 import { AuthContext } from './auth-context';
 import { LoginPage } from './login-page';
 import { RegisterPage } from './register-page';
@@ -18,6 +19,7 @@ function renderAt(path: '/register' | '/login') {
         loading: false,
         error: null,
         refresh: () => Promise.resolve(),
+        signedOut: () => undefined,
       }}
     >
       <MemoryRouter initialEntries={[path]}>
@@ -164,5 +166,35 @@ describe('LoginPage and registration (ADR-078)', () => {
     expect(
       screen.queryByRole('link', { name: 'Create an account' }),
     ).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * A sign-in refused for this tab's API revision (ADR-081): while the new
+ * version is still on its way, it is being installed; once it is out, the
+ * server's words, which say to reload. Worded as the page renders, so the
+ * line changes with it.
+ */
+describe('LoginPage refused as outdated', () => {
+  it('says the new version is being installed, then, once it is out, to reload', async () => {
+    server.use(http.post('/api/v1/auth/login', () => outdatedRefusal()));
+    const user = userEvent.setup();
+    renderAt('/login');
+
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Email' }),
+      'mei@example.com',
+    );
+    await user.type(screen.getByLabelText(/^Password/), 'a long password');
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    expect(
+      await screen.findByText(
+        'A new version is being installed. Try again in a minute; nothing was saved.',
+      ),
+    ).toBeVisible();
+
+    await deploy({ urgent: true });
+    expect(screen.getByText(OUTDATED)).toBeVisible();
   });
 });

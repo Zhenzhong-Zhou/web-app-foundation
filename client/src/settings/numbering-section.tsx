@@ -28,6 +28,7 @@ import { defineMessages, useIntl } from 'react-intl';
 import type { Numbering } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { SettingsSection } from '../components/settings-section';
 import { api, hasCode } from '../lib/api';
 import type { NumberingReset } from '../lib/api-names';
@@ -735,11 +736,10 @@ function NumberingForm({
                       '{number}{reset, select, never {} yearly {, each year} monthly {, each month} other {, each day}}',
                   },
                   {
-                    number: formatNumber(
-                      format.prefix,
-                      format.digits,
-                      1,
-                      today,
+                    number: (
+                      <Reference>
+                        {formatNumber(format.prefix, format.digits, 1, today)}
+                      </Reference>
                     ),
                     reset: format.reset,
                   },
@@ -1004,7 +1004,7 @@ function NumberingForm({
                         id: 'settings.numbering.confirm.next',
                         defaultMessage: 'Next: {number}',
                       },
-                      { number: printed(key) },
+                      { number: <Reference>{printed(key)}</Reference> },
                     )}
                   </Typography>
                   {numbering[key].last && (
@@ -1014,7 +1014,9 @@ function NumberingForm({
                           id: 'settings.numbering.confirm.last',
                           defaultMessage: 'The last given stays {number}.',
                         },
-                        { number: numbering[key].last },
+                        {
+                          number: <Reference>{numbering[key].last}</Reference>,
+                        },
                       )}
                     </Typography>
                   )}

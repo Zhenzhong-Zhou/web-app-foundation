@@ -12,9 +12,11 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App.tsx';
 import { AuthProvider } from './auth/auth-provider';
 import { ToastProvider } from './components/toast-provider';
+import { LanguageFailureToast } from './i18n/language-failure';
 import { LanguageProvider } from './i18n/language-provider';
 import { LocalizedTheme } from './i18n/localized-theme';
 import { initTextSize } from './theme/text-size';
+import { VersionWatch } from './version/version-check';
 
 // This device's text size (ADR-075), before anything renders, so the first
 // paint is already at it rather than Standard for a moment.
@@ -30,6 +32,9 @@ const router = createBrowserRouter([
     path: '*',
     element: (
       <AuthProvider>
+        {/* A newer build noticed, signed in or out, and loaded at the next
+            page (ADR-081). */}
+        <VersionWatch />
         <App />
       </AuthProvider>
     ),
@@ -48,7 +53,12 @@ createRoot(document.getElementById('root')!).render(
         {/* Inside the theme, so the toast is coloured like everything else;
             outside the router, because a confirmation should survive the
             navigation a save often triggers. */}
-        <ToastProvider>
+        <ToastProvider
+          // A language that would not load: the provider above says so
+          // through its context, and this, inside the theme, shows it at
+          // the foot of the screen, under any confirmation (ADR-081).
+          foot={<LanguageFailureToast />}
+        >
           <RouterProvider router={router} />
         </ToastProvider>
       </LocalizedTheme>

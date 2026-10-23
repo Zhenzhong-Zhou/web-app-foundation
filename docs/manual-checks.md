@@ -2004,11 +2004,320 @@ The pages, in a private window unless a check says otherwise.
   pill; at 390 px they wrap under his name rather than widen the card. Tom's
   own page shows the same two, a little apart.
 
+## 34. Old tabs after a deploy (ADR-081)
+
+A deploy, by hand, is either a real one with a tab left open across it, or
+DevTools → Sources → Overrides on `/version.json`, saved with another
+`build` than the tab's (`dev` on the dev server, which never counts as
+newer): the same `apiRevision` for a new version, one higher for one whose
+saves would be refused. Then switch to another tab and back, which reads
+the file, or wait ten minutes.
+
+- **MC-3401** *(ADR-081)* A new version on a computer. Signed in, on
+  Orders, deploy: New version appears just before Help, a pill in the
+  info tone, and the top bar keeps its height, so nothing on the page
+  moves. A screen reader says once, politely, A new version is ready. It
+  loads by itself when you open another page.; with a dialog open, such as
+  Receive on a purchase order, it says so in the dialog, and nothing more
+  once the dialog closes. New version opens that note
+  with Reload now, which loads the page. On an order, switching from Items
+  to History, or on Orders a filter, loads nothing; Inventory in the rail
+  loads in full (the Network tab shows the document again). Deploy once
+  more with another `build`, since a tab loads in full once per new
+  version (MC-3411): on New order with a line added, Inventory asks Leave
+  without saving? first: Stay keeps everything; Leave loads Inventory in
+  full, with no browser Leave site? after the app's.
+- **MC-3402** *(ADR-081)* A new version on a phone. At 390 px, and at 320
+  px with Larger text, deploy: no new button, a dot on the account button,
+  whose name a screen reader reads as …, signed in as …, a new version is
+  ready, and the bar still fits its six targets. The account menu's first
+  item reads A new version is ready · Reload now, It also loads by itself
+  when you open another page., and loads the page. In 中文, 新版本已就绪 ·
+  立即重新加载, 您打开其他页面时也会自动加载。
+- **MC-3403** *(ADR-081)* Signed out. On sign-in, register, forgot
+  password and an invitation's link, deploy: under the language and text
+  size, an info banner says A new version is ready. It loads when you open
+  another page., with Reload and no close. In Français, Une nouvelle
+  version est prête. Elle se charge quand vous ouvrez une autre page.; in
+  中文, 新版本已就绪。打开其他页面时即会加载。
+- **MC-3404** *(ADR-081)* Amber, once saves would be refused. Signed in,
+  deploy with `apiRevision` one higher: an amber banner tops the page,
+  above any other, A new version is ready, and this tab can no longer save
+  changes. Copy anything you’ve typed, then reload., its first sentence in
+  bold, with Reload; New version and the phone's dot are gone. A screen
+  reader says those words once, politely, in a dialog if one is open, and
+  says them again when a tab that had the info note turns amber. Receive on
+  a purchase order opens with the same line at its very top, above its
+  title; a dialog already open gains it as the file is read; on a phone in
+  中文 Invite, full screen, shows 新版本已就绪，此标签页已无法保存更改。 at
+  its top. A product's image opened at full size, Help, and the lookup on
+  a phone show no line. The signed-out pages' banner turns amber too.
+- **MC-3405** *(ADR-081)* Help names the version the tab runs. Open Help
+  and scroll to its foot: under a thin line, in small grey text, Version
+  0.7.0 · build 983c1d8 · 22 Oct 2026, the release, the build's first
+  seven characters and the day it was built, in the reader's own date
+  format (Oct 22, 2026 in a US browser). In 中文 版本 0.7.0 · 构建 983c1d8
+  · 2026年10月22日; in Français Version 0.7.0 · compilation 983c1d8 · 22
+  oct. 2026. On the dev server it reads build dev. After a deploy, the
+  build is the commit `/api/health` names, and an old tab's Help still
+  names its own.
+- **MC-3406** *(ADR-081)* The version file. `npm run build` in `client/`
+  writes `dist/version.json` with `build` (the commit checked out),
+  `builtAt`, `version` (as `client/package.json` says) and `apiRevision`;
+  `npm run dev` answers `/version.json` with the build `dev`, and
+  `/version.json?123` the same.
+
+A page that won't load is made by hand in DevTools → Network: Offline for
+a dropped connection, or Network request blocking with a pattern for one
+chunk (`*inventory-page*` for Inventory's on the dev server). Each way
+waits a second and tries once more before it says anything.
+
+- **MC-3407** *(ADR-081)* Offline. Signed in, on Orders, go Offline and
+  open Inventory from the rail: in its place, with the rail still there,
+  Can't reach the server, the line about the connection, in smaller grey
+  text under it This page tries again by itself when your connection
+  comes back., and Try again. Go back
+  online (No throttling): Inventory loads by itself, in full. Reload on
+  Orders, block `*inventory-page*` and `*version.json*`, and open
+  Inventory: the same page; unblock both, and Try again loads Inventory.
+  In 中文 无法连接服务器 and
+  网络恢复后，此页面会自动重试。
+- **MC-3408** *(ADR-081)* After a deploy. On Orders, deploy without
+  switching tabs, so the tab has not read the file yet, and block
+  Inventory's chunk. Inventory from the rail loads in full by itself (the
+  Network tab shows the document again); with the chunk still blocked, it
+  then says A new version is ready, A new version came out while this tab
+  was open. Reload to use it; nothing is lost., with Reload, and loads
+  nothing more by itself. Unblock it and Reload: Inventory.
+- **MC-3409** *(ADR-081)* This build, broken. Nothing deployed, block
+  Inventory's chunk alone: Something went wrong, with Reload, Go back, Go
+  home and a reference, never a new version.
+- **MC-3410** *(ADR-081)* Help's guide. Deploy, block `*guides*`, and open
+  Help on a page whose guide this tab has not shown yet: This guide has a
+  new version. Reload to read it., with Reload, and the page beside it
+  stays as it is. In 中文 这份指南有新版本。请重新加载后阅读。 Offline instead,
+  This guide could not be opened. Check your connection, then try again.,
+  with Try again.
+- **MC-3411** *(ADR-081)* Once per new version. On the dev server the
+  load in full comes back on the same build, as a tab does while Render's
+  edge still serves the old `index.html`. Deploy, open Inventory: it loads
+  in full once. Then Orders, Movements and Inventory again load nothing
+  more (no new document in the Network tab), and New version stays beside
+  Help, or the amber banner on the page with `apiRevision` one higher,
+  each still reloading when pressed. Deploy again with another `build`:
+  the next page loads in full once more.
+
+An outdated tab is made by hand on the server: raise `API_REVISION` by one
+in `server/src/common/api-revision.ts` alone and restart it, without `npm
+run api`, so the client still sends the revision before. On the dev
+server the version file names `dev`, the tab's own build, so the new
+version is still on its way, as when the API deploys first; an override
+of `/version.json` with another `build` stands for it being out. Put the
+revision back afterwards: `git status` shows nothing changed.
+
+- **MC-3412** *(ADR-081)* Outdated, the new version on its way. Signed in
+  on a purchase order, then raise the revision. In Receive, fill the
+  fields and press Receive: under them, A new version is being installed.
+  Try again in a minute; nothing was saved., with no Reload, and
+  everything typed stays. In 中文 新版本正在安装。请一分钟后再试；没有保存任何内容。
+  Close it and open Products from the rail: in its place, with the rail
+  still there, A new version is being installed, This page tries again by
+  itself in a minute., and no button; the Network tab shows Products read
+  again each minute, and `version.json` every 30 seconds. Switch to another
+  tab for a few minutes and back: nothing was asked meanwhile, and
+  Products and `version.json` are read again at once. Orders → New
+  order says the same in the form's place, never Could not load partners
+  and products. In a private window, Sign in says A new version is being
+  installed. Try again in a minute; nothing was saved.; so do Forgot your
+  password there, and a photo added on a product, in its row. Nothing signs
+  out, and no page says Could not reach the server. The bell asks
+  `unread-count` once more, is refused, and then asks nothing; put the
+  revision back and reload, and it asks again each minute. Signed in
+  without Keep me signed in, typing on a page asks `auth/me` nothing more
+  either.
+- **MC-3413** *(ADR-081)* Then the new version is out. Still outdated, add
+  the override of `/version.json`: within 30 seconds Products becomes A
+  new version is ready, A new version came out while this tab was open.
+  Reload to use it; nothing is lost., with Reload, under the amber banner.
+  Open Receive again and press Receive: the amber line tops the dialog,
+  and the refusal reads This tab is running an older version of the app,
+  so nothing was saved. Copy anything you typed, then reload., with Reload
+  beside it; what was typed stays. A dialog already showing the 503's
+  words gains the same, and its Reload, as the file is read, and so does
+  the private window's Sign in, its line now This tab is running an older
+  version of the app…, without pressing anything, and so does the
+  photo's row. Adding another photo says the same refusal in its row.
+- **MC-3414** *(ADR-081)* Opening an outdated tab. Outdated, with no
+  override, reload the page: no app, and on its own A new version is being
+  installed, which tries again by itself in a minute; with the override,
+  A new version is ready, with Reload. Never Could not reach the server.
+- **MC-3415** *(ADR-081)* Sign-out still works. Outdated, switch to
+  another tab and back, which reads the session: the page stays as it
+  was. Sign out from the account menu: the sign-in page, and the session
+  ended (its row gone from another device's Sessions); the Network tab
+  goes on reading `version.json` every 30 seconds there, since the tab is
+  still outdated. The same for Not you? Sign out on an invitation's link
+  opened signed in.
+- **MC-3416** *(ADR-081)* The API not yet deployed. Revision put back, set
+  `API_REVISION` in `client/src/api/revision.gen.ts` to one higher instead,
+  which the dev server picks up: a save in a dialog says A new version is
+  being installed. Try again in a minute; nothing was saved., with no
+  Reload and nothing amber; a page opened says it is being installed and
+  tries again by itself. Put it back: within a minute the page loads by
+  itself.
+- **MC-3417** *(ADR-081)* A record that won't load, offline. Open an order,
+  then go back to Orders, go Offline (DevTools → Network) and open another
+  order: Can't reach the server, the line about the connection, This page
+  tries again by itself when your connection comes back., and Try again.
+  Back online, the order loads by itself, without a load in full (no new
+  document in the Network tab), as a page that won't load does (MC-3407).
+
+A language that won't load is made by hand in DevTools → Network request
+blocking with `*compiled/zh-Hans*`, the Chinese catalogue on the dev
+server (`*assets/zh-Hans-*` in a build), which leaves Help's Chinese
+guides alone. Each try waits a second and tries once more first.
+
+- **MC-3418** *(ADR-081)* Switching. Signed in, in English, block the
+  catalogue and choose 简体中文 in the account menu: the screens stay in
+  English, and at the foot of the screen, in the language chosen,
+  无法加载简体中文。请检查网络连接，然后重试。, with 重试 and 关闭; a minute
+  later it is still there. Save something meanwhile, a partner's name:
+  its confirmation shows above the message, never over it, and goes; the
+  message stays. Reload: still English, and Your account's Language still
+  reads what it did, since nothing was saved. Choose 简体中文 again,
+  unblock, and press 重试 in the message: the app is in 中文, and a reload
+  and Your account keep it. From Français the same, in Chinese. Block
+  `*compiled/fr-CA*` and choose Français: Impossible de charger Français
+  (Canada). Vérifiez votre connexion et réessayez., with Réessayer and
+  Fermer;
+  Fermer puts it away and changes nothing. On the sign-in page the same.
+- **MC-3419** *(ADR-081)* At start. In 中文, signed in, block the
+  catalogue and reload: the app in English rather than a blank page, an
+  amber banner topping the page, in Chinese,
+  无法加载简体中文，应用暂时以英文显示。, with 重试 and no close, and no message
+  at the foot of the screen. A screen reader reads the banner in Chinese.
+  Signed out, the same banner under the language and text size. Press 重试
+  still blocked: 正在重新加载简体中文… for a second or two, 重试 greyed, then
+  the banner as it was, a screen reader saying each. Unblock and 重试: the app in 中文, the banner gone.
+  Blocked and reloaded again, Your
+  account's Language reads 简体中文; choosing English there puts the banner
+  away, and the next reload starts in English.
+- **MC-3420** *(ADR-081)* After a deploy. In English, deploy without
+  switching tabs, block the catalogue and choose 简体中文: the page loads in
+  full by itself (a new document in the Network tab), still in English,
+  since nothing was saved. Choose 简体中文 again within a minute, still
+  blocked: at the foot of the screen
+  无法加载简体中文，因为此标签页打开期间推出了新版本。重新加载即可使用，不会丢失任何内容。,
+  with 重新加载 and 关闭, never
+  the connection's words, and nothing loads by itself; 重新加载 loads the
+  page.
+
+The status tones are looked at in both colour modes, chosen in the account
+menu's Colour mode.
+
+- **MC-3421** *(ADR-081)* The status pages' discs and Home's empty line.
+  An unknown address (`/no-such-page`): the search icon dark blue on a
+  pale blue disc. MC-3409's Something went wrong: the warning sign dark
+  red on a pale red disc. MC-3407's Can't reach the server: the cloud dark
+  grey on a pale grey disc. In dark mode each the other way round, a light
+  icon on a dark tint, and each icon stands clear of its disc. Then, in an
+  organization of your own (registered locally, `REGISTRATION=open`) with
+  Getting started dismissed, Home shows every card with nothing in it:
+  each says so in green, such as No runs in progress., dark green on the
+  light card and light green on the dark one, as easy to read as the
+  words around it.
+
+A reference (a document's number, a SKU, a lot code) is kept whole where
+words sit beside it; one alone, or first in its line, needs nothing.
+
+- **MC-3422** *(ADR-081)* References kept whole. At 390 px, then at 320
+  px with Larger text, in English and in 中文: Home's To receive reads
+  PO-000009 Lakeshore Packaging · PO-DEMO-9, a space between the number
+  and the partner, and wraps only between words, never inside PO-DEMO-9
+  (no PO- at a line's end with DEMO-9 below); To ship the same for
+  SO-DEMO-1. On SO-DEMO-1's order, the line under its number moves their
+  reference's SO-DEMO-1 to the next line whole when it must. Copy
+  SO-DEMO-1 from Home and paste it into the lookup: it finds the order.
+  With VoiceOver, a Home row reads as one line, SO-DEMO-1 among its words,
+  never split off on its own (MC-R38). A refusal the same: edit Harbour
+  Health, give it the code COOP-BSL and Save: Code COOP-BSL is already
+  used by another partner, wrapping between words, never inside COOP-BSL;
+  Cancel, and its code is still HARBOUR. Inventory → a row's Ship out, for
+  more than can be taken while some is held for an order, the same: never
+  inside the SKU or the order's number.
+
+Home's tiles take as few rows as the page's width needs, shared evenly
+across them. The demo Owner has eight tiles; Daniel Okafor, an Admin,
+seven (no Costs waiting).
+
+- **MC-3423** *(ADR-081)* Home's tiles in even rows. As the Owner, at
+  1440 px and at 768 px: two rows of four, never seven and one alone; at
+  390 px, four rows of two. As Daniel, at 1440 px all seven in one row; at
+  1280 px four, then three as wide as the four above them, the end of the
+  second row left empty. Then Larger text (account menu → Text size) at
+  1440 px: the Owner's two rows of four, Daniel's four and three; at 390
+  px a tile no longer fits twice across, and each has the row to itself.
+  At no width does the page scroll sideways (MC-R39).
+
+A real deploy is a push to `main` that passes CI, with Render's settings
+as `docs/runbooks/render.md`, "Deploys", has them.
+
+- **MC-3424** *(ADR-081)* A tab kept open across a real deploy. Before the
+  push, sign in on the live app and leave one tab on Orders and one in a
+  purchase order's Receive with a quantity typed. Actions → Deploy, for
+  that commit, deploys the API, waits until The API names it, and only
+  then deploys the static site; `/api/health`'s `commit` and
+  `/version.json`'s `build` then name the same commit. Back in the tabs,
+  Receive saves and Orders still works. A tab opened before ADR-081 went
+  live stops there: its build has no version check and sends no revision,
+  which the API serves as today. From the next deploy on, coming back to
+  the Orders tab shows New version beside Help (MC-3401), Inventory from
+  the rail loads in full, and Help's foot names the commit `/api/health`
+  names (MC-3405).
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R42** *(a language that won't load, in its own words)* In 中文,
+  with the Chinese catalogue blocked, the banner the app starts with, and
+  the message when switching to it, are in Chinese, never in English alone
+  (MC-3418, MC-3419). Found by ADR-081's walkthrough, the novice
+  bookkeeper starting the app in 中文.
+
+- **MC-R41** *(a new version, read aloud)* With VoiceOver and a dialog
+  open, a new version coming out is said in the dialog, never lost behind
+  it; once saves would be refused, what is said is that this tab can no
+  longer save, never only that it loads at the next page (MC-3401,
+  MC-3404). Found by the walkthroughs of ADR-081, the warehouse worker
+  receiving on a phone and the novice bookkeeper drafting an invoice.
+
+- **MC-R40** *(a page waiting in the background)* A page saying A new
+  version is being installed, in a tab left behind another, asks nothing
+  until it is looked at again: no read each minute in the Network tab, and
+  a person's page never loads in full by itself while hidden (MC-3412).
+
+- **MC-R39** *(Home's tiles)* On a computer, the Owner's eight tiles on
+  Home read as two rows of four, never seven and one alone (MC-3423).
+
+- **MC-R38** *(Home's rows, read aloud)* With VoiceOver, a row on Home
+  reads its number and its partner as two words, PO-000009 Lakeshore
+  Packaging, never run together as PO-000009Lakeshore (MC-3422).
+
+- **MC-R37** *(the status tones, #172's review)* In dark mode and in
+  light, Something went wrong's warning sign stands out from its disc,
+  never a faint red on red, and Home's line for a card with nothing in it
+  is green and easy to read on the dark card, never plain white (MC-3421).
+
+- **MC-R36** *(a language that won't load)* In 中文, block
+  `*compiled/zh-Hans*` (DevTools → Network request blocking) and reload:
+  the app in English with a banner saying why, never a blank page. In
+  English, choosing 简体中文 while it is blocked says so at the foot of the
+  screen, and a reload is still in English.
+- **MC-R35** *(Home's failure line)* Offline (DevTools → Network), open
+  Home: it says Could not reach the server., as every other page does,
+  never the browser's Failed to fetch; in 中文 无法连接服务器。
 - **MC-R34** *(the menu on a phone)* At 390 px with VoiceOver, Open
   navigation: the menu is read as a dialog named Navigation (导航 in
   中文), and Close navigation closes it.
@@ -2583,3 +2892,41 @@ first.
   move its holders, say an Owner can: MC-3317 changed.
 - 2026-10-21: a made role's chip told from a built-in one by its shape,
   not by colour alone (WCAG 1.4.1): MC-3312 and MC-3327 changed.
+- 2026-10-22: ADR-081, a new version noticed: section 34, MC-3401 to
+  MC-3406.
+- 2026-10-22: ADR-081, a page that won't load says why: MC-3407 to
+  MC-3410, and MC-R35 for Home's failure line.
+- 2026-10-22: ADR-081, the reload at the next page once per new version:
+  MC-3411 added, MC-3401 changed.
+- 2026-10-22: ADR-081, the API revision sent, and an outdated tab's
+  refusals on screen: MC-3412 to MC-3417.
+- 2026-10-22: ADR-081, the bell rests in an outdated tab: MC-3412
+  extended.
+- 2026-10-22: ADR-081, a language that won't load says so: MC-3418 to
+  MC-3420, and MC-R36.
+- 2026-10-22: ADR-081, the status tones' contrast: MC-3421, and MC-R37
+  for #172's review.
+- 2026-10-22: ADR-081, references kept whole: MC-3422, and MC-R38 for
+  Home's rows read aloud.
+- 2026-10-22: ADR-081, references kept whole in refusals: MC-3422
+  extended.
+- 2026-10-22: ADR-081, Home's tiles in even rows: MC-3423, and MC-R39.
+- 2026-10-22: ADR-081, the client deployed after the API: MC-3424.
+- 2026-10-23: ADR-081's reviews, reads only while the tab is in front
+  (S8, S9): MC-3412 extended, and MC-R40.
+- 2026-10-23: ADR-081's reviews, one place for an outdated refusal (S1,
+  S2, S5): MC-3412 and MC-3413 extended.
+- 2026-10-23: ADR-081's reviews, the image upload refused as api() refuses
+  (S3): MC-3412 and MC-3413 extended.
+- 2026-10-23: ADR-081's reviews, refusals in words on Forgot your password
+  and in Move stock (R3, R5): MC-3412 and MC-3422 extended.
+- 2026-10-23: ADR-081's reviews, an outdated tab through sign-out and
+  idle pings (R4, R8): MC-3412 and MC-3415 extended.
+- 2026-10-23: ADR-081's walkthroughs, the new version read aloud in a
+  dialog and urgent when urgent (W1, W2): MC-3401 and MC-3404 extended,
+  and MC-R41.
+- 2026-10-23: ADR-081's walkthroughs and review, a language that won't
+  load says so in its own words (W4, W5, U1, U2): MC-3418 to MC-3420
+  rewritten, and MC-R42.
+- 2026-10-23: ADR-081's review, secondary text drawn grey where this
+  branch added it (R6): MC-3407 extended; MC-3405 now holds.

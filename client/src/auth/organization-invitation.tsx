@@ -55,7 +55,7 @@ export function OrganizationInvitation({
   onKept: () => Promise<void>;
 }) {
   const intl = useIntl();
-  const { session, refresh } = useAuth();
+  const { session, signedOut } = useAuth();
   const organization = invitation.organizationName;
   const title = setUpLabel(intl, organization);
   const above = <NewOrganizationMark name={organization} />;
@@ -74,7 +74,7 @@ export function OrganizationInvitation({
         <OtherAddress
           email={invitation.email}
           signedInAs={session.user.email}
-          onSignedOut={refresh}
+          onSignedOut={signedOut}
         />
       );
     }
@@ -122,7 +122,7 @@ export function OrganizationInvitation({
         accept={accept}
         onAccepted={onStarted}
         onRefused={onRefused}
-        onSignedOut={refresh}
+        onSignedOut={signedOut}
       />
     );
   }

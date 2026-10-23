@@ -1,8 +1,11 @@
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
+
+import { API_REVISION } from './src/api/revision.gen.ts';
 
 /**
  * Recompiles the catalogues while `npm run dev` runs (ADR-054).
@@ -59,7 +62,19 @@ function recompileCatalogues(): Plugin {
                 timestamp: true,
               });
             } else {
-              logger.info('Catalogues recompiled.', { timestamp: true });
+              // With the words a language's failure is said in, which
+              // `npm run i18n:compile` writes after it (ADR-081).
+              try {
+                execFileSync(process.execPath, [
+                  path.join(root, 'scripts/write-failure-words.mjs'),
+                ]);
+                logger.info('Catalogues recompiled.', { timestamp: true });
+              } catch {
+                logger.error(
+                  'Catalogues recompiled, but not the words a failed language is said in.',
+                  { timestamp: true },
+                );
+              }
             }
             if (again) {
               again = false;
@@ -108,8 +123,75 @@ function appName(mode: string): Plugin {
   };
 }
 
+/**
+ * The build's name, compiled into the app and written beside it as
+ * version.json (ADR-081), so a tab left open across a deploy can tell that
+ * the files on the server are no longer its own.
+ *
+ * The build is the commit Render builds (RENDER_GIT_COMMIT), else git's,
+ * else the time, for a build made outside a checkout. version.json adds the
+ * release, as package.json names it, and the API revision the build was
+ * made for: a newer build with a higher revision means an API that refuses
+ * this tab's saves. The hashed files come and go with each build; this one
+ * keeps its name, so a tab can ask for it.
+ *
+ * The dev server answers /version.json itself, naming the build `dev`,
+ * which the check never counts as newer.
+ */
+function versionFile(command: 'build' | 'serve'): Plugin {
+  const builtAt = new Date().toISOString();
+  const build =
+    command === 'serve'
+      ? 'dev'
+      : process.env.RENDER_GIT_COMMIT || gitCommit() || builtAt;
+  const { version } = JSON.parse(
+    readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
+  ) as { version: string };
+  const file = JSON.stringify({
+    build,
+    builtAt,
+    version,
+    apiRevision: API_REVISION,
+  });
+
+  return {
+    name: 'version-file',
+    config: () => ({
+      define: { __BUILD__: JSON.stringify({ build, builtAt, version }) },
+    }),
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        if (request.url?.split('?')[0] !== '/version.json') return next();
+        response.setHeader('Content-Type', 'application/json');
+        response.setHeader('Cache-Control', 'no-store');
+        response.end(file);
+      });
+    },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'version.json', source: file });
+    },
+  };
+}
+
+/** The commit checked out, or nothing outside a git checkout. */
+function gitCommit(): string | undefined {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return undefined;
+  }
+}
+
 export default defineConfig(({ command, mode }) => ({
-  plugins: [react(), recompileCatalogues(), appName(mode)],
+  plugins: [
+    react(),
+    recompileCatalogues(),
+    appName(mode),
+    versionFile(command),
+  ],
   resolve: {
     /**
      * In a production build, the ICU parser is swapped for its stub (ADR-054).

@@ -84,6 +84,14 @@ describe('tokens (ADR-055)', () => {
     }
   });
 
+  // Off its chip too, such as Home's line for a card with nothing to do
+  // (ADR-081).
+  it.each(SCHEMES)('keeps every %s tone’s text readable on panels', (_, s) => {
+    for (const tone of Object.values(s.tones)) {
+      expect(contrast(tone.fg, s.surface)).toBeGreaterThanOrEqual(AA);
+    }
+  });
+
   it.each(SCHEMES)('keeps %s coloured text readable on panels', (_, s) => {
     for (const colour of Object.values(s.intents)) {
       expect(contrast(colour, s.surface)).toBeGreaterThanOrEqual(AA);

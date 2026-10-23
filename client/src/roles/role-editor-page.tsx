@@ -40,6 +40,7 @@ import { FormError } from '../components/form-error';
 import { PageHeader } from '../components/page-header';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
 import { LoadFailure } from '../errors/load-failure';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { GoHome } from '../errors/status-actions';
 import { StatusPage } from '../errors/status-page';
 import { api, hasCode } from '../lib/api';
@@ -104,6 +105,18 @@ export function NewRolePage() {
   const roles = useResource<Role[]>('/roles');
 
   if (!can('roles.create')) return <OwnersOnly />;
+  const refused = catalogue.refused ?? roles.refused;
+  if (refused) {
+    return (
+      <RevisionRefusalPage
+        failure={refused}
+        onRetry={() => {
+          void catalogue.reload();
+          void roles.reload();
+        }}
+      />
+    );
+  }
   const failed = catalogue.error ?? roles.error;
   if (failed) return <Alert severity="error">{failed}</Alert>;
   if (!catalogue.data || !roles.data) return <Waiting />;

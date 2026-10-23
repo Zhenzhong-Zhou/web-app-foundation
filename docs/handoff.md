@@ -1,30 +1,66 @@
-# web-app-foundation — handoff, 21 October 2026
+# web-app-foundation — handoff, 22 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 21 October 2026: read this first
+## Now, 22 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **Next: merge ADR-080, job roles** (#176, `adr-080-job-roles`), planned
-  in this chat, built by Claude Code from the brief in `tmp/adr-080/` and
-  reviewed; Bob's walk, then the merge (*Still to do, by hand*). Roles an organization makes, from a template or a copy,
-  several to a member and added together; the built-in three fixed; a role
-  given only by someone whose roles hold all it grants; prices on orders a
-  permission of their own; Settings → Roles; migrations **0073** and
-  **0074**. It fixes #147 and #151, with parts of #148, #155 and #169
-  left; what building settled is in ADR-080's as-built amendment.
-  Then, before real users: old tabs after a deploy (#175), in a PR that
-  also adds a `/production-readiness` skill and runs it first; then that
-  review of the whole app, once (deploys, backups and a restore tried,
-  monitoring, security, email). After them, in this order unless a
-  trigger brings one forward, each with its entry in Open decisions: one
-  person in two organizations, then a practice organization (ADR-077,
-  *Deferred*); a public demo; plans and billing; the operator's console
-  and support access. Not code, and not to slip behind it: Render's free
-  database expires on 12 November 2026 (*Still to do, by hand*).
+- **Next: merge ADR-081, old tabs after a deploy** (#199,
+  `adr-081-old-tabs`), planned in this chat, built by Claude Code from the
+  brief in `tmp/adr-081/` and reviewed; it fixes #175 and #173. No
+  migration. A version file, and "New version" in the top bar (a dot on
+  the account button on a phone, a banner when signed out, amber on the
+  page and atop every dialog once the tab's saves would be refused), with
+  one reload at the next page; a failed load told apart (offline, a newer
+  build, a crash); an API revision the client sends, an outdated one
+  refused, and a breaking change caught in CI (oasdiff); the API deployed
+  before the client, by a workflow, once CI passes; migrations checked
+  against the release still running (squawk); a language that fails to
+  load says so in its own words; the release and build at Help's foot and
+  on `/health`; the `/production-readiness` skill; `seed:volume` caught up
+  with ADR-080 and the access query timed. Riding along: the status tones'
+  contrast, references kept whole, Home's tiles in even rows,
+  `eslint-plugin-compat`, a manifest per scale. What building settled is in
+  ADR-081's as-built amendment. **Before the merge, by hand,** and in this
+  order: replace the free database (it expires on 28 October 2026); the
+  two deploy hooks as secrets, `API_HEALTH_URL`, and both services'
+  Auto-Deploy Off; the three cache-header rules. **After it:** watch the
+  Deploy run, record the headers, MC-3424. The list, with each step's
+  check, is in #199's description and `docs/runbooks/render.md`.
+- **The order after it** (Bob, 22 October 2026): **#196**, MUI 9's
+  Typography colours, as a PR of its own, since it changes how every
+  screen looks; then **ADR-082, low stock** (its questions in Open
+  decisions); then the review of the whole app, once
+  (`/production-readiness` with its device pass: deploys, backups and a
+  restore tried, monitoring, security, performance, email, support,
+  browsers and China, tablets and foldables, the iPhone Duo closed and
+  open, a phone held sideways); then the fix-ups, each a PR of five to ten
+  related issues: safety and scale (#181 first, then #142, #186, #187,
+  #182), orders and shipping (#156, #158, #125, #161, #164, #159, #128,
+  and decisions #157 and #160), organization, roles and audit (#169, #168,
+  #179, #180, #174, #166, #133, #167), accessibility (#155, #170, #171,
+  #162), words and translations (#148, #149, #129, #150, with Bob's
+  mother's corrections). After them, in this order unless a trigger brings
+  one forward, each with its entry in Open decisions: one person in two
+  organizations, then a practice organization (ADR-077, *Deferred*); a
+  public demo; plans and billing; the operator's console and support
+  access.
+- **Meanwhile, in Claude Code's cloud sessions** (Bob's $250 credit, which
+  ends in early November): small fixes that need no brief, one branch and
+  PR each, merged after ADR-081: #189, #190, #193, #194, #195, #184. Not
+  #186 or #187 (they need the large seed) or #183 (better debugged on the
+  Mac). The cloud's Node is 22 and its Postgres 16, so its environment
+  installs Node 26, and the session runs `docker compose up -d`.
+- **ADR-080, job roles** (`adr-080-job-roles`): merged in #176. Roles an
+  organization makes, from a template or a copy, several to a member and
+  added together; the built-in three fixed; a role given only by someone
+  whose roles hold all it grants; prices on orders a permission of their
+  own; Settings → Roles; migrations **0073** and **0074**. It fixed #147
+  and #151, with parts of #148, #155 and #169 left; what building settled
+  is in ADR-080's as-built amendment, and its reviews filed #177 to #184.
 - **Onboarding, a chain of three** (Bob's priority, 19 October 2026), one
   PR each, ADR first: done with ADR-079's merge (#152).
     1. **ADR-077, invitations** (`adr-077-invitations`): merged (#143).
@@ -229,7 +265,7 @@ with this one, this one is current.
   ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
   "Error codes"). Since then, through #124: ADR-067 to ADR-070 below,
   and `deletion-started` (#117).
-- **Migrations:** through **0069** on `main`, 70 files in
+- **Migrations:** through **0074** on `main`, 75 files in
   `server/src/database/migrations/`. 0055 and 0056 are ADR-069's (#114);
   0057 to 0061 are ADR-070's (#116): the deletion day, the reminder, and
   whose account goes with it (0059 put it on the organization, 0060 moved
@@ -245,9 +281,10 @@ with this one, this one is current.
   `adr-078-registration` **0069** (organization invitations, #146);
   `adr-079-first-sign-in` adds **0070** (the welcome's dismissal),
   **0071** (`users.update` dropped) and **0072** (the Admin's stored line
-  says invite), in #152. Render holds one row per file in
-  `drizzle.__drizzle_migrations` once `main` is deployed there: 70, then
-  73 with ADR-079. After any new migration: `npm run migrate:all`, and
+  says invite), in #152; `adr-080-job-roles` **0073** (membership and
+  invitation roles) and **0074** (`roles.updated_by`), in #176. Render
+  holds one row per file in `drizzle.__drizzle_migrations` once `main` is
+  deployed there: 75 with ADR-080. After any new migration: `npm run migrate:all`, and
   check its journal time (*Working agreements*, Process).
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
@@ -415,14 +452,29 @@ with this one, this one is current.
 
 ### Still to do, by hand
 
-- **ADR-080, before merging #176:** walk section 33 of
-  `docs/manual-checks.md` (MC-3301 to MC-3327) and the *Regressions* lines
-  the PR lists; show Roles and the editor in 中文 on a phone to someone who
-  reads only Chinese. After it merges: delete `tmp/adr-080` and the
-  branch, then `npm run seed` and `npm run seed:demo`.
-- **On the next deploy:** whether Render keeps the old build's files (the
-  Network tab test in #175), recorded in `docs/runbooks/render.md`.
-- **Render's free database expires on 12 November 2026.** Move to a paid
+- **`/favicon.svg`:** `index.html` asks for it and nothing serves it (a 404
+  locally, `index.html` on Render). The line stays; Bob adds the file.
+- **The Chinese review:** Bob's mother has the export made at `b933b912`
+  (22 October 2026). Since then two lines were added,
+  `language.failedNewVersion` and `language.loadingAgain`, and two removed;
+  see what moved with `git diff b933b912 -- '*zh-Hans*'`. Send her a fresh
+  export after each merge, so each review stays small; her corrections
+  go into the words-and-translations fix-up. The export covers the two
+  catalogues only: not Help's guides (#150; until then she reads them in
+  Help, in 中文) and not MUI's or the browser's own words, which aren't
+  ours to correct. Her first note: 头像 for the profile picture
+  everywhere, since Your account says 照片 while Home says 头像.
+- **After #176, if not yet done:** delete `tmp/adr-080` and the branch,
+  then `npm run seed` and `npm run seed:demo`; show Roles and the editor
+  in 中文 on a phone to someone who reads only Chinese.
+- **Render's free database expires on 28 October 2026,** as its page said
+  on 22 October (created about 28 September; deleted about 11 November).
+  The 12 November this line gave before was wrong, and the "Done on 13
+  October" below does not match the database Render shows. Replace
+  it before ADR-081 merges, and in any case by 27 October: its deploy
+  runs migrations, and its checks after the deploy need the API up. Each
+  free database lasts 30 days, so until a paid one this comes back
+  monthly. Move to a paid
   database, or create a free one again, empty, by the steps in
   `docs/runbooks/render.md`. Before any real customer: a paid database and
   web service, backups to the Canadian bucket, and every development
@@ -487,8 +539,14 @@ with this one, this one is current.
   #169 (with no organization: Members, the bell, Account's words), #170
   (touch targets under 44 px) and #171 (the credit note's info box, the
   shipment's heading); and comments on #129, #133, #148 and #149, two of
-  whose items the branch fixes. #175 (old tabs after a deploy) is next
-  after ADR-080. From ADR-080's reviews: #177 (order prices in one
+  whose items the branch fixes. #175 (old tabs after a deploy) is
+  ADR-081, #199. From ADR-081's build: #186 (the lookup reads every
+  organization's partners and products), #187 (the plan check at large),
+  #189 (the bell's "Nothing yet." when its list failed), #190 (Resend's
+  silent failure), #193 (request fields on every log line), #194
+  (`npm run api`'s first run), #195 (a list's alert above its empty
+  state), #196 (Typography's dotted colours, about 220 places), #197 (the
+  browser floor's gaps) and #198 (unsaved work on most pages). From ADR-080's reviews: #177 (order prices in one
   object), #178 (one link that leads only where the reader may go, and
   lookups that check their own permission), #179 (Move everyone's gains
   and losses; a role deleted while being given), #180
@@ -532,11 +590,9 @@ with this one, this one is current.
   a major version; the client reports none. TypeScript 7.1's beta is out,
   and the Nest CLI waits on 7.1's API: check the blockers again once it is
   stable.
-- **From #172's reviews, not its PR's.** To file as issues: MUI's derived
-  `error.light`, `error.dark` and `success.dark` below contrast (the
-  status page's icon discs at about 2.2–2.5:1, `success.dark` on Home's
-  dark panel at 4.30:1); and the Returns list heading each return with the
-  reader's day, not the organization's (ADR-072). Refactors, each when its
+- **From #172's reviews, not its PR's.** The contrast is fixed in ADR-081
+  (#173); the Returns day is #174, and the inventory's two are #189 and
+  #190. Refactors, each when its
   screen is next touched: a shared select that draws its empty choice
   ("Everywhere", "All actions", "Top level") in words rather than as a
   blank box, about nine of them; and a shared heading row whose actions
@@ -597,6 +653,9 @@ with this one, this one is current.
 
 ### Deferred, each waiting for its trigger (in the ADRs)
 
+- Deploys: keeping the last build's files ourselves; failed loads and
+  refusals sent to an error tracker; Playwright against the built files;
+  feature flags and staged rollouts (ADR-081, Open decisions).
 - Roles: attributes, a scope on a member's role or a condition on using a
   permission; one record shared with a customer or a supplier (a portal);
   non-Owners editing roles; a bell when your roles change; a made role's
@@ -1291,16 +1350,11 @@ in ADR-050's amendment.
 - **Pro forma invoices** — deferred in ADR-046; remind Bob. Bring forward if
   the business needs them for customs, prepayment or sample values.
 - Check ADR-047's audit list names `return_authorization.replacement_raised`.
-- ADR-051 tooling, small follow-ups:
-  - **perf/ is never compiled in CI.** ESLint does not report type errors
-      and the build excludes the folder, so a type error there shows only
-      when someone runs it (it happened twice on the first run). Fix: a
-      `perf/tsconfig.json` and `npx tsc --noEmit -p perf/tsconfig.json` in
-      ci.yml's server job.
-  - **One manifest per scale.** seed:volume writes `perf/volume.json`, so
-      seeding the other scale overwrites it and it has to be copied aside by
-      hand (once it was lost and rebuilt from the database). Fix: write
-      `volume-<scale>.json`, and `npm run perf -- --scale small` reads it.
+- ADR-051 tooling: both follow-ups are done in ADR-081 (`perf/` was
+  type-checked by `npm run typecheck` since 7 October; a manifest per
+  scale). Watch: `seed:volume`'s Owners are registered but never
+  confirmed, which matters only if perf ever times an invitation
+  (ADR-077 refuses an unconfirmed inviter).
 - `docs/manual-checks.md` coverage pass: map every ADR and every client page
   to at least one check. The list covers the main flows, round 2 and
   licences at release (MC-506, MC-508 to MC-511), not yet tax codes and
@@ -1368,11 +1422,13 @@ in ADR-050's amendment.
   fixes go on the branch until its checks pass, never in a follow-up PR.
   Small chores (a CI line, a lint rule, a docs tidy) ride along in the next
   feature PR rather than getting one of their own.
-- **The three reviews, before the PR is opened** (21 October 2026): every
-  feature branch runs, for any PR that changes what a person sees,
-  `/usability-walkthrough` as one of its personas
+- **The reviews, before the PR is opened** (21 October 2026, and from
+  ADR-081 four): every feature branch runs, for any PR that changes what
+  a person sees, `/usability-walkthrough` as one of its personas
   (`.claude/skills/usability-walkthrough/personas.md`), then `/simplify`,
-  then `/code-review` last, so the review sees every fix before it. Each
+  then `/code-review`, so the review sees every fix before it, then
+  `/production-readiness` on the sections the change touches
+  (conventions.md, "Production readiness"). Each
   fix they lead to is its own commit. The PR description names the journey
   walked and the persona who walked it. `/usability-walkthrough` was
   missed on several recent PRs, so this branch's step 7 (ADR-079) walks
@@ -1382,7 +1438,9 @@ in ADR-050's amendment.
 
 - **Dependencies, on every branch** (21 October 2026): `npm outdated` in
   `server/` and `client/`, taking the in-range updates as a commit of their
-  own at the branch's start, and again before the reviews.
+  own at the branch's start, and again before the reviews. From ADR-081,
+  only versions at least 7 days old (`npm update --before=…`), a security
+  fix excepted (conventions.md, "Dependencies").
 - **Planned in this chat, built in Claude Code** (from ADR-079, 20
   October 2026). The claude.ai chat does the check before an ADR (its
   Deferred lines, the watch lists, Open decisions and the open issues),
@@ -1431,6 +1489,14 @@ in ADR-050's amendment.
   Deferred lines, this handoff's watch lists and the open issues for
   anything in the same area, and say which triggers have fired. That is
   when a deferred item is cheapest to pick up.
+- **The seeds grow with every feature** (from ADR-081): `seed:demo`, so
+  its screens, manual checks and walkthroughs need no setup; `seed:volume`,
+  realistic rows for any new table or hot query, timed against ADR-051's
+  budgets. Every build brief has a step for both, or says why a feature
+  adds nothing (CLAUDE.md; conventions.md, "Seeds").
+- **A change that touches many screens** starts its build with an
+  inventory step: Claude Code lists every cross-area read and link (or,
+  for ADR-081, every chunk, request and failure path) before building.
 - Migrations:
     1. write the schema;
     2. run `npm run migrate:new -- --name <name>`;

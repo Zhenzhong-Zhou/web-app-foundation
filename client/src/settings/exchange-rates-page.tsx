@@ -20,11 +20,13 @@ import type { ExchangeRate, OrganizationProfile } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
-import { api, messageFor } from '../lib/api';
+import { api, isRevisionRefusal } from '../lib/api';
 import { formatDay, formatQuantity } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useFailureWords } from '../lib/use-failure-words';
 import { ExchangeRateDialog } from './exchange-rate-dialog';
 
 /**
@@ -64,7 +66,10 @@ export function ExchangeRatesPage() {
   const intl = useIntl();
   const can = useCan();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // A read's failure as it came, worded as the page renders (ADR-081), or
+  // the page's own words.
+  const [error, setError] = useState<unknown>(null);
+  const errorWords = useFailureWords(error);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<ExchangeRate | null>(null);
 
@@ -77,7 +82,7 @@ export function ExchangeRatesPage() {
       setLoaded(await fetchAll());
       setError(null);
     } catch (caught) {
-      setError(messageFor(caught));
+      setError(caught);
     }
   }, []);
 
@@ -89,7 +94,8 @@ export function ExchangeRatesPage() {
         if (!ignore) setLoaded(result);
       })
       .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
+        if (ignore) return;
+        setError(caught);
       });
 
     return () => {
@@ -98,6 +104,10 @@ export function ExchangeRatesPage() {
   }, []);
 
   const baseCurrency = loaded?.baseCurrency ?? null;
+
+  if (!loaded && isRevisionRefusal(error)) {
+    return <RevisionRefusalPage failure={error} onRetry={() => void load()} />;
+  }
 
   return (
     <Stack spacing={3}>
@@ -132,7 +142,7 @@ export function ExchangeRatesPage() {
         }
       />
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {errorWords && <Alert severity="error">{errorWords}</Alert>}
 
       {loaded && !baseCurrency && (
         <Alert severity="info">

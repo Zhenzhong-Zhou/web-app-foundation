@@ -333,6 +333,8 @@
   "boms.statusBomVerbDuplicate": "{status, select, draft {草稿} active {已启用} archived {已归档} other {{status}}}状态的配方不能{verb, select, edited {编辑} other {{verb}}}——请改为复制为新草稿",
   "boms.suchBom": "未找到该配方",
   "boms.suchLineBom": "此配方中没有该行",
+  "common.apiUpdating": "新版本正在安装。请一分钟后再试；没有保存任何内容。",
+  "common.clientOutdated": "此标签页运行的是旧版本的应用，因此没有保存任何内容。请先复制您输入的内容，再重新加载。",
   "common.internalError": "服务器内部错误",
   "common.missingCsrfHeaderHeader": "修改数据的请求缺少 {CSRF_HEADER} 请求头",
   "costs.currencyBaseCurrencyRate": "{currency} 是本位币。汇率用于将其他币种换算为本位币。",

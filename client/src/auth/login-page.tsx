@@ -14,6 +14,7 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { PasswordField } from '../components/password-field';
 import { api, ApiError } from '../lib/api';
 import { SIGNED_OUT_REASON } from '../lib/session-keys';
+import { useFailureWords } from '../lib/use-failure-words';
 import { EMAIL_MAX_LENGTH, PASSWORD_MAX_LENGTH } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
 import { authMessageFor } from './auth-message';
@@ -30,7 +31,9 @@ export function LoginPage() {
   const [registration] = useRegistration();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  // A refusal as it came, worded as the page renders (ADR-081).
+  const [error, setError] = useState<unknown>(null);
+  const errorWords = useFailureWords(error, authMessageFor);
   // A 401 here is only ever the one refusal, wrong email or password
   // (ADR-011), so it marks both fields: which of the two is wrong is
   // exactly what it must not say (#120).
@@ -69,7 +72,7 @@ export function LoginPage() {
       navigate(from, { replace: true });
       // No setSubmitting(false): this component unmounts on navigate.
     } catch (caught) {
-      setError(authMessageFor(caught));
+      setError(caught);
       setRefused(caught instanceof ApiError && caught.status === 401);
       setSubmitting(false);
     }
@@ -85,9 +88,9 @@ export function LoginPage() {
     >
       {/* Alert renders role="alert", so a screen reader announces the failure
           without the user tabbing back to find it. */}
-      {error && (
+      {errorWords && (
         <Alert id="sign-in-error" severity="error">
-          {error}
+          {errorWords}
         </Alert>
       )}
       {idleMinutes !== null && !error && (

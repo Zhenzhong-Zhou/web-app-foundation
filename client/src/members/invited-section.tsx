@@ -24,10 +24,10 @@ import type { Invitation, Role } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { StatusChip } from '../components/status-chip';
 import { api } from '../lib/api';
+import { HIDDEN } from '../lib/hidden';
 import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { useSubmit } from '../lib/use-submit';
 import { STATUS_TONES } from '../theme/status';
-import { HIDDEN } from './hidden';
 import { invitedByLabel, linkStatusLabel } from './invitation-words';
 import { mayGiveAll, roleList } from './role-names';
 

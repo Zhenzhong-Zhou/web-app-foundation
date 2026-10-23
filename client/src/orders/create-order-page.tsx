@@ -23,7 +23,8 @@ import { useCan } from '../auth/permissions';
 import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
-import { api } from '../lib/api';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { api, isRevisionRefusal } from '../lib/api';
 import type { OrderDirection } from '../lib/api-names';
 import {
   BLANK_LINE,
@@ -74,7 +75,10 @@ export function CreateOrderPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [variants, setVariants] = useState<VariantOption[]>([]);
   const intl = useIntl();
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // Why the partners and products did not load, and a count that reads
+  // them again.
+  const [loadFailure, setLoadFailure] = useState<unknown>(null);
+  const [reads, setReads] = useState(0);
   // Set when a quantity or price is typed with a thousands separator.
   const [numberError, setNumberError] = useState<string | null>(null);
 
@@ -146,23 +150,16 @@ export function CreateOrderPage() {
         if (ignore) return;
         setPartners(partnerRows);
         setVariants(variantRows);
+        setLoadFailure(null);
       })
-      .catch(() => {
-        if (!ignore) {
-          setLoadError(
-            intl.formatMessage({
-              id: 'orders.create.loadFailed',
-              defaultMessage: 'Could not load partners and products.',
-            }),
-          );
-        }
+      .catch((caught: unknown) => {
+        if (!ignore) setLoadFailure(caught);
       });
 
     return () => {
       ignore = true;
     };
-    // intl only words the error; a new language refetches, which is harmless.
-  }, [intl]);
+  }, [reads]);
 
   // Apart from the partners and products: without them the field is not
   // offered, and the server still delivers to the one site there is. Asked
@@ -284,6 +281,17 @@ export function CreateOrderPage() {
     });
   }
 
+  // Refused for this tab's API revision, as every page is (ADR-081): why,
+  // in the form's place, which nothing could have been typed into yet.
+  if (isRevisionRefusal(loadFailure)) {
+    return (
+      <RevisionRefusalPage
+        failure={loadFailure}
+        onRetry={() => setReads((count) => count + 1)}
+      />
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit}>
       <UnsavedChangesDialog
@@ -302,7 +310,14 @@ export function CreateOrderPage() {
           })}
         </Typography>
 
-        {loadError && <Alert severity="error">{loadError}</Alert>}
+        {loadFailure !== null && (
+          <Alert severity="error">
+            {intl.formatMessage({
+              id: 'orders.create.loadFailed',
+              defaultMessage: 'Could not load partners and products.',
+            })}
+          </Alert>
+        )}
         {(numberError ?? error) && (
           <FormError message={(numberError ?? error)!} />
         )}

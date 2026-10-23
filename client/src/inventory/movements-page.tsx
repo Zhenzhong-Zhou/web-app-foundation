@@ -25,6 +25,7 @@ import { DateRangeFilter } from '../components/date-range-filter';
 import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api } from '../lib/api';
 import { type DayRange, withInstants } from '../lib/date-range';
 import {
@@ -94,8 +95,16 @@ export function MovementsPage() {
    * is paged, so an in-memory filter would only ever narrow the page in hand
    * and quietly hide everything past it.
    */
-  const { entries, error, loading, hasMore, loadingMore, loadMore } =
-    useKeysetList<Movement>(path);
+  const {
+    entries,
+    error,
+    refused,
+    loading,
+    hasMore,
+    loadingMore,
+    loadMore,
+    reload,
+  } = useKeysetList<Movement>(path);
   const showSkeleton = useDelayedFlag(loading);
 
   useEffect(() => {
@@ -121,6 +130,10 @@ export function MovementsPage() {
 
   // Stock sits only at leaves (ADR-024), so nothing else can appear in a row.
   const leaves = leavesOf(locations);
+
+  if (refused) {
+    return <RevisionRefusalPage failure={refused} onRetry={reload} />;
+  }
 
   return (
     <Stack spacing={3}>

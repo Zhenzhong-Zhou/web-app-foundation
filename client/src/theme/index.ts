@@ -7,6 +7,7 @@ import {
 
 import type { Locale } from '../lib/locales';
 import { returnFocus } from '../lib/open-dialog';
+import { VersionPaper } from '../version/version-paper';
 import { type Brand, DEFAULT_BRAND } from './brand-store';
 import { rem } from './rem';
 import {
@@ -260,9 +261,17 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
      * Focus goes back to the button that opened a dialog or a drawer once it
      * has closed (lib/open-dialog.ts, #155). A dialog passing its own
      * transition onExited would replace this one; none does.
+     *
+     * Every dialog's paper is drawn as VersionPaper, which puts the amber
+     * line at its top once this tab's saves would be refused (ADR-081).
      */
     MuiDialog: {
-      defaultProps: { slotProps: { transition: returnFocus } },
+      defaultProps: {
+        slotProps: {
+          transition: returnFocus,
+          paper: { component: VersionPaper },
+        },
+      },
       styleOverrides: { paper: { borderRadius: RADIUS.dialog } },
     },
     MuiDrawer: {

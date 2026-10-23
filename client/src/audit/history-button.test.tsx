@@ -61,7 +61,10 @@ describe('HistoryButton', () => {
     expect(
       await screen.findByText('Product variant updated'),
     ).toBeInTheDocument();
-    expect(screen.getByText('SKU: WIDGET-1 → RENAMED-1')).toBeInTheDocument();
+    // Each code in an element of its own, kept whole (ADR-081).
+    expect(screen.getByText(/^SKU:/)).toHaveTextContent(
+      'SKU: WIDGET-1 → RENAMED-1',
+    );
 
     // Scoped to this record, or the drawer is the whole organization's log.
     expect(requested[0].searchParams.get('resourceId')).toBe('product-1');

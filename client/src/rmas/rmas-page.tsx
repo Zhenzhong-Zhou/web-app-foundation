@@ -22,6 +22,7 @@ import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { fromAddress } from '../lib/address-filter';
 import type { ReturnAuthorizationStatus } from '../lib/api-names';
 import { type DayRange, withInstants } from '../lib/date-range';
@@ -77,14 +78,20 @@ export function RmasPage() {
   const {
     entries: rows,
     error,
+    refused,
     loading,
     hasMore,
     loadingMore,
     loadMore,
+    reload,
   } = useKeysetList<ReturnAuthorizationSummary>(
     withInstants(withSearch(query(filter), search), range),
   );
   const showSkeleton = useDelayedFlag(loading);
+
+  if (refused) {
+    return <RevisionRefusalPage failure={refused} onRetry={reload} />;
+  }
 
   return (
     <Stack spacing={3}>

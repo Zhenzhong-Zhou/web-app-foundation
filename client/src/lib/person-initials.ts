@@ -23,11 +23,12 @@ const LETTER = /[\p{L}\p{N}]/u;
 /**
  * Only where the browser has one: Firefox does from 125, below the floor
  * the build targets, and building it there would stop the app loading.
+ * Made in an `if`, the only guard ESLint's compat rule recognises.
  */
-const segmenter =
-  typeof Intl.Segmenter === 'function'
-    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
-    : undefined;
+let segmenter: Intl.Segmenter | undefined;
+if (typeof Intl.Segmenter === 'function') {
+  segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+}
 /** Without a segmenter, a letter with the combining marks typed after it. */
 const LETTER_WITH_MARKS = /\P{M}\p{M}*/gu;
 

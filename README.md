@@ -221,6 +221,11 @@ every existing Owner without a migration.
 The static site builds from root directory `client`, with `npm ci && npm run
 build` and a publish directory of `dist`.
 
+Neither deploys itself (ADR-081). Once CI passes on a push to `main`,
+`.github/workflows/deploy.yml` deploys the API at that commit, waits until its
+`/health` names it, then deploys the static site at the same commit; the
+settings it needs are in `docs/runbooks/render.md`, "Deploys".
+
 Everything runs on Render's free tier for now. What that costs the app,
 replacing the free database when it expires after 30 days, and what changes
 before real customers' data: `docs/runbooks/render.md`. Backups and restores:

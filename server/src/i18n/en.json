@@ -333,6 +333,8 @@
   "boms.statusBomVerbDuplicate": "A {status} BOM cannot be {verb} — duplicate it to a new draft instead",
   "boms.suchBom": "No such BOM",
   "boms.suchLineBom": "No such line on this BOM",
+  "common.apiUpdating": "A new version is being installed. Try again in a minute; nothing was saved.",
+  "common.clientOutdated": "This tab is running an older version of the app, so nothing was saved. Copy anything you typed, then reload.",
   "common.internalError": "Internal server error",
   "common.missingCsrfHeaderHeader": "Missing {CSRF_HEADER} header on a state-changing request",
   "costs.currencyBaseCurrencyRate": "{currency} is the base currency. A rate converts other currencies into it.",

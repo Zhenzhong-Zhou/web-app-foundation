@@ -13,6 +13,7 @@ import { useIntl } from 'react-intl';
 import type { OrderLine } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { formatQuantity } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
@@ -98,7 +99,7 @@ export function CloseLineDialog({
                     defaultMessage: '{sku}: {fulfilled} of {ordered} received.',
                   },
                   {
-                    sku: line.sku,
+                    sku: <Reference>{line.sku}</Reference>,
                     fulfilled: formatQuantity(line.quantityFulfilled),
                     ordered: formatQuantity(line.quantityOrdered),
                   },

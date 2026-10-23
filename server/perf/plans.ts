@@ -1,10 +1,4 @@
-import {
-  appendFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { type INestApplicationContext, Logger } from '@nestjs/common';
@@ -14,8 +8,10 @@ import type { Pool } from 'pg';
 import { AppModule } from '../src/app.module';
 import {
   ALL_PERMISSIONS,
+  PERMISSIONS,
   SYSTEM_ROLE_PERMISSIONS,
 } from '../src/core/authorization/permissions';
+import { PermissionsService } from '../src/core/authorization/permissions.service';
 import { PG_POOL } from '../src/database/database.tokens';
 import type { VolumeManifest } from '../src/database/seed-volume';
 import { runInTenantContext } from '../src/database/tenant-context';
@@ -33,6 +29,7 @@ import { AvailabilityService } from '../src/modules/stock/availability.service';
 import { LotTraceService } from '../src/modules/stock/lot-trace.service';
 import { StockReadsService } from '../src/modules/stock/stock-reads.service';
 import { type Captured, QueryCapture } from './capture';
+import { readManifest } from './manifest';
 import { toUnits } from './quantity';
 import { REPORTS } from './report';
 
@@ -47,14 +44,12 @@ import { REPORTS } from './report';
  * Usage, from `server/`, against the volume seed's database (README):
  *
  *     NODE_ENV=test DATABASE_URL_TEST=$PERF_DB npm run perf:plans
- *     ... npm run perf:plans -- --min-rows 50000
+ *     ... npm run perf:plans -- --scale large --min-rows 50000
  *
  * Large means at least --min-rows rows (default 10,000) by the planner's own
  * estimate, after a fresh ANALYZE. Below that a sequential scan is often the
  * right plan, and failing on it would teach people to ignore the check.
  */
-
-const MANIFEST = join(__dirname, 'volume.json');
 
 /** The thirty days before today, as days and as instants (ADR-057). */
 const NOW = Date.now();
@@ -111,12 +106,20 @@ async function main(): Promise<number> {
   const logger = new Logger('PlanCheck');
   const minRows = Number(valueOf(process.argv, '--min-rows') ?? 10_000);
 
-  if (!existsSync(MANIFEST)) {
-    logger.error(`No ${MANIFEST}: run npm run seed:volume first.`);
+  const manifest = readManifest(valueOf(process.argv, '--scale'));
+  if (typeof manifest === 'string') {
+    logger.error(manifest);
     return 1;
   }
 
-  const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8')) as VolumeManifest;
+  // A filter on the organization then matches every row, so a full scan is
+  // the right plan and a failure here says nothing about a busier database.
+  if (manifest.organizations.length === 1) {
+    logger.warn(
+      'The manifest lists one organization, so every row is its own and a sequential scan is often the right plan. Seed with --organizations 2 or more (5 by default) for plans that mean something.',
+    );
+  }
+
   const org = manifest.organizations[0];
 
   const capture = new QueryCapture();
@@ -197,6 +200,7 @@ async function buildProbes(
   const lookups = app.get(LookupService);
   const home = app.get(HomeService);
   const recent = app.get(RecentService);
+  const access = app.get(PermissionsService);
 
   const firstOrders = await orders.list({ status: 'all' });
   const deepOrders = await cursorAfter(
@@ -213,6 +217,11 @@ async function buildProbes(
   );
   const deepStock = await cursorAfter((before) => stock.list({ before }), 20);
   if (!shelf) throw new Error('No lot-tracked stock: was this volume-seeded?');
+  // A manifest written before the team (ADR-081) names nobody, and the
+  // access probe would then send nothing and drop out without a word.
+  if (!org.threeRoleMembershipId) {
+    throw new Error('No member holding three made roles: seed again.');
+  }
 
   // An open sale to preview: what earliest expiry first reads before a ship.
   const sale = await firstSale(orders, stock);
@@ -311,6 +320,18 @@ async function buildProbes(
     {
       name: 'recently opened',
       run: () => recent.list(org.userId, kindsVisibleWith(EVERY_PERMISSION), 6),
+    },
+    // Access (ADR-080): what a member holding three made roles may do, read
+    // on every request they make, and who may update an order, as a
+    // notification finds whom to tell.
+    {
+      name: 'access: three roles',
+      run: () => access.listForMember(org.threeRoleMembershipId),
+    },
+    {
+      name: 'access: holders',
+      run: () =>
+        access.holdersOf(org.organizationId, [PERMISSIONS.ORDERS_UPDATE]),
     },
     // Dates and sorting (ADR-057): each sort read through its index on
     // (organization_id, value, id), its page 2 after a (value, id) cursor,

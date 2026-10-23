@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-import type { ErrorDetails } from '../api/types.gen';
 import { useToast } from '../components/use-toast';
-import { ApiError, messageFor } from './api';
+import { ApiError } from './api';
+import { useFailureWords } from './use-failure-words';
 
 /**
  * The submit half of a dialog: in-flight state, one error string, and the
@@ -25,18 +25,21 @@ import { ApiError, messageFor } from './api';
  * hasCode in lib/api.ts, for a dialog that can offer the way out, such as a
  * link to the setting that is missing. Set and cleared with `error`, as
  * `errorDetails` is, what a few codes carry beside it (ADR-073).
+ *
+ * `error` is worded as the dialog renders, not when the refusal came: an
+ * outdated tab's refusal says the new version is being installed until
+ * the version file names it, and then what the server said (ADR-081). All
+ * three come from the one failure kept.
  */
 export function useSubmit<T = unknown>(
   onDone: () => void | Promise<void>,
   options: { success?: string | ((result: T) => string) } = {},
 ) {
   const [submitting, setSubmitting] = useState(false);
-  const [failure, setFailure] = useState<{
-    message: string;
-    code: string | null;
-    details: ErrorDetails | null;
-  } | null>(null);
+  const [failure, setFailure] = useState<unknown>(null);
   const toast = useToast();
+  const error = useFailureWords(failure);
+  const refusal = failure instanceof ApiError ? failure : null;
 
   /** Clears state when a dialog closes, so reopening starts clean. */
   function reset() {
@@ -52,12 +55,7 @@ export function useSubmit<T = unknown>(
     try {
       result = await action();
     } catch (caught) {
-      const refusal = caught instanceof ApiError ? caught : null;
-      setFailure({
-        message: messageFor(caught),
-        code: refusal?.code ?? null,
-        details: refusal?.details ?? null,
-      });
+      setFailure(caught);
       return;
     } finally {
       setSubmitting(false);
@@ -71,9 +69,9 @@ export function useSubmit<T = unknown>(
 
   return {
     submitting,
-    error: failure?.message ?? null,
-    errorCode: failure?.code ?? null,
-    errorDetails: failure?.details ?? null,
+    error,
+    errorCode: refusal?.code ?? null,
+    errorDetails: refusal?.details ?? null,
     reset,
     submit,
   };

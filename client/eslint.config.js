@@ -5,6 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import compat from 'eslint-plugin-compat';
 import formatjs from 'eslint-plugin-formatjs';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
@@ -85,6 +86,34 @@ export default defineConfig([
           },
         },
       ],
+    },
+  },
+  {
+    /**
+     * The browser floor (conventions.md, "Supported browsers", ADR-081): an
+     * API newer than these browsers fails unless it is guarded in an `if`,
+     * as Intl.Segmenter once was not. The list is Vite's build target, its
+     * default, which vite.config.ts does not set, and the two must agree: a
+     * Vite major moves its default, and this list moves with it.
+     */
+    files: ['src/**/*.{ts,tsx}'],
+    // Tests run in Node, not in these browsers.
+    ignores: ['**/*.test.{ts,tsx}', 'src/test/**'],
+    plugins: { compat },
+    settings: {
+      browsers: [
+        'chrome >= 111',
+        'edge >= 111',
+        'firefox >= 114',
+        'safari >= 16.4',
+        'ios_saf >= 16.4',
+      ],
+      // Vite rewrites newer syntax but adds no polyfills, so a built-in such
+      // as Object.groupBy counts as much as a Web API.
+      lintAllEsApis: true,
+    },
+    rules: {
+      'compat/compat': 'error',
     },
   },
   {

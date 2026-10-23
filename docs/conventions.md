@@ -301,6 +301,17 @@ committed, and neither is edited by hand.
   - A raw query's rows get a type of their own (`interface PoolRow`), as
     Postgres returns them, never `Record<string, unknown>`: a response
     built from unknowns cannot be checked against its declaration.
+- **The API revision** (ADR-081). One number,
+  `server/src/common/api-revision.ts`, carried as the document's
+  `info.version` (`1.<revision>`) and written by `npm run api` into
+  `client/src/api/revision.gen.ts`. The client sends it as
+  `X-Api-Revision`; the server refuses a lower one (`client_outdated`) and a
+  higher one (`api_updating`) before anything else, and serves a request
+  without it. An additive change keeps it. A breaking change raises it by
+  one in the commit that makes it, or keeps the old shape working for a
+  while instead. CI's "Against main" job holds the rule with oasdiff; a
+  change reviewed and accepted as harmless goes in
+  `server/openapi-breaking-accepted.txt`, with its reason.
 - **The e2e suite checks every response against the document** (ADR-068,
   amended): each object schema is closed, so a field the contract does
   not declare fails the test that made the request, as does a declared
@@ -311,6 +322,23 @@ committed, and neither is edited by hand.
     reads them, from `client/src/api/types.gen`. A name a screen switches
     on goes in `client/src/lib/api-names.ts`, read from a generated type
     (`OrderSummary['status']`), never written out again.
+
+## Migrations against the running release (ADR-081)
+
+A migration runs while the previous release still serves, so it leaves
+working everything that release reads.
+
+- **Expand, then contract.** In one deploy, add; never take away. Dropping
+  or renaming a column or a table, changing a type, making a column
+  required without a default, or replacing or dropping a key or unique
+  index that a released `ON CONFLICT` names waits for a later migration,
+  once no released code reads the old shape.
+- **squawk** checks each new migration in CI and in `scripts/verify.sh`
+  (`server/.squawk.toml` says which rules are off, and why). A statement
+  the running release truly does not read takes squawk's ignore comment
+  directly above it, with the reason on the line before.
+- **squawk cannot see a key a query names,** so `/code-review` checks that
+  by reading, as ADR-080's 0073 and ADR-073's 0067 show it must.
 
 ## Error codes
 
@@ -343,6 +371,10 @@ message, and the screen keys on the code, never on the words.
   read on the client as `errorDetails` from `useSubmit`, and only behind
   `hasCode`. Values only, never words, and the filter passes them only
   beside a code on the list.
+- **Two codes are the client's, whatever the screen:** `client_outdated`
+  and `api_updating` (ADR-081). `send()` marks the tab, reads the version
+  file and lets `messageFor` word them as they render; a screen does
+  nothing of its own for either.
 - **With a code, the message still says what to do next, but names no
   control on the screen.** The screen, keyed on the code, adds the link or
   the words naming its own control, from the client's catalogue, so
@@ -386,7 +418,11 @@ message, and the screen keys on the code, never on the words.
   moment one is needed, not coverage of every dialog on principle.
 - Nothing is mocked in a Playwright spec. A mocked API there only proves the UI
   agrees with our assumptions about the server, which is the class of bug that
-  layer exists to catch.
+  layer exists to catch. The API is never replaced; a spec may replace the
+  static host's own file, `/version.json`, to stand for a deploy, or abort a
+  chunk to stand for a dropped connection (ADR-081).
+- `toBeVisible` passes while a popover or a menu is still fading in, so axe
+  run on one just opened measures it halfway: wait until it has settled.
 - `getByRole`, never `getByLabelText`, in a component test: it finds a
   control as assistive technology does, by its role and accessible name,
   so a test also fails when the role is wrong, which a label match alone
@@ -412,6 +448,26 @@ adjust direction flip — most branches of anything here),
 Not worth it: pages, which are mostly loading and dialog state that e2e
 already covers; the simple create dialogs, which fill fields and POST; and
 `error-boundary`, `color-mode-select`, `form-error`, `auth-layout`.
+
+---
+
+## Seeds
+
+Two seeds grow with the app, and every feature adds what it needs to both
+(ADR-081). Its build brief has a step for them; a feature with nothing to
+add says so in its PR.
+
+- **`npm run seed:demo`** fills a dev database with a demo organization
+  whose screens, manual checks and walkthroughs work without setup: a
+  feature's new screens open on real-looking records, in every state its
+  checks name. CI runs it on an empty database, so a service it calls that
+  changes shape fails there; run it locally after changing one (handoff,
+  *Moving code*).
+- **`npm run seed:volume`** fills a database of its own with a year at
+  realistic scale (`server/perf/README.md`). A new table gets rows in the
+  proportions a customer would have, and a new hot query, one run on every
+  request or every list, is added to `npm run perf:plans` and timed
+  against ADR-051's budgets at both scales.
 
 ---
 
@@ -475,6 +531,16 @@ failure needs reporting) and the cases built on it.
   don't have access to this", naming who can change the role; no answer at
   all is "Can't reach the server" with Try again. Anything else keeps the
   server's own message, since it says something particular.
+- **A page whose code will not load** (ADR-081): every lazy import goes
+  through `loadChunkOrReload`, which tries once more, then reads the
+  version file. Unreadable is the offline page, which tries again by itself
+  on the browser's `online` event, as `LoadFailure`'s does; a newer build
+  loads the page in full once, then "A new version is ready"; the same build
+  is a crash.
+- **A tab outdated by the API** (ADR-081): "A new version is ready" with
+  Reload, or, while the new build is still on its way, "A new version is
+  being installed", which tries again by itself every minute while in
+  front.
 - **A crash:** the error boundary's "Something went wrong", with Reload, Go
   back when there is a page to go back to, and Go home, and a reference to
   quote (the server's request id, or one made and logged). Three, since a
@@ -525,6 +591,9 @@ theme. A component asks the palette by name (`color: 'text.secondary'`,
 value, a font size or a radius the tokens already name. A value the design needs
 and the tokens lack becomes a token first.
 
+- **Typography's `color` prop takes a palette name** (`textSecondary`,
+  `primary`), never a path: MUI 9 ignores `color="text.secondary"` there
+  and draws primary text (#196). A path goes in `sx`.
 - **Two layers.** Brand (the accent, the radius) is what a rebrand, and later an
   organization, changes. Semantic (surfaces, text, borders, the five status
   tones) never takes the brand's colour.
@@ -571,6 +640,11 @@ Use these rather than writing the thing again on a page:
   counts. Never a column of full-width fields.
 - **`EmptyState`** inside the list's panel when it is empty: the first-time
   message with no filter, "nothing matches" with one.
+- **`Reference`** around a document's number, a SKU or a lot code placed in a
+  message (`{ sku: <Reference>{sku}</Reference> }`), so it never breaks at its
+  hyphen; **`ReferencesWhole`** for text the server wrote, which keeps every
+  hyphenated word whole (ADR-081). A code over 16 characters may still
+  break, rather than run off a phone's screen; a page heading is left alone.
 - **`UndoSnackbar`** for the message after something that can be undone: its
   timer waits while focus or the pointer is on it, and runs again only once
   both have left (WCAG 2.2.1). MUI's `Snackbar` runs again when either does.
@@ -603,7 +677,11 @@ Internet Explorer, and any browser's IE mode, is not supported.
   elsewhere: `lib/person-initials.ts` builds an `Intl.Segmenter`, which
   Firefox has only from 125, when there is one, and otherwise splits text
   into letters with their combining marks. Built unguarded as the module
-  loads, it would stop the whole app in those browsers.
+  loads, it would stop the whole app in those browsers. ESLint now holds
+  the floor: `eslint-plugin-compat`, set to these browsers in
+  `client/eslint.config.js`, fails such an API unless an `if` guards it,
+  though its data stops near ES2022 and it cannot see a method called on
+  a variable (`list.toSorted()`) or check CSS (#197).
 - Nothing loads from another site: the font is bundled, Chinese uses the
   system's, and no analytics, CDN or Google service is called. A page that
   needs one would fail in mainland China; keep it that way, or make it
@@ -616,3 +694,44 @@ Internet Explorer, and any browser's IE mode, is not supported.
   every browser runs on main, nightly, and on a pull request labelled
   full-e2e (layout, mobile, sign-in).
 - The product's name in the tab is VITE_APP_NAME in the repository's .env.
+
+## Versions
+
+What each version in the project means, where it lives, and who moves it.
+
+| Version | Where | Moves when | Read it live |
+| --- | --- | --- | --- |
+| Release | `server/package.json`, `client/package.json`, git tags, `docs/releases/` | Bob tags a release | `/api/health`'s `version`; Help's foot |
+| API, major | the URL, `/v1` (ADR-013) | a break an outside program would meet | the URL |
+| API revision | `server/src/common/api-revision.ts`; `info.version` `1.<n>` | a breaking change for the app's own client (ADR-081) | `/api/health`'s `apiRevision`; `version.json` |
+| Build | the deployed commit | every deploy | `/api/health`'s `commit`; `version.json`'s `build`; Help's foot |
+| Database schema | `server/src/database/migrations/` | each migration | `drizzle.__drizzle_migrations`, one row per file |
+| Runtime | `engines`, `.node-version` (Node); ADR-002 (Postgres) | an upgrade, by its own PR | `node -v`; `select version()` |
+
+`/api/health` and `/version.json` must name the same commit once a deploy
+has finished; `deploy.yml` waits for the first before starting the second.
+
+## Dependencies
+
+- **Every branch** takes the in-range updates as a commit of its own at its
+  start, and again before the reviews (`npm outdated`, then `npm update`, in
+  `server/` and `client/`). No overrides (ADR-019); a major version is a
+  change of its own.
+- **Only versions at least 7 days old** (ADR-081): a freshly published
+  version is where a hijacked package hides, and most are caught within
+  days. `npm update --before="$(date -v-7d +%Y-%m-%d)"` on a Mac. A security
+  fix is taken at once, its publisher and diff looked at first.
+- **A new tool or package** is pinned to a release at least 14 days old.
+
+## Production readiness
+
+`/production-readiness` (ADR-081) reports on what real users need. It runs:
+
+- **in every feature's review step,** after `/code-review`, on the sections
+  the change touches (deploys for CI or deploy changes, performance for a
+  new hot query, security for anything near sign-in or permissions);
+- **on the whole app once before real users,** with its device pass
+  (tablets, foldables, a phone held sideways), and again **before each
+  release tag**;
+- **on the sections a change of host or plan touches,** such as a paid
+  database or a new region.

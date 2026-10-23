@@ -8058,7 +8058,7 @@
   "info": {
     "title": "web-app-foundation API",
     "description": "",
-    "version": "1",
+    "version": "1.1",
     "contact": {}
   },
   "tags": [],
@@ -11418,6 +11418,7 @@
         "properties": {
           "translations": {
             "uniqueItems": true,
+            "maxItems": 3,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProductTranslationDto"
@@ -11455,6 +11456,7 @@
         "properties": {
           "translations": {
             "uniqueItems": true,
+            "maxItems": 3,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/VariantTranslationDto"
@@ -11496,6 +11498,7 @@
         "properties": {
           "fileIds": {
             "uniqueItems": true,
+            "maxItems": 8,
             "type": "array",
             "items": {
               "type": "string",
@@ -19699,13 +19702,21 @@
               "string",
               "null"
             ]
+          },
+          "version": {
+            "type": "string"
+          },
+          "apiRevision": {
+            "type": "number"
           }
         },
         "required": [
           "status",
           "uptime",
           "timestamp",
-          "commit"
+          "commit",
+          "version",
+          "apiRevision"
         ]
       },
       "Readiness": {
@@ -19909,7 +19920,9 @@
           "role_changed",
           "role_held",
           "permission_requires",
-          "role_name_unavailable"
+          "role_name_unavailable",
+          "client_outdated",
+          "api_updating"
         ]
       },
       "ApiVocabulary": {

@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 
-import { Module } from '@nestjs/common';
+import {
+  type MiddlewareConsumer,
+  Module,
+  type NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -8,6 +13,8 @@ import { LoggerModule } from 'nestjs-pino';
 
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { CsrfGuard } from './common/guards/csrf.guard';
+import { ApiRevisionMiddleware } from './common/middleware/api-revision.middleware';
+import { requestLogLevel } from './common/request-log-level';
 import { type Env, validateEnv } from './config/env';
 import { AuditInterceptor } from './core/audit/audit.interceptor';
 import { AuditModule } from './core/audit/audit.module';
@@ -94,11 +101,7 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
               ignore: (req) => req.url?.startsWith('/health') ?? false,
             },
 
-            customLogLevel: (_req, res, err) => {
-              if (err || res.statusCode >= 500) return 'error';
-              if (res.statusCode >= 400) return 'warn';
-              return 'info';
-            },
+            customLogLevel: requestLogLevel,
           },
         };
       },
@@ -168,4 +171,21 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    // AppModule's middleware runs after the global LoggerModule's, so the
+    // request has its id, and before every imported module's, so the API
+    // revision is compared before SessionContextMiddleware reads the
+    // session (ADR-081). Sign-out is always served, whatever the revision:
+    // ending a session must never fail, on a shared computer least of all,
+    // and it sends nothing to misread.
+    consumer
+      .apply(ApiRevisionMiddleware)
+      .exclude({
+        path: 'auth/logout',
+        method: RequestMethod.POST,
+        version: '1',
+      })
+      .forRoutes('*');
+  }
+}
