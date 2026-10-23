@@ -67,8 +67,7 @@ export function PageHeader({
   headingRef?: Ref<HTMLHeadingElement>;
 }) {
   const intl = useIntl();
-  // The product's name, as index.html's title has it, not a word: it stays
-  // as it is in every language.
+  // The product's name, not a word: it stays as it is in every language.
   const section = crumbs[0]?.label ?? APP_NAME;
 
   const navigate = useNavigate();
