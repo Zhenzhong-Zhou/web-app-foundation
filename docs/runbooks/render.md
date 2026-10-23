@@ -1,8 +1,8 @@
 # Render: the free tier now, a paid plan before real data
 
-What the deployment runs on, what the free tier costs it, how to replace
-the free database when it expires, and what changes before real customers'
-data. Render's limits as checked on 13 October 2026 at render.com/docs/free;
+What the deployment runs on, how to build it from nothing, what the free
+tier costs it, how to replace the free database every month, and what
+changes before real customers' data. Render's limits as checked on 13 October 2026 at render.com/docs/free;
 check again before relying on a number.
 
 **Never paste a database URL, a password or a key into a chat, an issue or
@@ -25,6 +25,47 @@ where they are.
 `FILES_BUCKET`. An address ending in the bucket used to work and store
 every file one folder down; the server now refuses it at boot. The same
 goes for `BACKUP_S3_ENDPOINT` in GitHub's secrets, which nothing checks.
+
+## Building the services from nothing
+
+If a service is lost, or the account moves, this makes all three again.
+The database comes first, the static site last. Each setting is the one in
+use; the reasons are in the sections named.
+
+1. **The database:** "Replacing the database", step 2.
+2. **The web service** (the API). Render → **New** → **Web Service** → the
+   GitHub repository:
+   - **Branch** `main`; **Root Directory** `server`; **Runtime** Node, whose
+     version Render reads from `.node-version`;
+   - **Build Command:** the README's, under Deployment (it migrates and
+     seeds on every deploy);
+   - **Start Command:** `node dist/main`;
+   - **Region** Oregon (US West), the database's; **Instance Type** Free;
+   - **Environment:** every variable `.env.example` names for production.
+     The ones that point elsewhere: `DATABASE_URL` (the database's Internal
+     URL), `CLIENT_URL` (the static site's address), the mail settings and
+     `RESEND_API_KEY`, `FILE_STORAGE` with the `FILES_*` settings for R2
+     ("What runs where"), `REGISTRATION=invitation` and, optionally,
+     `OPERATOR_EMAIL` ("Registration and organization invitations"). The
+     server refuses to boot on a wrong value, and the deploy log says which;
+   - **Health Check Path** `/health/ready`; **Auto-Deploy** Off; its
+     **Deploy Hook** into GitHub as `RENDER_API_DEPLOY_HOOK` ("Deploys").
+3. **The static site** (the client). Render → **New** → **Static Site** →
+   the same repository:
+   - **Branch** `main`; **Root Directory** `client`; **Build Command**
+     `npm ci && npm run build`; **Publish Directory** `dist`;
+   - **Environment:** `VITE_APP_NAME`, the name in the browser's tab;
+   - **Redirects/Rewrites:** the README's two rules, `/api/*` to the web
+     service's own address first, then `/*` to `/index.html`;
+   - **Headers:** the three rules ("Deploys", "Setting it up");
+   - **Auto-Deploy** Off; its **Deploy Hook** into GitHub as
+     `RENDER_CLIENT_DEPLOY_HOOK`.
+4. **GitHub:** the variable `API_HEALTH_URL` ("Deploys") and the backup
+   secrets (restore.md, section 1).
+5. **The first deploy:** Manual Deploy on the web service, then, once
+   `/api/health/ready` answers, on the static site. After that, a push to
+   `main` that passes CI deploys both through `deploy.yml`.
+6. **Yourself:** `npm run org:invite` ("Inviting an organization").
 
 ## What the free tier costs the app
 
@@ -293,39 +334,83 @@ run it.
 An organization invited onto the free database goes with it when the
 database expires: a real customer waits for the paid one.
 
-## When the free database expires
+## Replacing the database
+
+A free database stops answering 30 days after it was created, and Render
+deletes it 14 days after that. Its page says the date ("Your database will
+expire on …"), and Render emails before it. Until the database is paid
+for, this comes back every month: replace it a day or two early, not
+after, since the live app is down in between.
 
 Start empty. Nothing on the free database is real data; restoring the last
 backup instead is "The host is gone" in restore.md, if a test needs the old
-rows.
+rows. Do every step in one sitting: the live app is down from step 1 until
+step 4.
 
-1. **New database:** Render → New → Postgres, Free, version 18, the same
-   region as the web service (private hostnames resolve only within a
-   region). Only one free database may be active, so delete the expired one
-   first if Render asks.
-2. **The API:** web service → Environment → `DATABASE_URL` = the new
-   database's **Internal** URL. Save, then deploy it by hand (Manual
-   Deploy → Deploy latest commit): Auto-Deploy is off since ADR-081. The
-   deploy runs every migration and the seed. The static site needs
+1. **Delete the old database.** Render → the database (`foundation-db`) →
+   Settings → at the bottom, **Delete Database**, typing its name to
+   confirm. Only one free database may exist at a time, so this comes
+   first.
+2. **Create the new one.** Render → **New** → **Postgres**:
+   - **Name:** `foundation-db` (the same name is fine);
+   - **Database** and **User:** empty, so Render makes them;
+   - **Region:** Oregon (US West), the web service's region, since an
+     Internal URL resolves only within its region;
+   - **PostgreSQL Version:** 18;
+   - **Instance Type:** Free.
+
+   **Create Database**, then wait until its status says Available.
+3. **Point the API at it.** The new database → **Connect** → copy the
+   **Internal Database URL**. The web service → **Environment** →
+   `DATABASE_URL` → paste → **Save**. Then **Manual Deploy** → **Deploy
+   latest commit**: Auto-Deploy is off since ADR-081 (if Save offers to
+   rebuild and deploy, that does the same). The build runs every migration
+   and the seed; the log ends with the service live. The static site needs
    nothing.
-3. **Backups:** GitHub → Settings → Secrets → Actions →
-   `BACKUP_DATABASE_URL` = the new **External** URL with
-   `?sslmode=no-verify`. Run Actions → **Backup** once by hand.
-4. **Check the migrations:** one row per migration, so the count is the
-   number of files in `server/src/database/migrations/` that end in `.sql`:
+4. **Check it answers.** It may take a minute while the service wakes:
+
+   ```bash
+   curl -s https://web-app-foundation-client.onrender.com/api/health/ready
+   ```
+
+   Done when it says `{"status":"ready","database":"up"}`.
+5. **Backups, the same day,** or that night's scheduled backup fails. The
+   new database → **Connect** → copy the **External Database URL**, and add
+   `?sslmode=no-verify` to its end. GitHub → the repository → Settings →
+   Secrets and variables → Actions → `BACKUP_DATABASE_URL` → **Update** →
+   paste. Then Actions → **Backup** → **Run workflow**. Done when the run
+   is green.
+6. **Count the migrations,** with that same External URL. One row per
+   migration, so the count is the number of files in
+   `server/src/database/migrations/` that end in `.sql` (75 at ADR-081):
 
    ```bash
    docker exec -it foundation-postgres psql "<External URL>" -c "select count(*) from drizzle.__drizzle_migrations;"
    ```
 
-5. **Files:** logos and photos uploaded against the old database are still
+7. **Your organization again.** Everything on the old database went with
+   it, accounts included: invite yourself with `npm run org:invite`
+   ("Inviting an organization", above), the database's address being the
+   External URL from step 5.
+8. **Files:** logos and photos uploaded against the old database are still
    in `waf-files`, and nothing points at them; the hourly purge only removes
    files the database knows of. If they were test uploads, empty the bucket
    in R2 (leave `waf-backups` alone).
-6. **The handoff:** the new creation date, so the next expiry is known.
+9. **Record the dates** in the handoff's line about the database: created
+   today, stops answering 30 days later, deleted 14 days after that.
 
 Nothing else needs running: a fresh database has no older rows, so the
 pinyin backfill is not needed, and new credentials retire the old ones.
+
+### If a step fails
+
+| What you see | What it usually is |
+| --- | --- |
+| The deploy fails at `npm run migrate` | `DATABASE_URL` is the External URL, or the database is in another region: use the Internal URL from the same region |
+| `/api/health/ready` says the database is `down` | the deploy hasn't finished, or the URL was saved without a deploy: deploy by hand again |
+| Backup fails to connect | the secret lacks `?sslmode=no-verify`, or is the Internal URL |
+| `org:invite` or `psql` times out | the database's **Access Control** doesn't let your address in: add it there |
+| Render won't create a free database | the old one still exists: step 1 first |
 
 ## Before real customers' data
 
