@@ -14,6 +14,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { ApiRevisionMiddleware } from './common/middleware/api-revision.middleware';
+import { requestLogLevel } from './common/request-log-level';
 import { type Env, validateEnv } from './config/env';
 import { AuditInterceptor } from './core/audit/audit.interceptor';
 import { AuditModule } from './core/audit/audit.module';
@@ -100,13 +101,7 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
               ignore: (req) => req.url?.startsWith('/health') ?? false,
             },
 
-            customLogLevel: (req, res, err) => {
-              // Logged once, at info, where it was refused (ADR-081).
-              if (ApiRevisionMiddleware.refused(req)) return 'silent';
-              if (err || res.statusCode >= 500) return 'error';
-              if (res.statusCode >= 400) return 'warn';
-              return 'info';
-            },
+            customLogLevel: requestLogLevel,
           },
         };
       },
