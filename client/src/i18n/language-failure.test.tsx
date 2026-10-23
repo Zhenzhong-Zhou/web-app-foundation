@@ -4,14 +4,12 @@ import { http, HttpResponse } from 'msw';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { API_REVISION } from '../api/revision.gen';
 import { LanguageSelect } from '../components/language-select';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
-import { BUILD } from '../version/build';
+import { serveVersion } from '../test/version';
 import { ChunkLoadError, loadChunkOrReload } from '../version/load-chunk';
 import { reloadPage } from '../version/reload-page';
-import { checkVersion } from '../version/version-check';
 import { loadMessages } from './catalogues';
 import {
   LanguageFailureBanner,
@@ -52,12 +50,9 @@ function watchSaves() {
 
 /** A language that won’t load says so, and saves nothing (ADR-081). */
 describe('a language that won’t load', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.mocked(loadMessages).mockClear();
     vi.mocked(reloadPage).mockClear();
-    sessionStorage.clear();
-    // This tab's own build on the server, whatever the test before it read.
-    await checkVersion();
   });
   afterEach(() => {
     localStorage.clear();
@@ -158,15 +153,7 @@ describe('a language that won’t load', () => {
       const user = userEvent.setup({
         advanceTimers: (ms) => vi.advanceTimersByTime(ms),
       });
-      server.use(
-        http.get('/version.json', () =>
-          HttpResponse.json({
-            ...BUILD,
-            build: 'a1b2c3d',
-            apiRevision: API_REVISION,
-          }),
-        ),
-      );
+      serveVersion();
       // Through the real loader: tried twice, then the version file read.
       vi.mocked(loadMessages).mockImplementationOnce(() =>
         loadChunkOrReload(() =>

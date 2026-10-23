@@ -1,33 +1,15 @@
 import { ThemeProvider } from '@mui/material/styles';
-import { act, render, screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
 import type { Blocker } from 'react-router-dom';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { API_REVISION } from '../api/revision.gen';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
 import { DeleteDraftDialog } from '../invoices/delete-draft-dialog';
 import { ProductGallery } from '../products/product-gallery';
-import { server } from '../test/setup';
+import { deploy } from '../test/version';
 import { themeFor } from '../theme';
-import { BUILD } from './build';
-import { checkVersion } from './version-check';
-
-/** A deploy whose API would refuse this tab's saves. */
-async function deployUrgent() {
-  server.use(
-    http.get('/version.json', () =>
-      HttpResponse.json({
-        ...BUILD,
-        build: 'a1b2c3d',
-        apiRevision: API_REVISION + 1,
-      }),
-    ),
-  );
-  await act(() => checkVersion());
-}
 
 /** In the app's theme, whose dialog defaults add the line. */
 const renderThemed = (ui: ReactNode) =>
@@ -42,13 +24,8 @@ const LINE =
  * no dialog had to change, and left out of the image viewer.
  */
 describe('the amber line in dialogs', () => {
-  afterEach(async () => {
-    server.resetHandlers();
-    await checkVersion();
-  });
-
   it('tops a dialog opened once saves would be refused, above its title', async () => {
-    await deployUrgent();
+    await deploy({ urgent: true });
     renderThemed(
       <DeleteDraftDialog
         invoiceId="invoice-1"
@@ -83,12 +60,12 @@ describe('the amber line in dialogs', () => {
     });
     expect(within(dialog).queryByRole('status')).not.toBeInTheDocument();
 
-    await deployUrgent();
+    await deploy({ urgent: true });
     expect(within(dialog).getByRole('status')).toHaveTextContent(LINE);
   });
 
   it('leaves the image viewer out, which only shows a picture', async () => {
-    await deployUrgent();
+    await deploy({ urgent: true });
     const user = userEvent.setup();
     renderThemed(
       <ProductGallery

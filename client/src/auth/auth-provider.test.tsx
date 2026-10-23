@@ -1,19 +1,13 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { API_REVISION } from '../api/revision.gen';
 import type { CurrentSession } from '../api/types.gen';
 import { browserTimeZone, organizationTimeZone } from '../lib/time-zone';
-import { apiError } from '../test/handlers';
 import { server } from '../test/setup';
-import { BUILD } from '../version/build';
-import {
-  checkVersion,
-  newVersionNow,
-  noteServed,
-} from '../version/version-check';
+import { outdatedRefusal, serveVersion } from '../test/version';
+import { newVersionNow } from '../version/version-check';
 import { AuthProvider } from './auth-provider';
 import { useAuth } from './use-auth';
 
@@ -67,11 +61,7 @@ function answer(
       const reply = replies[Math.min(requests.length, replies.length) - 1];
       if (reply === 'down') return HttpResponse.error();
       if (reply === 'outdated') {
-        return apiError(
-          409,
-          'This tab is running an older version of the app, so nothing was saved. Copy anything you typed, then reload.',
-          'client_outdated',
-        );
+        return outdatedRefusal();
       }
       if (reply === null) {
         return HttpResponse.json({ message: 'Sign in' }, { status: 401 });
@@ -301,11 +291,6 @@ describe('AuthProvider', () => {
 });
 
 describe('AuthProvider, for a tab the API refuses as outdated (ADR-081)', () => {
-  beforeEach(async () => {
-    noteServed();
-    await checkVersion();
-  });
-
   /** What after an action reads the session again, and a sign-out. */
   function Actions() {
     const { refresh, signedOut } = useAuth();
@@ -331,15 +316,7 @@ describe('AuthProvider, for a tab the API refuses as outdated (ADR-081)', () => 
   }
 
   it('leaves the app as it is when a read after an action is refused, and makes the new version urgent', async () => {
-    server.use(
-      http.get('/version.json', () =>
-        HttpResponse.json({
-          ...BUILD,
-          build: 'a1b2c3d',
-          apiRevision: API_REVISION,
-        }),
-      ),
-    );
+    serveVersion();
     const requests = answer(session(ALPHA), 'outdated');
     renderWithActions();
     await screen.findByText('Alpha Co');

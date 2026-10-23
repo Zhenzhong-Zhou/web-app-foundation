@@ -1,15 +1,12 @@
 import { render, screen } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
+import { http } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { API_REVISION } from './api/revision.gen';
 import App from './App';
 import { AuthProvider } from './auth/auth-provider';
-import { apiError } from './test/handlers';
 import { server } from './test/setup';
-import { BUILD } from './version/build';
-import { checkVersion, noteServed } from './version/version-check';
+import { outdatedRefusal, serveVersion } from './test/version';
 
 const renderApp = () =>
   render(
@@ -26,30 +23,12 @@ const renderApp = () =>
  * not reach the server", whose Try again met the same refusal.
  */
 describe('App, when the first session read is refused as outdated', () => {
-  beforeEach(async () => {
-    noteServed();
-    await checkVersion();
-    server.use(
-      http.get('/api/v1/auth/me', () =>
-        apiError(
-          409,
-          'This tab is running an older version of the app, so nothing was saved. Copy anything you typed, then reload.',
-          'client_outdated',
-        ),
-      ),
-    );
+  beforeEach(() => {
+    server.use(http.get('/api/v1/auth/me', () => outdatedRefusal()));
   });
 
   it('says a new version is ready once it is out', async () => {
-    server.use(
-      http.get('/version.json', () =>
-        HttpResponse.json({
-          ...BUILD,
-          build: 'a1b2c3d',
-          apiRevision: API_REVISION + 1,
-        }),
-      ),
-    );
+    serveVersion({ urgent: true });
     renderApp();
 
     expect(

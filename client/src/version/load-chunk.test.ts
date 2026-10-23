@@ -1,21 +1,10 @@
 import { http, HttpResponse } from 'msw';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { API_REVISION } from '../api/revision.gen';
 import { server } from '../test/setup';
-import { BUILD } from './build';
+import { serveVersion } from '../test/version';
 import { ChunkLoadError, loadChunk, loadChunkOrReload } from './load-chunk';
 import { reloadPage } from './reload-page';
-import { checkVersion } from './version-check';
-
-/** The static host's version.json, as after a deploy of `build`. */
-function serve(build: string) {
-  server.use(
-    http.get('/version.json', () =>
-      HttpResponse.json({ ...BUILD, build, apiRevision: API_REVISION }),
-    ),
-  );
-}
 
 /** A chunk whose first `failures` loads reject, as the browser's import does. */
 function chunk(failures: number) {
@@ -36,15 +25,9 @@ async function outcome<T>(loading: Promise<T>): Promise<T | unknown> {
   return settled;
 }
 
-beforeEach(async () => {
-  sessionStorage.clear();
+beforeEach(() => {
   vi.mocked(reloadPage).mockClear();
-  // This tab's own build on the server, whatever the test before it read.
-  await checkVersion();
   vi.useFakeTimers({ toFake: ['setTimeout'] });
-});
-afterEach(() => {
-  vi.useRealTimers();
 });
 
 describe('loadChunk', () => {
@@ -72,7 +55,7 @@ describe('loadChunk', () => {
   });
 
   it('says a new version came out when the file names a newer build', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     expect(await outcome(loadChunk(chunk(2)))).toMatchObject({
       failure: 'newer',
     });
@@ -87,7 +70,7 @@ describe('loadChunk', () => {
 
 describe('loadChunkOrReload', () => {
   it('loads the page being opened in full from a newer build, and waits for it', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     let settled = false;
     void loadChunkOrReload(chunk(2)).finally(() => {
       settled = true;
@@ -101,7 +84,7 @@ describe('loadChunkOrReload', () => {
   });
 
   it('loads in full once a minute at most for a build, so it never loops', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     const now = Date.now();
     void loadChunkOrReload(chunk(2));
     await vi.advanceTimersByTimeAsync(1000);

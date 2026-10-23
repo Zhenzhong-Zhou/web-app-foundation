@@ -39,3 +39,23 @@ export async function backToTheFront(page: Page) {
     }
   });
 }
+
+/**
+ * A mark on this document, gone from the next if it loads in full: how a
+ * spec tells a load in full from the router's own move between pages.
+ */
+export const markDocument = (page: Page) =>
+  page.evaluate(() => {
+    (window as { sameDocument?: boolean }).sameDocument = true;
+  });
+
+/** Whether the document is still the one markDocument marked. */
+export const sameDocument = (page: Page) =>
+  page.evaluate(() => (window as { sameDocument?: boolean }).sameDocument);
+
+/** Inventory from the rail, the page these specs move to. */
+export const openInventory = (page: Page) =>
+  page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('link', { name: 'Inventory' })
+    .click();

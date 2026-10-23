@@ -1,25 +1,12 @@
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { API_REVISION } from '../api/revision.gen';
 import { AuthLayout } from '../auth/auth-layout';
 import { renderWithAuth } from '../test/render-with-auth';
-import { server } from '../test/setup';
-import { BUILD } from './build';
+import { deploy } from '../test/version';
 import { reloadPage } from './reload-page';
 import { checkVersion } from './version-check';
-
-/** A deploy: the static host's version.json names another build. */
-async function deploy(apiRevision = API_REVISION) {
-  server.use(
-    http.get('/version.json', () =>
-      HttpResponse.json({ ...BUILD, build: 'a1b2c3d', apiRevision }),
-    ),
-  );
-  await act(() => checkVersion());
-}
 
 const renderSignIn = () =>
   renderWithAuth(
@@ -34,10 +21,8 @@ const renderSignIn = () =>
  * no close.
  */
 describe('a new version, signed out', () => {
-  afterEach(async () => {
+  afterEach(() => {
     vi.mocked(reloadPage).mockClear();
-    server.resetHandlers();
-    await checkVersion();
   });
 
   it('says nothing while the server has this tab’s build', async () => {
@@ -65,7 +50,7 @@ describe('a new version, signed out', () => {
 
   it('turns amber once its saves would be refused', async () => {
     renderSignIn();
-    await deploy(API_REVISION + 1);
+    await deploy({ urgent: true });
 
     const banner = screen.getByRole('status');
     expect(banner).toHaveTextContent(

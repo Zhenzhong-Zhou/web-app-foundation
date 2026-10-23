@@ -1,15 +1,12 @@
 import { delay, http, HttpResponse } from 'msw';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { API_REVISION } from '../api/revision.gen';
 import { apiError } from '../test/handlers';
 import { server } from '../test/setup';
+import { OUTDATED, outdatedRefusal, serveVersion } from '../test/version';
 import { BUILD } from '../version/build';
-import {
-  checkVersion,
-  newVersionNow,
-  noteServed,
-} from '../version/version-check';
+import { newVersionNow } from '../version/version-check';
 import { api, ApiError, download, messageFor } from './api';
 
 /** The error api() throws for a request, for asserting on its fields. */
@@ -116,23 +113,13 @@ describe('api', () => {
 });
 
 describe('the API revision (ADR-081)', () => {
-  const OUTDATED =
-    'This tab is running an older version of the app, so nothing was saved. Copy anything you typed, then reload.';
   const INSTALLING =
     'A new version is being installed. Try again in a minute; nothing was saved.';
 
   /** The API, deployed with a revision above this tab's. */
   const refuseAsOutdated = () =>
-    server.use(
-      http.get('/api/v1/things/refused', () =>
-        apiError(409, OUTDATED, 'client_outdated'),
-      ),
-    );
+    server.use(http.get('/api/v1/things/refused', () => outdatedRefusal()));
 
-  beforeEach(async () => {
-    noteServed();
-    await checkVersion();
-  });
   afterEach(() => vi.restoreAllMocks());
 
   it('goes with every request, api() and download() alike', async () => {
@@ -162,15 +149,7 @@ describe('the API revision (ADR-081)', () => {
   });
 
   it('notes an outdated refusal, and reads the version file, before the caller hears of it', async () => {
-    server.use(
-      http.get('/version.json', () =>
-        HttpResponse.json({
-          ...BUILD,
-          build: 'a1b2c3d',
-          apiRevision: API_REVISION + 1,
-        }),
-      ),
-    );
+    serveVersion({ urgent: true });
     refuseAsOutdated();
 
     const error = await failureOf('/things/refused');

@@ -3,11 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useState } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
+import { outdatedRefusal } from '../test/version';
 import { newVersionNow, noteServed } from '../version/version-check';
 import { NotificationBell } from './notification-bell';
 
@@ -96,11 +96,6 @@ describe('NotificationBell', () => {
   });
 
   describe('in a tab the API refuses as outdated (ADR-081)', () => {
-    afterEach(() => {
-      vi.useRealTimers();
-      noteServed();
-    });
-
     it('stops asking, since every ask would be refused, and asks again once served, as after a reload', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
       let asks = 0;
@@ -109,11 +104,7 @@ describe('NotificationBell', () => {
           asks += 1;
           // The API deploys between the first ask and the second.
           return asks === 2
-            ? apiError(
-                409,
-                'This tab is running an older version of the app, so nothing was saved. Copy anything you typed, then reload.',
-                'client_outdated',
-              )
+            ? outdatedRefusal()
             : HttpResponse.json({ count: 0 });
         }),
       );

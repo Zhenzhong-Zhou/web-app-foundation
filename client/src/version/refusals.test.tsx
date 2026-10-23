@@ -3,18 +3,21 @@ import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { API_REVISION } from '../api/revision.gen';
 import type { Location } from '../api/types.gen';
 import { ReceiveStockDialog } from '../inventory/receive-stock-dialog';
 import { ProductsPage } from '../products/products-page';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
+import {
+  deploy,
+  OUTDATED,
+  outdatedRefusal,
+  serveVersion,
+} from '../test/version';
 import { themeFor } from '../theme';
-import { BUILD } from './build';
-import { checkVersion, noteServed } from './version-check';
 
 /**
  * An outdated tab's refusals on screen (ADR-081): a page whose read is
@@ -22,33 +25,19 @@ import { checkVersion, noteServed } from './version-check';
  * still on its way when the API has deployed before the static site.
  */
 
-const OUTDATED =
-  'This tab is running an older version of the app, so nothing was saved. Copy anything you typed, then reload.';
 const INSTALLING =
   'A new version is being installed. Try again in a minute; nothing was saved.';
 const LINE =
   'A new version is ready, and this tab can no longer save changes. Copy anything you’ve typed, then reload.';
 
-/** The static host's version.json, naming `build`. */
-function serve(build: string) {
-  server.use(
-    http.get('/version.json', () =>
-      HttpResponse.json({ ...BUILD, build, apiRevision: API_REVISION + 1 }),
-    ),
-  );
-}
-
-const deployed = () => serve('a1b2c3d');
+const deployed = () => serveVersion({ urgent: true });
 
 /**
  * The read every 30 seconds while the new version is on its way, which
  * finds it out: called here rather than waited for, as version-check's own
  * tests wait for it.
  */
-async function outNow() {
-  deployed();
-  await act(() => checkVersion());
-}
+const outNow = () => deploy({ urgent: true });
 
 const LOCATIONS: Location[] = [
   {
@@ -62,15 +51,6 @@ const LOCATIONS: Location[] = [
     address: null,
   },
 ];
-
-beforeEach(async () => {
-  noteServed();
-  await checkVersion();
-});
-
-afterEach(() => {
-  vi.useRealTimers();
-});
 
 describe('a dialog’s save refused', () => {
   function open() {
@@ -101,9 +81,7 @@ describe('a dialog’s save refused', () => {
   it('as outdated: keeps what was typed, with Reload beside the refusal and the amber line above the title', async () => {
     deployed();
 
-    const refusal = await receive(() =>
-      apiError(409, OUTDATED, 'client_outdated'),
-    );
+    const refusal = await receive(() => outdatedRefusal());
     expect(refusal).toHaveTextContent(OUTDATED);
     expect(
       within(refusal).getByRole('button', { name: 'Reload' }),
@@ -114,9 +92,7 @@ describe('a dialog’s save refused', () => {
   });
 
   it('as outdated before the new version is out: the 503’s words, then the refusal’s once it is', async () => {
-    const refusal = await receive(() =>
-      apiError(409, OUTDATED, 'client_outdated'),
-    );
+    const refusal = await receive(() => outdatedRefusal());
     // A reload would load the same build, so it is not offered.
     expect(refusal).toHaveTextContent(INSTALLING);
     expect(within(refusal).queryByRole('button')).toBeNull();
@@ -152,11 +128,7 @@ describe('a page’s read refused', () => {
 
   it('as outdated, with the new version out: the new version page where the page would be', async () => {
     deployed();
-    server.use(
-      http.get('/api/v1/products', () =>
-        apiError(409, OUTDATED, 'client_outdated'),
-      ),
-    );
+    server.use(http.get('/api/v1/products', () => outdatedRefusal()));
     open();
 
     expect(
@@ -171,11 +143,7 @@ describe('a page’s read refused', () => {
   });
 
   it('as outdated before the new version is out: being installed, then the new version page once it is', async () => {
-    server.use(
-      http.get('/api/v1/products', () =>
-        apiError(409, OUTDATED, 'client_outdated'),
-      ),
-    );
+    server.use(http.get('/api/v1/products', () => outdatedRefusal()));
     open();
 
     expect(

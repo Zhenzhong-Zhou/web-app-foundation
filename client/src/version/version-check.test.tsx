@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { API_REVISION } from '../api/revision.gen';
 import { server } from '../test/setup';
+import { serveVersion } from '../test/version';
 import { BUILD } from './build';
 import { reloadPage } from './reload-page';
 import {
@@ -17,24 +18,6 @@ import {
   useReloadAtNextPage,
   useVersionReads,
 } from './version-check';
-
-/** The static host's version.json, as after a deploy of `build`. */
-function serve(build: string, apiRevision = API_REVISION) {
-  server.use(
-    http.get('/version.json', () =>
-      HttpResponse.json({ ...BUILD, build, apiRevision }),
-    ),
-  );
-}
-
-// Each test starts with this tab's own build on the server, as nothing has
-// been deployed, whatever the one before it read, no load in full noted
-// for this tab, and the API serving it.
-beforeEach(() => {
-  sessionStorage.clear();
-  noteServed();
-  return checkVersion();
-});
 
 describe('checkVersion', () => {
   it('finds nothing new while the file names this build', async () => {
@@ -49,7 +32,7 @@ describe('checkVersion', () => {
   });
 
   it('finds a newer build, not urgent while its API revision is the same', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     const { result } = renderHook(() => useNewVersion());
 
     expect(await act(() => checkVersion())).toBe('newer');
@@ -61,7 +44,7 @@ describe('checkVersion', () => {
   });
 
   it('finds it urgent once its API revision is above this tab’s', async () => {
-    serve('a1b2c3d', API_REVISION + 1);
+    serveVersion({ urgent: true });
     const { result } = renderHook(() => useNewVersion());
 
     await act(() => checkVersion());
@@ -73,12 +56,12 @@ describe('checkVersion', () => {
   });
 
   it('never counts the dev server’s build as newer', async () => {
-    serve('dev');
+    serveVersion({ build: 'dev' });
     expect(await checkVersion()).toBe('same');
   });
 
   it('reads index.html in the file’s place as unreadable, and changes nothing', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     const { result } = renderHook(() => useNewVersion());
     await act(() => checkVersion());
 
@@ -134,7 +117,7 @@ describe('checkVersion', () => {
   // A refusal and a chunk that would not load wait for the read before
   // anything shows, so a file that never answers must not hold them.
   it('gives up on a read after five seconds, as unreadable, and changes nothing', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     const { result } = renderHook(() => useNewVersion());
     await act(() => checkVersion());
 
@@ -172,7 +155,7 @@ describe('noteOutdated', () => {
   });
 
   it('reads the file at once, and makes a newer build urgent though its revision is the same', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     const { result } = renderHook(() => useNewVersion());
 
     expect(await act(() => noteOutdated())).toBe('newer');
@@ -228,7 +211,7 @@ describe('noteOutdated', () => {
   });
 
   it('forgets it once the API serves this tab again, as after a rollback', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     const { result } = renderHook(() => useNewVersion());
     await act(() => noteOutdated());
 
@@ -290,7 +273,7 @@ describe('loadNewerOnce', () => {
     vi.spyOn(Date, 'now').mockReturnValue(now + later);
 
   it('loads in full once per newer build, and never again for it', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     await checkVersion();
 
     at(0);
@@ -300,14 +283,14 @@ describe('loadNewerOnce', () => {
     expect(reloadPage).toHaveBeenCalledTimes(1);
 
     // Another build, and it may load again.
-    serve('e4f5a6b');
+    serveVersion({ build: 'e4f5a6b' });
     await checkVersion();
     expect(loadNewerOnce()).toBe(true);
     expect(reloadPage).toHaveBeenCalledTimes(2);
   });
 
   it('loads again for the same build once the time a caller gives has passed', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     await checkVersion();
 
     at(0);
@@ -325,7 +308,7 @@ describe('loadNewerOnce', () => {
   });
 
   it('loads nothing where storage is refused, since nothing would stop it repeating', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     await checkVersion();
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new DOMException('The operation is insecure.', 'SecurityError');
@@ -369,7 +352,7 @@ describe('useReloadAtNextPage', () => {
   });
 
   it('loads the next page in full once a newer build is known, not a tab or a filter', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     await checkVersion();
     const user = userEvent.setup();
     renderAt('/orders/1');
@@ -386,7 +369,7 @@ describe('useReloadAtNextPage', () => {
   });
 
   it('loads in full once per new version: back on the old build, later pages leave it to the person', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     await checkVersion();
     const user = userEvent.setup();
     const first = renderAt('/orders');
@@ -407,14 +390,14 @@ describe('useReloadAtNextPage', () => {
     expect(reloadPage).toHaveBeenCalledTimes(1);
 
     // A version newer still: the next page loads in full for it, once.
-    serve('e4f5a6b');
+    serveVersion({ build: 'e4f5a6b' });
     await checkVersion();
     await user.click(screen.getByRole('link', { name: 'Open orders' }));
     expect(reloadPage).toHaveBeenCalledTimes(2);
   });
 
   it('keeps a filter in the address on the same page', async () => {
-    serve('a1b2c3d');
+    serveVersion();
     await checkVersion();
     const user = userEvent.setup();
     renderAt('/orders');

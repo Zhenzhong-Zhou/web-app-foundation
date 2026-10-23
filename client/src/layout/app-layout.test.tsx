@@ -4,10 +4,9 @@ import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { API_REVISION } from '../api/revision.gen';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
-import { BUILD } from '../version/build';
+import { deploy } from '../test/version';
 import { reloadPage } from '../version/reload-page';
 import { checkVersion } from '../version/version-check';
 import { AppLayout } from './app-layout';
@@ -182,23 +181,10 @@ describe('a new version', () => {
       ),
     );
   });
-  afterEach(async () => {
+  afterEach(() => {
     vi.mocked(reloadPage).mockClear();
     vi.unstubAllGlobals();
-    // This tab's own build on the server again, for the next test.
-    server.resetHandlers();
-    await checkVersion();
   });
-
-  /** A deploy: the static host's version.json names another build. */
-  async function deploy(apiRevision = API_REVISION) {
-    server.use(
-      http.get('/version.json', () =>
-        HttpResponse.json({ ...BUILD, build: 'a1b2c3d', apiRevision }),
-      ),
-    );
-    await act(() => checkVersion());
-  }
 
   const NOTE =
     'A new version is ready. It loads by itself when you open another page.';
@@ -272,7 +258,7 @@ describe('a new version', () => {
   it('turns amber once its saves would be refused, first on the page, in place of the button and the dot', async () => {
     const user = userEvent.setup();
     renderFrame();
-    await deploy(API_REVISION + 1);
+    await deploy({ urgent: true });
 
     const banner = screen.getByRole('status');
     expect(banner).toHaveTextContent(
@@ -294,7 +280,7 @@ describe('a new version', () => {
   it('on a phone, amber leaves the account button without its dot', async () => {
     onAPhone();
     renderFrame();
-    await deploy(API_REVISION + 1);
+    await deploy({ urgent: true });
 
     expect(screen.getByRole('status')).toBeInTheDocument();
     expect(

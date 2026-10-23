@@ -1,5 +1,11 @@
 import { expect, test } from './fixtures';
-import { backToTheFront, deploy } from './support/version';
+import {
+  backToTheFront,
+  deploy,
+  markDocument,
+  openInventory,
+  sameDocument,
+} from './support/version';
 
 /**
  * A tab left open across a deploy (ADR-081): it finds the new version when
@@ -31,23 +37,14 @@ test('a deploy: New version in the top bar, and the next page loads in full', as
 
   // Another page loads in full, from the new version: a mark left on this
   // document is gone from the next.
-  await page.evaluate(() => {
-    (window as { sameDocument?: boolean }).sameDocument = true;
-  });
+  await markDocument(page);
   const loaded = page.waitForEvent('load');
-  await page
-    .getByRole('navigation', { name: 'Main' })
-    .getByRole('link', { name: 'Inventory' })
-    .click();
+  await openInventory(page);
   await loaded;
 
   await expect(page).toHaveURL(/\/inventory$/);
   await expect(
     page.getByRole('heading', { level: 1, name: 'Inventory' }),
   ).toBeVisible();
-  expect(
-    await page.evaluate(
-      () => (window as { sameDocument?: boolean }).sameDocument,
-    ),
-  ).toBeUndefined();
+  expect(await sameDocument(page)).toBeUndefined();
 });

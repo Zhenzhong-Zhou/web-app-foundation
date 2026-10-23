@@ -1,18 +1,11 @@
 import { act, screen } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { API_REVISION } from '../api/revision.gen';
 import { ApiError } from '../lib/api';
 import { renderWithAuth } from '../test/render-with-auth';
-import { server } from '../test/setup';
-import { BUILD } from '../version/build';
-import {
-  checkVersion,
-  noteOutdated,
-  noteServed,
-} from '../version/version-check';
+import { OUTDATED, serveVersion } from '../test/version';
+import { noteOutdated } from '../version/version-check';
 import { LoadFailure } from './load-failure';
 
 function renderFailure(failure: unknown, onRetry = vi.fn()) {
@@ -90,32 +83,10 @@ describe('LoadFailure', () => {
 
   describe('refused for this tab’s API revision (ADR-081)', () => {
     const outdated = () =>
-      new ApiError(
-        'This tab is running an older version of the app, so nothing was saved. Copy anything you typed, then reload.',
-        409,
-        'test-request',
-        undefined,
-        'client_outdated',
-      );
-
-    beforeEach(async () => {
-      noteServed();
-      await checkVersion();
-    });
-    afterEach(() => {
-      vi.useRealTimers();
-    });
+      new ApiError(OUTDATED, 409, 'test-request', undefined, 'client_outdated');
 
     it('says a new version is ready once it is out, with Reload', async () => {
-      server.use(
-        http.get('/version.json', () =>
-          HttpResponse.json({
-            ...BUILD,
-            build: 'a1b2c3d',
-            apiRevision: API_REVISION + 1,
-          }),
-        ),
-      );
+      serveVersion({ urgent: true });
       await noteOutdated();
       renderFailure(outdated());
 

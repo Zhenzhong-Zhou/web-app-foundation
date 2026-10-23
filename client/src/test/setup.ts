@@ -5,6 +5,11 @@ import { setupServer } from 'msw/node';
 import type { JSXElementConstructor, ReactNode } from 'react';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
+import {
+  checkVersion,
+  newVersionNow,
+  noteServed,
+} from '../version/version-check';
 import { handlers } from './handlers';
 
 export const server = setupServer(...handlers);
@@ -78,11 +83,23 @@ beforeAll(() => {
   server.listen({ onUnhandledFrame: 'error' });
 });
 
-afterEach(() => {
+afterEach(async () => {
   // Overrides are per-test. Without this a handler set to return a 409 leaks
   // into the next test in the file and fails something unrelated.
   server.resetHandlers();
   cleanup();
+
+  // What the version check knows lives in its module, which a file's tests
+  // share (ADR-081): back to this tab's own build on the server, the API
+  // serving it, and no load in full noted, whatever the test deployed or
+  // was refused. Real timers first, since the read waits on one.
+  vi.useRealTimers();
+  sessionStorage.clear();
+  const known = newVersionNow();
+  if (known.newer || known.outdated) {
+    noteServed();
+    await checkVersion();
+  }
 });
 
 afterAll(() => {

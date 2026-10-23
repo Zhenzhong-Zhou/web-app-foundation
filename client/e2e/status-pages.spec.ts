@@ -1,7 +1,10 @@
-import type { Page } from '@playwright/test';
-
 import { expect, test } from './fixtures';
-import { deploy } from './support/version';
+import {
+  deploy,
+  markDocument,
+  openInventory,
+  sameDocument,
+} from './support/version';
 
 /**
  * Status pages (conventions.md): an unknown address and a record that does
@@ -43,26 +46,12 @@ test('an order that does not exist says so, with the way to Orders', async ({
 test.describe('a page that won’t load', () => {
   const chunk = '**/src/inventory/inventory-page.tsx*';
 
-  /** A mark on this document, gone from the next if it loads in full. */
-  const mark = (page: Page) =>
-    page.evaluate(() => {
-      (window as { sameDocument?: boolean }).sameDocument = true;
-    });
-  const marked = (page: Page) =>
-    page.evaluate(() => (window as { sameDocument?: boolean }).sameDocument);
-
   test.beforeEach(async ({ page }) => {
     await page.goto('/orders');
     await expect(
       page.getByRole('heading', { level: 1, name: 'Orders' }),
     ).toBeVisible();
   });
-
-  const openInventory = (page: Page) =>
-    page
-      .getByRole('navigation', { name: 'Main' })
-      .getByRole('link', { name: 'Inventory' })
-      .click();
 
   test('offline: says so, and loads by itself when the connection is back', async ({
     page,
@@ -87,7 +76,7 @@ test.describe('a page that won’t load', () => {
     // The browser says the connection is back: the page loads in full.
     await page.unroute(chunk);
     await page.unroute(file);
-    await mark(page);
+    await markDocument(page);
     const loaded = page.waitForEvent('load');
     await page.evaluate(() => window.dispatchEvent(new Event('online')));
     await loaded;
@@ -95,7 +84,7 @@ test.describe('a page that won’t load', () => {
     await expect(
       page.getByRole('heading', { level: 1, name: 'Inventory' }),
     ).toBeVisible();
-    expect(await marked(page)).toBeUndefined();
+    expect(await sameDocument(page)).toBeUndefined();
   });
 
   test('after a deploy: loads in full from the new version, once', async ({
@@ -105,11 +94,11 @@ test.describe('a page that won’t load', () => {
     await deploy(page);
     await page.route(chunk, (route) => route.abort('internetdisconnected'));
 
-    await mark(page);
+    await markDocument(page);
     const loaded = page.waitForEvent('load');
     await openInventory(page);
     await loaded;
-    expect(await marked(page)).toBeUndefined();
+    expect(await sameDocument(page)).toBeUndefined();
     await expect(page).toHaveURL(/\/inventory$/);
 
     // Loaded, and the chunk still fails: this time it says so rather than
