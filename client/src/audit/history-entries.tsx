@@ -1,5 +1,4 @@
 import {
-  Alert,
   Box,
   Divider,
   Link,
@@ -13,6 +12,7 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { AuditRecord } from '../api/types.gen';
+import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PersonAvatar } from '../components/person-avatar';
 import {
@@ -44,14 +44,22 @@ export function HistoryEntries({ resourceId }: { resourceId: string }) {
     limit: String(PAGE_SIZE),
   });
 
-  const { entries, error, loading, hasMore, loadingMore, loadMore } =
-    useKeysetList<AuditRecord>(`/audit?${query.toString()}`);
+  const {
+    entries,
+    error,
+    failed,
+    loading,
+    hasMore,
+    loadingMore,
+    loadMore,
+    reload,
+  } = useKeysetList<AuditRecord>(`/audit?${query.toString()}`);
   const showSkeleton = useDelayedFlag(loading);
 
   return (
     <Stack sx={{ flexGrow: 1, minHeight: 0 }}>
       <Box sx={{ flexGrow: 1, overflowY: 'auto', px: 2, py: 1 }}>
-        {error && <Alert severity="error">{error}</Alert>}
+        <ListError error={error} onRetry={failed ? reload : undefined} />
 
         {loading && showSkeleton && <Skeleton height={160} />}
 

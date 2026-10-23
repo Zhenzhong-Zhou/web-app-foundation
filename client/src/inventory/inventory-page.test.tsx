@@ -1,10 +1,11 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { StockRow } from '../api/types.gen';
+import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { InventoryPage } from './inventory-page';
@@ -85,5 +86,37 @@ describe('InventoryPage', () => {
     expect(
       screen.getByRole('menuitem', { name: 'Correct the count' }),
     ).toBeInTheDocument();
+  });
+
+  it('shows only why a first read failed, with Try again, never Nothing here yet. (#195)', async () => {
+    let reads = 0;
+    server.use(
+      http.get('/api/v1/stock', () => {
+        reads += 1;
+        return reads === 1
+          ? apiError(500, 'Internal server error')
+          : HttpResponse.json({ entries: [], nextCursor: null });
+      }),
+      http.get('/api/v1/stock/counts', () =>
+        HttpResponse.json({ expiring: 0, needsCost: 0 }),
+      ),
+      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
+    );
+    renderWithAuth(
+      <MemoryRouter>
+        <InventoryPage />
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+
+    const failed = await screen.findByRole('alert');
+    expect(failed).toHaveTextContent('Internal server error');
+    expect(screen.queryByText('Nothing here yet.')).not.toBeInTheDocument();
+
+    await userEvent.click(
+      within(failed).getByRole('button', { name: 'Try again' }),
+    );
+    expect(await screen.findByText('Nothing here yet.')).toBeVisible();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

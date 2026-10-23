@@ -1,5 +1,4 @@
 import {
-  Alert,
   Link,
   Paper,
   Skeleton,
@@ -20,6 +19,7 @@ import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
+import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
@@ -100,6 +100,7 @@ export function InvoicesPage() {
     entries: rows,
     error,
     refused,
+    failed,
     loading,
     hasMore,
     loadingMore,
@@ -160,112 +161,116 @@ export function InvoicesPage() {
         />
       </FilterRow>
 
-      {error && <Alert severity="error">{error}</Alert>}
+      <ListError error={error} onRetry={failed ? reload : undefined} />
 
-      <Paper variant="outlined">
-        {loading ? (
-          <Stack sx={{ p: 2 }} spacing={1}>
-            {showSkeleton ? <Skeleton height={48} /> : null}
-          </Stack>
-        ) : rows?.length === 0 ? (
-          <EmptyState learnMore={{ guide: 'invoices', section: 'issue' }}>
-            {search || range.from || range.to
-              ? intl.formatMessage({
-                  id: 'inventory.noMatch',
-                  defaultMessage: 'Nothing matches that search.',
-                })
-              : filter === 'all'
+      {!failed && (
+        <Paper variant="outlined">
+          {loading ? (
+            <Stack sx={{ p: 2 }} spacing={1}>
+              {showSkeleton ? <Skeleton height={48} /> : null}
+            </Stack>
+          ) : rows?.length === 0 ? (
+            <EmptyState learnMore={{ guide: 'invoices', section: 'issue' }}>
+              {search || range.from || range.to
                 ? intl.formatMessage({
-                    id: 'invoices.empty',
-                    defaultMessage:
-                      'No invoices yet. Open an order and create one from a shipment.',
+                    id: 'inventory.noMatch',
+                    defaultMessage: 'Nothing matches that search.',
                   })
-                : intl.formatMessage({
-                    id: 'invoices.emptyFiltered',
-                    defaultMessage: 'Nothing here.',
-                  })}
-          </EmptyState>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'invoices.number',
-                      defaultMessage: 'Number',
+                : filter === 'all'
+                  ? intl.formatMessage({
+                      id: 'invoices.empty',
+                      defaultMessage:
+                        'No invoices yet. Open an order and create one from a shipment.',
+                    })
+                  : intl.formatMessage({
+                      id: 'invoices.emptyFiltered',
+                      defaultMessage: 'Nothing here.',
                     })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'invoices.customer',
-                      defaultMessage: 'Customer',
-                    })}
-                  </TableCell>
-                  <SortHeader
-                    label={invoiceDate}
-                    active={sort?.key === 'invoiceDate'}
-                    order={sort?.order ?? 'asc'}
-                    onSort={() => toggle('invoiceDate')}
-                  />
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'invoices.due',
-                      defaultMessage: 'Due',
-                    })}
-                  </TableCell>
-                  <SortHeader
-                    align="right"
-                    label={total}
-                    active={sort?.key === 'total'}
-                    order={sort?.order ?? 'asc'}
-                    onSort={() => toggle('total')}
-                  />
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'common.status',
-                      defaultMessage: 'Status',
-                    })}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {rows?.map((row) => (
-                  <TableRow key={row.id} hover>
+            </EmptyState>
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
                     <TableCell>
-                      <Link component={RouterLink} to={`/invoices/${row.id}`}>
-                        {row.number ??
-                          intl.formatMessage({
-                            id: 'orders.status.draft',
-                            defaultMessage: 'Draft',
-                          })}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{row.partnerName}</TableCell>
-                    <TableCell>
-                      {row.invoiceDate ? formatDay(row.invoiceDate) : NO_VALUE}
+                      {intl.formatMessage({
+                        id: 'invoices.number',
+                        defaultMessage: 'Number',
+                      })}
                     </TableCell>
                     <TableCell>
-                      {row.dueDate ? formatDay(row.dueDate) : NO_VALUE}
+                      {intl.formatMessage({
+                        id: 'invoices.customer',
+                        defaultMessage: 'Customer',
+                      })}
                     </TableCell>
-                    <TableCell align="right">
-                      {/* Stored at issue; a draft's total is on its page. */}
-                      {formatMoney(row.total, row.currency)}
-                    </TableCell>
+                    <SortHeader
+                      label={invoiceDate}
+                      active={sort?.key === 'invoiceDate'}
+                      order={sort?.order ?? 'asc'}
+                      onSort={() => toggle('invoiceDate')}
+                    />
                     <TableCell>
-                      <StatusChip
-                        tone={STATUS_TONES.invoice[row.status]}
-                        label={invoiceStatus(row.status).label}
-                      />
+                      {intl.formatMessage({
+                        id: 'invoices.due',
+                        defaultMessage: 'Due',
+                      })}
+                    </TableCell>
+                    <SortHeader
+                      align="right"
+                      label={total}
+                      active={sort?.key === 'total'}
+                      order={sort?.order ?? 'asc'}
+                      onSort={() => toggle('total')}
+                    />
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'common.status',
+                        defaultMessage: 'Status',
+                      })}
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
+                </TableHead>
+
+                <TableBody>
+                  {rows?.map((row) => (
+                    <TableRow key={row.id} hover>
+                      <TableCell>
+                        <Link component={RouterLink} to={`/invoices/${row.id}`}>
+                          {row.number ??
+                            intl.formatMessage({
+                              id: 'orders.status.draft',
+                              defaultMessage: 'Draft',
+                            })}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{row.partnerName}</TableCell>
+                      <TableCell>
+                        {row.invoiceDate
+                          ? formatDay(row.invoiceDate)
+                          : NO_VALUE}
+                      </TableCell>
+                      <TableCell>
+                        {row.dueDate ? formatDay(row.dueDate) : NO_VALUE}
+                      </TableCell>
+                      <TableCell align="right">
+                        {/* Stored at issue; a draft's total is on its page. */}
+                        {formatMoney(row.total, row.currency)}
+                      </TableCell>
+                      <TableCell>
+                        <StatusChip
+                          tone={STATUS_TONES.invoice[row.status]}
+                          label={invoiceStatus(row.status).label}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Paper>
+      )}
 
       <LoadMoreButton
         hasMore={hasMore}

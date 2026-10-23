@@ -1,5 +1,4 @@
 import {
-  Alert,
   Link,
   Paper,
   Skeleton,
@@ -19,6 +18,7 @@ import type { ReturnAuthorizationSummary } from '../api/types.gen';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { FilterRow } from '../components/filter-row';
+import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
@@ -79,6 +79,7 @@ export function RmasPage() {
     entries: rows,
     error,
     refused,
+    failed,
     loading,
     hasMore,
     loadingMore,
@@ -135,108 +136,110 @@ export function RmasPage() {
         />
       </FilterRow>
 
-      {error && <Alert severity="error">{error}</Alert>}
+      <ListError error={error} onRetry={failed ? reload : undefined} />
 
-      <Paper variant="outlined">
-        {loading ? (
-          <Stack sx={{ p: 2 }} spacing={1}>
-            {showSkeleton ? <Skeleton height={48} /> : null}
-          </Stack>
-        ) : rows?.length === 0 ? (
-          <EmptyState learnMore={{ guide: 'returns', section: 'authorize' }}>
-            {search || range.from || range.to
-              ? intl.formatMessage({
-                  id: 'inventory.noMatch',
-                  defaultMessage: 'Nothing matches that search.',
-                })
-              : filter === 'open'
+      {!failed && (
+        <Paper variant="outlined">
+          {loading ? (
+            <Stack sx={{ p: 2 }} spacing={1}>
+              {showSkeleton ? <Skeleton height={48} /> : null}
+            </Stack>
+          ) : rows?.length === 0 ? (
+            <EmptyState learnMore={{ guide: 'returns', section: 'authorize' }}>
+              {search || range.from || range.to
                 ? intl.formatMessage({
-                    id: 'rmas.empty',
-                    defaultMessage: 'No open returns.',
+                    id: 'inventory.noMatch',
+                    defaultMessage: 'Nothing matches that search.',
                   })
-                : intl.formatMessage({
-                    id: 'invoices.emptyFiltered',
-                    defaultMessage: 'Nothing here.',
-                  })}
-          </EmptyState>
-        ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'invoices.number',
-                      defaultMessage: 'Number',
+                : filter === 'open'
+                  ? intl.formatMessage({
+                      id: 'rmas.empty',
+                      defaultMessage: 'No open returns.',
+                    })
+                  : intl.formatMessage({
+                      id: 'invoices.emptyFiltered',
+                      defaultMessage: 'Nothing here.',
                     })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'invoices.customer',
-                      defaultMessage: 'Customer',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'inventory.trace.order',
-                      defaultMessage: 'Order',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'invoices.void.reason',
-                      defaultMessage: 'Reason',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'rmas.raised',
-                      defaultMessage: 'Raised',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'common.status',
-                      defaultMessage: 'Status',
-                    })}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows?.map((row) => (
-                  <TableRow key={row.id} hover>
+            </EmptyState>
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
                     <TableCell>
-                      <Link
-                        component={RouterLink}
-                        to={`/return-authorizations/${row.id}`}
-                      >
-                        {row.number}
-                      </Link>
+                      {intl.formatMessage({
+                        id: 'invoices.number',
+                        defaultMessage: 'Number',
+                      })}
                     </TableCell>
-                    <TableCell>{row.partnerName}</TableCell>
                     <TableCell>
-                      <Link
-                        component={RouterLink}
-                        to={`/orders/${row.orderId}`}
-                      >
-                        {row.orderNumber}
-                      </Link>
+                      {intl.formatMessage({
+                        id: 'invoices.customer',
+                        defaultMessage: 'Customer',
+                      })}
                     </TableCell>
-                    <TableCell>{row.reason}</TableCell>
-                    <TableCell>{formatDate(row.createdAt)}</TableCell>
                     <TableCell>
-                      <StatusChip
-                        tone={STATUS_TONES.returnAuthorization[row.status]}
-                        label={rmaStatus(row.status).label}
-                      />
+                      {intl.formatMessage({
+                        id: 'inventory.trace.order',
+                        defaultMessage: 'Order',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'invoices.void.reason',
+                        defaultMessage: 'Reason',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'rmas.raised',
+                        defaultMessage: 'Raised',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'common.status',
+                        defaultMessage: 'Status',
+                      })}
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
+                </TableHead>
+                <TableBody>
+                  {rows?.map((row) => (
+                    <TableRow key={row.id} hover>
+                      <TableCell>
+                        <Link
+                          component={RouterLink}
+                          to={`/return-authorizations/${row.id}`}
+                        >
+                          {row.number}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{row.partnerName}</TableCell>
+                      <TableCell>
+                        <Link
+                          component={RouterLink}
+                          to={`/orders/${row.orderId}`}
+                        >
+                          {row.orderNumber}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{row.reason}</TableCell>
+                      <TableCell>{formatDate(row.createdAt)}</TableCell>
+                      <TableCell>
+                        <StatusChip
+                          tone={STATUS_TONES.returnAuthorization[row.status]}
+                          label={rmaStatus(row.status).label}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Paper>
+      )}
 
       <LoadMoreButton
         hasMore={hasMore}

@@ -23,6 +23,7 @@ import type { AuditRecord } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
+import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { ReferencesWhole } from '../components/reference';
@@ -94,6 +95,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
     entries,
     error,
     refused,
+    failed,
     loading,
     hasMore,
     loadingMore,
@@ -309,7 +311,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
         </Alert>
       )}
 
-      {error && <Alert severity="error">{error}</Alert>}
+      <ListError error={error} onRetry={failed ? reload : undefined} />
 
       {loading && showSkeleton && <Skeleton height={200} />}
 

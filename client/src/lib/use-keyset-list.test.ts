@@ -203,6 +203,37 @@ describe('useKeysetList', () => {
     expect(ids(result.current.entries)).toEqual(['a1', 'a2']);
   });
 
+  it('says a first page that failed failed, with no rows, until a read works (#195)', async () => {
+    let fail = true;
+    server.use(
+      http.get(`${BASE}/things`, () =>
+        fail
+          ? HttpResponse.error()
+          : HttpResponse.json({ entries: rows('a1'), nextCursor: 'c1' }),
+      ),
+    );
+
+    const { result } = renderHook(() => useKeysetList<Row>('/things'));
+    await waitFor(() => expect(result.current.failed).toBe(true));
+    expect(result.current.error).toBe('Could not reach the server.');
+    expect(result.current.entries).toBeNull();
+    expect(result.current.loading).toBe(false);
+
+    fail = false;
+    act(() => result.current.reload());
+    await waitFor(() => expect(ids(result.current.entries)).toEqual(['a1']));
+    expect(result.current.failed).toBe(false);
+    expect(result.current.error).toBeNull();
+
+    // A Load more that fails keeps the rows: not a failed list.
+    fail = true;
+    await act(async () => {
+      await result.current.loadMore();
+    });
+    expect(result.current.error).toBe('Could not reach the server.');
+    expect(result.current.failed).toBe(false);
+  });
+
   it('reads the first page again on reload, keeping the rows up meanwhile', async () => {
     // The head changes between reads, as it does after a run is planned.
     let heads = 0;
