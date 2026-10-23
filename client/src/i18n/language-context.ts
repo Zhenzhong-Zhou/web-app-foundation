@@ -1,10 +1,17 @@
 import { createContext } from 'react';
 
 import type { Locale } from '../lib/locales';
+import type { ChunkFailure } from '../version/load-chunk';
 
 /** A language whose catalogue would not load (ADR-081). */
 export interface LanguageFailure {
   locale: Locale;
+  /**
+   * Why, as the chunk loader found it: the connection, or a newer build
+   * whose page this tab has already loaded in full once within the minute
+   * and whose files it still cannot read, or a real failure in this one.
+   */
+  why: ChunkFailure;
   /**
    * The language the app started in, or the one the account then applied
    * to it: the screens fell back to English, and a banner says so. Else a

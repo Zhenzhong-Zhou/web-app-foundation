@@ -2178,28 +2178,38 @@ guides alone. Each try waits a second and tries once more first.
 
 - **MC-3418** *(ADR-081)* Switching. Signed in, in English, block the
   catalogue and choose 简体中文 in the account menu: the screens stay in
-  English, and at the foot of the screen Couldn’t load 简体中文. Check your
-  connection and try again., with Try again and Close; a minute later it
-  is still there. Reload: still English, and Your account's Language still
-  reads what it did, since nothing was saved. Choose 简体中文 again, unblock,
-  and press Try again in the message: the app is in 中文, and a reload and
-  Your account keep it. In Français, Impossible de charger 简体中文. Vérifiez
-  votre connexion et réessayez.; Close puts it away and changes nothing.
-  On the sign-in page the same.
+  English, and at the foot of the screen, in the language chosen,
+  无法加载简体中文。请检查网络连接，然后重试。, with 重试 and 关闭; a minute
+  later it is still there. Save something meanwhile, a partner's name:
+  its confirmation shows above the message, never over it, and goes; the
+  message stays. Reload: still English, and Your account's Language still
+  reads what it did, since nothing was saved. Choose 简体中文 again,
+  unblock, and press 重试 in the message: the app is in 中文, and a reload
+  and Your account keep it. From Français the same, in Chinese. Block
+  `*compiled/fr-CA*` and choose Français: Impossible de charger Français
+  (Canada). Vérifiez votre connexion et réessayez., with Réessayer and
+  Fermer;
+  Fermer puts it away and changes nothing. On the sign-in page the same.
 - **MC-3419** *(ADR-081)* At start. In 中文, signed in, block the
   catalogue and reload: the app in English rather than a blank page, an
-  amber banner topping the page, Couldn’t load 简体中文, so the app is in
-  English for now., with Try again and no close, and no message at the
-  foot of the screen. A screen reader reads 简体中文 in Chinese. Signed out,
-  the same banner under the language and text size. Unblock and Try
-  again: the app in 中文, the banner gone. Blocked and reloaded again, Your
+  amber banner topping the page, in Chinese,
+  无法加载简体中文，应用暂时以英文显示。, with 重试 and no close, and no message
+  at the foot of the screen. A screen reader reads the banner in Chinese.
+  Signed out, the same banner under the language and text size. Press 重试
+  still blocked: 正在重新加载简体中文… for a second or two, 重试 greyed, then
+  the banner as it was, a screen reader saying each. Unblock and 重试: the app in 中文, the banner gone.
+  Blocked and reloaded again, Your
   account's Language reads 简体中文; choosing English there puts the banner
   away, and the next reload starts in English.
 - **MC-3420** *(ADR-081)* After a deploy. In English, deploy without
   switching tabs, block the catalogue and choose 简体中文: the page loads in
   full by itself (a new document in the Network tab), still in English,
   since nothing was saved. Choose 简体中文 again within a minute, still
-  blocked: MC-3418's message, and nothing loads by itself.
+  blocked: at the foot of the screen
+  无法加载简体中文，因为此标签页打开期间推出了新版本。重新加载即可使用，不会丢失任何内容。,
+  with 重新加载 and 关闭, never
+  the connection's words, and nothing loads by itself; 重新加载 loads the
+  page.
 
 The status tones are looked at in both colour modes, chosen in the account
 menu's Colour mode.
@@ -2268,6 +2278,12 @@ as `docs/runbooks/render.md`, "Deploys", has them.
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R42** *(a language that won't load, in its own words)* In 中文,
+  with the Chinese catalogue blocked, the banner the app starts with, and
+  the message when switching to it, are in Chinese, never in English alone
+  (MC-3418, MC-3419). Found by ADR-081's walkthrough, the novice
+  bookkeeper starting the app in 中文.
 
 - **MC-R41** *(a new version, read aloud)* With VoiceOver and a dialog
   open, a new version coming out is said in the dialog, never lost behind
@@ -2908,3 +2924,6 @@ first.
 - 2026-10-23: ADR-081's walkthroughs, the new version read aloud in a
   dialog and urgent when urgent (W1, W2): MC-3401 and MC-3404 extended,
   and MC-R41.
+- 2026-10-23: ADR-081's walkthroughs and review, a language that won't
+  load says so in its own words (W4, W5, U1, U2): MC-3418 to MC-3420
+  rewritten, and MC-R42.

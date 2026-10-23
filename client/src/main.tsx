@@ -53,12 +53,13 @@ createRoot(document.getElementById('root')!).render(
         {/* Inside the theme, so the toast is coloured like everything else;
             outside the router, because a confirmation should survive the
             navigation a save often triggers. */}
-        <ToastProvider>
+        <ToastProvider
+          // A language that would not load: the provider above says so
+          // through its context, and this, inside the theme, shows it at
+          // the foot of the screen, under any confirmation (ADR-081).
+          foot={<LanguageFailureToast />}
+        >
           <RouterProvider router={router} />
-          {/* A language that would not load: the provider above says so
-              through its context, and this, inside the theme, shows it
-              (ADR-081). Before the confirmation, which shows over it. */}
-          <LanguageFailureToast />
         </ToastProvider>
       </LocalizedTheme>
     </LanguageProvider>

@@ -15,6 +15,7 @@ import {
   isLocale,
   type Locale,
 } from '../lib/locales';
+import { ChunkLoadError } from '../version/load-chunk';
 import { ENGLISH, loadMessages, type Messages } from './catalogues';
 import { makeIntl, setIntl } from './intl';
 import { LanguageContext, type LanguageFailure } from './language-context';
@@ -123,14 +124,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         if (request.remember) remember(request.locale);
         request.settle(true);
       },
-      () => {
+      (caught: unknown) => {
         if (latest.current !== request) return;
         if (!shown.current) {
           shown.current = 'en';
           setActive(apply('en', ENGLISH));
         }
         // Kept as the latest, so Try again loads it and settles it.
-        setFailure({ locale: request.locale, atStart: request.atStart });
+        setFailure({
+          locale: request.locale,
+          atStart: request.atStart,
+          why: caught instanceof ChunkLoadError ? caught.failure : 'offline',
+        });
       },
     );
   }, []);

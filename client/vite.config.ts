@@ -62,7 +62,19 @@ function recompileCatalogues(): Plugin {
                 timestamp: true,
               });
             } else {
-              logger.info('Catalogues recompiled.', { timestamp: true });
+              // With the words a language's failure is said in, which
+              // `npm run i18n:compile` writes after it (ADR-081).
+              try {
+                execFileSync(process.execPath, [
+                  path.join(root, 'scripts/write-failure-words.mjs'),
+                ]);
+                logger.info('Catalogues recompiled.', { timestamp: true });
+              } catch {
+                logger.error(
+                  'Catalogues recompiled, but not the words a failed language is said in.',
+                  { timestamp: true },
+                );
+              }
             }
             if (again) {
               again = false;

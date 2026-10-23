@@ -81,14 +81,20 @@ describe('a language that won’t load', () => {
         screen.getByRole('option', { name: '简体中文（测试版）' }),
       );
 
+      // Said in the language that would not load, the one chosen.
       const toast = await screen.findByRole('status');
       expect(toast).toHaveTextContent(
-        'Couldn’t load 简体中文. Check your connection and try again.',
+        '无法加载简体中文。请检查网络连接，然后重试。',
       );
       expect(within(toast).getByText('简体中文')).toHaveAttribute(
         'lang',
         'zh-Hans',
       );
+      expect(
+        within(toast)
+          .getByText(/^无法加载/)
+          .closest('[lang]'),
+      ).toHaveAttribute('lang', 'zh-Hans');
       // Still in English, and nothing saved, on this device or the account.
       expect(
         screen.getByRole('combobox', { name: 'Language' }),
@@ -100,9 +106,7 @@ describe('a language that won’t load', () => {
       expect(screen.getByRole('status')).toBe(toast);
       expect(saved).not.toHaveBeenCalled();
 
-      await user.click(
-        within(toast).getByRole('button', { name: 'Try again' }),
-      );
+      await user.click(within(toast).getByRole('button', { name: '重试' }));
 
       expect(
         await screen.findByRole('combobox', { name: '语言' }),
@@ -135,7 +139,7 @@ describe('a language that won’t load', () => {
       );
       await user.click(
         within(await screen.findByRole('status')).getByRole('button', {
-          name: 'Close',
+          name: '关闭',
         }),
       );
 
@@ -181,6 +185,38 @@ describe('a language that won’t load', () => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
       expect(localStorage.getItem('language')).toBeNull();
     });
+
+    it('a newer build already loaded in full this minute: says a new version is why, with Reload, never the connection', async () => {
+      const user = userEvent.setup({
+        advanceTimers: (ms) => vi.advanceTimersByTime(ms),
+      });
+      // As the loader gives up once the minute's one load in full is spent.
+      vi.mocked(loadMessages).mockRejectedValueOnce(
+        new ChunkLoadError(
+          'newer',
+          new TypeError('Failed to fetch dynamically imported module'),
+        ),
+      );
+      renderWithAuth(
+        <>
+          <LanguageSelect />
+          <LanguageFailureToast />
+        </>,
+      );
+
+      await user.click(screen.getByRole('combobox', { name: 'Language' }));
+      await user.click(
+        screen.getByRole('option', { name: '简体中文（测试版）' }),
+      );
+
+      const toast = await screen.findByRole('status');
+      expect(toast).toHaveTextContent(
+        '无法加载简体中文，因为此标签页打开期间推出了新版本。重新加载即可使用，不会丢失任何内容。',
+      );
+      expect(within(toast).queryByRole('button', { name: '重试' })).toBeNull();
+      await user.click(within(toast).getByRole('button', { name: '重新加载' }));
+      expect(reloadPage).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('at start', () => {
@@ -194,9 +230,10 @@ describe('a language that won’t load', () => {
         </>,
       );
 
+      // Said in the language that would not load, the one stored.
       const banner = await screen.findByRole('status');
       expect(banner).toHaveTextContent(
-        'Couldn’t load 简体中文, so the app is in English for now.',
+        '无法加载简体中文，应用暂时以英文显示。',
       );
       expect(within(banner).getByText('简体中文')).toHaveAttribute(
         'lang',
@@ -209,13 +246,51 @@ describe('a language that won’t load', () => {
       expect(localStorage.getItem('language')).toBe('zh-Hans');
 
       await userEvent.click(
-        within(banner).getByRole('button', { name: 'Try again' }),
+        within(banner).getByRole('button', { name: '重试' }),
       );
 
       expect(
         await screen.findByRole('combobox', { name: '语言' }),
       ).toBeInTheDocument();
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+
+    it('says it is loading again while Try again tries, and why once more if it fails', async () => {
+      localStorage.setItem('language', 'zh-Hans');
+      failNextLoad();
+      renderWithAuth(<LanguageFailureBanner />);
+      const banner = await screen.findByRole('status');
+
+      let fail: (reason: unknown) => void = () => undefined;
+      vi.mocked(loadMessages).mockImplementationOnce(
+        () => new Promise((_resolve, reject) => (fail = reject)),
+      );
+      await userEvent.click(
+        within(banner).getByRole('button', { name: '重试' }),
+      );
+
+      expect(banner).toHaveTextContent('正在重新加载简体中文…');
+      expect(
+        within(banner).getByRole('button', { name: '重试' }),
+      ).toBeDisabled();
+
+      await act(async () => {
+        fail(
+          new ChunkLoadError(
+            'offline',
+            new TypeError('Failed to fetch dynamically imported module'),
+          ),
+        );
+        await Promise.resolve();
+      });
+      expect(screen.getByRole('status')).toHaveTextContent(
+        '无法加载简体中文，应用暂时以英文显示。',
+      );
+      expect(
+        within(screen.getByRole('status')).getByRole('button', {
+          name: '重试',
+        }),
+      ).toBeEnabled();
     });
 
     it('the account asking for the same language: the banner goes on saying it, never a toast', async () => {
@@ -230,9 +305,7 @@ describe('a language that won’t load', () => {
         </>,
       );
 
-      expect(
-        await screen.findByText(/so the app is in English for now/),
-      ).toBeInTheDocument();
+      expect(await screen.findByText(/应用暂时以英文显示/)).toBeInTheDocument();
       // The account's ask loaded it again, and failed the same way.
       await waitFor(() => expect(loadMessages).toHaveBeenCalledTimes(2));
       await act(() => Promise.resolve());
