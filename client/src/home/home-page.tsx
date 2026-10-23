@@ -34,6 +34,7 @@ import { zoneLabel } from '../lib/time-zone-label';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { rem } from '../theme/rem';
 import { TYPE } from '../theme/tokens';
+import { evenRowsSx } from './even-rows';
 import { GettingStarted } from './getting-started';
 import { greeting } from './greeting';
 import { CARDS } from './home-cards';
@@ -363,17 +364,15 @@ function OrganizationHome() {
             />
           )}
 
+          {/* In even rows, measured against the page's width rather than
+              the screen's (ADR-081). */}
           {showCards && cards.length > 0 && (
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(auto-fit, minmax(min(${rem(150)}, 100%), 1fr))`,
-                gap: 1.5,
-              }}
-            >
-              {cards.map((card) => (
-                <CountTile key={card.kind} card={card} />
-              ))}
+            <Box sx={{ containerType: 'inline-size' }}>
+              <Box sx={evenRowsSx(cards.length)}>
+                {cards.map((card) => (
+                  <CountTile key={card.kind} card={card} />
+                ))}
+              </Box>
             </Box>
           )}
 

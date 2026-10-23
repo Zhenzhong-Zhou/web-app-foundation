@@ -2217,10 +2217,26 @@ words sit beside it; one alone, or first in its line, needs nothing.
   used by another partner, wrapping between words, never inside COOP-BSL;
   Cancel, and its code is still HARBOUR.
 
+Home's tiles take as few rows as the page's width needs, shared evenly
+across them. The demo Owner has eight tiles; Daniel Okafor, an Admin,
+seven (no Costs waiting).
+
+- **MC-3423** *(ADR-081)* Home's tiles in even rows. As the Owner, at
+  1440 px and at 768 px: two rows of four, never seven and one alone; at
+  390 px, four rows of two. As Daniel, at 1440 px all seven in one row; at
+  1280 px four, then three as wide as the four above them, the end of the
+  second row left empty. Then Larger text (account menu → Text size) at
+  1440 px: the Owner's two rows of four, Daniel's four and three; at 390
+  px a tile no longer fits twice across, and each has the row to itself.
+  At no width does the page scroll sideways (MC-R39).
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R39** *(Home's tiles)* On a computer, the Owner's eight tiles on
+  Home read as two rows of four, never seven and one alone (MC-3423).
 
 - **MC-R38** *(Home's rows, read aloud)* With VoiceOver, a row on Home
   reads its number and its partner as two words, PO-000009 Lakeshore
@@ -2831,3 +2847,4 @@ first.
   Home's rows read aloud.
 - 2026-10-22: ADR-081, references kept whole in refusals: MC-3422
   extended.
+- 2026-10-22: ADR-081, Home's tiles in even rows: MC-3423, and MC-R39.
