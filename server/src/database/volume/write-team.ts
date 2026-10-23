@@ -17,7 +17,11 @@ import { invitations, memberships, users } from '../schema';
 import type { Random } from './random';
 import type { Volume } from './scale';
 
-/** What perf:plans needs of the team, recorded in the manifest. */
+/**
+ * The team, as the manifest records it for each organization: its made
+ * roles and invitations pending, counted, and the membership perf:plans
+ * times the access query for.
+ */
 export interface TeamAnchors {
   madeRoles: number;
   pendingInvitations: number;

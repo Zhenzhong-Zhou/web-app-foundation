@@ -189,7 +189,7 @@ async function seedVolume(): Promise<void> {
     // Last, so they join after the year the Owner made: the team, then
     // the newcomer, the last of all to join.
     const passwordHash = await app.get(PasswordService).hash(PASSWORD);
-    const roles = app.get(RolesService);
+    const rolesService = app.get(RolesService);
     const teams: TeamAnchors[] = [];
     const newcomers: string[] = [];
     for (const [index, account] of accounts.entries()) {
@@ -198,7 +198,7 @@ async function seedVolume(): Promise<void> {
           { userId: account.userId, organizationId: account.organizationId },
           () =>
             writeTeam(
-              roles,
+              rolesService,
               db,
               volume,
               new Random(options.seed + index),
