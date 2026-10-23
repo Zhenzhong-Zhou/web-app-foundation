@@ -2292,6 +2292,13 @@ a private window.
   to Home Screen: the P on white in the iPhone's rounded square, not a
   picture of the page. On Android, Chrome → ⋮ → Add to home screen: the P
   again, not a letter Chrome made up.
+- **MC-3502** The name in the tab. The sign-in page's tab reads Panivo,
+  and so does Home's. Inventory's reads Inventory · Panivo, and every page
+  in the rail ends the same way, Settings → Organization too; an order,
+  SO-DEMO-1 · Orders. In 中文 the page's name is Chinese and Panivo stays
+  as it is. Bookmark Inventory: the bookmark says Inventory · Panivo.
+  Empty `VITE_APP_NAME` and restart: every tab ends web-app-foundation,
+  none Foundation.
 
 ## Regressions
 
@@ -2950,3 +2957,5 @@ first.
   branch added it (R6): MC-3407 extended; MC-3405 now holds.
 - 2026-10-23: the product's icon in the tab, and its masters in
   `docs/brand/`: section 35, MC-3501.
+- 2026-10-23: a list page's tab ends with the product's name, the
+  setting index.html's title reads: MC-3502.

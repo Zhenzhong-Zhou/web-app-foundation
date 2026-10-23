@@ -1,6 +1,8 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
+import { DEFAULT_APP_NAME } from './vite.config.ts';
+
 // The computer's zone, the same on every machine (ADR-072): a test that
 // leans on it then fails everywhere, not only on a laptop that travels.
 // Tokyo, UTC+9 all year, so a day read in the computer's zone differs from
@@ -33,6 +35,8 @@ export default defineConfig({
       builtAt: '2026-10-22T03:00:00.000Z',
       version: '0.7.0',
     }),
+    // The product's name as a build without VITE_APP_NAME has it.
+    __APP_NAME__: JSON.stringify(DEFAULT_APP_NAME),
   },
   test: {
     environment: 'jsdom',

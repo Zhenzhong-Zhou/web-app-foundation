@@ -13,6 +13,7 @@ import { type ReactNode, type Ref, useEffect } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
+import { APP_NAME } from '../lib/app-name';
 import { rem } from '../theme/rem';
 
 interface Crumb {
@@ -66,8 +67,9 @@ export function PageHeader({
   headingRef?: Ref<HTMLHeadingElement>;
 }) {
   const intl = useIntl();
-  // The product's name, not a word: it stays as it is in every language.
-  const section = crumbs[0]?.label ?? 'Foundation';
+  // The product's name, as index.html's title has it, not a word: it stays
+  // as it is in every language.
+  const section = crumbs[0]?.label ?? APP_NAME;
 
   const navigate = useNavigate();
   const location = useLocation();

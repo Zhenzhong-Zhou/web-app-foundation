@@ -65,6 +65,17 @@ describe('PageHeader', () => {
     expect(document.title).toBe(before);
   });
 
+  /**
+   * A list page has no crumbs, so its tab ends with the product's name: the
+   * one index.html's title has, never a name written here. vitest.config.ts
+   * runs the tests under vite.config.ts's default.
+   */
+  it("ends a list page's tab with the product's name", () => {
+    renderHeader({ crumbs: [], title: 'Movements' });
+
+    expect(document.title).toBe('Movements · web-app-foundation');
+  });
+
   describe('back', () => {
     /** Renders where the router is, so a test can see where Back went. */
     function Where() {
