@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
@@ -196,7 +196,8 @@ describe('the role editor', () => {
     await user.click(screen.getByRole('button', { name: 'Save role' }));
 
     const name = screen.getByRole('textbox', { name: 'Name' });
-    expect(name).toHaveAttribute('aria-invalid', 'true');
+    // Once the refusal has come back (#210).
+    await waitFor(() => expect(name).toHaveAttribute('aria-invalid', 'true'));
     expect(name).toHaveAccessibleDescription(
       'There’s already a role called Sales.',
     );

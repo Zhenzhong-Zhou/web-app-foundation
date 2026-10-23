@@ -222,8 +222,9 @@ describe('DeletionBanner', () => {
       screen.getByRole('button', { name: 'Keep my account' }),
     );
 
+    // Once the request has gone and been answered (#210).
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
     expect(cancelled).toBe(true);
-    expect(refresh).toHaveBeenCalled();
   });
 
   it('says so when the account could not be kept', async () => {

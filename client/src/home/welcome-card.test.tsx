@@ -157,9 +157,12 @@ describe('the welcome card', () => {
 
     await user.click(inCard);
     const help = screen.getByRole('complementary', { name: 'Help' });
-    expect(
-      await within(help).findByRole('heading', { level: 2, name: 'Home' }),
-    ).toHaveFocus();
+    // Focus moves in an effect once the guide is drawn (#210).
+    const title = await within(help).findByRole('heading', {
+      level: 2,
+      name: 'Home',
+    });
+    await waitFor(() => expect(title).toHaveFocus());
     expect(
       within(screen.getByRole('banner')).getByRole('button', { name: 'Help' }),
     ).toHaveAttribute('aria-expanded', 'true');
@@ -171,7 +174,7 @@ describe('the welcome card', () => {
     ).toBeInTheDocument();
 
     await user.keyboard('{Escape}');
-    expect(inCard).toHaveFocus();
+    await waitFor(() => expect(inCard).toHaveFocus());
   });
 
   it('asks an Admin who joined unconfirmed to confirm first, with Resend, and links what is done', async () => {
@@ -263,7 +266,8 @@ describe('the welcome card', () => {
     // In place of the button, announced, and where focus was.
     const sent = await within(region).findByText('Sent');
     expect(sent).toBeVisible();
-    expect(sent).toHaveFocus();
+    // Given in an effect once Sent is drawn (#210).
+    await waitFor(() => expect(sent).toHaveFocus());
     expect(sent.closest('[role="status"]')).not.toBeNull();
     expect(resent).toBe(true);
   });

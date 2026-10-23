@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -42,9 +42,10 @@ describe('DeletionBanner', () => {
       screen.getByRole('button', { name: 'Keep my account' }),
     );
 
-    expect(cancelled).toEqual(['account']);
+    await waitFor(() => expect(cancelled).toEqual(['account']));
     const kept = await screen.findByText('Your account will not be deleted.');
-    expect(kept.closest('[role="status"]')).toHaveFocus();
+    // Given in an effect once the line is drawn (#210).
+    await waitFor(() => expect(kept.closest('[role="status"]')).toHaveFocus());
   });
 
   it('gives way to a deletion asked for again, and says the next keep too', async () => {
@@ -73,6 +74,6 @@ describe('DeletionBanner', () => {
       screen.getByRole('button', { name: 'Keep my account' }),
     );
     const kept = await screen.findByText('Your account will not be deleted.');
-    expect(kept.closest('[role="status"]')).toHaveFocus();
+    await waitFor(() => expect(kept.closest('[role="status"]')).toHaveFocus());
   });
 });

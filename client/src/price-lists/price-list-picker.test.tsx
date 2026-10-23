@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
@@ -47,8 +47,13 @@ function serve() {
 async function open() {
   const user = userEvent.setup();
   const combobox = await screen.findByRole('combobox', { name: 'Sales' });
+  // Off until the lists have come, so a click before then opens nothing
+  // (#210).
+  await waitFor(() =>
+    expect(combobox).not.toHaveAttribute('aria-disabled', 'true'),
+  );
   await user.click(combobox);
-  return { user, listbox: screen.getByRole('listbox') };
+  return { user, listbox: await screen.findByRole('listbox') };
 }
 
 describe('PriceListPicker', () => {

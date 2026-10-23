@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useRef } from 'react';
 import {
@@ -102,7 +102,9 @@ describe('Help', () => {
       level: 2,
       name: 'Orders',
     });
-    expect(title).toHaveFocus();
+    // Focus moves in an effect once the guide is drawn, a moment after the
+    // heading shows (#210).
+    await waitFor(() => expect(title).toHaveFocus());
     expect(button).toHaveAttribute('aria-expanded', 'true');
 
     // The page still works with Help open: nothing covers it from a click.
@@ -161,10 +163,17 @@ describe('Help', () => {
     const button = screen.getByRole('button', { name: 'Help' });
 
     await userEvent.click(button);
-    await within(help()).findByRole('heading', { level: 2, name: 'Orders' });
+    const title = await within(help()).findByRole('heading', {
+      level: 2,
+      name: 'Orders',
+    });
+    // Esc is Help's own, so it is pressed once focus is in Help, which an
+    // effect gives once the guide is drawn (#210).
+    await waitFor(() => expect(title).toHaveFocus());
     await userEvent.keyboard('{Escape}');
 
-    expect(button).toHaveFocus();
+    // Given back in an effect once Help has closed (#210).
+    await waitFor(() => expect(button).toHaveFocus());
     expect(button).toHaveAttribute('aria-expanded', 'false');
 
     await userEvent.click(button);
@@ -172,7 +181,7 @@ describe('Help', () => {
       await within(help()).findByRole('button', { name: 'Close help' }),
     );
 
-    expect(button).toHaveFocus();
+    await waitFor(() => expect(button).toHaveFocus());
     expect(button).toHaveAttribute('aria-expanded', 'false');
   });
 
@@ -193,24 +202,31 @@ describe('Help', () => {
     expect(
       within(help()).getByRole('heading', { level: 2, name: 'Locations' }),
     ).toBeInTheDocument();
-    expect(section).toHaveFocus();
-    expect(section).toHaveAttribute('data-marked');
+    // Focused and marked in one effect, once the guide is drawn (#210).
+    await waitFor(() => {
+      expect(section).toHaveFocus();
+      expect(section).toHaveAttribute('data-marked');
+    });
 
     await userEvent.keyboard('{Escape}');
-    expect(learnMore).toHaveFocus();
+    await waitFor(() => expect(learnMore).toHaveFocus());
   });
 
   // Safari focuses no button on a click: the press leaves focus on <body>.
   it('returns focus to the Help button when what opened it took no focus', async () => {
     renderFrame('/');
     fireEvent.click(screen.getByRole('button', { name: 'Learn more' }));
-    await within(help()).findByRole('heading', {
+    const section = await within(help()).findByRole('heading', {
       level: 3,
       name: 'Add a location',
     });
+    // In Help before Esc, as above (#210).
+    await waitFor(() => expect(section).toHaveFocus());
 
     await userEvent.keyboard('{Escape}');
-    expect(screen.getByRole('button', { name: 'Help' })).toHaveFocus();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Help' })).toHaveFocus(),
+    );
   });
 
   it('lists the guides for the pages the person can open, and shows one in place', async () => {
@@ -238,11 +254,21 @@ describe('Help', () => {
       'true',
     );
 
+    // Once the first guide has taken focus, as it does in an effect when
+    // drawn; a guide chosen before then would find the request for focus
+    // already taken (#210).
+    const orders = await within(help()).findByRole('heading', {
+      level: 2,
+      name: 'Orders',
+    });
+    await waitFor(() => expect(orders).toHaveFocus());
     await userEvent.click(within(all).getByRole('button', { name: 'Home' }));
 
-    expect(
-      await within(help()).findByRole('heading', { level: 2, name: 'Home' }),
-    ).toHaveFocus();
+    const home = await within(help()).findByRole('heading', {
+      level: 2,
+      name: 'Home',
+    });
+    await waitFor(() => expect(home).toHaveFocus());
     expect(screen.getByTestId('where')).toHaveTextContent('/orders');
   });
 
@@ -298,6 +324,6 @@ describe('Help', () => {
       level: 3,
       name: 'Your access',
     });
-    expect(section).toHaveFocus();
+    await waitFor(() => expect(section).toHaveFocus());
   });
 });
