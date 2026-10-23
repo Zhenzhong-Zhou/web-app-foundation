@@ -623,7 +623,11 @@ Internet Explorer, and any browser's IE mode, is not supported.
   elsewhere: `lib/person-initials.ts` builds an `Intl.Segmenter`, which
   Firefox has only from 125, when there is one, and otherwise splits text
   into letters with their combining marks. Built unguarded as the module
-  loads, it would stop the whole app in those browsers.
+  loads, it would stop the whole app in those browsers. ESLint now holds
+  the floor: `eslint-plugin-compat`, set to these browsers in
+  `client/eslint.config.js`, fails such an API unless an `if` guards it,
+  though its data stops near ES2022 and it cannot see a method called on
+  a variable (`list.toSorted()`).
 - Nothing loads from another site: the font is bundled, Chinese uses the
   system's, and no analytics, CDN or Google service is called. A page that
   needs one would fail in mainland China; keep it that way, or make it
