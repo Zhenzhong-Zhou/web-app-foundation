@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -130,6 +130,8 @@ describe('NumberingSection', () => {
 
     await user.click(dialog.getByRole('button', { name: 'Change numbering' }));
 
+    // Once the save has reached the server (#210).
+    await waitFor(() => expect(sent).not.toBeNull());
     expect(sent).toEqual({
       invoice: { prefix: 'INV-{YYYY}-', digits: 4, reset: 'yearly' },
       creditNote: { prefix: 'CN-', digits: 6, reset: 'never' },
@@ -229,7 +231,9 @@ describe('NumberingSection', () => {
     await user.click(screen.getByRole('button', { name: 'Save numbering' }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(sent).toMatchObject({ documentsInDateOrder: true });
+    await waitFor(() =>
+      expect(sent).toMatchObject({ documentsInDateOrder: true }),
+    );
   });
 
   it('says why a digits or next number is refused, and points the field at it', async () => {

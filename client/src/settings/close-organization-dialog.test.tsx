@@ -76,6 +76,8 @@ describe('CloseOrganizationDialog', () => {
     expect(screen.queryByText(/Still needed/)).not.toBeInTheDocument();
 
     await userEvent.click(close);
+    // Once the request has reached the server (#210).
+    await waitFor(() => expect(sent).toHaveLength(1));
     expect(sent).toEqual([
       {
         organizationName: 'Alpha Co',
@@ -109,7 +111,9 @@ describe('CloseOrganizationDialog', () => {
     await userEvent.click(
       within(dialog).getByRole('button', { name: 'Close organization' }),
     );
-    expect(sent).toEqual([expect.objectContaining({ declineExport: false })]);
+    await waitFor(() =>
+      expect(sent).toEqual([expect.objectContaining({ declineExport: false })]),
+    );
   });
 
   it('asks again for a download older than a day', async () => {
@@ -152,7 +156,9 @@ describe('CloseOrganizationDialog', () => {
       within(dialog).getByRole('button', { name: 'Delete both' }),
     );
 
-    expect(sent).toEqual([expect.objectContaining({ deleteAccount: true })]);
+    await waitFor(() =>
+      expect(sent).toEqual([expect.objectContaining({ deleteAccount: true })]),
+    );
   });
 
   it('names someone else of the same name, not you', async () => {
@@ -199,7 +205,13 @@ describe('CloseOrganizationDialog', () => {
       });
       // A plain link to a file: jsdom would try to navigate.
       link.addEventListener('click', (event) => event.preventDefault());
+      // The read the dialog makes as it opens, then the download's: it
+      // starts the polling in an effect, which reads at once and sets the
+      // interval together, so once that read is seen the clock can move
+      // (#210).
+      await vi.waitFor(() => expect(reads).toBe(1));
       await user.click(link);
+      await vi.waitFor(() => expect(reads).toBe(2));
 
       await vi.advanceTimersByTimeAsync(3_000);
       fresh = true;

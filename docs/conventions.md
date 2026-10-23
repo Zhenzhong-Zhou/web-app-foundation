@@ -429,6 +429,19 @@ message, and the screen keys on the code, never on the words.
   so a test also fails when the role is wrong, which a label match alone
   would miss. The one exception is a password field, which has no ARIA role
   for `getByRole` to find: there, `getByLabelText`.
+- **A test waits for what an effect does.** Focus moved, an element marked
+  or scrolled, a timer set, a request sent: each comes a moment after the
+  render a `findBy…` or an event waits for, and later still on a slow
+  runner. Check it with `await waitFor(…)` or a `findBy…`, never on the
+  next line; act on it (Esc in a panel, a click in a dialog) only once it
+  has happened; and move a fake clock only once the timer it should fire
+  exists, by `vi.getTimerCount()` or the effect's first visible result
+  (#206, #210). A test that passes on a fast machine and fails on CI is
+  most often this.
+- **A CI failure in code the PR did not touch** is re-run once. If it
+  passes, it is filed as a "Flaky:" issue the same day, naming the test,
+  the run and the line; it is never retried automatically, skipped or
+  bypassed to get a pull request green.
 
 ---
 
