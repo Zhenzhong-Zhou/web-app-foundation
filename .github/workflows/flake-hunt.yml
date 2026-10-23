@@ -1,0 +1,171 @@
+name: Flake hunt
+
+# Main's suites, run again and again, so a test that fails one run in a few
+# shows up as a name rather than as a pull request someone re-runs
+# (conventions.md, Tests). The client's unit tests run five times and the
+# server's end-to-end suite three, through server/scripts/e2e-flake-hunt.sh.
+# Weekly, and by hand: Actions → Flake hunt → Run workflow.
+#
+# A failure in any run turns the run red and names the tests in its summary.
+# It files nothing and retries nothing: a test it names is filed by hand,
+# under the flaky-test rule.
+#
+# The setup is ci.yml's, the steps these two suites need from it: a change
+# to one belongs in the other.
+on:
+  schedule:
+    - cron: '0 9 * * 0' # Sundays, 2am in Vancouver
+  workflow_dispatch:
+
+# Reads the repository, which needs nothing more (CodeQL: a workflow without
+# permissions gets the token's defaults).
+permissions:
+  contents: read
+
+# Vitest colours its output whenever CI is set, which would put escape codes
+# around every test name in the summary.
+env:
+  NO_COLOR: '1'
+
+jobs:
+  client:
+    name: Client — unit tests, five runs
+    # Main only: run by hand on another branch, it skips.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          check-latest: true
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - run: npm ci
+
+      # Every run to the end, so one failure does not hide another. Vitest
+      # heads each failing test with FAIL, which is how the summary finds
+      # the names.
+      - name: Unit tests, five runs
+        run: |
+          set -o pipefail
+          runs=5
+          failed_runs=()
+          for i in $(seq 1 "$runs"); do
+            echo "::group::Run $i of $runs"
+            npm test 2>&1 | tee "$RUNNER_TEMP/unit-$i.log" || failed_runs+=("$i")
+            echo "::endgroup::"
+          done
+
+          {
+            echo "## Client unit tests, $runs runs"
+            echo
+            echo '```text'
+            echo "$((runs - ${#failed_runs[@]})) of $runs runs passed."
+            if [ "${#failed_runs[@]}" -gt 0 ]; then
+              echo
+              echo 'Failing tests, by how often:'
+              names=$(for i in "${failed_runs[@]}"; do
+                grep -h ' FAIL ' "$RUNNER_TEMP/unit-$i.log" || true
+              done | sed 's/^ *//' | sort | uniq -c | sort -rn)
+              echo "${names:-  (none named: see runs ${failed_runs[*]} in the log)}"
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          [ "${#failed_runs[@]}" -eq 0 ]
+
+  server:
+    name: Server — end-to-end suite, three runs
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: server
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: foundation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d foundation"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          check-latest: true
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      # The suite's own database only: the script migrates it, and in test
+      # mode the server reads nothing else.
+      - name: Create test database
+        env:
+          PGPASSWORD: ci_password
+        run: createdb -h localhost -U app foundation_test
+
+      - name: Write .env
+        working-directory: .
+        run: |
+          cat > .env <<'ENVFILE'
+          NODE_ENV=test
+          PORT=3000
+          APP_URL=http://localhost:3000
+          CLIENT_URL=http://localhost:5173
+          POSTGRES_USER=app
+          POSTGRES_PASSWORD=ci_password
+          POSTGRES_DB=foundation
+          DATABASE_URL=postgresql://app:ci_password@localhost:5432/foundation
+          DATABASE_URL_TEST=postgresql://app:ci_password@localhost:5432/foundation_test
+          DATABASE_URL_E2E=postgresql://app:ci_password@localhost:5432/foundation_e2e
+          SESSION_MAX_AGE_MS=2592000000
+          SESSION_IDLE_MS=604800000
+          VERIFICATION_TOKEN_TTL_MS=86400000
+          PASSWORD_RESET_TOKEN_TTL_MS=3600000
+          MAIL_HOST=localhost
+          MAIL_PORT=1025
+          MAIL_SECURE=false
+          MAIL_FROM="Foundation <no-reply@localhost>"
+          RATE_LIMIT_TTL_SECONDS=60
+          RATE_LIMIT_MAX=1000
+          RATE_LIMIT_AUTH_MAX=1000
+          THROTTLE_FACTOR=100
+          ENVFILE
+
+      - run: npm ci
+
+      # The script prints which runs failed, the failing tests by how often
+      # and each failing run's first error, which is the summary as it is.
+      - name: End-to-end suite, three runs
+        run: |
+          set -o pipefail
+          runs=3
+          status=0
+          scripts/e2e-flake-hunt.sh "$runs" | tee "$RUNNER_TEMP/hunt.txt" || status=$?
+
+          {
+            echo "## Server end-to-end suite, $runs runs"
+            echo
+            echo '```text'
+            cat "$RUNNER_TEMP/hunt.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$status"
