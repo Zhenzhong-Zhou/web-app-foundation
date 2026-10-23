@@ -64,6 +64,25 @@ describe('the amber line in dialogs', () => {
     expect(within(dialog).getByRole('status')).toHaveTextContent(LINE);
   });
 
+  it('says the new version’s arrival inside an open dialog, which hides the page’s announcement', async () => {
+    renderThemed(
+      <DeleteDraftDialog
+        invoiceId="invoice-1"
+        open
+        onClose={() => undefined}
+        onDeleted={() => undefined}
+      />,
+    );
+    const dialog = screen.getByRole('dialog', { name: 'Delete this draft?' });
+    const announcement = dialog.querySelector('[aria-live="polite"]')!;
+    expect(announcement).toBeEmptyDOMElement();
+
+    await deploy();
+    expect(announcement).toHaveTextContent(
+      'A new version is ready. It loads by itself when you open another page.',
+    );
+  });
+
   it('leaves the image viewer out, which only shows a picture', async () => {
     await deploy({ urgent: true });
     const user = userEvent.setup();

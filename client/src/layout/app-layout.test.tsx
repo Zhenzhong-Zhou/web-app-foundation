@@ -277,6 +277,21 @@ describe('a new version', () => {
     expect(reloadPage).toHaveBeenCalledTimes(1);
   });
 
+  it('says to a screen reader that the tab can no longer save, once it turns urgent', async () => {
+    renderFrame();
+    const announcement = screen
+      .getByRole('banner')
+      .querySelector('[aria-live="polite"]')!;
+
+    await deploy();
+    expect(announcement).toHaveTextContent(NOTE);
+
+    await deploy({ urgent: true });
+    expect(announcement).toHaveTextContent(
+      'A new version is ready, and this tab can no longer save changes. Copy anything you’ve typed, then reload.',
+    );
+  });
+
   it('on a phone, amber leaves the account button without its dot', async () => {
     onAPhone();
     renderFrame();

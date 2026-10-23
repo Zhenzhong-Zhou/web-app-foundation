@@ -2017,7 +2017,9 @@ the file, or wait ten minutes.
   Orders, deploy: New version appears just before Help, a pill in the
   info tone, and the top bar keeps its height, so nothing on the page
   moves. A screen reader says once, politely, A new version is ready. It
-  loads by itself when you open another page. New version opens that note
+  loads by itself when you open another page.; with a dialog open, such as
+  Receive on a purchase order, it says so in the dialog, and nothing more
+  once the dialog closes. New version opens that note
   with Reload now, which loads the page. On an order, switching from Items
   to History, or on Orders a filter, loads nothing; Inventory in the rail
   loads in full (the Network tab shows the document again). Deploy once
@@ -2042,7 +2044,9 @@ the file, or wait ten minutes.
   deploy with `apiRevision` one higher: an amber banner tops the page,
   above any other, A new version is ready, and this tab can no longer save
   changes. Copy anything you’ve typed, then reload., its first sentence in
-  bold, with Reload; New version and the phone's dot are gone. Receive on
+  bold, with Reload; New version and the phone's dot are gone. A screen
+  reader says those words once, politely, in a dialog if one is open, and
+  says them again when a tab that had the info note turns amber. Receive on
   a purchase order opens with the same line at its very top, above its
   title; a dialog already open gains it as the file is read; on a phone in
   中文 Invite, full screen, shows 新版本已就绪，此标签页已无法保存更改。 at
@@ -2264,6 +2268,13 @@ as `docs/runbooks/render.md`, "Deploys", has them.
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R41** *(a new version, read aloud)* With VoiceOver and a dialog
+  open, a new version coming out is said in the dialog, never lost behind
+  it; once saves would be refused, what is said is that this tab can no
+  longer save, never only that it loads at the next page (MC-3401,
+  MC-3404). Found by the walkthroughs of ADR-081, the warehouse worker
+  receiving on a phone and the novice bookkeeper drafting an invoice.
 
 - **MC-R40** *(a page waiting in the background)* A page saying A new
   version is being installed, in a tab left behind another, asks nothing
@@ -2894,3 +2905,6 @@ first.
   and in Move stock (R3, R5): MC-3412 and MC-3422 extended.
 - 2026-10-23: ADR-081's reviews, an outdated tab through sign-out and
   idle pings (R4, R8): MC-3412 and MC-3415 extended.
+- 2026-10-23: ADR-081's walkthroughs, the new version read aloud in a
+  dialog and urgent when urgent (W1, W2): MC-3401 and MC-3404 extended,
+  and MC-R41.

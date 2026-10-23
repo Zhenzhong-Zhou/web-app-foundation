@@ -44,7 +44,6 @@ import { useHelp } from '../help/use-help';
 import { LanguageFailureBanner } from '../i18n/language-failure';
 import { api } from '../lib/api';
 import { SEPARATOR } from '../lib/format';
-import { HIDDEN } from '../lib/hidden';
 import { initialsOf } from '../lib/person-initials';
 import { LookupBox } from '../search/lookup-box';
 import { OrganizationDeletionBanner } from '../settings/organization-deletion-banner';
@@ -53,6 +52,7 @@ import { useTextSize } from '../theme/text-size';
 import { NewVersionBanner } from '../version/new-version-banner';
 import { NewVersionButton } from '../version/new-version-button';
 import { reloadPage } from '../version/reload-page';
+import { VersionAnnouncement } from '../version/version-announcement';
 import { useNewVersion } from '../version/version-check';
 import { IdleGuard } from './idle-guard';
 import { ACCOUNT_ITEMS } from './navigation';
@@ -322,16 +322,9 @@ function Frame() {
             borderColor: 'divider',
           }}
         >
-          {/* A newer build's arrival, said once and politely, on a phone
-              and a computer alike (ADR-081). */}
-          <Box aria-live="polite" sx={HIDDEN}>
-            {version.newer &&
-              intl.formatMessage({
-                id: 'version.note',
-                defaultMessage:
-                  'A new version is ready. It loads by itself when you open another page.',
-              })}
-          </Box>
+          {/* A newer build's arrival, said politely, on a phone and a
+              computer alike (ADR-081). */}
+          <VersionAnnouncement />
 
           {/* No flexWrap. A bar that wraps changes height with the window and
               drags the page with it. */}
