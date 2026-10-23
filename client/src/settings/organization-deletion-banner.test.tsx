@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -160,11 +160,12 @@ describe('OrganizationDeletionBanner', () => {
       screen.getByText(/Your account and Alpha Co will be deleted/),
     ).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Keep both' }));
-    expect(cancelled).toEqual(['account']);
+    await waitFor(() => expect(cancelled).toEqual(['account']));
     // It says what it kept, and takes the focus there.
     const kept = await screen.findByText('Your account and Alpha Co are kept.');
     expect(kept).toBeInTheDocument();
-    expect(kept.closest('[role="status"]')).toHaveFocus();
+    // Given in an effect once the line is drawn (#210).
+    await waitFor(() => expect(kept.closest('[role="status"]')).toHaveFocus());
   });
 
   it('cancels for an Owner, through the organization', async () => {
@@ -183,7 +184,7 @@ describe('OrganizationDeletionBanner', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Cancel deletion' }),
     );
-    expect(cancelled).toEqual(['organization']);
+    await waitFor(() => expect(cancelled).toEqual(['organization']));
   });
 
   it('gives way to a closing asked for again, after a cancel', async () => {

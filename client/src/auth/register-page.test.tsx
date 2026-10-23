@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -125,8 +125,9 @@ describe('RegisterPage', () => {
       name: 'Accounts here start from an invitation',
     });
     expect(heading).toBeVisible();
-    // Announced: the heading has the focus the button had.
-    expect(heading).toHaveFocus();
+    // Announced: the heading has the focus the button had, given in an
+    // effect once it is drawn (#210).
+    await waitFor(() => expect(heading).toHaveFocus());
   });
 
   it('shows the signed-out frame while the setting is read, then a spinner', async () => {
