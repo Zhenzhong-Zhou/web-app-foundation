@@ -308,8 +308,9 @@ database's migrations stop before 0069, and writes nothing.
 2. **The app's address** is the static site's, `CLIENT_URL` as the web
    service has it, such as `https://<your site>.onrender.com`.
 3. **The database's address** is the database's External Database URL,
-   from its Connect panel, with `?sslmode=no-verify` on the end, as the
-   backup secret has it. Paste it at the prompt: it is not shown and not
+   from its Connect panel, with `?sslmode=no-verify` on the end. Node's
+   Postgres client, which this command uses, reads that; `pg_dump` and
+   `psql` refuse it, so nowhere else adds it. Paste it at the prompt: it is not shown and not
    kept in the shell's history. The command never reads `.env`, so it
    cannot write to the development database by mistake; never put the
    production address there. If it times out, check that the database's
@@ -375,23 +376,28 @@ step 4.
 
    Done when it says `{"status":"ready","database":"up"}`.
 5. **Backups, the same day,** or that night's scheduled backup fails. The
-   new database → **Connect** → copy the **External Database URL**, and add
-   `?sslmode=no-verify` to its end. GitHub → the repository → Settings →
-   Secrets and variables → Actions → `BACKUP_DATABASE_URL` → **Update** →
-   paste. Then Actions → **Backup** → **Run workflow**. Done when the run
-   is green.
-6. **Count the migrations,** with that same External URL. One row per
-   migration, so the count is the number of files in
-   `server/src/database/migrations/` that end in `.sql` (75 at ADR-081):
+   new database → **Connect** → copy the **External Database URL**, exactly
+   as Render gives it: `backup.sh` asks for SSL itself
+   (`PGSSLMODE=require`), and `pg_dump` refuses `sslmode=no-verify`.
+   GitHub → the repository → Settings → Secrets and variables → Actions →
+   `BACKUP_DATABASE_URL` → **Update** → paste. Then Actions → **Backup** →
+   **Run workflow**. Done when the run is green.
+6. **Count the migrations,** with that same External URL, pasted at the
+   prompt so it stays out of the shell's history. One row per migration,
+   so the count is the number of files in `server/src/database/migrations/`
+   that end in `.sql` (75 at ADR-081):
 
    ```bash
-   docker exec -it foundation-postgres psql "<External URL>" -c "select count(*) from drizzle.__drizzle_migrations;"
+   read -s "DB?Paste the External URL, then Enter: "; echo
+   docker exec -it foundation-postgres psql "${DB}?sslmode=require" -c "select count(*) from drizzle.__drizzle_migrations;"
+   unset DB
    ```
 
 7. **Your organization again.** Everything on the old database went with
    it, accounts included: invite yourself with `npm run org:invite`
    ("Inviting an organization", above), the database's address being the
-   External URL from step 5.
+   External URL from step 5 with `?sslmode=no-verify` added, for Node's
+   client.
 8. **Files:** logos and photos uploaded against the old database are still
    in `waf-files`, and nothing points at them; the hourly purge only removes
    files the database knows of. If they were test uploads, empty the bucket
@@ -408,7 +414,9 @@ pinyin backfill is not needed, and new credentials retire the old ones.
 | --- | --- |
 | The deploy fails at `npm run migrate` | `DATABASE_URL` is the External URL, or the database is in another region: use the Internal URL from the same region |
 | `/api/health/ready` says the database is `down` | the deploy hasn't finished, or the URL was saved without a deploy: deploy by hand again |
-| Backup fails to connect | the secret lacks `?sslmode=no-verify`, or is the Internal URL |
+| Backup says `invalid sslmode value: "no-verify"` | the secret ends in `?sslmode=no-verify`: paste the External URL as Render gives it |
+| Backup fails to connect | the secret is the Internal URL: use the External one |
+| `psql: invalid connection option "<postgresql…` | the `<` and `>` around the URL were kept: leave them out |
 | `org:invite` or `psql` times out | the database's **Access Control** doesn't let your address in: add it there |
 | Render won't create a free database | the old one still exists: step 1 first |
 

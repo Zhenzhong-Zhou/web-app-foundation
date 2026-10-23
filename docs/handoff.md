@@ -459,7 +459,11 @@ with this one, this one is current.
   `language.failedNewVersion` and `language.loadingAgain`, and two removed;
   see what moved with `git diff b933b912 -- '*zh-Hans*'`. Send her a fresh
   export after each merge, so each review stays small; her corrections
-  go into the words-and-translations fix-up.
+  go into the words-and-translations fix-up. The export covers the two
+  catalogues only: not Help's guides (#150; until then she reads them in
+  Help, in 中文) and not MUI's or the browser's own words, which aren't
+  ours to correct. Her first note: 头像 for the profile picture
+  everywhere, since Your account says 照片 while Home says 头像.
 - **After #176, if not yet done:** delete `tmp/adr-080` and the branch,
   then `npm run seed` and `npm run seed:demo`; show Roles and the editor
   in 中文 on a phone to someone who reads only Chinese.
