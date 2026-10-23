@@ -46,15 +46,20 @@ use; the reasons are in the sections named.
      URL), `CLIENT_URL` (the static site's address), the mail settings and
      `RESEND_API_KEY`, `FILE_STORAGE` with the `FILES_*` settings for R2
      ("What runs where"), `REGISTRATION=invitation` and, optionally,
-     `OPERATOR_EMAIL` ("Registration and organization invitations"). The
-     server refuses to boot on a wrong value, and the deploy log says which;
+     `OPERATOR_EMAIL` ("Registration and organization invitations").
+     `MAIL_FROM` names the product, `Panivo <the address it has now>`: its
+     name is the sender an inbox shows, and the one each invitation is
+     signed with (ADR-077). The server refuses to boot on a wrong value,
+     and the deploy log says which;
    - **Health Check Path** `/health/ready`; **Auto-Deploy** Off; its
      **Deploy Hook** into GitHub as `RENDER_API_DEPLOY_HOOK` ("Deploys").
 3. **The static site** (the client). Render → **New** → **Static Site** →
    the same repository:
    - **Branch** `main`; **Root Directory** `client`; **Build Command**
      `npm ci && npm run build`; **Publish Directory** `dist`;
-   - **Environment:** `VITE_APP_NAME`, the name in the browser's tab;
+   - **Environment:** `VITE_APP_NAME=Panivo`, the product's name in the
+     browser's tab and its bookmarks. It is read only when the site
+     builds, so a change shows from the next deploy;
    - **Redirects/Rewrites:** the README's two rules, `/api/*` to the web
      service's own address first, then `/*` to `/index.html`;
    - **Headers:** the three rules ("Deploys", "Setting it up");

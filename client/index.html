@@ -2,7 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      The tab's icon: the SVG wherever a browser draws one, since it follows
+      dark mode; the ICO (16, 32 and 48 px) for any that cannot; and the
+      icon an iPhone puts on its home screen. sizes="32x32" keeps Chrome on
+      the SVG, which with "any" fetched the ICO as well. The masters are in
+      docs/brand/.
+    -->
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--
       360, QQ and Sogou browsers, common in China, carry a second engine, an

@@ -452,8 +452,12 @@ with this one, this one is current.
 
 ### Still to do, by hand
 
-- **`/favicon.svg`:** `index.html` asks for it and nothing serves it (a 404
-  locally, `index.html` on Render). The line stays; Bob adds the file.
+- **Panivo on Render** (`brand-name-and-icon`): the static site's
+  Environment, `VITE_APP_NAME=Panivo`, and the web service's `MAIL_FROM`,
+  `Panivo <the address it has now>` (runbooks/render.md, "Building the
+  services from nothing"). The static site reads the name only when it
+  builds, so set it before the merge's deploy, or deploy again after.
+  Then MC-3501 and MC-3502 on the live app, in a private window.
 - **The Chinese review:** Bob's mother has the export made at `b933b912`
   (22 October 2026). Since then two lines were added,
   `language.failedNewVersion` and `language.loadingAgain`, and two removed;
@@ -567,6 +571,12 @@ with this one, this one is current.
 
 ### Still to do, in code
 
+- **The brand's next PR** (Panivo, 品桥 in Chinese). `brand-name-and-icon`
+  gave the tab its icon and every tab the name `VITE_APP_NAME` sets, in
+  every language, so in 中文 Inventory's reads 库存 · Panivo. Waiting
+  for that PR: the mark at sign-in and in the rail, the tab's name by
+  language (品桥 in 中文), and the brand's colours. The masters are in
+  `docs/brand/`.
 - **ADR-079's limits.** Help still slides over the page in windows under
   about 1140 px, or under about 1265 px at Large text and 1330 px at
   Larger, where a control under it can be focused out of sight (WCAG

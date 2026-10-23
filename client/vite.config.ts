@@ -98,9 +98,11 @@ function recompileCatalogues(): Plugin {
  * The product's name in the browser's tab and bookmarks: VITE_APP_NAME from
  * the repository's .env, read here once at start, so renaming the product
  * (or one deployment of it, for a customer) is a setting, not an edit.
- * Escaped, since it lands in HTML.
+ * Escaped in index.html's title, since it lands in HTML, and handed to the
+ * app as __APP_NAME__ for the tab each page names (page-header.tsx), so the
+ * two always agree. vitest.config.ts gives the component tests the default.
  */
-const DEFAULT_APP_NAME = 'web-app-foundation';
+export const DEFAULT_APP_NAME = 'web-app-foundation';
 
 function appName(mode: string): Plugin {
   // loadEnv also takes a NODE_ENV it finds in a file as the build's own,
@@ -119,6 +121,7 @@ function appName(mode: string): Plugin {
 
   return {
     name: 'app-name',
+    config: () => ({ define: { __APP_NAME__: JSON.stringify(name) } }),
     transformIndexHtml: (html) => html.replaceAll('%APP_NAME%', escaped),
   };
 }
