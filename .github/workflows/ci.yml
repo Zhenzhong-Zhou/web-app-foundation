@@ -23,9 +23,13 @@ on:
 
 # On a pull request, a second push cancels the first: the suites take
 # minutes and nobody reads the result of a commit that has been replaced.
-# On main, never: every commit there is a version that deploys, so each gets
-# its own verdict, and a newer run waits for the older one to finish. That
-# is what shows which merge broke main, and what a release tag points at.
+# On main, a run in progress is never cancelled: a newer one waits for it
+# to finish, so a run that starts gives its commit a verdict, which is what
+# shows which merge broke main. GitHub keeps one run waiting, though: a
+# newer push cancels a run still waiting, so of several merges in quick
+# succession the middle ones get no run of their own, and only the newest
+# is checked and deployed (deploy.yml). Before tagging a release, its
+# commit's run must be there and green.
 # Adding any other label gets a group of its own, so it cannot cancel a run
 # in progress; its jobs are then skipped (each job's `if`).
 concurrency:

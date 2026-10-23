@@ -70,8 +70,10 @@ Why not Render's own auto-deploy, which both services had until ADR-081:
 Each deploy therefore redeploys the API, even when only the client changed:
 about a minute and a half, with nothing for the migrations or the seed to
 do. A push CI skips, docs only, deploys nothing; Help's guides, the one
-Markdown that ships, run CI (`ci.yml`'s `paths`). A newer push cancels an
-older run still waiting, so only the newest commit's client goes live.
+Markdown that ships, run CI (`ci.yml`'s `paths`). A newer push's run
+cancels an older one, waiting or deploying, so only the newest commit's
+client goes live; and CI on `main` keeps one run waiting, so of several
+merges in quick succession only the newest is checked and deployed.
 
 ### As Render showed it on 22 October 2026
 
