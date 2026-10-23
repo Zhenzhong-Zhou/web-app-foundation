@@ -2309,6 +2309,15 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R45** *(a request's fields on its own log line only, #193)* With
+  `npm run start:dev` in `server/`, ask
+  `curl -H 'X-Api-Revision: 2' -H 'X-Request-Id: mc-r45' 'localhost:3000/v1/orders?search=Wang'`:
+  the server's log has two lines with `reqId` `mc-r45`. Refused a client
+  newer than the API carries no `req`, and neither `Wang` nor the
+  headers; request completed carries `req`, its URL with
+  `?search=Wang` and its headers. On Render, searching the log for a
+  request id a person quotes finds both. Found while building ADR-081.
+
 - **MC-R44** *(Resend on the confirm-your-email banner, #190)* Signed in
   unconfirmed, on any page but Home, block
   `/api/v1/auth/verify-email/resend` in the browser's Network tab and
@@ -2983,3 +2992,5 @@ first.
   MC-3412 and MC-3413 extended, and MC-R43.
 - 2026-10-23: #190, Resend on the confirm-your-email banner says why it
   failed: MC-R44.
+- 2026-10-23: #193, a request's URL and headers on its own log line only:
+  MC-R45.

@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 import {
   type MiddlewareConsumer,
   Module,
@@ -14,7 +12,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { ApiRevisionMiddleware } from './common/middleware/api-revision.middleware';
-import { requestLogLevel } from './common/request-log-level';
+import { requestLogOptions } from './common/request-log';
 import { type Env, validateEnv } from './config/env';
 import { AuditInterceptor } from './core/audit/audit.interceptor';
 import { AuditModule } from './core/audit/audit.module';
@@ -61,50 +59,9 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
 
     LoggerModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService<Env, true>) => {
-        const nodeEnv = config.get('NODE_ENV', { infer: true });
-        const isProd = nodeEnv === 'production';
-
-        return {
-          pinoHttp: {
-            level: nodeEnv === 'test' ? 'silent' : isProd ? 'info' : 'debug',
-            // Structured JSON in production so log aggregators can parse it;
-            // human-readable locally.
-            transport: isProd
-              ? undefined
-              : { target: 'pino-pretty', options: { singleLine: true } },
-
-            // ADR-011: session tokens live in cookies. Logging them would
-            // undo the reason we only store their hash.
-            redact: {
-              paths: [
-                'req.headers.authorization',
-                'req.headers.cookie',
-                'res.headers["set-cookie"]',
-                'req.body.password',
-              ],
-              remove: true,
-            },
-
-            // Correlates every log line for one request, and hands the client
-            // an id to quote in a bug report.
-            genReqId: (req, res) => {
-              const id =
-                (req.headers['x-request-id'] as string) ?? randomUUID();
-              res.setHeader('x-request-id', id);
-              return id;
-            },
-
-            // Liveness probes fire every few seconds; logging them buries
-            // everything else.
-            autoLogging: {
-              ignore: (req) => req.url?.startsWith('/health') ?? false,
-            },
-
-            customLogLevel: requestLogLevel,
-          },
-        };
-      },
+      useFactory: (config: ConfigService<Env, true>) => ({
+        pinoHttp: requestLogOptions(config.get('NODE_ENV', { infer: true })),
+      }),
     }),
 
     ThrottlerModule.forRootAsync({
