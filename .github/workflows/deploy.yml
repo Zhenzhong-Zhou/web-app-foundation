@@ -9,8 +9,9 @@ name: Deploy
 #
 # When CI passes on a push to main, this deploys the API at that commit
 # through its deploy hook, waits until /health names the commit, then
-# deploys the static site at the same commit. A push CI skips (docs only)
-# changes nothing either service serves, so nothing deploys.
+# deploys the static site at the same commit, and checks the live site as
+# a visitor reaches it. A push CI skips (docs only) changes nothing either
+# service serves, so nothing deploys.
 #
 # Actions → Deploy → Run workflow deploys main's newest commit whose CI
 # passed on a push, the same way. A missed deploy (a run cancelled, a hook
@@ -18,9 +19,10 @@ name: Deploy
 # API still goes first and the commit is still one CI passed.
 #
 # Reads the repository variable API_HEALTH_URL (the static site's address
-# with /api/health) and the secrets RENDER_API_DEPLOY_HOOK and
-# RENDER_CLIENT_DEPLOY_HOOK (each service's Settings → Deploy Hook). With
-# any of them unset, as on a fork, it says so and deploys nothing.
+# with /api/health, from which the last step takes the site's) and the
+# secrets RENDER_API_DEPLOY_HOOK and RENDER_CLIENT_DEPLOY_HOOK (each
+# service's Settings → Deploy Hook). With any of them unset, as on a fork,
+# it says so and deploys nothing.
 on:
   workflow_run:
     workflows: [CI]
@@ -45,7 +47,8 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # The wait's 20 minutes and the live check's 10, with room for both.
+    timeout-minutes: 35
     # One at a time, and a newer run cancels an older one, waiting or under
     # way: only the newest commit should deploy, and an older run finishing
     # late would put an older client live after a newer API. One cancelled
@@ -128,3 +131,32 @@ jobs:
       - name: Deploy the static site
         if: steps.settings.outputs.ready == 'true'
         run: curl -fsS -m 30 -X POST "$RENDER_CLIENT_DEPLOY_HOOK&ref=$COMMIT"
+
+      # Read-only, as a visitor reaches it, every 20 seconds for up to 10
+      # minutes, since the static site builds for a while after its hook.
+      # version.json gets a fresh query string, which Render's edge has
+      # never kept (render.md, Deploys). The favicon must come back as an
+      # SVG: a file missing from the build comes back as index.html with a
+      # 200, through the /* rewrite. With the commit already live, as on a
+      # run by hand, this passes before the new build is out.
+      - name: Check the live site
+        if: steps.settings.outputs.ready == 'true'
+        run: |
+          site=${API_HEALTH_URL%/api/health}
+          deadline=$((SECONDS + 10 * 60))
+          while :; do
+            build=$(curl -fsS -m 30 "$site/version.json?$(date +%s)" | jq -r '.build // empty' 2> /dev/null || true)
+            database=$(curl -fsS -m 30 "$API_HEALTH_URL/ready" | jq -r '.database // empty' 2> /dev/null || true)
+            favicon=$(curl -sS -m 30 -o /dev/null -w '%{http_code} %{content_type}' "$site/favicon.svg" || true)
+            seen="/version.json names ${build:-no build}, /api/health/ready says the database is ${database:-not up}, and /favicon.svg answered HTTP ${favicon:-nothing}"
+            if [ "$build" = "$COMMIT" ] && [ "$database" = up ] && [[ "$favicon" == '200 image/svg+xml'* ]]; then
+              echo "At $site, $seen."
+              exit 0
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error title=The live site is not right::After 10 minutes at $site, $seen; expected $COMMIT, up, and 200 image/svg+xml. Both services were deployed at $COMMIT, and neither is rolled back. An older build: the static site's build failed or is slow (Render → the static site → Events). The database not up: Render → the database. The favicon as text/html: the build left it out (client/public). Once put right, re-run this job, or run Deploy by hand (docs/runbooks/render.md, Deploys)."
+              exit 1
+            fi
+            echo "$seen; asking again in 20 seconds."
+            sleep 20
+          done

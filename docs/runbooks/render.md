@@ -110,6 +110,18 @@ passed. With the commit already live, the wait ends at once. A run by
 hand and one after CI share the workflow's concurrency group, so they
 never deploy at once: the newer cancels the older.
 
+**The live site, checked:** the last step reads what a visitor gets, at
+`API_HEALTH_URL` without `/api/health`, every 20 seconds for up to 10
+minutes while the static site builds. `/version.json`, with a query
+string of its own so that Render's edge has never kept it, must name the
+commit; `/api/health/ready` must say the database is `up`; and
+`/favicon.svg` must come back as `image/svg+xml`, since a file the build
+left out comes back as `index.html` with a 200 (the `/*` rewrite). It
+only reads. After 10 minutes it fails, saying what each of the three
+gave; both services have been deployed by then, and neither is rolled
+back. With the commit already live, as on a run by hand, it passes before
+the new build is out.
+
 Why not Render's own auto-deploy, which both services had until ADR-081:
 
 - **The order.** On #176's deploy the static site took 40.5 seconds and

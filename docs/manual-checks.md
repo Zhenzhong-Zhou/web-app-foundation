@@ -2270,19 +2270,21 @@ as `docs/runbooks/render.md`, "Deploys", has them.
   push, sign in on the live app and leave one tab on Orders and one in a
   purchase order's Receive with a quantity typed. Actions → Deploy, for
   that commit, deploys the API, waits until The API names it, and only
-  then deploys the static site; `/api/health`'s `commit` and
-  `/version.json`'s `build` then name the same commit. Back in the tabs,
-  Receive saves and Orders still works. A tab opened before ADR-081 went
-  live stops there: its build has no version check and sends no revision,
-  which the API serves as today. From the next deploy on, coming back to
-  the Orders tab shows New version beside Help (MC-3401), Inventory from
-  the rail loads in full, and Help's foot names the commit `/api/health`
-  names (MC-3405).
+  then deploys the static site; Check the live site ends naming that
+  commit, the database up and `/favicon.svg` as `image/svg+xml`, and
+  `/api/health`'s `commit` and `/version.json`'s `build` name the same
+  commit. Back in the tabs, Receive saves and Orders still works. A tab
+  opened before ADR-081 went live stops there: its build has no version
+  check and sends no revision, which the API serves as today. From the
+  next deploy on, coming back to the Orders tab shows New version beside
+  Help (MC-3401), Inventory from the rail loads in full, and Help's foot
+  names the commit `/api/health` names (MC-3405).
 - **MC-3425** *(ADR-081)* Deploy by hand. Once merged, since GitHub offers
   Run workflow only for a workflow on the default branch: Actions → Deploy
   → Run workflow, on `main`. Its first step names the commit already live
   and the CI run that passed it; the API deploys, the wait ends at once,
-  saying The API names that commit, and the static site deploys.
+  saying The API names that commit, and the static site deploys. Check
+  the live site passes at its first look, the commit being live already.
   `/api/health`'s `commit` and `/version.json`'s `build` still name it.
 
 ## 35. The product's name and icon
@@ -3069,3 +3071,5 @@ first.
 - 2026-10-23: #196's comparison, the bell's Mark all read and Try again
   reached by the keyboard: MC-R54.
 - 2026-10-23: #196's ride-along, Deploy run by hand: MC-3425.
+- 2026-10-23: the live site checked after each deploy: MC-3424 and
+  MC-3425 extended.
