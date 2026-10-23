@@ -16,6 +16,7 @@ import { useIntl } from 'react-intl';
 import type { OrderDetail, TaxCode } from '../api/types.gen';
 import { FormError } from '../components/form-error';
 import { PdfActions } from '../components/pdf-actions';
+import { Reference } from '../components/reference';
 import { api, messageFor, withQuery } from '../lib/api';
 
 /**
@@ -81,7 +82,7 @@ export function ProFormaDialog({
   // The server's refusals, said here first, with what to do (ADR-071).
   const unpriced = order.lines
     .filter((line) => line.unitPrice === null)
-    .map((line) => line.sku);
+    .map((line) => <Reference key={line.id}>{line.sku}</Reference>);
   const currencies = [
     ...new Set(order.lines.map((line) => line.currency).filter(Boolean)),
   ];
@@ -125,7 +126,7 @@ export function ProFormaDialog({
             id: 'orders.proForma.title',
             defaultMessage: 'Pro forma invoice for {number}',
           },
-          { number: order.number },
+          { number: <Reference>{order.number}</Reference> },
         )}
       </DialogTitle>
 

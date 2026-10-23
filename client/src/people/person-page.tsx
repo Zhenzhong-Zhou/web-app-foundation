@@ -13,6 +13,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { PageHeader } from '../components/page-header';
 import { PersonAvatar } from '../components/person-avatar';
+import { ReferencesWhole } from '../components/reference';
 import { LoadFailure } from '../errors/load-failure';
 import { relativeTime, SEPARATOR } from '../lib/format';
 import { useResource } from '../lib/use-resource';
@@ -219,9 +220,11 @@ export function PersonPage() {
               {person.recentActivity.map((entry) => (
                 <ListItem key={entry.id} disableGutters divider>
                   <Typography variant="body2" sx={{ flexGrow: 1, minWidth: 0 }}>
-                    {[entry.actionName, entry.resourceLabel]
-                      .filter(Boolean)
-                      .join(SEPARATOR)}
+                    <ReferencesWhole
+                      text={[entry.actionName, entry.resourceLabel]
+                        .filter(Boolean)
+                        .join(SEPARATOR)}
+                    />
                   </Typography>
                   <Typography
                     variant="body2"

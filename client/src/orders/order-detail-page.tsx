@@ -23,6 +23,7 @@ import { useCan } from '../auth/permissions';
 import { DetailLayout } from '../components/detail-layout';
 import { PageHeader } from '../components/page-header';
 import { PdfActions } from '../components/pdf-actions';
+import { Reference } from '../components/reference';
 import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import type { OrderStatus } from '../lib/api-names';
@@ -492,7 +493,7 @@ export function OrderDetailPage() {
                     id: 'orders.subtitle.reference',
                     defaultMessage: 'their reference {reference}',
                   },
-                  { reference: order.reference },
+                  { reference: <Reference>{order.reference}</Reference> },
                 )}
               </>
             )}

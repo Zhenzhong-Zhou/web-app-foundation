@@ -13,6 +13,7 @@ import { useIntl } from 'react-intl';
 import type { Location, OrderLine } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { LotFields } from '../inventory/lot-fields';
 import { api } from '../lib/api';
 import {
@@ -129,7 +130,7 @@ export function ReceiveLineDialog({
         <DialogTitle>
           {intl.formatMessage(
             { id: 'orders.receive.title', defaultMessage: 'Receive {sku}' },
-            { sku: line?.sku },
+            { sku: <Reference>{line?.sku}</Reference> },
           )}
         </DialogTitle>
 

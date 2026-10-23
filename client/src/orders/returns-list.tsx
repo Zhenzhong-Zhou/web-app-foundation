@@ -12,7 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useState } from 'react';
+import { Fragment, type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -24,6 +24,7 @@ import type {
 import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api, ApiError } from '../lib/api';
 import { formatDate, formatQuantity, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -144,7 +145,7 @@ export function ReturnsList({
                       id: 'orders.returns.against',
                       defaultMessage: 'Against {rma}',
                     },
-                    { rma: rma.number },
+                    { rma: <Reference>{rma.number}</Reference> },
                   )}
                 </Link>
               )}
@@ -272,10 +273,16 @@ function LinkToRmaDialog({
                       date: formatDate(entry.createdAt),
                       // "A, B, C" in English and French, "A、B、C" in Chinese.
                       items: intl.formatList(
-                        entry.items.map(
-                          (item) =>
-                            `${item.sku} ${formatQuantity(item.quantity)}`,
-                        ),
+                        // By place: a return's items have no id of their own,
+                        // and never move.
+                        entry.items.map((item, index) => {
+                          const quantity = formatQuantity(item.quantity);
+                          return (
+                            <Fragment key={index}>
+                              <Reference>{item.sku}</Reference> {quantity}
+                            </Fragment>
+                          );
+                        }),
                         { type: 'conjunction', style: 'narrow' },
                       ),
                     },

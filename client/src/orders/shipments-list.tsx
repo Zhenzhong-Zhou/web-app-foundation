@@ -13,6 +13,7 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import type { InvoicePage, InvoiceSummary, Shipment } from '../api/types.gen';
+import { Reference } from '../components/reference';
 import { api, ApiError, apiUrl, messageFor } from '../lib/api';
 import { formatDate, formatDay, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -218,7 +219,7 @@ export function ShipmentsList({
                           id: 'orders.shipments.invoice',
                           defaultMessage: 'Invoice {number}',
                         },
-                        { number: invoice.number },
+                        { number: <Reference>{invoice.number}</Reference> },
                       )
                     : intl.formatMessage({
                         id: 'orders.shipments.draftInvoice',

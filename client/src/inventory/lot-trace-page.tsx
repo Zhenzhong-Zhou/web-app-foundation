@@ -27,6 +27,7 @@ import {
 import type { LotMatch, LotTrace } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
+import { Reference } from '../components/reference';
 import { LotCostPanel } from '../costs/lot-cost-panel';
 import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
@@ -139,7 +140,7 @@ export function LotSearchPage() {
               id: 'inventory.trace.noMatch',
               defaultMessage: 'No lot contains “{code}”.',
             },
-            { code },
+            { code: <Reference>{code}</Reference> },
           )}
         </Typography>
       )}
@@ -490,7 +491,13 @@ export function LotTracePage() {
                           id: 'inventory.trace.sampleOrder',
                           defaultMessage: '{reference} (sample)',
                         },
-                        { reference: row.orderNumber ?? orderWord },
+                        {
+                          reference: row.orderNumber ? (
+                            <Reference>{row.orderNumber}</Reference>
+                          ) : (
+                            orderWord
+                          ),
+                        },
                       )
                     : (row.orderNumber ?? orderWord)}
                 </Onward>
@@ -579,12 +586,14 @@ function SourceText({
   const intl = useIntl();
 
   if (source.kind === 'production') {
-    const reference =
-      source.runReference ??
+    const reference = source.runReference ? (
+      <Reference>{source.runReference}</Reference>
+    ) : (
       intl.formatMessage({
         id: 'inventory.trace.noReference',
         defaultMessage: 'without a reference',
-      });
+      })
+    );
     const run = (chunks: ReactNode[]) => (
       <Onward
         underline="always"
@@ -623,12 +632,14 @@ function SourceText({
         defaultMessage="Received from {supplier} on <order>{reference}</order>"
         values={{
           supplier: source.supplierName,
-          reference:
-            source.orderNumber ??
+          reference: source.orderNumber ? (
+            <Reference>{source.orderNumber}</Reference>
+          ) : (
             intl.formatMessage({
               id: 'inventory.trace.anOrder',
               defaultMessage: 'an order',
-            }),
+            })
+          ),
           order: (chunks: ReactNode[]) => (
             <Onward
               underline="always"

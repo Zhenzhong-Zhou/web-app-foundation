@@ -4,6 +4,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { AuditRecord } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
+import { ReferencesWhole } from '../components/reference';
 import { relativeTime, SEPARATOR } from '../lib/format';
 
 /**
@@ -50,9 +51,11 @@ export function RecentWork({ entries }: { entries?: AuditRecord[] }) {
           {entries.map((entry) => (
             <ListItem key={entry.id} disableGutters divider>
               <Typography variant="body2" sx={{ flexGrow: 1, minWidth: 0 }}>
-                {[entry.actionName, entry.resourceLabel]
-                  .filter(Boolean)
-                  .join(SEPARATOR)}
+                <ReferencesWhole
+                  text={[entry.actionName, entry.resourceLabel]
+                    .filter(Boolean)
+                    .join(SEPARATOR)}
+                />
               </Typography>
               <Typography
                 variant="body2"

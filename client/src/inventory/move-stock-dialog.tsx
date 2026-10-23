@@ -14,6 +14,7 @@ import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 
 import type { Location, Partner, StockRow } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
+import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { groupedNumberMessage, nameAndCode, toApiDecimal } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
@@ -293,8 +294,8 @@ export function MoveStockDialog({
                           '{sku} · lot {lot} at {location} — {amount} on hand',
                       },
                       {
-                        sku: row.sku,
-                        lot: row.lotCode,
+                        sku: <Reference>{row.sku}</Reference>,
+                        lot: <Reference>{row.lotCode}</Reference>,
                         location: row.locationName,
                         amount: withUnit(row.quantity, row.unitOfMeasure, intl),
                       },
@@ -306,7 +307,7 @@ export function MoveStockDialog({
                           '{sku} at {location} — {amount} on hand',
                       },
                       {
-                        sku: row.sku,
+                        sku: <Reference>{row.sku}</Reference>,
                         location: row.locationName,
                         amount: withUnit(row.quantity, row.unitOfMeasure, intl),
                       },

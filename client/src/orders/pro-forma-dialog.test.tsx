@@ -82,8 +82,8 @@ describe('ProFormaDialog', () => {
     );
 
     expect(
-      await screen.findByText(/Every item needs a price first\. WIDGET-1 has/),
-    ).toBeInTheDocument();
+      await screen.findByText(/Every item needs a price first\./),
+    ).toHaveTextContent(/Every item needs a price first\. WIDGET-1 has/);
     expect(screen.queryByRole('link', { name: 'Print' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Download PDF' })).toBeNull();
   });

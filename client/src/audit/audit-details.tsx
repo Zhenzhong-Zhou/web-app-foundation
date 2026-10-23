@@ -4,6 +4,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { AuditRecord } from '../api/types.gen';
 import { type Permission, useCan } from '../auth/permissions';
+import { ReferencesWhole } from '../components/reference';
 import type { AuditLinkKind } from '../lib/api-names';
 import { formatDay, formatWhen, NO_VALUE, SEPARATOR } from '../lib/format';
 import { RECENT_PATHS } from '../lib/recent';
@@ -58,11 +59,19 @@ export function AuditDetails({ details }: { details: Detail[] }) {
 
   function show(value: Value | null) {
     if (!value) return NO_VALUE;
-    const text = value.at
-      ? formatWhen(value.at)
-      : value.day
-        ? formatDay(value.day)
-        : value.text;
+    // The server's words, its references kept whole by their hyphens
+    // (ADR-081).
+    const text = (
+      <ReferencesWhole
+        text={
+          value.at
+            ? formatWhen(value.at)
+            : value.day
+              ? formatDay(value.day)
+              : value.text
+        }
+      />
+    );
     const page = value.link ? PAGES[value.link.kind] : null;
     if (!value.link || !page || !can(page.may)) return text;
     // Underlined, as every link inside a line of text is: colour alone

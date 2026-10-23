@@ -13,6 +13,7 @@ import type { NeedsCostEntry } from '../api/types.gen';
 import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import {
   formatQuantity,
@@ -129,8 +130,8 @@ export function SetCostDialog({
                         defaultMessage: '{sku} · lot {lot} — {quantity}',
                       },
                       {
-                        sku: entry.sku,
-                        lot: entry.lotCode,
+                        sku: <Reference>{entry.sku}</Reference>,
+                        lot: <Reference>{entry.lotCode}</Reference>,
                         quantity: formatQuantity(entry.quantity),
                       },
                     )

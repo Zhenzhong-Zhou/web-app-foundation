@@ -12,6 +12,7 @@ import { useIntl } from 'react-intl';
 import type { StockRow } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 
@@ -97,7 +98,7 @@ export function EditLotDialog({
         <DialogTitle>
           {intl.formatMessage(
             { id: 'inventory.lot.title', defaultMessage: 'Lot {code}' },
-            { code: row?.lotCode },
+            { code: <Reference>{row?.lotCode}</Reference> },
           )}
         </DialogTitle>
 

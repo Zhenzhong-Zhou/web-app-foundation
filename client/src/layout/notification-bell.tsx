@@ -15,6 +15,7 @@ import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
 import type { Notification } from '../api/types.gen';
+import { ReferencesWhole } from '../components/reference';
 import { api } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { rem } from '../theme/rem';
@@ -264,7 +265,9 @@ export function NotificationBell() {
                 // column of its own for one bit of information.
                 sx={{ fontWeight: entry.readAt ? 400 : 600 }}
               >
-                {entry.title}
+                {/* The server's words: its SKU or licence number kept
+                    whole by its hyphens (ADR-081). */}
+                <ReferencesWhole text={entry.title} />
               </Typography>
 
               {entry.body && (

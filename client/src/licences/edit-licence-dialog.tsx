@@ -14,6 +14,7 @@ import { useIntl } from 'react-intl';
 import type { ProductLicence } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 
@@ -95,7 +96,7 @@ export function EditLicenceDialog({
         <DialogTitle>
           {intl.formatMessage(
             { id: 'licences.title', defaultMessage: 'Licence {number}' },
-            { number: licence?.number },
+            { number: <Reference>{licence?.number}</Reference> },
           )}
         </DialogTitle>
 

@@ -19,6 +19,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 import type { CreditNoteDetail } from '../api/types.gen';
 import { PageHeader } from '../components/page-header';
 import { PdfActions } from '../components/pdf-actions';
+import { Reference } from '../components/reference';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { isRevisionRefusal } from '../lib/api';
 import {
@@ -121,7 +122,7 @@ export function CreditNoteDetailPage() {
               id="invoices.creditNote.reversesOn"
               defaultMessage="Reverses <link>{number}</link> of {date}. Reason: {reason}"
               values={{
-                number: note.invoiceNumber,
+                number: <Reference>{note.invoiceNumber}</Reference>,
                 date: invoiceDate,
                 reason: note.reason,
                 link,
@@ -131,7 +132,11 @@ export function CreditNoteDetailPage() {
             <FormattedMessage
               id="invoices.creditNote.reverses"
               defaultMessage="Reverses <link>{number}</link>. Reason: {reason}"
-              values={{ number: note.invoiceNumber, reason: note.reason, link }}
+              values={{
+                number: <Reference>{note.invoiceNumber}</Reference>,
+                reason: note.reason,
+                link,
+              }}
             />
           )
         ) : note.invoiceDate ? (
@@ -139,7 +144,7 @@ export function CreditNoteDetailPage() {
             id="invoices.creditNote.againstOn"
             defaultMessage="Credits against <link>{number}</link> of {date}. Reason: {reason}"
             values={{
-              number: note.invoiceNumber,
+              number: <Reference>{note.invoiceNumber}</Reference>,
               date: invoiceDate,
               reason: note.reason,
               link,
@@ -149,7 +154,11 @@ export function CreditNoteDetailPage() {
           <FormattedMessage
             id="invoices.creditNote.against"
             defaultMessage="Credits against <link>{number}</link>. Reason: {reason}"
-            values={{ number: note.invoiceNumber, reason: note.reason, link }}
+            values={{
+              number: <Reference>{note.invoiceNumber}</Reference>,
+              reason: note.reason,
+              link,
+            }}
           />
         )}
       </Alert>

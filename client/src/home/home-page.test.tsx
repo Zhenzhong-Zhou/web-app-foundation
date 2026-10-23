@@ -111,6 +111,44 @@ describe('HomePage', () => {
     ).toBeTruthy();
   });
 
+  // The board's Northside row (ADR-081): the customer's SO-DEMO-1 broke at
+  // its hyphen at 390 px, and the detail sat a margin from the number, with
+  // nowhere for the line to break between them.
+  it('keeps a reference in a row’s detail whole, a space before the detail', async () => {
+    serve({
+      gettingStarted: COMPLETE,
+      cards: [
+        {
+          kind: 'toShip',
+          count: 1,
+          late: 0,
+          rows: [
+            {
+              id: 'o1',
+              title: 'SO-000001',
+              detail: 'Northside Pharmacy · SO-DEMO-1',
+              due: null,
+              late: false,
+            },
+          ],
+        },
+      ],
+    });
+    renderWithAuth(routed(<HomePage />), { permissions: ['orders.view'] });
+
+    const ship = await screen.findByRole('region', { name: 'To ship' });
+    const number = within(ship).getByRole('link', { name: 'SO-000001' });
+    expect(number.parentElement?.textContent).toBe(
+      'SO-000001 Northside Pharmacy · SO-DEMO-1',
+    );
+    expect(
+      getComputedStyle(within(ship).getByText('SO-DEMO-1')).whiteSpace,
+    ).toBe('nowrap');
+    expect(within(ship).getByText(/Northside Pharmacy/)).toHaveTextContent(
+      'Northside Pharmacy · SO-DEMO-1',
+    );
+  });
+
   // The positive tone's text (ADR-081). It asked for MUI's success.dark,
   // 4.33 : 1 on a dark card, through Typography's color prop, which takes
   // a palette name rather than a path and so drew the plain text instead.

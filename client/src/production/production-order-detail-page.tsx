@@ -24,6 +24,7 @@ import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { LabelledValue } from '../components/labelled-value';
 import { PageHeader } from '../components/page-header';
+import { Reference } from '../components/reference';
 import { RunCostPanel } from '../costs/run-cost-panel';
 import { LoadFailure } from '../errors/load-failure';
 import { displayQuantity, NO_VALUE, SEPARATOR } from '../lib/format';
@@ -122,7 +123,7 @@ export function ProductionOrderDetailPage() {
       <Fragment key={lot.lotId}>
         {index > 0 && SEPARATOR}
         <Link component={RouterLink} to={`/lots/${lot.lotId}`} color="inherit">
-          {lot.code}
+          <Reference>{lot.code}</Reference>
         </Link>
         {run.status === 'completed'
           ? intl.formatMessage(
@@ -241,15 +242,20 @@ export function ProductionOrderDetailPage() {
             {
               count: variances.length,
               list: intl.formatList(
-                variances.map((variance) =>
-                  intl.formatMessage(
-                    {
-                      id: 'production.variance.item',
-                      defaultMessage: '{sku} at {percent}',
-                    },
-                    { sku: variance.sku, percent: percent(variance.variance) },
-                  ),
-                ),
+                variances.map((variance) => (
+                  <Fragment key={variance.lineId}>
+                    {intl.formatMessage(
+                      {
+                        id: 'production.variance.item',
+                        defaultMessage: '{sku} at {percent}',
+                      },
+                      {
+                        sku: <Reference>{variance.sku}</Reference>,
+                        percent: percent(variance.variance),
+                      },
+                    )}
+                  </Fragment>
+                )),
                 { type: 'conjunction', style: 'narrow' },
               ),
             },

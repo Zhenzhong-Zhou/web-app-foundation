@@ -25,6 +25,7 @@ import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { ReferencesWhole } from '../components/reference';
 import { When, Who } from '../components/who-and-when';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api, isRevisionRefusal, withQuery } from '../lib/api';
@@ -380,7 +381,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
                             sx={{ fontWeight: 600 }}
                           >
                             {SEPARATOR}
-                            {entry.resourceLabel}
+                            <ReferencesWhole text={entry.resourceLabel} />
                           </Typography>
                         )}
                         {/* component="div": the default <p> inside a cell

@@ -1,6 +1,7 @@
 import { Alert, Snackbar } from '@mui/material';
 import { type ReactNode, useCallback, useState } from 'react';
 
+import { ReferencesWhole } from './reference';
 import { type ShowToast, ToastContext } from './toast-context';
 
 /**
@@ -46,7 +47,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           onClose={() => setOpen(false)}
           sx={{ width: '100%' }}
         >
-          {message}
+          {/* Finished words: their references kept whole (ADR-081). */}
+          {message && <ReferencesWhole text={message} />}
         </Alert>
       </Snackbar>
     </ToastContext.Provider>

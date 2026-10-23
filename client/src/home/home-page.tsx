@@ -17,6 +17,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import type { HomeCard, HomeResponse, HomeRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
+import { ReferencesWhole } from '../components/reference';
 import { StatusChip } from '../components/status-chip';
 import { UndoSnackbar } from '../components/undo-snackbar';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -660,10 +661,17 @@ function RowLine({
             {row.title}
           </Typography>
         )}
+        {/* A space rather than a margin, so the line may break between the
+            title and the detail; the detail's references, the customer's
+            SO-DEMO-1, found by their hyphens in the server's words and kept
+            whole (ADR-081). */}
         {row.detail && (
-          <Typography component="span" color="text.secondary" sx={{ ml: 1 }}>
-            {row.detail}
-          </Typography>
+          <>
+            {' '}
+            <Typography component="span" color="text.secondary">
+              <ReferencesWhole text={row.detail} />
+            </Typography>
+          </>
         )}
       </Box>
       {chip ? (

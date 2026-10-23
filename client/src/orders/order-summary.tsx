@@ -4,6 +4,7 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { OrderDetail } from '../api/types.gen';
+import { Reference } from '../components/reference';
 import { StatusChip } from '../components/status-chip';
 import {
   displayQuantity,
@@ -75,7 +76,7 @@ function documentLinks(
     <span key={document.id}>
       {index > 0 && SEPARATOR}
       <Link component={RouterLink} to={to(document.id)}>
-        {document.number}
+        <Reference>{document.number}</Reference>
       </Link>
     </span>
   ));

@@ -14,6 +14,7 @@ import { useIntl } from 'react-intl';
 import type { OrderReturn } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { formatDate, formatQuantity, SEPARATOR } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
@@ -108,7 +109,7 @@ export function LinkReturnDialog({
               id: 'rmas.link.title',
               defaultMessage: 'Link a return to {rma}',
             },
-            { rma: rmaNumber },
+            { rma: <Reference>{rmaNumber}</Reference> },
           )}
         </DialogTitle>
 

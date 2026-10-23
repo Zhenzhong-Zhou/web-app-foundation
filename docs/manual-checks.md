@@ -2200,10 +2200,28 @@ menu's Colour mode.
   light card and light green on the dark one, as easy to read as the
   words around it.
 
+A reference (a document's number, a SKU, a lot code) is kept whole where
+words sit beside it; one alone, or first in its line, needs nothing.
+
+- **MC-3422** *(ADR-081)* References kept whole. At 390 px, then at 320
+  px with Larger text, in English and in 中文: Home's To receive reads
+  PO-000009 Lakeshore Packaging · PO-DEMO-9, a space between the number
+  and the partner, and wraps only between words, never inside PO-DEMO-9
+  (no PO- at a line's end with DEMO-9 below); To ship the same for
+  SO-DEMO-1. On SO-DEMO-1's order, the line under its number moves their
+  reference's SO-DEMO-1 to the next line whole when it must. Copy
+  SO-DEMO-1 from Home and paste it into the lookup: it finds the order.
+  With VoiceOver, a Home row reads as one line, SO-DEMO-1 among its words,
+  never split off on its own (MC-R38).
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R38** *(Home's rows, read aloud)* With VoiceOver, a row on Home
+  reads its number and its partner as two words, PO-000009 Lakeshore
+  Packaging, never run together as PO-000009Lakeshore (MC-3422).
 
 - **MC-R37** *(the status tones, #172's review)* In dark mode and in
   light, Something went wrong's warning sign stands out from its disc,
@@ -2806,3 +2824,5 @@ first.
   MC-3420, and MC-R36.
 - 2026-10-22: ADR-081, the status tones' contrast: MC-3421, and MC-R37
   for #172's review.
+- 2026-10-22: ADR-081, references kept whole: MC-3422, and MC-R38 for
+  Home's rows read aloud.

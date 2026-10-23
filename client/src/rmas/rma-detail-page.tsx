@@ -32,6 +32,7 @@ import { useCan } from '../auth/permissions';
 import { FormError } from '../components/form-error';
 import { PageHeader } from '../components/page-header';
 import { PdfActions } from '../components/pdf-actions';
+import { Reference } from '../components/reference';
 import { LoadFailure } from '../errors/load-failure';
 import { api } from '../lib/api';
 import {
@@ -207,14 +208,14 @@ export function RmaDetailPage() {
                   id: 'invoices.orderNumber',
                   defaultMessage: 'Order {number}',
                 },
-                { number: rma.orderNumber },
+                { number: <Reference>{rma.orderNumber}</Reference> },
               )}
             </Link>
             {rma.invoiceId && (
               <>
                 {SEPARATOR}
                 <Link component={RouterLink} to={`/invoices/${rma.invoiceId}`}>
-                  {rma.invoiceNumber}
+                  <Reference>{rma.invoiceNumber}</Reference>
                 </Link>
               </>
             )}
@@ -426,7 +427,7 @@ export function RmaDetailPage() {
             >
               {intl.formatMessage(
                 { id: 'rmas.creditOn', defaultMessage: 'Credit on {number}' },
-                { number: invoice.number },
+                { number: <Reference>{invoice.number}</Reference> },
               )}
             </Button>
           ))}
@@ -441,7 +442,7 @@ export function RmaDetailPage() {
               defaultMessage:
                 'Goods come back through Take a return on the order, naming {rma}.',
             },
-            { rma: rma.number },
+            { rma: <Reference>{rma.number}</Reference> },
           )}
         </Typography>
       )}
@@ -528,11 +529,11 @@ function ConfirmDialog({
         {action === 'cancel'
           ? intl.formatMessage(
               { id: 'rmas.cancel.title', defaultMessage: 'Cancel {rma}?' },
-              { rma: rmaNumber },
+              { rma: <Reference>{rmaNumber}</Reference> },
             )
           : intl.formatMessage(
               { id: 'rmas.close.title', defaultMessage: 'Close {rma}?' },
-              { rma: rmaNumber },
+              { rma: <Reference>{rmaNumber}</Reference> },
             )}
       </DialogTitle>
       <DialogContent>

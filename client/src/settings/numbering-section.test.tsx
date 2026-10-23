@@ -123,10 +123,10 @@ describe('NumberingSection', () => {
       screen.getByRole('dialog', { name: 'Change the numbering?' }),
     );
     expect(dialog.getByText('Invoices')).toBeInTheDocument();
-    expect(dialog.getByText('Next: INV-2026-0001')).toBeInTheDocument();
-    expect(
-      dialog.getByText('The last given stays INV-000452.'),
-    ).toBeInTheDocument();
+    expect(dialog.getByText(/^Next:/)).toHaveTextContent('Next: INV-2026-0001');
+    expect(dialog.getByText(/^The last given stays/)).toHaveTextContent(
+      'The last given stays INV-000452.',
+    );
 
     await user.click(dialog.getByRole('button', { name: 'Change numbering' }));
 

@@ -12,6 +12,7 @@ import { FormattedMessage, useIntl } from 'react-intl';
 import type { InvoiceDetail } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { formatMoney } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
@@ -80,7 +81,7 @@ export function VoidInvoiceDialog({
         <DialogTitle>
           {intl.formatMessage(
             { id: 'invoices.void.title', defaultMessage: 'Void {number}?' },
-            { number: invoice.number },
+            { number: <Reference>{invoice.number}</Reference> },
           )}
         </DialogTitle>
 
