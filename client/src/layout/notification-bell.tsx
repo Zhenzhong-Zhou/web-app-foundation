@@ -6,13 +6,14 @@ import {
   Button,
   Divider,
   IconButton,
-  Menu,
   MenuItem,
+  MenuList,
+  Popover,
   Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { type MouseEvent, useState } from 'react';
+import { type MouseEvent, useId, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
@@ -154,6 +155,7 @@ export function NotificationBell() {
     id: 'layout.notifications.title',
     defaultMessage: 'Notifications',
   });
+  const heading = useId();
 
   return (
     <>
@@ -182,18 +184,28 @@ export function NotificationBell() {
         </IconButton>
       </Tooltip>
 
-      <Menu
+      {/* A popover holding a menu of the entries, not a menu: the title,
+          Mark all read and a failed list's Try again or Reload are not
+          entries, so they sit above the list, where Tab reaches them. In a
+          menu, Tab closed it and the arrows passed them by (#196). It opens
+          where MUI's Menu does, below the bell, and the list takes the
+          focus, its first entry once loaded, as the Menu's did. */}
+      <Popover
         anchorEl={anchor}
         open={anchor !== null}
         onClose={() => setAnchor(null)}
-        slotProps={{ paper: { sx: { width: rem(380), maxHeight: 480 } } }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        disableAutoFocus
+        slotProps={{
+          paper: { sx: { width: rem(380), maxHeight: 480, py: 1 } },
+        }}
       >
         <Stack
           direction="row"
           spacing={2}
           sx={{ alignItems: 'center', px: 2, py: 1 }}
         >
-          <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
+          <Typography id={heading} variant="subtitle2" sx={{ flexGrow: 1 }}>
             {title}
           </Typography>
 
@@ -239,59 +251,69 @@ export function NotificationBell() {
           </Box>
         )}
 
-        {entries === null && failure === null && (
-          <MenuItem disabled>
-            <Typography variant="body2">
-              {intl.formatMessage({
-                id: 'common.loading',
-                defaultMessage: 'Loading…',
-              })}
-            </Typography>
-          </MenuItem>
-        )}
-
-        {entries?.length === 0 && (
-          <MenuItem disabled>
-            <Typography variant="body2">
-              {intl.formatMessage({
-                id: 'layout.notifications.empty',
-                defaultMessage: 'Nothing yet.',
-              })}
-            </Typography>
-          </MenuItem>
-        )}
-
-        {entries?.map((entry) => (
-          <MenuItem
-            key={entry.id}
-            onClick={() => void choose(entry)}
-            sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1.5 }}
-          >
-            <Stack spacing={0.25}>
-              <Typography
-                variant="body2"
-                // Unread is the only state worth styling. A dot would need a
-                // column of its own for one bit of information.
-                sx={{ fontWeight: entry.readAt ? 400 : 600 }}
-              >
-                {/* The server's words: its SKU or licence number kept
-                    whole by its hyphens (ADR-081). */}
-                <ReferencesWhole text={entry.title} />
+        <MenuList
+          autoFocus
+          autoFocusItem
+          aria-labelledby={heading}
+          disablePadding
+        >
+          {entries === null && failure === null && (
+            <MenuItem disabled>
+              <Typography variant="body2">
+                {intl.formatMessage({
+                  id: 'common.loading',
+                  defaultMessage: 'Loading…',
+                })}
               </Typography>
+            </MenuItem>
+          )}
 
-              {entry.body && (
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  {entry.body}
+          {entries?.length === 0 && (
+            <MenuItem disabled>
+              <Typography variant="body2">
+                {intl.formatMessage({
+                  id: 'layout.notifications.empty',
+                  defaultMessage: 'Nothing yet.',
+                })}
+              </Typography>
+            </MenuItem>
+          )}
+
+          {entries?.map((entry) => (
+            <MenuItem
+              key={entry.id}
+              onClick={() => void choose(entry)}
+              sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1.5 }}
+            >
+              <Stack spacing={0.25}>
+                <Typography
+                  variant="body2"
+                  // Unread is the only state worth styling. A dot would need
+                  // a column of its own for one bit of information.
+                  sx={{ fontWeight: entry.readAt ? 400 : 600 }}
+                >
+                  {/* The server's words: its SKU or licence number kept
+                      whole by its hyphens (ADR-081). */}
+                  <ReferencesWhole text={entry.title} />
                 </Typography>
-              )}
 
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {relativeTime(entry.createdAt)}
-              </Typography>
-            </Stack>
-          </MenuItem>
-        ))}
-      </Menu>
+                {entry.body && (
+                  <Typography
+                    variant="caption"
+                    sx={{ color: 'text.secondary' }}
+                  >
+                    {entry.body}
+                  </Typography>
+                )}
+
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  {relativeTime(entry.createdAt)}
+                </Typography>
+              </Stack>
+            </MenuItem>
+          ))}
+        </MenuList>
+      </Popover>
     </>
   );
 }

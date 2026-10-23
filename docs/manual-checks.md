@@ -2309,6 +2309,13 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R54** *(the bell's Mark all read reached by the keyboard, #196)*
+  Tab to the bell and press Enter: the first entry takes the focus once
+  the list has loaded. Shift+Tab reaches Mark all read, and Tab from it
+  goes back to the entries; Escape closes the bell's menu and puts the
+  focus back on the bell. With the list failed to load, as MC-R43 does it,
+  Tab reaches Try again. It looks as before. Found by #196's axe pass.
+
 - **MC-R53** *(options under a heading, a group of their list, #196)* In
   the search box type DEMO; in Chrome's DevTools, Accessibility, the list
   holds a group named Orders with its results in it as options, and one
@@ -3053,3 +3060,5 @@ first.
   MC-R49.
 - 2026-10-23: #196's comparison, options under a heading as a group of
   their list: MC-R53.
+- 2026-10-23: #196's comparison, the bell's Mark all read and Try again
+  reached by the keyboard: MC-R54.

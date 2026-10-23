@@ -96,6 +96,55 @@ describe('NotificationBell', () => {
     ).toBeVisible();
   });
 
+  // Above the list rather than in it: in a menu, Tab closed it and the
+  // arrows passed Mark all read by (#196).
+  it('reaches Mark all read from the keyboard, its menu holding only the entries', async () => {
+    server.use(
+      http.get('/api/v1/notifications/unread-count', () =>
+        HttpResponse.json({ count: 1 }),
+      ),
+      http.get('/api/v1/notifications', () =>
+        HttpResponse.json({
+          entries: [
+            {
+              id: 'n-1',
+              type: 'invitation.accepted',
+              title: 'Wang Fang joined',
+              body: null,
+              resourceType: 'user',
+              resourceId: 'user-wang',
+              readAt: null,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+          nextCursor: null,
+        }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Notifications, 1 unread' }),
+    );
+    const entry = await screen.findByRole('menuitem', {
+      name: /Wang Fang joined/,
+    });
+    await vi.waitFor(() => expect(entry).toHaveFocus());
+
+    await user.tab({ shift: true });
+    expect(screen.getByRole('button', { name: 'Mark all read' })).toHaveFocus();
+    expect(
+      within(screen.getByRole('menu', { name: 'Notifications' })).queryByRole(
+        'button',
+      ),
+    ).toBeNull();
+  });
+
   it('says a list that failed to load did, with Try again, never Nothing yet (#189)', async () => {
     let reads = 0;
     server.use(
