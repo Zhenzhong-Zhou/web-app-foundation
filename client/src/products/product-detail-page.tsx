@@ -130,7 +130,7 @@ export function ProductDetailPage() {
         message={error}
         missingTitle={intl.formatMessage({
           id: 'status.missing.product',
-          defaultMessage: "This product doesn't exist",
+          defaultMessage: 'This product doesn’t exist',
         })}
         list={{
           to: '/products',

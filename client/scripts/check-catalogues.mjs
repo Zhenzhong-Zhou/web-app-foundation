@@ -16,6 +16,9 @@
  * 5. French guillemets and colons hold their words with a no-break space,
  *    « like this » and ainsi : comme ceci, so a narrow screen never leaves
  *    « at the end of a line or starts one with a colon.
+ * 6. English writes a typographic apostrophe (’), as the copy asks (#184).
+ *    ICU reads ' as the start of a quote before a brace, and consumes it
+ *    there, so one left in the text a message prints is prose.
  *
  * What it cannot see is a translation gone stale after its English changed;
  * ADR-054 has that commit list the keys in the handoff instead.
@@ -113,6 +116,22 @@ function parsed(locale, id, message) {
   }
 }
 
+/** The text a message prints, its arguments and tags left out. */
+function printed(message) {
+  const text = [];
+  const walk = (elements) => {
+    for (const element of elements) {
+      if (element.type === TYPE.literal) text.push(element.value);
+      if (element.type === TYPE.tag) walk(element.children);
+      if (element.type === TYPE.select || element.type === TYPE.plural) {
+        for (const option of Object.values(element.options)) walk(option.value);
+      }
+    }
+  };
+  walk(parse(message));
+  return text.join('');
+}
+
 const englishPlaceholders = Object.fromEntries(
   Object.entries(english).map(([id, message]) => [
     id,
@@ -160,6 +179,17 @@ for (const locale of OTHERS) {
       );
     }
   }
+}
+
+// 6. English apostrophes, typographic. A message that does not parse is
+// reported above.
+const straight = Object.keys(english).filter(
+  (id) => englishPlaceholders[id] && printed(english[id]).includes("'"),
+);
+if (straight.length > 0) {
+  problems.push(
+    `English takes a typographic apostrophe (’), not ', outside a quoted brace: ${straight.join(', ')}`,
+  );
 }
 
 if (problems.length > 0) {

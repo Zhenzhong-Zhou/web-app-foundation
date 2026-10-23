@@ -132,7 +132,7 @@ export class ProductImagesService {
           t({
             id: 'products.images.order',
             defaultMessage:
-              "The new order must list each of this product's images once.",
+              'The new order must list each of this product’s images once.',
           }),
         );
       }

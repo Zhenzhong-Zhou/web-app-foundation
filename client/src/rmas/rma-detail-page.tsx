@@ -146,7 +146,7 @@ export function RmaDetailPage() {
           message={error}
           missingTitle={intl.formatMessage({
             id: 'status.missing.rma',
-            defaultMessage: "This return doesn't exist",
+            defaultMessage: 'This return doesn’t exist',
           })}
           list={{
             to: '/return-authorizations',

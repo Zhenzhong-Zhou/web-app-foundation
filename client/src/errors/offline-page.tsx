@@ -33,7 +33,7 @@ export function OfflinePage({
       kind="offline"
       title={intl.formatMessage({
         id: 'status.offline.title',
-        defaultMessage: "Can't reach the server",
+        defaultMessage: 'Can’t reach the server',
       })}
       message={intl.formatMessage({
         id: 'status.offline.message',

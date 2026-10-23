@@ -139,7 +139,7 @@ export function EditOrderDialog({
               helperText={intl.formatMessage({
                 id: 'orders.edit.reference.help',
                 defaultMessage:
-                  "The supplier's PO number, or your own. Shown in the orders list.",
+                  'The supplier’s PO number, or your own. Shown in the orders list.',
               })}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />

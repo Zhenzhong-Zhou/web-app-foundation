@@ -254,7 +254,7 @@ export function OrderDetailPage() {
         message={error}
         missingTitle={intl.formatMessage({
           id: 'status.missing.order',
-          defaultMessage: "This order doesn't exist",
+          defaultMessage: 'This order doesn’t exist',
         })}
         list={{
           to: '/orders',

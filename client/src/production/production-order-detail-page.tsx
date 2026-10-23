@@ -90,7 +90,7 @@ export function ProductionOrderDetailPage() {
         message={error}
         missingTitle={intl.formatMessage({
           id: 'status.missing.run',
-          defaultMessage: "This production run doesn't exist",
+          defaultMessage: 'This production run doesn’t exist',
         })}
         list={{
           to: '/production',

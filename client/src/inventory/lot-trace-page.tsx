@@ -228,7 +228,7 @@ export function LotTracePage() {
         message={error}
         missingTitle={intl.formatMessage({
           id: 'status.missing.lot',
-          defaultMessage: "This lot doesn't exist",
+          defaultMessage: 'This lot doesn’t exist',
         })}
         list={{
           to: '/lots',

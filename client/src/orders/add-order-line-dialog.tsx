@@ -215,7 +215,7 @@ export function AddOrderLineDialog({
                 helperText={intl.formatMessage({
                   id: 'orders.lines.price.help',
                   defaultMessage:
-                    "Optional. Left blank, the order's price list supplies it when there is one.",
+                    'Optional. Left blank, the order’s price list supplies it when there is one.',
                 })}
                 sx={{ flexGrow: 1 }}
                 slotProps={{

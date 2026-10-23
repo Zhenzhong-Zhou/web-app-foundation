@@ -86,7 +86,7 @@ export function ProfileForm() {
         fullWidth
         helperText={intl.formatMessage({
           id: 'account.profile.emailFixed',
-          defaultMessage: "Changing your email address isn't available yet.",
+          defaultMessage: 'Changing your email address isn’t available yet.',
         })}
       />
 

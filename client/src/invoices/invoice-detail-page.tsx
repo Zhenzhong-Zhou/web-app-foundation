@@ -167,7 +167,7 @@ export function InvoiceDetailPage() {
         message={error}
         missingTitle={intl.formatMessage({
           id: 'status.missing.invoice',
-          defaultMessage: "This invoice doesn't exist",
+          defaultMessage: 'This invoice doesn’t exist',
         })}
         list={{
           to: '/invoices',

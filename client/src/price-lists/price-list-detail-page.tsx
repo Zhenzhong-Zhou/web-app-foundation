@@ -85,7 +85,7 @@ export function PriceListDetailPage() {
         message={error}
         missingTitle={intl.formatMessage({
           id: 'status.missing.priceList',
-          defaultMessage: "This price list doesn't exist",
+          defaultMessage: 'This price list doesn’t exist',
         })}
         list={{
           to: '/settings/price-lists',

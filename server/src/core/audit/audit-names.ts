@@ -350,7 +350,7 @@ export const ACTION_NAMES: Record<AuditAction, Translatable> = {
   }),
   'user.role_changed': t({
     id: 'audit.action.userRoleChanged',
-    defaultMessage: "Changed a member's role",
+    defaultMessage: 'Changed a member’s role',
   }),
 };
 

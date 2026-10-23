@@ -253,9 +253,10 @@ three:
 - **Then** `npm run i18n:extract` in that package, and add the same id to
   `fr-CA.json` and `zh-Hans.json`, using `docs/glossary.md`'s words and a
   typographic apostrophe (’), which ICU leaves alone where ' starts a
-  quote. `npm run i18n:check` fails until all three agree, placeholders
-  included. Written by whoever adds the English, reviewed by someone
-  fluent before a release (MC-1405, `scripts/i18n-review.mjs`).
+  quote; English too, where `npm run i18n:check` refuses a straight one
+  except where it quotes a brace (#184). It fails until all three agree,
+  placeholders included. Written by whoever adds the English, reviewed by
+  someone fluent before a release (MC-1405, `scripts/i18n-review.mjs`).
 - **A printed document** speaks its customer's languages, not the
   reader's: the server draws it, its words through `doc.label` and
   `doc.lines` (`core/documents/document-text.ts`), its figures through
@@ -526,10 +527,10 @@ failure needs reporting) and the cases built on it.
   Signed in, inside the app with the rail and the lookup; signed out,
   centred on its own with Sign in (`NotFoundRoute`).
 - **A record that did not load:** `LoadFailure` with the error itself
-  (`useResource` returns it as `failure`). A 404 is "This order doesn't
+  (`useResource` returns it as `failure`). A 404 is "This order doesn’t
   exist", in the page's words, with its list and the lookup; a 403 is "You
-  don't have access to this", naming who can change the role; no answer at
-  all is "Can't reach the server" with Try again. Anything else keeps the
+  don’t have access to this", naming who can change the role; no answer at
+  all is "Can’t reach the server" with Try again. Anything else keeps the
   server's own message, since it says something particular.
 - **A page whose code will not load** (ADR-081): every lazy import goes
   through `loadChunkOrReload`, which tries once more, then reads the

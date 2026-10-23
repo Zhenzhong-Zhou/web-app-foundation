@@ -89,7 +89,7 @@ const BUILT_IN: Record<string, { id: string; defaultMessage: string }> = {
   }),
   arrayUnique: defineMessage({
     id: 'validation.arrayUnique',
-    defaultMessage: "All {property}'s elements must be unique",
+    defaultMessage: 'All {property}’s elements must be unique',
   }),
   isEmail: defineMessage({
     id: 'validation.isEmail',

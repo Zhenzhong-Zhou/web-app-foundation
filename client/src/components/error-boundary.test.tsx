@@ -95,7 +95,7 @@ describe('ErrorBoundary', () => {
       expect(
         screen.getByRole('heading', {
           level: 1,
-          name: "Can't reach the server",
+          name: 'Can’t reach the server',
         }),
       ).toBeInTheDocument();
       expect(
@@ -169,7 +169,7 @@ describe('ErrorBoundary', () => {
       expect(
         await screen.findByRole(
           'heading',
-          { level: 1, name: "Can't reach the server" },
+          { level: 1, name: 'Can’t reach the server' },
           { timeout: 3000 },
         ),
       ).toBeInTheDocument();

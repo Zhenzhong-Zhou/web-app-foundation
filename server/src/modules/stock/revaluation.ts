@@ -251,7 +251,7 @@ function assertAcquisition(target: Target): void {
         t({
           id: 'stock.batchSCostComes',
           defaultMessage:
-            "A batch's cost comes from its run, when the run closes",
+            'A batch’s cost comes from its run, when the run closes',
         }),
       );
     }
@@ -269,7 +269,7 @@ function assertAcquisition(target: Target): void {
       t({
         id: 'stock.stockGoingOutValued',
         defaultMessage:
-          "Stock going out is valued at its pool's average. Set the cost of what came in instead.",
+          'Stock going out is valued at its pool’s average. Set the cost of what came in instead.',
       }),
     );
   }

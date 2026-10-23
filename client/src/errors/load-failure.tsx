@@ -69,7 +69,7 @@ export function LoadFailure({
         kind="forbidden"
         title={intl.formatMessage({
           id: 'status.forbidden.title',
-          defaultMessage: "You don't have access to this",
+          defaultMessage: 'You don’t have access to this',
         })}
         message={failure.message}
         actions={<GoHome primary />}
