@@ -188,4 +188,34 @@ describe('a page’s read refused', () => {
       await screen.findByRole('heading', { level: 1, name: 'Products' }),
     ).toBeVisible();
   });
+
+  it('reads nothing while the tab is hidden, and again at once when it comes back', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    let reads = 0;
+    server.use(
+      http.get('/api/v1/products', () => {
+        reads += 1;
+        return apiError(503, INSTALLING, 'api_updating');
+      }),
+    );
+    open();
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'A new version is being installed',
+    });
+    expect(reads).toBe(1);
+
+    const showTab = (state: DocumentVisibilityState) => {
+      vi.spyOn(document, 'visibilityState', 'get').mockReturnValue(state);
+      act(() => {
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+    };
+    showTab('hidden');
+    act(() => vi.advanceTimersByTime(5 * 60_000));
+    expect(reads).toBe(1);
+
+    showTab('visible');
+    await vi.waitFor(() => expect(reads).toBe(2));
+  });
 });

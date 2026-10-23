@@ -2,6 +2,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { API_REVISION } from '../api/revision.gen';
+import { useWhileVisible } from '../lib/use-while-visible';
 import { BUILD } from './build';
 import { reloadPage } from './reload-page';
 
@@ -207,31 +208,7 @@ function isVersionFile(value: unknown): value is VersionFile {
  * tab asks nothing, as the bell's count does (ADR-063).
  */
 export function useVersionReads(): void {
-  useEffect(() => {
-    let timer: number | undefined;
-    function start() {
-      void checkVersion();
-      timer = window.setInterval(() => void checkVersion(), EVERY_MS);
-    }
-    function stop() {
-      window.clearInterval(timer);
-      timer = undefined;
-    }
-    function onVisibility() {
-      if (document.visibilityState === 'visible') {
-        if (timer === undefined) start();
-      } else {
-        stop();
-      }
-    }
-
-    if (document.visibilityState === 'visible') start();
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      stop();
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, []);
+  useWhileVisible(checkVersion, EVERY_MS);
 }
 
 /** This tab's last load in full for a newer build, in sessionStorage. */

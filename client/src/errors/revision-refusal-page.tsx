@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import { useIntl } from 'react-intl';
 
 import { type ApiError, hasCode } from '../lib/api';
+import { useWhileVisible } from '../lib/use-while-visible';
 import { reloadPage } from '../version/reload-page';
 import { useNewVersion } from '../version/version-check';
 import { NewVersionPage } from './new-version-page';
@@ -48,11 +48,10 @@ function InstallingPage({
   standalone?: boolean;
 }) {
   const intl = useIntl();
-
-  useEffect(() => {
-    const timer = window.setInterval(() => onRetry(), AGAIN_AFTER_MS);
-    return () => window.clearInterval(timer);
-  }, [onRetry]);
+  // Every minute while the tab is in front, and at once when it comes back
+  // to the front; a hidden tab asks nothing, which after a rollback could
+  // otherwise go on for as long as the tab stays open.
+  useWhileVisible(onRetry, AGAIN_AFTER_MS, false);
 
   return (
     <StatusPage

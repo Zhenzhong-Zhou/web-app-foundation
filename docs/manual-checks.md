@@ -2118,7 +2118,9 @@ revision back afterwards: `git status` shows nothing changed.
   Close it and open Products from the rail: in its place, with the rail
   still there, A new version is being installed, This page tries again by
   itself in a minute., and no button; the Network tab shows Products read
-  again each minute, and `version.json` every 30 seconds. Nothing signs
+  again each minute, and `version.json` every 30 seconds. Switch to another
+  tab for a few minutes and back: nothing was asked meanwhile, and
+  Products and `version.json` are read again at once. Nothing signs
   out, and no page says Could not reach the server. The bell asks
   `unread-count` once more, is refused, and then asks nothing; put the
   revision back and reload, and it asks again each minute.
@@ -2250,6 +2252,11 @@ as `docs/runbooks/render.md`, "Deploys", has them.
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R40** *(a page waiting in the background)* A page saying A new
+  version is being installed, in a tab left behind another, asks nothing
+  until it is looked at again: no read each minute in the Network tab, and
+  a person's page never loads in full by itself while hidden (MC-3412).
 
 - **MC-R39** *(Home's tiles)* On a computer, the Owner's eight tiles on
   Home read as two rows of four, never seven and one alone (MC-3423).
@@ -2865,3 +2872,5 @@ first.
   extended.
 - 2026-10-22: ADR-081, Home's tiles in even rows: MC-3423, and MC-R39.
 - 2026-10-22: ADR-081, the client deployed after the API: MC-3424.
+- 2026-10-23: ADR-081's reviews, reads only while the tab is in front
+  (S8, S9): MC-3412 extended, and MC-R40.
