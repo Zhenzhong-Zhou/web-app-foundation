@@ -256,7 +256,9 @@ three:
   quote; English too, where `npm run i18n:check` refuses a straight one
   except where it quotes a brace (#184). It fails until all three agree,
   placeholders included. Written by whoever adds the English, reviewed by
-  someone fluent before a release (MC-1405, `scripts/i18n-review.mjs`).
+  someone fluent before a release (MC-1405, `scripts/i18n-review.mjs`):
+  `export` the first time, then `export --since` the commit the last round
+  was exported at, which gives the reviewer only what changed.
 - **A printed document** speaks its customer's languages, not the
   reader's: the server draws it, its words through `doc.label` and
   `doc.lines` (`core/documents/document-text.ts`), its figures through

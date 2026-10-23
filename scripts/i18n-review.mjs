@@ -3,6 +3,8 @@
  * The fluent review of ADR-054's French and Chinese (MC-1405, step 4).
  *
  *     node scripts/i18n-review.mjs export            # review/fr-CA.xlsx, review/zh-Hans.xlsx
+ *     node scripts/i18n-review.mjs export --since b933b912
+ *                                                    # review/fr-CA.since-b933b912.xlsx, ...
  *     node scripts/i18n-review.mjs import review/fr-CA.xlsx
  *
  * Export writes one workbook per language, covering everything a person
@@ -13,11 +15,24 @@
  * must keep are listed beside it, since a translation that drops {sku}
  * would print a blank where the SKU belongs.
  *
- * Import reads a returned workbook, takes every non-empty Correction, and
- * writes it into the right catalogue. It refuses the whole file, writing
- * nothing, if any correction is not valid ICU or does not keep exactly the
- * English's placeholders; the problems are listed by row. Afterwards, run
- * `npm run i18n:check` in client/ and server/ and look at `git diff`.
+ * With --since and the commit the last round was exported at, it writes
+ * only what that reviewer has not seen: the messages new since, or whose
+ * English or translation differs from the catalogues as they were then
+ * (git show <commit>:<catalogue>). English that differs only in its
+ * apostrophes or quotation marks (' for ’, " for “ ”) counts as unchanged:
+ * #184 changed 29 messages that way, none in what a reviewer checks. Not
+ * if the change moved a placeholder, though, since ICU reads ' as a quote.
+ * The files are named for the commit, so a full export is never
+ * overwritten, and their last column, "Since <commit>", says why each row
+ * is there.
+ *
+ * Import reads a returned workbook, of either kind, takes every non-empty
+ * Correction, and writes it into the right catalogue. It refuses the whole
+ * file, writing nothing, if any correction is not valid ICU, does not keep
+ * exactly the English's placeholders, or belongs to a message removed
+ * since the export (clear that row's Correction); the problems are listed
+ * by row. Afterwards, run `npm run i18n:check` in client/ and server/ and
+ * look at `git diff`.
  *
  * No dependencies of its own: a workbook is a zip of XML, and Node has
  * zlib. It uses the FormatJS CLI and ICU parser each package already has,
@@ -148,27 +163,88 @@ function placeholders(message) {
   return names;
 }
 
+// ---------------------------------------------------------------- baseline
+
+/** A commit's short name, refusing a name git cannot find. */
+function commitNamed(name) {
+  try {
+    return execFileSync(
+      "git",
+      ["rev-parse", "--verify", "--quiet", "--short", `${name}^{commit}`],
+      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    ).trim();
+  } catch {
+    console.error(
+      `git cannot find a commit ${name}. Name the commit the last round was exported at, as git log shows it.`,
+    );
+    process.exit(1);
+  }
+}
+
+/** A catalogue as it was at a commit: empty if it did not exist yet. */
+function readAt(commit, file) {
+  let text;
+  try {
+    text = execFileSync("git", ["show", `${commit}:${file}`], {
+      cwd: ROOT,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      maxBuffer: 64 * 1024 * 1024,
+    });
+  } catch {
+    return {};
+  }
+  return JSON.parse(text);
+}
+
+const plainQuotes = (message) =>
+  message.replace(/’/g, "'").replace(/[“”]/g, '"');
+
+/** The same English to a reviewer: equal, or only ' ’ " “ ” changed (#184). */
+function sameEnglish(then, now) {
+  if (then === now) return true;
+  if (plainQuotes(then) !== plainQuotes(now)) return false;
+  // ICU reads ' as a quote, so a changed one can turn {name} into text.
+  try {
+    return (
+      [...placeholders(then)].sort().join(" ") ===
+      [...placeholders(now)].sort().join(" ")
+    );
+  } catch {
+    return false;
+  }
+}
+
 // ------------------------------------------------------------------ export
 
-function exportWorkbooks() {
+function exportWorkbooks(since) {
+  const baseline = since && commitNamed(since);
+  const columns = baseline
+    ? [...COLUMNS, { title: `Since ${baseline}`, width: 30 }]
+    : COLUMNS;
+
   mkdirSync(path.join(ROOT, "review"), { recursive: true });
   const sources = AREAS.map((area) => ({
     area,
     english: read(`${area.catalogues}/en.json`),
+    englishThen: baseline && readAt(baseline, `${area.catalogues}/en.json`),
     found: messagesOf(area),
   }));
 
   for (const language of LANGUAGES) {
-    const rows = [COLUMNS.map((column) => column.title)];
+    const rows = [columns.map((column) => column.title)];
+    let quotesOnly = 0;
 
-    for (const { area, english, found } of sources) {
+    for (const { area, english, englishThen, found } of sources) {
       const translated = read(`${area.catalogues}/${language}.json`);
+      const translatedThen =
+        baseline && readAt(baseline, `${area.catalogues}/${language}.json`);
 
       for (const id of Object.keys(english).sort()) {
         const where = found[id]?.file
           ? `${area.package}/${found[id].file}`
           : "";
-        rows.push([
+        const row = [
           area.name,
           id,
           where,
@@ -177,14 +253,44 @@ function exportWorkbooks() {
           "",
           "",
           [...placeholders(english[id])].join(" "),
-        ]);
+        ];
+
+        if (baseline) {
+          const isNew = !(id in englishThen);
+          const englishChanged =
+            !isNew && !sameEnglish(englishThen[id], english[id]);
+          const translationChanged =
+            !isNew && translatedThen[id] !== translated[id];
+
+          if (!isNew && !englishChanged && !translationChanged) {
+            if (englishThen[id] !== english[id]) quotesOnly += 1;
+            continue;
+          }
+          row.push(
+            isNew
+              ? "New"
+              : englishChanged && translationChanged
+                ? "English and translation changed"
+                : englishChanged
+                  ? "English changed"
+                  : "Translation changed",
+          );
+        }
+        rows.push(row);
       }
     }
 
-    const file = path.join(ROOT, "review", `${language}.xlsx`);
-    writeFileSync(file, workbook(language, rows));
+    const file = path.join(
+      ROOT,
+      "review",
+      baseline ? `${language}.since-${baseline}.xlsx` : `${language}.xlsx`,
+    );
+    writeFileSync(file, workbook(language, columns, rows));
     console.log(
-      `${path.relative(ROOT, file)}: ${rows.length - 1} messages to review.`,
+      baseline
+        ? `${path.relative(ROOT, file)}: ${rows.length - 1} messages new or changed since ${baseline}; ` +
+            `${quotesOnly} left out, their English changed only in its apostrophes or quotation marks.`
+        : `${path.relative(ROOT, file)}: ${rows.length - 1} messages to review.`,
     );
   }
 }
@@ -235,8 +341,14 @@ function importWorkbook(file) {
     const target = catalogues[row[areaAt]];
     const id = row[idAt];
 
-    if (!target || !(id in target.english)) {
+    if (!target) {
       problems.push(`${at}: no message ${id} in ${row[areaAt]}`);
+      return;
+    }
+    if (!(id in target.english)) {
+      problems.push(
+        `${at} ${id}: removed from ${row[areaAt]} since the export, so there is nothing to correct; clear the row's Correction`,
+      );
       return;
     }
 
@@ -306,8 +418,8 @@ const letter = (index) =>
     : letter(Math.floor(index / 26) - 1) + letter(index % 26);
 
 /** A one-sheet .xlsx: bold header, frozen top row, filter, wrapped text. */
-function workbook(sheetName, rows) {
-  const last = `${letter(COLUMNS.length - 1)}${rows.length}`;
+function workbook(sheetName, columns, rows) {
+  const last = `${letter(columns.length - 1)}${rows.length}`;
   const cells = rows
     .map(
       (row, r) =>
@@ -323,7 +435,7 @@ function workbook(sheetName, rows) {
   const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
 <sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
-<cols>${COLUMNS.map((column, i) => `<col min="${i + 1}" max="${i + 1}" width="${column.width}" customWidth="1"/>`).join("")}</cols>
+<cols>${columns.map((column, i) => `<col min="${i + 1}" max="${i + 1}" width="${column.width}" customWidth="1"/>`).join("")}</cols>
 <sheetData>${cells}</sheetData>
 <autoFilter ref="A1:${last}"/>
 </worksheet>`;
@@ -354,7 +466,7 @@ function workbook(sheetName, rows) {
     [
       "xl/workbook.xml",
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${escapeXml(sheetName)}" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">'${sheetName}'!$A$1:$${letter(COLUMNS.length - 1)}$${rows.length}</definedName></definedNames></workbook>`,
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${escapeXml(sheetName)}" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">'${sheetName}'!$A$1:$${letter(columns.length - 1)}$${rows.length}</definedName></definedNames></workbook>`,
     ],
     [
       "xl/_rels/workbook.xml.rels",
@@ -538,15 +650,17 @@ function unzip(buffer) {
 
 // ------------------------------------------------------------------- main
 
-const [command, file] = process.argv.slice(2);
+const [command, ...args] = process.argv.slice(2);
 
-if (command === "export") {
+if (command === "export" && args.length === 0) {
   exportWorkbooks();
-} else if (command === "import" && file) {
-  importWorkbook(path.resolve(file));
+} else if (command === "export" && args[0] === "--since" && args.length === 2) {
+  exportWorkbooks(args[1]);
+} else if (command === "import" && args[0]) {
+  importWorkbook(path.resolve(args[0]));
 } else {
   console.error(
-    "Usage:\n  node scripts/i18n-review.mjs export\n  node scripts/i18n-review.mjs import review/fr-CA.xlsx",
+    "Usage:\n  node scripts/i18n-review.mjs export\n  node scripts/i18n-review.mjs export --since <commit>\n  node scripts/i18n-review.mjs import review/fr-CA.xlsx",
   );
   process.exit(1);
 }

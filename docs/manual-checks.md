@@ -451,7 +451,16 @@ folder by folder; these check what is already in place.
   `review/zh-Hans.xlsx`; each reviewer fills in the Correction column;
   `node scripts/i18n-review.mjs import review/fr-CA.xlsx` writes them
   back, refusing the whole file if any correction loses a placeholder;
-  then `npm run i18n:check` in client/ and server/, and one commit.
+  then `npm run i18n:check` in client/ and server/, and one commit. A
+  later round reads only what changed: `node scripts/i18n-review.mjs
+  export --since <commit>`, the commit the last round was exported at,
+  writes `review/fr-CA.since-<commit>.xlsx` and its Chinese pair beside
+  the full export, not over it. Its rows are the messages new since, or
+  whose English or translation changed, the last column saying which;
+  English changed only in its apostrophes or quotation marks is left out,
+  and the count printed. A commit git cannot find is refused. Import reads
+  either file, and names a corrected row whose message was removed since,
+  writing nothing until that row's Correction is cleared.
 - **MC-1406** In Français and in 简体中文, every area converted so far
   reads entirely in that language, with no English left on it:
   - signed out: sign-in, register, forgot-password, reset and verify,
@@ -3073,3 +3082,5 @@ first.
 - 2026-10-23: #196's ride-along, Deploy run by hand: MC-3425.
 - 2026-10-23: the live site checked after each deploy: MC-3424 and
   MC-3425 extended.
+- 2026-10-23: #196's ride-along, the review export of only what changed
+  since a commit: MC-1405 extended.
