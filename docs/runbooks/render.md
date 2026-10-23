@@ -32,8 +32,10 @@ goes for `BACKUP_S3_ENDPOINT` in GitHub's secrets, which nothing checks.
   answering, and Render deletes it after a 14-day grace period unless it is
   moved to a paid instance type. Note the creation date in the handoff.
   On 22 October 2026 Render showed the current one, Free, as created
-  about 28 September 2026: it stops answering about 28 October and is
-  deleted about 11 November.
+  about 28 September 2026, and its page said "Your database will expire
+  on October 28, 2026": it stops answering then and is deleted about 11
+  November. Until the database is paid for, this comes back every 30
+  days.
 - **The web service sleeps after 15 minutes without a request,** and the
   next request waits about a minute while it starts. The hourly jobs run
   inside it, so while it sleeps they do not: licence reminders (ADR-064)
@@ -302,8 +304,10 @@ rows.
    region). Only one free database may be active, so delete the expired one
    first if Render asks.
 2. **The API:** web service → Environment → `DATABASE_URL` = the new
-   database's **Internal** URL. Save, and let it redeploy. The deploy runs
-   every migration and the seed.
+   database's **Internal** URL. Save, then deploy it by hand (Manual
+   Deploy → Deploy latest commit): Auto-Deploy is off since ADR-081. The
+   deploy runs every migration and the seed. The static site needs
+   nothing.
 3. **Backups:** GitHub → Settings → Secrets → Actions →
    `BACKUP_DATABASE_URL` = the new **External** URL with
    `?sslmode=no-verify`. Run Actions → **Backup** once by hand.

@@ -197,9 +197,21 @@ done; a check older than a change of host, plan or region is stale.
   the live address from several mainland cities; slow or blocked is a
   finding with the handoff's "Serving China" (a Hong Kong or Singapore
   region on our own domain; an ICP filing to host inside China).
+- **Newer than the floor's lint.** `eslint-plugin-compat` sees nothing
+  after about ES2022 and no CSS (#197): search `client/src/` for newer
+  built-ins (`Object.groupBy`, `Promise.withResolvers`, `Array.fromAsync`,
+  `toSorted`, `AbortSignal.any`, `Intl.DurationFormat`) and CSS above the
+  floor (`:has(`, `subgrid`, `@starting-style`), each guarded or within
+  the browsers conventions.md lists.
 - **Devices.** By hand: Android WeChat, 360 or QQ on Windows in 极速模式
   (the ⚡ icon), and an iPhone on iOS 16.4 or later; each signs in, opens
   an order and switches to 中文.
+- **Tablets, foldables and odd shapes.** By hand, or Playwright at those
+  sizes: an iPad mini and an iPad Air upright, an iPad held sideways and in
+  Split View; a foldable folded and unfolded, the iPhone Duo closed and
+  open; a phone held sideways (about 390 px tall). Look for a dialog's
+  buttons below the fold, a wide table on a phone (#159), touch targets
+  under 44 px (#170) and anything that needs hover.
 
 ## 4. Report
 

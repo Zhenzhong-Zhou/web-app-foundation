@@ -485,6 +485,9 @@ warrants professional review before handling real EU user data.
 
 ## ADR-013 — API versioning by URL prefix
 
+> **Amended by [ADR-081](#adr-081--old-tabs-after-a-deploy-a-newer-build-noticed-an-outdated-client-told-amends-adr-013-adr-051-adr-052-adr-054-adr-055-and-adr-068).**
+> Within `/v1`, a change that breaks the app's own client raises the API revision, which the client sends as `X-Api-Revision` and the server checks first; `/v2` stays for a break an outside program would meet. Everything else stands.
+
 **Context.** Four options: a URL path prefix (`/v1/users`), a custom header
 (`X-API-Version: 1`), Accept-header content negotiation
 (`application/vnd.app.v1+json`), or a query parameter (`?version=1`).
@@ -3985,6 +3988,9 @@ block / override / allow policy here carry over unchanged.
 
 ## ADR-051 — Performance: a volume seed, response-time budgets, plan checks
 
+> **Amended by [ADR-081](#adr-081--old-tabs-after-a-deploy-a-newer-build-noticed-an-outdated-client-told-amends-adr-013-adr-051-adr-052-adr-054-adr-055-and-adr-068).**
+> Each organization in `seed:volume` has a team holding made roles, `npm run perf:plans` times the access query, and each scale writes a manifest of its own, read by `--scale`.
+
 **Context.** Nothing measures how the app behaves with a year of data.
 Every test and both seeds work on a handful of rows, where any query is
 fast. The places that will slow down are known in kind but not in size:
@@ -4152,6 +4158,9 @@ runs always seed fresh, so their numbers stay comparable.
 ---
 
 ## ADR-052 — Calendar days are `date`, sent as YYYY-MM-DD (amends ADR-040)
+
+> **Amended by [ADR-081](#adr-081--old-tabs-after-a-deploy-a-newer-build-noticed-an-outdated-client-told-amends-adr-013-adr-051-adr-052-adr-054-adr-055-and-adr-068).**
+> The lenient mode is one of two ways through a breaking change; the other raises the API revision. And every migration, not only one on a large table, leaves working what the release still serving reads: expand, then contract.
 
 **Context.** Four columns hold a day somebody picked, not a moment:
 
@@ -4561,6 +4570,9 @@ needed. Where it differs from the decision above, and what stands in:
 
 ## ADR-054 — Languages: the person's language for the app, the customer's for documents
 
+> **Amended by [ADR-081](#adr-081--old-tabs-after-a-deploy-a-newer-build-noticed-an-outdated-client-told-amends-adr-013-adr-051-adr-052-adr-054-adr-055-and-adr-068).**
+> A language whose catalogue won't load says so, in its own words, and nothing is saved until it loads; at start the app falls back to English rather than a blank page.
+
 **Context.** Everything the app says is in English, from three places that
 change in different ways.
 
@@ -4948,6 +4960,9 @@ retention (ADR-036) within weeks.
 ---
 
 ## ADR-055 — The look: tokens, a side rail, tabs and a summary beside the work (amends ADR-021)
+
+> **Amended by [ADR-081](#adr-081--old-tabs-after-a-deploy-a-newer-build-noticed-an-outdated-client-told-amends-adr-013-adr-051-adr-052-adr-054-adr-055-and-adr-068).**
+> The status page's discs and Home's empty line take the five tones' pairs, not MUI's derived `light` and `dark`, which fell below contrast.
 
 **Context.** The client looks like Material UI's defaults because it is
 them. `theme.ts` sets the font, the button defaults and two table rules;
@@ -7216,6 +7231,9 @@ yet. Its triggers are under *Deferred*.
 ---
 
 ## ADR-068 — OpenAPI from the server, the client's types generated (#19)
+
+> **Amended by [ADR-081](#adr-081--old-tabs-after-a-deploy-a-newer-build-noticed-an-outdated-client-told-amends-adr-013-adr-051-adr-052-adr-054-adr-055-and-adr-068).**
+> The document's `info.version` carries the API revision, `npm run api` writes it into `client/src/api/`, and CI fails a breaking change that leaves it where it was.
 
 **Context.** The server and the client agree on the shape of every request
 and response by hand. `client/src/lib/types.ts` holds 89 types in 1,164
@@ -11010,6 +11028,141 @@ stays; conventions.md says so.
   the design; the riders; the deploy workflow and the runbook;
   dependencies again; the reviews; the docs last. Built by Claude Code, a
   prompt per commit (handoff, *How code is delivered*).
+
+**Amendment (October 2026) — as built (#199).** What building settled:
+
+- **The version file and the check.** `version.json` holds the build,
+  when it was built, the release (`client/package.json`'s version) and the
+  API revision. The tab reads it as it starts, not only on coming back to
+  the front and every ten minutes, so an old `index.html` from Render's
+  edge is caught; each read has a query string of its own and
+  `cache: 'no-store'`, and gives up after 5 seconds. Anything but its JSON
+  is unreadable and changes nothing; each read that succeeds sets the
+  state, so a rollback to the tab's own build clears it. Urgent means the
+  newer build's revision is above the tab's, or the API has refused the
+  tab.
+- **Where "New version" shows.** On a computer, the top bar's button and
+  its note. Below 600 px, the width where Help becomes an icon, the
+  account button's dot and the menu's first item, keeping the board's
+  second line. Signed out, the banner sits under the language and text-size
+  row, and turns amber too, since sign-in would be refused. The banners are
+  MUI's standard info and warning alerts, like the app's others. The amber
+  line reaches every dialog through the dialog paper's component setting
+  (`VersionPaper`), not by replacing the paper; the image viewer, and Help
+  and the lookup on a phone, opt out. An open dialog hides `#root` from
+  screen readers, so the announcement is in every dialog too, and says the
+  urgent words once urgent.
+- **The next page** loads in full once per newer build, ever, recorded in
+  `sessionStorage`: if it comes back on the old build, the button or the
+  banner stays and nothing reloads by itself again. Without storage,
+  nothing reloads by itself. The chunk loader's reload keeps a one-minute
+  guard, and the two share one record.
+- **A load that fails.** One loader, `loadChunkOrReload`
+  (`client/src/version/load-chunk.ts`), for pages, catalogues and guides,
+  throws a `ChunkLoadError` naming its case, and the error boundary reads
+  that rather than the browser's words. Render answers a vanished chunk
+  with a plain 404. The offline page, and `LoadFailure`'s too, tries again
+  on the browser's `online` event. A known limit: in Safari, a connection
+  dropped for under a second while a page's import loads shows the crash
+  page, since Safari keeps the failed fetch until a reload; Reload fixes it.
+- **The revision.** `API_REVISION` is 1, `info.version` 1.1, and
+  `client/src/api/revision.gen.ts` is written by
+  `client/scripts/write-api-revision.mjs` after openapi-ts. The middleware
+  runs after pino-http has given the request its id and before
+  `SessionContextMiddleware`; anything but digits above zero is no header.
+  It records each refused request, so the request log (`requestLogLevel`)
+  and the exception filter's 5xx log stay silent for it, leaving one info
+  line, "Refused an outdated client" or "Refused a client newer than the
+  API", with the method, the path, both revisions and the request id. The
+  log counts refused requests, not open tabs, though the bell and the idle
+  guard rest in an outdated tab. `/health` also names `version`, read from
+  `server/package.json` once as the server starts, since Render runs it as
+  `node dist/main`, where npm's variables are absent.
+- **Outdated on screen.** `send()` waits for the version read before the
+  caller hears of a refusal, so the first words are right. "On its way" is
+  outdated with no newer build known, an unreadable file included: the
+  503's words, a page that tries again every minute while in front, and a
+  read every 30 seconds until the build is out. `useResource` and
+  `useKeysetList` report a refusal, and `messageFor` words it as the page
+  renders; Your account's sections, New order's pickers and panels inside
+  pages show the server's words under the amber banner. `FormError` adds
+  Reload by the tab's state, so a client-side line shown then gets it too.
+  A refused first session read shows a full-page status, a later one leaves
+  the app as it is, and sign-out's answer doesn't count as being served. The
+  product image upload shares `api()`'s headers and its refusal. A refused
+  dialog shows Reload twice, the refusal's and the amber line's, as this ADR
+  asks for both.
+- **Languages.** The catalogue loads first; the device keeps the choice once
+  it has, and the account once `setLocale` says so. A language that fails
+  says so in its own words, not in English (amending the decision above):
+  those few messages ship in the main chunk, listed in
+  `client/src/i18n/failure-ids.json` and written by
+  `scripts/write-failure-words.mjs` at `i18n:compile`. The toast stays until
+  closed, sits at the foot of the toast stack, below any confirmation, says
+  so with Reload when a newer build is the cause, and shows that it is
+  loading again while Try again works. The account's language applied at
+  sign-in counts as a switch, except the one the start banner names.
+- **CI.** A job of its own, "Against main", on pull requests, compared with
+  the merge commit's first parent; `scripts/check-api-breaking.sh` (oasdiff
+  v1.33.0, pinned by digest, no network) and `scripts/check-migrations.sh`
+  (squawk-cli 2.68.0) are shared with `scripts/verify.sh`, which compares
+  with the merge base and exits 3, saying why, when a check cannot run. A
+  removed request property or parameter, and a removed optional response
+  field, count as breaking; a change reviewed and accepted is listed with its
+  reason in `server/openapi-breaking-accepted.txt` (swagger 12.0.3's
+  `maxItems` were the first). `server/.squawk.toml` keeps this ADR's rules
+  and turns off eleven that drizzle-kit's ordinary output trips, each with
+  its reason, `ban-drop-constraint` among them: a key replaced under a
+  released `ON CONFLICT`, as in 0067, is for `/code-review`'s new rule. This
+  PR took `main` from `1` to `1.1`, so its own check could not bite.
+- **Deploys.** Neither of Render's options gives the order. "After CI checks
+  pass" waits for every check, the deploy workflow's own included, and a
+  service with a root directory deploys only on changes under it. So both
+  Auto-Deploys are off (replacing "the web service deploying after CI's
+  checks pass"), and `.github/workflows/deploy.yml`, run when CI passes on a
+  push to `main`, calls the API's deploy hook with `?ref=<commit>`, waits up
+  to 20 minutes for `/api/health` to name it, then calls the static site's.
+  That needs a second secret, `RENDER_API_DEPLOY_HOOK`; every deploy
+  redeploys the API; a docs-only push, which CI skips, deploys nothing; and
+  CI now runs for Help's guides. A newer run cancels an older one, waiting
+  or deploying. On #176's deploy the client had met the old API for about
+  50 seconds. The settings, the cache headers and a rollback are in
+  `docs/runbooks/render.md`.
+- **The volume seed and the access query.** Each organization's members
+  count everyone, 15 and 150, so the team is 13 and 148: a second Owner and
+  Admins, then members holding one to three made roles in exact shares, so
+  one holding three always exists, and no Viewers; made roles at large are
+  three times small. At large the access query takes 0.09 ms for a member of
+  three made roles, and who holds a permission 0.73 ms; no access table
+  reaches 10,000 rows, and with sequential scans off every table is read by
+  an index, so no index changed. That pays ADR-080's owed timing. `perf/`
+  was already type-checked by `npm run typecheck` (since 7 October);
+  `--scale` defaults to small; the plan check warns on a manifest of one
+  organization and fails on one with no three-role member.
+- **The riders.**
+  - **Tones.** The status page's discs take ADR-055's tones (offline
+    neutral too), 8.1:1 and above; Home's empty line had never been green,
+    since MUI 9's Typography ignores a dotted `color` (#196), and is drawn
+    through `sx`.
+  - **References.** `Reference` keeps one value whole inside a message;
+    `ReferencesWhole` keeps every hyphenated word whole in the server's
+    text (notifications, Home's detail, the audit log, activity, toasts,
+    refusals). A code over 16 characters may break, and a page heading or
+    a reference standing first is left alone. Browsers break at a hyphen
+    only before a letter, so this ADR's `PO-000009` never broke.
+  - **Tiles.** Equal columns in as few rows as fit, from container queries
+    in rem; an odd count can still leave one alone (seven where three fit
+    is 3 + 3 + 1; a phone, 2 + 2 + 2 + 1), and at 320 px, or 390 px with
+    Larger text, it is one to a row.
+  - **The browser floor.** `eslint-plugin-compat` 7.0.2 holds Web APIs and
+    built-ins only up to about ES2022; newer built-ins, a method called on
+    a variable and CSS are #197.
+- **Left for issues.** #186 (the lookup reads every organization's rows),
+  #187 (plans at large), #189 (the bell's "Nothing yet.", in an outdated tab
+  too), #190 (Resend), #193 (request fields on every log line), #194
+  (`npm run api`'s first run), #195 (a list's alert above its empty state),
+  #196 (Typography's colours), #197 (the browser floor's gaps), #198
+  (unsaved work on most pages).
 
 ---
 
