@@ -165,13 +165,24 @@ function placeholders(message) {
 
 // ---------------------------------------------------------------- baseline
 
+/** What git prints, run at the repository's root; its errors unsaid. */
+const git = (...args) =>
+  execFileSync("git", args, {
+    cwd: ROOT,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+    maxBuffer: 64 * 1024 * 1024,
+  });
+
 /** A commit's short name, refusing a name git cannot find. */
 function commitNamed(name) {
   try {
-    return execFileSync(
-      "git",
-      ["rev-parse", "--verify", "--quiet", "--short", `${name}^{commit}`],
-      { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    return git(
+      "rev-parse",
+      "--verify",
+      "--quiet",
+      "--short",
+      `${name}^{commit}`,
     ).trim();
   } catch {
     console.error(
@@ -185,12 +196,7 @@ function commitNamed(name) {
 function readAt(commit, file) {
   let text;
   try {
-    text = execFileSync("git", ["show", `${commit}:${file}`], {
-      cwd: ROOT,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-      maxBuffer: 64 * 1024 * 1024,
-    });
+    text = git("show", `${commit}:${file}`);
   } catch {
     return {};
   }
