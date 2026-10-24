@@ -53,6 +53,18 @@ describe('RecentCard', () => {
     expect(screen.getByRole('link', { name: 'Invoice (draft)' })).toBeTruthy();
   });
 
+  /** A kind is a caption, in sentence case as every caption is (#223). */
+  it('writes each kind in sentence case, not capitals', async () => {
+    server.use(
+      http.get('/api/v1/recent', () => HttpResponse.json({ recent: ENTRIES })),
+    );
+    renderCard();
+
+    expect(await screen.findByText('Order')).not.toHaveStyle({
+      textTransform: 'uppercase',
+    });
+  });
+
   it('is left out while empty', async () => {
     renderCard();
     await waitFor(() =>
