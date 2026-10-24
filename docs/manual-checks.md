@@ -2332,6 +2332,13 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R55** *(quantities read without padding zeros, #213)* Products →
+  Calm 90ct → Recipe: Makes 1,000 per batch, not 1000.0000. On SO-DEMO-7,
+  Take a return: MAGCAP-60 reads 48 shipped, 0 already back, and its lot
+  MC60-0815 reads 48 under Shipped and 0 under Already back. Against RMA,
+  its open RMA: authorizes 2, 0 back against it so far. In Français the
+  batch reads 1 000. Found by #196's comparison.
+
 - **MC-R54** *(the bell's Mark all read reached by the keyboard, #196)*
   Tab to the bell and press Enter: the first entry takes the focus once
   the list has loaded. Shift+Tab reaches Mark all read, and Tab from it
@@ -3140,3 +3147,5 @@ first.
   Notifications, the bell saying it opens one: MC-R54 extended.
 - 2026-10-23: #196's review, Home's Change the days always underlined:
   MC-R49 extended.
+- 2026-10-24: #213, the recipe's batch size and Take a return's
+  quantities read without padding zeros: MC-R55.
