@@ -120,7 +120,10 @@ const NONE = {
  * lookup inside its budget (ADR-051): word similarity across every kind's
  * numbers is the costliest query here, and was all noise. A kind the member may not view is never queried, so nothing says
  * a record exists that its list would hide. Every query is scoped to the
- * organization in context.
+ * organization in context, and so is every table it joins: without that,
+ * Postgres joins this organization's orders and items to every
+ * organization's partners and products, a cost that grows with the whole
+ * database rather than with one customer's data (ADR-051's plan check, #186).
  */
 @Injectable()
 export class LookupService {
@@ -217,7 +220,13 @@ export class LookupService {
               coverFileId: NONE.coverFileId,
             })
             .from(orders)
-            .innerJoin(partners, eq(partners.id, orders.partnerId))
+            .innerJoin(
+              partners,
+              and(
+                eq(partners.id, orders.partnerId),
+                eq(partners.organizationId, organizationId),
+              ),
+            )
             .where(
               and(
                 eq(orders.organizationId, organizationId),
@@ -265,7 +274,13 @@ export class LookupService {
               coverFileId: NONE.coverFileId,
             })
             .from(invoices)
-            .innerJoin(partners, eq(partners.id, invoices.partnerId))
+            .innerJoin(
+              partners,
+              and(
+                eq(partners.id, invoices.partnerId),
+                eq(partners.organizationId, organizationId),
+              ),
+            )
             .where(
               and(
                 eq(invoices.organizationId, organizationId),
@@ -298,7 +313,13 @@ export class LookupService {
               coverFileId: NONE.coverFileId,
             })
             .from(creditNotes)
-            .innerJoin(partners, eq(partners.id, creditNotes.partnerId))
+            .innerJoin(
+              partners,
+              and(
+                eq(partners.id, creditNotes.partnerId),
+                eq(partners.organizationId, organizationId),
+              ),
+            )
             .where(
               and(
                 eq(creditNotes.organizationId, organizationId),
@@ -330,7 +351,13 @@ export class LookupService {
               coverFileId: NONE.coverFileId,
             })
             .from(lots)
-            .innerJoin(productVariants, eq(productVariants.id, lots.variantId))
+            .innerJoin(
+              productVariants,
+              and(
+                eq(productVariants.id, lots.variantId),
+                eq(productVariants.organizationId, organizationId),
+              ),
+            )
             .where(
               and(
                 eq(lots.organizationId, organizationId),
@@ -368,7 +395,13 @@ export class LookupService {
               coverFileId: coverOf(),
             })
             .from(productVariants)
-            .innerJoin(products, eq(products.id, productVariants.productId))
+            .innerJoin(
+              products,
+              and(
+                eq(products.id, productVariants.productId),
+                eq(products.organizationId, organizationId),
+              ),
+            )
             .where(
               and(
                 eq(productVariants.organizationId, organizationId),
@@ -443,7 +476,10 @@ export class LookupService {
             .from(productionOrders)
             .innerJoin(
               productVariants,
-              eq(productVariants.id, productionOrders.outputVariantId),
+              and(
+                eq(productVariants.id, productionOrders.outputVariantId),
+                eq(productVariants.organizationId, organizationId),
+              ),
             )
             .where(
               and(
@@ -478,7 +514,10 @@ export class LookupService {
             .from(returnAuthorizations)
             .innerJoin(
               partners,
-              eq(partners.id, returnAuthorizations.partnerId),
+              and(
+                eq(partners.id, returnAuthorizations.partnerId),
+                eq(partners.organizationId, organizationId),
+              ),
             )
             .where(
               and(
