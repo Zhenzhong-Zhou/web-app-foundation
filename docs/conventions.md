@@ -701,7 +701,10 @@ Use these rather than writing the thing again on a page:
 
 A new screen gets a line in SCREENS in client/e2e/accessibility.spec.ts, which
 runs axe for WCAG 2.2 AA in light and dark mode (ADR-055). A violation is
-fixed, not excluded: no rule is turned off.
+fixed, not excluded: no rule is turned off. Each line is its own test in each
+mode, so one slow screen or browser cannot time out the rest (#230), and the
+spec runs with reduced motion, so axe measures what has finished appearing,
+never a dialog still fading in.
 
 A link inside a sentence (a FormattedMessage `<link>` chunk) is
 underline="always": colour alone does not tell it from the words around it.

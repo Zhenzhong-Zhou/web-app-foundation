@@ -322,45 +322,50 @@ async function violations(page: Page): Promise<string[]> {
   );
 }
 
+// Less motion, as a person may ask for (ADR-075): transitions end at once,
+// so axe measures a dialog or a menu once it has appeared, never halfway.
+test.use({ reducedMotion: 'reduce' });
+
 for (const colorScheme of ['light', 'dark'] as const) {
   test.describe(`accessibility, ${colorScheme}`, () => {
     // The app follows the system until someone chooses (defaultMode
     // "system"), so emulating the system's scheme is choosing the mode.
     test.use({ colorScheme });
 
-    test('the main screens meet WCAG 2.2 AA', async ({ page, freshOrg }) => {
-      // Twenty screens and an axe pass each: longer than one flow.
-      test.setTimeout(120_000);
-
-      const data = await seed(freshOrg.api, freshOrg.email);
-      await signInAs(page, freshOrg.api);
-
-      const found: Record<string, string[]> = {};
-
+    // Each screen its own test, so a slow screen or browser times out only
+    // itself, and a retry reruns one screen; the report still lists every
+    // screen to fix in one run.
+    test.describe('the main screens meet WCAG 2.2 AA', () => {
       for (const screen of SCREENS) {
-        if (screen.version) {
-          await deploy(page, { urgent: screen.version === 'urgent' });
-        }
-        if (screen.broken) {
-          await page.route(screen.broken, (route) => route.abort('failed'));
-        }
-        await page.goto(screen.path(data));
-        if (screen.open) {
-          await expect(heading(page)).toBeVisible();
-          await screen.open(page);
-        }
-        await expect(screen.ready(page).first()).toBeVisible();
-        // Lists fill after their request; axe should see what a person does.
-        await page.waitForLoadState('networkidle');
+        test(screen.name, async ({ page, freshOrg }) => {
+          // A seed, a screen and an axe pass: longer than one flow.
+          test.setTimeout(60_000);
 
-        const list = await violations(page);
-        if (list.length > 0) found[screen.name] = list;
-        if (screen.version) await page.unroute('**/version.json?*');
-        if (screen.broken) await page.unroute(screen.broken);
+          const data = await seed(freshOrg.api, freshOrg.email);
+          await signInAs(page, freshOrg.api);
+
+          if (screen.version) {
+            await deploy(page, { urgent: screen.version === 'urgent' });
+          }
+          if (screen.broken) {
+            await page.route(screen.broken, (route) => route.abort('failed'));
+          }
+          await page.goto(screen.path(data));
+          if (screen.open) {
+            await expect(heading(page)).toBeVisible();
+            await screen.open(page);
+          }
+          await expect(screen.ready(page).first()).toBeVisible();
+          // Lists fill after their request; axe should see what a person
+          // does.
+          await page.waitForLoadState('networkidle');
+
+          const list = await violations(page);
+          if (screen.version) await page.unroute('**/version.json?*');
+          if (screen.broken) await page.unroute(screen.broken);
+          expect(list).toEqual([]);
+        });
       }
-
-      // All screens at once, so one run reports everything to fix.
-      expect(found).toEqual({});
     });
 
     test('a newcomer’s Home, with their welcome, meets WCAG 2.2 AA', async ({
