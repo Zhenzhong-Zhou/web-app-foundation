@@ -142,6 +142,41 @@ describe('NotificationBell', () => {
     ).toBeNull();
   });
 
+  // More than a menu, so a dialog named by its title, which the bell says
+  // it opens, and whether it is open (#196).
+  it('opens a dialog named Notifications, the bell saying whether it is open', async () => {
+    serveOneEntry();
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
+
+    const bell = await screen.findByRole('button', {
+      name: 'Notifications, 1 unread',
+    });
+    expect(bell).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(bell).toHaveAttribute('aria-expanded', 'false');
+
+    await user.click(bell);
+    const dialog = await screen.findByRole('dialog', { name: 'Notifications' });
+    expect(within(dialog).getByRole('menu')).toBeVisible();
+    expect(
+      within(dialog).getByRole('button', { name: 'Mark all read' }),
+    ).toBeVisible();
+    expect(bell).toHaveAttribute('aria-expanded', 'true');
+
+    const entry = await within(dialog).findByRole('menuitem', {
+      name: /Wang Fang joined/,
+    });
+    await vi.waitFor(() => expect(entry).toHaveFocus());
+    await user.keyboard('{Escape}');
+    await vi.waitFor(() =>
+      expect(bell).toHaveAttribute('aria-expanded', 'false'),
+    );
+  });
+
   // The button goes once nothing is unread, and the focus would go with it
   // to the popover itself (#196).
   it('gives the focus to the first entry after Mark all read', async () => {

@@ -184,6 +184,8 @@ export function NotificationBell() {
                 )
               : title
           }
+          aria-haspopup="dialog"
+          aria-expanded={anchor !== null}
           onClick={open}
         >
           {/* Nothing rather than 0: a Badge hiding a 0 still holds the
@@ -210,7 +212,13 @@ export function NotificationBell() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         disableAutoFocus
         slotProps={{
+          // A dialog named by its title, marked as MUI's Dialog marks its
+          // own: it holds Mark all read beside the menu, and a screen
+          // reader then says where that button is (#196).
           paper: {
+            role: 'dialog',
+            'aria-labelledby': heading,
+            'aria-modal': true,
             onKeyDown: () => {
               if (entries === null && failure === null) setKeyed(true);
             },

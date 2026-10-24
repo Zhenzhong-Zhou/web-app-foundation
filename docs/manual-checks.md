@@ -2342,8 +2342,11 @@ first.
   entries turn read, Mark all read goes, and the first entry has the
   focus, not the panel around it. In DevTools, Network, Slow 4G: open the
   bell and, while it says Loading…, Shift+Tab to Mark all read; when the
-  entries arrive the focus stays on it. Both found by `/code-review` on
-  #196.
+  entries arrive the focus stays on it. In Chrome's DevTools,
+  Accessibility, the bell has a popup, dialog, and is not expanded; open
+  it: expanded, and the panel is a dialog named Notifications, holding
+  Mark all read and the menu. VoiceOver on Mark all read says it is in
+  Notifications. All found by `/code-review` on #196.
 
 - **MC-R53** *(options under a heading, a group of their list, #196)* In
   the search box type DEMO; in Chrome's DevTools, Accessibility, the list
@@ -3131,3 +3134,5 @@ first.
   `production` environment: MC-3425 extended.
 - 2026-10-23: #196's review, the bell's focus after Mark all read and
   while its list loads: MC-R54 extended.
+- 2026-10-23: #196's review, the bell's panel a dialog named
+  Notifications, the bell saying it opens one: MC-R54 extended.
