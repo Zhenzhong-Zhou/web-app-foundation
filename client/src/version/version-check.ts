@@ -167,11 +167,13 @@ async function read(): Promise<VersionRead> {
 }
 
 /**
- * The file, asked for past every cache. `no-store` keeps the browser's out
- * of it; Render's edge ignores that but not a query string it has not seen,
- * so each read has one of its own. The host answers a file it lacks with
- * index.html, which is not the file. Given up after five seconds, its body
- * included.
+ * The file, asked for past every cache that listens. `no-store` keeps the
+ * browser's out of it, and a query string of its own any cache that keys on
+ * one. Render's edge ignores both, keeping the file by its path for up to
+ * five minutes, and empties itself when a deploy goes live, which is what
+ * brings a new build's file at once (render.md, As Render shows it). The
+ * host answers a file it lacks with index.html, which is not the file.
+ * Given up after five seconds, its body included.
  */
 async function fetchFile(): Promise<VersionFile | null> {
   const controller = new AbortController();

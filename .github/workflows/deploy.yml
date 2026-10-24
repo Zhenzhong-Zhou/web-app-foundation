@@ -140,8 +140,11 @@ jobs:
 
       # Read-only, as a visitor reaches it, every 20 seconds for up to 10
       # minutes, since the static site builds for a while after its hook.
-      # version.json gets a fresh query string, which Render's edge has
-      # never kept (render.md, Deploys). The favicon must come back as an
+      # version.json's query string gets past any cache that keys on it,
+      # but not Render's edge, which keeps a file by its path alone for
+      # five minutes: the new build shows because Render empties its edge
+      # when the deploy goes live (render.md, As Render shows it). The
+      # favicon must come back as an
       # SVG: a file missing from the build comes back as index.html with a
       # 200, through the /* rewrite. With the commit already live, as on a
       # run by hand, this passes before the new build is out.

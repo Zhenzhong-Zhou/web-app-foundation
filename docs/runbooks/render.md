@@ -117,9 +117,11 @@ cannot reach them.
 
 **The live site, checked:** the last step reads what a visitor gets, at
 `API_HEALTH_URL` without `/api/health`, every 20 seconds for up to 10
-minutes while the static site builds. `/version.json`, with a query
-string of its own so that Render's edge has never kept it, must name the
-commit; `/api/health/ready` must say the database is `up`; and
+minutes while the static site builds. `/version.json` must name the
+commit, which it does at the first look once the static site's deploy is
+live, since Render empties its edge then; the query string the step adds
+does not get past the edge, which ignores it (As Render shows it, below).
+`/api/health/ready` must say the database is `up`; and
 `/favicon.svg` must come back as `image/svg+xml`, since a file the build
 left out comes back as `index.html` with a 200 (the `/*` rewrite). It
 only reads. After 10 minutes it fails, saying what each of the three
@@ -188,21 +190,51 @@ run):
 | `/orders`                   | `public, max-age=0, s-maxage=300`           | `EXPIRED`         |
 | `/assets/index-Bl7LQjt0.js` | `public, max-age=31536000, immutable`       | `EXPIRED`         |
 
-So the rules do what they say for the paths they name: a hashed asset is
-kept a year, and `index.html` and the version file are asked for again
-every time. `/` and every deep link, such as `/orders`, are `index.html`
-through the `/*` rewrite, and the `/index.html` rule does not reach them:
-they keep Render's default, which lets its edge keep them for five
-minutes, and `/` came back `HIT`. After a deploy, then, someone opening
-`/` or a link into the app may get the old build's page for up to five
-minutes. Render's edge also ignores a request's `no-cache`, though a new
-query string misses it, which is why the version check adds one of its
-own. A tab that loads the old page sees the newer version file, loads in
+So the rules do what they say for the paths they name, to the browser: a
+hashed asset is kept a year, and `index.html` and the version file are
+asked for again every time. `/` and every deep link, such as `/orders`,
+are `index.html` through the `/*` rewrite, and the `/index.html` rule does
+not reach them: they keep Render's default, `s-maxage=300`, and `/` came
+back `HIT`. Render's edge keeps `/index.html` and `/version.json` five
+minutes too, whatever their `no-cache` says, and it keys every file by
+its path alone, so a query string never seen before is answered from the
+copy it holds (below). What brings a new build at once is that Render
+empties its edge when a deploy goes live: on #219's deploy, `/`,
+`/index.html` and `/version.json` turned over together. Were that ever to
+miss an edge, someone opening `/` or a link into the app there could get
+the old build's page for up to five minutes, and a tab could see a new
+version up to five minutes late. The version check's own query string
+gets past the browser, not the edge. A tab that loads the old page sees
+the newer version file, loads in
 full once per new version and then waits (manual checks, MC-3411), so it
 never loops. A rule for `/*` would reach them, but it overlaps
 `/assets/*`, and Render's docs do not say which wins: that is for the
 whole-app review (handoff). `/api/health` goes through the `/api/*`
 rewrite uncached, so the workflow never reads an old answer.
+
+**The edge and the query string,** on 24 October 2026, for #196's review,
+with `6ea3b6f8` live: `curl -sI` on each path, twice, five seconds apart,
+each query string new.
+
+| Path                             | 04:19:09 UTC             | 04:19:16 UTC               |
+|----------------------------------|--------------------------|----------------------------|
+| `/version.json`                  | `MISS`                   | `HIT`, `age: 5`            |
+| `/version.json?<time>-<random>`  | `HIT`, `age: 0`          | `HIT`, `age: 5`            |
+| `/version.json?r=<random>`       | `HIT`, `age: 0`          | `HIT`, `age: 5`            |
+| `/index.html`                    | `MISS`                   | `HIT`, `age: 5`            |
+| `/index.html?<time>-<random>`    | `HIT`, `age: 0`          | `HIT`, `age: 5`            |
+
+The first run's query strings, `?1792815549-11291` and `?r=1801020105`,
+had never been asked for, yet came back `HIT` from the copy the bare path
+had fetched a moment before; the second run's, three more new ones, from
+the same copy, the same age. Each named build `6ea3b6f8`, with or without
+a query string. And across #219's deploy, polled every 16 seconds with a
+new query string each time (#196's production-readiness review): the old
+build's copy, `06a34f53`, was a `HIT` aged 75 seconds at 01:03:37 UTC; at
+01:03:53 `/version.json`, `/index.html` and `/` were each a `MISS` naming
+`f395b9c5`; then `HIT`, ageing to 297 seconds, `EXPIRED` at 01:09:07, and
+`HIT` again. A copy 75 seconds old gave way on all three at the moment
+the deploy went live: a purge, not an expiry.
 
 ### Setting it up, by hand, in this order
 
