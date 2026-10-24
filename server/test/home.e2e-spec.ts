@@ -273,7 +273,7 @@ describe('Home (e2e)', () => {
         product: false,
       });
 
-      // Read through this organization's index, never another's (#187).
+      // Another organization's product does not tick this one's step (#187).
       const product = {
         type: 'good',
         name: 'Focus 60ct',
