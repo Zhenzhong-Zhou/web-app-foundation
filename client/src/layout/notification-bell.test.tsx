@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { Notification } from '../api/types.gen';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -22,6 +23,33 @@ function Frame() {
       </button>
       <NotificationBell />
     </MemoryRouter>
+  );
+}
+
+/** One unread entry, someone the reader invited having joined. */
+function serveOneEntry(entry: Partial<Notification> = {}) {
+  server.use(
+    http.get('/api/v1/notifications/unread-count', () =>
+      HttpResponse.json({ count: 1 }),
+    ),
+    http.get('/api/v1/notifications', () =>
+      HttpResponse.json({
+        entries: [
+          {
+            id: 'n-1',
+            type: 'invitation.accepted',
+            title: 'Wang Fang joined',
+            body: null,
+            resourceType: 'user',
+            resourceId: 'user-wang',
+            readAt: null,
+            createdAt: new Date().toISOString(),
+            ...entry,
+          },
+        ],
+        nextCursor: null,
+      }),
+    ),
   );
 }
 
@@ -48,27 +76,10 @@ describe('NotificationBell', () => {
   });
 
   it('opens the page on People of someone the reader invited, once they join (ADR-079)', async () => {
+    serveOneEntry({
+      body: 'Wang Fang accepted your invitation and joined Alpha Co as a Viewer.',
+    });
     server.use(
-      http.get('/api/v1/notifications/unread-count', () =>
-        HttpResponse.json({ count: 1 }),
-      ),
-      http.get('/api/v1/notifications', () =>
-        HttpResponse.json({
-          entries: [
-            {
-              id: 'n-1',
-              type: 'invitation.accepted',
-              title: 'Wang Fang joined',
-              body: 'Wang Fang accepted your invitation and joined Alpha Co as a Viewer.',
-              resourceType: 'user',
-              resourceId: 'user-wang',
-              readAt: null,
-              createdAt: new Date().toISOString(),
-            },
-          ],
-          nextCursor: null,
-        }),
-      ),
       http.post(
         '/api/v1/notifications/n-1/read',
         () => new HttpResponse(null, { status: 204 }),
@@ -99,28 +110,7 @@ describe('NotificationBell', () => {
   // Above the list rather than in it: in a menu, Tab closed it and the
   // arrows passed Mark all read by (#196).
   it('reaches Mark all read from the keyboard, its menu holding only the entries', async () => {
-    server.use(
-      http.get('/api/v1/notifications/unread-count', () =>
-        HttpResponse.json({ count: 1 }),
-      ),
-      http.get('/api/v1/notifications', () =>
-        HttpResponse.json({
-          entries: [
-            {
-              id: 'n-1',
-              type: 'invitation.accepted',
-              title: 'Wang Fang joined',
-              body: null,
-              resourceType: 'user',
-              resourceId: 'user-wang',
-              readAt: null,
-              createdAt: new Date().toISOString(),
-            },
-          ],
-          nextCursor: null,
-        }),
-      ),
-    );
+    serveOneEntry();
     const user = userEvent.setup();
     renderWithAuth(
       <MemoryRouter>
