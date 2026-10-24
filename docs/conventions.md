@@ -619,7 +619,18 @@ and the tokens lack becomes a token first.
   `sx={{ color: 'text.secondary' }}`. A `color` prop takes only a name
   (`primary`, `error`, `inherit`): MUI 9 ignores a path in Typography's
   prop and draws primary text (#196), and lint refuses one on any
-  component.
+  component. Lint cannot follow a path kept in a variable, returned by a
+  function or spread in, so write it where the colour is used.
+- **Muted text on a highlighted row** (a focused or selected option, a
+  menu entry the keyboard is on) draws in the main text colour, set once
+  in the theme: muted on MUI's state tints falls under 4.5 : 1.
+- **A menu holds only its entries.** A title or an action beside them goes
+  in a Popover above a MenuList, a dialog named by its title, its trigger
+  with `aria-haspopup` and `aria-expanded`: in a menu, Tab closes it and
+  the arrows skip anything but an entry.
+- **Focus, when a control removes itself** (Mark all read once nothing is
+  unread), moves to the next useful place, not to the page. A key pressed
+  while a list loads stops the list taking focus when it arrives.
 - **Two layers.** Brand (the accent, the radius) is what a rebrand, and later an
   organization, changes. Semantic (surfaces, text, borders, the five status
   tones) never takes the brand's colour.
@@ -635,7 +646,8 @@ and the tokens lack becomes a token first.
   basis) is `rem(px)` from `theme/rem.ts`, so it grows with the text and
   cuts or wraps where it does at Standard. Spacing, borders, icon-only boxes
   and images stay px.
-- **Links** take the accent and underline on hover. **Buttons**: one filled per
+- **Links** take the accent and underline on hover; a link drawn in the
+  colour of the text around it is always underlined. **Buttons**: one filled per
   group, as above; the rest text weight.
 - **Density** is the theme's: compact with a mouse, 44px targets under a finger
   (`pointer: coarse`). Don't set a control's height on the page.
@@ -749,8 +761,11 @@ has finished; `deploy.yml` waits for the first before starting the second.
   change of its own.
 - **Only versions at least 7 days old** (ADR-081): a freshly published
   version is where a hijacked package hides, and most are caught within
-  days. `npm update --before="$(date -v-7d +%Y-%m-%d)"` on a Mac. A security
-  fix is taken at once, its publisher and diff looked at first.
+  days. `npm update --before="$(date -v-7d +%Y-%m-%d)"` on a Mac, run only
+  when `npm outdated` lists something in range, and never to move back a
+  version already locked: the rule keeps new releases out, it does not
+  undo what is installed (#196's steps 1 and 8). A security fix is taken
+  at once, its publisher and diff looked at first.
 - **A new tool or package** is pinned to a release at least 14 days old.
 
 ## Production readiness

@@ -8,22 +8,37 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **Next: #196, MUI 9's Typography colours** (`fix-196-typography-colours`),
-  its own PR, since it changes how every screen looks; planned in this chat
-  and built by Claude Code from the brief in `tmp/fix-196/`. MUI 9's
-  Typography takes a colour prop only by a palette name, so
-  `color="text.secondary"` and three others, 218 places in 102 files, have
-  drawn the primary text colour since 2 September. Decided (Bob, 23
-  October 2026; ADR-055's amendment): MUI's own codemod,
-  `@mui/codemod@9.5.0 v9.0.0/system-props`, moves each path into `sx`; a
-  path inside an expression, which the codemod leaves, moves by hand;
-  `warning.dark` becomes `warning.main`; a lint rule refuses a dotted
-  colour prop; the main screens pictured before and after, in both modes,
-  and axe. Riding along: Deploy run by hand (`workflow_dispatch`, `main`'s
-  newest commit whose CI passed), and `i18n-review.mjs export --since`, so
-  a reviewer gets only what changed. The README's phone section and
-  `render.md`'s zsh fix came in its first commit. No migration; nothing
-  for the seeds.
+- **#196, colours by path in `sx`: PR #224, ready to merge**
+  (`fix-196-typography-colours`, 23 October 2026). MUI 9's Typography had
+  drawn 218 dotted colours as primary text since 2 September; MUI's own
+  codemod moved them into `sx`, and a lint rule refuses a dotted colour
+  prop. Found and fixed on the way: muted text on a highlighted option
+  draws in the main colour; every Autocomplete's groups sit inside their
+  listbox; the bell's title and Mark all read moved into a popover the
+  keyboard reaches. ADR-055's amendment says what building settled. Riding
+  along: Deploy by hand, a read-only check of the live site after each
+  deploy, `npm run screenshots:compare`, and `i18n-review.mjs export
+  --since`. No migration. **After merging, in order:** its Deploy run,
+  which now ends with the live-site check; then GitHub's `production`
+  environment limited to `main`, the two hooks moved into it and deleted
+  from the repository's secrets (`render.md`, Deploys, step 6); then Deploy
+  by hand once (manual checks, MC-3425); then MC-3424, if no deploy has
+  carried it yet.
+- **Merged on 23 October 2026, besides #196:** #200 (#189, the bell's
+  failed list), #201 (Panivo's tab icon and name), #202 (#190, Resend),
+  #203 (#193, request fields on one log line), #204 (#195, a failed list
+  shows only the failure), #205 (#194, `npm run api` apart from the dev
+  server), #207 (#206, a flaky refusals test), #208 (#184, typographic
+  apostrophes and a check), #209 (#180, `membership_roles.csv`), #211
+  (#210, tests wait for what an effect does, and the flaky-test rule),
+  #216 (#130, money from its digits), #217 (#138, a contact with no way to
+  reach it refused in words), #218 (the weekly flake hunt), #219 (#186,
+  the organization on every join in the lookup, checked at large the same
+  day), #220 (#215, the empty-list screenshot). Filed the same day: #212
+  (Help's Esc before the guide loads), #213 (quantities with padding
+  zeros), #214 (a voided shipment's faded row), #221 (an order's Total
+  column cut under Actions), #222 (the demo orders' History), #223 (Home's
+  recent-work kinds in capitals).
 - **ADR-081, old tabs after a deploy:** merged in #199 (1620e99) on 23
   October 2026, fixing #175 and #173; what building settled is in its
   as-built amendment. Done by hand on 22 October, before the merge: the
@@ -36,42 +51,36 @@ with this one, this one is current.
   `/api/health` and `/version.json` both named 1620e99, version 0.7.0, API
   revision 1. Deploy #2, for CI's scheduled run at 7:01, was skipped, as
   designed. The free API took about 50 seconds to wake for the first
-  request. The headers, and what they mean for `/` and deep links, are in
-  `render.md`, "Deploys". MC-3424 waits for the next deploy (*Still to do,
-  by hand*).
-- **The order after it** (Bob, 22 October 2026): **#196** (above), with
-  the brand's name, Panivo / 品桥, and the tab icon as a small PR of its
-  own beside it (#201); then **ADR-082, low stock**
+  request. The headers are in `render.md`, "Deploys". Render's edge
+  ignores a query string and empties itself at each deploy, so no page
+  stays old after one (#196's review; ADR-081's correction).
+- **The order after it** (Bob, 22 October 2026): **#196** (above); a
+  small one suggested before ADR-082, for Bob to confirm: **#187** on the
+  Mac, while `foundation_perf_large` is seeded and current; then
+  **ADR-082, low stock**
   (its questions in Open decisions); then the review of the whole app, once
   (`/production-readiness` with its device pass: deploys, backups and a
   restore tried, monitoring, security, performance, email, support,
   browsers and China, tablets and foldables, the iPhone Duo closed and
   open, a phone held sideways); then the fix-ups, each a PR of five to ten
-  related issues: safety and scale (#181 first, then #142, #186, #187,
-  #182), orders and shipping (#156, #158, #125, #161, #164, #159, #128,
-  and decisions #157 and #160), organization, roles and audit (#169, #168,
-  #179, #180, #174, #166, #133, #167), accessibility (#155, #170, #171,
-  #162), words and translations (#148, #149, #129, #150, with Bob's
-  mother's corrections). After them, in this order unless a trigger brings
+  related issues: safety and scale (#181 first, then #142, #187, #182),
+  orders and shipping (#156, #158, #125, #161, #164, #159, #128, #213,
+  #221, and decisions #157 and #160), organization, roles and audit (#169,
+  #168, #179, #174, #166, #133, #167), accessibility (#155, #170, #171,
+  #162, #212, #214), words and translations (#148, #149, #129, #150, with
+  Bob's mother's corrections), and as chores #222 and #223. After them, in this order unless a trigger brings
   one forward, each with its entry in Open decisions: one person in two
   organizations, then a practice organization (ADR-077, *Deferred*); a
   public demo; plans and billing; the operator's console and support
   access. The rest of the brand comes after #196 (*Still to do, in
   code*).
-- **Meanwhile, in Claude Code's cloud sessions** (Bob's $250 credit, which
-  ends in early November): small fixes that need no brief, one session,
-  branch and PR each, every prompt ending with a DONE line. #189 is pushed
-  as `fix-189-bell-failed-load` (c9d87bd, its PR to open; MC-R43). Then
-  #190, #193, #194 and #195, which barely overlap, with the regression
-  checks MC-R44 to MC-R47 named in their prompts, since sessions started
-  together would each take the next free number; then #184 (MC-R48),
-  which touches many files, once they have merged and before #196 starts
-  (#196's is MC-R49). Merge one at a time; a PR GitHub calls conflicting
-  goes back to its session to rebase on `main`. Not #186 or #187 (they
-  need the large seed) or #183 (better debugged on the Mac). The cloud's
-  Node is 22 and its Postgres 16, so its environment installs Node 26,
-  and the session runs `docker compose up -d`, pulling from
-  `mirror.gcr.io` when Docker Hub refuses.
+- **Claude Code's cloud sessions** (Bob's $250 credit, which ends in early
+  November) took the small fixes listed above, one branch and PR each.
+  What they taught is in the working agreements, "Cloud sessions": a new
+  session per task, a stop rule in every prompt, the session as committer
+  (its commits then show Verified), regression numbers named when several
+  run at once, and a sweep or a load proof kept to the Mac. One sweep in a
+  long session ran over half an hour.
 - **ADR-080, job roles** (`adr-080-job-roles`): merged in #176. Roles an
   organization makes, from a template or a copy, several to a member and
   added together; the built-in three fixed; a role given only by someone
@@ -475,17 +484,19 @@ with this one, this one is current.
   `Panivo <the address it has now>` (runbooks/render.md, "Building the
   services from nothing"). The static site reads the name only when it
   builds, so set it before the merge's deploy, or deploy again after.
-  Then MC-3501 and MC-3502 on the live app, in a private window.
+  Both set on 23 October, before #201 merged. Then MC-3501 and MC-3502 on
+  the live app, in a private window, if not yet walked.
 - **The Chinese review:** Bob's mother has the export made at `b933b912`
   (22 October 2026); her corrections were not back on 23 October. Let her
   finish that file: the import matches each correction by its message id,
   so it lands on whatever the catalogues hold by then, and a corrected row
   whose message has since gone is named, and nothing written until it is
   cleared. Since `b933b912`, `language.failedNewVersion` and
-  `language.loadingAgain` were added and two removed, and #189 adds
-  `layout.notifications.loadFailed`; #196 changes no words. Her next round
-  is only what changed, which #196 adds:
-  `node scripts/i18n-review.mjs export --since b933b912`. Her corrections
+  `language.loadingAgain` were added and two removed, #189 added
+  `layout.notifications.loadFailed`, and #138 and #196 added words of
+  their own. Once hers is imported, her next round is only what changed:
+  `node scripts/i18n-review.mjs export --since b933b912`, which leaves out
+  #184's apostrophe-only changes. Her corrections
   go into the words-and-translations fix-up. The export covers the two
   catalogues only: not Help's guides (#150; until then she reads them in
   Help, in 中文) and not MUI's or the browser's own words, which aren't
@@ -507,16 +518,13 @@ with this one, this one is current.
   paid database and web service, backups to the Canadian bucket, and
   every development secret replaced (the runbook's "Before real
   customers' data").
-- **At the next deploy,** the first PR merged after 1620e99 (likely #189):
-  MC-3424, with the tab of the live app kept open for it. Then run
-  `render.md`'s headers loop once more and record whether `/index.html`
-  and `/version.json` ever answer `HIT`.
-- **Render's edge and `/`:** `/` and every deep link come through the `/*`
-  rewrite, which the `/index.html` header rule does not reach, so after a
-  deploy Render's edge may serve the old `index.html` there for up to
-  five minutes (`render.md`, "Deploys"). The client copes (ADR-081); a
-  rule that reaches them is for the whole-app `/production-readiness`
-  review.
+- **MC-3424,** if no deploy has carried it yet: a tab of the live app
+  kept open across a deploy.
+- **#187 on the Mac:** `foundation_perf_large` is seeded and at every
+  migration. On 23 October `npm run perf:plans -- --scale large` passed
+  every lookup row after #219, and still failed on lot search reading all
+  25,000 variants and on Home's Getting started, whose `exists` stops at
+  its first row: #187's own items.
 - **Before v0.7.0:** walk sections 23 and 24 of `docs/manual-checks.md`
   (MC-2301 to MC-2303, leaving and deleting; MC-2401 to MC-2406, closing
   an organization); have the French and Chinese
@@ -601,11 +609,24 @@ with this one, this one is current.
   for that PR, after #196: the mark at sign-in, in the rail, in emails
   and on PDFs; the tab's name by language (品桥 in 中文); the brand's
   colours, and whether ADR-055's brand layer changes. Bob brings the
-  files then; the masters are in `docs/brand/`. From #201's
+  files then; the masters are in `docs/brand/`. Bob also wants, for that
+  PR: the mark and name above the sign-in and register forms, with a
+  footer carrying a © line (its holder, Bob or a company, still open, and
+  holder and year as settings like `VITE_APP_NAME`); "Powered by Panivo"
+  at the rail's foot under an organization's own logo; an About line in
+  Help's foot; and `apple-mobile-web-app-title` with a manifest's
+  `short_name`, since a home-screen icon takes the title of the page it
+  was added from. From #201's
   `/production-readiness`: the ICO holds the light mark only, so its navy
   stem is about 1 : 1 on a dark Windows taskbar or Safari's dark tab bar
   (Safari 16.4 to 18 draws the ICO); and with no web manifest, which icon
   Android's Add to home screen takes is uncertain (MC-3501 shows it).
+- **Chores after #196:** `eslint-plugin-testing-library` for the test
+  files, catching the async mistakes #206 and #210 were (it touches
+  `client/eslint.config.js`, which #196 changed); `scripts/i18n-review.mjs`
+  has no automated tests, its export, `--since` and import proved by hand;
+  `@mui/codemod@9.5.0`'s command crashes on yargs 18, which could be
+  reported to MUI.
 - **ADR-079's limits.** Help still slides over the page in windows under
   about 1140 px, or under about 1265 px at Large text and 1330 px at
   Larger, where a control under it can be focused out of sight (WCAG
@@ -1502,12 +1523,24 @@ in ADR-050's amendment.
   stopping for Bob's choices, then the fixes, the full verify, the push
   and the PR.
 - **Cloud sessions** (Claude Code on the web, from October 2026): one new
-  session per issue, from `main`, each cloning the repository fresh, so
-  nothing is pulled first. The prompt names the branch, the author, the
-  regression check's number when several run at once, and asks for
-  `scripts/verify.sh --quick`, a pull request with "Fixes #N", and a last
-  line saying DONE or BLOCKED. PRs merge one at a time; one GitHub calls
-  conflicting goes back to its session to rebase on `main`.
+  session per task, from `main`, each cloning the repository fresh, so
+  nothing is pulled first; a long session pays for its whole history at
+  every step. The prompt names the issue, the branch, the author Zhenzhong
+  Zhou with the session as committer (the commit then shows Verified), the
+  regression check's number when several run at once, and the files to
+  leave alone; asks for `scripts/verify.sh --quick`, a pull request with
+  "Fixes #N" and a last line saying DONE or BLOCKED; and ends with the stop
+  rule: change only what the issue names, and past about 20 minutes or
+  more files than that, stop and report. A proof runs only the changed
+  tests; a sweep, a load proof or anything needing the large seed stays on
+  the Mac. PRs merge one at a time, each when green; a branch behind
+  `main` with no conflict merges as it is, and a conflict in
+  `docs/manual-checks.md` is settled on GitHub with "Accept both changes",
+  an empty line between Regressions entries.
+- **Every pull request** that changes what a person sees takes pictures
+  before and after and compares them (`npm run screenshots:compare`), and
+  its Claude Code Review comment is read before merging. The README's
+  "Which tool, when" says when each of the repo's tools runs.
 - **An mbox is applied from Bob's downloads,** by its full name:
   `git am ~/Downloads/0001-<subject>.mbox`. Downloads land in
   `~/Downloads` itself, not a folder, so each file is named, never a glob.

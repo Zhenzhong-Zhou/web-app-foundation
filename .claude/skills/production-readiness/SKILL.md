@@ -58,11 +58,15 @@ done; a check older than a change of host, plan or region is stale.
 - **The order.** Both services deploy only through the deploy workflow
   (`deploy.yml`): the API at the commit CI passed, then the static site
   once `/api/health` names it. Its last runs (`gh run list --workflow
-  deploy.yml -L 5`), each deploying both or saying why it deployed
-  nothing; `gh secret list` naming `RENDER_API_DEPLOY_HOOK` and
-  `RENDER_CLIENT_DEPLOY_HOOK`, and `gh variable list` naming
-  `API_HEALTH_URL` (names only, never values); and, by hand, Auto-Deploy
-  off on the web service and on the static site (`render.md`, Deploys).
+  deploy.yml -L 5`), each deploying both, ending with the live-site check
+  green, or saying why it deployed nothing; `gh secret list --env
+  production` naming `RENDER_API_DEPLOY_HOOK` and
+  `RENDER_CLIENT_DEPLOY_HOOK`, `gh secret list` naming neither, and
+  `gh variable list` naming `API_HEALTH_URL` (names only, never values);
+  `gh api repos/{owner}/{repo}/environments/production` limiting
+  deployments to `main`; and, by hand, Auto-Deploy off on the web service
+  and on the static site (`render.md`, Deploys). Deploy by hand (Actions →
+  Deploy → Run workflow) offered, and run once since the last release.
 - **The version file and caching.** `curl -sI` on `/version.json`,
   `/index.html` and one `/assets/*.js` named in the live `index.html`:
   the first two never cached, the asset for a year and immutable

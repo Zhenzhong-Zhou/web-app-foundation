@@ -5278,6 +5278,50 @@ would fail as quietly at the next major; and renaming each to its palette
 name (`textSecondary`), which leaves one colour with two spellings, the
 prop's and `sx`'s.
 
+**As built (#224, 23 October 2026).** The count was exact: 217 written-out
+paths on Typography and one inside a conditional, which is the 218, plus
+two on Link. MUI 9.5's Link honours a path, so those two were not broken;
+they moved only so every path is written one way. The codemod's command
+crashes on yargs 18 (`yargs.command is not a function`), so its v9
+transform ran through the jscodeshift it ships, with its own flags. What
+building added:
+
+- **Muted text on a highlighted row takes the main text colour.** On a
+  focused or selected option, and on a menu entry the keyboard is on,
+  muted text against MUI's state tints fell to 4.13 to 4.48 : 1. The theme
+  points the muted colour at the main text colour on those rows, once, so
+  no screen changed. `tokens.test.ts` measures main text on every such
+  tint, and muted text on hover and on a chosen card, with all six accent
+  presets in both modes.
+- **Every Autocomplete's groups sit inside its listbox,** each a group
+  named by its heading (`theme/option-group.tsx`): MUI put grouped
+  options outside it, and axe refused that.
+- **A menu holds only its entries.** A title or an action goes in a
+  Popover above a MenuList, since in a menu Tab closes it and the arrows
+  skip anything but an entry. The bell is the first: its Popover is a
+  dialog named by its title, and the bell has `aria-haspopup="dialog"`
+  and `aria-expanded`.
+- **Focus.** When a control removes itself, as Mark all read does once
+  nothing is unread, focus moves to the next useful place, there the
+  first entry. A key pressed while a list loads stops the list taking
+  focus when it arrives.
+- **A link drawn in the colour of the text around it is always
+  underlined,** or it reads as a label (Home's Change the days).
+- **The lint rule is proved by a test** that lints a component and a
+  spec through the real `eslint.config.js`, so a later block that
+  replaces its options fails a test. Lint cannot follow a colour kept in
+  a variable, returned by a function or spread in; none exists today.
+- **axe opens what it never opened:** the bell with the keyboard on an
+  entry, the lookup with it on a result, and the time-zone list on the
+  chosen zone, the darkest tint.
+
+The two warning lines and a draft invoice's "None yet" are amber; the
+breadcrumb's current page became the main text colour, as its comment
+always said; a disabled role card's reason became muted, readable beside
+the faded name. *Deferred:* a selected menu entry holding a muted line
+gets no rule yet, since no menu has one; the first that does extends the
+theme's rule to `.Mui-selected`.
+
 ---
 
 ## ADR-056 — Search: one lookup in the top bar, and a search on every list
@@ -11210,6 +11254,20 @@ stays; conventions.md says so.
   (`npm run api`'s first run), #195 (a list's alert above its empty state),
   #196 (Typography's colours), #197 (the browser floor's gaps), #198
   (unsaved work on most pages).
+
+**Correction (24 October 2026, #196's review).** Render's edge ignores a
+request's query string as well as its `no-cache`: a query string never
+seen before was answered from the edge at age 0. What brings a new build
+is Render emptying its edge at each deploy, and `/` and deep links turned
+over at once with the rest, so no page stays old for five minutes after a
+deploy. The lines above that say a new query string misses the edge are
+wrong in that. The version check keeps its query string and
+`cache: 'no-store'`, which still get it past the browser's cache
+(`render.md`, "The edge and the query string"). Deploy by hand
+(`workflow_dispatch`, `main`'s newest commit whose CI passed) and a
+read-only check of the live site after each deploy came with #196 (#224);
+the deploy job runs in GitHub's `production` environment, limited to
+`main` and holding the hooks.
 
 ---
 
