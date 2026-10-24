@@ -177,12 +177,10 @@ export class HomeService {
    * The receipt, invoice, product and partner steps read the largest tables
    * it touches. As an EXISTS, the planner may price a sequential scan that
    * stops at the first match, which reads every tenant's rows when this
-   * organization has none: the organization the step is there for. Home's
-   * perf runs flagged one on stock_movements, then on invoices (ADR-058
-   * amended), then at large on products and partners (#187). Each is
+   * organization has none: the organization the step is there for. Each is
    * ordered as one of its table's indexes is and limited to one row, so the
-   * only cheap plan is that index: this organization's rows, in the
-   * index's order, up to the first match, and never another tenant's.
+   * only cheap plan is that index: this organization's rows, up to the
+   * first match, and never another tenant's (ADR-058 amended, #187).
    */
   gettingStarted(): Promise<GettingStarted> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
