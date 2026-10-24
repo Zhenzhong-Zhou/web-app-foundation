@@ -13,7 +13,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { type MouseEvent, useId, useState } from 'react';
+import { type MouseEvent, useId, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
@@ -77,6 +77,10 @@ export function NotificationBell() {
   const [count, setCount] = useState(0);
   const [entries, setEntries] = useState<Notification[] | null>(null);
   const [failure, setFailure] = useState<unknown>(null);
+  // A key pressed while the list loads: the person is going somewhere, and
+  // the list arriving must not take the focus back from them (#196).
+  const [keyed, setKeyed] = useState(false);
+  const list = useRef<HTMLUListElement>(null);
   const { newer, outdated } = useNewVersion();
   const refusalWords = useFailureWords(
     isRevisionRefusal(failure) ? failure : null,
@@ -117,6 +121,7 @@ export function NotificationBell() {
 
   function open(event: MouseEvent<HTMLElement>) {
     setAnchor(event.currentTarget);
+    setKeyed(false);
     void load();
   }
 
@@ -137,6 +142,13 @@ export function NotificationBell() {
   }
 
   async function readAll() {
+    // Mark all read goes once nothing is unread, and the focus would go
+    // with it to the popover itself: onto the first entry instead (#196).
+    const first = list.current?.querySelector<HTMLElement>(
+      '[role="menuitem"]:not([aria-disabled="true"])',
+    );
+    (first ?? list.current)?.focus();
+
     setCount(0);
     setEntries(
       (current) =>
@@ -189,7 +201,8 @@ export function NotificationBell() {
           entries, so they sit above the list, where Tab reaches them. In a
           menu, Tab closed it and the arrows passed them by (#196). It opens
           where MUI's Menu does, below the bell, and the list takes the
-          focus, its first entry once loaded, as the Menu's did. */}
+          focus, its first entry once loaded, as the Menu's did; not once a
+          key has been pressed while it loads. */}
       <Popover
         anchorEl={anchor}
         open={anchor !== null}
@@ -197,7 +210,12 @@ export function NotificationBell() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         disableAutoFocus
         slotProps={{
-          paper: { sx: { width: rem(380), maxHeight: 480, py: 1 } },
+          paper: {
+            onKeyDown: () => {
+              if (entries === null && failure === null) setKeyed(true);
+            },
+            sx: { width: rem(380), maxHeight: 480, py: 1 },
+          },
         }}
       >
         <Stack
@@ -251,9 +269,12 @@ export function NotificationBell() {
           </Box>
         )}
 
+        {/* Both off once keyed: with the item's alone off, MUI focuses
+            the list itself instead. */}
         <MenuList
-          autoFocus
-          autoFocusItem
+          ref={list}
+          autoFocus={!keyed}
+          autoFocusItem={!keyed}
           aria-labelledby={heading}
           disablePadding
         >

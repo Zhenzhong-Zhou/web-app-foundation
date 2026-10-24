@@ -2338,6 +2338,12 @@ first.
   goes back to the entries; Escape closes the bell's menu and puts the
   focus back on the bell. With the list failed to load, as MC-R43 does it,
   Tab reaches Try again. It looks as before. Found by #196's axe pass.
+  With something unread, Shift+Tab to Mark all read and press Enter: the
+  entries turn read, Mark all read goes, and the first entry has the
+  focus, not the panel around it. In DevTools, Network, Slow 4G: open the
+  bell and, while it says Loading…, Shift+Tab to Mark all read; when the
+  entries arrive the focus stays on it. Both found by `/code-review` on
+  #196.
 
 - **MC-R53** *(options under a heading, a group of their list, #196)* In
   the search box type DEMO; in Chrome's DevTools, Accessibility, the list
@@ -3123,3 +3129,5 @@ first.
   since a commit: MC-1405 extended.
 - 2026-10-23: #196's review, Deploy by hand only from `main`, in the
   `production` environment: MC-3425 extended.
+- 2026-10-23: #196's review, the bell's focus after Mark all read and
+  while its list loads: MC-R54 extended.

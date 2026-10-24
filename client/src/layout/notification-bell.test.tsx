@@ -26,14 +26,21 @@ function Frame() {
   );
 }
 
-/** One unread entry, someone the reader invited having joined. */
-function serveOneEntry(entry: Partial<Notification> = {}) {
+/**
+ * One unread entry, someone the reader invited having joined; the list once
+ * `until` settles, when given.
+ */
+function serveOneEntry(
+  entry: Partial<Notification> = {},
+  until?: Promise<void>,
+) {
   server.use(
     http.get('/api/v1/notifications/unread-count', () =>
       HttpResponse.json({ count: 1 }),
     ),
-    http.get('/api/v1/notifications', () =>
-      HttpResponse.json({
+    http.get('/api/v1/notifications', async () => {
+      await until;
+      return HttpResponse.json({
         entries: [
           {
             id: 'n-1',
@@ -48,8 +55,8 @@ function serveOneEntry(entry: Partial<Notification> = {}) {
           },
         ],
         nextCursor: null,
-      }),
-    ),
+      });
+    }),
   );
 }
 
@@ -133,6 +140,69 @@ describe('NotificationBell', () => {
         'button',
       ),
     ).toBeNull();
+  });
+
+  // The button goes once nothing is unread, and the focus would go with it
+  // to the popover itself (#196).
+  it('gives the focus to the first entry after Mark all read', async () => {
+    serveOneEntry();
+    server.use(
+      http.post(
+        '/api/v1/notifications/read-all',
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Notifications, 1 unread' }),
+    );
+    const entry = await screen.findByRole('menuitem', {
+      name: /Wang Fang joined/,
+    });
+    await vi.waitFor(() => expect(entry).toHaveFocus());
+    await user.tab({ shift: true });
+    await user.keyboard('{Enter}');
+
+    expect(screen.queryByRole('button', { name: 'Mark all read' })).toBeNull();
+    expect(entry).toHaveFocus();
+  });
+
+  // A slow list, as from an API waking: someone already on their way to
+  // Mark all read is not pulled back into the list when it arrives (#196).
+  it('leaves the focus where a key took it while the list loaded', async () => {
+    let arrive = () => {};
+    serveOneEntry(
+      {},
+      new Promise((resolve) => {
+        arrive = resolve;
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Notifications, 1 unread' }),
+    );
+    expect(await screen.findByText('Loading…')).toBeVisible();
+    await user.tab({ shift: true });
+    const markAllRead = screen.getByRole('button', { name: 'Mark all read' });
+    expect(markAllRead).toHaveFocus();
+
+    arrive();
+    expect(
+      await screen.findByRole('menuitem', { name: /Wang Fang joined/ }),
+    ).toBeVisible();
+    expect(markAllRead).toHaveFocus();
   });
 
   it('says a list that failed to load did, with Try again, never Nothing yet (#189)', async () => {
