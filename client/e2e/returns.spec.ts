@@ -198,7 +198,9 @@ test('receives a return against an RMA from the order', async ({
   // Choosing the RMA shows what it allows for each item.
   await dialog.getByLabel('Against RMA').click();
   await page.getByRole('option', { name: /RMA-000001/ }).click();
-  await expect(dialog).toContainText('RMA-000001 authorizes 2.0000');
+  await expect(dialog).toContainText(
+    'RMA-000001 authorizes 2, 0 back against it so far',
+  );
 
   await dialog.getByLabel('Return FOCUS-60CT').fill('2');
   await dialog.getByRole('button', { name: 'Receive return' }).click();

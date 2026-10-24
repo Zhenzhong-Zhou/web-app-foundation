@@ -111,6 +111,19 @@ describe('RecipePanel', () => {
     expect(screen.getByText('Us')).toBeInTheDocument();
   });
 
+  /** The batch size is read, not typed: no padding zeros, grouped (#213). */
+  it('reads the batch size without padding zeros', async () => {
+    serveRecipe([DRAFT], { ...DRAFT, lines: [BLEND_LINE] });
+
+    renderWithAuth(<RecipePanel variants={VARIANTS} />, {
+      permissions: ALL,
+    });
+
+    expect(
+      await screen.findByText('Makes 1,000 per batch'),
+    ).toBeInTheDocument();
+  });
+
   /**
    * The rule that shapes the whole panel: an active recipe is not editable, so
    * it offers a new version instead of an Add component that would 409.
