@@ -190,6 +190,57 @@ describe('Lookup (e2e)', () => {
     expect(await lookup(beta, 'focus')).toEqual([]);
   });
 
+  // #186: every join carries the organization, so each finds its own
+  // records through it, and none of a twin's with the same names and codes.
+  it("finds its own records through each join, none of a twin organization's", async () => {
+    const results = async (org: Org, q: string, kind: string) =>
+      (await lookup(org, q)).find((group) => group.kind === kind)?.results ??
+      [];
+
+    const found = async (org: Org) => {
+      const [partner] = await results(org, 'Northside', 'partner');
+      const [item] = await results(org, 'focus-60', 'item');
+      await org.agent
+        .post('/v1/orders')
+        .send({
+          partnerId: partner.id,
+          direction: 'purchase',
+          reference: 'REF-186',
+          lines: [{ variantId: item.id, quantityOrdered: '10' }],
+        })
+        .expect(201);
+
+      return {
+        orders: await results(org, 'Northside', 'order'),
+        partners: await results(org, 'Northside', 'partner'),
+        items: await results(org, 'focus-60', 'item'),
+        lots: await results(org, 'BF-2609', 'lot'),
+      };
+    };
+    const ids = (records: Awaited<ReturnType<typeof found>>) =>
+      Object.values(records).flatMap((rows) => rows.map((row) => row.id));
+
+    const alpha = await found(await stocked('alpha'));
+    const beta = await found(await stocked('beta'));
+
+    for (const records of [alpha, beta]) {
+      expect(records.orders).toEqual([
+        expect.objectContaining({ detail: 'Northside Pharmacy', close: false }),
+      ]);
+      expect(records.partners.map((row) => row.title)).toEqual([
+        'Northside Pharmacy',
+      ]);
+      expect(records.items).toEqual([
+        expect.objectContaining({ title: 'Focus 60ct', detail: 'FOCUS-60' }),
+      ]);
+      expect(records.lots.map((row) => [row.title, row.detail])).toEqual([
+        ['BF-2609', 'FOCUS-60'],
+        ['BF-2609-B', 'FOCUS-60'],
+      ]);
+    }
+    expect(ids(alpha).filter((id) => ids(beta).includes(id))).toEqual([]);
+  });
+
   it('leaves out every kind the member may not view', async () => {
     const alpha = await stocked('alpha');
 
