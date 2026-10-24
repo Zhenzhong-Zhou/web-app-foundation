@@ -108,7 +108,12 @@ cancelled, a hook unset, a wait that timed out) is put right there, not
 in Render, so the API still goes first and nothing deploys that CI has not
 passed. With the commit already live, the wait ends at once. A run by
 hand and one after CI share the workflow's concurrency group, so they
-never deploy at once: the newer cancels the older.
+never deploy at once: the newer cancels the older. Only from `main`:
+started from another branch, the run would be that branch's own copy of
+`deploy.yml`, so its job is skipped and nothing deploys. The job runs in
+GitHub's `production` environment, limited to `main` and holding the
+hooks (step 6 below), so a branch's copy that drops that check still
+cannot reach them.
 
 **The live site, checked:** the last step reads what a visitor gets, at
 `API_HEALTH_URL` without `/api/health`, every 20 seconds for up to 10
@@ -202,8 +207,9 @@ rewrite uncached, so the workflow never reads an old answer.
 ### Setting it up, by hand, in this order
 
 Before the pull request that adds `deploy.yml` merges, so that its merge
-deploys this way. All five were done on 22 October 2026; the header rules
-took effect at once, without a deploy.
+deploys this way. The first five were done on 22 October 2026; the header
+rules took effect at once, without a deploy. The sixth waits for #196's
+merge.
 
 1. **The deploy hooks, as secrets.** Render → the web service → Settings →
    Deploy Hook: copy it. GitHub → the repository → Settings → Secrets and
@@ -239,6 +245,19 @@ took effect at once, without a deploy.
    new name and the browser can keep the old for a year. `index.html`
    names the build's files and `version.json` says which build is out,
    so both are asked for again every time.
+6. **The `production` environment, limited to `main`,** once #196 has
+   merged, not before: until then `main`'s workflow names no
+   environment, and would lose the hooks. Bob, in GitHub → the
+   repository → Settings → Environments → `production` (the merge's
+   Deploy run creates it): Deployment branches and tags → Selected
+   branches and tags → add `main`. Then, under Environment secrets, add
+   `RENDER_API_DEPLOY_HOOK` and `RENDER_CLIENT_DEPLOY_HOOK` with the same
+   values, and delete the two repository secrets of those names. The
+   limit alone stops only a job that names the environment; with the
+   hooks in it, a run from any other branch, whatever its copy of
+   `deploy.yml` says, has no hook to call. Done when Deployment branches
+   lists `main` alone, the environment holds both hooks, the repository
+   neither, and Deploy by hand still deploys (manual checks, MC-3425).
 
 After the merge's deploy:
 

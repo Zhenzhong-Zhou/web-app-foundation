@@ -16,7 +16,12 @@ name: Deploy
 # Actions → Deploy → Run workflow deploys main's newest commit whose CI
 # passed on a push, the same way. A missed deploy (a run cancelled, a hook
 # unset, a wait that timed out) is put right here, not in Render, so the
-# API still goes first and the commit is still one CI passed.
+# API still goes first and the commit is still one CI passed. Only from
+# main: started from another branch, the run would be that branch's own
+# copy of this file, holding the hooks, so its job is skipped. The job
+# runs in the production environment: limited to main in GitHub's
+# settings, with the hooks as its secrets, it keeps them from a branch's
+# copy that drops this check (docs/runbooks/render.md, Setting it up).
 #
 # Reads the repository variable API_HEALTH_URL (the static site's address
 # with /api/health, from which the last step takes the site's) and the
@@ -39,13 +44,14 @@ permissions:
 jobs:
   deploy:
     name: The API, then the client
-    # Run by hand, or after CI on a push to main that passed. Not CI's
-    # nightly run or one started by hand, which test a commit already
-    # deployed, and never a pull request from a branch that happens to be
-    # called main.
+    # Run by hand from main, or after CI on a push to main that passed.
+    # Not CI's nightly run or one started by hand, which test a commit
+    # already deployed, and never a pull request from a branch that
+    # happens to be called main.
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    environment: production
     runs-on: ubuntu-24.04
     # The wait's 20 minutes and the live check's 10, with room for both.
     timeout-minutes: 35

@@ -2296,6 +2296,11 @@ as `docs/runbooks/render.md`, "Deploys", has them.
   saying The API names that commit, and the static site deploys. Check
   the live site passes at its first look, the commit being live already.
   `/api/health`'s `commit` and `/version.json`'s `build` still name it.
+  The run shows the `production` environment. Run workflow again, Use
+  workflow from: any other branch: the job is skipped and nothing
+  deploys. Once `render.md`'s step 6 is done, GitHub → Settings →
+  Environments → `production` lists `main` alone under Deployment
+  branches, and holds both hooks; the first run by hand passes as above.
 
 ## 35. The product's name and icon
 
@@ -3116,3 +3121,5 @@ first.
   MC-3425 extended.
 - 2026-10-23: #196's ride-along, the review export of only what changed
   since a commit: MC-1405 extended.
+- 2026-10-23: #196's review, Deploy by hand only from `main`, in the
+  `production` environment: MC-3425 extended.
