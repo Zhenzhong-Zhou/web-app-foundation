@@ -103,4 +103,31 @@ describe('ReturnOrderDialog', () => {
       { lineId: 'l-scoop', quantity: '2' },
     ]);
   });
+
+  /** What shipped and came back is read, not typed: no padding zeros (#213). */
+  it('reads what shipped without padding zeros', async () => {
+    server.use(
+      http.get('/api/v1/orders/order-1/returns/returnable', () =>
+        HttpResponse.json(RETURNABLE),
+      ),
+    );
+
+    render(
+      <ReturnOrderDialog
+        open
+        orderId="order-1"
+        locations={[BIN]}
+        canSeeRmas={false}
+        onClose={() => undefined}
+        onReturned={() => undefined}
+      />,
+    );
+
+    expect(
+      await screen.findByText('— 25 shipped, 0 already back'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: '10' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: '15' })).toBeInTheDocument();
+    expect(screen.getAllByRole('cell', { name: '0' })).toHaveLength(2);
+  });
 });

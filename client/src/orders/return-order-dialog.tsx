@@ -30,8 +30,8 @@ import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { api, ApiError } from '../lib/api';
 import {
+  displayQuantity,
   formatDay,
-  formatQuantity,
   groupedNumberMessage,
   NO_VALUE,
   toApiDecimal,
@@ -396,8 +396,8 @@ export function ReturnOrderDialog({
                             '— {shipped} shipped, {returned} already back',
                         },
                         {
-                          shipped: formatQuantity(line.quantityFulfilled),
-                          returned: formatQuantity(line.quantityReturned),
+                          shipped: displayQuantity(line.quantityFulfilled),
+                          returned: displayQuantity(line.quantityReturned),
                         },
                       )}
                     </Typography>
@@ -420,8 +420,8 @@ export function ReturnOrderDialog({
                           },
                           {
                             rma: <Reference>{chosenRma.number}</Reference>,
-                            quantity: formatQuantity(authorized.quantity),
-                            received: formatQuantity(
+                            quantity: displayQuantity(authorized.quantity),
+                            received: displayQuantity(
                               authorized.quantityReceived,
                             ),
                           },
@@ -490,10 +490,10 @@ export function ReturnOrderDialog({
                                   : NO_VALUE}
                               </TableCell>
                               <TableCell align="right">
-                                {formatQuantity(lot.shipped)}
+                                {displayQuantity(lot.shipped)}
                               </TableCell>
                               <TableCell align="right">
-                                {formatQuantity(lot.returned)}
+                                {displayQuantity(lot.returned)}
                               </TableCell>
                               <TableCell align="right" sx={{ width: rem(140) }}>
                                 <TextField

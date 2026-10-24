@@ -20,7 +20,7 @@ import type {
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { api, messageFor } from '../lib/api';
-import { formatQuantity, nameAndCode } from '../lib/format';
+import { displayQuantity, nameAndCode } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { licenceStatus } from '../licences/licence-status';
 import { LicenceStatusChip } from '../licences/licence-status-chip';
@@ -357,7 +357,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
                           'Makes {quantity} per batch · made under {licence}',
                       },
                       {
-                        quantity: formatQuantity(selected.outputQuantity),
+                        quantity: displayQuantity(selected.outputQuantity),
                         licence: licenceFor(selected.licenceId),
                       },
                     )
@@ -366,7 +366,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
                         id: 'boms.makes',
                         defaultMessage: 'Makes {quantity} per batch',
                       },
-                      { quantity: formatQuantity(selected.outputQuantity) },
+                      { quantity: displayQuantity(selected.outputQuantity) },
                     )}
               </Typography>
 
