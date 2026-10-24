@@ -757,6 +757,7 @@
   "organizations.notFound": "未找到该组织",
   "organizations.secondNeedsFirst": "设置第二单据语言前需先设置第一语言",
   "partners.codeCodeUsedAnother": "编码 {code} 已被另一个合作伙伴使用",
+  "partners.giveEmailOrPhone": "请填写电子邮箱或电话，以便联系到对方",
   "partners.makeAnotherAddressDefault": "停用此地址前，请先将另一个地址设为默认",
   "partners.suchAddress": "未找到该地址",
   "partners.suchContact": "未找到该联系人",

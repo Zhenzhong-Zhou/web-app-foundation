@@ -2310,6 +2310,14 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R51** *(a contact with neither an email nor a phone, #138)* On a
+  partner, add a contact with a name and nothing in Email or Phone, and
+  save: the dialog stays open and says Give an email or a phone, so the
+  contact can be reached, never Something went wrong. The same with Primary
+  ticked. In Français Indiquez un courriel ou un téléphone, pour que le
+  contact puisse être joint; in 中文 请填写电子邮箱或电话，以便联系到对方.
+  Fill in either and save: the contact is added. Found while running the
+  full suite for ADR-075.
 - **MC-R52** *(money too long for a JavaScript number, #130)* On draft
   SO-DEMO-3, Add item: any item, quantity 1, priced 98765432109876.5432
   CAD, the most digits a price holds. The line's price and total, and the
@@ -3044,6 +3052,8 @@ first.
   MC-R47.
 - 2026-10-23: #184, typographic apostrophes in English, and the
   catalogues' check holding them: MC-R48.
+- 2026-10-23: #138, a contact with neither an email nor a phone is
+  refused in words, not a 500: MC-R51.
 - 2026-10-23: #130, money on screen written from its digits, never a
   JavaScript number: MC-R52.
 - 2026-10-23: #180, each member's roles in `membership_roles.csv`:

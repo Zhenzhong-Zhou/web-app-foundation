@@ -757,6 +757,7 @@
   "organizations.notFound": "No such organization",
   "organizations.secondNeedsFirst": "A second document language needs a first one",
   "partners.codeCodeUsedAnother": "Code {code} is already used by another partner",
+  "partners.giveEmailOrPhone": "Give an email or a phone, so the contact can be reached",
   "partners.makeAnotherAddressDefault": "Make another address the default before retiring this one",
   "partners.suchAddress": "No such address",
   "partners.suchContact": "No such contact",
