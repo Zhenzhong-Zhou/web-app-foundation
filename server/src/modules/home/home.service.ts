@@ -174,13 +174,15 @@ export class HomeService {
    * Dismiss (the card) are, on the organization. `complete` once steps 1
    * to 6 are done and the team is added or skipped.
    *
-   * The receipt and invoice steps read the two largest tables it touches.
-   * As an EXISTS, the planner may price a sequential scan that stops at the
-   * first match, and Home's perf runs flagged one on stock_movements, then
-   * on invoices (ADR-058 amended). Each is ordered as one of its table's
-   * indexes is and limited to one row, so the only cheap plan is that
-   * index: this organization's rows, newest first, up to the first match,
-   * and never another tenant's.
+   * The receipt, invoice, product and partner steps read the largest tables
+   * it touches. As an EXISTS, the planner may price a sequential scan that
+   * stops at the first match, which reads every tenant's rows when this
+   * organization has none: the organization the step is there for. Home's
+   * perf runs flagged one on stock_movements, then on invoices (ADR-058
+   * amended), then at large on products and partners (#187). Each is
+   * ordered as one of its table's indexes is and limited to one row, so the
+   * only cheap plan is that index: this organization's rows, in the
+   * index's order, up to the first match, and never another tenant's.
    */
   gettingStarted(): Promise<GettingStarted> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -192,10 +194,14 @@ export class HomeService {
                         where a.owner_organization_id = o.id)) as organization,
           exists (select 1 from locations l
                   where l.organization_id = o.id) as location,
-          exists (select 1 from products p
-                  where p.organization_id = o.id) as product,
-          exists (select 1 from partners p
-                  where p.organization_id = o.id) as partner,
+          (select p.id from products p
+           where p.organization_id = o.id
+           order by p.name
+           limit 1) is not null as product,
+          (select p.id from partners p
+           where p.organization_id = o.id
+           order by p.name
+           limit 1) is not null as partner,
           (select m.id from stock_movements m
            where m.organization_id = o.id
              and m.reason = 'receipt'

@@ -272,6 +272,19 @@ describe('Home (e2e)', () => {
         partner: true,
         product: false,
       });
+
+      // Read through this organization's index, never another's (#187).
+      const product = {
+        type: 'good',
+        name: 'Focus 60ct',
+        variant: { sku: 'FOCUS-60', tracksLots: false },
+      };
+      const beta = await registerOrganization(app, 'beta');
+      await createVariant(beta.agent, product);
+      expect((await started(alpha)).steps.product).toBe(false);
+
+      await createVariant(alpha.agent, product);
+      expect((await started(alpha)).steps.product).toBe(true);
     });
 
     it('lets the team step be skipped, and the card dismissed and shown', async () => {
