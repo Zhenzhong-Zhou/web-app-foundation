@@ -54,16 +54,15 @@ with this one, this one is current.
   request. The headers are in `render.md`, "Deploys". Render's edge
   ignores a query string and empties itself at each deploy, so no page
   stays old after one (#196's review; ADR-081's correction).
-- **The order after it** (Bob, 22 October 2026): **#196** (above); a
-  small one suggested before ADR-082, for Bob to confirm: **#187** on the
-  Mac, while `foundation_perf_large` is seeded and current; then
+- **The order after it** (Bob, 22 October 2026): **#196** (above);
+  **#187**, fixed on its branch (*Still to do, by hand*); then
   **ADR-082, low stock**
   (its questions in Open decisions); then the review of the whole app, once
   (`/production-readiness` with its device pass: deploys, backups and a
   restore tried, monitoring, security, performance, email, support,
   browsers and China, tablets and foldables, the iPhone Duo closed and
   open, a phone held sideways); then the fix-ups, each a PR of five to ten
-  related issues: safety and scale (#181 first, then #142, #187, #182),
+  related issues: safety and scale (#181 first, then #142, #182),
   orders and shipping (#156, #158, #125, #161, #164, #159, #128, #213,
   #221, and decisions #157 and #160), organization, roles and audit (#169,
   #168, #179, #174, #166, #133, #167), accessibility (#155, #170, #171,
@@ -520,11 +519,19 @@ with this one, this one is current.
   customers' data").
 - **MC-3424,** if no deploy has carried it yet: a tab of the live app
   kept open across a deploy.
-- **#187 on the Mac:** `foundation_perf_large` is seeded and at every
-  migration. On 23 October `npm run perf:plans -- --scale large` passed
-  every lookup row after #219, and still failed on lot search reading all
-  25,000 variants and on Home's Getting started, whose `exists` stops at
-  its first row: #187's own items.
+- **#187, the plan check at large: fixed** on `fix-187-plans-at-large`
+  (23 October 2026), with no migration; `npm run perf:plans` passes at
+  small and at large. Lot search's SQL was unchanged since 2 October, but
+  0042's trigram index (8 October) hands back lots unordered, so every
+  match was joined before the sort, to every organization's 25,000
+  variants; its join now carries the organization. Getting started's
+  `exists` on products and partners stopped at its first row only for an
+  organization that has one. For one with neither, the one those steps
+  are for, it read every organization's 40,000 rows, so "stops at its
+  first row" was no reason to allow it: both steps now take the
+  organization's first row by name, limited to one, as the receipt and
+  invoice steps do (ADR-058 amended). `foundation_perf_large` stays
+  seeded and at every migration for #225 and #226, filed from its review.
 - **Before v0.7.0:** walk sections 23 and 24 of `docs/manual-checks.md`
   (MC-2301 to MC-2303, leaving and deleting; MC-2401 to MC-2406, closing
   an organization); have the French and Chinese
@@ -657,8 +664,14 @@ with this one, this one is current.
   ("Everywhere", "All actions", "Top level") in words rather than as a
   blank box, about nine of them; and a shared heading row whose actions
   wrap, the order's Items row being the third copy made by hand.
-- **The typo lookup** sits at 270 ms of its 300 ms budget; one query per
-  pass if it ever fails.
+- **The typo lookup has failed its budget:** the weekly full Performance
+  run has been red since 19 October on `GET /lookup?q=typo`, 353 ms at
+  the 95th percentile against 300 (small, 10 connections). This watch
+  said one query per pass if it ever failed; ADR-056's index per
+  organization comes after, its trigger met (#225).
+- **Home** sat at 249 ms of its 300 ms budget in the same run
+  (`GET /home`, small), with no watch until now. Trigger: over budget at
+  small. Then its plans first, the `home` probe's.
 - **An MUI warning,** logged twice by the Playwright run: "children must
   be passed when using the TextField component with select". Harmless;
   most likely the link-return dialog's select, which has no items while

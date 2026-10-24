@@ -127,6 +127,14 @@ Every document is a PDF the server draws (ADR-071), in the same few pieces.
   `TenantDb`, which applies `organization_id`. `UNSAFE_GLOBAL_DB` is refused by a
   lint rule except in the files `server/eslint.config.mjs` lists, each with its
   reason — direct use elsewhere is a review-blocking defect.
+- **The organization goes in every join's ON clause**, though the base
+  table is already scoped. It changes no result; without it, Postgres may
+  read every organization's rows of the joined table, a cost that grows
+  with the whole database rather than with one customer's data (#186,
+  #187). For the same reason, an `exists` that a scan answers at its
+  first match is no reason to allow that scan in the plan check: for an
+  organization with no such row, it reads every organization's. Order the
+  subquery as an index is and take one row instead (ADR-058).
 - **The role tables stay in `core/authorization`** (ADR-080).
   `membership_roles`, `invitation_roles` and `role_permissions` are refused
   by a lint rule outside it, except the files `server/eslint.config.mjs`
