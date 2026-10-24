@@ -2,12 +2,15 @@
  * Two runs of `npm run screenshots` on one page, each picture before beside
  * after, to look over a visual change:
  *
- *     npm run screenshots:compare -- <before folder> <after folder>
+ *     npm run screenshots:compare -- [--out <folder>] <before> <after>
  *
  * Each folder holds one run's pictures, named as capture.spec.ts names them,
  * `<order>-<page>.<language>.<mode>.<width>.png`. The page is written as
- * compare.html in the folder that holds both, and finds the pictures by
- * relative path, so it opens from there without a server.
+ * compare.html in --out's folder, or without it in the nearest folder that
+ * holds both, when that is inside the repository's tmp/; anywhere else,
+ * such as the repository itself when one run is still screenshots/out, it
+ * asks for --out rather than leave a page git would see. The page finds the
+ * pictures by relative path, so it opens from its folder without a server.
  *
  * Grouped by page, then language, mode and width in the order they are
  * taken, with checkboxes to show only some. A pair whose files are the same
@@ -17,26 +20,39 @@
  *
  * No dependencies: Node's own modules only.
  */
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 
 const LANGUAGES = { en: 'English', 'fr-CA': 'Français', 'zh-Hans': '中文' };
 const MODES = { light: 'Light', dark: 'Dark' };
 const WIDTHS = { desktop: 'Desktop', laptop: 'Laptop', phone: 'Phone' };
 
-if (process.argv.length !== 4) {
-  console.error(
-    'Usage: npm run screenshots:compare -- <before folder> <after folder>',
-  );
+const USAGE =
+  'Usage: npm run screenshots:compare -- [--out <folder>] <before folder> <after folder>';
+
+let options;
+try {
+  options = parseArgs({
+    options: { out: { type: 'string' } },
+    allowPositionals: true,
+  });
+} catch (error) {
+  console.error(`${error.message}\n${USAGE}`);
+  process.exit(2);
+}
+if (options.positionals.length !== 2) {
+  console.error(USAGE);
   process.exit(2);
 }
 
 // npm runs the script in client/; the folders are read from where it was
 // typed.
 const typedIn = process.env.INIT_CWD ?? process.cwd();
-const [before, after] = process.argv
-  .slice(2)
-  .map((folder) => path.resolve(typedIn, folder));
+const [before, after] = options.positionals.map((folder) =>
+  path.resolve(typedIn, folder),
+);
 
 function pictures(folder) {
   try {
@@ -47,10 +63,27 @@ function pictures(folder) {
   }
 }
 
-/** The nearest folder holding both, where the page goes. */
-let out = before;
-while (path.relative(out, after).split(path.sep)[0] === '..') {
-  out = path.dirname(out);
+/** Where the page goes: --out, or the nearest folder holding both. */
+let out;
+if (options.values.out) {
+  out = path.resolve(typedIn, options.values.out);
+  mkdirSync(out, { recursive: true });
+} else {
+  out = before;
+  while (path.relative(out, after).split(path.sep)[0] === '..') {
+    out = path.dirname(out);
+  }
+  // Inside tmp/, which git ignores; anywhere else the page could be
+  // committed by mistake, at the repository's root at worst.
+  const tmp = fileURLToPath(new URL('../../tmp', import.meta.url));
+  const inside = path.relative(tmp, out);
+  if (inside.startsWith('..') || path.isAbsolute(inside)) {
+    console.error(
+      `The folder holding both runs is ${out}, outside the repository's tmp/. ` +
+        'Say where the page goes: --out ../tmp/<branch>, for one.',
+    );
+    process.exit(2);
+  }
 }
 
 const escape = (text) =>
@@ -96,10 +129,6 @@ const languages = seen('language').sort(byRank(LANGUAGES));
 const modes = seen('mode').sort(byRank(MODES));
 const widths = seen('width').sort(byRank(WIDTHS));
 
-let pairs = 0;
-let identical = 0;
-let alone = 0;
-
 function side(folder, heading, name) {
   const file = path.join(folder, name);
   let bytes;
@@ -128,11 +157,8 @@ function pair({ name, language, mode, width }) {
     : same
       ? 'identical'
       : 'files differ';
-  pairs += 1;
-  if (same) identical += 1;
-  if (missing) alone += 1;
 
-  return `
+  const html = `
       <figure class="pair ${escape(width)}" data-language="${escape(language)}" data-mode="${escape(mode)}" data-width="${escape(width)}" data-same="${same}">
         <figcaption>${escape([label(LANGUAGES, language), label(MODES, mode), label(WIDTHS, width)].join(' · '))}
           <span class="${same ? 'same' : 'moved'}">${note}</span></figcaption>
@@ -141,6 +167,7 @@ function pair({ name, language, mode, width }) {
           ${now.html}
         </div>
       </figure>`;
+  return { html, same, missing };
 }
 
 const inOrder = (a, b) =>
@@ -148,11 +175,22 @@ const inOrder = (a, b) =>
   byRank(MODES)(a.mode, b.mode) ||
   byRank(WIDTHS)(a.width, b.width);
 
+const compared = new Map(
+  pages.map((page) => [page, shots.get(page).sort(inOrder).map(pair)]),
+);
+const all = [...compared.values()].flat();
+const pairs = all.length;
+const identical = all.filter((each) => each.same).length;
+const alone = all.filter((each) => each.missing).length;
+
 const sections = pages
   .map(
     (page) => `
   <section class="page" id="${escape(page)}">
-    <h2>${escape(page)}</h2>${shots.get(page).sort(inOrder).map(pair).join('')}
+    <h2>${escape(page)}</h2>${compared
+      .get(page)
+      .map((each) => each.html)
+      .join('')}
   </section>`,
   )
   .join('');

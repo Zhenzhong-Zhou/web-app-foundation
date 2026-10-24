@@ -204,7 +204,10 @@ after it, say to `tmp/<branch>/before/` and `after/`, then from `client/`
 It writes one page, `compare.html` in the folder holding both, with each
 picture before beside after, grouped by page, language, mode and width, and
 pairs whose files are the same bytes marked identical. It uses only Node's own
-modules, and the page opens from that folder without a server.
+modules, and the page opens from that folder without a server. The folder
+holding both must be inside `tmp/`, which git ignores; for any other pair, say
+`screenshots/out` as the second run, give the page's folder with `--out`:
+`npm run screenshots:compare -- --out ../tmp/<branch> ../tmp/<branch>/before screenshots/out`.
 
 `docs/manual-checks.md` is the list to walk through by hand before a release and
 after a feature lands; every change that alters what a person sees or a rule they
