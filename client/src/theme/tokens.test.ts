@@ -50,8 +50,19 @@ const STATES = {
   dark: { overlay: '#FFFFFF', hover: 0.08, focus: 0.12, selected: 0.16 },
 } as const;
 
-/** The default accent, and Charcoal, the darkest of ADR-060's six. */
-const ACCENTS = [BRAND.accent, '#3A4150'];
+/**
+ * ADR-060's six presets, the default first, as accent.test.ts has them. No
+ * one is the worst everywhere: in light mode the darkest, Charcoal, and in
+ * dark mode, mixed toward white, Blue.
+ */
+const ACCENTS = [
+  BRAND.accent,
+  '#1F5FBF',
+  '#0F6E6E',
+  '#2F5D50',
+  '#7A3B69',
+  '#3A4150',
+];
 
 /** An accent as a colour mode draws it. */
 const accentIn = (mode: 'light' | 'dark', accent: string) =>
