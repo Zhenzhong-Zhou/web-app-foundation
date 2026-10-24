@@ -34,7 +34,7 @@ export function OptionGroup({
           id={heading}
           role="presentation"
           className={autocompleteClasses.groupLabel}
-          sx={{ bgcolor: 'background.paper', top: -8 }}
+          sx={{ top: -8 }}
         >
           {group}
         </ListSubheader>
