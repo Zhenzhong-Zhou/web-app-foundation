@@ -226,8 +226,11 @@ export function formatDayLong(
  * CAD with two — which is why the server returns the number unrounded and
  * leaves this decision here (ADR-035).
  *
- * The amount arrives as a string from numeric(18,4) and is parsed only at the
- * point of display. Nothing computed from it is ever stored.
+ * The amount arrives as a string from numeric(18,4) and is formatted from the
+ * string itself, as the server's formatMoney is, never a Number(), which
+ * would round a figure past fifteen digits (ADR-025). A browser older than
+ * Intl's string support (Firefox before 116) reads it as Number() did.
+ * Nothing computed from it is ever stored.
  */
 export function formatMoney(
   amount: string | null,
@@ -240,7 +243,7 @@ export function formatMoney(
   return cached(
     `money:${locale}:${currency}`,
     () => new Intl.NumberFormat(locale, { style: 'currency', currency }),
-  ).format(Number(amount));
+  ).format(amount as Intl.StringNumericLiteral);
 }
 
 /**

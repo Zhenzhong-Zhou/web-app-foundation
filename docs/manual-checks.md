@@ -2310,6 +2310,11 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R52** *(money too long for a JavaScript number, #130)* On draft
+  SO-DEMO-3, Add item: any item, quantity 1, priced 98765432109876.5432
+  CAD, the most digits a price holds. The line's price and total, and the
+  order's total, each read $98,765,432,109,876.54, never .55: the amount
+  is written from its digits, not through a JavaScript number (ADR-025).
 - **MC-R50** *(each member's roles in the export, #180)* As the demo
   Owner, make a role named Sales, North in Settings → Roles, give it to a
   member beside the role they hold, then Download everything:
@@ -3039,5 +3044,7 @@ first.
   MC-R47.
 - 2026-10-23: #184, typographic apostrophes in English, and the
   catalogues' check holding them: MC-R48.
+- 2026-10-23: #130, money on screen written from its digits, never a
+  JavaScript number: MC-R52.
 - 2026-10-23: #180, each member's roles in `membership_roles.csv`:
   MC-3301 extended, and MC-R50.

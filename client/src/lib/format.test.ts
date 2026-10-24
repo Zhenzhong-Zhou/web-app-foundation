@@ -4,6 +4,7 @@ import {
   displayQuantity,
   formatCredit,
   formatDay,
+  formatMoney,
   formatQuantity,
   toApiDecimal,
 } from './format';
@@ -86,6 +87,22 @@ describe('displayQuantity', () => {
   it('keeps every digit of a value too long for a JavaScript number', () => {
     expect(displayQuantity('12345678901234.0001', 'en')).toBe(
       '12,345,678,901,234.0001',
+    );
+  });
+});
+
+describe('formatMoney', () => {
+  it('writes an amount in its currency’s minor units', () => {
+    expect(formatMoney('12.5000', 'CAD', 'en-CA')).toBe('$12.50');
+  });
+
+  /**
+   * The largest numeric(18,4) holds is past what a JavaScript number keeps:
+   * Number() read this one as …876.546875 and showed …876.55 (#130).
+   */
+  it('keeps every digit of an amount too long for a JavaScript number', () => {
+    expect(formatMoney('98765432109876.5432', 'CAD', 'en-CA')).toBe(
+      '$98,765,432,109,876.54',
     );
   });
 });
