@@ -2332,6 +2332,12 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R57** *(Recently opened's kinds in sentence case, #223)* Open
+  SO-DEMO-1 and a product, then Home: in Recently opened, each tile's kind
+  reads Order and Product, not ORDER and PRODUCT, quieter than the
+  record's name under it. In Français, Commande and Produit. Found by
+  `/simplify` on #196.
+
 - **MC-R55** *(quantities read without padding zeros, #213)* Products →
   Calm 90ct → Recipe: Makes 1,000 per batch, not 1000.0000. On SO-DEMO-7,
   Take a return: MAGCAP-60 reads 48 shipped, 0 already back, and its lot
@@ -3149,3 +3155,4 @@ first.
   MC-R49 extended.
 - 2026-10-24: #213, the recipe's batch size and Take a return's
   quantities read without padding zeros: MC-R55.
+- 2026-10-24: #223, Recently opened's kinds in sentence case: MC-R57.

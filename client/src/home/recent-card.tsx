@@ -96,14 +96,7 @@ export function RecentCard() {
               minWidth: 0,
             }}
           >
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-              }}
-            >
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage(RECENT_KIND_LABELS[entry.kind])}
             </Typography>
             <Link
