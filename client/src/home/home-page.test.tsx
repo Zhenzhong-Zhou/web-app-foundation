@@ -181,6 +181,22 @@ describe('HomePage', () => {
     }
   });
 
+  // Grey, as the words around it are, so underlined to say it is a link
+  // (conventions.md, The look).
+  it('underlines Change the days, for whoever may change them', async () => {
+    serve({
+      gettingStarted: COMPLETE,
+      cards: [{ kind: 'expiring', count: 0, late: 0, rows: [] }],
+    });
+    renderWithAuth(routed(<HomePage />), {
+      permissions: ['organizations.update'],
+    });
+
+    const link = await screen.findByRole('link', { name: 'Change the days' });
+    expect(link).toHaveAttribute('href', '/settings/organization?tab=stock');
+    expect(getComputedStyle(link).textDecoration).toMatch(/underline/);
+  });
+
   it('offers only the quick actions the role may take', async () => {
     serve({ gettingStarted: COMPLETE, cards: [] });
     renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });

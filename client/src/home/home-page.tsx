@@ -537,12 +537,13 @@ function CardPanel({ card, today }: { card: HomeCard; today: string }) {
           </Link>
         )}
         {/* Where the days come from, for whoever may change them
-            (ADR-060, ADR-061). */}
+            (ADR-060, ADR-061). Grey, as the words around it are, so
+            always underlined, or nothing says it is a link. */}
         {card.kind === 'expiring' && can('organizations.update') && (
           <Link
             component={RouterLink}
             to="/settings/organization?tab=stock"
-            underline="hover"
+            underline="always"
             variant="body2"
             sx={{ color: 'text.secondary' }}
           >

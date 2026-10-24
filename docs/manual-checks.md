@@ -2392,7 +2392,9 @@ first.
   zone list does the same, and its chosen zone keeps the main text
   colour. Open the bell's menu and press ↓: the entry the keyboard is on
   has its time in the main text colour, the others' stay grey. Found
-  while building ADR-081.
+  while building ADR-081. On Home, as the demo Owner, Expiring soon's
+  Change the days is grey and underlined, on a phone too, where nothing
+  hovers (found by #196's usability walkthrough).
 
 - **MC-R48** *(typographic apostrophes in English, #184)* In English, as
   Tom Becker open a sale's invoice by its address, as MC-3320 does: You
@@ -3136,3 +3138,5 @@ first.
   while its list loads: MC-R54 extended.
 - 2026-10-23: #196's review, the bell's panel a dialog named
   Notifications, the bell saying it opens one: MC-R54 extended.
+- 2026-10-23: #196's review, Home's Change the days always underlined:
+  MC-R49 extended.
