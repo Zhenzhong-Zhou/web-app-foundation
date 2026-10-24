@@ -7652,6 +7652,14 @@ Left out, because they belong to each member rather than to the
 organization: notifications, records opened recently and sessions, which
 are in each person's own export (ADR-069), and members' photos (ADR-063).
 
+*Amended (#180):* since ADR-080 a member may hold several roles.
+`members.csv` keeps them in its `role` column, their names joined with
+commas, for reading; a made role's name may hold a comma itself, so
+`membership_roles.csv` holds who has which role as ids: every column as
+stored, but the member given by the `user_id` that `members.csv` carries
+rather than a `membership_id` no file does. The README's glossary says to
+count and join by it.
+
 The export reads everything in one repeatable-read transaction, so its
 files agree with each other, and streams to the browser as it reads.
 Nothing is held in memory, and ADR-057's limit of 50,000 rows, set for a

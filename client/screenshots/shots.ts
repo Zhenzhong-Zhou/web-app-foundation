@@ -93,10 +93,11 @@ export const SHOTS: Shot[] = [
     path: (targets) => at(targets.batchLotId, (id) => `/lots/${id}`),
   },
   {
-    // The demo cancels no run, so this filter shows the empty state.
+    // A search no run's reference contains, so the empty state is pictured
+    // however full the demo is; a status filter emptied only until the demo
+    // cancelled a run. From the address, as the lookup's Show all opens it.
     name: '10-empty-list',
-    path: () => '/production',
-    prepare: (page, words) => press(page, words('orders.status.cancelled')),
+    path: () => '/production?search=ZZZ-000',
   },
   { name: '11-products', path: () => '/products' },
   {

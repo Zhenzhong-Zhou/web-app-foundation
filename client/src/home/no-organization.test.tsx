@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
@@ -123,10 +123,13 @@ describe('HomePage with no organization', () => {
     expect(
       await screen.findByText(/New organizations start from an invitation/),
     ).toBeVisible();
-    // Announced: the card's heading has the focus the button had.
-    expect(
-      screen.getByRole('heading', { name: 'Start an organization' }),
-    ).toHaveFocus();
+    // Announced: the card's heading has the focus the button had, given in
+    // an effect once the card is drawn (#210).
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: 'Start an organization' }),
+      ).toHaveFocus(),
+    );
   });
 
   it('reads the session again when Start is refused as already decided elsewhere', async () => {

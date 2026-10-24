@@ -1712,7 +1712,8 @@ The pages, in a private window unless a check says otherwise.
   demo Owner, Download everything: `members.csv` names each member's role
   as Members does; `invitations.csv` has no `role_id`, and
   `invitation_roles.csv` names each invitation's role by `invitation_id`
-  and `role_id`, as the README's glossary says, in English, Français and
+  and `role_id`, and `membership_roles.csv` each member's by `user_id` and
+  `role_id`, as the README's glossary says, in English, Français and
   中文.
 - **MC-3302** *(ADR-080)* Prices on orders, a permission of their own now,
   change nothing for the built-in roles. Run `npm run seed` in `server/`,
@@ -2339,6 +2340,31 @@ first.
   group for each other heading. Settings → Organization's time zone list
   holds This device and All time zones the same way. Both look as before.
   Found by #196's axe pass.
+
+- **MC-R52** *(money too long for a JavaScript number, #130)* On draft
+  SO-DEMO-3, Add item: any item, quantity 1, priced 98765432109876.5432
+  CAD, the most digits a price holds. The line's price and total, and the
+  order's total, each read $98,765,432,109,876.54, never .55: the amount
+  is written from its digits, not through a JavaScript number (ADR-025).
+
+- **MC-R51** *(a contact with neither an email nor a phone, #138)* On a
+  partner, add a contact with a name and nothing in Email or Phone, and
+  save: the dialog stays open and says Give an email or a phone, so the
+  contact can be reached, never Something went wrong. The same with Primary
+  ticked. In Français Indiquez un courriel ou un téléphone, pour que le
+  contact puisse être joint; in 中文 请填写电子邮箱或电话，以便联系到对方.
+  Fill in either and save: the contact is added. Found while running the
+  full suite for ADR-075.
+
+- **MC-R50** *(each member's roles in the export, #180)* As the demo
+  Owner, make a role named Sales, North in Settings → Roles, give it to a
+  member beside the role they hold, then Download everything:
+  `members.csv` names both in that member's `role` column, and
+  `membership_roles.csv` has a row for each, by `user_id` and `role_id`,
+  one of them the id `roles.csv` names Sales, North: two roles, where the
+  column alone could as well be three. The README's glossary says to count
+  and join by `membership_roles.csv`, in English, Français and 中文. Found
+  by `/code-review` on #176.
 
 - **MC-R49** *(colours given as a path, #196)* In light and in dark:
   Home's detail lines, SO-DEMO-1's notes under its figures (not counting 1
@@ -3073,6 +3099,12 @@ first.
   MC-R47.
 - 2026-10-23: #184, typographic apostrophes in English, and the
   catalogues' check holding them: MC-R48.
+- 2026-10-23: #138, a contact with neither an email nor a phone is
+  refused in words, not a 500: MC-R51.
+- 2026-10-23: #130, money on screen written from its digits, never a
+  JavaScript number: MC-R52.
+- 2026-10-23: #180, each member's roles in `membership_roles.csv`:
+  MC-3301 extended, and MC-R50.
 - 2026-10-23: #196, colours given as a path drawn again, grey and amber:
   MC-R49.
 - 2026-10-23: #196's comparison, options under a heading as a group of
