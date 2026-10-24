@@ -4118,8 +4118,12 @@ so the timing is the evidence for the name lookup.
 - **Movements for one shelf** went from 2 ms to 21 ms. No screen in the
   budgets reads it yet. Trigger: it joins the budgets, or passes 100 ms.
   Then indexes on the source and destination location with the id.
-- **Lot search** reads the organization's lots, as recorded at ADR-044.
-  Trigger: lots in the millions. Then pg_trgm.
+- **Lot search** reads through `lots_code_trgm_idx`, the pg_trgm this
+  line waited for, since migration 0042 (ADR-056), and joins only the
+  organization's variants (#187). The index knows no organization, so
+  other organizations' matching lots are read and filtered out: 79% of
+  the candidates for `LV-0001` at large. Trigger: ADR-056's for an index
+  per organization, which the typo lookup's missed budget meets (#225).
 - **Valuation** reads every pool by definition. Trigger: an organization
   whose valuation no longer fits a screen. Then an export.
 - **Migrations on large live tables.** 0036 builds its index inside the
@@ -5958,6 +5962,15 @@ totals statement, which it skipped because it opens with a parenthesis,
 and Getting started's invoice step reads through an index, as the receipt
 step does, after a run flagged a scan of invoices that the previous run's
 plan had not chosen.
+
+*Amended at large scale (#187, 23 October 2026):* the plan check flagged
+the product and partner steps, whose EXISTS the planner answered with a
+scan of products (25,000 rows) and partners (15,000). For the probe's
+organization it stopped at its first row; for one with no product or
+partner yet, the one those steps are for, it read every organization's
+rows. Both now select this organization's first row by name, limited to
+one, so `products_org_name_idx` and `partners_org_name_idx` are the only
+cheap plans, as the receipt and invoice steps' indexes are theirs.
 
 **Consequences.**
 

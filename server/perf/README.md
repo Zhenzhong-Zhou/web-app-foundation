@@ -145,8 +145,10 @@ back. It fails on a sequential scan of a table the planner estimates at
 lists one organization: every row is then that organization's, so a full
 scan is the right plan and says nothing about a busier database. A scan
 that is the decision rather than an accident goes in the allow-list in
-`perf/plans.ts`, with the reason; lot search is the one there today. Every
-plan goes to `perf/reports/<time>-<scale>-plans.json`.
+`perf/plans.ts`, with the reason; valuation's is the one there today. An
+`exists` that a scan answers at its first match is not a reason: for an
+organization with no such row, the scan reads every organization's
+(#187). Every plan goes to `perf/reports/<time>-<scale>-plans.json`.
 
 ## Reports
 

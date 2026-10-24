@@ -83,7 +83,11 @@ export class LotTraceService {
    * the obvious match on top. % and _ are escaped so they match themselves.
    *
    * Anywhere-in cannot use an ordinary index; lots_code_trgm_idx, a trigram
-   * index (ADR-056, migration 0042), serves it.
+   * index (ADR-056, migration 0042), serves it. That index hands back the
+   * matches unordered, so every one is joined before the sort, and the join
+   * carries the organization: without it, Postgres read every
+   * organization's variants to join this one's lots (ADR-051's plan check,
+   * #187).
    */
   async search(code: string) {
     // Escaped and trimmed as every search is (ADR-056, common/search.ts).
@@ -94,7 +98,9 @@ export class LotTraceService {
         await tx.execute(sql`
           select l.id, l.code, l.expires_at, pv.sku
           from lots l
-          join product_variants pv on pv.id = l.variant_id
+          join product_variants pv
+            on pv.id = l.variant_id
+            and pv.organization_id = ${organizationId}::uuid
           where l.organization_id = ${organizationId}::uuid
             and l.code ilike ${anywhere}
           order by (l.code ilike ${prefix}) desc, l.code, pv.sku
