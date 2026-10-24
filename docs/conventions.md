@@ -442,6 +442,14 @@ message, and the screen keys on the code, never on the words.
   passes, it is filed as a "Flaky:" issue the same day, naming the test,
   the run and the line; it is never retried automatically, skipped or
   bypassed to get a pull request green.
+- **The flake hunt** (`.github/workflows/flake-hunt.yml`) looks for those
+  failures before a pull request meets them. On main, Sundays at 09:00
+  UTC and by hand (Actions → Flake hunt → Run workflow), it runs the
+  client's unit tests five times and the server's end-to-end suite three
+  times (`server/scripts/e2e-flake-hunt.sh`). A test that fails in any run
+  turns the run red, and the run's summary names it and how often it
+  failed. The hunt files nothing and retries nothing: each test it names is
+  filed by hand as a "Flaky:" issue, as above.
 
 ---
 

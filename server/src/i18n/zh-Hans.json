@@ -730,6 +730,7 @@
   "organization.export.glossary.issued": "issued_at、voided_at、void_reason —— 单据的开具时间、作废时间及作废原因。",
   "organization.export.glossary.language": "language、second_language —— 单据打印所用的语言：en、fr-CA 或 zh-Hans。",
   "organization.export.glossary.lots": "lot_id、code、expires_at —— 一批货物、印在货物上的批号，以及到期日。",
+  "organization.export.glossary.memberRoles": "在 membership_roles.csv 中，每位成员担任的角色，每个角色一行：user_id，members.csv 中的成员；role_id，roles.csv 中的角色。members.csv 的 role 列列出角色名称以便阅读，以逗号分隔，而角色名称本身也可能含有逗号：统计和关联请以 membership_roles.csv 为准。",
   "organization.export.glossary.movements": "from_location_id、to_location_id、reason —— 在 stock_movements.csv 中，库存从哪里出、到哪里去，以及原因。",
   "organization.export.glossary.number": "number —— 单据上打印的编号，例如 INV-000001 或 CN-000001。",
   "organization.export.glossary.numbering": "document_numbering、document_sequences——每种单据怎样编号，以及每年、每月或每天的计数器；已经给出的编号保留在单据上。",
