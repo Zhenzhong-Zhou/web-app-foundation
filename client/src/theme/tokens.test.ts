@@ -36,10 +36,37 @@ function contrast(a: string, b: string): number {
 /** AA for normal text. Every pair here is read at body or chip size. */
 const AA = 4.5;
 
-const SCHEMES: [string, Scheme][] = [
+const SCHEMES: ['light' | 'dark', Scheme][] = [
   ['light', LIGHT],
   ['dark', DARK],
 ];
+
+/**
+ * MUI 9's tints for an entry's state (createPalette), which the theme
+ * leaves as they are: under the pointer, under the keyboard, selected.
+ */
+const STATES = {
+  light: { overlay: '#000000', hover: 0.04, focus: 0.12, selected: 0.08 },
+  dark: { overlay: '#FFFFFF', hover: 0.08, focus: 0.12, selected: 0.16 },
+} as const;
+
+/**
+ * ADR-060's six presets, the default first, as accent.test.ts has them. No
+ * one is the worst everywhere: in light mode the darkest, Charcoal, and in
+ * dark mode, mixed toward white, Blue.
+ */
+const ACCENTS = [
+  BRAND.accent,
+  '#1F5FBF',
+  '#0F6E6E',
+  '#2F5D50',
+  '#7A3B69',
+  '#3A4150',
+];
+
+/** An accent as a colour mode draws it. */
+const accentIn = (mode: 'light' | 'dark', accent: string) =>
+  mode === 'dark' ? towardWhite(accent, DARK_ACCENT_WEIGHT) : accent;
 
 describe('tokens (ADR-055)', () => {
   it('works out the dark accent by mixing toward white', () => {
@@ -69,14 +96,46 @@ describe('tokens (ADR-055)', () => {
   });
 
   it.each(SCHEMES)('keeps %s text readable on a chosen card', (name, s) => {
-    const accent =
-      name === 'dark'
-        ? towardWhite(BRAND.accent, DARK_ACCENT_WEIGHT)
-        : BRAND.accent;
-    const chosen = mix(accent, s.surface, CHOSEN_WEIGHT);
-    expect(contrast(s.text, chosen)).toBeGreaterThanOrEqual(AA);
-    expect(contrast(s.muted, chosen)).toBeGreaterThanOrEqual(AA);
+    for (const accent of ACCENTS) {
+      const chosen = mix(accentIn(name, accent), s.surface, CHOSEN_WEIGHT);
+      expect(contrast(s.text, chosen)).toBeGreaterThanOrEqual(AA);
+      expect(contrast(s.muted, chosen)).toBeGreaterThanOrEqual(AA);
+    }
   });
+
+  // A bell entry or a button holding a muted line, under the pointer; and
+  // tinted the same way, Home's welcome note and a numbering series'
+  // helper row (#196).
+  it.each(SCHEMES)(
+    'keeps %s muted text readable under the pointer',
+    (name, s) => {
+      const { overlay, hover } = STATES[name];
+      const ground = mix(overlay, s.surface, hover);
+      expect(contrast(s.muted, ground)).toBeGreaterThanOrEqual(AA);
+    },
+  );
+
+  // Muted text falls below AA on some of these, so the theme draws it in
+  // the main text colour there (mutedAsMain, #196).
+  it.each(SCHEMES)(
+    'keeps %s main text readable on a focused or selected option',
+    (name, s) => {
+      const { overlay, hover, focus, selected } = STATES[name];
+      for (const brand of ACCENTS) {
+        const accent = accentIn(name, brand);
+        for (const ground of [
+          mix(overlay, s.surface, hover),
+          // An option or a menu entry the keyboard is on.
+          mix(overlay, s.surface, focus),
+          mix(accent, s.surface, selected),
+          mix(accent, s.surface, selected + hover),
+          mix(accent, s.surface, selected + focus),
+        ]) {
+          expect(contrast(s.text, ground)).toBeGreaterThanOrEqual(AA);
+        }
+      }
+    },
+  );
 
   it.each(SCHEMES)('keeps every %s status tone readable', (_, s) => {
     for (const tone of Object.values(s.tones)) {

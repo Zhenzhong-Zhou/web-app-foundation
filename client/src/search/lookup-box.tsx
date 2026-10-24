@@ -300,7 +300,10 @@ function LookupField({
                     {option.result.title}
                   </Typography>
                   {option.result.close && (
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                      variant="caption"
+                      sx={{ color: 'text.secondary' }}
+                    >
                       {intl.formatMessage({
                         id: 'search.close',
                         defaultMessage: 'close match',
@@ -314,7 +317,11 @@ function LookupField({
                   sx={{ alignItems: 'center', minWidth: 0 }}
                 >
                   {option.result.detail && (
-                    <Typography variant="caption" color="text.secondary" noWrap>
+                    <Typography
+                      variant="caption"
+                      noWrap
+                      sx={{ color: 'text.secondary' }}
+                    >
                       {option.result.detail}
                     </Typography>
                   )}
@@ -389,14 +396,13 @@ function RecentOption({ entry }: { entry: RecentEntry }) {
           <Typography
             component="span"
             variant="body2"
-            color="text.secondary"
-            sx={{ fontWeight: 400, ml: 1 }}
+            sx={{ color: 'text.secondary', fontWeight: 400, ml: 1 }}
           >
             {entry.detail}
           </Typography>
         )}
       </Typography>
-      <Typography variant="caption" color="text.secondary" noWrap>
+      <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
         {intl.formatMessage(RECENT_KIND_LABELS[entry.kind])}
       </Typography>
     </Stack>

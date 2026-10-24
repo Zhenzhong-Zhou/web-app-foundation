@@ -258,7 +258,7 @@ export function ProductDetailPage() {
               </Typography>
             ))
           ) : (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'products.translations.none',
                 defaultMessage:

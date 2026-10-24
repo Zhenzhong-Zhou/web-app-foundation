@@ -444,8 +444,8 @@ export function ProductionOrderDetailPage() {
                         {lotsFor(line.componentVariantId) && (
                           <Typography
                             variant="caption"
-                            color="text.secondary"
                             component="div"
+                            sx={{ color: 'text.secondary' }}
                           >
                             {lotsFor(line.componentVariantId)}
                           </Typography>

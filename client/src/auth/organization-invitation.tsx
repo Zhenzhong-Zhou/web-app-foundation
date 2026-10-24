@@ -155,7 +155,7 @@ export function OrganizationInvitation({
       header={
         <Box>
           {header}
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {intl.formatMessage({
               id: 'invitation.organization.rename',
               defaultMessage: 'You can change the name later, in Settings.',
@@ -228,7 +228,7 @@ function NewOrganizationMark({ name }: { name: string }) {
         <Typography sx={{ fontWeight: 700, lineHeight: 1.25 }}>
           {name}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'invitation.organization.newOrganization',
             defaultMessage: 'A new organization',
@@ -272,7 +272,7 @@ function OwnerLine({
 function Until({ lastDay }: { lastDay: string }) {
   const intl = useIntl();
   return (
-    <Typography variant="body2" color="text.secondary">
+    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
       {intl.formatMessage(
         {
           id: 'invitation.organization.until',
@@ -302,7 +302,7 @@ function AlreadyInOrganization({
         defaultMessage: 'You can’t start an organization with this account yet',
       })}
     >
-      <Typography color="text.secondary">
+      <Typography sx={{ color: 'text.secondary' }}>
         {intl.formatMessage(
           {
             id: 'invitation.organization.otherOrganization.body',
@@ -312,7 +312,7 @@ function AlreadyInOrganization({
           { email: invitation.email },
         )}
       </Typography>
-      <Typography color="text.secondary">
+      <Typography sx={{ color: 'text.secondary' }}>
         {intl.formatMessage(
           {
             id: 'invitation.organization.otherOrganization.next',

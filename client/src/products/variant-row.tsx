@@ -50,8 +50,7 @@ function Detail({ label, value }: { label: string; value: string }) {
     <Stack direction="row" spacing={1}>
       <Typography
         variant="body2"
-        color="text.secondary"
-        sx={{ minWidth: rem(140) }}
+        sx={{ color: 'text.secondary', minWidth: rem(140) }}
       >
         {label}
       </Typography>

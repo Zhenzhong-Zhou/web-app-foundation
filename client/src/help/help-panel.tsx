@@ -462,8 +462,7 @@ function AllGuides({ help }: { help: HelpState }) {
         id="help-all-guides"
         variant="subtitle1"
         component="h3"
-        color="text.secondary"
-        sx={{ mb: 1 }}
+        sx={{ color: 'text.secondary', mb: 1 }}
       >
         {intl.formatMessage(M.allGuides)}
       </Typography>
@@ -472,8 +471,7 @@ function AllGuides({ help }: { help: HelpState }) {
           <Box key={group.label.id}>
             <Typography
               variant="body2"
-              color="text.secondary"
-              sx={{ fontWeight: 600 }}
+              sx={{ color: 'text.secondary', fontWeight: 600 }}
             >
               {intl.formatMessage(group.label)}
             </Typography>

@@ -176,7 +176,7 @@ export function TaxCodeDialog({
                 defaultMessage: 'Taxes it charges',
               })}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'settings.tax.charges.help',
                 defaultMessage:

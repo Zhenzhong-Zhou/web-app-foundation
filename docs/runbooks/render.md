@@ -77,11 +77,10 @@ use; the reasons are in the sections named.
 - **The database expires 30 days after it was created.** It then stops
   answering, and Render deletes it after a 14-day grace period unless it is
   moved to a paid instance type. Note the creation date in the handoff.
-  On 22 October 2026 Render showed the current one, Free, as created
-  about 28 September 2026, and its page said "Your database will expire
-  on October 28, 2026": it stops answering then and is deleted about 11
-  November. Until the database is paid for, this comes back every 30
-  days.
+  The current one, Free, was created on 22 October 2026, and its page
+  says "Your database will expire on November 21, 2026": it stops
+  answering then and is deleted about 5 December. Until the database is
+  paid for, this comes back every 30 days.
 - **The web service sleeps after 15 minutes without a request,** and the
   next request waits about a minute while it starts. The hourly jobs run
   inside it, so while it sleeps they do not: licence reminders (ADR-064)
@@ -101,6 +100,34 @@ deploy hook, waits until `/api/health` names the commit, and only then
 deploys the static site at the same commit. A `main` whose CI fails
 deploys neither, and if the API's deploy fails, the client stays where it
 was, matching it.
+
+**Deploying by hand:** Actions → Deploy → Run workflow deploys `main`'s
+newest commit whose CI passed on a push, in the same order, and says in
+its first step which commit and which CI run. A missed deploy (a run
+cancelled, a hook unset, a wait that timed out) is put right there, not
+in Render, so the API still goes first and nothing deploys that CI has not
+passed. With the commit already live, the wait ends at once. A run by
+hand and one after CI share the workflow's concurrency group, so they
+never deploy at once: the newer cancels the older. Only from `main`:
+started from another branch, the run would be that branch's own copy of
+`deploy.yml`, so its job is skipped and nothing deploys. The job runs in
+GitHub's `production` environment, limited to `main` and holding the
+hooks (step 6 below), so a branch's copy that drops that check still
+cannot reach them.
+
+**The live site, checked:** the last step reads what a visitor gets, at
+`API_HEALTH_URL` without `/api/health`, every 20 seconds for up to 10
+minutes while the static site builds. `/version.json` must name the
+commit, which it does at the first look once the static site's deploy is
+live, since Render empties its edge then; the query string the step adds
+does not get past the edge, which ignores it (As Render shows it, below).
+`/api/health/ready` must say the database is `up`; and
+`/favicon.svg` must come back as `image/svg+xml`, since a file the build
+left out comes back as `index.html` with a 200 (the `/*` rewrite). It
+only reads. After 10 minutes it fails, saying what each of the three
+gave; both services have been deployed by then, and neither is rolled
+back. With the commit already live, as on a run by hand, it passes before
+the new build is out.
 
 Why not Render's own auto-deploy, which both services had until ADR-081:
 
@@ -123,24 +150,26 @@ cancels an older one, waiting or deploying, so only the newest commit's
 client goes live; and CI on `main` keeps one run waiting, so of several
 merges in quick succession only the newest is checked and deployed.
 
-### As Render showed it on 22 October 2026
+### As Render shows it since 23 October 2026
 
 | Setting            | Web service (the API)                     | Static site (the client)                         |
 |--------------------|-------------------------------------------|--------------------------------------------------|
 | Address            | `https://web-app-foundation.onrender.com` | `https://web-app-foundation-client.onrender.com` |
 | Instance           | Free                                      | Free                                             |
-| Auto-Deploy        | On Commit                                 | On Commit                                        |
-| Deploy Hook        | not noted                                 | there                                            |
+| Auto-Deploy        | Off                                       | Off                                              |
+| Deploy Hook        | in GitHub as `RENDER_API_DEPLOY_HOOK`     | in GitHub as `RENDER_CLIENT_DEPLOY_HOOK`         |
 | Start Command      | `node dist/main`                          |                                                  |
 | Pre-Deploy Command | empty                                     |                                                  |
-| Health Check Path  | `/health/ready`, set by Bob that day      |                                                  |
+| Health Check Path  | `/health/ready`, set on 22 October 2026   |                                                  |
+| Headers            |                                           | the three rules below                            |
 
 The database is Free too (above). With no Pre-Deploy Command, the
 migrations run in the build command (README, "Deployment") while the
 previous release still serves, which is why ADR-081's migrations add and
 never take away in one deploy.
 
-What the static site sent, from `curl -sI` the same day:
+What the static site sent, from `curl -sI`, on 22 October 2026, before
+the header rules:
 
 | Path                        | `cache-control`                             | `cf-cache-status` |
 |-----------------------------|---------------------------------------------|-------------------|
@@ -150,19 +179,69 @@ What the static site sent, from `curl -sI` the same day:
 | `/version.json`             | the same, as `index.html`: not yet built    | `MISS`            |
 | `/api/health`               | none                                        | `BYPASS`          |
 
-So Render's edge can keep `index.html` for five minutes after a deploy.
-It ignores a request's `no-cache`, though a new query string misses it,
-which is why the version check adds one of its own. A tab that loads in
-full in those minutes can get the old build back; the client loads in
+And on 23 October 2026, after ADR-081's merge, with the three rules (one
+run):
+
+| Path                        | `cache-control`                             | `cf-cache-status` |
+|-----------------------------|---------------------------------------------|-------------------|
+| `/`                         | `public, max-age=0, s-maxage=300`           | `HIT`             |
+| `/index.html`               | `no-cache`                                  | `EXPIRED`         |
+| `/version.json`             | `no-cache`                                  | `EXPIRED`         |
+| `/orders`                   | `public, max-age=0, s-maxage=300`           | `EXPIRED`         |
+| `/assets/index-Bl7LQjt0.js` | `public, max-age=31536000, immutable`       | `EXPIRED`         |
+
+So the rules do what they say for the paths they name, to the browser: a
+hashed asset is kept a year, and `index.html` and the version file are
+asked for again every time. `/` and every deep link, such as `/orders`,
+are `index.html` through the `/*` rewrite, and the `/index.html` rule does
+not reach them: they keep Render's default, `s-maxage=300`, and `/` came
+back `HIT`. Render's edge keeps `/index.html` and `/version.json` five
+minutes too, whatever their `no-cache` says, and it keys every file by
+its path alone, so a query string never seen before is answered from the
+copy it holds (below). What brings a new build at once is that Render
+empties its edge when a deploy goes live: on #219's deploy, `/`,
+`/index.html` and `/version.json` turned over together. Were that ever to
+miss an edge, someone opening `/` or a link into the app there could get
+the old build's page for up to five minutes, and a tab could see a new
+version up to five minutes late. The version check's own query string
+gets past the browser, not the edge. A tab that loads the old page sees
+the newer version file, loads in
 full once per new version and then waits (manual checks, MC-3411), so it
-never loops. Hashed assets are sent `max-age=0`, so a browser asks again
-for every chunk on every load. `/api/health` goes through the `/api/*`
+never loops. A rule for `/*` would reach them, but it overlaps
+`/assets/*`, and Render's docs do not say which wins: that is for the
+whole-app review (handoff). `/api/health` goes through the `/api/*`
 rewrite uncached, so the workflow never reads an old answer.
+
+**The edge and the query string,** on 24 October 2026, for #196's review,
+with `6ea3b6f8` live: `curl -sI` on each path, twice, five seconds apart,
+each query string new.
+
+| Path                             | 04:19:09 UTC             | 04:19:16 UTC               |
+|----------------------------------|--------------------------|----------------------------|
+| `/version.json`                  | `MISS`                   | `HIT`, `age: 5`            |
+| `/version.json?<time>-<random>`  | `HIT`, `age: 0`          | `HIT`, `age: 5`            |
+| `/version.json?r=<random>`       | `HIT`, `age: 0`          | `HIT`, `age: 5`            |
+| `/index.html`                    | `MISS`                   | `HIT`, `age: 5`            |
+| `/index.html?<time>-<random>`    | `HIT`, `age: 0`          | `HIT`, `age: 5`            |
+
+The first run's query strings, `?1792815549-11291` and `?r=1801020105`,
+had never been asked for, yet came back `HIT` from the copy the bare path
+had fetched a moment before; the second run's, three more new ones, from
+the same copy, the same age. Each named build `6ea3b6f8`, with or without
+a query string. And across #219's deploy, polled every 16 seconds with a
+new query string each time (#196's production-readiness review): the old
+build's copy, `06a34f53`, was a `HIT` aged 75 seconds at 01:03:37 UTC; at
+01:03:53 `/version.json`, `/index.html` and `/` were each a `MISS` naming
+`f395b9c5`; then `HIT`, ageing to 297 seconds, `EXPIRED` at 01:09:07, and
+`HIT` again. A copy 75 seconds old gave way on all three at the moment
+the deploy went live: a purge, not an expiry.
 
 ### Setting it up, by hand, in this order
 
 Before the pull request that adds `deploy.yml` merges, so that its merge
-deploys this way:
+deploys this way. The first five were done on 22 October 2026; the header
+rules took effect at once, without a deploy. The sixth waits for #196's
+merge.
 
 1. **The deploy hooks, as secrets.** Render → the web service → Settings →
    Deploy Hook: copy it. GitHub → the repository → Settings → Secrets and
@@ -198,6 +277,19 @@ deploys this way:
    new name and the browser can keep the old for a year. `index.html`
    names the build's files and `version.json` says which build is out,
    so both are asked for again every time.
+6. **The `production` environment, limited to `main`,** once #196 has
+   merged, not before: until then `main`'s workflow names no
+   environment, and would lose the hooks. Bob, in GitHub → the
+   repository → Settings → Environments → `production` (the merge's
+   Deploy run creates it): Deployment branches and tags → Selected
+   branches and tags → add `main`. Then, under Environment secrets, add
+   `RENDER_API_DEPLOY_HOOK` and `RENDER_CLIENT_DEPLOY_HOOK` with the same
+   values, and delete the two repository secrets of those names. The
+   limit alone stops only a job that names the environment; with the
+   hooks in it, a run from any other branch, whatever its copy of
+   `deploy.yml` says, has no hook to call. Done when Deployment branches
+   lists `main` alone, the environment holds both hooks, the repository
+   neither, and Deploy by hand still deploys (manual checks, MC-3425).
 
 After the merge's deploy:
 
@@ -216,11 +308,16 @@ After the merge's deploy:
    ```bash
    site=https://web-app-foundation-client.onrender.com
    asset=$(curl -s "$site/?$(date +%s)" | grep -o '/assets/index-[A-Za-z0-9_-]*\.js' | head -1)
-   for path in / /index.html /version.json /orders "$asset"; do
-     echo "== $path"
-     curl -sI "$site$path" | grep -iE '^(cache-control|cf-cache-status):'
+   for p in / /index.html /version.json /orders "$asset"; do
+     echo "== $p"
+     curl -sI "$site$p" | grep -iE '^(cache-control|cf-cache-status):'
    done
    ```
+
+   The loop's name is `p`, not `path`: in zsh, the Mac's shell, `path` is
+   the list of folders programs are found in, so a loop over `path` loses
+   `curl` and `grep` (and the rest of that window's commands; open a new
+   one).
 
    `/` and `/orders` are `index.html` too, through the `/*` rewrite:
    whether the `/index.html` rule reaches them is part of what this
@@ -230,15 +327,25 @@ After the merge's deploy:
    either way.
 3. **A tab kept open across the deploy:** manual checks, MC-3424.
 
+On 23 October 2026, for #199's merge (1620e99): Deploy #1 deployed the
+API by its hook; the wait saw 983c1d8 three times, then 1620e99 after 1
+minute 43; then it deployed the static site. `/api/health` and
+`/version.json` both named 1620e99, version 0.7.0, API revision 1. The
+second run, Deploy #2, for CI's scheduled run at 7:01, was skipped, as
+designed: it tests a commit already deployed. The free API took about 50 seconds to wake for
+the first request. The headers are the second table above, from one run;
+the second run, and MC-3424, wait for the next deploy.
+
 ### When the wait times out
 
 The run fails after 20 minutes if the API never names the commit: its
 deploy failed (Render → the web service → Events, and its log), it is
 slow, or `API_HEALTH_URL` is wrong. The static site is left as it was.
 Once the API is up at that commit, Actions → the failed run → Re-run
-jobs, which deploys both again; or by hand, Render → the static site →
-Manual Deploy → Deploy a specific commit, the same commit. Never the
-static site first.
+jobs, which deploys both again; or Actions → Deploy → Run workflow, which
+deploys `main`'s newest commit whose CI passed on a push, the same one
+unless a newer has passed since. Not Render's Manual Deploy, which can put
+the static site first.
 
 ### A rollback
 

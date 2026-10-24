@@ -53,6 +53,27 @@ export default defineConfig([
        */
       'formatjs/enforce-default-message': ['error', 'literal'],
       'formatjs/enforce-placeholders': 'error',
+
+      /**
+       * A colour given as a path goes in sx (ADR-055). MUI 9 ignores a path
+       * in a color prop, and TypeScript still takes it as a string, so from
+       * MUI 9's first commit color="text.secondary" drew the primary text
+       * colour, in over 200 places, until #196. Refused however it is
+       * written (a literal, or a string inside a conditional, a logical or
+       * a template) and on any component, not only Typography.
+       */
+      'no-restricted-syntax': [
+        'error',
+        ...[
+          "JSXAttribute[name.name='color'] > Literal[value=/\\./]",
+          "JSXAttribute[name.name='color'] > JSXExpressionContainer Literal[value=/\\./]",
+          "JSXAttribute[name.name='color'] > JSXExpressionContainer TemplateElement[value.raw=/\\./]",
+        ].map((selector) => ({
+          selector,
+          message:
+            'A colour path goes in sx: MUI 9 ignores a path in a color prop and draws the primary text colour (#196). The prop takes only a name, such as primary, error or inherit.',
+        })),
+      ],
     },
   },
   {

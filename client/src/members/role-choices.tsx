@@ -136,8 +136,7 @@ export function RoleChoices({
                       component="span"
                       id={lineId}
                       variant="body2"
-                      color="text.secondary"
-                      sx={{ display: 'block' }}
+                      sx={{ color: 'text.secondary', display: 'block' }}
                     >
                       {lines.map((line) => (
                         <Box

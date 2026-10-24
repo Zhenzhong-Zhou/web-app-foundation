@@ -257,7 +257,7 @@ function OrganizationHome() {
           slotProps={{ content: { role: 'status' } }}
         />
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-          <Typography color="text.secondary">
+          <Typography sx={{ color: 'text.secondary' }}>
             {intl.formatDate(new Date(), {
               weekday: 'long',
               day: 'numeric',
@@ -332,8 +332,11 @@ function OrganizationHome() {
       ) : (
         <>
           <Typography
-            sx={{ mt: -1.5, fontSize: rem(TYPE.section) }}
-            color="text.secondary"
+            sx={{
+              color: 'text.secondary',
+              mt: -1.5,
+              fontSize: rem(TYPE.section),
+            }}
           >
             {summary}
           </Typography>
@@ -534,14 +537,15 @@ function CardPanel({ card, today }: { card: HomeCard; today: string }) {
           </Link>
         )}
         {/* Where the days come from, for whoever may change them
-            (ADR-060, ADR-061). */}
+            (ADR-060, ADR-061). Grey, as the words around it are, so
+            always underlined, or nothing says it is a link. */}
         {card.kind === 'expiring' && can('organizations.update') && (
           <Link
             component={RouterLink}
             to="/settings/organization?tab=stock"
-            underline="hover"
-            color="text.secondary"
+            underline="always"
             variant="body2"
+            sx={{ color: 'text.secondary' }}
           >
             {intl.formatMessage({
               id: 'home.expiringDays',
@@ -667,7 +671,7 @@ function RowLine({
         {row.detail && (
           <>
             {' '}
-            <Typography component="span" color="text.secondary">
+            <Typography component="span" sx={{ color: 'text.secondary' }}>
               <ReferencesWhole text={row.detail} />
             </Typography>
           </>
@@ -678,8 +682,7 @@ function RowLine({
       ) : note ? (
         <Typography
           variant="body2"
-          color="text.secondary"
-          sx={{ whiteSpace: 'nowrap' }}
+          sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}
         >
           {note}
         </Typography>

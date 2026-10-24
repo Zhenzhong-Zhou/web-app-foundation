@@ -153,7 +153,7 @@ export function TimeZoneForm({
         defaultMessage: 'Save time zone',
       })}
     >
-      <Typography color="text.secondary">
+      <Typography sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'settings.org.timeZone.help',
           defaultMessage:
@@ -221,7 +221,7 @@ export function TimeZoneForm({
           <Box component="li" key={key} {...props}>
             <Stack>
               <span>{option.label}</span>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {option.detail}
               </Typography>
             </Stack>
@@ -285,7 +285,7 @@ export function TimeZoneForm({
         </Stack>
       )}
 
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {readOnly
           ? intl.formatMessage({
               id: 'settings.org.timeZone.ownerOnly',

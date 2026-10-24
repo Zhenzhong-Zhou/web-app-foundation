@@ -38,7 +38,7 @@ function Fact({
       }}
     >
       <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {label}
         </Typography>
         <Typography variant="body2" sx={{ textAlign: 'right' }}>
@@ -48,9 +48,8 @@ function Fact({
       {note && (
         <Typography
           variant="caption"
-          color="text.secondary"
           component="p"
-          sx={{ textAlign: 'right' }}
+          sx={{ color: 'text.secondary', textAlign: 'right' }}
         >
           {note}
         </Typography>
@@ -276,9 +275,8 @@ export function OrderSummary({
           </Link>
           <Typography
             variant="caption"
-            color="text.secondary"
             component="p"
-            sx={{ mt: 0.5 }}
+            sx={{ color: 'text.secondary', mt: 0.5 }}
           >
             {intl.formatMessage({
               id: 'orders.summary.unsettled.help',
@@ -372,7 +370,11 @@ export function OrderSummary({
             </Link>
           )}
           {priced && !order.totalsComplete && (
-            <Typography variant="caption" color="text.secondary" component="p">
+            <Typography
+              variant="caption"
+              component="p"
+              sx={{ color: 'text.secondary' }}
+            >
               {intl.formatMessage({
                 id: 'orders.summary.unpriced',
                 defaultMessage: 'Not every item is priced yet.',

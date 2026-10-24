@@ -4,11 +4,13 @@ import {
   type Theme,
   type ThemeOptions,
 } from '@mui/material/styles';
+import { createElement } from 'react';
 
 import type { Locale } from '../lib/locales';
 import { returnFocus } from '../lib/open-dialog';
 import { VersionPaper } from '../version/version-paper';
 import { type Brand, DEFAULT_BRAND } from './brand-store';
+import { OptionGroup } from './option-group';
 import { rem } from './rem';
 import {
   CHOSEN_WEIGHT,
@@ -86,6 +88,18 @@ const TONE_OF_COLOR: Record<string, ToneName> = {
 
 /** A fingertip, for touch screens; the mouse gets the compact sizes. */
 const TOUCH = '@media (pointer: coarse)';
+
+/**
+ * Muted text drawn in the main text colour, inside the element this is set
+ * on. MUI's tint for an option the keyboard is on, or one selected, takes
+ * muted text below AA (4.13 : 1 on a selected option the keyboard is on,
+ * in dark mode), so there a secondary line reads as the main one: the
+ * tint, not the line, shows which entry it is (#196). Every muted line
+ * reads the one variable, so this reaches them without a rule on a screen.
+ */
+const mutedAsMain = (theme: Theme) => ({
+  '--mui-palette-text-secondary': paletteOf(theme).text.primary,
+});
 
 /**
  * CSS variables rather than runtime palette switching: the mode changes by
@@ -285,6 +299,29 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
      */
     MuiDialogActions: {
       styleOverrides: { root: { flexWrap: 'wrap', rowGap: 8 } },
+    },
+    /**
+     * An option under the pointer or the keyboard, and the one chosen: in
+     * the lookup and the pickers, their secondary lines in the main text
+     * colour (mutedAsMain). A bell entry the keyboard is on, likewise.
+     *
+     * Options under a heading are the listbox's group, named by it
+     * (option-group.tsx): the lookup's kinds, the time zone's This device.
+     */
+    MuiAutocomplete: {
+      defaultProps: {
+        renderGroup: (params) => createElement(OptionGroup, params),
+      },
+      styleOverrides: {
+        option: ({ theme }) => ({
+          '&.Mui-focused, &[aria-selected="true"]': mutedAsMain(theme),
+        }),
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: ({ theme }) => ({ '&.Mui-focusVisible': mutedAsMain(theme) }),
+      },
     },
     /**
      * A banner's actions drop below its message when the two do not fit

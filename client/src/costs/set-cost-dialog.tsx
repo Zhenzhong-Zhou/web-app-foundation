@@ -122,7 +122,7 @@ export function SetCostDialog({
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {entry && (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {entry.lotCode
                   ? intl.formatMessage(
                       {

@@ -265,7 +265,10 @@ export function RaiseRmaDialog({
                     <TableRow key={line.id}>
                       <TableCell>
                         {line.sku}
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          sx={{ color: 'text.secondary' }}
+                        >
                           {line.description}
                         </Typography>
                       </TableCell>
@@ -365,7 +368,7 @@ export function RaiseRmaDialog({
               })}
             />
             {!expectsGoods && (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {intl.formatMessage({
                   id: 'rmas.raise.keepOrDestroy',
                   defaultMessage:

@@ -112,7 +112,7 @@ function Failure({ reference }: { reference: string | null }) {
       }
       reference={
         reference && (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             <FormattedMessage
               id="components.errorBoundary.reference"
               defaultMessage="Reference: {requestId}"

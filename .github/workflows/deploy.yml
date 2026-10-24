@@ -9,48 +9,88 @@ name: Deploy
 #
 # When CI passes on a push to main, this deploys the API at that commit
 # through its deploy hook, waits until /health names the commit, then
-# deploys the static site at the same commit. A push CI skips (docs only)
-# changes nothing either service serves, so nothing deploys.
+# deploys the static site at the same commit, and checks the live site as
+# a visitor reaches it. A push CI skips (docs only) changes nothing either
+# service serves, so nothing deploys.
+#
+# Actions → Deploy → Run workflow deploys main's newest commit whose CI
+# passed on a push, the same way. A missed deploy (a run cancelled, a hook
+# unset, a wait that timed out) is put right here, not in Render, so the
+# API still goes first and the commit is still one CI passed. Only from
+# main: started from another branch, the run would be that branch's own
+# copy of this file, holding the hooks, so its job is skipped. The job
+# runs in the production environment: limited to main in GitHub's
+# settings, with the hooks as its secrets, it keeps them from a branch's
+# copy that drops this check (docs/runbooks/render.md, Setting it up).
 #
 # Reads the repository variable API_HEALTH_URL (the static site's address
-# with /api/health) and the secrets RENDER_API_DEPLOY_HOOK and
-# RENDER_CLIENT_DEPLOY_HOOK (each service's Settings → Deploy Hook). With
-# any of them unset, as on a fork, it says so and deploys nothing.
+# with /api/health, from which the last step takes the site's) and the
+# secrets RENDER_API_DEPLOY_HOOK and RENDER_CLIENT_DEPLOY_HOOK (each
+# service's Settings → Deploy Hook). With any of them unset, as on a fork,
+# it says so and deploys nothing.
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
 
-# Nothing is checked out: the hooks and the health URL are all it uses.
+# Nothing is checked out: the hooks, the health URL and, run by hand, CI's
+# runs are all it uses.
 permissions:
   contents: read
+  actions: read
 
 jobs:
   deploy:
     name: The API, then the client
-    # A push to main that passed. Not CI's nightly run or one started by
-    # hand, which test a commit already deployed, and never a pull request
-    # from a branch that happens to be called main.
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    # Run by hand from main, or after CI on a push to main that passed.
+    # Not CI's nightly run or one started by hand, which test a commit
+    # already deployed, and never a pull request from a branch that
+    # happens to be called main.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    environment: production
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # The wait's 20 minutes and the live check's 10, with room for both.
+    timeout-minutes: 35
     # One at a time, and a newer run cancels an older one, waiting or under
     # way: only the newest commit should deploy, and an older run finishing
     # late would put an older client live after a newer API. One cancelled
     # while it waited for the API leaves the newer run to deploy both.
     # Unlike CI, which never cancels a run in progress on main (ci.yml). On
     # the job, not the workflow, so a run skipped above never cancels one
-    # deploying.
+    # deploying. A run by hand is in the same group, so it and one after CI
+    # never deploy at once.
     concurrency:
       group: deploy
       cancel-in-progress: true
     env:
+      # After CI, the commit it passed; run by hand, empty until the first
+      # step sets it.
       COMMIT: ${{ github.event.workflow_run.head_sha }}
       API_HEALTH_URL: ${{ vars.API_HEALTH_URL }}
       RENDER_API_DEPLOY_HOOK: ${{ secrets.RENDER_API_DEPLOY_HOOK }}
       RENDER_CLIENT_DEPLOY_HOOK: ${{ secrets.RENDER_CLIENT_DEPLOY_HOOK }}
     steps:
+      # By hand: the commit a run after CI would have deployed, that of CI's
+      # newest run on a push to main that passed. Written to GITHUB_ENV, it
+      # replaces the job's empty COMMIT for every step after this one.
+      - name: Find main's newest commit that passed CI
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main --event push --status success --limit 1 --json headSha,databaseId,displayTitle --jq '.[0] // empty')
+          if [ -z "$run" ]; then
+            echo "::error title=Nothing to deploy::No run of CI on a push to main has passed, so there is no commit to deploy. Once one passes, its own Deploy run deploys it."
+            exit 1
+          fi
+          commit=$(jq -r .headSha <<< "$run")
+          echo "Deploying $commit, \"$(jq -r .displayTitle <<< "$run")\", which CI passed in $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$(jq -r .databaseId <<< "$run")."
+          echo "COMMIT=$commit" >> "$GITHUB_ENV"
+
       - name: Check the settings
         id: settings
         run: |
@@ -87,7 +127,7 @@ jobs:
               exit 0
             fi
             if [ "$SECONDS" -ge "$deadline" ]; then
-              echo "::error title=The API did not deploy::After 20 minutes the API still names ${named:-no commit}, not $COMMIT: its deploy failed or is slow (Render → the web service → Events), or, naming no commit, API_HEALTH_URL is wrong. The static site was left as it was, matching it. Once the API names the commit, re-run this job, or deploy the static site by hand at that commit (docs/runbooks/render.md, Deploys)."
+              echo "::error title=The API did not deploy::After 20 minutes the API still names ${named:-no commit}, not $COMMIT: its deploy failed or is slow (Render → the web service → Events), or, naming no commit, API_HEALTH_URL is wrong. The static site was left as it was, matching it. Once the API names the commit, re-run this job, or run Deploy by hand (docs/runbooks/render.md, When the wait times out)."
               exit 1
             fi
             echo "The API names ${named:-no commit yet}; asking again in 20 seconds."
@@ -97,3 +137,35 @@ jobs:
       - name: Deploy the static site
         if: steps.settings.outputs.ready == 'true'
         run: curl -fsS -m 30 -X POST "$RENDER_CLIENT_DEPLOY_HOOK&ref=$COMMIT"
+
+      # Read-only, as a visitor reaches it, every 20 seconds for up to 10
+      # minutes, since the static site builds for a while after its hook.
+      # version.json's query string gets past any cache that keys on it,
+      # but not Render's edge, which keeps a file by its path alone for
+      # five minutes: the new build shows because Render empties its edge
+      # when the deploy goes live (render.md, As Render shows it). The
+      # favicon must come back as an
+      # SVG: a file missing from the build comes back as index.html with a
+      # 200, through the /* rewrite. With the commit already live, as on a
+      # run by hand, this passes before the new build is out.
+      - name: Check the live site
+        if: steps.settings.outputs.ready == 'true'
+        run: |
+          site=${API_HEALTH_URL%/api/health}
+          deadline=$((SECONDS + 10 * 60))
+          while :; do
+            build=$(curl -fsS -m 30 "$site/version.json?$(date +%s)" | jq -r '.build // empty' 2> /dev/null || true)
+            database=$(curl -fsS -m 30 "$API_HEALTH_URL/ready" | jq -r '.database // empty' 2> /dev/null || true)
+            favicon=$(curl -sS -m 30 -o /dev/null -w '%{http_code} %{content_type}' "$site/favicon.svg" || true)
+            seen="/version.json names ${build:-no build}, /api/health/ready says the database is ${database:-not up}, and /favicon.svg answered HTTP ${favicon:-nothing}"
+            if [ "$build" = "$COMMIT" ] && [ "$database" = up ] && [[ "$favicon" == '200 image/svg+xml'* ]]; then
+              echo "At $site, $seen."
+              exit 0
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error title=The live site is not right::After 10 minutes at $site, $seen; expected $COMMIT, up, and 200 image/svg+xml. Both services were deployed at $COMMIT, and neither is rolled back. An older build: the static site's build failed or is slow (Render → the static site → Events). The database not up: Render → the database. The favicon as text/html: the build left it out (client/public). Once put right, re-run this job, or run Deploy by hand (docs/runbooks/render.md, Deploys)."
+              exit 1
+            fi
+            echo "$seen; asking again in 20 seconds."
+            sleep 20
+          done

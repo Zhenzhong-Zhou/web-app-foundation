@@ -331,7 +331,7 @@ export function MovementsPage() {
                             <Typography
                               variant="caption"
                               component="div"
-                              color="text.secondary"
+                              sx={{ color: 'text.secondary' }}
                             >
                               {movement.note}
                             </Typography>
@@ -352,7 +352,7 @@ export function MovementsPage() {
               </Table>
             </TableContainer>
           ) : (
-            <Typography color="text.secondary" sx={{ p: 3 }}>
+            <Typography sx={{ color: 'text.secondary', p: 3 }}>
               {variant || locationId || reason
                 ? intl.formatMessage({
                     id: 'inventory.movements.noMatch',

@@ -95,7 +95,7 @@ export function ProfileForm() {
           it shows the account's own choice, and says what none means
           (#119). */}
       <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'language.label',
             defaultMessage: 'Language',
@@ -109,7 +109,7 @@ export function ProfileForm() {
           <Typography
             id="language-not-chosen"
             variant="body2"
-            color="text.secondary"
+            sx={{ color: 'text.secondary' }}
           >
             {intl.formatMessage({
               id: 'account.profile.languageNotChosen',

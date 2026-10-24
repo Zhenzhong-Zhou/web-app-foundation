@@ -85,7 +85,7 @@ export function OrganizationDocumentLanguages({
       })}
       saveDisabled={!changed || !pair.first}
       notice={
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'settings.org.documentLanguages.notice',
             defaultMessage:
@@ -171,7 +171,7 @@ export function RequiredNameLanguages({
       })}
       saveDisabled={!changed}
       notice={
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'settings.org.requiredNames.notice',
             defaultMessage:

@@ -274,7 +274,7 @@ export function RecordOutputDialog({
               </>
             )}
 
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'production.output.staysOpen',
                 defaultMessage:

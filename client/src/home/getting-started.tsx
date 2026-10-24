@@ -203,7 +203,7 @@ export function GettingStarted({
           })}
         </Typography>
         <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
-          <Typography color="text.secondary">
+          <Typography sx={{ color: 'text.secondary' }}>
             {intl.formatMessage(
               {
                 id: 'home.start.progress',
@@ -278,7 +278,7 @@ export function GettingStarted({
                     </>
                   )}
                 </Typography>
-                <Typography color="text.secondary">
+                <Typography sx={{ color: 'text.secondary' }}>
                   <LearnMore
                     target={meta.learnMore}
                     variant="inline"

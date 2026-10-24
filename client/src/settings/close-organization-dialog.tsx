@@ -306,7 +306,7 @@ export function CloseOrganizationDialog({
                     </Typography>
                   )}
                   {last && downloadedAt === null && (
-                    <Typography variant="body2" color="warning.dark">
+                    <Typography variant="body2" sx={{ color: 'warning.main' }}>
                       {intl.formatMessage(
                         {
                           id: 'settings.deletion.stale',
@@ -349,9 +349,8 @@ export function CloseOrganizationDialog({
                         })}
                         <Typography
                           variant="body2"
-                          color="text.secondary"
                           component="span"
-                          sx={{ display: 'block' }}
+                          sx={{ color: 'text.secondary', display: 'block' }}
                         >
                           {intl.formatMessage({
                             id: 'settings.deletion.decline.why',
@@ -453,8 +452,7 @@ export function CloseOrganizationDialog({
             id="close-organization-missing"
             role="status"
             variant="body2"
-            color="text.secondary"
-            sx={{ px: 3, textAlign: 'right' }}
+            sx={{ color: 'text.secondary', px: 3, textAlign: 'right' }}
           >
             {intl.formatMessage(
               {

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { Notification } from '../api/types.gen';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -22,6 +23,40 @@ function Frame() {
       </button>
       <NotificationBell />
     </MemoryRouter>
+  );
+}
+
+/**
+ * One unread entry, someone the reader invited having joined; the list once
+ * `until` settles, when given.
+ */
+function serveOneEntry(
+  entry: Partial<Notification> = {},
+  until?: Promise<void>,
+) {
+  server.use(
+    http.get('/api/v1/notifications/unread-count', () =>
+      HttpResponse.json({ count: 1 }),
+    ),
+    http.get('/api/v1/notifications', async () => {
+      await until;
+      return HttpResponse.json({
+        entries: [
+          {
+            id: 'n-1',
+            type: 'invitation.accepted',
+            title: 'Wang Fang joined',
+            body: null,
+            resourceType: 'user',
+            resourceId: 'user-wang',
+            readAt: null,
+            createdAt: new Date().toISOString(),
+            ...entry,
+          },
+        ],
+        nextCursor: null,
+      });
+    }),
   );
 }
 
@@ -48,27 +83,10 @@ describe('NotificationBell', () => {
   });
 
   it('opens the page on People of someone the reader invited, once they join (ADR-079)', async () => {
+    serveOneEntry({
+      body: 'Wang Fang accepted your invitation and joined Alpha Co as a Viewer.',
+    });
     server.use(
-      http.get('/api/v1/notifications/unread-count', () =>
-        HttpResponse.json({ count: 1 }),
-      ),
-      http.get('/api/v1/notifications', () =>
-        HttpResponse.json({
-          entries: [
-            {
-              id: 'n-1',
-              type: 'invitation.accepted',
-              title: 'Wang Fang joined',
-              body: 'Wang Fang accepted your invitation and joined Alpha Co as a Viewer.',
-              resourceType: 'user',
-              resourceId: 'user-wang',
-              readAt: null,
-              createdAt: new Date().toISOString(),
-            },
-          ],
-          nextCursor: null,
-        }),
-      ),
       http.post(
         '/api/v1/notifications/n-1/read',
         () => new HttpResponse(null, { status: 204 }),
@@ -94,6 +112,132 @@ describe('NotificationBell', () => {
     expect(
       await screen.findByRole('heading', { name: 'Their page' }),
     ).toBeVisible();
+  });
+
+  // Above the list rather than in it: in a menu, Tab closed it and the
+  // arrows passed Mark all read by (#196).
+  it('reaches Mark all read from the keyboard, its menu holding only the entries', async () => {
+    serveOneEntry();
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Notifications, 1 unread' }),
+    );
+    const entry = await screen.findByRole('menuitem', {
+      name: /Wang Fang joined/,
+    });
+    await vi.waitFor(() => expect(entry).toHaveFocus());
+
+    await user.tab({ shift: true });
+    expect(screen.getByRole('button', { name: 'Mark all read' })).toHaveFocus();
+    expect(
+      within(screen.getByRole('menu', { name: 'Notifications' })).queryByRole(
+        'button',
+      ),
+    ).toBeNull();
+  });
+
+  // More than a menu, so a dialog named by its title, which the bell says
+  // it opens, and whether it is open (#196).
+  it('opens a dialog named Notifications, the bell saying whether it is open', async () => {
+    serveOneEntry();
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
+
+    const bell = await screen.findByRole('button', {
+      name: 'Notifications, 1 unread',
+    });
+    expect(bell).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(bell).toHaveAttribute('aria-expanded', 'false');
+
+    await user.click(bell);
+    const dialog = await screen.findByRole('dialog', { name: 'Notifications' });
+    expect(within(dialog).getByRole('menu')).toBeVisible();
+    expect(
+      within(dialog).getByRole('button', { name: 'Mark all read' }),
+    ).toBeVisible();
+    expect(bell).toHaveAttribute('aria-expanded', 'true');
+
+    const entry = await within(dialog).findByRole('menuitem', {
+      name: /Wang Fang joined/,
+    });
+    await vi.waitFor(() => expect(entry).toHaveFocus());
+    await user.keyboard('{Escape}');
+    await vi.waitFor(() =>
+      expect(bell).toHaveAttribute('aria-expanded', 'false'),
+    );
+  });
+
+  // The button goes once nothing is unread, and the focus would go with it
+  // to the popover itself (#196).
+  it('gives the focus to the first entry after Mark all read', async () => {
+    serveOneEntry();
+    server.use(
+      http.post(
+        '/api/v1/notifications/read-all',
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Notifications, 1 unread' }),
+    );
+    const entry = await screen.findByRole('menuitem', {
+      name: /Wang Fang joined/,
+    });
+    await vi.waitFor(() => expect(entry).toHaveFocus());
+    await user.tab({ shift: true });
+    await user.keyboard('{Enter}');
+
+    expect(screen.queryByRole('button', { name: 'Mark all read' })).toBeNull();
+    expect(entry).toHaveFocus();
+  });
+
+  // A slow list, as from an API waking: someone already on their way to
+  // Mark all read is not pulled back into the list when it arrives (#196).
+  it('leaves the focus where a key took it while the list loaded', async () => {
+    let arrive = () => {};
+    serveOneEntry(
+      {},
+      new Promise((resolve) => {
+        arrive = resolve;
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Notifications, 1 unread' }),
+    );
+    expect(await screen.findByText('Loading…')).toBeVisible();
+    await user.tab({ shift: true });
+    const markAllRead = screen.getByRole('button', { name: 'Mark all read' });
+    expect(markAllRead).toHaveFocus();
+
+    arrive();
+    expect(
+      await screen.findByRole('menuitem', { name: /Wang Fang joined/ }),
+    ).toBeVisible();
+    expect(markAllRead).toHaveFocus();
   });
 
   it('says a list that failed to load did, with Try again, never Nothing yet (#189)', async () => {

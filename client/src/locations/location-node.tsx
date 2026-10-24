@@ -65,7 +65,7 @@ export function LocationNode({
         <Typography sx={{ flexGrow: 1 }}>
           {location.name}
           {location.code && (
-            <Typography component="span" color="text.secondary">
+            <Typography component="span" sx={{ color: 'text.secondary' }}>
               {SEPARATOR}
               <Reference>{location.code}</Reference>
             </Typography>
@@ -75,8 +75,7 @@ export function LocationNode({
             <Typography
               component="span"
               variant="body2"
-              color="text.secondary"
-              sx={{ display: 'block' }}
+              sx={{ color: 'text.secondary', display: 'block' }}
             >
               {addressLine(location.address)}
             </Typography>

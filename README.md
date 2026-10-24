@@ -138,6 +138,24 @@ npm run dev
 No real SMTP provider is needed in development. All outbound mail is captured by
 Mailpit — open the inbox above to click verification and password-reset links.
 
+### From a phone on the same Wi-Fi
+
+1. In `client/`, start the dev server with `npm run dev -- --host`. Vite
+   prints a Network address, such as `http://192.168.1.23:5173`.
+2. Open that address on the phone: the IP address, not the Mac's name
+   (`….local`), which Vite refuses with "Blocked request".
+3. If the phone can't reach it, allow `node` in the Mac's firewall
+   (System Settings → Network → Firewall → Options), or press Allow when
+   macOS asks the first time.
+4. On an iPhone, Safari needs nothing more. Any other app (Chrome,
+   WeChat's browser) needs Local Network: Settings → Privacy & Security →
+   Local Network → that app on.
+
+The API needs nothing: the phone's requests go through Vite's `/api` proxy
+on the Mac. Mailpit's links name `localhost`, so open them on the Mac. On an
+iPhone Duo, walk each screen closed and open, and unfold it with a page
+open, since the layout changes under it.
+
 ---
 
 ## Commands
@@ -180,9 +198,40 @@ It starts its own API and client on ports 3200/5373 against the dev database,
 so the dev servers can stay as they are; compare a run before and after a
 visual change.
 
+To compare, copy `client/screenshots/out/` aside before the change and again
+after it, say to `tmp/<branch>/before/` and `after/`, then from `client/`
+`npm run screenshots:compare -- ../tmp/<branch>/before ../tmp/<branch>/after`.
+It writes one page, `compare.html` in the folder holding both, with each
+picture before beside after, grouped by page, language, mode and width, and
+pairs whose files are the same bytes marked identical. It uses only Node's own
+modules, and the page opens from that folder without a server. The folder
+holding both must be inside `tmp/`, which git ignores; for any other pair, say
+`screenshots/out` as the second run, give the page's folder with `--out`:
+`npm run screenshots:compare -- --out ../tmp/<branch> ../tmp/<branch>/before screenshots/out`.
+
 `docs/manual-checks.md` is the list to walk through by hand before a release and
 after a feature lands; every change that alters what a person sees or a rule they
 work under updates it.
+
+### Which tool, when
+
+| When                                   | Tool                                                                                   |
+|----------------------------------------|----------------------------------------------------------------------------------------|
+| Before every push                      | `scripts/verify.sh` (`--quick` while working, in full before a pull request)           |
+| A branch's start, and before reviews   | `npm outdated` in `server/` and `client/` (conventions.md, "Dependencies")             |
+| A change people will see               | `npm run screenshots` before and after, then `npm run screenshots:compare`             |
+| A change to what the API sends         | `npm run api` in `server/`; commit both generated files                                |
+| Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`         |
+| Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                     |
+| After a merge                          | `scripts/prune-branches.sh --yes`                                                      |
+| A test fails in code a PR didn't touch | Re-run once; if it passes, a "Flaky:" issue the same day (conventions.md, "Tests")     |
+| A server e2e test fails now and then   | `server/scripts/e2e-flake-hunt.sh <runs> <suite>`                                      |
+| A browser test fails                   | `npm run test:e2e:ui` in `client/`, to watch it step by step                           |
+| Looking inside the dev database        | `npm run db:studio` in `server/`                                                       |
+| Before a release tag                   | `/production-readiness` on the whole app; Actions → Performance; `perf:plans` at large |
+| Every Sunday, by itself                | Actions → Flake hunt (client unit tests five times, server e2e three)                  |
+| Every night and each month's 1st       | Actions → Backup, and Restore drill: check they are green                              |
+| Translations to review                 | `node scripts/i18n-review.mjs export --since <commit>`, then `import`                  |
 
 ---
 
@@ -223,7 +272,12 @@ build` and a publish directory of `dist`.
 
 Neither deploys itself (ADR-081). Once CI passes on a push to `main`,
 `.github/workflows/deploy.yml` deploys the API at that commit, waits until its
-`/health` names it, then deploys the static site at the same commit; the
+`/health` names it, then deploys the static site at the same commit, and last
+reads the live site: `/version.json` naming the commit, `/api/health/ready`
+saying the database is up, and `/favicon.svg` coming back as an image. Actions →
+Deploy → Run workflow does the same by hand for `main`'s newest commit whose CI
+passed, so a missed deploy never needs Render. The job runs in GitHub's
+`production` environment, limited to `main` and holding the deploy hooks; the
 settings it needs are in `docs/runbooks/render.md`, "Deploys".
 
 Everything runs on Render's free tier for now. What that costs the app,

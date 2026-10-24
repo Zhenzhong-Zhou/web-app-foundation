@@ -80,7 +80,7 @@ export function PartnerDocumentLanguages({
       })}
       saveDisabled={!changed}
       notice={
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'partners.documentLanguages.notice',
             defaultMessage:

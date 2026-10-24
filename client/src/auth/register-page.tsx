@@ -303,7 +303,7 @@ function ByInvitation({ announce }: { announce: boolean }) {
         direction="row"
         sx={{ alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}
       >
-        <Typography color="text.secondary">
+        <Typography sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'auth.byInvitation.haveAccount',
             defaultMessage: 'Already have an account?',
@@ -349,7 +349,7 @@ function Way({
         <Typography component="h2" variant="h6">
           {title}
         </Typography>
-        <Typography color="text.secondary">{children}</Typography>
+        <Typography sx={{ color: 'text.secondary' }}>{children}</Typography>
       </Box>
     </Box>
   );

@@ -278,7 +278,7 @@ export function MoveStockDialog({
                 were looking at, and re-picking it invites acting on a
                 different one. */}
             {row && (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {row.lotCode
                   ? intl.formatMessage(
                       {

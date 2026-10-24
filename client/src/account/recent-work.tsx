@@ -31,7 +31,7 @@ export function RecentWork({ entries }: { entries?: AuditRecord[] }) {
           { organization: session.organization.name },
         )}
       </Typography>
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'account.work.intro',
           defaultMessage:
@@ -39,7 +39,7 @@ export function RecentWork({ entries }: { entries?: AuditRecord[] }) {
         })}
       </Typography>
       {entries?.length === 0 && (
-        <Typography color="text.secondary">
+        <Typography sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'people.noActivity',
             defaultMessage: 'Nothing yet.',
@@ -59,8 +59,7 @@ export function RecentWork({ entries }: { entries?: AuditRecord[] }) {
               </Typography>
               <Typography
                 variant="body2"
-                color="text.secondary"
-                sx={{ whiteSpace: 'nowrap', pl: 2 }}
+                sx={{ color: 'text.secondary', whiteSpace: 'nowrap', pl: 2 }}
               >
                 {relativeTime(entry.createdAt)}
               </Typography>

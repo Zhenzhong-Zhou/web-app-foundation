@@ -52,7 +52,7 @@ export function NoOrganization() {
       <Typography variant="h4" component="h1">
         {greeting(intl, session?.user.name ?? '')}
       </Typography>
-      <Typography color="text.secondary" sx={{ mt: -1 }}>
+      <Typography sx={{ color: 'text.secondary', mt: -1 }}>
         {intl.formatMessage({
           id: 'home.noOrganization.lead',
           defaultMessage:
@@ -113,7 +113,7 @@ export function NoOrganization() {
         direction="row"
         sx={{ alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}
       >
-        <Typography color="text.secondary">
+        <Typography sx={{ color: 'text.secondary' }}>
           {intl.formatMessage({
             id: 'home.noOrganization.account',
             defaultMessage:

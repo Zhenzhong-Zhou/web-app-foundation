@@ -156,8 +156,7 @@ export function MembersSection({
         <Typography
           component="span"
           variant="caption"
-          color="text.secondary"
-          sx={{ ml: 0.5 }}
+          sx={{ color: 'text.secondary', ml: 0.5 }}
         >
           {intl.formatMessage({ id: 'members.you', defaultMessage: 'you' })}
         </Typography>
@@ -241,9 +240,9 @@ export function MembersSection({
                         {you(member)}
                         <Typography
                           variant="body2"
-                          color="text.secondary"
                           title={member.email}
                           sx={{
+                            color: 'text.secondary',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',

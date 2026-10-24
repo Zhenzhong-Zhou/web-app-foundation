@@ -193,7 +193,7 @@ export function AddBomLineDialog({
             {/* The point people miss: an external line still belongs on the
                 recipe. Leaving it off would make the recipe incomplete and
                 make bringing it in-house later look like a change (ADR-030). */}
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'boms.line.externalNote',
                 defaultMessage:

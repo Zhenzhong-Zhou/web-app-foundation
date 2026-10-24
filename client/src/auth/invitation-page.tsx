@@ -286,7 +286,7 @@ function Invitation({
           { organization },
         )}
       >
-        <Typography color="text.secondary">
+        <Typography sx={{ color: 'text.secondary' }}>
           {invitation.inviter
             ? intl.formatMessage(
                 {
@@ -475,7 +475,7 @@ function InvitationHeader({ invitation }: { invitation: InvitationPreview }) {
         {roles
           .filter((role) => role.description)
           .map((role) => (
-            <Typography key={role.name} color="text.secondary">
+            <Typography key={role.name} sx={{ color: 'text.secondary' }}>
               {roles.length === 1
                 ? role.description
                 : intl.formatMessage(
@@ -495,8 +495,7 @@ function InvitationHeader({ invitation }: { invitation: InvitationPreview }) {
         >
           <Typography
             variant="body2"
-            color="text.secondary"
-            sx={{ fontWeight: 600 }}
+            sx={{ color: 'text.secondary', fontWeight: 600 }}
           >
             {intl.formatMessage(
               { id: 'invitation.noteFrom', defaultMessage: 'From {inviter}' },
@@ -533,7 +532,7 @@ function invitedAs(
 function Until({ lastDay }: { lastDay: string }) {
   const intl = useIntl();
   return (
-    <Typography variant="body2" color="text.secondary">
+    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
       {intl.formatMessage(
         {
           id: 'invitation.until',
@@ -566,7 +565,7 @@ function OtherOrganization({ invitation }: { invitation: InvitationPreview }) {
         defaultMessage: 'You can’t join with this account yet',
       })}
     >
-      <Typography color="text.secondary">
+      <Typography sx={{ color: 'text.secondary' }}>
         {intl.formatMessage(
           {
             id: 'invitation.otherOrganization.body',
@@ -576,7 +575,7 @@ function OtherOrganization({ invitation }: { invitation: InvitationPreview }) {
           { email: invitation.email },
         )}
       </Typography>
-      <Typography color="text.secondary">
+      <Typography sx={{ color: 'text.secondary' }}>
         {invitation.inviter
           ? intl.formatMessage(
               {

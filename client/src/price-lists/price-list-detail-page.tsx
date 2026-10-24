@@ -254,7 +254,7 @@ export function PriceListDetailPage() {
         )}
       </Paper>
 
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({
           id: 'priceLists.detail.note',
           defaultMessage:

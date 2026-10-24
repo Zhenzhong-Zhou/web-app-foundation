@@ -345,8 +345,7 @@ export function ShipOrderDialog({
                       <Typography
                         component="span"
                         variant="body2"
-                        color="text.secondary"
-                        sx={{ ml: 0.5 }}
+                        sx={{ color: 'text.secondary', ml: 0.5 }}
                       >
                         {intl.formatMessage(
                           {
@@ -424,8 +423,7 @@ export function ShipOrderDialog({
                     >
                       <Typography
                         variant="body2"
-                        color="text.secondary"
-                        sx={{ flexGrow: 1 }}
+                        sx={{ color: 'text.secondary', flexGrow: 1 }}
                       >
                         {entry.lots.some((lot) => lot.taken)
                           ? entry.lots
@@ -580,7 +578,10 @@ export function ShipOrderDialog({
                           justifyContent: 'space-between',
                         }}
                       >
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography
+                          variant="caption"
+                          sx={{ color: 'text.secondary' }}
+                        >
                           {intl.formatMessage(
                             {
                               id: 'orders.ship.mustAddUp',
@@ -646,7 +647,7 @@ export function ShipOrderDialog({
               slotProps={{ htmlInput: { maxLength: 1000 } }}
             />
 
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'orders.ship.together',
                 defaultMessage:

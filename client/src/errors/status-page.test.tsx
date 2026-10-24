@@ -41,8 +41,9 @@ describe('StatusPage', () => {
   );
 
   // In sx, since Typography's color prop takes a palette name, not a path:
-  // color="text.secondary" drew nothing, and the note read as the message.
-  it('draws its note in the secondary text colour', () => {
+  // color="text.secondary" drew nothing, so the message was as dark as the
+  // title and the note read as the message (#196).
+  it('draws its message and its note in the secondary text colour', () => {
     const { getByText } = render(
       <ThemeProvider theme={themeFor('en')}>
         <StatusPage
@@ -54,8 +55,10 @@ describe('StatusPage', () => {
       </ThemeProvider>,
     );
 
-    expect(
-      getComputedStyle(getByText('This page tries again by itself.')).color,
-    ).toBe('var(--mui-palette-text-secondary)');
+    for (const text of ['Message', 'This page tries again by itself.']) {
+      expect(getComputedStyle(getByText(text)).color).toBe(
+        'var(--mui-palette-text-secondary)',
+      );
+    }
   });
 });

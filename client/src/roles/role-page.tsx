@@ -228,7 +228,7 @@ export function RolePage() {
               ))}
             </Box>
           ) : (
-            <Typography color="text.secondary">
+            <Typography sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'roles.told.none',
                 defaultMessage: 'Nothing from this role.',
@@ -364,7 +364,7 @@ function Holders({
               defaultMessage: 'Held by',
             })}
           </Typography>
-          <Typography color="text.secondary">
+          <Typography sx={{ color: 'text.secondary' }}>
             {intl.formatMessage(
               {
                 id: 'roles.holders.none',

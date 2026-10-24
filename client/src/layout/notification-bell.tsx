@@ -6,13 +6,14 @@ import {
   Button,
   Divider,
   IconButton,
-  Menu,
   MenuItem,
+  MenuList,
+  Popover,
   Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { type MouseEvent, useState } from 'react';
+import { type MouseEvent, useId, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
@@ -76,6 +77,10 @@ export function NotificationBell() {
   const [count, setCount] = useState(0);
   const [entries, setEntries] = useState<Notification[] | null>(null);
   const [failure, setFailure] = useState<unknown>(null);
+  // A key pressed while the list loads: the person is going somewhere, and
+  // the list arriving must not take the focus back from them (#196).
+  const [keyed, setKeyed] = useState(false);
+  const list = useRef<HTMLUListElement>(null);
   const { newer, outdated } = useNewVersion();
   const refusalWords = useFailureWords(
     isRevisionRefusal(failure) ? failure : null,
@@ -116,6 +121,7 @@ export function NotificationBell() {
 
   function open(event: MouseEvent<HTMLElement>) {
     setAnchor(event.currentTarget);
+    setKeyed(false);
     void load();
   }
 
@@ -136,6 +142,13 @@ export function NotificationBell() {
   }
 
   async function readAll() {
+    // Mark all read goes once nothing is unread, and the focus would go
+    // with it to the popover itself: onto the first entry instead (#196).
+    const first = list.current?.querySelector<HTMLElement>(
+      '[role="menuitem"]:not([aria-disabled="true"])',
+    );
+    (first ?? list.current)?.focus();
+
     setCount(0);
     setEntries(
       (current) =>
@@ -154,6 +167,7 @@ export function NotificationBell() {
     id: 'layout.notifications.title',
     defaultMessage: 'Notifications',
   });
+  const heading = useId();
 
   return (
     <>
@@ -170,6 +184,8 @@ export function NotificationBell() {
                 )
               : title
           }
+          aria-haspopup="dialog"
+          aria-expanded={anchor !== null}
           onClick={open}
         >
           {/* Nothing rather than 0: a Badge hiding a 0 still holds the
@@ -182,18 +198,40 @@ export function NotificationBell() {
         </IconButton>
       </Tooltip>
 
-      <Menu
+      {/* A popover holding a menu of the entries, not a menu: the title,
+          Mark all read and a failed list's Try again or Reload are not
+          entries, so they sit above the list, where Tab reaches them. In a
+          menu, Tab closed it and the arrows passed them by (#196). It opens
+          where MUI's Menu does, below the bell, and the list takes the
+          focus, its first entry once loaded, as the Menu's did; not once a
+          key has been pressed while it loads. */}
+      <Popover
         anchorEl={anchor}
         open={anchor !== null}
         onClose={() => setAnchor(null)}
-        slotProps={{ paper: { sx: { width: rem(380), maxHeight: 480 } } }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        disableAutoFocus
+        slotProps={{
+          // A dialog named by its title, marked as MUI's Dialog marks its
+          // own: it holds Mark all read beside the menu, and a screen
+          // reader then says where that button is (#196).
+          paper: {
+            role: 'dialog',
+            'aria-labelledby': heading,
+            'aria-modal': true,
+            onKeyDown: () => {
+              if (entries === null && failure === null) setKeyed(true);
+            },
+            sx: { width: rem(380), maxHeight: 480, py: 1 },
+          },
+        }}
       >
         <Stack
           direction="row"
           spacing={2}
           sx={{ alignItems: 'center', px: 2, py: 1 }}
         >
-          <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
+          <Typography id={heading} variant="subtitle2" sx={{ flexGrow: 1 }}>
             {title}
           </Typography>
 
@@ -239,59 +277,72 @@ export function NotificationBell() {
           </Box>
         )}
 
-        {entries === null && failure === null && (
-          <MenuItem disabled>
-            <Typography variant="body2">
-              {intl.formatMessage({
-                id: 'common.loading',
-                defaultMessage: 'Loading…',
-              })}
-            </Typography>
-          </MenuItem>
-        )}
-
-        {entries?.length === 0 && (
-          <MenuItem disabled>
-            <Typography variant="body2">
-              {intl.formatMessage({
-                id: 'layout.notifications.empty',
-                defaultMessage: 'Nothing yet.',
-              })}
-            </Typography>
-          </MenuItem>
-        )}
-
-        {entries?.map((entry) => (
-          <MenuItem
-            key={entry.id}
-            onClick={() => void choose(entry)}
-            sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1.5 }}
-          >
-            <Stack spacing={0.25}>
-              <Typography
-                variant="body2"
-                // Unread is the only state worth styling. A dot would need a
-                // column of its own for one bit of information.
-                sx={{ fontWeight: entry.readAt ? 400 : 600 }}
-              >
-                {/* The server's words: its SKU or licence number kept
-                    whole by its hyphens (ADR-081). */}
-                <ReferencesWhole text={entry.title} />
+        {/* Both off once keyed: with the item's alone off, MUI focuses
+            the list itself instead. */}
+        <MenuList
+          ref={list}
+          autoFocus={!keyed}
+          autoFocusItem={!keyed}
+          aria-labelledby={heading}
+          disablePadding
+        >
+          {entries === null && failure === null && (
+            <MenuItem disabled>
+              <Typography variant="body2">
+                {intl.formatMessage({
+                  id: 'common.loading',
+                  defaultMessage: 'Loading…',
+                })}
               </Typography>
+            </MenuItem>
+          )}
 
-              {entry.body && (
-                <Typography variant="caption" color="text.secondary">
-                  {entry.body}
+          {entries?.length === 0 && (
+            <MenuItem disabled>
+              <Typography variant="body2">
+                {intl.formatMessage({
+                  id: 'layout.notifications.empty',
+                  defaultMessage: 'Nothing yet.',
+                })}
+              </Typography>
+            </MenuItem>
+          )}
+
+          {entries?.map((entry) => (
+            <MenuItem
+              key={entry.id}
+              onClick={() => void choose(entry)}
+              sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1.5 }}
+            >
+              <Stack spacing={0.25}>
+                <Typography
+                  variant="body2"
+                  // Unread is the only state worth styling. A dot would need
+                  // a column of its own for one bit of information.
+                  sx={{ fontWeight: entry.readAt ? 400 : 600 }}
+                >
+                  {/* The server's words: its SKU or licence number kept
+                      whole by its hyphens (ADR-081). */}
+                  <ReferencesWhole text={entry.title} />
                 </Typography>
-              )}
 
-              <Typography variant="caption" color="text.secondary">
-                {relativeTime(entry.createdAt)}
-              </Typography>
-            </Stack>
-          </MenuItem>
-        ))}
-      </Menu>
+                {entry.body && (
+                  <Typography
+                    variant="caption"
+                    sx={{ color: 'text.secondary' }}
+                  >
+                    {entry.body}
+                  </Typography>
+                )}
+
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  {relativeTime(entry.createdAt)}
+                </Typography>
+              </Stack>
+            </MenuItem>
+          ))}
+        </MenuList>
+      </Popover>
     </>
   );
 }

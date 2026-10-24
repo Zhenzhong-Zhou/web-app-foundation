@@ -346,7 +346,7 @@ export function ProductGallery({
   );
 
   const limitNote = canEdit && (
-    <Typography variant="body2" color="text.secondary">
+    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
       {room <= 0
         ? intl.formatMessage(
             {
@@ -372,7 +372,7 @@ export function ProductGallery({
         id: 'products.gallery.title',
         defaultMessage: 'Images',
       })}
-      <Typography component="span" color="text.secondary" sx={{ ml: 1 }}>
+      <Typography component="span" sx={{ color: 'text.secondary', ml: 1 }}>
         {intl.formatMessage(
           {
             id: 'products.gallery.count',
@@ -573,7 +573,7 @@ export function ProductGallery({
 
           <Stack spacing={1.5}>
             {heading}
-            <Typography color="text.secondary">
+            <Typography sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'products.gallery.about',
                 defaultMessage:

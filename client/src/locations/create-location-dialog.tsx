@@ -184,7 +184,7 @@ export function CreateLocationDialog({
               slotProps={{ htmlInput: { maxLength: 64 } }}
             />
 
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
                 id: 'locations.create.leavesHoldStock',
                 defaultMessage:

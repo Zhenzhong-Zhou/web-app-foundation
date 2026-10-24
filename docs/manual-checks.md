@@ -451,7 +451,16 @@ folder by folder; these check what is already in place.
   `review/zh-Hans.xlsx`; each reviewer fills in the Correction column;
   `node scripts/i18n-review.mjs import review/fr-CA.xlsx` writes them
   back, refusing the whole file if any correction loses a placeholder;
-  then `npm run i18n:check` in client/ and server/, and one commit.
+  then `npm run i18n:check` in client/ and server/, and one commit. A
+  later round reads only what changed: `node scripts/i18n-review.mjs
+  export --since <commit>`, the commit the last round was exported at,
+  writes `review/fr-CA.since-<commit>.xlsx` and its Chinese pair beside
+  the full export, not over it. Its rows are the messages new since, or
+  whose English or translation changed, the last column saying which;
+  English changed only in its apostrophes or quotation marks is left out,
+  and the count printed. A commit git cannot find is refused. Import reads
+  either file, and names a corrected row whose message was removed since,
+  writing nothing until that row's Correction is cleared.
 - **MC-1406** In Français and in 简体中文, every area converted so far
   reads entirely in that language, with no English left on it:
   - signed out: sign-in, register, forgot-password, reset and verify,
@@ -2271,14 +2280,27 @@ as `docs/runbooks/render.md`, "Deploys", has them.
   push, sign in on the live app and leave one tab on Orders and one in a
   purchase order's Receive with a quantity typed. Actions → Deploy, for
   that commit, deploys the API, waits until The API names it, and only
-  then deploys the static site; `/api/health`'s `commit` and
-  `/version.json`'s `build` then name the same commit. Back in the tabs,
-  Receive saves and Orders still works. A tab opened before ADR-081 went
-  live stops there: its build has no version check and sends no revision,
-  which the API serves as today. From the next deploy on, coming back to
-  the Orders tab shows New version beside Help (MC-3401), Inventory from
-  the rail loads in full, and Help's foot names the commit `/api/health`
-  names (MC-3405).
+  then deploys the static site; Check the live site ends naming that
+  commit, the database up and `/favicon.svg` as `image/svg+xml`, and
+  `/api/health`'s `commit` and `/version.json`'s `build` name the same
+  commit. Back in the tabs, Receive saves and Orders still works. A tab
+  opened before ADR-081 went live stops there: its build has no version
+  check and sends no revision, which the API serves as today. From the
+  next deploy on, coming back to the Orders tab shows New version beside
+  Help (MC-3401), Inventory from the rail loads in full, and Help's foot
+  names the commit `/api/health` names (MC-3405).
+- **MC-3425** *(ADR-081)* Deploy by hand. Once merged, since GitHub offers
+  Run workflow only for a workflow on the default branch: Actions → Deploy
+  → Run workflow, on `main`. Its first step names the commit already live
+  and the CI run that passed it; the API deploys, the wait ends at once,
+  saying The API names that commit, and the static site deploys. Check
+  the live site passes at its first look, the commit being live already.
+  `/api/health`'s `commit` and `/version.json`'s `build` still name it.
+  The run shows the `production` environment. Run workflow again, Use
+  workflow from: any other branch: the job is skipped and nothing
+  deploys. Once `render.md`'s step 6 is done, GitHub → Settings →
+  Environments → `production` lists `main` alone under Deployment
+  branches, and holds both hooks; the first run by hand passes as above.
 
 ## 35. The product's name and icon
 
@@ -2310,6 +2332,35 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R54** *(the bell's Mark all read reached by the keyboard, #196)*
+  Tab to the bell and press Enter: the first entry takes the focus once
+  the list has loaded. Shift+Tab reaches Mark all read, and Tab from it
+  goes back to the entries; Escape closes the bell's menu and puts the
+  focus back on the bell. With the list failed to load, as MC-R43 does it,
+  Tab reaches Try again. It looks as before. Found by #196's axe pass.
+  With something unread, Shift+Tab to Mark all read and press Enter: the
+  entries turn read, Mark all read goes, and the first entry has the
+  focus, not the panel around it. In DevTools, Network, Slow 4G: open the
+  bell and, while it says Loading…, Shift+Tab to Mark all read; when the
+  entries arrive the focus stays on it. In Chrome's DevTools,
+  Accessibility, the bell has a popup, dialog, and is not expanded; open
+  it: expanded, and the panel is a dialog named Notifications, holding
+  Mark all read and the menu. VoiceOver on Mark all read says it is in
+  Notifications. All found by `/code-review` on #196.
+
+- **MC-R53** *(options under a heading, a group of their list, #196)* In
+  the search box type DEMO; in Chrome's DevTools, Accessibility, the list
+  holds a group named Orders with its results in it as options, and one
+  group for each other heading. Settings → Organization's time zone list
+  holds This device and All time zones the same way. Both look as before.
+  Found by #196's axe pass.
+
+- **MC-R52** *(money too long for a JavaScript number, #130)* On draft
+  SO-DEMO-3, Add item: any item, quantity 1, priced 98765432109876.5432
+  CAD, the most digits a price holds. The line's price and total, and the
+  order's total, each read $98,765,432,109,876.54, never .55: the amount
+  is written from its digits, not through a JavaScript number (ADR-025).
+
 - **MC-R51** *(a contact with neither an email nor a phone, #138)* On a
   partner, add a contact with a name and nothing in Email or Phone, and
   save: the dialog stays open and says Give an email or a phone, so the
@@ -2318,11 +2369,7 @@ first.
   contact puisse être joint; in 中文 请填写电子邮箱或电话，以便联系到对方.
   Fill in either and save: the contact is added. Found while running the
   full suite for ADR-075.
-- **MC-R52** *(money too long for a JavaScript number, #130)* On draft
-  SO-DEMO-3, Add item: any item, quantity 1, priced 98765432109876.5432
-  CAD, the most digits a price holds. The line's price and total, and the
-  order's total, each read $98,765,432,109,876.54, never .55: the amount
-  is written from its digits, not through a JavaScript number (ADR-025).
+
 - **MC-R50** *(each member's roles in the export, #180)* As the demo
   Owner, make a role named Sales, North in Settings → Roles, give it to a
   member beside the role they hold, then Download everything:
@@ -2332,6 +2379,22 @@ first.
   column alone could as well be three. The README's glossary says to count
   and join by `membership_roles.csv`, in English, Français and 中文. Found
   by `/code-review` on #176.
+
+- **MC-R49** *(colours given as a path, #196)* In light and in dark:
+  Home's detail lines, SO-DEMO-1's notes under its figures (not counting 1
+  voided shipment) and the bell's times are grey, not the main text
+  colour, and the order's crumb, SO-DEMO-1, is darker than Orders before
+  it. Take a return's Not on … line, Close this organization's download
+  again line, for an export more than a day old, and a draft invoice's
+  None yet under Tax are amber. In the search box, type DEMO and press ↓:
+  the highlighted result's grey line turns the main text colour, and back
+  to grey once the highlight moves on; Settings → Organization's time
+  zone list does the same, and its chosen zone keeps the main text
+  colour. Open the bell's menu and press ↓: the entry the keyboard is on
+  has its time in the main text colour, the others' stay grey. Found
+  while building ADR-081. On Home, as the demo Owner, Expiring soon's
+  Change the days is grey and underlined, on a phone too, where nothing
+  hovers (found by #196's usability walkthrough).
 
 - **MC-R48** *(typographic apostrophes in English, #184)* In English, as
   Tom Becker open a sale's invoice by its address, as MC-3320 does: You
@@ -3058,3 +3121,22 @@ first.
   JavaScript number: MC-R52.
 - 2026-10-23: #180, each member's roles in `membership_roles.csv`:
   MC-3301 extended, and MC-R50.
+- 2026-10-23: #196, colours given as a path drawn again, grey and amber:
+  MC-R49.
+- 2026-10-23: #196's comparison, options under a heading as a group of
+  their list: MC-R53.
+- 2026-10-23: #196's comparison, the bell's Mark all read and Try again
+  reached by the keyboard: MC-R54.
+- 2026-10-23: #196's ride-along, Deploy run by hand: MC-3425.
+- 2026-10-23: the live site checked after each deploy: MC-3424 and
+  MC-3425 extended.
+- 2026-10-23: #196's ride-along, the review export of only what changed
+  since a commit: MC-1405 extended.
+- 2026-10-23: #196's review, Deploy by hand only from `main`, in the
+  `production` environment: MC-3425 extended.
+- 2026-10-23: #196's review, the bell's focus after Mark all read and
+  while its list loads: MC-R54 extended.
+- 2026-10-23: #196's review, the bell's panel a dialog named
+  Notifications, the bell saying it opens one: MC-R54 extended.
+- 2026-10-23: #196's review, Home's Change the days always underlined:
+  MC-R49 extended.

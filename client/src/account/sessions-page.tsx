@@ -136,7 +136,7 @@ export function SessionsPage() {
     // Barely reachable: the caller's own session is always in this list. An
     // empty array means it disappeared between the request and the render —
     // worth saying rather than showing a blank box.
-    <Typography color="text.secondary" sx={{ p: 3 }}>
+    <Typography sx={{ color: 'text.secondary', p: 3 }}>
       {intl.formatMessage({
         id: 'account.sessions.empty',
         defaultMessage: 'No active sessions. Try refreshing.',

@@ -392,7 +392,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
                           <Typography
                             variant="caption"
                             component="div"
-                            color="text.secondary"
+                            sx={{ color: 'text.secondary' }}
                           >
                             <AuditDetails details={entry.details} />
                           </Typography>
