@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
 
 import { MailService } from './mail.service';
-import { MailBrand } from './mail-brand';
+import { answersAsPng, MAIL_MARK_CHECK, MailBrand } from './mail-brand';
 
 @Module({
-  providers: [MailService, MailBrand],
+  providers: [
+    MailService,
+    MailBrand,
+    { provide: MAIL_MARK_CHECK, useValue: answersAsPng },
+  ],
   exports: [MailService, MailBrand],
 })
 export class MailModule {}

@@ -52,6 +52,12 @@ Each is drawn on a 100 × 100 viewBox, except the link preview's picture.
 Each PNG is drawn at its own size from the SVG. The ICO holds its three
 sizes as PNGs, written by the script itself.
 
+If the mail mark ever changes, give its file a new name, in
+`scripts/brand-assets.mjs` and in `server/src/shared/mail/mail-brand.ts`,
+rather than drawing over `brand/mail-mark.png`: mail apps keep copies of
+the images they have fetched, so the old name would go on showing the old
+mark. The server shows the new one once the static site serves it.
+
 ## Making them
 
 ```bash

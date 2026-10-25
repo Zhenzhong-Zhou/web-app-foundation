@@ -10,6 +10,7 @@ import { OrganizationDeletionTimer } from './core/auth/organization-deletion.tim
 import { FilesPurgeTimer } from './core/files/files-purge.timer';
 import { InvitationsSweepTimer } from './core/invitations/invitations-sweep.timer';
 import { LicenceRemindersTimer } from './modules/product-licences/licence-reminders.timer';
+import { MailBrand } from './shared/mail/mail-brand';
 
 async function bootstrap() {
   // bufferLogs holds early boot logs until pino replaces the default logger,
@@ -33,6 +34,8 @@ async function bootstrap() {
   ]) {
     app.get(timer).start();
   }
+  // Whether the static site serves the emails' mark yet (ADR-082).
+  app.get(MailBrand).start();
 }
 
 void bootstrap();

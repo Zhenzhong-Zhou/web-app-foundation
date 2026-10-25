@@ -2331,9 +2331,10 @@ private window.
   Empty `VITE_APP_NAME` and restart: every tab ends web-app-foundation,
   none Foundation.
 - **MC-3503** The product's emails. In the repository's `.env`, set
-  `MAIL_FROM="Panivo <no-reply@localhost>"`, as `.env.example` has it,
-  and restart the API; keep `npm run dev` running in `client/`, which
-  serves the mark. With Mailpit open, ask for a reset on Forgot your
+  `MAIL_FROM="Panivo <no-reply@localhost>"`, as `.env.example` has it.
+  Start `npm run dev` in `client/`, which serves the mark, then restart
+  the API: it asks for the mark as it starts, and its log says The mail
+  mark answers. With Mailpit open, ask for a reset on Forgot your
   password: the email opens with the P on its small navy plate and
   Panivo in bold beside it, a thin line under both, then Hi and the name,
   every sentence as before. In Mailpit's Text tab, Panivo is the first
@@ -2342,11 +2343,15 @@ private window.
   private window), the deletion emails (MC-2302, MC-2402) and the
   operator's (MC-3107). An invitation (MC-3001) has none: it still opens
   with Join and the organization's name, and names Panivo only in its last
-  line. On the live site, with a phone's mail app in dark mode if one is
-  to hand, ask for a reset for your own address: the plate stands clear
-  on the dark background and Panivo reads light, not navy; with the mail
-  app blocking images, an empty box stands where the mark was and Panivo
-  still heads the email.
+  line. Stop the client and restart the API: the log says the mark does
+  not answer, and the next reset email opens with Panivo alone, no image
+  and no empty box beside it. Start the client again: within ten minutes
+  the log says the mark answers, and the next email shows it. On the live
+  site, with a phone's mail app in dark mode if one is to hand, ask for a
+  reset for your own address: the plate stands clear on the dark
+  background and Panivo reads light, not navy; with the mail app blocking
+  images, an empty box stands where the mark was and Panivo still heads
+  the email.
 
 ## Regressions
 
@@ -3182,3 +3187,5 @@ first.
   `scripts/brand-assets.mjs`: MC-3501 rewritten.
 - 2026-10-24: ADR-082, the product's emails open with its mark and
   name, an invitation's still with the organization's: MC-3503.
+- 2026-10-24: ADR-082, the emails' mark shown only once the static site
+  serves it, the name alone until then: MC-3503 extended.

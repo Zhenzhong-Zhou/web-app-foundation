@@ -12,6 +12,11 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../../src/database/database.module';
 import { permissions } from '../../src/database/schema';
+import {
+  MAIL_MARK_CHECK,
+  MailBrand,
+  type MarkCheck,
+} from '../../src/shared/mail/mail-brand';
 import { ResponseContractInterceptor } from './response-contract';
 
 /**
@@ -33,7 +38,12 @@ import { ResponseContractInterceptor } from './response-contract';
 export async function createTestApp(
   customize?: (builder: TestingModuleBuilder) => TestingModuleBuilder,
 ): Promise<INestApplication> {
-  const base = Test.createTestingModule({ imports: [AppModule] });
+  const base = Test.createTestingModule({ imports: [AppModule] })
+    // No client serves CLIENT_URL here, so the suite answers for the
+    // emails' mark (ADR-082), served unless a test says otherwise, and
+    // never reaches the address.
+    .overrideProvider(MAIL_MARK_CHECK)
+    .useValue(vi.fn<MarkCheck>(() => Promise.resolve(true)));
   const builder = customize ? customize(base) : base;
 
   const moduleRef = await builder.compile();
@@ -47,6 +57,9 @@ export async function createTestApp(
   // same port, so an occasional request is answered by something else
   // entirely (the stray 401/404/501s of issue #1).
   await app.listen(0, '127.0.0.1');
+  // The check main.ts starts, asked once, as the tests run each job
+  // themselves (HourlyTimer).
+  await app.get(MailBrand).check();
   return app;
 }
 

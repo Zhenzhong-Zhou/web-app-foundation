@@ -1,7 +1,12 @@
 import type { ConfigService } from '@nestjs/config';
 
 import type { Env } from '../../config/env';
-import { appNameOf, MailBrand } from './mail-brand';
+import {
+  answersAsPng,
+  appNameOf,
+  MailBrand,
+  type MarkCheck,
+} from './mail-brand';
 
 /** The footer names who sends it, and never shows an address (ADR-077). */
 describe('appNameOf', () => {
@@ -20,6 +25,7 @@ describe('appNameOf', () => {
 
 /** The header the product's emails open with (ADR-082). */
 describe('MailBrand', () => {
+  const MARK = 'https://app.example.com/brand/mail-mark.png';
   const MAIL = {
     to: 'mei.lin@example.com',
     subject: 'Confirm your email address',
@@ -27,7 +33,10 @@ describe('MailBrand', () => {
     html: '<p>Hi Mei Lin,</p>',
   };
 
-  function brand(mailFrom: string): MailBrand {
+  function brand(
+    mailFrom: string,
+    check: MarkCheck = () => Promise.resolve(true),
+  ): MailBrand {
     const settings: Partial<Env> = {
       MAIL_FROM: mailFrom,
       CLIENT_URL: 'https://app.example.com',
@@ -35,20 +44,68 @@ describe('MailBrand', () => {
     const config = {
       get: (key: keyof Env) => settings[key],
     } as unknown as ConfigService<Env, true>;
-    return new MailBrand(config);
+    return new MailBrand(config, check);
   }
 
-  it('opens with the mark from CLIENT_URL and the name beside it', () => {
-    const mail = brand('Panivo <no-reply@example.com>').withHeader(MAIL);
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('opens with the mark from CLIENT_URL and the name beside it, once the mark answers', async () => {
+    const panivo = brand('Panivo <no-reply@example.com>');
+    await panivo.check();
+    const mail = panivo.withHeader(MAIL);
 
     expect(mail.html).toMatch(/^<table role="presentation"/);
     expect(mail.html).toContain(
-      '<img src="https://app.example.com/brand/mail-mark.png" width="28" height="28" alt=""',
+      `<img src="${MARK}" width="28" height="28" alt=""`,
     );
     expect(mail.html).toContain('>Panivo</td>');
     expect(mail.html.endsWith('\n<p>Hi Mei Lin,</p>')).toBe(true);
     expect(mail.text).toBe('Panivo\n\nHi Mei Lin,');
     expect(mail.subject).toBe(MAIL.subject);
+  });
+
+  it('opens with the name alone while the mark does not answer', async () => {
+    const check = vi.fn<MarkCheck>(() => Promise.resolve(false));
+    const panivo = brand('Panivo <no-reply@example.com>', check);
+    await panivo.check();
+    const mail = panivo.withHeader(MAIL);
+
+    expect(check).toHaveBeenCalledWith(MARK);
+    expect(mail.html).toMatch(/^<table role="presentation"/);
+    expect(mail.html).not.toContain('<img');
+    expect(mail.html).toContain('>Panivo</td>');
+    expect(mail.text).toBe('Panivo\n\nHi Mei Lin,');
+  });
+
+  it('checks now and every ten minutes until the mark answers, and never waits for it', async () => {
+    vi.useFakeTimers();
+    let answer: (value: boolean) => void = () => undefined;
+    const check = vi.fn<MarkCheck>(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+    );
+    const panivo = brand('Panivo <no-reply@example.com>', check);
+
+    // The first answer still out: the header does not wait for it.
+    panivo.start();
+    expect(check).toHaveBeenCalledTimes(1);
+    expect(panivo.withHeader(MAIL).html).not.toContain('<img');
+    answer(false);
+
+    await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
+    expect(check).toHaveBeenCalledTimes(2);
+    answer(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(panivo.withHeader(MAIL).html).toContain('<img');
+
+    // Answered: no more checks.
+    await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
+    expect(check).toHaveBeenCalledTimes(2);
+    panivo.onApplicationShutdown();
   });
 
   it('escapes the name, set by whoever deploys it', () => {
@@ -61,5 +118,47 @@ describe('MailBrand', () => {
 
   it('leaves the email as it is when MAIL_FROM names no one', () => {
     expect(brand('no-reply@example.com').withHeader(MAIL)).toEqual(MAIL);
+  });
+});
+
+/** The mark answers only as a PNG: Render answers a missing file with index.html. */
+describe('answersAsPng', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function answering(response: Response | Error): void {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
+      response instanceof Error
+        ? Promise.reject(response)
+        : Promise.resolve(response),
+    );
+  }
+
+  it('is true for an image/png', async () => {
+    answering(
+      new Response('png', { headers: { 'Content-Type': 'image/png' } }),
+    );
+    expect(await answersAsPng('https://app.example.com/m.png')).toBe(true);
+  });
+
+  it('is false for index.html with a 200, a 404 or no answer', async () => {
+    answering(
+      new Response('<!doctype html>', {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      }),
+    );
+    expect(await answersAsPng('https://app.example.com/m.png')).toBe(false);
+
+    answering(
+      new Response('png', {
+        status: 404,
+        headers: { 'Content-Type': 'image/png' },
+      }),
+    );
+    expect(await answersAsPng('https://app.example.com/m.png')).toBe(false);
+
+    answering(new Error('connect ECONNREFUSED'));
+    expect(await answersAsPng('https://app.example.com/m.png')).toBe(false);
   });
 });

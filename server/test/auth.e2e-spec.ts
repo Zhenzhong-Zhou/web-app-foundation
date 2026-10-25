@@ -13,8 +13,14 @@ import {
   sessions,
   users,
 } from '../src/database/schema';
+import { escapeHtml } from '../src/shared/mail/escape-html';
+import {
+  MAIL_MARK_CHECK,
+  MailBrand,
+  type MarkCheck,
+} from '../src/shared/mail/mail-brand';
 import { createE2eApp, PASSWORD } from './utils/fixtures';
-import { expectMailBrand } from './utils/mail-brand';
+import { expectMailBrand, mailBrandOf } from './utils/mail-brand';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -287,6 +293,29 @@ describe('Auth (e2e)', () => {
       expect(sent).toBeDefined();
       expect(sent?.html).toContain('/verify-email?token=');
       expectMailBrand(app, sent);
+    });
+
+    // ADR-082: never a broken image, before the static site serves it.
+    it('heads it with the name alone while the mark does not answer', async () => {
+      const check = vi.mocked(app.get<MarkCheck>(MAIL_MARK_CHECK));
+      check.mockResolvedValueOnce(false);
+      await app.get(MailBrand).check();
+      try {
+        await authedAgent(app)
+          .post('/v1/auth/register')
+          .send(registration)
+          .expect(201);
+
+        const { mark, name } = mailBrandOf(app);
+        const sent = mail.lastTo(EMAIL);
+        expect(check).toHaveBeenLastCalledWith(mark);
+        expect(sent?.html).not.toContain('<img');
+        expect(sent?.html).toContain(`>${escapeHtml(name)}</td>`);
+        expect(sent?.text.startsWith(`${name}\n\n`)).toBe(true);
+      } finally {
+        // Served again, for the tests after this one.
+        await app.get(MailBrand).check();
+      }
     });
 
     it('verifies the address and spends the token', async () => {
