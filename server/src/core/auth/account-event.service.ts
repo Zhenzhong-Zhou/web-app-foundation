@@ -12,6 +12,7 @@ import {
 } from '../../database/schema';
 import { recipientLocale, t, type Translatable } from '../../i18n/translate';
 import { MailService } from '../../shared/mail/mail.service';
+import { MailBrand } from '../../shared/mail/mail-brand';
 import {
   NOTIFICATION_TYPES,
   NotificationType,
@@ -87,6 +88,7 @@ export class AccountEventService {
     @Inject(UNSAFE_GLOBAL_DB) private readonly db: Database,
     private readonly notifications: NotificationsService,
     private readonly mail: MailService,
+    private readonly brand: MailBrand,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -257,7 +259,7 @@ export class AccountEventService {
 
     if (!mail) return;
 
-    void this.mail.send(mail).catch((error: unknown) => {
+    void this.mail.send(this.brand.withHeader(mail)).catch((error: unknown) => {
       this.logger.error(
         `Could not email ${action} to ${userId}: ${String(error)}`,
       );

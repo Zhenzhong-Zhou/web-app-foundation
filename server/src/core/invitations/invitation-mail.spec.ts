@@ -1,19 +1,4 @@
-import { appNameOf, invitationMail } from './invitation-mail';
-
-/** The footer names who sends it, and never shows an address (ADR-077). */
-describe('appNameOf', () => {
-  it('reads the display name MAIL_FROM gives its address', () => {
-    expect(appNameOf('Foundation <no-reply@example.com>')).toBe('Foundation');
-    expect(appNameOf('"Northside Tools" <no-reply@example.com>')).toBe(
-      'Northside Tools',
-    );
-  });
-
-  it('is null for an address with no name', () => {
-    expect(appNameOf('no-reply@example.com')).toBeNull();
-    expect(appNameOf('<no-reply@example.com>')).toBeNull();
-  });
-});
+import { invitationMail } from './invitation-mail';
 
 describe('invitationMail', () => {
   const context = {

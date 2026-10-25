@@ -32,16 +32,6 @@ export interface InvitationMailContext {
 }
 
 /**
- * The name MAIL_FROM gives its address, `Foundation <no-reply@…>`, or null
- * when it gives none: a footer says nothing rather than an address.
- */
-export function appNameOf(mailFrom: string): string | null {
-  const match = /^\s*"?([^"<]*?)"?\s*<[^>]*>\s*$/.exec(mailFrom);
-  const name = match?.[1].trim();
-  return name ? name : null;
-}
-
-/**
  * The invitation (ADR-077): who invited them, by name and by address so it
  * can be told from a forgery, or the organization alone once the inviter
  * has gone; to which organization and as what, with what that lets them

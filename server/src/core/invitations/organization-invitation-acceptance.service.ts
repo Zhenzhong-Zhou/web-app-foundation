@@ -10,6 +10,7 @@ import { isUniqueViolation } from '../../database/errors';
 import { organizationInvitations, users } from '../../database/schema';
 import { t } from '../../i18n/translate';
 import { MailService } from '../../shared/mail/mail.service';
+import { MailBrand } from '../../shared/mail/mail-brand';
 import {
   AccountEventService,
   type EventMeta,
@@ -76,6 +77,7 @@ export class OrganizationInvitationAcceptanceService {
     private readonly events: AccountEventService,
     private readonly auth: AuthService,
     private readonly mail: MailService,
+    private readonly brand: MailBrand,
   ) {}
 
   /** Whether a live link is an organization invitation's. */
@@ -350,14 +352,16 @@ export class OrganizationInvitationAcceptanceService {
     if (!to) return;
     try {
       await this.mail.send(
-        organizationStartedMail({
-          to,
-          organizationName: invitation.organizationName,
-          name: owner.name,
-          email: owner.email,
-          verified: owner.emailVerified,
-          at: new Date(),
-        }),
+        this.brand.withHeader(
+          organizationStartedMail({
+            to,
+            organizationName: invitation.organizationName,
+            name: owner.name,
+            email: owner.email,
+            verified: owner.emailVerified,
+            at: new Date(),
+          }),
+        ),
       );
     } catch (error) {
       this.logger.error(

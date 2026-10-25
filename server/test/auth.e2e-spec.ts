@@ -14,6 +14,7 @@ import {
   users,
 } from '../src/database/schema';
 import { createE2eApp, PASSWORD } from './utils/fixtures';
+import { expectMailBrand } from './utils/mail-brand';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -285,6 +286,7 @@ describe('Auth (e2e)', () => {
       const sent = mail.lastTo(EMAIL);
       expect(sent).toBeDefined();
       expect(sent?.html).toContain('/verify-email?token=');
+      expectMailBrand(app, sent);
     });
 
     it('verifies the address and spends the token', async () => {
@@ -350,6 +352,7 @@ describe('Auth (e2e)', () => {
         .expect(202);
 
       expect(mail.lastTo(EMAIL)?.html).toContain('/reset-password?token=');
+      expectMailBrand(app, mail.lastTo(EMAIL));
     });
 
     it('answers identically for an unknown address, and sends nothing', async () => {
@@ -379,6 +382,11 @@ describe('Auth (e2e)', () => {
       // The likely reason someone is here is that an attacker holds their
       // password. A reset leaving that session live is not a recovery.
       expect(await db.select().from(sessions)).toHaveLength(0);
+      // And the security email it sends (ADR-037).
+      expectMailBrand(
+        app,
+        mail.sent.find((sent) => sent.subject === 'Your password was reset'),
+      );
 
       await authedAgent(app)
         .post('/v1/auth/login')

@@ -36,6 +36,7 @@ import {
   roleIdNamed,
   roleIdsOf,
 } from './utils/fixtures';
+import { expectMailBrand } from './utils/mail-brand';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -319,6 +320,7 @@ describe('Account deletion (e2e)', () => {
       expect(mail.lastTo(email)?.subject).toBe(
         `Your account will be deleted after ${longDay(day)}`,
       );
+      expectMailBrand(app, mail.lastTo(email));
 
       const events = await db
         .select({ action: accountEvents.action })
@@ -357,6 +359,7 @@ describe('Account deletion (e2e)', () => {
       expect(mail.lastTo(email)?.subject).toBe(
         'Your account will not be deleted',
       );
+      expectMailBrand(app, mail.lastTo(email));
     });
 
     /**
@@ -563,6 +566,7 @@ describe('Account deletion (e2e)', () => {
       expect(mail.lastTo(email)?.subject).toBe(
         'Your account could not be deleted',
       );
+      expectMailBrand(app, mail.lastTo(email));
 
       // The history says why the deletion went, not only that it was asked.
       const events = await db

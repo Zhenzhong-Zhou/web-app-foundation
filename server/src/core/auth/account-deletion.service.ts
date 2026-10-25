@@ -40,6 +40,7 @@ import {
 } from '../../database/schema';
 import { recipientLocale, t, type Translatable } from '../../i18n/translate';
 import { type Mail, MailService } from '../../shared/mail/mail.service';
+import { MailBrand } from '../../shared/mail/mail-brand';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { lockOwners } from '../authorization/giving';
 import { rolesOfMembers } from '../authorization/member-roles';
@@ -140,6 +141,7 @@ export class AccountDeletionService {
     private readonly account: AccountService,
     private readonly photos: AccountPhotoService,
     private readonly mail: MailService,
+    private readonly brand: MailBrand,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -698,12 +700,14 @@ export class AccountDeletionService {
   ): Promise<void> {
     try {
       await this.mail.send(
-        build({
-          locale: recipientLocale(person.locale, language),
-          to: person.email,
-          name: person.name,
-          clientUrl: this.config.get('CLIENT_URL', { infer: true }),
-        }),
+        this.brand.withHeader(
+          build({
+            locale: recipientLocale(person.locale, language),
+            to: person.email,
+            name: person.name,
+            clientUrl: this.config.get('CLIENT_URL', { infer: true }),
+          }),
+        ),
       );
     } catch (error) {
       // The deletion itself stands; a lost email is logged, not thrown, as

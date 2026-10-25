@@ -48,8 +48,9 @@ use; the reasons are in the sections named.
      ("What runs where"), `REGISTRATION=invitation` and, optionally,
      `OPERATOR_EMAIL` ("Registration and organization invitations").
      `MAIL_FROM` names the product, `Panivo <the address it has now>`: its
-     name is the sender an inbox shows, and the one each invitation is
-     signed with (ADR-077). The server refuses to boot on a wrong value,
+     name is the sender an inbox shows, the one each invitation is signed
+     with (ADR-077), and the one beside the mark atop the product's own
+     emails (ADR-082). The server refuses to boot on a wrong value,
      and the deploy log says which;
    - **Health Check Path** `/health/ready`; **Auto-Deploy** Off; its
      **Deploy Hook** into GitHub as `RENDER_API_DEPLOY_HOOK` ("Deploys").

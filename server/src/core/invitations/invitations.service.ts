@@ -23,6 +23,7 @@ import { requestTimeZone } from '../../database/tenant-context';
 import { TenantDb } from '../../database/tenant-db.service';
 import { recipientLocale, t, type Translatable } from '../../i18n/translate';
 import { MailService } from '../../shared/mail/mail.service';
+import { appNameOf } from '../../shared/mail/mail-brand';
 import { recordContext } from '../audit/audit-context';
 import { AuthTokenService } from '../auth/auth-token.service';
 import type { RequestContext } from '../auth/request-context';
@@ -47,7 +48,7 @@ import type {
   Invitation,
   InvitationLinkStatus,
 } from './dto/invitation-response.dto';
-import { appNameOf, invitationMail } from './invitation-mail';
+import { invitationMail } from './invitation-mail';
 import { inviterStillHere } from './inviter';
 import { lastDayOf, linkEnd } from './link-end';
 
