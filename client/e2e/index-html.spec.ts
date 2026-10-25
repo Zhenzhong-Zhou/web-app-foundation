@@ -206,6 +206,13 @@ for (const [stored, system] of [
     );
     const colours = await themeColors(page);
     expect(colours.map(rgb)).toEqual([background, background]);
+    // The browser's own defaults in that mode too, so whatever it draws
+    // before the app's styles apply is never its black on the dark page.
+    await expect(page.locator('html')).toHaveCSS('color-scheme', stored);
+    await expect(page.locator('html')).toHaveCSS(
+      'color',
+      rgb(stored === 'dark' ? '#E6E9EF' : '#141A24'),
+    );
 
     // The progress bar under the mark waits 250 ms after it, the delay
     // the app's spinner waited.

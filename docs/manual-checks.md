@@ -2395,6 +2395,8 @@ private window.
   beside or after them, until the sign-in page takes their place, still
   dark. With VoiceOver on, the mark reads Panivo, image, and the bar is
   not read. In 中文 too they stay while 中文's words load, then the page.
+  In Safari the same, and as the page comes, none of its text is ever
+  black on the dark page, not even for a moment.
   Sign in and reload, still on Slow 4G: the mark covers the whole window
   until Home has drawn, and the rail and Home appear together, never the
   rail beside an empty page or a grey block. Choose Light with the system
@@ -3448,3 +3450,6 @@ first.
 - 2026-10-25: ADR-082's pull request, nothing fading into the rail's foot
   while every link is above it, under a name that takes the foot to two
   lines: MC-3511 extended.
+- 2026-10-25: ADR-082's pull request, the browser's own defaults dark from
+  the first moment in Dark, so no text is ever black on the dark page as
+  it starts: MC-3506 extended.

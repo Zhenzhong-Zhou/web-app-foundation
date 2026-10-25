@@ -70,9 +70,13 @@
       whose highest, a tooltip's, is 1500. src/loading.js, whose tag
       vite.config.ts adds at the end of this <head>, sets the mode's class
       on <html>, the one MUI's theme then keeps (colorSchemeSelector
-      'class'). The mark is docs/brand's panivo-mark.svg and
-      panivo-mark-on-dark.svg, its shape and colours tokens.ts's MARK_SHAPE
-      and MARK, and its waits filled in with them by vite.config.ts.
+      'class'). The class also sets the browser's own defaults for the
+      mode, color-scheme and the text's colour, so in Dark anything drawn
+      before the app's styles apply is light on the dark page, never the
+      browser's black; WebKit has such a moment. The mark is docs/brand's
+      panivo-mark.svg and panivo-mark-on-dark.svg, its shape and colours
+      tokens.ts's MARK_SHAPE and MARK, and its waits filled in with them by
+      vite.config.ts.
 
       Still up 250 ms after the mark appears, the delay the app's spinner
       waits (INDICATOR_DELAY_MS), a thin bar slides under it, so a long
@@ -87,6 +91,14 @@
       app's is one of those files.
     -->
     <style>
+      html {
+        color-scheme: light;
+        color: %TEXT_LIGHT%;
+      }
+      html.dark {
+        color-scheme: dark;
+        color: %TEXT_DARK%;
+      }
       html,
       #loading-mark {
         background: %PAGE_LIGHT%;
@@ -168,14 +180,10 @@
         gap: 16px;
         max-width: 32em;
         padding: 0 16px;
-        color: %TEXT_LIGHT%;
         font:
           16px/1.5 system-ui,
           sans-serif;
         text-align: center;
-      }
-      html.dark #loading-mark .failed {
-        color: %TEXT_DARK%;
       }
       #loading-mark .failed p {
         margin: 0;
