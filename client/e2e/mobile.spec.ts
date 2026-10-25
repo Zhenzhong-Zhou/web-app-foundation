@@ -30,6 +30,32 @@ test('finds its way round on a phone, through the drawer', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Inventory' })).toBeHidden();
 });
 
+/**
+ * Held sideways, about 340 px tall, the phone cannot spare the foot its own
+ * place: the drawer scrolls as one, its foot after the links (ADR-082).
+ */
+test('scrolls the drawer as one on a phone held sideways, its foot last', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 844, height: 340 });
+  await page.goto('/inventory');
+  await page.getByRole('button', { name: 'Open navigation' }).click();
+
+  const drawer = page.getByRole('dialog', { name: 'Navigation' });
+  const foot = drawer.getByText(/^Powered by /);
+  await expect(drawer.getByRole('link', { name: 'Home' })).toBeInViewport();
+  await expect(foot).not.toBeInViewport();
+
+  await foot.scrollIntoViewIfNeeded();
+  await expect(foot).toBeInViewport({ ratio: 1 });
+  const last = drawer.getByRole('link').last();
+  const [link, line] = await Promise.all([
+    last.boundingBox(),
+    foot.boundingBox(),
+  ]);
+  expect(line!.y).toBeGreaterThanOrEqual(link!.y + link!.height);
+});
+
 test('signs in from a phone, with the password shown to check it', async ({
   browser,
 }) => {

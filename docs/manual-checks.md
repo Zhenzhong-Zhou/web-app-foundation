@@ -2474,7 +2474,9 @@ private window.
   Folded: the P alone; hover it, or Tab to it, and a tooltip says Powered
   by Panivo, which VoiceOver reads. Below 1200 px, the menu drawer ends
   the same way, its foot pinned too: on a phone it is in view as the
-  drawer opens, with the links scrolling above it. In Français, Propulsé par; in 中文 with its setting, 由, the
+  drawer opens, with the links scrolling above it. Hold the phone
+  sideways (or DevTools at 844 × 340): the drawer scrolls as one, Home at
+  its top and the foot after the last link, with no fade. In Français, Propulsé par; in 中文 with its setting, 由, the
   P, 品桥, 提供支持, on one line.
 - **MC-3512** Help's foot. Open Help and scroll to its end: Panivo ·
   Version 0.7.0 · build … · the day, and under it the © line, small and
@@ -3419,6 +3421,9 @@ first.
 - 2026-10-25: ADR-082's review, every link above the rail's foot at
   1440 × 900, and the links fading into the foot while more run on under
   it: MC-3511 extended.
+- 2026-10-25: ADR-082's review, the foot pinned only on a window taller
+  than about 500 px, the drawer scrolling as one on a phone held
+  sideways: MC-3511 extended.
 - 2026-10-25: #126, Link a return's select drawn once the returns arrive:
   MC-R58.
 - 2026-10-25: #163, To ship and To receive count only orders with something

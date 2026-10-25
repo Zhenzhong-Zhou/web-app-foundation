@@ -14,6 +14,14 @@ export const RAIL_WIDTH = rem(232);
 export const RAIL_FOLDED_WIDTH = rem(64);
 
 /**
+ * A window too short to spare the foot its own place: a phone held
+ * sideways is about 340 px tall. Below about 500 px the rail and the menu
+ * drawer scroll as one, the foot after the links, so the links keep the
+ * room; above it the foot is pinned, in view at any height (ADR-082).
+ */
+export const SHORT_WINDOW = '@media (max-height: 499.98px)';
+
+/**
  * The links fading into the rail just above its foot while more of them
  * run on under it (useMoreBelow), so the rail reads as one that scrolls
  * (ADR-082): a fade, since a shadow hardly shows on the dark rail. On the

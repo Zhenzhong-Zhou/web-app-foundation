@@ -57,7 +57,12 @@ import { IdleGuard } from './idle-guard';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
 import { OrganizationMark } from './organization-mark';
-import { RAIL_FOLDED_WIDTH, RAIL_MORE_BELOW, RAIL_WIDTH } from './rail';
+import {
+  RAIL_FOLDED_WIDTH,
+  RAIL_MORE_BELOW,
+  RAIL_WIDTH,
+  SHORT_WINDOW,
+} from './rail';
 import { RailTop } from './rail-top';
 import { SideNav } from './side-nav';
 import { MAIN_CONTENT_ID, SkipLink } from './skip-link';
@@ -266,7 +271,7 @@ function Frame() {
           full height so its colour does too; the inner one stays in view
           while the page scrolls. Its links scroll on their own above its
           foot, which is pinned, so Powered by is in view at any window
-          height (ADR-082). */}
+          height above about 500 px (ADR-082). */}
       <Box
         component="aside"
         sx={{
@@ -283,6 +288,8 @@ function Frame() {
             height: '100dvh',
             display: 'flex',
             flexDirection: 'column',
+            // Too short to pin the foot: all of it scrolls, as one.
+            [SHORT_WINDOW]: { overflowY: 'auto', overflowX: 'hidden' },
           }}
         >
           {/* The organization's at the top, the product's at the foot
@@ -294,6 +301,7 @@ function Frame() {
               minHeight: 0,
               overflowY: 'auto',
               overflowX: 'hidden',
+              [SHORT_WINDOW]: { flex: 'none', overflow: 'visible' },
             }}
           >
             <Box
@@ -611,11 +619,17 @@ function Frame() {
             },
           }}
         >
-          {/* Its links scroll above its foot, pinned as the rail's is
-              (ADR-082). */}
+          {/* Its links scroll above its foot, pinned as the rail's is, on
+              a window tall enough to spare it (ADR-082). */}
           <Box
             ref={drawerScroller}
-            sx={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}
+            sx={{
+              flex: '1 1 auto',
+              minHeight: 0,
+              overflowY: 'auto',
+              // Too short to pin the foot: the drawer scrolls, foot and all.
+              [SHORT_WINDOW]: { flex: 'none', overflow: 'visible' },
+            }}
           >
             <Box ref={drawerContent}>
               <Stack
