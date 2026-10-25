@@ -158,10 +158,11 @@ const SCREENS: Screen[] = [
   },
   {
     // A MacBook's window, 1440 × 900: every link above the rail's foot,
-    // with nothing fading into it. At a laptop's 1280 × 800 the foot is
-    // pinned in view without scrolling the rail, and the links run on
-    // under it, fading into it, until the rail is scrolled to their end
-    // (ADR-082).
+    // with nothing fading into it, under the build's own name too, as CI
+    // has it, which takes the foot to two lines. At a laptop's 1280 × 800
+    // the foot is pinned in view without scrolling the rail, and the links
+    // run on under it, fading into it, until the rail is scrolled to their
+    // end (ADR-082).
     name: 'the rail at 1440 × 900, every link above its foot',
     path: () => '/orders',
     open: async (page) => {

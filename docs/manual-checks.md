@@ -2465,7 +2465,9 @@ private window.
 - **MC-3511** The rail's foot. At the bottom of the rail, pinned: a
   line, then Powered by, the P and Panivo, small, Panivo brighter than the
   words. At 1440 × 900, a MacBook's window, every link is above the line,
-  Price lists the last, with nothing fading into it. At 1280 × 800 the
+  Price lists the last, with nothing fading into it; so too under the
+  build's own name, web-app-foundation, where VITE_APP_NAME is not set,
+  which takes the foot to two lines. At 1280 × 800 the
   foot is in view without scrolling, open and folded, and the links run on
   under it, the last in view fading into the rail just above the line;
   scroll the rail to its end and the fade goes. Make the window shorter,
@@ -3443,3 +3445,6 @@ first.
   accepted: MC-R64.
 - 2026-10-25: #129, the missing-name refusal, a line's price notice and the
   held-stock refusal wholly in the reader's language: MC-R63.
+- 2026-10-25: ADR-082's pull request, nothing fading into the rail's foot
+  while every link is above it, under a name that takes the foot to two
+  lines: MC-3511 extended.
