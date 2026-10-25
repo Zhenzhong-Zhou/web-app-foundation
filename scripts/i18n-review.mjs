@@ -38,6 +38,9 @@
  * zlib. It uses the FormatJS CLI and ICU parser each package already has,
  * so run `npm install` in client/ and server/ first.
  *
+ * Its tests, in i18n-review.test.mjs, run it on a small catalogue in a
+ * temporary folder: `node --test scripts/`.
+ *
  * The workbooks are working files, not the source of truth: review/ is
  * git-ignored, and what matters lands as a commit to the catalogues.
  */
@@ -424,7 +427,7 @@ const letter = (index) =>
     : letter(Math.floor(index / 26) - 1) + letter(index % 26);
 
 /** A one-sheet .xlsx: bold header, frozen top row, filter, wrapped text. */
-function workbook(sheetName, columns, rows) {
+export function workbook(sheetName, columns, rows) {
   const last = `${letter(columns.length - 1)}${rows.length}`;
   const cells = rows
     .map(
@@ -485,7 +488,7 @@ function workbook(sheetName, columns, rows) {
 }
 
 /** The sheet name and every row's cell text, from a workbook Excel or Sheets saved. */
-function readWorkbook(buffer) {
+export function readWorkbook(buffer) {
   const files = unzip(buffer);
   const text = (name) => files.get(name)?.toString("utf8");
 
@@ -656,17 +659,24 @@ function unzip(buffer) {
 
 // ------------------------------------------------------------------- main
 
-const [command, ...args] = process.argv.slice(2);
+// Run, not imported: its tests import the workbook's writer and reader.
+if (import.meta.main) {
+  const [command, ...args] = process.argv.slice(2);
 
-if (command === "export" && args.length === 0) {
-  exportWorkbooks();
-} else if (command === "export" && args[0] === "--since" && args.length === 2) {
-  exportWorkbooks(args[1]);
-} else if (command === "import" && args[0]) {
-  importWorkbook(path.resolve(args[0]));
-} else {
-  console.error(
-    "Usage:\n  node scripts/i18n-review.mjs export\n  node scripts/i18n-review.mjs export --since <commit>\n  node scripts/i18n-review.mjs import review/fr-CA.xlsx",
-  );
-  process.exit(1);
+  if (command === "export" && args.length === 0) {
+    exportWorkbooks();
+  } else if (
+    command === "export" &&
+    args[0] === "--since" &&
+    args.length === 2
+  ) {
+    exportWorkbooks(args[1]);
+  } else if (command === "import" && args[0]) {
+    importWorkbook(path.resolve(args[0]));
+  } else {
+    console.error(
+      "Usage:\n  node scripts/i18n-review.mjs export\n  node scripts/i18n-review.mjs export --since <commit>\n  node scripts/i18n-review.mjs import review/fr-CA.xlsx",
+    );
+    process.exit(1);
+  }
 }

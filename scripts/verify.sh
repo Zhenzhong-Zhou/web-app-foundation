@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # What CI runs, on this machine and in CI's order: the Markdown check, the
-# server's checks and both its suites, then the client's checks, unit tests
-# and the Playwright suite. Stops at the first failure, so the last heading
-# printed is what failed.
+# server's checks and both its suites, the tests of scripts/ itself, then
+# the client's checks, unit tests and the Playwright suite. Stops at the
+# first failure, so the last heading printed is what failed.
 #
 #   scripts/verify.sh            everything, about as long as CI takes
 #   scripts/verify.sh --quick    format, lint, types, checks, build and unit
@@ -60,6 +60,14 @@ contract() {
   fi
 }
 
+# The scripts' own tests, on Node's runner (node --test finds each
+# *.test.mjs): scripts/ sits outside both packages, so neither one's Vitest
+# runs them. i18n-review.test.mjs uses both packages' node_modules.
+scripts_tests() {
+  step 'Scripts: their own tests'
+  node --test scripts/
+}
+
 # A check that exits 3 when it cannot run, having said why: reported and
 # gone on from, as Docker not running is. Any other failure stops here.
 may_skip() {
@@ -112,6 +120,7 @@ if $quick; then
     && npm run checks && npm run build && npm test)
 
   contract
+  scripts_tests
   against_main
 
   step 'Client: format, lint, catalogues, build, unit tests'
@@ -121,6 +130,7 @@ else
   (cd server && npm run verify)
 
   contract
+  scripts_tests
   against_main
 
   step 'Client: format, lint, catalogues, build, unit tests, Playwright'

@@ -214,6 +214,12 @@ jobs:
         run: npm run i18n:check
         working-directory: server
 
+      # The tests of scripts/ itself, on Node's runner, since neither
+      # package's Vitest finds them. Here, where both packages are
+      # installed: i18n-review.mjs uses each one's FormatJS.
+      - name: Test the repository's scripts
+        run: node --test scripts/
+
       # From an empty database every time, which is the path production takes
       # and the one that rarely gets exercised locally.
       - name: Migrate
