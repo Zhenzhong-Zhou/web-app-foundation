@@ -2462,9 +2462,13 @@ private window.
   Expand navigation and the name. Click or tap it: the rail opens.
 - **MC-3511** The rail's foot. At the bottom of the rail, pinned: a
   line, then Powered by, the P and Panivo, small, Panivo brighter than the
-  words. At 1280 × 800 it is in view without scrolling, open and folded;
-  make the window shorter, to about 500 px: the links scroll on their own
-  above the line, cut at it, and the foot stays put. On the dark rail the P
+  words. At 1440 × 900, a MacBook's window, every link is above the line,
+  Price lists the last, with nothing fading into it. At 1280 × 800 the
+  foot is in view without scrolling, open and folded, and the links run on
+  under it, the last in view fading into the rail just above the line;
+  scroll the rail to its end and the fade goes. Make the window shorter,
+  to about 500 px: the links scroll on their own above the line, fading
+  into it, and the foot stays put. On the dark rail the P
   is white-stemmed in Light and Dark alike; choose the light rail
   (Branding): in Light the navy P, in Dark the white one, clear on each.
   Folded: the P alone; hover it, or Tab to it, and a tooltip says Powered
@@ -3412,6 +3416,9 @@ first.
   type, the plate growing with the text size: MC-3510 extended.
 - 2026-10-25: ADR-082's review, the rail's top a link to Home again, as
   the corner was before it moved: MC-3510 extended.
+- 2026-10-25: ADR-082's review, every link above the rail's foot at
+  1440 × 900, and the links fading into the foot while more run on under
+  it: MC-3511 extended.
 - 2026-10-25: #126, Link a return's select drawn once the returns arrive:
   MC-R58.
 - 2026-10-25: #163, To ship and To receive count only orders with something

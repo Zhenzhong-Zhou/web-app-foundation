@@ -57,11 +57,12 @@ import { IdleGuard } from './idle-guard';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
 import { OrganizationMark } from './organization-mark';
-import { RAIL_FOLDED_WIDTH, RAIL_WIDTH } from './rail';
+import { RAIL_FOLDED_WIDTH, RAIL_MORE_BELOW, RAIL_WIDTH } from './rail';
 import { RailTop } from './rail-top';
 import { SideNav } from './side-nav';
 import { MAIN_CONTENT_ID, SkipLink } from './skip-link';
 import { UnverifiedBannerContext } from './unverified-banner-context';
+import { useMoreBelow } from './use-more-below';
 
 /**
  * Where the rail appears (ADR-055). Below it the same groups open in a
@@ -170,6 +171,16 @@ function Frame() {
   const theme = useTheme();
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   const [drawer, setDrawer] = useState(false);
+  const {
+    scroller: railScroller,
+    content: railContent,
+    more: railMore,
+  } = useMoreBelow();
+  const {
+    scroller: drawerScroller,
+    content: drawerContent,
+    more: drawerMore,
+  } = useMoreBelow();
   const [folded, setFolded] = useState(storedFolded);
   const help = useHelp();
   const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
@@ -275,27 +286,39 @@ function Frame() {
           }}
         >
           {/* The organization's at the top, the product's at the foot
-              (ADR-082). */}
+              (ADR-082), its shadow saying when more links run on under it. */}
           <Box
+            ref={railScroller}
             sx={{
               flex: '1 1 auto',
               minHeight: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 0.5,
               overflowY: 'auto',
               overflowX: 'hidden',
-              px: 1,
-              pt: 1.5,
-              pb: 1,
             }}
           >
-            <RailTop name={orgName} folded={folded} onToggle={toggleFolded} />
+            <Box
+              ref={railContent}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0.5,
+                px: 1,
+                pt: 1,
+                pb: 1,
+              }}
+            >
+              <RailTop name={orgName} folded={folded} onToggle={toggleFolded} />
 
-            <SideNav folded={folded} />
+              <SideNav folded={folded} />
+            </Box>
           </Box>
 
-          <Box sx={{ flex: 'none', px: 1, pb: 1.5 }}>
+          <Box
+            sx={[
+              { flex: 'none', position: 'relative', px: 1, pb: 1 },
+              railMore && RAIL_MORE_BELOW,
+            ]}
+          >
             <PoweredBy folded={folded} />
           </Box>
         </Box>
@@ -590,31 +613,41 @@ function Frame() {
         >
           {/* Its links scroll above its foot, pinned as the rail's is
               (ADR-082). */}
-          <Box sx={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
-            <Stack
-              direction="row"
-              sx={{ alignItems: 'center', pl: 1.5, pb: 1, gap: 1 }}
-            >
-              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                <OrganizationMark name={orgName} onRail />
-              </Box>
-              <IconButton
-                aria-label={intl.formatMessage({
-                  id: 'layout.closeNavigation',
-                  defaultMessage: 'Close navigation',
-                })}
-                onClick={() => setDrawer(false)}
-                sx={{ color: 'rail.text' }}
+          <Box
+            ref={drawerScroller}
+            sx={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}
+          >
+            <Box ref={drawerContent}>
+              <Stack
+                direction="row"
+                sx={{ alignItems: 'center', pl: 1.5, pb: 1, gap: 1 }}
               >
-                <CloseIcon />
-              </IconButton>
-            </Stack>
+                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                  <OrganizationMark name={orgName} onRail />
+                </Box>
+                <IconButton
+                  aria-label={intl.formatMessage({
+                    id: 'layout.closeNavigation',
+                    defaultMessage: 'Close navigation',
+                  })}
+                  onClick={() => setDrawer(false)}
+                  sx={{ color: 'rail.text' }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Stack>
 
-            <SideNav onNavigate={() => setDrawer(false)} />
+              <SideNav onNavigate={() => setDrawer(false)} />
+            </Box>
           </Box>
 
-          {/* Ending as the rail does (ADR-082). */}
-          <Box sx={{ flex: 'none', pt: 1, pb: 0.5 }}>
+          {/* Ending as the rail does, its shadow too (ADR-082). */}
+          <Box
+            sx={[
+              { flex: 'none', position: 'relative', pt: 1, pb: 0.5 },
+              drawerMore && RAIL_MORE_BELOW,
+            ]}
+          >
             <PoweredBy />
           </Box>
         </Drawer>

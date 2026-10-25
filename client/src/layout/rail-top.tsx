@@ -75,7 +75,7 @@ export function RailTop({
     return (
       <Stack
         direction="row"
-        sx={{ alignItems: 'center', gap: 0.75, minHeight: 44, mb: 1 }}
+        sx={{ alignItems: 'center', gap: 0.75, minHeight: 44, mb: 0.5 }}
       >
         {/* The way home, as the top-left corner is (ADR-058), named by the
             logo or the name it shows, and that name in full on hover where
@@ -126,7 +126,7 @@ export function RailTop({
   const shown = square === false ? initials : null;
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.5 }}>
       <Tooltip
         title={intl.formatMessage({
           id: 'layout.expandNavigation',

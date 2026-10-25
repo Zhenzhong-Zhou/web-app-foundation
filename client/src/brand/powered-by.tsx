@@ -31,7 +31,7 @@ export function PoweredBy({ folded = false }: { folded?: boolean }) {
         sx={{
           borderTop: 1,
           borderColor: 'rail.divider',
-          pt: 1.5,
+          pt: 1,
           display: 'flex',
           justifyContent: 'center',
         }}
@@ -65,7 +65,7 @@ export function PoweredBy({ folded = false }: { folded?: boolean }) {
       sx={{
         borderTop: 1,
         borderColor: 'rail.divider',
-        pt: 1.5,
+        pt: 1,
         px: 1.5,
         color: 'rail.muted',
         display: 'flex',

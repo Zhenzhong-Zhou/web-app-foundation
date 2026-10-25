@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import type { APIRequestContext, Page } from '@playwright/test';
+import type { APIRequestContext, Locator, Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import {
@@ -64,6 +64,14 @@ const heading = (page: Page) => page.getByRole('heading', { level: 1 });
 
 /** A laptop's window, which the rail's links outgrow. */
 const LAPTOP = { width: 1280, height: 800 };
+
+/** Whether the links fade into the rail's foot, as they do while more run on under it. */
+const fades = (foot: Locator) =>
+  foot.evaluate(
+    (line) =>
+      getComputedStyle(line.parentElement!, '::before').backgroundImage !==
+      'none',
+  );
 
 const help = (page: Page) =>
   page.getByRole('complementary', { name: 'Help', exact: true });
@@ -158,6 +166,36 @@ const SCREENS: Screen[] = [
       await expect(page.getByText(/^Powered by /)).toBeInViewport({
         ratio: 1,
       });
+    },
+    ready: (page) => page.getByText(/^Powered by /),
+  },
+  {
+    // A MacBook's window, 1440 × 900: every link above the rail's foot,
+    // with nothing fading into it. At a laptop's 1280 × 800 the links run
+    // on under the foot, fading into it, until the rail is scrolled to
+    // their end (ADR-082).
+    name: 'the rail at 1440 × 900, every link above its foot',
+    path: () => '/orders',
+    open: async (page) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      const foot = page.getByText(/^Powered by /);
+      const last = page
+        .getByRole('navigation', { name: 'Settings' })
+        .getByRole('link')
+        .last();
+      await expect(last).toBeInViewport({ ratio: 1 });
+      const [link, line] = await Promise.all([
+        last.boundingBox(),
+        foot.boundingBox(),
+      ]);
+      expect(link!.y + link!.height).toBeLessThanOrEqual(line!.y);
+      await expect.poll(() => fades(foot)).toBe(false);
+
+      await page.setViewportSize(LAPTOP);
+      await expect(foot).toBeInViewport({ ratio: 1 });
+      await expect.poll(() => fades(foot)).toBe(true);
+      await last.scrollIntoViewIfNeeded();
+      await expect.poll(() => fades(foot)).toBe(false);
     },
     ready: (page) => page.getByText(/^Powered by /),
   },
