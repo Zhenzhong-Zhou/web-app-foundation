@@ -157,23 +157,11 @@ const SCREENS: Screen[] = [
     ready: (page) => help(page).getByText(/ · Version /),
   },
   {
-    // Its foot pinned below the links, in view at a laptop's height
-    // without scrolling the rail (ADR-082).
-    name: 'the rail open, its foot in view',
-    path: () => '/orders',
-    open: async (page) => {
-      await page.setViewportSize(LAPTOP);
-      await expect(page.getByText(/^Powered by /)).toBeInViewport({
-        ratio: 1,
-      });
-    },
-    ready: (page) => page.getByText(/^Powered by /),
-  },
-  {
     // A MacBook's window, 1440 × 900: every link above the rail's foot,
-    // with nothing fading into it. At a laptop's 1280 × 800 the links run
-    // on under the foot, fading into it, until the rail is scrolled to
-    // their end (ADR-082).
+    // with nothing fading into it. At a laptop's 1280 × 800 the foot is
+    // pinned in view without scrolling the rail, and the links run on
+    // under it, fading into it, until the rail is scrolled to their end
+    // (ADR-082).
     name: 'the rail at 1440 × 900, every link above its foot',
     path: () => '/orders',
     open: async (page) => {
