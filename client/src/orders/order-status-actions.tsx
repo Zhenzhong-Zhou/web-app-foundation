@@ -66,12 +66,19 @@ export function OrderStatusActions({
           </Button>
         ))}
 
+      {/* Close order is filled only once nothing is left to ship or
+          receive: while goods are due, the state waits for them, not for
+          closing (conventions.md, Responsive layout; #158). */}
       {NEXT_STATUSES[order.status]
         .filter((next) => next !== 'cancelled')
         .map((next) => (
           <Button
             key={next}
-            variant={quiet ? 'outlined' : 'contained'}
+            variant={
+              quiet || (next === 'fulfilled' && !order.fullyFulfilled)
+                ? 'outlined'
+                : 'contained'
+            }
             fullWidth={stacked}
             disabled={working}
             onClick={(event) => {
