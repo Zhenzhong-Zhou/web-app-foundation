@@ -1,6 +1,7 @@
 import { ThemeProvider } from '@mui/material/styles';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import { drawnIn } from '../test/drawn-colour';
@@ -19,9 +20,11 @@ function renderTop({
 }) {
   const onToggle = vi.fn();
   const view = renderWithAuth(
-    <ThemeProvider theme={themeFor('en')}>
-      <RailTop name={name} folded={folded} onToggle={onToggle} />
-    </ThemeProvider>,
+    <MemoryRouter>
+      <ThemeProvider theme={themeFor('en')}>
+        <RailTop name={name} folded={folded} onToggle={onToggle} />
+      </ThemeProvider>
+    </MemoryRouter>,
     {
       organization: {
         name,
@@ -58,22 +61,29 @@ const plate = () =>
  * name with the fold button, and folded, one plate that expands it.
  */
 describe('RailTop', () => {
-  it('shows the name with the fold button, open, where there is no logo', async () => {
+  it('shows the name, a link home, with the fold button, open, where there is no logo', async () => {
     const { onToggle } = renderTop({ folded: false });
 
-    expect(screen.getByText('WIDE Naturals Inc.')).toBeVisible();
+    // The way home, as the top-left corner is (ADR-058), and the fold
+    // button beside it, not in it.
+    const home = screen.getByRole('link', { name: 'WIDE Naturals Inc.' });
+    expect(home).toHaveAttribute('href', '/');
+    expect(home).toHaveTextContent('WIDE Naturals Inc.');
     const fold = screen.getByRole('button', { name: 'Collapse navigation' });
+    expect(home).not.toContainElement(fold);
     expect(fold).toHaveAttribute('aria-expanded', 'true');
 
     await userEvent.click(fold);
     expect(onToggle).toHaveBeenCalledOnce();
   });
 
-  it('shows the logo, open, whatever its shape', () => {
+  it('shows the logo, open, whatever its shape, as the way home', () => {
     renderTop({ folded: false, logoFileId: 'wordmark-open' });
 
+    const home = screen.getByRole('link', { name: 'WIDE Naturals Inc.' });
+    expect(home).toHaveAttribute('href', '/');
     expect(
-      screen.getByRole('img', { name: 'WIDE Naturals Inc.' }),
+      within(home).getByRole('img', { name: 'WIDE Naturals Inc.' }),
     ).toHaveAttribute('src', '/api/v1/files/wordmark-open');
   });
 

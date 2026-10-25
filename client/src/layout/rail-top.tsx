@@ -1,8 +1,16 @@
 import KeyboardDoubleArrowLeft from '@mui/icons-material/KeyboardDoubleArrowLeft';
 import KeyboardDoubleArrowRight from '@mui/icons-material/KeyboardDoubleArrowRight';
-import { Box, ButtonBase, IconButton, Stack, Tooltip } from '@mui/material';
+import {
+  Box,
+  ButtonBase,
+  IconButton,
+  Link,
+  Stack,
+  Tooltip,
+} from '@mui/material';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { useBranding } from '../auth/use-branding';
 import { initialsLang, organizationInitialsOf } from '../lib/person-initials';
@@ -23,8 +31,8 @@ function isSquare(image: HTMLImageElement): boolean {
 /**
  * The rail's top (ADR-082, amending ADR-060's layout): the organization's,
  * as the rail's foot is the product's. Open, its logo, on a white plate on
- * a dark rail as OrganizationMark draws it, or its name, with the fold
- * button beside it. Folded, one 44 px plate that is the unfold button: the
+ * a dark rail as OrganizationMark draws it, or its name, a link to Home as
+ * the top bar's was, with the fold button beside it. Folded, one 44 px plate that is the unfold button: the
  * logo when it is about square, else the organization's initials on its
  * accent, in the colours a contained button takes, so they pass in either
  * mode. On hover or keyboard focus » takes the plate's place, with a
@@ -68,10 +76,32 @@ export function RailTop({
         direction="row"
         sx={{ alignItems: 'center', gap: 0.75, minHeight: 44, mb: 1 }}
       >
-        {/* Its name in full on hover, where the rail cuts it. */}
-        <Box sx={{ flex: '1 1 auto', minWidth: 0, pl: 0.5 }} title={name}>
+        {/* The way home, as the top-left corner is (ADR-058), named by the
+            logo or the name it shows, and that name in full on hover where
+            the rail cuts it; the fold button beside it, not in it. */}
+        <Link
+          component={RouterLink}
+          to="/"
+          underline="none"
+          color="inherit"
+          title={name}
+          sx={{
+            flex: '1 1 auto',
+            minWidth: 0,
+            minHeight: 44,
+            display: 'flex',
+            alignItems: 'center',
+            pl: 0.5,
+            borderRadius: 1,
+            '&:focus-visible': {
+              outline: '2px solid',
+              outlineColor: 'rail.strong',
+              outlineOffset: 2,
+            },
+          }}
+        >
           <OrganizationMark name={name} onRail />
-        </Box>
+        </Link>
         <IconButton
           aria-label={intl.formatMessage({
             id: 'layout.collapseNavigation',

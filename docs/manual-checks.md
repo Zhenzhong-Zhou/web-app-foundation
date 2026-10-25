@@ -2443,6 +2443,9 @@ private window.
   organization's logo at the top of the rail, on a white plate on the
   dark rail, or its name in white where it has none, with « beside it on
   one row; the top bar holds search, Help, the bell and you, with no logo.
+  From any page, click the logo or the name: Home, as the top bar's was.
+  Tab from the skip link: the logo or name first, its ring white on the
+  dark rail, then «, each on its own.
   Narrow the window below 1200 px: the logo or name is back in the top
   bar, and the menu drawer opens as before. Press «: the rail folds to one
   44 px plate at its top. With no logo, the organization's initials on its
@@ -3407,6 +3410,8 @@ first.
   read: MC-3510 extended.
 - 2026-10-25: ADR-082's review, the folded plate's initials in the app's
   type, the plate growing with the text size: MC-3510 extended.
+- 2026-10-25: ADR-082's review, the rail's top a link to Home again, as
+  the corner was before it moved: MC-3510 extended.
 - 2026-10-25: #126, Link a return's select drawn once the returns arrive:
   MC-R58.
 - 2026-10-25: #163, To ship and To receive count only orders with something
