@@ -436,6 +436,64 @@ describe('OrderDetailPage lines', () => {
      * shipping, which have their own buttons (#24). Closing says only that
      * nothing more is coming, in either direction.
      */
+    /**
+     * One filled button, the act the order waits for (conventions.md,
+     * Responsive layout; #158): while goods are due, Close order is
+     * outlined, and Ship is the filled one where it shows; once nothing
+     * is left, Close order is filled.
+     */
+    describe('Close order, filled once nothing is left', () => {
+      const due = { status: 'confirmed' as const };
+      const done = {
+        status: 'confirmed' as const,
+        fullyFulfilled: true,
+        lines: [
+          orderLine({
+            quantityFulfilled: '40.0000',
+            quantityOutstanding: '0.0000',
+            isComplete: true,
+          }),
+        ],
+      };
+      const closeOrder = () =>
+        screen.findByRole('button', { name: 'Close order' });
+
+      it('is outlined on a purchase with goods still to come', async () => {
+        serve(order(due));
+        renderPage();
+
+        expect(await closeOrder()).toHaveClass('MuiButton-outlined');
+      });
+
+      it('is filled on a purchase received in full', async () => {
+        serve(order(done));
+        renderPage();
+
+        expect(await closeOrder()).toHaveClass('MuiButton-contained');
+      });
+
+      it('is outlined on a sale still to ship, under a filled Ship', async () => {
+        serveSale([], due);
+        renderPage(SALE_PERMISSIONS);
+
+        expect(await closeOrder()).toHaveClass('MuiButton-outlined');
+        // Filled by the theme's default variant, which this render lacks.
+        expect(screen.getByRole('button', { name: 'Ship' })).not.toHaveClass(
+          'MuiButton-outlined',
+        );
+      });
+
+      it('is filled on a sale shipped in full', async () => {
+        serveSale([], done);
+        renderPage(SALE_PERMISSIONS);
+
+        expect(await closeOrder()).toHaveClass('MuiButton-contained');
+        expect(
+          screen.queryByRole('button', { name: 'Ship' }),
+        ).not.toBeInTheDocument();
+      });
+    });
+
     it('calls closing "Close order"', async () => {
       serve(order({ status: 'confirmed' }));
       renderPage();

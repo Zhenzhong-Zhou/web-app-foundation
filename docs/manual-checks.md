@@ -2332,6 +2332,14 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R61** *(Close order filled only once nothing is left, #158)* As
+  the demo Owner, PO-DEMO-4, with cartons still due: Close order in the
+  summary is outlined, not filled. A purchase received in full but not
+  yet closed shows Close order filled. On SO-DEMO-1, part shipped, Ship
+  is the filled button and Close order outlined under it; on SO-DEMO-QC,
+  shipped in full, there is no Ship and Close order is filled. Found by
+  the walkthroughs on `walkthroughs-older`.
+
 - **MC-R59** *(To ship and To receive, only what is still to come, #163)*
   As the demo Owner, on Home: To ship leaves out SO-DEMO-QC and
   SO-DEMO-ZH, shipped in full though still confirmed until closed, and
@@ -3177,3 +3185,5 @@ first.
   MC-R58.
 - 2026-10-25: #163, To ship and To receive count only orders with something
   still to ship or to come, as the Orders list they open: MC-R59.
+- 2026-10-25: #158, Close order outlined while goods are due, filled once
+  nothing is left: MC-R61.
