@@ -62,6 +62,9 @@ interface Seed {
 
 const heading = (page: Page) => page.getByRole('heading', { level: 1 });
 
+/** A laptop's window, which the rail's links outgrow. */
+const LAPTOP = { width: 1280, height: 800 };
+
 const help = (page: Page) =>
   page.getByRole('complementary', { name: 'Help', exact: true });
 
@@ -146,13 +149,31 @@ const SCREENS: Screen[] = [
     ready: (page) => help(page).getByText(/ · Version /),
   },
   {
+    // Its foot pinned below the links, in view at a laptop's height
+    // without scrolling the rail (ADR-082).
+    name: 'the rail open, its foot in view',
+    path: () => '/orders',
+    open: async (page) => {
+      await page.setViewportSize(LAPTOP);
+      await expect(page.getByText(/^Powered by /)).toBeInViewport({
+        ratio: 1,
+      });
+    },
+    ready: (page) => page.getByText(/^Powered by /),
+  },
+  {
     // Its top the organization's plate, initials on the accent with no
-    // logo, and the product's mark at its foot named in a tooltip
-    // (ADR-082).
+    // logo, and the product's mark at its foot, pinned in view at a
+    // laptop's height, named in a tooltip (ADR-082).
     name: 'the rail folded, its initials plate and its foot’s tooltip',
     folded: true,
     path: () => '/orders',
-    open: (page) => page.getByRole('img', { name: /^Powered by / }).hover(),
+    open: async (page) => {
+      await page.setViewportSize(LAPTOP);
+      const mark = page.getByRole('img', { name: /^Powered by / });
+      await expect(mark).toBeInViewport({ ratio: 1 });
+      await mark.hover();
+    },
     ready: (page) => page.getByRole('tooltip', { name: /^Powered by / }),
   },
   {

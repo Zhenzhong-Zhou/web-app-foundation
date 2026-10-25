@@ -252,8 +252,10 @@ function Frame() {
       <SkipLink />
 
       {/* The rail: beside the page from `lg`. The outer box runs the page's
-          full height so its colour does too; the inner one stays in view,
-          with its own scroll, while the page scrolls. */}
+          full height so its colour does too; the inner one stays in view
+          while the page scrolls. Its links scroll on their own above its
+          foot, which is pinned, so Powered by is in view at any window
+          height (ADR-082). */}
       <Box
         component="aside"
         sx={{
@@ -270,20 +272,30 @@ function Frame() {
             height: '100dvh',
             display: 'flex',
             flexDirection: 'column',
-            gap: 0.5,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            px: 1,
-            py: 1.5,
           }}
         >
           {/* The organization's at the top, the product's at the foot
               (ADR-082). */}
-          <RailTop name={orgName} folded={folded} onToggle={toggleFolded} />
+          <Box
+            sx={{
+              flex: '1 1 auto',
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0.5,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              px: 1,
+              pt: 1.5,
+              pb: 1,
+            }}
+          >
+            <RailTop name={orgName} folded={folded} onToggle={toggleFolded} />
 
-          <SideNav folded={folded} />
+            <SideNav folded={folded} />
+          </Box>
 
-          <Box sx={{ mt: 'auto', pt: 2 }}>
+          <Box sx={{ flex: 'none', px: 1, pb: 1.5 }}>
             <PoweredBy folded={folded} />
           </Box>
         </Box>
@@ -576,29 +588,33 @@ function Frame() {
             },
           }}
         >
-          <Stack
-            direction="row"
-            sx={{ alignItems: 'center', pl: 1.5, pb: 1, gap: 1 }}
-          >
-            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-              <OrganizationMark name={orgName} onRail />
-            </Box>
-            <IconButton
-              aria-label={intl.formatMessage({
-                id: 'layout.closeNavigation',
-                defaultMessage: 'Close navigation',
-              })}
-              onClick={() => setDrawer(false)}
-              sx={{ color: 'rail.text' }}
+          {/* Its links scroll above its foot, pinned as the rail's is
+              (ADR-082). */}
+          <Box sx={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
+            <Stack
+              direction="row"
+              sx={{ alignItems: 'center', pl: 1.5, pb: 1, gap: 1 }}
             >
-              <CloseIcon />
-            </IconButton>
-          </Stack>
+              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                <OrganizationMark name={orgName} onRail />
+              </Box>
+              <IconButton
+                aria-label={intl.formatMessage({
+                  id: 'layout.closeNavigation',
+                  defaultMessage: 'Close navigation',
+                })}
+                onClick={() => setDrawer(false)}
+                sx={{ color: 'rail.text' }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Stack>
 
-          <SideNav onNavigate={() => setDrawer(false)} />
+            <SideNav onNavigate={() => setDrawer(false)} />
+          </Box>
 
           {/* Ending as the rail does (ADR-082). */}
-          <Box sx={{ mt: 'auto', pt: 2, pb: 0.5 }}>
+          <Box sx={{ flex: 'none', pt: 1, pb: 0.5 }}>
             <PoweredBy />
           </Box>
         </Drawer>

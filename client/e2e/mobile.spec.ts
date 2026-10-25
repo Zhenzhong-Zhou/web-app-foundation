@@ -14,8 +14,13 @@ test('finds its way round on a phone, through the drawer', async ({ page }) => {
   await page.goto('/inventory');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-  // Below 1200px the rail folds into a drawer behind ☰ (ADR-055).
+  // Below 1200px the rail folds into a drawer behind ☰ (ADR-055). Its
+  // foot is pinned below the links, in view on a phone's screen without
+  // scrolling them (ADR-082).
   await page.getByRole('button', { name: 'Open navigation' }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Navigation' }).getByText(/^Powered by /),
+  ).toBeInViewport({ ratio: 1 });
   await page.getByRole('link', { name: 'Orders' }).click();
 
   await expect(

@@ -2443,14 +2443,17 @@ private window.
   it: » takes its place and a tooltip says Expand navigation; VoiceOver
   reads WN, Expand navigation (WIDE Naturals Inc.), or with a logo
   Expand navigation and the name. Click or tap it: the rail opens.
-- **MC-3511** The rail's foot. At the end of the rail, under Settings,
-  scrolling the rail if it runs long: a line, then Powered by, the P and
-  Panivo, small, Panivo brighter than the words. On the dark rail the P
+- **MC-3511** The rail's foot. At the bottom of the rail, pinned: a
+  line, then Powered by, the P and Panivo, small, Panivo brighter than the
+  words. At 1280 × 800 it is in view without scrolling, open and folded;
+  make the window shorter, to about 500 px: the links scroll on their own
+  above the line, cut at it, and the foot stays put. On the dark rail the P
   is white-stemmed in Light and Dark alike; choose the light rail
   (Branding): in Light the navy P, in Dark the white one, clear on each.
   Folded: the P alone; hover it, or Tab to it, and a tooltip says Powered
   by Panivo, which VoiceOver reads. Below 1200 px, the menu drawer ends
-  the same way. In Français, Propulsé par; in 中文 with its setting, 由, the
+  the same way, its foot pinned too: on a phone it is in view as the
+  drawer opens, with the links scrolling above it. In Français, Propulsé par; in 中文 with its setting, 由, the
   P, 品桥, 提供支持, on one line.
 - **MC-3512** Help's foot. Open Help and scroll to its end: Panivo ·
   Version 0.7.0 · build … · the day, and under it the © line, small and
@@ -3305,3 +3308,5 @@ first.
   invitation's footer, the organization at the rail's top and Panivo at
   its foot, Help's foot naming the product: MC-3507 to MC-3512; MC-1102's
   rename and MC-1702's logo now at the rail's top.
+- 2026-10-25: ADR-082, the rail's foot and the drawer's pinned, in view at
+  any window height: MC-3511 extended.
