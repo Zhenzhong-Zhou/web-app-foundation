@@ -175,6 +175,9 @@ for (const [stored, system] of [
     await page.addInitScript((mode) => {
       localStorage.setItem('mui-mode', mode);
     }, stored);
+    // The app's timers under the test's hand, so its spinner's 250 ms can
+    // pass without waiting them out; the mark's CSS keeps its own time.
+    await page.clock.install();
     const app = await holdTheApp(page);
     const session = await hold(page, /\/api\/v1\/auth\/me$/);
     await page.goto('/login', { waitUntil: 'commit' });
@@ -211,10 +214,10 @@ for (const [stored, system] of [
 
     // The app starts, and reads the session: the mark stays, with the
     // progress bar sliding under it, and the app's spinner, due after
-    // 250 ms, does not show.
+    // 250 ms, stays out of a screen reader's reach under it.
     app.release();
     await session.asked;
-    await page.waitForTimeout(500);
+    await page.clock.runFor(500);
     await expect(mark).toBeVisible();
     await expect(progress).toBeVisible();
     expect(await slides(progress)).toBe('loading-bar-slides');

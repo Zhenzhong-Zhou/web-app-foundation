@@ -23,10 +23,13 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       # The merge's second parent, HEAD^2, is the pull request's head, so
-      # HEAD^1..HEAD^2 is its own commits, back to where it left main.
+      # HEAD^1..HEAD^2 is its own commits, back to where it left main. The
+      # whole history, but commits only (tree:0): git log reads no file, so
+      # the clone skips the history's trees and files.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          filter: tree:0
 
       - name: Every commit by a real identity
         run: scripts/check-authors.sh HEAD^1..HEAD^2

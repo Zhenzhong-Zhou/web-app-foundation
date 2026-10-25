@@ -469,9 +469,10 @@ for (const colorScheme of ['light', 'dark'] as const) {
           await expect(
             page.getByRole('heading', { level: 1, name: screen.title }),
           ).toBeVisible();
-          // The © line the e2e server is built with (playwright.config.ts).
+          // The © line the e2e server is built with (playwright.config.ts);
+          // with it and the heading these pages are drawn, with no list to
+          // fill.
           await expect(page.getByRole('contentinfo')).toBeVisible();
-          await page.waitForLoadState('networkidle');
 
           expect(await violations(page)).toEqual([]);
         });
