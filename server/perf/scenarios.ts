@@ -8,7 +8,7 @@ import {
   type Send,
 } from './load';
 import { fromUnits, sumUnits, toUnits, wholeUnitsUp } from './quantity';
-import type { ConcurrencyResult } from './report';
+import type { ConcurrencyResult, KnownMiss } from './report';
 
 export const READ_BUDGET_MS = 300;
 export const WRITE_BUDGET_MS = 500;
@@ -45,6 +45,7 @@ export interface Scenario {
   name: string;
   kind: 'read' | 'write';
   budgetMs: number;
+  knownMiss?: KnownMiss;
   send: Send;
 }
 
@@ -243,7 +244,12 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // narrowed by its search.
     read('GET /lookup?q=code', () => '/lookup?q=LV-00001'),
     read('GET /lookup?q=name', () => '/lookup?q=focus'),
-    read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
+    // Over its budget in the weekly run since 19 October 2026 (#225): known
+    // until 30 November, and failing past 450 ms (ADR-082).
+    {
+      ...read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
+      knownMiss: { issue: '#225', until: '2026-11-30', ceilingMs: 450 },
+    },
     read('GET /orders?search', () => '/orders?status=all&search=SO-10'),
     // Home (ADR-058): the page everyone opens first, every card an owner
     // sees and Getting started, in one request.

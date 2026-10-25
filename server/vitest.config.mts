@@ -31,7 +31,8 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'unit',
-          include: ['src/**/*.spec.ts'],
+          // perf/'s own, for the budgets' verdict (ADR-082).
+          include: ['src/**/*.spec.ts', 'perf/**/*.spec.ts'],
         },
       },
       {

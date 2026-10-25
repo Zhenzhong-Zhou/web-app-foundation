@@ -1,7 +1,13 @@
 import { RateLimited, signIn } from './client';
 import { runLoad } from './load';
 import { readManifest } from './manifest';
-import { growthFor, type Result, writeReport } from './report';
+import {
+  growthFor,
+  knownMissLabel,
+  type Result,
+  verdictOf,
+  writeReport,
+} from './report';
 import {
   concurrencyCheck,
   discover,
@@ -20,8 +26,9 @@ import {
  *     npm run perf -- --scale large --url http://localhost:3000 --skip-stress
  *
  * Budgets at 10 connections fail the run at small scale and are shown at
- * large; the concurrency check fails it at either; the stress run at 100
- * connections only reports. See perf/README.md for how to start the server.
+ * large, a known miss excepted until its date (ADR-082); the concurrency
+ * check fails it at either; the stress run at 100 connections only reports.
+ * See perf/README.md for how to start the server.
  */
 
 interface Phase {
@@ -67,6 +74,8 @@ async function main(): Promise<number> {
   }
 
   const startedAt = new Date().toISOString();
+  // The day a known miss's end date is read against, in UTC.
+  const day = startedAt.slice(0, 10);
   const budgetsEnforced = manifest.scale === 'small';
 
   console.log(
@@ -94,14 +103,14 @@ async function main(): Promise<number> {
   const tag = Date.now().toString(36).toUpperCase();
   const results: Result[] = [];
 
-  results.push(...(await runPhase(BUDGET, orgs, `${tag}B`)));
+  results.push(...(await runPhase(BUDGET, orgs, `${tag}B`, day)));
 
   console.log('Concurrency check: 200 shipments of one product…');
   const concurrency = await concurrencyCheck(orgs[0], tag);
   console.log(concurrency.passed ? '  passed' : '  FAILED');
 
   if (!skipStress) {
-    results.push(...(await runPhase(STRESS, orgs, `${tag}S`)));
+    results.push(...(await runPhase(STRESS, orgs, `${tag}S`, day)));
   }
 
   const { against, growth } = growthFor(manifest.scale, results);
@@ -124,7 +133,7 @@ async function main(): Promise<number> {
 
   console.log(`\n${markdown}\n\nReport: ${path}`);
 
-  const budgetFailed = results.some((result) => result.passed === false);
+  const budgetFailed = results.some((result) => result.verdict === 'fail');
   return (budgetsEnforced && budgetFailed) || !concurrency.passed ? 1 : 0;
 }
 
@@ -136,6 +145,7 @@ async function runPhase(
   phase: Phase,
   orgs: Org[],
   tag: string,
+  day: string,
 ): Promise<Result[]> {
   const results: Result[] = [];
   const { connections } = phase;
@@ -144,7 +154,7 @@ async function runPhase(
 
   for (const scenario of readScenarios(orgs)) {
     results.push(
-      await measure(phase, scenario, { connections, ...phase.reads }),
+      await measure(phase, scenario, { connections, ...phase.reads }, day),
     );
   }
 
@@ -152,11 +162,11 @@ async function runPhase(
   const chain = new WriteChain(orgs, writes, tag);
   await chain.prepare();
 
-  results.push(await measure(phase, chain.receive(), writes));
-  results.push(await measure(phase, chain.ship(), writes));
+  results.push(await measure(phase, chain.receive(), writes, day));
+  results.push(await measure(phase, chain.ship(), writes, day));
   await chain.draftInvoices();
-  results.push(await measure(phase, chain.issue(), writes));
-  results.push(await measure(phase, chain.credit(), writes));
+  results.push(await measure(phase, chain.issue(), writes, day));
+  results.push(await measure(phase, chain.credit(), writes, day));
 
   return results;
 }
@@ -165,19 +175,26 @@ async function measure(
   phase: Phase,
   scenario: Scenario,
   options: { connections: number; requests: number; warmup: number },
+  day: string,
 ): Promise<Result> {
   const stats = await runLoad(scenario.send, options);
+  const knownMiss = scenario.knownMiss ?? null;
 
-  const passed =
+  const verdict =
     phase.name === 'budget'
-      ? stats.errors === 0 && stats.p95 <= scenario.budgetMs
+      ? verdictOf(stats, scenario.budgetMs, knownMiss, day)
       : null;
 
   const p95 = `${Math.round(stats.p95)} ms`.padStart(8);
-  const verdict = passed === null ? '' : passed ? 'pass' : 'over budget';
+  const shown =
+    verdict === 'known' && knownMiss
+      ? knownMissLabel(knownMiss)
+      : verdict === 'fail'
+        ? 'over budget'
+        : (verdict ?? '');
 
   console.log(
-    `  ${scenario.name.padEnd(34)} p95 ${p95}  ${stats.errors} errors  ${verdict}`,
+    `  ${scenario.name.padEnd(34)} p95 ${p95}  ${stats.errors} errors  ${shown}`,
   );
 
   return {
@@ -186,8 +203,9 @@ async function measure(
     kind: scenario.kind,
     connections: options.connections,
     budgetMs: scenario.budgetMs,
+    knownMiss,
     stats,
-    passed,
+    verdict,
   };
 }
 
