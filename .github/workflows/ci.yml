@@ -183,6 +183,13 @@ jobs:
       - run: npm run build
         working-directory: server
 
+      # The unit project: the specs beside their source, and perf/'s
+      # verdict. scripts/verify.sh has always run it; this job ran only the
+      # e2e suite until ADR-082's branch. The job keeps its name, which the
+      # required checks know it by.
+      - run: npm test
+        working-directory: server
+
       # Catches a hand-edited migration whose snapshot was never regenerated.
       # Locally this only runs for whoever generates; here it runs for everyone.
       - name: Check migration snapshots
