@@ -371,7 +371,7 @@ function Frame() {
               ]}
             >
               {/* minWidth 0, or the name would not shrink to be cut. */}
-              <Box sx={{ maxWidth: { xs: '50vw', [BAR]: 320 }, minWidth: 0 }}>
+              <Box sx={{ maxWidth: '50vw', minWidth: 0 }}>
                 <OrganizationMark name={orgName} initials={tight} />
               </Box>
             </Link>
