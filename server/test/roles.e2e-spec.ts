@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import {
   ALL_PERMISSIONS,
@@ -12,8 +12,11 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import {
+  authTokens,
   invitationRoles,
   invitations,
+  membershipRoles,
+  memberships,
   roles,
   users,
 } from '../src/database/schema';
@@ -182,6 +185,22 @@ describe('Roles (e2e)', () => {
         .set('Accept-Language', language)
         .expect(200),
     ).entries;
+  }
+
+  /** Until this many requests wait on a lock, for about three seconds. */
+  async function waitingOnLocks(count: number): Promise<void> {
+    const until = Date.now() + 3000;
+    for (;;) {
+      const { rows } = await db.execute<{ waiting: number }>(sql`
+        select count(*)::int as waiting from pg_stat_activity
+        where datname = current_database() and wait_event_type = 'Lock'
+      `);
+      if (rows[0].waiting >= count) return;
+      if (Date.now() > until) {
+        throw new Error(`${rows[0].waiting} of ${count} waiting on a lock`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
   }
 
   describe('reading', () => {
@@ -729,6 +748,55 @@ describe('Roles (e2e)', () => {
       ].filter((id) => id === owner);
       expect(owners).toHaveLength(1);
     });
+
+    /**
+     * Giving a role reads it, then writes the member's roles; a delete
+     * between the two left the giving to fail on the foreign key, a 500
+     * (#179). The member's roles are held here, so the change waits after
+     * its read, and the delete is sent then: the role, read for key share,
+     * waits for the change, and the delete counts its new holder.
+     */
+    it('refuses to delete a role while it is being given, counting the new holder', async () => {
+      const alpha = await organization('alpha');
+      const packers = await make(alpha, 'Packers', template('stock_lookup'));
+      const sam = await join(
+        alpha,
+        'sam@example.com',
+        [await builtIn(alpha, 'Viewer')],
+        'Sam Lee',
+      );
+
+      let racing!: Promise<{ status: number; body: unknown }[]>;
+      await db.transaction(async (tx) => {
+        await tx
+          .select({ roleId: membershipRoles.roleId })
+          .from(membershipRoles)
+          .innerJoin(
+            memberships,
+            eq(memberships.id, membershipRoles.membershipId),
+          )
+          .where(eq(memberships.userId, sam.id))
+          .for('update', { of: membershipRoles });
+        const giving = alpha.agent
+          .patch(`/v1/users/${sam.id}`)
+          .send({ roleIds: [packers.id] })
+          .then();
+        await waitingOnLocks(1);
+        racing = Promise.all([
+          giving,
+          alpha.agent.delete(`/v1/roles/${packers.id}`),
+        ]);
+        await waitingOnLocks(2);
+      });
+      const [given, deleted] = await racing;
+
+      expect([given.status, deleted.status]).toEqual([204, 409]);
+      expect(body<Refusal>(deleted)).toMatchObject({
+        code: 'role_held',
+        message: '1 member holds Packers. Move them to another role first.',
+      });
+      expect(await roleIdsOf(app, sam.id)).toEqual([packers.id]);
+    });
   });
 
   describe('Move everyone', () => {
@@ -1221,6 +1289,90 @@ describe('Roles (e2e)', () => {
         'The roles this invitation named have been deleted. Revoke it, and invite them again.',
       );
       await alpha.agent.delete(`/v1/invitations/${pat}`).expect(204);
+    });
+
+    /**
+     * Resend reads an invitation's roles, then renews its link; a delete
+     * between the two, the link having ended, let the role go and left a
+     * live invitation naming none, which failed when accepted (#179). The
+     * link is held here, so Resend waits after its read, and the delete is
+     * sent then: it waits, and counts the invitation live. One left with
+     * no role before then reads as ended when accepted, as ADR-077 has
+     * every link nobody can join by.
+     */
+    it('keeps the role of an invitation resent while it is deleted, and refuses one left with none as ended', async () => {
+      const alpha = await organization('alpha');
+      const packers = await make(alpha, 'Packers', template('stock_lookup'));
+      const invite = async (email: string) =>
+        body<{ invitation: { id: string } }>(
+          await alpha.agent
+            .post('/v1/invitations')
+            .send({ email, roleIds: [packers.id] })
+            .expect(201),
+        ).invitation.id;
+      const accept = (email: string, name: string) =>
+        authedAgent(app)
+          .post('/v1/invitations/accept')
+          .send({
+            token: invitationToken(app, email),
+            name,
+            password: PASSWORD,
+          });
+
+      const pat = await invite('pat@example.com');
+      await db
+        .update(invitations)
+        .set({ expiresAt: new Date(Date.now() - 86_400_000) })
+        .where(eq(invitations.id, pat));
+
+      let racing!: Promise<{ status: number; body: unknown }[]>;
+      await db.transaction(async (tx) => {
+        await tx
+          .select({ id: authTokens.id })
+          .from(authTokens)
+          .where(eq(authTokens.invitationId, pat))
+          .for('update');
+        const resending = alpha.agent
+          .post(`/v1/invitations/${pat}/resend`)
+          .then();
+        await waitingOnLocks(1);
+        racing = Promise.all([
+          resending,
+          alpha.agent.delete(`/v1/roles/${packers.id}`),
+        ]);
+        await waitingOnLocks(2);
+      });
+      const [resent, deleted] = await racing;
+
+      expect([resent.status, deleted.status]).toEqual([200, 409]);
+      expect(body<Refusal>(deleted).message).toBe(
+        'An invitation waiting to be accepted names Packers. Revoke it, or wait until it’s accepted, then delete the role.',
+      );
+      await accept('pat@example.com', 'Pat Kim').expect(200);
+      const [joined] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, 'pat@example.com'));
+      expect(await roleIdsOf(app, joined.id)).toEqual([packers.id]);
+
+      // As such a race left one before: refused, and nobody joins.
+      const lee = await invite('lee@example.com');
+      await db
+        .delete(invitationRoles)
+        .where(eq(invitationRoles.invitationId, lee));
+      expect(
+        body<Refusal>(await accept('lee@example.com', 'Lee Chan').expect(400)),
+      ).toMatchObject({
+        code: 'invitation_ended',
+        message:
+          'This invitation has ended. Ask whoever invited you for a new one.',
+      });
+      expect(
+        await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.email, 'lee@example.com')),
+      ).toEqual([]);
     });
 
     it('names them as a list in the email, on its page and in the bell, and gives them all', async () => {

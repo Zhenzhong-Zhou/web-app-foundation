@@ -2332,6 +2332,18 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R64** *(a role deleted while it is being given, refused in words,
+  #179)* Giving a role and deleting it at the same moment is too narrow to
+  aim for by hand; the server's e2e tests hold it open, and the delete
+  waits, then says who holds the role or that an invitation names it. By
+  hand, the invitation such a race used to leave: as the demo Owner,
+  invite an address as Warehouse with Copy link, then take its roles away
+  in the database (`delete from invitation_roles where invitation_id =
+  (select id from invitations where email = '…')`). Open the link in a
+  private window, give a name and a password and join: the page reads
+  This invitation has ended, never Internal server error, and the address
+  has no account. On Invited, Resend says the roles it named have been
+  deleted. Found by `/code-review` on #176.
 - **MC-R63** *(no English inside a French or Chinese message, #129)* In
   Français, then in 简体中文: with 简体中文 checked under Product names
   required on invoices and a customer set to Chinese, issue an invoice for
@@ -3224,5 +3236,8 @@ first.
   shipment is: MC-R60.
 - 2026-10-25: #171, the credit note's sentence a note, not an alert, and a
   shipment's header an h3 under the Shipments tab's h2: MC-R62.
+- 2026-10-25: #179's second half, a role deleted while it is being given
+  refused in words, and an invitation left naming no role ended when
+  accepted: MC-R64.
 - 2026-10-25: #129, the missing-name refusal, a line's price notice and the
   held-stock refusal wholly in the reader's language: MC-R63.

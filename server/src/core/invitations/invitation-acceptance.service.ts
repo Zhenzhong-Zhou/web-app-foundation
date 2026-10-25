@@ -367,7 +367,8 @@ export class InvitationAcceptanceService {
 
   /**
    * The invitation a live link is for, or ENDED: used, expired and
-   * revoked alike.
+   * revoked alike, and one naming no role, whose roles were deleted while
+   * its link had ended, since there is nothing to join as.
    */
   private async live(token: string): Promise<Live> {
     const invitationId = await this.tokens.findInvitation(token);
@@ -393,6 +394,10 @@ export class InvitationAcceptanceService {
     if (!row || row.acceptedAt || row.revokedAt) throw ended();
 
     const named = await rolesOfInvitation(this.db, row.id);
+    // Resend refuses it with invitations.noRoles, in the inviter's words;
+    // whoever accepts gets the one refusal every link that cannot be used
+    // gets (ADR-077).
+    if (named.length === 0) throw ended();
     return {
       ...row,
       roleIds: named.map((role) => role.id),
