@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import type { APIRequestContext, Page } from '@playwright/test';
+import type { APIRequestContext, Locator, Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import {
@@ -48,6 +48,8 @@ interface Screen {
    * host's files, never the API's.
    */
   broken?: string;
+  /** The rail folded on this device, as a person may keep it. */
+  folded?: boolean;
 }
 
 interface Seed {
@@ -59,6 +61,33 @@ interface Seed {
 }
 
 const heading = (page: Page) => page.getByRole('heading', { level: 1 });
+
+/** A laptop's window, which the rail's links outgrow. */
+const LAPTOP = { width: 1280, height: 800 };
+
+/** Whether the links fade into the rail's foot, as they do while more run on under it. */
+const fades = (foot: Locator) =>
+  foot.evaluate(
+    (line) =>
+      getComputedStyle(line.parentElement!, '::before').backgroundImage !==
+      'none',
+  );
+
+const help = (page: Page) =>
+  page.getByRole('complementary', { name: 'Help', exact: true });
+
+/**
+ * The screens before sign-in, the product's own (ADR-082): its mark and
+ * name above, the © line below.
+ */
+const SIGNED_OUT: { name: string; path: string; title: string }[] = [
+  { name: 'sign-in', path: '/login', title: 'Sign in' },
+  {
+    name: 'a status page, signed out',
+    path: '/no-such-page',
+    title: 'Page not found',
+  },
+];
 
 /**
  * The entry the keyboard is on, in a menu or a list. MUI tints it, and on
@@ -114,6 +143,65 @@ const SCREENS: Screen[] = [
       page
         .getByRole('complementary', { name: 'Help', exact: true })
         .getByRole('heading', { level: 2, name: 'Orders', exact: true }),
+  },
+  {
+    // Its foot names the product, and the © line follows (ADR-082).
+    name: 'Help’s foot',
+    path: () => '/orders',
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Help', exact: true }).click();
+      await help(page)
+        .getByText(/ · Version /)
+        .scrollIntoViewIfNeeded();
+    },
+    ready: (page) => help(page).getByText(/ · Version /),
+  },
+  {
+    // A MacBook's window, 1440 × 900: every link above the rail's foot,
+    // with nothing fading into it, under the build's own name too, as CI
+    // has it, which takes the foot to two lines. At a laptop's 1280 × 800
+    // the foot is pinned in view without scrolling the rail, and the links
+    // run on under it, fading into it, until the rail is scrolled to their
+    // end (ADR-082).
+    name: 'the rail at 1440 × 900, every link above its foot',
+    path: () => '/orders',
+    open: async (page) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      const foot = page.getByText(/^Powered by /);
+      const last = page
+        .getByRole('navigation', { name: 'Settings' })
+        .getByRole('link')
+        .last();
+      await expect(last).toBeInViewport({ ratio: 1 });
+      const [link, line] = await Promise.all([
+        last.boundingBox(),
+        foot.boundingBox(),
+      ]);
+      expect(link!.y + link!.height).toBeLessThanOrEqual(line!.y);
+      await expect.poll(() => fades(foot)).toBe(false);
+
+      await page.setViewportSize(LAPTOP);
+      await expect(foot).toBeInViewport({ ratio: 1 });
+      await expect.poll(() => fades(foot)).toBe(true);
+      await last.scrollIntoViewIfNeeded();
+      await expect.poll(() => fades(foot)).toBe(false);
+    },
+    ready: (page) => page.getByText(/^Powered by /),
+  },
+  {
+    // Its top the organization's plate, initials on the accent with no
+    // logo, and the product's mark at its foot, pinned in view at a
+    // laptop's height, named in a tooltip (ADR-082).
+    name: 'the rail folded, its initials plate and its foot’s tooltip',
+    folded: true,
+    path: () => '/orders',
+    open: async (page) => {
+      await page.setViewportSize(LAPTOP);
+      const mark = page.getByRole('img', { name: /^Powered by / });
+      await expect(mark).toBeInViewport({ ratio: 1 });
+      await mark.hover();
+    },
+    ready: (page) => page.getByRole('tooltip', { name: /^Powered by / }),
   },
   {
     // The top bar's button and its note (ADR-081).
@@ -350,6 +438,11 @@ for (const colorScheme of ['light', 'dark'] as const) {
           if (screen.broken) {
             await page.route(screen.broken, (route) => route.abort('failed'));
           }
+          if (screen.folded) {
+            await page.addInitScript(() =>
+              localStorage.setItem('nav.folded', 'true'),
+            );
+          }
           await page.goto(screen.path(data));
           if (screen.open) {
             await expect(heading(page)).toBeVisible();
@@ -364,6 +457,24 @@ for (const colorScheme of ['light', 'dark'] as const) {
           if (screen.version) await page.unroute('**/version.json?*');
           if (screen.broken) await page.unroute(screen.broken);
           expect(list).toEqual([]);
+        });
+      }
+    });
+
+    test.describe('the screens before sign-in meet WCAG 2.2 AA', () => {
+      test.use({ storageState: { cookies: [], origins: [] } });
+
+      for (const screen of SIGNED_OUT) {
+        test(screen.name, async ({ page }) => {
+          await page.goto(screen.path);
+          await expect(
+            page.getByRole('heading', { level: 1, name: screen.title }),
+          ).toBeVisible();
+          // The © line the e2e server is built with (playwright.config.ts).
+          await expect(page.getByRole('contentinfo')).toBeVisible();
+          await page.waitForLoadState('networkidle');
+
+          expect(await violations(page)).toEqual([]);
         });
       }
     });

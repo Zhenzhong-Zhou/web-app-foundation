@@ -95,14 +95,46 @@ export function initialsOf(name: string | null, email?: string | null): string {
 }
 
 /**
+ * A company's legal ending in a Latin name, as its last word, compared
+ * without its case and its dots: Inc., Ltd, L.L.C., GmbH.
+ */
+const LEGAL_WORDS = new Set([
+  'inc',
+  'incorporated',
+  'ltd',
+  'ltée',
+  'limited',
+  'llc',
+  'llp',
+  'lp',
+  'corp',
+  'corporation',
+  'co',
+  'company',
+  'plc',
+  'gmbh',
+  'ag',
+  'sa',
+  'sarl',
+  'bv',
+  'nv',
+  'pty',
+]);
+
+/** A Chinese name's legal ending, longest first: 股份有限公司 before 有限公司. */
+const LEGAL_ENDINGS = ['股份有限公司', '有限责任公司', '有限公司', '公司'];
+
+/**
  * What an organization without a logo shows (ADR-078), by a rule of its
  * own: a company's name is not a person's, and most end the same way,
- * 有限公司 or Ltd., which a person's rule would take.
+ * 有限公司 or Ltd., which is left out (ADR-082), so it never stands as an
+ * initial.
  *
- * - **Starting in Chinese**: its first two Chinese characters. 海港草本有限公司
- *   gives 海港, 青禾贸易 gives 青禾.
+ * - **Starting in Chinese**: its first two Chinese characters. 清禾药业有限公司
+ *   gives 清禾, 青禾贸易 gives 青禾, 禾有限公司 gives 禾.
  * - **Otherwise**: the first letters of its first two words, or one letter
- *   for a name of one word. Reid Supply Co. gives RS, Acme gives A.
+ *   for a name of one word. WIDE Naturals Inc. gives WN, Acme Inc. gives
+ *   A, Acme gives A.
  */
 export function organizationInitialsOf(name: string): string {
   const words = name
@@ -111,11 +143,22 @@ export function organizationInitialsOf(name: string): string {
     .filter((letters) => letters.length > 0);
   if (words.length === 0) return '?';
   if (HAN.test(words[0][0])) {
-    return words
+    let han = words
       .flat()
       .filter((g) => HAN.test(g))
-      .slice(0, 2)
       .join('');
+    const ending = LEGAL_ENDINGS.find(
+      (each) => han.endsWith(each) && han.length > each.length,
+    );
+    if (ending) han = han.slice(0, -ending.length);
+    return graphemes(han).slice(0, 2).join('');
+  }
+  // The legal endings, from the last word back, keeping the first.
+  while (
+    words.length > 1 &&
+    LEGAL_WORDS.has(words[words.length - 1].join('').toLowerCase())
+  ) {
+    words.pop();
   }
   return words
     .slice(0, 2)

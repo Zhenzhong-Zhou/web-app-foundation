@@ -8,6 +8,25 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 import compat from 'eslint-plugin-compat';
 import formatjs from 'eslint-plugin-formatjs';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import testingLibrary from 'eslint-plugin-testing-library';
+
+/**
+ * The browser floor (conventions.md, "Supported browsers", ADR-081): Vite's
+ * build target, its default, which vite.config.ts does not set, and the two
+ * must agree: a Vite major moves its default, and this list moves with it.
+ * Vite rewrites newer syntax but adds no polyfills, so a built-in such as
+ * Object.groupBy counts as much as a Web API.
+ */
+const FLOOR = {
+  browsers: [
+    'chrome >= 111',
+    'edge >= 111',
+    'firefox >= 114',
+    'safari >= 16.4',
+    'ios_saf >= 16.4',
+  ],
+  lintAllEsApis: true,
+};
 
 export default defineConfig([
   // src/api/ is generated from the server's OpenAPI document (ADR-068).
@@ -111,30 +130,55 @@ export default defineConfig([
   },
   {
     /**
-     * The browser floor (conventions.md, "Supported browsers", ADR-081): an
-     * API newer than these browsers fails unless it is guarded in an `if`,
-     * as Intl.Segmenter once was not. The list is Vite's build target, its
-     * default, which vite.config.ts does not set, and the two must agree: a
-     * Vite major moves its default, and this list moves with it.
+     * The browser floor, FLOOR: an API newer than these browsers fails
+     * unless it is guarded in an `if`, as Intl.Segmenter once was not.
      */
     files: ['src/**/*.{ts,tsx}'],
     // Tests run in Node, not in these browsers.
     ignores: ['**/*.test.{ts,tsx}', 'src/test/**'],
     plugins: { compat },
-    settings: {
-      browsers: [
-        'chrome >= 111',
-        'edge >= 111',
-        'firefox >= 114',
-        'safari >= 16.4',
-        'ios_saf >= 16.4',
-      ],
-      // Vite rewrites newer syntax but adds no polyfills, so a built-in such
-      // as Object.groupBy counts as much as a Web API.
-      lintAllEsApis: true,
-    },
+    settings: FLOOR,
     rules: {
       'compat/compat': 'error',
+    },
+  },
+  {
+    /**
+     * src/loading.js, the classic script index.html runs before the app
+     * (ADR-082): plain JavaScript, which the TypeScript blocks above miss,
+     * held to the same floor, since nothing runs before it to fail softly.
+     */
+    files: ['src/loading.js'],
+    extends: [js.configs.recommended, eslintConfigPrettier],
+    languageOptions: { sourceType: 'script', globals: globals.browser },
+    plugins: { compat },
+    settings: FLOOR,
+    rules: {
+      'compat/compat': 'error',
+    },
+  },
+  {
+    // Component tests use Testing Library as it means to be used: an async
+    // query, event or wait awaited, a sync one not, and queries from screen.
+    files: ['src/**/*.test.{ts,tsx}', 'src/test/**'],
+    extends: [testingLibrary.configs['flat/react']],
+    settings: {
+      // A helper returning render's result from another file; one in the
+      // spec's own file is found without being named. Without a list the
+      // plugin takes every render… helper for one, and most here return a
+      // mock to check or a router to move.
+      'testing-library/custom-renders': ['renderWithAuth'],
+    },
+    rules: {
+      /**
+       * A test reaches some elements through the DOM on purpose: MUI's own
+       * markup (a chip, a badge's dot, the progress bar's track), and parts
+       * kept out of the accessibility tree by design (an icon's disc, a
+       * hidden file input, a live region with no role), which no role or name
+       * can find.
+       */
+      'testing-library/no-node-access': 'off',
+      'testing-library/no-container': 'off',
     },
   },
   {

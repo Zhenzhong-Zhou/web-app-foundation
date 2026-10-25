@@ -1,29 +1,77 @@
-# web-app-foundation — handoff, 23 October 2026
+# web-app-foundation — handoff, 25 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 23 October 2026: read this first
+## Now, 25 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **#196, colours by path in `sx`: PR #224, ready to merge**
-  (`fix-196-typography-colours`, 23 October 2026). MUI 9's Typography had
-  drawn 218 dotted colours as primary text since 2 September; MUI's own
-  codemod moved them into `sx`, and a lint rule refuses a dotted colour
-  prop. Found and fixed on the way: muted text on a highlighted option
-  draws in the main colour; every Autocomplete's groups sit inside their
-  listbox; the bell's title and Mark all read moved into a popover the
-  keyboard reaches. ADR-055's amendment says what building settled. Riding
-  along: Deploy by hand, a read-only check of the live site after each
-  deploy, `npm run screenshots:compare`, and `i18n-review.mjs export
-  --since`. No migration. **After merging, in order:** its Deploy run,
-  which now ends with the live-site check; then GitHub's `production`
-  environment limited to `main`, the two hooks moved into it and deleted
-  from the repository's secrets (`render.md`, Deploys, step 6); then Deploy
-  by hand once (manual checks, MC-3425); then MC-3424, if no deploy has
-  carried it yet.
+- **The brand, ADR-082: PR #247** (`adr-082-brand`, 24 to 25 October
+  2026), green in every browser and ready to merge; its as-built
+  amendment says what building settled. Panivo on every page before
+  sign-in, at the rail's foot and in Help's foot; the organization's logo
+  at the rail's top, linking Home, its initials when folded; one icon on
+  a navy plate for the tab, the taskbar, home screens and emails; a web
+  manifest, `theme-color`, a card for a shared link, and the mark while
+  the app loads; the © holder (Zhenzhong (Bob) Zhou) and a name per
+  language as settings. Claude Code Review cannot run on it: the action
+  refuses a pull request that changes its own workflow, as #243's fix
+  does; step 13's `/code-review` reviewed the branch. **Before merging, by
+  hand:** the static site's three settings on Render (`render.md`); the
+  API's `MAIL_FROM` reads `Panivo <…>`; the new manual checks on the Mac
+  (MC-3503 to MC-3512). **After the merge, by hand:** MC-3501 on an iPhone
+  and an Android home screen, MC-3504 (a link pasted into a chat) and
+  MC-3505 (a phone's bar in each mode) on the live site; `git config
+  core.hooksPath scripts/hooks` on each clone, then delete
+  `.git/hooks/pre-push`; "Commits — no placeholder identity" added to
+  `main`'s ruleset as a required check, now that it has run; and the next
+  pull request's Claude Code Review, #243's first real test.
+- **`main` was red from #224 to #231** (23 to 24 October 2026). On a
+  push CI runs every browser, but a pull request runs Chromium only
+  unless it is labelled `full-e2e`, and #224 was not. Its new rows in
+  `accessibility.spec.ts` pushed the one test that opened every screen
+  past its 120 seconds in Firefox, where axe runs slowest. #227's run,
+  the scheduled one and #228's failed too, Deploy skipped each,
+  and the live site stayed at #217's merge. #231 (fixing #230) made each
+  screen its own test, in each mode, under reduced motion; it deployed
+  with the four merges behind it on 24 October (4e58ebc), the API by its
+  hook from the `production` environment. Its branch filed #232: two
+  WebKit contrast checks that measure a colour mid-change, 4 times in 60
+  runs, passing on a retry. A pull request that changes the look across
+  many screens carries `full-e2e`, as `ci.yml`'s comment says; #196's
+  should have.
+- **#196, colours by path in `sx`:** merged as #224 (fa89912) on 23
+  October 2026. MUI 9's Typography had drawn 218 dotted colours as
+  primary text since 2 September; MUI's codemod moved them into `sx`,
+  and a lint rule refuses a dotted colour prop. ADR-055's amendment says
+  what building settled, and which four values stay muted on purpose.
+  After the merge: the `production` environment limited to `main`, both
+  hooks moved into it and deleted from the repository's secrets (24
+  October); MC-3424 walked at #231's deploy, an open tab offering the new
+  version; MC-3502 walked; MC-3501 walked, its icon's dark version nearly
+  invisible on a light Chrome theme with the system dark (ADR-082).
+  Still to do: Deploy by hand once (MC-3425).
+- **Merged on 24 October 2026, besides #224:** #227 (#187, the plan
+  check at large, with its docs; it filed #225 and #226), #228 (#213,
+  quantities with padding zeros), #229 (#223, Recently opened's kinds in
+  sentence case) and #231 (#230). Of the three fixes given to cloud
+  sessions, #221 stopped before any code. The order page's content is
+  capped at 1200 px (`Container maxWidth="lg"`) and its summary is a
+  fixed `rem(300)`, so the Items table has about 796 px at any wider
+  window, and its pinned Actions covers Total; at 125% text it has about
+  720 px for about 1,000 needed (an estimate). Wrapping Item, pinning
+  Total, more room or fewer columns each change ADR-055's tables, so
+  #221 is decided with #159's design.
+- **Merged on 24 and 25 October 2026, from cloud sessions:** #234 (#126),
+  #235 (#163: To ship and To receive count only what is still to come,
+  through the Orders list's `outstanding` filter; ADR-058 amended),
+  #236 (#158: Close order filled only once nothing is due), #237 (#174),
+  #238 (#171), #239 (#129, all three of its cases) and #240 (#179's
+  second half; its first half, Move everyone's dialog, stays open). #222
+  stopped before code: it is decided on the issue and rides along in
+  ADR-083's branch.
 - **Merged on 23 October 2026, besides #196:** #200 (#189, the bell's
   failed list), #201 (Panivo's tab icon and name), #202 (#190, Resend),
   #203 (#193, request fields on one log line), #204 (#195, a failed list
@@ -54,32 +102,50 @@ with this one, this one is current.
   request. The headers are in `render.md`, "Deploys". Render's edge
   ignores a query string and empties itself at each deploy, so no page
   stays old after one (#196's review; ADR-081's correction).
-- **The order after it** (Bob, 22 October 2026): **#196** (above);
-  **#187**, fixed on its branch (*Still to do, by hand*); then
-  **ADR-082, low stock**
-  (its questions in Open decisions); then the review of the whole app, once
+- **The order after it** (Bob, 22 to 25 October 2026): **ADR-082, the
+  brand** (above); then two small pull requests: **the organization's
+  small square logo** (Settings → Branding, the folded plate's first
+  choice ahead of the initials; a migration and an ADR-060 amendment),
+  and **the emails' design** (one layout for every email, the invitation
+  included without Panivo's header: the system's font, a phone's width,
+  the main link as a button mail apps draw, the small print grey, dark
+  mail apps checked, every email keeping its words; a short ADR and the
+  canvas first); then **ADR-083, low stock** (its questions in Open
+  decisions; #222 rides along). Then the review of the whole app, once
   (`/production-readiness` with its device pass: deploys, backups and a
-  restore tried, monitoring, security, performance, email, support,
-  browsers and China, tablets and foldables, the iPhone Duo closed and
-  open, a phone held sideways); then the fix-ups, each a PR of five to ten
-  related issues: safety and scale (#181 first, then #142, #182),
-  orders and shipping (#156, #158, #125, #161, #164, #159, #128, #213,
-  #221, and decisions #157 and #160), organization, roles and audit (#169,
-  #168, #179, #174, #166, #133, #167), accessibility (#155, #170, #171,
-  #162, #212, #214), words and translations (#148, #149, #129, #150, with
-  Bob's mother's corrections), and as chores #222 and #223. After them, in this order unless a trigger brings
-  one forward, each with its entry in Open decisions: one person in two
-  organizations, then a practice organization (ADR-077, *Deferred*); a
-  public demo; plans and billing; the operator's console and support
-  access. The rest of the brand comes after #196 (*Still to do, in
-  code*).
+  restore tried, security, performance, email, support, browsers and
+  China, tablets and foldables, the iPhone Duo closed and open, a phone
+  held sideways). Its monitoring section sets up an uptime monitor on
+  `/api/health` and the site, and decides an error tracker as a small PR
+  with a short ADR: what is sent, scrubbed of personal details (PIPEDA,
+  PIPL), and browser errors carried through the app's own API, so the
+  browser contacts no other site. Then the fix-ups, each a PR of five to
+  ten related issues: safety and scale (#181 first, then #142, #182,
+  #225, #226, #244), orders and shipping (#156, #125, #161, #164, #128,
+  #241, #159 with #221, a layout decision first, #158's summary Receive
+  if still open, and decisions #157 and #160), organization, roles and
+  audit (#169, #168, #179's first half, #166, #133, #167, #233 and the
+  flaky "roles" setup filed from #247's run), accessibility (#155, #170,
+  #162, #212, #214 with a row of its own in `accessibility.spec.ts`,
+  #232, #242, #246), and words and translations (#148, #149, #150, #245,
+  with Bob's mother's corrections). #245 (`translate="no"` on data) is
+  decided and suits a cloud session once #247 has merged. After them, in
+  this order unless a trigger brings one forward, each with its entry in
+  Open decisions: one person in two organizations, then a practice
+  organization (ADR-077, *Deferred*); a public demo; plans and billing;
+  the operator's console and support access.
 - **Claude Code's cloud sessions** (Bob's $250 credit, which ends in early
-  November) took the small fixes listed above, one branch and PR each.
-  What they taught is in the working agreements, "Cloud sessions": a new
-  session per task, a stop rule in every prompt, the session as committer
-  (its commits then show Verified), regression numbers named when several
-  run at once, and a sweep or a load proof kept to the Mac. One sweep in a
-  long session ran over half an hour.
+  November) took the small fixes listed above, one branch and PR each;
+  on 24 October, #228 and #229, while #221 stopped with its findings, as
+  its stop rule asks. What they taught is in the working agreements,
+  "Cloud sessions": a new session per task, a stop rule in every prompt,
+  the session as committer (its commits then show Verified), regression
+  numbers named when several run at once, and a sweep or a load proof
+  kept to the Mac. One sweep in a long session ran over half an hour. On
+  24 and 25 October, five of eight issues picked from the handoff's
+  one-line lists finished; three stopped, needing a decision or more
+  files, as the stop rule asks. The chat now reads an issue's whole text
+  before giving it to a session (`gh issue list --json number,title,body`).
 - **ADR-080, job roles** (`adr-080-job-roles`): merged in #176. Roles an
   organization makes, from a template or a copy, several to a member and
   added together; the built-in three fixed; a role given only by someone
@@ -483,10 +549,15 @@ with this one, this one is current.
   `Panivo <the address it has now>` (runbooks/render.md, "Building the
   services from nothing"). The static site reads the name only when it
   builds, so set it before the merge's deploy, or deploy again after.
-  Both set on 23 October, before #201 merged. Then MC-3501 and MC-3502 on
-  the live app, in a private window, if not yet walked.
+  Both set on 23 October, before #201 merged. MC-3501 and MC-3502 walked
+  on the live app on 24 October. ADR-082 adds three settings to the
+  static site, set before its merge's deploy.
 - **The Chinese review:** Bob's mother has the export made at `b933b912`
-  (22 October 2026); her corrections were not back on 23 October. Let her
+  (22 October 2026); her corrections were not back on 25 October, and
+  Bob says when she starts and when they come back. She reads with the
+  app in 简体中文 and Chrome's translation off for the site: through
+  Chrome's she was reading Google's Chinese, which also turned a code
+  like m2 into 平方米 (#245). Let her
   finish that file: the import matches each correction by its message id,
   so it lands on whatever the catalogues hold by then, and a corrected row
   whose message has since gone is named, and nothing written until it is
@@ -517,10 +588,32 @@ with this one, this one is current.
   paid database and web service, backups to the Canadian bucket, and
   every development secret replaced (the runbook's "Before real
   customers' data").
-- **MC-3424,** if no deploy has carried it yet: a tab of the live app
-  kept open across a deploy.
-- **#187, the plan check at large: fixed** on `fix-187-plans-at-large`
-  (23 October 2026), with no migration; `npm run perf:plans` passes at
+- **MC-3425,** Deploy by hand once: Actions → Deploy → Run workflow,
+  from `main`. It redeploys the commit already live. MC-3424 was walked
+  at #231's deploy on 24 October.
+- **Dependabot, 24 October 2026.** Alert 4, esbuild up to 0.24.2
+  (medium, development only), stays open as #113 left it: drizzle-kit
+  0.31.11's deprecated `@esbuild-kit/esm-loader` pins esbuild
+  `~0.18.20`, in a dev server nothing starts; it closes with drizzle-kit
+  1.0, whose fifth release candidate came out on 21 October. Alert 6,
+  multer 2.4.0 (high, in production code), is pinned exactly by
+  `@nestjs/platform-express` 12.2.0, the newest; its crash needs an
+  asynchronous `fileFilter`, which no upload route sets, so it cannot be
+  reached here. #247 overrides it to 2.5.0 (ADR-019, amended), and the
+  alert closes once it merges.
+- **Email's DNS, checked 25 October 2026:** Resend's domain
+  `wide-naturals.ca` at Namecheap, DKIM and SPF verified, DMARC
+  `v=DMARC1; p=none;`, tracking off, TLS opportunistic
+  (`docs/runbooks/services.md`).
+- **An uptime monitor,** any time, with no commit: UptimeRobot or Better
+  Stack on `/api/health` and the site, alerting Bob's email. Its pings
+  also keep the free API awake.
+- **The pre-push hook** was missing on Bob's Mac and was put back on 23
+  October: `.git/hooks` is not versioned, so a fresh clone loses it.
+  #247 moves it to `scripts/hooks/`; once that merges, run `git config
+  core.hooksPath scripts/hooks` once on each clone.
+- **#187, the plan check at large: merged** as #227, from
+  `fix-187-plans-at-large` (23 October 2026), with no migration; `npm run perf:plans` passes at
   small and at large. Lot search's SQL was unchanged since 2 October, but
   0042's trigram index (8 October) hands back lots unordered, so every
   match was joined before the sort, to every organization's 25,000
@@ -604,36 +697,25 @@ with this one, this one is current.
   (two one-second windows while a deletion completes), fixed on
   `deletion-started`, and #118 (the export's column glossary and invoice
   PDFs, also under *Open decisions* in `decisions.md`), which ADR-071
-  takes up; #119 to #122 were fixed in #123. `gh issue list` to review.
+  takes up; #119 to #122 were fixed in #123. From 23 and 24 October:
+  #212, #214, #221, #222, #225, #226 and #232 open; #213, #223 and #230
+  closed by #228, #229 and #231. `gh issue list` to review.
 - **Branches:** prune the merged ones, `after-adr-070` among them
   (`scripts/prune-branches.sh`).
 
 ### Still to do, in code
 
-- **The brand's next PR** (Panivo, 品桥 in Chinese). `brand-name-and-icon`
-  gave the tab its icon and every tab the name `VITE_APP_NAME` sets, in
-  every language, so in 中文 Inventory's reads 库存 · Panivo. Waiting
-  for that PR, after #196: the mark at sign-in, in the rail, in emails
-  and on PDFs; the tab's name by language (品桥 in 中文); the brand's
-  colours, and whether ADR-055's brand layer changes. Bob brings the
-  files then; the masters are in `docs/brand/`. Bob also wants, for that
-  PR: the mark and name above the sign-in and register forms, with a
-  footer carrying a © line (its holder, Bob or a company, still open, and
-  holder and year as settings like `VITE_APP_NAME`); "Powered by Panivo"
-  at the rail's foot under an organization's own logo; an About line in
-  Help's foot; and `apple-mobile-web-app-title` with a manifest's
-  `short_name`, since a home-screen icon takes the title of the page it
-  was added from. From #201's
-  `/production-readiness`: the ICO holds the light mark only, so its navy
-  stem is about 1 : 1 on a dark Windows taskbar or Safari's dark tab bar
-  (Safari 16.4 to 18 draws the ICO); and with no web manifest, which icon
-  Android's Add to home screen takes is uncertain (MC-3501 shows it).
-- **Chores after #196:** `eslint-plugin-testing-library` for the test
-  files, catching the async mistakes #206 and #210 were (it touches
-  `client/eslint.config.js`, which #196 changed); `scripts/i18n-review.mjs`
-  has no automated tests, its export, `--since` and import proved by hand;
-  `@mui/codemod@9.5.0`'s command crashes on yargs 18, which could be
+- **The brand: ADR-082** (*Now*, above), with the square logo and the
+  emails' design after it.
+- `@mui/codemod@9.5.0`'s command crashes on yargs 18, which could be
   reported to MUI.
+- **From #231.** `e2e/text-size.spec.ts` still opens every screen in one
+  test, Chromium only, with 90 seconds: a candidate for the same split.
+  ADR-075 kept it whole as "unlike accessibility.spec", a reason now
+  gone. Playwright's Firefox does not start on Bob's Mac ("Could not find
+  profile folder"), so #231 ran it on Linux from Playwright's Docker
+  image as a remote browser; the commands are in #232, and the image,
+  about 2 GB, is kept for the next Firefox check.
 - **ADR-079's limits.** Help still slides over the page in windows under
   about 1140 px, or under about 1265 px at Large text and 1330 px at
   Larger, where a control under it can be focused out of sight (WCAG
@@ -656,7 +738,8 @@ with this one, this one is current.
   the server's tooling (four moderate, three high), each fixable only by
   a major version; the client reports none. TypeScript 7.1's beta is out,
   and the Nest CLI waits on 7.1's API: check the blockers again once it is
-  stable.
+  stable. On 24 October #231's branch took no update: `@nestjs/swagger`
+  12.0.4 came out that day, inside the seven days.
 - **From #172's reviews, not its PR's.** The contrast is fixed in ADR-081
   (#173); the Returns day is #174, and the inventory's two are #189 and
   #190. Refactors, each when its
@@ -668,7 +751,10 @@ with this one, this one is current.
   run has been red since 19 October on `GET /lookup?q=typo`, 353 ms at
   the 95th percentile against 300 (small, 10 connections). This watch
   said one query per pass if it ever failed; ADR-056's index per
-  organization comes after, its trigger met (#225).
+  organization comes after, its trigger met (#225). #247 gives that
+  budget a known miss, with a 450 ms ceiling until 30 November 2026, so
+  the weekly run catches anything new meanwhile; the index stays in the
+  safety and scale fix-up.
 - **Home** sat at 249 ms of its 300 ms budget in the same run
   (`GET /home`, small), with no watch until now. Trigger: over budget at
   small. Then its plans first, the `home` probe's.
@@ -697,7 +783,9 @@ with this one, this one is current.
     out once under full-suite load, at Vitest's five seconds, and passes
     alone in under 200 ms: `addMember` now invites and accepts each
     member, a few more requests than Add member made. If it recurs, look
-    at what the fixture spends before raising the timeout.
+    at what the fixture spends before raising the timeout. It recurred on
+    24 October in invitations' "needs users.create": the trigger has
+    fired, and #233 tracks it.
   - Playwright's global setup once found no confirmation email for its
     Owner in Mailpit within its ten seconds (`scripts/verify.sh`, 19
     October 2026), and the same setup passed on the next run. Nothing
@@ -726,6 +814,11 @@ with this one, this one is current.
 
 ### Deferred, each waiting for its trigger (in the ADRs)
 
+- Brand: a registered business's name on the © line; terms and a privacy
+  policy, before the first user outside Bob; the name by language in
+  emails and in a shared link's card; a drawn wordmark; the mark in an
+  organization's emails; a sending domain of Panivo's own, at the first
+  customers (ADR-082).
 - Deploys: keeping the last build's files ourselves; failed loads and
   refusals sent to an error tracker; Playwright against the built files;
   feature flags and staged rollouts (ADR-081, Open decisions).
@@ -1518,12 +1611,12 @@ in ADR-050's amendment.
 - **Planned in this chat, built in Claude Code** (from ADR-079, 20
   October 2026). The claude.ai chat does the check before an ADR (its
   Deferred lines, the watch lists, Open decisions and the open issues),
-  the decisions for Bob to confirm, the ADR as `0001` (one mbox that
-  tidies the handoff too), the canvas designs, and a build brief: one
+  the decisions for Bob to confirm, the ADR as the branch's first commit
+  (it tidies the handoff too), the canvas designs, and a build brief: one
   Claude Code prompt per commit. Claude Code writes the code from each prompt, runs
   `scripts/verify.sh`, `/simplify` and `/code-review`, and opens the PR.
   Bob pastes its summaries back into the chat, which writes the as-built
-  amendment and the docs, as mbox files. Until ADR-078 the chat wrote
+  amendment and the docs, as full files. Until ADR-078 the chat wrote
   the code too, as one mbox per commit, and Claude Code only applied
   them.
 - **The build, as ADR-079 ran it.** The brief and the canvas's boards go
@@ -1549,14 +1642,24 @@ in ADR-050's amendment.
   the Mac. PRs merge one at a time, each when green; a branch behind
   `main` with no conflict merges as it is, and a conflict in
   `docs/manual-checks.md` is settled on GitHub with "Accept both changes",
-  an empty line between Regressions entries.
+  an empty line between Regressions entries, the dated list kept oldest
+  first. A session first installs the Node in `.node-version`, since a
+  container may start on an older one (one had 22, where twenty client
+  tests fail for reasons of their own). Its own "unpushed commits"
+  warning after a push can be false, since the clone tracks only `main`:
+  `git ls-remote origin <branch>` says whether the commit is there before
+  anything is pushed again.
 - **Every pull request** that changes what a person sees takes pictures
   before and after and compares them (`npm run screenshots:compare`), and
   its Claude Code Review comment is read before merging. The README's
   "Which tool, when" says when each of the repo's tools runs.
-- **An mbox is applied from Bob's downloads,** by its full name:
-  `git am ~/Downloads/0001-<subject>.mbox`. Downloads land in
-  `~/Downloads` itself, not a folder, so each file is named, never a glob.
+- **The chat's docs commits come as full files, not an mbox** (from
+  ADR-082, 24 October 2026): `git am` had failed on Bob's side. Each file
+  is made from `main` as Bob has it, with its `git hash-object` before
+  and after, so a copy made from another version is caught before it
+  overwrites anything; then the commands to copy it in and commit.
+  Downloads land in `~/Downloads` itself, not a folder, so each file is
+  named in full, never a glob.
 - **Every answer that changes files opens with a roadmap:** a tree or
   relative paths, each marked **new**, **full replacement** or **snippet**.
 - **New files, and changes touching several places or a large chunk of one
@@ -1618,8 +1721,9 @@ in ADR-050's amendment.
   identity on the repo's history (`git log --format='%an <%ae>' | sort |
   uniq -c` shows it). Every mbox or patch Claude prepares uses it, never a
   placeholder such as `Claude (draft) <draft@example.invalid>`: removing
-  those took a history rewrite. A local `.git/hooks/pre-push` refuses a push
-  that carries one.
+  those took a history rewrite. A pre-push hook refuses a push that
+  carries one: `.git/hooks/pre-push` until ADR-082 moves it to
+  `scripts/hooks/`, with a CI check behind it.
 - Explicit `git add` per concern, never `-A`.
 - Run `git status` before every commit. Files staged earlier — even new or
   empty ones — ride into whichever commit runs first. Unstage with

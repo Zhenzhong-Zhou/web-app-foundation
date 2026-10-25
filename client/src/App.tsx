@@ -1,12 +1,5 @@
-import {
-  Alert,
-  Button,
-  CircularProgress,
-  Skeleton,
-  Stack,
-} from '@mui/material';
+import { CircularProgress, Skeleton, Stack } from '@mui/material';
 import { type ComponentType, type ReactNode, Suspense } from 'react';
-import { useIntl } from 'react-intl';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { ForgotPasswordPage } from './auth/forgot-password-page';
@@ -17,9 +10,11 @@ import { ResetPasswordPage } from './auth/reset-password-page';
 import { useAuth } from './auth/use-auth';
 import { VerifyEmailPage } from './auth/verify-email-page';
 import { NotFoundRoute } from './errors/not-found-page';
+import { OfflinePage } from './errors/offline-page';
 import { RevisionRefusalPage } from './errors/revision-refusal-page';
 import { AppLayout } from './layout/app-layout';
 import { isRevisionRefusal } from './lib/api';
+import { ScreenShown } from './lib/loading-mark';
 import { useDelayedFlag } from './lib/use-delayed-flag';
 import { SIGNED_IN_ROUTES } from './routes';
 
@@ -67,18 +62,24 @@ function RouteFallback() {
  * the layout suspends the layout, so the header and nav would tear down and
  * remount on every navigation to a chunk that is not loaded yet. Inside the
  * outlet, only the content swaps.
+ *
+ * ScreenShown sits inside the boundary, so it draws with the page and not
+ * before: the loading mark stays over the rail until the first page's chunk
+ * is in (ADR-082).
  */
 function split(Page: ComponentType) {
   return (
     <Suspense fallback={<RouteFallback />}>
+      <ScreenShown />
       <Page />
     </Suspense>
   );
 }
 
 export default function App() {
-  const intl = useIntl();
   const { loading, error, refresh } = useAuth();
+  // Under the loading mark while it is up, out of sight and of screen
+  // readers (#root is hidden from them until it comes down, ADR-082).
   const showSpinner = useDelayedFlag(loading);
 
   if (loading) {
@@ -115,31 +116,10 @@ export default function App() {
       />
     );
   }
+  // No answer: the product's Can't reach the server, framed as the screens
+  // before sign-in are (ADR-082), Try again reading the session again.
   if (error) {
-    return (
-      <Stack
-        spacing={2}
-        sx={{
-          minHeight: '100dvh',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 4,
-        }}
-      >
-        <Alert severity="error">
-          {intl.formatMessage({
-            id: 'common.serverUnreachable',
-            defaultMessage: 'Could not reach the server.',
-          })}
-        </Alert>
-        <Button variant="contained" onClick={() => void refresh()}>
-          {intl.formatMessage({
-            id: 'common.tryAgain',
-            defaultMessage: 'Try again',
-          })}
-        </Button>
-      </Stack>
-    );
+    return <OfflinePage onRetry={() => void refresh()} standalone />;
   }
 
   return (

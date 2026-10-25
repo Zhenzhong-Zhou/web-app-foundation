@@ -1,4 +1,5 @@
 import { execFile, execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -6,6 +7,10 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 
 import { API_REVISION } from './src/api/revision.gen.ts';
+import { Locale } from './src/api/types.gen.ts';
+import { LOADING_FAILED } from './src/lib/loading-words.ts';
+import { INDICATOR_DELAY_MS } from './src/lib/use-delayed-flag.ts';
+import { DARK, LIGHT, MARK, MARK_SHAPE, RADIUS } from './src/theme/tokens.ts';
 
 /**
  * Recompiles the catalogues while `npm run dev` runs (ADR-054).
@@ -98,32 +103,259 @@ function recompileCatalogues(): Plugin {
  * The product's name in the browser's tab and bookmarks: VITE_APP_NAME from
  * the repository's .env, read here once at start, so renaming the product
  * (or one deployment of it, for a customer) is a setting, not an edit.
- * Escaped in index.html's title, since it lands in HTML, and handed to the
- * app as __APP_NAME__ for the tab each page names (page-header.tsx), so the
- * two always agree. vitest.config.ts gives the component tests the default.
+ * Escaped in index.html, since it lands in HTML. vitest.config.ts gives the
+ * component tests the default.
+ *
+ * Beside it, ADR-082's settings, read the same way:
+ *
+ * - VITE_APP_NAME_<TAG>, the name in one language the app speaks, such as
+ *   VITE_APP_NAME_ZH_HANS or VITE_APP_NAME_FR_CA, else VITE_APP_NAME,
+ *   handed to the app as __APP_NAMES__. It names the tabs and the marks in
+ *   that language; index.html's title and the manifest each hold one name,
+ *   VITE_APP_NAME, the home screen's.
+ * - VITE_COPYRIGHT_HOLDER, the © line's holder, with the build's year, so
+ *   nobody edits it in January, handed to the app as __COPYRIGHT__. Unset,
+ *   as on a fork, no © line, rather than someone else's name.
+ * - VITE_SITE_URL, the site's own address: a shared link's card needs its
+ *   picture's address in full. Unset, the card has no picture.
  */
-export const DEFAULT_APP_NAME = 'web-app-foundation';
+const DEFAULT_APP_NAME = 'web-app-foundation';
+
+export interface BrandSettings {
+  /** The name in each language, English's VITE_APP_NAME, the home screen's. */
+  names: Record<Locale, string>;
+  /** "© 2026 Zhenzhong (Bob) Zhou", or null with no holder. */
+  copyright: string | null;
+  /** The address of a shared link's picture, or null with no site. */
+  picture: string | null;
+}
+
+/** The setting naming the product in a language: fr-CA's VITE_APP_NAME_FR_CA. */
+const nameSetting = (locale: Locale) =>
+  `VITE_APP_NAME_${locale.toUpperCase().replaceAll('-', '_')}`;
+
+export function brandSettings(
+  env: Record<string, string | undefined>,
+  year: number,
+): BrandSettings {
+  const name = env.VITE_APP_NAME || DEFAULT_APP_NAME;
+  const holder = env.VITE_COPYRIGHT_HOLDER;
+
+  return {
+    // English, the language the catalogues are written in, is
+    // VITE_APP_NAME's own.
+    names: Object.fromEntries(
+      Object.values(Locale).map((locale) => [
+        locale,
+        (locale !== 'en' && env[nameSetting(locale)]) || name,
+      ]),
+    ) as Record<Locale, string>,
+    copyright: holder ? `© ${year} ${holder}` : null,
+    picture: pictureAt(env.VITE_SITE_URL),
+  };
+}
+
+/** The card's picture on the site; a site that is no address stops the build. */
+function pictureAt(site: string | undefined): string | null {
+  if (!site) return null;
+  const picture = URL.parse('/og-image.png', site);
+  if (picture?.protocol !== 'https:' && picture?.protocol !== 'http:') {
+    throw new Error(
+      `VITE_SITE_URL is ${site}, not the site's address, such as https://web-app-foundation-client.onrender.com.`,
+    );
+  }
+  return picture.href;
+}
+
+/** The icons the manifest names, made from docs/brand/ (ADR-082). */
+const MANIFEST_ICONS = [
+  { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+  { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+  {
+    src: '/icon-maskable-512.png',
+    sizes: '512x512',
+    type: 'image/png',
+    purpose: 'maskable',
+  },
+];
 
 function appName(mode: string): Plugin {
   // loadEnv also takes a NODE_ENV it finds in a file as the build's own,
   // and the root .env has the server's NODE_ENV=development: every local
   // build then shipped React's development bundle, 250 kB more than CI's.
-  // Only the name is wanted from it.
+  // Only the brand's settings are wanted from it.
   const userNodeEnv = process.env.VITE_USER_NODE_ENV;
-  const name =
-    loadEnv(mode, '..', 'VITE_APP_NAME').VITE_APP_NAME || DEFAULT_APP_NAME;
+  const settings = brandSettings(
+    loadEnv(mode, '..', [
+      'VITE_APP_NAME',
+      'VITE_COPYRIGHT_HOLDER',
+      'VITE_SITE_URL',
+    ]),
+    new Date().getFullYear(),
+  );
   if (userNodeEnv === undefined) delete process.env.VITE_USER_NODE_ENV;
+  // English's, VITE_APP_NAME, the one name index.html and the manifest hold.
+  const name = settings.names.en;
   const escaped = name
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
 
+  /**
+   * The home screen's name and icons (ADR-082). It is there for those, so
+   * `browser`: added to a home screen, the app still opens with the
+   * browser's bar and its back button. Written here, as version.json is,
+   * since it holds the name; the dev server answers it too, since the
+   * end-to-end suite runs there.
+   */
+  const manifest = JSON.stringify({
+    name,
+    short_name: name,
+    icons: MANIFEST_ICONS,
+    start_url: '/',
+    display: 'browser',
+  });
+
   return {
     name: 'app-name',
-    config: () => ({ define: { __APP_NAME__: JSON.stringify(name) } }),
-    transformIndexHtml: (html) => html.replaceAll('%APP_NAME%', escaped),
+    config: () => ({
+      define: {
+        __APP_NAMES__: JSON.stringify(settings.names),
+        __COPYRIGHT__: JSON.stringify(settings.copyright),
+      },
+    }),
+    transformIndexHtml: (html) => ({
+      html: html.replaceAll('%APP_NAME%', escaped),
+      tags: settings.picture
+        ? [
+            {
+              tag: 'meta',
+              attrs: { property: 'og:image', content: settings.picture },
+              injectTo: 'head',
+            },
+          ]
+        : [],
+    }),
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        if (request.url?.split('?')[0] !== '/manifest.webmanifest') {
+          return next();
+        }
+        response.setHeader('Content-Type', 'application/manifest+json');
+        response.end(manifest);
+      });
+    },
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'manifest.webmanifest',
+        source: manifest,
+      });
+    },
   };
+}
+
+/**
+ * src/loading.js, the loading mark's script (ADR-082), in /assets/ under a
+ * name from its content, which Render has a browser keep for a year
+ * (render.md), so a page load waits for it once per change of it rather
+ * than asking again every time. Vite bundles only modules, and this is a
+ * classic script so that it runs before the page draws, so it is written
+ * here, its tag added at the end of <head>, after the theme-color tags it
+ * reads. The dev server answers it, read afresh on each request.
+ */
+function loadingScript(): Plugin {
+  const file = new URL('./src/loading.js', import.meta.url);
+  // With the words it shows if the app's files do not load, in each
+  // language, from the catalogues: none is loaded by then.
+  const source = () =>
+    readFileSync(file, 'utf8').replace(
+      "'%LOADING_FAILED%'",
+      JSON.stringify(loadingFailedWords()),
+    );
+  const hash = createHash('sha256').update(source()).digest('hex');
+  const fileName = `assets/loading-${hash.slice(0, 8)}.js`;
+
+  return {
+    name: 'loading-script',
+    transformIndexHtml: () => [
+      { tag: 'script', attrs: { src: `/${fileName}` }, injectTo: 'head' },
+    ],
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        if (request.url?.split('?')[0] !== `/${fileName}`) return next();
+        response.setHeader('Content-Type', 'text/javascript');
+        response.end(source());
+      });
+    },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName, source: source() });
+    },
+  };
+}
+
+/** LOADING_FAILED in each language, as the catalogues give it. */
+function loadingFailedWords(): Record<
+  Locale,
+  { line: string; reload: string }
+> {
+  return Object.fromEntries(
+    Object.values(Locale).map((locale) => {
+      const catalogue = JSON.parse(
+        readFileSync(
+          new URL(`./src/locales/${locale}.json`, import.meta.url),
+          'utf8',
+        ),
+      ) as Record<string, string>;
+      return [
+        locale,
+        {
+          line: catalogue[LOADING_FAILED.line.id],
+          reload: catalogue[LOADING_FAILED.reload.id],
+        },
+      ];
+    }),
+  ) as Record<Locale, { line: string; reload: string }>;
+}
+
+/** How long the loading mark waits to appear, so a quick load shows none. */
+const MARK_DELAY_MS = 300;
+
+/**
+ * tokens.ts in index.html (ADR-055, ADR-082): the page's colours, for the
+ * browser's bar (theme-color) and the page under the loading mark; and the
+ * loading mark's shape and colours, MARK_SHAPE and MARK, as ProductMark
+ * draws them, so neither can drift from what the app draws. Its bar waits
+ * the app's own delay for an indicator after the mark.
+ */
+const TOKENS: Record<string, string> = {
+  PAGE_LIGHT: LIGHT.page,
+  PAGE_DARK: DARK.page,
+  TEXT_LIGHT: LIGHT.text,
+  TEXT_DARK: DARK.text,
+  RADIUS_CONTROL: `${RADIUS.control}px`,
+  MARK_BOWL: MARK.light.bowl,
+  MARK_STEM: MARK.light.stem,
+  MARK_ON_DARK_BOWL: MARK.onDark.bowl,
+  MARK_ON_DARK_STEM: MARK.onDark.stem,
+  MARK_TRANSFORM: MARK_SHAPE.transform,
+  MARK_BOWL_PATH: MARK_SHAPE.bowl,
+  MARK_STEM_PATH: MARK_SHAPE.stem,
+  MARK_DELAY: `${MARK_DELAY_MS}ms`,
+  BAR_DELAY: `${MARK_DELAY_MS + INDICATOR_DELAY_MS}ms`,
+};
+
+/** index.html with those values in place of their placeholders; others stay. */
+export function withTokens(html: string): string {
+  return html.replaceAll(
+    /%([A-Z_]+)%/g,
+    (found, key: string) => TOKENS[key] ?? found,
+  );
+}
+
+function fromTokens(): Plugin {
+  return { name: 'from-tokens', transformIndexHtml: withTokens };
 }
 
 /**
@@ -193,6 +425,8 @@ export default defineConfig(({ command, mode }) => ({
     react(),
     recompileCatalogues(),
     appName(mode),
+    fromTokens(),
+    loadingScript(),
     versionFile(command),
   ],
   resolve: {

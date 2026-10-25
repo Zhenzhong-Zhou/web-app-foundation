@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 
+/** The wait before an indicator shows; index.html's loading bar waits it too. */
+export const INDICATOR_DELAY_MS = 250;
+
 /**
  * True only once `active` has been true for `delayMs`.
  *
@@ -12,7 +15,10 @@ import { useEffect, useState } from 'react';
  * immediately. That suits the boot check. A screen that loads repeatedly wants
  * a key or a reset.
  */
-export function useDelayedFlag(active: boolean, delayMs = 250): boolean {
+export function useDelayedFlag(
+  active: boolean,
+  delayMs = INDICATOR_DELAY_MS,
+): boolean {
   const [elapsed, setElapsed] = useState(false);
 
   useEffect(() => {

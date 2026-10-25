@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # What CI runs, on this machine and in CI's order: the Markdown check, the
-# server's checks and both its suites, then the client's checks, unit tests
-# and the Playwright suite. Stops at the first failure, so the last heading
-# printed is what failed.
+# server's checks and both its suites, the tests of scripts/ itself, then
+# the client's checks, unit tests and the Playwright suite. Stops at the
+# first failure, so the last heading printed is what failed.
 #
 #   scripts/verify.sh            everything, about as long as CI takes
 #   scripts/verify.sh --quick    format, lint, types, checks, build and unit
@@ -16,10 +16,12 @@
 # server/openapi.json and client/src/api/, and stops if either changed,
 # leaving the fresh files in place to commit.
 #
-# So do the two checks CI makes of a pull request against main (ADR-081),
-# here against origin/main as last fetched: a breaking API change raises
-# the revision (oasdiff, in Docker), and each new migration leaves the
-# running release working (squawk). Each says why when it cannot run.
+# So do the three checks CI makes of a pull request against main, here
+# against origin/main as last fetched: a breaking API change raises the
+# revision (oasdiff, in Docker), each new migration leaves the running
+# release working (squawk; both ADR-081), and no commit the branch adds
+# carries a placeholder identity (ADR-082). Each says why when it cannot
+# run.
 #
 # Not run here, though CI runs it: npm run seed:demo, which would add a demo
 # organization to the dev database on every run. Run it after changing a
@@ -58,6 +60,14 @@ contract() {
   fi
 }
 
+# The scripts' own tests, on Node's runner (node --test finds each
+# *.test.mjs): scripts/ sits outside both packages, so neither one's Vitest
+# runs them. i18n-review.test.mjs uses both packages' node_modules.
+scripts_tests() {
+  step 'Scripts: their own tests'
+  node --test scripts/
+}
+
 # A check that exits 3 when it cannot run, having said why: reported and
 # gone on from, as Docker not running is. Any other failure stops here.
 may_skip() {
@@ -93,6 +103,13 @@ against_main() {
   else
     may_skip scripts/check-migrations.sh "$base"
   fi
+
+  step 'Against origin/main: every commit by a real identity'
+  if [[ -z "$base" ]]; then
+    echo "Skipped: no $main to compare with. git fetch origin main, then run again."
+  else
+    scripts/check-authors.sh "$main..HEAD"
+  fi
 }
 
 markdown
@@ -103,6 +120,7 @@ if $quick; then
     && npm run checks && npm run build && npm test)
 
   contract
+  scripts_tests
   against_main
 
   step 'Client: format, lint, catalogues, build, unit tests'
@@ -112,6 +130,7 @@ else
   (cd server && npm run verify)
 
   contract
+  scripts_tests
   against_main
 
   step 'Client: format, lint, catalogues, build, unit tests, Playwright'

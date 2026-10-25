@@ -40,6 +40,7 @@ import {
   registerOrganization,
   roleIdNamed,
 } from './utils/fixtures';
+import { expectMailBrand } from './utils/mail-brand';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -573,6 +574,7 @@ describe('Organization invitations (e2e)', () => {
       const told = mail.lastTo(OPS);
       expect(told?.subject).toBe('Harbour Herbs was set up');
       expect(told?.text).toContain(`Chen Jie (${CHEN})`);
+      expectMailBrand(app, told);
     });
 
     it('hears nothing when it is unset', async () => {

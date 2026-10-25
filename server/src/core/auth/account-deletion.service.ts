@@ -39,7 +39,8 @@ import {
   users,
 } from '../../database/schema';
 import { recipientLocale, t, type Translatable } from '../../i18n/translate';
-import { type Mail, MailService } from '../../shared/mail/mail.service';
+import type { Mail } from '../../shared/mail/mail.service';
+import { MailBrand } from '../../shared/mail/mail-brand';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { lockOwners } from '../authorization/giving';
 import { rolesOfMembers } from '../authorization/member-roles';
@@ -139,7 +140,7 @@ export class AccountDeletionService {
     private readonly events: AccountEventService,
     private readonly account: AccountService,
     private readonly photos: AccountPhotoService,
-    private readonly mail: MailService,
+    private readonly mail: MailBrand,
     private readonly config: ConfigService<Env, true>,
   ) {}
 

@@ -23,6 +23,7 @@ import { requestTimeZone } from '../../database/tenant-context';
 import { TenantDb } from '../../database/tenant-db.service';
 import { recipientLocale, t, type Translatable } from '../../i18n/translate';
 import { MailService } from '../../shared/mail/mail.service';
+import { MailBrand } from '../../shared/mail/mail-brand';
 import { recordContext } from '../audit/audit-context';
 import { AuthTokenService } from '../auth/auth-token.service';
 import type { RequestContext } from '../auth/request-context';
@@ -47,7 +48,7 @@ import type {
   Invitation,
   InvitationLinkStatus,
 } from './dto/invitation-response.dto';
-import { appNameOf, invitationMail } from './invitation-mail';
+import { invitationMail } from './invitation-mail';
 import { inviterStillHere } from './inviter';
 import { lastDayOf, linkEnd } from './link-end';
 
@@ -124,16 +125,18 @@ const ON_AN_INVITATION = {
 export class InvitationsService {
   private readonly logger = new Logger(InvitationsService.name);
   private readonly clientUrl: string;
-  private readonly appName: string | null;
 
   constructor(
     private readonly tenantDb: TenantDb,
     private readonly tokens: AuthTokenService,
     private readonly mail: MailService,
+    // For the product's name, which signs an invitation; its header is the
+    // organization's, never the product's (ADR-077), so it is sent through
+    // MailService.
+    private readonly brand: MailBrand,
     config: ConfigService<Env, true>,
   ) {
     this.clientUrl = config.get('CLIENT_URL', { infer: true });
-    this.appName = appNameOf(config.get('MAIL_FROM', { infer: true }));
   }
 
   /**
@@ -537,7 +540,7 @@ export class InvitationsService {
           timeZone: requestTimeZone(),
           lastDay: lastDayOf(requestTimeZone(), expiresAt),
           link: this.linkOf(token),
-          appName: this.appName,
+          appName: this.brand.name,
         }),
       );
       return true;

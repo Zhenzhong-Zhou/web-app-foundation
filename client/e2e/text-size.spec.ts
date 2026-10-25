@@ -156,6 +156,30 @@ for (const [where, viewport] of [
   });
 }
 
+/**
+ * The folded rail's plate (ADR-082) is a box with words in it, the
+ * organization's initials: it grows with them at Larger, and draws them in
+ * the app's font, which a button does not take by itself.
+ */
+test('at Larger, the folded plate grows with its initials, in the app’s font', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.addInitScript(() => {
+    localStorage.setItem('textSize', 'larger');
+    localStorage.setItem('nav.folded', 'true');
+  });
+  await page.goto('/orders');
+
+  const plate = page.getByRole('button', { name: /Expand navigation \(/ });
+  await expect(plate).toBeVisible();
+  // 44 px at Standard, 125% of it at Larger.
+  expect((await plate.boundingBox())?.width).toBeCloseTo(55, 0);
+  expect(await plate.evaluate((el) => getComputedStyle(el).fontFamily)).toBe(
+    await page.evaluate(() => getComputedStyle(document.body).fontFamily),
+  );
+});
+
 test('at Larger, the invitation page reflows at 320px wide, signed out', async ({
   browser,
   api,
@@ -249,10 +273,10 @@ test('at Larger on a phone, Home with its cards fits', async ({
 /**
  * Every target in the top bar, 44px each way (ADR-075, ADR-079): on a
  * phone, ☰, the organization, search, Help, the bell and the account; on a
- * computer, the organization, the search box, New version, Help, the bell
- * and the account. With a new version out, the bar at its fullest: a
- * phone's says so with a dot on the account button, no seventh target
- * (ADR-081).
+ * computer, the search box, New version, Help, the bell and the account,
+ * the organization being at the rail's top there (ADR-082). With a new
+ * version out, the bar at its fullest: a phone's says so with a dot on the
+ * account button, no seventh target (ADR-081).
  */
 for (const size of ['standard', 'larger'] as const) {
   for (const [where, viewport] of [
@@ -305,7 +329,6 @@ for (const size of ['standard', 'larger'] as const) {
             bar.getByRole('button', { name: /signed in as .*new version/ }),
           ]
         : [
-            mark,
             // The box, not the input inside it: the box takes the tap.
             bar.locator('.MuiInputBase-root'),
             bar.getByRole('button', { name: 'New version', exact: true }),
@@ -313,6 +336,7 @@ for (const size of ['standard', 'larger'] as const) {
             bar.getByRole('button', { name: 'Notifications', exact: true }),
             bar.getByRole('button', { name: /signed in as/ }),
           ];
+      if (!phone) await expect(mark).toBeHidden();
       const small: string[] = [];
       for (const target of targets) {
         const box = await target.boundingBox();

@@ -10,6 +10,7 @@ import { OrganizationDeletionTimer } from './core/auth/organization-deletion.tim
 import { FilesPurgeTimer } from './core/files/files-purge.timer';
 import { InvitationsSweepTimer } from './core/invitations/invitations-sweep.timer';
 import { LicenceRemindersTimer } from './modules/product-licences/licence-reminders.timer';
+import { MailBrand } from './shared/mail/mail-brand';
 
 async function bootstrap() {
   // bufferLogs holds early boot logs until pino replaces the default logger,
@@ -21,6 +22,12 @@ async function bootstrap() {
 
   const config = app.get<ConfigService<Env, true>>(ConfigService);
   await app.listen(config.get('PORT', { infer: true }));
+
+  // Whether the static site serves the emails' mark yet (ADR-082), asked
+  // before the timers start, since their first run is at once and its
+  // emails should carry the mark: within 10 seconds, after listen, so no
+  // request waits for it.
+  await app.get(MailBrand).start();
 
   // Here only, never when the application boots: tests and scripts boot it
   // too (HourlyTimer).

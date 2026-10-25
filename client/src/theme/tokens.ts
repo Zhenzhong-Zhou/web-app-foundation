@@ -83,6 +83,30 @@ export const RAILS: Record<'dark' | 'light', { light: Rail; dark: Rail }> = {
   },
 };
 
+/**
+ * The product's mark (ADR-082), as docs/brand's masters draw it: a navy
+ * stem and a purple bowl on light ground, panivo-mark.svg, and a white stem
+ * and a lighter bowl on dark, panivo-mark-on-dark.svg. Its purple and navy
+ * are the default accent and the dark rail, so a change to one is made to
+ * the other, the masters and the files made from them too.
+ */
+export const MARK = {
+  light: { bowl: BRAND.accent, stem: RAILS.dark.light.bg },
+  onDark: { bowl: '#776BC6', stem: '#FFFFFF' },
+} as const;
+
+/**
+ * The mark's shape, as the same masters draw it: a bowl and a stem in a
+ * 100 × 100 box, moved by `transform` to sit in its middle. ProductMark
+ * draws it, and so does index.html's loading mark, filled in from here by
+ * vite.config.ts.
+ */
+export const MARK_SHAPE = {
+  transform: 'translate(-2 -1)',
+  bowl: 'M24 12H54A26 26 0 0 1 54 64H40Z',
+  stem: 'M24 12V76A14 14 0 0 0 52 76A87.142857 87.142857 0 0 0 24 12Z',
+} as const;
+
 /** Controls, then panels. Chips are round. */
 export const RADIUS = { control: 6, panel: 8, dialog: 10 } as const;
 

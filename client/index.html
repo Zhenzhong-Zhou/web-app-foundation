@@ -3,16 +3,53 @@
   <head>
     <meta charset="UTF-8" />
     <!--
-      The tab's icon: the SVG wherever a browser draws one, since it follows
-      dark mode; the ICO (16, 32 and 48 px) for any that cannot; and the
-      icon an iPhone puts on its home screen. sizes="32x32" keeps Chrome on
-      the SVG, which with "any" fetched the ICO as well. The masters are in
-      docs/brand/.
+      The tab's icon, the mark on its navy plate, which never switches
+      (ADR-082): the SVG wherever a browser draws one; the ICO (16, 32 and
+      48 px) for any that cannot; and the icon an iPhone puts on its home
+      screen. sizes="32x32" keeps Chrome on the SVG, which with "any"
+      fetched the ICO as well. scripts/brand-assets.mjs makes all three
+      from the masters in docs/brand/.
     -->
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!--
+      The home screen's name: Android's from the manifest, which
+      vite.config.ts's app-name plugin writes with the icons; an iPhone's
+      from this title, else it takes the page's (ADR-082).
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="%APP_NAME%" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      A phone's bar in the page's colour, for the system's mode, rather than
+      white above a dark app; src/loading.js, then theme-color.ts, set both
+      to the app's own mode once someone has chosen one (ADR-082).
+    -->
+    <meta
+      name="theme-color"
+      content="%PAGE_LIGHT%"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="%PAGE_DARK%"
+      media="(prefers-color-scheme: dark)"
+    />
+    <!--
+      A shared link's card (ADR-082). The same for every address, since the
+      pages are drawn in the browser: a copied invitation shows the product,
+      never the organization. Its picture, og:image, is added by the
+      app-name plugin when VITE_SITE_URL is set, since it must be a full
+      address.
+    -->
+    <meta property="og:title" content="%APP_NAME%" />
+    <meta
+      property="og:description"
+      content="Inventory, orders, production and invoices."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
     <!--
       360, QQ and Sogou browsers, common in China, carry a second engine, an
       old Internet Explorer, and may open a site in it; this app would show a
@@ -23,9 +60,167 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <!-- VITE_APP_NAME in the repository's .env; see vite.config.ts. -->
     <title>%APP_NAME%</title>
+    <!--
+      The loading mark (ADR-082): the page's colour from the first moment,
+      in the mode the app opens in, and the mark after 300 ms, so a quick
+      load shows the colour alone. It never moves. It covers the page, beside
+      #root rather than in it, until the app's first screen is on view, and
+      that screen takes it down (lib/loading-mark.ts), #root hidden from
+      screen readers till then, so they hear only the mark; above MUI's layers,
+      whose highest, a tooltip's, is 1500. src/loading.js, whose tag
+      vite.config.ts adds at the end of this <head>, sets the mode's class
+      on <html>, the one MUI's theme then keeps (colorSchemeSelector
+      'class'). The class also sets the browser's own defaults for the
+      mode, color-scheme and the text's colour, so in Dark anything drawn
+      before the app's styles apply is light on the dark page, never the
+      browser's black; WebKit has such a moment. The mark is docs/brand's
+      panivo-mark.svg and panivo-mark-on-dark.svg, its shape and colours
+      tokens.ts's MARK_SHAPE and MARK, and its waits filled in with them by
+      vite.config.ts.
+
+      Still up 250 ms after the mark appears, the delay the app's spinner
+      waits (INDICATOR_DELAY_MS), a thin bar slides under it, so a long
+      wake-up (a minute, on Render's free plan) does not look frozen; it
+      stands still under reduced motion. Set apart from the mark, which
+      stays centred and never shifts as the bar appears. No words, since
+      none are loaded yet, and hidden from screen readers, as a progress bar
+      with no name.
+
+      If the app's own files do not load, src/loading.js puts one line and
+      Reload in the mark's place (.failed), in the system's font, since the
+      app's is one of those files.
+    -->
+    <style>
+      html {
+        color-scheme: light;
+        color: %TEXT_LIGHT%;
+      }
+      html.dark {
+        color-scheme: dark;
+        color: %TEXT_DARK%;
+      }
+      html,
+      #loading-mark {
+        background: %PAGE_LIGHT%;
+      }
+      html.dark,
+      html.dark #loading-mark {
+        background: %PAGE_DARK%;
+      }
+      #loading-mark {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #loading-mark svg {
+        visibility: hidden;
+        animation: loading-mark-appears 0s %MARK_DELAY% forwards;
+      }
+      @keyframes loading-mark-appears {
+        to {
+          visibility: visible;
+        }
+      }
+      html.dark #loading-mark .bowl {
+        fill: %MARK_ON_DARK_BOWL%;
+      }
+      html.dark #loading-mark .stem {
+        fill: %MARK_ON_DARK_STEM%;
+      }
+      #loading-mark .bar {
+        position: absolute;
+        top: calc(50% + 56px);
+        left: calc(50% - 60px);
+        width: 120px;
+        height: 4px;
+        overflow: hidden;
+        border-radius: 2px;
+        background: color-mix(in srgb, %MARK_BOWL% 20%, transparent);
+        visibility: hidden;
+        animation: loading-mark-appears 0s %BAR_DELAY% forwards;
+      }
+      #loading-mark .bar::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 40%;
+        border-radius: inherit;
+        background: %MARK_BOWL%;
+        animation: loading-bar-slides 1.4s ease-in-out infinite;
+      }
+      @keyframes loading-bar-slides {
+        from {
+          transform: translateX(-100%);
+        }
+        to {
+          transform: translateX(250%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #loading-mark .bar::before {
+          left: 30%;
+          animation: none;
+        }
+      }
+      html.dark #loading-mark .bar {
+        background: color-mix(in srgb, %MARK_ON_DARK_BOWL% 30%, transparent);
+      }
+      html.dark #loading-mark .bar::before {
+        background: %MARK_ON_DARK_BOWL%;
+      }
+      #loading-mark .failed {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        max-width: 32em;
+        padding: 0 16px;
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+        text-align: center;
+      }
+      #loading-mark .failed p {
+        margin: 0;
+      }
+      #loading-mark .failed button {
+        min-height: 44px;
+        padding: 8px 20px;
+        border: 1px solid currentColor;
+        border-radius: %RADIUS_CONTROL%;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      #loading-mark .failed button:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root" aria-hidden="true"></div>
+    <div id="loading-mark">
+      <svg
+        role="img"
+        aria-label="%APP_NAME%"
+        viewBox="0 0 100 100"
+        width="64"
+        height="64"
+      >
+        <g transform="%MARK_TRANSFORM%">
+          <path class="bowl" fill="%MARK_BOWL%" d="%MARK_BOWL_PATH%" />
+          <path class="stem" fill="%MARK_STEM%" d="%MARK_STEM_PATH%" />
+        </g>
+      </svg>
+      <div class="bar" aria-hidden="true"></div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

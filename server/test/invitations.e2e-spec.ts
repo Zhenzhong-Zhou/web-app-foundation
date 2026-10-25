@@ -36,6 +36,7 @@ import {
   roleIdNamed,
   roleIdsOf,
 } from './utils/fixtures';
+import { mailBrandOf } from './utils/mail-brand';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -578,6 +579,10 @@ describe('Invitations (e2e)', () => {
       expect(email.html).not.toContain('<b>');
       expect(email.html).not.toContain('<img');
       expect(email.html).not.toContain('data:');
+      // The organization's, not the product's: no header (ADR-082).
+      const brand = mailBrandOf(app);
+      expect(email.html).not.toContain(brand.mark);
+      expect(email.text.startsWith(brand.name)).toBe(false);
     });
 
     it('writes in the inviter’s own language unless another is chosen', async () => {

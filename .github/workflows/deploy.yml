@@ -143,27 +143,73 @@ jobs:
       # version.json's query string gets past any cache that keys on it,
       # but not Render's edge, which keeps a file by its path alone for
       # five minutes: the new build shows because Render empties its edge
-      # when the deploy goes live (render.md, As Render shows it). The
-      # favicon must come back as an
-      # SVG: a file missing from the build comes back as index.html with a
-      # 200, through the /* rewrite. With the commit already live, as on a
-      # run by hand, this passes before the new build is out.
+      # when the deploy goes live (render.md, As Render shows it). Each
+      # file below must come back as itself. One missing from the build
+      # comes back as a 404 when it is a .png or a .js, and as index.html
+      # with a 200, through the /* rewrite, when it is a .svg or a
+      # .webmanifest, so the status alone would not do. The favicon, then
+      # ADR-082's: the manifest the build writes, the shared link's
+      # picture, the emails' mark and the loading mark's script, by the
+      # name the live index.html gives it, each with its own content type,
+      # except the manifest, which may come back with any but text/html:
+      # browsers read a manifest whatever its type.
+      # With the commit already live, as on a run by hand, this passes
+      # before the new build is out.
       - name: Check the live site
         if: steps.settings.outputs.ready == 'true'
         run: |
           site=${API_HEALTH_URL%/api/health}
+          files=(
+            '/favicon.svg image/svg+xml'
+            '/manifest.webmanifest any'
+            '/og-image.png image/png'
+            '/brand/mail-mark.png image/png'
+          )
           deadline=$((SECONDS + 10 * 60))
           while :; do
             build=$(curl -fsS -m 30 "$site/version.json?$(date +%s)" | jq -r '.build // empty' 2> /dev/null || true)
             database=$(curl -fsS -m 30 "$API_HEALTH_URL/ready" | jq -r '.database // empty' 2> /dev/null || true)
-            favicon=$(curl -sS -m 30 -o /dev/null -w '%{http_code} %{content_type}' "$site/favicon.svg" || true)
-            seen="/version.json names ${build:-no build}, /api/health/ready says the database is ${database:-not up}, and /favicon.svg answered HTTP ${favicon:-nothing}"
-            if [ "$build" = "$COMMIT" ] && [ "$database" = up ] && [[ "$favicon" == '200 image/svg+xml'* ]]; then
+            # The files only once the build is the commit's, since before
+            # then their answers cannot end the wait; all at once.
+            wrong=''
+            files_seen=', the files not asked until it names the commit'
+            if [ "$build" = "$COMMIT" ]; then
+              # The loading mark's script is named by its content
+              # (vite.config.ts): the one the live index.html names.
+              loading=$(curl -fsS -m 30 "$site/index.html?$(date +%s)" | grep -o '/assets/loading-[0-9a-f]*\.js' | head -1 || true)
+              checks=("${files[@]}")
+              if [ -n "$loading" ]; then
+                checks+=("$loading application/javascript")
+              else
+                wrong=', index.html names no loading script'
+              fi
+              answers=$(mktemp -d)
+              for i in "${!checks[@]}"; do
+                read -r file _ <<< "${checks[$i]}"
+                curl -sS -m 30 -o /dev/null -w '%{http_code} %{content_type}' "$site$file" > "$answers/$i" 2> /dev/null &
+              done
+              wait
+              for i in "${!checks[@]}"; do
+                read -r file type <<< "${checks[$i]}"
+                answer=$(cat "$answers/$i")
+                if [ "$type" = any ]; then
+                  [[ "$answer" == '200 '* && "$answer" != '200 text/html'* ]] && continue
+                  type='any type but text/html'
+                else
+                  [[ "$answer" == "200 $type"* ]] && continue
+                fi
+                wrong="$wrong, $file answered HTTP ${answer:-nothing}, not 200 $type"
+              done
+              rm -r "$answers"
+              files_seen=${wrong:-, and every file came back as itself}
+            fi
+            seen="/version.json names ${build:-no build}, /api/health/ready says the database is ${database:-not up}$files_seen"
+            if [ "$build" = "$COMMIT" ] && [ "$database" = up ] && [ -z "$wrong" ]; then
               echo "At $site, $seen."
               exit 0
             fi
             if [ "$SECONDS" -ge "$deadline" ]; then
-              echo "::error title=The live site is not right::After 10 minutes at $site, $seen; expected $COMMIT, up, and 200 image/svg+xml. Both services were deployed at $COMMIT, and neither is rolled back. An older build: the static site's build failed or is slow (Render → the static site → Events). The database not up: Render → the database. The favicon as text/html: the build left it out (client/public). Once put right, re-run this job, or run Deploy by hand (docs/runbooks/render.md, Deploys)."
+              echo "::error title=The live site is not right::After 10 minutes at $site, $seen; expected $COMMIT, up, and each file as itself. Both services were deployed at $COMMIT, and neither is rolled back. An older build: the static site's build failed or is slow (Render → the static site → Events). The database not up: Render → the database. A file missing (a 404) or as text/html: the build left it out (client/public, or vite.config.ts for the manifest and the loading script). Once put right, re-run this job, or run Deploy by hand (docs/runbooks/render.md, Deploys)."
               exit 1
             fi
             echo "$seen; asking again in 20 seconds."

@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 
-import { cleanup, type RenderOptions } from '@testing-library/react';
+import type { RenderOptions } from '@testing-library/react';
 import { setupServer } from 'msw/node';
 import type { JSXElementConstructor, ReactNode } from 'react';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
@@ -87,7 +87,6 @@ afterEach(async () => {
   // Overrides are per-test. Without this a handler set to return a 409 leaks
   // into the next test in the file and fails something unrelated.
   server.resetHandlers();
-  cleanup();
 
   // What the version check knows lives in its module, which a file's tests
   // share (ADR-081): back to this tab's own build on the server, the API

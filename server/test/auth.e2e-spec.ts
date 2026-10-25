@@ -13,7 +13,14 @@ import {
   sessions,
   users,
 } from '../src/database/schema';
+import { escapeHtml } from '../src/shared/mail/escape-html';
+import {
+  MAIL_MARK_CHECK,
+  MailBrand,
+  type MarkCheck,
+} from '../src/shared/mail/mail-brand';
 import { createE2eApp, PASSWORD } from './utils/fixtures';
+import { expectMailBrand, mailBrandOf } from './utils/mail-brand';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -285,6 +292,30 @@ describe('Auth (e2e)', () => {
       const sent = mail.lastTo(EMAIL);
       expect(sent).toBeDefined();
       expect(sent?.html).toContain('/verify-email?token=');
+      expectMailBrand(app, sent);
+    });
+
+    // ADR-082: never a broken image, before the static site serves it.
+    it('heads it with the name alone while the mark does not answer', async () => {
+      const check = vi.mocked(app.get<MarkCheck>(MAIL_MARK_CHECK));
+      check.mockResolvedValueOnce(false);
+      await app.get(MailBrand).check();
+      try {
+        await authedAgent(app)
+          .post('/v1/auth/register')
+          .send(registration)
+          .expect(201);
+
+        const { mark, name } = mailBrandOf(app);
+        const sent = mail.lastTo(EMAIL);
+        expect(check).toHaveBeenLastCalledWith(mark);
+        expect(sent?.html).not.toContain('<img');
+        expect(sent?.html).toContain(`>${escapeHtml(name)}</td>`);
+        expect(sent?.text.startsWith(`${name}\n\n`)).toBe(true);
+      } finally {
+        // Served again, for the tests after this one.
+        await app.get(MailBrand).check();
+      }
     });
 
     it('verifies the address and spends the token', async () => {
@@ -350,6 +381,7 @@ describe('Auth (e2e)', () => {
         .expect(202);
 
       expect(mail.lastTo(EMAIL)?.html).toContain('/reset-password?token=');
+      expectMailBrand(app, mail.lastTo(EMAIL));
     });
 
     it('answers identically for an unknown address, and sends nothing', async () => {
@@ -379,6 +411,11 @@ describe('Auth (e2e)', () => {
       // The likely reason someone is here is that an attacker holds their
       // password. A reset leaving that session live is not a recovery.
       expect(await db.select().from(sessions)).toHaveLength(0);
+      // And the security email it sends (ADR-037).
+      expectMailBrand(
+        app,
+        mail.sent.find((sent) => sent.subject === 'Your password was reset'),
+      );
 
       await authedAgent(app)
         .post('/v1/auth/login')

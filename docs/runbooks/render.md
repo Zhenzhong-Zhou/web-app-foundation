@@ -48,8 +48,9 @@ use; the reasons are in the sections named.
      ("What runs where"), `REGISTRATION=invitation` and, optionally,
      `OPERATOR_EMAIL` ("Registration and organization invitations").
      `MAIL_FROM` names the product, `Panivo <the address it has now>`: its
-     name is the sender an inbox shows, and the one each invitation is
-     signed with (ADR-077). The server refuses to boot on a wrong value,
+     name is the sender an inbox shows, the one each invitation is signed
+     with (ADR-077), and the one beside the mark atop the product's own
+     emails (ADR-082). The server refuses to boot on a wrong value,
      and the deploy log says which;
    - **Health Check Path** `/health/ready`; **Auto-Deploy** Off; its
      **Deploy Hook** into GitHub as `RENDER_API_DEPLOY_HOOK` ("Deploys").
@@ -58,8 +59,15 @@ use; the reasons are in the sections named.
    - **Branch** `main`; **Root Directory** `client`; **Build Command**
      `npm ci && npm run build`; **Publish Directory** `dist`;
    - **Environment:** `VITE_APP_NAME=Panivo`, the product's name in the
-     browser's tab and its bookmarks. It is read only when the site
-     builds, so a change shows from the next deploy;
+     browser's tab and its bookmarks, and ADR-082's three:
+     `VITE_APP_NAME_ZH_HANS=品桥`, the name in 中文;
+     `VITE_COPYRIGHT_HOLDER=Zhenzhong (Bob) Zhou`, the © line's holder,
+     until a registered business's name replaces it; and `VITE_SITE_URL`,
+     the site's own address (`https://web-app-foundation-client.onrender.com`),
+     which a shared link's picture needs in full. `.env.example` says what
+     each falls back to. They are read only when the site builds, so a
+     change shows from the next deploy, and the three are set before the
+     deploy that first reads them;
    - **Redirects/Rewrites:** the README's two rules, `/api/*` to the web
      service's own address first, then `/*` to `/index.html`;
    - **Headers:** the three rules ("Deploys", "Setting it up");
@@ -121,13 +129,19 @@ minutes while the static site builds. `/version.json` must name the
 commit, which it does at the first look once the static site's deploy is
 live, since Render empties its edge then; the query string the step adds
 does not get past the edge, which ignores it (As Render shows it, below).
-`/api/health/ready` must say the database is `up`; and
-`/favicon.svg` must come back as `image/svg+xml`, since a file the build
-left out comes back as `index.html` with a 200 (the `/*` rewrite). It
-only reads. After 10 minutes it fails, saying what each of the three
-gave; both services have been deployed by then, and neither is rolled
-back. With the commit already live, as on a run by hand, it passes before
-the new build is out.
+`/api/health/ready` must say the database is `up`; and each static file
+the build must carry comes back as itself. One the build left out comes
+back as a 404 when it is a `.png` or a `.js`, but as `index.html` with a
+200 (the `/*` rewrite) when it is a `.svg` or a `.webmanifest` ("Old files
+after a deploy"), so the step reads the type as well as the status:
+`/favicon.svg` as `image/svg+xml`, and ADR-082's, `/og-image.png` and
+`/brand/mail-mark.png` as `image/png`, the loading mark's script, by the
+name the live `index.html` gives it (`/assets/loading-<hash>.js`), as
+`application/javascript`, and `/manifest.webmanifest` as anything but
+`text/html`, since browsers read a manifest whatever its type. It only
+reads. After 10 minutes it fails, saying what each gave; both services
+have been deployed by then, and neither is rolled back. With the commit
+already live, as on a run by hand, it passes before the new build is out.
 
 Why not Render's own auto-deploy, which both services had until ADR-081:
 
@@ -274,9 +288,11 @@ merge.
    | `/version.json` | `Cache-Control` | `no-cache`                            |
 
    A file in `/assets/` is named by its content, so a changed one gets a
-   new name and the browser can keep the old for a year. `index.html`
-   names the build's files and `version.json` says which build is out,
-   so both are asked for again every time.
+   new name and the browser can keep the old for a year; the loading
+   mark's script is among them (ADR-082), so a page load waits for it
+   only once after it changes. `index.html` names the build's files and
+   `version.json` says which build is out, so both are asked for again
+   every time.
 6. **The `production` environment, limited to `main`,** once #196 has
    merged, not before: until then `main`'s workflow names no
    environment, and would lose the hooks. Bob, in GitHub → the
@@ -555,3 +571,8 @@ business.
   anything.
 - **The release checks walked once** on the paid deployment, against the
   real address, before the first customer signs in.
+- **Terms and a privacy policy,** written, and linked in the signed-out
+  footer above the © line: the one item here that needs code (ADR-082,
+  Deferred). The app keeps personal details (names,
+  emails, photos, sign-in addresses), and privacy laws expect a published
+  policy before anyone else's are kept.

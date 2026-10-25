@@ -12,6 +12,7 @@ import {
   PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
+import { expectMailBrand } from './utils/mail-brand';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -265,6 +266,7 @@ describe('Notifications (e2e)', () => {
 
       const [message] = sentWith(SIGN_IN_SUBJECT);
       expect(message.to).toBe(alpha.email);
+      expectMailBrand(app, message);
     });
 
     // Same rule as the bell, or the inbox becomes the thing people filter.
@@ -293,6 +295,7 @@ describe('Notifications (e2e)', () => {
         .expect(200);
 
       expect(sentWith('Your password was changed')).toHaveLength(1);
+      expectMailBrand(app, sentWith('Your password was changed')[0]);
     });
 
     /**

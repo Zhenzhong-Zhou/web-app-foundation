@@ -814,15 +814,16 @@ await fetch(`${api}/v1/files/product-image`, {
   Stock each change the address (`?tab=money` and so on), and pasting that
   address in a new tab opens the same tab. Type in Profile's tax number, open
   Stock and come back: the typing is still there. On a phone the tabs scroll
-  sideways. Rename the organization: the side rail and the top bar show the
-  new name after Save, the History button lists the change, and an invoice
-  issued before still prints the old name. In 中文 the tabs read 概况, 财务,
-  单据 and 库存.
+  sideways. Rename the organization: the rail's top, and below 1200 px the
+  top bar, show the new name after Save, the History button lists the
+  change, and an invoice issued before still prints the old name. In 中文
+  the tabs read 概况, 财务, 单据 and 库存.
 
 - **MC-1702** Branding (ADR-060). As an owner, Settings → Organization →
   Branding: upload a PNG logo and an SVG one in turn; each previews on both
-  sidebar shades, and after Save the logo replaces the name in the top bar
-  (on a white plate in dark mode). Choose Teal and Save: buttons, links and
+  sidebar shades, and after Save the logo replaces the name at the rail's
+  top, and below 1200 px in the top bar (on a white plate on the dark rail,
+  and in dark mode). Choose Teal and Save: buttons, links and
   the selected tab turn teal at once, in light and dark mode. Choose your
   own colour `#5BB8F0`: the tab says `#127EB3` will be saved; `#D93A2B`
   warns it is close to the error red. On Stock set expiry to 180 and 60:
@@ -911,8 +912,10 @@ await fetch(`${api}/v1/files/product-image`, {
   box starts unticked. On a personal laptop it stays ticked. As an owner,
   Organization → Security: 15 minutes, for sign-ins without Keep me
   signed in. On the unticked computer, leave the app alone 14 minutes:
-  the warning shows with a countdown, also in the tab's title; Enter keeps
-  you in. Start editing an order and leave it: the warning adds that
+  the warning shows with a countdown, also in the tab's title, before the
+  page's name and the product's; switch to 中文 from the account menu while
+  it runs and the title's name turns 品桥 with the countdown still first.
+  Enter keeps you in, and the title is the page's again, in 中文. Start editing an order and leave it: the warning adds that
   unsaved changes will be lost. Let it run out: the sign-in page says
   why, and signing in returns you to the page. With two tabs open, use
   one and the other does not warn; sign out from the warning in one and
@@ -2164,7 +2167,7 @@ revision back afterwards: `git status` shows nothing changed.
 - **MC-3414** *(ADR-081)* Opening an outdated tab. Outdated, with no
   override, reload the page: no app, and on its own A new version is being
   installed, which tries again by itself in a minute; with the override,
-  A new version is ready, with Reload. Never Could not reach the server.
+  A new version is ready, with Reload. Never Can’t reach the server.
 - **MC-3415** *(ADR-081)* Sign-out still works. Outdated, switch to
   another tab and back, which reads the session: the page stays as it
   was. Sign out from the account menu: the sign-in page, and the session
@@ -2306,26 +2309,185 @@ as `docs/runbooks/render.md`, "Deploys", has them.
 
 The name is a setting, `VITE_APP_NAME=Panivo`: in the repository's `.env`
 locally (restart `npm run dev` after changing it), and in the static
-site's environment on Render, read when it builds. The icon's masters are
-in `docs/brand/`. Browsers keep an icon long after it changes, so check in
-a private window.
+site's environment on Render, read when it builds. ADR-082's three beside
+it, `VITE_APP_NAME_ZH_HANS=品桥`, `VITE_COPYRIGHT_HOLDER` and
+`VITE_SITE_URL`, are read the same way (`.env.example`). The icon's masters are
+in `docs/brand/`, and `scripts/brand-assets.mjs` makes the files browsers
+load from them. Browsers keep an icon long after it changes, so check in a
+private window.
 
 - **MC-3501** The icon. On a computer, open the app in Chrome, Edge,
-  Firefox and Safari: the tab shows the P, a navy stem and a purple bowl,
-  sharp at the tab's size. With the system in dark mode, reload: the stem
-  turns white and the bowl a lighter purple, except in Safari before 26,
-  which draws the ICO and keeps the colours of light mode. Bookmark the
-  page: the bookmark shows the same P. On an iPhone, Safari → Share → Add
-  to Home Screen: the P on white in the iPhone's rounded square, not a
-  picture of the page. On Android, Chrome → ⋮ → Add to home screen: the P
-  again, not a letter Chrome made up.
+  Firefox and Safari: the tab shows the P on a small rounded navy plate, a
+  white stem and a purple bowl, sharp at the tab's size. It never switches:
+  with a light tab strip and a dark one (the browser's theme), and the
+  system in light mode and in dark, reload each time; the plate is the
+  same, and clear on every strip, a light Chrome theme with the system
+  dark included. On Windows in dark mode, pin the app to the taskbar: the
+  plate, not a navy P on the dark bar. Bookmark the page: the bookmark
+  shows the same plate. On an iPhone, from Inventory, Safari → Share → Add
+  to Home Screen: the P on navy filling the iPhone's rounded square, not a
+  picture of the page, and the name it offers is Panivo, not Inventory ·
+  Panivo. On Android, from Inventory, Chrome → ⋮ → Add to home screen: the
+  P on navy filling the shape the phone cuts, the P whole and well inside
+  it, named Panivo, not a letter Chrome made up. Opened from either home
+  screen, the app still shows the browser's bar and its back button.
 - **MC-3502** The name in the tab. The sign-in page's tab reads Panivo,
   and so does Home's. Inventory's reads Inventory · Panivo, and every other
   page in the rail ends the same way, Settings → Organization too; an order,
-  SO-DEMO-1 · Orders. In 中文 the page's name is Chinese and Panivo stays
-  as it is. Bookmark Inventory: the bookmark says Inventory · Panivo.
-  Empty `VITE_APP_NAME` and restart: every tab ends web-app-foundation,
-  none Foundation.
+  SO-DEMO-1 · Orders. From Inventory, go Home: its tab is Panivo again.
+  Bookmark Inventory: the bookmark says Inventory · Panivo. With
+  `VITE_APP_NAME_ZH_HANS=品桥` in `.env` and `npm run dev` restarted, in
+  中文 the page's name is Chinese and every tab ends 品桥: 库存 · 品桥, Home
+  and the sign-in page 品桥 alone, and an order SO-DEMO-1 · 订单. On the
+  sign-in page, switch between English and 中文: the tab turns Panivo and
+  品桥 with the page. Reload in 中文: for a moment while it loads the tab
+  may read Panivo, index.html's one name, then 品桥. Empty
+  `VITE_APP_NAME_ZH_HANS` and restart: in 中文 every tab ends Panivo, as
+  in English. Empty `VITE_APP_NAME` too and restart: every tab ends
+  web-app-foundation, none Foundation.
+- **MC-3503** The product's emails. In the repository's `.env`, set
+  `MAIL_FROM="Panivo <no-reply@localhost>"`, as `.env.example` has it.
+  Start `npm run dev` in `client/`, which serves the mark, then restart
+  the API: it asks for the mark as it starts, and its log says The mail
+  mark answers. With Mailpit open, ask for a reset on Forgot your
+  password: the email opens with the P on its small navy plate and
+  Panivo in bold beside it, a thin line under both, then Hi and the name,
+  every sentence as before. In Mailpit's Text tab, Panivo is the first
+  line, with a blank line under it. The same header opens the
+  confirm-your-email email (MC-101), the new sign-in email (sign in from a
+  private window), the deletion emails (MC-2302, MC-2402) and the
+  operator's (MC-3107). An invitation (MC-3001) has none: it still opens
+  with Join and the organization's name, and names Panivo only in its last
+  line. Stop the client and restart the API: the log says the mark does
+  not answer, and the next reset email opens with Panivo alone, no image
+  and no empty box beside it. Start the client again: within ten minutes
+  the log says the mark answers, and the next email shows it. On the live
+  site, with a phone's mail app in dark mode if one is to hand, ask for a
+  reset for your own address: the plate stands clear on the dark
+  background and Panivo reads light, not navy; with the mail app blocking
+  images, an empty box stands where the mark was and Panivo still heads
+  the email.
+- **MC-3504** A link pasted into a chat. On the live site, once Render
+  has `VITE_SITE_URL` (`render.md`), paste the site's address into a chat
+  that shows previews (Slack, Teams, Discord, iMessage; WeChat makes its
+  own): a card reads Panivo and Inventory, orders, production and
+  invoices., with the picture of the P on navy beside Panivo and 品桥,
+  sharp, the names not boxes or a fallback font. Paste an invitation link:
+  the same card, never the organization's name. Locally, with
+  `VITE_SITE_URL` empty, View Source on any page shows og:title and no
+  og:image.
+- **MC-3505** A phone's bar in each mode. On an Android phone in Chrome
+  (or an iPhone's Safari, where it tints its bar): with the phone in light
+  mode, the bar above the sign-in page is the page's pale grey, not white;
+  in dark mode, the page's near-black, not white over a dark page. Sign
+  in, and in the account menu choose Dark with the phone light: the bar
+  turns dark with the page, and stays dark on a reload, from its first
+  moment. Light with the phone dark: the bar light. System: it follows
+  the phone again.
+- **MC-3506** The loading mark, in Dark, on a slow connection. In Chrome
+  on a computer with the system light, choose Dark in the account menu,
+  then sign out. DevTools → Network: Disable cache, Slow 4G; reload: the
+  page is dark from the first moment, never a white flash; after a moment
+  the P appears in the middle, a white stem and a lighter purple bowl,
+  still, not spinning or fading, and a moment later a thin purple bar
+  under it, a short stripe sliding left to right along it, with no
+  words. The P never shifts as the bar comes. They stay, with no spinner
+  beside or after them, until the sign-in page takes their place, still
+  dark. With VoiceOver on, the mark reads Panivo, image, and the bar is
+  not read. In 中文 too they stay while 中文's words load, then the page.
+  In Safari the same, and as the page comes, none of its text is ever
+  black on the dark page, not even for a moment.
+  Sign in and reload, still on Slow 4G: the mark covers the whole window
+  until Home has drawn, and the rail and Home appear together, never the
+  rail beside an empty page or a grey block. Choose Light with the system
+  dark: the same, light, the bar purple on a pale track. Turn on Reduce
+  motion (macOS: System Settings → Accessibility → Display) and reload:
+  the bar shows with its stripe standing still in the middle. Stop the API
+  and reload: Can’t reach the server, as a page whose connection dropped
+  says it, with Try again, and no mark or bar left over it; start the API
+  and press Try again: the sign-in page. With VoiceOver on while the mark
+  is up, it reads Panivo and nothing of the page under it. DevTools → Network, right-click the app's own script
+  (`main.tsx` locally, `index-….js` under `/assets/` on the live site) →
+  Block request URL, and reload: the mark and bar give way to one line,
+  The app could not load. Check the connection, then reload., with Reload
+  under it, focused, in the system's font, and VoiceOver reads the line;
+  in 中文, 应用未能加载。请检查网络连接，然后重新加载。 with 重新加载.
+  Unblock it and press Reload: the page. Turn throttling off and reload: the page's colour,
+  then the page, the mark seldom and the bar more seldom still. On the
+  live site, after the API has slept (15 minutes with no visit), the first
+  visit shows the mark and its sliding bar for up to a minute, never
+  still as if frozen, with no spinner, then the page.
+- **MC-3507** The pages before sign-in. With `VITE_COPYRIGHT_HOLDER` set
+  in `.env` and `npm run dev` restarted, open Sign in, Create an account
+  (where registration is open), Forgot your password, a reset link, a
+  confirm-email link while signed out, and a page that does not exist,
+  signed out. Each has the P and Panivo above it, centred, Panivo bold
+  text that a double-click selects, and © 2026 and the holder at the foot,
+  in small grey text; every sentence is as before. Stop the API and
+  reload: Can’t reach the server with Try again, the same name above and
+  line below. It and the page that does not exist have the language and
+  text size at the top, as Sign in has: choose 中文 there and the page,
+  its name and the tab change to it. In Dark (the account menu, then sign out) the P is the
+  white stem and lighter bowl, clear on the dark page. VoiceOver reads
+  Panivo once, with no image before it, and the footer as the page's
+  footer. Empty `VITE_COPYRIGHT_HOLDER` and restart: no line, and no empty
+  space where it was. At 125% text the P grows with the name.
+- **MC-3508** The same in 中文, on a phone. With `VITE_APP_NAME_ZH_HANS=品桥`
+  in `.env` and restarted, open Sign in on a phone (or DevTools at 390 px)
+  and choose 简体中文: 品桥 above the form, the © line at the foot still
+  in its holder's words; switch to English and back: Panivo, then 品桥.
+  Empty the setting: in 中文 the name above is Panivo.
+- **MC-3509** The invitation page's footer. Open an invitation link signed
+  out (MC-3001): the organization's logo or name and Join … head it as
+  before, with no Panivo above; at the foot, a small P, Panivo and the ©
+  line, in grey. The same footer on an ended link, a malformed one, an
+  organization invitation and Already in this organization. While the
+  link is read, only the spinner, with no name or footer.
+- **MC-3510** The rail's top. On a computer at 1200 px or wider: the
+  organization's logo at the top of the rail, on a white plate on the
+  dark rail, or its name in white where it has none, with « beside it on
+  one row; the top bar holds search, Help, the bell and you, with no logo.
+  From any page, click the logo or the name: Home, as the top bar's was.
+  Tab from the skip link: the logo or name first, its ring white on the
+  dark rail, then «, each on its own.
+  Narrow the window below 1200 px: the logo or name is back in the top
+  bar, and the menu drawer opens as before. Press «: the rail folds to one
+  44 px plate at its top. With no logo, the organization's initials on its
+  accent, white on it in Light and dark on the lighter accent in Dark:
+  WIDE Naturals Inc. reads WN, and 清禾药业有限公司 reads 清禾, in the
+  same type as the links under it; at Larger text the plate grows with
+  them, and they still fit it. With a
+  square logo (Settings → Organization → Branding), the logo on a white
+  plate; with a wide wordmark, the initials. Reload folded, DevTools'
+  Network on Slow 4G: while the logo loads the plate shows » alone, never
+  initials that then give way to the logo. Hover the plate, or Tab to
+  it: » takes its place and a tooltip says Expand navigation; VoiceOver
+  reads WN, Expand navigation (WIDE Naturals Inc.), or with a logo
+  Expand navigation and the name. Click or tap it: the rail opens.
+- **MC-3511** The rail's foot. At the bottom of the rail, pinned: a
+  line, then Powered by, the P and Panivo, small, Panivo brighter than the
+  words. At 1440 × 900, a MacBook's window, every link is above the line,
+  Price lists the last, with nothing fading into it; so too under the
+  build's own name, web-app-foundation, where VITE_APP_NAME is not set,
+  which takes the foot to two lines. At 1280 × 800 the
+  foot is in view without scrolling, open and folded, and the links run on
+  under it, the last in view fading into the rail just above the line;
+  scroll the rail to its end and the fade goes. Make the window shorter,
+  to about 500 px: the links scroll on their own above the line, fading
+  into it, and the foot stays put. On the dark rail the P
+  is white-stemmed in Light and Dark alike; choose the light rail
+  (Branding): in Light the navy P, in Dark the white one, clear on each.
+  Folded: the P alone; hover it, or Tab to it, and a tooltip says Powered
+  by Panivo, which VoiceOver reads. Below 1200 px, the menu drawer ends
+  the same way, its foot pinned too: on a phone it is in view as the
+  drawer opens, with the links scrolling above it. Hold the phone
+  sideways (or DevTools at 844 × 340): the drawer scrolls as one, Home at
+  its top and the foot after the last link, with no fade. In Français, Propulsé par; in 中文 with its setting, 由, the
+  P, 品桥, 提供支持, on one line.
+- **MC-3512** Help's foot. Open Help and scroll to its end: Panivo ·
+  Version 0.7.0 · build … · the day, and under it the © line, small and
+  grey. In 中文 with its setting, 品桥 · 版本 … ; with no holder set, the
+  version line alone.
 
 ## Regressions
 
@@ -3226,6 +3388,50 @@ first.
 - 2026-10-24: #213, the recipe's batch size and Take a return's
   quantities read without padding zeros: MC-R55.
 - 2026-10-24: #223, Recently opened's kinds in sentence case: MC-R57.
+- 2026-10-24: ADR-082, one icon on a navy plate for the tab, the ICO,
+  the taskbar and an iPhone's home screen, made by
+  `scripts/brand-assets.mjs`: MC-3501 rewritten.
+- 2026-10-24: ADR-082, the product's emails open with its mark and
+  name, an invitation's still with the organization's: MC-3503.
+- 2026-10-24: ADR-082, the emails' mark shown only once the static site
+  serves it, the name alone until then: MC-3503 extended.
+- 2026-10-24: ADR-082, the names and the © holder as settings, and
+  index.html's manifest, theme-color, card and loading mark: MC-3501 and
+  MC-3502 extended (the home screens' name, the tab in 中文 by its
+  setting); MC-3504 to MC-3506.
+- 2026-10-24: ADR-082, the loading mark kept until the first screen is
+  on view, with no spinner under it: MC-3506 rewritten.
+- 2026-10-24: ADR-082, a thin bar under the loading mark once it has
+  been up a moment, still under reduced motion: MC-3506 extended.
+- 2026-10-24: ADR-082, Panivo on every page before sign-in and in an
+  invitation's footer, the organization at the rail's top and Panivo at
+  its foot, Help's foot naming the product: MC-3507 to MC-3512; MC-1102's
+  rename and MC-1702's logo now at the rail's top.
+- 2026-10-25: ADR-082, the rail's foot and the drawer's pinned, in view at
+  any window height: MC-3511 extended.
+- 2026-10-25: ADR-082's review, the app's own files not loading: one line
+  and Reload in the loading mark's place, in the reader's language:
+  MC-3506 extended.
+- 2026-10-25: ADR-082's review, the start-up screen with no answer from
+  the server now the Can’t reach the server page, and nothing under the
+  loading mark read aloud: MC-3414, MC-3506 and MC-3507 changed.
+- 2026-10-25: ADR-082's review, the language and text size on the status
+  pages before sign-in and the start-up screens, as on Sign in: MC-3507
+  extended.
+- 2026-10-25: ADR-082's review, the folded plate » alone while a logo is
+  read: MC-3510 extended.
+- 2026-10-25: ADR-082's review, the folded plate's initials in the app's
+  type, the plate growing with the text size: MC-3510 extended.
+- 2026-10-25: ADR-082's review, the rail's top a link to Home again, as
+  the corner was before it moved: MC-3510 extended.
+- 2026-10-25: ADR-082's review, every link above the rail's foot at
+  1440 × 900, and the links fading into the foot while more run on under
+  it: MC-3511 extended.
+- 2026-10-25: ADR-082's review, the foot pinned only on a window taller
+  than about 500 px, the drawer scrolling as one on a phone held
+  sideways: MC-3511 extended.
+- 2026-10-25: ADR-082's review, the sign-out countdown in the tab's title
+  worked out with the rest, never put back: MC-2101 extended.
 - 2026-10-25: #126, Link a return's select drawn once the returns arrive:
   MC-R58.
 - 2026-10-25: #163, To ship and To receive count only orders with something
@@ -3241,3 +3447,9 @@ first.
   accepted: MC-R64.
 - 2026-10-25: #129, the missing-name refusal, a line's price notice and the
   held-stock refusal wholly in the reader's language: MC-R63.
+- 2026-10-25: ADR-082's pull request, nothing fading into the rail's foot
+  while every link is above it, under a name that takes the foot to two
+  lines: MC-3511 extended.
+- 2026-10-25: ADR-082's pull request, the browser's own defaults dark from
+  the first moment in Dark, so no text is ever black on the dark page as
+  it starts: MC-3506 extended.

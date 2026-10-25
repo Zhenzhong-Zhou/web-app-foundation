@@ -122,7 +122,7 @@ answers:
 
 A budget passes only within its time and with no errors. Budgets fail the
 run at small scale; at large they are shown but do not fail, since they
-were set for the small scale.
+were set for the small scale. A known miss, below, is the one exception.
 
 The **concurrency check** ships one product 200 times from 10 connections
 across four orders, then checks that no request failed (a deadlock is a
@@ -133,6 +133,37 @@ The **stress run** repeats everything at 100 connections. It never fails:
 it shows where response time starts to climb. The server's database pool
 holds 10 connections, so at 100 the queue for those is part of what it
 shows.
+
+## Known misses
+
+A budget missed for a reason already filed may carry a known miss
+(ADR-082): its issue, an end date and a ceiling. Through the end date, a
+95th percentile over the budget, at or under the ceiling and with no errors,
+reads "over budget, known: #225" and does not fail the run. Past the
+ceiling, with an error, or from the day after the end date, it fails as any
+miss does. The date is the run's, in UTC; the weekly run starts at 11:00
+UTC, the same day in Vancouver. The summary lists each known miss under the
+budgets, with its issue, its date and its ceiling, whether this run met it
+or not.
+
+Today's is the typo lookup's: #225, until 30 November 2026, 450 ms. The
+weekly run had measured 353 ms against its 300.
+
+To add one, give the scenario in `perf/scenarios.ts` a `knownMiss`:
+
+```ts
+{
+  ...read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
+  knownMiss: { issue: '#225', until: '2026-11-30', ceilingMs: 450 },
+},
+```
+
+with a comment saying since when it has missed. A known miss is never added
+without an issue and a date: it says the budget is owed, the date turns the
+run red again if it is not paid, and the ceiling keeps a miss that grows
+from passing as known. Its type requires both, and `perf/report.spec.ts`
+checks their form. Raising the budget instead would forget it. The known miss goes with the
+fix that brings the budget back.
 
 ## The plan check
 

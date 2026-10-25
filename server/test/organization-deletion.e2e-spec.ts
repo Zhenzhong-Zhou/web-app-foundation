@@ -48,6 +48,7 @@ import {
   registerOrganization,
   roleIdNamed,
 } from './utils/fixtures';
+import { expectMailBrand } from './utils/mail-brand';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -521,6 +522,7 @@ describe('Organization deletion (e2e)', () => {
       });
       for (const to of [alpha.email, 'member@alpha.example.com']) {
         expect(mail.lastTo(to)?.subject).toMatch(/^alpha Co will be deleted/);
+        expectMailBrand(app, mail.lastTo(to));
       }
       expect(mail.lastTo(alpha.email)?.text).toContain(
         'Download everything again',
@@ -668,6 +670,7 @@ describe('Organization deletion (e2e)', () => {
 
       const subject = `Reminder: alpha Co will be deleted after ${longDay(inAWeek)}`;
       expect(mail.lastTo(alpha.email)?.subject).toBe(subject);
+      expectMailBrand(app, mail.lastTo(alpha.email));
       expect(mail.lastTo(alpha.email)?.text).toContain(
         'Download everything again now',
       );
@@ -738,6 +741,7 @@ describe('Organization deletion (e2e)', () => {
         'alpha Co will not be deleted',
       );
       expect(mail.lastTo(alpha.email)?.text).toContain('Owner cancelled');
+      expectMailBrand(app, mail.lastTo(alpha.email));
     });
 
     it('is refused once the day has ended everywhere', async () => {
@@ -804,6 +808,7 @@ describe('Organization deletion (e2e)', () => {
       expect(mail.lastTo('member@alpha.example.com')?.subject).toBe(
         'alpha Co has been deleted',
       );
+      expectMailBrand(app, mail.lastTo('member@alpha.example.com'));
     });
 
     it('waits until the day has ended everywhere', async () => {

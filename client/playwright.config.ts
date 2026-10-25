@@ -182,7 +182,16 @@ export default defineConfig({
       url: CLIENT_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
-      env: { VITE_API_TARGET: 'http://localhost:3100' },
+      env: {
+        VITE_API_TARGET: 'http://localhost:3100',
+        // A © line, so the screens before sign-in are checked with their
+        // footer, as on Render (ADR-082); ../.env's own, where it sets one.
+        VITE_COPYRIGHT_HOLDER:
+          process.env.VITE_COPYRIGHT_HOLDER || 'Zhenzhong (Bob) Zhou',
+        // A site's address, so a shared link's card has its picture, as on
+        // Render; ../.env's own, where it sets one.
+        VITE_SITE_URL: process.env.VITE_SITE_URL || CLIENT_URL,
+      },
     },
   ],
 });

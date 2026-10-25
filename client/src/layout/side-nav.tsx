@@ -51,7 +51,12 @@ export function SideNav({
               ) : (
                 <Typography
                   variant="caption"
-                  sx={{ color: 'rail.muted', fontWeight: 600, px: 1.5, pt: 2 }}
+                  sx={{
+                    color: 'rail.muted',
+                    fontWeight: 600,
+                    px: 1.5,
+                    pt: 1.5,
+                  }}
                 >
                   {name}
                 </Typography>
@@ -102,7 +107,7 @@ function RailLink({
         alignItems: 'center',
         justifyContent: folded ? 'center' : 'flex-start',
         gap: 1.25,
-        minHeight: 36,
+        minHeight: 34,
         px: 1.25,
         borderRadius: 1,
         typography: 'body1',

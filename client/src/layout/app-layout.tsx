@@ -1,6 +1,4 @@
 import CloseIcon from '@mui/icons-material/Close';
-import KeyboardDoubleArrowLeft from '@mui/icons-material/KeyboardDoubleArrowLeft';
-import KeyboardDoubleArrowRight from '@mui/icons-material/KeyboardDoubleArrowRight';
 import MenuIcon from '@mui/icons-material/Menu';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import {
@@ -30,6 +28,7 @@ import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 import { DeletionBanner } from '../account/deletion-banner';
 import { useAuth } from '../auth/use-auth';
 import { useResendConfirmation } from '../auth/use-resend-confirmation';
+import { PoweredBy } from '../brand/powered-by';
 import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
 import { LanguageSelect } from '../components/language-select';
@@ -58,10 +57,17 @@ import { IdleGuard } from './idle-guard';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
 import { OrganizationMark } from './organization-mark';
-import { RAIL_FOLDED_WIDTH, RAIL_WIDTH } from './rail';
+import {
+  RAIL_FOLDED_WIDTH,
+  RAIL_MORE_BELOW,
+  RAIL_WIDTH,
+  SHORT_WINDOW,
+} from './rail';
+import { RailTop } from './rail-top';
 import { SideNav } from './side-nav';
 import { MAIN_CONTENT_ID, SkipLink } from './skip-link';
 import { UnverifiedBannerContext } from './unverified-banner-context';
+import { useMoreBelow } from './use-more-below';
 
 /**
  * Where the rail appears (ADR-055). Below it the same groups open in a
@@ -170,6 +176,16 @@ function Frame() {
   const theme = useTheme();
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   const [drawer, setDrawer] = useState(false);
+  const {
+    scroller: railScroller,
+    content: railContent,
+    more: railMore,
+  } = useMoreBelow();
+  const {
+    scroller: drawerScroller,
+    content: drawerContent,
+    more: drawerMore,
+  } = useMoreBelow();
   const [folded, setFolded] = useState(storedFolded);
   const help = useHelp();
   const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
@@ -252,8 +268,10 @@ function Frame() {
       <SkipLink />
 
       {/* The rail: beside the page from `lg`. The outer box runs the page's
-          full height so its colour does too; the inner one stays in view,
-          with its own scroll, while the page scrolls. */}
+          full height so its colour does too; the inner one stays in view
+          while the page scrolls. Its links scroll on their own above its
+          foot, which is pinned, so Powered by is in view at any window
+          height above about 500 px (ADR-082). */}
       <Box
         component="aside"
         sx={{
@@ -270,41 +288,47 @@ function Frame() {
             height: '100dvh',
             display: 'flex',
             flexDirection: 'column',
-            gap: 0.5,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            px: 1,
-            py: 1.5,
+            // Too short to pin the foot: all of it scrolls, as one.
+            [SHORT_WINDOW]: { overflowY: 'auto', overflowX: 'hidden' },
           }}
         >
-          <IconButton
-            aria-label={
-              folded
-                ? intl.formatMessage({
-                    id: 'layout.expandNavigation',
-                    defaultMessage: 'Expand navigation',
-                  })
-                : intl.formatMessage({
-                    id: 'layout.collapseNavigation',
-                    defaultMessage: 'Collapse navigation',
-                  })
-            }
-            aria-expanded={!folded}
-            onClick={toggleFolded}
+          {/* The organization's at the top, the product's at the foot
+              (ADR-082), its fade saying when more links run on under it. */}
+          <Box
+            ref={railScroller}
             sx={{
-              alignSelf: folded ? 'center' : 'flex-end',
-              color: 'rail.text',
-              '&:hover': { color: 'rail.strong', bgcolor: 'rail.hover' },
+              flex: '1 1 auto',
+              minHeight: 0,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              [SHORT_WINDOW]: { flex: 'none', overflow: 'visible' },
             }}
           >
-            {folded ? (
-              <KeyboardDoubleArrowRight fontSize="small" />
-            ) : (
-              <KeyboardDoubleArrowLeft fontSize="small" />
-            )}
-          </IconButton>
+            <Box
+              ref={railContent}
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0.5,
+                px: 1,
+                pt: 1,
+                pb: 1,
+              }}
+            >
+              <RailTop name={orgName} folded={folded} onToggle={toggleFolded} />
 
-          <SideNav folded={folded} />
+              <SideNav folded={folded} />
+            </Box>
+          </Box>
+
+          <Box
+            sx={[
+              { flex: 'none', position: 'relative', px: 1, pb: 1 },
+              railMore && RAIL_MORE_BELOW,
+            ]}
+          >
+            <PoweredBy folded={folded} />
+          </Box>
         </Box>
       </Box>
 
@@ -358,7 +382,8 @@ function Frame() {
                 its name until then. The way home, which is what a person
                 expects of the top-left corner. Truncated rather than
                 wrapped: a long name is the one thing here of unknown width,
-                so it is the one thing that gives. */}
+                so it is the one thing that gives. Below the rail's width
+                only: beside the rail, its top holds it (ADR-082). */}
             <Link
               component={RouterLink}
               to="/"
@@ -370,14 +395,14 @@ function Frame() {
                   minWidth: 44,
                   minHeight: 44,
                   flexShrink: 1,
-                  display: 'flex',
+                  display: { xs: 'flex', [BAR]: 'none' },
                   alignItems: 'center',
                 },
                 tight && { flexShrink: 0, justifyContent: 'center' },
               ]}
             >
               {/* minWidth 0, or the name would not shrink to be cut. */}
-              <Box sx={{ maxWidth: { xs: '50vw', [BAR]: 320 }, minWidth: 0 }}>
+              <Box sx={{ maxWidth: '50vw', minWidth: 0 }}>
                 <OrganizationMark name={orgName} initials={tight} />
               </Box>
             </Link>
@@ -594,26 +619,51 @@ function Frame() {
             },
           }}
         >
-          <Stack
-            direction="row"
-            sx={{ alignItems: 'center', pl: 1.5, pb: 1, gap: 1 }}
+          {/* Its links scroll above its foot, pinned as the rail's is, on
+              a window tall enough to spare it (ADR-082). */}
+          <Box
+            ref={drawerScroller}
+            sx={{
+              flex: '1 1 auto',
+              minHeight: 0,
+              overflowY: 'auto',
+              // Too short to pin the foot: the drawer scrolls, foot and all.
+              [SHORT_WINDOW]: { flex: 'none', overflow: 'visible' },
+            }}
           >
-            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-              <OrganizationMark name={orgName} onRail />
-            </Box>
-            <IconButton
-              aria-label={intl.formatMessage({
-                id: 'layout.closeNavigation',
-                defaultMessage: 'Close navigation',
-              })}
-              onClick={() => setDrawer(false)}
-              sx={{ color: 'rail.text' }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Stack>
+            <Box ref={drawerContent}>
+              <Stack
+                direction="row"
+                sx={{ alignItems: 'center', pl: 1.5, pb: 1, gap: 1 }}
+              >
+                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                  <OrganizationMark name={orgName} onRail />
+                </Box>
+                <IconButton
+                  aria-label={intl.formatMessage({
+                    id: 'layout.closeNavigation',
+                    defaultMessage: 'Close navigation',
+                  })}
+                  onClick={() => setDrawer(false)}
+                  sx={{ color: 'rail.text' }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Stack>
 
-          <SideNav onNavigate={() => setDrawer(false)} />
+              <SideNav onNavigate={() => setDrawer(false)} />
+            </Box>
+          </Box>
+
+          {/* Ending as the rail does, its fade too (ADR-082). */}
+          <Box
+            sx={[
+              { flex: 'none', position: 'relative', pt: 1, pb: 0.5 },
+              drawerMore && RAIL_MORE_BELOW,
+            ]}
+          >
+            <PoweredBy />
+          </Box>
         </Drawer>
 
         {/* The page's main landmark (#121), and where the skip link puts

@@ -14,8 +14,13 @@ test('finds its way round on a phone, through the drawer', async ({ page }) => {
   await page.goto('/inventory');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-  // Below 1200px the rail folds into a drawer behind ☰ (ADR-055).
+  // Below 1200px the rail folds into a drawer behind ☰ (ADR-055). Its
+  // foot is pinned below the links, in view on a phone's screen without
+  // scrolling them (ADR-082).
   await page.getByRole('button', { name: 'Open navigation' }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Navigation' }).getByText(/^Powered by /),
+  ).toBeInViewport({ ratio: 1 });
   await page.getByRole('link', { name: 'Orders' }).click();
 
   await expect(
@@ -23,6 +28,32 @@ test('finds its way round on a phone, through the drawer', async ({ page }) => {
   ).toBeVisible();
   // Choosing a page closes the drawer.
   await expect(page.getByRole('link', { name: 'Inventory' })).toBeHidden();
+});
+
+/**
+ * Held sideways, about 340 px tall, the phone cannot spare the foot its own
+ * place: the drawer scrolls as one, its foot after the links (ADR-082).
+ */
+test('scrolls the drawer as one on a phone held sideways, its foot last', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 844, height: 340 });
+  await page.goto('/inventory');
+  await page.getByRole('button', { name: 'Open navigation' }).click();
+
+  const drawer = page.getByRole('dialog', { name: 'Navigation' });
+  const foot = drawer.getByText(/^Powered by /);
+  await expect(drawer.getByRole('link', { name: 'Home' })).toBeInViewport();
+  await expect(foot).not.toBeInViewport();
+
+  await foot.scrollIntoViewIfNeeded();
+  await expect(foot).toBeInViewport({ ratio: 1 });
+  const last = drawer.getByRole('link').last();
+  const [link, line] = await Promise.all([
+    last.boundingBox(),
+    foot.boundingBox(),
+  ]);
+  expect(line!.y).toBeGreaterThanOrEqual(link!.y + link!.height);
 });
 
 test('signs in from a phone, with the password shown to check it', async ({

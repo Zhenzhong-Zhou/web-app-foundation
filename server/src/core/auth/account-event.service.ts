@@ -11,7 +11,7 @@ import {
   users,
 } from '../../database/schema';
 import { recipientLocale, t, type Translatable } from '../../i18n/translate';
-import { MailService } from '../../shared/mail/mail.service';
+import { MailBrand } from '../../shared/mail/mail-brand';
 import {
   NOTIFICATION_TYPES,
   NotificationType,
@@ -86,7 +86,7 @@ export class AccountEventService {
   constructor(
     @Inject(UNSAFE_GLOBAL_DB) private readonly db: Database,
     private readonly notifications: NotificationsService,
-    private readonly mail: MailService,
+    private readonly mail: MailBrand,
     private readonly config: ConfigService<Env, true>,
   ) {}
 

@@ -13,12 +13,16 @@ import { StatusPage } from './status-page';
  *
  * A record page whose read got no answer (LoadFailure) shows it too, with
  * `onRetry` reading the record again in place of the load in full, so the
- * two "Can't reach the server" pages behave alike.
+ * two "Can't reach the server" pages behave alike. At start, when the
+ * first session read got no answer, `standalone`, with `onRetry` reading
+ * it again.
  */
 export function OfflinePage({
   onRetry = reloadPage,
+  standalone,
 }: {
   onRetry?: () => void;
+  standalone?: boolean;
 }) {
   const intl = useIntl();
 
@@ -53,6 +57,7 @@ export function OfflinePage({
           })}
         </Button>
       }
+      standalone={standalone}
     />
   );
 }

@@ -158,7 +158,7 @@ jobs:
           MAIL_HOST=localhost
           MAIL_PORT=1025
           MAIL_SECURE=false
-          MAIL_FROM="Foundation <no-reply@localhost>"
+          MAIL_FROM="Panivo <no-reply@localhost>"
           RATE_LIMIT_TTL_SECONDS=60
           RATE_LIMIT_MAX=1000
           RATE_LIMIT_AUTH_MAX=1000
@@ -181,6 +181,13 @@ jobs:
         working-directory: server
 
       - run: npm run build
+        working-directory: server
+
+      # The unit project: the specs beside their source, and perf/'s
+      # verdict. scripts/verify.sh has always run it; this job ran only the
+      # e2e suite until ADR-082's branch. The job keeps its name, which the
+      # required checks know it by.
+      - run: npm test
         working-directory: server
 
       # Catches a hand-edited migration whose snapshot was never regenerated.
@@ -206,6 +213,12 @@ jobs:
       - name: Check server catalogues
         run: npm run i18n:check
         working-directory: server
+
+      # The tests of scripts/ itself, on Node's runner, since neither
+      # package's Vitest finds them. Here, where both packages are
+      # installed: i18n-review.mjs uses each one's FormatJS.
+      - name: Test the repository's scripts
+        run: node --test scripts/
 
       # From an empty database every time, which is the path production takes
       # and the one that rarely gets exercised locally.
@@ -337,7 +350,7 @@ jobs:
           MAIL_HOST=localhost
           MAIL_PORT=1025
           MAIL_SECURE=false
-          MAIL_FROM="Foundation <no-reply@localhost>"
+          MAIL_FROM="Panivo <no-reply@localhost>"
           RATE_LIMIT_TTL_SECONDS=60
           RATE_LIMIT_MAX=1000
           RATE_LIMIT_AUTH_MAX=1000

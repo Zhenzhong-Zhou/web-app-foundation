@@ -1,8 +1,9 @@
 import { ThemeProvider } from '@mui/material/styles';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { drawnIn } from '../test/drawn-colour';
+import { renderWithAuth } from '../test/render-with-auth';
 import { themeFor } from '../theme';
 import { contrast } from '../theme/accent';
 import { type StatusKind, StatusPage } from './status-page';
@@ -44,7 +45,7 @@ describe('StatusPage', () => {
   // color="text.secondary" drew nothing, so the message was as dark as the
   // title and the note read as the message (#196).
   it('draws its message and its note in the secondary text colour', () => {
-    const { getByText } = render(
+    render(
       <ThemeProvider theme={themeFor('en')}>
         <StatusPage
           kind="offline"
@@ -56,9 +57,38 @@ describe('StatusPage', () => {
     );
 
     for (const text of ['Message', 'This page tries again by itself.']) {
-      expect(getComputedStyle(getByText(text)).color).toBe(
+      expect(getComputedStyle(screen.getByText(text)).color).toBe(
         'var(--mui-palette-text-secondary)',
       );
     }
+  });
+});
+
+/**
+ * Before sign-in, or before the app has drawn, a status page is the
+ * product's, as Sign in is (ADR-082): its language and text size first.
+ */
+describe('StatusPage, standalone', () => {
+  it('offers the language and the text size at the top, as Sign in does', () => {
+    renderWithAuth(
+      <ThemeProvider theme={themeFor('en')}>
+        <StatusPage
+          kind="notFound"
+          title="Page not found"
+          message="Message"
+          standalone
+        />
+      </ThemeProvider>,
+    );
+
+    const language = screen.getByRole('combobox', { name: 'Language' });
+    const size = screen.getByRole('combobox', { name: 'Text size' });
+    const heading = screen.getByRole('heading', { name: 'Page not found' });
+    // Before the page's heading, in reading order.
+    expect(
+      language.compareDocumentPosition(heading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(size).toBeVisible();
   });
 });

@@ -24,7 +24,7 @@ import {
   translate,
 } from '../../i18n/translate';
 import { escapeHtml } from '../../shared/mail/escape-html';
-import { MailService } from '../../shared/mail/mail.service';
+import { MailBrand } from '../../shared/mail/mail-brand';
 import type { Permission } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
 import { startOrganization } from '../organizations/start-organization';
@@ -124,7 +124,7 @@ export class AuthService implements OnModuleInit {
     private readonly permissions: PermissionsService,
     private readonly tokens: AuthTokenService,
     private readonly events: AccountEventService,
-    private readonly mail: MailService,
+    private readonly mail: MailBrand,
     private readonly config: ConfigService<Env, true>,
   ) {}
 

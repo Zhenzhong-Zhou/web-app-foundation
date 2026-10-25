@@ -8,6 +8,8 @@ import UpdateOutlined from '@mui/icons-material/UpdateOutlined';
 import { Box, Paper, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import { SignedOutControls, SignedOutFrame } from '../brand/signed-out-frame';
+import { useScreenShown } from '../lib/loading-mark';
 import { rem } from '../theme/rem';
 import { type ToneName, TYPE } from '../theme/tokens';
 
@@ -65,6 +67,9 @@ export function StatusPage({
   reference?: ReactNode;
   standalone?: boolean;
 }) {
+  // On view in the app's layout, at start too: the loading mark comes down
+  // (ADR-082). Standalone, SignedOutFrame does it as well.
+  useScreenShown();
   const look = LOOK[kind];
   const Icon = look.icon;
 
@@ -118,26 +123,21 @@ export function StatusPage({
     </Stack>
   );
 
+  // Before sign-in, or before the app has drawn, the product's: its name
+  // above and the © line below (ADR-082), and the language and text size
+  // at the top, as on Sign in.
   if (standalone) {
     return (
-      <Box
-        component="main"
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 3,
-          bgcolor: 'background.default',
-        }}
-      >
-        <Paper
-          variant="outlined"
-          sx={{ p: { xs: 3, sm: 5 }, maxWidth: rem(480) }}
-        >
-          {body}
-        </Paper>
-      </Box>
+      <SignedOutFrame controls={<SignedOutControls />}>
+        <Box sx={{ my: 'auto', display: 'flex', justifyContent: 'center' }}>
+          <Paper
+            variant="outlined"
+            sx={{ p: { xs: 3, sm: 5 }, maxWidth: rem(480) }}
+          >
+            {body}
+          </Paper>
+        </Box>
+      </SignedOutFrame>
     );
   }
 

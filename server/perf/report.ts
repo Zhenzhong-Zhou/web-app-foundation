@@ -22,15 +22,65 @@ export const GROWTH_FLAG = 3;
 
 export type Scale = 'small' | 'large';
 
+/**
+ * A budget missed for a reason already filed (ADR-082): its issue, the last
+ * day it holds (the run's day in UTC) and a ceiling. Never added without an
+ * issue and a date (perf/README.md, "Known misses").
+ */
+export interface KnownMiss {
+  issue: string;
+  until: string;
+  ceilingMs: number;
+}
+
+/**
+ * pass: within budget with no errors. known: over budget but within its
+ * known miss, which does not fail the run. fail: anything else.
+ */
+export type Verdict = 'pass' | 'known' | 'fail';
+
 export interface Result {
   phase: 'budget' | 'stress';
   name: string;
   kind: 'read' | 'write';
   connections: number;
   budgetMs: number;
+  knownMiss: KnownMiss | null;
   stats: Stats;
-  /** Within budget with no errors. Null under stress, which never fails. */
-  passed: boolean | null;
+  /** Null under stress, which never fails. */
+  verdict: Verdict | null;
+}
+
+/**
+ * A budget's verdict on the run's day (YYYY-MM-DD, UTC). A known miss holds
+ * at or under its ceiling, with no errors, through its end date.
+ */
+export function verdictOf(
+  stats: Pick<Stats, 'p95' | 'errors'>,
+  budgetMs: number,
+  knownMiss: KnownMiss | null,
+  day: string,
+): Verdict {
+  if (stats.errors > 0) return 'fail';
+  if (stats.p95 <= budgetMs) return 'pass';
+  if (knownMiss && stats.p95 <= knownMiss.ceilingMs && day <= knownMiss.until) {
+    return 'known';
+  }
+  return 'fail';
+}
+
+/**
+ * A budget's verdict in words, at the console and in the summary: a known
+ * miss names its issue.
+ */
+export function verdictLabel(
+  verdict: Verdict,
+  knownMiss: KnownMiss | null,
+): string {
+  if (verdict === 'known' && knownMiss) {
+    return `over budget, known: ${knownMiss.issue}`;
+  }
+  return verdict === 'fail' ? 'over budget' : 'pass';
 }
 
 export interface ConcurrencyResult {
@@ -151,6 +201,9 @@ function toMarkdown(report: Report): string {
   const stress = report.results.filter((result) => result.phase === 'stress');
   const other = report.scale === 'small' ? 'large' : 'small';
   const growth = new Map(report.growth.map((row) => [row.name, row]));
+  const known = budget.flatMap((result) =>
+    result.knownMiss ? [{ result, miss: result.knownMiss }] : [],
+  );
 
   const lines = [
     `## Perf: ${report.scale} scale, ${report.organizations} organizations, seed ${report.seed}`,
@@ -181,6 +234,19 @@ function toMarkdown(report: Report): string {
     report.growthAgainst
       ? `Growth compares with ${report.growthAgainst}. Over ${GROWTH_FLAG}× means the endpoint reads in proportion to the data, not to a page.`
       : `No ${other}-scale report yet, so no growth column. Run the other scale once to fill it.`,
+    ...(known.length > 0
+      ? [
+          '',
+          '### Known misses (ADR-082)',
+          '',
+          'Each holds through its date, at or under its ceiling with no errors; then a miss fails the run as before.',
+          '',
+          ...known.map(
+            ({ result, miss }) =>
+              `- ${result.name}: ${miss.issue}, until ${miss.until}, ceiling ${miss.ceilingMs} ms. This run: ${verdict(result, report.budgetsEnforced)}.`,
+          ),
+        ]
+      : []),
     '',
     `### Concurrency: ${report.concurrency.attempted} shipments of one product from ${report.concurrency.connections} connections`,
     '',
@@ -229,9 +295,12 @@ function cells(result: Result): string {
   ].join(' | ');
 }
 
+/** The summary's verdict: a miss is a failure where budgets are enforced. */
 function verdict(result: Result, enforced: boolean): string {
-  if (result.passed) return 'pass';
-  return enforced ? '**FAIL**' : 'over';
+  const verdict = result.verdict ?? 'fail';
+  return verdict === 'fail' && enforced
+    ? '**FAIL**'
+    : verdictLabel(verdict, result.knownMiss);
 }
 
 function ms(value: number): string {

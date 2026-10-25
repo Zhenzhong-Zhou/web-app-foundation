@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
@@ -27,12 +27,10 @@ describe('ProductGallery, a photo refused as outdated', () => {
 
     const chooser =
       container.querySelector<HTMLInputElement>('input[type="file"]')!;
-    act(() => {
-      fireEvent.change(chooser, {
-        target: {
-          files: [new File(['jpeg'], 'bottle.jpg', { type: 'image/jpeg' })],
-        },
-      });
+    fireEvent.change(chooser, {
+      target: {
+        files: [new File(['jpeg'], 'bottle.jpg', { type: 'image/jpeg' })],
+      },
     });
 
     expect(

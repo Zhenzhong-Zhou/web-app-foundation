@@ -1,7 +1,7 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
-import { DEFAULT_APP_NAME } from './vite.config.ts';
+import { brandSettings } from './vite.config.ts';
 
 // The computer's zone, the same on every machine (ADR-072): a test that
 // leans on it then fails everywhere, not only on a laptop that travels.
@@ -35,8 +35,10 @@ export default defineConfig({
       builtAt: '2026-10-22T03:00:00.000Z',
       version: '0.7.0',
     }),
-    // The product's name as a build without VITE_APP_NAME has it.
-    __APP_NAME__: JSON.stringify(DEFAULT_APP_NAME),
+    // The product's names as a build without ADR-082's settings has them,
+    // and no © line. A test sets its own with vi.stubGlobal.
+    __APP_NAMES__: JSON.stringify(brandSettings({}, 2026).names),
+    __COPYRIGHT__: JSON.stringify(null),
   },
   test: {
     environment: 'jsdom',
@@ -46,7 +48,8 @@ export default defineConfig({
     // e2e/ is Playwright's. Both use the word "test" and describe/it, and a
     // Playwright spec loaded by Vitest fails in a way that reads like a broken
     // component rather than a misrouted file.
-    include: ['src/**/*.test.{ts,tsx}'],
+    // vite.config.test.ts: the settings the build reads.
+    include: ['src/**/*.test.{ts,tsx}', 'vite.config.test.ts'],
 
     css: false,
     restoreMocks: true,
