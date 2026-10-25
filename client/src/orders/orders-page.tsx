@@ -28,7 +28,7 @@ import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { fromAddress } from '../lib/address-filter';
+import { flagFromAddress, fromAddress } from '../lib/address-filter';
 import type { OrderDirection } from '../lib/api-names';
 import { type DayRange, withDays } from '../lib/date-range';
 import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
@@ -100,6 +100,10 @@ export function OrdersPage() {
       '',
     ),
   );
+  // Something still to ship or to come (ADR-058, #163): Home's ?outstanding=1.
+  const [outstanding, setOutstanding] = useState(() =>
+    flagFromAddress(params, 'outstanding'),
+  );
   const { text, setText, search } = useListSearch();
   // By expected date, and sortable by it (ADR-057); the export takes the
   // same query, so the file is what the list shows.
@@ -111,6 +115,7 @@ export function OrdersPage() {
         `/orders?${new URLSearchParams({
           status: filter,
           ...(direction ? { direction } : {}),
+          ...(outstanding ? { outstanding: 'true' } : {}),
         }).toString()}`,
         search,
       ),
@@ -187,7 +192,10 @@ export function OrdersPage() {
       </FilterRow>
 
       {/* What a link narrowed that no button shows, each removable. */}
-      {(direction || filter === 'draft' || filter === 'confirmed') && (
+      {(direction ||
+        outstanding ||
+        filter === 'draft' ||
+        filter === 'confirmed') && (
         <Stack direction="row" spacing={1}>
           {direction && (
             <Chip
@@ -209,6 +217,27 @@ export function OrdersPage() {
             <Chip
               label={orderStatusLabel(filter, direction || 'sale')}
               onDelete={() => setFilter('open')}
+            />
+          )}
+          {outstanding && (
+            <Chip
+              label={
+                direction === 'sale'
+                  ? intl.formatMessage({
+                      id: 'orders.filter.toShip',
+                      defaultMessage: 'Still to ship',
+                    })
+                  : direction === 'purchase'
+                    ? intl.formatMessage({
+                        id: 'orders.filter.toReceive',
+                        defaultMessage: 'Still to receive',
+                      })
+                    : intl.formatMessage({
+                        id: 'orders.filter.outstanding',
+                        defaultMessage: 'Still to ship or receive',
+                      })
+              }
+              onDelete={() => setOutstanding(false)}
             />
           )}
         </Stack>

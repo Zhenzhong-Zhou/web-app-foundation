@@ -147,6 +147,130 @@ describe('Home (e2e)', () => {
     expect(card(await home(alpha), 'toShip')?.count).toBe(0);
   });
 
+  /**
+   * Only what is still to ship or still to come (#163): an order shipped
+   * or received in full stays confirmed until it is closed (#24), and
+   * leaves the card; a line closed short counts for nothing.
+   */
+  it('counts only orders with something still to ship or to come', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const shelf = await createLocation(alpha.agent, {
+      type: 'site',
+      name: 'Shelf',
+    });
+    const customer = await createPartner(alpha.agent, { name: 'Customer' });
+    const supplier = await createPartner(alpha.agent, { name: 'Supplier' });
+    const [focus, calm] = [
+      await createVariant(alpha.agent, {
+        type: 'good',
+        name: 'Focus 60ct',
+        variant: { sku: 'FOCUS-60', tracksLots: false },
+      }),
+      await createVariant(alpha.agent, {
+        type: 'good',
+        name: 'Calm 90ct',
+        variant: { sku: 'CALM-90', tracksLots: false },
+      }),
+    ];
+    for (const variantId of [focus, calm]) {
+      await alpha.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId,
+          toLocationId: shelf,
+          quantity: '100',
+          reason: 'receipt',
+        })
+        .expect(201);
+    }
+
+    /**
+     * A confirmed order of 5 of each item given; each line then shipped or
+     * received as much as `done` says, and closed short where `short`.
+     */
+    async function confirmed(
+      direction: 'sale' | 'purchase',
+      reference: string,
+      lines: { variantId: string; done: string; short?: boolean }[],
+    ) {
+      const order = body<{ order: { id: string; lines: { id: string }[] } }>(
+        await alpha.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: direction === 'sale' ? customer : supplier,
+            direction,
+            reference,
+            lines: lines.map((line) => ({
+              variantId: line.variantId,
+              quantityOrdered: '5',
+              unitPrice: '10',
+              currency: 'CAD',
+            })),
+          })
+          .expect(201),
+      ).order;
+      await alpha.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+
+      for (const [index, line] of lines.entries()) {
+        const lineId = order.lines[index].id;
+        if (direction === 'sale') {
+          await alpha.agent
+            .post(`/v1/orders/${order.id}/shipments`)
+            .send({
+              fromLocationId: shelf,
+              lines: [{ lineId, quantity: line.done }],
+            })
+            .expect(201);
+        } else {
+          await alpha.agent
+            .post(`/v1/orders/${order.id}/lines/${lineId}/receipts`)
+            .send({ toLocationId: shelf, quantity: line.done })
+            .expect(201);
+        }
+        if (line.short) {
+          await alpha.agent
+            .post(`/v1/orders/${order.id}/lines/${lineId}/close`)
+            .send({ reason: 'No more coming' })
+            .expect(204);
+        }
+      }
+      return order.id;
+    }
+
+    for (const direction of ['sale', 'purchase'] as const) {
+      const prefix = direction === 'sale' ? 'SO' : 'PO';
+      await confirmed(direction, `${prefix}-FULL`, [
+        { variantId: focus, done: '5' },
+      ]);
+      const part = await confirmed(direction, `${prefix}-PART`, [
+        { variantId: focus, done: '2' },
+      ]);
+      await confirmed(direction, `${prefix}-SHORT`, [
+        { variantId: focus, done: '5' },
+        { variantId: calm, done: '1', short: true },
+      ]);
+
+      const kind = direction === 'sale' ? 'toShip' : 'toReceive';
+      const shown = card(await home(alpha), kind);
+      expect(shown?.count).toBe(1);
+      expect(shown?.rows).toHaveLength(shown?.count ?? -1);
+      expect(shown?.rows.map((row) => row.id)).toEqual([part]);
+
+      // The page the card opens, with its link's filter, lists the same.
+      const list = body<{ entries: { id: string }[] }>(
+        await alpha.agent
+          .get(
+            `/v1/orders?status=confirmed&direction=${direction}&outstanding=true`,
+          )
+          .expect(200),
+      ).entries;
+      expect(list.map((entry) => entry.id)).toEqual([part]);
+    }
+  });
+
   it('lists lots expiring soon, the expired ones counted late', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const location = await createLocation(alpha.agent, {

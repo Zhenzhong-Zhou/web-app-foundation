@@ -4573,6 +4573,14 @@
             }
           },
           {
+            "name": "outstanding",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -4725,6 +4733,14 @@
                 "purchase",
                 "sale"
               ]
+            }
+          },
+          {
+            "name": "outstanding",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           },
           {

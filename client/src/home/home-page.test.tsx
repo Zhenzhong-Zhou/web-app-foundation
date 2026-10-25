@@ -98,7 +98,7 @@ describe('HomePage', () => {
       within(ship)
         .getByRole('link', { name: 'See all 3' })
         .getAttribute('href'),
-    ).toBe('/orders?direction=sale&status=confirmed');
+    ).toBe('/orders?direction=sale&status=confirmed&outstanding=1');
     expect(within(ship).getByText('2 days late')).toBeTruthy();
     expect(
       within(ship).getByRole('link', { name: 'SO-1' }).getAttribute('href'),

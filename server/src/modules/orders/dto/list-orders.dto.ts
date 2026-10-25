@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsUUID } from 'class-validator';
+import { IsBooleanString, IsIn, IsOptional, IsUUID } from 'class-validator';
 
 import { CalendarRangeQueryDto } from '../../../common/dto/range-query.dto';
 import { SORT_ORDERS, type SortOrder } from '../../../common/sorted-page';
@@ -39,6 +39,16 @@ export class ListOrdersDto extends CalendarRangeQueryDto {
   @IsOptional()
   @IsIn(ORDER_DIRECTIONS)
   direction?: OrderDirection;
+
+  /**
+   * Confirmed, with something still to ship (a sale) or still to come (a
+   * purchase): Home's To ship and To receive (ADR-058, #163). A sale
+   * shipped in full stays confirmed until it is closed (#24), and is left
+   * out.
+   */
+  @IsOptional()
+  @IsBooleanString()
+  outstanding?: string;
 
   /** Sorted by expected date (ADR-057), orders without one last. */
   @IsOptional()
