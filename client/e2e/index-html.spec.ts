@@ -73,6 +73,7 @@ const themeColors = (page: Page) =>
 test("names the product for a home screen, and a shared link's card", async ({
   page,
   request,
+  baseURL,
 }) => {
   await holdTheApp(page);
   await page.goto('/', { waitUntil: 'commit' });
@@ -128,18 +129,13 @@ test("names the product for a home screen, and a shared link's card", async ({
     'content',
     'summary_large_image',
   );
-  // The picture needs the site's own address, VITE_SITE_URL in ../.env,
-  // which the dev server reads as playwright.config.ts does.
-  const site = process.env.VITE_SITE_URL;
-  const picture = page.locator('meta[property="og:image"]');
-  if (site) {
-    await expect(picture).toHaveAttribute(
-      'content',
-      new URL('/og-image.png', site).href,
-    );
-  } else {
-    await expect(picture).toHaveCount(0);
-  }
+  // The picture, in full at the site's own address: VITE_SITE_URL, which
+  // playwright.config.ts gives the dev server, ../.env's or this one's.
+  const site = process.env.VITE_SITE_URL || baseURL;
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    'content',
+    new URL('/og-image.png', site).href,
+  );
   const image = await request.get('/og-image.png');
   expect(image.headers()['content-type']).toBe('image/png');
 });
