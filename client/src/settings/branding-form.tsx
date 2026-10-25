@@ -13,6 +13,7 @@ import { type ChangeEvent, type SubmitEvent, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import { SettingsSection } from '../components/settings-section';
+import { LOGO_PLATE, logoSrc } from '../layout/logo';
 import { api, messageFor } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import { nearStatus, normalizeHex, safeAccent } from '../theme/accent';
@@ -147,7 +148,7 @@ export function BrandingForm({
   const logoImage = logo ? (
     <Box
       component="img"
-      src={`/api/v1/files/${logo}`}
+      src={logoSrc(logo)}
       alt=""
       sx={{ display: 'block', maxHeight: 32, maxWidth: '100%' }}
     />
@@ -253,7 +254,7 @@ export function BrandingForm({
                   alignSelf: 'flex-start',
                   minHeight: 32,
                   ...(side === 'dark'
-                    ? { bgcolor: '#FFFFFF', borderRadius: 1, px: 1, py: 0.5 }
+                    ? { bgcolor: LOGO_PLATE, borderRadius: 1, px: 1, py: 0.5 }
                     : {}),
                 }}
               >

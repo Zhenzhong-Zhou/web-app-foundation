@@ -8,6 +8,7 @@ import { useBranding } from '../auth/use-branding';
 import { initialsLang, organizationInitialsOf } from '../lib/person-initials';
 import { rem } from '../theme/rem';
 import { LIGHT, TYPE } from '../theme/tokens';
+import { LOGO_PLATE, logoSrc } from './logo';
 import { OrganizationMark } from './organization-mark';
 
 /** How far from square a logo may be and still fill the folded plate. */
@@ -41,9 +42,7 @@ export function RailTop({
 }) {
   const intl = useIntl();
   const branding = useBranding();
-  const logo = branding?.logoFileId
-    ? `/api/v1/files/${branding.logoFileId}`
-    : null;
+  const logo = branding?.logoFileId ? logoSrc(branding.logoFileId) : null;
 
   // Its own width and height, read when it loads, open or folded, so a
   // fold draws it at once; unknown until then, and the plate » alone.
@@ -153,7 +152,7 @@ export function RailTop({
                   // White in both modes, as the logo's plate is, and while
                   // the logo is read; the arrow takes Light's text on it.
                   // Its edge shows on a white rail.
-                  bgcolor: '#FFFFFF',
+                  bgcolor: LOGO_PLATE,
                   color: LIGHT.text,
                   border: 1,
                   borderColor: 'rail.divider',

@@ -2,9 +2,10 @@ import { Box, Typography } from '@mui/material';
 
 import { useBranding } from '../auth/use-branding';
 import { initialsLang, organizationInitialsOf } from '../lib/person-initials';
+import { LOGO_PLATE, logoSrc } from './logo';
 
 /** Most logos are made for white, so a dark ground gets a white plate. */
-const PLATE = { bgcolor: '#FFFFFF', borderRadius: 1, px: 1, py: 0.5 };
+const PLATE = { bgcolor: LOGO_PLATE, borderRadius: 1, px: 1, py: 0.5 };
 
 /**
  * The organization's place in the corner (ADR-055, ADR-060): its logo when
@@ -65,7 +66,7 @@ export function OrganizationMark({
     >
       <Box
         component="img"
-        src={`/api/v1/files/${branding.logoFileId}`}
+        src={logoSrc(branding.logoFileId)}
         alt={name}
         sx={{ display: 'block', maxHeight: 32, maxWidth: '100%' }}
       />
