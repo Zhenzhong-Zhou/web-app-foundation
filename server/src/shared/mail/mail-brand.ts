@@ -30,7 +30,9 @@ export const MAIL_MARK_CHECK = Symbol('MAIL_MARK_CHECK');
 
 /**
  * Whether the address answers as an image/png. A 200 alone proves
- * nothing: Render answers a missing file with index.html and a 200.
+ * nothing: Vite's dev server, the CLIENT_URL on a Mac, answers a missing
+ * file with index.html and a 200, as any host with a catch-all rewrite
+ * may. Render answers a missing .png with a 404.
  */
 export const answersAsPng: MarkCheck = async (url) => {
   try {

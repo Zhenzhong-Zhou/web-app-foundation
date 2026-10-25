@@ -121,7 +121,7 @@ describe('MailBrand', () => {
   });
 });
 
-/** The mark answers only as a PNG: Render answers a missing file with index.html. */
+/** The mark answers only as a PNG: a dev server answers a missing file with index.html. */
 describe('answersAsPng', () => {
   afterEach(() => {
     vi.restoreAllMocks();

@@ -130,15 +130,17 @@ commit, which it does at the first look once the static site's deploy is
 live, since Render empties its edge then; the query string the step adds
 does not get past the edge, which ignores it (As Render shows it, below).
 `/api/health/ready` must say the database is `up`; and each static file
-the build must carry comes back as itself, since a file the build left
-out comes back as `index.html` with a 200 (the `/*` rewrite):
+the build must carry comes back as itself. One the build left out comes
+back as a 404 when it is a `.png` or a `.js`, but as `index.html` with a
+200 (the `/*` rewrite) when it is a `.svg` or a `.webmanifest` ("Old files
+after a deploy"), so the step reads the type as well as the status:
 `/favicon.svg` as `image/svg+xml`, and ADR-082's, `/og-image.png` and
 `/brand/mail-mark.png` as `image/png`, `/loading.js` as
 `application/javascript`, and `/manifest.webmanifest` as anything but
 `text/html`, since browsers read a manifest whatever its type. It only
 reads. After 10 minutes it fails, saying what each gave; both services
-have been deployed by then, and neither is rolled back. With the commit already live, as on a run by hand, it passes before
-the new build is out.
+have been deployed by then, and neither is rolled back. With the commit
+already live, as on a run by hand, it passes before the new build is out.
 
 Why not Render's own auto-deploy, which both services had until ADR-081:
 
