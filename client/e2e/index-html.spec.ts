@@ -33,11 +33,13 @@ async function hold(page: Page, url: RegExp) {
 }
 
 /**
- * Holds the app's entry back, so the page stays as index.html drew it. The
- * suite runs on Vite's dev server, whose entry is src/main.tsx; a build's
- * is a hashed file in /assets/.
+ * The app's entry. The suite runs on Vite's dev server, whose entry is
+ * src/main.tsx; a build's is a hashed file in /assets/.
  */
-const holdTheApp = (page: Page) => hold(page, /\/src\/main\.tsx(\?|$)/);
+const theApp = /\/src\/main\.tsx(\?|$)/;
+
+/** Holds the app's entry back, so the page stays as index.html drew it. */
+const holdTheApp = (page: Page) => hold(page, theApp);
 
 /** index.html's own title, VITE_APP_NAME: the app is held, so nothing has changed it. */
 async function indexTitle(page: Page): Promise<string> {
@@ -247,6 +249,52 @@ test('keeps the progress bar still under reduced motion', async ({ page }) => {
   const progress = page.locator('#loading-mark .bar');
   await expect(progress).toBeVisible();
   expect(await slides(progress)).toBe('none');
+});
+
+/**
+ * The app's entry refused, as a dropped connection or a missing file
+ * leaves it: the mark gives way to one line and Reload, rather than
+ * sliding on as if the app were coming, in the reader's language, the one
+ * chosen on this device, else the browser's.
+ */
+test("puts one line and Reload in the mark's place when the app does not load", async ({
+  page,
+}) => {
+  await page.addInitScript(() => localStorage.setItem('language', 'zh-Hans'));
+  await page.route(theApp, (route) => route.abort());
+  await page.goto('/login', { waitUntil: 'commit' });
+
+  const failed = page.locator('#loading-mark').getByRole('alert');
+  await expect(failed).toContainText(
+    '应用未能加载。请检查网络连接，然后重新加载。',
+  );
+  await expect(failed).toHaveAttribute('lang', 'zh-Hans');
+  await expect(page.locator('#loading-mark svg')).toHaveCount(0);
+  await expect(page.locator('#loading-mark .bar')).toHaveCount(0);
+  const reload = page.getByRole('button', { name: '重新加载' });
+  await expect(reload).toBeFocused();
+
+  // Reload asks for the page again, and with the entry let through the
+  // app starts.
+  await page.unroute(theApp);
+  await reload.click();
+  await expect(page.getByRole('heading', { name: '登录' })).toBeVisible();
+});
+
+test.describe("in the browser's language", () => {
+  test.use({ locale: 'fr-CA' });
+
+  test('says so in French with nothing chosen on the device', async ({
+    page,
+  }) => {
+    await page.route(theApp, (route) => route.abort());
+    await page.goto('/login', { waitUntil: 'commit' });
+
+    await expect(page.getByRole('alert')).toContainText(
+      'L’application n’a pas pu se charger.',
+    );
+    await expect(page.getByRole('button', { name: 'Recharger' })).toBeFocused();
+  });
 });
 
 /**

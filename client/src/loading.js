@@ -35,3 +35,74 @@
     root.classList.add(dark ? 'dark' : 'light');
   }
 })();
+
+/**
+ * The app's own files did not load: its entry, or a file the entry imports,
+ * refused or cut off, which the module script reports as an error. The
+ * mark would stay up over nothing, its bar sliding as if the app were on
+ * its way, so it gives way to one line and Reload, in the reader's
+ * language as the app would choose it: the one chosen on this device, else
+ * the first of the browser's the app speaks, else English. The words come
+ * from the catalogues, written in by vite.config.ts, since none is loaded.
+ */
+(() => {
+  const WORDS = '%LOADING_FAILED%';
+
+  /** As lib/locales.ts's matchLocale: any English, any French, Simplified Chinese. */
+  function match(tag) {
+    try {
+      const locale = new Intl.Locale(tag).maximize();
+      if (locale.language === 'en') return 'en';
+      if (locale.language === 'fr') return 'fr-CA';
+      if (locale.language === 'zh' && locale.script === 'Hans') {
+        return 'zh-Hans';
+      }
+    } catch {
+      // Not a language tag.
+    }
+    return null;
+  }
+
+  function language() {
+    try {
+      const stored = localStorage.getItem('language');
+      if (stored in WORDS) return stored;
+    } catch {
+      // Storage refused: the browser's language.
+    }
+    for (const tag of navigator.languages) {
+      const locale = match(tag);
+      if (locale) return locale;
+    }
+    return 'en';
+  }
+
+  addEventListener(
+    'error',
+    (event) => {
+      const mark = document.getElementById('loading-mark');
+      const script = event.target;
+      if (!mark || !(script instanceof HTMLScriptElement)) return;
+      if (script.type !== 'module') return;
+
+      const locale = language();
+      const words = WORDS[locale];
+      const line = document.createElement('p');
+      line.textContent = words.line;
+      const reload = document.createElement('button');
+      reload.type = 'button';
+      reload.textContent = words.reload;
+      reload.addEventListener('click', () => location.reload());
+
+      const failed = document.createElement('div');
+      failed.className = 'failed';
+      failed.lang = locale;
+      failed.setAttribute('role', 'alert');
+      failed.append(line, reload);
+      mark.replaceChildren(failed);
+      reload.focus();
+    },
+    // A script's error does not bubble: caught on its way down.
+    true,
+  );
+})();

@@ -853,6 +853,8 @@
   "licences.validUntil.help": "Blank for a scheme that does not expire.",
   "licences.validUntil.helpNew": "Blank for a scheme that does not expire, which includes an NPN.",
   "licences.withdrawnNote": "Withdrawn licences stay on recipes that were made under them — only new recipes stop offering it.",
+  "loading.failed": "The app could not load. Check the connection, then reload.",
+  "loading.reload": "Reload",
   "locations.add": "Add location",
   "locations.addInside": "Add inside",
   "locations.added": "Location added",

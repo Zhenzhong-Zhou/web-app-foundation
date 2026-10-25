@@ -8,8 +8,9 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 
 import { API_REVISION } from './src/api/revision.gen.ts';
 import { Locale } from './src/api/types.gen.ts';
+import { LOADING_FAILED } from './src/lib/loading-words.ts';
 import { INDICATOR_DELAY_MS } from './src/lib/use-delayed-flag.ts';
-import { DARK, LIGHT, MARK, MARK_SHAPE } from './src/theme/tokens.ts';
+import { DARK, LIGHT, MARK, MARK_SHAPE, RADIUS } from './src/theme/tokens.ts';
 
 /**
  * Recompiles the catalogues while `npm run dev` runs (ADR-054).
@@ -266,7 +267,13 @@ function appName(mode: string): Plugin {
  */
 function loadingScript(): Plugin {
   const file = new URL('./src/loading.js', import.meta.url);
-  const source = () => readFileSync(file, 'utf8');
+  // With the words it shows if the app's files do not load, in each
+  // language, from the catalogues: none is loaded by then.
+  const source = () =>
+    readFileSync(file, 'utf8').replace(
+      "'%LOADING_FAILED%'",
+      JSON.stringify(loadingFailedWords()),
+    );
   const hash = createHash('sha256').update(source()).digest('hex');
   const fileName = `assets/loading-${hash.slice(0, 8)}.js`;
 
@@ -288,6 +295,30 @@ function loadingScript(): Plugin {
   };
 }
 
+/** LOADING_FAILED in each language, as the catalogues give it. */
+function loadingFailedWords(): Record<
+  Locale,
+  { line: string; reload: string }
+> {
+  return Object.fromEntries(
+    Object.values(Locale).map((locale) => {
+      const catalogue = JSON.parse(
+        readFileSync(
+          new URL(`./src/locales/${locale}.json`, import.meta.url),
+          'utf8',
+        ),
+      ) as Record<string, string>;
+      return [
+        locale,
+        {
+          line: catalogue[LOADING_FAILED.line.id],
+          reload: catalogue[LOADING_FAILED.reload.id],
+        },
+      ];
+    }),
+  ) as Record<Locale, { line: string; reload: string }>;
+}
+
 /** How long the loading mark waits to appear, so a quick load shows none. */
 const MARK_DELAY_MS = 300;
 
@@ -301,6 +332,9 @@ const MARK_DELAY_MS = 300;
 const TOKENS: Record<string, string> = {
   PAGE_LIGHT: LIGHT.page,
   PAGE_DARK: DARK.page,
+  TEXT_LIGHT: LIGHT.text,
+  TEXT_DARK: DARK.text,
+  RADIUS_CONTROL: `${RADIUS.control}px`,
   MARK_BOWL: MARK.light.bowl,
   MARK_STEM: MARK.light.stem,
   MARK_ON_DARK_BOWL: MARK.onDark.bowl,

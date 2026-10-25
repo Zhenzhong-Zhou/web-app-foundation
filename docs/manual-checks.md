@@ -2400,7 +2400,13 @@ private window.
   motion (macOS: System Settings → Accessibility → Display) and reload:
   the bar shows with its stripe standing still in the middle. Stop the API
   and reload: Could not reach the server with Try again, and no mark or
-  bar left over it. Turn throttling off and reload: the page's colour,
+  bar left over it. DevTools → Network, right-click the app's own script
+  (`main.tsx` locally, `index-….js` under `/assets/` on the live site) →
+  Block request URL, and reload: the mark and bar give way to one line,
+  The app could not load. Check the connection, then reload., with Reload
+  under it, focused, in the system's font, and VoiceOver reads the line;
+  in 中文, 应用未能加载。请检查网络连接，然后重新加载。 with 重新加载.
+  Unblock it and press Reload: the page. Turn throttling off and reload: the page's colour,
   then the page, the mark seldom and the bar more seldom still. On the
   live site, after the API has slept (15 minutes with no visit), the first
   visit shows the mark and its sliding bar for up to a minute, never
@@ -3380,6 +3386,9 @@ first.
   rename and MC-1702's logo now at the rail's top.
 - 2026-10-25: ADR-082, the rail's foot and the drawer's pinned, in view at
   any window height: MC-3511 extended.
+- 2026-10-25: ADR-082's review, the app's own files not loading: one line
+  and Reload in the loading mark's place, in the reader's language:
+  MC-3506 extended.
 - 2026-10-25: #126, Link a return's select drawn once the returns arrive:
   MC-R58.
 - 2026-10-25: #163, To ship and To receive count only orders with something

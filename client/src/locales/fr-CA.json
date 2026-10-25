@@ -853,6 +853,8 @@
   "licences.validUntil.help": "Vide pour un régime sans expiration.",
   "licences.validUntil.helpNew": "Vide pour un régime sans expiration, ce qui inclut un NPN.",
   "licences.withdrawnNote": "Les licences retirées restent sur les recettes fabriquées sous elles — seules les nouvelles recettes cessent de la proposer.",
+  "loading.failed": "L’application n’a pas pu se charger. Vérifiez la connexion, puis rechargez.",
+  "loading.reload": "Recharger",
   "locations.add": "Ajouter un emplacement",
   "locations.addInside": "Ajouter à l’intérieur",
   "locations.added": "Emplacement ajouté",

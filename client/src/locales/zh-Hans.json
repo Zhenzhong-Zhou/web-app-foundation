@@ -853,6 +853,8 @@
   "licences.validUntil.help": "不会过期的制度请留空。",
   "licences.validUntil.helpNew": "不会过期的制度请留空，NPN 即属此类。",
   "licences.withdrawnNote": "已撤销的许可证仍保留在依据其生产的配方上——只是新配方不再提供此选项。",
+  "loading.failed": "应用未能加载。请检查网络连接，然后重新加载。",
+  "loading.reload": "重新加载",
   "locations.add": "添加库位",
   "locations.addInside": "在其中添加",
   "locations.added": "库位已添加",

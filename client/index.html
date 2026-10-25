@@ -80,6 +80,10 @@
       stays centred and never shifts as the bar appears. No words, since
       none are loaded yet, and hidden from screen readers, as a progress bar
       with no name.
+
+      If the app's own files do not load, src/loading.js puts one line and
+      Reload in the mark's place (.failed), in the system's font, since the
+      app's is one of those files.
     -->
     <style>
       html,
@@ -155,6 +159,39 @@
       }
       html.dark #loading-mark .bar::before {
         background: %MARK_ON_DARK_BOWL%;
+      }
+      #loading-mark .failed {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        max-width: 32em;
+        padding: 0 16px;
+        color: %TEXT_LIGHT%;
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+        text-align: center;
+      }
+      html.dark #loading-mark .failed {
+        color: %TEXT_DARK%;
+      }
+      #loading-mark .failed p {
+        margin: 0;
+      }
+      #loading-mark .failed button {
+        min-height: 44px;
+        padding: 8px 20px;
+        border: 1px solid currentColor;
+        border-radius: %RADIUS_CONTROL%;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      #loading-mark .failed button:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
       }
     </style>
   </head>
