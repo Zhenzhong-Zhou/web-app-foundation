@@ -25,13 +25,16 @@ function tabTitle(locale: Locale, part: Part | null): string {
 
 let locale: Locale = DEFAULT_LOCALE;
 let part: Part | null = null;
+/** Words before all of it while they hold: the sign-out countdown's. */
+let prefix: string | null = null;
 
 /**
  * Worked out again at every change, never put back: a title restored on
  * leaving a page would keep the language it was written in.
  */
 function show(): void {
-  document.title = tabTitle(locale, part);
+  const title = tabTitle(locale, part);
+  document.title = prefix ? `${prefix} · ${title}` : title;
 }
 
 /** The reader's language, set by LanguageProvider with everything else. */
@@ -50,4 +53,21 @@ export function useTabTitle(page: string, section?: string): void {
       show();
     };
   }, [page, section]);
+}
+
+/**
+ * Puts words before the tab's title while they are given, the sign-out
+ * countdown's, which a person in another window sees; null, or leaving,
+ * the title alone again. Worked out with the rest, so the page or the
+ * language changing under it still shows.
+ */
+export function useTabPrefix(words: string | null): void {
+  useEffect(() => {
+    prefix = words;
+    show();
+    return () => {
+      prefix = null;
+      show();
+    };
+  }, [words]);
 }

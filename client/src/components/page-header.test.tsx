@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useLanguage } from '../i18n/use-language';
+import { useTabPrefix } from '../lib/tab-title';
 import { stubNames } from '../test/app-names';
 import { PageHeader } from './page-header';
 
@@ -127,6 +128,45 @@ describe('PageHeader', () => {
       await userEvent.click(screen.getByRole('button', { name: '中文' }));
 
       await waitFor(() => expect(document.title).toBe('品桥'));
+    });
+
+    /**
+     * The sign-out countdown before it, worked out with the rest rather
+     * than put back after, so a change of language under it still shows,
+     * and once it ends the title is the page's again, in that language.
+     */
+    it('puts the countdown before it while it runs, the rest worked out as ever', async () => {
+      stubNames({ 'zh-Hans': '品桥' });
+
+      function Countdown({ words }: { words: string | null }) {
+        useTabPrefix(words);
+        return null;
+      }
+      function Choose() {
+        const { setLocale } = useLanguage();
+        return (
+          <button type="button" onClick={() => void setLocale('zh-Hans')}>
+            中文
+          </button>
+        );
+      }
+      const page = (words: string | null) => (
+        <MemoryRouter>
+          <PageHeader crumbs={[]} title="Movements" />
+          <Countdown words={words} />
+          <Choose />
+        </MemoryRouter>
+      );
+      const { rerender } = render(page('(4:59) Signing out…'));
+      expect(document.title).toBe('(4:59) Signing out… · Movements · Panivo');
+
+      await userEvent.click(screen.getByRole('button', { name: '中文' }));
+      await waitFor(() =>
+        expect(document.title).toBe('(4:59) Signing out… · Movements · 品桥'),
+      );
+
+      rerender(page(null));
+      expect(document.title).toBe('Movements · 品桥');
     });
   });
 

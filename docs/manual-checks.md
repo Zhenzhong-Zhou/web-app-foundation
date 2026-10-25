@@ -912,8 +912,10 @@ await fetch(`${api}/v1/files/product-image`, {
   box starts unticked. On a personal laptop it stays ticked. As an owner,
   Organization → Security: 15 minutes, for sign-ins without Keep me
   signed in. On the unticked computer, leave the app alone 14 minutes:
-  the warning shows with a countdown, also in the tab's title; Enter keeps
-  you in. Start editing an order and leave it: the warning adds that
+  the warning shows with a countdown, also in the tab's title, before the
+  page's name and the product's; switch to 中文 from the account menu while
+  it runs and the title's name turns 品桥 with the countdown still first.
+  Enter keeps you in, and the title is the page's again, in 中文. Start editing an order and leave it: the warning adds that
   unsaved changes will be lost. Let it run out: the sign-in page says
   why, and signing in returns you to the page. With two tabs open, use
   one and the other does not warn; sign out from the warning in one and
@@ -3424,6 +3426,8 @@ first.
 - 2026-10-25: ADR-082's review, the foot pinned only on a window taller
   than about 500 px, the drawer scrolling as one on a phone held
   sideways: MC-3511 extended.
+- 2026-10-25: ADR-082's review, the sign-out countdown in the tab's title
+  worked out with the rest, never put back: MC-2101 extended.
 - 2026-10-25: #126, Link a return's select drawn once the returns arrive:
   MC-R58.
 - 2026-10-25: #163, To ship and To receive count only orders with something

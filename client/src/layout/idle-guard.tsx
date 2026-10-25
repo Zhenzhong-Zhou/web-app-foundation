@@ -12,6 +12,7 @@ import { useIntl } from 'react-intl';
 import { useAuth } from '../auth/use-auth';
 import { api } from '../lib/api';
 import { SIGNED_OUT_REASON } from '../lib/session-keys';
+import { useTabPrefix } from '../lib/tab-title';
 import { hasUnsavedChanges } from '../lib/unsaved-registry';
 import { newVersionNow } from '../version/version-check';
 
@@ -140,17 +141,14 @@ export function IdleGuard() {
     left === null
       ? null
       : `${Math.floor(left / 60_000)}:${String(Math.ceil((left % 60_000) / 1000) % 60).padStart(2, '0')}`;
-  useEffect(() => {
-    if (countdown === null) return;
-    const original = document.title;
-    document.title = `(${countdown}) ${intl.formatMessage({
-      id: 'idle.title',
-      defaultMessage: 'Signing out…',
-    })} · ${original}`;
-    return () => {
-      document.title = original;
-    };
-  }, [countdown, intl]);
+  useTabPrefix(
+    countdown === null
+      ? null
+      : `(${countdown}) ${intl.formatMessage({
+          id: 'idle.title',
+          defaultMessage: 'Signing out…',
+        })}`,
+  );
 
   if (!limit || countdown === null) return null;
   const minutes = Math.round(limit / 60_000);
