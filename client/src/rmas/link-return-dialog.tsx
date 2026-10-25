@@ -16,7 +16,8 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { api } from '../lib/api';
-import { formatDate, formatQuantity, SEPARATOR } from '../lib/format';
+import { formatDay, formatQuantity, SEPARATOR } from '../lib/format';
+import { organizationDayOf } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
 
 /**
@@ -151,7 +152,7 @@ export function LinkReturnDialog({
                 >
                   {returns.map((entry) => (
                     <MenuItem key={entry.id} value={entry.id}>
-                      {formatDate(entry.createdAt)}
+                      {formatDay(organizationDayOf(entry.createdAt))}
                       {SEPARATOR}
                       {intl.formatList(
                         entry.items.map(

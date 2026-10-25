@@ -556,6 +556,33 @@ describe('OrderDetailPage lines', () => {
           await screen.findByRole('heading', { name: 'Oct 16, 2026' }),
         ).toBeInTheDocument();
       });
+
+      it("heads a return with the organization's day, as its shipment is (#174)", async () => {
+        setOrganizationTimeZone('America/Vancouver');
+        serveSale();
+        server.use(
+          http.get('/api/v1/orders/:id/returns', () =>
+            // Received at 5:30 pm on 16 October in Vancouver: the 17th in
+            // Tokyo, where the tests run.
+            HttpResponse.json([
+              {
+                id: 'return-1',
+                toLocationId: 'location-1',
+                returnAuthorizationId: null,
+                reason: null,
+                note: null,
+                createdAt: '2026-10-17T00:30:00.000Z',
+                items: [],
+              },
+            ]),
+          ),
+        );
+        renderPage(SALE_PERMISSIONS, '/orders/order-1?tab=returns');
+
+        expect(
+          await screen.findByRole('heading', { name: 'Oct 16, 2026' }),
+        ).toBeInTheDocument();
+      });
     });
 
     // A voided invoice no longer bills the shipment; it can be billed again.

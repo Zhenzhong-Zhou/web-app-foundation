@@ -26,8 +26,9 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { api, ApiError } from '../lib/api';
-import { formatDate, formatQuantity, SEPARATOR } from '../lib/format';
+import { formatDay, formatQuantity, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { organizationDayOf } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
 import { LotItemsTable } from './lot-items-table';
 import { returnReasonLabel } from './return-reasons';
@@ -127,7 +128,9 @@ export function ReturnsList({
             <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
               <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
                 {[
-                  formatDate(entry.createdAt),
+                  // The organization's day, as the Shipments tab beside it
+                  // heads a shipment (ADR-072), not the reader's.
+                  formatDay(organizationDayOf(entry.createdAt)),
                   entry.reason && returnReasonLabel(entry.reason, intl),
                 ]
                   .filter(Boolean)
@@ -270,7 +273,7 @@ function LinkToRmaDialog({
                         'Received {date}: {items}. A return is counted against one RMA, once.',
                     },
                     {
-                      date: formatDate(entry.createdAt),
+                      date: formatDay(organizationDayOf(entry.createdAt)),
                       // "A, B, C" in English and French, "A、B、C" in Chinese.
                       items: intl.formatList(
                         // By place: a return's items have no id of their own,

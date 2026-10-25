@@ -26,7 +26,8 @@ import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { fromAddress } from '../lib/address-filter';
 import type { ReturnAuthorizationStatus } from '../lib/api-names';
 import { type DayRange, withInstants } from '../lib/date-range';
-import { formatDate } from '../lib/format';
+import { formatDay } from '../lib/format';
+import { organizationDayOf } from '../lib/time-zone';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch, withSearch } from '../lib/use-list-search';
@@ -225,7 +226,9 @@ export function RmasPage() {
                         </Link>
                       </TableCell>
                       <TableCell>{row.reason}</TableCell>
-                      <TableCell>{formatDate(row.createdAt)}</TableCell>
+                      <TableCell>
+                        {formatDay(organizationDayOf(row.createdAt))}
+                      </TableCell>
                       <TableCell>
                         <StatusChip
                           tone={STATUS_TONES.returnAuthorization[row.status]}

@@ -35,14 +35,10 @@ import { PdfActions } from '../components/pdf-actions';
 import { Reference } from '../components/reference';
 import { LoadFailure } from '../errors/load-failure';
 import { api } from '../lib/api';
-import {
-  displayQuantity,
-  formatDate,
-  NO_VALUE,
-  SEPARATOR,
-} from '../lib/format';
+import { displayQuantity, formatDay, NO_VALUE, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
+import { organizationDayOf } from '../lib/time-zone';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
@@ -222,7 +218,7 @@ export function RmaDetailPage() {
             {SEPARATOR}
             {intl.formatMessage(
               { id: 'rmas.raisedOn', defaultMessage: 'raised {date}' },
-              { date: formatDate(rma.createdAt) },
+              { date: formatDay(organizationDayOf(rma.createdAt)) },
             )}
           </>
         }

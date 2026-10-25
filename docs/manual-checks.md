@@ -2332,6 +2332,16 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R60** *(a return and an RMA by the organization's day, #174)* With
+  the organization in Vancouver and the computer set to Shanghai, as
+  MC-2606 does, after 5 pm in Vancouver: take a return on a shipped sale.
+  The order's Returns tab heads it with Vancouver's today, the same day
+  as the Shipments tab heads a shipment made now, and its Link to an RMA
+  dialog says Received with that day. Raise an RMA on the same order: its
+  page says raised today, the Returns list's date is today, and its Link
+  a return dialog lists the return by today. Not tomorrow, Shanghai's
+  day, in any of them. Found by the reviews of #172.
+
 - **MC-R61** *(Close order filled only once nothing is left, #158)* As
   the demo Owner, PO-DEMO-4, with cartons still due: Close order in the
   summary is outlined, not filled. A purchase received in full but not
@@ -3187,3 +3197,5 @@ first.
   still to ship or to come, as the Orders list they open: MC-R59.
 - 2026-10-25: #158, Close order outlined while goods are due, filled once
   nothing is left: MC-R61.
+- 2026-10-25: #174, a return and an RMA dated by the organization's day, as a
+  shipment is: MC-R60.
