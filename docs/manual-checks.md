@@ -2421,7 +2421,9 @@ private window.
   text that a double-click selects, and © 2026 and the holder at the foot,
   in small grey text; every sentence is as before. Stop the API and
   reload: Can’t reach the server with Try again, the same name above and
-  line below. In Dark (the account menu, then sign out) the P is the
+  line below. It and the page that does not exist have the language and
+  text size at the top, as Sign in has: choose 中文 there and the page,
+  its name and the tab change to it. In Dark (the account menu, then sign out) the P is the
   white stem and lighter bowl, clear on the dark page. VoiceOver reads
   Panivo once, with no image before it, and the footer as the page's
   footer. Empty `VITE_COPYRIGHT_HOLDER` and restart: no line, and no empty
@@ -3394,6 +3396,9 @@ first.
 - 2026-10-25: ADR-082's review, the start-up screen with no answer from
   the server now the Can’t reach the server page, and nothing under the
   loading mark read aloud: MC-3414, MC-3506 and MC-3507 changed.
+- 2026-10-25: ADR-082's review, the language and text size on the status
+  pages before sign-in and the start-up screens, as on Sign in: MC-3507
+  extended.
 - 2026-10-25: #126, Link a return's select drawn once the returns arrive:
   MC-R58.
 - 2026-10-25: #163, To ship and To receive count only orders with something

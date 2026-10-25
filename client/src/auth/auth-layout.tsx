@@ -1,9 +1,7 @@
 import { Box, Paper, Stack, Typography } from '@mui/material';
 import type { ReactNode, Ref, SubmitEvent } from 'react';
 
-import { SignedOutFrame } from '../brand/signed-out-frame';
-import { LanguageSelect } from '../components/language-select';
-import { TextSizeSelect } from '../components/text-size-select';
+import { SignedOutControls, SignedOutFrame } from '../brand/signed-out-frame';
 import { LanguageFailureBanner } from '../i18n/language-failure';
 import { NewVersionBanner } from '../version/new-version-banner';
 
@@ -39,26 +37,7 @@ export function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <SignedOutFrame
-      invitation={invitation}
-      controls={
-        // Before anything else, so someone who cannot read the page can
-        // still find the controls that change it: its language first
-        // (ADR-054), then its text size (ADR-075).
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'flex-end',
-            gap: 1,
-            mb: 2,
-          }}
-        >
-          <LanguageSelect />
-          <TextSizeSelect />
-        </Box>
-      }
-    >
+    <SignedOutFrame invitation={invitation} controls={<SignedOutControls />}>
       {/* A newer build, said here since these pages have no top bar, and
           a language that would not load (ADR-081). After the language,
           which stays first. */}

@@ -1,6 +1,8 @@
 import { Box, Container, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import { LanguageSelect } from '../components/language-select';
+import { TextSizeSelect } from '../components/text-size-select';
 import { copyrightLine, useAppName } from '../lib/app-name';
 import { useScreenShown } from '../lib/loading-mark';
 import { ProductMark } from './product-mark';
@@ -106,6 +108,28 @@ export function SignedOutFrame({
           {copyright && <span>{copyright}</span>}
         </Box>
       )}
+    </Box>
+  );
+}
+
+/**
+ * The controls a screen before sign-in puts in the frame's slot, before
+ * anything else, so someone who cannot read the page can still find what
+ * changes it: its language first (ADR-054), then its text size (ADR-075).
+ */
+export function SignedOutControls() {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-end',
+        gap: 1,
+        mb: 2,
+      }}
+    >
+      <LanguageSelect />
+      <TextSizeSelect />
     </Box>
   );
 }

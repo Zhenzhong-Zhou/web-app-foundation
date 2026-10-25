@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { drawnIn } from '../test/drawn-colour';
+import { renderWithAuth } from '../test/render-with-auth';
 import { themeFor } from '../theme';
 import { contrast } from '../theme/accent';
 import { type StatusKind, StatusPage } from './status-page';
@@ -60,5 +61,34 @@ describe('StatusPage', () => {
         'var(--mui-palette-text-secondary)',
       );
     }
+  });
+});
+
+/**
+ * Before sign-in, or before the app has drawn, a status page is the
+ * product's, as Sign in is (ADR-082): its language and text size first.
+ */
+describe('StatusPage, standalone', () => {
+  it('offers the language and the text size at the top, as Sign in does', () => {
+    renderWithAuth(
+      <ThemeProvider theme={themeFor('en')}>
+        <StatusPage
+          kind="notFound"
+          title="Page not found"
+          message="Message"
+          standalone
+        />
+      </ThemeProvider>,
+    );
+
+    const language = screen.getByRole('combobox', { name: 'Language' });
+    const size = screen.getByRole('combobox', { name: 'Text size' });
+    const heading = screen.getByRole('heading', { name: 'Page not found' });
+    // Before the page's heading, in reading order.
+    expect(
+      language.compareDocumentPosition(heading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(size).toBeVisible();
   });
 });

@@ -8,7 +8,7 @@ import UpdateOutlined from '@mui/icons-material/UpdateOutlined';
 import { Box, Paper, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
-import { SignedOutFrame } from '../brand/signed-out-frame';
+import { SignedOutControls, SignedOutFrame } from '../brand/signed-out-frame';
 import { useScreenShown } from '../lib/loading-mark';
 import { rem } from '../theme/rem';
 import { type ToneName, TYPE } from '../theme/tokens';
@@ -124,10 +124,11 @@ export function StatusPage({
   );
 
   // Before sign-in, or before the app has drawn, the product's: its name
-  // above and the © line below (ADR-082).
+  // above and the © line below (ADR-082), and the language and text size
+  // at the top, as on Sign in.
   if (standalone) {
     return (
-      <SignedOutFrame>
+      <SignedOutFrame controls={<SignedOutControls />}>
         <Box sx={{ my: 'auto', display: 'flex', justifyContent: 'center' }}>
           <Paper
             variant="outlined"
