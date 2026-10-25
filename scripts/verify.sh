@@ -16,10 +16,12 @@
 # server/openapi.json and client/src/api/, and stops if either changed,
 # leaving the fresh files in place to commit.
 #
-# So do the two checks CI makes of a pull request against main (ADR-081),
-# here against origin/main as last fetched: a breaking API change raises
-# the revision (oasdiff, in Docker), and each new migration leaves the
-# running release working (squawk). Each says why when it cannot run.
+# So do the three checks CI makes of a pull request against main, here
+# against origin/main as last fetched: a breaking API change raises the
+# revision (oasdiff, in Docker), each new migration leaves the running
+# release working (squawk; both ADR-081), and no commit the branch adds
+# carries a placeholder identity (ADR-082). Each says why when it cannot
+# run.
 #
 # Not run here, though CI runs it: npm run seed:demo, which would add a demo
 # organization to the dev database on every run. Run it after changing a
@@ -92,6 +94,13 @@ against_main() {
     echo "Skipped: no $main to compare with. git fetch origin main, then run again."
   else
     may_skip scripts/check-migrations.sh "$base"
+  fi
+
+  step 'Against origin/main: every commit by a real identity'
+  if [[ -z "$base" ]]; then
+    echo "Skipped: no $main to compare with. git fetch origin main, then run again."
+  else
+    scripts/check-authors.sh "$main..HEAD"
   fi
 }
 

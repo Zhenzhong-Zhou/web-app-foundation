@@ -9,9 +9,10 @@
 #     scripts/check-authors.sh <sha> --not --remotes  # what no remote has
 #
 # Takes revisions as git log takes them. The pre-push hook
-# (scripts/hooks/pre-push) runs it on what is being pushed, and CI on a
-# pull request's own commits (ci.yml, authors), since a clone can lack
-# the hook or a push skip it (ADR-082).
+# (scripts/hooks/pre-push) runs it on what is being pushed, CI on a pull
+# request's own commits (ci.yml, authors), since a clone can lack the hook
+# or a push skip it (ADR-082), and scripts/verify.sh on what the branch
+# adds to origin/main.
 #
 # Exits 0 when no commit carries one; 1 when some do, naming each and
 # what to do; 2 without revisions; git's own status when it cannot read
