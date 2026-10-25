@@ -13,9 +13,6 @@ import { OrganizationMark } from './organization-mark';
 /** How far from square a logo may be and still fill the folded plate. */
 const SQUARE_ENOUGH = 1.25;
 
-/** Each logo's shape once read, so a fold after the first draws it at once. */
-const squareLogos = new Map<string, boolean>();
-
 function isSquare(image: HTMLImageElement): boolean {
   const { naturalWidth: width, naturalHeight: height } = image;
   if (!width || !height) return false;
@@ -48,27 +45,21 @@ export function RailTop({
     ? `/api/v1/files/${branding.logoFileId}`
     : null;
 
-  // Its own width and height, read when it loads; unknown until then, and
-  // the initials meanwhile.
+  // Its own width and height, read when it loads, open or folded, so a
+  // fold draws it at once; unknown until then, and the plate » alone.
+  // RailTop stays as the rail folds, so the answer stays with it.
   const [read, setRead] = useState<{ logo: string; square: boolean }>();
-  const square = logo
-    ? read?.logo === logo
-      ? read.square
-      : squareLogos.get(logo)
-    : false;
-  const measured = (shape: boolean) => {
-    if (!logo) return;
-    squareLogos.set(logo, shape);
-    setRead({ logo, square: shape });
-  };
+  const square = !logo ? false : read?.logo === logo ? read.square : undefined;
 
   const measure = logo && square === undefined && (
     <img
       hidden
       src={logo}
       alt=""
-      onLoad={(event) => measured(isSquare(event.currentTarget))}
-      onError={() => measured(false)}
+      onLoad={(event) =>
+        setRead({ logo, square: isSquare(event.currentTarget) })
+      }
+      onError={() => setRead({ logo, square: false })}
     />
   );
 
@@ -103,6 +94,10 @@ export function RailTop({
   }
 
   const initials = organizationInitialsOf(name);
+  // The logo on the plate, once it is known to be square.
+  const squareLogo = square ? logo : null;
+  // Its initials, where it shows them: none while the logo is read.
+  const shown = square === false ? initials : null;
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
@@ -117,7 +112,7 @@ export function RailTop({
           // Its initials first where it shows them, so a voice user can say
           // what they see, as the account button does (WCAG 2.5.3).
           aria-label={
-            square
+            !shown
               ? intl.formatMessage(
                   {
                     id: 'layout.expandNavigationOf',
@@ -153,11 +148,11 @@ export function RailTop({
                 outlineOffset: 2,
               },
             },
-            square
+            !shown
               ? {
-                  // White in both modes, as the logo's plate is; the arrow
-                  // takes Light's text on it. Its edge shows on a white
-                  // rail.
+                  // White in both modes, as the logo's plate is, and while
+                  // the logo is read; the arrow takes Light's text on it.
+                  // Its edge shows on a white rail.
                   bgcolor: '#FFFFFF',
                   color: LIGHT.text,
                   border: 1,
@@ -171,20 +166,24 @@ export function RailTop({
                 },
           ]}
         >
-          {square ? (
+          {squareLogo && (
             <Box
               component="img"
               className="face"
-              src={logo ?? undefined}
+              src={squareLogo}
               alt=""
               sx={{ maxWidth: 28, maxHeight: 28 }}
             />
-          ) : (
-            <span className="face" aria-hidden lang={initialsLang(initials)}>
-              {initials}
+          )}
+          {shown && (
+            <span className="face" aria-hidden lang={initialsLang(shown)}>
+              {shown}
             </span>
           )}
-          <KeyboardDoubleArrowRight className="unfold" fontSize="small" />
+          <KeyboardDoubleArrowRight
+            className={square === undefined ? undefined : 'unfold'}
+            fontSize="small"
+          />
         </ButtonBase>
       </Tooltip>
       {measure}

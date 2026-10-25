@@ -108,8 +108,16 @@ describe('RailTop', () => {
 
   it('puts a square logo on the plate once it has loaded', () => {
     const { container } = renderTop({ folded: true, logoFileId: 'square' });
-    // Initials until the logo's shape is known.
-    expect(plate()).toHaveTextContent('WN');
+    // » alone until the logo's shape is known: neither initials that would
+    // give way to it, nor a name that would change with them.
+    expect(plate()).not.toHaveTextContent('WN');
+    expect(plate().querySelector('img')).toBeNull();
+    expect(
+      plate().querySelector('[data-testid="KeyboardDoubleArrowRightIcon"]'),
+    ).toBeVisible();
+    expect(plate()).toHaveAccessibleName(
+      'Expand navigation (WIDE Naturals Inc.)',
+    );
 
     loads(container, 200, 180);
 

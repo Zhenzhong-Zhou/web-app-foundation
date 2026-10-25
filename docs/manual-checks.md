@@ -2449,7 +2449,9 @@ private window.
   accent, white on it in Light and dark on the lighter accent in Dark:
   WIDE Naturals Inc. reads WN, and 清禾药业有限公司 reads 清禾. With a
   square logo (Settings → Organization → Branding), the logo on a white
-  plate; with a wide wordmark, the initials. Hover the plate, or Tab to
+  plate; with a wide wordmark, the initials. Reload folded, DevTools'
+  Network on Slow 4G: while the logo loads the plate shows » alone, never
+  initials that then give way to the logo. Hover the plate, or Tab to
   it: » takes its place and a tooltip says Expand navigation; VoiceOver
   reads WN, Expand navigation (WIDE Naturals Inc.), or with a logo
   Expand navigation and the name. Click or tap it: the rail opens.
@@ -3399,6 +3401,8 @@ first.
 - 2026-10-25: ADR-082's review, the language and text size on the status
   pages before sign-in and the start-up screens, as on Sign in: MC-3507
   extended.
+- 2026-10-25: ADR-082's review, the folded plate » alone while a logo is
+  read: MC-3510 extended.
 - 2026-10-25: #126, Link a return's select drawn once the returns arrive:
   MC-R58.
 - 2026-10-25: #163, To ship and To receive count only orders with something
