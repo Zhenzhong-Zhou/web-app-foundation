@@ -1,29 +1,23 @@
 import type { INestApplication } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 
-import type { Env } from '../../src/config/env';
 import { escapeHtml } from '../../src/shared/mail/escape-html';
 import type { Mail } from '../../src/shared/mail/mail.service';
-import { appNameOf } from '../../src/shared/mail/mail-brand';
+import { MailBrand } from '../../src/shared/mail/mail-brand';
 
 /**
  * The header the product's emails open with (ADR-082): the mark's address
- * from CLIENT_URL, and the name from MAIL_FROM, never a literal, so the
- * suite holds whatever name a deployment gives it.
+ * and the name as MailBrand reads them from CLIENT_URL and MAIL_FROM, never
+ * a literal, so the suite holds whatever name a deployment gives it.
  */
 export function mailBrandOf(app: INestApplication): {
   mark: string;
   name: string;
 } {
-  const config = app.get<ConfigService<Env, true>>(ConfigService);
-  const name = appNameOf(config.get('MAIL_FROM', { infer: true }));
+  const { mark, name } = app.get(MailBrand);
   if (!name) {
     throw new Error('MAIL_FROM names no one: give it a name, as .env.example');
   }
-  return {
-    mark: `${config.get('CLIENT_URL', { infer: true })}/brand/mail-mark.png`,
-    name,
-  };
+  return { mark, name };
 }
 
 /** Opens with the header, in the HTML and the text alike. */

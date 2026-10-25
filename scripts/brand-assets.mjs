@@ -27,46 +27,61 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MASTERS = path.join(ROOT, "docs/brand");
 const PUBLIC = path.join(ROOT, "client/public");
 
-const require = createRequire(path.join(ROOT, "server/package.json"));
-const sharp = require("sharp");
+/** The mark on its navy plate, the master most of the files come from. */
+const PLATE = "panivo-plate.svg";
 
-/** Each PNG, its master and its width; the height follows the master's. */
-const PNGS = [
+/**
+ * Each PNG, its master and its size: the height is the one the master's
+ * shape gives at that width, which png() checks. Its test reads them here.
+ */
+export const PNGS = [
   {
     file: "apple-touch-icon.png",
     master: "panivo-app-icon-dark.svg",
     width: 180,
+    height: 180,
   },
-  { file: "icon-192.png", master: "panivo-plate.svg", width: 192 },
-  { file: "icon-512.png", master: "panivo-plate.svg", width: 512 },
+  { file: "icon-192.png", master: PLATE, width: 192, height: 192 },
+  { file: "icon-512.png", master: PLATE, width: 512, height: 512 },
   {
     file: "icon-maskable-512.png",
     master: "panivo-app-icon-maskable.svg",
     width: 512,
+    height: 512,
   },
-  { file: "og-image.png", master: "panivo-link-preview.svg", width: 1200 },
-  { file: "brand/mail-mark.png", master: "panivo-plate.svg", width: 56 },
+  {
+    file: "og-image.png",
+    master: "panivo-link-preview.svg",
+    width: 1200,
+    height: 630,
+  },
+  { file: "brand/mail-mark.png", master: PLATE, width: 56, height: 56 },
 ];
 
 /** The ICO's master and sizes. */
-const ICO = {
+export const ICO = {
   file: "favicon.ico",
-  master: "panivo-plate.svg",
+  master: PLATE,
   sizes: [16, 32, 48],
 };
 
 /**
- * A master drawn as a PNG `width` pixels wide. librsvg reads a viewBox's
- * units as pixels at 72 dpi, so the density sets the size.
+ * A master drawn as a PNG `width` pixels wide, `height` high if given.
+ * librsvg reads a viewBox's units as pixels at 72 dpi, so the density sets
+ * the size. The server's sharp, loaded here, so its test can import the
+ * lists above without it.
  */
-async function png(master, width) {
+async function png(master, width, height = width) {
+  const sharp = createRequire(path.join(ROOT, "server/package.json"))("sharp");
   const svg = readFileSync(path.join(MASTERS, master));
   const { width: drawn } = await sharp(svg).metadata();
   const { data, info } = await sharp(svg, { density: (72 * width) / drawn })
     .png({ compressionLevel: 9 })
     .toBuffer({ resolveWithObject: true });
-  if (info.width !== width) {
-    throw new Error(`${master} came out ${info.width} px wide, not ${width}`);
+  if (info.width !== width || info.height !== height) {
+    throw new Error(
+      `${master} came out ${info.width} × ${info.height} px, not ${width} × ${height}`,
+    );
   }
   return data;
 }
@@ -97,18 +112,21 @@ function write(file, data) {
   console.log(`client/public/${file}: ${data.length} bytes`);
 }
 
-for (const { file, master, width } of PNGS) {
-  write(file, await png(master, width));
+// Run, not imported: its test imports the lists.
+if (import.meta.main) {
+  for (const { file, master, width, height } of PNGS) {
+    write(file, await png(master, width, height));
+  }
+
+  const images = await Promise.all(
+    ICO.sizes.map(async (size) => ({
+      size,
+      data: await png(ICO.master, size),
+    })),
+  );
+  write(ICO.file, ico(images));
+
+  // The SVG icon is the plate's master as it is.
+  copyFileSync(path.join(MASTERS, PLATE), path.join(PUBLIC, "favicon.svg"));
+  console.log(`client/public/favicon.svg: a copy of docs/brand/${PLATE}`);
 }
-
-const images = await Promise.all(
-  ICO.sizes.map(async (size) => ({ size, data: await png(ICO.master, size) })),
-);
-write(ICO.file, ico(images));
-
-// The SVG icon is the plate's master as it is.
-copyFileSync(
-  path.join(MASTERS, "panivo-plate.svg"),
-  path.join(PUBLIC, "favicon.svg"),
-);
-console.log("client/public/favicon.svg: a copy of docs/brand/panivo-plate.svg");

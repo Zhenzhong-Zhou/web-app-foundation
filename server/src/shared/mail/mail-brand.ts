@@ -71,8 +71,10 @@ export const answersAsPng: MarkCheck = async (url) => {
 @Injectable()
 export class MailBrand implements OnApplicationShutdown {
   private readonly logger = new Logger(MailBrand.name);
-  private readonly name: string | null;
-  private readonly mark: string;
+  /** MAIL_FROM's name, which signs the product's emails; null with none. */
+  readonly name: string | null;
+  /** The mark's address on the static site. */
+  readonly mark: string;
   /** The check's last answer, which the header reads. */
   private markServed = false;
   /** A miss is a warning once, then a debug line every ten minutes. */
@@ -132,15 +134,10 @@ export class MailBrand implements OnApplicationShutdown {
 
     const cell =
       'padding:0 0 16px;border-bottom:1px solid #EEF0F4;vertical-align:middle';
-    const header = [
-      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:16px"><tr>',
-      this.markServed &&
-        `<td style="${cell};padding-right:10px"><img src="${this.mark}" width="28" height="28" alt="" style="display:block;border:0"></td>`,
-      `<td width="100%" style="${cell};font-size:20px;font-weight:700;line-height:28px">${escapeHtml(this.name)}</td>`,
-      '</tr></table>',
-    ]
-      .filter(Boolean)
-      .join('');
+    const mark = this.markServed
+      ? `<td style="${cell};padding-right:10px"><img src="${this.mark}" width="28" height="28" alt="" style="display:block;border:0"></td>`
+      : '';
+    const header = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:16px"><tr>${mark}<td width="100%" style="${cell};font-size:20px;font-weight:700;line-height:28px">${escapeHtml(this.name)}</td></tr></table>`;
 
     return {
       ...mail,

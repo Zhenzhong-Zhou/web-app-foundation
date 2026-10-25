@@ -20,13 +20,11 @@ export function ThemeColor(): null {
     for (const meta of document.querySelectorAll<HTMLMetaElement>(
       'meta[name="theme-color"]',
     )) {
-      const scheme =
+      const dark =
         mode === 'system'
           ? meta.getAttribute('media')?.includes('dark')
-            ? 'dark'
-            : 'light'
-          : mode;
-      meta.content = scheme === 'dark' ? DARK.page : LIGHT.page;
+          : mode === 'dark';
+      meta.content = dark ? DARK.page : LIGHT.page;
     }
   }, [mode]);
 

@@ -18,7 +18,7 @@ interface Part {
  * place, keeping its tab short (SO-DEMO-1 · Orders); a page with no part,
  * signed out or Home, is the name alone.
  */
-export function tabTitle(locale: Locale, part: Part | null): string {
+function tabTitle(locale: Locale, part: Part | null): string {
   const name = appNameIn(locale);
   return part ? `${part.page} · ${part.section ?? name}` : name;
 }

@@ -16,6 +16,8 @@ import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { ICO, PNGS } from "./brand-assets.mjs";
+
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PUBLIC = path.join(ROOT, "client/public");
 
@@ -32,21 +34,13 @@ function sizeOf(png) {
 const read = (file) => readFileSync(path.join(PUBLIC, file));
 
 test("each PNG is at its size", () => {
-  const sizes = {
-    "apple-touch-icon.png": [180, 180],
-    "icon-192.png": [192, 192],
-    "icon-512.png": [512, 512],
-    "icon-maskable-512.png": [512, 512],
-    "og-image.png": [1200, 630],
-    "brand/mail-mark.png": [56, 56],
-  };
-  for (const [file, size] of Object.entries(sizes)) {
-    assert.deepEqual(sizeOf(read(file)), size, file);
+  for (const { file, width, height } of PNGS) {
+    assert.deepEqual(sizeOf(read(file)), [width, height], file);
   }
 });
 
 test("the ICO holds 16, 32 and 48 px, each a PNG", () => {
-  const ico = read("favicon.ico");
+  const ico = read(ICO.file);
   assert.equal(ico.readUInt16LE(2), 1, "an icon");
   const count = ico.readUInt16LE(4);
   const entries = Array.from({ length: count }, (_, i) => {
@@ -56,16 +50,15 @@ test("the ICO holds 16, 32 and 48 px, each a PNG", () => {
     const png = ico.subarray(offset, offset + length);
     return { declared: ico.readUInt8(at), size: sizeOf(png) };
   });
-  assert.deepEqual(entries, [
-    { declared: 16, size: [16, 16] },
-    { declared: 32, size: [32, 32] },
-    { declared: 48, size: [48, 48] },
-  ]);
+  assert.deepEqual(
+    entries,
+    ICO.sizes.map((size) => ({ declared: size, size: [size, size] })),
+  );
 });
 
 test("the SVG icon is the plate's master, as it is", () => {
   assert.equal(
     read("favicon.svg").toString(),
-    readFileSync(path.join(ROOT, "docs/brand/panivo-plate.svg"), "utf8"),
+    readFileSync(path.join(ROOT, "docs/brand", ICO.master), "utf8"),
   );
 });
