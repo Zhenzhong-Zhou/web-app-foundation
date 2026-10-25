@@ -4,6 +4,7 @@ import type { ReactNode, Ref, SubmitEvent } from 'react';
 import { LanguageSelect } from '../components/language-select';
 import { TextSizeSelect } from '../components/text-size-select';
 import { LanguageFailureBanner } from '../i18n/language-failure';
+import { useScreenShown } from '../lib/loading-mark';
 import { NewVersionBanner } from '../version/new-version-banner';
 
 /**
@@ -33,6 +34,9 @@ export function AuthLayout({
   onSubmit?: (event: SubmitEvent) => void;
   children: ReactNode;
 }) {
+  // A signed-out page on view: the loading mark comes down (ADR-082).
+  useScreenShown();
+
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
       {/* Before anything else, so someone who cannot read the page can

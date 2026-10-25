@@ -20,6 +20,7 @@ import { NotFoundRoute } from './errors/not-found-page';
 import { RevisionRefusalPage } from './errors/revision-refusal-page';
 import { AppLayout } from './layout/app-layout';
 import { isRevisionRefusal } from './lib/api';
+import { loadingMarkShown, ScreenShown } from './lib/loading-mark';
 import { useDelayedFlag } from './lib/use-delayed-flag';
 import { SIGNED_IN_ROUTES } from './routes';
 
@@ -67,10 +68,15 @@ function RouteFallback() {
  * the layout suspends the layout, so the header and nav would tear down and
  * remount on every navigation to a chunk that is not loaded yet. Inside the
  * outlet, only the content swaps.
+ *
+ * ScreenShown sits inside the boundary, so it draws with the page and not
+ * before: the loading mark stays over the rail until the first page's chunk
+ * is in (ADR-082).
  */
 function split(Page: ComponentType) {
   return (
     <Suspense fallback={<RouteFallback />}>
+      <ScreenShown />
       <Page />
     </Suspense>
   );
@@ -79,7 +85,9 @@ function split(Page: ComponentType) {
 export default function App() {
   const intl = useIntl();
   const { loading, error, refresh } = useAuth();
-  const showSpinner = useDelayedFlag(loading);
+  // Not while the loading mark is up (ADR-082): it already says the app is
+  // on its way, through a cold start's minute too.
+  const showSpinner = useDelayedFlag(loading) && !loadingMarkShown();
 
   if (loading) {
     return showSpinner ? (
@@ -126,6 +134,7 @@ export default function App() {
           p: 4,
         }}
       >
+        <ScreenShown />
         <Alert severity="error">
           {intl.formatMessage({
             id: 'common.serverUnreachable',

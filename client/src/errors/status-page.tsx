@@ -8,6 +8,7 @@ import UpdateOutlined from '@mui/icons-material/UpdateOutlined';
 import { Box, Paper, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import { useScreenShown } from '../lib/loading-mark';
 import { rem } from '../theme/rem';
 import { type ToneName, TYPE } from '../theme/tokens';
 
@@ -65,6 +66,9 @@ export function StatusPage({
   reference?: ReactNode;
   standalone?: boolean;
 }) {
+  // On view, at start too (the new-version page, a page not found): the
+  // loading mark comes down (ADR-082).
+  useScreenShown();
   const look = LOOK[kind];
   const Icon = look.icon;
 

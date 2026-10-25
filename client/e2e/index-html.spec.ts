@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
+import { OWNER_STATE_PATH } from './global-setup';
 
 /**
  * What index.html gives before the app starts (ADR-082): the home screen's
@@ -11,25 +12,36 @@ import { expect, test } from './fixtures';
 test.use({ storageState: { cookies: [], origins: [] } });
 
 /**
- * Holds the app's entry back until the returned function is called, so the
- * page stays as index.html drew it. The suite runs on Vite's dev server,
- * whose entry is src/main.tsx; a build's is a hashed file in /assets/.
+ * Holds back each request to `url` until `release` is called, slowed, never
+ * answered in its place; `asked` settles once the page has asked for it.
  */
-async function holdTheApp(page: Page): Promise<() => void> {
+async function hold(page: Page, url: RegExp) {
   let release = () => {};
   const released = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route(/\/src\/main\.tsx(\?|$)/, async (route) => {
+  let asked = () => {};
+  const wasAsked = new Promise<void>((resolve) => {
+    asked = resolve;
+  });
+  await page.route(url, async (route) => {
+    asked();
     await released;
     await route.continue();
   });
-  return release;
+  return { asked: wasAsked, release };
 }
+
+/**
+ * Holds the app's entry back, so the page stays as index.html drew it. The
+ * suite runs on Vite's dev server, whose entry is src/main.tsx; a build's
+ * is a hashed file in /assets/.
+ */
+const holdTheApp = (page: Page) => hold(page, /\/src\/main\.tsx(\?|$)/);
 
 /** index.html's own title, VITE_APP_NAME: the app is held, so nothing has changed it. */
 async function indexTitle(page: Page): Promise<string> {
-  await expect(page.locator('#root').getByRole('img')).toBeAttached();
+  await expect(page.locator('#loading-mark').getByRole('img')).toBeAttached();
   const name = await page.title();
   // Filled in by vite.config.ts's app-name plugin, never left a placeholder.
   expect(name).not.toBe('');
@@ -161,11 +173,12 @@ for (const [stored, system] of [
     await page.addInitScript((mode) => {
       localStorage.setItem('mui-mode', mode);
     }, stored);
-    const release = await holdTheApp(page);
+    const app = await holdTheApp(page);
+    const session = await hold(page, /\/api\/v1\/auth\/me$/);
     await page.goto('/login', { waitUntil: 'commit' });
     const name = await indexTitle(page);
 
-    const mark = page.locator('#root').getByRole('img', { name });
+    const mark = page.locator('#loading-mark').getByRole('img', { name });
     await expect(mark).toBeVisible();
     await expect(page.locator('html')).toHaveClass(stored);
     // It waits 300 ms, so a quick load shows the colour alone, and then
@@ -182,13 +195,25 @@ for (const [stored, system] of [
     const background = await page.evaluate(
       () => getComputedStyle(document.documentElement).backgroundColor,
     );
+    await expect(page.locator('#loading-mark')).toHaveCSS(
+      'background-color',
+      background,
+    );
     const colours = await themeColors(page);
     expect(colours.map(rgb)).toEqual([background, background]);
 
+    // The app starts, and reads the session: the mark stays, and the
+    // app's spinner, due after 250 ms, does not show.
+    app.release();
+    await session.asked;
+    await page.waitForTimeout(500);
+    await expect(mark).toBeVisible();
+    await expect(page.getByRole('progressbar')).toHaveCount(0);
+
     // The app's first page takes its place, in the same mode.
-    release();
+    session.release();
     await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(mark).toHaveCount(0);
+    await expect(page.locator('#loading-mark')).toHaveCount(0);
     expect(
       await page.evaluate(
         () => getComputedStyle(document.body).backgroundColor,
@@ -200,3 +225,31 @@ for (const [stored, system] of [
     ]);
   });
 }
+
+/**
+ * Signed in, the first page's chunk can come well after the rail: the mark
+ * stays over the rail until the page has drawn, so the two appear at once.
+ */
+test.describe('signed in', () => {
+  test.use({ storageState: OWNER_STATE_PATH });
+
+  test('keeps the loading mark until the first page has drawn', async ({
+    page,
+  }) => {
+    const home = await hold(page, /\/src\/home\/home-page\.tsx(\?|$)/);
+    await page.goto('/', { waitUntil: 'commit' });
+    const name = await indexTitle(page);
+    await home.asked;
+
+    // The rail is there, under the mark, and the page is not.
+    await expect(page.getByRole('navigation', { name: 'Main' })).toBeAttached();
+    await expect(
+      page.locator('#loading-mark').getByRole('img', { name }),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(0);
+
+    home.release();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.locator('#loading-mark')).toHaveCount(0);
+  });
+});

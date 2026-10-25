@@ -2386,12 +2386,18 @@ private window.
   then sign out. DevTools → Network: Disable cache, Slow 4G; reload: the
   page is dark from the first moment, never a white flash; after a moment
   the P appears in the middle, a white stem and a lighter purple bowl,
-  still, not spinning or fading; then the app's spinner or the sign-in
-  page takes its place, still dark. With VoiceOver on, the mark reads
-  Panivo, image. Choose Light with the system dark: the same, light. Turn
-  throttling off and reload: the page's colour, then the page, the mark
-  seldom if ever. In 中文 the mark goes a moment before the page shows,
-  while 中文's words load; the page's colour stays.
+  still, not spinning or fading. It stays, with no spinner beside or after
+  it, until the sign-in page takes its place, still dark. With VoiceOver
+  on, the mark reads Panivo, image. In 中文 too it stays while 中文's words
+  load, then the page. Sign in and reload, still on Slow 4G: the mark
+  covers the whole window until Home has drawn, and the rail and Home
+  appear together, never the rail beside an empty page or a grey block.
+  Choose Light with the system dark: the same, light. Stop the API and
+  reload: the mark, then Could not reach the server with Try again, the
+  mark gone. Turn throttling off and reload: the page's colour, then the
+  page, the mark seldom if ever. On the live site, after the API has
+  slept (15 minutes with no visit), the first visit shows the mark for up
+  to a minute, with no spinner, then the page.
 
 ## Regressions
 
@@ -3233,3 +3239,5 @@ first.
   index.html's manifest, theme-color, card and loading mark: MC-3501 and
   MC-3502 extended (the home screens' name, the tab in 中文 by its
   setting); MC-3504 to MC-3506.
+- 2026-10-24: ADR-082, the loading mark kept until the first screen is
+  on view, with no spinner under it: MC-3506 rewritten.

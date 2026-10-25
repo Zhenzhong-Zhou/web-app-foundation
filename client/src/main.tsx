@@ -15,6 +15,7 @@ import { ToastProvider } from './components/toast-provider';
 import { LanguageFailureToast } from './i18n/language-failure';
 import { LanguageProvider } from './i18n/language-provider';
 import { LocalizedTheme } from './i18n/localized-theme';
+import { removeLoadingMark } from './lib/loading-mark';
 import { initTextSize } from './theme/text-size';
 import { ThemeColor } from './theme/theme-color';
 import { VersionWatch } from './version/version-check';
@@ -42,7 +43,17 @@ const router = createBrowserRouter([
   },
 ]);
 
-createRoot(document.getElementById('root')!).render(
+/**
+ * A render error no boundary caught leaves the page empty, and no screen
+ * would ever take the loading mark down (ADR-082): it goes with the app,
+ * rather than seem to load for ever. Reported as React reports it.
+ */
+const onUncaughtError = (error: unknown) => {
+  removeLoadingMark();
+  reportError(error);
+};
+
+createRoot(document.getElementById('root')!, { onUncaughtError }).render(
   <StrictMode>
     {/* Outermost: the theme's built-in text, the sign-in pages and the
         account all read the language (ADR-054). */}
