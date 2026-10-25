@@ -50,11 +50,18 @@ jobs:
       # repository's logs, as the action itself warns. The plugin skips a
       # pull request it has reviewed before, so the job fails only when
       # this one has no review from it at all.
+      #
+      # The action also skips, with a warning that workflow validation
+      # failed, while this file differs from the default branch's, as on a
+      # pull request that changes it (#247). It leaves no execution file
+      # then, so the step compares the file with the default branch's
+      # itself, and says so plainly.
       - name: A review is on the pull request
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
           EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           if [ -f "$EXECUTION_FILE" ]; then
             jq -rs 'flatten | last | "Claude Code ended: \(.subtype // "unknown")\(if .is_error then ", as an error" else "" end). \(.result // "" | tostring | .[0:500])"' "$EXECUTION_FILE" || true
@@ -64,7 +71,16 @@ jobs:
             gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/comments" --jq '.[] | select(.user.login == "claude[bot]") | .id'
           } | wc -l)
           if [ "$count" -eq 0 ]; then
-            echo "::error title=No code review::Claude Code Review ended without a review on this pull request: out of usage, or it judged the change too simple to review. The line above says how it ended. Re-run this job once it can, or review by hand (/code-review)."
+            # This file's path: the workflow's ref without the repository
+            # before it or the ref after.
+            workflow=${GITHUB_WORKFLOW_REF#"$GITHUB_REPOSITORY"/}
+            workflow=${workflow%@*}
+            main=$(gh api "repos/$GITHUB_REPOSITORY/contents/$workflow?ref=$DEFAULT_BRANCH" --jq .sha 2>/dev/null || true)
+            if [ "$main" != "$(git hash-object "$workflow")" ]; then
+              echo "::error title=No code review::Claude Code Review skipped this pull request because it changes the review's own workflow, $workflow, and the action runs only the one on $DEFAULT_BRANCH. The review runs once this workflow is on $DEFAULT_BRANCH; until then, review by hand (/code-review)."
+            else
+              echo "::error title=No code review::Claude Code Review ended without a review on this pull request: out of usage, or it judged the change too simple to review. The line above says how it ended. Re-run this job once it can, or review by hand (/code-review)."
+            fi
             exit 1
           fi
           echo "claude[bot] has $count review comments on this pull request."
