@@ -2332,6 +2332,16 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R62** *(the credit note's sentence a note, a shipment's header an
+  h3, #171)* With VoiceOver on, open CN-000001: the sentence that says
+  what it credits, Credits against INV-000001, is not announced as the
+  page arrives, and is read where it stands, as a note. In Chrome's
+  DevTools, Accessibility, its role is note, not alert. On SO-DEMO-1's
+  Shipments tab, each shipment's header, its day, carrier and tracking
+  number, is a heading level 3 under Shipments, level 2; VoiceOver's
+  rotor lists them so under Headings. Both look as before. Found by the
+  walkthroughs on `walkthroughs-older`.
+
 - **MC-R60** *(a return and an RMA by the organization's day, #174)* With
   the organization in Vancouver and the computer set to Shanghai, as
   MC-2606 does, after 5 pm in Vancouver: take a return on a shipped sale.
@@ -3199,3 +3209,5 @@ first.
   nothing is left: MC-R61.
 - 2026-10-25: #174, a return and an RMA dated by the organization's day, as a
   shipment is: MC-R60.
+- 2026-10-25: #171, the credit note's sentence a note, not an alert, and a
+  shipment's header an h3 under the Shipments tab's h2: MC-R62.
