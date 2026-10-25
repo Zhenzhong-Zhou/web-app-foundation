@@ -71,6 +71,8 @@ export class MailBrand implements OnApplicationShutdown {
   private readonly mark: string;
   /** The check's last answer, which the header reads. */
   private markServed = false;
+  /** A miss is a warning once, then a debug line every ten minutes. */
+  private missed = false;
   private timer?: NodeJS.Timeout;
 
   constructor(
@@ -100,10 +102,13 @@ export class MailBrand implements OnApplicationShutdown {
     if (this.markServed) {
       clearInterval(this.timer);
       this.logger.log(`The mail mark answers at ${this.mark}`);
-    } else {
+    } else if (!this.missed) {
+      this.missed = true;
       this.logger.warn(
-        `The mail mark does not answer as a PNG at ${this.mark}: emails show the name alone, and it is asked again in ten minutes`,
+        `The mail mark does not answer as a PNG at ${this.mark}: emails show the name alone, and it is asked again every ten minutes`,
       );
+    } else {
+      this.logger.debug(`The mail mark still does not answer at ${this.mark}`);
     }
   }
 

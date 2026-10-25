@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 
 import type { Env } from '../../config/env';
@@ -114,6 +115,26 @@ describe('MailBrand', () => {
     await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
     expect(check).toHaveBeenCalledTimes(2);
     panivo.onApplicationShutdown();
+  });
+
+  it('warns of a missing mark once, then says so at debug level', async () => {
+    const warn = vi
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
+    const debug = vi
+      .spyOn(Logger.prototype, 'debug')
+      .mockImplementation(() => undefined);
+    const panivo = brand('Panivo <no-reply@example.com>', () =>
+      Promise.resolve(false),
+    );
+
+    await panivo.check();
+    await panivo.check();
+    await panivo.check();
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(debug).toHaveBeenCalledTimes(2);
+    vi.restoreAllMocks();
   });
 
   it('escapes the name, set by whoever deploys it', () => {
