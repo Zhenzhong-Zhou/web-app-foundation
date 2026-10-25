@@ -135,7 +135,7 @@ export class MailBrand implements OnApplicationShutdown {
     const cell =
       'padding:0 0 16px;border-bottom:1px solid #EEF0F4;vertical-align:middle';
     const mark = this.markServed
-      ? `<td style="${cell};padding-right:10px"><img src="${this.mark}" width="28" height="28" alt="" style="display:block;border:0"></td>`
+      ? `<td style="${cell};padding-right:10px"><img src="${escapeHtml(this.mark)}" width="28" height="28" alt="" style="display:block;border:0"></td>`
       : '';
     const header = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:16px"><tr>${mark}<td width="100%" style="${cell};font-size:20px;font-weight:700;line-height:28px">${escapeHtml(this.name)}</td></tr></table>`;
 

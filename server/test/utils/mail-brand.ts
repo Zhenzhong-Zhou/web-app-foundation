@@ -29,7 +29,11 @@ export function expectMailBrand(
   const html = mail?.html ?? '';
   const header = html.slice(0, html.indexOf('<p'));
 
-  expect(header).toContain(`<img src="${mark}" width="28" height="28" alt=""`);
+  // First, before anything the email says.
+  expect(header).toMatch(/^<table role="presentation"/);
+  expect(header).toContain(
+    `<img src="${escapeHtml(mark)}" width="28" height="28" alt=""`,
+  );
   expect(header).toContain(`>${escapeHtml(name)}</td>`);
   expect(mail?.text.startsWith(`${name}\n\n`)).toBe(true);
 }

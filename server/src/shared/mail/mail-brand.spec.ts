@@ -40,10 +40,11 @@ describe('MailBrand', () => {
   function brand(
     mailFrom: string,
     check: MarkCheck = () => Promise.resolve(true),
+    clientUrl = 'https://app.example.com',
   ): MailBrand {
     const settings: Partial<Env> = {
       MAIL_FROM: mailFrom,
-      CLIENT_URL: 'https://app.example.com',
+      CLIENT_URL: clientUrl,
     };
     const config = {
       get: (key: keyof Env) => settings[key],
@@ -155,6 +156,19 @@ describe('MailBrand', () => {
     );
 
     expect(html).toContain('>Tools &amp; Co</td>');
+  });
+
+  it("escapes the mark's address, set by whoever deploys it too", async () => {
+    const panivo = brand(
+      'Panivo <no-reply@example.com>',
+      () => Promise.resolve(true),
+      'https://app.example.com/?a="1"&b=2',
+    );
+    await panivo.check();
+
+    expect(panivo.withHeader(MAIL).html).toContain(
+      '<img src="https://app.example.com/?a=&quot;1&quot;&amp;b=2/brand/mail-mark.png"',
+    );
   });
 
   it('leaves the email as it is when MAIL_FROM names no one', () => {
