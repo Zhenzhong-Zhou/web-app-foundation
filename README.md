@@ -110,6 +110,7 @@ Four decisions shape everything else:
 ```bash
 git clone <repo-url>
 cd web-app-foundation
+git config core.hooksPath scripts/hooks   # once per clone: the pre-push hook
 
 cp .env.example .env      # then edit secrets
 

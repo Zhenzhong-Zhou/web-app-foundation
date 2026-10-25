@@ -259,6 +259,24 @@ jobs:
       - name: New migrations leave the running release working
         run: scripts/check-migrations.sh HEAD^1
 
+  # No commit authored or committed by a placeholder identity (ADR-082),
+  # in the script the pre-push hook runs, since a clone can lack the hook
+  # or a push skip it. A job of its own: it needs the pull request's whole
+  # history, which against-main does not fetch.
+  authors:
+    name: Commits — no placeholder identity
+    if: github.event_name == 'pull_request' && (github.event.action != 'labeled' || github.event.label.name == 'full-e2e')
+    runs-on: ubuntu-24.04
+    steps:
+      # The merge's second parent, HEAD^2, is the pull request's head, so
+      # HEAD^1..HEAD^2 is its own commits, back to where it left main.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Every commit by a real identity
+        run: scripts/check-authors.sh HEAD^1..HEAD^2
+
   # Three machines, each a third of the suite (--shard). No `needs`: it
   # starts beside the other two instead of after them, which took the
   # longest path from about 10 minutes to the slowest of the three jobs.
