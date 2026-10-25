@@ -1,4 +1,5 @@
 import { execFile, execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -254,6 +255,39 @@ function appName(mode: string): Plugin {
   };
 }
 
+/**
+ * src/loading.js, the loading mark's script (ADR-082), in /assets/ under a
+ * name from its content, which Render has a browser keep for a year
+ * (render.md), so a page load waits for it once per change of it rather
+ * than asking again every time. Vite bundles only modules, and this is a
+ * classic script so that it runs before the page draws, so it is written
+ * here, its tag added at the end of <head>, after the theme-color tags it
+ * reads. The dev server answers it, read afresh on each request.
+ */
+function loadingScript(): Plugin {
+  const file = new URL('./src/loading.js', import.meta.url);
+  const source = () => readFileSync(file, 'utf8');
+  const hash = createHash('sha256').update(source()).digest('hex');
+  const fileName = `assets/loading-${hash.slice(0, 8)}.js`;
+
+  return {
+    name: 'loading-script',
+    transformIndexHtml: () => [
+      { tag: 'script', attrs: { src: `/${fileName}` }, injectTo: 'head' },
+    ],
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        if (request.url?.split('?')[0] !== `/${fileName}`) return next();
+        response.setHeader('Content-Type', 'text/javascript');
+        response.end(source());
+      });
+    },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName, source: source() });
+    },
+  };
+}
+
 /** How long the loading mark waits to appear, so a quick load shows none. */
 const MARK_DELAY_MS = 300;
 
@@ -358,6 +392,7 @@ export default defineConfig(({ command, mode }) => ({
     recompileCatalogues(),
     appName(mode),
     fromTokens(),
+    loadingScript(),
     versionFile(command),
   ],
   resolve: {

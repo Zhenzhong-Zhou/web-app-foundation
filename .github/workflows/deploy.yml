@@ -149,9 +149,10 @@ jobs:
       # with a 200, through the /* rewrite, when it is a .svg or a
       # .webmanifest, so the status alone would not do. The favicon, then
       # ADR-082's: the manifest the build writes, the shared link's
-      # picture, the emails' mark and the loading mark's script, each with
-      # its own content type, except the manifest, which may come back with
-      # any but text/html: browsers read a manifest whatever its type.
+      # picture, the emails' mark and the loading mark's script, by the
+      # name the live index.html gives it, each with its own content type,
+      # except the manifest, which may come back with any but text/html:
+      # browsers read a manifest whatever its type.
       # With the commit already live, as on a run by hand, this passes
       # before the new build is out.
       - name: Check the live site
@@ -163,7 +164,6 @@ jobs:
             '/manifest.webmanifest any'
             '/og-image.png image/png'
             '/brand/mail-mark.png image/png'
-            '/loading.js application/javascript'
           )
           deadline=$((SECONDS + 10 * 60))
           while :; do
@@ -174,14 +174,23 @@ jobs:
             wrong=''
             files_seen=', the files not asked until it names the commit'
             if [ "$build" = "$COMMIT" ]; then
+              # The loading mark's script is named by its content
+              # (vite.config.ts): the one the live index.html names.
+              loading=$(curl -fsS -m 30 "$site/index.html?$(date +%s)" | grep -o '/assets/loading-[0-9a-f]*\.js' | head -1 || true)
+              checks=("${files[@]}")
+              if [ -n "$loading" ]; then
+                checks+=("$loading application/javascript")
+              else
+                wrong=', index.html names no loading script'
+              fi
               answers=$(mktemp -d)
-              for i in "${!files[@]}"; do
-                read -r file _ <<< "${files[$i]}"
+              for i in "${!checks[@]}"; do
+                read -r file _ <<< "${checks[$i]}"
                 curl -sS -m 30 -o /dev/null -w '%{http_code} %{content_type}' "$site$file" > "$answers/$i" 2> /dev/null &
               done
               wait
-              for i in "${!files[@]}"; do
-                read -r file type <<< "${files[$i]}"
+              for i in "${!checks[@]}"; do
+                read -r file type <<< "${checks[$i]}"
                 answer=$(cat "$answers/$i")
                 if [ "$type" = any ]; then
                   [[ "$answer" == '200 '* && "$answer" != '200 text/html'* ]] && continue
@@ -200,7 +209,7 @@ jobs:
               exit 0
             fi
             if [ "$SECONDS" -ge "$deadline" ]; then
-              echo "::error title=The live site is not right::After 10 minutes at $site, $seen; expected $COMMIT, up, and each file as itself. Both services were deployed at $COMMIT, and neither is rolled back. An older build: the static site's build failed or is slow (Render → the static site → Events). The database not up: Render → the database. A file missing (a 404) or as text/html: the build left it out (client/public, or vite.config.ts for the manifest). Once put right, re-run this job, or run Deploy by hand (docs/runbooks/render.md, Deploys)."
+              echo "::error title=The live site is not right::After 10 minutes at $site, $seen; expected $COMMIT, up, and each file as itself. Both services were deployed at $COMMIT, and neither is rolled back. An older build: the static site's build failed or is slow (Render → the static site → Events). The database not up: Render → the database. A file missing (a 404) or as text/html: the build left it out (client/public, or vite.config.ts for the manifest and the loading script). Once put right, re-run this job, or run Deploy by hand (docs/runbooks/render.md, Deploys)."
               exit 1
             fi
             echo "$seen; asking again in 20 seconds."

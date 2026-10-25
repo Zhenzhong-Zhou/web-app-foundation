@@ -23,8 +23,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--
       A phone's bar in the page's colour, for the system's mode, rather than
-      white above a dark app; loading.js, then theme-color.ts, set both to
-      the app's own mode once someone has chosen one (ADR-082).
+      white above a dark app; src/loading.js, then theme-color.ts, set both
+      to the app's own mode once someone has chosen one (ADR-082).
     -->
     <meta
       name="theme-color"
@@ -66,7 +66,8 @@
       load shows the colour alone. It never moves. It covers the page, beside
       #root rather than in it, until the app's first screen is on view, and
       that screen takes it down (lib/loading-mark.ts); above MUI's layers,
-      whose highest, a tooltip's, is 1500. loading.js sets the mode's class
+      whose highest, a tooltip's, is 1500. src/loading.js, whose tag
+      vite.config.ts adds at the end of this <head>, sets the mode's class
       on <html>, the one MUI's theme then keeps (colorSchemeSelector
       'class'). The mark is docs/brand's panivo-mark.svg and
       panivo-mark-on-dark.svg, its shape and colours tokens.ts's MARK_SHAPE
@@ -156,7 +157,6 @@
         background: %MARK_ON_DARK_BOWL%;
       }
     </style>
-    <script src="/loading.js"></script>
   </head>
   <body>
     <div id="root"></div>

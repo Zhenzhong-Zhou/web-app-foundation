@@ -9,7 +9,9 @@
  *
  * A file of its own, not inline, so a Content-Security-Policy (#142) needs
  * no hash for it; and a classic script, not a module, so it runs before
- * the page draws.
+ * the page draws. Not imported by anything: vite.config.ts writes it into
+ * /assets/ under a name from its content, which a browser keeps for a
+ * year, and adds its tag to index.html.
  */
 (() => {
   let chosen = null;

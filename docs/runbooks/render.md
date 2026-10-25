@@ -135,7 +135,8 @@ back as a 404 when it is a `.png` or a `.js`, but as `index.html` with a
 200 (the `/*` rewrite) when it is a `.svg` or a `.webmanifest` ("Old files
 after a deploy"), so the step reads the type as well as the status:
 `/favicon.svg` as `image/svg+xml`, and ADR-082's, `/og-image.png` and
-`/brand/mail-mark.png` as `image/png`, `/loading.js` as
+`/brand/mail-mark.png` as `image/png`, the loading mark's script, by the
+name the live `index.html` gives it (`/assets/loading-<hash>.js`), as
 `application/javascript`, and `/manifest.webmanifest` as anything but
 `text/html`, since browsers read a manifest whatever its type. It only
 reads. After 10 minutes it fails, saying what each gave; both services
@@ -287,9 +288,11 @@ merge.
    | `/version.json` | `Cache-Control` | `no-cache`                            |
 
    A file in `/assets/` is named by its content, so a changed one gets a
-   new name and the browser can keep the old for a year. `index.html`
-   names the build's files and `version.json` says which build is out,
-   so both are asked for again every time.
+   new name and the browser can keep the old for a year; the loading
+   mark's script is among them (ADR-082), so a page load waits for it
+   only once after it changes. `index.html` names the build's files and
+   `version.json` says which build is out, so both are asked for again
+   every time.
 6. **The `production` environment, limited to `main`,** once #196 has
    merged, not before: until then `main`'s workflow names no
    environment, and would lose the hooks. Bob, in GitHub → the
