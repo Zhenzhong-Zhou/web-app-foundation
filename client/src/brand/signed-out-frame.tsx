@@ -5,7 +5,7 @@ import { LanguageSelect } from '../components/language-select';
 import { TextSizeSelect } from '../components/text-size-select';
 import { copyrightLine, useAppName } from '../lib/app-name';
 import { useScreenShown } from '../lib/loading-mark';
-import { ProductMark } from './product-mark';
+import { ProductLockup, ProductMark } from './product-mark';
 
 /**
  * The frame of every screen before sign-in (ADR-082): the product's mark
@@ -91,20 +91,7 @@ export function SignedOutFrame({
             color: 'text.secondary',
           }}
         >
-          {invitation && (
-            <Box
-              component="span"
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.75,
-                fontWeight: 600,
-              }}
-            >
-              <ProductMark size={16} />
-              {name}
-            </Box>
-          )}
+          {invitation && <ProductLockup />}
           {copyright && <span>{copyright}</span>}
         </Box>
       )}

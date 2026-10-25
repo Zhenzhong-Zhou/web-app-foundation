@@ -1,9 +1,10 @@
 import { Box, Tooltip, Typography } from '@mui/material';
 import { FormattedMessage, useIntl } from 'react-intl';
 
+import { RAIL_FOCUS_RING } from '../layout/rail';
 import { useAppName } from '../lib/app-name';
 import { useBrand } from '../theme/brand-store';
-import { ProductMark } from './product-mark';
+import { ProductLockup, ProductMark } from './product-mark';
 
 /**
  * The rail's foot (ADR-082): "Powered by", the mark and the product's
@@ -47,11 +48,7 @@ export function PoweredBy({ folded = false }: { folded?: boolean }) {
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              '&:focus-visible': {
-                outline: '2px solid',
-                outlineColor: 'rail.strong',
-                outlineOffset: 2,
-              },
+              '&:focus-visible': RAIL_FOCUS_RING,
             }}
           >
             <ProductMark size={22} onDark={onDark} />
@@ -81,21 +78,7 @@ export function PoweredBy({ folded = false }: { folded?: boolean }) {
         id="brand.poweredBy"
         defaultMessage="Powered by {name}"
         values={{
-          name: (
-            <Box
-              component="span"
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.75,
-                color: 'rail.strong',
-                fontWeight: 600,
-              }}
-            >
-              <ProductMark size={16} onDark={onDark} />
-              {name}
-            </Box>
-          ),
+          name: <ProductLockup onDark={onDark} sx={{ color: 'rail.strong' }} />,
         }}
       />
     </Typography>

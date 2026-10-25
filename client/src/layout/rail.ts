@@ -10,3 +10,14 @@ import { rem } from '../theme/rem';
  */
 export const RAIL_WIDTH = rem(232);
 export const RAIL_FOLDED_WIDTH = rem(64);
+
+/**
+ * A focus ring on the rail, in its strongest colour, for its own stops:
+ * the folded mark at its foot, the plate and the organization's link at
+ * its top.
+ */
+export const RAIL_FOCUS_RING = {
+  outline: '2px solid',
+  outlineColor: 'rail.strong',
+  outlineOffset: 2,
+} as const;

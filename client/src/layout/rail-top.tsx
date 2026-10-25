@@ -18,6 +18,7 @@ import { rem } from '../theme/rem';
 import { LIGHT, TYPE } from '../theme/tokens';
 import { LOGO_PLATE, logoSrc } from './logo';
 import { OrganizationMark } from './organization-mark';
+import { RAIL_FOCUS_RING } from './rail';
 
 /** How far from square a logo may be and still fill the folded plate. */
 const SQUARE_ENOUGH = 1.25;
@@ -93,11 +94,7 @@ export function RailTop({
             alignItems: 'center',
             pl: 0.5,
             borderRadius: 1,
-            '&:focus-visible': {
-              outline: '2px solid',
-              outlineColor: 'rail.strong',
-              outlineOffset: 2,
-            },
+            '&:focus-visible': RAIL_FOCUS_RING,
           }}
         >
           <OrganizationMark name={name} onRail />
@@ -175,11 +172,7 @@ export function RailTop({
                 '& .face': { display: 'none' },
                 '& .unfold': { display: 'block' },
               },
-              '&.Mui-focusVisible': {
-                outline: '2px solid',
-                outlineColor: 'rail.strong',
-                outlineOffset: 2,
-              },
+              '&.Mui-focusVisible': RAIL_FOCUS_RING,
             },
             !shown
               ? {

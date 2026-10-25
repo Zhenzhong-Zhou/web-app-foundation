@@ -1,5 +1,6 @@
-import { SvgIcon } from '@mui/material';
+import { Box, SvgIcon, type SxProps, type Theme } from '@mui/material';
 
+import { useAppName } from '../lib/app-name';
 import { rem } from '../theme/rem';
 import { MARK, MARK_SHAPE } from '../theme/tokens';
 
@@ -42,5 +43,37 @@ export function ProductMark({
         <path className="stem" d={MARK_SHAPE.stem} />
       </g>
     </SvgIcon>
+  );
+}
+
+/**
+ * The mark and the product's name in text beside it, small, inline: the
+ * rail's foot and an invitation's footer (ADR-082). Its colour is its
+ * place's, unless `sx` gives one.
+ */
+export function ProductLockup({
+  onDark = false,
+  sx,
+}: {
+  onDark?: boolean;
+  sx?: SxProps<Theme>;
+}) {
+  const name = useAppName();
+  return (
+    <Box
+      component="span"
+      sx={[
+        {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 0.75,
+          fontWeight: 600,
+        },
+        ...(Array.isArray(sx) ? sx : [sx]),
+      ]}
+    >
+      <ProductMark size={16} onDark={onDark} />
+      {name}
+    </Box>
   );
 }
