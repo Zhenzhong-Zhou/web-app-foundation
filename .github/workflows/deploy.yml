@@ -169,19 +169,32 @@ jobs:
           while :; do
             build=$(curl -fsS -m 30 "$site/version.json?$(date +%s)" | jq -r '.build // empty' 2> /dev/null || true)
             database=$(curl -fsS -m 30 "$API_HEALTH_URL/ready" | jq -r '.database // empty' 2> /dev/null || true)
+            # The files only once the build is the commit's, since before
+            # then their answers cannot end the wait; all at once.
             wrong=''
-            for entry in "${files[@]}"; do
-              read -r file type <<< "$entry"
-              answer=$(curl -sS -m 30 -o /dev/null -w '%{http_code} %{content_type}' "$site$file" || true)
-              if [ "$type" = any ]; then
-                [[ "$answer" == '200 '* && "$answer" != '200 text/html'* ]] && continue
-                type='any type but text/html'
-              else
-                [[ "$answer" == "200 $type"* ]] && continue
-              fi
-              wrong="$wrong, $file answered HTTP ${answer:-nothing}, not 200 $type"
-            done
-            seen="/version.json names ${build:-no build}, /api/health/ready says the database is ${database:-not up}${wrong:-, and every file came back as itself}"
+            files_seen=', the files not asked until it names the commit'
+            if [ "$build" = "$COMMIT" ]; then
+              answers=$(mktemp -d)
+              for i in "${!files[@]}"; do
+                read -r file _ <<< "${files[$i]}"
+                curl -sS -m 30 -o /dev/null -w '%{http_code} %{content_type}' "$site$file" > "$answers/$i" 2> /dev/null &
+              done
+              wait
+              for i in "${!files[@]}"; do
+                read -r file type <<< "${files[$i]}"
+                answer=$(cat "$answers/$i")
+                if [ "$type" = any ]; then
+                  [[ "$answer" == '200 '* && "$answer" != '200 text/html'* ]] && continue
+                  type='any type but text/html'
+                else
+                  [[ "$answer" == "200 $type"* ]] && continue
+                fi
+                wrong="$wrong, $file answered HTTP ${answer:-nothing}, not 200 $type"
+              done
+              rm -r "$answers"
+              files_seen=${wrong:-, and every file came back as itself}
+            fi
+            seen="/version.json names ${build:-no build}, /api/health/ready says the database is ${database:-not up}$files_seen"
             if [ "$build" = "$COMMIT" ] && [ "$database" = up ] && [ -z "$wrong" ]; then
               echo "At $site, $seen."
               exit 0
