@@ -1,12 +1,5 @@
-import {
-  Alert,
-  Button,
-  CircularProgress,
-  Skeleton,
-  Stack,
-} from '@mui/material';
+import { CircularProgress, Skeleton, Stack } from '@mui/material';
 import { type ComponentType, type ReactNode, Suspense } from 'react';
-import { useIntl } from 'react-intl';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { ForgotPasswordPage } from './auth/forgot-password-page';
@@ -16,12 +9,12 @@ import { RegisterPage } from './auth/register-page';
 import { ResetPasswordPage } from './auth/reset-password-page';
 import { useAuth } from './auth/use-auth';
 import { VerifyEmailPage } from './auth/verify-email-page';
-import { SignedOutFrame } from './brand/signed-out-frame';
 import { NotFoundRoute } from './errors/not-found-page';
+import { OfflinePage } from './errors/offline-page';
 import { RevisionRefusalPage } from './errors/revision-refusal-page';
 import { AppLayout } from './layout/app-layout';
 import { isRevisionRefusal } from './lib/api';
-import { loadingMarkShown, ScreenShown } from './lib/loading-mark';
+import { ScreenShown } from './lib/loading-mark';
 import { useDelayedFlag } from './lib/use-delayed-flag';
 import { SIGNED_IN_ROUTES } from './routes';
 
@@ -84,11 +77,10 @@ function split(Page: ComponentType) {
 }
 
 export default function App() {
-  const intl = useIntl();
   const { loading, error, refresh } = useAuth();
-  // Not while the loading mark is up (ADR-082): it, and the bar under it,
-  // already say the app is on its way, through a cold start's minute too.
-  const showSpinner = useDelayedFlag(loading) && !loadingMarkShown();
+  // Under the loading mark while it is up, out of sight and of screen
+  // readers (#root is hidden from them until it comes down, ADR-082).
+  const showSpinner = useDelayedFlag(loading);
 
   if (loading) {
     return showSpinner ? (
@@ -124,27 +116,10 @@ export default function App() {
       />
     );
   }
-  // Before the app has drawn, the product's screen (ADR-082).
+  // No answer: the product's Can't reach the server, framed as the screens
+  // before sign-in are (ADR-082), Try again reading the session again.
   if (error) {
-    return (
-      <SignedOutFrame>
-        <Stack spacing={2} sx={{ my: 'auto', alignItems: 'center', py: 4 }}>
-          <ScreenShown />
-          <Alert severity="error">
-            {intl.formatMessage({
-              id: 'common.serverUnreachable',
-              defaultMessage: 'Could not reach the server.',
-            })}
-          </Alert>
-          <Button variant="contained" onClick={() => void refresh()}>
-            {intl.formatMessage({
-              id: 'common.tryAgain',
-              defaultMessage: 'Try again',
-            })}
-          </Button>
-        </Stack>
-      </SignedOutFrame>
-    );
+    return <OfflinePage onRetry={() => void refresh()} standalone />;
   }
 
   return (

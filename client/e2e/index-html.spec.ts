@@ -308,8 +308,12 @@ test.describe('signed in', () => {
     const name = await indexTitle(page);
     await home.asked;
 
-    // The rail is there, under the mark, and the page is not.
-    await expect(page.getByRole('navigation', { name: 'Main' })).toBeAttached();
+    // The rail is there, under the mark, kept from screen readers with
+    // the rest of #root till the mark comes down, and the page is not.
+    await expect(
+      page.getByRole('navigation', { name: 'Main', includeHidden: true }),
+    ).toBeAttached();
+    await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0);
     await expect(
       page.locator('#loading-mark').getByRole('img', { name }),
     ).toBeVisible();
@@ -318,5 +322,6 @@ test.describe('signed in', () => {
     home.release();
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.locator('#loading-mark')).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
   });
 });

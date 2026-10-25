@@ -2,6 +2,7 @@ import { Box, Container, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
 import { copyrightLine, useAppName } from '../lib/app-name';
+import { useScreenShown } from '../lib/loading-mark';
 import { ProductMark } from './product-mark';
 
 /**
@@ -26,6 +27,9 @@ export function SignedOutFrame({
   invitation?: boolean;
   children: ReactNode;
 }) {
+  // A screen before sign-in on view: the loading mark comes down (ADR-082),
+  // here once for all of them.
+  useScreenShown();
   const name = useAppName();
   const copyright = copyrightLine();
 

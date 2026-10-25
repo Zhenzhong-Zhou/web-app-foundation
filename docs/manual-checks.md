@@ -2165,7 +2165,7 @@ revision back afterwards: `git status` shows nothing changed.
 - **MC-3414** *(ADR-081)* Opening an outdated tab. Outdated, with no
   override, reload the page: no app, and on its own A new version is being
   installed, which tries again by itself in a minute; with the override,
-  A new version is ready, with Reload. Never Could not reach the server.
+  A new version is ready, with Reload. Never Can’t reach the server.
 - **MC-3415** *(ADR-081)* Sign-out still works. Outdated, switch to
   another tab and back, which reads the session: the page stays as it
   was. Sign out from the account menu: the sign-in page, and the session
@@ -2399,8 +2399,10 @@ private window.
   dark: the same, light, the bar purple on a pale track. Turn on Reduce
   motion (macOS: System Settings → Accessibility → Display) and reload:
   the bar shows with its stripe standing still in the middle. Stop the API
-  and reload: Could not reach the server with Try again, and no mark or
-  bar left over it. DevTools → Network, right-click the app's own script
+  and reload: Can’t reach the server, as a page whose connection dropped
+  says it, with Try again, and no mark or bar left over it; start the API
+  and press Try again: the sign-in page. With VoiceOver on while the mark
+  is up, it reads Panivo and nothing of the page under it. DevTools → Network, right-click the app's own script
   (`main.tsx` locally, `index-….js` under `/assets/` on the live site) →
   Block request URL, and reload: the mark and bar give way to one line,
   The app could not load. Check the connection, then reload., with Reload
@@ -2418,8 +2420,8 @@ private window.
   signed out. Each has the P and Panivo above it, centred, Panivo bold
   text that a double-click selects, and © 2026 and the holder at the foot,
   in small grey text; every sentence is as before. Stop the API and
-  reload: Could not reach the server with Try again, the same name above
-  and line below. In Dark (the account menu, then sign out) the P is the
+  reload: Can’t reach the server with Try again, the same name above and
+  line below. In Dark (the account menu, then sign out) the P is the
   white stem and lighter bowl, clear on the dark page. VoiceOver reads
   Panivo once, with no image before it, and the footer as the page's
   footer. Empty `VITE_COPYRIGHT_HOLDER` and restart: no line, and no empty
@@ -3389,6 +3391,9 @@ first.
 - 2026-10-25: ADR-082's review, the app's own files not loading: one line
   and Reload in the loading mark's place, in the reader's language:
   MC-3506 extended.
+- 2026-10-25: ADR-082's review, the start-up screen with no answer from
+  the server now the Can’t reach the server page, and nothing under the
+  loading mark read aloud: MC-3414, MC-3506 and MC-3507 changed.
 - 2026-10-25: #126, Link a return's select drawn once the returns arrive:
   MC-R58.
 - 2026-10-25: #163, To ship and To receive count only orders with something

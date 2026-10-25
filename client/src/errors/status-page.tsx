@@ -67,8 +67,8 @@ export function StatusPage({
   reference?: ReactNode;
   standalone?: boolean;
 }) {
-  // On view, at start too (the new-version page, a page not found): the
-  // loading mark comes down (ADR-082).
+  // On view in the app's layout, at start too: the loading mark comes down
+  // (ADR-082). Standalone, SignedOutFrame does it as well.
   useScreenShown();
   const look = LOOK[kind];
   const Icon = look.icon;

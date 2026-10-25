@@ -65,7 +65,8 @@
       in the mode the app opens in, and the mark after 300 ms, so a quick
       load shows the colour alone. It never moves. It covers the page, beside
       #root rather than in it, until the app's first screen is on view, and
-      that screen takes it down (lib/loading-mark.ts); above MUI's layers,
+      that screen takes it down (lib/loading-mark.ts), #root hidden from
+      screen readers till then, so they hear only the mark; above MUI's layers,
       whose highest, a tooltip's, is 1500. src/loading.js, whose tag
       vite.config.ts adds at the end of this <head>, sets the mode's class
       on <html>, the one MUI's theme then keeps (colorSchemeSelector
@@ -196,7 +197,7 @@
     </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root" aria-hidden="true"></div>
     <div id="loading-mark">
       <svg
         role="img"

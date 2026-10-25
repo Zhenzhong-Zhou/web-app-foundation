@@ -5,7 +5,6 @@ import { SignedOutFrame } from '../brand/signed-out-frame';
 import { LanguageSelect } from '../components/language-select';
 import { TextSizeSelect } from '../components/text-size-select';
 import { LanguageFailureBanner } from '../i18n/language-failure';
-import { useScreenShown } from '../lib/loading-mark';
 import { NewVersionBanner } from '../version/new-version-banner';
 
 /**
@@ -39,9 +38,6 @@ export function AuthLayout({
   invitation?: boolean;
   children: ReactNode;
 }) {
-  // A signed-out page on view: the loading mark comes down (ADR-082).
-  useScreenShown();
-
   return (
     <SignedOutFrame
       invitation={invitation}
