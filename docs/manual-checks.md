@@ -2332,6 +2332,16 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R59** *(To ship and To receive, only what is still to come, #163)*
+  As the demo Owner, on Home: To ship leaves out SO-DEMO-QC and
+  SO-DEMO-ZH, shipped in full though still confirmed until closed, and
+  its count is as many as its rows. See all opens Orders with Sales only,
+  Confirmed and Still to ship, listing the same orders; clear Still to
+  ship and the two are back. To receive the same for purchases: one
+  received in full leaves it, one received in part stays, and its See all
+  reads Still to receive. In Français the filter reads Reste à expédier;
+  in 中文, 待发货. Found by the walkthroughs on `walkthroughs-older`.
+
 - **MC-R58** *(Link a return waits for the returns, #126)* On SO-DEMO-7's
   open RMA, in DevTools, Network, Slow 4G, press Link a return: while the
   order's returns load there is no empty Return field, and then the dialog
@@ -3165,3 +3175,5 @@ first.
 - 2026-10-24: #223, Recently opened's kinds in sentence case: MC-R57.
 - 2026-10-25: #126, Link a return's select drawn once the returns arrive:
   MC-R58.
+- 2026-10-25: #163, To ship and To receive count only orders with something
+  still to ship or to come, as the Orders list they open: MC-R59.

@@ -5655,6 +5655,7 @@ export type OrdersControllerListV1Data = {
     status?: 'draft' | 'confirmed' | 'fulfilled' | 'cancelled' | 'open' | 'all';
     partnerId?: string;
     direction?: 'purchase' | 'sale';
+    outstanding?: string;
     sort?: 'expectedAt';
     order?: 'asc' | 'desc';
     from?: string;
@@ -5697,6 +5698,7 @@ export type OrdersControllerExportOrdersV1Data = {
     status?: 'draft' | 'confirmed' | 'fulfilled' | 'cancelled' | 'open' | 'all';
     partnerId?: string;
     direction?: 'purchase' | 'sale';
+    outstanding?: string;
     sort?: 'expectedAt';
     order?: 'asc' | 'desc';
     from?: string;
