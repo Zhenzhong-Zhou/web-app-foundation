@@ -517,6 +517,32 @@ describe('OrderDetailPage lines', () => {
     });
 
     /**
+     * Each shipment is a part of the tab, so its header is a heading one
+     * level under the tab's, not the h6 its look would make it (#171).
+     */
+    it('heads each shipment with an h3 under the tab’s h2', async () => {
+      serveSale();
+      server.use(
+        http.get('/api/v1/orders/:id/shipments', () =>
+          HttpResponse.json([
+            { ...shipment, carrier: 'Purolator' },
+            { ...shipment, id: 'shipment-2', carrier: 'Canpar' },
+          ]),
+        ),
+      );
+      renderPage(SALE_PERMISSIONS, SHIPMENTS_TAB);
+
+      expect(
+        await screen.findByRole('heading', { level: 2, name: 'Shipments' }),
+      ).toBeInTheDocument();
+      for (const carrier of [/Purolator/, /Canpar/]) {
+        expect(
+          screen.getByRole('heading', { level: 3, name: carrier }),
+        ).toBeInTheDocument();
+      }
+    });
+
+    /**
      * The server refuses to void a billed shipment (ADR-046), so the page
      * does not offer it: the link to the invoice is where the answer is.
      */

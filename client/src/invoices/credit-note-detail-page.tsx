@@ -114,7 +114,7 @@ export function CreditNoteDetailPage() {
       {/* Four whole sentences rather than one built from parts, so each
           language orders its own; written out, each with its own id and
           English, where the extractor and the types both read them. */}
-      <Alert severity="info">
+      <Alert severity="info" role="note">
         {note.isVoid ? (
           note.invoiceDate ? (
             <FormattedMessage
