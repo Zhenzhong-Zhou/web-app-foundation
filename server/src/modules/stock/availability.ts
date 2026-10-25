@@ -315,7 +315,15 @@ export async function assertTakeable(
           takeable: check.takeable,
           sku: input.sku,
           held: check.held,
-          orders: input.forOrderId ? 'other orders' : 'confirmed orders',
+          orders: input.forOrderId
+            ? t({
+                id: 'stock.heldForOtherOrders',
+                defaultMessage: 'other orders',
+              })
+            : t({
+                id: 'stock.heldForConfirmedOrders',
+                defaultMessage: 'confirmed orders',
+              }),
         },
       ),
     );

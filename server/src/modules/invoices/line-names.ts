@@ -1,6 +1,7 @@
 import { ConflictException } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import type { DocumentLanguages } from '../../core/organizations/document-languages';
 import type { Transaction } from '../../database/database.module';
 import { organizations } from '../../database/schema';
@@ -29,9 +30,16 @@ type NameRow = {
   second_variant: string | null;
 };
 
-/** "Simplified Chinese" rather than zh-Hans, for a refusal people read. */
-const languageName = (tag: string) =>
-  new Intl.DisplayNames(['en'], { type: 'language' }).of(tag) ?? tag;
+/**
+ * A language in its own name, never translated, as the product page names
+ * it (the client's LANGUAGE_NAMES): whoever adds the name finds 简体中文
+ * there as the refusal wrote it, in whichever language they read.
+ */
+const LANGUAGE_NAMES: Record<Locale, string> = {
+  en: 'English',
+  'fr-CA': 'Français (Canada)',
+  'zh-Hans': '简体中文',
+};
 
 /**
  * Each line's name in the invoice's languages (ADR-054), checked against
@@ -137,9 +145,9 @@ export async function namedLines(
           {
             id: 'invoices.skuLanguageNameWhich',
             defaultMessage:
-              '{sku} has no {language} name, which this organization requires on its documents',
+              '{sku} has no {language} name, which this organization requires on its documents. Add its {language} name on its product’s page.',
           },
-          { sku: untranslated.sku, language: languageName(slot.language) },
+          { sku: untranslated.sku, language: LANGUAGE_NAMES[slot.language] },
         ),
       );
     }

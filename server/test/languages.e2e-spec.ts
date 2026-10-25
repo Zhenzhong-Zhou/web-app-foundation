@@ -808,8 +808,21 @@ describe('Languages (e2e)', () => {
           .send({ invoiceDate: TODAY });
 
       const refused = await issue().expect(409);
-      expect(body<{ message: string }>(refused).message).toMatch(
-        /^FOCUS-60CT has no .*Chinese name/,
+      expect(body<{ message: string }>(refused).message).toBe(
+        'FOCUS-60CT has no 简体中文 name, which this organization requires on its documents. Add its 简体中文 name on its product’s page.',
+      );
+
+      // The language in its own name, as the product page lists it, and the
+      // way out, in the reader's language (#129).
+      const refusedIn = async (language: string) =>
+        body<{ message: string }>(
+          await issue().set('Accept-Language', language).expect(409),
+        ).message;
+      expect(await refusedIn('fr-CA')).toBe(
+        'FOCUS-60CT n’a pas de nom en 简体中文, ce que cette organisation exige sur ses documents. Ajoutez son nom en 简体中文 sur la page de son produit.',
+      );
+      expect(await refusedIn('zh-Hans')).toBe(
+        'FOCUS-60CT 没有简体中文名称，而本组织要求单据上必须有。请在其产品页面上添加简体中文名称。',
       );
 
       await alpha.agent

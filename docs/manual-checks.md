@@ -2332,6 +2332,19 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R63** *(no English inside a French or Chinese message, #129)* In
+  Français, then in 简体中文: with 简体中文 checked under Product names
+  required on invoices and a customer set to Chinese, issue an invoice for
+  a product with no Chinese name. The refusal names the language 简体中文,
+  as the product page lists it, never Simplified Chinese, and says to add
+  its 简体中文 name on its product's page. On a sale to a customer with a
+  default price list, add a line for an item not on the list: why it is
+  unpriced reads in the app's language, the list's name and the SKU as
+  typed. Inventory → a row's Ship out, for more than can be taken while
+  some is held: the refusal ends in the app's language, des commandes
+  confirmées or 已确认的订单, and shipping an order more than it holds
+  ends with d’autres commandes or 其他订单. Found reading the source.
+
 - **MC-R62** *(the credit note's sentence a note, a shipment's header an
   h3, #171)* With VoiceOver on, open CN-000001: the sentence that says
   what it credits, Credits against INV-000001, is not announced as the
@@ -3211,3 +3224,5 @@ first.
   shipment is: MC-R60.
 - 2026-10-25: #171, the credit note's sentence a note, not an alert, and a
   shipment's header an h3 under the Shipments tab's h2: MC-R62.
+- 2026-10-25: #129, the missing-name refusal, a line's price notice and the
+  held-stock refusal wholly in the reader's language: MC-R63.
