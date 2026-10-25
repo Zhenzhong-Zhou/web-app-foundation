@@ -50,7 +50,14 @@ Each is drawn on a 100 × 100 viewBox, except the link preview's picture.
 | `brand/mail-mark.png`   | `panivo-plate.svg`             | 56 px          | the product's emails, drawn at 28 px             |
 
 Each PNG is drawn at its own size from the SVG. The ICO holds its three
-sizes as PNGs, written by the script itself.
+sizes as PNGs, written by the script itself. The web manifest that names
+the three `icon-*.png` is written by the build, since it holds the name
+(`client/vite.config.ts`).
+
+One more copy is made by hand: `client/index.html`'s loading mark draws
+the paths of `panivo-mark.svg` and `panivo-mark-on-dark.svg` inline, with
+their colours in its style, so the page needs no file to draw it. A change
+to the mark is copied there too.
 
 If the mail mark ever changes, give its file a new name, in
 `scripts/brand-assets.mjs` and in `server/src/shared/mail/mail-brand.ts`,
@@ -89,5 +96,6 @@ square at (387.64, 204.5), Panivo from x 547.64 on a baseline at y 295.5,
 are in the repository. To make them again, shape the names the same way at
 those places and replace the two text paths.
 
-The product's name is a setting, not a file here: `VITE_APP_NAME`
-(`docs/runbooks/render.md`).
+The product's name is a setting, not a file here: `VITE_APP_NAME`, and
+a language's own, such as `VITE_APP_NAME_ZH_HANS` (`.env.example`,
+`docs/runbooks/render.md`).

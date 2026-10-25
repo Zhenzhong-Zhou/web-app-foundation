@@ -1,9 +1,10 @@
 import { Link } from '@mui/material';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { useLanguage } from '../i18n/use-language';
 import { PageHeader } from './page-header';
 
 function renderHeader(props: Parameters<typeof PageHeader>[0]) {
@@ -47,33 +48,97 @@ describe('PageHeader', () => {
     ).toBeInTheDocument();
   });
 
-  /**
-   * The one navigation surface the component cannot otherwise provide: without
-   * this every tab in the app is called the same thing.
-   */
-  it('names the tab, and restores it on unmount', () => {
-    const before = document.title;
-
-    const { unmount } = renderHeader({
-      crumbs: [{ label: 'Orders', to: '/orders' }],
-      title: 'Acme Supplies',
+  describe('the tab', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      localStorage.clear();
     });
 
-    expect(document.title).toBe('Acme Supplies · Orders');
+    /**
+     * The one navigation surface the component cannot otherwise provide:
+     * without this every tab in the app is called the same thing. Leaving,
+     * the title is worked out again, never put back (ADR-082): one restored
+     * would keep the language it was written in.
+     */
+    it('names the tab, and leaves the name alone on unmount', () => {
+      document.title = 'A title from before';
 
-    unmount();
-    expect(document.title).toBe(before);
-  });
+      const { unmount } = renderHeader({
+        crumbs: [{ label: 'Orders', to: '/orders' }],
+        title: 'Acme Supplies',
+      });
 
-  /**
-   * A list page has no crumbs, so its tab ends with the product's name: the
-   * one index.html's title has, never a name written here. vitest.config.ts
-   * runs the tests under vite.config.ts's default.
-   */
-  it("ends a list page's tab with the product's name", () => {
-    renderHeader({ crumbs: [], title: 'Movements' });
+      expect(document.title).toBe('Acme Supplies · Orders');
 
-    expect(document.title).toBe('Movements · web-app-foundation');
+      unmount();
+      expect(document.title).toBe('web-app-foundation');
+    });
+
+    /**
+     * A list page has no crumbs, so its tab ends with the product's name,
+     * never a name written here. vitest.config.ts runs the tests under
+     * vite.config.ts's default.
+     */
+    it("ends a list page's tab with the product's name", () => {
+      renderHeader({ crumbs: [], title: 'Movements' });
+
+      expect(document.title).toBe('Movements · web-app-foundation');
+    });
+
+    /** 中文's name is its setting, VITE_APP_NAME_ZH_HANS, where it is set. */
+    it("ends it with 中文's own name in 中文", async () => {
+      vi.stubGlobal('__APP_NAMES__', {
+        en: 'Panivo',
+        'fr-CA': 'Panivo',
+        'zh-Hans': '品桥',
+      });
+      localStorage.setItem('language', 'zh-Hans');
+
+      renderHeader({ crumbs: [], title: '移动记录' });
+
+      await waitFor(() => expect(document.title).toBe('移动记录 · 品桥'));
+    });
+
+    // Unset, the build gives 中文 VITE_APP_NAME (vite.config.test.ts).
+    it('ends it with VITE_APP_NAME in 中文 without its setting', async () => {
+      vi.stubGlobal('__APP_NAMES__', {
+        en: 'Panivo',
+        'fr-CA': 'Panivo',
+        'zh-Hans': 'Panivo',
+      });
+      localStorage.setItem('language', 'zh-Hans');
+
+      renderHeader({ crumbs: [], title: '移动记录' });
+
+      await waitFor(() => expect(document.title).toBe('移动记录 · Panivo'));
+    });
+
+    /**
+     * A page with no header, a signed-out one, is the name alone, and a
+     * change of language changes it.
+     */
+    it('is the name alone without a header, in the language chosen', async () => {
+      vi.stubGlobal('__APP_NAMES__', {
+        en: 'Panivo',
+        'fr-CA': 'Panivo',
+        'zh-Hans': '品桥',
+      });
+
+      function Choose() {
+        const { setLocale } = useLanguage();
+        return (
+          <button type="button" onClick={() => void setLocale('zh-Hans')}>
+            中文
+          </button>
+        );
+      }
+      render(<Choose />);
+      expect(document.title).toBe('Panivo');
+
+      await userEvent.click(screen.getByRole('button', { name: '中文' }));
+
+      await waitFor(() => expect(document.title).toBe('品桥'));
+    });
   });
 
   describe('back', () => {

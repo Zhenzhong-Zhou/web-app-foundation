@@ -2306,7 +2306,9 @@ as `docs/runbooks/render.md`, "Deploys", has them.
 
 The name is a setting, `VITE_APP_NAME=Panivo`: in the repository's `.env`
 locally (restart `npm run dev` after changing it), and in the static
-site's environment on Render, read when it builds. The icon's masters are
+site's environment on Render, read when it builds. ADR-082's three beside
+it, `VITE_APP_NAME_ZH_HANS=品桥`, `VITE_COPYRIGHT_HOLDER` and
+`VITE_SITE_URL`, are read the same way (`.env.example`). The icon's masters are
 in `docs/brand/`, and `scripts/brand-assets.mjs` makes the files browsers
 load from them. Browsers keep an icon long after it changes, so check in a
 private window.
@@ -2319,17 +2321,27 @@ private window.
   same, and clear on every strip, a light Chrome theme with the system
   dark included. On Windows in dark mode, pin the app to the taskbar: the
   plate, not a navy P on the dark bar. Bookmark the page: the bookmark
-  shows the same plate. On an iPhone, Safari → Share → Add to Home Screen:
-  the P on navy filling the iPhone's rounded square, not a picture of the
-  page. On Android, Chrome → ⋮ → Add to home screen: the P again, not a
-  letter Chrome made up.
+  shows the same plate. On an iPhone, from Inventory, Safari → Share → Add
+  to Home Screen: the P on navy filling the iPhone's rounded square, not a
+  picture of the page, and the name it offers is Panivo, not Inventory ·
+  Panivo. On Android, from Inventory, Chrome → ⋮ → Add to home screen: the
+  P on navy filling the shape the phone cuts, the P whole and well inside
+  it, named Panivo, not a letter Chrome made up. Opened from either home
+  screen, the app still shows the browser's bar and its back button.
 - **MC-3502** The name in the tab. The sign-in page's tab reads Panivo,
   and so does Home's. Inventory's reads Inventory · Panivo, and every other
   page in the rail ends the same way, Settings → Organization too; an order,
-  SO-DEMO-1 · Orders. In 中文 the page's name is Chinese and Panivo stays
-  as it is. Bookmark Inventory: the bookmark says Inventory · Panivo.
-  Empty `VITE_APP_NAME` and restart: every tab ends web-app-foundation,
-  none Foundation.
+  SO-DEMO-1 · Orders. From Inventory, go Home: its tab is Panivo again.
+  Bookmark Inventory: the bookmark says Inventory · Panivo. With
+  `VITE_APP_NAME_ZH_HANS=品桥` in `.env` and `npm run dev` restarted, in
+  中文 the page's name is Chinese and every tab ends 品桥: 库存 · 品桥, Home
+  and the sign-in page 品桥 alone, and an order SO-DEMO-1 · 订单. On the
+  sign-in page, switch between English and 中文: the tab turns Panivo and
+  品桥 with the page. Reload in 中文: for a moment while it loads the tab
+  may read Panivo, index.html's one name, then 品桥. Empty
+  `VITE_APP_NAME_ZH_HANS` and restart: in 中文 every tab ends Panivo, as
+  in English. Empty `VITE_APP_NAME` too and restart: every tab ends
+  web-app-foundation, none Foundation.
 - **MC-3503** The product's emails. In the repository's `.env`, set
   `MAIL_FROM="Panivo <no-reply@localhost>"`, as `.env.example` has it.
   Start `npm run dev` in `client/`, which serves the mark, then restart
@@ -2352,6 +2364,34 @@ private window.
   background and Panivo reads light, not navy; with the mail app blocking
   images, an empty box stands where the mark was and Panivo still heads
   the email.
+- **MC-3504** A link pasted into a chat. On the live site, once Render
+  has `VITE_SITE_URL` (`render.md`), paste the site's address into a chat
+  that shows previews (Slack, Teams, Discord, iMessage; WeChat makes its
+  own): a card reads Panivo and Inventory, orders, production and
+  invoices., with the picture of the P on navy beside Panivo and 品桥,
+  sharp, the names not boxes or a fallback font. Paste an invitation link:
+  the same card, never the organization's name. Locally, with
+  `VITE_SITE_URL` empty, View Source on any page shows og:title and no
+  og:image.
+- **MC-3505** A phone's bar in each mode. On an Android phone in Chrome
+  (or an iPhone's Safari, where it tints its bar): with the phone in light
+  mode, the bar above the sign-in page is the page's pale grey, not white;
+  in dark mode, the page's near-black, not white over a dark page. Sign
+  in, and in the account menu choose Dark with the phone light: the bar
+  turns dark with the page, and stays dark on a reload, from its first
+  moment. Light with the phone dark: the bar light. System: it follows
+  the phone again.
+- **MC-3506** The loading mark, in Dark, on a slow connection. In Chrome
+  on a computer with the system light, choose Dark in the account menu,
+  then sign out. DevTools → Network: Disable cache, Slow 4G; reload: the
+  page is dark from the first moment, never a white flash; after a moment
+  the P appears in the middle, a white stem and a lighter purple bowl,
+  still, not spinning or fading; then the app's spinner or the sign-in
+  page takes its place, still dark. With VoiceOver on, the mark reads
+  Panivo, image. Choose Light with the system dark: the same, light. Turn
+  throttling off and reload: the page's colour, then the page, the mark
+  seldom if ever. In 中文 the mark goes a moment before the page shows,
+  while 中文's words load; the page's colour stays.
 
 ## Regressions
 
@@ -3189,3 +3229,7 @@ first.
   name, an invitation's still with the organization's: MC-3503.
 - 2026-10-24: ADR-082, the emails' mark shown only once the static site
   serves it, the name alone until then: MC-3503 extended.
+- 2026-10-24: ADR-082, the names and the © holder as settings, and
+  index.html's manifest, theme-color, card and loading mark: MC-3501 and
+  MC-3502 extended (the home screens' name, the tab in 中文 by its
+  setting); MC-3504 to MC-3506.

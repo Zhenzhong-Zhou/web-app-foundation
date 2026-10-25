@@ -13,7 +13,43 @@
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!--
+      The home screen's name: Android's from the manifest, which
+      vite.config.ts's app-name plugin writes with the icons; an iPhone's
+      from this title, else it takes the page's (ADR-082).
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="%APP_NAME%" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      A phone's bar in the page's colour, for the system's mode, rather than
+      white above a dark app; loading.js, then theme-color.ts, set both to
+      the app's own mode once someone has chosen one (ADR-082).
+    -->
+    <meta
+      name="theme-color"
+      content="%PAGE_LIGHT%"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="%PAGE_DARK%"
+      media="(prefers-color-scheme: dark)"
+    />
+    <!--
+      A shared link's card (ADR-082). The same for every address, since the
+      pages are drawn in the browser: a copied invitation shows the product,
+      never the organization. Its picture, og:image, is added by the
+      app-name plugin when VITE_SITE_URL is set, since it must be a full
+      address.
+    -->
+    <meta property="og:title" content="%APP_NAME%" />
+    <meta
+      property="og:description"
+      content="Inventory, orders, production and invoices."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
     <!--
       360, QQ and Sogou browsers, common in China, carry a second engine, an
       old Internet Explorer, and may open a site in it; this app would show a
@@ -24,9 +60,71 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <!-- VITE_APP_NAME in the repository's .env; see vite.config.ts. -->
     <title>%APP_NAME%</title>
+    <!--
+      The loading mark (ADR-082): the page's colour from the first moment,
+      in the mode the app opens in, and the mark after 300 ms, so a quick
+      load shows the colour alone. It never moves. The app's first render
+      replaces it. loading.js sets the mode's class on <html>, the one MUI's
+      theme then keeps (colorSchemeSelector 'class'). The mark is
+      docs/brand's panivo-mark.svg and panivo-mark-on-dark.svg, drawn here.
+    -->
+    <style>
+      html {
+        background: %PAGE_LIGHT%;
+      }
+      html.dark {
+        background: %PAGE_DARK%;
+      }
+      .loading-mark {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .loading-mark svg {
+        visibility: hidden;
+        animation: loading-mark-appears 0s 300ms forwards;
+      }
+      @keyframes loading-mark-appears {
+        to {
+          visibility: visible;
+        }
+      }
+      html.dark .loading-mark .bowl {
+        fill: #776bc6;
+      }
+      html.dark .loading-mark .stem {
+        fill: #ffffff;
+      }
+    </style>
+    <script src="/loading.js"></script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="loading-mark">
+        <svg
+          role="img"
+          aria-label="%APP_NAME%"
+          viewBox="0 0 100 100"
+          width="64"
+          height="64"
+        >
+          <g transform="translate(-2 -1)">
+            <path
+              class="bowl"
+              fill="#5546B8"
+              d="M24 12H54A26 26 0 0 1 54 64H40Z"
+            />
+            <path
+              class="stem"
+              fill="#1C2230"
+              d="M24 12V76A14 14 0 0 0 52 76A87.142857 87.142857 0 0 0 24 12Z"
+            />
+          </g>
+        </svg>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

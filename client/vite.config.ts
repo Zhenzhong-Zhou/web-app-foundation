@@ -6,6 +6,8 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 
 import { API_REVISION } from './src/api/revision.gen.ts';
+import { Locale } from './src/api/types.gen.ts';
+import { DARK, LIGHT } from './src/theme/tokens.ts';
 
 /**
  * Recompiles the catalogues while `npm run dev` runs (ADR-054).
@@ -98,31 +100,171 @@ function recompileCatalogues(): Plugin {
  * The product's name in the browser's tab and bookmarks: VITE_APP_NAME from
  * the repository's .env, read here once at start, so renaming the product
  * (or one deployment of it, for a customer) is a setting, not an edit.
- * Escaped in index.html's title, since it lands in HTML, and handed to the
- * app as __APP_NAME__ for the tab each page names (page-header.tsx), so the
- * two always agree. vitest.config.ts gives the component tests the default.
+ * Escaped in index.html, since it lands in HTML. vitest.config.ts gives the
+ * component tests the default.
+ *
+ * Beside it, ADR-082's settings, read the same way:
+ *
+ * - VITE_APP_NAME_<TAG>, the name in one language the app speaks, such as
+ *   VITE_APP_NAME_ZH_HANS or VITE_APP_NAME_FR_CA, else VITE_APP_NAME,
+ *   handed to the app as __APP_NAMES__. It names the tabs and the marks in
+ *   that language; index.html's title and the manifest each hold one name,
+ *   VITE_APP_NAME, the home screen's.
+ * - VITE_COPYRIGHT_HOLDER, the © line's holder, with the build's year, so
+ *   nobody edits it in January, handed to the app as __COPYRIGHT__. Unset,
+ *   as on a fork, no © line, rather than someone else's name.
+ * - VITE_SITE_URL, the site's own address: a shared link's card needs its
+ *   picture's address in full. Unset, the card has no picture.
  */
-export const DEFAULT_APP_NAME = 'web-app-foundation';
+const DEFAULT_APP_NAME = 'web-app-foundation';
+
+export interface BrandSettings {
+  name: string;
+  /** The name in each language. */
+  names: Record<Locale, string>;
+  /** "© 2026 Zhenzhong (Bob) Zhou", or null with no holder. */
+  copyright: string | null;
+  /** The address of a shared link's picture, or null with no site. */
+  picture: string | null;
+}
+
+/** The setting naming the product in a language: fr-CA's VITE_APP_NAME_FR_CA. */
+const nameSetting = (locale: Locale) =>
+  `VITE_APP_NAME_${locale.toUpperCase().replaceAll('-', '_')}`;
+
+export function brandSettings(
+  env: Record<string, string | undefined>,
+  year: number,
+): BrandSettings {
+  const name = env.VITE_APP_NAME || DEFAULT_APP_NAME;
+  const holder = env.VITE_COPYRIGHT_HOLDER;
+
+  return {
+    name,
+    // English, the language the catalogues are written in, is
+    // VITE_APP_NAME's own.
+    names: Object.fromEntries(
+      Object.values(Locale).map((locale) => [
+        locale,
+        (locale !== 'en' && env[nameSetting(locale)]) || name,
+      ]),
+    ) as Record<Locale, string>,
+    copyright: holder ? `© ${year} ${holder}` : null,
+    picture: pictureAt(env.VITE_SITE_URL),
+  };
+}
+
+/** The card's picture on the site; a site that is no address stops the build. */
+function pictureAt(site: string | undefined): string | null {
+  if (!site) return null;
+  const picture = URL.parse('/og-image.png', site);
+  if (picture?.protocol !== 'https:' && picture?.protocol !== 'http:') {
+    throw new Error(
+      `VITE_SITE_URL is ${site}, not the site's address, such as https://web-app-foundation-client.onrender.com.`,
+    );
+  }
+  return picture.href;
+}
+
+/** The icons the manifest names, made from docs/brand/ (ADR-082). */
+const MANIFEST_ICONS = [
+  { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+  { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+  {
+    src: '/icon-maskable-512.png',
+    sizes: '512x512',
+    type: 'image/png',
+    purpose: 'maskable',
+  },
+];
 
 function appName(mode: string): Plugin {
   // loadEnv also takes a NODE_ENV it finds in a file as the build's own,
   // and the root .env has the server's NODE_ENV=development: every local
   // build then shipped React's development bundle, 250 kB more than CI's.
-  // Only the name is wanted from it.
+  // Only the brand's settings are wanted from it.
   const userNodeEnv = process.env.VITE_USER_NODE_ENV;
-  const name =
-    loadEnv(mode, '..', 'VITE_APP_NAME').VITE_APP_NAME || DEFAULT_APP_NAME;
+  const settings = brandSettings(
+    loadEnv(mode, '..', [
+      'VITE_APP_NAME',
+      'VITE_COPYRIGHT_HOLDER',
+      'VITE_SITE_URL',
+    ]),
+    new Date().getFullYear(),
+  );
   if (userNodeEnv === undefined) delete process.env.VITE_USER_NODE_ENV;
-  const escaped = name
+  const escaped = settings.name
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
 
+  /**
+   * The home screen's name and icons (ADR-082). It is there for those, so
+   * `browser`: added to a home screen, the app still opens with the
+   * browser's bar and its back button. Written here, as version.json is,
+   * since it holds the name; the dev server answers it too, since the
+   * end-to-end suite runs there.
+   */
+  const manifest = JSON.stringify({
+    name: settings.name,
+    short_name: settings.name,
+    icons: MANIFEST_ICONS,
+    start_url: '/',
+    display: 'browser',
+  });
+
   return {
     name: 'app-name',
-    config: () => ({ define: { __APP_NAME__: JSON.stringify(name) } }),
-    transformIndexHtml: (html) => html.replaceAll('%APP_NAME%', escaped),
+    config: () => ({
+      define: {
+        __APP_NAMES__: JSON.stringify(settings.names),
+        __COPYRIGHT__: JSON.stringify(settings.copyright),
+      },
+    }),
+    transformIndexHtml: (html) => ({
+      html: html.replaceAll('%APP_NAME%', escaped),
+      tags: settings.picture
+        ? [
+            {
+              tag: 'meta',
+              attrs: { property: 'og:image', content: settings.picture },
+              injectTo: 'head',
+            },
+          ]
+        : [],
+    }),
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        if (request.url?.split('?')[0] !== '/manifest.webmanifest') {
+          return next();
+        }
+        response.setHeader('Content-Type', 'application/manifest+json');
+        response.end(manifest);
+      });
+    },
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'manifest.webmanifest',
+        source: manifest,
+      });
+    },
+  };
+}
+
+/**
+ * The page's colours from tokens.ts (ADR-055) in index.html: the browser's
+ * bar (theme-color) and the page under the loading mark, so neither can
+ * drift from the page the app draws (ADR-082).
+ */
+function pageColours(): Plugin {
+  return {
+    name: 'page-colours',
+    transformIndexHtml: (html) =>
+      html
+        .replaceAll('%PAGE_LIGHT%', LIGHT.page)
+        .replaceAll('%PAGE_DARK%', DARK.page),
   };
 }
 
@@ -193,6 +335,7 @@ export default defineConfig(({ command, mode }) => ({
     react(),
     recompileCatalogues(),
     appName(mode),
+    pageColours(),
     versionFile(command),
   ],
   resolve: {

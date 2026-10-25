@@ -22,6 +22,7 @@
   "include": [
     "openapi-ts.config.ts",
     "vite.config.ts",
+    "vite.config.test.ts",
     "playwright.config.ts",
     "playwright.screenshots.config.ts",
     "vitest.config.ts"

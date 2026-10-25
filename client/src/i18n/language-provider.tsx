@@ -15,6 +15,7 @@ import {
   isLocale,
   type Locale,
 } from '../lib/locales';
+import { setTabLocale } from '../lib/tab-title';
 import { ChunkLoadError } from '../version/load-chunk';
 import { ENGLISH, loadMessages, type Messages } from './catalogues';
 import { makeIntl, setIntl } from './intl';
@@ -49,9 +50,10 @@ interface Active {
 /**
  * Points everything at a language in one step, so no screen renders half
  * in one and half in the other: the formatters, the intl object helpers
- * use, and <html lang>, which screen readers pronounce by and browsers
- * choose Chinese glyph forms by. The tag is the language in the browser's
- * own region (formattingLocale).
+ * use, <html lang>, which screen readers pronounce by and browsers
+ * choose Chinese glyph forms by, and the product's name in the tab
+ * (ADR-082). The tag is the language in the browser's own region
+ * (formattingLocale).
  */
 function apply(locale: Locale, messages: Messages): Active {
   const tag = formattingLocale(locale, navigator.languages);
@@ -63,6 +65,7 @@ function apply(locale: Locale, messages: Messages): Active {
   // its own catalogues (ADR-054).
   setRequestLanguage(locale);
   document.documentElement.lang = tag;
+  setTabLocale(locale);
 
   return { locale, intl };
 }

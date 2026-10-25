@@ -16,6 +16,7 @@ import { LanguageFailureToast } from './i18n/language-failure';
 import { LanguageProvider } from './i18n/language-provider';
 import { LocalizedTheme } from './i18n/localized-theme';
 import { initTextSize } from './theme/text-size';
+import { ThemeColor } from './theme/theme-color';
 import { VersionWatch } from './version/version-check';
 
 // This device's text size (ADR-075), before anything renders, so the first
@@ -50,6 +51,8 @@ createRoot(document.getElementById('root')!).render(
           must apply before anything paints. */}
       <LocalizedTheme>
         <CssBaseline />
+        {/* The browser's bar in the mode chosen here (ADR-082). */}
+        <ThemeColor />
         {/* Inside the theme, so the toast is coloured like everything else;
             outside the router, because a confirmation should survive the
             navigation a save often triggers. */}

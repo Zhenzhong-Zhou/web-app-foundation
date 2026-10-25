@@ -59,8 +59,15 @@ use; the reasons are in the sections named.
    - **Branch** `main`; **Root Directory** `client`; **Build Command**
      `npm ci && npm run build`; **Publish Directory** `dist`;
    - **Environment:** `VITE_APP_NAME=Panivo`, the product's name in the
-     browser's tab and its bookmarks. It is read only when the site
-     builds, so a change shows from the next deploy;
+     browser's tab and its bookmarks, and ADR-082's three:
+     `VITE_APP_NAME_ZH_HANS=品桥`, the name in 中文;
+     `VITE_COPYRIGHT_HOLDER=Zhenzhong (Bob) Zhou`, the © line's holder,
+     until a registered business's name replaces it; and `VITE_SITE_URL`,
+     the site's own address (`https://web-app-foundation-client.onrender.com`),
+     which a shared link's picture needs in full. `.env.example` says what
+     each falls back to. They are read only when the site builds, so a
+     change shows from the next deploy, and the three are set before the
+     deploy that first reads them;
    - **Redirects/Rewrites:** the README's two rules, `/api/*` to the web
      service's own address first, then `/*` to `/index.html`;
    - **Headers:** the three rules ("Deploys", "Setting it up");
@@ -122,12 +129,14 @@ minutes while the static site builds. `/version.json` must name the
 commit, which it does at the first look once the static site's deploy is
 live, since Render empties its edge then; the query string the step adds
 does not get past the edge, which ignores it (As Render shows it, below).
-`/api/health/ready` must say the database is `up`; and
-`/favicon.svg` must come back as `image/svg+xml`, since a file the build
-left out comes back as `index.html` with a 200 (the `/*` rewrite). It
-only reads. After 10 minutes it fails, saying what each of the three
-gave; both services have been deployed by then, and neither is rolled
-back. With the commit already live, as on a run by hand, it passes before
+`/api/health/ready` must say the database is `up`; and each static file
+the build must carry comes back as itself, since a file the build left
+out comes back as `index.html` with a 200 (the `/*` rewrite):
+`/favicon.svg` as `image/svg+xml`, and ADR-082's, `/manifest.webmanifest`
+as `application/manifest+json`, `/og-image.png` and `/brand/mail-mark.png`
+as `image/png`, and `/loading.js` as `application/javascript`. It only
+reads. After 10 minutes it fails, saying what each gave; both services
+have been deployed by then, and neither is rolled back. With the commit already live, as on a run by hand, it passes before
 the new build is out.
 
 Why not Render's own auto-deploy, which both services had until ADR-081:
@@ -556,3 +565,8 @@ business.
   anything.
 - **The release checks walked once** on the paid deployment, against the
   real address, before the first customer signs in.
+- **Terms and a privacy policy,** written, and linked in the signed-out
+  footer above the © line: the one item here that needs code (ADR-082,
+  Deferred). The app keeps personal details (names,
+  emails, photos, sign-in addresses), and privacy laws expect a published
+  policy before anyone else's are kept.

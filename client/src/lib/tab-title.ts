@@ -1,0 +1,53 @@
+import { useEffect } from 'react';
+
+import { appNameIn } from './app-name';
+import { DEFAULT_LOCALE, type Locale } from './locales';
+
+/**
+ * A page's part of the tab's title: its own title, and for a detail page
+ * the section it sits in ("SO-DEMO-1", "Orders").
+ */
+interface Part {
+  page: string;
+  section?: string;
+}
+
+/**
+ * The tab's title (ADR-082): the page's part, if any, then the product's
+ * name in the reader's language. A detail page's section takes the name's
+ * place, keeping its tab short (SO-DEMO-1 · Orders); a page with no part,
+ * signed out or Home, is the name alone.
+ */
+export function tabTitle(locale: Locale, part: Part | null): string {
+  const name = appNameIn(locale);
+  return part ? `${part.page} · ${part.section ?? name}` : name;
+}
+
+let locale: Locale = DEFAULT_LOCALE;
+let part: Part | null = null;
+
+/**
+ * Worked out again at every change, never put back: a title restored on
+ * leaving a page would keep the language it was written in.
+ */
+function show(): void {
+  document.title = tabTitle(locale, part);
+}
+
+/** The reader's language, set by LanguageProvider with everything else. */
+export function setTabLocale(next: Locale): void {
+  locale = next;
+  show();
+}
+
+/** Names the tab while the page is shown; leaving, the name alone. */
+export function useTabTitle(page: string, section?: string): void {
+  useEffect(() => {
+    part = { page, section };
+    show();
+    return () => {
+      part = null;
+      show();
+    };
+  }, [page, section]);
+}

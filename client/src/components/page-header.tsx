@@ -9,11 +9,11 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { type ReactNode, type Ref, useEffect } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
-import { APP_NAME } from '../lib/app-name';
+import { useTabTitle } from '../lib/tab-title';
 import { rem } from '../theme/rem';
 
 interface Crumb {
@@ -67,8 +67,6 @@ export function PageHeader({
   headingRef?: Ref<HTMLHeadingElement>;
 }) {
   const intl = useIntl();
-  // The product's name, not a word: it stays as it is in every language.
-  const section = crumbs[0]?.label ?? APP_NAME;
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,16 +92,10 @@ export function PageHeader({
    * The tab, and therefore the browser's own history and any bookmark. Without
    * this every page in the app is called the same thing, which makes a list of
    * open tabs useless — and browser history is the one navigation surface this
-   * component cannot provide.
+   * component cannot provide. A detail page's section stands in for the
+   * product's name, which ends a list page's (tab-title.ts).
    */
-  useEffect(() => {
-    const previous = document.title;
-    document.title = `${title} · ${section}`;
-
-    return () => {
-      document.title = previous;
-    };
-  }, [title, section]);
+  useTabTitle(title, crumbs[0]?.label);
 
   const back = intl.formatMessage({
     id: 'components.pageHeader.back',
