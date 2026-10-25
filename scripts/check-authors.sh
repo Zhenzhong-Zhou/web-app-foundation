@@ -10,7 +10,7 @@
 #
 # Takes revisions as git log takes them. The pre-push hook
 # (scripts/hooks/pre-push) runs it on what is being pushed, CI on a pull
-# request's own commits (ci.yml, authors), since a clone can lack the hook
+# request's own commits (authors.yml), since a clone can lack the hook
 # or a push skip it (ADR-082), and scripts/verify.sh on what the branch
 # adds to origin/main.
 #

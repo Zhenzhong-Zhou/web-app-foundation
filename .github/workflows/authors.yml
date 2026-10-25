@@ -1,0 +1,32 @@
+name: Authors
+
+# No commit authored or committed by a placeholder identity (ADR-082), in
+# the script the pre-push hook runs, since a clone can lack the hook or a
+# push skip it. A workflow of its own, with no paths: ci.yml skips a pull
+# request that changes only docs, and that is the kind the chat prepares,
+# where the placeholder came from before (docs.yml says the same of
+# Markdown). It takes seconds.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  authors:
+    name: Commits — no placeholder identity
+    runs-on: ubuntu-24.04
+    steps:
+      # The merge's second parent, HEAD^2, is the pull request's head, so
+      # HEAD^1..HEAD^2 is its own commits, back to where it left main.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Every commit by a real identity
+        run: scripts/check-authors.sh HEAD^1..HEAD^2
