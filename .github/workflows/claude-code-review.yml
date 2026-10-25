@@ -43,3 +43,29 @@ jobs:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
 
+      # The action reports success even when it posted nothing, as when it
+      # ran out of usage on #227, #228, #235 and #236 (#243). How it ended,
+      # its last message, goes in the log: that one only, not
+      # show_full_output, which prints every tool's result in this public
+      # repository's logs, as the action itself warns. The plugin skips a
+      # pull request it has reviewed before, so the job fails only when
+      # this one has no review from it at all.
+      - name: A review is on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
+        run: |
+          if [ -f "$EXECUTION_FILE" ]; then
+            jq -rs 'flatten | last | "Claude Code ended: \(.subtype // "unknown")\(if .is_error then ", as an error" else "" end). \(.result // "" | tostring | .[0:500])"' "$EXECUTION_FILE" || true
+          fi
+          count=$( {
+            gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --jq '.[] | select(.user.login == "claude[bot]") | .id'
+            gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/comments" --jq '.[] | select(.user.login == "claude[bot]") | .id'
+          } | wc -l)
+          if [ "$count" -eq 0 ]; then
+            echo "::error title=No code review::Claude Code Review ended without a review on this pull request: out of usage, or it judged the change too simple to review. The line above says how it ended. Re-run this job once it can, or review by hand (/code-review)."
+            exit 1
+          fi
+          echo "claude[bot] has $count review comments on this pull request."
+
