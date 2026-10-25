@@ -205,6 +205,7 @@ describe('Help', () => {
     // Focused and marked in one effect, once the guide is drawn (#210).
     await waitFor(() => {
       expect(section).toHaveFocus();
+      // eslint-disable-next-line testing-library/no-wait-for-multiple-assertions -- one effect does both, so one wait (#210)
       expect(section).toHaveAttribute('data-marked');
     });
 

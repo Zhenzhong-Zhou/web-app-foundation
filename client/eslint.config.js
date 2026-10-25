@@ -8,6 +8,7 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 import compat from 'eslint-plugin-compat';
 import formatjs from 'eslint-plugin-formatjs';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import testingLibrary from 'eslint-plugin-testing-library';
 
 export default defineConfig([
   // src/api/ is generated from the server's OpenAPI document (ADR-068).
@@ -135,6 +136,30 @@ export default defineConfig([
     },
     rules: {
       'compat/compat': 'error',
+    },
+  },
+  {
+    // Component tests use Testing Library as it means to be used: an async
+    // query, event or wait awaited, a sync one not, and queries from screen.
+    files: ['src/**/*.test.{ts,tsx}', 'src/test/**'],
+    extends: [testingLibrary.configs['flat/react']],
+    settings: {
+      // A helper returning render's result from another file; one in the
+      // spec's own file is found without being named. Without a list the
+      // plugin takes every render… helper for one, and most here return a
+      // mock to check or a router to move.
+      'testing-library/custom-renders': ['renderWithAuth'],
+    },
+    rules: {
+      /**
+       * A test reaches some elements through the DOM on purpose: MUI's own
+       * markup (a chip, a badge's dot, the progress bar's track), and parts
+       * kept out of the accessibility tree by design (an icon's disc, a
+       * hidden file input, a live region with no role), which no role or name
+       * can find.
+       */
+      'testing-library/no-node-access': 'off',
+      'testing-library/no-container': 'off',
     },
   },
   {

@@ -392,7 +392,7 @@ describe('useReloadAtNextPage', () => {
     serveVersion();
     await checkVersion();
     const user = userEvent.setup();
-    const first = renderAt('/orders');
+    const { unmount } = renderAt('/orders');
 
     await user.click(screen.getByRole('link', { name: 'Inventory' }));
     expect(reloadPage).toHaveBeenCalledTimes(1);
@@ -400,7 +400,7 @@ describe('useReloadAtNextPage', () => {
     // The load came back on this tab's build, as Render's edge can serve
     // the old index.html for five minutes, and the file still names the
     // new one: another page loads nothing more.
-    first.unmount();
+    unmount();
     renderAt('/inventory');
     await checkVersion();
     await user.click(screen.getByRole('link', { name: 'Open orders' }));
