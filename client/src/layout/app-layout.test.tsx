@@ -23,13 +23,14 @@ function renderFrame() {
   );
 }
 
+/** Folded, the organization's plate at the rail's top, named with its initials. */
+const UNFOLD = 'A, Expand navigation (Alpha Co)';
+
 /**
  * The rail's own button, named for what it would do: folded, the
  * organization's plate at its top (ADR-082).
  */
-const rail = (
-  name: 'Collapse navigation' | 'A, Expand navigation (Alpha Co)',
-) =>
+const rail = (name: 'Collapse navigation' | typeof UNFOLD) =>
   // Hidden here: jsdom does not match the media query that shows the rail.
   screen.getByRole('button', { name, hidden: true });
 
@@ -66,7 +67,7 @@ describe('the rail while Help is open', () => {
     expect(rail('Collapse navigation')).toBeInTheDocument();
 
     await openHelp(user);
-    expect(rail('A, Expand navigation (Alpha Co)')).toBeInTheDocument();
+    expect(rail(UNFOLD)).toBeInTheDocument();
 
     await closeHelp(user);
     expect(rail('Collapse navigation')).toBeInTheDocument();
@@ -77,12 +78,12 @@ describe('the rail while Help is open', () => {
     localStorage.setItem('nav.folded', 'true');
     const user = userEvent.setup();
     renderFrame();
-    expect(rail('A, Expand navigation (Alpha Co)')).toBeInTheDocument();
+    expect(rail(UNFOLD)).toBeInTheDocument();
 
     await openHelp(user);
-    expect(rail('A, Expand navigation (Alpha Co)')).toBeInTheDocument();
+    expect(rail(UNFOLD)).toBeInTheDocument();
     await closeHelp(user);
-    expect(rail('A, Expand navigation (Alpha Co)')).toBeInTheDocument();
+    expect(rail(UNFOLD)).toBeInTheDocument();
     expect(localStorage.getItem('nav.folded')).toBe('true');
   });
 
@@ -92,16 +93,16 @@ describe('the rail while Help is open', () => {
 
     // Opened again beside Help: it stays open once Help closes.
     await openHelp(user);
-    await user.click(rail('A, Expand navigation (Alpha Co)'));
+    await user.click(rail(UNFOLD));
     await closeHelp(user);
     expect(rail('Collapse navigation')).toBeInTheDocument();
 
     // Opened and folded again: folded is now theirs, and stays.
     await openHelp(user);
-    await user.click(rail('A, Expand navigation (Alpha Co)'));
+    await user.click(rail(UNFOLD));
     await user.click(rail('Collapse navigation'));
     await closeHelp(user);
-    expect(rail('A, Expand navigation (Alpha Co)')).toBeInTheDocument();
+    expect(rail(UNFOLD)).toBeInTheDocument();
     expect(localStorage.getItem('nav.folded')).toBe('true');
   });
 });

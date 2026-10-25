@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { InvitationLayout } from '../auth/invitation-parts';
+import { stubNames } from '../test/app-names';
 import { renderWithAuth } from '../test/render-with-auth';
 import { themeFor } from '../theme';
 import { SignedOutFrame } from './signed-out-frame';
@@ -79,11 +80,7 @@ describe('SignedOutFrame', () => {
   });
 
   it('names the product in 中文 by its own setting', async () => {
-    vi.stubGlobal('__APP_NAMES__', {
-      en: 'Panivo',
-      'fr-CA': 'Panivo',
-      'zh-Hans': '品桥',
-    });
+    stubNames({ 'zh-Hans': '品桥' });
     localStorage.setItem('language', 'zh-Hans');
     renderInTheme(
       <SignedOutFrame>

@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useLanguage } from '../i18n/use-language';
+import { stubNames } from '../test/app-names';
 import { PageHeader } from './page-header';
 
 function renderHeader(props: Parameters<typeof PageHeader>[0]) {
@@ -87,11 +88,7 @@ describe('PageHeader', () => {
 
     /** 中文's name is its setting, VITE_APP_NAME_ZH_HANS, where it is set. */
     it("ends it with 中文's own name in 中文", async () => {
-      vi.stubGlobal('__APP_NAMES__', {
-        en: 'Panivo',
-        'fr-CA': 'Panivo',
-        'zh-Hans': '品桥',
-      });
+      stubNames({ 'zh-Hans': '品桥' });
       localStorage.setItem('language', 'zh-Hans');
 
       renderHeader({ crumbs: [], title: '移动记录' });
@@ -101,11 +98,7 @@ describe('PageHeader', () => {
 
     // Unset, the build gives 中文 VITE_APP_NAME (vite.config.test.ts).
     it('ends it with VITE_APP_NAME in 中文 without its setting', async () => {
-      vi.stubGlobal('__APP_NAMES__', {
-        en: 'Panivo',
-        'fr-CA': 'Panivo',
-        'zh-Hans': 'Panivo',
-      });
+      stubNames();
       localStorage.setItem('language', 'zh-Hans');
 
       renderHeader({ crumbs: [], title: '移动记录' });
@@ -118,11 +111,7 @@ describe('PageHeader', () => {
      * change of language changes it.
      */
     it('is the name alone without a header, in the language chosen', async () => {
-      vi.stubGlobal('__APP_NAMES__', {
-        en: 'Panivo',
-        'fr-CA': 'Panivo',
-        'zh-Hans': '品桥',
-      });
+      stubNames({ 'zh-Hans': '品桥' });
 
       function Choose() {
         const { setLocale } = useLanguage();

@@ -10,6 +10,7 @@ import {
 } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
+import { stubNames } from '../test/app-names';
 import { renderWithAuth } from '../test/render-with-auth';
 import { ChunkLoadError } from '../version/load-chunk';
 import { reloadPage } from '../version/reload-page';
@@ -311,11 +312,7 @@ describe('Help', () => {
   });
 
   it('gives the name and the version in Chinese too', async () => {
-    vi.stubGlobal('__APP_NAMES__', {
-      en: 'Panivo',
-      'fr-CA': 'Panivo',
-      'zh-Hans': '品桥',
-    });
+    stubNames({ 'zh-Hans': '品桥' });
     localStorage.setItem('language', 'zh-Hans');
     try {
       renderFrame('/orders');

@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { stubNames } from '../test/app-names';
 import { themeFor } from '../theme';
 import { setBrand } from '../theme/brand-store';
 import { PoweredBy } from './powered-by';
@@ -72,11 +73,7 @@ describe('PoweredBy', () => {
   });
 
   it('puts the name where 中文 puts it, by its own setting', async () => {
-    vi.stubGlobal('__APP_NAMES__', {
-      en: 'Panivo',
-      'fr-CA': 'Panivo',
-      'zh-Hans': '品桥',
-    });
+    stubNames({ 'zh-Hans': '品桥' });
     localStorage.setItem('language', 'zh-Hans');
     renderFoot();
 
