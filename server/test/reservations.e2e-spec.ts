@@ -311,6 +311,47 @@ describe('Reservations (e2e)', () => {
       }
     });
 
+    // Whose hold it is, in the reader's language too (#129).
+    it('says who holds the stock in the reader’s language', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const s = await scenario(alpha);
+
+      const handOut = (language: string) =>
+        alpha.agent
+          .post('/v1/stock/movements')
+          .set('Accept-Language', language)
+          .send({
+            variantId: s.focus,
+            fromLocationId: s.shelf,
+            quantity: '1',
+            reason: 'sample',
+          })
+          .expect(409);
+      // The second order holds 40; 50 would take 10 of the first's.
+      const ship = (language: string) =>
+        alpha.agent
+          .post(`/v1/orders/${s.second.id}/shipments`)
+          .set('Accept-Language', language)
+          .send({
+            fromLocationId: s.shelf,
+            lines: [{ lineId: s.second.lines[0].id, quantity: '50' }],
+          })
+          .expect(409);
+      const message = async (refusal: ReturnType<typeof ship>) =>
+        body<{ message: string }>(await refusal).message;
+
+      expect(await message(handOut('fr-CA'))).toMatch(
+        /réservé pour des commandes confirmées\.$/,
+      );
+      expect(await message(handOut('zh-Hans'))).toMatch(
+        /已为 已确认的订单 预留。$/,
+      );
+      expect(await message(ship('fr-CA'))).toMatch(
+        /réservé pour d’autres commandes\.$/,
+      );
+      expect(await message(ship('zh-Hans'))).toMatch(/已为 其他订单 预留。$/);
+    });
+
     /**
      * Held stock can still be moved and corrected: those record what
      * physically happened, and refusing them would put the ledger out of
