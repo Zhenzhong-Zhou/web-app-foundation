@@ -396,7 +396,10 @@ message, and the screen keys on the code, never on the words.
 - Both sides test with Vitest (ADR-067). On the server, unit tests sit
   beside their source (`users.service.spec.ts`, `npm test`), and
   integration tests live in `test/` and end in `.e2e-spec.ts` (`npm run
-  test:e2e`, one file at a time).
+  test:e2e`, one file at a time). CI's server job runs both.
+- The repository's own scripts test with Node's runner:
+  `scripts/*.test.mjs`, run by `node --test scripts/` from
+  `scripts/verify.sh` and CI's server job (ADR-082).
 - Vitest does not type-check. A type error in a spec fails `npm run
   typecheck`, which CI and `scripts/verify.sh` run, not the test run.
 - Every integration test calls `await app.close()` in `afterAll`, or the
@@ -746,7 +749,10 @@ Internet Explorer, and any browser's IE mode, is not supported.
   macOS versions. In CI a pull request runs Chromium only, in three shards;
   every browser runs on main, nightly, and on a pull request labelled
   full-e2e (layout, mobile, sign-in).
-- The product's name in the tab is VITE_APP_NAME in the repository's .env.
+- The product's name is VITE_APP_NAME in the repository's .env, with one
+  per language as `VITE_APP_NAME_<TAG>` (`VITE_APP_NAME_ZH_HANS`,
+  `VITE_APP_NAME_FR_CA`), each falling back to it. A tab's title comes
+  from `lib/tab-title.ts`, in the reader's language (ADR-082).
 
 ## Versions
 
@@ -764,18 +770,28 @@ What each version in the project means, where it lives, and who moves it.
 `/api/health` and `/version.json` must name the same commit once a deploy
 has finished; `deploy.yml` waits for the first before starting the second.
 
+A report of a problem names the line in Help's foot (the release, the
+build and its date), which finds the exact code the person ran. A
+document that leaves the app, such as a PDF manual or a written
+specification, names the release and the date it describes; the guides
+inside the app need nothing, since they ship with the build Help's foot
+names.
+
 ## Dependencies
 
 - **Every branch** takes the in-range updates as a commit of its own at its
   start, and again before the reviews (`npm outdated`, then `npm update`, in
-  `server/` and `client/`). No overrides (ADR-019); a major version is a
+  `server/` and `client/`). No overrides, except a patched release of the
+  same major under a package that pins the vulnerable one exactly, as
+  js-yaml's and multer's are (ADR-019, amended); a major version is a
   change of its own.
 - **Only versions at least 7 days old** (ADR-081): a freshly published
   version is where a hijacked package hides, and most are caught within
   days. `npm update --before="$(date -v-7d +%Y-%m-%d)"` on a Mac, run only
   when `npm outdated` lists something in range, and never to move back a
   version already locked: the rule keeps new releases out, it does not
-  undo what is installed (#196's steps 1 and 8). A security fix is taken
+  undo what is installed (#196's steps 1 and 8). Run it with `--dry-run`
+  first: it lists any version it would move back. A security fix is taken
   at once, its publisher and diff looked at first.
 - **A new tool or package** is pinned to a release at least 14 days old.
 

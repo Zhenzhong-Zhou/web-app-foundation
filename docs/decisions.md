@@ -5768,6 +5768,9 @@ rest now.
 
 ## ADR-058 — Home: what needs attention, first
 
+> **Amended (#235, 24 October 2026).**
+> To ship and To receive count only orders with something still to ship or receive, as this ADR defines them, through the Orders list's `outstanding` filter, so the card, its rows and the page it opens agree. Close order stays its own step (#24).
+
 **Context.** Signing in lands on Products (`/` redirects there), the page a
 person needs least often. What needs doing today is spread over six lists,
 each found by knowing where to look and which filter to press: orders to
@@ -6356,7 +6359,7 @@ setting, so a plan can raise it.
 ## ADR-060 — Branding: each organization's logo, colour and expiry days
 
 > **Amended by [ADR-082](#adr-082--the-products-brand-panivo-before-sign-in-the-organizations-after-amends-adr-019-adr-051-adr-055-adr-060-and-adr-081).**
-> Before sign-in, the product's mark and name, and a © line; after it, "Powered by Panivo" at the rail's foot under the organization's logo. An organization's documents carry no product mark.
+> Before sign-in, the product's mark and name, and a © line. After it, from 1200 px the organization's logo moves to the rail's top, linking Home, and "Powered by Panivo" sits at the rail's foot. An organization's documents carry no product mark.
 
 **Context.** ADR-055 made the brand a few values, the accent colour, the logo
 and the sidebar's shade, so that each organization could one day set its own.
@@ -7191,6 +7194,9 @@ the bottle would say which at a glance.
 ---
 
 ## ADR-067 — The server's tests on Vitest, then Nest 12 (amends ADR-019)
+
+> **Amended by [ADR-082](#adr-082--the-products-brand-panivo-before-sign-in-the-organizations-after-amends-adr-019-adr-051-adr-055-adr-060-and-adr-081).**
+> Vitest stays the one runner for the client and the server. The repository's own scripts test with Node's runner (`scripts/*.test.mjs`), and `perf/`'s spec runs with the server's unit tests, which CI's server job now runs.
 
 **Context.** `npm outdated` lists three majors on the server, each held
 for a different reason (the `npm audit` branch, October 2026):
@@ -8213,6 +8219,9 @@ the volume seed, with a probe for one invoice and one for the export.
   China's fapiao. Trigger: the first customer who must issue one.
 - **A PDF kept exactly as sent.** Trigger: a customer, or a law, that
   needs the file itself rather than the document drawn again.
+- **Tagged PDFs,** with a structure tree and a document language, which
+  pdfmake does not write (#162). Trigger: a customer or an authority that
+  asks for accessible documents.
 - **The budgets for the PDF routes and the export,** and their probes for
   one invoice and one export (*Decision — performance*): nothing is
   measured yet, so no figure is set. Trigger: the first `npm run perf` on
@@ -11585,6 +11594,84 @@ carrying the placeholder refused.
 - Designed on the canvas before building, as ADR-060's Branding was; the
   brief and the boards go in `tmp/adr-082/`.
 
+**Amendment (October 2026) — as built (#247).** What building settled:
+
+- **The organization moves to the rail's top** (amends ADR-060). From
+  1200 px its logo, or its name, tops the rail with the fold button beside
+  it, and links Home; the top bar keeps search, Help, the bell and the
+  account. Folded, one plate is the expand button. It shows a roughly
+  square logo (at most 1.25 : 1), else the organization's initials on its
+  accent in a contained button's colours, made by script with legal
+  endings left out (WIDE Naturals Inc. gives WN, 清禾药业有限公司 gives
+  清禾). Its name reuses the app's pair with Collapse navigation, the
+  initials first as WCAG 2.5.3 asks: "WN, Expand navigation (WIDE Naturals
+  Inc.)", or "Expand navigation (…)" with a logo. Below 1200 px the top
+  bar and the drawer are unchanged. A small square logo of the
+  organization's own, uploaded separately, is the next pull request, the
+  plate's first choice ahead of the initials.
+- **The rail's foot is pinned** under the links in a window taller than
+  about 500 px. The links scroll above it and fade into the rail just
+  above its line while more lie below; 58 px were won back, so every link
+  fits at 1440 × 900.
+- **The signed-out frame** holds sign-in, register, forgot and reset
+  password, the email confirmation, the signed-out Page not found, and
+  the start-up pages: `OfflinePage` for "Could not reach the server", and
+  the new-version and installing pages. Each has the language and
+  text-size controls. The crash page and offline page this ADR named do
+  not exist signed out; a render error there still shows an empty page
+  (#244). Every invitation state is footer-only. The name is text at the
+  type scale's title size, 25 px, not the board's 32.
+- **Tabs** are worked out from the reader's language each time
+  (`lib/tab-title.ts`), the sign-out countdown included; a record's tab
+  keeps its section, "SO-DEMO-1 · Orders", as #201 had it.
+- **Help's foot** names the product and holds the © line, with no mark:
+  the plate's decision listed it among the places the mark is drawn, by
+  mistake.
+- **The loading mark** sits beside `#root`, not in it, above the app until
+  its first screen is on view: a page, `OfflinePage` or a version page.
+  `#root` is hidden from screen readers meanwhile. A thin bar appears
+  550 ms after the page starts if the mark is still up, and stands still
+  under reduced motion. Its script, hashed into `/assets/` and cached a
+  year, reads the stored mode and sets the page's colour, `color-scheme`
+  and default text colour at once, so Safari never draws the browser's
+  black text on the dark page. If the app's entry fails to load, it takes
+  the mark down and shows one line with Reload in the reader's language
+  (`loading.failed`, `loading.reload`). Its colours, shape and waits come
+  from `tokens.ts`.
+- **Emails** go through `MailBrand.send`, which adds the header. The mark
+  appears only once the server has seen `CLIENT_URL` +
+  `/brand/mail-mark.png` answer as `image/png`, asked before the hourly
+  emails start and every 10 minutes until it does, misses after the first
+  logged at debug. If the mark ever changes, its file takes a new name,
+  since mail apps keep the images they have fetched.
+- **Render answers a missing `.png` or `.js` with a 404 and `text/plain`;**
+  only a path with no extension, an `.svg` or a `.webmanifest` gets
+  `index.html` and a 200. The decisions after step 7 said otherwise. The
+  live check runs once the build is the commit's, takes the manifest on
+  any type but `text/html`, and the other files only on their own.
+- **Files:** a master of its own for the maskable icon, since Android's
+  mask would cut the plate's corners; the preview's names as outlines
+  from Source Sans 3 and Noto Sans SC, under the SIL Open Font License,
+  made once outside the repository.
+- **What rode along, as built:** multer 2.5.0 by override; the hook in
+  `scripts/hooks/`, and the author check in a workflow of its own
+  (`authors.yml`) on every pull request, docs-only ones included, and in
+  `scripts/verify.sh`; #225's known miss; `eslint-plugin-testing-library`
+  with `no-node-access` and `no-container` off. Its async rules catch a
+  find, a user event or a `waitFor` left without `await`; the mistakes of
+  #206 and #210, checking an effect's result too early, stay a rule people
+  hold. Tests for `scripts/` on Node's own runner, and `perf/`'s spec run
+  with the server's unit tests, which CI's server job now runs too, where
+  before only `verify.sh` did (amends ADR-067). `MAIL_FROM` names Panivo
+  in the workflows. Claude Code Review fails when it ends without a review
+  (#243), and says so when a pull request changes its own workflow, which
+  the action refuses to run.
+- **Deferred, added:** the link card in the reader's language (it reads in
+  English, since `index.html` holds one language), with the trigger of
+  the name by language in emails; and a sending domain of Panivo's own.
+  Mail goes from `wide-naturals.ca`, the domain Bob has today, with DKIM
+  and SPF verified and DMARC at `p=none`. Trigger: the first customers.
+
 ---
 
 ## Open decisions
@@ -11712,7 +11799,9 @@ they exist so the reasoning is not rediscovered from scratch.
   support; never a silent sign-in as a customer, which customers ask
   about in contracts and privacy law (PIPEDA, PIPL) cares about.
   Monitoring the app itself is a different need: an error tracker and an
-  uptime check beside the logs. Trigger: more organizations than the
+  uptime check beside the logs. A "Report a problem" link in Help belongs
+  here too, sending the version, build, page, language and browser with
+  the person's words. Trigger: more organizations than the
   command line serves, or a support request that needs the customer's
   screen.
 - **A public demo.** A deployment of its own with its own database, filled
