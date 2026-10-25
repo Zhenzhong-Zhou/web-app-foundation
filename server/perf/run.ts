@@ -3,8 +3,8 @@ import { runLoad } from './load';
 import { readManifest } from './manifest';
 import {
   growthFor,
-  knownMissLabel,
   type Result,
+  verdictLabel,
   verdictOf,
   writeReport,
 } from './report';
@@ -186,12 +186,7 @@ async function measure(
       : null;
 
   const p95 = `${Math.round(stats.p95)} ms`.padStart(8);
-  const shown =
-    verdict === 'known' && knownMiss
-      ? knownMissLabel(knownMiss)
-      : verdict === 'fail'
-        ? 'over budget'
-        : (verdict ?? '');
+  const shown = verdict ? verdictLabel(verdict, knownMiss) : '';
 
   console.log(
     `  ${scenario.name.padEnd(34)} p95 ${p95}  ${stats.errors} errors  ${shown}`,

@@ -69,9 +69,18 @@ export function verdictOf(
   return 'fail';
 }
 
-/** How a known miss's verdict reads, at the console and in the summary. */
-export function knownMissLabel(miss: KnownMiss): string {
-  return `over budget, known: ${miss.issue}`;
+/**
+ * A budget's verdict in words, at the console and in the summary: a known
+ * miss names its issue.
+ */
+export function verdictLabel(
+  verdict: Verdict,
+  knownMiss: KnownMiss | null,
+): string {
+  if (verdict === 'known' && knownMiss) {
+    return `over budget, known: ${knownMiss.issue}`;
+  }
+  return verdict === 'fail' ? 'over budget' : 'pass';
 }
 
 export interface ConcurrencyResult {
@@ -286,12 +295,12 @@ function cells(result: Result): string {
   ].join(' | ');
 }
 
+/** The summary's verdict: a miss is a failure where budgets are enforced. */
 function verdict(result: Result, enforced: boolean): string {
-  if (result.verdict === 'pass') return 'pass';
-  if (result.verdict === 'known' && result.knownMiss) {
-    return knownMissLabel(result.knownMiss);
-  }
-  return enforced ? '**FAIL**' : 'over';
+  const verdict = result.verdict ?? 'fail';
+  return verdict === 'fail' && enforced
+    ? '**FAIL**'
+    : verdictLabel(verdict, result.knownMiss);
 }
 
 function ms(value: number): string {

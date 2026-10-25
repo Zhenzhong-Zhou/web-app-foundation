@@ -1,4 +1,4 @@
-import { type KnownMiss, verdictOf } from './report';
+import { type KnownMiss, verdictLabel, verdictOf } from './report';
 import { readScenarios } from './scenarios';
 
 // The typo lookup's (ADR-082).
@@ -56,9 +56,12 @@ describe('known misses', () => {
       expect(knownMiss.until).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
   });
+});
 
-  it('include the typo lookup’s', () => {
-    const typo = scenarios.find(({ name }) => name === 'GET /lookup?q=typo');
-    expect(typo?.knownMiss).toEqual(typoMiss);
+describe('verdictLabel', () => {
+  it('names a known miss by its issue, and says a miss is over budget', () => {
+    expect(verdictLabel('pass', null)).toBe('pass');
+    expect(verdictLabel('known', typoMiss)).toBe('over budget, known: #225');
+    expect(verdictLabel('fail', typoMiss)).toBe('over budget');
   });
 });
