@@ -293,7 +293,7 @@ function Frame() {
           }}
         >
           {/* The organization's at the top, the product's at the foot
-              (ADR-082), its shadow saying when more links run on under it. */}
+              (ADR-082), its fade saying when more links run on under it. */}
           <Box
             ref={railScroller}
             sx={{
@@ -655,7 +655,7 @@ function Frame() {
             </Box>
           </Box>
 
-          {/* Ending as the rail does, its shadow too (ADR-082). */}
+          {/* Ending as the rail does, its fade too (ADR-082). */}
           <Box
             sx={[
               { flex: 'none', position: 'relative', pt: 1, pb: 0.5 },
