@@ -2307,18 +2307,22 @@ as `docs/runbooks/render.md`, "Deploys", has them.
 The name is a setting, `VITE_APP_NAME=Panivo`: in the repository's `.env`
 locally (restart `npm run dev` after changing it), and in the static
 site's environment on Render, read when it builds. The icon's masters are
-in `docs/brand/`. Browsers keep an icon long after it changes, so check in
-a private window.
+in `docs/brand/`, and `scripts/brand-assets.mjs` makes the files browsers
+load from them. Browsers keep an icon long after it changes, so check in a
+private window.
 
 - **MC-3501** The icon. On a computer, open the app in Chrome, Edge,
-  Firefox and Safari: the tab shows the P, a navy stem and a purple bowl,
-  sharp at the tab's size. With the system in dark mode, reload: the stem
-  turns white and the bowl a lighter purple, except in Safari before 26,
-  which draws the ICO and keeps the colours of light mode. Bookmark the
-  page: the bookmark shows the same P. On an iPhone, Safari → Share → Add
-  to Home Screen: the P on white in the iPhone's rounded square, not a
-  picture of the page. On Android, Chrome → ⋮ → Add to home screen: the P
-  again, not a letter Chrome made up.
+  Firefox and Safari: the tab shows the P on a small rounded navy plate, a
+  white stem and a purple bowl, sharp at the tab's size. It never switches:
+  with a light tab strip and a dark one (the browser's theme), and the
+  system in light mode and in dark, reload each time; the plate is the
+  same, and clear on every strip, a light Chrome theme with the system
+  dark included. On Windows in dark mode, pin the app to the taskbar: the
+  plate, not a navy P on the dark bar. Bookmark the page: the bookmark
+  shows the same plate. On an iPhone, Safari → Share → Add to Home Screen:
+  the P on navy filling the iPhone's rounded square, not a picture of the
+  page. On Android, Chrome → ⋮ → Add to home screen: the P again, not a
+  letter Chrome made up.
 - **MC-3502** The name in the tab. The sign-in page's tab reads Panivo,
   and so does Home's. Inventory's reads Inventory · Panivo, and every other
   page in the rail ends the same way, Settings → Organization too; an order,
@@ -3156,3 +3160,6 @@ first.
 - 2026-10-24: #213, the recipe's batch size and Take a return's
   quantities read without padding zeros: MC-R55.
 - 2026-10-24: #223, Recently opened's kinds in sentence case: MC-R57.
+- 2026-10-24: ADR-082, one icon on a navy plate for the tab, the ICO,
+  the taskbar and an iPhone's home screen, made by
+  `scripts/brand-assets.mjs`: MC-3501 rewritten.
