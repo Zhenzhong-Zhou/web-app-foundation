@@ -83,6 +83,18 @@ export const RAILS: Record<'dark' | 'light', { light: Rail; dark: Rail }> = {
   },
 };
 
+/**
+ * The product's mark (ADR-082), as docs/brand's masters draw it: a navy
+ * stem and a purple bowl on light ground, panivo-mark.svg, and a white stem
+ * and a lighter bowl on dark, panivo-mark-on-dark.svg. Its purple and navy
+ * are the default accent and the dark rail, so a change to one is made to
+ * the other, the masters and the files made from them too.
+ */
+export const MARK = {
+  light: { bowl: BRAND.accent, stem: RAILS.dark.light.bg },
+  onDark: { bowl: '#776BC6', stem: '#FFFFFF' },
+} as const;
+
 /** Controls, then panels. Chips are round. */
 export const RADIUS = { control: 6, panel: 8, dialog: 10 } as const;
 

@@ -30,7 +30,8 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useCan } from '../auth/permissions';
 import { Reload } from '../errors/status-actions';
 import { useLanguage } from '../i18n/use-language';
-import { formatDate } from '../lib/format';
+import { copyrightLine, useAppName } from '../lib/app-name';
+import { formatDate, SEPARATOR } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { rem } from '../theme/rem';
 import { useTextSize } from '../theme/text-size';
@@ -416,34 +417,38 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
 /**
  * The version this tab runs, last, small and grey: what someone helping
  * asks for first, and the build a tab left open is still on (ADR-081).
+ * It starts with the product's name, in the reader's language, and the ©
+ * line follows under it, where one is set (ADR-082).
  */
 function VersionFoot() {
   const intl = useIntl();
+  const name = useAppName();
+  const copyright = copyrightLine();
+  // In sx: Typography's color takes a palette name, not a path (#196).
+  const quiet = { color: 'text.secondary' };
   return (
-    <Typography
-      variant="caption"
-      component="p"
-      // In sx: Typography's color takes a palette name, not a path (#196).
-      sx={{
-        mt: 3,
-        pt: 1.5,
-        borderTop: 1,
-        borderColor: 'divider',
-        color: 'text.secondary',
-      }}
-    >
-      {intl.formatMessage(
-        {
-          id: 'help.version',
-          defaultMessage: 'Version {version} · build {build} · {date}',
-        },
-        {
-          version: BUILD.version,
-          build: BUILD.build.slice(0, 7),
-          date: formatDate(BUILD.builtAt),
-        },
+    <Box sx={{ mt: 3, pt: 1.5, borderTop: 1, borderColor: 'divider' }}>
+      <Typography variant="caption" component="p" sx={quiet}>
+        {name}
+        {SEPARATOR}
+        {intl.formatMessage(
+          {
+            id: 'help.version',
+            defaultMessage: 'Version {version} · build {build} · {date}',
+          },
+          {
+            version: BUILD.version,
+            build: BUILD.build.slice(0, 7),
+            date: formatDate(BUILD.builtAt),
+          },
+        )}
+      </Typography>
+      {copyright && (
+        <Typography variant="caption" component="p" sx={quiet}>
+          {copyright}
+        </Typography>
       )}
-    </Typography>
+    </Box>
   );
 }
 

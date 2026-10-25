@@ -249,10 +249,10 @@ test('at Larger on a phone, Home with its cards fits', async ({
 /**
  * Every target in the top bar, 44px each way (ADR-075, ADR-079): on a
  * phone, ☰, the organization, search, Help, the bell and the account; on a
- * computer, the organization, the search box, New version, Help, the bell
- * and the account. With a new version out, the bar at its fullest: a
- * phone's says so with a dot on the account button, no seventh target
- * (ADR-081).
+ * computer, the search box, New version, Help, the bell and the account,
+ * the organization being at the rail's top there (ADR-082). With a new
+ * version out, the bar at its fullest: a phone's says so with a dot on the
+ * account button, no seventh target (ADR-081).
  */
 for (const size of ['standard', 'larger'] as const) {
   for (const [where, viewport] of [
@@ -305,7 +305,6 @@ for (const size of ['standard', 'larger'] as const) {
             bar.getByRole('button', { name: /signed in as .*new version/ }),
           ]
         : [
-            mark,
             // The box, not the input inside it: the box takes the tap.
             bar.locator('.MuiInputBase-root'),
             bar.getByRole('button', { name: 'New version', exact: true }),
@@ -313,6 +312,7 @@ for (const size of ['standard', 'larger'] as const) {
             bar.getByRole('button', { name: 'Notifications', exact: true }),
             bar.getByRole('button', { name: /signed in as/ }),
           ];
+      if (!phone) await expect(mark).toBeHidden();
       const small: string[] = [];
       for (const target of targets) {
         const box = await target.boundingBox();

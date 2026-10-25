@@ -62,9 +62,15 @@ interface Accepting {
 /** What came of a change of language, for whichever page is showing. */
 const LanguageNotice = createContext<ReactNode>(null);
 
-/** The signed-out frame, with what came of a change of language. */
+/**
+ * The signed-out frame, with what came of a change of language. Every
+ * state of the invitation, an ended or failed link included, is the
+ * organization's page: Panivo in its footer, never above (ADR-082).
+ */
 export function InvitationLayout(props: ComponentProps<typeof AuthLayout>) {
-  return <AuthLayout notice={useContext(LanguageNotice)} {...props} />;
+  return (
+    <AuthLayout notice={useContext(LanguageNotice)} invitation {...props} />
+  );
 }
 
 /** Provides what came of a change of language to the page below it. */

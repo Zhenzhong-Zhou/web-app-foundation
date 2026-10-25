@@ -54,10 +54,13 @@ sizes as PNGs, written by the script itself. The web manifest that names
 the three `icon-*.png` is written by the build, since it holds the name
 (`client/vite.config.ts`).
 
-One more copy is made by hand: `client/index.html`'s loading mark draws
-the paths of `panivo-mark.svg` and `panivo-mark-on-dark.svg` inline, with
-their colours in its style, so the page needs no file to draw it. A change
-to the mark is copied there too.
+Two more copies are made by hand, of the paths of `panivo-mark.svg` and
+`panivo-mark-on-dark.svg` and their colours: `client/index.html`'s
+loading mark draws them inline, with the colours in its style, so the page
+needs no file to draw it; and `client/src/brand/product-mark.tsx` draws
+the mark inside the app, before sign-in, at the rail's foot and in an
+invitation's footer, with the colours from `MARK` in `tokens.ts`. A
+change to the mark is copied to both.
 
 If the mail mark ever changes, give its file a new name, in
 `scripts/brand-assets.mjs` and in `server/src/shared/mail/mail-brand.ts`,

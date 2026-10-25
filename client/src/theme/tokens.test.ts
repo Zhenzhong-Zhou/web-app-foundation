@@ -6,6 +6,7 @@ import {
   DARK,
   DARK_ACCENT_WEIGHT,
   LIGHT,
+  MARK,
   mix,
   ON_ACCENT,
   RAILS,
@@ -154,6 +155,28 @@ describe('tokens (ADR-055)', () => {
   it.each(SCHEMES)('keeps %s coloured text readable on panels', (_, s) => {
     for (const colour of Object.values(s.intents)) {
       expect(contrast(colour, s.surface)).toBeGreaterThanOrEqual(AA);
+    }
+  });
+
+  /**
+   * The mark's two parts stand out from every ground it is drawn on, at
+   * the 3:1 a graphic needs (WCAG 1.4.11): its light master on the light
+   * page and the light rail in Light, its on-dark master on the dark page
+   * and on every other rail (ADR-082).
+   */
+  it('keeps the mark clear on every ground it is drawn on', () => {
+    const grounds: [keyof typeof MARK, string][] = [
+      ['light', LIGHT.page],
+      ['light', RAILS.light.light.bg],
+      ['onDark', DARK.page],
+      ['onDark', RAILS.dark.light.bg],
+      ['onDark', RAILS.dark.dark.bg],
+      ['onDark', RAILS.light.dark.bg],
+    ];
+    for (const [version, ground] of grounds) {
+      for (const part of Object.values(MARK[version])) {
+        expect(contrast(part, ground)).toBeGreaterThanOrEqual(3);
+      }
     }
   });
 

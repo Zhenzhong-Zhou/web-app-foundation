@@ -16,6 +16,7 @@ import { RegisterPage } from './auth/register-page';
 import { ResetPasswordPage } from './auth/reset-password-page';
 import { useAuth } from './auth/use-auth';
 import { VerifyEmailPage } from './auth/verify-email-page';
+import { SignedOutFrame } from './brand/signed-out-frame';
 import { NotFoundRoute } from './errors/not-found-page';
 import { RevisionRefusalPage } from './errors/revision-refusal-page';
 import { AppLayout } from './layout/app-layout';
@@ -123,31 +124,26 @@ export default function App() {
       />
     );
   }
+  // Before the app has drawn, the product's screen (ADR-082).
   if (error) {
     return (
-      <Stack
-        spacing={2}
-        sx={{
-          minHeight: '100dvh',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 4,
-        }}
-      >
-        <ScreenShown />
-        <Alert severity="error">
-          {intl.formatMessage({
-            id: 'common.serverUnreachable',
-            defaultMessage: 'Could not reach the server.',
-          })}
-        </Alert>
-        <Button variant="contained" onClick={() => void refresh()}>
-          {intl.formatMessage({
-            id: 'common.tryAgain',
-            defaultMessage: 'Try again',
-          })}
-        </Button>
-      </Stack>
+      <SignedOutFrame>
+        <Stack spacing={2} sx={{ my: 'auto', alignItems: 'center', py: 4 }}>
+          <ScreenShown />
+          <Alert severity="error">
+            {intl.formatMessage({
+              id: 'common.serverUnreachable',
+              defaultMessage: 'Could not reach the server.',
+            })}
+          </Alert>
+          <Button variant="contained" onClick={() => void refresh()}>
+            {intl.formatMessage({
+              id: 'common.tryAgain',
+              defaultMessage: 'Try again',
+            })}
+          </Button>
+        </Stack>
+      </SignedOutFrame>
     );
   }
 

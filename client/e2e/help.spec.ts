@@ -245,9 +245,10 @@ test('every page keeps its width beside Help at 1280 × 800', async ({
 
   expect(problems).toEqual([]);
 
-  // The rail folded for Help, and comes back as it was once Help closes.
+  // The rail folded for Help, its top the organization's plate (ADR-082),
+  // and comes back as it was once Help closes.
   await expect(
-    page.getByRole('button', { name: 'Expand navigation', exact: true }),
+    page.getByRole('button', { name: /Expand navigation \(/ }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Close help', exact: true }).click();
   await expect(

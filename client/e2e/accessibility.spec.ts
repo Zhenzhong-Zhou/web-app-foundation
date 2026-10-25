@@ -48,6 +48,8 @@ interface Screen {
    * host's files, never the API's.
    */
   broken?: string;
+  /** The rail folded on this device, as a person may keep it. */
+  folded?: boolean;
 }
 
 interface Seed {
@@ -59,6 +61,22 @@ interface Seed {
 }
 
 const heading = (page: Page) => page.getByRole('heading', { level: 1 });
+
+const help = (page: Page) =>
+  page.getByRole('complementary', { name: 'Help', exact: true });
+
+/**
+ * The screens before sign-in, the product's own (ADR-082): its mark and
+ * name above, the © line below.
+ */
+const SIGNED_OUT: { name: string; path: string; title: string }[] = [
+  { name: 'sign-in', path: '/login', title: 'Sign in' },
+  {
+    name: 'a status page, signed out',
+    path: '/no-such-page',
+    title: 'Page not found',
+  },
+];
 
 /**
  * The entry the keyboard is on, in a menu or a list. MUI tints it, and on
@@ -114,6 +132,28 @@ const SCREENS: Screen[] = [
       page
         .getByRole('complementary', { name: 'Help', exact: true })
         .getByRole('heading', { level: 2, name: 'Orders', exact: true }),
+  },
+  {
+    // Its foot names the product, and the © line follows (ADR-082).
+    name: 'Help’s foot',
+    path: () => '/orders',
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Help', exact: true }).click();
+      await help(page)
+        .getByText(/ · Version /)
+        .scrollIntoViewIfNeeded();
+    },
+    ready: (page) => help(page).getByText(/ · Version /),
+  },
+  {
+    // Its top the organization's plate, initials on the accent with no
+    // logo, and the product's mark at its foot named in a tooltip
+    // (ADR-082).
+    name: 'the rail folded, its initials plate and its foot’s tooltip',
+    folded: true,
+    path: () => '/orders',
+    open: (page) => page.getByRole('img', { name: /^Powered by / }).hover(),
+    ready: (page) => page.getByRole('tooltip', { name: /^Powered by / }),
   },
   {
     // The top bar's button and its note (ADR-081).
@@ -350,6 +390,11 @@ for (const colorScheme of ['light', 'dark'] as const) {
           if (screen.broken) {
             await page.route(screen.broken, (route) => route.abort('failed'));
           }
+          if (screen.folded) {
+            await page.addInitScript(() =>
+              localStorage.setItem('nav.folded', 'true'),
+            );
+          }
           await page.goto(screen.path(data));
           if (screen.open) {
             await expect(heading(page)).toBeVisible();
@@ -364,6 +409,24 @@ for (const colorScheme of ['light', 'dark'] as const) {
           if (screen.version) await page.unroute('**/version.json?*');
           if (screen.broken) await page.unroute(screen.broken);
           expect(list).toEqual([]);
+        });
+      }
+    });
+
+    test.describe('the screens before sign-in meet WCAG 2.2 AA', () => {
+      test.use({ storageState: { cookies: [], origins: [] } });
+
+      for (const screen of SIGNED_OUT) {
+        test(screen.name, async ({ page }) => {
+          await page.goto(screen.path);
+          await expect(
+            page.getByRole('heading', { level: 1, name: screen.title }),
+          ).toBeVisible();
+          // The © line the e2e server is built with (playwright.config.ts).
+          await expect(page.getByRole('contentinfo')).toBeVisible();
+          await page.waitForLoadState('networkidle');
+
+          expect(await violations(page)).toEqual([]);
         });
       }
     });

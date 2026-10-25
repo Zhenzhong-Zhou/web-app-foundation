@@ -1,0 +1,193 @@
+import KeyboardDoubleArrowLeft from '@mui/icons-material/KeyboardDoubleArrowLeft';
+import KeyboardDoubleArrowRight from '@mui/icons-material/KeyboardDoubleArrowRight';
+import { Box, ButtonBase, IconButton, Stack, Tooltip } from '@mui/material';
+import { useState } from 'react';
+import { useIntl } from 'react-intl';
+
+import { useBranding } from '../auth/use-branding';
+import { initialsLang, organizationInitialsOf } from '../lib/person-initials';
+import { rem } from '../theme/rem';
+import { LIGHT, TYPE } from '../theme/tokens';
+import { OrganizationMark } from './organization-mark';
+
+/** How far from square a logo may be and still fill the folded plate. */
+const SQUARE_ENOUGH = 1.25;
+
+/** Each logo's shape once read, so a fold after the first draws it at once. */
+const squareLogos = new Map<string, boolean>();
+
+function isSquare(image: HTMLImageElement): boolean {
+  const { naturalWidth: width, naturalHeight: height } = image;
+  if (!width || !height) return false;
+  return Math.max(width, height) / Math.min(width, height) <= SQUARE_ENOUGH;
+}
+
+/**
+ * The rail's top (ADR-082, amending ADR-060's layout): the organization's,
+ * as the rail's foot is the product's. Open, its logo, on a white plate on
+ * a dark rail as OrganizationMark draws it, or its name, with the fold
+ * button beside it. Folded, one 44 px plate that is the unfold button: the
+ * logo when it is about square, else the organization's initials on its
+ * accent, in the colours a contained button takes, so they pass in either
+ * mode. On hover or keyboard focus » takes the plate's place, with a
+ * tooltip; a tap unfolds. Its words are the fold button's own, Expand and
+ * Collapse navigation (Bob, 24 October 2026).
+ */
+export function RailTop({
+  name,
+  folded,
+  onToggle,
+}: {
+  name: string;
+  folded: boolean;
+  onToggle: () => void;
+}) {
+  const intl = useIntl();
+  const branding = useBranding();
+  const logo = branding?.logoFileId
+    ? `/api/v1/files/${branding.logoFileId}`
+    : null;
+
+  // Its own width and height, read when it loads; unknown until then, and
+  // the initials meanwhile.
+  const [read, setRead] = useState<{ logo: string; square: boolean }>();
+  const square = logo
+    ? read?.logo === logo
+      ? read.square
+      : squareLogos.get(logo)
+    : false;
+  const measured = (shape: boolean) => {
+    if (!logo) return;
+    squareLogos.set(logo, shape);
+    setRead({ logo, square: shape });
+  };
+
+  const measure = logo && square === undefined && (
+    <img
+      hidden
+      src={logo}
+      alt=""
+      onLoad={(event) => measured(isSquare(event.currentTarget))}
+      onError={() => measured(false)}
+    />
+  );
+
+  if (!folded) {
+    return (
+      <Stack
+        direction="row"
+        sx={{ alignItems: 'center', gap: 0.75, minHeight: 44, mb: 1 }}
+      >
+        {/* Its name in full on hover, where the rail cuts it. */}
+        <Box sx={{ flex: '1 1 auto', minWidth: 0, pl: 0.5 }} title={name}>
+          <OrganizationMark name={name} onRail />
+        </Box>
+        <IconButton
+          aria-label={intl.formatMessage({
+            id: 'layout.collapseNavigation',
+            defaultMessage: 'Collapse navigation',
+          })}
+          aria-expanded
+          onClick={onToggle}
+          sx={{
+            flex: 'none',
+            color: 'rail.text',
+            '&:hover': { color: 'rail.strong', bgcolor: 'rail.hover' },
+          }}
+        >
+          <KeyboardDoubleArrowLeft fontSize="small" />
+        </IconButton>
+        {measure}
+      </Stack>
+    );
+  }
+
+  const initials = organizationInitialsOf(name);
+
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+      <Tooltip
+        title={intl.formatMessage({
+          id: 'layout.expandNavigation',
+          defaultMessage: 'Expand navigation',
+        })}
+        placement="right"
+      >
+        <ButtonBase
+          // Its initials first where it shows them, so a voice user can say
+          // what they see, as the account button does (WCAG 2.5.3).
+          aria-label={
+            square
+              ? intl.formatMessage(
+                  {
+                    id: 'layout.expandNavigationOf',
+                    defaultMessage: 'Expand navigation ({organization})',
+                  },
+                  { organization: name },
+                )
+              : intl.formatMessage(
+                  {
+                    id: 'layout.expandNavigationWithInitials',
+                    defaultMessage:
+                      '{initials}, Expand navigation ({organization})',
+                  },
+                  { initials, organization: name },
+                )
+          }
+          aria-expanded={false}
+          onClick={onToggle}
+          sx={[
+            {
+              width: 44,
+              height: 44,
+              flex: 'none',
+              borderRadius: 1,
+              '& .unfold': { display: 'none' },
+              '&:hover, &.Mui-focusVisible': {
+                '& .face': { display: 'none' },
+                '& .unfold': { display: 'block' },
+              },
+              '&.Mui-focusVisible': {
+                outline: '2px solid',
+                outlineColor: 'rail.strong',
+                outlineOffset: 2,
+              },
+            },
+            square
+              ? {
+                  // White in both modes, as the logo's plate is; the arrow
+                  // takes Light's text on it. Its edge shows on a white
+                  // rail.
+                  bgcolor: '#FFFFFF',
+                  color: LIGHT.text,
+                  border: 1,
+                  borderColor: 'rail.divider',
+                }
+              : {
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  fontWeight: 700,
+                  fontSize: rem(TYPE.section),
+                },
+          ]}
+        >
+          {square ? (
+            <Box
+              component="img"
+              className="face"
+              src={logo ?? undefined}
+              alt=""
+              sx={{ maxWidth: 28, maxHeight: 28 }}
+            />
+          ) : (
+            <span className="face" aria-hidden lang={initialsLang(initials)}>
+              {initials}
+            </span>
+          )}
+          <KeyboardDoubleArrowRight className="unfold" fontSize="small" />
+        </ButtonBase>
+      </Tooltip>
+      {measure}
+    </Box>
+  );
+}

@@ -814,15 +814,16 @@ await fetch(`${api}/v1/files/product-image`, {
   Stock each change the address (`?tab=money` and so on), and pasting that
   address in a new tab opens the same tab. Type in Profile's tax number, open
   Stock and come back: the typing is still there. On a phone the tabs scroll
-  sideways. Rename the organization: the side rail and the top bar show the
-  new name after Save, the History button lists the change, and an invoice
-  issued before still prints the old name. In 中文 the tabs read 概况, 财务,
-  单据 and 库存.
+  sideways. Rename the organization: the rail's top, and below 1200 px the
+  top bar, show the new name after Save, the History button lists the
+  change, and an invoice issued before still prints the old name. In 中文
+  the tabs read 概况, 财务, 单据 and 库存.
 
 - **MC-1702** Branding (ADR-060). As an owner, Settings → Organization →
   Branding: upload a PNG logo and an SVG one in turn; each previews on both
-  sidebar shades, and after Save the logo replaces the name in the top bar
-  (on a white plate in dark mode). Choose Teal and Save: buttons, links and
+  sidebar shades, and after Save the logo replaces the name at the rail's
+  top, and below 1200 px in the top bar (on a white plate on the dark rail,
+  and in dark mode). Choose Teal and Save: buttons, links and
   the selected tab turn teal at once, in light and dark mode. Choose your
   own colour `#5BB8F0`: the tab says `#127EB3` will be saved; `#D93A2B`
   warns it is close to the error red. On Stock set expiry to 180 and 60:
@@ -2404,6 +2405,57 @@ private window.
   live site, after the API has slept (15 minutes with no visit), the first
   visit shows the mark and its sliding bar for up to a minute, never
   still as if frozen, with no spinner, then the page.
+- **MC-3507** The pages before sign-in. With `VITE_COPYRIGHT_HOLDER` set
+  in `.env` and `npm run dev` restarted, open Sign in, Create an account
+  (where registration is open), Forgot your password, a reset link, a
+  confirm-email link while signed out, and a page that does not exist,
+  signed out. Each has the P and Panivo above it, centred, Panivo bold
+  text that a double-click selects, and © 2026 and the holder at the foot,
+  in small grey text; every sentence is as before. Stop the API and
+  reload: Could not reach the server with Try again, the same name above
+  and line below. In Dark (the account menu, then sign out) the P is the
+  white stem and lighter bowl, clear on the dark page. VoiceOver reads
+  Panivo once, with no image before it, and the footer as the page's
+  footer. Empty `VITE_COPYRIGHT_HOLDER` and restart: no line, and no empty
+  space where it was. At 125% text the P grows with the name.
+- **MC-3508** The same in 中文, on a phone. With `VITE_APP_NAME_ZH_HANS=品桥`
+  in `.env` and restarted, open Sign in on a phone (or DevTools at 390 px)
+  and choose 简体中文: 品桥 above the form, the © line at the foot still
+  in its holder's words; switch to English and back: Panivo, then 品桥.
+  Empty the setting: in 中文 the name above is Panivo.
+- **MC-3509** The invitation page's footer. Open an invitation link signed
+  out (MC-3001): the organization's logo or name and Join … head it as
+  before, with no Panivo above; at the foot, a small P, Panivo and the ©
+  line, in grey. The same footer on an ended link, a malformed one, an
+  organization invitation and Already in this organization. While the
+  link is read, only the spinner, with no name or footer.
+- **MC-3510** The rail's top. On a computer at 1200 px or wider: the
+  organization's logo at the top of the rail, on a white plate on the
+  dark rail, or its name in white where it has none, with « beside it on
+  one row; the top bar holds search, Help, the bell and you, with no logo.
+  Narrow the window below 1200 px: the logo or name is back in the top
+  bar, and the menu drawer opens as before. Press «: the rail folds to one
+  44 px plate at its top. With no logo, the organization's initials on its
+  accent, white on it in Light and dark on the lighter accent in Dark:
+  WIDE Naturals Inc. reads WN, and 清禾药业有限公司 reads 清禾. With a
+  square logo (Settings → Organization → Branding), the logo on a white
+  plate; with a wide wordmark, the initials. Hover the plate, or Tab to
+  it: » takes its place and a tooltip says Expand navigation; VoiceOver
+  reads WN, Expand navigation (WIDE Naturals Inc.), or with a logo
+  Expand navigation and the name. Click or tap it: the rail opens.
+- **MC-3511** The rail's foot. At the end of the rail, under Settings,
+  scrolling the rail if it runs long: a line, then Powered by, the P and
+  Panivo, small, Panivo brighter than the words. On the dark rail the P
+  is white-stemmed in Light and Dark alike; choose the light rail
+  (Branding): in Light the navy P, in Dark the white one, clear on each.
+  Folded: the P alone; hover it, or Tab to it, and a tooltip says Powered
+  by Panivo, which VoiceOver reads. Below 1200 px, the menu drawer ends
+  the same way. In Français, Propulsé par; in 中文 with its setting, 由, the
+  P, 品桥, 提供支持, on one line.
+- **MC-3512** Help's foot. Open Help and scroll to its end: Panivo ·
+  Version 0.7.0 · build … · the day, and under it the © line, small and
+  grey. In 中文 with its setting, 品桥 · 版本 … ; with no holder set, the
+  version line alone.
 
 ## Regressions
 
@@ -3249,3 +3301,7 @@ first.
   on view, with no spinner under it: MC-3506 rewritten.
 - 2026-10-24: ADR-082, a thin bar under the loading mark once it has
   been up a moment, still under reduced motion: MC-3506 extended.
+- 2026-10-24: ADR-082, Panivo on every page before sign-in and in an
+  invitation's footer, the organization at the rail's top and Panivo at
+  its foot, Help's foot naming the product: MC-3507 to MC-3512; MC-1102's
+  rename and MC-1702's logo now at the rail's top.

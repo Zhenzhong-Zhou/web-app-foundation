@@ -1,6 +1,7 @@
-import { Box, Container, Paper, Stack, Typography } from '@mui/material';
+import { Box, Paper, Stack, Typography } from '@mui/material';
 import type { ReactNode, Ref, SubmitEvent } from 'react';
 
+import { SignedOutFrame } from '../brand/signed-out-frame';
 import { LanguageSelect } from '../components/language-select';
 import { TextSizeSelect } from '../components/text-size-select';
 import { LanguageFailureBanner } from '../i18n/language-failure';
@@ -9,7 +10,8 @@ import { NewVersionBanner } from '../version/new-version-banner';
 
 /**
  * The frame every unauthenticated screen shares. Extracted at five, not two —
- * by then the shape had stopped being a guess.
+ * by then the shape had stopped being a guess. Inside the product's frame,
+ * its name above and the © line below (ADR-082).
  *
  * `component="form"` rather than a div with a click handler: submit-on-enter,
  * required-field behaviour, and password-manager detection all key off a real
@@ -21,6 +23,7 @@ export function AuthLayout({
   above,
   notice,
   onSubmit,
+  invitation = false,
   children,
 }: {
   /** Left out only while a page is read, before it knows its heading. */
@@ -32,28 +35,34 @@ export function AuthLayout({
   /** Under the language choice: what came of a change made there. */
   notice?: ReactNode;
   onSubmit?: (event: SubmitEvent) => void;
+  /** An invitation's page, the organization's: Panivo in its footer only. */
+  invitation?: boolean;
   children: ReactNode;
 }) {
   // A signed-out page on view: the loading mark comes down (ADR-082).
   useScreenShown();
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      {/* Before anything else, so someone who cannot read the page can
-          still find the controls that change it: its language first
-          (ADR-054), then its text size (ADR-075). */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'flex-end',
-          gap: 1,
-          mb: 2,
-        }}
-      >
-        <LanguageSelect />
-        <TextSizeSelect />
-      </Box>
+    <SignedOutFrame
+      invitation={invitation}
+      controls={
+        // Before anything else, so someone who cannot read the page can
+        // still find the controls that change it: its language first
+        // (ADR-054), then its text size (ADR-075).
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+            gap: 1,
+            mb: 2,
+          }}
+        >
+          <LanguageSelect />
+          <TextSizeSelect />
+        </Box>
+      }
+    >
       {/* A newer build, said here since these pages have no top bar, and
           a language that would not load (ADR-081). After the language,
           which stays first. */}
@@ -80,6 +89,6 @@ export function AuthLayout({
           <Stack spacing={2}>{children}</Stack>
         </Box>
       </Paper>
-    </Container>
+    </SignedOutFrame>
   );
 }

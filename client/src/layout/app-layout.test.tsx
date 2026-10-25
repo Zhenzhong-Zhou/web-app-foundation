@@ -23,8 +23,13 @@ function renderFrame() {
   );
 }
 
-/** The rail's own button, named for what it would do. */
-const rail = (name: 'Collapse navigation' | 'Expand navigation') =>
+/**
+ * The rail's own button, named for what it would do: folded, the
+ * organization's plate at its top (ADR-082).
+ */
+const rail = (
+  name: 'Collapse navigation' | 'A, Expand navigation (Alpha Co)',
+) =>
   // Hidden here: jsdom does not match the media query that shows the rail.
   screen.getByRole('button', { name, hidden: true });
 
@@ -61,7 +66,7 @@ describe('the rail while Help is open', () => {
     expect(rail('Collapse navigation')).toBeInTheDocument();
 
     await openHelp(user);
-    expect(rail('Expand navigation')).toBeInTheDocument();
+    expect(rail('A, Expand navigation (Alpha Co)')).toBeInTheDocument();
 
     await closeHelp(user);
     expect(rail('Collapse navigation')).toBeInTheDocument();
@@ -72,12 +77,12 @@ describe('the rail while Help is open', () => {
     localStorage.setItem('nav.folded', 'true');
     const user = userEvent.setup();
     renderFrame();
-    expect(rail('Expand navigation')).toBeInTheDocument();
+    expect(rail('A, Expand navigation (Alpha Co)')).toBeInTheDocument();
 
     await openHelp(user);
-    expect(rail('Expand navigation')).toBeInTheDocument();
+    expect(rail('A, Expand navigation (Alpha Co)')).toBeInTheDocument();
     await closeHelp(user);
-    expect(rail('Expand navigation')).toBeInTheDocument();
+    expect(rail('A, Expand navigation (Alpha Co)')).toBeInTheDocument();
     expect(localStorage.getItem('nav.folded')).toBe('true');
   });
 
@@ -87,16 +92,16 @@ describe('the rail while Help is open', () => {
 
     // Opened again beside Help: it stays open once Help closes.
     await openHelp(user);
-    await user.click(rail('Expand navigation'));
+    await user.click(rail('A, Expand navigation (Alpha Co)'));
     await closeHelp(user);
     expect(rail('Collapse navigation')).toBeInTheDocument();
 
     // Opened and folded again: folded is now theirs, and stays.
     await openHelp(user);
-    await user.click(rail('Expand navigation'));
+    await user.click(rail('A, Expand navigation (Alpha Co)'));
     await user.click(rail('Collapse navigation'));
     await closeHelp(user);
-    expect(rail('Expand navigation')).toBeInTheDocument();
+    expect(rail('A, Expand navigation (Alpha Co)')).toBeInTheDocument();
     expect(localStorage.getItem('nav.folded')).toBe('true');
   });
 });
@@ -125,6 +130,18 @@ describe('the menu on a phone', () => {
     expect(
       within(menu).getByRole('button', { name: 'Close navigation' }),
     ).toBeVisible();
+  });
+
+  // As the rail ends (ADR-082).
+  it('ends with Powered by and the product', async () => {
+    const user = userEvent.setup();
+    renderFrame();
+
+    await user.click(screen.getByRole('button', { name: 'Open navigation' }));
+    const menu = await screen.findByRole('dialog', { name: 'Navigation' });
+    expect(within(menu).getByText(/^Powered by/)).toHaveTextContent(
+      'Powered by web-app-foundation',
+    );
   });
 });
 

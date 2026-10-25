@@ -1,6 +1,4 @@
 import CloseIcon from '@mui/icons-material/Close';
-import KeyboardDoubleArrowLeft from '@mui/icons-material/KeyboardDoubleArrowLeft';
-import KeyboardDoubleArrowRight from '@mui/icons-material/KeyboardDoubleArrowRight';
 import MenuIcon from '@mui/icons-material/Menu';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import {
@@ -30,6 +28,7 @@ import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 import { DeletionBanner } from '../account/deletion-banner';
 import { useAuth } from '../auth/use-auth';
 import { useResendConfirmation } from '../auth/use-resend-confirmation';
+import { PoweredBy } from '../brand/powered-by';
 import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
 import { LanguageSelect } from '../components/language-select';
@@ -59,6 +58,7 @@ import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
 import { OrganizationMark } from './organization-mark';
 import { RAIL_FOLDED_WIDTH, RAIL_WIDTH } from './rail';
+import { RailTop } from './rail-top';
 import { SideNav } from './side-nav';
 import { MAIN_CONTENT_ID, SkipLink } from './skip-link';
 import { UnverifiedBannerContext } from './unverified-banner-context';
@@ -277,34 +277,15 @@ function Frame() {
             py: 1.5,
           }}
         >
-          <IconButton
-            aria-label={
-              folded
-                ? intl.formatMessage({
-                    id: 'layout.expandNavigation',
-                    defaultMessage: 'Expand navigation',
-                  })
-                : intl.formatMessage({
-                    id: 'layout.collapseNavigation',
-                    defaultMessage: 'Collapse navigation',
-                  })
-            }
-            aria-expanded={!folded}
-            onClick={toggleFolded}
-            sx={{
-              alignSelf: folded ? 'center' : 'flex-end',
-              color: 'rail.text',
-              '&:hover': { color: 'rail.strong', bgcolor: 'rail.hover' },
-            }}
-          >
-            {folded ? (
-              <KeyboardDoubleArrowRight fontSize="small" />
-            ) : (
-              <KeyboardDoubleArrowLeft fontSize="small" />
-            )}
-          </IconButton>
+          {/* The organization's at the top, the product's at the foot
+              (ADR-082). */}
+          <RailTop name={orgName} folded={folded} onToggle={toggleFolded} />
 
           <SideNav folded={folded} />
+
+          <Box sx={{ mt: 'auto', pt: 2 }}>
+            <PoweredBy folded={folded} />
+          </Box>
         </Box>
       </Box>
 
@@ -358,7 +339,8 @@ function Frame() {
                 its name until then. The way home, which is what a person
                 expects of the top-left corner. Truncated rather than
                 wrapped: a long name is the one thing here of unknown width,
-                so it is the one thing that gives. */}
+                so it is the one thing that gives. Below the rail's width
+                only: beside the rail, its top holds it (ADR-082). */}
             <Link
               component={RouterLink}
               to="/"
@@ -370,7 +352,7 @@ function Frame() {
                   minWidth: 44,
                   minHeight: 44,
                   flexShrink: 1,
-                  display: 'flex',
+                  display: { xs: 'flex', [BAR]: 'none' },
                   alignItems: 'center',
                 },
                 tight && { flexShrink: 0, justifyContent: 'center' },
@@ -614,6 +596,11 @@ function Frame() {
           </Stack>
 
           <SideNav onNavigate={() => setDrawer(false)} />
+
+          {/* Ending as the rail does (ADR-082). */}
+          <Box sx={{ mt: 'auto', pt: 2, pb: 0.5 }}>
+            <PoweredBy />
+          </Box>
         </Drawer>
 
         {/* The page's main landmark (#121), and where the skip link puts

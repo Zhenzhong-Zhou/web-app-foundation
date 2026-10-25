@@ -126,6 +126,25 @@ describe('organizationInitialsOf', () => {
     expect(organizationInitialsOf('Acme')).toBe('A');
     expect(organizationInitialsOf('  ')).toBe('?');
   });
+
+  // The folded rail's plate (ADR-082): an ending every company shares
+  // never stands as an initial.
+  it('leaves out a legal ending', () => {
+    expect(organizationInitialsOf('WIDE Naturals Inc.')).toBe('WN');
+    expect(organizationInitialsOf('清禾药业有限公司')).toBe('清禾');
+    expect(organizationInitialsOf('Acme Inc.')).toBe('A');
+    expect(organizationInitialsOf('Acme, LLC')).toBe('A');
+    expect(organizationInitialsOf('Herbes Boréales Ltée')).toBe('HB');
+    expect(organizationInitialsOf('Smith Co. Ltd')).toBe('S');
+    expect(organizationInitialsOf('Kräuter GmbH')).toBe('K');
+    expect(organizationInitialsOf('禾有限公司')).toBe('禾');
+    expect(organizationInitialsOf('禾股份有限公司')).toBe('禾');
+    // A name that is no more than an ending keeps it.
+    expect(organizationInitialsOf('Inc.')).toBe('I');
+    expect(organizationInitialsOf('有限公司')).toBe('有限');
+    // Only at the end: a company named for one keeps the word.
+    expect(organizationInitialsOf('Co Op Foods')).toBe('CO');
+  });
 });
 
 describe('initialsLang', () => {

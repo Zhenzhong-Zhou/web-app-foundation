@@ -273,21 +273,49 @@ describe('Help', () => {
     expect(screen.getByTestId('where')).toHaveTextContent('/orders');
   });
 
-  it('ends with the version this tab runs, in the reader’s language (ADR-081)', async () => {
+  /**
+   * The product's name, then the release, the build's first seven and the
+   * day it was built (ADR-081, ADR-082). No © line without a holder, as on
+   * a fork, and vitest.config.ts builds the tests with none.
+   */
+  it('ends with the product and the version this tab runs', async () => {
     renderFrame('/orders');
     await userEvent.click(screen.getByRole('button', { name: 'Help' }));
 
-    // The release, the build's first seven, and the day it was built.
     const foot = await within(help()).findByText(
-      'Version 0.7.0 · build 983c1d8 · Oct 22, 2026',
+      'web-app-foundation · Version 0.7.0 · build 983c1d8 · Oct 22, 2026',
     );
     expect(foot).toBeVisible();
     // In small grey text: Typography's color prop takes a palette name, not
     // a path, so the colour is given in sx (#196).
     expect(getComputedStyle(foot).color).toBe('rgba(0, 0, 0, 0.6)');
+    expect(within(help()).queryByText(/^©/)).toBeNull();
   });
 
-  it('gives the version in Chinese too', async () => {
+  it('puts the © line under it where a holder is set', async () => {
+    vi.stubGlobal('__COPYRIGHT__', '© 2026 Zhenzhong (Bob) Zhou');
+    try {
+      renderFrame('/orders');
+      await userEvent.click(screen.getByRole('button', { name: 'Help' }));
+
+      const line = await within(help()).findByText(
+        '© 2026 Zhenzhong (Bob) Zhou',
+      );
+      expect(line).toBeVisible();
+      expect(line.previousElementSibling).toHaveTextContent(
+        /^web-app-foundation · Version 0\.7\.0/,
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('gives the name and the version in Chinese too', async () => {
+    vi.stubGlobal('__APP_NAMES__', {
+      en: 'Panivo',
+      'fr-CA': 'Panivo',
+      'zh-Hans': '品桥',
+    });
     localStorage.setItem('language', 'zh-Hans');
     try {
       renderFrame('/orders');
@@ -298,10 +326,11 @@ describe('Help', () => {
       expect(
         await within(
           screen.getByRole('complementary', { name: '帮助' }),
-        ).findByText('版本 0.7.0 · 构建 983c1d8 · 2026年10月22日'),
+        ).findByText('品桥 · 版本 0.7.0 · 构建 983c1d8 · 2026年10月22日'),
       ).toBeVisible();
     } finally {
       localStorage.clear();
+      vi.unstubAllGlobals();
     }
   });
 
