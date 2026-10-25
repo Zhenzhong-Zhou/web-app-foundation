@@ -125,42 +125,45 @@ export function LinkReturnDialog({
               })}
             </DialogContentText>
 
-            {returns?.length === 0 ? (
-              <Alert severity="info">
-                {intl.formatMessage({
-                  id: 'rmas.link.noneLeft',
-                  defaultMessage:
-                    'Every return on this order already counts against an RMA.',
-                })}
-              </Alert>
-            ) : (
-              <TextField
-                id="link-return"
-                select
-                label={intl.formatMessage({
-                  id: 'rmas.link.return',
-                  defaultMessage: 'Return',
-                })}
-                required
-                fullWidth
-                value={returnId}
-                onChange={(event) => setReturnId(event.target.value)}
-              >
-                {returns?.map((entry) => (
-                  <MenuItem key={entry.id} value={entry.id}>
-                    {formatDate(entry.createdAt)}
-                    {SEPARATOR}
-                    {intl.formatList(
-                      entry.items.map(
-                        (item) =>
-                          `${item.sku} ${formatQuantity(item.quantity)}`,
-                      ),
-                      { type: 'conjunction', style: 'narrow' },
-                    )}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
+            {/* Once the returns are in: a select with no options yet
+                makes MUI warn (#126). */}
+            {returns &&
+              (returns.length === 0 ? (
+                <Alert severity="info">
+                  {intl.formatMessage({
+                    id: 'rmas.link.noneLeft',
+                    defaultMessage:
+                      'Every return on this order already counts against an RMA.',
+                  })}
+                </Alert>
+              ) : (
+                <TextField
+                  id="link-return"
+                  select
+                  label={intl.formatMessage({
+                    id: 'rmas.link.return',
+                    defaultMessage: 'Return',
+                  })}
+                  required
+                  fullWidth
+                  value={returnId}
+                  onChange={(event) => setReturnId(event.target.value)}
+                >
+                  {returns.map((entry) => (
+                    <MenuItem key={entry.id} value={entry.id}>
+                      {formatDate(entry.createdAt)}
+                      {SEPARATOR}
+                      {intl.formatList(
+                        entry.items.map(
+                          (item) =>
+                            `${item.sku} ${formatQuantity(item.quantity)}`,
+                        ),
+                        { type: 'conjunction', style: 'narrow' },
+                      )}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              ))}
           </Stack>
         </DialogContent>
 

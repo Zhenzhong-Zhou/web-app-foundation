@@ -2332,6 +2332,13 @@ a private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R58** *(Link a return waits for the returns, #126)* On SO-DEMO-7's
+  open RMA, in DevTools, Network, Slow 4G, press Link a return: while the
+  order's returns load there is no empty Return field, and then the dialog
+  says every return on this order already counts against an RMA. The
+  console shows no MUI warning about `children`. Found by the e2e test
+  "links a return that arrived before the RMA".
+
 - **MC-R57** *(Recently opened's kinds in sentence case, #223)* Open
   SO-DEMO-1 and a product, then Home: in Recently opened, each tile's kind
   reads Order and Product, not ORDER and PRODUCT, quieter than the
@@ -3156,3 +3163,5 @@ first.
 - 2026-10-24: #213, the recipe's batch size and Take a return's
   quantities read without padding zeros: MC-R55.
 - 2026-10-24: #223, Recently opened's kinds in sentence case: MC-R57.
+- 2026-10-25: #126, Link a return's select drawn once the returns arrive:
+  MC-R58.
