@@ -7,7 +7,8 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 
 import { API_REVISION } from './src/api/revision.gen.ts';
 import { Locale } from './src/api/types.gen.ts';
-import { DARK, LIGHT } from './src/theme/tokens.ts';
+import { INDICATOR_DELAY_MS } from './src/lib/use-delayed-flag.ts';
+import { DARK, LIGHT, MARK, MARK_SHAPE } from './src/theme/tokens.ts';
 
 /**
  * Recompiles the catalogues while `npm run dev` runs (ADR-054).
@@ -253,19 +254,40 @@ function appName(mode: string): Plugin {
   };
 }
 
+/** How long the loading mark waits to appear, so a quick load shows none. */
+const MARK_DELAY_MS = 300;
+
 /**
- * The page's colours from tokens.ts (ADR-055) in index.html: the browser's
- * bar (theme-color) and the page under the loading mark, so neither can
- * drift from the page the app draws (ADR-082).
+ * tokens.ts in index.html (ADR-055, ADR-082): the page's colours, for the
+ * browser's bar (theme-color) and the page under the loading mark; and the
+ * loading mark's shape and colours, MARK_SHAPE and MARK, as ProductMark
+ * draws them, so neither can drift from what the app draws. Its bar waits
+ * the app's own delay for an indicator after the mark.
  */
-function pageColours(): Plugin {
-  return {
-    name: 'page-colours',
-    transformIndexHtml: (html) =>
-      html
-        .replaceAll('%PAGE_LIGHT%', LIGHT.page)
-        .replaceAll('%PAGE_DARK%', DARK.page),
-  };
+const TOKENS: Record<string, string> = {
+  PAGE_LIGHT: LIGHT.page,
+  PAGE_DARK: DARK.page,
+  MARK_BOWL: MARK.light.bowl,
+  MARK_STEM: MARK.light.stem,
+  MARK_ON_DARK_BOWL: MARK.onDark.bowl,
+  MARK_ON_DARK_STEM: MARK.onDark.stem,
+  MARK_TRANSFORM: MARK_SHAPE.transform,
+  MARK_BOWL_PATH: MARK_SHAPE.bowl,
+  MARK_STEM_PATH: MARK_SHAPE.stem,
+  MARK_DELAY: `${MARK_DELAY_MS}ms`,
+  BAR_DELAY: `${MARK_DELAY_MS + INDICATOR_DELAY_MS}ms`,
+};
+
+/** index.html with those values in place of their placeholders; others stay. */
+export function withTokens(html: string): string {
+  return html.replaceAll(
+    /%([A-Z_]+)%/g,
+    (found, key: string) => TOKENS[key] ?? found,
+  );
+}
+
+function fromTokens(): Plugin {
+  return { name: 'from-tokens', transformIndexHtml: withTokens };
 }
 
 /**
@@ -335,7 +357,7 @@ export default defineConfig(({ command, mode }) => ({
     react(),
     recompileCatalogues(),
     appName(mode),
-    pageColours(),
+    fromTokens(),
     versionFile(command),
   ],
   resolve: {

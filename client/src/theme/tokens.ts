@@ -95,6 +95,18 @@ export const MARK = {
   onDark: { bowl: '#776BC6', stem: '#FFFFFF' },
 } as const;
 
+/**
+ * The mark's shape, as the same masters draw it: a bowl and a stem in a
+ * 100 × 100 box, moved by `transform` to sit in its middle. ProductMark
+ * draws it, and so does index.html's loading mark, filled in from here by
+ * vite.config.ts.
+ */
+export const MARK_SHAPE = {
+  transform: 'translate(-2 -1)',
+  bowl: 'M24 12H54A26 26 0 0 1 54 64H40Z',
+  stem: 'M24 12V76A14 14 0 0 0 52 76A87.142857 87.142857 0 0 0 24 12Z',
+} as const;
+
 /** Controls, then panels. Chips are round. */
 export const RADIUS = { control: 6, panel: 8, dialog: 10 } as const;
 

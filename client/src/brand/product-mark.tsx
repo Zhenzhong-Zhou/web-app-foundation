@@ -1,7 +1,7 @@
 import { SvgIcon } from '@mui/material';
 
 import { rem } from '../theme/rem';
-import { MARK } from '../theme/tokens';
+import { MARK, MARK_SHAPE } from '../theme/tokens';
 
 const ON_DARK = {
   '& .bowl': { fill: MARK.onDark.bowl },
@@ -37,12 +37,9 @@ export function ProductMark({
         onDark ? ON_DARK : (theme) => theme.applyStyles('dark', ON_DARK),
       ]}
     >
-      <g transform="translate(-2 -1)">
-        <path className="bowl" d="M24 12H54A26 26 0 0 1 54 64H40Z" />
-        <path
-          className="stem"
-          d="M24 12V76A14 14 0 0 0 52 76A87.142857 87.142857 0 0 0 24 12Z"
-        />
+      <g transform={MARK_SHAPE.transform}>
+        <path className="bowl" d={MARK_SHAPE.bowl} />
+        <path className="stem" d={MARK_SHAPE.stem} />
       </g>
     </SvgIcon>
   );

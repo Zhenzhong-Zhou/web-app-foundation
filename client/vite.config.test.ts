@@ -1,6 +1,10 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
-import { brandSettings } from './vite.config.ts';
+import { MARK, MARK_SHAPE } from './src/theme/tokens.ts';
+import { brandSettings, withTokens } from './vite.config.ts';
 
 /**
  * ADR-082's settings as a build reads them, each with what it falls back
@@ -87,5 +91,40 @@ describe('brandSettings', () => {
     expect(() =>
       brandSettings({ VITE_SITE_URL: 'ftp://example.com' }, 2026),
     ).toThrow(/not the site's address/);
+  });
+});
+
+/**
+ * index.html's loading mark drawn from tokens.ts, as ProductMark is, so a
+ * change to the accent or the mark reaches it too (ADR-082).
+ */
+describe('withTokens', () => {
+  const html = readFileSync(
+    path.join(import.meta.dirname, 'index.html'),
+    'utf8',
+  );
+
+  it('leaves index.html no colour of its own', () => {
+    expect(html).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+    expect(html).not.toMatch(/rgba?\(/);
+  });
+
+  it("fills in the mark's colours and shape, and the waits", () => {
+    const filled = withTokens(html);
+
+    expect(filled).toContain(
+      `fill="${MARK.light.bowl}" d="${MARK_SHAPE.bowl}"`,
+    );
+    expect(filled).toContain(
+      `fill="${MARK.light.stem}" d="${MARK_SHAPE.stem}"`,
+    );
+    expect(filled).toContain(`fill: ${MARK.onDark.bowl};`);
+    expect(filled).toContain(`fill: ${MARK.onDark.stem};`);
+    expect(filled).toContain('loading-mark-appears 0s 300ms forwards');
+    expect(filled).toContain('loading-mark-appears 0s 550ms forwards');
+    // Only the name's placeholder, the app-name plugin's, is left.
+    expect(new Set(filled.match(/%[A-Z_]+%/g))).toEqual(
+      new Set(['%APP_NAME%']),
+    );
   });
 });

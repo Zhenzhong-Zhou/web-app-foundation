@@ -69,14 +69,16 @@
       whose highest, a tooltip's, is 1500. loading.js sets the mode's class
       on <html>, the one MUI's theme then keeps (colorSchemeSelector
       'class'). The mark is docs/brand's panivo-mark.svg and
-      panivo-mark-on-dark.svg, drawn here.
+      panivo-mark-on-dark.svg, its shape and colours tokens.ts's MARK_SHAPE
+      and MARK, and its waits filled in with them by vite.config.ts.
 
       Still up 250 ms after the mark appears, the delay the app's spinner
-      waited, a thin bar slides under it, so a long wake-up (a minute, on
-      Render's free plan) does not look frozen; it stands still under
-      reduced motion. Set apart from the mark, which stays centred and
-      never shifts as the bar appears. No words, since none are loaded yet,
-      and hidden from screen readers, as a progress bar with no name.
+      waits (INDICATOR_DELAY_MS), a thin bar slides under it, so a long
+      wake-up (a minute, on Render's free plan) does not look frozen; it
+      stands still under reduced motion. Set apart from the mark, which
+      stays centred and never shifts as the bar appears. No words, since
+      none are loaded yet, and hidden from screen readers, as a progress bar
+      with no name.
     -->
     <style>
       html,
@@ -97,7 +99,7 @@
       }
       #loading-mark svg {
         visibility: hidden;
-        animation: loading-mark-appears 0s 300ms forwards;
+        animation: loading-mark-appears 0s %MARK_DELAY% forwards;
       }
       @keyframes loading-mark-appears {
         to {
@@ -105,10 +107,10 @@
         }
       }
       html.dark #loading-mark .bowl {
-        fill: #776bc6;
+        fill: %MARK_ON_DARK_BOWL%;
       }
       html.dark #loading-mark .stem {
-        fill: #ffffff;
+        fill: %MARK_ON_DARK_STEM%;
       }
       #loading-mark .bar {
         position: absolute;
@@ -118,9 +120,9 @@
         height: 4px;
         overflow: hidden;
         border-radius: 2px;
-        background: rgb(85 70 184 / 0.2);
+        background: color-mix(in srgb, %MARK_BOWL% 20%, transparent);
         visibility: hidden;
-        animation: loading-mark-appears 0s 550ms forwards;
+        animation: loading-mark-appears 0s %BAR_DELAY% forwards;
       }
       #loading-mark .bar::before {
         content: '';
@@ -130,7 +132,7 @@
         left: 0;
         width: 40%;
         border-radius: inherit;
-        background: #5546b8;
+        background: %MARK_BOWL%;
         animation: loading-bar-slides 1.4s ease-in-out infinite;
       }
       @keyframes loading-bar-slides {
@@ -148,10 +150,10 @@
         }
       }
       html.dark #loading-mark .bar {
-        background: rgb(119 107 198 / 0.3);
+        background: color-mix(in srgb, %MARK_ON_DARK_BOWL% 30%, transparent);
       }
       html.dark #loading-mark .bar::before {
-        background: #776bc6;
+        background: %MARK_ON_DARK_BOWL%;
       }
     </style>
     <script src="/loading.js"></script>
@@ -166,17 +168,9 @@
         width="64"
         height="64"
       >
-        <g transform="translate(-2 -1)">
-          <path
-            class="bowl"
-            fill="#5546B8"
-            d="M24 12H54A26 26 0 0 1 54 64H40Z"
-          />
-          <path
-            class="stem"
-            fill="#1C2230"
-            d="M24 12V76A14 14 0 0 0 52 76A87.142857 87.142857 0 0 0 24 12Z"
-          />
+        <g transform="%MARK_TRANSFORM%">
+          <path class="bowl" fill="%MARK_BOWL%" d="%MARK_BOWL_PATH%" />
+          <path class="stem" fill="%MARK_STEM%" d="%MARK_STEM_PATH%" />
         </g>
       </svg>
       <div class="bar" aria-hidden="true"></div>
