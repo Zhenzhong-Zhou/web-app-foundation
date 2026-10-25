@@ -57,6 +57,12 @@ export const LAST_OWNER_CHANGE = t({
  * These roles of the organization's, with what each grants, in the order
  * asked. An id it has none of is malformed, as a body naming another
  * organization's record is (400).
+ *
+ * Held for key share to the end of the transaction, so a delete, which
+ * holds the role for update, waits for the giving to finish, then counts
+ * the new holder or the invitation naming it and refuses (#179). Without
+ * it, the role could go between this read and the write, which would then
+ * fail on its foreign key.
  */
 export async function grantingRoles(
   tx: Transaction,
@@ -77,7 +83,8 @@ export async function grantingRoles(
         eq(roles.organizationId, organizationId),
         inArray(roles.id, [...roleIds]),
       ),
-    );
+    )
+    .for('key share');
   if (found.length !== new Set(roleIds).size) {
     throw new BadRequestException(
       t({ id: 'users.unknownRole', defaultMessage: 'Unknown role' }),

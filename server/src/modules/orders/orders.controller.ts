@@ -24,7 +24,7 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { PermissionsService } from '../../core/authorization/permissions.service';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
-import { localeOf } from '../../i18n/translate';
+import { localeOf, translate } from '../../i18n/translate';
 import { CloseLineDto } from './dto/close-line.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { DuplicateOrderDto } from './dto/duplicate-order.dto';
@@ -196,14 +196,21 @@ export class OrdersController {
   ): Promise<AddedOrderLineEnvelope> {
     const added = await this.lines.addLine(id, dto);
     // As the order's detail shows it, so one line has one shape, with the
-    // notice when the list had no price.
+    // notice when the list had no price, in the request's language.
     const order = await this.orders.findById(id, await this.sight(user));
     const line = order.lines.find((each) => each.id === added.id);
     if (!line) throw new Error(`Line ${added.id} is not on order ${id}`);
     return {
       line: {
         ...line,
-        ...(added.priceNotice ? { priceNotice: added.priceNotice } : {}),
+        ...(added.priceNotice
+          ? {
+              priceNotice: translate(
+                added.priceNotice,
+                localeOf(user.language),
+              ),
+            }
+          : {}),
       },
     };
   }

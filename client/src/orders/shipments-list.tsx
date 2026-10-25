@@ -167,7 +167,11 @@ export function ShipmentsList({
         return (
           <Paper key={shipment.id} variant="outlined" sx={{ p: 2 }}>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
-              <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
+              <Typography
+                variant="subtitle2"
+                component="h3"
+                sx={{ flexGrow: 1 }}
+              >
                 {[
                   // The organization's day, as its packing slip prints it
                   // (ADR-072), not the day it already is where the reader is.
@@ -180,7 +184,7 @@ export function ShipmentsList({
               </Typography>
 
               {/* Beside the heading, not inside it: a chip is a div, and a
-                  div inside the heading's h6 is invalid markup. */}
+                  div inside the heading's h3 is invalid markup. */}
               {voided && (
                 <Chip
                   label={intl.formatMessage({

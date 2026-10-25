@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, desc, eq, inArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, or, type SQL, sql } from 'drizzle-orm';
 
 import { calendarRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
@@ -56,6 +56,24 @@ export function sightOf(held: ReadonlySet<Permission>): OrderSight {
 
 /** Draft and confirmed: the documents somebody still has to do something about. */
 const OPEN_STATUSES = ['draft', 'confirmed'] as const;
+
+/**
+ * Confirmed, with something still to ship or still to come (ADR-058,
+ * #163): a line not closed short whose quantity is above what has shipped
+ * or been received. The list's `outstanding`, and Home's To ship and To
+ * receive counts, so the card, its rows and the page it opens agree. The
+ * lines are read through their order's index, the organization beside the
+ * order (conventions.md, TenantDb).
+ */
+export function outstandingOrder(): SQL {
+  return sql`(${orders.status} = 'confirmed' and exists (
+    select 1 from ${orderLines}
+    where ${orderLines.orderId} = ${orders.id}
+      and ${orderLines.organizationId} = ${orders.organizationId}
+      and not ${orderLines.isClosedShort}
+      and ${orderLines.quantityOrdered} > ${orderLines.quantityFulfilled}
+  ))`;
+}
 
 /**
  * Reading orders: the paged list and one order's detail.
@@ -129,6 +147,7 @@ export class OrdersService {
       if (paging.where) scope.push(paging.where);
       if (query.partnerId) scope.push(eq(orders.partnerId, query.partnerId));
       if (query.direction) scope.push(eq(orders.direction, query.direction));
+      if (query.outstanding === 'true') scope.push(outstandingOrder());
       // By expected date (ADR-057); an order without one is left out.
       scope.push(...calendarRange(orders.expectedAt, query));
       // Its number, its reference or its partner's name (ADR-056, ADR-071).

@@ -15,7 +15,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { InvoicesService } from '../invoices/invoices.service';
-import { OrdersService } from '../orders/orders.service';
+import { OrdersService, outstandingOrder } from '../orders/orders.service';
 import { ProductionOrdersService } from '../production-orders/production-orders.service';
 import { ReturnAuthorizationsService } from '../return-authorizations/return-authorizations.service';
 import { StockReadsService, stockRowsOf } from '../stock/stock-reads.service';
@@ -316,6 +316,7 @@ export class HomeService {
       case 'toReceive': {
         const page = await this.orders.list({
           status: 'confirmed',
+          outstanding: 'true',
           direction: directionOf(kind),
           sort: 'expectedAt',
           order: 'asc',
@@ -453,7 +454,7 @@ function totalOf(
       const where = and(
         eq(orders.organizationId, organizationId),
         eq(orders.direction, directionOf(kind)),
-        eq(orders.status, 'confirmed'),
+        outstandingOrder(),
       );
       return counted(
         sql`${orders} where ${where}`,

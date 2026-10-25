@@ -407,6 +407,64 @@ describe('Price lists (e2e)', () => {
       expect(added).toMatchObject({ unitPrice: null, currency: null });
       expect(added.priceNotice).toMatch(/This sale is in CAD/);
     });
+
+    // A word on this response, so in the language of the request (#129).
+    it('says why a line is unpriced in the reader’s language', async () => {
+      const s = await setup('alpha');
+      const wholesale = await priceList(s, 'Wholesale CAD', 'sale', 'CAD', {
+        [s.focus]: '18.5',
+      });
+      const usdList = await priceList(s, 'Export USD', 'sale', 'USD', {
+        [s.calm]: '14',
+      });
+
+      const notice = async (language: string) => {
+        const sale = await order(s, s.customer, 'sale', [
+          { variantId: s.focus, quantityOrdered: '1' },
+        ]);
+        return body<{ line: Line }>(
+          await s.agent
+            .post(`/v1/orders/${sale.id}/lines`)
+            .set('Accept-Language', language)
+            .send({ variantId: s.calm, quantityOrdered: '1' })
+            .expect(201),
+        ).line.priceNotice;
+      };
+
+      await assign(s, s.customer, { salePriceListId: wholesale });
+      expect(await notice('fr-CA')).toBe(
+        'Wholesale CAD n’a pas de prix pour CALM-30CT',
+      );
+      expect(await notice('zh-Hans')).toBe(
+        'Wholesale CAD 中没有 CALM-30CT 的价格',
+      );
+
+      // The sale's first line priced in CAD by hand, then the USD list.
+      await assign(s, s.customer, { salePriceListId: usdList });
+      const otherCurrency = async (language: string) => {
+        const sale = await order(s, s.customer, 'sale', [
+          {
+            variantId: s.focus,
+            quantityOrdered: '1',
+            unitPrice: '24.99',
+            currency: 'CAD',
+          },
+        ]);
+        return body<{ line: Line }>(
+          await s.agent
+            .post(`/v1/orders/${sale.id}/lines`)
+            .set('Accept-Language', language)
+            .send({ variantId: s.calm, quantityOrdered: '1' })
+            .expect(201),
+        ).line.priceNotice;
+      };
+      expect(await otherCurrency('fr-CA')).toBe(
+        'Cette vente est en CAD et Export USD fixe ses prix en USD; CALM-30CT a donc été ajouté sans prix',
+      );
+      expect(await otherCurrency('zh-Hans')).toBe(
+        '此销售订单使用 CAD，而 Export USD 以 USD 定价，因此 CALM-30CT 添加时没有价格',
+      );
+    });
   });
 
   describe('after the line has its price', () => {

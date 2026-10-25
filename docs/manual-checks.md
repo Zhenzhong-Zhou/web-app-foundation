@@ -2465,6 +2465,76 @@ private window.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R64** *(a role deleted while it is being given, refused in words,
+  #179)* Giving a role and deleting it at the same moment is too narrow to
+  aim for by hand; the server's e2e tests hold it open, and the delete
+  waits, then says who holds the role or that an invitation names it. By
+  hand, the invitation such a race used to leave: as the demo Owner,
+  invite an address as Warehouse with Copy link, then take its roles away
+  in the database (`delete from invitation_roles where invitation_id =
+  (select id from invitations where email = '…')`). Open the link in a
+  private window, give a name and a password and join: the page reads
+  This invitation has ended, never Internal server error, and the address
+  has no account. On Invited, Resend says the roles it named have been
+  deleted. Found by `/code-review` on #176.
+- **MC-R63** *(no English inside a French or Chinese message, #129)* In
+  Français, then in 简体中文: with 简体中文 checked under Product names
+  required on invoices and a customer set to Chinese, issue an invoice for
+  a product with no Chinese name. The refusal names the language 简体中文,
+  as the product page lists it, never Simplified Chinese, and says to add
+  its 简体中文 name on its product's page. On a sale to a customer with a
+  default price list, add a line for an item not on the list: why it is
+  unpriced reads in the app's language, the list's name and the SKU as
+  typed. Inventory → a row's Ship out, for more than can be taken while
+  some is held: the refusal ends in the app's language, des commandes
+  confirmées or 已确认的订单, and shipping an order more than it holds
+  ends with d’autres commandes or 其他订单. Found reading the source.
+
+- **MC-R62** *(the credit note's sentence a note, a shipment's header an
+  h3, #171)* With VoiceOver on, open CN-000001: the sentence that says
+  what it credits, Credits against INV-000001, is not announced as the
+  page arrives, and is read where it stands, as a note. In Chrome's
+  DevTools, Accessibility, its role is note, not alert. On SO-DEMO-1's
+  Shipments tab, each shipment's header, its day, carrier and tracking
+  number, is a heading level 3 under Shipments, level 2; VoiceOver's
+  rotor lists them so under Headings. Both look as before. Found by the
+  walkthroughs on `walkthroughs-older`.
+
+- **MC-R60** *(a return and an RMA by the organization's day, #174)* With
+  the organization in Vancouver and the computer set to Shanghai, as
+  MC-2606 does, after 5 pm in Vancouver: take a return on a shipped sale.
+  The order's Returns tab heads it with Vancouver's today, the same day
+  as the Shipments tab heads a shipment made now, and its Link to an RMA
+  dialog says Received with that day. Raise an RMA on the same order: its
+  page says raised today, the Returns list's date is today, and its Link
+  a return dialog lists the return by today. Not tomorrow, Shanghai's
+  day, in any of them. Found by the reviews of #172.
+
+- **MC-R61** *(Close order filled only once nothing is left, #158)* As
+  the demo Owner, PO-DEMO-4, with cartons still due: Close order in the
+  summary is outlined, not filled. A purchase received in full but not
+  yet closed shows Close order filled. On SO-DEMO-1, part shipped, Ship
+  is the filled button and Close order outlined under it; on SO-DEMO-QC,
+  shipped in full, there is no Ship and Close order is filled. Found by
+  the walkthroughs on `walkthroughs-older`.
+
+- **MC-R59** *(To ship and To receive, only what is still to come, #163)*
+  As the demo Owner, on Home: To ship leaves out SO-DEMO-QC and
+  SO-DEMO-ZH, shipped in full though still confirmed until closed, and
+  its count is as many as its rows. See all opens Orders with Sales only,
+  Confirmed and Still to ship, listing the same orders; clear Still to
+  ship and the two are back. To receive the same for purchases: one
+  received in full leaves it, one received in part stays, and its See all
+  reads Still to receive. In Français the filter reads Reste à expédier;
+  in 中文, 待发货. Found by the walkthroughs on `walkthroughs-older`.
+
+- **MC-R58** *(Link a return waits for the returns, #126)* On SO-DEMO-7's
+  open RMA, in DevTools, Network, Slow 4G, press Link a return: while the
+  order's returns load there is no empty Return field, and then the dialog
+  says every return on this order already counts against an RMA. The
+  console shows no MUI warning about `children`. Found by the e2e test
+  "links a return that arrived before the RMA".
+
 - **MC-R57** *(Recently opened's kinds in sentence case, #223)* Open
   SO-DEMO-1 and a product, then Home: in Recently opened, each tile's kind
   reads Order and Product, not ORDER and PRODUCT, quieter than the
@@ -3310,3 +3380,18 @@ first.
   rename and MC-1702's logo now at the rail's top.
 - 2026-10-25: ADR-082, the rail's foot and the drawer's pinned, in view at
   any window height: MC-3511 extended.
+- 2026-10-25: #126, Link a return's select drawn once the returns arrive:
+  MC-R58.
+- 2026-10-25: #163, To ship and To receive count only orders with something
+  still to ship or to come, as the Orders list they open: MC-R59.
+- 2026-10-25: #158, Close order outlined while goods are due, filled once
+  nothing is left: MC-R61.
+- 2026-10-25: #174, a return and an RMA dated by the organization's day, as a
+  shipment is: MC-R60.
+- 2026-10-25: #171, the credit note's sentence a note, not an alert, and a
+  shipment's header an h3 under the Shipments tab's h2: MC-R62.
+- 2026-10-25: #179's second half, a role deleted while it is being given
+  refused in words, and an invitation left naming no role ended when
+  accepted: MC-R64.
+- 2026-10-25: #129, the missing-name refusal, a line's price notice and the
+  held-stock refusal wholly in the reader's language: MC-R63.

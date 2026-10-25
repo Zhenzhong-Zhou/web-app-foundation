@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { and, eq, isNotNull, ne } from 'drizzle-orm';
 
 import { orderLines, productVariants } from '../../database/schema';
-import { t } from '../../i18n/translate';
+import { t, type Translatable } from '../../i18n/translate';
 import { listForOrder, priceOnList } from '../price-lists/list-price';
 import { type Tx } from '../stock/stock.service';
 
@@ -31,9 +31,10 @@ export interface LineInput {
 
 /**
  * A line just added, with a word on its price when the list could not supply
- * one (ADR-049). Not stored: it explains this response, not the line.
+ * one (ADR-049). Not stored: it explains this response, not the line, and
+ * the controller words it in the request's language.
  */
-export type AddedLine = OrderLine & { priceNotice?: string };
+export type AddedLine = OrderLine & { priceNotice?: Translatable };
 
 /**
  * Each line snapshots the SKU the way movements do (ADR-023), so an order
@@ -98,7 +99,7 @@ export async function insertLines(
       line.unitPrice !== undefined ? (line.priceSource ?? 'manual') : null;
     let priceListId: string | null =
       line.unitPrice !== undefined ? (line.priceListId ?? null) : null;
-    let priceNotice: string | undefined;
+    let priceNotice: Translatable | undefined;
 
     if (
       line.currency !== undefined &&
@@ -117,7 +118,13 @@ export async function insertLines(
       );
 
       if (listed === null) {
-        priceNotice = `${list.name} has no price for ${variant.sku}`;
+        priceNotice = t(
+          {
+            id: 'orders.priceNotice.notOnList',
+            defaultMessage: '{list} has no price for {sku}',
+          },
+          { list: list.name, sku: variant.sku },
+        );
       } else if (
         order.direction === 'sale' &&
         saleCurrencies.size > 0 &&
@@ -125,7 +132,19 @@ export async function insertLines(
       ) {
         // Unpriced rather than refused: the confirm check names the line,
         // and the person may not control the list (ADR-049).
-        priceNotice = `This sale is in ${[...saleCurrencies].join(', ')} and ${list.name} prices in ${list.currency}, so ${variant.sku} was added without a price`;
+        priceNotice = t(
+          {
+            id: 'orders.priceNotice.otherCurrency',
+            defaultMessage:
+              'This sale is in {currencies} and {list} prices in {currency}, so {sku} was added without a price',
+          },
+          {
+            currencies: [...saleCurrencies],
+            list: list.name,
+            currency: list.currency,
+            sku: variant.sku,
+          },
+        );
       } else {
         unitPrice = listed;
         currency = list.currency;

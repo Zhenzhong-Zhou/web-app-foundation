@@ -394,7 +394,7 @@ describe('Documents as PDF (e2e)', () => {
         .get(`/v1/return-authorizations/${returningScoop}/pdf`)
         .expect(409);
       expect(body<{ message: string }>(refused).message).toMatch(
-        /^SCOOP has no .*Chinese name/,
+        /^SCOOP has no 简体中文 name/,
       );
     });
   });
