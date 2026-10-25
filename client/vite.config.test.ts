@@ -16,7 +16,7 @@ describe('brandSettings', () => {
   });
 
   it("takes a language's own name where it is set", () => {
-    const { name, names } = brandSettings(
+    const { names } = brandSettings(
       { VITE_APP_NAME: 'Panivo', VITE_APP_NAME_ZH_HANS: '品桥' },
       2026,
     );
@@ -26,8 +26,6 @@ describe('brandSettings', () => {
       'fr-CA': 'Panivo',
       'zh-Hans': '品桥',
     });
-    // index.html's and the manifest's one name stays VITE_APP_NAME.
-    expect(name).toBe('Panivo');
   });
 
   it('reads French by its tag too, and leaves English to VITE_APP_NAME', () => {
@@ -45,12 +43,12 @@ describe('brandSettings', () => {
   });
 
   it('falls back to the default name, as an empty setting in .env.example leaves it', () => {
-    const { name, names } = brandSettings(
+    const { names } = brandSettings(
       { VITE_APP_NAME: '', VITE_APP_NAME_ZH_HANS: '' },
       2026,
     );
 
-    expect(name).toBe('web-app-foundation');
+    expect(names.en).toBe('web-app-foundation');
     expect(names['zh-Hans']).toBe('web-app-foundation');
   });
 

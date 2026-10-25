@@ -119,8 +119,7 @@ function recompileCatalogues(): Plugin {
 const DEFAULT_APP_NAME = 'web-app-foundation';
 
 export interface BrandSettings {
-  name: string;
-  /** The name in each language. */
+  /** The name in each language, English's VITE_APP_NAME, the home screen's. */
   names: Record<Locale, string>;
   /** "© 2026 Zhenzhong (Bob) Zhou", or null with no holder. */
   copyright: string | null;
@@ -140,7 +139,6 @@ export function brandSettings(
   const holder = env.VITE_COPYRIGHT_HOLDER;
 
   return {
-    name,
     // English, the language the catalogues are written in, is
     // VITE_APP_NAME's own.
     names: Object.fromEntries(
@@ -193,7 +191,9 @@ function appName(mode: string): Plugin {
     new Date().getFullYear(),
   );
   if (userNodeEnv === undefined) delete process.env.VITE_USER_NODE_ENV;
-  const escaped = settings.name
+  // English's, VITE_APP_NAME, the one name index.html and the manifest hold.
+  const name = settings.names.en;
+  const escaped = name
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
@@ -207,8 +207,8 @@ function appName(mode: string): Plugin {
    * end-to-end suite runs there.
    */
   const manifest = JSON.stringify({
-    name: settings.name,
-    short_name: settings.name,
+    name,
+    short_name: name,
     icons: MANIFEST_ICONS,
     start_url: '/',
     display: 'browser',
