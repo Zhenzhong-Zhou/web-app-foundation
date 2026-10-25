@@ -144,19 +144,21 @@ jobs:
       # but not Render's edge, which keeps a file by its path alone for
       # five minutes: the new build shows because Render empties its edge
       # when the deploy goes live (render.md, As Render shows it). Each
-      # file below must come back as itself, with its own content type: a
-      # file missing from the build comes back as index.html with a 200,
-      # through the /* rewrite. The favicon, then ADR-082's: the manifest
-      # the build writes, the shared link's picture, the emails' mark and
-      # the loading mark's script. With the commit already live, as on a
-      # run by hand, this passes before the new build is out.
+      # file below must come back as itself: a file missing from the build
+      # comes back as index.html with a 200, through the /* rewrite. The
+      # favicon, then ADR-082's: the manifest the build writes, the shared
+      # link's picture, the emails' mark and the loading mark's script, each
+      # with its own content type, except the manifest, which may come back
+      # with any but text/html: browsers read a manifest whatever its type.
+      # With the commit already live, as on a run by hand, this passes
+      # before the new build is out.
       - name: Check the live site
         if: steps.settings.outputs.ready == 'true'
         run: |
           site=${API_HEALTH_URL%/api/health}
           files=(
             '/favicon.svg image/svg+xml'
-            '/manifest.webmanifest application/manifest+json'
+            '/manifest.webmanifest any'
             '/og-image.png image/png'
             '/brand/mail-mark.png image/png'
             '/loading.js application/javascript'
@@ -169,9 +171,13 @@ jobs:
             for entry in "${files[@]}"; do
               read -r file type <<< "$entry"
               answer=$(curl -sS -m 30 -o /dev/null -w '%{http_code} %{content_type}' "$site$file" || true)
-              if [[ "$answer" != "200 $type"* ]]; then
-                wrong="$wrong, $file answered HTTP ${answer:-nothing}, not 200 $type"
+              if [ "$type" = any ]; then
+                [[ "$answer" == '200 '* && "$answer" != '200 text/html'* ]] && continue
+                type='any type but text/html'
+              else
+                [[ "$answer" == "200 $type"* ]] && continue
               fi
+              wrong="$wrong, $file answered HTTP ${answer:-nothing}, not 200 $type"
             done
             seen="/version.json names ${build:-no build}, /api/health/ready says the database is ${database:-not up}${wrong:-, and every file came back as itself}"
             if [ "$build" = "$COMMIT" ] && [ "$database" = up ] && [ -z "$wrong" ]; then

@@ -132,9 +132,10 @@ does not get past the edge, which ignores it (As Render shows it, below).
 `/api/health/ready` must say the database is `up`; and each static file
 the build must carry comes back as itself, since a file the build left
 out comes back as `index.html` with a 200 (the `/*` rewrite):
-`/favicon.svg` as `image/svg+xml`, and ADR-082's, `/manifest.webmanifest`
-as `application/manifest+json`, `/og-image.png` and `/brand/mail-mark.png`
-as `image/png`, and `/loading.js` as `application/javascript`. It only
+`/favicon.svg` as `image/svg+xml`, and ADR-082's, `/og-image.png` and
+`/brand/mail-mark.png` as `image/png`, `/loading.js` as
+`application/javascript`, and `/manifest.webmanifest` as anything but
+`text/html`, since browsers read a manifest whatever its type. It only
 reads. After 10 minutes it fails, saying what each gave; both services
 have been deployed by then, and neither is rolled back. With the commit already live, as on a run by hand, it passes before
 the new build is out.
