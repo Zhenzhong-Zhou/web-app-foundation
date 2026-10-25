@@ -90,11 +90,19 @@ describe('MailBrand', () => {
     );
     const panivo = brand('Panivo <no-reply@example.com>', check);
 
-    // The first answer still out: the header does not wait for it.
-    panivo.start();
+    // The first answer still out: the header does not wait for it, and
+    // start() resolves only with it, so main.ts starts the timers after.
+    let started = false;
+    void panivo.start().then(() => {
+      started = true;
+    });
     expect(check).toHaveBeenCalledTimes(1);
     expect(panivo.withHeader(MAIL).html).not.toContain('<img');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(started).toBe(false);
     answer(false);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(started).toBe(true);
 
     await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
     expect(check).toHaveBeenCalledTimes(2);

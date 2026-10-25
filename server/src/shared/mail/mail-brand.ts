@@ -82,14 +82,16 @@ export class MailBrand implements OnApplicationShutdown {
   }
 
   /**
-   * Checks the mark now and every ten minutes until it answers, in the
-   * background: neither start-up nor a send waits for it. Started by
-   * main.ts once the server listens, as the timers are (HourlyTimer).
+   * Checks the mark now and every ten minutes until it answers; a send
+   * never waits for it. Resolves with the first answer, within the
+   * check's 10 seconds, so main.ts, which starts it once the server
+   * listens, starts the hourly timers after it: they run at once, and on
+   * a free plan most of their emails go out just after the server wakes.
    */
-  start(): void {
+  start(): Promise<void> {
     this.timer = setInterval(() => void this.check(), TEN_MINUTES);
     this.timer.unref();
-    void this.check();
+    return this.check();
   }
 
   /** Asks once. Once the mark answers, no more checks follow. */
