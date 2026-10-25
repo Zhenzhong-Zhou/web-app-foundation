@@ -132,10 +132,14 @@ export function RailTop({
           onClick={onToggle}
           sx={[
             {
-              width: 44,
-              height: 44,
+              // In rem, as a box with words in it is, so the initials still
+              // fit it at Larger text (ADR-075); 44 px at Standard.
+              width: rem(44),
+              height: rem(44),
               flex: 'none',
               borderRadius: 1,
+              // A button takes the browser's own font, not the app's.
+              font: 'inherit',
               '& .unfold': { display: 'none' },
               '&:hover, &.Mui-focusVisible': {
                 '& .face': { display: 'none' },

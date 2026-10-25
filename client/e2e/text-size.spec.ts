@@ -156,6 +156,30 @@ for (const [where, viewport] of [
   });
 }
 
+/**
+ * The folded rail's plate (ADR-082) is a box with words in it, the
+ * organization's initials: it grows with them at Larger, and draws them in
+ * the app's font, which a button does not take by itself.
+ */
+test('at Larger, the folded plate grows with its initials, in the app’s font', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.addInitScript(() => {
+    localStorage.setItem('textSize', 'larger');
+    localStorage.setItem('nav.folded', 'true');
+  });
+  await page.goto('/orders');
+
+  const plate = page.getByRole('button', { name: /Expand navigation \(/ });
+  await expect(plate).toBeVisible();
+  // 44 px at Standard, 125% of it at Larger.
+  expect((await plate.boundingBox())?.width).toBeCloseTo(55, 0);
+  expect(await plate.evaluate((el) => getComputedStyle(el).fontFamily)).toBe(
+    await page.evaluate(() => getComputedStyle(document.body).fontFamily),
+  );
+});
+
 test('at Larger, the invitation page reflows at 320px wide, signed out', async ({
   browser,
   api,

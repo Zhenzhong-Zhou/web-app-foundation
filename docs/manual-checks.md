@@ -2447,7 +2447,9 @@ private window.
   bar, and the menu drawer opens as before. Press «: the rail folds to one
   44 px plate at its top. With no logo, the organization's initials on its
   accent, white on it in Light and dark on the lighter accent in Dark:
-  WIDE Naturals Inc. reads WN, and 清禾药业有限公司 reads 清禾. With a
+  WIDE Naturals Inc. reads WN, and 清禾药业有限公司 reads 清禾, in the
+  same type as the links under it; at Larger text the plate grows with
+  them, and they still fit it. With a
   square logo (Settings → Organization → Branding), the logo on a white
   plate; with a wide wordmark, the initials. Reload folded, DevTools'
   Network on Slow 4G: while the logo loads the plate shows » alone, never
@@ -3403,6 +3405,8 @@ first.
   extended.
 - 2026-10-25: ADR-082's review, the folded plate » alone while a logo is
   read: MC-3510 extended.
+- 2026-10-25: ADR-082's review, the folded plate's initials in the app's
+  type, the plate growing with the text size: MC-3510 extended.
 - 2026-10-25: #126, Link a return's select drawn once the returns arrive:
   MC-R58.
 - 2026-10-25: #163, To ship and To receive count only orders with something
