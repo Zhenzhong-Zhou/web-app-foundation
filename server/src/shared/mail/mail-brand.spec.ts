@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 
 import type { Env } from '../../config/env';
+import type { MailService } from './mail.service';
 import {
   answersAsPng,
   appNameOf,
@@ -34,6 +35,8 @@ describe('MailBrand', () => {
     html: '<p>Hi Mei Lin,</p>',
   };
 
+  const transport = { send: vi.fn(() => Promise.resolve()) };
+
   function brand(
     mailFrom: string,
     check: MarkCheck = () => Promise.resolve(true),
@@ -45,7 +48,7 @@ describe('MailBrand', () => {
     const config = {
       get: (key: keyof Env) => settings[key],
     } as unknown as ConfigService<Env, true>;
-    return new MailBrand(config, check);
+    return new MailBrand(config, check, transport as unknown as MailService);
   }
 
   afterEach(() => {
@@ -135,6 +138,15 @@ describe('MailBrand', () => {
     expect(warn).toHaveBeenCalledTimes(1);
     expect(debug).toHaveBeenCalledTimes(2);
     vi.restoreAllMocks();
+  });
+
+  it('sends the email it is given with its header', async () => {
+    const panivo = brand('Panivo <no-reply@example.com>');
+    await panivo.check();
+
+    await panivo.send(MAIL);
+
+    expect(transport.send).toHaveBeenCalledWith(panivo.withHeader(MAIL));
   });
 
   it('escapes the name, set by whoever deploys it', () => {

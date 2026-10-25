@@ -24,7 +24,6 @@ import {
   translate,
 } from '../../i18n/translate';
 import { escapeHtml } from '../../shared/mail/escape-html';
-import { MailService } from '../../shared/mail/mail.service';
 import { MailBrand } from '../../shared/mail/mail-brand';
 import type { Permission } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
@@ -125,8 +124,7 @@ export class AuthService implements OnModuleInit {
     private readonly permissions: PermissionsService,
     private readonly tokens: AuthTokenService,
     private readonly events: AccountEventService,
-    private readonly mail: MailService,
-    private readonly brand: MailBrand,
+    private readonly mail: MailBrand,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -488,14 +486,12 @@ export class AuthService implements OnModuleInit {
         }),
       );
 
-      await this.mail.send(
-        this.brand.withHeader({
-          to: email,
-          subject: confirm,
-          text: `${hi(name)}\n\n${say(t({ id: 'mail.verify.lead', defaultMessage: 'Confirm your email address:' }))}\n${link}\n\n${expires}`,
-          html: `<p>${hi(escapeHtml(name))}</p><p><a href="${link}">${confirm}</a></p><p>${expires}</p>`,
-        }),
-      );
+      await this.mail.send({
+        to: email,
+        subject: confirm,
+        text: `${hi(name)}\n\n${say(t({ id: 'mail.verify.lead', defaultMessage: 'Confirm your email address:' }))}\n${link}\n\n${expires}`,
+        html: `<p>${hi(escapeHtml(name))}</p><p><a href="${link}">${confirm}</a></p><p>${expires}</p>`,
+      });
     } catch (error) {
       // Broad by design: registration must survive a dead SMTP connection.
       // But that also swallows token-issue failures, so the message must not
@@ -618,14 +614,12 @@ export class AuthService implements OnModuleInit {
       }),
     );
 
-    await this.mail.send(
-      this.brand.withHeader({
-        to: user.email,
-        subject: reset,
-        text: `${hi(user.name)}\n\n${say(t({ id: 'mail.reset.lead', defaultMessage: 'Reset your password:' }))}\n${link}\n\n${expires}`,
-        html: `<p>${hi(escapeHtml(user.name))}</p><p><a href="${link}">${reset}</a></p><p>${expires}</p>`,
-      }),
-    );
+    await this.mail.send({
+      to: user.email,
+      subject: reset,
+      text: `${hi(user.name)}\n\n${say(t({ id: 'mail.reset.lead', defaultMessage: 'Reset your password:' }))}\n${link}\n\n${expires}`,
+      html: `<p>${hi(escapeHtml(user.name))}</p><p><a href="${link}">${reset}</a></p><p>${expires}</p>`,
+    });
 
     this.logger.log(`Password reset link sent for ${user.id}`);
   }

@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 
 import type { Env } from '../../config/env';
 import { escapeHtml } from './escape-html';
-import type { Mail } from './mail.service';
+import { type Mail, MailService } from './mail.service';
 
 const TEN_MINUTES = 10 * 60 * 1000;
 
@@ -63,6 +63,10 @@ export const answersAsPng: MarkCheck = async (url) => {
  * the minutes between the API's deploy and the site's (ADR-081), the
  * header is the name alone. MAIL_FROM with no name gives no header: the
  * mark would stand alone.
+ *
+ * The product's services send through it, never through MailService
+ * itself, so none can leave the header out; an invitation, the
+ * organization's, goes through MailService.
  */
 @Injectable()
 export class MailBrand implements OnApplicationShutdown {
@@ -78,6 +82,7 @@ export class MailBrand implements OnApplicationShutdown {
   constructor(
     config: ConfigService<Env, true>,
     @Inject(MAIL_MARK_CHECK) private readonly answers: MarkCheck,
+    private readonly mail: MailService,
   ) {
     this.name = appNameOf(config.get('MAIL_FROM', { infer: true }));
     this.mark = `${config.get('CLIENT_URL', { infer: true })}/brand/mail-mark.png`;
@@ -114,6 +119,11 @@ export class MailBrand implements OnApplicationShutdown {
 
   onApplicationShutdown(): void {
     clearInterval(this.timer);
+  }
+
+  /** Sends one of the product's emails, opening with the header. */
+  send(mail: Mail): Promise<void> {
+    return this.mail.send(this.withHeader(mail));
   }
 
   /** The product's email, opening with the header; its text with the name. */
