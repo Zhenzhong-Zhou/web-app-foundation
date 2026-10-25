@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import { OWNER_STATE_PATH } from './global-setup';
@@ -56,6 +56,10 @@ function rgb(hex: string): string {
   );
   return `rgb(${r}, ${g}, ${b})`;
 }
+
+/** The animation the progress bar's moving part runs, or none. */
+const slides = (progress: Locator) =>
+  progress.evaluate((bar) => getComputedStyle(bar, '::before').animationName);
 
 const themeColors = (page: Page) =>
   page
@@ -202,12 +206,20 @@ for (const [stored, system] of [
     const colours = await themeColors(page);
     expect(colours.map(rgb)).toEqual([background, background]);
 
-    // The app starts, and reads the session: the mark stays, and the
-    // app's spinner, due after 250 ms, does not show.
+    // The progress bar under the mark waits 250 ms after it, the delay
+    // the app's spinner waited.
+    const progress = page.locator('#loading-mark .bar');
+    await expect(progress).toHaveCSS('animation-delay', '0.55s');
+
+    // The app starts, and reads the session: the mark stays, with the
+    // progress bar sliding under it, and the app's spinner, due after
+    // 250 ms, does not show.
     app.release();
     await session.asked;
     await page.waitForTimeout(500);
     await expect(mark).toBeVisible();
+    await expect(progress).toBeVisible();
+    expect(await slides(progress)).toBe('loading-bar-slides');
     await expect(page.getByRole('progressbar')).toHaveCount(0);
 
     // The app's first page takes its place, in the same mode.
@@ -225,6 +237,17 @@ for (const [stored, system] of [
     ]);
   });
 }
+
+// Under reduced motion the progress bar shows, standing still.
+test('keeps the progress bar still under reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await holdTheApp(page);
+  await page.goto('/login', { waitUntil: 'commit' });
+
+  const progress = page.locator('#loading-mark .bar');
+  await expect(progress).toBeVisible();
+  expect(await slides(progress)).toBe('none');
+});
 
 /**
  * Signed in, the first page's chunk can come well after the rail: the mark

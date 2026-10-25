@@ -85,8 +85,8 @@ function split(Page: ComponentType) {
 export default function App() {
   const intl = useIntl();
   const { loading, error, refresh } = useAuth();
-  // Not while the loading mark is up (ADR-082): it already says the app is
-  // on its way, through a cold start's minute too.
+  // Not while the loading mark is up (ADR-082): it, and the bar under it,
+  // already say the app is on its way, through a cold start's minute too.
   const showSpinner = useDelayedFlag(loading) && !loadingMarkShown();
 
   if (loading) {

@@ -70,6 +70,13 @@
       on <html>, the one MUI's theme then keeps (colorSchemeSelector
       'class'). The mark is docs/brand's panivo-mark.svg and
       panivo-mark-on-dark.svg, drawn here.
+
+      Still up 250 ms after the mark appears, the delay the app's spinner
+      waited, a thin bar slides under it, so a long wake-up (a minute, on
+      Render's free plan) does not look frozen; it stands still under
+      reduced motion. Set apart from the mark, which stays centred and
+      never shifts as the bar appears. No words, since none are loaded yet,
+      and hidden from screen readers, as a progress bar with no name.
     -->
     <style>
       html,
@@ -103,6 +110,49 @@
       html.dark #loading-mark .stem {
         fill: #ffffff;
       }
+      #loading-mark .bar {
+        position: absolute;
+        top: calc(50% + 56px);
+        left: calc(50% - 60px);
+        width: 120px;
+        height: 4px;
+        overflow: hidden;
+        border-radius: 2px;
+        background: rgb(85 70 184 / 0.2);
+        visibility: hidden;
+        animation: loading-mark-appears 0s 550ms forwards;
+      }
+      #loading-mark .bar::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 40%;
+        border-radius: inherit;
+        background: #5546b8;
+        animation: loading-bar-slides 1.4s ease-in-out infinite;
+      }
+      @keyframes loading-bar-slides {
+        from {
+          transform: translateX(-100%);
+        }
+        to {
+          transform: translateX(250%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #loading-mark .bar::before {
+          left: 30%;
+          animation: none;
+        }
+      }
+      html.dark #loading-mark .bar {
+        background: rgb(119 107 198 / 0.3);
+      }
+      html.dark #loading-mark .bar::before {
+        background: #776bc6;
+      }
     </style>
     <script src="/loading.js"></script>
   </head>
@@ -129,6 +179,7 @@
           />
         </g>
       </svg>
+      <div class="bar" aria-hidden="true"></div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

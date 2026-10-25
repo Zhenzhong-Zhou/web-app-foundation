@@ -2386,18 +2386,24 @@ private window.
   then sign out. DevTools → Network: Disable cache, Slow 4G; reload: the
   page is dark from the first moment, never a white flash; after a moment
   the P appears in the middle, a white stem and a lighter purple bowl,
-  still, not spinning or fading. It stays, with no spinner beside or after
-  it, until the sign-in page takes its place, still dark. With VoiceOver
-  on, the mark reads Panivo, image. In 中文 too it stays while 中文's words
-  load, then the page. Sign in and reload, still on Slow 4G: the mark
-  covers the whole window until Home has drawn, and the rail and Home
-  appear together, never the rail beside an empty page or a grey block.
-  Choose Light with the system dark: the same, light. Stop the API and
-  reload: the mark, then Could not reach the server with Try again, the
-  mark gone. Turn throttling off and reload: the page's colour, then the
-  page, the mark seldom if ever. On the live site, after the API has
-  slept (15 minutes with no visit), the first visit shows the mark for up
-  to a minute, with no spinner, then the page.
+  still, not spinning or fading, and a moment later a thin purple bar
+  under it, a short stripe sliding left to right along it, with no
+  words. The P never shifts as the bar comes. They stay, with no spinner
+  beside or after them, until the sign-in page takes their place, still
+  dark. With VoiceOver on, the mark reads Panivo, image, and the bar is
+  not read. In 中文 too they stay while 中文's words load, then the page.
+  Sign in and reload, still on Slow 4G: the mark covers the whole window
+  until Home has drawn, and the rail and Home appear together, never the
+  rail beside an empty page or a grey block. Choose Light with the system
+  dark: the same, light, the bar purple on a pale track. Turn on Reduce
+  motion (macOS: System Settings → Accessibility → Display) and reload:
+  the bar shows with its stripe standing still in the middle. Stop the API
+  and reload: Could not reach the server with Try again, and no mark or
+  bar left over it. Turn throttling off and reload: the page's colour,
+  then the page, the mark seldom and the bar more seldom still. On the
+  live site, after the API has slept (15 minutes with no visit), the first
+  visit shows the mark and its sliding bar for up to a minute, never
+  still as if frozen, with no spinner, then the page.
 
 ## Regressions
 
@@ -3241,3 +3247,5 @@ first.
   setting); MC-3504 to MC-3506.
 - 2026-10-24: ADR-082, the loading mark kept until the first screen is
   on view, with no spinner under it: MC-3506 rewritten.
+- 2026-10-24: ADR-082, a thin bar under the loading mark once it has
+  been up a moment, still under reduced motion: MC-3506 extended.
