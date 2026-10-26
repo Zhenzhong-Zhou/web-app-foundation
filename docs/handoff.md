@@ -8,6 +8,70 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
+- **CI's reliability, #252: PR #254** (`ci-reliability`, 26 October
+  2026), green in every browser (`full-e2e`) and ready to merge. Claude
+  Code Review's check fails on it by design, since the PR changes the
+  review's own workflow, so it was reviewed by hand: `/simplify`,
+  `/code-review`, and `/production-readiness` on its deploys section.
+  - **The review.** On #251 it ended after 4 seconds and 3 turns. "The PR
+    status check" it said it would wait for was its own first step, a
+    Haiku subagent run in the background, not CI, and the action stops at
+    Claude's first result. Now `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`
+    runs every subagent in the foreground; `--append-system-prompt` has
+    it finish every step in the run and never wait for checks or other
+    runs; `--allowedTools` holds the plugin's seven `gh` commands for the
+    whole run, as the action's own examples do; and the check names a
+    third reason, "it ended before its review had finished", and prints
+    each refused tool with what it asked for (`Refused: …`). The evidence
+    is on #252. #253 is filed: re-runs review shallowly (#251's second
+    attempt took 37 seconds, Sonnet alone, three tools refused, without
+    the multi-agent review), with a table of 25 runs. All of this gets
+    its first real test on the next pull request, the emails' design:
+    read its seconds, models and any `Refused:` line there. If a
+    `Refused:` line names a listed tool, the list's format is the first
+    suspect, since the action's examples write it with no space after
+    each comma.
+  - **Install browsers** crawled rather than hung: a shard fetched the
+    browsers' Linux packages (181 packages, 119 MB with every browser)
+    from `azure.archive.ubuntu.com` at about 40 kB/s, still going after
+    20 and 27 minutes on #251's runs, and 49 minutes to finish on the
+    scheduled run of 26 October. The browsers themselves download in
+    seconds. Now each try gets 5 minutes under `timeout`, up to three.
+    Before a retry, the try's `apt-get` is killed, since under `sudo` it
+    runs in a session of its own and outlives `timeout`'s signal; dpkg
+    finishes what was cut off; and the Azure mirror leaves apt's list,
+    so the retry fetches from `archive.ubuntu.com`, keeping what was
+    already fetched. A warning names each try that times out or fails;
+    the step is capped at 17 minutes, each Playwright job at 45. No apt
+    settings of our own: the runner image's `zz-retries` (a 15-second
+    timeout, one retry, then the next mirror) already applies, and it
+    catches a mirror gone silent, not one crawling. The PR's first run
+    stalled on two of three shards and showed the `sudo` gap (fixed in
+    `a1501ae`); its full-e2e run passed, shard 2/3 in two tries: 5
+    minutes crawling on Azure, then the remaining 96.6 MB from
+    `archive.ubuntu.com` in 37 seconds. If stalls keep coming, skipping
+    Azure from the first try is the next step; Playwright's Docker image
+    the heavier one.
+  - **Found by its review, put right by hand on 26 October:** the
+    `production` environment had never been limited to `main`, and both
+    deploy hooks were still repository secrets, though this handoff said
+    so of 24 October. Now the environment allows `main` alone and holds
+    both hooks, and the repository neither (checked through `gh api`).
+    Deploy #35, the first Deploy ever run by hand from Actions, then
+    deployed 95063d6 through the environment, both hooks answering:
+    MC-3425's first half. Actions shows no run by hand before it, so the
+    static site's rebuild of 25 October, after #247, was Render's own
+    Manual Deploy.
+  - **Riding along:** this handoff, `services.md` (UptimeRobot's two
+    monitors, a mailbox on the domain), TypeScript 7 rechecked (still
+    blocked; 7.1 still beta), and "Telling users what changed" in Open
+    decisions. No dependency was taken: `typescript-eslint` 8.72.1 and
+    `@aws-sdk/client-s3` 3.1157.0, published on 26 October, are old
+    enough on 2 November, for the emails' design branch.
+  - **Before deleting the branch:** MC-3425's second half, Actions →
+    Deploy → Run workflow, Use workflow from: `ci-reliability`; the job
+    is skipped and nothing deploys. Then delete `ci-reliability` here and
+    on GitHub.
 - **The organization's square logo: merged as #251** (`square-logo`,
   95063d6) on 26 October 2026, with ADR-060's amendment and its
   as-built. An optional square logo on Branding, beside
@@ -32,8 +96,8 @@ with this one, this one is current.
   the app loads; the © holder (Zhenzhong (Bob) Zhou) and a name per
   language as settings. The three `VITE_` settings were first put on the
   API's Environment by mistake, so the merge's build had no © line; they
-  are now on the static site, rebuilt with Deploy by hand (which also
-  walked MC-3425), and the stray ones are gone from the API. `render.md`
+  are now on the static site, rebuilt with Render's own Manual Deploy,
+  and the stray ones are gone from the API. `render.md`
   now says plainly that every `VITE_` setting goes on the static site.
   The hook is set (`core.hooksPath scripts/hooks`, the old
   `.git/hooks/pre-push` deleted), and "Commits — no placeholder
@@ -59,13 +123,12 @@ with this one, this one is current.
   primary text since 2 September; MUI's codemod moved them into `sx`,
   and a lint rule refuses a dotted colour prop. ADR-055's amendment says
   what building settled, and which four values stay muted on purpose.
-  After the merge: the `production` environment limited to `main`, both
-  hooks moved into it and deleted from the repository's secrets (24
-  October); MC-3424 walked at #231's deploy, an open tab offering the new
-  version; MC-3502 walked; MC-3501 walked, its icon's dark version nearly
-  invisible on a light Chrome theme with the system dark (ADR-082).
-  Deploy by hand (MC-3425) was walked on 25 October, rebuilding the
-  static site after #247.
+  After the merge: MC-3424 walked at #231's deploy, an open tab offering
+  the new version; MC-3502 walked; MC-3501 walked, its icon's dark
+  version nearly invisible on a light Chrome theme with the system dark
+  (ADR-082). The `production` environment's limit to `main` and its
+  hooks, recorded here as done on 24 October, were done only on 26
+  October, and Deploy by hand (MC-3425) first ran then (#254, above).
 - **Merged on 24 October 2026, besides #224:** #227 (#187, the plan
   check at large, with its docs; it filed #225 and #226), #228 (#213,
   quantities with padding zeros), #229 (#223, Recently opened's kinds in
@@ -118,24 +181,7 @@ with this one, this one is current.
   stays old after one (#196's review; ADR-081's correction).
 - **The order now** (Bob, changed on 26 October 2026), with ADR-082 and
   the square logo merged:
-    1. **#252**, a small PR of its own (`ci-reliability`), widened to CI's
-       reliability. A pull request that changes the review's workflow
-       cannot be reviewed by it (as #247), so `/code-review` runs by hand.
-       The review is told not to wait for the pull request's other checks
-       (`--append-system-prompt` in `claude_args`), and the check names
-       that third reason. Playwright's Install browsers stalls in its
-       Linux packages, not the browsers: on #251's run, apt fetching 181
-       packages (119 MB) from `azure.archive.ubuntu.com` hung at package
-       35, after an `Ign:` on an earlier one, on shard 1/3; then on 2/3
-       and 3/3 for over 17 minutes on its docs-only push, while the other
-       shard took 6. So `ci.yml` sets apt to time out and retry quickly
-       (`Acquire::http::Timeout`, `Acquire::Retries`) before the install,
-       gives Install browsers about 10 minutes a try and up to three
-       tries, and each Playwright job about 45 minutes. Caching the
-       browsers would not help, since they are not what stalls. If stalls
-       continue, Playwright's Docker image is the heavier fix, though the
-       jobs start containers of their own. The first docs commit, this
-       handoff's, rides in it.
+    1. **#252**, CI's reliability: PR #254, above, to merge.
     2. **The emails' design**: one layout for every email, the invitation
        included without Panivo's header (the system's font, a phone's
        width, the main link as a button mail apps draw, the small print
@@ -762,16 +808,17 @@ with this one, this one is current.
   #212, #214, #221, #222, #225, #226 and #232 open; #213, #223 and #230
   closed by #228, #229 and #231. From 24 and 25 October: #233, #241,
   #242, #244, #245, #246 and #248 open; #158 retitled, its filled button
-  fixed by #236. From 26 October: #249, #250 and #252 open; #246 closed
-  with #251. `gh issue list` to review.
+  fixed by #236. From 26 October: #249, #250, #252 and #253 open, #252
+  closing with #254; #246 closed with #251. `gh issue list` to review.
 - **Branches:** prune the merged ones, `after-adr-070` among them
   (`scripts/prune-branches.sh`).
 
 ### Still to do, in code
 
-- **#252's small PR** (`ci-reliability`), widened to CI's reliability,
-  then the emails' design with `/build-from-brief` riding along, and the
-  error tracker (the order, *Now*).
+- **#254** (#252, CI's reliability) to merge, then the emails' design
+  with `/build-from-brief` riding along, and the error tracker (the
+  order, *Now*). The emails' design is the review's first real test
+  after #254, and #253's.
 - `@mui/codemod@9.5.0`'s command crashes on yargs 18, which could be
   reported to MUI.
 - **From #231.** `e2e/text-size.spec.ts` still opens every screen in one
@@ -1721,6 +1768,9 @@ in ADR-050's amendment.
   warning after a push can be false, since the clone tracks only `main`:
   `git ls-remote origin <branch>` says whether the commit is there before
   anything is pushed again.
+- **A pull request opened with `gh pr create --label full-e2e`** runs
+  Chromium only the first time: the label is not in the opened event, so
+  every browser runs from the next push or a re-label (#254).
 - **Every pull request** that changes what a person sees takes pictures
   before and after and compares them (`npm run screenshots:compare`), and
   its Claude Code Review comment is read before merging. The README's

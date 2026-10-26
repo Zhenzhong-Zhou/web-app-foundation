@@ -171,6 +171,13 @@ cancels an older one, waiting or deploying, so only the newest commit's
 client goes live; and CI on `main` keeps one run waiting, so of several
 merges in quick succession only the newest is checked and deployed.
 
+**A shard that cannot install its browsers** fails `main`'s CI, so
+nothing deploys until it passes: Actions → CI → the run → Re-run failed
+jobs, and its Deploy follows once the re-run passes. Install browsers
+gives apt three tries of 5 minutes, the last two from
+`archive.ubuntu.com` (`ci.yml`), so this should be rare. Before #254 such
+a stall passed late instead, holding a run for up to 49 minutes.
+
 ### As Render shows it since 23 October 2026
 
 | Setting            | Web service (the API)                     | Static site (the client)                         |
@@ -261,8 +268,10 @@ the deploy went live: a purge, not an expiry.
 
 Before the pull request that adds `deploy.yml` merges, so that its merge
 deploys this way. The first five were done on 22 October 2026; the header
-rules took effect at once, without a deploy. The sixth waits for #196's
-merge.
+rules took effect at once, without a deploy. The sixth was meant for
+after #196's merge but was done only on 26 October 2026, when #254's
+review found it undone; Deploy #35, run by hand, then deployed through
+the environment (MC-3425).
 
 1. **The deploy hooks, as secrets.** Render → the web service → Settings →
    Deploy Hook: copy it. GitHub → the repository → Settings → Secrets and
