@@ -2,8 +2,8 @@ import { Box, Typography } from '@mui/material';
 
 import { useBranding } from '../auth/use-branding';
 import { initialsLang, organizationInitialsOf } from '../lib/person-initials';
-import { rem } from '../theme/rem';
-import { LOGO_ON_PLATE, logoSrc, SQUARE_LOGO_ON_PLATE } from './logo';
+import { LOGO_ON_PLATE, logoSrc } from './logo';
+import { Plate } from './plate';
 
 /**
  * The organization's place in the corner (ADR-055, ADR-060): its logo when
@@ -32,21 +32,12 @@ export function OrganizationMark({
   const darkRail = onRail && branding?.rail === 'dark';
 
   const squareLogo = (fileId: string, alt: string) => (
-    <Box
-      sx={[
-        { display: 'flex', flex: 'none' },
-        darkRail ? SQUARE_LOGO_ON_PLATE : {},
-        (theme) => theme.applyStyles('dark', SQUARE_LOGO_ON_PLATE),
-      ]}
-    >
-      <Box
-        component="img"
-        src={logoSrc(fileId, 'thumb')}
-        alt={alt}
-        // In rem, so it grows with the name beside it.
-        sx={{ display: 'block', maxWidth: rem(32), maxHeight: rem(32) }}
-      />
-    </Box>
+    <Plate
+      size="beside"
+      src={logoSrc(fileId, 'thumb')}
+      alt={alt}
+      plated={darkRail || 'dark'}
+    />
   );
 
   if (initials && branding?.squareLogoFileId) {

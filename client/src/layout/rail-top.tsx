@@ -12,11 +12,10 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useBranding } from '../auth/use-branding';
-import { initialsLang, organizationInitialsOf } from '../lib/person-initials';
+import { organizationInitialsOf } from '../lib/person-initials';
 import { rem } from '../theme/rem';
-import { LIGHT, TYPE } from '../theme/tokens';
-import { LOGO_PLATE } from './logo';
 import { OrganizationMark } from './organization-mark';
+import { Plate } from './plate';
 import { RAIL_FOCUS_RING } from './rail';
 import { usePlate } from './use-plate';
 
@@ -138,61 +137,39 @@ export function RailTop({
           }
           aria-expanded={false}
           onClick={onToggle}
-          sx={[
-            {
-              // In rem, as a box with words in it is, so the initials still
-              // fit it at Larger text (ADR-075); 44 px at Standard.
-              width: rem(44),
-              height: rem(44),
-              flex: 'none',
-              borderRadius: 1,
-              // A button takes the browser's own font, not the app's.
-              font: 'inherit',
-              '& .unfold': { display: 'none' },
-              '&:hover, &.Mui-focusVisible': {
-                '& .face': { display: 'none' },
-                '& .unfold': { display: 'block' },
-              },
-              '&.Mui-focusVisible': RAIL_FOCUS_RING,
+          sx={{
+            // In rem, as a box with words in it is, so the initials still
+            // fit it at Larger text (ADR-075); 44 px at Standard.
+            width: rem(44),
+            height: rem(44),
+            flex: 'none',
+            borderRadius: 1,
+            // A button takes the browser's own font, not the app's.
+            font: 'inherit',
+            '& .unfold': { display: 'none' },
+            '&:hover, &.Mui-focusVisible': {
+              '& .face': { display: 'none' },
+              '& .unfold': { display: 'block' },
             },
-            !shown
-              ? {
-                  // White in both modes, as the logo's plate is, and while
-                  // the logo is read; the arrow takes Light's text on it.
-                  // Its edge shows on a white rail.
-                  bgcolor: LOGO_PLATE,
-                  color: LIGHT.text,
-                  border: 1,
-                  borderColor: 'rail.divider',
-                }
-              : {
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                  fontWeight: 700,
-                  fontSize: rem(TYPE.section),
-                },
-          ]}
+            '&.Mui-focusVisible': RAIL_FOCUS_RING,
+          }}
         >
-          {'src' in face && (
-            <Box
-              component="img"
-              className="face"
-              src={face.src}
-              alt=""
-              // In rem, as the plate is, so it grows with the plate at Large
-              // and Larger text; 28 px at Standard (ADR-060, amended).
-              sx={{ maxWidth: rem(28), maxHeight: rem(28) }}
+          {/* The initials in the colours a contained button takes, so they
+              pass in either mode; the white plate's edge shows on a white
+              rail. */}
+          <Plate
+            size="folded"
+            face={face}
+            initials={initials}
+            accent="primary.main"
+            onAccent="primary.contrastText"
+            edge="rail.divider"
+          >
+            <KeyboardDoubleArrowRight
+              className={face.kind === 'measuring' ? undefined : 'unfold'}
+              fontSize="small"
             />
-          )}
-          {shown && (
-            <span className="face" aria-hidden lang={initialsLang(shown)}>
-              {shown}
-            </span>
-          )}
-          <KeyboardDoubleArrowRight
-            className={face.kind === 'measuring' ? undefined : 'unfold'}
-            fontSize="small"
-          />
+          </Plate>
         </ButtonBase>
       </Tooltip>
       {measuring}

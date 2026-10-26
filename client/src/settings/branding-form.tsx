@@ -22,12 +22,8 @@ import { defineMessages, useIntl } from 'react-intl';
 
 import type { UploadedFileEnvelope } from '../api/types.gen';
 import { SettingsSection } from '../components/settings-section';
-import {
-  LOGO_ON_PLATE,
-  LOGO_PLATE,
-  logoSrc,
-  SQUARE_LOGO_ON_PLATE,
-} from '../layout/logo';
+import { LOGO_ON_PLATE, LOGO_PLATE, logoSrc } from '../layout/logo';
+import { Plate } from '../layout/plate';
 import { usePlate } from '../layout/use-plate';
 import { api, messageFor } from '../lib/api';
 import type { OrganizationLogoKind } from '../lib/api-names';
@@ -36,7 +32,7 @@ import { useSubmit } from '../lib/use-submit';
 import { nearStatus, normalizeHex, safeAccent } from '../theme/accent';
 import { DEFAULT_BRAND } from '../theme/brand-store';
 import { rem } from '../theme/rem';
-import { RAILS, TYPE } from '../theme/tokens';
+import { RAILS } from '../theme/tokens';
 
 /** ADR-060's six, each tested in both modes: none needs adjusting. */
 const PRESETS = [
@@ -572,24 +568,11 @@ export function BrandingForm({
                       sx={{ alignItems: 'center', minWidth: 0 }}
                     >
                       {squareLogo && (
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            flex: 'none',
-                            ...(dark ? SQUARE_LOGO_ON_PLATE : {}),
-                          }}
-                        >
-                          <Box
-                            component="img"
-                            src={logoSrc(squareLogo, 'thumb')}
-                            alt=""
-                            sx={{
-                              display: 'block',
-                              maxWidth: rem(32),
-                              maxHeight: rem(32),
-                            }}
-                          />
-                        </Box>
+                        <Plate
+                          size="beside"
+                          src={logoSrc(squareLogo, 'thumb')}
+                          plated={dark}
+                        />
                       )}
                       <Typography
                         variant="subtitle1"
@@ -625,43 +608,14 @@ export function BrandingForm({
                     pl: 1.5,
                   }}
                 >
-                  <Box
-                    sx={[
-                      {
-                        width: rem(44),
-                        height: rem(44),
-                        boxSizing: 'border-box',
-                        borderRadius: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      },
-                      face.kind === 'initials'
-                        ? {
-                            bgcolor: accent,
-                            color: '#FFFFFF',
-                            fontWeight: 700,
-                            fontSize: rem(TYPE.section),
-                          }
-                        : {
-                            bgcolor: LOGO_PLATE,
-                            border: 1,
-                            borderColor: colours.divider,
-                          },
-                    ]}
-                  >
-                    {'src' in face && (
-                      <Box
-                        component="img"
-                        src={face.src}
-                        alt=""
-                        sx={{ maxWidth: rem(28), maxHeight: rem(28) }}
-                      />
-                    )}
-                    {face.kind === 'initials' && (
-                      <span lang={initialsLang(initials)}>{initials}</span>
-                    )}
-                  </Box>
+                  <Plate
+                    size="folded"
+                    face={face}
+                    initials={initials}
+                    accent={accent}
+                    onAccent="#FFFFFF"
+                    edge={colours.divider}
+                  />
                 </Box>
               </Stack>
             );

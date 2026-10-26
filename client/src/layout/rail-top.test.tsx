@@ -77,6 +77,9 @@ const plate = () =>
     name: /^(WN, )?Expand navigation \(WIDE Naturals Inc\.\)$/,
   });
 
+/** The plate as drawn inside the button, by Plate (plate.tsx). */
+const drawnPlate = () => plate().firstElementChild!;
+
 /**
  * The rail's top (ADR-082, decision 11): the organization's, its logo or
  * name with the fold button, and folded, one plate that expands it.
@@ -122,7 +125,7 @@ describe('RailTop', () => {
       'WN, Expand navigation (WIDE Naturals Inc.)',
     );
     expect(plate()).toHaveAttribute('aria-expanded', 'false');
-    const drawn = getComputedStyle(plate());
+    const drawn = getComputedStyle(drawnPlate());
     expect(drawnIn('light', drawn.backgroundColor)).toBe('#5546B8');
     expect(drawnIn('light', drawn.color)).toBe('#FFFFFF');
     expect(
@@ -192,7 +195,7 @@ describe('RailTop', () => {
       larger: '35px × 35px',
     });
     // On the white plate, as a square main logo is, until hover or focus.
-    expect(plate()).toHaveStyle({ backgroundColor: LOGO_PLATE });
+    expect(drawnPlate()).toHaveStyle({ backgroundColor: LOGO_PLATE });
     expect(
       plate().querySelector('[data-testid="KeyboardDoubleArrowRightIcon"]'),
     ).toHaveClass('unfold');
