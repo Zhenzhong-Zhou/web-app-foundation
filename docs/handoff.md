@@ -68,10 +68,9 @@ with this one, this one is current.
     decisions. No dependency was taken: `typescript-eslint` 8.72.1 and
     `@aws-sdk/client-s3` 3.1157.0, published on 26 October, are old
     enough on 2 November, for the emails' design branch.
-  - **Before deleting the branch:** MC-3425's second half, Actions →
-    Deploy → Run workflow, Use workflow from: `ci-reliability`; the job
-    is skipped and nothing deploys. Then delete `ci-reliability` here and
-    on GitHub.
+  - **MC-3425's second half, walked:** Deploy #36, run by hand from
+    `ci-reliability` (a1501ae), skipped its job and deployed nothing.
+    After the merge, delete `ci-reliability` here and on GitHub.
 - **The organization's square logo: merged as #251** (`square-logo`,
   95063d6) on 26 October 2026, with ADR-060's amendment and its
   as-built. An optional square logo on Branding, beside
