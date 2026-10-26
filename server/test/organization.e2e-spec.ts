@@ -1,6 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import sharp from 'sharp';
 
 import {
   type Database,
@@ -13,6 +12,7 @@ import {
   createE2eApp,
   registerOrganization,
 } from './utils/fixtures';
+import { solidPng } from './utils/images';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -23,6 +23,7 @@ interface OrganizationResponse {
   licenceNotInForcePolicy: string;
   licenceExpiredPolicy: string;
   licenceRequired: boolean;
+  squareLogoFileId: string | null;
   address: {
     line1: string;
     line2: string | null;
@@ -249,6 +250,7 @@ describe('Organization (e2e)', () => {
         organization: {
           branding: {
             logoFileId: string | null;
+            squareLogoFileId: string | null;
             accentColor: string | null;
             rail: string;
             logoOnDocuments: boolean;
@@ -260,16 +262,16 @@ describe('Organization (e2e)', () => {
       return me.organization.branding;
     }
 
-    async function logo(agent: Agent): Promise<string> {
-      const png = await sharp({
-        create: { width: 400, height: 160, channels: 4, background: '#2a6' },
-      })
-        .png()
-        .toBuffer();
+    /** A logo or a square logo uploaded, not yet attached: its id. */
+    async function uploaded(
+      agent: Agent,
+      route: 'logo' | 'square-logo',
+    ): Promise<string> {
+      const [width, height] = route === 'logo' ? [400, 160] : [300, 300];
       return body<{ file: { id: string } }>(
         await agent
-          .post('/v1/files/logo')
-          .attach('file', png, 'logo.png')
+          .post(`/v1/files/${route}`)
+          .attach('file', await solidPng(width, height), `${route}.png`)
           .expect(201),
       ).file.id;
     }
@@ -278,6 +280,7 @@ describe('Organization (e2e)', () => {
       const org = await registerOrganization(app, 'alpha');
       expect(await branding(org.agent)).toEqual({
         logoFileId: null,
+        squareLogoFileId: null,
         accentColor: null,
         rail: 'dark',
         logoOnDocuments: true,
@@ -326,8 +329,8 @@ describe('Organization (e2e)', () => {
 
     it('attaches a new logo and releases the one it replaces', async () => {
       const org = await registerOrganization(app, 'alpha');
-      const first = await logo(org.agent);
-      const second = await logo(org.agent);
+      const first = await uploaded(org.agent, 'logo');
+      const second = await uploaded(org.agent, 'logo');
       const row = async (id: string) =>
         (await db.select().from(files).where(eq(files.id, id)))[0];
 
@@ -359,14 +362,69 @@ describe('Organization (e2e)', () => {
       expect((await row(second)).releasedAt).not.toBeNull();
     });
 
+    it('attaches a new square logo and releases the one it replaces', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const first = await uploaded(org.agent, 'square-logo');
+      const second = await uploaded(org.agent, 'square-logo');
+      const row = async (id: string) =>
+        (await db.select().from(files).where(eq(files.id, id)))[0];
+      const save = (squareLogoFileId: string | null) =>
+        org.agent
+          .patch('/v1/organization')
+          .send({ squareLogoFileId })
+          .expect(204);
+
+      await save(first);
+      expect((await branding(org.agent)).squareLogoFileId).toBe(first);
+      expect((await current(org.agent)).squareLogoFileId).toBe(first);
+      expect((await row(first)).attachedAt).not.toBeNull();
+
+      await save(second);
+      expect((await row(first)).releasedAt).not.toBeNull();
+      expect((await row(second)).attachedAt).not.toBeNull();
+
+      await save(null);
+      expect((await branding(org.agent)).squareLogoFileId).toBeNull();
+      expect((await row(second)).releasedAt).not.toBeNull();
+
+      const entries = await db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, 'organization.updated'))
+        .orderBy(auditLog.id);
+      expect(entries.map((entry) => entry.payload)).toEqual([
+        { squareLogoFileId: { from: null, to: first } },
+        { squareLogoFileId: { from: first, to: second } },
+        { squareLogoFileId: { from: second, to: null } },
+      ]);
+    });
+
+    it('takes each logo only as its own kind', async () => {
+      const org = await registerOrganization(app, 'alpha');
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ squareLogoFileId: await uploaded(org.agent, 'logo') })
+        .expect(400);
+      await org.agent
+        .patch('/v1/organization')
+        .send({ logoFileId: await uploaded(org.agent, 'square-logo') })
+        .expect(400);
+    });
+
     it('lets another organization attach none of them', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const beta = await registerOrganization(app, 'beta');
-      const theirs = await logo(alpha.agent);
+      const theirs = await uploaded(alpha.agent, 'logo');
+      const theirSquare = await uploaded(alpha.agent, 'square-logo');
 
       await beta.agent
         .patch('/v1/organization')
         .send({ logoFileId: theirs })
+        .expect(400);
+      await beta.agent
+        .patch('/v1/organization')
+        .send({ squareLogoFileId: theirSquare })
         .expect(400);
     });
   });

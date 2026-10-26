@@ -41,6 +41,8 @@ export class DeletionOrganization {
 /** The organization's look, applied on load (ADR-060). */
 export class OrganizationBranding {
   logoFileId!: string | null;
+  /** The square logo (ADR-060, amended): the folded rail's plate first. */
+  squareLogoFileId!: string | null;
   accentColor!: string | null;
   rail!: OrganizationRail;
   logoOnDocuments!: boolean;

@@ -32,6 +32,14 @@ Sous **Stock**, choisissez ce que fait le lancement d’un ordre quand la licenc
 1. Pour **Pas encore en vigueur** et pour **Expirée**, choisissez **Refuser**, **Refuser sauf dérogation, avec un motif**, ou **Permettre, et l’enregistrer**.
 2. Cochez **Une recette doit porter une licence pour être lancée** si chaque ordre en a besoin, puis appuyez sur **Enregistrer la politique de licences**.
 
+## Image de marque {#branding}
+
+Sous **Image de marque**, choisissez l’apparence de l’application pour tout le monde ici.
+
+1. Sous **Logo**, appuyez sur **Téléverser un logo**. Large ou carré, il s’affiche en haut de la barre latérale, et s’imprime sur les factures, les notes de crédit et les bordereaux d’expédition, sauf si **Documents** en décide autrement.
+2. Sous **Logo carré**, appuyez sur **Téléverser un logo carré** pour les petits espaces, comme la barre latérale repliée. La ligne en dessous indique ce qui s’y affiche sans lui.
+3. Choisissez une **Couleur** et la teinte de la **Barre latérale**, puis appuyez sur **Enregistrer l’image de marque**.
+
 ## Déconnexion après inactivité {#idle-sign-out}
 
 Sous **Sécurité**, pour les ordinateurs que plusieurs personnes partagent.
@@ -52,5 +60,6 @@ Une minute avant, un avertissement propose **Rester connecté**. Le réglage ne 
 - La devise de base ne peut plus changer une fois que du stock porte une valeur dans cette devise.
 - Un prochain numéro inférieur à un numéro déjà attribué est refusé; le plus bas permis est proposé.
 - Deux types de documents avec le même préfixe imprimeraient les mêmes numéros : donnez à chacun le sien.
+- Un logo carré doit être presque carré, au plus 5 : 4 dans un sens comme dans l’autre, et faire au moins 128 pixels de côté. Utilisez une image large comme logo principal.
 
 Voir aussi [Taux de change](/settings/exchange-rates) et [Listes de prix](/settings/price-lists).

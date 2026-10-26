@@ -56,6 +56,7 @@ export class OrganizationProfile {
   requiredNameLanguages!: Locale[];
   /** Branding (ADR-060). */
   logoFileId!: string | null;
+  squareLogoFileId!: string | null;
   accentColor!: string | null;
   rail!: OrganizationRail;
   logoOnDocuments!: boolean;

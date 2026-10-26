@@ -61,6 +61,10 @@ try {
       '--format',
       'simple',
       '--throws',
+      // As written, so a no-break space a message needs is kept: "5 : 4"
+      // never split across two lines. Otherwise formatjs turns it into a
+      // plain space, as \s matches it.
+      '--preserve-whitespace',
       '--out-file',
       extracted,
     ],

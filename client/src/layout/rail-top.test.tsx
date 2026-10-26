@@ -5,18 +5,23 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import { drawnIn } from '../test/drawn-colour';
+import { loads } from '../test/image-loads';
 import { renderWithAuth } from '../test/render-with-auth';
+import { atTextSizes } from '../test/text-sizes';
 import { themeFor } from '../theme';
+import { LOGO_PLATE } from './logo';
 import { RailTop } from './rail-top';
 
 function renderTop({
   folded,
   name = 'WIDE Naturals Inc.',
   logoFileId = null,
+  squareLogoFileId = null,
 }: {
   folded: boolean;
   name?: string;
   logoFileId?: string | null;
+  squareLogoFileId?: string | null;
 }) {
   const onToggle = vi.fn();
   const view = renderWithAuth(
@@ -30,6 +35,7 @@ function renderTop({
         name,
         branding: {
           logoFileId,
+          squareLogoFileId,
           accentColor: null,
           rail: 'dark',
           logoOnDocuments: true,
@@ -42,19 +48,24 @@ function renderTop({
   return { ...view, onToggle };
 }
 
-/** The logo loaded at its own size, as the browser reads it. */
-function loads(container: HTMLElement, width: number, height: number) {
-  const image = container.querySelector<HTMLImageElement>('img[hidden]')!;
-  Object.defineProperty(image, 'naturalWidth', { value: width });
-  Object.defineProperty(image, 'naturalHeight', { value: height });
-  fireEvent.load(image);
-}
+/**
+ * The plate's image at Standard and at Larger text, as the browser draws
+ * it: in rem, it grows with the plate (ADR-060, amended).
+ */
+const sizes = (image: Element | null) =>
+  atTextSizes(() => {
+    const { maxWidth, maxHeight } = getComputedStyle(image!);
+    return `${maxWidth} × ${maxHeight}`;
+  });
 
 /** Named with the initials it shows, or alone with a logo (WCAG 2.5.3). */
 const plate = () =>
   screen.getByRole('button', {
     name: /^(WN, )?Expand navigation \(WIDE Naturals Inc\.\)$/,
   });
+
+/** The plate as drawn inside the button, by Plate (plate.tsx). */
+const drawnPlate = () => plate().firstElementChild!;
 
 /**
  * The rail's top (ADR-082, decision 11): the organization's, its logo or
@@ -101,7 +112,7 @@ describe('RailTop', () => {
       'WN, Expand navigation (WIDE Naturals Inc.)',
     );
     expect(plate()).toHaveAttribute('aria-expanded', 'false');
-    const drawn = getComputedStyle(plate());
+    const drawn = getComputedStyle(drawnPlate());
     expect(drawnIn('light', drawn.backgroundColor)).toBe('#5546B8');
     expect(drawnIn('light', drawn.color)).toBe('#FFFFFF');
     expect(
@@ -139,6 +150,52 @@ describe('RailTop', () => {
       'src',
       '/api/v1/files/square',
     );
+    expect(sizes(plate().querySelector('img'))).toEqual({
+      standard: '28px × 28px',
+      larger: '35px × 35px',
+    });
+  });
+
+  /**
+   * The plate's first choice (ADR-060, amended): known square already, so
+   * nothing is measured, and drawn from the small file the plate needs.
+   */
+  it.each([
+    ['without a main logo', null],
+    ['ahead of a wide main logo', 'wordmark'],
+  ])('puts the square logo on the plate at once, %s', (_, logoFileId) => {
+    const { container } = renderTop({
+      folded: true,
+      logoFileId,
+      squareLogoFileId: 'mark',
+    });
+
+    expect(container.querySelector('img[hidden]')).toBeNull();
+    expect(plate()).not.toHaveTextContent('WN');
+    expect(plate()).toHaveAccessibleName(
+      'Expand navigation (WIDE Naturals Inc.)',
+    );
+    const image = plate().querySelector('img');
+    expect(image).toHaveAttribute('src', '/api/v1/files/mark?size=thumb');
+    expect(sizes(image)).toEqual({
+      standard: '28px × 28px',
+      larger: '35px × 35px',
+    });
+    // On the white plate, as a square main logo is, until hover or focus.
+    expect(drawnPlate()).toHaveStyle({ backgroundColor: LOGO_PLATE });
+    expect(
+      plate().querySelector('[data-testid="KeyboardDoubleArrowRightIcon"]'),
+    ).toHaveClass('unfold');
+  });
+
+  it('measures nothing open either, with a square logo', () => {
+    const { container } = renderTop({
+      folded: false,
+      logoFileId: 'wordmark-open',
+      squareLogoFileId: 'mark',
+    });
+
+    expect(container.querySelector('img[hidden]')).toBeNull();
   });
 
   it('keeps the initials for a wide logo, a wordmark', () => {

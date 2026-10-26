@@ -74,6 +74,7 @@ export interface CurrentSession {
     /** How the app looks, and what counts as expiring (ADR-060). */
     branding: {
       logoFileId: string | null;
+      squareLogoFileId: string | null;
       accentColor: string | null;
       rail: OrganizationRail;
       logoOnDocuments: boolean;
@@ -377,6 +378,7 @@ export class AuthService implements OnModuleInit {
               id: organizations.id,
               name: organizations.name,
               logoFileId: organizations.logoFileId,
+              squareLogoFileId: organizations.squareLogoFileId,
               accentColor: organizations.accentColor,
               rail: organizations.rail,
               logoOnDocuments: organizations.logoOnDocuments,
@@ -432,6 +434,7 @@ export class AuthService implements OnModuleInit {
         name: organization.name,
         branding: {
           logoFileId: organization.logoFileId,
+          squareLogoFileId: organization.squareLogoFileId,
           accentColor: organization.accentColor,
           rail: organization.rail,
           logoOnDocuments: organization.logoOnDocuments,

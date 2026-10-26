@@ -28,6 +28,7 @@ function session(
       name: organization.name,
       branding: {
         logoFileId: null,
+        squareLogoFileId: null,
         accentColor: null,
         rail: 'dark',
         logoOnDocuments: true,

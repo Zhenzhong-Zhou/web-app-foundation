@@ -22,6 +22,7 @@ export type SessionUser = {
 
 export type OrganizationBranding = {
   logoFileId: string | null;
+  squareLogoFileId: string | null;
   accentColor: string | null;
   rail: 'dark' | 'light';
   logoOnDocuments: boolean;
@@ -844,7 +845,7 @@ export type FileSizes = {
 
 export type StoredFile = {
   id: string;
-  kind: 'logo' | 'product_image' | 'avatar';
+  kind: 'logo' | 'product_image' | 'avatar' | 'square_logo';
   contentType: string;
   sizes: FileSizes;
   createdAt: string;
@@ -1250,6 +1251,7 @@ export type OrganizationProfile = {
   documentSecondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
   requiredNameLanguages: Array<'en' | 'fr-CA' | 'zh-Hans'>;
   logoFileId: string | null;
+  squareLogoFileId: string | null;
   accentColor: string | null;
   rail: 'dark' | 'light';
   logoOnDocuments: boolean;
@@ -1280,6 +1282,7 @@ export type UpdateOrganizationDto = {
   accentColor?: string | null;
   rail?: 'dark' | 'light';
   logoFileId?: string | null;
+  squareLogoFileId?: string | null;
   logoOnDocuments?: boolean;
   paperSize?: 'letter' | 'a4' | null;
   timeZone?: string;
@@ -4113,6 +4116,20 @@ export type FilesControllerUploadLogoV1Responses = {
 
 export type FilesControllerUploadLogoV1Response =
   FilesControllerUploadLogoV1Responses[keyof FilesControllerUploadLogoV1Responses];
+
+export type FilesControllerUploadSquareLogoV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/files/square-logo';
+};
+
+export type FilesControllerUploadSquareLogoV1Responses = {
+  201: UploadedFileEnvelope;
+};
+
+export type FilesControllerUploadSquareLogoV1Response =
+  FilesControllerUploadSquareLogoV1Responses[keyof FilesControllerUploadSquareLogoV1Responses];
 
 export type FilesControllerUploadProductImageV1Data = {
   body?: never;

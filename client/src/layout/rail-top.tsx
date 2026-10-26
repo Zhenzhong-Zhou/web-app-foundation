@@ -8,37 +8,27 @@ import {
   Stack,
   Tooltip,
 } from '@mui/material';
-import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useBranding } from '../auth/use-branding';
-import { initialsLang, organizationInitialsOf } from '../lib/person-initials';
+import { organizationInitialsOf } from '../lib/person-initials';
 import { rem } from '../theme/rem';
-import { LIGHT, TYPE } from '../theme/tokens';
-import { LOGO_PLATE, logoSrc } from './logo';
 import { OrganizationMark } from './organization-mark';
+import { Plate } from './plate';
 import { RAIL_FOCUS_RING } from './rail';
-
-/** How far from square a logo may be and still fill the folded plate. */
-const SQUARE_ENOUGH = 1.25;
-
-function isSquare(image: HTMLImageElement): boolean {
-  const { naturalWidth: width, naturalHeight: height } = image;
-  if (!width || !height) return false;
-  return Math.max(width, height) / Math.min(width, height) <= SQUARE_ENOUGH;
-}
+import { usePlate } from './use-plate';
 
 /**
  * The rail's top (ADR-082, amending ADR-060's layout): the organization's,
  * as the rail's foot is the product's. Open, its logo, on a white plate on
  * a dark rail as OrganizationMark draws it, or its name, a link to Home as
  * the top bar's was, with the fold button beside it. Folded, one 44 px plate that is the unfold button: the
- * logo when it is about square, else the organization's initials on its
- * accent, in the colours a contained button takes, so they pass in either
- * mode. On hover or keyboard focus » takes the plate's place, with a
- * tooltip; a tap unfolds. Its words are the fold button's own, Expand and
- * Collapse navigation (Bob, 24 October 2026).
+ * square logo, or the logo when it is about square (usePlate), else the
+ * organization's initials on its accent, in the colours a contained button
+ * takes, so they pass in either mode. On hover or keyboard focus » takes
+ * the plate's place, with a tooltip; a tap unfolds. Its words are the fold
+ * button's own, Expand and Collapse navigation (Bob, 24 October 2026).
  */
 export function RailTop({
   name,
@@ -51,25 +41,16 @@ export function RailTop({
 }) {
   const intl = useIntl();
   const branding = useBranding();
-  const logo = branding?.logoFileId ? logoSrc(branding.logoFileId) : null;
-
-  // Its own width and height, read when it loads, open or folded, so a
-  // fold draws it at once; unknown until then, and the plate » alone.
-  // RailTop stays as the rail folds, so the answer stays with it.
-  const [read, setRead] = useState<{ logo: string; square: boolean }>();
-  const square = !logo ? false : read?.logo === logo ? read.square : undefined;
-
-  const measure = logo && square === undefined && (
-    <img
-      hidden
-      src={logo}
-      alt=""
-      onLoad={(event) =>
-        setRead({ logo, square: isSquare(event.currentTarget) })
-      }
-      onError={() => setRead({ logo, square: false })}
-    />
+  const { face, measure } = usePlate(
+    branding?.logoFileId ?? null,
+    branding?.squareLogoFileId ?? null,
   );
+
+  // A square logo shows at once. Without one, the logo's own width and
+  // height, read when it loads, open or folded, so a fold draws it at once;
+  // unknown until then, and the plate » alone. RailTop stays as the rail
+  // folds, so the answer stays with it.
+  const measuring = measure && <img hidden alt="" {...measure} />;
 
   if (!folded) {
     return (
@@ -110,20 +91,19 @@ export function RailTop({
             flex: 'none',
             color: 'rail.text',
             '&:hover': { color: 'rail.strong', bgcolor: 'rail.hover' },
+            '&.Mui-focusVisible': RAIL_FOCUS_RING,
           }}
         >
           <KeyboardDoubleArrowLeft fontSize="small" />
         </IconButton>
-        {measure}
+        {measuring}
       </Stack>
     );
   }
 
   const initials = organizationInitialsOf(name);
-  // The logo on the plate, once it is known to be square.
-  const squareLogo = square ? logo : null;
   // Its initials, where it shows them: none while the logo is read.
-  const shown = square === false ? initials : null;
+  const shown = face.kind === 'initials' ? initials : null;
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.5 }}>
@@ -157,62 +137,42 @@ export function RailTop({
           }
           aria-expanded={false}
           onClick={onToggle}
-          sx={[
-            {
-              // In rem, as a box with words in it is, so the initials still
-              // fit it at Larger text (ADR-075); 44 px at Standard.
-              width: rem(44),
-              height: rem(44),
-              flex: 'none',
-              borderRadius: 1,
-              // A button takes the browser's own font, not the app's.
-              font: 'inherit',
-              '& .unfold': { display: 'none' },
-              '&:hover, &.Mui-focusVisible': {
-                '& .face': { display: 'none' },
-                '& .unfold': { display: 'block' },
-              },
-              '&.Mui-focusVisible': RAIL_FOCUS_RING,
+          sx={{
+            // In rem, as a box with words in it is, so the initials still
+            // fit it at Larger text (ADR-075); 44 px at Standard.
+            width: rem(44),
+            height: rem(44),
+            flex: 'none',
+            borderRadius: 1,
+            // A button takes the browser's own font, not the app's.
+            font: 'inherit',
+            '& .unfold': { display: 'none' },
+            '&:hover, &.Mui-focusVisible': {
+              '& .face': { display: 'none' },
+              '& .unfold': { display: 'block' },
             },
-            !shown
-              ? {
-                  // White in both modes, as the logo's plate is, and while
-                  // the logo is read; the arrow takes Light's text on it.
-                  // Its edge shows on a white rail.
-                  bgcolor: LOGO_PLATE,
-                  color: LIGHT.text,
-                  border: 1,
-                  borderColor: 'rail.divider',
-                }
-              : {
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                  fontWeight: 700,
-                  fontSize: rem(TYPE.section),
-                },
-          ]}
+            '&.Mui-focusVisible': RAIL_FOCUS_RING,
+          }}
         >
-          {squareLogo && (
-            <Box
-              component="img"
-              className="face"
-              src={squareLogo}
-              alt=""
-              sx={{ maxWidth: 28, maxHeight: 28 }}
+          {/* The initials in the colours a contained button takes, so they
+              pass in either mode; the white plate's edge shows on a white
+              rail. */}
+          <Plate
+            size="folded"
+            face={face}
+            initials={initials}
+            accent="primary.main"
+            onAccent="primary.contrastText"
+            edge="rail.divider"
+          >
+            <KeyboardDoubleArrowRight
+              className={face.kind === 'measuring' ? undefined : 'unfold'}
+              fontSize="small"
             />
-          )}
-          {shown && (
-            <span className="face" aria-hidden lang={initialsLang(shown)}>
-              {shown}
-            </span>
-          )}
-          <KeyboardDoubleArrowRight
-            className={square === undefined ? undefined : 'unfold'}
-            fontSize="small"
-          />
+          </Plate>
         </ButtonBase>
       </Tooltip>
-      {measure}
+      {measuring}
     </Box>
   );
 }

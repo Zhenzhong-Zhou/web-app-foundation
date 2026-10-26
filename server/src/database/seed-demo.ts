@@ -7,6 +7,7 @@ import { AuthService } from '../core/auth/auth.service';
 import { rolesOfMember } from '../core/authorization/member-roles';
 import { holdsOwner } from '../core/authorization/owner';
 import { SYSTEM_ROLES } from '../core/authorization/permissions';
+import { FilesService } from '../core/files/files.service';
 import { OrganizationsService } from '../core/organizations/organizations.service';
 import { BomsService } from '../modules/boms/boms.service';
 import { ExchangeRatesService } from '../modules/costs/exchange-rates.service';
@@ -86,6 +87,21 @@ import { runInTenantContext } from './tenant-context';
 
 /** Fixed rather than random, so a demo account can always be signed into. */
 const DEMO_PASSWORD = 'demo-password-2026';
+
+/**
+ * The demo's square logo (ADR-060, amended): a leaf in a circle, in the
+ * default accent, since the demo sets no colour of its own. Drawn here
+ * rather than kept as a file; an SVG has no least size, and the server
+ * draws it again at each size it keeps.
+ */
+const SQUARE_LOGO = Buffer.from(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' +
+    '<circle cx="32" cy="32" r="31" fill="#5546B8"/>' +
+    '<path d="M19 45Q17 18 45 19Q46 47 19 45Z" fill="#FFF"/>' +
+    '<path d="M14 50L21 43" stroke="#FFF" stroke-width="3" stroke-linecap="round"/>' +
+    '<path d="M22 42L38 26" stroke="#5546B8" stroke-width="2" stroke-linecap="round"/>' +
+    '</svg>',
+);
 
 async function seedDemo(): Promise<void> {
   const logger = new Logger('SeedDemo');
@@ -171,6 +187,7 @@ async function seedDemo(): Promise<void> {
     const returns = app.get(ReturnsService);
     const stock = app.get(StockService);
     const organization = app.get(OrganizationsService);
+    const files = app.get(FilesService);
     const partnerAddresses = app.get(PartnerAddressesService);
     const taxCodes = app.get(TaxCodesService);
     const invoiceDrafts = app.get(InvoiceDraftsService);
@@ -191,8 +208,24 @@ async function seedDemo(): Promise<void> {
         // Stock is valued in the base currency from the first receipt
         // (ADR-048). Set only if empty, like the tax number below: an
         // existing organization's choice must survive.
-        const { baseCurrency } = await organization.get();
+        const { baseCurrency, squareLogoFileId } = await organization.get();
         if (!baseCurrency) await organization.update({ baseCurrency: 'CAD' });
+
+        // A square logo and no main logo, so the rail's top shows it beside
+        // the name and the folded plate shows it alone. Uploaded and saved
+        // as Branding does both; only if it has none, as above.
+        if (!squareLogoFileId) {
+          const mark = await files.upload(
+            'square_logo',
+            {
+              buffer: SQUARE_LOGO,
+              originalname: 'square-logo.svg',
+              size: SQUARE_LOGO.length,
+            },
+            actor,
+          );
+          await organization.update({ squareLogoFileId: mark.id });
+        }
 
         // An NPN: issued on a date, and valid while the product is marketed
         // and compliant, so no expiry. Leaving it blank is the realistic

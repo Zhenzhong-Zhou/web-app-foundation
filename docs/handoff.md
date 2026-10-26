@@ -8,26 +8,41 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **The brand, ADR-082: PR #247** (`adr-082-brand`, 24 to 25 October
-  2026), green in every browser and ready to merge; its as-built
+- **The organization's square logo: PR #251** (`square-logo`, 25 to 26
+  October 2026), green in every browser and ready to merge, with ADR-060's
+  amendment and its as-built. An optional square logo on Branding, beside
+  the logo on a computer, its line naming what this organization shows
+  without one; the folded plate's first choice ahead of a square main
+  logo and the initials, its image growing with the plate; beside the
+  name where there is no main logo, and alone on a phone under 360 px at
+  Larger text; its own file kind and route, kept at 512 px and at 128 px,
+  migration **0075**. Riders: #246, Branding's colour sample no longer
+  taken for Save, large SVG logos no longer refused as damaged, no-break
+  spaces kept by the catalogues' extraction. Claude Code Review, re-run
+  once CI had finished, found no issues: #243's check passed its first
+  real test, and #252 is what it caught. **After the merge, by hand:**
+  `npm run migrate:all` on each clone, a restart of any local API started
+  before it, and MC-3601 to MC-3610 on the live site once Render has
+  deployed. Then `tmp/square-logo/` can go.
+- **The brand, ADR-082: merged as #247** (25 October 2026); its as-built
   amendment says what building settled. Panivo on every page before
   sign-in, at the rail's foot and in Help's foot; the organization's logo
   at the rail's top, linking Home, its initials when folded; one icon on
   a navy plate for the tab, the taskbar, home screens and emails; a web
   manifest, `theme-color`, a card for a shared link, and the mark while
   the app loads; the © holder (Zhenzhong (Bob) Zhou) and a name per
-  language as settings. Claude Code Review cannot run on it: the action
-  refuses a pull request that changes its own workflow, as #243's fix
-  does; step 13's `/code-review` reviewed the branch. **Before merging, by
-  hand:** the static site's three settings on Render (`render.md`); the
-  API's `MAIL_FROM` reads `Panivo <…>`; the new manual checks on the Mac
-  (MC-3503 to MC-3512). **After the merge, by hand:** MC-3501 on an iPhone
-  and an Android home screen, MC-3504 (a link pasted into a chat) and
-  MC-3505 (a phone's bar in each mode) on the live site; `git config
-  core.hooksPath scripts/hooks` on each clone, then delete
-  `.git/hooks/pre-push`; "Commits — no placeholder identity" added to
-  `main`'s ruleset as a required check, now that it has run; and the next
-  pull request's Claude Code Review, #243's first real test.
+  language as settings. The three `VITE_` settings were first put on the
+  API's Environment by mistake, so the merge's build had no © line; they
+  are now on the static site, rebuilt with Deploy by hand (which also
+  walked MC-3425), and the stray ones are gone from the API. `render.md`
+  now says plainly that every `VITE_` setting goes on the static site.
+  The hook is set (`core.hooksPath scripts/hooks`, the old
+  `.git/hooks/pre-push` deleted), and "Commits — no placeholder
+  identity" is a required check in `main`'s ruleset. **Still by hand:**
+  MC-3501 on an iPhone and an Android home screen, MC-3504 (a link pasted
+  into a chat) and MC-3505 (a phone's bar in each mode) on the live site;
+  and the next pull request's Claude Code Review, #243's first real test,
+  which will be the square logo's.
 - **`main` was red from #224 to #231** (23 to 24 October 2026). On a
   push CI runs every browser, but a pull request runs Chromium only
   unless it is labelled `full-e2e`, and #224 was not. Its new rows in
@@ -52,7 +67,8 @@ with this one, this one is current.
   October); MC-3424 walked at #231's deploy, an open tab offering the new
   version; MC-3502 walked; MC-3501 walked, its icon's dark version nearly
   invisible on a light Chrome theme with the system dark (ADR-082).
-  Still to do: Deploy by hand once (MC-3425).
+  Deploy by hand (MC-3425) was walked on 25 October, rebuilding the
+  static site after #247.
 - **Merged on 24 October 2026, besides #224:** #227 (#187, the plan
   check at large, with its docs; it filed #225 and #226), #228 (#213,
   quantities with padding zeros), #229 (#223, Recently opened's kinds in
@@ -67,7 +83,8 @@ with this one, this one is current.
 - **Merged on 24 and 25 October 2026, from cloud sessions:** #234 (#126),
   #235 (#163: To ship and To receive count only what is still to come,
   through the Orders list's `outstanding` filter; ADR-058 amended),
-  #236 (#158: Close order filled only once nothing is due), #237 (#174),
+  #236 (#158: Close order filled only once nothing is due; #158 stays
+  open, retitled "Order page: a Receive action in the summary"), #237 (#174),
   #238 (#171), #239 (#129, all three of its cases) and #240 (#179's
   second half; its first half, Move everyone's dialog, stays open). #222
   stopped before code: it is decided on the issue and rides along in
@@ -102,38 +119,57 @@ with this one, this one is current.
   request. The headers are in `render.md`, "Deploys". Render's edge
   ignores a query string and empties itself at each deploy, so no page
   stays old after one (#196's review; ADR-081's correction).
-- **The order after it** (Bob, 22 to 25 October 2026): **ADR-082, the
-  brand** (above); then two small pull requests: **the organization's
-  small square logo** (Settings → Branding, the folded plate's first
-  choice ahead of the initials; a migration and an ADR-060 amendment),
-  and **the emails' design** (one layout for every email, the invitation
-  included without Panivo's header: the system's font, a phone's width,
-  the main link as a button mail apps draw, the small print grey, dark
-  mail apps checked, every email keeping its words; a short ADR and the
-  canvas first); then **ADR-083, low stock** (its questions in Open
-  decisions; #222 rides along). Then the review of the whole app, once
+- **The order now** (Bob, 22 to 26 October 2026), ADR-082 having merged:
+  **the organization's square logo** (#251, above); **#252**, a small PR
+  of its own, since a pull request that changes the review's workflow
+  cannot be reviewed by it (as #247): the review told not to wait for the
+  other checks, the check naming that third reason, and a time limit on
+  CI's Install browsers step, which stalled once on #251; **the emails'
+  design** (one layout for every email, the invitation included without
+  Panivo's header: the system's font, a phone's width, the main link as a
+  button mail apps draw, the small print grey, dark mail apps checked,
+  every email keeping its words; a short ADR and the canvas first), with
+  a chore riding along: **`/build-from-brief`**, a project skill holding
+  the ground rules every build brief repeats (the author identity,
+  staging by path, `scripts/verify.sh`, lint fixups, `npm run api`, the
+  stop rule, where `/clear` is safe, the inventory step), so a brief
+  shrinks to its decisions and its prompts and a rule changed once
+  reaches every session (Bob, 25 October 2026), with what the square logo
+  taught: dependencies judged by each package's own publish time, never
+  moving one back; a migration that adds to a list the code shares commits
+  with that code; manual checks in the same commit as what they check; the
+  review step in two prompts, the findings first, the fixes once Bob has
+  chosen. The emails' own brief is the first written for it; **an error
+  tracker**, a small PR with a short ADR: what is sent, scrubbed of
+  personal details (PIPEDA, PIPL), and browser errors carried through the
+  app's own API, so the browser contacts no other site; then
+  **ADR-083, low stock** (its questions in Open decisions; #222 rides
+  along). The uptime monitor runs on UptimeRobot since 25 October
+  (`docs/runbooks/services.md`). Then the review of the whole app, once
   (`/production-readiness` with its device pass: deploys, backups and a
   restore tried, security, performance, email, support, browsers and
   China, tablets and foldables, the iPhone Duo closed and open, a phone
-  held sideways). Its monitoring section sets up an uptime monitor on
-  `/api/health` and the site, and decides an error tracker as a small PR
-  with a short ADR: what is sent, scrubbed of personal details (PIPEDA,
-  PIPL), and browser errors carried through the app's own API, so the
-  browser contacts no other site. Then the fix-ups, each a PR of five to
-  ten related issues: safety and scale (#181 first, then #142, #182,
-  #225, #226, #244), orders and shipping (#156, #125, #161, #164, #128,
-  #241, #159 with #221, a layout decision first, #158's summary Receive
-  if still open, and decisions #157 and #160), organization, roles and
-  audit (#169, #168, #179's first half, #166, #133, #167, #233 and the
-  flaky "roles" setup filed from #247's run), accessibility (#155, #170,
-  #162, #212, #214 with a row of its own in `accessibility.spec.ts`,
-  #232, #242, #246), and words and translations (#148, #149, #150, #245,
-  with Bob's mother's corrections). #245 (`translate="no"` on data) is
-  decided and suits a cloud session once #247 has merged. After them, in
-  this order unless a trigger brings one forward, each with its entry in
-  Open decisions: one person in two organizations, then a practice
+  held sideways); its email section reports DMARC's `p=none` as
+  deferred, by decision, until the first paying customer. Then the
+  fix-ups, each a PR of five to ten
+  related issues: safety and scale (#181 first, then #142, #182, #225,
+  #226, #244), orders and shipping (#156, #125, #161, #164, #128, #241,
+  #250, #159 with #221, a layout decision first, #158's Receive action in the
+  summary, and decisions #157 and #160), organization, roles and audit
+  (#169, #168, #179's first half, #166, #133, #167, #233 and #248, the
+  flaky "roles" setup from #247's run), accessibility (#155, #170, #162,
+  #212, #214 with a row of its own in `accessibility.spec.ts`, #232,
+  #242; #246 rides with the square logo), and words and translations
+  (#148, #149, #150, #245, #249, with Bob's mother's corrections). #245
+  (`translate="no"` on data) is decided and suits a cloud session now
+  that #247 has merged. Not checked yet, and for #245: whether
+  `document.documentElement.lang` reads `zh-Hans` with the app in
+  简体中文; if it reads `en`, that is a bug for #245. Then new features,
+  in this order unless a trigger brings one forward, each with its entry
+  in Open decisions: one person in two organizations, then a practice
   organization (ADR-077, *Deferred*); a public demo; plans and billing;
-  the operator's console and support access.
+  the operator's console and support access. Before going commercial,
+  the repository's visibility (Open decisions).
 - **Claude Code's cloud sessions** (Bob's $250 credit, which ends in early
   November) took the small fixes listed above, one branch and PR each;
   on 24 October, #228 and #229, while #221 stopped with its findings, as
@@ -550,8 +586,9 @@ with this one, this one is current.
   services from nothing"). The static site reads the name only when it
   builds, so set it before the merge's deploy, or deploy again after.
   Both set on 23 October, before #201 merged. MC-3501 and MC-3502 walked
-  on the live app on 24 October. ADR-082 adds three settings to the
-  static site, set before its merge's deploy.
+  on the live app on 24 October. ADR-082's three settings went on the API
+  by mistake at #247's merge; moved to the static site and deployed by
+  hand on 25 October (*Now*, and `render.md`).
 - **The Chinese review:** Bob's mother has the export made at `b933b912`
   (22 October 2026); her corrections were not back on 25 October, and
   Bob says when she starts and when they come back. She reads with the
@@ -588,9 +625,6 @@ with this one, this one is current.
   paid database and web service, backups to the Canadian bucket, and
   every development secret replaced (the runbook's "Before real
   customers' data").
-- **MC-3425,** Deploy by hand once: Actions → Deploy → Run workflow,
-  from `main`. It redeploys the commit already live. MC-3424 was walked
-  at #231's deploy on 24 October.
 - **Dependabot, 24 October 2026.** Alert 4, esbuild up to 0.24.2
   (medium, development only), stays open as #113 left it: drizzle-kit
   0.31.11's deprecated `@esbuild-kit/esm-loader` pins esbuild
@@ -599,19 +633,23 @@ with this one, this one is current.
   multer 2.4.0 (high, in production code), is pinned exactly by
   `@nestjs/platform-express` 12.2.0, the newest; its crash needs an
   asynchronous `fileFilter`, which no upload route sets, so it cannot be
-  reached here. #247 overrides it to 2.5.0 (ADR-019, amended), and the
-  alert closes once it merges.
+  reached here. #247 overrode it to 2.5.0 (ADR-019, amended) and has
+  merged: check that the alert closed.
 - **Email's DNS, checked 25 October 2026:** Resend's domain
   `wide-naturals.ca` at Namecheap, DKIM and SPF verified, DMARC
   `v=DMARC1; p=none;`, tracking off, TLS opportunistic
-  (`docs/runbooks/services.md`).
-- **An uptime monitor,** any time, with no commit: UptimeRobot or Better
-  Stack on `/api/health` and the site, alerting Bob's email. Its pings
-  also keep the free API awake.
-- **The pre-push hook** was missing on Bob's Mac and was put back on 23
-  October: `.git/hooks` is not versioned, so a fresh clone loses it.
-  #247 moves it to `scripts/hooks/`; once that merges, run `git config
-  core.hooksPath scripts/hooks` once on each clone.
+  (`docs/runbooks/services.md`). DMARC stays at `p=none`, with no report
+  address, until the first paying customer (Bob, 25 October 2026): until
+  then anyone can send mail in the domain's name and receivers still
+  deliver it, which matters once customers know the domain. Then a report
+  address (`rua`), a few weeks of reports, and `p=quarantine`, likely on
+  Panivo's own sending domain, which ADR-082 defers to the same time.
+  Meanwhile, once: Gmail's Show original on one of the app's emails reads
+  SPF, DKIM and DMARC PASS.
+- **The pre-push hook** lives in `scripts/hooks/` since #247, and Bob's
+  clone has used it since 25 October (`core.hooksPath`, the old copy
+  deleted). A new clone needs `git config core.hooksPath scripts/hooks`
+  once (the README's setup).
 - **#187, the plan check at large: merged** as #227, from
   `fix-187-plans-at-large` (23 October 2026), with no migration; `npm run perf:plans` passes at
   small and at large. Lot search's SQL was unchanged since 2 October, but
@@ -699,14 +737,18 @@ with this one, this one is current.
   PDFs, also under *Open decisions* in `decisions.md`), which ADR-071
   takes up; #119 to #122 were fixed in #123. From 23 and 24 October:
   #212, #214, #221, #222, #225, #226 and #232 open; #213, #223 and #230
-  closed by #228, #229 and #231. `gh issue list` to review.
+  closed by #228, #229 and #231. From 24 and 25 October: #233, #241,
+  #242, #244, #245, #246 and #248 open; #158 retitled, its filled button
+  fixed by #236. From 26 October: #249, #250 and #252 open; #246 closes
+  with #251. `gh issue list` to review.
 - **Branches:** prune the merged ones, `after-adr-070` among them
   (`scripts/prune-branches.sh`).
 
 ### Still to do, in code
 
-- **The brand: ADR-082** (*Now*, above), with the square logo and the
-  emails' design after it.
+- **#252's small PR** once #251 merges, then the emails' design with
+  `/build-from-brief` riding along, and the error tracker (the order,
+  *Now*).
 - `@mui/codemod@9.5.0`'s command crashes on yargs 18, which could be
   reported to MUI.
 - **From #231.** `e2e/text-size.spec.ts` still opens every screen in one
@@ -818,7 +860,9 @@ with this one, this one is current.
   policy, before the first user outside Bob; the name by language in
   emails and in a shared link's card; a drawn wordmark; the mark in an
   organization's emails; a sending domain of Panivo's own, at the first
-  customers (ADR-082).
+  customers (ADR-082); DMARC enforcement, a report address and then
+  `quarantine`, at the first paying customer, likely on that domain (Bob,
+  25 October 2026).
 - Deploys: keeping the last build's files ourselves; failed loads and
   refusals sent to an error tracker; Playwright against the built files;
   feature flags and staged rollouts (ADR-081, Open decisions).
@@ -1606,8 +1650,11 @@ in ADR-050's amendment.
 - **Dependencies, on every branch** (21 October 2026): `npm outdated` in
   `server/` and `client/`, taking the in-range updates as a commit of their
   own at the branch's start, and again before the reviews. From ADR-081,
-  only versions at least 7 days old (`npm update --before=…`), a security
-  fix excepted (conventions.md, "Dependencies").
+  only versions at least 7 days old, judged package by package from its
+  own publish time and never moving a locked version back; not `npm
+  update --before`, which does both wrong (the square logo's step 2, 25
+  October 2026). A security fix is excepted, and any other exception is
+  Bob's, named in its commit (conventions.md, "Dependencies").
 - **Planned in this chat, built in Claude Code** (from ADR-079, 20
   October 2026). The claude.ai chat does the check before an ADR (its
   Deferred lines, the watch lists, Open decisions and the open issues),

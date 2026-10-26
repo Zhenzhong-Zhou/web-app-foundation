@@ -55,6 +55,10 @@ try {
       '--format',
       'simple',
       '--throws',
+      // As written, so a no-break space a message needs is kept, as the
+      // server's extraction keeps it. Otherwise formatjs turns it into a
+      // plain space, as \s matches it.
+      '--preserve-whitespace',
       '--out-file',
       extracted,
     ],

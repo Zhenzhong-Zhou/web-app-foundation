@@ -32,6 +32,14 @@ On **Stock**, choose what releasing a run does when the licence on its recipe is
 1. For **Not yet in force** and for **Expired**, choose **Refuse**, **Refuse unless overridden, with a reason**, or **Allow, and record it**.
 2. Tick **A recipe must carry a licence to be released** if every run needs one, and press **Save licence policy**.
 
+## Branding {#branding}
+
+On **Branding**, choose how the app looks for everyone here.
+
+1. Under **Logo**, press **Upload a logo**. Wide or square, it heads the sidebar, and prints on invoices, credit notes and packing slips unless **Documents** says otherwise.
+2. Under **Square logo**, press **Upload a square logo** for small spaces, such as the folded sidebar. The line under it says what shows there without one.
+3. Choose a **Colour** and the **Sidebar**’s shade, and press **Save branding**.
+
 ## Sign out after inactivity {#idle-sign-out}
 
 On **Security**, for computers several people share.
@@ -52,5 +60,6 @@ A minute before, people see a warning with **Stay signed in**. It can only short
 - The base currency cannot change once stock carries a value in it.
 - A next number below one already given is refused; the lowest allowed is offered.
 - Two kinds of document with one prefix would print the same numbers: give each its own.
+- A square logo must be about square, at most 5 : 4 either way, and at least 128 pixels on each side. Use a wide image as the main logo.
 
 See also [Exchange rates](/settings/exchange-rates) and [Price lists](/settings/price-lists).

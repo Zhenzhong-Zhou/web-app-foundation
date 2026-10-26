@@ -16,6 +16,7 @@ import type {
   ReturnAuthorizationLine,
   ReturnAuthorizationSummary,
   RunDetail,
+  StoredFile,
 } from '../api/types.gen';
 
 /**
@@ -72,6 +73,12 @@ export type LicenceStatusAtRelease = NonNullable<
 export type LookupKind = LookupResponse['groups'][number]['kind'];
 
 export type OrderDirection = OrderSummary['direction'];
+
+/** The organization's two logos (ADR-060, amended), a Branding row each. */
+export type OrganizationLogoKind = Extract<
+  StoredFile['kind'],
+  'logo' | 'square_logo'
+>;
 
 /** The paper every document is drawn on (ADR-071); null is automatic. */
 export type PaperSize = NonNullable<OrganizationProfile['paperSize']>;

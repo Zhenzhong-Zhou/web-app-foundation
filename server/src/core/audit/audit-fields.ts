@@ -658,6 +658,13 @@ export const AUDIT_FIELDS = {
     name: t({ id: 'audit.field.logoFileId', defaultMessage: 'Logo' }),
     read: { file: null },
   },
+  squareLogoFileId: {
+    name: t({
+      id: 'audit.field.squareLogoFileId',
+      defaultMessage: 'Square logo',
+    }),
+    read: { file: null },
+  },
   fileId: {
     name: t({ id: 'audit.field.fileId', defaultMessage: 'Images' }),
     read: { file: WORDS.imageAdded },

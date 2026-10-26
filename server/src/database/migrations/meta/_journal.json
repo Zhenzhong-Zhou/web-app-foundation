@@ -526,6 +526,13 @@
       "when": 1792612201257,
       "tag": "0074_role_updated_by",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1792985427089,
+      "tag": "0075_square_logo",
+      "breakpoints": true
     }
   ]
 }

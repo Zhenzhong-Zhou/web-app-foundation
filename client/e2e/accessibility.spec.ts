@@ -76,6 +76,66 @@ const fades = (foot: Locator) =>
 const help = (page: Page) =>
   page.getByRole('complementary', { name: 'Help', exact: true });
 
+/** WCAG's relative luminance of a colour as the browser computes it. */
+function luminance(colour: string): number {
+  const rgb = /^rgb\((\d+), (\d+), (\d+)\)$/.exec(colour);
+  if (!rgb) throw new Error(`Translucent, or not rgb(): ${colour}`);
+  const [r, g, b] = rgb.slice(1).map((channel) => {
+    const value = Number(channel) / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * Each rail's own colour in each mode, as the browser computes it: tokens.ts's
+ * RAILS[rail][mode].bg, written out since no spec imports from src.
+ */
+const RAIL_GROUND = {
+  dark: { light: 'rgb(28, 34, 48)', dark: 'rgb(16, 19, 24)' },
+  light: { light: 'rgb(255, 255, 255)', dark: 'rgb(30, 35, 44)' },
+} as const;
+
+/**
+ * The keyboard on a button of the rail's, and its ring at 3 : 1 or more
+ * against what the ring is drawn on, as WCAG 2.2's 1.4.11 asks: the ring
+ * stands off the button, so on the nearest box with a colour of its own,
+ * the rail or the menu drawer (#246). axe does not measure a ring.
+ *
+ * Measured once that box is the chosen rail's own colour: the organization's
+ * rail arrives with the session, and Linux WebKit once read the light rail's
+ * ring on the dark rail's ground, the page still changing.
+ */
+async function expectRingOnRail(button: Locator, railGround: string) {
+  await expect(button).toBeFocused();
+  await expect(button).toHaveClass(/Mui-focusVisible/);
+  const read = () =>
+    button.evaluate((element) => {
+      let box = element.parentElement;
+      while (
+        box &&
+        getComputedStyle(box).backgroundColor === 'rgba(0, 0, 0, 0)'
+      ) {
+        box = box.parentElement;
+      }
+      return {
+        style: getComputedStyle(element).outlineStyle,
+        ring: getComputedStyle(element).outlineColor,
+        ground: getComputedStyle(box ?? document.body).backgroundColor,
+      };
+    });
+  await expect.poll(async () => (await read()).ground).toBe(railGround);
+  const { style, ring, ground } = await read();
+  expect(style).toBe('solid');
+  const [light, dark] = [luminance(ring), luminance(ground)].sort(
+    (x, y) => y - x,
+  );
+  expect(
+    (light + 0.05) / (dark + 0.05),
+    `${ring} on ${ground}`,
+  ).toBeGreaterThanOrEqual(3);
+}
+
 /**
  * The screens before sign-in, the product's own (ADR-082): its mark and
  * name above, the © line below.
@@ -282,6 +342,25 @@ const SCREENS: Screen[] = [
     ready: (page) =>
       page.getByRole('option', { selected: true }).and(keyboardOn(page)),
   },
+  {
+    // The two logos' rows side by side on a computer, and the line under
+    // the square logo naming the initials the folded plate shows, in the
+    // plate's colours (ADR-060, amended).
+    name: 'Branding, the two logos side by side',
+    path: () => '/settings/organization?tab=branding',
+    open: async (page) => {
+      const [logo, square] = await Promise.all([
+        page.getByRole('group', { name: 'Logo', exact: true }).boundingBox(),
+        page.getByRole('group', { name: 'Square logo' }).boundingBox(),
+      ]);
+      expect(square!.x).toBeGreaterThanOrEqual(logo!.x + logo!.width);
+      expect(square!.y).toBeCloseTo(logo!.y, 0);
+    },
+    ready: (page) =>
+      page
+        .getByRole('group', { name: 'Square logo' })
+        .getByText(/^Without one, the initials \S+ show there\.$/),
+  },
   { name: 'members', path: () => '/members', ready: heading },
   {
     name: 'the Invite dialog',
@@ -457,6 +536,52 @@ for (const colorScheme of ['light', 'dark'] as const) {
           if (screen.version) await page.unroute('**/version.json?*');
           if (screen.broken) await page.unroute(screen.broken);
           expect(list).toEqual([]);
+        });
+      }
+    });
+
+    // The rail's own buttons, tabbed to as a keyboard user reaches them, on
+    // each shade of the rail (ADR-060): the theme's ring, the accent, was
+    // 2.24 : 1 on the dark rail, and they take the rail's own (#246).
+    test.describe('the rail’s buttons have a ring at 3 : 1 on it', () => {
+      for (const rail of ['dark', 'light'] as const) {
+        test(`the ${rail} rail`, async ({ page, freshOrg }) => {
+          const branded = await freshOrg.api.patch('/v1/organization', {
+            data: { rail },
+          });
+          expect(branded.ok(), await branded.text()).toBeTruthy();
+          await signInAs(page, freshOrg.api);
+          await page.goto('/orders');
+          await expect(heading(page)).toBeVisible();
+          // The session read and its rail drawn before anything is measured.
+          await page.waitForLoadState('networkidle');
+
+          // The fold button, next after the organization's link.
+          await page
+            .getByRole('link', { name: freshOrg.organizationName, exact: true })
+            .focus();
+          await page.keyboard.press('Tab');
+          await expectRingOnRail(
+            page.getByRole('button', {
+              name: 'Collapse navigation',
+              exact: true,
+            }),
+            RAIL_GROUND[rail][colorScheme],
+          );
+
+          // Below 1200 px, the menu drawer's Close, its first stop.
+          await page.setViewportSize({ width: 1024, height: 768 });
+          await page
+            .getByRole('button', { name: 'Open navigation', exact: true })
+            .focus();
+          await page.keyboard.press('Enter');
+          const close = page.getByRole('button', {
+            name: 'Close navigation',
+            exact: true,
+          });
+          await expect(close).toBeVisible();
+          await page.keyboard.press('Tab');
+          await expectRingOnRail(close, RAIL_GROUND[rail][colorScheme]);
         });
       }
     });

@@ -787,12 +787,18 @@ names.
   change of its own.
 - **Only versions at least 7 days old** (ADR-081): a freshly published
   version is where a hijacked package hides, and most are caught within
-  days. `npm update --before="$(date -v-7d +%Y-%m-%d)"` on a Mac, run only
-  when `npm outdated` lists something in range, and never to move back a
-  version already locked: the rule keeps new releases out, it does not
-  undo what is installed (#196's steps 1 and 8). Run it with `--dry-run`
-  first: it lists any version it would move back. A security fix is taken
-  at once, its publisher and diff looked at first.
+  days. Package by package: for each one `npm outdated` lists in range,
+  `npm view <package> time --json` gives when its Wanted version was
+  published; take it with `npm update <package>` only when that was at
+  least 7 × 24 hours ago, and say on which day each of the rest comes of
+  age. Never move back a version already locked: the rule keeps new
+  releases out, it does not undo what is installed (#196's steps 1 and
+  8). Not `npm update --before`: it resolves every package to its
+  cutoff, so it moves back whatever is newer, or fails where nothing in a
+  range is that old, and a date alone cuts off at midnight UTC, about 8
+  days (the square logo's step 2, 25 October 2026). A security fix is
+  taken at once, its publisher and diff looked at first; any other
+  exception is Bob's, named in its commit message.
 - **A new tool or package** is pinned to a release at least 14 days old.
 
 ## Production readiness

@@ -2,21 +2,21 @@ import { Box, Typography } from '@mui/material';
 
 import { useBranding } from '../auth/use-branding';
 import { initialsLang, organizationInitialsOf } from '../lib/person-initials';
-import { LOGO_PLATE, logoSrc } from './logo';
-
-/** Most logos are made for white, so a dark ground gets a white plate. */
-const PLATE = { bgcolor: LOGO_PLATE, borderRadius: 1, px: 1, py: 0.5 };
+import { LOGO_ON_PLATE, logoSrc } from './logo';
+import { Plate } from './plate';
 
 /**
  * The organization's place in the corner (ADR-055, ADR-060): its logo when
- * it has one, at most 32 px tall, else its name. The logo sits on a white
+ * it has one, at most 32 px tall, else its name, with its square logo
+ * beside it when it has one (ADR-060, amended). A logo sits on a white
  * plate in dark mode, and on the dark rail when `onRail`. Fills its
  * parent's width, so the caller sets how wide the corner may grow.
  *
- * `initials`, where the name would be cut to a few letters: the
- * organization's initials in its place (ADR-079); a logo stays a logo. The
- * name follows them for a screen reader, so the link is named for the
- * organization and still by what it shows (WCAG 2.5.3).
+ * `initials`, where the name would be cut to a few letters: the square
+ * logo alone, else the logo, else the organization's initials in its place
+ * (ADR-079). The name follows the initials for a screen reader, so the
+ * link is named for the organization and still by what it shows (WCAG
+ * 2.5.3); a logo alone is named for it.
  */
 export function OrganizationMark({
   name,
@@ -28,6 +28,21 @@ export function OrganizationMark({
   initials?: boolean;
 }) {
   const branding = useBranding();
+  // Most logos are made for white, so a dark ground gets a white plate.
+  const darkRail = onRail && branding?.rail === 'dark';
+
+  const squareLogo = (fileId: string, alt: string) => (
+    <Plate
+      size="beside"
+      src={logoSrc(fileId, 'thumb')}
+      alt={alt}
+      plated={darkRail || 'dark'}
+    />
+  );
+
+  if (initials && branding?.squareLogoFileId) {
+    return squareLogo(branding.squareLogoFileId, name);
+  }
 
   if (!branding?.logoFileId && initials) {
     const short = organizationInitialsOf(name);
@@ -45,14 +60,19 @@ export function OrganizationMark({
 
   if (!branding?.logoFileId) {
     return (
-      <Typography
-        variant={onRail ? 'subtitle1' : 'h6'}
-        component="div"
-        noWrap
-        sx={onRail ? { color: 'rail.strong' } : undefined}
-      >
-        {name}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        {/* The name beside it says whose it is. */}
+        {branding?.squareLogoFileId &&
+          squareLogo(branding.squareLogoFileId, '')}
+        <Typography
+          variant={onRail ? 'subtitle1' : 'h6'}
+          component="div"
+          noWrap
+          sx={onRail ? { color: 'rail.strong' } : undefined}
+        >
+          {name}
+        </Typography>
+      </Box>
     );
   }
 
@@ -60,8 +80,8 @@ export function OrganizationMark({
     <Box
       sx={[
         { display: 'flex', alignItems: 'center', maxWidth: '100%' },
-        onRail && branding.rail === 'dark' ? PLATE : {},
-        (theme) => theme.applyStyles('dark', PLATE),
+        darkRail ? LOGO_ON_PLATE : {},
+        (theme) => theme.applyStyles('dark', LOGO_ON_PLATE),
       ]}
     >
       <Box

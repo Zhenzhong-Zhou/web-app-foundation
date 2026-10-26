@@ -13,7 +13,12 @@ export interface KindRule {
   upload: Permission;
   /** Who may read one; null for any member (the logo is everyone's). */
   view: Permission | null;
-  render: 'logo' | 'photo';
+  render: 'logo' | 'squareLogo' | 'photo';
+  /**
+   * What its sizes are kept as, the renderer's output: a logo keeps PNG,
+   * lossless for flat colour and sharp edges; a photo WebP.
+   */
+  format: 'png' | 'webp';
 }
 
 /** An organization's kinds; a person's photo is not uploaded here (ADR-063). */
@@ -24,6 +29,15 @@ export const KIND_RULES: Record<OrganizationFileKind, KindRule> = {
     upload: 'organizations.update',
     view: null,
     render: 'logo',
+    format: 'png',
+  },
+  square_logo: {
+    accepts: ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'],
+    maxBytes: 2 * MB,
+    upload: 'organizations.update',
+    view: null,
+    render: 'squareLogo',
+    format: 'png',
   },
   product_image: {
     accepts: ['image/png', 'image/jpeg', 'image/webp'],
@@ -31,5 +45,6 @@ export const KIND_RULES: Record<OrganizationFileKind, KindRule> = {
     upload: 'products.update',
     view: 'products.view',
     render: 'photo',
+    format: 'webp',
   },
 };

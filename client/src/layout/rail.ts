@@ -43,8 +43,9 @@ export const RAIL_MORE_BELOW = (theme: Theme) => ({
 
 /**
  * A focus ring on the rail, in its strongest colour, for its own stops:
- * the folded mark at its foot, the plate and the organization's link at
- * its top.
+ * the folded mark at its foot, the plate, the organization's link and the
+ * fold button at its top, and the menu drawer's Close. The theme's ring,
+ * the accent, is 2.24 : 1 on the dark rail (#246).
  */
 export const RAIL_FOCUS_RING = {
   outline: '2px solid',

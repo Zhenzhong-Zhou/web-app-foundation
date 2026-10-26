@@ -23,21 +23,50 @@ import {
   type StoredSize,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
-import { t } from '../../i18n/translate';
+import { t, type Translatable } from '../../i18n/translate';
 import type { RequestContext } from '../auth/request-context';
 import { PermissionsService } from '../authorization/permissions.service';
 import { dispositionOf } from './content-disposition';
-import { KIND_RULES } from './file-kinds';
+import { KIND_RULES, type KindRule } from './file-kinds';
 import { FILE_STORAGE, type FileStorage, keyOf, ownerOf } from './file-storage';
 import {
+  ImageRefused,
   LOGO_MIN,
-  LogoTooSmall,
   type Rendered,
   renderLogo,
   renderPhoto,
+  renderSquareLogo,
+  SQUARE_LOGO_MIN,
   UnreadableImage,
 } from './images';
 import { sniff, type Sniffed } from './sniff';
+
+/** What each refusal of an image says (images.ts, ImageRefused). */
+const REFUSED: Record<ImageRefused['reason'], () => Translatable> = {
+  logoTooSmall: () =>
+    t(
+      {
+        id: 'files.logo.tooSmall',
+        defaultMessage: 'A logo must be at least {min} pixels wide',
+      },
+      { min: LOGO_MIN },
+    ),
+  squareLogoTooSmall: () =>
+    t(
+      {
+        id: 'files.squareLogo.small',
+        defaultMessage:
+          'A square logo must be at least {min} pixels on each side.',
+      },
+      { min: SQUARE_LOGO_MIN },
+    ),
+  squareLogoNotSquare: () =>
+    t({
+      id: 'files.squareLogo.shape',
+      defaultMessage:
+        'A square logo must be about square, at most 5\u00a0:\u00a04 either way. Use a wide image as the main logo.',
+    }),
+};
 
 /** An upload as multer hands it over, in memory. */
 export interface UploadedBinary {
@@ -95,8 +124,9 @@ export class FilesService {
     const rule = KIND_RULES[kind];
     const type = sniff(file.buffer);
     if (!type || !rule.accepts.includes(type)) {
+      // Either logo goes by a logo's words.
       throw new UnsupportedMediaTypeException(
-        rule.render === 'logo'
+        rule.render !== 'photo'
           ? t({
               id: 'files.logo.type',
               defaultMessage: 'A logo must be a PNG, JPEG, WebP or SVG image',
@@ -109,7 +139,7 @@ export class FilesService {
     }
 
     const rendered = await this.render(rule.render, file.buffer, type);
-    const contentType = rule.render === 'logo' ? 'image/png' : 'image/webp';
+    const contentType = `image/${rule.format}`;
     const bytes = rendered.reduce((sum, size) => sum + size.data.length, 0);
     // Before the transaction, not inside it: hashing up to 20 MB would
     // hold the organization's upload lock for as long.
@@ -208,10 +238,7 @@ export class FilesService {
             ),
             bytes,
             sha256,
-            originalName: downloadName(
-              file.originalname,
-              rule.render === 'logo' ? 'png' : 'webp',
-            ),
+            originalName: downloadName(file.originalname, rule.format),
             createdBy: userId,
           })
           .returning();
@@ -269,7 +296,8 @@ export class FilesService {
     }
     if (view && reader) await this.permissions.demand(reader, [view]);
 
-    // A logo has only `full`; any size asked of it is that.
+    // A size the file does not keep is answered with `full`: a logo keeps
+    // only that, a square logo no `display`.
     const kept: FileSize = row.sizes[size] ? size : 'full';
     const stored = row.sizes[kept];
     if (!stored) throw new Error(`File ${row.id} has no ${kept} size`);
@@ -341,26 +369,38 @@ export class FilesService {
       );
   }
 
+  /**
+   * A record's one file of a kind going from `from` to `to`, as an
+   * organization's logo does: the new one attached and the old released,
+   * in the record's transaction, so one is never left both unused and
+   * kept (ADR-059). `to` undefined, or the same, changes nothing; null
+   * removes it. Whether the record's column changes.
+   */
+  async swapFile(
+    tx: Transaction,
+    organizationId: string,
+    kind: OrganizationFileKind,
+    from: string | null,
+    to: string | null | undefined,
+  ): Promise<boolean> {
+    if (to === undefined || to === from) return false;
+    if (to) await this.attach(tx, organizationId, to, kind);
+    if (from) await this.release(tx, organizationId, from);
+    return true;
+  }
+
   private async render(
-    render: 'logo' | 'photo',
+    render: KindRule['render'],
     input: Buffer,
     type: Sniffed,
   ): Promise<Rendered[]> {
     try {
-      return render === 'logo'
-        ? await renderLogo(input, type)
-        : await renderPhoto(input);
+      if (render === 'logo') return await renderLogo(input, type);
+      if (render === 'squareLogo') return await renderSquareLogo(input, type);
+      return await renderPhoto(input);
     } catch (error) {
-      if (error instanceof LogoTooSmall) {
-        throw new BadRequestException(
-          t(
-            {
-              id: 'files.logo.tooSmall',
-              defaultMessage: 'A logo must be at least {min} pixels wide',
-            },
-            { min: LOGO_MIN },
-          ),
-        );
+      if (error instanceof ImageRefused) {
+        throw new BadRequestException(REFUSED[error.reason]());
       }
       if (error instanceof UnreadableImage) {
         throw new BadRequestException(

@@ -59,6 +59,16 @@ export class FilesController {
     return this.keep('logo', user, file);
   }
 
+  @Post('square-logo')
+  @RequirePermissions(PERMISSIONS.ORGANIZATIONS_UPDATE)
+  @UseInterceptors(receive('square_logo'))
+  uploadSquareLogo(
+    @CurrentUser() user: RequestContext,
+    @UploadedFile() file: UploadedBinary | undefined,
+  ): Promise<UploadedFileEnvelope> {
+    return this.keep('square_logo', user, file);
+  }
+
   @Post('product-image')
   @RequirePermissions(PERMISSIONS.PRODUCTS_UPDATE)
   @UseInterceptors(receive('product_image'))

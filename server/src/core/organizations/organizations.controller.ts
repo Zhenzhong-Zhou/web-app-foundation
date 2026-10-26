@@ -108,6 +108,7 @@ export class OrganizationController {
       // Branding and the expiry days (ADR-060). The accent is logged as
       // sent; the row holds the shade that passed.
       'logoFileId',
+      'squareLogoFileId',
       'accentColor',
       'rail',
       'logoOnDocuments',

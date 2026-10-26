@@ -18,6 +18,7 @@ import {
   createE2eApp,
   registerOrganization,
 } from './utils/fixtures';
+import { solidPng } from './utils/images';
 import { resetDatabase } from './utils/reset-db';
 
 interface Kept {
@@ -135,6 +136,71 @@ describe('Files (e2e)', () => {
     expect((await sharp(bytesOf(res)).metadata()).format).toBe('png');
   });
 
+  it('keeps a logo from an SVG that declares itself large', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    // Drawn at 300 dpi, 2000 px came to 69 million pixels and was refused
+    // as unreadable; drawn at the size kept, it is 1024.
+    const large = Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="2000"><circle cx="1000" cy="1000" r="900" fill="#2f6b4f"/></svg>',
+    );
+    const kept = body<Kept>(
+      await alpha.agent
+        .post('/v1/files/logo')
+        .attach('file', large, 'logo.svg')
+        .expect(201),
+    ).file;
+
+    expect(kept.contentType).toBe('image/png');
+    expect(kept.sizes.full).toMatchObject({ width: 1024, height: 1024 });
+  });
+
+  it('keeps a square logo as two PNGs, and full for a size it lacks', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const kept = body<Kept>(
+      await alpha.agent
+        .post('/v1/files/square-logo')
+        .attach('file', await solidPng(800, 800), 'mark.png')
+        .expect(201),
+    ).file;
+
+    expect(kept.kind).toBe('square_logo');
+    expect(kept.contentType).toBe('image/png');
+    expect(Object.keys(kept.sizes).sort()).toEqual(['full', 'thumb']);
+    expect(kept.sizes.thumb).toMatchObject({ width: 128, height: 128 });
+    expect(kept.sizes.full).toMatchObject({ width: 512, height: 512 });
+
+    const served = async (query: string) => {
+      const res = await alpha.agent
+        .get(`/v1/files/${kept.id}${query}`)
+        .expect(200);
+      expect(res.headers['content-type']).toBe('image/png');
+      return (await sharp(bytesOf(res)).metadata()).width;
+    };
+    expect(await served('?size=thumb')).toBe(128);
+    expect(await served('')).toBe(512);
+    expect(await served('?size=display')).toBe(512);
+  });
+
+  it('refuses a square logo too wide or too small, in words', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const refused = async (image: Buffer) =>
+      body<{ message: string }>(
+        await alpha.agent
+          .post('/v1/files/square-logo')
+          .attach('file', image, 'mark.png')
+          .expect(400),
+      ).message;
+
+    expect(await refused(await solidPng(600, 400))).toBe(
+      'A square logo must be about square, at most 5\u00a0:\u00a04 either way. Use a wide image as the main logo.',
+    );
+    expect(await refused(await solidPng(100, 100))).toBe(
+      'A square logo must be at least 128 pixels on each side.',
+    );
+    // Nothing kept.
+    expect(await db.select().from(files)).toEqual([]);
+  });
+
   it('goes by the bytes, and refuses what will not decode', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const jpegHeader = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
@@ -159,6 +225,10 @@ describe('Files (e2e)', () => {
     const alpha = await registerOrganization(app, 'alpha');
     await alpha.agent
       .post('/v1/files/logo')
+      .attach('file', Buffer.alloc(2 * 1024 * 1024 + 1, 1), 'huge.png')
+      .expect(413);
+    await alpha.agent
+      .post('/v1/files/square-logo')
       .attach('file', Buffer.alloc(2 * 1024 * 1024 + 1, 1), 'huge.png')
       .expect(413);
   });
@@ -197,6 +267,24 @@ describe('Files (e2e)', () => {
     await viewer
       .post('/v1/files/logo')
       .attach('file', SVG, 'logo.svg')
+      .expect(403);
+  });
+
+  it('lets a viewer see the square logo, refused one before reading it', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
+    const kept = body<Kept>(
+      await alpha.agent
+        .post('/v1/files/square-logo')
+        .attach('file', await solidPng(300, 300), 'mark.png')
+        .expect(201),
+    ).file;
+
+    await viewer.get(`/v1/files/${kept.id}?size=thumb`).expect(200);
+    // Past the limit, which reading would answer with 413: refused first.
+    await viewer
+      .post('/v1/files/square-logo')
+      .attach('file', Buffer.alloc(2 * 1024 * 1024 + 1, 1), 'huge.png')
       .expect(403);
   });
 

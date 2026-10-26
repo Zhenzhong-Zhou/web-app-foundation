@@ -109,6 +109,51 @@ test('brands the organization and sets its expiry days', async ({
   await expect(page.getByText('Expiry saved')).toBeVisible();
 });
 
+/**
+ * The square logo (ADR-060, amended): uploaded on Branding and saved, it
+ * stands beside the name with no main logo, and the folded rail's plate
+ * shows it at once, from the 128 px file kept for it.
+ */
+test('gives the organization a square logo, which the folded rail shows', async ({
+  page,
+  freshOrg,
+}) => {
+  await signInAs(page, freshOrg.api);
+  await page.goto('/settings/organization?tab=branding');
+
+  const square = page.getByRole('group', { name: 'Square logo' });
+  await square.locator('input[type="file"]').setInputFiles({
+    name: 'mark.svg',
+    mimeType: 'image/svg+xml',
+    buffer: Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><circle cx="80" cy="80" r="80" fill="#2f6b4f"/></svg>',
+    ),
+  });
+  await expect(square.getByRole('button', { name: 'Replace' })).toBeVisible();
+  await page.getByRole('button', { name: 'Save branding' }).click();
+  await expect(page.getByText('Branding saved')).toBeVisible();
+
+  const thumb = /^\/api\/v1\/files\/[\w-]+\?size=thumb$/;
+  // Beside the name at the rail's top, which names the way home.
+  const home = page.getByRole('link', {
+    name: freshOrg.organizationName,
+    exact: true,
+  });
+  await expect(home.locator('img')).toHaveAttribute('src', thumb);
+
+  await page.getByRole('button', { name: 'Collapse navigation' }).click();
+  const plate = page.getByRole('button', {
+    name: `Expand navigation (${freshOrg.organizationName})`,
+    exact: true,
+  });
+  await expect(plate).toBeVisible();
+  const image = plate.locator('img');
+  await expect(image).toHaveAttribute('src', thumb);
+  await expect
+    .poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBe(128);
+});
+
 test('adds a two-tax code, changes a rate, and retires it', async ({
   page,
   freshOrg,
