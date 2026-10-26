@@ -1,8 +1,9 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { renderWithAuth } from '../test/render-with-auth';
+import { atTextSizes } from '../test/text-sizes';
 import { themeFor } from '../theme';
 import { LOGO_PLATE } from './logo';
 import { OrganizationMark } from './organization-mark';
@@ -50,10 +51,6 @@ function renderMark({
 
 const home = () => screen.getByRole('link');
 
-afterEach(() => {
-  document.documentElement.style.fontSize = '';
-});
-
 /**
  * The organization's place in the corner, the rail's top and the drawer's
  * header (ADR-060, amended): with no main logo, its square logo beside the
@@ -76,11 +73,10 @@ describe('OrganizationMark', () => {
     expect(image!.parentElement).toHaveStyle({ backgroundColor: LOGO_PLATE });
 
     // At most 32 px, in rem, so it grows with the name beside it.
-    const at = (scale: string) => {
-      document.documentElement.style.fontSize = scale;
-      return getComputedStyle(image!).maxHeight;
-    };
-    expect([at(''), at('125%')]).toEqual(['32px', '40px']);
+    expect(atTextSizes(() => getComputedStyle(image!).maxHeight)).toEqual({
+      standard: '32px',
+      larger: '40px',
+    });
   });
 
   it('draws the square logo on the light rail without a plate', () => {

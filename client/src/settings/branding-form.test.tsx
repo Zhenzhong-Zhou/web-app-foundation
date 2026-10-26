@@ -10,6 +10,8 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { OrganizationLogoKind } from '../lib/api-names';
+import { apiError } from '../test/handlers';
+import { loads } from '../test/image-loads';
 import { server } from '../test/setup';
 import { BrandingForm } from './branding-form';
 
@@ -55,14 +57,6 @@ const preview = () =>
     name: 'How it looks in the sidebar',
     hidden: true,
   }).nextElementSibling as HTMLElement;
-
-/** The main logo loaded at its own size, as the browser reads it. */
-function loads(container: HTMLElement, width: number, height: number) {
-  const image = container.querySelector<HTMLImageElement>('img[hidden]')!;
-  Object.defineProperty(image, 'naturalWidth', { value: width });
-  Object.defineProperty(image, 'naturalHeight', { value: height });
-  fireEvent.load(image);
-}
 
 /** What an upload route answers, for the kind it keeps. */
 function stored(id: string, kind: OrganizationLogoKind) {
@@ -225,13 +219,9 @@ describe('BrandingForm, the two logos', () => {
   it('shows a refusal in its own row, and keeps nothing', async () => {
     server.use(
       http.post('/api/v1/files/square-logo', () =>
-        HttpResponse.json(
-          {
-            statusCode: 400,
-            message:
-              'A square logo must be about square, at most 5 : 4 either way. Use a wide image as the main logo.',
-          },
-          { status: 400 },
+        apiError(
+          400,
+          'A square logo must be about square, at most 5\u00a0:\u00a04 either way. Use a wide image as the main logo.',
         ),
       ),
     );

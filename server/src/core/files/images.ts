@@ -35,7 +35,7 @@ export const LOGO_MIN = 256;
  * each side, kept in two sizes, each its longer side at most.
  */
 export const SQUARE_LOGO_MIN = 128;
-export const SQUARE_LOGO_SIZES = { thumb: 128, full: 512 } as const;
+const SQUARE_LOGO_SIZES = { thumb: 128, full: 512 } as const;
 
 /**
  * How far from square a square logo may be, either way: the folded
@@ -43,7 +43,7 @@ export const SQUARE_LOGO_SIZES = { thumb: 128, full: 512 } as const;
  * (client/src/layout/use-plate.ts); the two packages share no code, so
  * each keeps its own.
  */
-export const SQUARE_ENOUGH = 1.25;
+const SQUARE_ENOUGH = 1.25;
 
 /** Decoding stops past this many pixels: a 20 MB upload can claim billions. */
 const MAX_PIXELS = 50_000_000;

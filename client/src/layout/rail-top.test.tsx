@@ -2,10 +2,12 @@ import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { drawnIn } from '../test/drawn-colour';
+import { loads } from '../test/image-loads';
 import { renderWithAuth } from '../test/render-with-auth';
+import { atTextSizes } from '../test/text-sizes';
 import { themeFor } from '../theme';
 import { LOGO_PLATE } from './logo';
 import { RailTop } from './rail-top';
@@ -46,30 +48,15 @@ function renderTop({
   return { ...view, onToggle };
 }
 
-/** The logo loaded at its own size, as the browser reads it. */
-function loads(container: HTMLElement, width: number, height: number) {
-  const image = container.querySelector<HTMLImageElement>('img[hidden]')!;
-  Object.defineProperty(image, 'naturalWidth', { value: width });
-  Object.defineProperty(image, 'naturalHeight', { value: height });
-  fireEvent.load(image);
-}
-
 /**
  * The plate's image at Standard and at Larger text, as the browser draws
  * it: in rem, it grows with the plate (ADR-060, amended).
  */
-function sizes(image: Element | null) {
-  const at = (scale: string) => {
-    document.documentElement.style.fontSize = scale;
+const sizes = (image: Element | null) =>
+  atTextSizes(() => {
     const { maxWidth, maxHeight } = getComputedStyle(image!);
     return `${maxWidth} × ${maxHeight}`;
-  };
-  return { standard: at(''), larger: at('125%') };
-}
-
-afterEach(() => {
-  document.documentElement.style.fontSize = '';
-});
+  });
 
 /** Named with the initials it shows, or alone with a logo (WCAG 2.5.3). */
 const plate = () =>

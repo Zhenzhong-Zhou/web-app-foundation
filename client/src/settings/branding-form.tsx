@@ -24,7 +24,7 @@ import type { UploadedFileEnvelope } from '../api/types.gen';
 import { SettingsSection } from '../components/settings-section';
 import { LOGO_ON_PLATE, LOGO_PLATE, logoSrc } from '../layout/logo';
 import { Plate } from '../layout/plate';
-import { usePlate } from '../layout/use-plate';
+import { type PlateFace, usePlate } from '../layout/use-plate';
 import { api, messageFor } from '../lib/api';
 import type { OrganizationLogoKind } from '../lib/api-names';
 import { initialsLang, organizationInitialsOf } from '../lib/person-initials';
@@ -32,7 +32,7 @@ import { useSubmit } from '../lib/use-submit';
 import { nearStatus, normalizeHex, safeAccent } from '../theme/accent';
 import { DEFAULT_BRAND } from '../theme/brand-store';
 import { rem } from '../theme/rem';
-import { RAILS } from '../theme/tokens';
+import { ON_ACCENT, RAILS } from '../theme/tokens';
 
 /** ADR-060's six, each tested in both modes: none needs adjusting. */
 const PRESETS = [
@@ -306,6 +306,70 @@ function LogoRow({
 }
 
 /**
+ * The square logo's second sentence, while it has none: what the folded
+ * plate shows instead, by its rule. The initials in the plate's own
+ * colours, as text so a screen reader reads them; nothing while the main
+ * logo is read. On a line of its own, not joined by a space, which some
+ * languages do not put between sentences.
+ */
+function SquareLogoFallback({
+  face,
+  initials,
+  accent,
+}: {
+  face: PlateFace;
+  initials: string;
+  accent: string;
+}) {
+  const intl = useIntl();
+
+  if (face.kind === 'initials') {
+    return (
+      <Box component="span" sx={{ display: 'block' }}>
+        {intl.formatMessage(
+          {
+            id: 'settings.branding.squareLogo.fallbackInitials',
+            defaultMessage: 'Without one, the initials {initials} show there.',
+          },
+          {
+            initials: (
+              <Box
+                key="initials"
+                component="span"
+                lang={initialsLang(initials)}
+                sx={{
+                  display: 'inline-block',
+                  px: 0.5,
+                  borderRadius: 0.5,
+                  bgcolor: accent,
+                  color: ON_ACCENT.light,
+                  typography: 'caption',
+                  fontWeight: 700,
+                }}
+              >
+                {initials}
+              </Box>
+            ),
+          },
+        )}
+      </Box>
+    );
+  }
+  if (face.kind === 'logo') {
+    return (
+      <Box component="span" sx={{ display: 'block' }}>
+        {intl.formatMessage({
+          id: 'settings.branding.squareLogo.fallbackLogo',
+          defaultMessage:
+            'Your logo is about square, so it already shows there; upload one only for a different mark.',
+        })}
+      </Box>
+    );
+  }
+  return null;
+}
+
+/**
  * Branding (ADR-060): the logo, the square logo, the colour and the
  * sidebar's shade, saved together. A custom colour is previewed as the
  * shade that will be saved: the server applies the same check and saves
@@ -377,45 +441,6 @@ export function BrandingForm({
     );
   }
 
-  // What shows on the plate without a square logo, in the plate's own
-  // colours, the initials as text so a screen reader reads them; nothing
-  // while the logo is read.
-  const fallback =
-    face.kind === 'initials'
-      ? intl.formatMessage(
-          {
-            id: 'settings.branding.squareLogo.fallbackInitials',
-            defaultMessage: 'Without one, the initials {initials} show there.',
-          },
-          {
-            initials: (
-              <Box
-                key="initials"
-                component="span"
-                lang={initialsLang(initials)}
-                sx={{
-                  display: 'inline-block',
-                  px: 0.5,
-                  borderRadius: 0.5,
-                  bgcolor: accent,
-                  color: '#FFFFFF',
-                  typography: 'caption',
-                  fontWeight: 700,
-                }}
-              >
-                {initials}
-              </Box>
-            ),
-          },
-        )
-      : face.kind === 'logo'
-        ? intl.formatMessage({
-            id: 'settings.branding.squareLogo.fallbackLogo',
-            defaultMessage:
-              'Your logo is about square, so it already shows there; upload one only for a different mark.',
-          })
-        : null;
-
   return (
     <SettingsSection
       title={intl.formatMessage({
@@ -486,13 +511,11 @@ export function BrandingForm({
                 id: 'settings.branding.squareLogo.line',
                 defaultMessage: 'For small spaces, such as the folded sidebar.',
               })}
-              {/* On a line of its own, not joined by a space, which some
-                  languages do not put between sentences. */}
-              {fallback && (
-                <Box component="span" sx={{ display: 'block' }}>
-                  {fallback}
-                </Box>
-              )}
+              <SquareLogoFallback
+                face={face}
+                initials={initials}
+                accent={accent}
+              />
             </>
           }
           uploading={uploading.square_logo}
@@ -613,7 +636,7 @@ export function BrandingForm({
                     face={face}
                     initials={initials}
                     accent={accent}
-                    onAccent="#FFFFFF"
+                    onAccent={ON_ACCENT.light}
                     edge={colours.divider}
                   />
                 </Box>
@@ -723,7 +746,7 @@ export function BrandingForm({
               py: 1,
               borderRadius: 1,
               bgcolor: accent,
-              color: '#FFFFFF',
+              color: ON_ACCENT.light,
               fontWeight: 600,
             }}
           >

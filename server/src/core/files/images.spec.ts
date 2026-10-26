@@ -18,6 +18,15 @@ function photo(width: number, height: number): Promise<Buffer> {
     .toBuffer();
 }
 
+/** A plain PNG, for a logo or a square logo. */
+function png(width: number, height: number): Promise<Buffer> {
+  return sharp({
+    create: { width, height, channels: 4, background: '#2a6f' },
+  })
+    .png()
+    .toBuffer();
+}
+
 describe('renderPhoto', () => {
   it('keeps three sizes in proportion, as WebP, without metadata', async () => {
     const sizes = await renderPhoto(await photo(4000, 3000));
@@ -90,44 +99,24 @@ describe('renderLogo', () => {
   });
 
   it('refuses a raster logo narrower than 256 px', async () => {
-    const small = await sharp({
-      create: { width: 200, height: 100, channels: 4, background: '#fff0' },
-    })
-      .png()
-      .toBuffer();
+    const small = await png(200, 100);
     const refused = renderLogo(small, 'image/png');
     await expect(refused).rejects.toBeInstanceOf(ImageRefused);
     await expect(refused).rejects.toHaveProperty('reason', 'logoTooSmall');
   });
 
   it('shrinks a large logo, never enlarges a raster one', async () => {
-    const wide = await sharp({
-      create: { width: 3000, height: 1000, channels: 4, background: '#fff0' },
-    })
-      .png()
-      .toBuffer();
+    const wide = await png(3000, 1000);
     const [shrunk] = await renderLogo(wide, 'image/png');
     expect([shrunk.width, shrunk.height]).toEqual([1024, 341]);
 
-    const modest = await sharp({
-      create: { width: 400, height: 100, channels: 4, background: '#fff0' },
-    })
-      .png()
-      .toBuffer();
+    const modest = await png(400, 100);
     const [kept] = await renderLogo(modest, 'image/png');
     expect([kept.width, kept.height]).toEqual([400, 100]);
   });
 });
 
 describe('renderSquareLogo', () => {
-  function png(width: number, height: number): Promise<Buffer> {
-    return sharp({
-      create: { width, height, channels: 4, background: '#2a6f' },
-    })
-      .png()
-      .toBuffer();
-  }
-
   async function sizesOf(input: Buffer, type: 'image/png' | 'image/svg+xml') {
     const sizes = await renderSquareLogo(input, type);
     for (const { data } of sizes) {

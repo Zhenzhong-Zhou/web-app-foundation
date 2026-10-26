@@ -18,6 +18,7 @@ import {
   createE2eApp,
   registerOrganization,
 } from './utils/fixtures';
+import { solidPng } from './utils/images';
 import { resetDatabase } from './utils/reset-db';
 
 interface Kept {
@@ -43,15 +44,6 @@ function photo(width: number, height: number): Promise<Buffer> {
 const SVG = Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><rect width="200" height="100" fill="#2a6"/></svg>',
 );
-
-/** A square logo's PNG (ADR-060, amended). */
-function mark(width: number, height: number): Promise<Buffer> {
-  return sharp({
-    create: { width, height, channels: 4, background: '#2a6f' },
-  })
-    .png()
-    .toBuffer();
-}
 
 /** Supertest keeps an image as a Buffer. */
 function bytesOf(res: { body: unknown }): Buffer {
@@ -167,7 +159,7 @@ describe('Files (e2e)', () => {
     const kept = body<Kept>(
       await alpha.agent
         .post('/v1/files/square-logo')
-        .attach('file', await mark(800, 800), 'mark.png')
+        .attach('file', await solidPng(800, 800), 'mark.png')
         .expect(201),
     ).file;
 
@@ -199,10 +191,10 @@ describe('Files (e2e)', () => {
           .expect(400),
       ).message;
 
-    expect(await refused(await mark(600, 400))).toBe(
+    expect(await refused(await solidPng(600, 400))).toBe(
       'A square logo must be about square, at most 5\u00a0:\u00a04 either way. Use a wide image as the main logo.',
     );
-    expect(await refused(await mark(100, 100))).toBe(
+    expect(await refused(await solidPng(100, 100))).toBe(
       'A square logo must be at least 128 pixels on each side.',
     );
     // Nothing kept.
@@ -284,7 +276,7 @@ describe('Files (e2e)', () => {
     const kept = body<Kept>(
       await alpha.agent
         .post('/v1/files/square-logo')
-        .attach('file', await mark(300, 300), 'mark.png')
+        .attach('file', await solidPng(300, 300), 'mark.png')
         .expect(201),
     ).file;
 
