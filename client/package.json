@@ -25,7 +25,7 @@
     "test": "vitest run",
     "pretest:watch": "npm run i18n:compile",
     "test:watch": "vitest",
-    "i18n:extract": "formatjs extract \"src/**/*.{ts,tsx}\" --ignore \"src/**/*.test.{ts,tsx}\" --ignore \"src/test/**\" --format simple --throws --out-file src/locales/en.json",
+    "i18n:extract": "formatjs extract \"src/**/*.{ts,tsx}\" --ignore \"src/**/*.test.{ts,tsx}\" --ignore \"src/test/**\" --format simple --throws --preserve-whitespace --out-file src/locales/en.json",
     "i18n:compile": "formatjs compile-folder --format simple --ast src/locales src/i18n/compiled && node scripts/write-failure-words.mjs",
     "i18n:check": "node scripts/check-catalogues.mjs",
     "api:types": "openapi-ts && node scripts/write-api-revision.mjs",
