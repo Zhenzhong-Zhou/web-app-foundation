@@ -144,6 +144,24 @@ describe('Files (e2e)', () => {
     expect((await sharp(bytesOf(res)).metadata()).format).toBe('png');
   });
 
+  it('keeps a logo from an SVG that declares itself large', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    // Drawn at 300 dpi, 2000 px came to 69 million pixels and was refused
+    // as unreadable; drawn at the size kept, it is 1024.
+    const large = Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="2000"><circle cx="1000" cy="1000" r="900" fill="#2f6b4f"/></svg>',
+    );
+    const kept = body<Kept>(
+      await alpha.agent
+        .post('/v1/files/logo')
+        .attach('file', large, 'logo.svg')
+        .expect(201),
+    ).file;
+
+    expect(kept.contentType).toBe('image/png');
+    expect(kept.sizes.full).toMatchObject({ width: 1024, height: 1024 });
+  });
+
   it('keeps a square logo as two PNGs, and full for a size it lacks', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const kept = body<Kept>(

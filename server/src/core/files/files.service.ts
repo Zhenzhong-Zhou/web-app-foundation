@@ -23,25 +23,50 @@ import {
   type StoredSize,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
-import { t } from '../../i18n/translate';
+import { t, type Translatable } from '../../i18n/translate';
 import type { RequestContext } from '../auth/request-context';
 import { PermissionsService } from '../authorization/permissions.service';
 import { dispositionOf } from './content-disposition';
 import { KIND_RULES, type KindRule } from './file-kinds';
 import { FILE_STORAGE, type FileStorage, keyOf, ownerOf } from './file-storage';
 import {
+  ImageRefused,
   LOGO_MIN,
-  LogoTooSmall,
   type Rendered,
   renderLogo,
   renderPhoto,
   renderSquareLogo,
   SQUARE_LOGO_MIN,
-  SquareLogoNotSquare,
-  SquareLogoTooSmall,
   UnreadableImage,
 } from './images';
 import { sniff, type Sniffed } from './sniff';
+
+/** What each refusal of an image says (images.ts, ImageRefused). */
+const REFUSED: Record<ImageRefused['reason'], () => Translatable> = {
+  logoTooSmall: () =>
+    t(
+      {
+        id: 'files.logo.tooSmall',
+        defaultMessage: 'A logo must be at least {min} pixels wide',
+      },
+      { min: LOGO_MIN },
+    ),
+  squareLogoTooSmall: () =>
+    t(
+      {
+        id: 'files.squareLogo.small',
+        defaultMessage:
+          'A square logo must be at least {min} pixels on each side.',
+      },
+      { min: SQUARE_LOGO_MIN },
+    ),
+  squareLogoNotSquare: () =>
+    t({
+      id: 'files.squareLogo.shape',
+      defaultMessage:
+        'A square logo must be about square, at most 5\u00a0:\u00a04 either way. Use a wide image as the main logo.',
+    }),
+};
 
 /** An upload as multer hands it over, in memory. */
 export interface UploadedBinary {
@@ -354,37 +379,8 @@ export class FilesService {
       if (render === 'squareLogo') return await renderSquareLogo(input, type);
       return await renderPhoto(input);
     } catch (error) {
-      if (error instanceof LogoTooSmall) {
-        throw new BadRequestException(
-          t(
-            {
-              id: 'files.logo.tooSmall',
-              defaultMessage: 'A logo must be at least {min} pixels wide',
-            },
-            { min: LOGO_MIN },
-          ),
-        );
-      }
-      if (error instanceof SquareLogoTooSmall) {
-        throw new BadRequestException(
-          t(
-            {
-              id: 'files.squareLogo.small',
-              defaultMessage:
-                'A square logo must be at least {min} pixels on each side.',
-            },
-            { min: SQUARE_LOGO_MIN },
-          ),
-        );
-      }
-      if (error instanceof SquareLogoNotSquare) {
-        throw new BadRequestException(
-          t({
-            id: 'files.squareLogo.shape',
-            defaultMessage:
-              'A square logo must be about square, at most 5\u00a0:\u00a04 either way. Use a wide image as the main logo.',
-          }),
-        );
+      if (error instanceof ImageRefused) {
+        throw new BadRequestException(REFUSED[error.reason]());
       }
       if (error instanceof UnreadableImage) {
         throw new BadRequestException(

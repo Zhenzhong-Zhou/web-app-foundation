@@ -821,7 +821,9 @@ await fetch(`${api}/v1/files/product-image`, {
 
 - **MC-1702** Branding (ADR-060). As an owner, Settings → Organization →
   Branding: upload a PNG logo and an SVG one in turn; each previews on both
-  sidebar shades, and after Save the logo replaces the name at the rail's
+  sidebar shades. An SVG that declares itself large, `width="2000"
+  height="2000"`, is kept too, as sharp as a small one, never refused as
+  unreadable. After Save the logo replaces the name at the rail's
   top, and below 1200 px in the top bar (on a white plate on the dark rail,
   and in dark mode). Under Colour, Buttons will look like this: and under
   it a sample reading Example, in the chosen colour; it is not a button,
@@ -3602,3 +3604,6 @@ first.
 - 2026-10-26: the square logo's pull request, Branding's colour sample
   captioned and reading Example, never a second Save branding: MC-1702
   extended.
+- 2026-10-26: the square logo's pull request, an SVG logo declared 1700 px
+  or wider kept, drawn at the size kept rather than refused as unreadable:
+  MC-1702 extended.

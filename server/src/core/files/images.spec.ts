@@ -1,12 +1,10 @@
 import sharp from 'sharp';
 
 import {
-  LogoTooSmall,
+  ImageRefused,
   renderLogo,
   renderPhoto,
   renderSquareLogo,
-  SquareLogoNotSquare,
-  SquareLogoTooSmall,
   UnreadableImage,
 } from './images';
 
@@ -64,9 +62,31 @@ describe('renderLogo', () => {
 
     expect(logo.size).toBe('full');
     expect((await sharp(logo.data).metadata()).format).toBe('png');
-    // Drawn at 300 dpi, then scaled: a pixel either way is rounding.
+    // Drawn at the size kept: a pixel either way is rounding.
     expect(logo.width).toBe(1024);
     expect(Math.abs(logo.height - 512)).toBeLessThanOrEqual(1);
+  });
+
+  /**
+   * Drawn at the size kept, not at 300 dpi and scaled, an SVG that
+   * declares itself large stays under the pixel limit: one of 1700 px, as
+   * a designer's export often is, was refused as unreadable.
+   */
+  it('draws an SVG declared 1700 px or wider', async () => {
+    const svg = (width: number, height: number) =>
+      Buffer.from(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="${width}" height="${height}" fill="#2a6"/></svg>`,
+      );
+
+    for (const [width, height, kept] of [
+      [1700, 1700, [1024, 1024]],
+      [4000, 1000, [1024, 256]],
+      [12000, 12000, [1024, 1024]],
+    ] as const) {
+      const [logo] = await renderLogo(svg(width, height), 'image/svg+xml');
+      expect([logo.width, logo.height]).toEqual(kept);
+      expect((await sharp(logo.data).metadata()).format).toBe('png');
+    }
   });
 
   it('refuses a raster logo narrower than 256 px', async () => {
@@ -75,9 +95,9 @@ describe('renderLogo', () => {
     })
       .png()
       .toBuffer();
-    await expect(renderLogo(small, 'image/png')).rejects.toBeInstanceOf(
-      LogoTooSmall,
-    );
+    const refused = renderLogo(small, 'image/png');
+    await expect(refused).rejects.toBeInstanceOf(ImageRefused);
+    await expect(refused).rejects.toHaveProperty('reason', 'logoTooSmall');
   });
 
   it('shrinks a large logo, never enlarges a raster one', async () => {
@@ -130,13 +150,13 @@ describe('renderSquareLogo', () => {
   it('refuses one wider than 5 : 4', async () => {
     await expect(
       renderSquareLogo(await png(600, 400), 'image/png'),
-    ).rejects.toBeInstanceOf(SquareLogoNotSquare);
+    ).rejects.toHaveProperty('reason', 'squareLogoNotSquare');
   });
 
   it('refuses a raster under 128 px on a side', async () => {
     await expect(
       renderSquareLogo(await png(100, 100), 'image/png'),
-    ).rejects.toBeInstanceOf(SquareLogoTooSmall);
+    ).rejects.toHaveProperty('reason', 'squareLogoTooSmall');
   });
 
   it('shrinks a large one to 512 and 128', async () => {
@@ -166,6 +186,11 @@ describe('renderSquareLogo', () => {
     ]);
     await expect(
       renderSquareLogo(svg(60, 40), 'image/svg+xml'),
-    ).rejects.toBeInstanceOf(SquareLogoNotSquare);
+    ).rejects.toHaveProperty('reason', 'squareLogoNotSquare');
+    // Declared far larger than the pixel limit allows to draw at that size.
+    expect(await sizesOf(svg(12000, 12000), 'image/svg+xml')).toEqual([
+      ['thumb', 128, 128],
+      ['full', 512, 512],
+    ]);
   });
 });

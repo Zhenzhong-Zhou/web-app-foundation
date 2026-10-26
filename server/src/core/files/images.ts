@@ -59,14 +59,20 @@ export interface Rendered {
 /** The bytes do not decode as the image they claim to be. */
 export class UnreadableImage extends Error {}
 
-/** A raster logo narrower than LOGO_MIN. */
-export class LogoTooSmall extends Error {}
-
-/** A raster square logo under SQUARE_LOGO_MIN on either side. */
-export class SquareLogoTooSmall extends Error {}
-
-/** A square logo further from square than SQUARE_ENOUGH. */
-export class SquareLogoNotSquare extends Error {}
+/**
+ * An image its kind refuses, and why: a raster logo narrower than
+ * LOGO_MIN, a raster square logo under SQUARE_LOGO_MIN on either side, or
+ * a square logo further from square than SQUARE_ENOUGH. Any other failure
+ * is UnreadableImage.
+ */
+export class ImageRefused extends Error {
+  constructor(
+    readonly reason:
+      'logoTooSmall' | 'squareLogoTooSmall' | 'squareLogoNotSquare',
+  ) {
+    super(reason);
+  }
+}
 
 /**
  * A photo in its three sizes: decoded, turned upright, sRGB, every piece of
@@ -140,38 +146,20 @@ export function renderAvatar(input: Buffer): Promise<Rendered[]> {
 export function renderLogo(input: Buffer, type: Sniffed): Promise<Rendered[]> {
   return decoded(async () => {
     const vector = type === 'image/svg+xml';
-    const image = sharp(input, {
-      failOn: 'error',
-      limitInputPixels: MAX_PIXELS,
-      density: vector ? 300 : 72,
-    });
+    const { width, long } = await declared(input);
+    if (!vector && width < LOGO_MIN) throw new ImageRefused('logoTooSmall');
 
-    if (!vector) {
-      const { width = 0 } = await image.metadata();
-      if (width < LOGO_MIN) throw new LogoTooSmall();
-    }
-
-    const { data, info } = await image
-      .rotate()
-      .resize({
-        width: LOGO_MAX,
-        height: LOGO_MAX,
-        fit: 'inside',
-        // A vector has no pixels of its own to lose.
-        withoutEnlargement: !vector,
-      })
-      .toColourspace('srgb')
-      .png({ compressionLevel: 9 })
-      .toBuffer({ resolveWithObject: true });
-    return [{ size: 'full', data, width: info.width, height: info.height }];
+    return [
+      { size: 'full', ...(await drawPng(input, vector, long, LOGO_MAX)) },
+    ];
   });
 }
 
 /**
  * A square logo as two PNGs, each fitting its size: never cropped or
  * padded, a raster never enlarged. Its proportions are checked first, an
- * SVG's by its drawn size; an SVG is then drawn at each size, not drawn
- * once and scaled, and only the PNGs kept, as for the logo.
+ * SVG's by the size it declares; then each size is drawn, and only the
+ * PNGs kept, as for the logo.
  */
 export function renderSquareLogo(
   input: Buffer,
@@ -179,49 +167,75 @@ export function renderSquareLogo(
 ): Promise<Rendered[]> {
   return decoded(async () => {
     const vector = type === 'image/svg+xml';
-    const drawn = (density: number) =>
-      sharp(input, {
-        failOn: 'error',
-        limitInputPixels: MAX_PIXELS,
-        density,
-      });
-
-    // An SVG's size at 72 dpi is the one it declares.
-    const { width = 0, height = 0 } = await drawn(72).metadata();
-    if (!width || !height) throw new Error('The image has no size');
-    const long = Math.max(width, height);
+    const { width, height, long } = await declared(input);
     if (!vector && Math.min(width, height) < SQUARE_LOGO_MIN) {
-      throw new SquareLogoTooSmall();
+      throw new ImageRefused('squareLogoTooSmall');
     }
     if (long / Math.min(width, height) > SQUARE_ENOUGH) {
-      throw new SquareLogoNotSquare();
+      throw new ImageRefused('squareLogoNotSquare');
     }
 
     return Promise.all(
       (
         Object.keys(SQUARE_LOGO_SIZES) as (keyof typeof SQUARE_LOGO_SIZES)[]
-      ).map(async (size) => {
-        const side = SQUARE_LOGO_SIZES[size];
-        // Within the 1 to 100,000 dpi sharp draws at; the resize below
-        // makes up any difference.
-        const density = vector
-          ? Math.min(100_000, Math.max(1, (72 * side) / long))
-          : 72;
-        const { data, info } = await drawn(density)
-          .rotate()
-          .resize({
-            width: side,
-            height: side,
-            fit: 'inside',
-            withoutEnlargement: !vector,
-          })
-          .toColourspace('srgb')
-          .png({ compressionLevel: 9 })
-          .toBuffer({ resolveWithObject: true });
-        return { size, data, width: info.width, height: info.height };
-      }),
+      ).map(async (size) => ({
+        size,
+        ...(await drawPng(input, vector, long, SQUARE_LOGO_SIZES[size])),
+      })),
     );
   });
+}
+
+/**
+ * The size an image declares, an SVG's at 72 dpi. Read, not drawn, so with
+ * no pixel limit: an SVG declared thousands of pixels wide is drawn small
+ * below, under the limit, which the drawing keeps.
+ */
+async function declared(input: Buffer) {
+  const { width = 0, height = 0 } = await sharp(input, {
+    failOn: 'error',
+    limitInputPixels: false,
+    density: 72,
+  }).metadata();
+  if (!width || !height) throw new Error('The image has no size');
+  return { width, height, long: Math.max(width, height) };
+}
+
+/**
+ * An image as a PNG fitting `side` × `side`, upright and sRGB: never
+ * cropped or padded, a raster never enlarged. An SVG is drawn at that
+ * size, its density from its declared longer side (`long`), not drawn
+ * large and scaled down, so it stays sharp and under the pixel limit
+ * whatever size it declares.
+ */
+async function drawPng(
+  input: Buffer,
+  vector: boolean,
+  long: number,
+  side: number,
+): Promise<Omit<Rendered, 'size'>> {
+  // Within the 1 to 100,000 dpi sharp draws at; the resize below makes up
+  // any difference.
+  const density = vector
+    ? Math.min(100_000, Math.max(1, (72 * side) / long))
+    : 72;
+  const { data, info } = await sharp(input, {
+    failOn: 'error',
+    limitInputPixels: MAX_PIXELS,
+    density,
+  })
+    .rotate()
+    .resize({
+      width: side,
+      height: side,
+      fit: 'inside',
+      // A vector has no pixels of its own to lose.
+      withoutEnlargement: !vector,
+    })
+    .toColourspace('srgb')
+    .png({ compressionLevel: 9 })
+    .toBuffer({ resolveWithObject: true });
+  return { data, width: info.width, height: info.height };
 }
 
 /**
@@ -241,13 +255,7 @@ async function decoded<T>(work: () => Promise<T>): Promise<T> {
   try {
     return await work();
   } catch (error) {
-    if (
-      error instanceof LogoTooSmall ||
-      error instanceof SquareLogoTooSmall ||
-      error instanceof SquareLogoNotSquare
-    ) {
-      throw error;
-    }
+    if (error instanceof ImageRefused) throw error;
     throw new UnreadableImage(
       error instanceof Error ? error.message : String(error),
     );
