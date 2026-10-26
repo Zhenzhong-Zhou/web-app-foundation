@@ -1,16 +1,16 @@
-# web-app-foundation — handoff, 25 October 2026
+# web-app-foundation — handoff, 26 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 25 October 2026: read this first
+## Now, 26 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **The organization's square logo: PR #251** (`square-logo`, 25 to 26
-  October 2026), green in every browser and ready to merge, with ADR-060's
-  amendment and its as-built. An optional square logo on Branding, beside
+- **The organization's square logo: merged as #251** (`square-logo`,
+  95063d6) on 26 October 2026, with ADR-060's amendment and its
+  as-built. An optional square logo on Branding, beside
   the logo on a computer, its line naming what this organization shows
   without one; the folded plate's first choice ahead of a square main
   logo and the initials, its image growing with the plate; beside the
@@ -20,10 +20,9 @@ with this one, this one is current.
   taken for Save, large SVG logos no longer refused as damaged, no-break
   spaces kept by the catalogues' extraction. Claude Code Review, re-run
   once CI had finished, found no issues: #243's check passed its first
-  real test, and #252 is what it caught. **After the merge, by hand:**
-  `npm run migrate:all` on each clone, a restart of any local API started
-  before it, and MC-3601 to MC-3610 on the live site once Render has
-  deployed. Then `tmp/square-logo/` can go.
+  real test, and #252 is what it caught. After the merge, by hand, all
+  done on 26 October: `npm run migrate:all`, MC-3601 to MC-3610 walked on
+  the live site, and `tmp/square-logo/` deleted.
 - **The brand, ADR-082: merged as #247** (25 October 2026); its as-built
   amendment says what building settled. Panivo on every page before
   sign-in, at the rail's foot and in Help's foot; the organization's logo
@@ -40,9 +39,7 @@ with this one, this one is current.
   `.git/hooks/pre-push` deleted), and "Commits — no placeholder
   identity" is a required check in `main`'s ruleset. **Still by hand:**
   MC-3501 on an iPhone and an Android home screen, MC-3504 (a link pasted
-  into a chat) and MC-3505 (a phone's bar in each mode) on the live site;
-  and the next pull request's Claude Code Review, #243's first real test,
-  which will be the square logo's.
+  into a chat) and MC-3505 (a phone's bar in each mode) on the live site.
 - **`main` was red from #224 to #231** (23 to 24 October 2026). On a
   push CI runs every browser, but a pull request runs Chromium only
   unless it is labelled `full-e2e`, and #224 was not. Its new rows in
@@ -119,57 +116,80 @@ with this one, this one is current.
   request. The headers are in `render.md`, "Deploys". Render's edge
   ignores a query string and empties itself at each deploy, so no page
   stays old after one (#196's review; ADR-081's correction).
-- **The order now** (Bob, 22 to 26 October 2026), ADR-082 having merged:
-  **the organization's square logo** (#251, above); **#252**, a small PR
-  of its own, since a pull request that changes the review's workflow
-  cannot be reviewed by it (as #247): the review told not to wait for the
-  other checks, the check naming that third reason, and a time limit on
-  CI's Install browsers step, which stalled once on #251; **the emails'
-  design** (one layout for every email, the invitation included without
-  Panivo's header: the system's font, a phone's width, the main link as a
-  button mail apps draw, the small print grey, dark mail apps checked,
-  every email keeping its words; a short ADR and the canvas first), with
-  a chore riding along: **`/build-from-brief`**, a project skill holding
-  the ground rules every build brief repeats (the author identity,
-  staging by path, `scripts/verify.sh`, lint fixups, `npm run api`, the
-  stop rule, where `/clear` is safe, the inventory step), so a brief
-  shrinks to its decisions and its prompts and a rule changed once
-  reaches every session (Bob, 25 October 2026), with what the square logo
-  taught: dependencies judged by each package's own publish time, never
-  moving one back; a migration that adds to a list the code shares commits
-  with that code; manual checks in the same commit as what they check; the
-  review step in two prompts, the findings first, the fixes once Bob has
-  chosen. The emails' own brief is the first written for it; **an error
-  tracker**, a small PR with a short ADR: what is sent, scrubbed of
-  personal details (PIPEDA, PIPL), and browser errors carried through the
-  app's own API, so the browser contacts no other site; then
-  **ADR-083, low stock** (its questions in Open decisions; #222 rides
-  along). The uptime monitor runs on UptimeRobot since 25 October
-  (`docs/runbooks/services.md`). Then the review of the whole app, once
-  (`/production-readiness` with its device pass: deploys, backups and a
-  restore tried, security, performance, email, support, browsers and
-  China, tablets and foldables, the iPhone Duo closed and open, a phone
-  held sideways); its email section reports DMARC's `p=none` as
-  deferred, by decision, until the first paying customer. Then the
-  fix-ups, each a PR of five to ten
-  related issues: safety and scale (#181 first, then #142, #182, #225,
-  #226, #244), orders and shipping (#156, #125, #161, #164, #128, #241,
-  #250, #159 with #221, a layout decision first, #158's Receive action in the
-  summary, and decisions #157 and #160), organization, roles and audit
-  (#169, #168, #179's first half, #166, #133, #167, #233 and #248, the
-  flaky "roles" setup from #247's run), accessibility (#155, #170, #162,
-  #212, #214 with a row of its own in `accessibility.spec.ts`, #232,
-  #242; #246 rides with the square logo), and words and translations
-  (#148, #149, #150, #245, #249, with Bob's mother's corrections). #245
-  (`translate="no"` on data) is decided and suits a cloud session now
-  that #247 has merged. Not checked yet, and for #245: whether
-  `document.documentElement.lang` reads `zh-Hans` with the app in
-  简体中文; if it reads `en`, that is a bug for #245. Then new features,
-  in this order unless a trigger brings one forward, each with its entry
-  in Open decisions: one person in two organizations, then a practice
-  organization (ADR-077, *Deferred*); a public demo; plans and billing;
-  the operator's console and support access. Before going commercial,
-  the repository's visibility (Open decisions).
+- **The order now** (Bob, changed on 26 October 2026), with ADR-082 and
+  the square logo merged:
+    1. **#252**, a small PR of its own (`ci-reliability`), widened to CI's
+       reliability. A pull request that changes the review's workflow
+       cannot be reviewed by it (as #247), so `/code-review` runs by hand.
+       The review is told not to wait for the pull request's other checks
+       (`--append-system-prompt` in `claude_args`), and the check names
+       that third reason. Playwright's Install browsers stalls in its
+       Linux packages, not the browsers: on #251's run, apt fetching 181
+       packages (119 MB) from `azure.archive.ubuntu.com` hung at package
+       35, after an `Ign:` on an earlier one, on shard 1/3; then on 2/3
+       and 3/3 for over 17 minutes on its docs-only push, while the other
+       shard took 6. So `ci.yml` sets apt to time out and retry quickly
+       (`Acquire::http::Timeout`, `Acquire::Retries`) before the install,
+       gives Install browsers about 10 minutes a try and up to three
+       tries, and each Playwright job about 45 minutes. Caching the
+       browsers would not help, since they are not what stalls. If stalls
+       continue, Playwright's Docker image is the heavier fix, though the
+       jobs start containers of their own. The first docs commit, this
+       handoff's, rides in it.
+    2. **The emails' design**: one layout for every email, the invitation
+       included without Panivo's header (the system's font, a phone's
+       width, the main link as a button mail apps draw, the small print
+       grey, dark mail apps checked, every email keeping its words); a
+       short ADR and the canvas first. Riding along,
+       **`/build-from-brief`**, a project skill holding the ground rules
+       every build brief repeats (the author identity, staging by path,
+       `scripts/verify.sh`, lint fixups, `npm run api`, the stop rule,
+       where `/clear` is safe, the inventory step), so a brief shrinks to
+       its decisions and its prompts and a rule changed once reaches every
+       session (Bob, 25 October 2026). It carries the square logo's four
+       lessons: dependencies judged by each package's own publish time,
+       never moving one back; a migration that adds to a list the code
+       shares commits with that code; manual checks in the same commit as
+       what they check; the review step in two prompts, the findings
+       first, the fixes once Bob has chosen. The emails' own brief is the
+       first written for it.
+    3. **An error tracker**, a small PR with a short ADR, so real errors
+       show while fixing: what is sent, scrubbed of personal details
+       (PIPEDA, PIPL), and browser errors carried through the app's own
+       API, so the browser contacts no other site.
+    4. **ADR-083, low stock** (its questions in Open decisions; #222 rides
+       along).
+    5. **The fix-ups**, each a PR of five to ten related issues: safety
+       and scale (#181 first, then #142, #182, #225, #226, #244), orders
+       and shipping (#156, #125, #161, #164, #128, #241, #250, #159 with
+       #221, a layout decision first, #158's Receive action in the
+       summary, and decisions #157 and #160), organization, roles and
+       audit (#169, #168, #179's first half, #166, #133, #167, #233 and
+       #248, the flaky "roles" setup from #247's run), accessibility
+       (#155, #170, #162, #212, #214 with a row of its own in
+       `accessibility.spec.ts`, #232, #242), and words and translations
+       (#148, #149, #150, #245, #249, with Bob's mother's corrections).
+    6. **The review of the whole app**, once, after the fix-ups, so it
+       judges the app with the known issues fixed and finds what nobody
+       has filed (`/production-readiness` with its device pass: deploys,
+       backups and a restore tried, security, performance, email,
+       support, browsers and China, tablets and foldables, the iPhone Duo
+       closed and open, a phone held sideways); its email section reports
+       DMARC's `p=none` as deferred, by decision, until the first paying
+       customer. Then one round for its findings.
+    7. **New features**, in this order unless a trigger brings one
+       forward, each with its entry in Open decisions: one person in two
+       organizations, then a practice organization (ADR-077,
+       *Deferred*); a public demo; plans and billing; the operator's
+       console and support access.
+
+  #245 (`translate="no"` on data) is decided and suits a cloud session
+  before Bob's cloud credit ends in early November. Not checked yet, and
+  for #245: whether `document.documentElement.lang` reads `zh-Hans` with
+  the app in 简体中文; if it reads `en`, that is a bug for #245. The
+  uptime monitor runs on UptimeRobot since 25 October, its two monitors
+  and no more (`docs/runbooks/services.md`). Before going commercial, the
+  repository's visibility (Open decisions).
 - **Claude Code's cloud sessions** (Bob's $250 credit, which ends in early
   November) took the small fixes listed above, one branch and PR each;
   on 24 October, #228 and #229, while #221 stopped with its findings, as
@@ -417,9 +437,10 @@ with this one, this one is current.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
   for typescript-eslint and the Nest CLI (ADR-067, *Deferred*); still so
-  on 21 October 2026, with typescript-eslint 8.72.0 accepting `<6.1.0`,
-  the Nest CLI 12.0.10 depending on TypeScript `~6.0.2`, and
-  `@nestjs/swagger` 12.0.2 accepting up to 6 (ADR-019's table).
+  on 26 October 2026, with TypeScript 7.0.2 out since 8 July:
+  typescript-eslint 8.72.0 accepts `<6.1.0`, the Nest CLI 12.0.10 depends
+  on TypeScript `~6.0.2`, and `@nestjs/swagger` 12.0.4 accepts `^5 || ^6`
+  (ADR-019's table).
 - **ADR-046 amended:** a taxed invoice needs the seller's tax number,
   refused with `organization_tax_number_missing` and linked to Profile
   (`invoice-tax-number`, MC-711). Tax profiles by country are deferred in
@@ -645,7 +666,9 @@ with this one, this one is current.
   address (`rua`), a few weeks of reports, and `p=quarantine`, likely on
   Panivo's own sending domain, which ADR-082 defers to the same time.
   Meanwhile, once: Gmail's Show original on one of the app's emails reads
-  SPF, DKIM and DMARC PASS.
+  SPF, DKIM and DMARC PASS. A mailbox on the domain, when one is wanted (a
+  support address, or DMARC's reports): forwarding through ImprovMX, as
+  `services.md` says under *Not set up yet*.
 - **The pre-push hook** lives in `scripts/hooks/` since #247, and Bob's
   clone has used it since 25 October (`core.hooksPath`, the old copy
   deleted). A new clone needs `git config core.hooksPath scripts/hooks`
@@ -739,16 +762,16 @@ with this one, this one is current.
   #212, #214, #221, #222, #225, #226 and #232 open; #213, #223 and #230
   closed by #228, #229 and #231. From 24 and 25 October: #233, #241,
   #242, #244, #245, #246 and #248 open; #158 retitled, its filled button
-  fixed by #236. From 26 October: #249, #250 and #252 open; #246 closes
+  fixed by #236. From 26 October: #249, #250 and #252 open; #246 closed
   with #251. `gh issue list` to review.
 - **Branches:** prune the merged ones, `after-adr-070` among them
   (`scripts/prune-branches.sh`).
 
 ### Still to do, in code
 
-- **#252's small PR** once #251 merges, then the emails' design with
-  `/build-from-brief` riding along, and the error tracker (the order,
-  *Now*).
+- **#252's small PR** (`ci-reliability`), widened to CI's reliability,
+  then the emails' design with `/build-from-brief` riding along, and the
+  error tracker (the order, *Now*).
 - `@mui/codemod@9.5.0`'s command crashes on yargs 18, which could be
   reported to MUI.
 - **From #231.** `e2e/text-size.spec.ts` still opens every screen in one
@@ -857,7 +880,9 @@ with this one, this one is current.
 ### Deferred, each waiting for its trigger (in the ADRs)
 
 - Brand: a registered business's name on the © line; terms and a privacy
-  policy, before the first user outside Bob; the name by language in
+  policy, before the first user outside Bob, with what users are told
+  when something changes (Open decisions, "Telling users what changed");
+  the name by language in
   emails and in a shared link's card; a drawn wordmark; the mark in an
   organization's emails; a sending domain of Panivo's own, at the first
   customers (ADR-082); DMARC enforcement, a report address and then
@@ -883,10 +908,10 @@ with this one, this one is current.
   shared scanners, handhelds or kiosks; a maximum session length
   (ADR-065).
 - TypeScript 7, once typescript-eslint and @nestjs/swagger accept it and
-  the Nest CLI builds with it (on 21 October 2026, typescript-eslint
-  8.72.0 accepts `>=4.8.4 <6.1.0`, @nestjs/swagger 12.0.2
-  `^5.5.0 || ^6.0.0`, and the Nest CLI 12.0.10 depends on `~6.0.2`;
-  ADR-067).
+  the Nest CLI builds with it (on 26 October 2026, with 7.0.2 out since 8
+  July, typescript-eslint 8.72.0 accepts `>=4.8.4 <6.1.0`,
+  @nestjs/swagger 12.0.4 `^5.5.0 || ^6.0.0`, and the Nest CLI 12.0.10
+  depends on `~6.0.2`; ADR-067).
 
 ## Where things stand
 
