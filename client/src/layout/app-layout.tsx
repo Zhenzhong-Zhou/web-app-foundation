@@ -58,6 +58,7 @@ import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
 import { OrganizationMark } from './organization-mark';
 import {
+  RAIL_FOCUS_RING,
   RAIL_FOLDED_WIDTH,
   RAIL_MORE_BELOW,
   RAIL_WIDTH,
@@ -645,7 +646,10 @@ function Frame() {
                     defaultMessage: 'Close navigation',
                   })}
                   onClick={() => setDrawer(false)}
-                  sx={{ color: 'rail.text' }}
+                  sx={{
+                    color: 'rail.text',
+                    '&.Mui-focusVisible': RAIL_FOCUS_RING,
+                  }}
                 >
                   <CloseIcon />
                 </IconButton>

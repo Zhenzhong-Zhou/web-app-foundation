@@ -92,6 +92,7 @@ export function RailTop({
             flex: 'none',
             color: 'rail.text',
             '&:hover': { color: 'rail.strong', bgcolor: 'rail.hover' },
+            '&.Mui-focusVisible': RAIL_FOCUS_RING,
           }}
         >
           <KeyboardDoubleArrowLeft fontSize="small" />

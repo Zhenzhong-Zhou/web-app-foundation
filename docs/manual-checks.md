@@ -2448,10 +2448,11 @@ private window.
   dark rail, or its name in white where it has none, with « beside it on
   one row; the top bar holds search, Help, the bell and you, with no logo.
   From any page, click the logo or the name: Home, as the top bar's was.
-  Tab from the skip link: the logo or name first, its ring white on the
-  dark rail, then «, each on its own.
+  Tab from the skip link: the logo or name first, then «, each on its own,
+  each ring white on the dark rail.
   Narrow the window below 1200 px: the logo or name is back in the top
-  bar, and the menu drawer opens as before. Press «: the rail folds to one
+  bar, and the menu drawer opens as before; Tab in it, and its Close takes
+  the same white ring. Press «: the rail folds to one
   44 px plate at its top. With no logo, the organization's initials on its
   accent, white on it in Light and dark on the lighter accent in Dark:
   WIDE Naturals Inc. reads WN, and 清禾药业有限公司 reads 清禾, in the
@@ -3453,3 +3454,5 @@ first.
 - 2026-10-25: ADR-082's pull request, the browser's own defaults dark from
   the first moment in Dark, so no text is ever black on the dark page as
   it starts: MC-3506 extended.
+- 2026-10-25: #246, the fold button's and the menu drawer's Close rings in
+  the rail's own colour, white on the dark rail: MC-3510 extended.
