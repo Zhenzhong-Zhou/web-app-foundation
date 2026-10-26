@@ -66,6 +66,7 @@ export class OrganizationsService {
           documentSecondLanguage: organizations.documentSecondLanguage,
           requiredNameLanguages: organizations.requiredNameLanguages,
           logoFileId: organizations.logoFileId,
+          squareLogoFileId: organizations.squareLogoFileId,
           accentColor: organizations.accentColor,
           rail: organizations.rail,
           logoOnDocuments: organizations.logoOnDocuments,
@@ -126,6 +127,7 @@ export class OrganizationsService {
           documentSecondLanguage: organizations.documentSecondLanguage,
           requiredNameLanguages: organizations.requiredNameLanguages,
           logoFileId: organizations.logoFileId,
+          squareLogoFileId: organizations.squareLogoFileId,
           accentColor: organizations.accentColor,
           rail: organizations.rail,
           logoOnDocuments: organizations.logoOnDocuments,
@@ -173,6 +175,7 @@ export class OrganizationsService {
         documentSecondLanguage: existing.documentSecondLanguage,
         requiredNameLanguages: existing.requiredNameLanguages,
         logoFileId: existing.logoFileId,
+        squareLogoFileId: existing.squareLogoFileId,
         accentColor: existing.accentColor,
         rail: existing.rail,
         logoOnDocuments: existing.logoOnDocuments,
@@ -205,7 +208,8 @@ export class OrganizationsService {
           : safeAccent(normalizeHex(input.accentColor) ?? '').accent;
 
       // A new logo is attached in this transaction and the old released,
-      // so one is never left both unused and kept (ADR-059).
+      // so one is never left both unused and kept (ADR-059); the square
+      // logo too (ADR-060, amended).
       const logoChanges =
         input.logoFileId !== undefined &&
         input.logoFileId !== existing.logoFileId;
@@ -215,6 +219,26 @@ export class OrganizationsService {
         }
         if (existing.logoFileId) {
           await this.files.release(tx, organizationId, existing.logoFileId);
+        }
+      }
+      const squareLogoChanges =
+        input.squareLogoFileId !== undefined &&
+        input.squareLogoFileId !== existing.squareLogoFileId;
+      if (squareLogoChanges) {
+        if (input.squareLogoFileId) {
+          await this.files.attach(
+            tx,
+            organizationId,
+            input.squareLogoFileId,
+            'square_logo',
+          );
+        }
+        if (existing.squareLogoFileId) {
+          await this.files.release(
+            tx,
+            organizationId,
+            existing.squareLogoFileId,
+          );
         }
       }
 
@@ -300,6 +324,9 @@ export class OrganizationsService {
           ? { requiredNameLanguages: input.requiredNameLanguages }
           : {}),
         ...(logoChanges ? { logoFileId: input.logoFileId } : {}),
+        ...(squareLogoChanges
+          ? { squareLogoFileId: input.squareLogoFileId }
+          : {}),
         ...(accentColor !== undefined ? { accentColor } : {}),
         ...(input.rail !== undefined ? { rail: input.rail } : {}),
         ...(input.logoOnDocuments !== undefined

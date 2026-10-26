@@ -4,6 +4,9 @@ import {
   LogoTooSmall,
   renderLogo,
   renderPhoto,
+  renderSquareLogo,
+  SquareLogoNotSquare,
+  SquareLogoTooSmall,
   UnreadableImage,
 } from './images';
 
@@ -93,5 +96,76 @@ describe('renderLogo', () => {
       .toBuffer();
     const [kept] = await renderLogo(modest, 'image/png');
     expect([kept.width, kept.height]).toEqual([400, 100]);
+  });
+});
+
+describe('renderSquareLogo', () => {
+  function png(width: number, height: number): Promise<Buffer> {
+    return sharp({
+      create: { width, height, channels: 4, background: '#2a6f' },
+    })
+      .png()
+      .toBuffer();
+  }
+
+  async function sizesOf(input: Buffer, type: 'image/png' | 'image/svg+xml') {
+    const sizes = await renderSquareLogo(input, type);
+    for (const { data } of sizes) {
+      expect((await sharp(data).metadata()).format).toBe('png');
+    }
+    return sizes.map(({ size, width, height }) => [size, width, height]);
+  }
+
+  it('keeps a square one and a 5 : 4 one, each in two sizes', async () => {
+    expect(await sizesOf(await png(600, 600), 'image/png')).toEqual([
+      ['thumb', 128, 128],
+      ['full', 512, 512],
+    ]);
+    expect(await sizesOf(await png(1000, 800), 'image/png')).toEqual([
+      ['thumb', 128, 102],
+      ['full', 512, 410],
+    ]);
+  });
+
+  it('refuses one wider than 5 : 4', async () => {
+    await expect(
+      renderSquareLogo(await png(600, 400), 'image/png'),
+    ).rejects.toBeInstanceOf(SquareLogoNotSquare);
+  });
+
+  it('refuses a raster under 128 px on a side', async () => {
+    await expect(
+      renderSquareLogo(await png(100, 100), 'image/png'),
+    ).rejects.toBeInstanceOf(SquareLogoTooSmall);
+  });
+
+  it('shrinks a large one to 512 and 128', async () => {
+    expect(await sizesOf(await png(2000, 2000), 'image/png')).toEqual([
+      ['thumb', 128, 128],
+      ['full', 512, 512],
+    ]);
+  });
+
+  it('never enlarges a raster', async () => {
+    expect(await sizesOf(await png(200, 200), 'image/png')).toEqual([
+      ['thumb', 128, 128],
+      ['full', 200, 200],
+    ]);
+  });
+
+  it('draws an SVG to each size, its proportions checked', async () => {
+    const svg = (width: number, height: number) =>
+      Buffer.from(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="${width}" height="${height}" fill="#2a6"/></svg>`,
+      );
+
+    // Small as drawn, and no raster's minimum: drawn up to each size.
+    expect(await sizesOf(svg(40, 40), 'image/svg+xml')).toEqual([
+      ['thumb', 128, 128],
+      ['full', 512, 512],
+    ]);
+    await expect(
+      renderSquareLogo(svg(60, 40), 'image/svg+xml'),
+    ).rejects.toBeInstanceOf(SquareLogoNotSquare);
   });
 });

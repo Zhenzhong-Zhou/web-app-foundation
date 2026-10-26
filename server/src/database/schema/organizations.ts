@@ -169,6 +169,15 @@ export const organizations = pgTable(
     logoFileId: uuid('logo_file_id').references((): AnyPgColumn => files.id, {
       onDelete: 'set null',
     }),
+    /**
+     * The square logo (ADR-060, amended), a file as the logo is: first on
+     * the folded rail's plate, and beside the name when there is no logo.
+     * Null: a logo about square on the plate, or the initials.
+     */
+    squareLogoFileId: uuid('square_logo_file_id').references(
+      (): AnyPgColumn => files.id,
+      { onDelete: 'set null' },
+    ),
     accentColor: text('accent_color'),
     rail: text('rail').$type<OrganizationRail>().notNull().default('dark'),
     /** Whether invoices, credit notes and packing slips print the logo. */

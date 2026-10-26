@@ -23,6 +23,7 @@ interface OrganizationResponse {
   licenceNotInForcePolicy: string;
   licenceExpiredPolicy: string;
   licenceRequired: boolean;
+  squareLogoFileId: string | null;
   address: {
     line1: string;
     line2: string | null;
@@ -249,6 +250,7 @@ describe('Organization (e2e)', () => {
         organization: {
           branding: {
             logoFileId: string | null;
+            squareLogoFileId: string | null;
             accentColor: string | null;
             rail: string;
             logoOnDocuments: boolean;
@@ -274,10 +276,25 @@ describe('Organization (e2e)', () => {
       ).file.id;
     }
 
+    async function squareLogo(agent: Agent): Promise<string> {
+      const png = await sharp({
+        create: { width: 300, height: 300, channels: 4, background: '#2a6' },
+      })
+        .png()
+        .toBuffer();
+      return body<{ file: { id: string } }>(
+        await agent
+          .post('/v1/files/square-logo')
+          .attach('file', png, 'mark.png')
+          .expect(201),
+      ).file.id;
+    }
+
     it('starts with the defaults, returned with the session', async () => {
       const org = await registerOrganization(app, 'alpha');
       expect(await branding(org.agent)).toEqual({
         logoFileId: null,
+        squareLogoFileId: null,
         accentColor: null,
         rail: 'dark',
         logoOnDocuments: true,
@@ -359,14 +376,69 @@ describe('Organization (e2e)', () => {
       expect((await row(second)).releasedAt).not.toBeNull();
     });
 
+    it('attaches a new square logo and releases the one it replaces', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const first = await squareLogo(org.agent);
+      const second = await squareLogo(org.agent);
+      const row = async (id: string) =>
+        (await db.select().from(files).where(eq(files.id, id)))[0];
+      const save = (squareLogoFileId: string | null) =>
+        org.agent
+          .patch('/v1/organization')
+          .send({ squareLogoFileId })
+          .expect(204);
+
+      await save(first);
+      expect((await branding(org.agent)).squareLogoFileId).toBe(first);
+      expect((await current(org.agent)).squareLogoFileId).toBe(first);
+      expect((await row(first)).attachedAt).not.toBeNull();
+
+      await save(second);
+      expect((await row(first)).releasedAt).not.toBeNull();
+      expect((await row(second)).attachedAt).not.toBeNull();
+
+      await save(null);
+      expect((await branding(org.agent)).squareLogoFileId).toBeNull();
+      expect((await row(second)).releasedAt).not.toBeNull();
+
+      const entries = await db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, 'organization.updated'))
+        .orderBy(auditLog.id);
+      expect(entries.map((entry) => entry.payload)).toEqual([
+        { squareLogoFileId: { from: null, to: first } },
+        { squareLogoFileId: { from: first, to: second } },
+        { squareLogoFileId: { from: second, to: null } },
+      ]);
+    });
+
+    it('takes each logo only as its own kind', async () => {
+      const org = await registerOrganization(app, 'alpha');
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ squareLogoFileId: await logo(org.agent) })
+        .expect(400);
+      await org.agent
+        .patch('/v1/organization')
+        .send({ logoFileId: await squareLogo(org.agent) })
+        .expect(400);
+    });
+
     it('lets another organization attach none of them', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const beta = await registerOrganization(app, 'beta');
       const theirs = await logo(alpha.agent);
+      const theirSquare = await squareLogo(alpha.agent);
 
       await beta.agent
         .patch('/v1/organization')
         .send({ logoFileId: theirs })
+        .expect(400);
+      await beta.agent
+        .patch('/v1/organization')
+        .send({ squareLogoFileId: theirSquare })
         .expect(400);
     });
   });

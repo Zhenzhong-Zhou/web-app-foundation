@@ -91,6 +91,7 @@ const NOT_AUDITED = new Map<string, string>([
     'FilesController.uploadLogo',
     'An upload changes nothing until a record uses it; attaching it is that record’s audited save (ADR-059)',
   ],
+  ['FilesController.uploadSquareLogo', 'As above (ADR-059)'],
   ['FilesController.uploadProductImage', 'As above (ADR-059)'],
   [
     'ShipmentsController.preview',

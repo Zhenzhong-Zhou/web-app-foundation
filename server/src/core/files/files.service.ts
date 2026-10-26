@@ -27,7 +27,7 @@ import { t } from '../../i18n/translate';
 import type { RequestContext } from '../auth/request-context';
 import { PermissionsService } from '../authorization/permissions.service';
 import { dispositionOf } from './content-disposition';
-import { KIND_RULES } from './file-kinds';
+import { KIND_RULES, type KindRule } from './file-kinds';
 import { FILE_STORAGE, type FileStorage, keyOf, ownerOf } from './file-storage';
 import {
   LOGO_MIN,
@@ -35,6 +35,10 @@ import {
   type Rendered,
   renderLogo,
   renderPhoto,
+  renderSquareLogo,
+  SQUARE_LOGO_MIN,
+  SquareLogoNotSquare,
+  SquareLogoTooSmall,
   UnreadableImage,
 } from './images';
 import { sniff, type Sniffed } from './sniff';
@@ -93,10 +97,13 @@ export class FilesService {
     userId: string,
   ): Promise<FileView> {
     const rule = KIND_RULES[kind];
+    // Either logo goes by a logo's words and is kept as PNG; a photo as
+    // WebP.
+    const logo = rule.render === 'logo' || rule.render === 'squareLogo';
     const type = sniff(file.buffer);
     if (!type || !rule.accepts.includes(type)) {
       throw new UnsupportedMediaTypeException(
-        rule.render === 'logo'
+        logo
           ? t({
               id: 'files.logo.type',
               defaultMessage: 'A logo must be a PNG, JPEG, WebP or SVG image',
@@ -109,7 +116,7 @@ export class FilesService {
     }
 
     const rendered = await this.render(rule.render, file.buffer, type);
-    const contentType = rule.render === 'logo' ? 'image/png' : 'image/webp';
+    const contentType = logo ? 'image/png' : 'image/webp';
     const bytes = rendered.reduce((sum, size) => sum + size.data.length, 0);
     // Before the transaction, not inside it: hashing up to 20 MB would
     // hold the organization's upload lock for as long.
@@ -210,7 +217,7 @@ export class FilesService {
             sha256,
             originalName: downloadName(
               file.originalname,
-              rule.render === 'logo' ? 'png' : 'webp',
+              logo ? 'png' : 'webp',
             ),
             createdBy: userId,
           })
@@ -269,7 +276,8 @@ export class FilesService {
     }
     if (view && reader) await this.permissions.demand(reader, [view]);
 
-    // A logo has only `full`; any size asked of it is that.
+    // A size the file does not keep is answered with `full`: a logo keeps
+    // only that, a square logo no `display`.
     const kept: FileSize = row.sizes[size] ? size : 'full';
     const stored = row.sizes[kept];
     if (!stored) throw new Error(`File ${row.id} has no ${kept} size`);
@@ -342,14 +350,14 @@ export class FilesService {
   }
 
   private async render(
-    render: 'logo' | 'photo',
+    render: KindRule['render'],
     input: Buffer,
     type: Sniffed,
   ): Promise<Rendered[]> {
     try {
-      return render === 'logo'
-        ? await renderLogo(input, type)
-        : await renderPhoto(input);
+      if (render === 'logo') return await renderLogo(input, type);
+      if (render === 'squareLogo') return await renderSquareLogo(input, type);
+      return await renderPhoto(input);
     } catch (error) {
       if (error instanceof LogoTooSmall) {
         throw new BadRequestException(
@@ -360,6 +368,27 @@ export class FilesService {
             },
             { min: LOGO_MIN },
           ),
+        );
+      }
+      if (error instanceof SquareLogoTooSmall) {
+        throw new BadRequestException(
+          t(
+            {
+              id: 'files.squareLogo.small',
+              defaultMessage:
+                'A square logo must be at least {min} pixels on each side.',
+            },
+            { min: SQUARE_LOGO_MIN },
+          ),
+        );
+      }
+      if (error instanceof SquareLogoNotSquare) {
+        throw new BadRequestException(
+          t({
+            id: 'files.squareLogo.shape',
+            defaultMessage:
+              'A square logo must be about square, at most 5 : 4 either way. Use a wide image as the main logo.',
+          }),
         );
       }
       if (error instanceof UnreadableImage) {

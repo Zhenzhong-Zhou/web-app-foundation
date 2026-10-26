@@ -103,6 +103,7 @@ function sessionFor({
       name: 'Alpha Co',
       branding: {
         logoFileId: null,
+        squareLogoFileId: null,
         accentColor: null,
         rail: 'dark',
         logoOnDocuments: true,

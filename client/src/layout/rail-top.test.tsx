@@ -30,6 +30,7 @@ function renderTop({
         name,
         branding: {
           logoFileId,
+          squareLogoFileId: null,
           accentColor: null,
           rail: 'dark',
           logoOnDocuments: true,

@@ -144,6 +144,14 @@ export class UpdateOrganizationDto {
   @IsUUID()
   logoFileId?: string | null;
 
+  /**
+   * The square logo (ADR-060, amended): an uploaded square logo file, null
+   * to remove it.
+   */
+  @IsOptional()
+  @IsUUID()
+  squareLogoFileId?: string | null;
+
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsBoolean()
   logoOnDocuments?: boolean;

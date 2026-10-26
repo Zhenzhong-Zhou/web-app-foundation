@@ -13,7 +13,10 @@ export class StoredFileSize {
   bytes!: number;
 }
 
-/** The sizes kept: a photo all three, a logo only `full`. */
+/**
+ * The sizes kept: a photo all three, a square logo `thumb` and `full`, a
+ * logo only `full`.
+ */
 export class FileSizes {
   thumb?: StoredFileSize;
   display?: StoredFileSize;
@@ -28,7 +31,7 @@ export class StoredFile {
   createdAt!: Date;
 }
 
-/** Uploading a logo or a product image: the file as kept. */
+/** Uploading a logo, a square logo or a product image: the file as kept. */
 export class UploadedFileEnvelope {
   file!: StoredFile;
 }

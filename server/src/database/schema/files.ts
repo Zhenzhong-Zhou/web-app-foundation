@@ -18,12 +18,20 @@ import { users } from './users';
  * The kinds of file stored so far (ADR-059). Each feature that keeps files
  * adds its own, with a migration for the check below.
  */
-export const FILE_KINDS = ['logo', 'product_image', 'avatar'] as const;
+export const FILE_KINDS = [
+  'logo',
+  'product_image',
+  'avatar',
+  'square_logo',
+] as const;
 export type FileKind = (typeof FILE_KINDS)[number];
 /** The kinds an organization owns; an avatar is its person's (ADR-063). */
 export type OrganizationFileKind = Exclude<FileKind, 'avatar'>;
 
-/** The sizes a file is kept in: a logo only `full`, a photo all three. */
+/**
+ * The sizes a file is kept in: a logo only `full`, a square logo `thumb`
+ * and `full`, a photo all three.
+ */
 export const FILE_SIZES = ['thumb', 'display', 'full'] as const;
 export type FileSize = (typeof FILE_SIZES)[number];
 
@@ -87,7 +95,7 @@ export const files = pgTable(
       .where(sql`${t.releasedAt} is not null`),
     check(
       'files_kind_check',
-      sql`${t.kind} in ('logo', 'product_image', 'avatar')`,
+      sql`${t.kind} in ('logo', 'product_image', 'avatar', 'square_logo')`,
     ),
     // One owner: an avatar is its person's, everything else an
     // organization's (ADR-063).

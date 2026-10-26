@@ -30,6 +30,21 @@ export const AVATAR_SIZES = {
 export const LOGO_MAX = 1024;
 export const LOGO_MIN = 256;
 
+/**
+ * A square logo (ADR-060, amended): a raster at least SQUARE_LOGO_MIN on
+ * each side, kept in two sizes, each its longer side at most.
+ */
+export const SQUARE_LOGO_MIN = 128;
+export const SQUARE_LOGO_SIZES = { thumb: 128, full: 512 } as const;
+
+/**
+ * How far from square a square logo may be, either way: the folded
+ * plate's own rule. The client holds the same 1.25 for the plate
+ * (client/src/layout/rail-top.tsx); the two packages share no code, so
+ * each keeps its own.
+ */
+export const SQUARE_ENOUGH = 1.25;
+
 /** Decoding stops past this many pixels: a 20 MB upload can claim billions. */
 const MAX_PIXELS = 50_000_000;
 
@@ -46,6 +61,12 @@ export class UnreadableImage extends Error {}
 
 /** A raster logo narrower than LOGO_MIN. */
 export class LogoTooSmall extends Error {}
+
+/** A raster square logo under SQUARE_LOGO_MIN on either side. */
+export class SquareLogoTooSmall extends Error {}
+
+/** A square logo further from square than SQUARE_ENOUGH. */
+export class SquareLogoNotSquare extends Error {}
 
 /**
  * A photo in its three sizes: decoded, turned upright, sRGB, every piece of
@@ -147,6 +168,63 @@ export function renderLogo(input: Buffer, type: Sniffed): Promise<Rendered[]> {
 }
 
 /**
+ * A square logo as two PNGs, each fitting its size: never cropped or
+ * padded, a raster never enlarged. Its proportions are checked first, an
+ * SVG's by its drawn size; an SVG is then drawn at each size, not drawn
+ * once and scaled, and only the PNGs kept, as for the logo.
+ */
+export function renderSquareLogo(
+  input: Buffer,
+  type: Sniffed,
+): Promise<Rendered[]> {
+  return decoded(async () => {
+    const vector = type === 'image/svg+xml';
+    const drawn = (density: number) =>
+      sharp(input, {
+        failOn: 'error',
+        limitInputPixels: MAX_PIXELS,
+        density,
+      });
+
+    // An SVG's size at 72 dpi is the one it declares.
+    const { width = 0, height = 0 } = await drawn(72).metadata();
+    if (!width || !height) throw new Error('The image has no size');
+    const long = Math.max(width, height);
+    if (!vector && Math.min(width, height) < SQUARE_LOGO_MIN) {
+      throw new SquareLogoTooSmall();
+    }
+    if (long / Math.min(width, height) > SQUARE_ENOUGH) {
+      throw new SquareLogoNotSquare();
+    }
+
+    return Promise.all(
+      (
+        Object.keys(SQUARE_LOGO_SIZES) as (keyof typeof SQUARE_LOGO_SIZES)[]
+      ).map(async (size) => {
+        const side = SQUARE_LOGO_SIZES[size];
+        // Within the 1 to 100,000 dpi sharp draws at; the resize below
+        // makes up any difference.
+        const density = vector
+          ? Math.min(100_000, Math.max(1, (72 * side) / long))
+          : 72;
+        const { data, info } = await drawn(density)
+          .rotate()
+          .resize({
+            width: side,
+            height: side,
+            fit: 'inside',
+            withoutEnlargement: !vector,
+          })
+          .toColourspace('srgb')
+          .png({ compressionLevel: 9 })
+          .toBuffer({ resolveWithObject: true });
+        return { size, data, width: info.width, height: info.height };
+      }),
+    );
+  });
+}
+
+/**
  * A kept logo small enough to send inline, for the invitation page
  * (ADR-077): twice the 32 px it is shown at, so it stays sharp, and at
  * most four times as wide. Never enlarged.
@@ -163,7 +241,13 @@ async function decoded<T>(work: () => Promise<T>): Promise<T> {
   try {
     return await work();
   } catch (error) {
-    if (error instanceof LogoTooSmall) throw error;
+    if (
+      error instanceof LogoTooSmall ||
+      error instanceof SquareLogoTooSmall ||
+      error instanceof SquareLogoNotSquare
+    ) {
+      throw error;
+    }
     throw new UnreadableImage(
       error instanceof Error ? error.message : String(error),
     );

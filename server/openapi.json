@@ -1285,6 +1285,27 @@
         ]
       }
     },
+    "/v1/files/square-logo": {
+      "post": {
+        "operationId": "FilesController_uploadSquareLogo_v1",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadedFileEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Files"
+        ]
+      }
+    },
     "/v1/files/product-image": {
       "post": {
         "operationId": "FilesController_uploadProductImage_v1",
@@ -8163,6 +8184,12 @@
               "null"
             ]
           },
+          "squareLogoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "accentColor": {
             "type": [
               "string",
@@ -8188,6 +8215,7 @@
         },
         "required": [
           "logoFileId",
+          "squareLogoFileId",
           "accentColor",
           "rail",
           "logoOnDocuments",
@@ -10062,7 +10090,8 @@
             "enum": [
               "logo",
               "product_image",
-              "avatar"
+              "avatar",
+              "square_logo"
             ]
           },
           "contentType": {
@@ -11809,6 +11838,12 @@
               "null"
             ]
           },
+          "squareLogoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "accentColor": {
             "type": [
               "string",
@@ -11884,6 +11919,7 @@
           "documentSecondLanguage",
           "requiredNameLanguages",
           "logoFileId",
+          "squareLogoFileId",
           "accentColor",
           "rail",
           "logoOnDocuments",
@@ -11998,6 +12034,13 @@
             ]
           },
           "logoFileId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "squareLogoFileId": {
             "type": [
               "string",
               "null"
