@@ -753,23 +753,32 @@ export function BrandingForm({
         {near && (
           <Alert severity="warning">{intl.formatMessage(NEAR[near])}</Alert>
         )}
-        <Box
-          aria-hidden
-          sx={{
-            alignSelf: 'flex-start',
-            px: 2,
-            py: 1,
-            borderRadius: 1,
-            bgcolor: accent,
-            color: '#FFFFFF',
-            fontWeight: 600,
-          }}
-        >
-          {intl.formatMessage({
-            id: 'settings.branding.save',
-            defaultMessage: 'Save branding',
-          })}
-        </Box>
+        {/* A button in the colour that will be saved, for the eye: a
+            sample, not a button, under a caption and with a word of its
+            own, so nobody takes it for Save. */}
+        <Stack spacing={0.75} aria-hidden sx={{ alignItems: 'flex-start' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {intl.formatMessage({
+              id: 'settings.branding.sample.caption',
+              defaultMessage: 'Buttons will look like this:',
+            })}
+          </Typography>
+          <Box
+            sx={{
+              px: 2,
+              py: 1,
+              borderRadius: 1,
+              bgcolor: accent,
+              color: '#FFFFFF',
+              fontWeight: 600,
+            }}
+          >
+            {intl.formatMessage({
+              id: 'settings.branding.sample',
+              defaultMessage: 'Example',
+            })}
+          </Box>
+        </Stack>
       </Stack>
 
       <Stack spacing={1}>

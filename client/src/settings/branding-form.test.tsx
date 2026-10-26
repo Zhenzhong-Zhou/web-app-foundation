@@ -301,6 +301,24 @@ describe('BrandingForm, the two logos', () => {
     },
   );
 
+  it('shows the colour on a sample under its caption, never a second Save', () => {
+    renderForm();
+
+    // The one Save branding is the button that saves.
+    expect(screen.getAllByText('Save branding')).toHaveLength(1);
+    const sample = screen.getByText('Example');
+    expect(sample.previousElementSibling).toHaveTextContent(
+      'Buttons will look like this:',
+    );
+    expect(sample).toHaveStyle({
+      backgroundColor: '#5546B8',
+      color: '#FFFFFF',
+    });
+    // A picture of a button, not one: nothing to press or tab to.
+    expect(sample.closest('button, [role="button"], [tabindex]')).toBeNull();
+    expect(sample.closest('[aria-hidden="true"]')).not.toBeNull();
+  });
+
   /** What the folded plate shows without a square logo (usePlate). */
   describe('the square logo’s line, without one', () => {
     it('names the initials, in the plate’s colours, with no logo', () => {

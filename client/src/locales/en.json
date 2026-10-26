@@ -1730,6 +1730,8 @@
   "settings.branding.preset.plum": "Plum",
   "settings.branding.preset.teal": "Teal",
   "settings.branding.preview": "How it looks in the sidebar",
+  "settings.branding.sample": "Example",
+  "settings.branding.sample.caption": "Buttons will look like this:",
   "settings.branding.save": "Save branding",
   "settings.branding.saved": "Branding saved",
   "settings.branding.sidebar": "Sidebar",

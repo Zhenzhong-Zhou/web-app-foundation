@@ -1730,6 +1730,8 @@
   "settings.branding.preset.plum": "Prune",
   "settings.branding.preset.teal": "Sarcelle",
   "settings.branding.preview": "L’aperçu dans la barre latérale",
+  "settings.branding.sample": "Exemple",
+  "settings.branding.sample.caption": "Les boutons ressembleront à ceci :",
   "settings.branding.save": "Enregistrer l’image de marque",
   "settings.branding.saved": "Image de marque enregistrée",
   "settings.branding.sidebar": "Barre latérale",

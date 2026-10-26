@@ -1730,6 +1730,8 @@
   "settings.branding.preset.plum": "梅紫",
   "settings.branding.preset.teal": "青色",
   "settings.branding.preview": "在侧栏中的样子",
+  "settings.branding.sample": "示例",
+  "settings.branding.sample.caption": "按钮将显示为：",
   "settings.branding.save": "保存品牌设置",
   "settings.branding.saved": "品牌设置已保存",
   "settings.branding.sidebar": "侧栏",

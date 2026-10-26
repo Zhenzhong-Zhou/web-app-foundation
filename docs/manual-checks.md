@@ -823,7 +823,11 @@ await fetch(`${api}/v1/files/product-image`, {
   Branding: upload a PNG logo and an SVG one in turn; each previews on both
   sidebar shades, and after Save the logo replaces the name at the rail's
   top, and below 1200 px in the top bar (on a white plate on the dark rail,
-  and in dark mode). Choose Teal and Save: buttons, links and
+  and in dark mode). Under Colour, Buttons will look like this: and under
+  it a sample reading Example, in the chosen colour; it is not a button,
+  a tap does nothing and Tab passes over it, and the only Save branding
+  is the button at the foot (in 中文 按钮将显示为： and 示例). Choose Teal
+  and Save: buttons, links and
   the selected tab turn teal at once, in light and dark mode. Choose your
   own colour `#5BB8F0`: the tab says `#127EB3` will be saved; `#D93A2B`
   warns it is close to the error red. On Stock set expiry to 180 and 60:
@@ -3595,3 +3599,6 @@ first.
   extended.
 - 2026-10-26: the square logo's pull request, 5 : 4 held on one line by
   no-break spaces, in the refusal and in Help: MC-3604 extended.
+- 2026-10-26: the square logo's pull request, Branding's colour sample
+  captioned and reading Example, never a second Save branding: MC-1702
+  extended.
