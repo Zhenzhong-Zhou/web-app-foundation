@@ -15,6 +15,7 @@ import {
   type ReactNode,
   type SubmitEvent,
   useId,
+  useRef,
   useState,
 } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
@@ -155,6 +156,9 @@ function LogoRow({
   const headingId = useId();
   const row = LOGO_ROWS[kind];
   const [error, setError] = useState<string | null>(null);
+  // Remove takes itself away, so focus goes to the button that stays,
+  // Upload, rather than falling to the page.
+  const uploadButton = useRef<HTMLLabelElement>(null);
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -233,7 +237,12 @@ function LogoRow({
         useFlexGap
         sx={{ alignItems: 'center', flexWrap: 'wrap' }}
       >
-        <Button component="label" variant="outlined" disabled={uploading}>
+        <Button
+          ref={uploadButton}
+          component="label"
+          variant="outlined"
+          disabled={uploading}
+        >
           {fileId
             ? intl.formatMessage({
                 id: 'settings.branding.logo.replace',
@@ -249,7 +258,14 @@ function LogoRow({
           />
         </Button>
         {fileId && (
-          <Button variant="text" color="error" onClick={() => onChange(null)}>
+          <Button
+            variant="text"
+            color="error"
+            onClick={() => {
+              onChange(null);
+              uploadButton.current?.focus();
+            }}
+          >
             {intl.formatMessage({
               id: 'settings.branding.logo.remove',
               defaultMessage: 'Remove',

@@ -2582,7 +2582,10 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
 - **MC-3608** Remove and Save. With a square logo saved, press Remove:
   its logo, Replace and Remove give way to Upload a square logo, the line
   gains its second sentence, and the preview's plates change at once;
-  the rail waits for Save. Save branding: Branding saved, and with no
+  the rail waits for Save. From the keyboard, Tab to Remove and press
+  Enter: focus is on Upload a square logo, ringed, and VoiceOver reads
+  it; never back at the page's top. The same under Logo, onto Upload a
+  logo. Save branding: Branding saved, and with no
   reload the rail's top and the folded plate drop the square logo, as
   MC-3605 and MC-3606 order them. History, at the Organization page's
   top, has the change as Square logo, in words, never an id. Upload one
@@ -3580,3 +3583,5 @@ first.
   line: MC-3610.
 - 2026-10-26: the square logo's pull request, Branding's sidebar preview
   hidden from screen readers, its heading too: MC-3601 extended.
+- 2026-10-26: the square logo's pull request, Remove leaving focus on its
+  row's upload button, for both logos: MC-3608 extended.

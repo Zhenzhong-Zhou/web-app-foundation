@@ -254,6 +254,25 @@ describe('BrandingForm, the two logos', () => {
     });
   });
 
+  it.each([
+    ['Logo', 'Upload a logo'],
+    ['Square logo', 'Upload a square logo'],
+  ] as const)(
+    'moves focus to the upload button once %s is removed',
+    async (name, upload) => {
+      const user = userEvent.setup();
+      renderForm({ logoFileId: 'wordmark', squareLogoFileId: 'mark' });
+
+      within(row(name)).getByRole('button', { name: 'Remove' }).focus();
+      await user.keyboard('{Enter}');
+
+      // Not left on the page, where Remove was.
+      expect(
+        within(row(name)).getByRole('button', { name: upload }),
+      ).toHaveFocus();
+    },
+  );
+
   /** What the folded plate shows without a square logo (usePlate). */
   describe('the square logo’s line, without one', () => {
     it('names the initials, in the plate’s colours, with no logo', () => {
