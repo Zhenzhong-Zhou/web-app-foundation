@@ -106,4 +106,26 @@ export const SHOTS: Shot[] = [
   },
   { name: '13-stock-value', path: () => '/costs' },
   { name: '14-sign-in', path: () => '/login', signedOut: true },
+  {
+    // The two logos side by side on a computer, stacked on a phone, and the
+    // line under the square logo.
+    name: '15-branding',
+    path: () => '/settings/organization?tab=branding',
+  },
+  {
+    // The rail folded to its plate, which shows the demo's square logo. The
+    // window only: the page beside it is 01's.
+    name: '16-rail-folded',
+    path: () => '/inventory',
+    widths: ['desktop'],
+    windowOnly: true,
+    prepare: async (page, words) => {
+      const collapse = page.getByRole('button', {
+        name: words('layout.collapseNavigation'),
+        exact: true,
+      });
+      await collapse.click();
+      await collapse.waitFor({ state: 'detached' });
+    },
+  },
 ];

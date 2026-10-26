@@ -2453,13 +2453,14 @@ private window.
   Narrow the window below 1200 px: the logo or name is back in the top
   bar, and the menu drawer opens as before; Tab in it, and its Close takes
   the same white ring. Press «: the rail folds to one
-  44 px plate at its top. With no logo, the organization's initials on its
+  44 px plate at its top. With neither logo, the organization's initials on its
   accent, white on it in Light and dark on the lighter accent in Dark:
   WIDE Naturals Inc. reads WN, and 清禾药业有限公司 reads 清禾, in the
   same type as the links under it; at Larger text the plate grows with
   them, and they still fit it. With a
-  square logo (Settings → Organization → Branding), the logo on a white
-  plate; with a wide wordmark, the initials. Reload folded, DevTools'
+  square main logo and no square logo (Settings → Organization →
+  Branding), the logo on a white plate; with a wide wordmark, the
+  initials. Reload folded, DevTools'
   Network on Slow 4G: while the logo loads the plate shows » alone, never
   initials that then give way to the logo. Hover the plate, or Tab to
   it: » takes its place and a tooltip says Expand navigation; VoiceOver
@@ -2489,6 +2490,118 @@ private window.
   Version 0.7.0 · build … · the day, and under it the © line, small and
   grey. In 中文 with its setting, 品桥 · 版本 … ; with no holder set, the
   version line alone.
+
+## 36. The organization's square logo
+
+ADR-060, amended: a small square logo of the organization's own, beside
+its main logo on Branding, for the folded rail's plate and, with no main
+logo, beside the name. The demo organization has one, a white leaf on an
+indigo circle, and no main logo. For the uploads, make these in any
+editor: PNGs of 512 × 512, 500 × 400, 600 × 400 and 100 × 100, an SVG
+drawn at 16 × 16 (`width="16" height="16"`) and a wide one at 60 × 40.
+Each check holds in English and 中文, in Light and Dark, and on the dark
+and the light rail (Branding → Sidebar); MC-3609 walks them.
+
+- **MC-3601** The two rows. As the demo Owner on a computer, Settings →
+  Organization → Branding: Logo on the left and Square logo on the right,
+  Optional in grey beside its heading, a thin line between them. Each row
+  in the same order: its heading, its line, the logo on a white square
+  (the square logo's 56 px), Upload or Replace and Remove, then its hint.
+  The Logo's line reads Wide or square, at the top of the sidebar.
+  Narrow the window below 900 px, or open it on a phone: Square logo
+  follows Logo, a line above it, nothing cut off. With VoiceOver, moving
+  into each row names it Logo or Square logo, so each Replace says which
+  logo it acts on.
+- **MC-3602** The line under the square logo. With the demo's square
+  logo, one sentence: For small spaces, such as the folded sidebar. Press
+  Remove: a second line under it, Without one, the initials … show there,
+  the initials on a small chip, white on the organization's colour, the
+  same letters the folded plate shows; VoiceOver reads them in the
+  sentence. Upload the 512 × 512 PNG as the Logo, still with no square
+  logo: the second line becomes Your logo is about square, so it already
+  shows there; upload one only for a different mark. Replace the Logo with
+  the 600 × 400 one: the initials line again. Put the 512 × 512 back, with
+  no square logo, Save, and reload with DevTools' Network on Slow 4G:
+  while the main logo loads, the first sentence alone, then the
+  about-square line, never the initials first. In 中文, 未设置时，那里显示缩写 …
+  and 您的标志接近正方形…, each on a line of its own under
+  用于小空间，例如折叠的侧栏。, with no space where the sentences meet.
+- **MC-3603** Uploading, heard. VoiceOver on, DevTools' Network on Slow
+  4G. Under Square logo, press Upload a square logo, or Replace, and
+  choose the 512 × 512 PNG: the button greys, a small spinner and
+  Uploading… stand beside it, and
+  VoiceOver says Uploading… with focus where it was; Save branding is
+  greyed until it is done. Then the new logo in its white square. Under
+  Logo, the same: Uploading… beside its button, heard. Start one in each
+  row: Save waits for both. In 中文, 正在上传…. Reload before saving: the
+  logos saved before are back; nothing changes until Save branding.
+- **MC-3604** Refusals. Under Square logo, upload each in turn. Refused in
+  red in the Square logo row, the Logo row untouched and the square logo
+  shown before still there: the 600 × 400 PNG and the wide SVG, A square
+  logo must be about square, at most 5 : 4 either way. Use a wide image
+  as the main logo.; the 100 × 100 PNG, A square logo must be at least
+  128 pixels on each side. Kept: the 500 × 400 PNG, and the same turned
+  to 400 × 500, 5 : 4 either way; and the SVG drawn at 16 × 16, since an
+  SVG of any size is drawn afresh at each size, sharp on the plate and
+  beside the name after Save. Upload again after a refusal: the refusal
+  goes. In 中文, 方形标志必须接近正方形，长宽比不超过 5 : 4。较宽的图片请用作主标志。
+  and 方形标志每边至少需要 128 像素。
+- **MC-3605** The folded plate. With a square logo saved, at 1200 px or
+  wider, press «: the plate shows the square logo on white at once,
+  reloaded on Slow 4G too, with no » first. Hover it, or Tab to it: »
+  takes its place; VoiceOver reads Expand navigation (Demo …). Remove the
+  square logo, put the 512 × 512 PNG as the Logo and Save: the main logo
+  on the plate, after » alone while it loads (MC-3510). Replace the Logo
+  with the 600 × 400: the initials. Neither logo: the initials. With a
+  square logo again, at Larger text (the avatar menu's Text size) the
+  plate grows and its image with it, filling as much of it as at
+  Standard; a square main logo grows with it too. DevTools → Network,
+  cache disabled, reload folded: the plate's file ends `?size=thumb` and
+  is 128 × 128 (its Preview), while Branding's thumbnail's ends
+  `?size=full`, 512 × 512.
+- **MC-3606** Beside the name. With a square logo and no main logo, as the
+  demo has them: at the rail's top the square logo on a small white
+  plate, then the name in white, then «. Choose the light rail on
+  Branding and Save: in Light the square logo stands on the rail with no
+  plate, in Dark on its white plate. Narrow the window below 1200 px: the
+  top bar has it beside the name, on a white plate in Dark only; open the
+  menu: the drawer's header has it beside the name, as the rail does.
+  VoiceOver reads each as a link named for the organization alone, the
+  image not read. Upload a main logo and Save: the main logo alone in all
+  three, no square logo beside it.
+- **MC-3607** The tight bar. With a square logo, on a phone at 320 px wide
+  (or DevTools) at Larger text: the bar shows the square logo alone where
+  the name was, on a white plate in Dark, and VoiceOver reads the
+  organization's name; nothing scrolls sideways, and its link is a full
+  44 px (DevTools' box model). With a main logo too, still the square
+  logo. Remove the square logo and Save: the main logo alone, or with
+  none the initials, as MC-3204. At Standard text, or at 390 px: with no
+  main logo, the square logo beside the name again.
+- **MC-3608** Remove and Save. With a square logo saved, press Remove:
+  its logo, Replace and Remove give way to Upload a square logo, the line
+  gains its second sentence, and the preview's plates change at once;
+  the rail waits for Save. Save branding: Branding saved, and with no
+  reload the rail's top and the folded plate drop the square logo, as
+  MC-3605 and MC-3606 order them. History, at the Organization page's
+  top, has the change as Square logo, in words, never an id. Upload one
+  again and Save: the rail shows it at once.
+- **MC-3609** Both languages, both modes, both rails. Walk MC-3601 to
+  MC-3608 again in 中文 and in Dark, each on the dark and the light rail:
+  in 中文 the headings read 标志 and 方形标志 with 可选, the button
+  上传方形标志, the hint 接近正方形，每边至少 128 像素。…, and none cut short.
+  The preview's two tiles each show the rail open and folded as the rail
+  draws them after Save, side by side on a computer and stacked on a
+  phone; the chip's initials clear on the organization's colour in both
+  modes.
+- **MC-3610** Help's Branding. On Settings → Organization, press Help: the
+  Organization guide has Branding between Licences at release and Sign
+  out after inactivity, in three steps: Logo and Upload a logo, Square
+  logo and Upload a square logo, then Colour, Sidebar and Save branding,
+  each bold word as the tab says it. Under If something is refused, a
+  line: A square logo must be about square, at most 5 : 4 either way, and
+  at least 128 pixels on each side. Use a wide image as the main logo. In
+  中文, 品牌, with 标志, 方形标志 and 保存品牌设置 in bold, and the line
+  方形标志必须接近正方形，长宽比不超过 5 : 4，且每边至少需要 128 像素。较宽的图片请用作主标志。
 
 ## Regressions
 
@@ -3456,3 +3569,10 @@ first.
   it starts: MC-3506 extended.
 - 2026-10-25: #246, the fold button's and the menu drawer's Close rings in
   the rail's own colour, white on the dark rail: MC-3510 extended.
+- 2026-10-25: ADR-060, amended, the organization's square logo on
+  Branding, on the folded plate and beside the name: section 36,
+  MC-3601 to MC-3609.
+- 2026-10-25: ADR-060, amended, the folded plate's square logo now a
+  square main logo with no square logo of its own: MC-3510 changed.
+- 2026-10-25: the Organization guide's Branding section and its refusal
+  line: MC-3610.
