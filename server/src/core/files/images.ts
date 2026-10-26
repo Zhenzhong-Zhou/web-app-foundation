@@ -40,7 +40,7 @@ export const SQUARE_LOGO_SIZES = { thumb: 128, full: 512 } as const;
 /**
  * How far from square a square logo may be, either way: the folded
  * plate's own rule. The client holds the same 1.25 for the plate
- * (client/src/layout/rail-top.tsx); the two packages share no code, so
+ * (client/src/layout/use-plate.ts); the two packages share no code, so
  * each keeps its own.
  */
 export const SQUARE_ENOUGH = 1.25;

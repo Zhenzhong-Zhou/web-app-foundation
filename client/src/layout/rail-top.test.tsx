@@ -2,21 +2,24 @@ import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { drawnIn } from '../test/drawn-colour';
 import { renderWithAuth } from '../test/render-with-auth';
 import { themeFor } from '../theme';
+import { LOGO_PLATE } from './logo';
 import { RailTop } from './rail-top';
 
 function renderTop({
   folded,
   name = 'WIDE Naturals Inc.',
   logoFileId = null,
+  squareLogoFileId = null,
 }: {
   folded: boolean;
   name?: string;
   logoFileId?: string | null;
+  squareLogoFileId?: string | null;
 }) {
   const onToggle = vi.fn();
   const view = renderWithAuth(
@@ -30,7 +33,7 @@ function renderTop({
         name,
         branding: {
           logoFileId,
-          squareLogoFileId: null,
+          squareLogoFileId,
           accentColor: null,
           rail: 'dark',
           logoOnDocuments: true,
@@ -50,6 +53,23 @@ function loads(container: HTMLElement, width: number, height: number) {
   Object.defineProperty(image, 'naturalHeight', { value: height });
   fireEvent.load(image);
 }
+
+/**
+ * The plate's image at Standard and at Larger text, as the browser draws
+ * it: in rem, it grows with the plate (ADR-060, amended).
+ */
+function sizes(image: Element | null) {
+  const at = (scale: string) => {
+    document.documentElement.style.fontSize = scale;
+    const { maxWidth, maxHeight } = getComputedStyle(image!);
+    return `${maxWidth} × ${maxHeight}`;
+  };
+  return { standard: at(''), larger: at('125%') };
+}
+
+afterEach(() => {
+  document.documentElement.style.fontSize = '';
+});
 
 /** Named with the initials it shows, or alone with a logo (WCAG 2.5.3). */
 const plate = () =>
@@ -140,6 +160,52 @@ describe('RailTop', () => {
       'src',
       '/api/v1/files/square',
     );
+    expect(sizes(plate().querySelector('img'))).toEqual({
+      standard: '28px × 28px',
+      larger: '35px × 35px',
+    });
+  });
+
+  /**
+   * The plate's first choice (ADR-060, amended): known square already, so
+   * nothing is measured, and drawn from the small file the plate needs.
+   */
+  it.each([
+    ['without a main logo', null],
+    ['ahead of a wide main logo', 'wordmark'],
+  ])('puts the square logo on the plate at once, %s', (_, logoFileId) => {
+    const { container } = renderTop({
+      folded: true,
+      logoFileId,
+      squareLogoFileId: 'mark',
+    });
+
+    expect(container.querySelector('img[hidden]')).toBeNull();
+    expect(plate()).not.toHaveTextContent('WN');
+    expect(plate()).toHaveAccessibleName(
+      'Expand navigation (WIDE Naturals Inc.)',
+    );
+    const image = plate().querySelector('img');
+    expect(image).toHaveAttribute('src', '/api/v1/files/mark?size=thumb');
+    expect(sizes(image)).toEqual({
+      standard: '28px × 28px',
+      larger: '35px × 35px',
+    });
+    // On the white plate, as a square main logo is, until hover or focus.
+    expect(plate()).toHaveStyle({ backgroundColor: LOGO_PLATE });
+    expect(
+      plate().querySelector('[data-testid="KeyboardDoubleArrowRightIcon"]'),
+    ).toHaveClass('unfold');
+  });
+
+  it('measures nothing open either, with a square logo', () => {
+    const { container } = renderTop({
+      folded: false,
+      logoFileId: 'wordmark-open',
+      squareLogoFileId: 'mark',
+    });
+
+    expect(container.querySelector('img[hidden]')).toBeNull();
   });
 
   it('keeps the initials for a wide logo, a wordmark', () => {

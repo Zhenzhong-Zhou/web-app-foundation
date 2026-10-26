@@ -289,10 +289,13 @@ export function OrganizationPage() {
               <BrandingForm
                 key={[
                   organization.logoFileId,
+                  organization.squareLogoFileId,
                   organization.accentColor,
                   organization.rail,
                 ].join()}
+                name={organization.name}
                 logoFileId={organization.logoFileId}
+                squareLogoFileId={organization.squareLogoFileId}
                 accentColor={organization.accentColor}
                 rail={organization.rail}
                 onSaved={reloadAll}

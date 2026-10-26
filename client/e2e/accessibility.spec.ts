@@ -282,6 +282,25 @@ const SCREENS: Screen[] = [
     ready: (page) =>
       page.getByRole('option', { selected: true }).and(keyboardOn(page)),
   },
+  {
+    // The two logos' rows side by side on a computer, and the line under
+    // the square logo naming the initials the folded plate shows, in the
+    // plate's colours (ADR-060, amended).
+    name: 'Branding, the two logos side by side',
+    path: () => '/settings/organization?tab=branding',
+    open: async (page) => {
+      const [logo, square] = await Promise.all([
+        page.getByRole('group', { name: 'Logo', exact: true }).boundingBox(),
+        page.getByRole('group', { name: 'Square logo' }).boundingBox(),
+      ]);
+      expect(square!.x).toBeGreaterThanOrEqual(logo!.x + logo!.width);
+      expect(square!.y).toBeCloseTo(logo!.y, 0);
+    },
+    ready: (page) =>
+      page
+        .getByRole('group', { name: 'Square logo' })
+        .getByText(/^Without one, the initials \S+ show there\.$/),
+  },
   { name: 'members', path: () => '/members', ready: heading },
   {
     name: 'the Invite dialog',
