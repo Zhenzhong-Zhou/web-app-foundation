@@ -97,13 +97,11 @@ export class FilesService {
     userId: string,
   ): Promise<FileView> {
     const rule = KIND_RULES[kind];
-    // Either logo goes by a logo's words and is kept as PNG; a photo as
-    // WebP.
-    const logo = rule.render === 'logo' || rule.render === 'squareLogo';
     const type = sniff(file.buffer);
     if (!type || !rule.accepts.includes(type)) {
+      // Either logo goes by a logo's words.
       throw new UnsupportedMediaTypeException(
-        logo
+        rule.render !== 'photo'
           ? t({
               id: 'files.logo.type',
               defaultMessage: 'A logo must be a PNG, JPEG, WebP or SVG image',
@@ -116,7 +114,7 @@ export class FilesService {
     }
 
     const rendered = await this.render(rule.render, file.buffer, type);
-    const contentType = logo ? 'image/png' : 'image/webp';
+    const contentType = `image/${rule.format}`;
     const bytes = rendered.reduce((sum, size) => sum + size.data.length, 0);
     // Before the transaction, not inside it: hashing up to 20 MB would
     // hold the organization's upload lock for as long.
@@ -215,10 +213,7 @@ export class FilesService {
             ),
             bytes,
             sha256,
-            originalName: downloadName(
-              file.originalname,
-              logo ? 'png' : 'webp',
-            ),
+            originalName: downloadName(file.originalname, rule.format),
             createdBy: userId,
           })
           .returning();
