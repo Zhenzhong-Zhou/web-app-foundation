@@ -8,8 +8,29 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
+- **ADR-083, the emails' design** (`adr-083-emails`, 26 October 2026):
+  the ADR is the branch's first commit, with the riders Bob chose (A to
+  L, J included). One layout for every email, built from blocks into
+  both parts, every text part unchanged character for character;
+  buttons only where an email's action already has words; dark mail
+  apps; a padded preheader; the invitation's `Reply-To` its inviter;
+  `npm run mail:preview`, with pictures for `screenshots:compare` and
+  Mailpit's HTML Check; and `/build-from-brief`. Next in this chat: the
+  canvas's boards, then the brief, the first written for
+  `/build-from-brief`; once the skill is built, each prompt is
+  `/build-from-brief tmp/adr-083/brief.md <step>`. The error tracker is
+  ADR-084 and low stock ADR-085. Its pull request is the first real one
+  for #254's changes to Claude Code Review: read its first run's
+  seconds, models and any `Refused:` line against #253's table, without
+  a re-run. Its dependency steps leave `typescript-eslint` 8.72.1 and
+  `@aws-sdk/client-s3` 3.1157.0 alone before 2 November.
+- **Bob's mother's Chinese corrections** are slow in coming (26 October
+  2026): ask again from Thursday 29 October whether they are back. Bob
+  read the Organization guide's 品牌 section in Help, in 中文, himself on
+  26 October, since the guides are not in her export (#150).
 - **CI's reliability, #252: PR #254** (`ci-reliability`, 26 October
-  2026), green in every browser (`full-e2e`) and ready to merge. Claude
+  2026), green in every browser (`full-e2e`), merged on 26 October with
+  its as-built docs, closing #252; its merge's CI and Deploy were green. Claude
   Code Review's check fails on it by design, since the PR changes the
   review's own workflow, so it was reviewed by hand: `/simplify`,
   `/code-review`, and `/production-readiness` on its deploys section.
@@ -70,7 +91,7 @@ with this one, this one is current.
     enough on 2 November, for the emails' design branch.
   - **MC-3425's second half, walked:** Deploy #36, run by hand from
     `ci-reliability` (a1501ae), skipped its job and deployed nothing.
-    After the merge, delete `ci-reliability` here and on GitHub.
+    `ci-reliability` was deleted after the merge, here and on GitHub.
 - **The organization's square logo: merged as #251** (`square-logo`,
   95063d6) on 26 October 2026, with ADR-060's amendment and its
   as-built. An optional square logo on Branding, beside
@@ -147,7 +168,7 @@ with this one, this one is current.
   #238 (#171), #239 (#129, all three of its cases) and #240 (#179's
   second half; its first half, Move everyone's dialog, stays open). #222
   stopped before code: it is decided on the issue and rides along in
-  ADR-083's branch.
+  ADR-085's branch.
 - **Merged on 23 October 2026, besides #196:** #200 (#189, the bell's
   failed list), #201 (Panivo's tab icon and name), #202 (#190, Resend),
   #203 (#193, request fields on one log line), #204 (#195, a failed list
@@ -180,8 +201,9 @@ with this one, this one is current.
   stays old after one (#196's review; ADR-081's correction).
 - **The order now** (Bob, changed on 26 October 2026), with ADR-082 and
   the square logo merged:
-    1. **#252**, CI's reliability: PR #254, above, to merge.
-    2. **The emails' design**: one layout for every email, the invitation
+    1. **#252**, CI's reliability: PR #254, merged on 26 October.
+    2. **ADR-083, the emails' design** (`adr-083-emails`, above): one
+       layout for every email, the invitation
        included without Panivo's header (the system's font, a phone's
        width, the main link as a button mail apps draw, the small print
        grey, dark mail apps checked, every email keeping its words); a
@@ -198,11 +220,11 @@ with this one, this one is current.
        what they check; the review step in two prompts, the findings
        first, the fixes once Bob has chosen. The emails' own brief is the
        first written for it.
-    3. **An error tracker**, a small PR with a short ADR, so real errors
+    3. **ADR-084, an error tracker**, a small PR with a short ADR, so real errors
        show while fixing: what is sent, scrubbed of personal details
        (PIPEDA, PIPL), and browser errors carried through the app's own
        API, so the browser contacts no other site.
-    4. **ADR-083, low stock** (its questions in Open decisions; #222 rides
+    4. **ADR-085, low stock** (its questions in Open decisions; #222 rides
        along).
     5. **The fix-ups**, each a PR of five to ten related issues: safety
        and scale (#181 first, then #142, #182, #225, #226, #244), orders
@@ -458,7 +480,8 @@ with this one, this one is current.
   ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
   "Error codes"). Since then, through #124: ADR-067 to ADR-070 below,
   and `deletion-started` (#117).
-- **Migrations:** through **0074** on `main`, 75 files in
+- **Migrations:** through **0075** on `main` (#251's, the square logo),
+  76 files in
   `server/src/database/migrations/`. 0055 and 0056 are ADR-069's (#114);
   0057 to 0061 are ADR-070's (#116): the deletion day, the reminder, and
   whose account goes with it (0059 put it on the organization, 0060 moved
@@ -477,7 +500,7 @@ with this one, this one is current.
   says invite), in #152; `adr-080-job-roles` **0073** (membership and
   invitation roles) and **0074** (`roles.updated_by`), in #176. Render
   holds one row per file in `drizzle.__drizzle_migrations` once `main` is
-  deployed there: 75 with ADR-080. After any new migration: `npm run migrate:all`, and
+  deployed there: 75 with ADR-080, 76 with the square logo. After any new migration: `npm run migrate:all`, and
   check its journal time (*Working agreements*, Process).
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
@@ -656,7 +679,8 @@ with this one, this one is current.
   by mistake at #247's merge; moved to the static site and deployed by
   hand on 25 October (*Now*, and `render.md`).
 - **The Chinese review:** Bob's mother has the export made at `b933b912`
-  (22 October 2026); her corrections were not back on 25 October, and
+  (22 October 2026); her corrections were not back on 26 October and
+  will be slow (ask after them from 29 October), and
   Bob says when she starts and when they come back. She reads with the
   app in 简体中文 and Chrome's translation off for the site: through
   Chrome's she was reading Google's Chinese, which also turned a code
@@ -814,8 +838,8 @@ with this one, this one is current.
 
 ### Still to do, in code
 
-- **#254** (#252, CI's reliability) to merge, then the emails' design
-  with `/build-from-brief` riding along, and the error tracker (the
+- **ADR-083, the emails' design**, on `adr-083-emails`
+  with `/build-from-brief` riding along, then ADR-084, the error tracker (the
   order, *Now*). The emails' design is the review's first real test
   after #254, and #253's.
 - `@mui/codemod@9.5.0`'s command crashes on yargs 18, which could be
@@ -1781,8 +1805,18 @@ in ADR-050's amendment.
   overwrites anything; then the commands to copy it in and commit.
   Downloads land in `~/Downloads` itself, not a folder, so each file is
   named in full, never a glob.
+- **A long file changes by a patch, not a full replacement** (26 October
+  2026): `decisions.md`, this handoff, `manual-checks.md` and
+  `conventions.md` are changed only where they need it. Bob attaches his
+  copy from `main`, since Project knowledge's search returns a long file
+  in passages; the chat sends a patch, applied with `git apply --check`
+  and then `git apply --index`, which stages what it changed. A patch
+  that does not match Bob's copy is refused whole, and `git diff
+  --cached` shows every change before the commit. New and short files
+  still come whole.
 - **Every answer that changes files opens with a roadmap:** a tree or
-  relative paths, each marked **new**, **full replacement** or **snippet**.
+  relative paths, each marked **new**, **full replacement**, **patch** or
+  **snippet**.
 - **New files, and changes touching several places or a large chunk of one
   file, come as full downloadable files.** Only a single small change stays
   inline as a snippet.

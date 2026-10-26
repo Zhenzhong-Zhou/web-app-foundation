@@ -9693,6 +9693,14 @@ resending and revoking follow the rule that only what you hold can be given;
 "Only an Owner can invite an Owner" keeps its words. The messages choose an
 article only for a built-in role, and a made role goes without one.
 
+**Amendment (October 2026) — the invitation's email, and replies to
+its inviter (ADR-083).** The invitation's email takes the layout every
+email shares: Join {organization} still opens it, with no product
+header; Accept the invitation is a button, with its address under it
+for a mail app that will not open one; and its last line is small
+print. While its inviter is still a member, its `Reply-To` is their
+address, which the email already shows.
+
 ---
 
 ## ADR-078 — Registration: open, or by invitation (amends ADR-006, ADR-070 and ADR-077)
@@ -11537,6 +11545,9 @@ the deploy job runs in GitHub's `production` environment, limited to
 
 ## ADR-082 — The product's brand: Panivo before sign-in, the organization's after (amends ADR-019, ADR-051, ADR-055, ADR-060 and ADR-081)
 
+> **Amended by [ADR-083](#adr-083--the-emails-one-layout-for-every-email-amends-adr-077-and-adr-082).**
+> The product's emails share one layout with the invitation, built from blocks; the header is that layout's first block, and an email's main action is a button where it already has words.
+
 **Context.** The product was named Panivo, 品桥 in Chinese, in October
 2026, and #201 gave the tab its icon and every tab the name
 `VITE_APP_NAME` sets. Nothing else says whose app it is. The sign-in and
@@ -11894,6 +11905,310 @@ carrying the placeholder refused.
 
 ---
 
+## ADR-083 — The emails: one layout for every email (amends ADR-077 and ADR-082)
+
+**Context.** The app sends 14 emails, built one by one in six places:
+
+- confirm your email and reset your password, inline in
+  `core/auth/auth.service.ts`;
+- a new sign-in, a password changed and a password reset (ADR-037), in
+  `core/auth/security-mail.ts`;
+- an account's deletion scheduled, cancelled and done (ADR-069), through
+  `compose()` in `core/auth/deletion-mail.ts`;
+- an organization's deletion scheduled, cancelled, a week away and done
+  (ADR-070), through the same `compose()`;
+- the operator's, when an organization invitation is accepted (ADR-078),
+  in English, in `core/invitations/operator-mail.ts`;
+- the invitation (ADR-077), the organization's, in
+  `core/invitations/invitation-mail.ts`, without the product's header.
+
+`org:invite` prints its link and emails nothing. Each HTML part is a
+fragment of paragraphs: no document, no language, no width, no font, and
+every main link plain text. ADR-082 gave the product's emails a header
+and no more. The invitation's small print already says "If the button
+doesn't open, copy this address into your browser", though its Accept is a
+plain link. A reply to any of them goes to `no-reply@`, which nobody
+reads: the domain has no mailbox (`docs/runbooks/services.md`). This ADR
+gives every email one layout, and keeps every word.
+
+Checked before drafting, as the working agreements ask:
+
+- **Fired, and taken here.** None of the Deferred lines. What this answers
+  is ADR-082's own finding while checking: emails built one by one, with no
+  layout they share.
+- **Not fired, and kept in step.**
+  - ADR-060's colour on emails (an organization whose customers receive
+    email from the app): every button is the product's purple, the
+    invitation's too.
+  - ADR-082's mark in an organization's emails, which ADR-060's amendment
+    thought this design might take with the square logo: not taken. Mail
+    apps block images and Gmail drops a `data:` image, so the logo would
+    need an address anyone can fetch without signing in, which the file
+    route never gives. ADR-077's organization named in words stands.
+  - ADR-082's name by language in emails: its trigger is a Chinese reader
+    who finds Panivo out of place there. Bob's mother's review is under
+    way and slow; the handoff asks after it from 29 October 2026.
+  - ADR-082's sending domain of Panivo's own and DMARC at `p=none`, and
+    its terms and privacy policy: the first customers', and the first user
+    outside Bob's. A footer for the product's emails waits with them
+    (Deferred).
+  - ADR-064's licence notices by email: in-app only until a licence lapses
+    while nobody who would have acted opened the app. With this layout,
+    one is a list of blocks.
+  - ADR-037: the security emails stay the product's, with no one-click
+    action, so no button (below).
+  - #170: the button is at least 44 px tall. #142: an email loads nothing
+    but the mark, from our own static site. #150: no word changes, so
+    nothing new for the Chinese review.
+  - The handoff's watch on Playwright's global setup missing its
+    confirmation email: this rebuilds that email, so if it recurs on this
+    branch, the watch's steps come first.
+- **Found while checking.**
+  - No email carries `lang`, so a Chinese email tells neither a mail app's
+    font choice nor a screen reader which language it is in.
+  - `compose()` already lays out 7 of the 14: where the layout starts.
+  - The security emails' `#666` is the only grey in any email.
+  - Links point at `onrender.com` while mail comes from
+    `wide-naturals.ca`, a mismatch spam filters weigh a little; Panivo's
+    own domain settles both.
+  - The README says CLAUDE.md comes "with two project skills"; there have
+    been three since ADR-081.
+
+**Decision — one layout, built from blocks, in our own code.** A small
+builder in `server/src/shared/mail/` takes an email as blocks: a greeting,
+a paragraph, a button, details (a label and a value per row), a quote,
+small print and a footer. It writes the HTML part and the text part from
+the same blocks, so the two cannot disagree. The product's header
+(ADR-082) is the first block of the product's emails: MailBrand draws it
+as before, and still sends every product email, so none can leave it out.
+Laravel's notification emails are built the same way: a greeting, lines,
+one action and the address under it.
+
+- **The text part stays as it is,** character for character, in every
+  email and language. The preview's first run, before the layout, is what
+  the build compares with.
+- **The builder escapes every value;** the only markup an email holds is
+  the builder's own. Today each of the six places escapes for itself.
+- **Styles are inline.** A `<style>` block holds only extras, the dark
+  grey and Outlook's own rules, since some Gmail apps strip it.
+- **Two tests hold every email:** its HTML stays under 50 KB, half of the
+  102 KB at which Gmail cuts a message off, and it loads nothing but the
+  mark: no other image, font or tracker.
+- No new dependency. MJML or React Email would bring a compiler, or
+  React, to the server for 14 emails whose words already live in the
+  catalogues.
+
+**Decision — a whole document, in its language.** `<!doctype html>`, with
+`lang` and `dir` on `<html>` and again on the outermost element, since
+Gmail drops the `<html>` element and its attributes. The subject as
+`<title>`. Meta tags for the character set and the viewport;
+`color-scheme` and `supported-color-schemes` as `light dark`;
+`format-detection` off for dates, addresses, telephone numbers and email
+addresses, so iOS Mail does not turn a deletion email's day into a blue
+link; and `x-apple-disable-message-reformatting`. Every table used for
+layout has `role="presentation"`, as the header's has, so a screen reader
+does not read it as a table; the security emails' details stay a table of
+data.
+
+**Decision — the look.**
+
+- One column, at most 600 px wide, the full width on a phone. Outlook on
+  Windows ignores `max-width`, so a fixed 600 px table wraps the column
+  for Outlook alone, in its conditional comments.
+- The system's font, `-apple-system, BlinkMacSystemFont, 'Segoe UI',
+  Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei',
+  'Noto Sans SC', sans-serif`, at 16 px with a line height of 1.6.
+  Outlook on Windows falls back to Times New Roman when the first font is
+  not installed, so Outlook alone is given `Arial, 'Microsoft YaHei',
+  sans-serif`.
+- Small print at 14 px in one grey, `#5B6575`, 5.9 : 1 on white,
+  replacing the security emails' `#666`.
+- The product's emails keep ADR-082's header. The invitation keeps none:
+  its heading, Join {organization}, opens it, and its last line, Sent for
+  {organization} by Panivo., is small print.
+
+**Decision — buttons only where the action already has words.** Confirm
+your email address, Reset your password and Accept the invitation become
+buttons, one to an email.
+
+- A table cell in the product's purple, `#5546B8`, holding the link in
+  white, 7.1 : 1, at least 44 px tall (#170). The padding is on the link,
+  with Outlook's own padding rule, so the whole button is clickable there
+  too. Its corners are the app's control radius, square in Outlook, which
+  draws no rounded corners without VML.
+- Under each, the invitation's line, "If the button doesn't open, copy
+  this address into your browser:", with the address, which breaks
+  anywhere so a long link never widens a phone's column. It moves from
+  `mail.invitation.fallback` to a shared id, its words unchanged in all
+  three languages. In the HTML part only: the text part already gives the
+  address on a line of its own.
+- The security emails keep their two links inside the sentence, as
+  ADR-037 wants: no one-click action in a security email, which is what
+  phishing copies. Google's alerts have a button; this is a deliberate
+  difference.
+- The deletion notices keep the app's address written out as their link:
+  they inform, and the actions they mention are in the app.
+
+So every sentence an email shows is already translated; none is added in
+English alone.
+
+**Decision — dark mail apps.** No colour is set on the page or the text,
+so each mail app's own colours apply, its dark ones too. Only the
+header's plate, the button and the rules have fixed colours, each chosen
+to stand on light and dark. The grey becomes `#A3ACBA` under
+`prefers-color-scheme: dark`, which Apple Mail honours, and under
+Outlook.com's own selector for its dark mode. Gmail's app inverts colours
+in its own way, and the check by hand looks at what it does.
+
+**Decision — the inbox preview.** A hidden preheader carries the email's
+first sentence after its greeting, or its first sentence where it has
+none, padded with invisible spacing so the preview ends there rather than
+running on into the header. Without it every inbox shows "Panivo Hi Bob,"
+first. Some screen readers read it before the email: an accepted trade,
+for no new words. HTML only.
+
+**Decision — the invitation answers to its inviter (amends ADR-077).**
+While the inviter is still a member, the invitation's `Reply-To` is their
+address, as Google Docs' sharing emails do: a newcomer who replies, "which
+warehouse do I start in?", reaches a person rather than `no-reply@`. The
+address is already in the email, so the invitation can be told from a
+forgery (ADR-077), and inviting needs it verified. Once the inviter has
+gone, the invitation names only the organization and has no `Reply-To`. A
+resend is written the same way. `Mail` gains an optional `replyTo`, which
+MailService passes to Resend's API as `reply_to` and to nodemailer as
+`replyTo`; no product email sets one.
+
+**Decision — seeing every email at once.**
+
+- `npm run mail:preview` in `server/` writes every email, in each
+  language it is sent in, as HTML and text, into `tmp/mail-preview/` with
+  an index page, from fixed contexts and with no database. `--send`
+  delivers them all to Mailpit, and refuses when `RESEND_API_KEY` is set,
+  so it never sends real mail.
+- The client's Playwright draws each previewed email at 375 and 600 px,
+  light and dark, where `npm run screenshots:compare` reads them, so the
+  pull request shows each email before and after, as it shows the
+  screens. No new dependency. A browser is not a mail app, so the check
+  by hand stays.
+- Mailpit's HTML Check scores each email against caniemail.com's data,
+  mail app by mail app; the manual check reads it, in place of a paid
+  rendering service.
+- By hand on the live site, light and dark, images on and off: Apple Mail
+  on a Mac and an iPhone, Gmail's app and web, Outlook.com, and QQ Mail's
+  web view where there is an address to hand. A handful of emails, not all
+  of them: Resend's free plan sends 100 a day.
+
+**Decision — `/build-from-brief`, a project skill, rides along.**
+`.claude/skills/build-from-brief/SKILL.md`, run as
+`/build-from-brief tmp/adr-NNN/brief.md <step>`, in place of "Read
+tmp/adr-NNN/brief.md and do step N. End with the summary for the chat."
+It holds what every brief repeated: the author and committer; staging by
+path after `git status`; one `-m` with the why; `scripts/verify.sh`,
+`--quick` within a step and in full before a push; lint's reformatting
+committed as a fixup, never restored; `npm run api` and both generated
+files; migrations; the inventory step and the seeds step; the stop rule;
+where `/clear` is safe; and the summary for the chat. A brief then holds
+its decisions and its prompts.
+
+- **One home per rule.** The skill links `docs/conventions.md` and the
+  handoff's working agreements rather than copying them, except the lines
+  it must act on, so a rule changed once cannot disagree with itself.
+- **The square logo's four lessons, as rules:** dependencies judged by
+  each package's own publish time, never moving one back; a migration
+  that adds to a list the code shares commits with that code; manual
+  checks in the same commit as what they check; the review step in two
+  prompts, the findings first, the fixes once Bob has chosen.
+- **It runs only when a prompt names it,** never on Claude Code's own
+  initiative.
+- **Its summary has a fixed shape:** the commits with their hashes, what
+  verify said, issues filed, follow-ups, and whether `/clear` is safe now.
+- Built straight after the branch's dependencies, so the rest of the
+  branch runs through it. CLAUDE.md names it, and the README lists the
+  four project skills.
+
+**Decision — the numbers after it.** The error tracker is ADR-084, and low
+stock moves from ADR-083 to ADR-085, as it moved for the brand on 24
+October.
+
+**Considered and not done.**
+
+- **MJML, React Email, or templates in files.** A compiler, React on the
+  server, or a second language beside TypeScript, for 14 emails whose
+  words are in the catalogues.
+- **Litmus or Email on Acid,** which render an email in about a hundred
+  mail apps, for a monthly fee. Mailpit's HTML Check, the pictures and the
+  list by hand do it until there are customers.
+- **VML for rounded corners in Outlook on Windows.** Code only that one
+  app reads, for corners.
+- **An email in the app's chosen mode,** dark for someone who chose Dark.
+  The mail app decides as the email is read, not as it is sent; one email
+  is read on several devices, while the app's choice is kept per device;
+  and Gmail's app inverts colours by itself, which would turn a dark email
+  muddy or light. Light by default, switched by the mail app, is what
+  follows each reader. The page an email's link opens already starts in
+  that device's mode (ADR-082).
+- **The organization's square logo in the invitation:** above.
+- **The organization's accent on the invitation's button:** ADR-060's
+  colour on emails, still deferred.
+- **A footer on the product's emails** saying why it came, where replies
+  go, and linking terms: new words, and nothing yet to link (Deferred).
+- **One-click unsubscribe (`List-Unsubscribe`).** Gmail and Yahoo ask it
+  of bulk and marketing mail; these are transactional.
+- **Open and click tracking.** Off in Resend: a tracking pixel would break
+  the test above, and click tracking rewrites every link, the sign-in and
+  reset links included.
+
+**Deferred — each with what brings it in.**
+
+- **A footer for the product's emails,** with a reply address and links to
+  the terms and privacy policy. Trigger: those documents (ADR-082), or a
+  mailbox on the domain (`services.md`).
+- **Links on the sending domain.** Trigger: Panivo's own domain, at the
+  first customers (ADR-082).
+- **A rendering service.** Trigger: the first paying customer, or an email
+  reported looking wrong in a mail app the list does not cover.
+- ADR-082's name by language in emails and mark in an organization's
+  emails, and ADR-060's colour on emails, keep their triggers; with the
+  layout, each is a change to one block.
+
+**Consequences.**
+
+- No migration, and no change to the API.
+- Server: `shared/mail/`'s layout and its blocks; MailBrand drawing the
+  header as a block; each of the six places building blocks;
+  `Mail.replyTo`; the fallback line's shared id in the three catalogues;
+  specs for the layout (escaping, both parts from one set of blocks,
+  `lang` twice, the tables' role, the size, nothing loaded but the mark)
+  and for each email's text part, unchanged.
+- `npm run mail:preview` in `server/`, and the client's Playwright drawing
+  the previews for `screenshots:compare`.
+- `.claude/skills/build-from-brief/SKILL.md`; CLAUDE.md; the README's
+  skills line, and a row in its "Which tool, when" for the preview.
+- Seeds: nothing. Emails add no table, the demo sends none, and the
+  preview builds every email without a database.
+- Manual checks: MC-3503 rewritten (Mailpit, its HTML Check, the
+  preheader); new checks for a button and its fallback line, a phone's
+  width, dark mail apps, the live site's list, and a reply to an
+  invitation reaching its inviter.
+- Designed on the canvas before building: the confirm-email email on a
+  computer and a phone, light and dark, images off; the invitation in
+  English and 中文; a security email; a deletion notice. The brief and the
+  boards go in `tmp/adr-083/`.
+- Build order, a commit each, through `/build-from-brief`: this ADR;
+  dependencies; the skill; an inventory of every email, with the
+  preview's first run as the before; the layout and its tests; the
+  product's emails moved onto it; the invitation, with its `Reply-To`;
+  the pictures; dependencies again; the reviews, `/usability-walkthrough`
+  as the novice bookkeeper opening an invitation on a phone in 中文, then
+  `/simplify`, `/code-review` and `/production-readiness` on its email
+  section; the docs last. Manual checks go in the commit whose change
+  they check.
+- The pull request is the first real one for #254's changes to Claude
+  Code Review: its first run's time, models and any `Refused:` line are
+  read against #253's table, without a re-run.
+
+---
+
 ## Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
@@ -12020,7 +12335,7 @@ they exist so the reasoning is not rediscovered from scratch.
   about in contracts and privacy law (PIPEDA, PIPL) cares about.
   Monitoring the app itself is a different need: an error tracker and an
   uptime check beside the logs. The error tracker is a small pull request
-  of its own with a short ADR, after the emails' design (Bob, 25 October
+  of its own with a short ADR, ADR-084, after the emails' design (Bob, 25 October
   2026); the uptime check is set up by hand
   (`docs/runbooks/services.md`). A "Report a problem" link in Help
   belongs here too, sending the version, build, page, language and
@@ -12039,9 +12354,11 @@ they exist so the reasoning is not rediscovered from scratch.
   trial. Not on the invitation, which only starts the trial; seat limits
   are counted at inviting (ADR-077). ADR-070's "closed by us" waits on
   it. Trigger: the first paying customer.
-- **Low stock** — as ADR-083 (Bob, 22 October 2026), after ADR-082, the
+- **Low stock** — as ADR-085 (Bob, 22 October 2026; ADR-083 until the
+  emails' design took that number on 26 October), after ADR-082, the
   brand, which went first on 24 October, then the square logo (ADR-060,
-  amended), the emails' design and the error tracker (Bob, 25 October
+  amended), the emails' design (ADR-083) and the error tracker (ADR-084)
+  (Bob, 25 October
   2026), and before the whole-app `/production-readiness` review.
   Nothing warns when stock runs short; the only mention was a placeholder
   dashboard's "low stock" in the Resolved table, and ADR-058 built Home
@@ -12565,3 +12882,4 @@ they exist so the reasoning is not rediscovered from scratch.
 | Money on an order                      | Labelled before or with tax; totals from the server   | ADR-055          |
 | Product names in other languages       | Translation rows; required languages per organization | ADR-054          |
 | The product's brand                    | Panivo signed out, in emails, at the rail's foot      | ADR-082          |
+| Email layout                           | One layout from blocks; buttons where words exist     | ADR-083          |
