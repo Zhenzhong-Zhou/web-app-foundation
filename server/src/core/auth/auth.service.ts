@@ -17,18 +17,13 @@ import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { type OrganizationRail, organizations } from '../../database/schema';
 import { users } from '../../database/schema';
-import {
-  recipientLocale,
-  t,
-  type Translatable,
-  translate,
-} from '../../i18n/translate';
-import { escapeHtml } from '../../shared/mail/escape-html';
+import { recipientLocale, t } from '../../i18n/translate';
 import { MailBrand } from '../../shared/mail/mail-brand';
 import type { Permission } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
 import { startOrganization } from '../organizations/start-organization';
 import { AccountEventService } from './account-event.service';
+import { passwordResetMail, verificationMail } from './account-mail';
 import { AuthTokenService } from './auth-token.service';
 import type { DeletionStage } from './dto/auth-response.dto';
 import type { LoginDto } from './dto/login.dto';
@@ -468,33 +463,15 @@ export class AuthService implements OnModuleInit {
   ) {
     try {
       const { token } = await this.tokens.issue(userId, 'email_verification');
-      const clientUrl = this.config.get('CLIENT_URL', { infer: true });
-      const link = `${clientUrl}/verify-email?token=${token}`;
-
-      // In the recipient's language (ADR-054); the English is unchanged.
-      const say = (message: Translatable) => translate(message, locale);
-      const hi = (who: string) =>
-        say(t({ id: 'mail.hi', defaultMessage: 'Hi {name},' }, { name: who }));
-      const confirm = say(
-        t({
-          id: 'mail.verify.confirm',
-          defaultMessage: 'Confirm your email address',
+      await this.mail.send(
+        verificationMail({
+          locale,
+          to: email,
+          name,
+          clientUrl: this.config.get('CLIENT_URL', { infer: true }),
+          token,
         }),
       );
-      const expires = say(
-        t({
-          id: 'mail.verify.expires',
-          defaultMessage:
-            'The link expires in 24 hours. If you did not sign up, ignore this message.',
-        }),
-      );
-
-      await this.mail.send({
-        to: email,
-        subject: confirm,
-        text: `${hi(name)}\n\n${say(t({ id: 'mail.verify.lead', defaultMessage: 'Confirm your email address:' }))}\n${link}\n\n${expires}`,
-        html: `<p>${hi(escapeHtml(name))}</p><p><a href="${link}">${confirm}</a></p><p>${expires}</p>`,
-      });
     } catch (error) {
       // Broad by design: registration must survive a dead SMTP connection.
       // But that also swallows token-issue failures, so the message must not
@@ -598,31 +575,16 @@ export class AuthService implements OnModuleInit {
     }
 
     const { token } = await this.tokens.issue(user.id, 'password_reset');
-    const clientUrl = this.config.get('CLIENT_URL', { infer: true });
-    const link = `${clientUrl}/reset-password?token=${token}`;
-
-    // Their own language, else the forgot-password page's (ADR-054).
-    const locale = recipientLocale(user.locale, language);
-    const say = (message: Translatable) => translate(message, locale);
-    const hi = (who: string) =>
-      say(t({ id: 'mail.hi', defaultMessage: 'Hi {name},' }, { name: who }));
-    const reset = say(
-      t({ id: 'mail.reset.action', defaultMessage: 'Reset your password' }),
-    );
-    const expires = say(
-      t({
-        id: 'mail.reset.expires',
-        defaultMessage:
-          'The link expires in one hour and can be used once. If you did not request this, ignore this message — your password has not changed.',
+    await this.mail.send(
+      passwordResetMail({
+        // Their own language, else the forgot-password page's (ADR-054).
+        locale: recipientLocale(user.locale, language),
+        to: user.email,
+        name: user.name,
+        clientUrl: this.config.get('CLIENT_URL', { infer: true }),
+        token,
       }),
     );
-
-    await this.mail.send({
-      to: user.email,
-      subject: reset,
-      text: `${hi(user.name)}\n\n${say(t({ id: 'mail.reset.lead', defaultMessage: 'Reset your password:' }))}\n${link}\n\n${expires}`,
-      html: `<p>${hi(escapeHtml(user.name))}</p><p><a href="${link}">${reset}</a></p><p>${expires}</p>`,
-    });
 
     this.logger.log(`Password reset link sent for ${user.id}`);
   }

@@ -742,7 +742,7 @@ async function lockOrganizations(
 }
 
 /** The refusal for a block: why, and what to do next (ADR-069). */
-function refusalMessage(block: Block): Translatable {
+export function refusalMessage(block: Block): Translatable {
   return block.code === 'only_member'
     ? t(
         {
