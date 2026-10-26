@@ -384,12 +384,12 @@ jobs:
       # then the next mirror) are the first defence, but they catch a
       # mirror gone silent, not one crawling. Each try's 5 minutes, about
       # twice the slowest healthy install, are the guarantee: a stall ends
-      # the try, not the job. Before a retry, dpkg finishes an install cut
-      # off mid-way, and the Azure mirror leaves apt's list, so the retry
-      # fetches from archive.ubuntu.com, the image's next, keeping the
-      # packages already fetched. If stalls continue, Playwright's Docker
-      # image is the heavier fix, though this job starts containers of its
-      # own (the services above).
+      # the try, not the job. Before a retry, the try's apt-get is stopped,
+      # dpkg finishes an install cut off mid-way, and the Azure mirror
+      # leaves apt's list, so the retry fetches from archive.ubuntu.com,
+      # the image's next, keeping the packages already fetched. If stalls
+      # continue, Playwright's Docker image is the heavier fix, though this
+      # job starts containers of its own (the services above).
       - name: Install browsers
         # A backstop: three tries of 5 minutes, and the pauses between.
         timeout-minutes: 17
@@ -400,6 +400,11 @@ jobs:
           fi
           for try in 1 2 3; do
             if [ "$try" -gt 1 ]; then
+              # The try's apt-get runs under sudo, in a session of its
+              # own, and can outlive timeout's signal: on #254's first
+              # run it went on fetching, holding dpkg's lock.
+              sudo pkill -KILL -x apt-get || true
+              while pgrep -x 'apt-get|dpkg' > /dev/null; do sleep 1; done
               sudo dpkg --configure -a
               sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
               sleep 10
