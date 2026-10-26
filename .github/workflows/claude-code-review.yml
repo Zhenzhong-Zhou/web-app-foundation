@@ -34,6 +34,11 @@ jobs:
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@v1
+        # The plugin's steps are subagents. Run in the background, one is
+        # lost when the run ends, since the action stops at Claude's first
+        # result (#252); in the foreground, the run waits for each.
+        env:
+          CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: '1'
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
@@ -42,22 +47,25 @@ jobs:
           claude_args: >-
             --allowedTools "mcp__github_inline_comment__create_inline_comment"
             --append-system-prompt "Review the pull request's diff as it
-            stands now. Never wait for its checks, CI or any other run, and
-            never end by saying you will continue later: nothing returns to
-            this run once it ends. Post the review, or say on the pull
-            request that there is nothing to flag, before ending."
+            stands now, and finish every step of the review in this run.
+            Never wait for the pull request's checks, CI or other workflow
+            runs, and never end by saying you will continue later: nothing
+            returns to this run once it ends. Post the review, or say on the
+            pull request that there is nothing to flag, before ending."
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
 
       # The action reports success even when it posted nothing, as when it
-      # ran out of usage on #227, #228, #235 and #236 (#243), or stopped to
-      # wait for CI on #251, though nothing returns to it once it ends
-      # (#252, run 40359350311). claude_args now tells it not to wait; this
-      # check stays as the net. How it ended, its last message, goes in the
-      # log: that one only, not show_full_output, which prints every tool's
-      # result in this public repository's logs, as the action itself
-      # warns. The plugin skips a pull request it has reviewed before, so
-      # the job fails only when this one has no review from it at all.
+      # ran out of usage on #227, #228, #235 and #236 (#243), or ended on
+      # #251 after 4 seconds, its first step still running in the
+      # background, saying it would continue once that reported back
+      # (#252, run 40359350311). Background tasks are now off and
+      # claude_args tells it to finish in this run; this check stays as the
+      # net. How it ended, its last message, goes in the log: that one only,
+      # not show_full_output, which prints every tool's result in this
+      # public repository's logs, as the action itself warns. The plugin
+      # skips a pull request it has reviewed before, so the job fails only
+      # when this one has no review from it at all.
       #
       # The action also skips, with a warning that workflow validation
       # failed, while this file differs from the default branch's, as on a
@@ -87,7 +95,7 @@ jobs:
             if [ "$main" != "$(git hash-object "$workflow")" ]; then
               echo "::error title=No code review::Claude Code Review skipped this pull request because it changes the review's own workflow, $workflow, and the action runs only the one on $DEFAULT_BRANCH. The review runs once this workflow is on $DEFAULT_BRANCH; until then, review by hand (/code-review)."
             else
-              echo "::error title=No code review::Claude Code Review ended without a review on this pull request: out of usage, it judged the change too simple to review, or it stopped to wait for the pull request's other checks. The line above says how it ended. Re-run this job once it can, after CI for the last, or review by hand (/code-review)."
+              echo "::error title=No code review::Claude Code Review ended without a review on this pull request: out of usage, it judged the change too simple to review, or it ended before its review had finished. The line above says how it ended. Re-run this job once it can, or review by hand (/code-review)."
             fi
             exit 1
           fi
