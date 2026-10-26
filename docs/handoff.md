@@ -133,13 +133,14 @@ with this one, this one is current.
   scrubbed of personal details (PIPEDA, PIPL), and browser errors carried
   through the app's own API, so the browser contacts no other site; then
   **ADR-083, low stock** (its questions in Open decisions; #222 rides
-  along). The uptime monitor is set up by hand, apart from any PR
-  (*Still to do, by hand*). Then the review of the whole app, once
+  along). The uptime monitor runs on UptimeRobot since 25 October
+  (`docs/runbooks/services.md`). Then the review of the whole app, once
   (`/production-readiness` with its device pass: deploys, backups and a
   restore tried, security, performance, email, support, browsers and
   China, tablets and foldables, the iPhone Duo closed and open, a phone
-  held sideways); its email section now takes DMARC from `p=none` to
-  `p=quarantine` in steps. Then the fix-ups, each a PR of five to ten
+  held sideways); its email section reports DMARC's `p=none` as
+  deferred, by decision, until the first paying customer. Then the
+  fix-ups, each a PR of five to ten
   related issues: safety and scale (#181 first, then #142, #182, #225,
   #226, #244), orders and shipping (#156, #125, #161, #164, #128, #241,
   #159 with #221, a layout decision first, #158's Receive action in the
@@ -626,12 +627,14 @@ with this one, this one is current.
 - **Email's DNS, checked 25 October 2026:** Resend's domain
   `wide-naturals.ca` at Namecheap, DKIM and SPF verified, DMARC
   `v=DMARC1; p=none;`, tracking off, TLS opportunistic
-  (`docs/runbooks/services.md`). Next, in the whole-app review's email
-  section: a report address (`rua`) on the DMARC record, a few weeks of
-  reports read, then `p=quarantine`.
-- **An uptime monitor,** any time, with no commit: UptimeRobot or Better
-  Stack on `/api/health` and the site, alerting Bob's email. Its pings
-  also keep the free API awake. Not set up yet on 25 October.
+  (`docs/runbooks/services.md`). DMARC stays at `p=none`, with no report
+  address, until the first paying customer (Bob, 25 October 2026): until
+  then anyone can send mail in the domain's name and receivers still
+  deliver it, which matters once customers know the domain. Then a report
+  address (`rua`), a few weeks of reports, and `p=quarantine`, likely on
+  Panivo's own sending domain, which ADR-082 defers to the same time.
+  Meanwhile, once: Gmail's Show original on one of the app's emails reads
+  SPF, DKIM and DMARC PASS.
 - **The pre-push hook** lives in `scripts/hooks/` since #247, and Bob's
   clone has used it since 25 October (`core.hooksPath`, the old copy
   deleted). A new clone needs `git config core.hooksPath scripts/hooks`
@@ -845,7 +848,9 @@ with this one, this one is current.
   policy, before the first user outside Bob; the name by language in
   emails and in a shared link's card; a drawn wordmark; the mark in an
   organization's emails; a sending domain of Panivo's own, at the first
-  customers (ADR-082).
+  customers (ADR-082); DMARC enforcement, a report address and then
+  `quarantine`, at the first paying customer, likely on that domain (Bob,
+  25 October 2026).
 - Deploys: keeping the last build's files ourselves; failed loads and
   refusals sent to an error tracker; Playwright against the built files;
   feature flags and staged rollouts (ADR-081, Open decisions).
@@ -1633,8 +1638,11 @@ in ADR-050's amendment.
 - **Dependencies, on every branch** (21 October 2026): `npm outdated` in
   `server/` and `client/`, taking the in-range updates as a commit of their
   own at the branch's start, and again before the reviews. From ADR-081,
-  only versions at least 7 days old (`npm update --before=…`), a security
-  fix excepted (conventions.md, "Dependencies").
+  only versions at least 7 days old, judged package by package from its
+  own publish time and never moving a locked version back; not `npm
+  update --before`, which does both wrong (the square logo's step 2, 25
+  October 2026). A security fix is excepted, and any other exception is
+  Bob's, named in its commit (conventions.md, "Dependencies").
 - **Planned in this chat, built in Claude Code** (from ADR-079, 20
   October 2026). The claude.ai chat does the check before an ADR (its
   Deferred lines, the watch lists, Open decisions and the open issues),

@@ -166,14 +166,20 @@ done; a check older than a change of host, plan or region is stale.
   (`dig +short TXT resend._domainkey.<domain>`) and
   `dig +short TXT _dmarc.<domain>`: SPF, DKIM and DMARC present and
   aligned.
-- **DMARC, tightened in steps.** At `p=none` the record only watches: a
-  message forged in the domain's name is still delivered. So, by hand:
-  add a report address to the record (`rua=mailto:…`), read a few weeks
-  of the daily reports it brings, until every service that sends as the
-  domain, a mailbox provider as well as Resend, passes SPF or DKIM
-  aligned, then raise the policy to `p=quarantine`. A record still at
-  `p=none`, or with no `rua`, is a finding, with how many weeks of
-  reports have been read.
+- **DMARC, tightened in steps, from the first paying customer.** At
+  `p=none` the record only watches: a message forged in the domain's name
+  is still delivered. Until the first paying customer, `p=none` with no
+  `rua` is deferred by decision (Bob, 25 October 2026): report it as
+  deferred, not as a finding, and check by hand that the app's own mail
+  passes (Gmail, Show original: SPF, DKIM and DMARC all PASS). From the
+  first paying customer, by hand: add a report address
+  (`rua=mailto:…`), read a few weeks of the daily reports it brings, until
+  every service that sends as the domain, a mailbox provider as well as
+  Resend, passes SPF or DKIM aligned, then raise the policy to
+  `p=quarantine`, on Panivo's own sending domain if the move has happened
+  by then (ADR-082, Deferred). From then, a record still at `p=none`, or
+  with no `rua`, is a finding, with how many weeks of reports have been
+  read.
 - **Delivery.** By hand: one of each email (confirm, reset, invitation, a
   licence reminder) reaches Gmail, Outlook, and a QQ or 163.com address
   (the handoff, "Before customers"), not in spam, in the reader's

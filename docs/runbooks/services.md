@@ -18,6 +18,7 @@ off it is a matter of settings, not code. Checked on 25 October 2026.
 | **GitHub** | The repository (public), Actions, Dependabot, the ruleset for `main`, the `production` environment | `.github/workflows/`; [render.md](render.md), "Setting it up, by hand, in this order", for the environment and the ruleset | `production`: `RENDER_API_DEPLOY_HOOK`, `RENDER_CLIENT_DEPLOY_HOOK`; repository: the `BACKUP_*` secrets and variables, `CLAUDE_CODE_OAUTH_TOKEN` | Another CI means rewriting the workflows; the code and its history move with git |
 | **Anthropic** | Claude Code Review on each pull request, and Claude Code's cloud sessions | `.github/workflows/claude-code-review.yml` and `claude.yml` | `CLAUDE_CODE_OAUTH_TOKEN` | Nothing in the app depends on it |
 | **healthchecks.io** | The backups' heartbeat: emails when a day passes without a backup (ADR-053) | healthchecks.io's dashboard | `BACKUP_HEALTHCHECK_URL`; unset, the step is skipped | Any heartbeat monitor: its URL |
+| **UptimeRobot** | Asks `/api/health` and the site every 5 minutes and emails Bob when either stops answering, since 25 October 2026; its pings keep the free API awake, about 744 of the 750 free hours Render gives a month | UptimeRobot's dashboard, the free plan: two HTTP(s) monitors, `https://web-app-foundation-client.onrender.com/api/health` and `https://web-app-foundation-client.onrender.com/` | None in the repository | Any uptime monitor: the two addresses |
 
 ## Email's DNS (25 October 2026)
 
@@ -27,8 +28,11 @@ off it is a matter of settings, not code. Checked on 25 October 2026.
 - **SPF:** CNAME records at `send` and `rsend`, pointing at Resend Forge,
   verified.
 - **DMARC:** a TXT record at `_dmarc`, `v=DMARC1; p=none;`, which asks
-  mail apps to report, not to reject. It can tighten to `quarantine` once
-  its reports show every message passing.
+  mail apps to deliver what fails rather than reject it. It stays so,
+  with no report address, until the first paying customer (Bob, 25
+  October 2026); then it takes a report address (`rua`) and tightens to
+  `quarantine` once the reports show every message passing, likely on
+  Panivo's own sending domain by then (below).
 
 In Resend: Forge on, sending enabled, receiving off, open and click
 tracking off (tracking rewrites every link, the sign-in and reset links
@@ -42,10 +46,6 @@ Panivo's own is deferred to the first customers (ADR-082).
 
 ## Not set up yet
 
-- **An uptime monitor,** such as UptimeRobot or Better Stack: it asks
-  `/api/health` and the site every few minutes and emails when either
-  stops answering. Nothing in the repository; its pings also keep the
-  free API awake. Still not set up on 25 October 2026.
 - **An error tracker,** such as Sentry or GlitchTip: a small pull request
   of its own with a short ADR, after the emails' design and before
   ADR-083 (Bob, 25 October 2026). Personal details are scrubbed before
