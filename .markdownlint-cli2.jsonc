@@ -20,6 +20,9 @@
     // where a failed run leaves an error-context.md to lint otherwise.
     "client/e2e/.output/**",
     "client/screenshots/.output/**",
-    "review/**"
+    "review/**",
+    // Untracked scratch (briefs, inventories), ignored by git: CI never
+    // sees it, so its Markdown should not fail scripts/verify.sh.
+    "tmp/**"
   ]
 }
