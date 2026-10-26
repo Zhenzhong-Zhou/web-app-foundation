@@ -280,6 +280,10 @@ jobs:
     name: Client — Playwright ${{ matrix.shard }}/3
     if: github.event.action != 'labeled' || github.event.label.name == 'full-e2e'
     runs-on: ubuntu-24.04
+    # A shard takes 5 to 8 minutes with every browser. This ends one that
+    # stalls long before GitHub's default of 6 hours, with room for Install
+    # browsers' three tries.
+    timeout-minutes: 45
     strategy:
       # One shard failing must not cancel the others: their failures are
       # different tests, and all of them are wanted at once.
@@ -368,13 +372,52 @@ jobs:
       # Chromium for the suite; WebKit (Safari, iPhone) and Firefox for the
       # projects that check every screen in each (playwright.config.ts), only
       # when they run.
+      #
+      # What stalls is apt fetching the browsers' Linux packages (181
+      # packages, 119 MB, with every browser), not the browsers, which
+      # download in seconds, so caching the browsers would not help. On
+      # #251's runs and the scheduled one of 26 October, a shard fetched
+      # them from azure.archive.ubuntu.com at about 40 kB/s: still going
+      # when cancelled after 20 and 27 minutes, or 49 to finish, where the
+      # other shards took about one. The runner image's own apt settings
+      # (/etc/apt/apt.conf.d/zz-retries: a 15-second timeout and one retry,
+      # then the next mirror) are the first defence, but they catch a
+      # mirror gone silent, not one crawling. Each try's 5 minutes, about
+      # twice the slowest healthy install, are the guarantee: a stall ends
+      # the try, not the job. Before a retry, the try's apt-get is stopped,
+      # dpkg finishes an install cut off mid-way, and the Azure mirror
+      # leaves apt's list, so the retry fetches from archive.ubuntu.com,
+      # the image's next, keeping the packages already fetched. If stalls
+      # continue, Playwright's Docker image is the heavier fix, though this
+      # job starts containers of its own (the services above).
       - name: Install browsers
+        # A backstop: three tries of 5 minutes, and the pauses between.
+        timeout-minutes: 17
         run: |
+          browsers=(chromium)
           if [ "$FULL_E2E" = true ]; then
-            npx playwright install --with-deps chromium webkit firefox
-          else
-            npx playwright install --with-deps chromium
+            browsers+=(webkit firefox)
           fi
+          for try in 1 2 3; do
+            if [ "$try" -gt 1 ]; then
+              # The try's apt-get runs under sudo, in a session of its
+              # own, and can outlive timeout's signal: on #254's first
+              # run it went on fetching, holding dpkg's lock.
+              sudo pkill -KILL -x apt-get || true
+              while pgrep -x 'apt-get|dpkg' > /dev/null; do sleep 1; done
+              sudo dpkg --configure -a
+              sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+              sleep 10
+            fi
+            timeout --kill-after=20s 5m npx playwright install --with-deps "${browsers[@]}" && exit 0
+            status=$?
+            if [ "$status" -eq 124 ] || [ "$status" -eq 137 ]; then
+              echo "::warning title=Install browsers::Try $try of 3 timed out after 5 minutes."
+            else
+              echo "::warning title=Install browsers::Try $try of 3 failed, exit code $status."
+            fi
+          done
+          exit 1
         working-directory: client
 
       # One script, not four steps. pretest:e2e already migrates and seeds

@@ -878,7 +878,7 @@ behaviour the change leaves intact.
 | Upgrade             | Blocked by                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Unblocks when                                                                                                                                                     |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `@nestjs/*` 11 → 12 | `@nestjs/throttler@6.5.0` peers at `^11.0.0`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Cleared by ADR-067: throttler 6.7.1 accepts `^12.0.0`, and the server runs Nest 12                                                                                |
-| `typescript` 6 → 7  | As of 21 October 2026: `typescript-eslint@8.72.0` peers at `<6.1.0` ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)); `@nestjs/cli@12.0.10` depends on `~6.0.2` ([nest-cli#3479](https://github.com/nestjs/nest-cli/issues/3479)); `@nestjs/swagger@12.0.2` peers at `^5.5.0 \|\| ^6.0.0` ([swagger#4002](https://github.com/nestjs/swagger/pull/4002)), and its plugin is a transformer inside `nest build`; the Go port's support for `emitDecoratorMetadata`, which Nest requires | Realistically TypeScript 7.1 stable, whose API those tools need, plus new releases of all three — then verify the decorator support explicitly, not by assumption |
+| `typescript` 6 → 7  | As of 26 October 2026: `typescript-eslint@8.72.0` peers at `<6.1.0` ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)); `@nestjs/cli@12.0.10` depends on `~6.0.2` ([nest-cli#3479](https://github.com/nestjs/nest-cli/issues/3479)); `@nestjs/swagger@12.0.4` peers at `^5.5.0 \|\| ^6.0.0` ([swagger#4002](https://github.com/nestjs/swagger/pull/4002)), and its plugin is a transformer inside `nest build`; the Go port's support for `emitDecoratorMetadata`, which Nest requires | Realistically TypeScript 7.1 stable, whose API those tools need, plus new releases of all three — then verify the decorator support explicitly, not by assumption |
 
 Being on a supported release line is the goal; being on the newest major is
 not. `11.2.3` is current for the 11 line, and a non-empty `npm outdated` is not
@@ -12060,6 +12060,19 @@ they exist so the reasoning is not rediscovered from scratch.
   for a change risky enough to try with one customer first. ADR-081 keeps
   every open tab working across a deploy, but each deploy still reaches
   everyone at once. Trigger: the first paying customers.
+- **Telling users what changed.** What a change tells the people using
+  the app, decided by what it does to them (Bob, 26 October 2026):
+  - By email and in the app, in advance: terms, privacy and prices;
+    anything that changes their records or their numbers (tax, rounding,
+    numbering, retention, deletion); security rules they must act on;
+    features removed.
+  - A "What's new" in Help and a one-time notice in the bell: when a
+    workflow moves, or a feature they would want arrives. Permission
+    changes go to Owners.
+  - Nothing: bug fixes, small visual changes, anything internal.
+
+  Trigger: the first user outside Bob, together with the terms and
+  privacy policy.
 - **A public or a private repository.** The repository is public, so
   anyone can read the code; nothing secret is in it, the secrets being in
   GitHub's settings and Render's. Private would hide the code, but on
