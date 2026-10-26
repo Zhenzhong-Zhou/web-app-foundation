@@ -2511,7 +2511,9 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
   Narrow the window below 900 px, or open it on a phone: Square logo
   follows Logo, a line above it, nothing cut off. With VoiceOver, moving
   into each row names it Logo or Square logo, so each Replace says which
-  logo it acts on.
+  logo it acts on; after the Square logo row it goes on to Colour,
+  passing over How it looks in the sidebar and its picture, which the
+  square logo's line already says in words.
 - **MC-3602** The line under the square logo. With the demo's square
   logo, one sentence: For small spaces, such as the folded sidebar. Press
   Remove: a second line under it, Without one, the initials … show there,
@@ -3576,3 +3578,5 @@ first.
   square main logo with no square logo of its own: MC-3510 changed.
 - 2026-10-25: the Organization guide's Branding section and its refusal
   line: MC-3610.
+- 2026-10-26: the square logo's pull request, Branding's sidebar preview
+  hidden from screen readers, its heading too: MC-3601 extended.

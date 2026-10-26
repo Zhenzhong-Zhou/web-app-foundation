@@ -477,17 +477,18 @@ export function BrandingForm({
         />
       </Box>
 
-      <Stack spacing={1}>
+      {/* A picture for the eye, its heading with it: a screen reader skips
+          both, since the square logo's line says in words what the plate
+          shows. */}
+      <Stack spacing={1} aria-hidden>
         <Typography variant="subtitle2" component="h3">
           {intl.formatMessage({
             id: 'settings.branding.preview',
             defaultMessage: 'How it looks in the sidebar',
           })}
         </Typography>
-        {/* Each shade's rail open and folded, as the rail draws them; a
-            picture, its words the rail's own. */}
+        {/* Each shade's rail open and folded, as the rail draws them. */}
         <Box
-          aria-hidden
           sx={{
             display: 'grid',
             gridTemplateColumns: {

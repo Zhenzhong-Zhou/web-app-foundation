@@ -46,10 +46,15 @@ const squareLine = () =>
     'For small spaces, such as the folded sidebar.',
   );
 
-/** The two sidebar previews, a picture under their heading. */
+/**
+ * The two sidebar previews, a picture under their heading, both hidden from
+ * a screen reader.
+ */
 const preview = () =>
-  screen.getByRole('heading', { name: 'How it looks in the sidebar' })
-    .nextElementSibling as HTMLElement;
+  screen.getByRole('heading', {
+    name: 'How it looks in the sidebar',
+    hidden: true,
+  }).nextElementSibling as HTMLElement;
 
 /** The main logo loaded at its own size, as the browser reads it. */
 function loads(container: HTMLElement, width: number, height: number) {
@@ -308,6 +313,15 @@ describe('BrandingForm, the two logos', () => {
 
   /** Each shade's rail, open and folded, by the rail's own rule. */
   describe('the preview', () => {
+    it('is a picture a screen reader skips, its heading too', () => {
+      renderForm();
+
+      expect(
+        screen.queryByRole('heading', { name: 'How it looks in the sidebar' }),
+      ).toBeNull();
+      expect(preview().closest('[aria-hidden="true"]')).not.toBeNull();
+    });
+
     it('shows the initials on each folded plate, and the name open, with no logo', () => {
       renderForm();
 
