@@ -404,11 +404,9 @@ jobs:
               sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
               sleep 10
             fi
-            status=0
-            timeout --kill-after=20s 5m npx playwright install --with-deps "${browsers[@]}" || status=$?
-            if [ "$status" -eq 0 ]; then
-              exit 0
-            elif [ "$status" -eq 124 ] || [ "$status" -eq 137 ]; then
+            timeout --kill-after=20s 5m npx playwright install --with-deps "${browsers[@]}" && exit 0
+            status=$?
+            if [ "$status" -eq 124 ] || [ "$status" -eq 137 ]; then
               echo "::warning title=Install browsers::Try $try of 3 timed out after 5 minutes."
             else
               echo "::warning title=Install browsers::Try $try of 3 failed, exit code $status."
