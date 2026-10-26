@@ -88,28 +88,44 @@ function luminance(colour: string): number {
 }
 
 /**
+ * Each rail's own colour in each mode, as the browser computes it: tokens.ts's
+ * RAILS[rail][mode].bg, written out since no spec imports from src.
+ */
+const RAIL_GROUND = {
+  dark: { light: 'rgb(28, 34, 48)', dark: 'rgb(16, 19, 24)' },
+  light: { light: 'rgb(255, 255, 255)', dark: 'rgb(30, 35, 44)' },
+} as const;
+
+/**
  * The keyboard on a button of the rail's, and its ring at 3 : 1 or more
  * against what the ring is drawn on, as WCAG 2.2's 1.4.11 asks: the ring
  * stands off the button, so on the nearest box with a colour of its own,
  * the rail or the menu drawer (#246). axe does not measure a ring.
+ *
+ * Measured once that box is the chosen rail's own colour: the organization's
+ * rail arrives with the session, and Linux WebKit once read the light rail's
+ * ring on the dark rail's ground, the page still changing.
  */
-async function expectRingOnRail(button: Locator) {
+async function expectRingOnRail(button: Locator, railGround: string) {
   await expect(button).toBeFocused();
   await expect(button).toHaveClass(/Mui-focusVisible/);
-  const { style, ring, ground } = await button.evaluate((element) => {
-    let box = element.parentElement;
-    while (
-      box &&
-      getComputedStyle(box).backgroundColor === 'rgba(0, 0, 0, 0)'
-    ) {
-      box = box.parentElement;
-    }
-    return {
-      style: getComputedStyle(element).outlineStyle,
-      ring: getComputedStyle(element).outlineColor,
-      ground: getComputedStyle(box ?? document.body).backgroundColor,
-    };
-  });
+  const read = () =>
+    button.evaluate((element) => {
+      let box = element.parentElement;
+      while (
+        box &&
+        getComputedStyle(box).backgroundColor === 'rgba(0, 0, 0, 0)'
+      ) {
+        box = box.parentElement;
+      }
+      return {
+        style: getComputedStyle(element).outlineStyle,
+        ring: getComputedStyle(element).outlineColor,
+        ground: getComputedStyle(box ?? document.body).backgroundColor,
+      };
+    });
+  await expect.poll(async () => (await read()).ground).toBe(railGround);
+  const { style, ring, ground } = await read();
   expect(style).toBe('solid');
   const [light, dark] = [luminance(ring), luminance(ground)].sort(
     (x, y) => y - x,
@@ -550,6 +566,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
               name: 'Collapse navigation',
               exact: true,
             }),
+            RAIL_GROUND[rail][colorScheme],
           );
 
           // Below 1200 px, the menu drawer's Close, its first stop.
@@ -564,7 +581,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
           });
           await expect(close).toBeVisible();
           await page.keyboard.press('Tab');
-          await expectRingOnRail(close);
+          await expectRingOnRail(close, RAIL_GROUND[rail][colorScheme]);
         });
       }
     });
