@@ -6681,6 +6681,77 @@ and folded, the plate chosen by the same rule as the rail's.
   brief in `tmp/square-logo/`. The pull request carries `full-e2e`, since
   it adds rows to `accessibility.spec.ts`.
 
+**As built (#251, 26 October 2026).** Built as decided, in the brief's
+steps. What building corrected and settled:
+
+- **Three corrections to the amendment above.** Branding never had the
+  unsaved-changes question the check above credits it with: ADR-061's
+  "switching
+  tab with unsaved changes asks first" was not built for the Organization
+  page, #198 is that gap, and none was added here. "Every change is an
+  addition" was not quite true: the upload response's `kind` is one enum
+  for every route, so it gains `square_logo` on the two existing upload
+  routes, which oasdiff calls breaking (response-property-enum-value-added).
+  Each route returns only its own kind and `square_logo` comes only from
+  the new route, so both lines are accepted in
+  `server/openapi-breaking-accepted.txt` and the API revision stays.
+  Branding's thumbnail asks for `thumb`, as the preview does, not `full`:
+  128 px is enough for 40 px on any screen, so nothing downloads twice;
+  `full` stays kept for a switcher later.
+- **The plate.** One rule, `usePlate` in `client/src/layout/use-plate.ts`,
+  and one `Plate` component, used by the rail, the name beside it and
+  Branding's preview, so the three cannot disagree. The 1.25 lives there,
+  `images.ts`'s copy pointing at it. The plate's image is `rem(28)`, so it
+  grows with the plate at Larger text, a square main logo included.
+- **Branding.** One row component for both logos, each row a group named
+  by its heading, so a screen reader can tell the two Replace and the two
+  Remove buttons apart; Remove is a text button for both. The square
+  logo's fallback sentence sits on a line of its own, since Chinese joins
+  sentences without a space. When an upload ends, the row says "Uploaded.
+  Press Save branding to use it." in place of "Uploading…", since nothing
+  else says the file counts only after Save; after Remove, focus moves to
+  the row's upload button. The whole sidebar preview, heading included,
+  is hidden from screen readers, the line saying in words what the plate
+  shows; with no logo, its open rail now shows the name, as the rail does.
+- **A rider, the colour sample.** The sample under Colour read "Save
+  branding" and looked exactly like the real Save, the first one an owner
+  reaches on a phone. It now reads "Example" under the caption "Buttons
+  will look like this:", a plain box, neither focusable nor read aloud.
+- **Files.** One drawing helper draws an SVG at each target size by its
+  density, rather than once at 300 dpi and scaled, so a 40 px SVG comes
+  out sharp at 512; one `ImageRefused` class carries the three refusals.
+  That also mended the main logo: an SVG declared 1,700 px or wider broke
+  the pixel limit at 300 dpi and was refused as damaged; it is now kept at
+  1,024. Each kind names its format, `png` or `webp`, in place of the test
+  on its render that the check warned about, and `FilesService.swapFile`
+  attaches and releases both logos.
+- **Words.** The catalogues' extraction (formatjs) turned no-break spaces
+  into plain ones, on the server and on the client; both now run with
+  `--preserve-whitespace`, so "5 : 4" stays on one line in French.
+- **Commits.** The migration and the server are one commit (d0201a16):
+  `FILE_KINDS` is shared by the code and `files_kind_check`, so adding
+  `square_logo` needs `KIND_RULES`' entry and changes the API, while
+  leaving it out fails the schema test that the code knows every value the
+  check allows; no split of 0075 stayed green. The client (e8da2bd1) and
+  the guide (e981184f) went in without their manual checks, which came
+  with the seeds (6440912e), as the brief had them: the brief's mistake.
+- **Tests and checks.** #246's ring test waits until the rail has switched
+  before it measures, after failing 2 runs in about 44 in Linux WebKit; an
+  `accessibility.spec.ts` row for Branding on a fresh organization, at
+  `?tab=branding` as ADR-061's as-built has it; two screenshots,
+  15-branding and 16-rail-folded; MC-3601 to MC-3610, with MC-3510 and
+  MC-1702 changed. Claude Code Review, re-run once CI had finished, found
+  no issues.
+- **Dependencies.** @nestjs/swagger 12.0.4 and pdfmake 0.3.13, taken
+  inside the 7-day wait by Bob's choice (4fdb332d). The branch's first
+  dependency step found `npm update --before` wrong, and
+  `docs/conventions.md` now judges each package by its own publish time.
+- **Left for issues.** #249, "File too large" in English with no next step
+  on every upload route; #250, Receive stock saying "No products yet"
+  while they load; the rail's folding dropping focus, added to #155; #252,
+  Claude Code Review ending without a review when it stops to wait for the
+  pull request's other checks, which the check from #243 caught on #251.
+
 ---
 
 ## ADR-061 — The Organization page in tabs, and a name that can change

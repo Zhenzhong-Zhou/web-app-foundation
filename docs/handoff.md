@@ -8,20 +8,22 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **The organization's square logo: planned** (25 October 2026), branch
-  `square-logo`, its decisions confirmed as recommended. ADR-060's
-  amendment holds them: an optional square logo on Branding, beside the
-  logo on a computer, its line naming what this organization shows
+- **The organization's square logo: PR #251** (`square-logo`, 25 to 26
+  October 2026), green in every browser and ready to merge, with ADR-060's
+  amendment and its as-built. An optional square logo on Branding, beside
+  the logo on a computer, its line naming what this organization shows
   without one; the folded plate's first choice ahead of a square main
-  logo and the initials, its image now growing with the plate; beside the
+  logo and the initials, its image growing with the plate; beside the
   name where there is no main logo, and alone on a phone under 360 px at
-  Larger text; its own file kind and route, kept at 512 px and at 128 px
-  for the plate, migration **0075**; "Uploading…" in words for both
-  logos; #246 rides along. The boards are on the canvas (the row "The
-  organization's square logo"); the brief is in `tmp/square-logo/brief.md`,
-  one Claude Code prompt per commit. Claude Code builds it and opens the
-  pull request with `full-e2e`; its summaries come back to the chat for
-  the as-built amendment.
+  Larger text; its own file kind and route, kept at 512 px and at 128 px,
+  migration **0075**. Riders: #246, Branding's colour sample no longer
+  taken for Save, large SVG logos no longer refused as damaged, no-break
+  spaces kept by the catalogues' extraction. Claude Code Review, re-run
+  once CI had finished, found no issues: #243's check passed its first
+  real test, and #252 is what it caught. **After the merge, by hand:**
+  `npm run migrate:all` on each clone, a restart of any local API started
+  before it, and MC-3601 to MC-3610 on the live site once Render has
+  deployed. Then `tmp/square-logo/` can go.
 - **The brand, ADR-082: merged as #247** (25 October 2026); its as-built
   amendment says what building settled. Panivo on every page before
   sign-in, at the rail's foot and in Help's foot; the organization's logo
@@ -117,8 +119,12 @@ with this one, this one is current.
   request. The headers are in `render.md`, "Deploys". Render's edge
   ignores a query string and empties itself at each deploy, so no page
   stays old after one (#196's review; ADR-081's correction).
-- **The order now** (Bob, 22 to 25 October 2026), ADR-082 having merged:
-  **the organization's square logo** (planned, above); **the emails'
+- **The order now** (Bob, 22 to 26 October 2026), ADR-082 having merged:
+  **the organization's square logo** (#251, above); **#252**, a small PR
+  of its own, since a pull request that changes the review's workflow
+  cannot be reviewed by it (as #247): the review told not to wait for the
+  other checks, the check naming that third reason, and a time limit on
+  CI's Install browsers step, which stalled once on #251; **the emails'
   design** (one layout for every email, the invitation included without
   Panivo's header: the system's font, a phone's width, the main link as a
   button mail apps draw, the small print grey, dark mail apps checked,
@@ -128,10 +134,15 @@ with this one, this one is current.
   staging by path, `scripts/verify.sh`, lint fixups, `npm run api`, the
   stop rule, where `/clear` is safe, the inventory step), so a brief
   shrinks to its decisions and its prompts and a rule changed once
-  reaches every session (Bob, 25 October 2026); the emails' own brief is
-  the first written for it; **an error tracker**, a small PR with a short ADR: what is sent,
-  scrubbed of personal details (PIPEDA, PIPL), and browser errors carried
-  through the app's own API, so the browser contacts no other site; then
+  reaches every session (Bob, 25 October 2026), with what the square logo
+  taught: dependencies judged by each package's own publish time, never
+  moving one back; a migration that adds to a list the code shares commits
+  with that code; manual checks in the same commit as what they check; the
+  review step in two prompts, the findings first, the fixes once Bob has
+  chosen. The emails' own brief is the first written for it; **an error
+  tracker**, a small PR with a short ADR: what is sent, scrubbed of
+  personal details (PIPEDA, PIPL), and browser errors carried through the
+  app's own API, so the browser contacts no other site; then
   **ADR-083, low stock** (its questions in Open decisions; #222 rides
   along). The uptime monitor runs on UptimeRobot since 25 October
   (`docs/runbooks/services.md`). Then the review of the whole app, once
@@ -143,13 +154,13 @@ with this one, this one is current.
   fix-ups, each a PR of five to ten
   related issues: safety and scale (#181 first, then #142, #182, #225,
   #226, #244), orders and shipping (#156, #125, #161, #164, #128, #241,
-  #159 with #221, a layout decision first, #158's Receive action in the
+  #250, #159 with #221, a layout decision first, #158's Receive action in the
   summary, and decisions #157 and #160), organization, roles and audit
   (#169, #168, #179's first half, #166, #133, #167, #233 and #248, the
   flaky "roles" setup from #247's run), accessibility (#155, #170, #162,
   #212, #214 with a row of its own in `accessibility.spec.ts`, #232,
   #242; #246 rides with the square logo), and words and translations
-  (#148, #149, #150, #245, with Bob's mother's corrections). #245
+  (#148, #149, #150, #245, #249, with Bob's mother's corrections). #245
   (`translate="no"` on data) is decided and suits a cloud session now
   that #247 has merged. Not checked yet, and for #245: whether
   `document.documentElement.lang` reads `zh-Hans` with the app in
@@ -728,13 +739,14 @@ with this one, this one is current.
   #212, #214, #221, #222, #225, #226 and #232 open; #213, #223 and #230
   closed by #228, #229 and #231. From 24 and 25 October: #233, #241,
   #242, #244, #245, #246 and #248 open; #158 retitled, its filled button
-  fixed by #236. `gh issue list` to review.
+  fixed by #236. From 26 October: #249, #250 and #252 open; #246 closes
+  with #251. `gh issue list` to review.
 - **Branches:** prune the merged ones, `after-adr-070` among them
   (`scripts/prune-branches.sh`).
 
 ### Still to do, in code
 
-- **The square logo** (planned, *Now*), then the emails' design with
+- **#252's small PR** once #251 merges, then the emails' design with
   `/build-from-brief` riding along, and the error tracker (the order,
   *Now*).
 - `@mui/codemod@9.5.0`'s command crashes on yargs 18, which could be
