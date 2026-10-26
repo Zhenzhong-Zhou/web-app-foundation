@@ -80,8 +80,9 @@ const NEAR = defineMessages({
 
 /**
  * The two logos' rows (ADR-060, amended), each its own route, words and
- * thumbnail, drawn by one component so they cannot drift. A square logo
- * keeps two sizes and its thumbnail asks for the larger; a logo keeps one.
+ * thumbnail, drawn by one component so they cannot drift. A square logo's
+ * thumbnail asks for the small file, as the preview does; a logo keeps
+ * one.
  */
 const LOGO_ROWS = {
   logo: {
@@ -104,7 +105,7 @@ const LOGO_ROWS = {
   },
   square_logo: {
     route: '/files/square-logo',
-    size: 'full',
+    size: 'thumb',
     optional: true,
     thumbnail: { width: 56, height: 56, justifyContent: 'center' },
     words: defineMessages({

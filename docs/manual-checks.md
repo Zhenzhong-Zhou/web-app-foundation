@@ -2570,8 +2570,8 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
   plate grows and its image with it, filling as much of it as at
   Standard; a square main logo grows with it too. DevTools → Network,
   cache disabled, reload folded: the plate's file ends `?size=thumb` and
-  is 128 × 128 (its Preview), while Branding's thumbnail's ends
-  `?size=full`, 512 × 512.
+  is 128 × 128 (its Preview), and on Branding the row's thumbnail and the
+  preview ask for that same file, so the page fetches it once.
 - **MC-3606** Beside the name. With a square logo and no main logo, as the
   demo has them: at the rail's top the square logo on a small white
   plate, then the name in white, then «. Choose the light rail on
@@ -3607,3 +3607,5 @@ first.
 - 2026-10-26: the square logo's pull request, an SVG logo declared 1700 px
   or wider kept, drawn at the size kept rather than refused as unreadable:
   MC-1702 extended.
+- 2026-10-26: the square logo's pull request, Branding's thumbnail of the
+  square logo from the 128 px file, as the preview's: MC-3605 changed.

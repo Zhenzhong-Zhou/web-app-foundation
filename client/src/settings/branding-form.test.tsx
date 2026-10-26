@@ -158,10 +158,10 @@ describe('BrandingForm, the two logos', () => {
       ),
     );
     expect(save).toBeEnabled();
-    // Its thumbnail from the larger of the two sizes it keeps.
+    // Its thumbnail from the small file, as the preview's.
     expect(square.querySelector('img')).toHaveAttribute(
       'src',
-      '/api/v1/files/mark-1?size=full',
+      '/api/v1/files/mark-1?size=thumb',
     );
     expect(
       within(square).getByRole('button', { name: 'Replace' }),

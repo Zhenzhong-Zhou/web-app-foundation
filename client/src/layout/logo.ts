@@ -9,10 +9,11 @@ import { LIGHT } from '../theme/tokens';
  * nothing else.
  *
  * `size` for a square logo, which keeps two (ADR-060, amended): `thumb`
- * wherever it is drawn small, `full` for Branding's thumbnail. The main
- * logo keeps one and is asked for none.
+ * wherever the app draws it, Branding's thumbnail included; `full` is for
+ * the organization's export. The main logo keeps one and is asked for
+ * none.
  */
-export const logoSrc = (fileId: string, size?: 'thumb' | 'full') =>
+export const logoSrc = (fileId: string, size?: 'thumb') =>
   size ? `/api/v1/files/${fileId}?size=${size}` : `/api/v1/files/${fileId}`;
 
 export const LOGO_PLATE = LIGHT.surface;
