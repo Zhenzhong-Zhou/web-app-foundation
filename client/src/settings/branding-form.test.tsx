@@ -157,8 +157,11 @@ describe('BrandingForm, the two logos', () => {
     // The other row is not uploading.
     expect(within(row('Logo')).getByRole('status')).toBeEmptyDOMElement();
 
+    // Done, and how to keep it: nothing is kept until Save.
     await waitFor(() =>
-      expect(within(square).getByRole('status')).toBeEmptyDOMElement(),
+      expect(within(square).getByRole('status')).toHaveTextContent(
+        /^Uploaded\. Press Save branding to use it\.$/,
+      ),
     );
     expect(save).toBeEnabled();
     // Its thumbnail from the larger of the two sizes it keeps.
@@ -195,6 +198,28 @@ describe('BrandingForm, the two logos', () => {
         '/api/v1/files/wordmark-1',
       ),
     );
+    expect(within(row('Logo')).getByRole('status')).toHaveTextContent(
+      'Uploaded. Press Save branding to use it.',
+    );
+  });
+
+  it('stops saying Uploaded once the logo is removed', async () => {
+    server.use(
+      http.post('/api/v1/files/square-logo', () =>
+        stored('mark-1', 'square_logo'),
+      ),
+    );
+    const user = userEvent.setup();
+    renderForm();
+    const square = row('Square logo');
+
+    choose('Square logo');
+    await waitFor(() =>
+      expect(within(square).getByRole('status')).toHaveTextContent('Uploaded.'),
+    );
+    await user.click(within(square).getByRole('button', { name: 'Remove' }));
+
+    expect(within(square).getByRole('status')).toBeEmptyDOMElement();
   });
 
   it('shows a refusal in its own row, and keeps nothing', async () => {
@@ -219,6 +244,9 @@ describe('BrandingForm, the two logos', () => {
     ).toHaveTextContent(/^A square logo must be about square/);
     expect(within(row('Logo')).queryByRole('alert')).toBeNull();
     expect(row('Square logo').querySelector('img')).toBeNull();
+    expect(
+      within(row('Square logo')).getByRole('status'),
+    ).toBeEmptyDOMElement();
   });
 
   it('sends both logos with Save, and a removed one as none', async () => {

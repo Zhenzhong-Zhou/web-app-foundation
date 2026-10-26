@@ -1743,6 +1743,7 @@
   "settings.branding.squareLogo.optional": "Facultatif",
   "settings.branding.squareLogo.upload": "Téléverser un logo carré",
   "settings.branding.title": "Image de marque",
+  "settings.branding.uploaded": "Téléversé. Enregistrez l’image de marque pour l’utiliser.",
   "settings.branding.uploading": "Téléversement…",
   "settings.close.button": "Fermer cette organisation…",
   "settings.close.cancel": "Annuler la suppression",

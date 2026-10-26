@@ -1743,6 +1743,7 @@
   "settings.branding.squareLogo.optional": "Optional",
   "settings.branding.squareLogo.upload": "Upload a square logo",
   "settings.branding.title": "Branding",
+  "settings.branding.uploaded": "Uploaded. Press Save branding to use it.",
   "settings.branding.uploading": "Uploading…",
   "settings.close.button": "Close this organization…",
   "settings.close.cancel": "Cancel deletion",

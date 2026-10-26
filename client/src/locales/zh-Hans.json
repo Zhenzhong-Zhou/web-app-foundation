@@ -1743,6 +1743,7 @@
   "settings.branding.squareLogo.optional": "可选",
   "settings.branding.squareLogo.upload": "上传方形标志",
   "settings.branding.title": "品牌",
+  "settings.branding.uploaded": "已上传。点击“保存品牌设置”后生效。",
   "settings.branding.uploading": "正在上传…",
   "settings.close.button": "关闭此组织…",
   "settings.close.cancel": "取消删除",

@@ -2533,10 +2533,13 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
   choose the 512 × 512 PNG: the button greys, a small spinner and
   Uploading… stand beside it, and
   VoiceOver says Uploading… with focus where it was; Save branding is
-  greyed until it is done. Then the new logo in its white square. Under
-  Logo, the same: Uploading… beside its button, heard. Start one in each
-  row: Save waits for both. In 中文, 正在上传…. Reload before saving: the
-  logos saved before are back; nothing changes until Save branding.
+  greyed until it is done. Then the new logo in its white square, and
+  beside Replace, Uploaded. Press Save branding to use it., which
+  VoiceOver says too; Remove, Save branding or a refusal takes it away.
+  Under Logo, the same: Uploading… beside its button, heard, then
+  Uploaded…. Start one in each row: Save waits for both. In 中文, 正在上传…
+  and 已上传。点击“保存品牌设置”后生效。. Reload before saving: the logos
+  saved before are back; nothing changes until Save branding.
 - **MC-3604** Refusals. Under Square logo, upload each in turn. Refused in
   red in the Square logo row, the Logo row untouched and the square logo
   shown before still there: the 600 × 400 PNG and the wide SVG, A square
@@ -3585,3 +3588,6 @@ first.
   hidden from screen readers, its heading too: MC-3601 extended.
 - 2026-10-26: the square logo's pull request, Remove leaving focus on its
   row's upload button, for both logos: MC-3608 extended.
+- 2026-10-26: the square logo's pull request, each logo's row saying
+  when its upload is done and that Save branding keeps it: MC-3603
+  extended.

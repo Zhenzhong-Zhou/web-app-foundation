@@ -133,7 +133,8 @@ const LOGO_ROWS = {
  * One logo's row: its heading, what it is for, the logo itself, Upload or
  * Replace and Remove, and its hint. A file is uploaded at once (ADR-059)
  * and kept only when Save attaches it. While it uploads, the row says so
- * in words, so a screen reader hears it too; a refusal stays in its row.
+ * in words, so a screen reader hears it too, and once it is done, how to
+ * keep it; a refusal stays in its row.
  * A group named by its heading, so each row's Replace and Remove say
  * which logo they act on.
  */
@@ -156,6 +157,8 @@ function LogoRow({
   const headingId = useId();
   const row = LOGO_ROWS[kind];
   const [error, setError] = useState<string | null>(null);
+  // Uploaded and not yet saved: said until the row changes again.
+  const [uploaded, setUploaded] = useState(false);
   // Remove takes itself away, so focus goes to the button that stays,
   // Upload, rather than falling to the page.
   const uploadButton = useRef<HTMLLabelElement>(null);
@@ -168,12 +171,14 @@ function LogoRow({
     form.append('file', file);
     onUploading(true);
     setError(null);
+    setUploaded(false);
     try {
       const { file: stored } = await api<UploadedFileEnvelope>(row.route, {
         method: 'POST',
         body: form,
       });
       onChange(stored.id);
+      setUploaded(true);
     } catch (caught) {
       setError(messageFor(caught));
     } finally {
@@ -263,6 +268,7 @@ function LogoRow({
             color="error"
             onClick={() => {
               onChange(null);
+              setUploaded(false);
               uploadButton.current?.focus();
             }}
           >
@@ -287,6 +293,12 @@ function LogoRow({
               })}
             </>
           )}
+          {!uploading &&
+            uploaded &&
+            intl.formatMessage({
+              id: 'settings.branding.uploaded',
+              defaultMessage: 'Uploaded. Press Save branding to use it.',
+            })}
         </Box>
       </Stack>
       <Typography variant="body2" sx={{ color: 'text.secondary' }}>
