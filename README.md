@@ -387,8 +387,9 @@ licences beyond the product's own — site, wholesale and business licences.
 - [`docs/principles.md`](docs/principles.md) — what the product aims for, and
   the ADRs that hold to each aim
 - [`docs/handoff.md`](docs/handoff.md) — where the work stands and what is next
-- [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with two project
-  skills in `.claude/skills/`: `/code-review` and `/usability-walkthrough`
+- [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with four project
+  skills in `.claude/skills/`: `/code-review`, `/usability-walkthrough`,
+  `/production-readiness` and `/build-from-brief`
 - [`docs/releases/`](docs/releases) — the notes each tagged release was made with
 
 Both are worth reading before a change that touches money, quantities, or the
