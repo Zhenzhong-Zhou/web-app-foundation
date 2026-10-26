@@ -15,8 +15,12 @@ with this one, this one is current.
   buttons only where an email's action already has words; dark mail
   apps; a padded preheader; the invitation's `Reply-To` its inviter;
   `npm run mail:preview`, with pictures for `screenshots:compare` and
-  Mailpit's HTML Check; and `/build-from-brief`. Next in this chat: the
-  canvas's boards, then the brief, the first written for
+  Mailpit's HTML Check; and `/build-from-brief`. The canvas's boards are
+  approved, with what they settled in ADR-083's amendment: the app's
+  own dark accent for links and the button in dark mail apps, each
+  email's subject as its heading, the email an article to a screen
+  reader, and the button the column's width on a phone. Next in this
+  chat: the brief, the first written for
   `/build-from-brief`; once the skill is built, each prompt is
   `/build-from-brief tmp/adr-083/brief.md <step>`. The error tracker is
   ADR-084 and low stock ADR-085. Its pull request is the first real one
@@ -831,8 +835,9 @@ with this one, this one is current.
   #212, #214, #221, #222, #225, #226 and #232 open; #213, #223 and #230
   closed by #228, #229 and #231. From 24 and 25 October: #233, #241,
   #242, #244, #245, #246 and #248 open; #158 retitled, its filled button
-  fixed by #236. From 26 October: #249, #250, #252 and #253 open, #252
-  closing with #254; #246 closed with #251. `gh issue list` to review.
+  fixed by #236. From 26 October: #249, #250, #253 and #255 (the
+  security emails' time, from ADR-083's design) open; #252 closed with
+  #254, and #246 with #251. `gh issue list` to review.
 - **Branches:** prune the merged ones, `after-adr-070` among them
   (`scripts/prune-branches.sh`).
 

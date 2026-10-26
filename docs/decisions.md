@@ -12207,6 +12207,56 @@ October.
   Code Review: its first run's time, models and any `Refused:` line are
   read against #253's table, without a re-run.
 
+**Amendment (October 2026) — settled with the design.** The canvas's
+boards (Bob, 26 October 2026) settled six points and found one fault.
+
+- **Dark mail apps take the app's own Dark accent** (the fault). The
+  purple, `#5546B8`, reaches 2.35 : 1 on Apple Mail's dark background,
+  where text needs 4.5 : 1, so the security emails' links, a deletion
+  notice's address and the button's edge were hard to see. Under
+  `prefers-color-scheme: dark`, and Outlook.com's own selector for it,
+  links and the button take ADR-055's dark accent, the purple mixed 45%
+  toward white, `#A299D8`: links 6.4 : 1, and the button `#A299D8` with
+  dark text `#141A24`, 6.7 : 1, as the app's own buttons are in Dark.
+  Gmail's app inverts colours its own way, and the check by hand looks
+  at what it does.
+- **Each product email opens with its subject as its heading,** under
+  the header: words the email already has in every language, in the
+  HTML part only. The invitation's heading, Join {organization}, already
+  is one.
+- **To a screen reader, an email is one article.** Its outermost element
+  has `role="article"`, `aria-roledescription="email"` and its subject
+  as `aria-label`, as the Email Markup Consortium advises, so a screen
+  reader in webmail reads it as one email rather than running it into
+  the page around it. Nothing shows on screen.
+- **On a phone the button fills the column,** by a style rule for narrow
+  screens; a mail app that drops the rule shows it at its usual width,
+  which a computer keeps.
+- **The address line comes last,** in small print after the email's
+  other sentences and before an invitation's last line, rather than
+  straight under the button: what to do is read first, the fallback
+  after it.
+- **The expiry sentence stays body text,** and the invitation's note sits
+  in a thin box, not behind a coloured bar.
+- **Manual checks gain** VoiceOver in Gmail on the web reading one email
+  as an article, its heading first; the button the column's width on a
+  phone; and the links and the button in Apple Mail's dark mode.
+
+**Deferred, added:**
+
+- **The brand's mark beside the sender's name in an inbox (BIMI).** It
+  needs DMARC enforced, at `p=quarantine` or `reject`; Panivo's own
+  sending domain, since BIMI attaches a mark to the domain mail comes
+  from and `wide-naturals.ca` is Bob's own; and, for Gmail, a mark
+  certificate paid for each year, one kind of which needs a registered
+  trademark. Trigger: DMARC's, the first paying customer, with Panivo's
+  own domain.
+
+**Left for an issue:** the security emails print their time as
+`toUTCString()`, "Mon, 26 Oct 2026 22:41:07 GMT", hard to read and in
+no reader's time zone: #255. Changing it changes the text part, which
+this branch keeps, so it has a branch of its own.
+
 ---
 
 ## Open decisions
