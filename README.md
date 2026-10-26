@@ -221,6 +221,7 @@ work under updates it.
 | Before every push                      | `scripts/verify.sh` (`--quick` while working, in full before a pull request)           |
 | A branch's start, and before reviews   | `npm outdated` in `server/` and `client/` (conventions.md, "Dependencies")             |
 | A change people will see               | `npm run screenshots` before and after, then `npm run screenshots:compare`             |
+| A change to an email                   | `npm run mail:preview` in `server/`, before and after; `-- --send` for Mailpit         |
 | A change to what the API sends         | `npm run api` in `server/`; commit both generated files                                |
 | A change to the mark, in `docs/brand/` | `node scripts/brand-assets.mjs`; commit what it writes in `client/public/`             |
 | Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`         |

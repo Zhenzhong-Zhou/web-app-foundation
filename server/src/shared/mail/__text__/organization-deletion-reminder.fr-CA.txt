@@ -1,0 +1,13 @@
+Panivo
+
+Bonjour Mei Lin,
+
+Northside Naturals sera supprimée après le 25 novembre 2026, avec ses dossiers, ses fichiers et son journal d’audit.
+
+D’ici là, chacun peut continuer à travailler comme d’habitude. Seul un propriétaire peut annuler la suppression, jusqu’à la fin de ce jour.
+
+Téléchargez tout de nouveau dès maintenant, depuis Paramètres → Organisation, pour que votre copie comprenne aussi la dernière semaine : une fois l’organisation supprimée, plus rien ne permet d’en produire une.
+
+Votre compte demeure : seule votre adhésion à Northside Naturals prend fin.
+
+http://localhost:5173/settings/organization

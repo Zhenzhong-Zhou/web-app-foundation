@@ -1,0 +1,18 @@
+Join Northside Naturals
+
+Chen Jie (chen.jie@example.com) invited you to join as an Admin.
+
+Day-to-day work: stock, orders, production and drafting invoices. Can invite and remove members.
+
+From Chen Jie
+Start at the North site on Monday.
+Bring boots: the cold room is cold.
+
+Accept the invitation
+http://localhost:5173/invitation?token=sample-token
+
+The link works once, until the end of November 2, 2026, Pacific Time (Vancouver). You’ll choose your own password.
+
+Not expecting this? Ignore it: nothing happens unless you accept.
+
+Sent for Northside Naturals by Panivo.

@@ -1,0 +1,11 @@
+Panivo
+
+Mei Lin，您好：
+
+您的账户原定于今天删除，但自您申请以来情况有所变化：
+
+您是 Northside Naturals 唯一的所有者。请先将另一位成员设为所有者。
+
+删除已取消。问题解决后，您可以在“账户”页面再次申请。
+
+http://localhost:5173/account

@@ -1,0 +1,11 @@
+Panivo
+
+Bonjour Mei Lin,
+
+Vous avez demandé la suppression de votre compte. Il sera supprimé après le 25 novembre 2026, et tous vos autres appareils ont été déconnectés.
+
+D’ici là, vous pouvez vous connecter et travailler comme d’habitude, et télécharger vos données depuis votre page Compte.
+
+Vous avez changé d’avis, ou vous n’avez pas fait cette demande? Connectez-vous et appuyez sur Conserver mon compte dans la bannière en haut de chaque page. Si vous n’avez rien demandé, changez aussi votre mot de passe.
+
+http://localhost:5173/account

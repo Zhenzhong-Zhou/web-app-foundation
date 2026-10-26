@@ -1,0 +1,8 @@
+Panivo
+
+Hi Mei Lin,
+
+Confirm your email address:
+http://localhost:5173/verify-email?token=sample-token
+
+The link expires in 24 hours. If you did not sign up, ignore this message.

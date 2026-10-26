@@ -1,0 +1,13 @@
+Panivo
+
+Hi Mei Lin,
+
+Chen Jie asked for Northside Naturals to be deleted. Its records, files and audit log will be deleted after November 25, 2026.
+
+Until then everyone can keep working as usual. Only an Owner can cancel the deletion, until that day is over.
+
+Download everything again shortly before then, from Settings → Organization: once the organization is deleted, nothing can make a copy.
+
+Your account stays: only your membership of Northside Naturals ends.
+
+http://localhost:5173/settings/organization

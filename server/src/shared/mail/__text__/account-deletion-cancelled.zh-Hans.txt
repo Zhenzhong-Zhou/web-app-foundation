@@ -1,0 +1,7 @@
+Panivo
+
+Mei Lin，您好：
+
+您的账户删除已取消，账户保持不变。
+
+http://localhost:5173/account

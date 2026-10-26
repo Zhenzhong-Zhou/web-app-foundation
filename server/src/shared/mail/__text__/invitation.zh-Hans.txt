@@ -1,0 +1,18 @@
+加入 Northside Naturals
+
+Chen Jie（chen.jie@example.com）邀请您以管理员身份加入。
+
+日常工作：库存、订单、生产和起草发票。可以邀请和移除成员。
+
+来自 Chen Jie 的留言
+Start at the North site on Monday.
+Bring boots: the cold room is cold.
+
+接受邀请
+http://localhost:5173/invitation?token=sample-token
+
+链接只能用一次，有效期到2026年11月2日结束，北美太平洋时间（Vancouver）。密码由您自己设置。
+
+没有在等这封邮件？忽略即可：不接受就什么都不会发生。
+
+由 Panivo 代 Northside Naturals 发送。

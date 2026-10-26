@@ -32,6 +32,7 @@
     "seed:demo": "ts-node src/database/seed-demo.ts",
     "seed:volume": "ts-node src/database/seed-volume.ts",
     "org:invite": "ts-node src/cli/org-invite.ts",
+    "mail:preview": "ts-node src/cli/mail-preview.ts",
     "backfill:pinyin": "ts-node src/database/backfill-pinyin.ts",
     "perf": "ts-node perf/run.ts",
     "perf:plans": "ts-node perf/plans.ts",

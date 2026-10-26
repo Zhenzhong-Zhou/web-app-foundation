@@ -1,0 +1,11 @@
+Panivo
+
+Hi Mei Lin,
+
+Your account was due to be deleted today, but something changed since you asked:
+
+You are the only Owner of Northside Naturals. Make another member an Owner first.
+
+The deletion is cancelled. Once that is sorted out, you can ask again from your Account page.
+
+http://localhost:5173/account

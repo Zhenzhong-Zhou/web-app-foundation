@@ -1,0 +1,11 @@
+Panivo
+
+Hi Mei Lin,
+
+You asked for your account to be deleted. It will be deleted after November 25, 2026, and every other device has been signed out.
+
+Until then you can sign in and work as usual, and download your data from your Account page.
+
+Changed your mind, or did not ask for this? Sign in and press Keep my account in the banner at the top of every page. If you did not ask, change your password too.
+
+http://localhost:5173/account

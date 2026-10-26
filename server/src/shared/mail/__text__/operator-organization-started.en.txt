@@ -1,0 +1,7 @@
+Panivo
+
+Chen Jie (chen.jie@example.com) accepted the invitation and set up Northside Naturals on 26 October 2026 at 22:41 UTC. They are its Owner.
+
+Their address isn’t confirmed yet: the app has asked them to confirm it before they invite anyone.
+
+Sent because OPERATOR_EMAIL is set on this server.

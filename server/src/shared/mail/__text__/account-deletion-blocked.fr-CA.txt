@@ -1,0 +1,11 @@
+Panivo
+
+Bonjour Mei Lin,
+
+Votre compte devait être supprimé aujourd’hui, mais quelque chose a changé depuis votre demande :
+
+Vous êtes le seul propriétaire de Northside Naturals. Désignez d’abord un autre membre comme propriétaire.
+
+La suppression est annulée. Une fois ce point réglé, vous pourrez la demander de nouveau depuis votre page Compte.
+
+http://localhost:5173/account

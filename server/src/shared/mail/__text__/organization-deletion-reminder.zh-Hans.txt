@@ -1,0 +1,13 @@
+Panivo
+
+Mei Lin，您好：
+
+Northside Naturals 将在 2026年11月25日之后删除，其记录、文件和审计日志将一并删除。
+
+在此之前，大家可以照常工作。只有所有者可以取消删除，截止到当天结束。
+
+请现在从“设置 › 组织”中再次下载全部数据，让您的副本也包含最后一周的内容：组织删除后，将无法再下载。
+
+您的账户仍然保留，只是您在 Northside Naturals 的成员身份将结束。
+
+http://localhost:5173/settings/organization

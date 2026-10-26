@@ -1,0 +1,7 @@
+Panivo
+
+Hi Mei Lin,
+
+The deletion of your account was cancelled, and the account stays as it is.
+
+http://localhost:5173/account
