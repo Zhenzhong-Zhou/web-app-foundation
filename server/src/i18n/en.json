@@ -482,7 +482,7 @@
   "files.organizationDeleting": "This organization is being deleted, so nothing more can be added to it.",
   "files.photo.type": "A photo must be a PNG, JPEG or WebP image",
   "files.quota.full": "This would take your organization past its {limit} MB of files. Remove some before adding more.",
-  "files.squareLogo.shape": "A square logo must be about square, at most 5 : 4 either way. Use a wide image as the main logo.",
+  "files.squareLogo.shape": "A square logo must be about square, at most 5 : 4 either way. Use a wide image as the main logo.",
   "files.squareLogo.small": "A square logo must be at least {min} pixels on each side.",
   "files.upload.missing": "Choose a file to upload",
   "invitations.alreadyAMember": "That address already belongs to a member of this organization. To give them other access, change their roles instead.",

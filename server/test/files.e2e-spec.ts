@@ -182,7 +182,7 @@ describe('Files (e2e)', () => {
       ).message;
 
     expect(await refused(await mark(600, 400))).toBe(
-      'A square logo must be about square, at most 5 : 4 either way. Use a wide image as the main logo.',
+      'A square logo must be about square, at most 5\u00a0:\u00a04 either way. Use a wide image as the main logo.',
     );
     expect(await refused(await mark(100, 100))).toBe(
       'A square logo must be at least 128 pixels on each side.',

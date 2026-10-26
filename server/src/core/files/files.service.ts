@@ -387,7 +387,7 @@ export class FilesService {
           t({
             id: 'files.squareLogo.shape',
             defaultMessage:
-              'A square logo must be about square, at most 5 : 4 either way. Use a wide image as the main logo.',
+              'A square logo must be about square, at most 5\u00a0:\u00a04 either way. Use a wide image as the main logo.',
           }),
         );
       }

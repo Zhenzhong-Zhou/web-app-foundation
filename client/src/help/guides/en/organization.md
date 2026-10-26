@@ -60,6 +60,6 @@ A minute before, people see a warning with **Stay signed in**. It can only short
 - The base currency cannot change once stock carries a value in it.
 - A next number below one already given is refused; the lowest allowed is offered.
 - Two kinds of document with one prefix would print the same numbers: give each its own.
-- A square logo must be about square, at most 5 : 4 either way, and at least 128 pixels on each side. Use a wide image as the main logo.
+- A square logo must be about square, at most 5 : 4 either way, and at least 128 pixels on each side. Use a wide image as the main logo.
 
 See also [Exchange rates](/settings/exchange-rates) and [Price lists](/settings/price-lists).

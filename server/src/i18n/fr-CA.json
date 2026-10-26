@@ -482,7 +482,7 @@
   "files.organizationDeleting": "Cette organisation est en cours de suppression : on ne peut plus rien y ajouter.",
   "files.photo.type": "Une photo doit être une image PNG, JPEG ou WebP",
   "files.quota.full": "Cela dépasserait les {limit} Mo de fichiers de votre organisation. Supprimez-en avant d’en ajouter d’autres.",
-  "files.squareLogo.shape": "Un logo carré doit être presque carré, au plus 5 : 4 dans un sens comme dans l’autre. Utilisez une image large comme logo principal.",
+  "files.squareLogo.shape": "Un logo carré doit être presque carré, au plus 5 : 4 dans un sens comme dans l’autre. Utilisez une image large comme logo principal.",
   "files.squareLogo.small": "Un logo carré doit faire au moins {min} pixels de côté.",
   "files.upload.missing": "Choisissez un fichier à téléverser",
   "invitations.alreadyAMember": "Cette adresse appartient déjà à un membre de cette organisation. Pour lui donner un autre accès, changez plutôt ses rôles.",

@@ -2550,7 +2550,9 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
   SVG of any size is drawn afresh at each size, sharp on the plate and
   beside the name after Save. Upload again after a refusal: the refusal
   goes. In 中文, 方形标志必须接近正方形，长宽比不超过 5 : 4。较宽的图片请用作主标志。
-  and 方形标志每边至少需要 128 像素。
+  and 方形标志每边至少需要 128 像素。 On a phone, in each language, 5 : 4
+  stays on one line, in the refusal and in Help's line for it, however
+  the sentence wraps.
 - **MC-3605** The folded plate. With a square logo saved, at 1200 px or
   wider, press «: the plate shows the square logo on white at once,
   reloaded on Slow 4G too, with no » first. Hover it, or Tab to it: »
@@ -3591,3 +3593,5 @@ first.
 - 2026-10-26: the square logo's pull request, each logo's row saying
   when its upload is done and that Save branding keeps it: MC-3603
   extended.
+- 2026-10-26: the square logo's pull request, 5 : 4 held on one line by
+  no-break spaces, in the refusal and in Help: MC-3604 extended.

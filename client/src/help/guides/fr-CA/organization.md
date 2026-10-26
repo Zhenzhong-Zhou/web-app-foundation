@@ -60,6 +60,6 @@ Une minute avant, un avertissement propose **Rester connecté**. Le réglage ne 
 - La devise de base ne peut plus changer une fois que du stock porte une valeur dans cette devise.
 - Un prochain numéro inférieur à un numéro déjà attribué est refusé; le plus bas permis est proposé.
 - Deux types de documents avec le même préfixe imprimeraient les mêmes numéros : donnez à chacun le sien.
-- Un logo carré doit être presque carré, au plus 5 : 4 dans un sens comme dans l’autre, et faire au moins 128 pixels de côté. Utilisez une image large comme logo principal.
+- Un logo carré doit être presque carré, au plus 5 : 4 dans un sens comme dans l’autre, et faire au moins 128 pixels de côté. Utilisez une image large comme logo principal.
 
 Voir aussi [Taux de change](/settings/exchange-rates) et [Listes de prix](/settings/price-lists).
