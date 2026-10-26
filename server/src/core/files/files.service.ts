@@ -369,6 +369,26 @@ export class FilesService {
       );
   }
 
+  /**
+   * A record's one file of a kind going from `from` to `to`, as an
+   * organization's logo does: the new one attached and the old released,
+   * in the record's transaction, so one is never left both unused and
+   * kept (ADR-059). `to` undefined, or the same, changes nothing; null
+   * removes it. Whether the record's column changes.
+   */
+  async swapFile(
+    tx: Transaction,
+    organizationId: string,
+    kind: OrganizationFileKind,
+    from: string | null,
+    to: string | null | undefined,
+  ): Promise<boolean> {
+    if (to === undefined || to === from) return false;
+    if (to) await this.attach(tx, organizationId, to, kind);
+    if (from) await this.release(tx, organizationId, from);
+    return true;
+  }
+
   private async render(
     render: KindRule['render'],
     input: Buffer,

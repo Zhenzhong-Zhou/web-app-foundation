@@ -210,37 +210,20 @@ export class OrganizationsService {
       // A new logo is attached in this transaction and the old released,
       // so one is never left both unused and kept (ADR-059); the square
       // logo too (ADR-060, amended).
-      const logoChanges =
-        input.logoFileId !== undefined &&
-        input.logoFileId !== existing.logoFileId;
-      if (logoChanges) {
-        if (input.logoFileId) {
-          await this.files.attach(tx, organizationId, input.logoFileId, 'logo');
-        }
-        if (existing.logoFileId) {
-          await this.files.release(tx, organizationId, existing.logoFileId);
-        }
-      }
-      const squareLogoChanges =
-        input.squareLogoFileId !== undefined &&
-        input.squareLogoFileId !== existing.squareLogoFileId;
-      if (squareLogoChanges) {
-        if (input.squareLogoFileId) {
-          await this.files.attach(
-            tx,
-            organizationId,
-            input.squareLogoFileId,
-            'square_logo',
-          );
-        }
-        if (existing.squareLogoFileId) {
-          await this.files.release(
-            tx,
-            organizationId,
-            existing.squareLogoFileId,
-          );
-        }
-      }
+      const logoChanges = await this.files.swapFile(
+        tx,
+        organizationId,
+        'logo',
+        existing.logoFileId,
+        input.logoFileId,
+      );
+      const squareLogoChanges = await this.files.swapFile(
+        tx,
+        organizationId,
+        'square_logo',
+        existing.squareLogoFileId,
+        input.squareLogoFileId,
+      );
 
       if (input.defaultSalePriceListId) {
         await assertListAssignable(
