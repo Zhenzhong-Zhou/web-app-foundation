@@ -45,11 +45,12 @@ Panivo's own is deferred to the first customers (ADR-082).
 - **An uptime monitor,** such as UptimeRobot or Better Stack: it asks
   `/api/health` and the site every few minutes and emails when either
   stops answering. Nothing in the repository; its pings also keep the
-  free API awake.
-- **An error tracker,** such as Sentry or GlitchTip: decided in the
-  whole-app review as a small pull request with a short ADR. Personal
-  details are scrubbed before anything is sent, and browser errors go
-  through the app's own API, so the browser contacts no other site.
+  free API awake. Still not set up on 25 October 2026.
+- **An error tracker,** such as Sentry or GlitchTip: a small pull request
+  of its own with a short ADR, after the emails' design and before
+  ADR-083 (Bob, 25 October 2026). Personal details are scrubbed before
+  anything is sent, and browser errors go through the app's own API, so
+  the browser contacts no other site.
 
 ## On a developer's machine
 

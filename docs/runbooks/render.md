@@ -47,6 +47,7 @@ use; the reasons are in the sections named.
      `RESEND_API_KEY`, `FILE_STORAGE` with the `FILES_*` settings for R2
      ("What runs where"), `REGISTRATION=invitation` and, optionally,
      `OPERATOR_EMAIL` ("Registration and organization invitations").
+     No `VITE_` setting goes here: the API never reads one (step 3).
      `MAIL_FROM` names the product, `Panivo <the address it has now>`: its
      name is the sender an inbox shows, the one each invitation is signed
      with (ADR-077), and the one beside the mark atop the product's own
@@ -67,7 +68,13 @@ use; the reasons are in the sections named.
      which a shared link's picture needs in full. `.env.example` says what
      each falls back to. They are read only when the site builds, so a
      change shows from the next deploy, and the three are set before the
-     deploy that first reads them;
+     deploy that first reads them. **Every `VITE_` setting goes on the
+     static site, never on the web service.** The two services'
+     Environment pages look the same; on #247's merge the three went on
+     the API by mistake, so the site built without them (no © line) until
+     they were moved here and the site deployed again by hand (25 October
+     2026). After any change here, Actions → Deploy → Run workflow, or
+     wait for the next deploy;
    - **Redirects/Rewrites:** the README's two rules, `/api/*` to the web
      service's own address first, then `/*` to `/index.html`;
    - **Headers:** the three rules ("Deploys", "Setting it up");

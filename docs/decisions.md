@@ -6405,6 +6405,8 @@ kind: the expiry days on the Stock tab beside Licences at release, and
   documents below.
 - **One logo.** A second version for dark backgrounds waits for a logo the
   white plate does not suit (Deferred).
+  *Amended (October 2026): an optional square logo beside it, for the
+  places only a square fits (below).*
 
 **Decision — the colour: presets, or a custom colour made safe.**
 
@@ -6531,6 +6533,153 @@ come with the organization's other settings; nothing new is fetched.
 - **The colour on emails.** The security emails stay the product's
   (ADR-037). Trigger: an organization whose customers receive email from
   the app.
+
+**Amendment (October 2026) — a square logo of the organization's own.**
+ADR-082 moved the logo to the rail's top and gave the folded rail one
+44 px plate, which shows the logo when it is about square and the
+organization's initials otherwise. Most logos are wordmarks, so most
+plates show initials; and on a phone under 360 px at Larger text
+(ADR-079) a wide logo shrinks to something nobody can read. Many firms
+also keep a small square mark, for an app icon or a social profile. This
+amendment lets an organization upload one beside its logo (Bob, 25
+October 2026, as recommended).
+
+Checked before drafting, as the working agreements ask:
+
+- **Fired, and taken here.** ADR-082's as-built line: a small square logo
+  of the organization's own, uploaded separately, the plate's first
+  choice ahead of the initials. #246, in the two files this changes: the
+  open rail's fold button and the menu drawer's Close take the theme's
+  focus ring, 2.24 : 1 on the dark rail, rather than the rail's own.
+- **Not fired, and kept in step.** This ADR's second logo for dark
+  backgrounds: the square logo sits on the same white plate, so a white
+  mark would vanish there too, and when that trigger fires both logos get
+  a dark version. This ADR's white-labelled tab icon, and ADR-082's one
+  icon on a plate: the square logo is never the tab icon or a home
+  screen's. ADR-077's invitation page keeps the main logo. ADR-082's
+  deferred "the mark in an organization's emails" waits for the emails'
+  design, next, which may take the square logo for that header. Open
+  decisions, "One person in two organizations": a switcher between
+  organizations would show each one's square logo, read with its branding
+  as the plate does. #245: the plate's initials are data and take
+  `translate="no"` there, not here. #170 (every new control 44 px), #198
+  (Branding already asks before unsaved work is left; a square logo added
+  or removed counts), #148 (the refusals in plain words), #142 (nothing
+  new loads from another site), #150 (the guide section added here is not
+  in the translation review's export).
+- **Found while checking.** The Organization guide (ADR-079) has no
+  section for the Branding tab, in any language. `seed:demo` sets no logo,
+  so no demo has shown one on the plate. The server keeps a logo as PNG by
+  testing that its kind renders as a logo, so a second logo kind would be
+  written as WebP unless handled. The 1.25 that decides "about square"
+  lives only in the client's `rail-top.tsx`. MC-3510's "with a square
+  logo" means a square main logo. The plate is `rem(44)`, growing with
+  the text size, but draws its image at a fixed 28 px, so at Larger text
+  a square main logo sits small in a larger plate. A logo is kept and
+  served at its one size, up to 1024 px, however small it is drawn. The
+  logo's upload says nothing while it runs but a disabled button, which a
+  screen reader does not announce.
+
+**Decision — an optional square logo, beside the logo.** On Branding,
+saved with the tab's one Save: **Square logo** (« Logo carré »,
+方形标志), marked optional. On a computer the two logos sit side by
+side, one brand in two shapes; on a phone the square logo follows the
+logo. Each row has a line saying what it is for: the logo's "Wide or
+square, at the top of the sidebar."; the square logo's "For small
+spaces, such as the folded sidebar.", followed, while it has none, by
+what this organization shows there instead: its initials, or, when its
+logo is about square, that the logo already shows there and a square
+logo is only for a different mark. Both rows are one component; while
+either uploads, "Uploading…" is said in words as well as shown, so a
+screen reader hears it. The preview shows each sidebar shade both open
+and folded, the plate chosen by the same rule as the rail's.
+
+**Decision — where it shows, and only there.**
+
+- **The folded plate** takes the first of: the square logo; a main logo
+  about square (at most 1.25 : 1), as ADR-082 built; the organization's
+  initials. On the white plate, as ADR-082 drew a square logo there, the
+  image at most 28 px at Standard text and in rem, so it grows with the
+  plate as the initials do (amending ADR-082's plate, whose image was a
+  fixed 28 px).
+- **Beside the name.** With no main logo, the square logo stands beside
+  the name wherever the name stands in for the logo: the rail's top, and
+  below 1200 px the top bar and the menu drawer's header.
+- **The tight bar.** On a phone under 360 px at Larger text, where
+  ADR-079 shows the logo or the initials alone, the square logo comes
+  first, then the main logo, then the initials.
+- **Nowhere else.** The tab icon and home screens stay the product's
+  (ADR-082); documents print the main logo (above); the invitation page
+  keeps it (ADR-077); emails wait for their own design.
+
+**Decision — the file.**
+
+- A kind of its own, `square_logo`, uploaded through
+  `POST /v1/files/square-logo` behind `organizations.update` (ADR-059,
+  one route per kind), and read by any member, as the logo is.
+- PNG, JPEG, WebP or SVG, at most 2 MB, as the logo. A raster at least
+  128 px on each side, and any image at most 5 : 4 either way, the
+  plate's own 1.25. Refused otherwise, nothing kept: "A square logo must
+  be at least 128 pixels on each side." and "A square logo must be about
+  square, at most 5 : 4 either way. Use a wide image as the main logo."
+- Kept as two PNGs: `full`, at most 512 px on its longer side, for
+  Branding and room for a switcher later; and `thumb`, at most 128 px,
+  which the plate and the bars ask for, sharp on a 3× screen at a few
+  kilobytes rather than the 512 px file on every first visit from a phone
+  or from China (ADR-059's reason for sizes). A size it does not keep is
+  answered with `full`. An SVG is drawn and only the PNGs kept. Never
+  cropped or padded, and a raster never enlarged.
+- `organizations.square_logo_file_id`, attached and released in the same
+  transaction as the logo, so a replaced one is purged 30 days later
+  (ADR-059); recorded in the audit as the logo is, in words (ADR-076);
+  carried with the session's branding on `/v1/auth/me`. Every change is
+  an addition, so the API revision stays where it is (ADR-081).
+
+**Considered and not done.**
+
+- **Edge to edge on the plate,** as a phone's app icon. Right for an icon
+  with its own background; a transparent mark would touch the plate's
+  edges and lose its corners, and telling the two apart means reading the
+  image's edges.
+- **Cropping or padding to a square on the server.** A crop cuts into the
+  mark (ADR-063 crops only faces); padding changes what the owner
+  uploaded. Refusing beyond 5 : 4 says what to do instead.
+- **A square logo made from the main one,** its first letters or its left
+  part. A guess at someone's brand.
+- **The square logo as the tab icon after sign-in.** One domain, one icon
+  (ADR-060, ADR-082).
+- **Drag and paste onto the row,** as product images take them. A logo
+  is set once or twice in an organization's life; the button is enough.
+- **A checkerboard behind the thumbnail** to show transparency. The two
+  sidebar previews already show the logo on dark and on white.
+
+**Deferred.**
+
+- **A smaller copy of the main logo for the rail,** which is drawn at
+  most 32 px tall from a file up to 1024 px wide. Trigger: the whole-app
+  review's Lighthouse run, or a perf run, naming the logo's bytes.
+
+**Consequences.**
+
+- Migration **0075**: `square_logo_file_id`, and `square_logo` in
+  `files_kind_check`.
+- Server: the kind, its route, its checks and its two sizes; the
+  organization's update and read; the audit's words; the catalogues.
+- Client: the Branding rows side by side, one component for both logos,
+  with the fallback line and "Uploading…"; one rule for the plate, used by
+  the rail and the preview; the plate's image in rem; `OrganizationMark`
+  with no main logo and on the tight bar; `thumb` wherever the square logo
+  is drawn small.
+- Riders: #246; the Organization guide's Branding section in three
+  languages.
+- Seeds: `seed:demo`'s organization gets a square logo and no main logo;
+  `seed:volume` adds nothing (one nullable column, read with the session
+  as branding already is).
+- Manual checks: a section of their own, MC-3601 onward; MC-3510
+  reworded.
+- Designed on the canvas (the row "The organization's square logo"); the
+  brief in `tmp/square-logo/`. The pull request carries `full-e2e`, since
+  it adds rows to `accessibility.spec.ts`.
 
 ---
 
@@ -11799,9 +11948,12 @@ they exist so the reasoning is not rediscovered from scratch.
   support; never a silent sign-in as a customer, which customers ask
   about in contracts and privacy law (PIPEDA, PIPL) cares about.
   Monitoring the app itself is a different need: an error tracker and an
-  uptime check beside the logs. A "Report a problem" link in Help belongs
-  here too, sending the version, build, page, language and browser with
-  the person's words. Trigger: more organizations than the
+  uptime check beside the logs. The error tracker is a small pull request
+  of its own with a short ADR, after the emails' design (Bob, 25 October
+  2026); the uptime check is set up by hand
+  (`docs/runbooks/services.md`). A "Report a problem" link in Help
+  belongs here too, sending the version, build, page, language and
+  browser with the person's words. Trigger: more organizations than the
   command line serves, or a support request that needs the customer's
   screen.
 - **A public demo.** A deployment of its own with its own database, filled
@@ -11817,10 +11969,12 @@ they exist so the reasoning is not rediscovered from scratch.
   are counted at inviting (ADR-077). ADR-070's "closed by us" waits on
   it. Trigger: the first paying customer.
 - **Low stock** — as ADR-083 (Bob, 22 October 2026), after ADR-082, the
-  brand, which went first on 24 October, and before the whole-app
-  `/production-readiness` review. Nothing warns when
-  stock runs short; the only mention was a placeholder dashboard's "low
-  stock" in the Resolved table, and ADR-058 built Home without it. To
+  brand, which went first on 24 October, then the square logo (ADR-060,
+  amended), the emails' design and the error tracker (Bob, 25 October
+  2026), and before the whole-app `/production-readiness` review.
+  Nothing warns when stock runs short; the only mention was a placeholder
+  dashboard's "low stock" in the Resolved table, and ADR-058 built Home
+  without it. To
   decide: a reorder point per SKU, and perhaps a reorder quantity, set on
   the product page; what it is compared with (on hand, available to
   promise as ADR-045 computes it at available locations, or that plus what
@@ -11835,6 +11989,19 @@ they exist so the reasoning is not rediscovered from scratch.
   for a change risky enough to try with one customer first. ADR-081 keeps
   every open tab working across a deploy, but each deploy still reaches
   everyone at once. Trigger: the first paying customers.
+- **A public or a private repository.** The repository is public, so
+  anyone can read the code; nothing secret is in it, the secrets being in
+  GitHub's settings and Render's. Private would hide the code, but on
+  GitHub's Free plan a private repository loses three things this one
+  leans on: Actions' minutes become a monthly allowance, where CI runs
+  every browser on each push to `main`, nightly and on `full-e2e`, beside
+  the weekly flake hunt and Performance; rulesets stop being enforced, so
+  `main`'s required checks, "Commits — no placeholder identity" among
+  them, would stop without a warning; and CodeQL's code scanning (#113)
+  needs a paid security product. GitHub Pro keeps rulesets on a private
+  repository and adds minutes. To decide: stay public, or go private on a
+  paid plan sized from a month of Actions' usage. Trigger: before going
+  commercial (Bob, 25 October 2026).
 - **Job roles** — decided in ADR-080: roles an organization makes, from a
   template or a copy, several to a member and added together; the built-in
   three fixed; a role given only by someone whose roles hold all it grants,
