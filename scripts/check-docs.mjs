@@ -5,6 +5,8 @@
  *
  *     node scripts/check-docs.mjs
  *
+ * It checks the repository it is run in, from any folder of it.
+ *
  * Every link in every Markdown file git tracks or would track (so not
  * tmp/) must lead somewhere: each inline link or image, and each
  * reference definition, outside front matter, fenced code and inline
@@ -33,11 +35,13 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { checkAdrs, frontMatterEnd } from "./adr-index.mjs";
 
-const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+/** The root of the repository it is run in. */
+const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+  encoding: "utf8",
+}).trim();
 
 /**
  * Every file git tracks or would track, relative to ROOT, and every
@@ -273,14 +277,16 @@ function links(repository) {
   };
 }
 
-const results = [links(inRepository()), checkAdrs()];
-const failures = results.flatMap((result) => result.failures);
+if (import.meta.main) {
+  const results = [links(inRepository()), checkAdrs()];
+  const failures = results.flatMap((result) => result.failures);
 
-if (failures.length > 0) {
-  for (const failure of failures) console.error(failure);
-  console.error(
-    `${failures.length} ${failures.length === 1 ? "failure" : "failures"}.`,
-  );
-  process.exit(1);
+  if (failures.length > 0) {
+    for (const failure of failures) console.error(failure);
+    console.error(
+      `${failures.length} ${failures.length === 1 ? "failure" : "failures"}.`,
+    );
+    process.exit(1);
+  }
+  for (const result of results) console.log(result.summary);
 }
-for (const result of results) console.log(result.summary);

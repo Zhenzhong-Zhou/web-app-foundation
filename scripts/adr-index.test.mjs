@@ -4,15 +4,14 @@
  *
  *     node --test scripts/
  *
- * Each test copies the script into a temporary repository with a few
- * ADRs and a README, and runs it there, since it reads the docs/adr/
- * beside it, as git lists it.
+ * Each test runs the script in a temporary repository with a few ADRs
+ * and a README, since it reads the docs/adr/ of the repository it is run
+ * in, as git lists it.
  * check-docs.test.mjs tests the front matter's own checks.
  */
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import {
-  copyFileSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -51,17 +50,12 @@ Written by the script.
 The table.
 `;
 
-/** A temporary repository: the script, three ADRs, a file that is not one, the README. */
+/** A temporary repository: three ADRs, a file that is not one, the README. */
 function fixture(t) {
   const root = mkdtempSync(path.join(tmpdir(), "adr-index-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
 
   execFileSync("git", ["init", "--quiet"], { cwd: root });
-  mkdirSync(path.join(root, "scripts"));
-  copyFileSync(
-    path.join(ROOT, "scripts/adr-index.mjs"),
-    path.join(root, "scripts/adr-index.mjs"),
-  );
   write(
     root,
     "docs/adr/0001-the-first.md",
@@ -91,11 +85,12 @@ function fixture(t) {
   return root;
 }
 
+/** The script, run in the fixture as a person runs it. */
 const run = (root, ...args) =>
   spawnSync(
     process.execPath,
-    [path.join(root, "scripts/adr-index.mjs"), ...args],
-    { encoding: "utf8" },
+    [path.join(ROOT, "scripts/adr-index.mjs"), ...args],
+    { cwd: root, encoding: "utf8" },
   );
 
 const readme = (root) =>

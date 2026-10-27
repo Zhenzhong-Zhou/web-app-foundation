@@ -6,6 +6,8 @@
  *     node scripts/adr-index.mjs            # writes the table in docs/adr/README.md
  *     node scripts/adr-index.mjs --check    # writes nothing; exits 1 if it is stale
  *
+ * It reads the repository it is run in, from any folder of it.
+ *
  * Every ADR, docs/adr/NNNN-<slug>.md (four digits, then lower-case words
  * and numbers joined by hyphens), has a number no other file has, and
  * front matter with its status (accepted, deferred or superseded by an
@@ -31,15 +33,17 @@
  * scripts/check-docs.mjs runs the same checks, --check's included, with
  * checkAdrs().
  *
- * Its tests, in adr-index.test.mjs, run it in a temporary folder:
+ * Its tests, in adr-index.test.mjs, run it in a temporary repository:
  * `node --test scripts/`.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+/** The root of the repository it is run in. */
+const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+  encoding: "utf8",
+}).trim();
 
 const ADR_FOLDER = "docs/adr";
 const README = `${ADR_FOLDER}/README.md`;

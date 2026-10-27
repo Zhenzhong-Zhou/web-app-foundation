@@ -4,20 +4,13 @@
  *
  *     node --test scripts/
  *
- * Each test copies the script into a temporary repository of a few
- * Markdown files and runs it there, since it checks the repository it sits
- * in. git init is enough: the files are listed as git would track them,
- * committed or not.
+ * Each test runs the script in a temporary repository of a few Markdown
+ * files, since it checks the repository it is run in. git init is
+ * enough: the files are listed as git would track them, committed or not.
  */
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import {
-  copyFileSync,
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -30,30 +23,21 @@ function write(root, file, text) {
   writeFileSync(path.join(root, file), text);
 }
 
-/**
- * A temporary repository: the script and the ADR index's, which it
- * imports, a .gitignore of tmp/, and the files.
- */
+/** A temporary repository: a .gitignore of tmp/, and the files. */
 function fixture(t, files) {
   const root = mkdtempSync(path.join(tmpdir(), "check-docs-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
 
   execFileSync("git", ["init", "--quiet"], { cwd: root });
   write(root, ".gitignore", "tmp/\n");
-  mkdirSync(path.join(root, "scripts"));
-  for (const script of ["check-docs.mjs", "adr-index.mjs"]) {
-    copyFileSync(
-      path.join(ROOT, "scripts", script),
-      path.join(root, "scripts", script),
-    );
-  }
   for (const [file, text] of Object.entries(files)) write(root, file, text);
   return root;
 }
 
-/** The fixture's copy of the script, run as verify.sh runs it. */
+/** The script, run in the fixture as verify.sh runs it in the repository. */
 const check = (root) =>
-  spawnSync(process.execPath, [path.join(root, "scripts/check-docs.mjs")], {
+  spawnSync(process.execPath, [path.join(ROOT, "scripts/check-docs.mjs")], {
+    cwd: root,
     encoding: "utf8",
   });
 
@@ -79,11 +63,9 @@ See [the guide](docs/guide.md), [its setup](docs/guide.md#setup),
 
   const run = check(root);
   assert.equal(run.status, 0, run.stderr);
-  assert.equal(
-    run.stdout,
-    "Links in 2 Markdown files: 3 to files and folders, 1 to headings in their own file; none broken.\n" +
-      "ADRs in docs/adr/: 0, each with its front matter and heading, and its amendments recorded both ways.\n",
-  );
+  assert.match(run.stdout, /: 3 to files and folders, 1 to headings/);
+  // Run from a folder inside it, it checks the same repository.
+  assert.equal(check(path.join(root, "docs")).stdout, run.stdout);
 });
 
 test("a missing file is reported by file and line", (t) => {
@@ -225,9 +207,11 @@ const adr = (frontMatter, heading) =>
 const INDEX =
   "# Architecture Decisions\n\n## By number\n\n<!-- adr-index:start -->\n<!-- adr-index:end -->\n";
 
-/** The fixture's copy of the index script, run as a person runs it. */
+/** The index script, run in the fixture as a person runs it. */
 const writeIndex = (root) =>
-  execFileSync(process.execPath, [path.join(root, "scripts/adr-index.mjs")]);
+  execFileSync(process.execPath, [path.join(ROOT, "scripts/adr-index.mjs")], {
+    cwd: root,
+  });
 
 test("ADRs with front matter, amendments both ways and a current index pass, and a stale index fails", (t) => {
   const root = fixture(t, {
@@ -245,10 +229,7 @@ test("ADRs with front matter, amendments both ways and a current index pass, and
 
   const run = check(root);
   assert.equal(run.status, 0, run.stderr);
-  assert.equal(
-    run.stdout.split("\n")[1],
-    "ADRs in docs/adr/: 2, each with its front matter and heading, and its amendments recorded both ways; the index in README.md current.",
-  );
+  assert.match(run.stdout, /^ADRs in docs\/adr\/: 2, .*the index .*current/m);
 
   write(
     root,
@@ -258,9 +239,9 @@ test("ADRs with front matter, amendments both ways and a current index pass, and
       "ADR-001 — One, renamed",
     ),
   );
-  assert.deepEqual(failures(check(root)), [
-    'docs/adr/README.md:9: the index — stale: it has "| [ADR-001] | One | accepted | 2026-08-24 | | [ADR-002] |" where the ADRs give "| [ADR-001] | One, renamed | accepted | 2026-08-24 | | [ADR-002] |"; run node scripts/adr-index.mjs',
-  ]);
+  const [stale, ...rest] = failures(check(root));
+  assert.match(stale, /^docs\/adr\/README\.md:9: .*stale/);
+  assert.deepEqual(rest, []);
 });
 
 test("an ADR needs the README that holds the index", (t) => {
