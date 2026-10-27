@@ -8,12 +8,13 @@
  * Every link in every Markdown file git tracks or would track (so not
  * tmp/) must lead somewhere: each inline link or image, and each
  * reference definition, outside front matter, fenced code and inline
- * code. Its path, resolved from the file's folder, must name a file or
- * folder in the repository, letter case included; a #fragment on a .md
- * file, or on the file itself, must be a heading's anchor there, made as
- * GitHub makes it, or an <a id> or <a name>. markdownlint's MD051 checks
- * fragments within one file only, so a dead link between files went
- * unseen.
+ * code. Its path, resolved from the file's folder, must name a file git
+ * tracks or would track, or a folder holding one, letter case included:
+ * what a fresh checkout has, as CI's does, rather than what this disk
+ * holds. A #fragment on a .md file, or on the file itself, must be a
+ * heading's anchor there, made as GitHub makes it, or an <a id> or
+ * <a name>. markdownlint's MD051 checks fragments within one file only,
+ * so a dead link between files went unseen.
  *
  * Skipped: links to other sites (a scheme, or //), paths from / (the Help
  * guides link the app's routes, as /inventory), and a fragment on any
@@ -30,7 +31,7 @@
  * `node --test scripts/`.
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -38,16 +39,28 @@ import { checkAdrs, frontMatterEnd } from "./adr-index.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-/** Every Markdown file git tracks or would track, relative to ROOT. */
-function markdownFiles() {
+/**
+ * Every file git tracks or would track, relative to ROOT, and every
+ * folder holding one, in the letter case git has them.
+ */
+function inRepository() {
   const listed = execFileSync(
     "git",
-    ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "*.md"],
+    ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
     { cwd: ROOT, encoding: "utf8" },
   );
-  return [...new Set(listed.split("\0"))].filter(
-    (file) => file && existsSync(path.join(ROOT, file)),
+  const files = new Set(
+    listed
+      .split("\0")
+      .filter((file) => file && existsSync(path.join(ROOT, file))),
   );
+  const folders = new Set([""]);
+  for (const file of files) {
+    for (let at = file.indexOf("/"); at > 0; at = file.indexOf("/", at + 1)) {
+      folders.add(file.slice(0, at));
+    }
+  }
+  return { files, folders };
 }
 
 /**
@@ -187,32 +200,11 @@ function anchorsIn(absolute) {
   return anchors;
 }
 
-const listings = new Map();
-
-/**
- * Whether a path inside the repository exists, each name in the case
- * written. macOS finds `Docs/` for `docs/`; GitHub and CI's Linux do not.
- */
-function existsAsWritten(relative) {
-  let folder = ROOT;
-  for (const name of relative.split(path.sep).filter(Boolean)) {
-    if (!listings.has(folder)) {
-      listings.set(
-        folder,
-        statSync(folder).isDirectory() ? readdirSync(folder) : [],
-      );
-    }
-    if (!listings.get(folder).includes(name)) return false;
-    folder = path.join(folder, name);
-  }
-  return true;
-}
-
 /**
  * Why a link from a file leads nowhere, or null when it leads somewhere;
  * "skipped" when it is not this check's to follow.
  */
-function brokenBecause(file, target) {
+function brokenBecause(file, target, { files, folders }) {
   if (/^[A-Za-z][A-Za-z0-9+.-]*:/.test(target) || target.startsWith("/")) {
     return "skipped";
   }
@@ -235,16 +227,20 @@ function brokenBecause(file, target) {
   if (relative === ".." || relative.startsWith(`..${path.sep}`)) {
     return "outside the repository";
   }
-  if (!existsAsWritten(relative)) {
+  if (!files.has(relative) && !folders.has(relative)) {
+    const lower = relative.toLowerCase();
+    if ([...files, ...folders].some((known) => known.toLowerCase() === lower)) {
+      return "no such file or folder: names are case-sensitive on GitHub";
+    }
     return existsSync(absolute)
-      ? "no such file or folder: names are case-sensitive on GitHub"
+      ? "not in the repository: git ignores it, so a fresh checkout, as CI's, has none"
       : "no such file or folder";
   }
 
   if (
     fragment &&
     (!linked || absolute.endsWith(".md")) &&
-    statSync(absolute).isFile() &&
+    files.has(relative) &&
     !anchorsIn(absolute).has(fragment)
   ) {
     return "no such heading or anchor there";
@@ -253,13 +249,14 @@ function brokenBecause(file, target) {
 }
 
 /** Every relative link leads to a file or folder, and a fragment to a heading. */
-function links(files) {
+function links(repository) {
+  const markdown = [...repository.files].filter((file) => file.endsWith(".md"));
   const failures = [];
   let toPaths = 0;
   let withinFile = 0;
-  for (const file of files) {
+  for (const file of markdown) {
     for (const { line, target } of linksIn(file)) {
-      const reason = brokenBecause(file, target);
+      const reason = brokenBecause(file, target, repository);
       if (reason === "skipped") continue;
       if (target.startsWith("#")) withinFile++;
       else toPaths++;
@@ -268,12 +265,11 @@ function links(files) {
   }
   return {
     failures,
-    summary: `Links in ${files.length} Markdown files: ${toPaths} to files and folders, ${withinFile} to headings in their own file; none broken.`,
+    summary: `Links in ${markdown.length} Markdown files: ${toPaths} to files and folders, ${withinFile} to headings in their own file; none broken.`,
   };
 }
 
-const files = markdownFiles();
-const results = [links(files), checkAdrs()];
+const results = [links(inRepository()), checkAdrs()];
 const failures = results.flatMap((result) => result.failures);
 
 if (failures.length > 0) {

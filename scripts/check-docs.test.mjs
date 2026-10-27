@@ -201,20 +201,20 @@ See [the guide][guide] and [what was there][gone].
   ]);
 });
 
-test("a path must be in the repository, in the case GitHub's names are", (t) => {
+test("a path must be one git tracks, in the case GitHub's names are", (t) => {
   const root = fixture(t, {
-    "README.md": "# Readme\n\n[Guide](Docs/guide.md), [above](../README.md).\n",
+    "README.md":
+      "# Readme\n\n[Guide](Docs/guide.md), [above](../README.md),\n[notes](tmp/notes.md).\n",
     "docs/guide.md": GUIDE,
+    // On this disk, but ignored, so not in a fresh checkout.
+    "tmp/notes.md": "# Notes\n",
   });
 
-  const [cased, above, ...rest] = failures(check(root));
-  // macOS finds Docs/ for docs/ and so says why; Linux finds nothing.
-  assert.match(
-    cased,
-    /^README\.md:3: Docs\/guide\.md — no such file or folder/,
-  );
-  assert.equal(above, "README.md:3: ../README.md — outside the repository");
-  assert.deepEqual(rest, []);
+  assert.deepEqual(failures(check(root)), [
+    "README.md:3: Docs/guide.md — no such file or folder: names are case-sensitive on GitHub",
+    "README.md:3: ../README.md — outside the repository",
+    "README.md:4: tmp/notes.md — not in the repository: git ignores it, so a fresh checkout, as CI's, has none",
+  ]);
 });
 
 /** An ADR's file: its front matter, a blank line, its heading and text. */
