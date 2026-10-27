@@ -299,6 +299,15 @@ test("an ADR's front matter: none, an unknown status, a date that is not a day, 
       "status: accepted\ndate 2026-08-24\n",
       "ADR-003 — Three",
     ),
+    // Months and days past any calendar's, which no Date can hold.
+    "docs/adr/0004-four.md": adr(
+      "status: accepted\ndate: 2026-13-01\n",
+      "ADR-004 — Four",
+    ),
+    "docs/adr/0005-five.md": adr(
+      "status: accepted\ndate: 2026-10-32\n",
+      "ADR-005 — Five",
+    ),
     "docs/adr/README.md": INDEX,
   });
 
@@ -308,6 +317,8 @@ test("an ADR's front matter: none, an unknown status, a date that is not a day, 
     "docs/adr/0002-two.md:3: date: 2026-02-30 — not a day as YYYY-MM-DD",
     "docs/adr/0003-three.md:3: date 2026-08-24 — not a field: each line is a name, a colon and its value",
     "docs/adr/0003-three.md:1: date — missing from the front matter",
+    "docs/adr/0004-four.md:3: date: 2026-13-01 — not a day as YYYY-MM-DD",
+    "docs/adr/0005-five.md:3: date: 2026-10-32 — not a day as YYYY-MM-DD",
   ]);
 });
 

@@ -51,10 +51,15 @@ const FIELDS = ["status", "date", "amends", "amended-by"];
 /** An ADR's name as the text writes it: ADR-071. */
 const adrName = (number) => `ADR-${String(number).padStart(3, "0")}`;
 
-/** A YYYY-MM-DD that is a day of the calendar. */
-const isDay = (value) =>
-  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-  new Date(`${value}T00:00:00Z`).toISOString().startsWith(value);
+/**
+ * A YYYY-MM-DD that is a day of the calendar. A month past 12 or a day
+ * past 31 makes no Date at all; 2026-02-30 makes 2 March.
+ */
+function isDay(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const day = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(day.getTime()) && day.toISOString().startsWith(value);
+}
 
 /**
  * A front matter list, `[ADR-046, ADR-054]`, as the numbers it names;
