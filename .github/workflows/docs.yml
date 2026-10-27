@@ -2,14 +2,13 @@ name: Docs
 
 # Markdown gets its own workflow because CI skips docs-only changes
 # (ci.yml's paths): a check inside ci.yml would never run on the
-# pull requests that need it. This one runs only when Markdown, its rules,
-# or this file change, and takes seconds.
+# pull requests that need it. This one runs on every push and pull request,
+# not on Markdown changes alone: renaming a test or a guide can break a link
+# from a Markdown file (ADR-086). It takes seconds.
 on:
   push:
     branches: [main]
-    paths: ['**/*.md', '.markdownlint-cli2.jsonc', '.github/workflows/docs.yml']
   pull_request:
-    paths: ['**/*.md', '.markdownlint-cli2.jsonc', '.github/workflows/docs.yml']
   workflow_dispatch:
 
 # A second push to the same branch cancels the first, as in ci.yml.
@@ -39,3 +38,8 @@ jobs:
       # can add a rule, and that should arrive as a change here rather than
       # as a red build on an unrelated pull request.
       - run: npx --yes markdownlint-cli2@0.23.3
+
+      # Every relative link in the Markdown leads to a file, and a fragment
+      # to a heading there, which markdownlint checks within one file only
+      # (ADR-086). Node and git, nothing to install.
+      - run: node scripts/check-docs.mjs
