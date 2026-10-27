@@ -124,6 +124,15 @@ describe('writeMail', () => {
     });
   });
 
+  it('keeps the envelope it is given, a reply’s address included', () => {
+    expect(email({ replyTo: 'chen.jie@example.com' })).toMatchObject({
+      to: 'mei.lin@example.com',
+      subject: 'Confirm your email address',
+      replyTo: 'chen.jie@example.com',
+    });
+    expect(email()).not.toHaveProperty('replyTo');
+  });
+
   it("keeps a heading in the text part unless it is the HTML's alone", () => {
     const { text } = email({
       blocks: [

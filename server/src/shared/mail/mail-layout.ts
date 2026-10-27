@@ -87,13 +87,14 @@ type Block =
   /** The last line, in small print under a rule. */
   | { kind: 'footer'; text: string };
 
-/** An email as blocks, in the language it is written in. */
-export interface MailContent {
-  to: string;
-  subject: string;
+/**
+ * An email as blocks, in the language it is written in: Mail's envelope,
+ * a reply's address included, with its parts still to write.
+ */
+export type MailContent = Omit<Mail, 'html' | 'text'> & {
   locale: Locale;
   blocks: MailBlock[];
-}
+};
 
 /**
  * Rules a mail app may drop without losing anything: some Gmail apps strip

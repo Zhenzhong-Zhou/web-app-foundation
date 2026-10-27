@@ -146,8 +146,9 @@ export function invitationMail(context: InvitationMailContext): Mail {
         ),
   );
 
-  const mail = writeMail({
+  return writeMail({
     to: context.to,
+    ...(context.inviter && { replyTo: context.inviter.email }),
     subject: say(
       context.inviter
         ? t(
@@ -181,5 +182,4 @@ export function invitationMail(context: InvitationMailContext): Mail {
       { kind: 'footer', text: footer },
     ],
   });
-  return context.inviter ? { ...mail, replyTo: context.inviter.email } : mail;
 }
