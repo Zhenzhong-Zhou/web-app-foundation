@@ -245,11 +245,13 @@ export const LIGHT: Scheme = {
 };
 
 export const DARK: Scheme = {
+  /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   page: '#161A21',
   surface: '#1E232C',
   head: '#232934',
   border: '#2E3440',
   line: '#282E39',
+  /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   text: '#E6E9EF',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   muted: '#A3ACBA',

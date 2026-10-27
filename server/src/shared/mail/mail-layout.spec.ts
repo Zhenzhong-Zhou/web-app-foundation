@@ -342,6 +342,30 @@ describe('writeMail', () => {
     );
   });
 
+  it("gives a dark mail app the app's dark page and text, on html, body and the email, and a light one neither", () => {
+    const { html } = email();
+    const style = html.slice(html.indexOf('<style>'), html.indexOf('</style>'));
+
+    // Light text alone would be white on white where a mail app, as Mailpit
+    // does, paints its own white behind the email.
+    for (const selector of ['html', 'body', '.email']) {
+      for (const rule of ['background-color: #161A21', 'color: #E6E9EF']) {
+        expect(style).toContain(`\n  ${selector} { ${rule} !important; }`);
+        expect(style).toContain(
+          `\n[data-ogsc] ${selector}, [data-ogsb] ${selector} { ${rule} !important; }`,
+        );
+      }
+    }
+    // The email is its outermost element; in light, it and the body take
+    // the mail app's own colours.
+    const [, article] =
+      /<div role="article"[^>]* class="email" style="([^"]*)">/.exec(html) ??
+      [];
+    expect(article).toContain('font-size:16px');
+    expect(article).not.toMatch(/color|background/);
+    expect(html).toContain('<body style="margin:0;padding:0">');
+  });
+
   it('opens its body with the preheader: the first paragraph after the greeting, whole, padded', () => {
     const { html } = email();
 

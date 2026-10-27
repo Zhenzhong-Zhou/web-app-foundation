@@ -7,9 +7,9 @@ import type { Mail } from './mail.service';
 /**
  * The colours an email sets (ADR-083), copied from the client's
  * client/src/theme/tokens.ts, since the packages share no code: a change
- * there is made here too. Only the rules, the button, links, the note's
- * box and the small print have one; the page and the text take the mail
- * app's own, its dark ones too.
+ * there is made here too. In light, only the rules, the button, links,
+ * the note's box and the small print have one, and the page and the text
+ * take the mail app's own; in dark, the page and the text have one too.
  */
 const LIGHT = {
   /** BRAND.accent. */
@@ -26,6 +26,13 @@ const LIGHT = {
 
 /** What a dark mail app shows instead (ADR-083's amendment). */
 const DARK = {
+  /**
+   * DARK.page and DARK.text, the ground with the text: a dark scheme turns
+   * the text light, while some mail apps, Mailpit among them, paint their
+   * own white behind the email.
+   */
+  page: '#161A21',
+  text: '#E6E9EF',
   /** The app's dark accent, worked out from the light one as the app does. */
   accent: darkAccent(LIGHT.accent),
   /** ON_ACCENT.dark. */
@@ -108,9 +115,15 @@ export type MailContent = Omit<Mail, 'html' | 'text'> & {
  * `<style>`, so everything an email needs is inline. A phone's narrower
  * padding and full-width button, then dark mail apps' colours, by class,
  * under the media query Apple Mail honours and Outlook.com's own
- * attributes for its dark mode.
+ * attributes for its dark mode. The page and the text on each of html,
+ * body and the email, whichever a mail app keeps: Gmail drops the first
+ * two.
  */
 const DARK_RULES: [selector: string, rule: string][] = [
+  ...['html', 'body', '.email'].flatMap((selector): [string, string][] => [
+    [selector, `background-color: ${DARK.page}`],
+    [selector, `color: ${DARK.text}`],
+  ]),
   ['.muted', `color: ${DARK.muted}`],
   ['.link', `color: ${DARK.accent}`],
   ['.button td', `background-color: ${DARK.accent}`],
@@ -223,7 +236,7 @@ function htmlOf(subject: string, locale: Locale, blocks: MailBlock[]): string {
     '<body style="margin:0;padding:0">',
     `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${escapeHtml(preheaderOf(blocks))}${PADDING}</div>`,
     // lang and dir again: Gmail drops <html> and its attributes.
-    `<div role="article" aria-roledescription="email" aria-label="${label}" lang="${lang}" dir="ltr" style="font-family:${FONT};${BODY}">`,
+    `<div role="article" aria-roledescription="email" aria-label="${label}" lang="${lang}" dir="ltr" class="email" style="font-family:${FONT};${BODY}">`,
     `<!--[if mso]>${TABLE} width="600" align="center"><tr><td><![endif]-->`,
     `${TABLE} width="100%" style="max-width:600px;margin:0 auto;border-collapse:collapse">`,
     // A row to a block, 16 px apart: padding on a cell, which every mail

@@ -2668,12 +2668,16 @@ a day.
   address in the last line, a link, breaking within the column, nothing
   scrolling sideways. Wider than 600 px, the column stops growing,
   centred, and the button keeps its own width.
-- **MC-3705** Apple Mail, light and dark. From the live site, ask for a
-  reset for your own address, and sign in from a new browser for a
-  security email. In Apple Mail on a Mac with the system in Dark, and on
-  an iPhone in dark mode: the page and the words in the mail app's dark
-  colours; the plate clear on the dark background and Panivo light, not
-  navy; the button light purple with dark words; the security email's two
+- **MC-3705** Apple Mail, light and dark. First in Mailpit, with the
+  Mac's system in Dark: in every email, the invitation's too, every line
+  readable, the page near-black and the words light, never white on
+  white; the invitation's heading, its lead, the role line and the note
+  included. From the live site, ask for a reset for your own address, and
+  sign in from a new browser for a security email. In Apple Mail on a Mac
+  with the system in Dark, and on an iPhone in dark mode: the page
+  near-black and the words light, the app's own dark colours; the plate
+  clear on the dark background and Panivo light, not navy; the button
+  light purple with dark words; the security email's two
   links, and the address under the reset email's button, light purple;
   the small print a lighter grey, readable; the line under the header
   dark grey, not glaring. In light mode, purple and grey on white. With
@@ -2686,9 +2690,10 @@ a day.
   order, at the column's width, and the inbox's preview line as MC-3702.
   In Gmail's phone app, the reset's address wraps inside the column, at
   any character or after a /, ? or =, nothing scrolling sideways; copied,
-  it is the address whole. In each one's dark mode, the button and the
-  links readable (Gmail's app turns colours its own way: look at what it
-  does). Images off: Panivo still heads the email.
+  it is the address whole. In each one's dark mode, every line readable,
+  the button and the links too, as in Mailpit with the system in Dark
+  (MC-3705; Gmail's app turns colours its own way: look at what it does).
+  Images off: Panivo still heads the email.
 - **MC-3707** VoiceOver in Gmail on the web. In Safari, open one email:
   moving into it, VoiceOver names it an email, by its subject, and reads
   it as one, not run into Gmail's page around it; inside it, the rotor's
