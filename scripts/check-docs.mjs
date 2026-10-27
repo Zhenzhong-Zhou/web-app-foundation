@@ -152,6 +152,12 @@ function linksIn(file) {
  * since anchorOf drops them. Code is set aside first and put back as
  * written, since GitHub undoes no markup inside it. The shapes are in
  * scripts/fixtures/anchors.md, which markdownlint's MD051 checks too.
+ *
+ * Every < and > the tags leave goes too, last before the code is put
+ * back. One pass of the tag pattern can leave one behind (<<a>b> leaves
+ * <b>), which CodeQL reports as incomplete sanitization. anchorOf drops
+ * both anyway, so no anchor changes; the pass comes after the `_` step,
+ * where an earlier one would change one (x<_y_ is xy, not x_y_).
  */
 function headingText(markdown) {
   const code = [];
@@ -166,6 +172,7 @@ function headingText(markdown) {
       /(?<![\p{L}\p{N}_])(_+)(?=\S)(.+?)(?<=\S)\1(?![\p{L}\p{N}_])/gu,
       "$2",
     )
+    .replace(/[<>]/g, "")
     .replace(/\uE000(\d+)\uE001/g, (_, index) => code[index]);
 }
 

@@ -16,6 +16,7 @@ repeats a heading on purpose.
 - [Underscores, as emphasis and in a word](#the-first-and-snake_case)
 - [Underscores in code](#the-_private_-field)
 - [Chinese](#品牌)
+- [A stray less-than sign](#when-a--b)
 - [A repeated heading](#notes), [and its repeat](#notes-1)
 
 ## ADR-082 — The product's brand
@@ -29,6 +30,8 @@ repeats a heading on purpose.
 ## The `_private_` field
 
 ## 品牌
+
+## When a < b
 
 ## Notes
 
