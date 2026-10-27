@@ -35,6 +35,7 @@
     "test:e2e:report": "playwright show-report",
     "screenshots": "playwright test -c playwright.screenshots.config.ts",
     "screenshots:compare": "node screenshots/compare.mjs",
+    "screenshots:mail": "node screenshots/mail.mjs",
     "fix": "npm run format && npm run lint",
     "verify": "npm run format:check && npm run lint:ci && npm run i18n:check && npm run build && npm test",
     "verify:all": "npm run verify && npm run test:e2e"
