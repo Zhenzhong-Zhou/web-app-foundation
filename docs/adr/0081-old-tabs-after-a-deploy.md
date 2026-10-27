@@ -396,7 +396,7 @@ stays; conventions.md says so.
   a failure is shown; the volume seed; the server; CI; the client, after
   the design; the riders; the deploy workflow and the runbook;
   dependencies again; the reviews; the docs last. Built by Claude Code, a
-  prompt per commit (handoff, *How code is delivered*).
+  prompt per commit (engineering.md, *How code is delivered*).
 
 **Amendment (October 2026) — as built (#199).** What building settled:
 

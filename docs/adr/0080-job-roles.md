@@ -390,7 +390,7 @@ to a role reaches its holders on their next click.
 - `npm run migrate:all` once 0073 lands.
 - Build order: this ADR; #155; the schema and permissions; the server; the
   client after the design; the guides; the docs last, after the reviews.
-  Built by Claude Code, a prompt per commit (handoff, *How code is
+  Built by Claude Code, a prompt per commit (engineering.md, *How code is
   delivered*).
 
 **Amendment (October 2026) — as built (#176).** What building settled:
@@ -413,7 +413,7 @@ to a role reaches its holders on their next click.
 - **Refusals.** Codes `role_changed`, `role_held`, `permission_requires` and
   `role_name_unavailable`. 400 for a permission never offered, a missing
   need, an Owner not alone, no roles, or another organization's role (a body
-  id, as the handoff's rule says, where it had been 404); 404 for no such
+  id, as engineering.md's rule says, where it had been 404); 404 for no such
   role; 409 for a name taken or reading as built in, a built-in role changed
   or deleted, a stale save, a held role, a role a live invitation names, and
   the last Owner; 403 for giving. The three locked permissions are added

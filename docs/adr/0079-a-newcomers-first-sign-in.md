@@ -335,7 +335,7 @@ commit, ahead of this ADR's server, closing #144.
   handoff.
 - Build order: this ADR; #144; the server; the client after the design,
   Help, then the guides, then the welcome; the docs last, after the
-  reviews. Built by Claude Code, a prompt per commit (handoff, *How code
+  reviews. Built by Claude Code, a prompt per commit (engineering.md, *How code
   is delivered*).
 
 **Amendment (October 2026) — as built.** What building it, its design

@@ -210,7 +210,7 @@ where `/clear` is safe; and the summary for the chat. A brief then holds
 its decisions and its prompts.
 
 - **One home per rule.** The skill links `docs/conventions.md` and the
-  handoff's working agreements rather than copying them, except the lines
+  working agreements in `docs/engineering.md` rather than copying them, except the lines
   it must act on, so a rule changed once cannot disagree with itself.
 - **The square logo's four lessons, as rules:** dependencies judged by
   each package's own publish time, never moving one back; a migration
