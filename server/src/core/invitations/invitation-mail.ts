@@ -1,7 +1,7 @@
 import type { Locale } from '../../common/locales';
 import { t, type Translatable, translate } from '../../i18n/translate';
-import { escapeHtml } from '../../shared/mail/escape-html';
 import type { Mail } from '../../shared/mail/mail.service';
+import { writeMail } from '../../shared/mail/mail-layout';
 import { zoneLabel } from '../audit/audit-words';
 import { dayOf } from '../auth/deletion-mail';
 import type { SystemRole } from '../authorization/permissions';
@@ -13,7 +13,8 @@ export interface InvitationMailContext {
   /**
    * Who invited them, while still a member of the organization; null once
    * they have left or deleted their account, and the organization alone
-   * is named (ADR-077).
+   * is named (ADR-077). A reply goes to their address while they are
+   * named (ADR-083).
    */
   inviter: { name: string; email: string } | null;
   organizationName: string;
@@ -37,8 +38,13 @@ export interface InvitationMailContext {
  * has gone; to which organization and as what, with what that lets them
  * do; the inviter's note; and the link's last day, named in the
  * organization's zone. The organization is named in words, never by its
- * logo: mail apps block an inline image. Everything a person typed is
- * escaped in the HTML part, as every sentence is.
+ * logo: mail apps block an inline image.
+ *
+ * Written on the layout every email shares (ADR-083), with no product
+ * header: its heading opens it, Accept the invitation is its button, and
+ * its last line is small print. While the inviter is named, a reply goes
+ * to them rather than to MAIL_FROM's no-reply address, which nobody reads;
+ * once they have gone, the email names nobody to reply to.
  */
 export function invitationMail(context: InvitationMailContext): Mail {
   const say = (message: Translatable) => translate(message, context.locale);
@@ -122,16 +128,6 @@ export function invitationMail(context: InvitationMailContext): Mail {
         'Not expecting this? Ignore it: nothing happens unless you accept.',
     }),
   );
-  const fallback = say(
-    t(
-      {
-        id: 'mail.invitation.fallback',
-        defaultMessage:
-          'If the button doesn’t open, copy this address into your browser: {link}',
-      },
-      { link: context.link },
-    ),
-  );
   const footer = say(
     context.appName
       ? t(
@@ -150,38 +146,7 @@ export function invitationMail(context: InvitationMailContext): Mail {
         ),
   );
 
-  const text = [
-    heading,
-    lead,
-    ...lines,
-    context.note && `${from}\n${context.note}`,
-    // The link on the line below says what follows: no colon, which each
-    // language would write its own way (：in Chinese).
-    `${accept}\n${context.link}`,
-    expires,
-    ignore,
-    footer,
-  ]
-    .filter((part): part is string => Boolean(part))
-    .join('\n\n');
-
-  const note = context.note
-    ? `<blockquote><strong>${escapeHtml(from)}</strong><br>${escapeHtml(context.note).replace(/\r?\n/g, '<br>')}</blockquote>`
-    : null;
-  const html = [
-    `<h1>${escapeHtml(heading)}</h1>`,
-    `<p>${escapeHtml(lead)}</p>`,
-    ...lines.map((line) => `<p>${escapeHtml(line)}</p>`),
-    note,
-    `<p><a href="${context.link}">${escapeHtml(accept)}</a></p>`,
-    `<p>${escapeHtml(expires)}</p>`,
-    `<p>${escapeHtml(ignore)} ${escapeHtml(fallback)}</p>`,
-    `<p>${escapeHtml(footer)}</p>`,
-  ]
-    .filter((part): part is string => Boolean(part))
-    .join('\n');
-
-  return {
+  const mail = writeMail({
     to: context.to,
     subject: say(
       context.inviter
@@ -200,7 +165,21 @@ export function invitationMail(context: InvitationMailContext): Mail {
             { organization },
           ),
     ),
-    text,
-    html,
-  };
+    locale: context.locale,
+    blocks: [
+      { kind: 'heading', text: heading },
+      { kind: 'paragraph', text: lead },
+      ...lines.map((line) => ({ kind: 'paragraph' as const, text: line })),
+      ...(context.note
+        ? [{ kind: 'quote' as const, title: from, text: context.note }]
+        : []),
+      // The text part's link on the line below says what follows: no
+      // colon, which each language would write its own way (：in Chinese).
+      { kind: 'button', label: accept, href: context.link },
+      { kind: 'paragraph', text: expires },
+      { kind: 'paragraph', text: ignore },
+      { kind: 'footer', text: footer },
+    ],
+  });
+  return context.inviter ? { ...mail, replyTo: context.inviter.email } : mail;
 }

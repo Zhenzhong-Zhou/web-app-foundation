@@ -688,9 +688,13 @@ describe('Invitations (e2e)', () => {
           .expect(201),
       ).invitation;
 
-      // A member still: named, by name and by address.
+      // A member still: named, by name and by address, and a reply goes
+      // to Mei (ADR-083).
       expect(mail.lastTo('sam@example.com')?.subject).toBe(
         'Mei Lin invited you to join alpha Co',
+      );
+      expect(mail.lastTo('sam@example.com')?.replyTo).toBe(
+        'mei@alpha.example.com',
       );
       expect(
         (await read(invitationToken(app, 'sam@example.com')))?.inviter,
@@ -723,6 +727,7 @@ describe('Invitations (e2e)', () => {
           .expect(200);
         const resent = mail.lastTo(email)!;
         expect(resent.subject).toBe('An invitation to join alpha Co');
+        expect(resent.replyTo).toBeUndefined();
         expect(resent.text).toContain(
           'alpha Co invited you to join as a Viewer.',
         );
@@ -918,6 +923,9 @@ describe('Invitations (e2e)', () => {
       expect(
         resent.link.lastDay! > dayIn('UTC', new Date(Date.now() + 6 * DAY)),
       ).toBe(true);
+
+      // Written as the first was: a reply goes to the inviter (ADR-083).
+      expect(mail.lastTo('sam@example.com')?.replyTo).toBe(alpha.email);
 
       const second = invitationToken(app, 'sam@example.com');
       expect(second).not.toBe(first);

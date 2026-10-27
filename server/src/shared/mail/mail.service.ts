@@ -88,6 +88,7 @@ export class MailService implements OnModuleDestroy {
         subject: mail.subject,
         text: mail.text,
         html: mail.html,
+        reply_to: mail.replyTo,
       }),
       signal: AbortSignal.timeout(10_000),
     });

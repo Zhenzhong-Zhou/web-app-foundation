@@ -348,7 +348,7 @@ describe('every email', async () => {
 describe('the buttons', async () => {
   const samples = await mailSamples();
 
-  it('are to confirm an address and reset a password, one to an email, in every language', () => {
+  it('are to confirm an address, reset a password and accept an invitation, one to an email, in every language', () => {
     const buttoned = samples.filter(({ mail }) =>
       mail.html.includes('class="button"'),
     );
@@ -360,6 +360,9 @@ describe('the buttons', async () => {
       'reset-password.en',
       'reset-password.fr-CA',
       'reset-password.zh-Hans',
+      'invitation.en',
+      'invitation.fr-CA',
+      'invitation.zh-Hans',
     ]);
     for (const { mail } of buttoned) {
       expect(mail.html.match(/class="button"/g)).toHaveLength(1);

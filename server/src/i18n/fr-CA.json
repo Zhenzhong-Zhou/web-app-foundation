@@ -579,7 +579,6 @@
   "mail.hi": "Bonjour {name},",
   "mail.invitation.action": "Accepter l’invitation",
   "mail.invitation.expires": "Le lien ne sert qu’une fois, jusqu’à la fin du {date}, {zone}. Vous choisirez votre propre mot de passe.",
-  "mail.invitation.fallback": "Si le bouton ne s’ouvre pas, copiez cette adresse dans votre navigateur : {link}",
   "mail.invitation.heading": "Joignez-vous à {organization}",
   "mail.invitation.ignore": "Vous ne vous y attendiez pas? Ignorez ce message : rien ne se passe à moins que vous n’acceptiez.",
   "mail.invitation.lead": "{inviter} ({email}) vous invite à vous joindre à nous en tant que {system, select, other {{roles}}}.",

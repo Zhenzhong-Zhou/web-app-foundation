@@ -2622,8 +2622,9 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
 
 One layout for every email, from blocks (`server/src/shared/mail/`). The
 product's emails open with the header (MC-3503) and their subject as a
-heading; Confirm your email address and Reset your password are buttons,
-with the address to copy last, in small print. No word changes, and each
+heading; the invitation with Join and the organization's name, and no
+header. Confirm your email address, Reset your password and Accept the
+invitation are buttons, with the address to copy last, in small print. No word changes, and each
 email's text part is as it was, character for character
 (`mail-samples.spec.ts` holds every one). With Mailpit open and
 `npm run dev` running in `client/`, which serves the mark,
@@ -2638,8 +2639,8 @@ a day.
   your email address and Reset your password each have one purple button,
   white words on it, under Hi, then the sentence on when the link expires,
   and last, in smaller grey type, If the button doesn't open, copy this
-  address into your browser: and the address. No other email has a
-  button. The security emails keep their two links inside If it was
+  address into your browser: and the address. No other product email has
+  a button; the invitation's is MC-3710. The security emails keep their two links inside If it was
   not, …, underlined in purple; their When, Browser and IP address in two
   columns, the labels grey; and We will never ask for your password by
   email. last, in grey. A deletion email ends with the app's address,
@@ -2686,15 +2687,38 @@ a day.
   moving into it, VoiceOver names it an email, by its subject, and reads
   it as one, not run into Gmail's page around it; inside it, the rotor's
   Headings has its subject first; the mark is passed over in silence.
-- **MC-3708** The Text tab. In Mailpit's Text tab, each email as before
-  the layout: Panivo, a blank line, Hi and the name; Confirm your email
-  address: with its colon and the address on the line under it; no
+- **MC-3708** The Text tab. In Mailpit's Text tab, each product email as
+  before the layout: Panivo, a blank line, Hi and the name; Confirm your
+  email address: with its colon and the address on the line under it; no
   heading, no If the button doesn't open line, and no preview line.
 - **MC-3709** QQ Mail. Where a QQ Mail address is to hand, with the
   account's language 中文 on the live site, ask for a reset to it and open
   it in QQ Mail's web view: the header, heading, button and address line
   in order, the Chinese in the system's Chinese font, the button
   readable.
+- **MC-3710** The invitation. In Mailpit, the invitation to Northside
+  Naturals, in English: no header, and no Panivo above it; Join Northside
+  Naturals as its heading; Chen Jie (`chen.jie@example.com`) invited you
+  to join as an Admin., then what an Admin does; the note in a thin grey box,
+  From Chen Jie in bold over its two lines; the purple button, Accept the
+  invitation; the sentence on when the link works until, then Not
+  expecting this? …; in smaller grey type, If the button doesn't open,
+  copy this address into your browser: and the address; and last, under a
+  thin line, Sent for Northside Naturals by Panivo., small and grey. In
+  Mailpit's list, its preview line is Chen Jie's sentence, nothing after
+  it. In 中文 the same, 加入 Northside Naturals, the box headed 来自 Chen
+  Jie 的留言, the button 接受邀请. On a phone, as MC-3704: the button the
+  column's width, the box within the column, the address breaking inside
+  it. In the Text tab, as before: Join Northside Naturals first, Accept the
+  invitation with the address on the line under it and no colon, and no If
+  the button doesn't open line.
+- **MC-3711** A reply reaches the inviter. In Mailpit, MC-3001's
+  invitation names the demo Owner's address as its Reply-To, and so does a
+  Resend of it from Invited; MC-3017's, resent once Sarah Chen has left,
+  names none. On the live site, invite an address of your own that is not
+  your account's, open the invitation in its mail app and Reply: the reply
+  is addressed to your account's address, never `no-reply@`, and arrives
+  there. Revoke the invitation on Invited afterwards.
 
 ## Regressions
 
