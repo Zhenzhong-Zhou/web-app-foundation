@@ -30,7 +30,10 @@ function write(root, file, text) {
   writeFileSync(path.join(root, file), text);
 }
 
-/** A temporary repository: the script, a .gitignore of tmp/, and the files. */
+/**
+ * A temporary repository: the script and the ADR index's, which it
+ * imports, a .gitignore of tmp/, and the files.
+ */
 function fixture(t, files) {
   const root = mkdtempSync(path.join(tmpdir(), "check-docs-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
@@ -38,10 +41,12 @@ function fixture(t, files) {
   execFileSync("git", ["init", "--quiet"], { cwd: root });
   write(root, ".gitignore", "tmp/\n");
   mkdirSync(path.join(root, "scripts"));
-  copyFileSync(
-    path.join(ROOT, "scripts/check-docs.mjs"),
-    path.join(root, "scripts/check-docs.mjs"),
-  );
+  for (const script of ["check-docs.mjs", "adr-index.mjs"]) {
+    copyFileSync(
+      path.join(ROOT, "scripts", script),
+      path.join(root, "scripts", script),
+    );
+  }
   for (const [file, text] of Object.entries(files)) write(root, file, text);
   return root;
 }
@@ -76,7 +81,8 @@ See [the guide](docs/guide.md), [its setup](docs/guide.md#setup),
   assert.equal(run.status, 0, run.stderr);
   assert.equal(
     run.stdout,
-    "Links in 2 Markdown files: 3 to files and folders, 1 to headings in their own file; none broken.\n",
+    "Links in 2 Markdown files: 3 to files and folders, 1 to headings in their own file; none broken.\n" +
+      "ADRs in docs/adr/: 0, each with its front matter and heading, and its amendments recorded both ways; no README.md, so no index to check.\n",
   );
 });
 
@@ -209,4 +215,112 @@ test("a path must be in the repository, in the case GitHub's names are", (t) => 
   );
   assert.equal(above, "README.md:3: ../README.md — outside the repository");
   assert.deepEqual(rest, []);
+});
+
+/** An ADR's file: its front matter, a blank line, its heading and text. */
+const adr = (frontMatter, heading) =>
+  `---\n${frontMatter}---\n\n# ${heading}\n\nThe decision.\n`;
+
+/** The fixture's copy of the index script, run as a person runs it. */
+const writeIndex = (root) =>
+  execFileSync(process.execPath, [path.join(root, "scripts/adr-index.mjs")]);
+
+test("ADRs with front matter, amendments both ways and a current index pass, and a stale index fails", (t) => {
+  const root = fixture(t, {
+    "docs/adr/0001-one.md": adr(
+      "status: accepted\ndate: 2026-08-24\namended-by: [ADR-002]\n",
+      "ADR-001 — One",
+    ),
+    "docs/adr/0002-two.md": adr(
+      "status: deferred\ndate: 2026-08-25\namends: [ADR-001]\n",
+      "ADR-002 — Two (amends ADR-001)",
+    ),
+    "docs/adr/README.md":
+      "# Architecture Decisions\n\n## By number\n\n<!-- adr-index:start -->\n<!-- adr-index:end -->\n",
+  });
+  writeIndex(root);
+
+  const run = check(root);
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(
+    run.stdout.split("\n")[1],
+    "ADRs in docs/adr/: 2, each with its front matter and heading, and its amendments recorded both ways; the index in README.md current.",
+  );
+
+  write(
+    root,
+    "docs/adr/0001-one.md",
+    adr(
+      "status: accepted\ndate: 2026-08-24\namended-by: [ADR-002]\n",
+      "ADR-001 — One, renamed",
+    ),
+  );
+  assert.deepEqual(failures(check(root)), [
+    'docs/adr/README.md:9: the index — stale: it has "| [ADR-001] | One | accepted | 2026-08-24 | | [ADR-002] |" where the ADRs give "| [ADR-001] | One, renamed | accepted | 2026-08-24 | | [ADR-002] |"; run node scripts/adr-index.mjs',
+  ]);
+});
+
+test("an ADR's front matter: none, an unknown status, a date that is not a day, a line that is not a field", (t) => {
+  const root = fixture(t, {
+    "docs/adr/0001-one.md": "# ADR-001 — One\n\nThe decision.\n",
+    "docs/adr/0002-two.md": adr(
+      "status: approved\ndate: 2026-02-30\n",
+      "ADR-002 — Two",
+    ),
+    "docs/adr/0003-three.md": adr(
+      "status: accepted\ndate 2026-08-24\n",
+      "ADR-003 — Three",
+    ),
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    "docs/adr/0001-one.md:1: front matter — none: an ADR opens with its status and date between --- lines",
+    "docs/adr/0002-two.md:2: status: approved — not accepted, deferred or superseded by ADR-NNN",
+    "docs/adr/0002-two.md:3: date: 2026-02-30 — not a day as YYYY-MM-DD",
+    "docs/adr/0003-three.md:3: date 2026-08-24 — not a field: each line is a name, a colon and its value",
+    "docs/adr/0003-three.md:1: date — missing from the front matter",
+  ]);
+});
+
+test("an ADR's heading has its file's number", (t) => {
+  const root = fixture(t, {
+    "docs/adr/0012-twelve.md": adr(
+      "status: accepted\ndate: 2026-08-24\n",
+      "ADR-013 — Twelve",
+    ),
+    "docs/adr/0013-thirteen.md":
+      "---\nstatus: accepted\ndate: 2026-08-24\n---\n\nThe decision, with no heading.\n",
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    "docs/adr/0012-twelve.md:6: ADR-013 — the heading's number is not the file's, ADR-012",
+    "docs/adr/0013-thirteen.md:1: heading — none: the first line after the front matter is # ADR-013 — its title",
+  ]);
+});
+
+test("an amendment is in both ADRs' front matter", (t) => {
+  const root = fixture(t, {
+    // Amended by ADR-003, whose amends does not say so.
+    "docs/adr/0001-one.md": adr(
+      "status: accepted\ndate: 2026-08-24\namended-by: [ADR-003]\n",
+      "ADR-001 — One",
+    ),
+    // Amends ADR-001, whose amended-by does not say so, and ADR-009,
+    // which does not exist.
+    "docs/adr/0002-two.md": adr(
+      "status: accepted\ndate: 2026-08-25\namends: [ADR-001, ADR-009]\n",
+      "ADR-002 — Two",
+    ),
+    "docs/adr/0003-three.md": adr(
+      "status: accepted\ndate: 2026-08-26\namends: ADR-001\n",
+      "ADR-003 — Three",
+    ),
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    "docs/adr/0001-one.md:4: amended-by: ADR-003 — ADR-003's amends does not list ADR-001; add it there, or take it out of this list",
+    "docs/adr/0002-two.md:4: amends: ADR-001 — ADR-001's amended-by does not list ADR-002; add it there",
+    "docs/adr/0002-two.md:4: amends: ADR-009 — no such ADR in docs/adr/",
+    "docs/adr/0003-three.md:4: amends: ADR-001 — not a list as [ADR-046, ADR-054]",
+  ]);
 });
