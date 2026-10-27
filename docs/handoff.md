@@ -8,18 +8,35 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **ADR-083, the emails' design: PR #257** (`adr-083-emails`, 26 and 27
-  October 2026), built through `/build-from-brief`, green, to merge
-  with this as-built commit; ADR-083's as-built amendment says what
+- **ADR-086, docs as code** (`docs-moves`, from 27 October 2026), part 1
+  of the docs plan, before anything else in the order below. Moves only,
+  proved by a script: `decisions.md` split into one file per ADR in
+  `docs/adr/`, each with front matter (status, date, amends, amended
+  by), an index generated from it (`docs/adr/README.md`) and Open
+  decisions in a file of its own, `decisions.md` kept as a stub; the
+  working agreements moved to `docs/engineering.md`; the pointers the
+  moves break fixed with them; and `scripts/check-docs.mjs`, checking
+  from now on every relative link in the repository's Markdown, each
+  amendment recorded both ways, and the index. Planned in the chat,
+  built through `/build-from-brief tmp/adr-086/brief.md N`, steps 1 to 6;
+  no dependency step on either docs branch (ADR-086). Part 2,
+  `docs-start-here`, follows; its scope is in ADR-086 and is confirmed
+  when it is planned. After each docs PR merges, re-sync Project
+  knowledge (*Still to do, by hand*).
+- **ADR-083, the emails' design: merged as #257** (`adr-083-emails`,
+  5d34faf) on 27 October 2026, built through `/build-from-brief`, with
+  its as-built commit last; ADR-083's as-built amendment says what
   building settled. One layout for every email, built from blocks into
   both parts, every text part unchanged and held by
   `mail-samples.spec.ts`; buttons where the words were; each product
   email's subject as its heading; the email's own dark colours in a
-  dark mail app; the invitation's `Reply-To` its inviter. **Before
-  merging:** Mailpit's half of section 37 (MC-3701 to MC-3704, MC-3708,
-  MC-3710, and MC-3711's Reply-To). **After the merge, by hand:** the
-  live site's half (MC-3705, MC-3706, MC-3707, MC-3709 and MC-3711's
-  reply), and `/production-readiness`'s by-hand list in
+  dark mail app; the invitation's `Reply-To` its inviter. Mailpit's half
+  of section 37 (MC-3701 to MC-3704, MC-3708, MC-3710, and MC-3711's
+  Reply-To) was the step before merging. **After the merge, by hand:**
+  once Deploy has run for 5d34faf (CI on the merge was still running that
+  morning, and Deploy waits for it), the live site's half (MC-3705,
+  MC-3706, MC-3707, MC-3709 and MC-3711's reply), and
+  `/production-readiness`'s by-hand list in
   `tmp/adr-083/review.md` (each email in the inbox, not spam, with
   Gmail's Show original reading SPF, DKIM and DMARC PASS; Resend's open
   and click tracking off; the address line on a phone); then delete
@@ -200,37 +217,26 @@ with this one, this one is current.
   request. The headers are in `render.md`, "Deploys". Render's edge
   ignores a query string and empties itself at each deploy, so no page
   stays old after one (#196's review; ADR-081's correction).
-- **The order now** (Bob, changed on 26 October 2026), with ADR-082 and
-  the square logo merged:
-    1. **#252**, CI's reliability: PR #254, merged on 26 October.
-    2. **ADR-083, the emails' design** (`adr-083-emails`, above): one
-       layout for every email, the invitation
-       included without Panivo's header (the system's font, a phone's
-       width, the main link as a button mail apps draw, the small print
-       grey, dark mail apps checked, every email keeping its words); a
-       short ADR and the canvas first. Riding along,
-       **`/build-from-brief`**, a project skill holding the ground rules
-       every build brief repeats (the author identity, staging by path,
-       `scripts/verify.sh`, lint fixups, `npm run api`, the stop rule,
-       where `/clear` is safe, the inventory step), so a brief shrinks to
-       its decisions and its prompts and a rule changed once reaches every
-       session (Bob, 25 October 2026). It carries the square logo's four
-       lessons: dependencies judged by each package's own publish time,
-       never moving one back; a migration that adds to a list the code
-       shares commits with that code; manual checks in the same commit as
-       what they check; the review step in two prompts, the findings
-       first, the fixes once Bob has chosen. The emails' own brief is the
-       first written for it.
-    3. **ADR-084, an error tracker**, a small PR with a short ADR, so real errors
+- **The order now** (Bob, changed on 27 October 2026: the docs first,
+  right after #257):
+    1. **ADR-083, the emails' design:** merged as #257 on 27 October; its
+       by-hand steps (above). Before it, #252, CI's reliability, merged as
+       #254 on 26 October.
+    2. **`docs-moves`**, ADR-086's part 1 (above), docs only.
+    3. **`docs-start-here`**, ADR-086's part 2, docs only.
+    4. **ADR-084, an error tracker**, a small PR with a short ADR, so real errors
        show while fixing: what is sent, scrubbed of personal details
        (PIPEDA, PIPL), and browser errors carried through the app's own
        API, so the browser contacts no other site. Its branch first
        takes `typescript-eslint` 8.72.1 and `@aws-sdk/client-s3`
-       3.1157.0, old enough from 2 November.
-    4. **ADR-085, low stock** (its questions in Open decisions; #222 and
+       3.1157.0, old enough from 2 November. Riding along, planned for
+       the emails' branch and not taken there: an `npm audit` step in
+       CI, and the database's size in the backup's summary.
+    5. **ADR-085, low stock** (its questions in Open decisions; #222 and
        the Movements page, #256, ride along).
-    5. **The fix-ups**, each a PR of five to ten related issues: safety
-       and scale (#181 first, then #142, #182, #225, #226, #244), orders
+    6. **The fix-ups**, each a PR of five to ten related issues, each
+       batch writing the rules files for its areas (ADR-086, part 2):
+       safety and scale (#181 first, then #142, #182, #225, #226, #244), orders
        and shipping (#156, #125, #161, #164, #128, #241, #250, #159 with
        #221, a layout decision first, #158's Receive action in the
        summary, and decisions #157 and #160), organization, roles and
@@ -239,7 +245,10 @@ with this one, this one is current.
        (#155, #170, #162, #212, #214 with a row of its own in
        `accessibility.spec.ts`, #232, #242), and words and translations
        (#148, #149, #150, #245, #249, with Bob's mother's corrections).
-    6. **The review of the whole app**, once, after the fix-ups, so it
+       #255 and #258 go together, since both change the emails' text
+       parts (`npm run mail:text -- --update`).
+    7. **One docs PR for the remaining rules files**, then **the review of
+       the whole app**, once, after the fix-ups, so it
        judges the app with the known issues fixed and finds what nobody
        has filed (`/production-readiness` with its device pass: deploys,
        backups and a restore tried, security, performance, email,
@@ -247,11 +256,15 @@ with this one, this one is current.
        closed and open, a phone held sideways); its email section reports
        DMARC's `p=none` as deferred, by decision, until the first paying
        customer. Then one round for its findings.
-    7. **New features**, in this order unless a trigger brings one
+    8. **New features**, in this order unless a trigger brings one
        forward, each with its entry in Open decisions: one person in two
        organizations, then a practice organization (ADR-077,
        *Deferred*); a public demo; plans and billing; the operator's
        console and support access.
+
+  Later: `/release` at the next tag; the chat-side planning skill after
+  `docs-start-here`; the support playbook with the operator's console;
+  a starter-kit template repository last.
 
   #245 (`translate="no"` on data) is decided and suits a cloud session
   before Bob's cloud credit ends in early November. Not checked yet, and
@@ -845,12 +858,20 @@ with this one, this one is current.
   #252 closed with #254, and #246 with #251. `gh issue list` to review.
 - **Branches:** prune the merged ones, `after-adr-070` among them
   (`scripts/prune-branches.sh`).
+- **Outside any PR** (Bob's list, 27 October 2026): his user preferences
+  in claude.ai's Settings; Project knowledge slimmed to `docs/`, the
+  README, `CLAUDE.md` and `.claude/skills/`, and re-synced after each
+  docs PR; a healthchecks.io check as `BACKUP_HEALTHCHECK_URL`
+  (`docs/runbooks/services.md`); the backup key's two copies confirmed.
+  Backups to R2 (`BACKUP_DESTINATION=s3`) are recorded as live since 7
+  October: check the Backup runs before redoing anything.
 
 ### Still to do, in code
 
-- **ADR-084, an error tracker,** next (the order, *Now*). Its branch
-  first takes `typescript-eslint` 8.72.1 and `@aws-sdk/client-s3`
-  3.1157.0, published on 26 October and too new for ADR-083's.
+- **ADR-086's two docs PRs** next, then **ADR-084, an error tracker**
+  (the order, *Now*). ADR-084's branch first takes `typescript-eslint`
+  8.72.1 and `@aws-sdk/client-s3` 3.1157.0, published on 26 October and
+  too new for ADR-083's.
 - `@mui/codemod@9.5.0`'s command crashes on yargs 18, which could be
   reported to MUI.
 - **From #231.** `e2e/text-size.spec.ts` still opens every screen in one
