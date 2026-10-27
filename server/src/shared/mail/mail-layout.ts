@@ -191,16 +191,18 @@ function textOf(block: MailBlock, locale: Locale): string | null {
 }
 
 function htmlOf(subject: string, locale: Locale, blocks: MailBlock[]): string {
+  const rows = blocks.map((block) => blockHtml(block, locale));
   const button = blocks.find((block) => block.kind === 'button');
-  const rows = [
-    ...blocks
-      .filter((block) => block.kind !== 'footer')
-      .map((block) => blockHtml(block, locale)),
-    ...(button ? [addressLine(button.href, locale)] : []),
-    ...blocks
-      .filter((block) => block.kind === 'footer')
-      .map((block) => blockHtml(block, locale)),
-  ];
+  if (button) {
+    // Last, or before the first footer, every block keeping its place: the
+    // text part has them in the same order.
+    const footer = blocks.findIndex((block) => block.kind === 'footer');
+    rows.splice(
+      footer === -1 ? rows.length : footer,
+      0,
+      addressLine(button.href, locale),
+    );
+  }
   const lang = escapeHtml(locale);
   const label = escapeHtml(subject);
 

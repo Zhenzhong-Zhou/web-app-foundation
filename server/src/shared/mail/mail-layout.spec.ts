@@ -158,6 +158,19 @@ describe('writeMail', () => {
     expect(html).toContain('From Chen Jie</strong><br>Hi.');
   });
 
+  it('keeps every block in its place in both parts, a footer that is not last too', () => {
+    const { html, text } = email({
+      blocks: [
+        { kind: 'paragraph', text: 'First.' },
+        { kind: 'footer', text: 'Between.' },
+        { kind: 'paragraph', text: 'Last.' },
+      ],
+    });
+
+    expect(text).toBe('First.\n\nBetween.\n\nLast.');
+    expectInOrder(bodyOf(html), ['First.', 'Between.', 'Last.']);
+  });
+
   it('greets the reader by name in the email’s language', () => {
     const blocks: MailBlock[] = [{ kind: 'greeting', name: 'Mei Lin' }];
 
