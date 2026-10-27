@@ -32,7 +32,7 @@ import {
   users,
 } from '../../database/schema';
 import { t } from '../../i18n/translate';
-import type { Mail } from '../../shared/mail/mail.service';
+import type { MailContent } from '../../shared/mail/mail-layout';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { holdsOwner } from '../authorization/owner';
 import { FILE_STORAGE, type FileStorage, keyOf } from '../files/file-storage';
@@ -570,7 +570,7 @@ export class OrganizationDeletionService {
   private async tell(
     members: Member[],
     actor: RequestContext | undefined,
-    build: (mail: DeletionMailContext, member: Member) => Mail,
+    build: (mail: DeletionMailContext, member: Member) => MailContent,
   ): Promise<void> {
     // A few at a time: one by one, a slow mail provider and a large team
     // could hold the request past the host's timeout, after the deletion

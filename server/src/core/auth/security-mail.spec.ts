@@ -1,3 +1,4 @@
+import { writeMail } from '../../shared/mail/mail-layout';
 import { buildSecurityMail } from './security-mail';
 
 const CONTEXT = {
@@ -15,10 +16,12 @@ const CONTEXT = {
  */
 describe('buildSecurityMail', () => {
   it('writes the English as before', () => {
-    const mail = buildSecurityMail('account.password_changed', {
-      ...CONTEXT,
-      locale: 'en',
-    })!;
+    const mail = writeMail(
+      buildSecurityMail('account.password_changed', {
+        ...CONTEXT,
+        locale: 'en',
+      })!,
+    );
 
     expect(mail.subject).toBe('Your password was changed');
     expect(mail.text).toContain('Hi Bob,');
@@ -26,21 +29,25 @@ describe('buildSecurityMail', () => {
     expect(mail.text).toContain(
       'If it was not, reset your password now — that signs out every device: https://app.example.com/forgot-password',
     );
+    // Both links in the sentence, as ADR-037 wants: no button.
     expect(mail.html).toContain(
-      '<a href="https://app.example.com/forgot-password">reset your password</a>',
+      'If it was not, <a class="link" href="https://app.example.com/forgot-password" style="color:#5546B8;text-decoration:underline">reset your password</a> now — that signs out every device. Then <a class="link" href="https://app.example.com/account/sessions" style="color:#5546B8;text-decoration:underline">check which devices are signed in</a>.',
     );
+    expect(mail.html).not.toContain('class="button"');
   });
 
   it('writes the same mail in the recipient’s language, links intact', () => {
-    const mail = buildSecurityMail('account.password_changed', {
-      ...CONTEXT,
-      locale: 'fr-CA',
-    })!;
+    const mail = writeMail(
+      buildSecurityMail('account.password_changed', {
+        ...CONTEXT,
+        locale: 'fr-CA',
+      })!,
+    );
 
     expect(mail.subject).toBe('Votre mot de passe a été changé');
     expect(mail.text).toContain('Bonjour Bob,');
     expect(mail.html).toContain(
-      '<a href="https://app.example.com/forgot-password">réinitialisez votre mot de passe</a>',
+      'Sinon, <a class="link" href="https://app.example.com/forgot-password" style="color:#5546B8;text-decoration:underline">réinitialisez votre mot de passe</a> maintenant',
     );
     expect(mail.text).not.toContain('If this was you');
   });

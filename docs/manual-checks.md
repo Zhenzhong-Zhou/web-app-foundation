@@ -2357,22 +2357,21 @@ private window.
   the API: it asks for the mark as it starts, and its log says The mail
   mark answers. With Mailpit open, ask for a reset on Forgot your
   password: the email opens with the P on its small navy plate and
-  Panivo in bold beside it, a thin line under both, then Hi and the name,
-  every sentence as before. In Mailpit's Text tab, Panivo is the first
-  line, with a blank line under it. The same header opens the
-  confirm-your-email email (MC-101), the new sign-in email (sign in from a
-  private window), the deletion emails (MC-2302, MC-2402) and the
-  operator's (MC-3107). An invitation (MC-3001) has none: it still opens
+  Panivo in bold beside it, a thin line under both, then the subject,
+  Reset your password, as its heading, larger, then Hi and the name; the
+  rest is section 37's layout (MC-3701). In Mailpit's Text tab, Panivo is
+  the first line, with a blank line under it, then Hi and the name: no
+  heading. The same header and heading open the confirm-your-email email
+  (MC-101), the new sign-in email (sign in from a private window), the
+  deletion emails (MC-2302, MC-2402) and the operator's (MC-3107), each
+  under its own subject. An invitation (MC-3001) has none: it still opens
   with Join and the organization's name, and names Panivo only in its last
   line. Stop the client and restart the API: the log says the mark does
   not answer, and the next reset email opens with Panivo alone, no image
-  and no empty box beside it. Start the client again: within ten minutes
-  the log says the mark answers, and the next email shows it. On the live
-  site, with a phone's mail app in dark mode if one is to hand, ask for a
-  reset for your own address: the plate stands clear on the dark
-  background and Panivo reads light, not navy; with the mail app blocking
-  images, an empty box stands where the mark was and Panivo still heads
-  the email.
+  and no empty box beside it, the heading under it as before. Start the
+  client again: within ten minutes the log says the mark answers, and the
+  next email shows it. Mail apps, light and dark, images on and off:
+  MC-3705 and MC-3706.
 - **MC-3504** A link pasted into a chat. On the live site, once Render
   has `VITE_SITE_URL` (`render.md`), paste the site's address into a chat
   that shows previews (Slack, Teams, Discord, iMessage; WeChat makes its
@@ -2618,6 +2617,84 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
   at least 128 pixels on each side. Use a wide image as the main logo. In
   中文, 品牌, with 标志, 方形标志 and 保存品牌设置 in bold, and the line
   方形标志必须接近正方形，长宽比不超过 5 : 4，且每边至少需要 128 像素。较宽的图片请用作主标志。
+
+## 37. The emails (ADR-083)
+
+One layout for every email, from blocks (`server/src/shared/mail/`). The
+product's emails open with the header (MC-3503) and their subject as a
+heading; Confirm your email address and Reset your password are buttons,
+with the address to copy last, in small print. No word changes, and each
+email's text part is as it was, character for character
+(`mail-samples.spec.ts` holds every one). With Mailpit open and
+`npm run dev` running in `client/`, which serves the mark,
+`npm run mail:preview -- --send` in `server/` puts every email into
+Mailpit at once, in each language it is sent in, to
+`mei.lin@example.com`; the checks in Mailpit start there. On the live
+site, a handful of emails, not all of them: Resend's free plan sends 100
+a day.
+
+- **MC-3701** Each product email in Mailpit, in English: the header, the
+  subject as its heading, Hi Mei Lin, then the email's sentences. Confirm
+  your email address and Reset your password each have one purple button,
+  white words on it, under Hi, then the sentence on when the link expires,
+  and last, in smaller grey type, If the button doesn't open, copy this
+  address into your browser: and the address. No other email has a
+  button. The security emails keep their two links inside If it was
+  not, …, underlined in purple; their When, Browser and IP address in two
+  columns, the labels grey; and We will never ask for your password by
+  email. last, in grey. A deletion email ends with the app's address,
+  written out as its link. The operator's, Northside Naturals was set up,
+  has no Hi. In 中文 and Français the same, in their words, the Chinese
+  in the system's Chinese font, never boxes.
+- **MC-3702** The preview line. In Mailpit's list, under each subject, the
+  email's first sentence after Hi: You asked for your account to be
+  deleted. for the account's deletion, Your account was signed in to from
+  a browser it has not used before. for a new sign-in, the button's words
+  for confirm and reset, and the operator's first sentence; nothing after
+  it. Never Panivo Hi Mei Lin,.
+- **MC-3703** Mailpit's HTML Check. On the reset email's HTML Check tab,
+  about 92 % supported. The rows only partly supported are the extras an
+  email does without, each with an inline style that holds where it is
+  dropped: `@media` (a phone's button and a dark mail app's colours),
+  `<style>`, `word-break`, `border-radius`, `<body>`. A new row, or the
+  score under 90 %, is a change to look at.
+- **MC-3704** On a phone. In Mailpit's HTML tab at its phone size, or
+  `tmp/mail-preview/` in a browser 375 px wide: the column fills the
+  width, 16 px in from each side; the button the column's full width; the
+  address in the last line breaking within the column, nothing scrolling
+  sideways. Wider than 600 px, the column stops growing, centred, and the
+  button keeps its own width.
+- **MC-3705** Apple Mail, light and dark. From the live site, ask for a
+  reset for your own address, and sign in from a new browser for a
+  security email. In Apple Mail on a Mac with the system in Dark, and on
+  an iPhone in dark mode: the page and the words in the mail app's dark
+  colours; the plate clear on the dark background and Panivo light, not
+  navy; the button light purple with dark words; the security email's two
+  links light purple; the small print a lighter grey, readable; the line
+  under the header dark grey, not glaring. In light mode, purple and grey
+  on white. With remote images blocked (Mail's Privacy settings, or Load
+  Remote Images off on the iPhone): no mark, or an empty box where it was,
+  and Panivo still heads the email.
+- **MC-3706** Gmail and Outlook.com. The same two emails to a Gmail
+  address and an Outlook.com one: in Gmail on the web, Gmail's phone app
+  and Outlook.com, the header, heading, button and address line in that
+  order, at the column's width, and the inbox's preview line as MC-3702.
+  In each one's dark mode, the button and the links readable (Gmail's app
+  turns colours its own way: look at what it does). Images off: Panivo
+  still heads the email.
+- **MC-3707** VoiceOver in Gmail on the web. In Safari, open one email:
+  moving into it, VoiceOver names it an email, by its subject, and reads
+  it as one, not run into Gmail's page around it; inside it, the rotor's
+  Headings has its subject first; the mark is passed over in silence.
+- **MC-3708** The Text tab. In Mailpit's Text tab, each email as before
+  the layout: Panivo, a blank line, Hi and the name; Confirm your email
+  address: with its colon and the address on the line under it; no
+  heading, no If the button doesn't open line, and no preview line.
+- **MC-3709** QQ Mail. Where a QQ Mail address is to hand, with the
+  account's language 中文 on the live site, ask for a reset to it and open
+  it in QQ Mail's web view: the header, heading, button and address line
+  in order, the Chinese in the system's Chinese font, the button
+  readable.
 
 ## Regressions
 

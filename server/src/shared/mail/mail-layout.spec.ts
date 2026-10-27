@@ -343,3 +343,26 @@ describe('every email', async () => {
     },
   );
 });
+
+/** Buttons only where the action already has words (ADR-083). */
+describe('the buttons', async () => {
+  const samples = await mailSamples();
+
+  it('are to confirm an address and reset a password, one to an email, in every language', () => {
+    const buttoned = samples.filter(({ mail }) =>
+      mail.html.includes('class="button"'),
+    );
+
+    expect(buttoned.map(({ name, locale }) => `${name}.${locale}`)).toEqual([
+      'confirm-email.en',
+      'confirm-email.fr-CA',
+      'confirm-email.zh-Hans',
+      'reset-password.en',
+      'reset-password.fr-CA',
+      'reset-password.zh-Hans',
+    ]);
+    for (const { mail } of buttoned) {
+      expect(mail.html.match(/class="button"/g)).toHaveLength(1);
+    }
+  });
+});

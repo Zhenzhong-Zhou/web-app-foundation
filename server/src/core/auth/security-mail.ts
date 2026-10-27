@@ -3,8 +3,7 @@ import { UAParser } from 'ua-parser-js';
 import type { Locale } from '../../common/locales';
 import type { AccountEventAction } from '../../database/schema';
 import { t, type Translatable, translate } from '../../i18n/translate';
-import { escapeHtml } from '../../shared/mail/escape-html';
-import type { Mail } from '../../shared/mail/mail.service';
+import type { MailContent, Run } from '../../shared/mail/mail-layout';
 
 interface SecurityMailContext {
   /** The recipient's language, else the request's (ADR-054). */
@@ -104,7 +103,7 @@ function describeBrowser(
 export function buildSecurityMail(
   action: AccountEventAction,
   context: SecurityMailContext,
-): Mail | null {
+): MailContent | null {
   const copy = COPY[action];
   if (!copy) return null;
 
@@ -119,7 +118,7 @@ export function buildSecurityMail(
           timeZone: 'UTC',
         }).format(context.at);
 
-  const details = [
+  const details: [string, string][] = [
     [say(t({ id: 'mail.security.when', defaultMessage: 'When' })), when],
     [
       say(t({ id: 'mail.security.browser', defaultMessage: 'Browser' })),
@@ -135,80 +134,102 @@ export function buildSecurityMail(
   const reset = `${context.clientUrl}/forgot-password`;
   const sessions = `${context.clientUrl}/account/sessions`;
 
-  const text = [
-    say(
-      t(
-        { id: 'mail.hi', defaultMessage: 'Hi {name},' },
-        { name: context.name },
+  // The HTML's sentence, with its two links wherever its language puts
+  // them: each placeholder given a marker, and the sentence split there.
+  const links: Record<string, Run> = {
+    reset: {
+      text: say(
+        t({
+          id: 'mail.security.resetLink',
+          defaultMessage: 'reset your password',
+        }),
       ),
-    ),
-    '',
-    say(copy.happened),
-    '',
-    ...details.map(([label, value]) => `${label}: ${value}`),
-    '',
-    say(
-      t({
-        id: 'mail.security.wasYou',
-        defaultMessage: 'If this was you, there is nothing to do.',
-      }),
-    ),
-    '',
-    say(
-      t(
-        {
-          id: 'mail.security.notYou',
-          defaultMessage:
-            'If it was not, reset your password now — that signs out every device: {link}',
-        },
-        { link: reset },
+      href: reset,
+    },
+    sessions: {
+      text: say(
+        t({
+          id: 'mail.security.sessionsLink',
+          defaultMessage: 'check which devices are signed in',
+        }),
       ),
+      href: sessions,
+    },
+  };
+  const notYou = say(
+    t(
+      {
+        id: 'mail.security.notYouHtml',
+        defaultMessage:
+          'If it was not, {resetLink} now — that signs out every device. Then {sessionsLink}.',
+      },
+      { resetLink: '\u0000reset\u0000', sessionsLink: '\u0000sessions\u0000' },
     ),
-    say(
-      t(
-        {
-          id: 'mail.security.checkDevices',
-          defaultMessage: 'Then check which devices are signed in: {link}',
-        },
-        { link: sessions },
-      ),
-    ),
-    '',
-    say(
-      t({
-        id: 'mail.security.neverAsk',
-        defaultMessage: 'We will never ask for your password by email.',
-      }),
-    ),
-  ].join('\n');
+  )
+    .split('\u0000')
+    .map((part, index) => (index % 2 === 0 ? part : links[part]));
 
-  const cell = 'padding:4px 12px 4px 0';
-
-  const html = [
-    `<p>${say(t({ id: 'mail.hi', defaultMessage: 'Hi {name},' }, { name: escapeHtml(context.name) }))}</p>`,
-    `<p>${say(copy.happened)}</p>`,
-    '<table style="border-collapse:collapse">',
-    ...details.map(
-      ([label, value]) =>
-        `<tr><td style="${cell};color:#666">${label}</td><td style="${cell}">${escapeHtml(value)}</td></tr>`,
-    ),
-    '</table>',
-    `<p>${say(t({ id: 'mail.security.wasYou', defaultMessage: 'If this was you, there is nothing to do.' }))}</p>`,
-    `<p>${say(
-      t(
-        {
-          id: 'mail.security.notYouHtml',
-          defaultMessage:
-            'If it was not, {resetLink} now — that signs out every device. Then {sessionsLink}.',
-        },
-        {
-          resetLink: `<a href="${reset}">${say(t({ id: 'mail.security.resetLink', defaultMessage: 'reset your password' }))}</a>`,
-          sessionsLink: `<a href="${sessions}">${say(t({ id: 'mail.security.sessionsLink', defaultMessage: 'check which devices are signed in' }))}</a>`,
-        },
-      ),
-    )}</p>`,
-    `<p style="color:#666">${say(t({ id: 'mail.security.neverAsk', defaultMessage: 'We will never ask for your password by email.' }))}</p>`,
-  ].join('\n');
-
-  return { to: context.to, subject: say(copy.subject), text, html };
+  return {
+    to: context.to,
+    subject: say(copy.subject),
+    locale: context.locale,
+    blocks: [
+      {
+        kind: 'greeting',
+        text: say(
+          t(
+            { id: 'mail.hi', defaultMessage: 'Hi {name},' },
+            { name: context.name },
+          ),
+        ),
+      },
+      { kind: 'paragraph', text: say(copy.happened) },
+      { kind: 'details', rows: details },
+      {
+        kind: 'paragraph',
+        text: say(
+          t({
+            id: 'mail.security.wasYou',
+            defaultMessage: 'If this was you, there is nothing to do.',
+          }),
+        ),
+      },
+      {
+        kind: 'paragraph',
+        text: notYou,
+        // The text part writes each address out, a line to each.
+        plain: [
+          say(
+            t(
+              {
+                id: 'mail.security.notYou',
+                defaultMessage:
+                  'If it was not, reset your password now — that signs out every device: {link}',
+              },
+              { link: reset },
+            ),
+          ),
+          say(
+            t(
+              {
+                id: 'mail.security.checkDevices',
+                defaultMessage:
+                  'Then check which devices are signed in: {link}',
+              },
+              { link: sessions },
+            ),
+          ),
+        ].join('\n'),
+      },
+      {
+        kind: 'small',
+        text: say(
+          t({
+            id: 'mail.security.neverAsk',
+            defaultMessage: 'We will never ask for your password by email.',
+          }),
+        ),
+      },
+    ],
+  };
 }

@@ -9,6 +9,7 @@ import {
   MailBrand,
   type MarkCheck,
 } from './mail-brand';
+import type { MailContent } from './mail-layout';
 
 /** The footer names who sends it, and never shows an address (ADR-077). */
 describe('appNameOf', () => {
@@ -25,14 +26,27 @@ describe('appNameOf', () => {
   });
 });
 
-/** The header the product's emails open with (ADR-082). */
+/**
+ * Each row of the email's column, in order: what a block wrote (ADR-083).
+ * A row ends its line; a table inside one does not.
+ */
+function rowsOf(html: string): string[] {
+  return [...html.matchAll(/<td class="column"[^>]*>(.*?)<\/td><\/tr>\n/g)].map(
+    ([, row]) => row,
+  );
+}
+
+/**
+ * The header the product's emails open with (ADR-082), then each one's
+ * subject as its heading (ADR-083).
+ */
 describe('MailBrand', () => {
   const MARK = 'https://app.example.com/brand/mail-mark.png';
-  const MAIL = {
+  const MAIL: MailContent = {
     to: 'mei.lin@example.com',
     subject: 'Confirm your email address',
-    text: 'Hi Mei Lin,',
-    html: '<p>Hi Mei Lin,</p>',
+    locale: 'en',
+    blocks: [{ kind: 'greeting', text: 'Hi Mei Lin,' }],
   };
 
   const transport = { send: vi.fn(() => Promise.resolve()) };
@@ -56,31 +70,35 @@ describe('MailBrand', () => {
     vi.useRealTimers();
   });
 
-  it('opens with the mark from CLIENT_URL and the name beside it, once the mark answers', async () => {
+  it('opens with the mark from CLIENT_URL and the name beside it, once the mark answers, then the subject', async () => {
     const panivo = brand('Panivo <no-reply@example.com>');
     await panivo.check();
-    const mail = panivo.withHeader(MAIL);
+    const mail = panivo.write(MAIL);
+    const [header, heading, greeting] = rowsOf(mail.html);
 
-    expect(mail.html).toMatch(/^<table role="presentation"/);
-    expect(mail.html).toContain(
+    expect(header).toMatch(/^<table role="presentation"/);
+    expect(header).toContain(
       `<img src="${MARK}" width="28" height="28" alt=""`,
     );
-    expect(mail.html).toContain('>Panivo</td>');
-    expect(mail.html.endsWith('\n<p>Hi Mei Lin,</p>')).toBe(true);
+    expect(header).toContain('>Panivo</td>');
+    expect(heading).toMatch(/^<h1 [^>]*>Confirm your email address<\/h1>$/);
+    expect(greeting).toBe('<p style="margin:0">Hi Mei Lin,</p>');
     expect(mail.text).toBe('Panivo\n\nHi Mei Lin,');
     expect(mail.subject).toBe(MAIL.subject);
+    expect(mail.html).toMatch(/^<!doctype html>\n<html lang="en"/);
   });
 
   it('opens with the name alone while the mark does not answer', async () => {
     const check = vi.fn<MarkCheck>(() => Promise.resolve(false));
     const panivo = brand('Panivo <no-reply@example.com>', check);
     await panivo.check();
-    const mail = panivo.withHeader(MAIL);
+    const mail = panivo.write(MAIL);
+    const [header] = rowsOf(mail.html);
 
     expect(check).toHaveBeenCalledWith(MARK);
-    expect(mail.html).toMatch(/^<table role="presentation"/);
+    expect(header).toMatch(/^<table role="presentation"/);
     expect(mail.html).not.toContain('<img');
-    expect(mail.html).toContain('>Panivo</td>');
+    expect(header).toContain('>Panivo</td>');
     expect(mail.text).toBe('Panivo\n\nHi Mei Lin,');
   });
 
@@ -102,7 +120,7 @@ describe('MailBrand', () => {
       started = true;
     });
     expect(check).toHaveBeenCalledTimes(1);
-    expect(panivo.withHeader(MAIL).html).not.toContain('<img');
+    expect(panivo.write(MAIL).html).not.toContain('<img');
     await vi.advanceTimersByTimeAsync(0);
     expect(started).toBe(false);
     answer(false);
@@ -113,7 +131,7 @@ describe('MailBrand', () => {
     expect(check).toHaveBeenCalledTimes(2);
     answer(true);
     await vi.advanceTimersByTimeAsync(0);
-    expect(panivo.withHeader(MAIL).html).toContain('<img');
+    expect(panivo.write(MAIL).html).toContain('<img');
 
     // Answered: no more checks.
     await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
@@ -147,13 +165,11 @@ describe('MailBrand', () => {
 
     await panivo.send(MAIL);
 
-    expect(transport.send).toHaveBeenCalledWith(panivo.withHeader(MAIL));
+    expect(transport.send).toHaveBeenCalledWith(panivo.write(MAIL));
   });
 
   it('escapes the name, set by whoever deploys it', () => {
-    const { html } = brand('Tools & Co <no-reply@example.com>').withHeader(
-      MAIL,
-    );
+    const { html } = brand('Tools & Co <no-reply@example.com>').write(MAIL);
 
     expect(html).toContain('>Tools &amp; Co</td>');
   });
@@ -166,13 +182,16 @@ describe('MailBrand', () => {
     );
     await panivo.check();
 
-    expect(panivo.withHeader(MAIL).html).toContain(
+    expect(panivo.write(MAIL).html).toContain(
       '<img src="https://app.example.com/?a=&quot;1&quot;&amp;b=2/brand/mail-mark.png"',
     );
   });
 
-  it('leaves the email as it is when MAIL_FROM names no one', () => {
-    expect(brand('no-reply@example.com').withHeader(MAIL)).toEqual(MAIL);
+  it('opens with the subject when MAIL_FROM names no one', () => {
+    const mail = brand('no-reply@example.com').write(MAIL);
+
+    expect(rowsOf(mail.html)[0]).toMatch(/^<h1 /);
+    expect(mail.text).toBe('Hi Mei Lin,');
   });
 });
 

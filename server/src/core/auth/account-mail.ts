@@ -1,7 +1,6 @@
 import type { Locale } from '../../common/locales';
 import { t, type Translatable, translate } from '../../i18n/translate';
-import { escapeHtml } from '../../shared/mail/escape-html';
-import type { Mail } from '../../shared/mail/mail.service';
+import type { MailContent } from '../../shared/mail/mail-layout';
 
 /** Who the email goes to, in their language (ADR-054), and its token. */
 export interface AccountMailContext {
@@ -13,7 +12,7 @@ export interface AccountMailContext {
 }
 
 /** The link to confirm an address, sent on registration and on a resend. */
-export function verificationMail(context: AccountMailContext): Mail {
+export function verificationMail(context: AccountMailContext): MailContent {
   const link = `${context.clientUrl}/verify-email?token=${context.token}`;
 
   // In the recipient's language (ADR-054); the English is unchanged.
@@ -37,13 +36,27 @@ export function verificationMail(context: AccountMailContext): Mail {
   return {
     to: context.to,
     subject: confirm,
-    text: `${hi(context.name)}\n\n${say(t({ id: 'mail.verify.lead', defaultMessage: 'Confirm your email address:' }))}\n${link}\n\n${expires}`,
-    html: `<p>${hi(escapeHtml(context.name))}</p><p><a href="${link}">${confirm}</a></p><p>${expires}</p>`,
+    locale: context.locale,
+    blocks: [
+      { kind: 'greeting', text: hi(context.name) },
+      {
+        kind: 'button',
+        label: confirm,
+        href: link,
+        lead: say(
+          t({
+            id: 'mail.verify.lead',
+            defaultMessage: 'Confirm your email address:',
+          }),
+        ),
+      },
+      { kind: 'paragraph', text: expires },
+    ],
   };
 }
 
 /** The link to choose a new password, from the forgot-password page. */
-export function passwordResetMail(context: AccountMailContext): Mail {
+export function passwordResetMail(context: AccountMailContext): MailContent {
   const link = `${context.clientUrl}/reset-password?token=${context.token}`;
 
   const say = (message: Translatable) => translate(message, context.locale);
@@ -63,7 +76,18 @@ export function passwordResetMail(context: AccountMailContext): Mail {
   return {
     to: context.to,
     subject: reset,
-    text: `${hi(context.name)}\n\n${say(t({ id: 'mail.reset.lead', defaultMessage: 'Reset your password:' }))}\n${link}\n\n${expires}`,
-    html: `<p>${hi(escapeHtml(context.name))}</p><p><a href="${link}">${reset}</a></p><p>${expires}</p>`,
+    locale: context.locale,
+    blocks: [
+      { kind: 'greeting', text: hi(context.name) },
+      {
+        kind: 'button',
+        label: reset,
+        href: link,
+        lead: say(
+          t({ id: 'mail.reset.lead', defaultMessage: 'Reset your password:' }),
+        ),
+      },
+      { kind: 'paragraph', text: expires },
+    ],
   };
 }

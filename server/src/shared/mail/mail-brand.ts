@@ -7,8 +7,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 import type { Env } from '../../config/env';
-import { escapeHtml } from './escape-html';
 import { type Mail, MailService } from './mail.service';
+import { type MailContent, writeMail } from './mail-layout';
 
 const TEN_MINUTES = 10 * 60 * 1000;
 
@@ -55,8 +55,9 @@ export const answersAsPng: MarkCheck = async (url) => {
  * drawn: Gmail drops an image carried as a `data:` URL. Its `alt` is
  * empty, since the name beside it says the same, so a mail app that blocks
  * images loses nothing. The name takes the mail app's own text colour,
- * which a dark mail app turns light. A table, which every mail app lays
- * out alike, where a flex row would not be.
+ * which a dark mail app turns light. The layout's header block draws it
+ * (ADR-083): a table, which every mail app lays out alike, where a flex
+ * row would not be.
  *
  * The mark is shown only once the server has seen it answer as a PNG, so
  * no email carries a broken image: before the static site has it, as in
@@ -65,8 +66,8 @@ export const answersAsPng: MarkCheck = async (url) => {
  * mark would stand alone.
  *
  * The product's services send through it, never through MailService
- * itself, so none can leave the header out; an invitation, the
- * organization's, goes through MailService.
+ * itself, so none can leave out the header, or its subject as its heading;
+ * an invitation, the organization's, goes through MailService.
  */
 @Injectable()
 export class MailBrand implements OnApplicationShutdown {
@@ -124,25 +125,31 @@ export class MailBrand implements OnApplicationShutdown {
   }
 
   /** Sends one of the product's emails, opening with the header. */
-  send(mail: Mail): Promise<void> {
-    return this.mail.send(this.withHeader(mail));
+  send(content: MailContent): Promise<void> {
+    return this.mail.send(this.write(content));
   }
 
-  /** The product's email, opening with the header; its text with the name. */
-  withHeader(mail: Mail): Mail {
-    if (!this.name) return mail;
-
-    const cell =
-      'padding:0 0 16px;border-bottom:1px solid #EEF0F4;vertical-align:middle';
-    const mark = this.markServed
-      ? `<td style="${cell};padding-right:10px"><img src="${escapeHtml(this.mark)}" width="28" height="28" alt="" style="display:block;border:0"></td>`
-      : '';
-    const header = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:16px"><tr>${mark}<td width="100%" style="${cell};font-size:20px;font-weight:700;line-height:28px">${escapeHtml(this.name)}</td></tr></table>`;
-
-    return {
-      ...mail,
-      text: `${this.name}\n\n${mail.text}`,
-      html: `${header}\n${mail.html}`,
-    };
+  /**
+   * The product's email written (ADR-083): the header, then its subject as
+   * its heading, in the HTML part only, then its own blocks. The text part
+   * opens with the name.
+   */
+  write(content: MailContent): Mail {
+    return writeMail({
+      ...content,
+      blocks: [
+        ...(this.name
+          ? [
+              {
+                kind: 'header' as const,
+                name: this.name,
+                mark: this.markServed ? this.mark : null,
+              },
+            ]
+          : []),
+        { kind: 'heading', text: content.subject, htmlOnly: true },
+        ...content.blocks,
+      ],
+    });
   }
 }

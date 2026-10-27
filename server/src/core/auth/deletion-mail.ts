@@ -1,7 +1,6 @@
 import type { Locale } from '../../common/locales';
 import { t, type Translatable, translate } from '../../i18n/translate';
-import { escapeHtml } from '../../shared/mail/escape-html';
-import type { Mail } from '../../shared/mail/mail.service';
+import type { MailContent } from '../../shared/mail/mail-layout';
 
 /** Who the email goes to, in their language (ADR-054). */
 export interface DeletionMailContext {
@@ -24,34 +23,38 @@ export function dayOf(day: string, locale: Locale): string {
 }
 
 /**
- * One email from paragraphs. Each paragraph is plain text in the text part
- * and escaped in the HTML part; the link, the account page unless another
- * is given, is written out in the text and linked in the HTML.
+ * One email from paragraphs: the greeting, the paragraphs, then the link,
+ * the account page unless another is given, written out as its own words
+ * (ADR-083). A notice informs; what it mentions is done in the app.
  */
 export function compose(
   context: DeletionMailContext,
   subject: Translatable,
   paragraphs: Translatable[],
   path = '/account',
-): Mail {
+): MailContent {
   const say = (message: Translatable) => translate(message, context.locale);
-  const greeting = say(
-    t({ id: 'mail.hi', defaultMessage: 'Hi {name},' }, { name: context.name }),
-  );
-  const link = `${context.clientUrl}${path}`;
-  const lines = paragraphs.map(say);
 
-  const text = [greeting, '', ...lines.flatMap((line) => [line, '']), link]
-    .join('\n')
-    .trimEnd();
-
-  const html = [
-    `<p>${escapeHtml(greeting)}</p>`,
-    ...lines.map((line) => `<p>${escapeHtml(line)}</p>`),
-    `<p><a href="${link}">${escapeHtml(link)}</a></p>`,
-  ].join('\n');
-
-  return { to: context.to, subject: say(subject), text, html };
+  return {
+    to: context.to,
+    subject: say(subject),
+    locale: context.locale,
+    blocks: [
+      {
+        kind: 'greeting',
+        text: say(
+          t(
+            { id: 'mail.hi', defaultMessage: 'Hi {name},' },
+            { name: context.name },
+          ),
+        ),
+      },
+      ...paragraphs.map(
+        (paragraph) => ({ kind: 'paragraph', text: say(paragraph) }) as const,
+      ),
+      { kind: 'link', href: `${context.clientUrl}${path}` },
+    ],
+  };
 }
 
 /**
@@ -61,7 +64,7 @@ export function compose(
 export function deletionScheduledMail(
   context: DeletionMailContext,
   day: string,
-): Mail {
+): MailContent {
   const date = dayOf(day, context.locale);
   return compose(
     context,
@@ -96,7 +99,9 @@ export function deletionScheduledMail(
 }
 
 /** The deletion was cancelled. */
-export function deletionCancelledMail(context: DeletionMailContext): Mail {
+export function deletionCancelledMail(
+  context: DeletionMailContext,
+): MailContent {
   return compose(
     context,
     t({
@@ -120,7 +125,7 @@ export function deletionCancelledMail(context: DeletionMailContext): Mail {
 export function deletionBlockedMail(
   context: DeletionMailContext,
   refusal: Translatable,
-): Mail {
+): MailContent {
   return compose(
     context,
     t({

@@ -27,6 +27,7 @@ import { invitationMail } from '../../core/invitations/invitation-mail';
 import { organizationStartedMail } from '../../core/invitations/operator-mail';
 import type { Mail, MailService } from './mail.service';
 import { MailBrand } from './mail-brand';
+import type { MailContent } from './mail-layout';
 
 /** One email in one language, as the preview writes it and the proof reads it. */
 export interface MailSample {
@@ -75,8 +76,8 @@ export async function mailSamples(): Promise<MailSample[]> {
   await brand.check();
 
   /** The product's email as MailBrand.send passes it on. */
-  const branded = async (mail: Mail | null): Promise<Mail> => {
-    await brand.send(mail!);
+  const branded = async (content: MailContent | null): Promise<Mail> => {
+    await brand.send(content!);
     return sent.pop()!;
   };
 

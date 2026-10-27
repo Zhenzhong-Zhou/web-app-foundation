@@ -20,20 +20,29 @@ export function mailBrandOf(app: INestApplication): {
   return { mark, name };
 }
 
-/** Opens with the header, in the HTML and the text alike. */
+/**
+ * Opens with the header, in the HTML and the text alike, and in the HTML
+ * its subject as its heading straight after (ADR-083).
+ */
 export function expectMailBrand(
   app: INestApplication,
   mail: Mail | undefined,
 ): void {
   const { mark, name } = mailBrandOf(app);
   const html = mail?.html ?? '';
-  const header = html.slice(0, html.indexOf('<p'));
+  // The column's first row, up to the heading.
+  const column = html.slice(html.indexOf('<td class="column"'));
+  const header = column.slice(0, column.indexOf('<h1'));
 
   // First, before anything the email says.
-  expect(header).toMatch(/^<table role="presentation"/);
+  expect(header).toMatch(/^<td class="column"[^>]*><table role="presentation"/);
   expect(header).toContain(
     `<img src="${escapeHtml(mark)}" width="28" height="28" alt=""`,
   );
   expect(header).toContain(`>${escapeHtml(name)}</td>`);
+  expect(header).not.toContain('<p');
+  expect(/<h1 [^>]*>(.*?)<\/h1>/.exec(column)?.[1]).toBe(
+    escapeHtml(mail?.subject ?? ''),
+  );
   expect(mail?.text.startsWith(`${name}\n\n`)).toBe(true);
 }
