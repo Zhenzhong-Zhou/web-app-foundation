@@ -208,13 +208,14 @@ describe('writeMail', () => {
     ).toBe(true);
   });
 
-  it('puts the address under a button in small print last, before the footer, in the HTML alone', () => {
+  it('puts the address under a button in small print last, before the footer, in the HTML alone, as its own link', () => {
     const { html, text } = email({ locale: 'zh-Hans' });
+    const href = LINK.replace('&', '&amp;');
 
     expectInOrder(bodyOf(html), [
       'We will never ask',
       '>https://app.example.com/account</a>',
-      `<p class="muted" style="margin:0;font-size:14px;line-height:1.5;color:#5B6575">按钮打不开时，把这个地址复制到浏览器：<span style="word-break:break-all">${LINK.replace('&', '&amp;')}</span></p>`,
+      `<p class="muted" style="margin:0;font-size:14px;line-height:1.5;color:#5B6575">按钮打不开时，把这个地址复制到浏览器：<a class="link" href="${href}" style="color:#5546B8;text-decoration:underline;word-break:break-all">${href}</a></p>`,
       'Sent for Northside Naturals by Panivo.',
     ]);
     expect(text).not.toContain('按钮打不开时');

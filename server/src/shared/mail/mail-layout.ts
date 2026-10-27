@@ -282,8 +282,10 @@ function linkHtml(href: string, text: string): string {
 /**
  * The button's address to copy, for a mail app where it does not open, in
  * the HTML part only: the text part already gives the address on a line of
- * its own. The address breaks anywhere, so a long one never widens a
- * phone's column. The catalogue check holds every language to `{link}`.
+ * its own. The address is its own link too, as a deletion notice's is, for
+ * a mail app that draws no button, and breaks anywhere, so a long one never
+ * widens a phone's column. The catalogue check holds every language to
+ * `{link}`.
  */
 function addressLine(href: string, locale: Locale): string {
   const sentence = translate(
@@ -298,7 +300,7 @@ function addressLine(href: string, locale: Locale): string {
     locale,
   );
   const at = sentence.lastIndexOf(href);
-  const address = `<span style="word-break:break-all">${escapeHtml(href)}</span>`;
+  const address = `<a class="link" href="${escapeHtml(href)}" style="${LINK};word-break:break-all">${escapeHtml(href)}</a>`;
   return `<p class="muted" style="margin:0;${SMALL}">${escapeHtml(sentence.slice(0, at))}${address}${escapeHtml(sentence.slice(at + href.length))}</p>`;
 }
 

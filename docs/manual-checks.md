@@ -2639,7 +2639,8 @@ a day.
   your email address and Reset your password each have one purple button,
   white words on it, under Hi, then the sentence on when the link expires,
   and last, in smaller grey type, If the button doesn't open, copy this
-  address into your browser: and the address. No other product email has
+  address into your browser: and the address, underlined in purple, a
+  link to the page the button opens. No other product email has
   a button; the invitation's is MC-3710. The security emails keep their two links inside If it was
   not, …, underlined in purple; their When, Browser and IP address in two
   columns, the labels grey; and We will never ask for your password by
@@ -2663,20 +2664,21 @@ a day.
 - **MC-3704** On a phone. In Mailpit's HTML tab at its phone size, or
   `tmp/mail-preview/` in a browser 375 px wide: the column fills the
   width, 16 px in from each side; the button the column's full width; the
-  address in the last line breaking within the column, nothing scrolling
-  sideways. Wider than 600 px, the column stops growing, centred, and the
-  button keeps its own width.
+  address in the last line, a link, breaking within the column, nothing
+  scrolling sideways. Wider than 600 px, the column stops growing,
+  centred, and the button keeps its own width.
 - **MC-3705** Apple Mail, light and dark. From the live site, ask for a
   reset for your own address, and sign in from a new browser for a
   security email. In Apple Mail on a Mac with the system in Dark, and on
   an iPhone in dark mode: the page and the words in the mail app's dark
   colours; the plate clear on the dark background and Panivo light, not
   navy; the button light purple with dark words; the security email's two
-  links light purple; the small print a lighter grey, readable; the line
-  under the header dark grey, not glaring. In light mode, purple and grey
-  on white. With remote images blocked (Mail's Privacy settings, or Load
-  Remote Images off on the iPhone): no mark, or an empty box where it was,
-  and Panivo still heads the email.
+  links, and the address under the reset email's button, light purple;
+  the small print a lighter grey, readable; the line under the header
+  dark grey, not glaring. In light mode, purple and grey on white. With
+  remote images blocked (Mail's Privacy settings, or Load Remote Images
+  off on the iPhone): no mark, or an empty box where it was, and Panivo
+  still heads the email.
 - **MC-3706** Gmail and Outlook.com. The same two emails to a Gmail
   address and an Outlook.com one: in Gmail on the web, Gmail's phone app
   and Outlook.com, the header, heading, button and address line in that
@@ -2704,15 +2706,16 @@ a day.
   From Chen Jie in bold over its two lines; the purple button, Accept the
   invitation; the sentence on when the link works until, then Not
   expecting this? …; in smaller grey type, If the button doesn't open,
-  copy this address into your browser: and the address; and last, under a
-  thin line, Sent for Northside Naturals by Panivo., small and grey. In
-  Mailpit's list, its preview line is Chen Jie's sentence, nothing after
-  it. In 中文 the same, 加入 Northside Naturals, the box headed 来自 Chen
-  Jie 的留言, the button 接受邀请. On a phone, as MC-3704: the button the
-  column's width, the box within the column, the address breaking inside
-  it. In the Text tab, as before: Join Northside Naturals first, Accept the
-  invitation with the address on the line under it and no colon, and no If
-  the button doesn't open line.
+  copy this address into your browser: and the address, underlined in
+  purple, a link to the invitation page; and last, under a thin line, Sent
+  for Northside Naturals by Panivo., small and grey. In Mailpit's list, its
+  preview line is Chen Jie's sentence, nothing after it. In 中文 the same,
+  加入 Northside Naturals, the box headed 来自 Chen Jie 的留言, the button
+  接受邀请. On a phone, as MC-3704: the button the column's width, the box
+  within the column, the address breaking inside it. In the Text tab, as
+  before: Join Northside Naturals first, Accept the invitation with the
+  address on the line under it and no colon, and no If the button doesn't
+  open line.
 - **MC-3711** A reply reaches the inviter. In Mailpit, MC-3001's
   invitation names the demo Owner's address as its Reply-To, and so does a
   Resend of it from Invited; MC-3017's, resent once Sarah Chen has left,
