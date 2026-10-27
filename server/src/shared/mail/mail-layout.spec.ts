@@ -1,3 +1,5 @@
+import { verificationMail } from '../../core/auth/account-mail';
+import { invitationMail } from '../../core/invitations/invitation-mail';
 import { type MailBlock, type MailContent, writeMail } from './mail-layout';
 import { mailSamples } from './mail-samples';
 
@@ -278,22 +280,17 @@ describe('writeMail', () => {
     );
   });
 
-  it('opens its body with the preheader: the first sentence after the greeting, padded', () => {
+  it('opens its body with the preheader: the first paragraph after the greeting, whole, padded', () => {
     const { html } = email();
 
-    expect(preheaderOf(html)).toBe('Your account is ready.');
+    expect(preheaderOf(html)).toBe('Your account is ready. One step is left.');
     expect(html).toContain(
-      `Your account is ready.${'&#847;&zwnj;&nbsp;'.repeat(90)}</div>`,
+      `Your account is ready. One step is left.${'&#847;&zwnj;&nbsp;'.repeat(90)}</div>`,
     );
     expect(email().text).not.toContain('&#847;');
   });
 
-  it("takes the button's words where it comes first, and the first sentence where there is no greeting", () => {
-    const button = email({
-      blocks: BLOCKS.filter((block) => block.kind !== 'paragraph'),
-    });
-    expect(preheaderOf(button.html)).toBe('Confirm your email address');
-
+  it('takes the first paragraph whole where there is no greeting, in every language', () => {
     const operator = email({
       blocks: [
         { kind: 'header', name: 'Panivo', mark: null },
@@ -304,7 +301,7 @@ describe('writeMail', () => {
       ],
     });
     expect(preheaderOf(operator.html)).toBe(
-      'Chen Jie set up Northside Naturals.',
+      'Chen Jie set up Northside Naturals. They are its Owner.',
     );
 
     const chinese = email({
@@ -317,7 +314,43 @@ describe('writeMail', () => {
         },
       ],
     });
-    expect(preheaderOf(chinese.html)).toBe('您申请删除账户。');
+    expect(preheaderOf(chinese.html)).toBe(
+      '您申请删除账户。账户将在2026年11月25日之后删除。',
+    );
+  });
+
+  it('previews an invitation from Dr. Wang by its whole lead, the name never cut at its full stop', () => {
+    const { html } = invitationMail({
+      locale: 'en',
+      to: 'mei.lin@example.com',
+      inviter: { name: 'Dr. Wang', email: 'wang.li@example.com' },
+      organizationName: 'Northside Naturals',
+      roles: [{ name: 'Admin', description: 'Day-to-day work.' }],
+      system: 'Admin',
+      note: null,
+      timeZone: 'America/Vancouver',
+      lastDay: '2026-11-02',
+      link: 'https://app.example.com/invitation?token=abc',
+      appName: 'Panivo',
+    });
+
+    expect(preheaderOf(html)).toBe(
+      'Dr. Wang (wang.li@example.com) invited you to join as an Admin.',
+    );
+  });
+
+  it("previews confirm by its button's words, which come before its paragraph", () => {
+    const { html } = writeMail(
+      verificationMail({
+        locale: 'en',
+        to: 'mei.lin@example.com',
+        name: 'Mei Lin',
+        clientUrl: 'https://app.example.com',
+        token: 'abc',
+      }),
+    );
+
+    expect(preheaderOf(html)).toBe('Confirm your email address');
   });
 });
 

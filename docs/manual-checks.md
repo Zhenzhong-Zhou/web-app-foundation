@@ -2648,11 +2648,12 @@ a day.
   has no Hi. In 中文 and Français the same, in their words, the Chinese
   in the system's Chinese font, never boxes.
 - **MC-3702** The preview line. In Mailpit's list, under each subject, the
-  email's first sentence after Hi: You asked for your account to be
-  deleted. for the account's deletion, Your account was signed in to from
-  a browser it has not used before. for a new sign-in, the button's words
-  for confirm and reset, and the operator's first sentence; nothing after
-  it. Never Panivo Hi Mei Lin,.
+  email's first paragraph after Hi, whole: You asked for your account to
+  be deleted. It will be deleted after November 25, 2026, … for the
+  account's deletion, Your account was signed in to from a browser it has
+  not used before. for a new sign-in, the button's words for confirm and
+  reset, and the operator's first paragraph; nothing after it. Never
+  Panivo Hi Mei Lin,.
 - **MC-3703** Mailpit's HTML Check. On the reset email's HTML Check tab,
   about 92 % supported. The rows only partly supported are the extras an
   email does without, each with an inline style that holds where it is

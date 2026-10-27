@@ -202,7 +202,7 @@ function htmlOf(subject: string, locale: Locale, blocks: MailBlock[]): string {
     `<!--[if mso]><style>body, table, td, th, p, h1, a, span, strong { font-family: ${OUTLOOK_FONT} !important; }</style><![endif]-->`,
     '</head>',
     '<body style="margin:0;padding:0">',
-    `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${escapeHtml(preheaderOf(blocks, locale))}${PADDING}</div>`,
+    `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${escapeHtml(preheaderOf(blocks))}${PADDING}</div>`,
     // lang and dir again: Gmail drops <html> and its attributes.
     `<div role="article" aria-roledescription="email" aria-label="${label}" lang="${lang}" dir="ltr" style="font-family:${FONT};${BODY}">`,
     '<!--[if mso]><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->',
@@ -303,21 +303,18 @@ function addressLine(href: string, locale: Locale): string {
 }
 
 /**
- * What the inbox's preview shows after the subject: the first sentence
+ * What the inbox's preview shows after the subject: the first paragraph
  * after the greeting, or the email's first where it has none, and a
  * button's words where it comes first. Without it, every inbox would show
- * the header's name and the greeting.
+ * the header's name and the greeting. The paragraph whole, never cut at a
+ * full stop: Dr. Wang's would end at "Dr.".
  */
-function preheaderOf(blocks: MailBlock[], locale: Locale): string {
+function preheaderOf(blocks: MailBlock[]): string {
   const first = blocks.find(
     (block) => block.kind === 'paragraph' || block.kind === 'button',
   );
   if (!first) return '';
-  if (first.kind === 'button') return first.label;
-  const [sentence] = new Intl.Segmenter(locale, {
-    granularity: 'sentence',
-  }).segment(wordsOf(first.text));
-  return sentence?.segment.trim() ?? '';
+  return first.kind === 'button' ? first.label : wordsOf(first.text);
 }
 
 function wordsOf(text: string | Run[]): string {
