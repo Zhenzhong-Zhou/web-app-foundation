@@ -144,6 +144,16 @@ function linksIn(file) {
   return links;
 }
 
+/** The text with every tag gone, in passes until one removes nothing. */
+function withoutTags(text) {
+  let before;
+  do {
+    before = text;
+    text = text.replace(/<\/?[A-Za-z][^<>]*>/g, "");
+  } while (text !== before);
+  return text;
+}
+
 /**
  * A heading's text as GitHub shows it, as far as its anchor can tell. The
  * rule: undo only the markup whose characters anchorOf would keep, which
@@ -153,26 +163,24 @@ function linksIn(file) {
  * written, since GitHub undoes no markup inside it. The shapes are in
  * scripts/fixtures/anchors.md, which markdownlint's MD051 checks too.
  *
- * Every < and > the tags leave goes too, last before the code is put
- * back. One pass of the tag pattern can leave one behind (<<a>b> leaves
- * <b>), which CodeQL reports as incomplete sanitization. anchorOf drops
- * both anyway, so no anchor changes; the pass comes after the `_` step,
- * where an earlier one would change one (x<_y_ is xy, not x_y_).
+ * The tags go in passes until none is left, since one pass can leave a
+ * tag behind (<<a>b> leaves <b>), which CodeQL reports as incomplete
+ * sanitization. A < or > that is no tag's stays, as in "a < b", and
+ * anchorOf drops it.
  */
 function headingText(markdown) {
   const code = [];
-  return markdown
+  const text = markdown
     .replace(CODE_SPAN, (_, ticks, content) => {
       code.push(/^ .*[^ ].* $/.test(content) ? content.slice(1, -1) : content);
       return `\uE000${code.length - 1}\uE001`;
     })
-    .replace(/!?\[([^\]]*)\](?:\([^)]*\)|\[[^\]]*\])/g, "$1")
-    .replace(/<\/?[A-Za-z][^<>]*>/g, "")
+    .replace(/!?\[([^\]]*)\](?:\([^)]*\)|\[[^\]]*\])/g, "$1");
+  return withoutTags(text)
     .replace(
       /(?<![\p{L}\p{N}_])(_+)(?=\S)(.+?)(?<=\S)\1(?![\p{L}\p{N}_])/gu,
       "$2",
     )
-    .replace(/[<>]/g, "")
     .replace(/\uE000(\d+)\uE001/g, (_, index) => code[index]);
 }
 
