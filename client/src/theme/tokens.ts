@@ -18,6 +18,11 @@
 /**
  * What a rebrand changes: the accent (primary buttons, links, the selected
  * tab) and the sidebar's shade.
+ *
+ * The emails keep a copy of the accent, and of its dark version, in
+ * server/src/shared/mail/mail-layout.ts (ADR-083), since the packages
+ * share no code: a change to the accent is made to both, as ADR-082 asks
+ * of the brand's colours.
  */
 export const BRAND = { accent: '#5546B8', rail: 'dark' } as const;
 
@@ -107,7 +112,13 @@ export const MARK_SHAPE = {
   stem: 'M24 12V76A14 14 0 0 0 52 76A87.142857 87.142857 0 0 0 24 12Z',
 } as const;
 
-/** Controls, then panels. Chips are round. */
+/**
+ * Controls, then panels. Chips are round.
+ *
+ * The emails keep a copy of control and panel, the button's corners and
+ * the note's, in server/src/shared/mail/mail-layout.ts: a change to either
+ * is made there too.
+ */
 export const RADIUS = { control: 6, panel: 8, dialog: 10 } as const;
 
 /**
@@ -127,7 +138,13 @@ export function towardWhite(hex: string, weight: number): string {
   return `#${mixed.join('')}`.toUpperCase();
 }
 
-/** How much of the accent dark mode keeps. */
+/**
+ * How much of the accent dark mode keeps.
+ *
+ * The emails keep the dark accent it makes of the default one, #A299D8, in
+ * server/src/shared/mail/mail-layout.ts: a change to the weight is made
+ * there too.
+ */
 export const DARK_ACCENT_WEIGHT = 0.45;
 
 /**
@@ -156,7 +173,12 @@ export function mix(colour: string, ground: string, weight: number): string {
  */
 export const CHOSEN_WEIGHT = 0.06;
 
-/** Text on the accent: white on the light accent, near black on the dark. */
+/**
+ * Text on the accent: white on the light accent, near black on the dark.
+ *
+ * The emails keep a copy of both, in server/src/shared/mail/mail-layout.ts:
+ * a change to either is made there too.
+ */
 export const ON_ACCENT = { light: '#FFFFFF', dark: '#10141A' } as const;
 
 export type ToneName = 'neutral' | 'info' | 'positive' | 'warning' | 'critical';
@@ -198,9 +220,12 @@ export const LIGHT: Scheme = {
   page: '#F6F7F9',
   surface: '#FFFFFF',
   head: '#F6F7F9',
+  /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   border: '#E1E4EA',
+  /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   line: '#EEF0F4',
   text: '#141A24',
+  /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   muted: '#5B6575',
   intents: {
     success: '#1E6B3E',
@@ -224,6 +249,7 @@ export const DARK: Scheme = {
   border: '#2E3440',
   line: '#282E39',
   text: '#E6E9EF',
+  /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   muted: '#A3ACBA',
   intents: {
     success: '#7FD1A0',
