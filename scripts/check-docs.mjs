@@ -20,14 +20,9 @@
  * other kind of file (#L10). Only ATX headings (## Heading) have anchors
  * here; a link to a setext one fails.
  *
- * Every ADR, docs/adr/NNNN-*.md, has a number no other file has, and
- * front matter with its status (accepted, deferred or superseded by an
- * ADR that exists) and its date (YYYY-MM-DD), in any order, and no
- * field but those, amends and amended-by. Its heading's number is its
- * file's. Each ADR its `amends` names exists and lists it in its
- * `amended-by`, and each one its `amended-by` names lists it in its
- * `amends`; both lists are in ascending order. When docs/adr/README.md
- * exists, its index is what scripts/adr-index.mjs would write.
+ * And the ADRs in docs/adr/, by the rules scripts/adr-index.mjs holds:
+ * each one's front matter, heading and amendments, and their index in
+ * docs/adr/README.md current.
  *
  * Prints each failure as `file:line: target — reason` and exits 1, or
  * what it checked and exits 0. scripts/verify.sh and the Docs workflow run
@@ -39,15 +34,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  ADR_FOLDER,
-  README,
-  adrName,
-  listOf,
-  listed,
-  readAdrs,
-  staleIndex,
-} from "./adr-index.mjs";
+import { checkAdrs, frontMatterEnd } from "./adr-index.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -70,10 +57,8 @@ function markdownFiles() {
 function withoutBlocks(text) {
   const lines = text.split("\n");
   let at = 0;
-  if (/^---\s*$/.test(lines[0])) {
-    const end = lines.findIndex((line, i) => i > 0 && /^---\s*$/.test(line));
-    if (end > 0) for (; at <= end; at++) lines[at] = "";
-  }
+  const end = frontMatterEnd(lines);
+  if (end > 0) for (; at <= end; at++) lines[at] = "";
 
   let fence = null;
   for (; at < lines.length; at++) {
@@ -287,157 +272,8 @@ function links(files) {
   };
 }
 
-const STATUS = /^(?:accepted|deferred|superseded by ADR-(\d{3,}))$/;
-
-/** An ADR's front matter fields, in any order. */
-const FIELDS = ["status", "date", "amends", "amended-by"];
-
-/** A YYYY-MM-DD that is a day of the calendar. */
-const isDay = (value) =>
-  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-  new Date(`${value}T00:00:00Z`).toISOString().startsWith(value);
-
-/**
- * Every ADR in docs/adr/ has a number of its own, its status, date and
- * heading, each amendment is in the front matter of both ADRs, and the
- * index is current.
- */
-function adrs() {
-  const found = readAdrs();
-  const byNumber = new Map(found.map((adr) => [adr.number, adr]));
-  const failures = [];
-
-  for (const adr of found) {
-    const name = adrName(adr.number);
-    const fail = (line, what, reason) =>
-      failures.push(`${adr.file}:${line}: ${what} — ${reason}`);
-    const fields = adr.frontMatter ?? {};
-
-    const sharing = found.filter(
-      (other) => other !== adr && other.number === adr.number,
-    );
-    if (sharing.length > 0) {
-      fail(
-        1,
-        name,
-        `also the number of ${sharing.map((other) => other.file).join(", ")}; each ADR has its own`,
-      );
-    }
-
-    if (!adr.frontMatter) {
-      fail(
-        1,
-        "front matter",
-        "none: an ADR opens with its status and date between --- lines",
-      );
-    }
-    for (const { text, line } of adr.malformed) {
-      fail(
-        line,
-        text,
-        "not a field: each line is a name, a colon and its value",
-      );
-    }
-    for (const [field, { value, line }] of Object.entries(fields)) {
-      if (!FIELDS.includes(field)) {
-        fail(
-          line,
-          `${field}: ${value}`,
-          `not a field an ADR has: ${FIELDS.join(", ")}`,
-        );
-      }
-    }
-    if (adr.frontMatter && !fields.status) {
-      fail(1, "status", "missing from the front matter");
-    } else if (fields.status) {
-      const status = STATUS.exec(fields.status.value);
-      if (!status) {
-        fail(
-          fields.status.line,
-          `status: ${fields.status.value}`,
-          "not accepted, deferred or superseded by ADR-NNN",
-        );
-      } else if (status[1] && !byNumber.has(Number(status[1]))) {
-        fail(
-          fields.status.line,
-          `status: ${fields.status.value}`,
-          `no such ADR in ${ADR_FOLDER}/`,
-        );
-      }
-    }
-    if (adr.frontMatter && !fields.date) {
-      fail(1, "date", "missing from the front matter");
-    } else if (fields.date && !isDay(fields.date.value)) {
-      fail(
-        fields.date.line,
-        `date: ${fields.date.value}`,
-        "not a day as YYYY-MM-DD",
-      );
-    }
-
-    if (!adr.heading) {
-      fail(
-        1,
-        "heading",
-        `none: the first line after the front matter is # ${name} — its title`,
-      );
-    } else if (adr.heading.number !== adr.number) {
-      fail(
-        adr.heading.line,
-        adrName(adr.heading.number),
-        `the heading's number is not the file's, ${name}`,
-      );
-    }
-
-    for (const [field, other, fix] of [
-      ["amends", "amended-by", "add it there"],
-      ["amended-by", "amends", "add it there, or take it out of this list"],
-    ]) {
-      if (!fields[field]) continue;
-      const { value, line } = fields[field];
-      const numbers = listOf(value);
-      if (!numbers) {
-        fail(line, `${field}: ${value}`, "not a list as [ADR-046, ADR-054]");
-        continue;
-      }
-      if (numbers.some((number, i) => i > 0 && number <= numbers[i - 1])) {
-        const ascending = [...new Set(numbers)].sort((a, b) => a - b);
-        fail(
-          line,
-          `${field}: ${value}`,
-          `not in ascending order, each ADR once: write it as [${ascending.map(adrName).join(", ")}]`,
-        );
-      }
-      for (const number of numbers) {
-        const named = byNumber.get(number);
-        if (!named) {
-          fail(
-            line,
-            `${field}: ${adrName(number)}`,
-            `no such ADR in ${ADR_FOLDER}/`,
-          );
-        } else if (!listed(named, other).includes(adr.number)) {
-          fail(
-            line,
-            `${field}: ${adrName(number)}`,
-            `${adrName(number)}'s ${other} does not list ${name}; ${fix}`,
-          );
-        }
-      }
-    }
-  }
-
-  const indexed = existsSync(path.join(ROOT, README));
-  const stale = indexed && staleIndex(found);
-  if (stale) failures.push(stale);
-  return {
-    failures,
-    summary: `ADRs in ${ADR_FOLDER}/: ${found.length}, each with its front matter and heading, and its amendments recorded both ways; ${indexed ? "the index in README.md current" : "no README.md, so no index to check"}.`,
-  };
-}
-
 const files = markdownFiles();
-const results = [links(files), adrs()];
+const results = [links(files), checkAdrs()];
 const failures = results.flatMap((result) => result.failures);
 
 if (failures.length > 0) {

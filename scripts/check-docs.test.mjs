@@ -82,7 +82,7 @@ See [the guide](docs/guide.md), [its setup](docs/guide.md#setup),
   assert.equal(
     run.stdout,
     "Links in 2 Markdown files: 3 to files and folders, 1 to headings in their own file; none broken.\n" +
-      "ADRs in docs/adr/: 0, each with its front matter and heading, and its amendments recorded both ways; no README.md, so no index to check.\n",
+      "ADRs in docs/adr/: 0, each with its front matter and heading, and its amendments recorded both ways.\n",
   );
 });
 
@@ -221,6 +221,10 @@ test("a path must be in the repository, in the case GitHub's names are", (t) => 
 const adr = (frontMatter, heading) =>
   `---\n${frontMatter}---\n\n# ${heading}\n\nThe decision.\n`;
 
+/** The README the ADRs need, its index not written yet. */
+const INDEX =
+  "# Architecture Decisions\n\n## By number\n\n<!-- adr-index:start -->\n<!-- adr-index:end -->\n";
+
 /** The fixture's copy of the index script, run as a person runs it. */
 const writeIndex = (root) =>
   execFileSync(process.execPath, [path.join(root, "scripts/adr-index.mjs")]);
@@ -235,8 +239,7 @@ test("ADRs with front matter, amendments both ways and a current index pass, and
       "status: deferred\ndate: 2026-08-25\namends: [ADR-001]\n",
       "ADR-002 — Two (amends ADR-001)",
     ),
-    "docs/adr/README.md":
-      "# Architecture Decisions\n\n## By number\n\n<!-- adr-index:start -->\n<!-- adr-index:end -->\n",
+    "docs/adr/README.md": INDEX,
   });
   writeIndex(root);
 
@@ -260,6 +263,31 @@ test("ADRs with front matter, amendments both ways and a current index pass, and
   ]);
 });
 
+test("an ADR needs the README that holds the index", (t) => {
+  const root = fixture(t, {
+    "docs/adr/0001-one.md": adr(
+      "status: accepted\ndate: 2026-08-24\n",
+      "ADR-001 — One",
+    ),
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    'docs/adr/README.md: the index — no such file: write it with a "By number" heading, <!-- adr-index:start --> and <!-- adr-index:end --> under it, then run node scripts/adr-index.mjs',
+  ]);
+});
+
+test("front matter's --- lines may end in spaces, for the ADRs as for the links", (t) => {
+  const root = fixture(t, {
+    "docs/adr/0001-one.md":
+      "--- \nstatus: accepted\ndate: 2026-08-24\n---  \n\n# ADR-001 — One\n\nThe decision.\n",
+    "docs/adr/README.md": INDEX,
+  });
+  writeIndex(root);
+
+  const run = check(root);
+  assert.equal(run.status, 0, run.stderr);
+});
+
 test("an ADR's front matter: none, an unknown status, a date that is not a day, a line that is not a field", (t) => {
   const root = fixture(t, {
     "docs/adr/0001-one.md": "# ADR-001 — One\n\nThe decision.\n",
@@ -271,6 +299,7 @@ test("an ADR's front matter: none, an unknown status, a date that is not a day, 
       "status: accepted\ndate 2026-08-24\n",
       "ADR-003 — Three",
     ),
+    "docs/adr/README.md": INDEX,
   });
 
   assert.deepEqual(failures(check(root)), [
@@ -290,6 +319,7 @@ test("an ADR's heading has its file's number", (t) => {
     ),
     "docs/adr/0013-thirteen.md":
       "---\nstatus: accepted\ndate: 2026-08-24\n---\n\nThe decision, with no heading.\n",
+    "docs/adr/README.md": INDEX,
   });
 
   assert.deepEqual(failures(check(root)), [
@@ -315,6 +345,7 @@ test("an amendment is in both ADRs' front matter", (t) => {
       "status: accepted\ndate: 2026-08-26\namends: ADR-001\n",
       "ADR-003 — Three",
     ),
+    "docs/adr/README.md": INDEX,
   });
 
   assert.deepEqual(failures(check(root)), [
@@ -335,6 +366,7 @@ test("two ADRs with one number fail, each naming the other", (t) => {
       "status: accepted\ndate: 2026-08-25\n",
       "ADR-012 — Two",
     ),
+    "docs/adr/README.md": INDEX,
   });
 
   assert.deepEqual(failures(check(root)), [
@@ -357,6 +389,7 @@ test("amends and amended-by are in ascending order, each ADR once", (t) => {
       "status: accepted\ndate: 2026-08-26\namends: [ADR-001]\n",
       "ADR-003 — Three",
     ),
+    "docs/adr/README.md": INDEX,
   });
 
   assert.deepEqual(failures(check(root)), [
@@ -375,6 +408,7 @@ test("an ADR has no field but status, date, amends and amended-by, in any order"
       "amends: [ADR-001]\ndate: 2026-08-25\nstatus: accepted\n",
       "ADR-002 — Two",
     ),
+    "docs/adr/README.md": INDEX,
   });
 
   assert.deepEqual(failures(check(root)), [
@@ -392,6 +426,7 @@ test("superseded by an ADR with no file fails", (t) => {
       "status: superseded by ADR-009\ndate: 2026-08-25\n",
       "ADR-002 — Two",
     ),
+    "docs/adr/README.md": INDEX,
   });
 
   assert.deepEqual(failures(check(root)), [

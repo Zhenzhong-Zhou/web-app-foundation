@@ -142,8 +142,31 @@ The table.
   assert.equal(checked.status, 0, checked.stderr);
   assert.equal(
     checked.stdout,
-    "docs/adr/README.md: the index of 3 ADRs is current.\n",
+    "ADRs in docs/adr/: 3, each with its front matter and heading, and its amendments recorded both ways; the index in README.md current.\n",
   );
+});
+
+test("an ADR that fails its checks stops both modes, and nothing is written", (t) => {
+  const root = fixture(t);
+  write(
+    root,
+    "docs/adr/0003-the-third.md",
+    adr("status: acepted\ndate: 2026-08-26\n", "ADR-003 — The third"),
+  );
+  const failure =
+    "docs/adr/0003-the-third.md:2: status: acepted — not accepted, deferred or superseded by ADR-NNN";
+
+  const written = run(root);
+  assert.equal(written.status, 1, written.stdout);
+  assert.equal(
+    written.stderr,
+    `${failure}\nNothing written: the index is written only from ADRs that pass.\n`,
+  );
+  assert.equal(readme(root), README);
+
+  const checked = run(root, "--check");
+  assert.equal(checked.status, 1, checked.stdout);
+  assert.equal(checked.stderr, `${failure}\n`);
 });
 
 test("a changed title is found stale, by its line, and --check writes nothing", (t) => {
