@@ -269,6 +269,20 @@ describe('writeMail', () => {
     ).not.toContain('If the button doesn’t open');
   });
 
+  it('makes the button at least 44 px tall, the whole of it the link, in Outlook too (#170)', () => {
+    const [, cell, link] =
+      /class="button"[^>]*><tr><td ([^>]*)><a ([^>]*)>/.exec(email().html) ??
+      [];
+    const lineHeight = Number(/line-height:(\d+)px/.exec(link)?.[1]);
+    const padding = Number(/;padding:(\d+)px \d+px;/.exec(link)?.[1]);
+
+    // The link's line and its padding above and below it.
+    expect(lineHeight + 2 * padding).toBeGreaterThanOrEqual(44);
+    expect(link).toContain('display:inline-block');
+    // Outlook pads no link: its cell takes the same padding.
+    expect(cell).toMatch(new RegExp(`mso-padding-alt:${padding}px \\d+px`));
+  });
+
   it('loads nothing but the mark', () => {
     const { html } = email();
 
