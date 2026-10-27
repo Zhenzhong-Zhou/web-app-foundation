@@ -338,17 +338,18 @@ scope as Bob set it on 26 and 27 October 2026, each to be confirmed then:
   Chinese, a repeated heading, with MD024 off for that file alone) and a
   link to each, and markdownlint and `check-docs.mjs` both check it on
   every run.
-- **CodeQL's one alert** on the pull request (#9: incomplete
-  multi-character sanitization, high) was on `headingText`, whose single
+- **CodeQL's one alert** on the pull request (code scanning alert 9:
+  incomplete multi-character sanitization, high) was on `headingText`, whose single
   pass removing tags could leave a `<` behind. Its result only ever
   becomes an anchor, never HTML (`anchorOf` is its one use), but it was
-  fixed rather than dismissed, as #113 fixed CodeQL's first six: a last
-  pass, before the code spans go back, removes every `<` and `>` left.
-  Straight after the tags it would have changed an anchor, since in
-  `x<_y_` the `_` would then follow a letter and stop counting as
-  emphasis. Last, it changes none of the anchors of the repository's
-  742 headings, since `anchorOf` drops both characters anyway; the
-  fixture gained `## When a < b` to show it.
+  fixed rather than dismissed, as #113 fixed CodeQL's first six. A last
+  pass removing every `<` and `>` left changed no anchor, but CodeQL did
+  not count it; the tag pass now repeats until the text stops changing,
+  the form CodeQL's own suggestion takes, and the extra pass is gone. No
+  anchor of the repository's 742 headings changed; the fixture gained
+  `## When a < b`. One shape no heading here uses now differs from
+  GitHub's: `<<a>b>` gives an empty anchor where markdownlint's MD051
+  gives `b`, so the fixture cannot hold it.
 - **Left from the review:** test helpers shared with
   `i18n-review.test.mjs` (a chore of its own), the line-number loop, the
   anchor cache, the tests run in parallel, the Docs workflow's path
