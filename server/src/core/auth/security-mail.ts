@@ -174,15 +174,7 @@ export function buildSecurityMail(
     subject: say(copy.subject),
     locale: context.locale,
     blocks: [
-      {
-        kind: 'greeting',
-        text: say(
-          t(
-            { id: 'mail.hi', defaultMessage: 'Hi {name},' },
-            { name: context.name },
-          ),
-        ),
-      },
+      { kind: 'greeting', name: context.name },
       { kind: 'paragraph', text: say(copy.happened) },
       { kind: 'details', rows: details },
       {

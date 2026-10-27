@@ -65,7 +65,8 @@ export type MailBlock =
   | { kind: 'header'; name: string; mark: string | null }
   /** A product email's is its subject, in the HTML part only. */
   | { kind: 'heading'; text: string; htmlOnly?: boolean }
-  | { kind: 'greeting'; text: string }
+  /** "Hi {name},", in the email's language. */
+  | { kind: 'greeting'; name: string }
   /** `plain` is the text part's words, where they differ. */
   | { kind: 'paragraph'; text: string | Run[]; plain?: string }
   /**
@@ -146,19 +147,20 @@ export function writeMail({ blocks, locale, ...mail }: MailContent): Mail {
     ...mail,
     html: htmlOf(mail.subject, locale, blocks),
     text: blocks
-      .map(textOf)
+      .map((block) => textOf(block, locale))
       .filter((part): part is string => part !== null)
       .join('\n\n'),
   };
 }
 
-function textOf(block: MailBlock): string | null {
+function textOf(block: MailBlock, locale: Locale): string | null {
   switch (block.kind) {
     case 'header':
       return block.name;
     case 'heading':
       return block.htmlOnly ? null : block.text;
     case 'greeting':
+      return greetingOf(block.name, locale);
     case 'small':
     case 'footer':
       return block.text;
@@ -180,9 +182,13 @@ function textOf(block: MailBlock): string | null {
 function htmlOf(subject: string, locale: Locale, blocks: MailBlock[]): string {
   const button = blocks.find((block) => block.kind === 'button');
   const rows = [
-    ...blocks.filter((block) => block.kind !== 'footer').map(blockHtml),
+    ...blocks
+      .filter((block) => block.kind !== 'footer')
+      .map((block) => blockHtml(block, locale)),
     ...(button ? [addressLine(button.href, locale)] : []),
-    ...blocks.filter((block) => block.kind === 'footer').map(blockHtml),
+    ...blocks
+      .filter((block) => block.kind === 'footer')
+      .map((block) => blockHtml(block, locale)),
   ];
   const lang = escapeHtml(locale);
   const label = escapeHtml(subject);
@@ -222,7 +228,7 @@ function htmlOf(subject: string, locale: Locale, blocks: MailBlock[]): string {
   ].join('\n');
 }
 
-function blockHtml(block: MailBlock): string {
+function blockHtml(block: MailBlock, locale: Locale): string {
   switch (block.kind) {
     case 'header': {
       const cell = `padding:0 0 16px;border-bottom:1px solid ${LIGHT.rule};vertical-align:middle`;
@@ -236,7 +242,7 @@ function blockHtml(block: MailBlock): string {
     case 'heading':
       return `<h1 style="margin:0;font-size:22px;font-weight:700;line-height:1.3">${escapeHtml(block.text)}</h1>`;
     case 'greeting':
-      return `<p style="margin:0">${escapeHtml(block.text)}</p>`;
+      return `<p style="margin:0">${escapeHtml(greetingOf(block.name, locale))}</p>`;
     case 'paragraph': {
       const runs = typeof block.text === 'string' ? [block.text] : block.text;
       const html = runs
@@ -273,6 +279,14 @@ function blockHtml(block: MailBlock): string {
     case 'footer':
       return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse"><tr><td class="rule muted" style="padding:16px 0 0;border-top:1px solid ${LIGHT.rule};${SMALL}">${escapeHtml(block.text)}</td></tr></table>`;
   }
+}
+
+/** The reader greeted by name, in their language (ADR-054). */
+function greetingOf(name: string, locale: Locale): string {
+  return translate(
+    t({ id: 'mail.hi', defaultMessage: 'Hi {name},' }, { name }),
+    locale,
+  );
 }
 
 function linkHtml(href: string, text: string): string {

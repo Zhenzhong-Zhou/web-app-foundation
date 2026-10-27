@@ -46,7 +46,7 @@ describe('MailBrand', () => {
     to: 'mei.lin@example.com',
     subject: 'Confirm your email address',
     locale: 'en',
-    blocks: [{ kind: 'greeting', text: 'Hi Mei Lin,' }],
+    blocks: [{ kind: 'greeting', name: 'Mei Lin' }],
   };
 
   const transport = { send: vi.fn(() => Promise.resolve()) };

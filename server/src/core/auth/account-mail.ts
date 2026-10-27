@@ -17,8 +17,6 @@ export function verificationMail(context: AccountMailContext): MailContent {
 
   // In the recipient's language (ADR-054); the English is unchanged.
   const say = (message: Translatable) => translate(message, context.locale);
-  const hi = (who: string) =>
-    say(t({ id: 'mail.hi', defaultMessage: 'Hi {name},' }, { name: who }));
   const confirm = say(
     t({
       id: 'mail.verify.confirm',
@@ -38,7 +36,7 @@ export function verificationMail(context: AccountMailContext): MailContent {
     subject: confirm,
     locale: context.locale,
     blocks: [
-      { kind: 'greeting', text: hi(context.name) },
+      { kind: 'greeting', name: context.name },
       {
         kind: 'button',
         label: confirm,
@@ -60,8 +58,6 @@ export function passwordResetMail(context: AccountMailContext): MailContent {
   const link = `${context.clientUrl}/reset-password?token=${context.token}`;
 
   const say = (message: Translatable) => translate(message, context.locale);
-  const hi = (who: string) =>
-    say(t({ id: 'mail.hi', defaultMessage: 'Hi {name},' }, { name: who }));
   const reset = say(
     t({ id: 'mail.reset.action', defaultMessage: 'Reset your password' }),
   );
@@ -78,7 +74,7 @@ export function passwordResetMail(context: AccountMailContext): MailContent {
     subject: reset,
     locale: context.locale,
     blocks: [
-      { kind: 'greeting', text: hi(context.name) },
+      { kind: 'greeting', name: context.name },
       {
         kind: 'button',
         label: reset,

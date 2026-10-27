@@ -11,7 +11,7 @@ const LIMIT = 50 * 1024;
 const BLOCKS: MailBlock[] = [
   { kind: 'header', name: 'Panivo', mark: MARK },
   { kind: 'heading', text: 'Confirm your email address', htmlOnly: true },
-  { kind: 'greeting', text: 'Hi Mei Lin,' },
+  { kind: 'greeting', name: 'Mei Lin' },
   { kind: 'paragraph', text: 'Your account is ready. One step is left.' },
   {
     kind: 'button',
@@ -137,6 +137,17 @@ describe('writeMail', () => {
     );
   });
 
+  it('greets the reader by name in the email’s language', () => {
+    const blocks: MailBlock[] = [{ kind: 'greeting', name: 'Mei Lin' }];
+
+    expect(email({ locale: 'fr-CA', blocks }).text).toBe('Bonjour Mei Lin,');
+    const chinese = email({ locale: 'zh-Hans', blocks });
+    expect(chinese.text).toBe('Mei Lin，您好：');
+    expect(bodyOf(chinese.html)).toContain(
+      '<p style="margin:0">Mei Lin，您好：</p>',
+    );
+  });
+
   it('escapes every value, in the text and in attributes', () => {
     const evil = '"><img src=x onerror=alert(1)>&\'';
     const escaped = '&quot;&gt;&lt;img src=x onerror=alert(1)&gt;&amp;&#39;';
@@ -145,7 +156,7 @@ describe('writeMail', () => {
       blocks: [
         { kind: 'header', name: evil, mark: evil },
         { kind: 'heading', text: evil },
-        { kind: 'greeting', text: evil },
+        { kind: 'greeting', name: evil },
         { kind: 'paragraph', text: [evil, { text: evil, href: evil }] },
         { kind: 'button', label: evil, href: evil },
         { kind: 'details', rows: [[evil, evil]] },
@@ -307,7 +318,7 @@ describe('writeMail', () => {
     const chinese = email({
       locale: 'zh-Hans',
       blocks: [
-        { kind: 'greeting', text: '梅琳，您好：' },
+        { kind: 'greeting', name: '梅琳' },
         {
           kind: 'paragraph',
           text: '您申请删除账户。账户将在2026年11月25日之后删除。',
