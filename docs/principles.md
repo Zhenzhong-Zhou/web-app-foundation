@@ -86,4 +86,4 @@ something deferred is recorded with the trigger that would bring it
 back. The reasoning is never rediscovered from scratch.
 
 Held by: `docs/adr/`, the working agreements in
-`docs/handoff.md`.
+`docs/engineering.md`.

@@ -2,7 +2,7 @@
 #
 # Refuses a push that carries a commit authored or committed by a
 # placeholder identity, such as "Claude (draft) <draft@example.invalid>"
-# (docs/handoff.md, Working agreements, Commits). Removing those once took
+# (docs/engineering.md, Working agreements, Commits). Removing those once took
 # a history rewrite; this stops one before it reaches GitHub.
 #
 # Kept in the repository, since git never commits .git/hooks/ (ADR-082):
