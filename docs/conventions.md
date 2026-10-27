@@ -454,7 +454,7 @@ message, and the screen keys on the code, never on the words.
   person sees, or a rule they work under, updates its checks in the same
   commit. A fixed bug that a person could have noticed adds a check under
   *Regressions*. The walkthrough before each release runs that list.
-- `scripts/smoke-auth.sh` checks a **running dev server** over HTTP. No database
+- `server/scripts/smoke-auth.sh` checks a **running dev server** over HTTP. No database
   access, no setup — if it needs `psql`, it is an e2e test wearing a shell script.
   Localhost only: it registers real accounts, and pointed at a deployment it
   fills production with them.

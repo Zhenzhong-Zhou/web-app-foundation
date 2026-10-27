@@ -43,7 +43,8 @@ step() { printf '\n== %s\n\n' "$*"; }
 # The docs workflow's check, at the version it pins, with the repository's
 # .markdownlint-cli2.jsonc. The first run downloads it. Then its other
 # check, scripts/check-docs.mjs: links, ADR front matter and the index
-# (ADR-086).
+# (ADR-086); paths written as code, the rules files' citations and
+# .claude/rules/'s patterns, and the notice against origin/main (ADR-087).
 markdown() {
   step 'Markdown: every .md file, as the docs workflow checks it'
   npx --yes markdownlint-cli2@0.23.3

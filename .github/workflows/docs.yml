@@ -25,7 +25,18 @@ jobs:
     name: Docs — markdownlint
     runs-on: ubuntu-24.04
     steps:
+      # A pull request checks out its merge into main. Two commits deep, so
+      # the merge's first parent, HEAD^1, is there: main as the change
+      # merges into it, as in ci.yml's against-main job.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      # check-docs.mjs's notice compares with origin/main, which a pull
+      # request's checkout does not name: HEAD^1 is that base.
+      - name: The base the notice compares with
+        if: github.event_name == 'pull_request'
+        run: git update-ref refs/remotes/origin/main HEAD^1
 
       - uses: actions/setup-node@v7
         with:
@@ -42,6 +53,9 @@ jobs:
       # Every relative link in the Markdown leads to a file, and a fragment
       # to a heading there, which markdownlint checks within one file only;
       # every ADR's front matter is right, each amendment recorded both
-      # ways; and the ADRs' index is current (ADR-086). Node and git,
-      # nothing to install.
+      # ways; and the ADRs' index is current (ADR-086). Every path written
+      # as code names a file; the rules files' tests and manual checks, and
+      # each pattern in .claude/rules/, are found; and a notice, which never
+      # fails, names each rules file the change left alone though its tests
+      # or area changed (ADR-087). Node and git, nothing to install.
       - run: node scripts/check-docs.mjs

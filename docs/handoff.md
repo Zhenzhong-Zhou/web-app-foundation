@@ -566,7 +566,7 @@ with this one, this one is current.
   The last group followed (`remaining-responses`: audit with account
   activity, notifications, home, recent, lookup, health), so every JSON
   response is declared and checked. Phase 2 closed with `types-ts-removed`:
-  `client/src/lib/types.ts` is gone, the client imports the generated
+  the hand-written `lib/types.ts` is gone, the client imports the generated
   types from `client/src/api/types.gen`, and the few names screens switch
   on (`OrderStatus`, `CalendarDay`) live in `client/src/lib/api-names.ts`,
   each read from a generated type. #19 is done.
@@ -1727,8 +1727,8 @@ in ADR-050's amendment.
   - FIFO;
   - export to the books;
   - confirming the weighted-average method with the accountant.
-- User guides and a glossary: raised, not decided. Markdown under
-  `docs/user/`, a getting-started order, task guides by job, the rules in
+- User guides and a glossary: raised, not decided. Markdown in
+  a folder of its own in `docs/`, a getting-started order, task guides by job, the rules in
   plain words, and a glossary that also holds the translation terms (ADR-054).
   Screenshots for them come from `npm run screenshots`.
 - Client speed: unmeasured. Lighthouse on the Render static site, warm and
