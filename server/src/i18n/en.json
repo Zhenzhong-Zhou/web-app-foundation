@@ -566,6 +566,7 @@
   "locations.site.unknown": "Unknown site",
   "locations.suchLocation": "No such location",
   "locations.unknownParentLocation": "Unknown parent location",
+  "mail.button.fallback": "If the button doesn’t open, copy this address into your browser: {link}",
   "mail.deletion.blocked.again": "The deletion is cancelled. Once that is sorted out, you can ask again from your Account page.",
   "mail.deletion.blocked.body": "Your account was due to be deleted today, but something changed since you asked:",
   "mail.deletion.blocked.subject": "Your account could not be deleted",

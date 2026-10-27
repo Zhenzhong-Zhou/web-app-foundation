@@ -566,6 +566,7 @@
   "locations.site.unknown": "Site inconnu",
   "locations.suchLocation": "Emplacement introuvable",
   "locations.unknownParentLocation": "Emplacement parent inconnu",
+  "mail.button.fallback": "Si le bouton ne s’ouvre pas, copiez cette adresse dans votre navigateur : {link}",
   "mail.deletion.blocked.again": "La suppression est annulée. Une fois ce point réglé, vous pourrez la demander de nouveau depuis votre page Compte.",
   "mail.deletion.blocked.body": "Votre compte devait être supprimé aujourd’hui, mais quelque chose a changé depuis votre demande :",
   "mail.deletion.blocked.subject": "Votre compte n’a pas pu être supprimé",

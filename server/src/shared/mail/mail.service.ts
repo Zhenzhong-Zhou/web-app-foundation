@@ -9,6 +9,12 @@ export interface Mail {
   subject: string;
   text: string;
   html: string;
+  /**
+   * Where a reply goes instead of MAIL_FROM's no-reply address, which
+   * nobody reads: an invitation's inviter (ADR-083). No product email sets
+   * one.
+   */
+  replyTo?: string;
 }
 
 /**
