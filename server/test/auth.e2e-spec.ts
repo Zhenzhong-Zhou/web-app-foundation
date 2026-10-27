@@ -13,14 +13,17 @@ import {
   sessions,
   users,
 } from '../src/database/schema';
-import { escapeHtml } from '../src/shared/mail/escape-html';
 import {
   MAIL_MARK_CHECK,
   MailBrand,
   type MarkCheck,
 } from '../src/shared/mail/mail-brand';
 import { createE2eApp, PASSWORD } from './utils/fixtures';
-import { expectMailBrand, mailBrandOf } from './utils/mail-brand';
+import {
+  expectBlocksInOrder,
+  expectMailBrand,
+  mailBrandOf,
+} from './utils/mail-brand';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -310,7 +313,9 @@ describe('Auth (e2e)', () => {
         const sent = mail.lastTo(EMAIL);
         expect(check).toHaveBeenLastCalledWith(mark);
         expect(sent?.html).not.toContain('<img');
-        expect(sent?.html).toContain(`>${escapeHtml(name)}</td>`);
+        expectBlocksInOrder(sent?.html ?? '', [
+          { kind: 'header', name, mark: null },
+        ]);
         expect(sent?.text.startsWith(`${name}\n\n`)).toBe(true);
       } finally {
         // Served again, for the tests after this one.

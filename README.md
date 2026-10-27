@@ -221,6 +221,9 @@ work under updates it.
 | Before every push                      | `scripts/verify.sh` (`--quick` while working, in full before a pull request)           |
 | A branch's start, and before reviews   | `npm outdated` in `server/` and `client/` (conventions.md, "Dependencies")             |
 | A change people will see               | `npm run screenshots` before and after, then `npm run screenshots:compare`             |
+| A change to an email                   | `npm run mail:preview` in `server/`, before and after; `-- --send` for Mailpit         |
+| A change to an email, in pictures      | `npm run screenshots:mail` in `client/` on each preview, then `screenshots:compare`    |
+| An email's words changed on purpose    | `npm run mail:text -- --update` in `server/`; commit the files with the words          |
 | A change to what the API sends         | `npm run api` in `server/`; commit both generated files                                |
 | A change to the mark, in `docs/brand/` | `node scripts/brand-assets.mjs`; commit what it writes in `client/public/`             |
 | Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`         |
@@ -387,8 +390,9 @@ licences beyond the product's own — site, wholesale and business licences.
 - [`docs/principles.md`](docs/principles.md) — what the product aims for, and
   the ADRs that hold to each aim
 - [`docs/handoff.md`](docs/handoff.md) — where the work stands and what is next
-- [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with two project
-  skills in `.claude/skills/`: `/code-review` and `/usability-walkthrough`
+- [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with four project
+  skills in `.claude/skills/`: `/code-review`, `/usability-walkthrough`,
+  `/production-readiness` and `/build-from-brief`
 - [`docs/releases/`](docs/releases) — the notes each tagged release was made with
 
 Both are worth reading before a change that touches money, quantities, or the

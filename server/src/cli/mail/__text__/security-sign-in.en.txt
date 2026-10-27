@@ -1,0 +1,16 @@
+Panivo
+
+Hi Mei Lin,
+
+Your account was signed in to from a browser it has not used before.
+
+When: Mon, 26 Oct 2026 22:41:07 GMT
+Browser: Chrome on macOS
+IP address: 203.0.113.7
+
+If this was you, there is nothing to do.
+
+If it was not, reset your password now — that signs out every device: http://localhost:5173/forgot-password
+Then check which devices are signed in: http://localhost:5173/account/sessions
+
+We will never ask for your password by email.

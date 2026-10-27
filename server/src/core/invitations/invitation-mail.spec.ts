@@ -67,6 +67,12 @@ describe('invitationMail', () => {
     ).toContain('接受邀请\nhttps://app.example.com/invitation?token=abc');
   });
 
+  it('gives a reply to the inviter while they are named (ADR-083)', () => {
+    expect(invitationMail({ ...context, appName: null }).replyTo).toBe(
+      'mei.lin@example.com',
+    );
+  });
+
   it('names only the organization once the inviter has gone (ADR-077)', () => {
     const mail = invitationMail({
       ...context,
@@ -83,5 +89,6 @@ describe('invitationMail', () => {
     );
     expect(mail.text + mail.html).not.toContain('Mei Lin');
     expect(mail.text + mail.html).not.toContain('mei.lin@example.com');
+    expect(mail).not.toHaveProperty('replyTo');
   });
 });

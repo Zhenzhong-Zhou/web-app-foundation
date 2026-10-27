@@ -11,12 +11,17 @@
  * space allows, to the nearest lightness that passes.
  */
 
+import {
+  channels,
+  darkAccent,
+  ON_DARK_ACCENT,
+  toHex,
+} from '../../common/dark-accent';
+
 const AA = 4.5;
 const WHITE = '#FFFFFF';
-/** ADR-055's text on a dark-mode accent, and its dark page. */
-const ON_DARK_ACCENT = '#10141A';
+/** ADR-055's dark page. */
 const DARK_PAGE = '#161A21';
-const DARK_ACCENT_WEIGHT = 0.45;
 
 /** The status tones' hues (ADR-055): error, warning, success. */
 const STATUS = {
@@ -72,13 +77,6 @@ export function nearStatus(hex: string): StatusTone | null {
   return null;
 }
 
-/** ADR-055's dark-mode accent: the colour mixed toward white. */
-export function darkAccent(hex: string): string {
-  return toHex(
-    channels(hex).map((value) => value + (1 - value) * DARK_ACCENT_WEIGHT),
-  );
-}
-
 export function contrast(a: string, b: string): number {
   const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (light + 0.05) / (dark + 0.05);
@@ -91,21 +89,6 @@ function passes(hex: string): boolean {
     contrast(dark, ON_DARK_ACCENT) >= AA &&
     contrast(dark, DARK_PAGE) >= AA
   );
-}
-
-function channels(hex: string): number[] {
-  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
-}
-
-function toHex(values: number[]): string {
-  return `#${values
-    .map((value) =>
-      Math.round(Math.min(Math.max(value, 0), 1) * 255)
-        .toString(16)
-        .padStart(2, '0'),
-    )
-    .join('')
-    .toUpperCase()}`;
 }
 
 function linear(value: number): number {

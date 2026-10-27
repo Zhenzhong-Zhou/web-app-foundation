@@ -1,5 +1,4 @@
-import { escapeHtml } from '../../shared/mail/escape-html';
-import type { Mail } from '../../shared/mail/mail.service';
+import type { MailContent } from '../../shared/mail/mail-layout';
 
 /** What the operator is told when an organization invitation is accepted. */
 export interface OrganizationStartedContext {
@@ -21,7 +20,7 @@ export interface OrganizationStartedContext {
  */
 export function organizationStartedMail(
   context: OrganizationStartedContext,
-): Mail {
+): MailContent {
   const when = `${new Intl.DateTimeFormat('en-GB', {
     dateStyle: 'long',
     timeStyle: 'short',
@@ -39,7 +38,7 @@ export function organizationStartedMail(
   return {
     to: context.to,
     subject: `${context.organizationName} was set up`,
-    text: paragraphs.join('\n\n'),
-    html: paragraphs.map((each) => `<p>${escapeHtml(each)}</p>`).join(''),
+    locale: 'en',
+    blocks: paragraphs.map((text) => ({ kind: 'paragraph', text })),
   };
 }

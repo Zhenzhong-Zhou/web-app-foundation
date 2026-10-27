@@ -118,6 +118,34 @@ Every document is a PDF the server draws (ADR-071), in the same few pieces.
   is written as it is; a moment's day, when a slip shipped, goes through
   `doc.dayOf`, in the organization's time zone (ADR-072).
 
+## A new email
+
+Every email is written on one layout, from blocks (ADR-083).
+
+- **Its blocks** are a `MailContent`
+  (`server/src/shared/mail/mail-layout.ts`), in the reader's language: a
+  greeting by name, paragraphs, at most one button, details, a quote,
+  small print, a written-out link and a footer. `writeMail` writes the
+  HTML and the text part from the same blocks and escapes every value, so
+  a builder never writes HTML. A block whose text part reads otherwise
+  gives those words as `plain`, or null for the HTML alone.
+- **How it is sent.** The product's emails go through `MailBrand.send`,
+  which opens each with the header and its subject as its heading. The
+  organization's, the invitation today, are written with `writeMail`
+  and sent through `MailService`, with no header, and only they set
+  `replyTo`, to the member they come from while still one. One sent to an
+  address a member typed needs the sender's own address confirmed first
+  (ADR-077).
+- **Its words** are server messages in all three catalogues. A link
+  inside a sentence is a placeholder the language places, rendered with
+  `translateParts`; a button only where the action already has words.
+- **Its proof.** A sample in `server/src/cli/mail/mail-samples.ts`, in
+  each language it is sent in, and its text part's files under
+  `__text__/`, read before they are committed with it (Tests). The first
+  run of `npm run mail:text` in `server/` writes them from the new email,
+  and says a file is missing; the second is green. `npm run mail:preview`
+  then shows it beside the rest, and `-- --send` puts it in Mailpit.
+
 ## Module boundaries
 
 - One folder per module under `core/`, each with its own `*.module.ts`.
@@ -405,6 +433,14 @@ message, and the screen keys on the code, never on the words.
 - Every integration test calls `await app.close()` in `afterAll`, or the
   `pg` pool stays open and the run hangs without explaining why.
 - One integration test per feature as it's built (ADR-008).
+- **Every email's text part has a proof** (ADR-083).
+  `server/src/cli/mail/mail-samples.spec.ts` builds each email in each
+  language it is sent in and compares its text part with its file under
+  `__text__/`. A change of layout or code never rewrites one, ADR-083's
+  layout included: a difference is the change's bug. A branch that changes
+  an email's words on purpose, as #255 or a translation corrected, runs
+  `npm run mail:text -- --update` in `server/` and commits the files with
+  the words, in a commit that changes nothing else and names them.
 - **The client's unit tests run in Tokyo**, `TZ` set in
   `vitest.config.ts`, so a test that assumes the computer is in UTC, or in
   the organization's zone, fails everywhere, not only on someone else's

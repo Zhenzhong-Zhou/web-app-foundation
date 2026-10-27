@@ -1,0 +1,8 @@
+Panivo
+
+Mei Lin，您好：
+
+确认您的邮箱地址：
+http://localhost:5173/verify-email?token=sample-token
+
+链接 24 小时后过期。如果您没有注册，请忽略此邮件。

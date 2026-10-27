@@ -101,6 +101,9 @@ Karpathy's observations on LLM coding pitfalls
   persona and reports what gets in the way.
 - `/production-readiness`: reviews whether the deployed app is ready for
   real users, report only.
+- `/build-from-brief`: runs one step of a build brief in `tmp/`, as
+  `/build-from-brief tmp/adr-NNN/brief.md <step>`, under the rules every
+  brief shares; only when a prompt names it.
 
 Every feature branch runs, for any PR that changes what a person sees,
 `/usability-walkthrough` as one of its personas

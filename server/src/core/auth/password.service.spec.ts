@@ -1,7 +1,6 @@
-import type { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 
-import type { Env } from '../../config/env';
+import { configOf } from '../../config/config-of';
 import { PasswordService } from './password.service';
 
 /**
@@ -15,11 +14,7 @@ describe('PasswordService', () => {
   beforeAll(() => {
     // NODE_ENV=test selects the reduced cost parameters, without which each
     // hash below would take ~100ms.
-    const config = {
-      get: () => 'test',
-    } as unknown as ConfigService<Env, true>;
-
-    service = new PasswordService(config);
+    service = new PasswordService(configOf({ NODE_ENV: 'test' }));
   });
 
   it('produces an argon2id hash', async () => {

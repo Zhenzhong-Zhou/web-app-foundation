@@ -39,8 +39,8 @@ import {
   users,
 } from '../../database/schema';
 import { recipientLocale, t, type Translatable } from '../../i18n/translate';
-import type { Mail } from '../../shared/mail/mail.service';
 import { MailBrand } from '../../shared/mail/mail-brand';
+import type { MailContent } from '../../shared/mail/mail-layout';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { lockOwners } from '../authorization/giving';
 import { rolesOfMembers } from '../authorization/member-roles';
@@ -652,7 +652,7 @@ export class AccountDeletionService {
    */
   private async unschedule(
     userId: string,
-    build: (context: DeletionMailContext) => Mail,
+    build: (context: DeletionMailContext) => MailContent,
     meta?: EventMeta,
   ): Promise<boolean> {
     const cancelled = await this.db
@@ -673,7 +673,7 @@ export class AccountDeletionService {
    */
   private async send(
     userId: string,
-    build: (context: DeletionMailContext) => Mail,
+    build: (context: DeletionMailContext) => MailContent,
     language?: string,
   ): Promise<void> {
     const [user] = await this.db
@@ -694,7 +694,7 @@ export class AccountDeletionService {
    */
   async sendTo(
     person: { id: string; email: string; name: string; locale: Locale | null },
-    build: (context: DeletionMailContext) => Mail,
+    build: (context: DeletionMailContext) => MailContent,
     language?: string,
   ): Promise<void> {
     try {
@@ -742,7 +742,7 @@ async function lockOrganizations(
 }
 
 /** The refusal for a block: why, and what to do next (ADR-069). */
-function refusalMessage(block: Block): Translatable {
+export function refusalMessage(block: Block): Translatable {
   return block.code === 'only_member'
     ? t(
         {

@@ -1,5 +1,5 @@
 import { t, type Translatable } from '../../i18n/translate';
-import type { Mail } from '../../shared/mail/mail.service';
+import type { MailContent } from '../../shared/mail/mail-layout';
 import { compose, dayOf, type DeletionMailContext } from './deletion-mail';
 
 /**
@@ -68,7 +68,7 @@ function notice(
     exportAgain: Translatable;
     withAccount: Translatable;
   },
-): Mail {
+): MailContent {
   return compose(
     context,
     wording.subject,
@@ -87,7 +87,7 @@ export function organizationDeletionScheduledMail(
   context: DeletionMailContext,
   details: { organization: string; actor: string; day: string },
   side: MemberSide,
-): Mail {
+): MailContent {
   const date = dayOf(details.day, context.locale);
   const { organization, actor } = details;
 
@@ -143,7 +143,7 @@ export function organizationDeletionCancelledMail(
   context: DeletionMailContext,
   details: { organization: string; actor: string },
   side: MemberSide,
-): Mail {
+): MailContent {
   const { organization, actor } = details;
   const paragraphs: Translatable[] = [
     side.isActor
@@ -192,7 +192,7 @@ export function organizationDeletedMail(
   context: DeletionMailContext,
   details: { organization: string; day: string },
   side: MemberSide,
-): Mail {
+): MailContent {
   const date = dayOf(details.day, context.locale);
   const { organization } = details;
 
@@ -241,7 +241,7 @@ export function organizationDeletionReminderMail(
   context: DeletionMailContext,
   details: { organization: string; day: string },
   side: MemberSide,
-): Mail {
+): MailContent {
   const date = dayOf(details.day, context.locale);
   const { organization } = details;
 

@@ -1,0 +1,7 @@
+Panivo
+
+Bonjour Mei Lin,
+
+La suppression de votre compte a été annulée, et le compte reste tel quel.
+
+http://localhost:5173/account

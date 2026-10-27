@@ -1,0 +1,13 @@
+Panivo
+
+Bonjour Mei Lin,
+
+Chen Jie a demandé la suppression de Northside Naturals. Ses dossiers, ses fichiers et son journal d’audit seront supprimés après le 25 novembre 2026.
+
+D’ici là, chacun peut continuer à travailler comme d’habitude. Seul un propriétaire peut annuler la suppression, jusqu’à la fin de ce jour.
+
+Téléchargez tout de nouveau peu avant cette date, depuis Paramètres → Organisation : une fois l’organisation supprimée, plus rien ne permet d’en faire une copie.
+
+Votre compte demeure : seule votre adhésion à Northside Naturals prend fin.
+
+http://localhost:5173/settings/organization

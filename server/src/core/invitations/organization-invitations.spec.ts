@@ -1,3 +1,4 @@
+import { writeMail } from '../../shared/mail/mail-layout';
 import { organizationStartedMail } from './operator-mail';
 import {
   organizationInvitationLink,
@@ -57,14 +58,16 @@ describe('organizationInvitationMessage', () => {
 
 describe('organizationStartedMail', () => {
   it('tells the operator which organization, by whom and when, escaping names', () => {
-    const mail = organizationStartedMail({
-      to: 'ops@example.com',
-      organizationName: 'Harbour <Herbs>',
-      name: 'Chen Jie',
-      email: 'chen.jie@harbourherbs.example',
-      at: new Date('2026-10-21T10:42:00Z'),
-      verified: false,
-    });
+    const mail = writeMail(
+      organizationStartedMail({
+        to: 'ops@example.com',
+        organizationName: 'Harbour <Herbs>',
+        name: 'Chen Jie',
+        email: 'chen.jie@harbourherbs.example',
+        at: new Date('2026-10-21T10:42:00Z'),
+        verified: false,
+      }),
+    );
     expect(mail.subject).toBe('Harbour <Herbs> was set up');
     expect(mail.text).toContain(
       'Chen Jie (chen.jie@harbourherbs.example) accepted the invitation and set up Harbour <Herbs> on 21 October 2026 at 10:42 UTC.',
