@@ -3722,3 +3722,15 @@ first.
   MC-1702 extended.
 - 2026-10-26: the square logo's pull request, Branding's thumbnail of the
   square logo from the 128 px file, as the preview's: MC-3605 changed.
+- 2026-10-26: ADR-083, the product's emails on one layout, their subject
+  as a heading: section 37, MC-3701 to MC-3709, and MC-3503 rewritten.
+- 2026-10-26: ADR-083, the invitation on the layout, its replies going to
+  its inviter: MC-3710 and MC-3711.
+- 2026-10-26: ADR-083, the preview line its source whole, never its first
+  sentence: MC-3702 rewritten.
+- 2026-10-26: ADR-083's reviews, the address under a button a link that
+  breaks after / ? = and &: MC-3701, MC-3704, MC-3706, MC-3709 and
+  MC-3710 changed.
+- 2026-10-27: ADR-083, a dark mail app gets the email's own dark page
+  under its light text, never white on white: MC-3705 and MC-3706
+  changed.

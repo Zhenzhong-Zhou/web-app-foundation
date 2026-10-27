@@ -12257,6 +12257,118 @@ boards (Bob, 26 October 2026) settled six points and found one fault.
 no reader's time zone: #255. Changing it changes the text part, which
 this branch keeps, so it has a branch of its own.
 
+**Amendment (October 2026) — as built (#257).** What building settled:
+
+- **Corrections to the decisions above.**
+  - The account's third deletion email is *blocked*, "your account could
+    not be deleted", sent when something changed since the person asked
+    (ADR-069), not *done*: nothing is emailed once an account is gone.
+    The count stays 14.
+  - The dark button's text is `#10141A`, the app's `ON_ACCENT.dark`,
+    7.1 : 1, not `#141A24`; the button's corners are 6 px,
+    `RADIUS.control`, not the boards' 8.
+  - The preview line takes its source whole, never its first sentence:
+    the button's words for confirm and reset, an invitation's lead, and
+    the first paragraph after the greeting for the rest. Splitting
+    sentences cut an inviter named "Dr. Wang" at "Dr.", and no rule for
+    abbreviations fits every language and every name. A deletion
+    notice's preview now shows its day too.
+  - "No colour is set on the page or the text" holds in light mode only.
+    Mailpit, like some mail apps, paints its own white page behind an
+    email while honouring `color-scheme: light dark`, which turns the
+    default text light: white on white. Under the dark rules, the email
+    sets its own page and text, the app's `DARK.page` `#161A21` and
+    `DARK.text` `#E6E9EF`, on `<html>`, `<body>` and its outermost
+    element. Apple Mail's dark mode shows the app's dark grey rather
+    than its own.
+- **The layout,** `server/src/shared/mail/mail-layout.ts`: ten blocks and
+  `writeMail()`, which writes both parts from one list. Spacing is
+  padding on one table row per block, since Outlook ignores some
+  margins; Outlook's font is a `<!--[if mso]>` style of its own; the main
+  `<style>` holds only the dark and narrow-screen rules, Outlook.com's
+  `[data-ogsc]` and `[data-ogsb]` among them. A block's text part is
+  worded by one optional `plain` field: `null` leaves it out, a string
+  words it differently. The details' labels never wrap, so 浏览器 stays
+  whole on a phone. The note's border takes the rules' dark colour,
+  `#3A3F48`, the emails' own value, since no token has it. The preheader
+  is the body's first element, outside the article.
+- **The product's emails.** `MailBrand.write` adds the header block and
+  the subject as the heading, in the HTML part only, and `send` sends what
+  it writes, so no product email can leave either out. The greeting block
+  takes the reader's name, and the layout says Hi in the email's
+  language. Confirm and reset are one builder, `core/auth/account-mail.ts`,
+  given their path and their words, moved out of `AuthService` unchanged
+  in a commit of their own. A link inside a translated sentence, the
+  security emails' two, is placed by one helper, `translateParts` in
+  `i18n/translate.ts`, so each language keeps its own word order.
+- **The address under a button** is its own link, in the small print's
+  grey. It breaks after any `/`, `?`, `=` and `&` by `<wbr>`, which is
+  not copied, as well as by `word-break`, which about a third of mail apps
+  ignore. It goes in before an email's first footer, and no block moves,
+  so both parts keep one order.
+- **The invitation.** `MailContent` is `Mail`'s envelope with blocks, so
+  `replyTo` passes through `writeMail`; `MailService` gives it to Resend
+  as `reply_to` and to nodemailer as `replyTo`. It is set while the
+  inviter is still a member, on a send and a resend alike, and is absent
+  once they have gone. `mail.invitation.fallback` became
+  `mail.button.fallback`, its words unchanged.
+- **The proof.** `server/src/cli/mail/` holds 40 samples, every email in
+  each language it is sent in, built with the real builders and no
+  database, and each sample's text part in `__text__/`, written from the
+  code before the layout and never rewritten since; `mail-samples.spec.ts`
+  compares them on every run. `npm run mail:text` runs the proof alone,
+  and `npm run mail:text -- --update` rewrites the files, for a branch
+  that changes an email's words on purpose (#255, a translation
+  corrected), in a commit that changes nothing else; a change of layout
+  or code fixes the code, never the files (conventions.md, "Tests"). The
+  samples sit beside their only user, `cli/mail-preview.ts`, since
+  `shared/` imports nothing from `core/`.
+- **The tools.** `npm run mail:preview` writes `tmp/mail-preview/`, a
+  byte-order mark before each text part; `-- --send` refuses when
+  `RESEND_API_KEY` is set, and every sample goes to an `@example.com`
+  address. `npm run screenshots:mail` in `client/` draws a preview folder
+  at 375 and 600 px, light and dark, named as `screenshots:compare` reads
+  them, the mark from `client/public/` with no server running; a run
+  takes about 7 seconds. A comparison copies today's preview to a folder
+  of its own, since `mail:preview` empties its folder each run.
+- **The colours.** `common/dark-accent.ts` holds `darkAccent()` and
+  `ON_DARK_ACCENT`, used by organizations' accents and the emails alike;
+  `tokens.ts` names each value the emails keep a copy of, `DARK.page`,
+  `DARK.text`, `ON_ACCENT.light` and `RADIUS.panel` among them. No test
+  reads the client.
+- **Tests.** Escaping; both parts from one set of blocks; `lang` twice;
+  every layout table's role; the article's three attributes; the dark
+  rules, the page and text colours under both selectors and none in light
+  mode; the preheader first; the button at least 44 px, in Outlook too;
+  buttons on confirm, reset and the invitation only; and under 50 KB with
+  nothing loaded but the mark, against all 40 samples. The header's tests
+  compare MailBrand's blocks (`opening(subject)`), and the layout's spec
+  alone pins markup. Mailpit's HTML Check scores the emails about 89 to
+  93 % supported, every warning one of the extras above or a margin reset
+  to zero.
+- **Riders.** `.env.example` leaves `RESEND_API_KEY` commented out, so a
+  copied `.env` sends to Mailpit. CodeQL found a spec escaping only the
+  first `&` of the address it expected.
+- **The reviews,** numbered in `tmp/adr-083/review.md`: 19 fixed. Left:
+  Panivo in the email and 品桥 on the page its button opens, evidence for
+  ADR-082's deferred name by language in emails, for Bob's mother's
+  review to confirm; an organization on UTC named as "GMT+00:00（UTC）"
+  in an expiry, a comment on #255; and `screenshots:mail` loading each
+  email four times (below).
+- **Considered and not done, added:** `screenshots:mail` drawing both
+  widths at once and switching mode without a reload, which would save
+  about 3 seconds of 7. Trigger: a run over a minute.
+- **Claude Code Review's first run after #254** (run 40458807349) took
+  28.9 seconds in 8 turns, Sonnet alone, with two Bash commands refused
+  for chaining an allowed `gh pr diff` with `cd`, `grep`, `tail` or a
+  redirect. The allowed list parsed into eight clean entries, so not its
+  commas: the multi-agent review does not run on a first attempt either
+  (#253, commented).
+- **Left for an issue:** the token lifetimes, #258. The confirm and reset
+  emails say 24 hours and one hour, while `VERIFICATION_TOKEN_TTL_MS` and
+  `PASSWORD_RESET_TOKEN_TTL_MS` are settings; set to anything else, the
+  emails would name the wrong time.
+
 ---
 
 ## Open decisions

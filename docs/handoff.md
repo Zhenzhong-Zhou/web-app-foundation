@@ -1,33 +1,31 @@
-# web-app-foundation — handoff, 26 October 2026
+# web-app-foundation — handoff, 27 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 26 October 2026: read this first
+## Now, 27 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **ADR-083, the emails' design** (`adr-083-emails`, 26 October 2026):
-  the ADR is the branch's first commit, with the riders Bob chose (A to
-  L, J included). One layout for every email, built from blocks into
-  both parts, every text part unchanged character for character;
-  buttons only where an email's action already has words; dark mail
-  apps; a padded preheader; the invitation's `Reply-To` its inviter;
-  `npm run mail:preview`, with pictures for `screenshots:compare` and
-  Mailpit's HTML Check; and `/build-from-brief`. The canvas's boards are
-  approved, with what they settled in ADR-083's amendment: the app's
-  own dark accent for links and the button in dark mail apps, each
-  email's subject as its heading, the email an article to a screen
-  reader, and the button the column's width on a phone. Next in this
-  chat: the brief, the first written for
-  `/build-from-brief`; once the skill is built, each prompt is
-  `/build-from-brief tmp/adr-083/brief.md <step>`. The error tracker is
-  ADR-084 and low stock ADR-085. Its pull request is the first real one
-  for #254's changes to Claude Code Review: read its first run's
-  seconds, models and any `Refused:` line against #253's table, without
-  a re-run. Its dependency steps leave `typescript-eslint` 8.72.1 and
-  `@aws-sdk/client-s3` 3.1157.0 alone before 2 November.
+- **ADR-083, the emails' design: PR #257** (`adr-083-emails`, 26 and 27
+  October 2026), built through `/build-from-brief`, green, to merge
+  with this as-built commit; ADR-083's as-built amendment says what
+  building settled. One layout for every email, built from blocks into
+  both parts, every text part unchanged and held by
+  `mail-samples.spec.ts`; buttons where the words were; each product
+  email's subject as its heading; the email's own dark colours in a
+  dark mail app; the invitation's `Reply-To` its inviter. **Before
+  merging:** Mailpit's half of section 37 (MC-3701 to MC-3704, MC-3708,
+  MC-3710, and MC-3711's Reply-To). **After the merge, by hand:** the
+  live site's half (MC-3705, MC-3706, MC-3707, MC-3709 and MC-3711's
+  reply), and `/production-readiness`'s by-hand list in
+  `tmp/adr-083/review.md` (each email in the inbox, not spam, with
+  Gmail's Show original reading SPF, DKIM and DMARC PASS; Resend's open
+  and click tracking off; the address line on a phone); then delete
+  `tmp/adr-083/` and the branch. Claude Code Review's first run
+  after #254 still skipped its agents (ADR-083's as-built; #253,
+  commented).
 - **Bob's mother's Chinese corrections** are slow in coming (26 October
   2026): ask again from Thursday 29 October whether they are back. Bob
   read the Organization guide's 品牌 section in Help, in 中文, himself on
@@ -50,12 +48,11 @@ with this one, this one is current.
     each refused tool with what it asked for (`Refused: …`). The evidence
     is on #252. #253 is filed: re-runs review shallowly (#251's second
     attempt took 37 seconds, Sonnet alone, three tools refused, without
-    the multi-agent review), with a table of 25 runs. All of this gets
-    its first real test on the next pull request, the emails' design:
-    read its seconds, models and any `Refused:` line there. If a
-    `Refused:` line names a listed tool, the list's format is the first
-    suspect, since the action's examples write it with no space after
-    each comma.
+    the multi-agent review), with a table of 25 runs. Its first real
+    test, #257's first run, still skipped the agents: 28.9 seconds,
+    Sonnet alone, two Bash commands refused for chaining an allowed `gh
+    pr diff` with `cd`, `grep`, `tail` or a redirect. The list parsed
+    into eight clean entries, so not its commas (on #253).
   - **Install browsers** crawled rather than hung: a shard fetched the
     browsers' Linux packages (181 packages, 119 MB with every browser)
     from `azure.archive.ubuntu.com` at about 40 kB/s, still going after
@@ -227,9 +224,11 @@ with this one, this one is current.
     3. **ADR-084, an error tracker**, a small PR with a short ADR, so real errors
        show while fixing: what is sent, scrubbed of personal details
        (PIPEDA, PIPL), and browser errors carried through the app's own
-       API, so the browser contacts no other site.
-    4. **ADR-085, low stock** (its questions in Open decisions; #222 rides
-       along).
+       API, so the browser contacts no other site. Its branch first
+       takes `typescript-eslint` 8.72.1 and `@aws-sdk/client-s3`
+       3.1157.0, old enough from 2 November.
+    4. **ADR-085, low stock** (its questions in Open decisions; #222 and
+       the Movements page, #256, ride along).
     5. **The fix-ups**, each a PR of five to ten related issues: safety
        and scale (#181 first, then #142, #182, #225, #226, #244), orders
        and shipping (#156, #125, #161, #164, #128, #241, #250, #159 with
@@ -702,7 +701,12 @@ with this one, this one is current.
   catalogues only: not Help's guides (#150; until then she reads them in
   Help, in 中文) and not MUI's or the browser's own words, which aren't
   ours to correct. Her first note: 头像 for the profile picture
-  everywhere, since Your account says 照片 while Home says 头像.
+  everywhere, since Your account says 照片 while Home says 头像. Two
+  more to ask her, from ADR-083's walkthrough: whether Panivo in a
+  Chinese email reads out of place beside 品桥 in the app, which is
+  ADR-082's trigger for the name by language in emails; and the
+  invitation email's 有效期到2026年11月3日结束, with no space where the
+  page writes 到 2026年.
 - **After #176, if not yet done:** delete `tmp/adr-080` and the branch,
   then `npm run seed` and `npm run seed:demo`; show Roles and the editor
   in 中文 on a phone to someone who reads only Chinese.
@@ -835,18 +839,18 @@ with this one, this one is current.
   #212, #214, #221, #222, #225, #226 and #232 open; #213, #223 and #230
   closed by #228, #229 and #231. From 24 and 25 October: #233, #241,
   #242, #244, #245, #246 and #248 open; #158 retitled, its filled button
-  fixed by #236. From 26 October: #249, #250, #253 and #255 (the
-  security emails' time, from ADR-083's design) open; #252 closed with
-  #254, and #246 with #251. `gh issue list` to review.
+  fixed by #236. From 26 October: #249, #250, #253, #255 (the security
+  emails' time, from ADR-083's design), #256 (the Movements page,
+  riding along in ADR-085) and #258 (the emails' token lifetimes) open;
+  #252 closed with #254, and #246 with #251. `gh issue list` to review.
 - **Branches:** prune the merged ones, `after-adr-070` among them
   (`scripts/prune-branches.sh`).
 
 ### Still to do, in code
 
-- **ADR-083, the emails' design**, on `adr-083-emails`
-  with `/build-from-brief` riding along, then ADR-084, the error tracker (the
-  order, *Now*). The emails' design is the review's first real test
-  after #254, and #253's.
+- **ADR-084, an error tracker,** next (the order, *Now*). Its branch
+  first takes `typescript-eslint` 8.72.1 and `@aws-sdk/client-s3`
+  3.1157.0, published on 26 October and too new for ADR-083's.
 - `@mui/codemod@9.5.0`'s command crashes on yargs 18, which could be
   reported to MUI.
 - **From #231.** `e2e/text-size.spec.ts` still opens every screen in one
@@ -963,6 +967,10 @@ with this one, this one is current.
   customers (ADR-082); DMARC enforcement, a report address and then
   `quarantine`, at the first paying customer, likely on that domain (Bob,
   25 October 2026).
+- Emails: a footer for the product's emails, at the terms or a mailbox
+  on the domain; links on Panivo's own domain; a rendering service, at
+  the first paying customer; the mark beside the sender's name in an
+  inbox (BIMI), with DMARC's trigger (ADR-083).
 - Deploys: keeping the last build's files ourselves; failed loads and
   refusals sent to an error tracker; Playwright against the built files;
   feature flags and staged rollouts (ADR-081, Open decisions).
@@ -1763,18 +1771,22 @@ in ADR-050's amendment.
   Claude Code prompt per commit. Claude Code writes the code from each prompt, runs
   `scripts/verify.sh`, `/simplify` and `/code-review`, and opens the PR.
   Bob pastes its summaries back into the chat, which writes the as-built
-  amendment and the docs, as full files. Until ADR-078 the chat wrote
+  amendment and the docs, as a patch for a long file (below). Until
+  ADR-078 the chat wrote
   the code too, as one mbox per commit, and Claude Code only applied
   them.
-- **The build, as ADR-079 ran it.** The brief and the canvas's boards go
-  in `tmp/adr-NNN/`, ignored by git though `scripts/verify.sh` lints its
-  Markdown. Each prompt is one line: "Read tmp/adr-NNN/brief.md and do
-  step N. End with the summary for the chat." `/clear` between steps,
-  never inside one; a step's follow-ups (an amend, an issue to file) stay
-  in its context, and its summary is pasted into the chat before clearing.
-  The review step runs in two prompts: the reviews and walkthroughs,
-  stopping for Bob's choices, then the fixes, the full verify, the push
-  and the PR.
+- **The build, through `/build-from-brief`** (from ADR-083). The brief
+  and the canvas's boards go in `tmp/adr-NNN/`, ignored by git though
+  `scripts/verify.sh` lints its Markdown. Each prompt is one line,
+  `/build-from-brief tmp/adr-NNN/brief.md N`; the skill holds the ground
+  rules every brief repeated, so a brief holds its decisions and its
+  steps. `/clear` between steps, never inside one; a step's follow-ups
+  (an amend, an issue to file) stay in its context, and its summary is
+  pasted into the chat before clearing. A small fix between steps is a
+  plain prompt of its own, a commit, then `/clear`. The review step runs
+  in two prompts: the reviews write their findings, numbered, to
+  `tmp/adr-NNN/review.md` and stop for Bob's choices; then the fixes by
+  number, the full verify, the push and the PR.
 - **Cloud sessions** (Claude Code on the web, from October 2026): one new
   session per task, from `main`, each cloning the repository fresh, so
   nothing is pulled first; a long session pays for its whole history at

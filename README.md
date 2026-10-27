@@ -223,6 +223,7 @@ work under updates it.
 | A change people will see               | `npm run screenshots` before and after, then `npm run screenshots:compare`             |
 | A change to an email                   | `npm run mail:preview` in `server/`, before and after; `-- --send` for Mailpit         |
 | A change to an email, in pictures      | `npm run screenshots:mail` in `client/` on each preview, then `screenshots:compare`    |
+| An email's words changed on purpose    | `npm run mail:text -- --update` in `server/`; commit the files with the words          |
 | A change to what the API sends         | `npm run api` in `server/`; commit both generated files                                |
 | A change to the mark, in `docs/brand/` | `node scripts/brand-assets.mjs`; commit what it writes in `client/public/`             |
 | Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`         |
