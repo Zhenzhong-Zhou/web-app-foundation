@@ -288,6 +288,33 @@ test("front matter's --- lines may end in spaces, for the ADRs as for the links"
   assert.equal(run.status, 0, run.stderr);
 });
 
+test("docs/adr/ holds ADRs named NNNN-<slug>.md, the README and open-decisions.md, and nothing else git sees", (t) => {
+  const root = fixture(t, {
+    "docs/adr/0001-one.md": adr(
+      "status: accepted\ndate: 2026-08-24\n",
+      "ADR-001 — One",
+    ),
+    "docs/adr/002-two.md": adr(
+      "status: accepted\ndate: 2026-08-25\n",
+      "ADR-002 — Two",
+    ),
+    "docs/adr/0003_three.md": "# ADR-003 — Three\n",
+    "docs/adr/0004-Four.md": "# ADR-004 — Four\n",
+    "docs/adr/open-decisions.md": "# Open decisions\n",
+    "docs/adr/README.md": INDEX,
+    // Ignored, as a Mac's .DS_Store is, so not in a checkout.
+    "docs/adr/tmp/notes.md": "# Notes\n",
+  });
+
+  const why =
+    "not a name for a file here: an ADR is NNNN-<slug>.md, four digits and its title's words in lower case, and the only others are README.md and open-decisions.md";
+  assert.deepEqual(failures(check(root)), [
+    `docs/adr/0003_three.md:1: 0003_three.md — ${why}`,
+    `docs/adr/0004-Four.md:1: 0004-Four.md — ${why}`,
+    `docs/adr/002-two.md:1: 002-two.md — ${why}`,
+  ]);
+});
+
 test("an ADR's front matter: none, an unknown status, a date that is not a day, a line that is not a field", (t) => {
   const root = fixture(t, {
     "docs/adr/0001-one.md": "# ADR-001 — One\n\nThe decision.\n",

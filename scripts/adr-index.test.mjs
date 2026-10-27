@@ -4,12 +4,13 @@
  *
  *     node --test scripts/
  *
- * Each test copies the script into a temporary folder with a few ADRs and
- * a README, and runs it there, since it reads the docs/adr/ beside it.
+ * Each test copies the script into a temporary repository with a few
+ * ADRs and a README, and runs it there, since it reads the docs/adr/
+ * beside it, as git lists it.
  * check-docs.test.mjs tests the front matter's own checks.
  */
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
   copyFileSync,
   mkdirSync,
@@ -50,11 +51,12 @@ Written by the script.
 The table.
 `;
 
-/** A temporary folder: the script, three ADRs, a file that is not one, the README. */
+/** A temporary repository: the script, three ADRs, a file that is not one, the README. */
 function fixture(t) {
   const root = mkdtempSync(path.join(tmpdir(), "adr-index-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
 
+  execFileSync("git", ["init", "--quiet"], { cwd: root });
   mkdirSync(path.join(root, "scripts"));
   copyFileSync(
     path.join(ROOT, "scripts/adr-index.mjs"),

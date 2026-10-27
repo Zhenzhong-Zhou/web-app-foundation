@@ -6,14 +6,16 @@
  *     node scripts/adr-index.mjs            # writes the table in docs/adr/README.md
  *     node scripts/adr-index.mjs --check    # writes nothing; exits 1 if it is stale
  *
- * Every ADR, docs/adr/NNNN-*.md, has a number no other file has, and
+ * Every ADR, docs/adr/NNNN-<slug>.md (four digits, then lower-case words
+ * and numbers joined by hyphens), has a number no other file has, and
  * front matter with its status (accepted, deferred or superseded by an
  * ADR that exists) and its date (YYYY-MM-DD), in any order, and no
  * field but those, amends and amended-by. Its heading, `# ADR-NNN —
  * Title`, has its file's number. Each ADR its `amends` names exists and
  * lists it in its `amended-by`, and each one its `amended-by` names lists
  * it in its `amends`; both lists are in ascending order. Once there is an
- * ADR, docs/adr/README.md holds their index.
+ * ADR, docs/adr/README.md holds their index, and open-decisions.md is the
+ * folder's only other file.
  *
  * The index is one row per file, in number order, between
  * <!-- adr-index:start --> and <!-- adr-index:end --> in the README: ADR,
@@ -32,7 +34,8 @@
  * Its tests, in adr-index.test.mjs, run it in a temporary folder:
  * `node --test scripts/`.
  */
-import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -42,6 +45,12 @@ const ADR_FOLDER = "docs/adr";
 const README = `${ADR_FOLDER}/README.md`;
 const START = "<!-- adr-index:start -->";
 const END = "<!-- adr-index:end -->";
+
+/** An ADR's file name; the slug is its title's words, as ADR-086 makes it. */
+const ADR_FILE = /^\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
+
+/** The folder's files that are not ADRs. */
+const OTHERS = ["README.md", "open-decisions.md"];
 
 const STATUS = /^(?:accepted|deferred|superseded by ADR-(\d{3,}))$/;
 
@@ -85,18 +94,38 @@ export function frontMatterEnd(lines) {
 }
 
 /**
- * Every docs/adr/NNNN-*.md, in number order: its file, the number its
+ * The names of the files in docs/adr/ that git tracks or would track, so
+ * not the .DS_Store a Mac leaves there; none when there is no folder.
+ */
+function inFolder() {
+  const listed = execFileSync(
+    "git",
+    [
+      "ls-files",
+      "-z",
+      "--cached",
+      "--others",
+      "--exclude-standard",
+      "--",
+      ADR_FOLDER,
+    ],
+    { cwd: ROOT, encoding: "utf8" },
+  );
+  return [...new Set(listed.split("\0"))]
+    .filter((file) => file && existsSync(path.join(ROOT, file)))
+    .map((file) => file.slice(ADR_FOLDER.length + 1));
+}
+
+/**
+ * Every docs/adr/NNNN-<slug>.md, in number order: its file, the number its
  * name gives, its front matter's fields, each `{ value, line }` (null
  * when it has none, its unreadable lines in `malformed`), and its
  * heading (null when its first line after the front matter is not
  * `# ADR-NNN — Title`).
  */
 function readAdrs() {
-  const folder = path.join(ROOT, ADR_FOLDER);
-  if (!existsSync(folder)) return [];
-
-  return readdirSync(folder)
-    .filter((name) => /^\d{4}-.+\.md$/.test(name))
+  return inFolder()
+    .filter((name) => ADR_FILE.test(name))
     .sort()
     .map((name) => {
       const file = `${ADR_FOLDER}/${name}`;
@@ -222,6 +251,14 @@ export function checkAdrs({ writing = false } = {}) {
   const found = readAdrs();
   const byNumber = new Map(found.map((adr) => [adr.number, adr]));
   const failures = [];
+
+  for (const name of inFolder()) {
+    if (!ADR_FILE.test(name) && !OTHERS.includes(name)) {
+      failures.push(
+        `${ADR_FOLDER}/${name}:1: ${name} — not a name for a file here: an ADR is NNNN-<slug>.md, four digits and its title's words in lower case, and the only others are ${OTHERS.join(" and ")}`,
+      );
+    }
+  }
 
   for (const adr of found) {
     const name = adrName(adr.number);
