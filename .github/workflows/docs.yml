@@ -2,9 +2,9 @@ name: Docs
 
 # Markdown gets its own workflow because CI skips docs-only changes
 # (ci.yml's paths): a check inside ci.yml would never run on the
-# pull requests that need it. This one runs on every push and pull request,
-# not on Markdown changes alone: renaming a test or a guide can break a link
-# from a Markdown file (ADR-086). It takes seconds.
+# pull requests that need it. This one runs on every pull request, and every
+# push to main, not on Markdown changes alone: renaming a test or a guide can
+# break a link from a Markdown file (ADR-086). It takes seconds.
 on:
   push:
     branches: [main]
@@ -40,6 +40,8 @@ jobs:
       - run: npx --yes markdownlint-cli2@0.23.3
 
       # Every relative link in the Markdown leads to a file, and a fragment
-      # to a heading there, which markdownlint checks within one file only
-      # (ADR-086). Node and git, nothing to install.
+      # to a heading there, which markdownlint checks within one file only;
+      # every ADR's front matter is right, each amendment recorded both
+      # ways; and the ADRs' index is current (ADR-086). Node and git,
+      # nothing to install.
       - run: node scripts/check-docs.mjs

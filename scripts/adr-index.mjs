@@ -4,7 +4,7 @@
  * keep (ADR-086).
  *
  *     node scripts/adr-index.mjs            # writes the table in docs/adr/README.md
- *     node scripts/adr-index.mjs --check    # writes nothing; exits 1 if it is stale
+ *     node scripts/adr-index.mjs --check    # writes nothing; exits 1 if it is stale or an ADR fails
  *
  * It reads the repository it is run in, from any folder of it.
  *

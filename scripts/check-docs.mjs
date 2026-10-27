@@ -23,9 +23,14 @@
  * other kind of file (#L10). Only ATX headings (## Heading) have anchors
  * here; a link to a setext one fails.
  *
+ * Checked too, though GitHub renders neither: a link inside an HTML
+ * comment (<!-- … -->), and one in a code block indented four spaces,
+ * which is read as text. Each fails if it leads nowhere, so at worst a
+ * false failure, never a dead link missed.
+ *
  * And the ADRs in docs/adr/, by the rules scripts/adr-index.mjs holds:
- * each one's front matter, heading and amendments, and their index in
- * docs/adr/README.md current.
+ * each one's name, front matter, heading and amendments, the README
+ * beside them, and their index in it current.
  *
  * Prints each failure as `file:line: target — reason` and exits 1, or
  * what it checked and exits 0. scripts/verify.sh and the Docs workflow run
