@@ -393,3 +393,110 @@ part 1, for `docs-start-here` to settle with the rest:
   in-app Help is built (ADR-079); and the rules files after the
   invoices pilot come from the fix-ups and one docs PR, each checked
   against its area's code and tests, not drafted from the ADRs alone.
+
+**Amendment (October 2026) — part 2 as planned.** Settled on 27 October
+2026, from the list above and the second amendment's. Part 2,
+`docs-start-here`, stays one docs-only pull request. Its rules files,
+Claude's code rules by area and the checks that keep both true are
+[ADR-087](0087-the-rules-written-down.md), a decision of their own,
+which replaces the five nested `CLAUDE.md` files above with path-scoped
+rules in `.claude/rules/`, one per area, covering both its server and
+its client folders. The rest:
+
+- **Start here.** `docs/README.md`, written by hand, about 150 lines.
+  First the system on one page as a Mermaid block: the browser, the
+  API's core, modules and shared layers, PostgreSQL, Resend, R2, Render
+  and GitHub Actions. Then which document answers which question,
+  grouped by Diátaxis's four kinds: tutorial (the README's setup),
+  how-to (the Help guides and the runbooks), reference (the rules files,
+  the API reference, the glossary, `conventions.md`) and explanation
+  (the ADRs and `principles.md`), with the handoff beside them as
+  status. Then the docs' folder tree, each entry a link. A new document
+  finds its kind there, and no file mixes two, as the handoff did while
+  it held the working agreements.
+- **Headings in every ADR, by a script.** Each bold label opening a
+  paragraph at the margin becomes a heading, about 600 in all: `##` for
+  Context, each Decision, Considered and not done, Deferred,
+  Consequences and each Amendment, and `###` for a label inside an
+  amendment. Labels inside lists and quotes stay bold. The words stay;
+  only a label's closing period goes, as markdownlint's MD026 asks. The
+  script's proof turns the headings back and must give files
+  byte-identical to the branch's start. Both are for the branch only, in
+  `tmp/`.
+- **A template for new ADRs,** `docs/adr/template.md`: the front matter
+  and the headings, under a comment mapping them to MADR's names
+  (Context → Context and Problem Statement, Decision → Decision Outcome,
+  Considered and not done → Considered Options, Consequences →
+  Consequences; Deferred, with its triggers, has no counterpart and
+  stays). `adr-index.mjs` allows the name.
+- **Open decisions' 73 entries become `##` headings,** by the same script
+  and its proof. Nothing else in the file changes.
+- **`areas` in the front matter.** One or more per ADR, from one list in
+  `adr-index.mjs`: a name for each folder in `server/src/modules/` and
+  `server/src/core/`, and seven for what crosses them: `api`,
+  `database`, `docs`, `help`, `i18n`, `ops` and `ui`. Named after the
+  code's folders, an area maps to its files with no table between, and
+  ADR-087's rules files take the same names. The index gains a "By area"
+  section, generated as "By number" is. Claude Code proposes each ADR's
+  areas from its text; Bob reviews the generated section.
+- **Resolved is retired.** Its rows covered 40 of the 85 ADRs, each
+  pointing to an ADR the index lists by title, and now by area.
+  Completing it would mean 45 rows more, kept by hand. Git keeps the
+  table.
+- **The handoff, cut to status:** under 300 lines, from 1,766. It keeps
+  where things stand, the order, the dates, what is still to do by hand
+  and in code, and pointers to the Deferred lines and the open issues.
+  Every finished item goes, and the history from "Where things stand"
+  down; `git show 504daab:docs/handoff.md` holds it. Each item still to
+  do in code without an issue gets one, and the handoff keeps the order
+  and the links, so the issues are the one list of open work. The pull
+  request lists each removed section and where what lasts of it now
+  lives (its ADR's as-built, `engineering.md`, an issue); anything with
+  no home gets one first.
+- **Citations as links.** A citation of a section in Markdown, as
+  "(conventions.md, Tests)", becomes a link,
+  `[conventions.md, Tests](conventions.md#tests)`, so the check catches
+  the next move: about 27 today. Code comments keep the plain form, under
+  the as-built's editorial rule and a sweep. `check-docs.mjs` also checks
+  a repository path written as code, as `` `scripts/smoke-auth.sh` ``, in
+  every Markdown file but the ADRs, the release notes and `tmp/`, where
+  history may name what has since gone. `conventions.md` names that
+  script, which no longer exists.
+- **The lines that made sense only in their old homes,** fixed in place
+  under the as-built's editorial rule: the second amendment's list; the
+  index's preamble ("A running log", "Append new entries", its Format
+  line); ADR-012's "this log"; the README's Documentation list, which
+  leaves out `engineering.md` and the glossary, and its "Both"; and the
+  line on `tmp/`'s Markdown. Where an amendment overturned a rule, as
+  ADR-015 did ADR-011's, a one-line note at the amended ADR's top says
+  what changed.
+- **Six practices for `docs/engineering.md`:** the four above, and two
+  from 27 October. An alert is named "code scanning alert 9" or
+  "Dependabot alert 4", never "#9", in commits, pull requests and
+  comments, since GitHub links "#9" to issue or pull request 9. A
+  security fix is pushed on its own, and its alert seen closed, before
+  an as-built says "fixed": on #259, CodeQL did not count the first fix.
+- **"A long file changes by a patch" stays, by size.** A file under 600
+  lines comes whole: every ADR, `engineering.md`, and the handoff once
+  cut. A longer one changes by a patch: `manual-checks.md` (3,736
+  lines) and `conventions.md` (851).
+- **`scripts/verify.sh --docs`:** markdownlint, `check-docs.mjs` and the
+  scripts' tests, in seconds. A commit that changes only Markdown or
+  `scripts/` runs it in place of `--quick`, and it refuses when the
+  uncommitted changes touch anything else. The full verify still runs
+  before each push. Part 1's eight review fixes took nine `--quick`
+  runs.
+- **`/doctor prompt-audit`,** Claude Code's own audit of its instruction
+  files (`CLAUDE.md`, `.claude/rules/`, the skills) for contradictions
+  and references to files that no longer exist, joins part 2's review
+  step and each release's checks. It changes nothing itself; its
+  findings are numbered with the other reviews'.
+- **The per-area table diagrams ride along in ADR-084's branch,** a
+  commit of their own, as small chores do: they need a script that
+  loads the Drizzle schema and a check in verify, which is code. Start
+  here links them then.
+- **Not done: an archive of the handoff's history,** as
+  `docs/history.md`. It would bring the history back into the Project's
+  search, which the cut is for; git holds it.
+- **Deferred, with what brings it in: a prose linter** (Vale) holding the
+  glossary's words, when a second writer or a translator joins.

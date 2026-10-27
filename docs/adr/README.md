@@ -103,6 +103,7 @@ script.
 | [ADR-082] | The product's brand: Panivo before sign-in, the organization's after | accepted | 2026-10-24 | [ADR-019], [ADR-051], [ADR-055], [ADR-060], [ADR-067], [ADR-081] | [ADR-083] |
 | [ADR-083] | The emails: one layout for every email | accepted | 2026-10-26 | [ADR-077], [ADR-082] | |
 | [ADR-086] | Docs as code: one file per decision, and links that are checked | accepted | 2026-10-27 | | |
+| [ADR-087] | The rules written down: `docs/rules/` for people, `.claude/rules/` for Claude | accepted | 2026-10-27 | | |
 
 [ADR-001]: 0001-nestjs-as-the-server-framework.md
 [ADR-002]: 0002-postgresql-as-the-database.md
@@ -188,6 +189,7 @@ script.
 [ADR-082]: 0082-the-products-brand.md
 [ADR-083]: 0083-the-emails.md
 [ADR-086]: 0086-docs-as-code.md
+[ADR-087]: 0087-the-rules-written-down.md
 
 <!-- adr-index:end -->
 
