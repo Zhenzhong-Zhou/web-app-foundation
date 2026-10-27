@@ -382,7 +382,7 @@ licences beyond the product's own — site, wholesale and business licences.
 
 ## Documentation
 
-- [`docs/decisions.md`](docs/decisions.md) — why the architecture is the way it is.
+- [`docs/adr/`](docs/adr/README.md) — why the architecture is the way it is, one ADR per file.
   **Read this before changing anything structural.**
 - [`docs/conventions.md`](docs/conventions.md) — naming and code organisation rules
 - [`docs/manual-checks.md`](docs/manual-checks.md) — what to check by hand before a

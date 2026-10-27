@@ -847,7 +847,7 @@ with this one, this one is current.
   review and its walkthrough in Chinese: #117
   (two one-second windows while a deletion completes), fixed on
   `deletion-started`, and #118 (the export's column glossary and invoice
-  PDFs, also under *Open decisions* in `decisions.md`), which ADR-071
+  PDFs, also under *Open decisions* in `docs/adr/open-decisions.md`), which ADR-071
   takes up; #119 to #122 were fixed in #123. From 23 and 24 October:
   #212, #214, #221, #222, #225, #226 and #232 open; #213, #223 and #230
   closed by #228, #229 and #231. From 24 and 25 October: #233, #241,
@@ -1348,7 +1348,7 @@ Then tag v0.4.0.
    Known edges, written down rather than fixed: the packing slip has no
    item names in other languages; field names inside an audit entry and
    in validation messages are the API's; the industry vocabulary
-   ("recipe", "batch") is an open decision in `decisions.md`.
+   ("recipe", "batch") is an open decision in `docs/adr/open-decisions.md`.
 
 ## What v0.4 built
 
@@ -1844,7 +1844,7 @@ in ADR-050's amendment.
   Downloads land in `~/Downloads` itself, not a folder, so each file is
   named in full, never a glob.
 - **A long file changes by a patch, not a full replacement** (26 October
-  2026): `decisions.md`, this handoff, `manual-checks.md` and
+  2026): the ADR files in `docs/adr/`, this handoff, `manual-checks.md` and
   `conventions.md` are changed only where they need it. Bob attaches his
   copy from `main`, since Project knowledge's search returns a long file
   in passages; the chat sends a patch, applied with `git apply --check`
@@ -1868,13 +1868,13 @@ in ADR-050's amendment.
   - `server/test/…`;
   - `client/src/…` (feature folders, `lib/api-names.ts`, `auth/permissions.ts`);
   - `client/e2e/…`;
-  - `docs/decisions.md`.
+  - `docs/adr/NNNN-<slug>.md`.
 
 ### Process
 
 - ADR before code for each new area. Server first with e2e tests, then the
   client screens. Each step its own commit.
-- **At the start of every ADR,** before drafting it: check `decisions.md`'s
+- **At the start of every ADR,** before drafting it: check the ADRs'
   Deferred lines, this handoff's watch lists and the open issues for
   anything in the same area, and say which triggers have fired. That is
   when a deferred item is cheapest to pick up.

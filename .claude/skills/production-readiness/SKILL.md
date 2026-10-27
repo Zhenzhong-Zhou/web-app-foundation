@@ -8,7 +8,7 @@ description: Review whether the deployed app is ready for real users, across eig
 Answer one question with evidence: could a real customer start using the
 deployed app tomorrow, and what would hurt them first? Judge against what
 this repository has already decided (the ADRs, `docs/runbooks/`, Open
-decisions in `docs/decisions.md`), not general taste. Report; change
+decisions in `docs/adr/open-decisions.md`), not general taste. Report; change
 nothing, here or in production.
 
 ## Rules

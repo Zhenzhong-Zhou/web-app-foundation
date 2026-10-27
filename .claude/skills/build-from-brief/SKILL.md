@@ -22,7 +22,7 @@ else.
   ADR leaves to the build, and the steps around this one, so the step
   neither redoes an earlier one nor reaches into a later one.
 - **What the brief says to read first,** usually its ADR and amendments in
-  `docs/decisions.md`, then the home of each rule below that the step
+  `docs/adr/`, then the home of each rule below that the step
   touches.
 
 A brief's own rules add to these, as "no API change is expected" does.
