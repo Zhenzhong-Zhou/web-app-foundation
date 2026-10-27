@@ -57,24 +57,26 @@ export type Run = string | { text: string; href: string };
 
 /**
  * What an email is made of (ADR-083). Each block writes itself into both
- * parts, so the HTML and the text cannot disagree. Where the text part
- * words a block its own way, as it did before the layout, the block holds
- * those words beside its own.
+ * parts, so the HTML and the text cannot disagree.
  */
-export type MailBlock =
+export type MailBlock = Block & {
+  /**
+   * The text part's own words for the block, where they differ from the
+   * HTML's, as they did before the layout; null leaves the block out of
+   * the text part.
+   */
+  plain?: string | null;
+};
+
+type Block =
   /** The product's (ADR-082): the mark, once it answers, and the name. */
   | { kind: 'header'; name: string; mark: string | null }
-  /** A product email's is its subject, in the HTML part only. */
-  | { kind: 'heading'; text: string; htmlOnly?: boolean }
+  | { kind: 'heading'; text: string }
   /** "Hi {name},", in the email's language. */
   | { kind: 'greeting'; name: string }
-  /** `plain` is the text part's words, where they differ. */
-  | { kind: 'paragraph'; text: string | Run[]; plain?: string }
-  /**
-   * The email's one action. The text part gives `lead`, the label unless
-   * said, with the address on the line under it.
-   */
-  | { kind: 'button'; label: string; href: string; lead?: string }
+  | { kind: 'paragraph'; text: string | Run[] }
+  /** The email's one action; the text part gives the address under it. */
+  | { kind: 'button'; label: string; href: string }
   /** A label and a value per row: a table of data, not of layout. */
   | { kind: 'details'; rows: [label: string, value: string][] }
   /** Someone's own words in a box, under whose they are. */
@@ -155,20 +157,20 @@ export function writeMail({ blocks, locale, ...mail }: MailContent): Mail {
 }
 
 function textOf(block: MailBlock, locale: Locale): string | null {
+  if (block.plain !== undefined) return block.plain;
   switch (block.kind) {
     case 'header':
       return block.name;
-    case 'heading':
-      return block.htmlOnly ? null : block.text;
     case 'greeting':
       return greetingOf(block.name, locale);
+    case 'heading':
     case 'small':
     case 'footer':
       return block.text;
     case 'paragraph':
-      return block.plain ?? wordsOf(block.text);
+      return wordsOf(block.text);
     case 'button':
-      return `${block.lead ?? block.label}\n${block.href}`;
+      return `${block.label}\n${block.href}`;
     case 'details':
       return block.rows
         .map(([label, value]) => `${label}: ${value}`)

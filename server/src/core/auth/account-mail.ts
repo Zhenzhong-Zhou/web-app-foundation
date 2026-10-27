@@ -53,6 +53,7 @@ function tokenMail(
 ): MailContent {
   const say = (message: Translatable) => translate(message, context.locale);
   const action = say(words.action);
+  const link = `${context.clientUrl}${path}?token=${context.token}`;
 
   return {
     to: context.to,
@@ -63,8 +64,8 @@ function tokenMail(
       {
         kind: 'button',
         label: action,
-        href: `${context.clientUrl}${path}?token=${context.token}`,
-        lead: say(words.lead),
+        href: link,
+        plain: `${say(words.lead)}\n${link}`,
       },
       { kind: 'paragraph', text: say(words.expires) },
     ],

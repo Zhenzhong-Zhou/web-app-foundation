@@ -10,14 +10,14 @@ const LIMIT = 50 * 1024;
 /** Every kind of block, in the order an email holds them. */
 const BLOCKS: MailBlock[] = [
   { kind: 'header', name: 'Panivo', mark: MARK },
-  { kind: 'heading', text: 'Confirm your email address', htmlOnly: true },
+  { kind: 'heading', text: 'Confirm your email address', plain: null },
   { kind: 'greeting', name: 'Mei Lin' },
   { kind: 'paragraph', text: 'Your account is ready. One step is left.' },
   {
     kind: 'button',
     label: 'Confirm your email address',
     href: LINK,
-    lead: 'Confirm your email address:',
+    plain: `Confirm your email address:\n${LINK}`,
   },
   {
     kind: 'details',
@@ -135,6 +135,20 @@ describe('writeMail', () => {
     expect(text).toBe(
       'Join Northside Naturals\n\nChen Jie invited you to join.',
     );
+  });
+
+  it('words any block its own way in the text part, or leaves it out', () => {
+    const { html, text } = email({
+      blocks: [
+        { kind: 'small', text: 'In the HTML alone.', plain: null },
+        { kind: 'quote', title: 'From Chen Jie', text: 'Hi.', plain: 'Hi.' },
+        { kind: 'button', label: 'Open', href: LINK },
+      ],
+    });
+
+    expect(text).toBe(`Hi.\n\nOpen\n${LINK}`);
+    expect(html).toContain('In the HTML alone.');
+    expect(html).toContain('From Chen Jie</strong><br>Hi.');
   });
 
   it('greets the reader by name in the email’s language', () => {

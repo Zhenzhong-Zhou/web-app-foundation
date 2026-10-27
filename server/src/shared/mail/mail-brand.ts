@@ -147,7 +147,7 @@ export class MailBrand implements OnApplicationShutdown {
               },
             ]
           : []),
-        { kind: 'heading', text: content.subject, htmlOnly: true },
+        { kind: 'heading', text: content.subject, plain: null },
         ...content.blocks,
       ],
     });
