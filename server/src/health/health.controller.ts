@@ -11,7 +11,7 @@ import { PG_POOL } from '../database/database.module';
 import type { Health, Readiness } from './dto/health-response.dto';
 
 /**
- * The release, as server/package.json names it (handoff, "At each
+ * The release, as server/package.json names it (engineering.md, "At each
  * release"). Read from the file, once: npm_package_version exists only
  * when npm starts the process, not under `node dist/main`. Two levels up
  * from src/health and from dist/health alike; a JSON import would fall

@@ -532,7 +532,7 @@ add says so in its PR.
   whose screens, manual checks and walkthroughs work without setup: a
   feature's new screens open on real-looking records, in every state its
   checks name. CI runs it on an empty database, so a service it calls that
-  changes shape fails there; run it locally after changing one (handoff,
+  changes shape fails there; run it locally after changing one (engineering.md,
   *Moving code*).
 - **`npm run seed:volume`** fills a database of its own with a year at
   realistic scale (`server/perf/README.md`). A new table gets rows in the

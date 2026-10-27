@@ -25,7 +25,7 @@
 #
 # Not run here, though CI runs it: npm run seed:demo, which would add a demo
 # organization to the dev database on every run. Run it after changing a
-# service the demo calls (handoff, Moving code).
+# service the demo calls (engineering.md, Moving code).
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
