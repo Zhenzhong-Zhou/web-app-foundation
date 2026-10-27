@@ -258,7 +258,7 @@ describe('writeMail', () => {
 
   it('puts the address under a button in small print last, before the footer, in the HTML alone, as its own link', () => {
     const { html, text } = email({ locale: 'zh-Hans' });
-    const href = LINK.replace('&', '&amp;');
+    const href = LINK.replaceAll('&', '&amp;');
     // A place to break after each / ? = and &, for a mail app that ignores
     // word-break; what is copied is the address.
     const breakable =
