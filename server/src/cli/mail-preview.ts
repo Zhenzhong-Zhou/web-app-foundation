@@ -7,7 +7,7 @@ import type { ConfigService } from '@nestjs/config';
 import { type Env, envSchema } from '../config/env';
 import { escapeHtml } from '../shared/mail/escape-html';
 import { MailService } from '../shared/mail/mail.service';
-import { type MailSample, mailSamples } from '../shared/mail/mail-samples';
+import { type MailSample, mailSamples } from './mail/mail-samples';
 
 /**
  * `npm run mail:preview` (ADR-083): every email the app sends, in each

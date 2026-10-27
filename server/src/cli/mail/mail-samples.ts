@@ -25,9 +25,9 @@ import { buildSecurityMail } from '../../core/auth/security-mail';
 import { roleWords } from '../../core/authorization/role-words';
 import { invitationMail } from '../../core/invitations/invitation-mail';
 import { organizationStartedMail } from '../../core/invitations/operator-mail';
-import type { Mail, MailService } from './mail.service';
-import { MailBrand } from './mail-brand';
-import type { MailContent } from './mail-layout';
+import type { Mail, MailService } from '../../shared/mail/mail.service';
+import { MailBrand } from '../../shared/mail/mail-brand';
+import type { MailContent } from '../../shared/mail/mail-layout';
 
 /** One email in one language, as the preview writes it and the proof reads it. */
 export interface MailSample {

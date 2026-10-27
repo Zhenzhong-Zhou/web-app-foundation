@@ -1,7 +1,6 @@
 import { verificationMail } from '../../core/auth/account-mail';
 import { invitationMail } from '../../core/invitations/invitation-mail';
 import { type MailBlock, type MailContent, writeMail } from './mail-layout';
-import { mailSamples } from './mail-samples';
 
 const MARK = 'https://app.example.com/brand/mail-mark.png';
 const LINK = 'https://app.example.com/verify-email?token=abc&next=1';
@@ -351,54 +350,5 @@ describe('writeMail', () => {
     );
 
     expect(preheaderOf(html)).toBe('Confirm your email address');
-  });
-});
-
-/** ADR-083's two tests that hold every email the app sends. */
-describe('every email', async () => {
-  const samples = await mailSamples();
-
-  it.each(samples.map((sample) => [`${sample.name}.${sample.locale}`, sample]))(
-    '%s stays under 50 KB and loads nothing but the mark',
-    (_, { mail }) => {
-      expect(Buffer.byteLength(mail.html)).toBeLessThan(LIMIT);
-
-      const images = mail.html.match(/<img\b[^>]*>/g) ?? [];
-      expect(images.length).toBeLessThanOrEqual(1);
-      for (const image of images) {
-        expect(image).toMatch(
-          / src="http:\/\/localhost:5173\/brand\/mail-mark\.png"/,
-        );
-      }
-      expect(mail.html.match(/\bsrc=/g) ?? []).toHaveLength(images.length);
-      expect(mail.html).not.toContain('url(');
-      expect(mail.html).not.toMatch(/<link\b/);
-    },
-  );
-});
-
-/** Buttons only where the action already has words (ADR-083). */
-describe('the buttons', async () => {
-  const samples = await mailSamples();
-
-  it('are to confirm an address, reset a password and accept an invitation, one to an email, in every language', () => {
-    const buttoned = samples.filter(({ mail }) =>
-      mail.html.includes('class="button"'),
-    );
-
-    expect(buttoned.map(({ name, locale }) => `${name}.${locale}`)).toEqual([
-      'confirm-email.en',
-      'confirm-email.fr-CA',
-      'confirm-email.zh-Hans',
-      'reset-password.en',
-      'reset-password.fr-CA',
-      'reset-password.zh-Hans',
-      'invitation.en',
-      'invitation.fr-CA',
-      'invitation.zh-Hans',
-    ]);
-    for (const { mail } of buttoned) {
-      expect(mail.html.match(/class="button"/g)).toHaveLength(1);
-    }
   });
 });

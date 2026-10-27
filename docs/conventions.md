@@ -406,7 +406,7 @@ message, and the screen keys on the code, never on the words.
   `pg` pool stays open and the run hangs without explaining why.
 - One integration test per feature as it's built (ADR-008).
 - **Every email's text part has a proof** (ADR-083).
-  `server/src/shared/mail/mail-samples.spec.ts` builds each email in each
+  `server/src/cli/mail/mail-samples.spec.ts` builds each email in each
   language it is sent in and compares its text part with its file under
   `__text__/`. A change of layout or code never rewrites one, ADR-083's
   layout included: a difference is the change's bug. A branch that changes
