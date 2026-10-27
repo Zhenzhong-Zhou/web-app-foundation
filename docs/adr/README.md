@@ -255,3 +255,4 @@ script.
 | Product names in other languages       | Translation rows; required languages per organization | ADR-054          |
 | The product's brand                    | Panivo signed out, in emails, at the rail's foot      | ADR-082          |
 | Email layout                           | One layout from blocks; buttons where words exist     | ADR-083          |
+| Where decisions are kept               | One file per ADR; front matter; an index generated    | ADR-086          |

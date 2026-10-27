@@ -285,3 +285,110 @@ scope as Bob set it on 26 and 27 October 2026, each to be confirmed then:
   that is renamed fails it, where it used to go stale unseen.
 - Part 1 changes `scripts/` and a workflow as well as Markdown, so CI runs
   on it too.
+
+**Amendment (October 2026) — as built (#259).** What building settled:
+
+- **Editorial fixes change an old ADR in place.** A moved file's path, a
+  link, or a citation of where a rule lives is corrected in the old
+  ADR's text, on the branch that moves the thing; what an ADR decided
+  changes only by an amendment, with `amends` and `amended-by`. Git
+  keeps the earlier wording, and `git blame -C -C` shows it. Under this,
+  nine citations that named the handoff for a section now in
+  `docs/engineering.md` were corrected after the move: four comments and
+  a line of `conventions.md` (9dd39167), and five citations in ADRs 079,
+  080, 081 and 083 (c33d6023). The brief's pointer tables had missed
+  them, written as "(handoff, Server)" rather than as a path.
+- **The proof** held at cdcc1969: the new files, front matter set aside,
+  joined back byte-identical to `decisions.md` (SHA-256 c288419ae62b…).
+  The old file was 86 pieces, not the brief's 85: the preamble, 83 ADRs,
+  Open decisions and Resolved. The pointer files were compared with the
+  step's start, since this ADR's own commit had changed the handoff.
+- **The front matter, as written:** 34 ADRs amended and 19 amending
+  another; ADR-067 added to ADR-082's `amends`. Of the 22 that no note
+  named an amender for, 18 had no note at all, and 052, 054, 055 and 069
+  had notes naming only some. Dates from git: 13 on 2026-08-24, the
+  latest 2026-10-26.
+- **`adr-index.mjs` owns the ADR format,** where the brief had put its
+  checks in `check-docs.mjs`: one `checkAdrs()` and one
+  `frontMatterEnd()`, used by `check-docs.mjs` and by both writing and
+  `--check`, which stop on a failing ADR, so the index can never be
+  written from what the check refuses. Writing skips only the "index is
+  current" check, which it exists to fix. The README is required
+  whenever an ADR exists. The allowed fields are one list, `FIELDS`,
+  where part 2's `areas` joins them.
+- **Also refused:** two files with one number; an `amends` or
+  `amended-by` list out of ascending order or naming an ADR twice; a
+  field not in `FIELDS`; `superseded by` naming an ADR with no file; a
+  file in `docs/adr/` other than `README.md`, `open-decisions.md` and
+  `NNNN-<slug>.md`; an impossible date. The fields' order is free, and a
+  field written twice is not reported: the later one counts, and for
+  `amends` and `amended-by` the both-ways check fails anyway.
+- **Links are checked against git's list of files** (tracked, and new
+  ones not ignored), not the disk, so a link to an ignored file fails
+  here as it would in CI's fresh checkout, and letter case is exact.
+  `docs/adr/` is listed the same way, so a Mac's `.DS_Store` does not
+  count. Not handled, and said in the script: setext headings; the Help
+  guides' `{#id}` ids, which get GitHub's anchor (`make-a-role-make`),
+  not the id; links in HTML comments and indented code, which are
+  checked though never shown, a false failure and never a miss.
+- **A fixture keeps the anchors honest.** After the split one link
+  within a file was left, so MD051 no longer cross-checked the anchors
+  as this ADR said it would. `scripts/fixtures/anchors.md` holds the
+  awkward heading shapes (an em dash, apostrophes, backticks, `_`,
+  Chinese, a repeated heading, with MD024 off for that file alone) and a
+  link to each, and markdownlint and `check-docs.mjs` both check it on
+  every run.
+- **CodeQL's one alert** on the pull request (#9: incomplete
+  multi-character sanitization, high) was on `headingText`, whose single
+  pass removing tags could leave a `<` behind. Its result only ever
+  becomes an anchor, never HTML (`anchorOf` is its one use), but it was
+  fixed rather than dismissed, as #113 fixed CodeQL's first six: a last
+  pass, before the code spans go back, removes every `<` and `>` left.
+  Straight after the tags it would have changed an anchor, since in
+  `x<_y_` the `_` would then follow a letter and stop counting as
+  emphasis. Last, it changes none of the anchors of the repository's
+  742 headings, since `anchorOf` drops both characters anyway; the
+  fixture gained `## When a < b` to show it.
+- **Left from the review:** test helpers shared with
+  `i18n-review.test.mjs` (a chore of its own), the line-number loop, the
+  anchor cache, the tests run in parallel, the Docs workflow's path
+  filters (decided above), and three minor parser edges. `docs.yml` is
+  not Prettier-formatted, as `ci.yml` is not.
+
+**Amendment (October 2026) — part 2's list grows.** Found while building
+part 1, for `docs-start-here` to settle with the rest:
+
+- Citations of a section written as links,
+  `[engineering.md, Server](../engineering.md#server)`, so the check
+  catches the next move; code comments still rely on the editorial rule
+  and a sweep.
+- Whether a link to a Help guide section uses GitHub's anchor or the
+  guide's `{#id}`, once the rules files link them.
+- `docs/adr/README.md`'s preamble, written for one file ("A running
+  log", "Append new entries"), and ADR-012's "this log is not legal
+  advice".
+- In `docs/engineering.md`: the title doubled above "Working agreements
+  (for Claude)"; "Moving code (what step 1 learned)", the step being the
+  handoff's maintainability step 1; "this branch's step 7 (ADR-079)",
+  already out of date; and "Planned in this chat". In the handoff, "What
+  they taught is in the working agreements", which no longer says where.
+- Whether a review's fix step needs `scripts/verify.sh --quick` before
+  each of its commits: part 1's eight took nine runs and ran well past
+  `/build-from-brief`'s half hour.
+- Diagrams, as text that something keeps true, never images. Written
+  by hand, since they change slowly: in "Start here", the docs' folder
+  tree with each entry a link, and the system on one page as a Mermaid
+  block. Generated: one diagram per area of its tables and their
+  foreign keys (56 tables and 162 foreign keys on 27 October 2026), made
+  from the Drizzle schema with `getTableConfig` as a Mermaid
+  `erDiagram`, `organization_id` left out since every table has it, and
+  checked as the API contract is; with part 2 or as a small PR of its
+  own. Not drawn: the ADRs' amendments, which the index holds; which
+  module imports which, a job for ESLint's rules as TenantDb's shows;
+  and anything inside a function.
+- Where the other documents land, so part 2 does not take them on: the
+  support playbook comes with the operator's console (the handoff's
+  "Later"); the terms and privacy policy stay in ADR-082's Deferred; the
+  in-app Help is built (ADR-079); and the rules files after the
+  invoices pilot come from the fix-ups and one docs PR, each checked
+  against its area's code and tests, not drafted from the ADRs alone.

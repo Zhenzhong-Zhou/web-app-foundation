@@ -8,8 +8,10 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **ADR-086, docs as code** (`docs-moves`, from 27 October 2026), part 1
-  of the docs plan, before anything else in the order below. Moves only,
+- **ADR-086, docs as code: part 1 is PR #259** (`docs-moves`, 27 October
+  2026), green, to merge with this as-built commit; ADR-086's as-built
+  amendment says what building settled, and a second amendment adds to
+  part 2's list. Moves only,
   proved by a script: `decisions.md` split into one file per ADR in
   `docs/adr/`, each with front matter (status, date, amends, amended
   by), an index generated from it (`docs/adr/README.md`) and Open
@@ -17,12 +19,12 @@ with this one, this one is current.
   working agreements moved to `docs/engineering.md`; the pointers the
   moves break fixed with them; and `scripts/check-docs.mjs`, checking
   from now on every relative link in the repository's Markdown, each
-  amendment recorded both ways, and the index. Planned in the chat,
-  built through `/build-from-brief tmp/adr-086/brief.md N`, steps 1 to 6;
-  no dependency step on either docs branch (ADR-086). Part 2,
-  `docs-start-here`, follows; its scope is in ADR-086 and is confirmed
-  when it is planned. After each docs PR merges, re-sync Project
-  knowledge (*Still to do, by hand*).
+  amendment recorded both ways, and the index. Built through
+  `/build-from-brief`, with three small fixes between its steps; no
+  dependency step on either docs branch (ADR-086). **After the merge:**
+  re-sync Project knowledge (*Still to do, by hand*), and delete
+  `docs-moves` and `tmp/adr-086/`. Part 2, `docs-start-here`, follows;
+  its scope is in ADR-086 and is confirmed when it is planned.
 - **ADR-083, the emails' design: merged as #257** (`adr-083-emails`,
   5d34faf) on 27 October 2026, built through `/build-from-brief`, with
   its as-built commit last; ADR-083's as-built amendment says what
@@ -222,14 +224,22 @@ with this one, this one is current.
     1. **ADR-083, the emails' design:** merged as #257 on 27 October; its
        by-hand steps (above). Before it, #252, CI's reliability, merged as
        #254 on 26 October.
-    2. **`docs-moves`**, ADR-086's part 1 (above), docs only.
+    2. **`docs-moves`**, ADR-086's part 1: PR #259 (above).
     3. **`docs-start-here`**, ADR-086's part 2, docs only.
     4. **ADR-084, an error tracker**, a small PR with a short ADR, so real errors
        show while fixing: what is sent, scrubbed of personal details
        (PIPEDA, PIPL), and browser errors carried through the app's own
        API, so the browser contacts no other site. Its branch first
        takes `typescript-eslint` 8.72.1 and `@aws-sdk/client-s3`
-       3.1157.0, old enough from 2 November. Riding along, planned for
+       3.1157.0, old enough from 2 November, and the Nest packages at
+       12.3.x together, old enough from 3 November: their
+       `@nestjs/platform-express` depends on multer 2.5.0 itself, so
+       the multer override goes. It then overrides esbuild under
+       drizzle-kit to 0.28.2 (Bob, 27 October), amending ADR-019 first,
+       since that override crosses esbuild's breaking versions, with its
+       exit written down: it goes once drizzle-kit's own dependencies
+       resolve to esbuild 0.28.1 or later without it, tried at each
+       drizzle-kit update. Riding along, planned for
        the emails' branch and not taken there: an `npm audit` step in
        CI, and the database's size in the backup's summary.
     5. **ADR-085, low stock** (its questions in Open decisions; #222 and
@@ -740,7 +750,9 @@ with this one, this one is current.
   (medium, development only), stays open as #113 left it: drizzle-kit
   0.31.11's deprecated `@esbuild-kit/esm-loader` pins esbuild
   `~0.18.20`, in a dev server nothing starts; it closes with drizzle-kit
-  1.0, whose fifth release candidate came out on 21 October. Alert 6,
+  1.0, whose fifth release candidate came out on 21 October; until then
+  ADR-084's branch overrides it (Bob, 27 October; the order, *Now*).
+  Alert 6,
   multer 2.4.0 (high, in production code), is pinned exactly by
   `@nestjs/platform-express` 12.2.0, the newest; its crash needs an
   asynchronous `fileFilter`, which no upload route sets, so it cannot be
@@ -868,8 +880,8 @@ with this one, this one is current.
 
 ### Still to do, in code
 
-- **ADR-086's two docs PRs** next, then **ADR-084, an error tracker**
-  (the order, *Now*). ADR-084's branch first takes `typescript-eslint`
+- **ADR-086's part 2**, `docs-start-here`, next (part 1 is #259), then
+  **ADR-084, an error tracker** (the order, *Now*). ADR-084's branch first takes `typescript-eslint`
   8.72.1 and `@aws-sdk/client-s3` 3.1157.0, published on 26 October and
   too new for ADR-083's.
 - `@mui/codemod@9.5.0`'s command crashes on yargs 18, which could be
