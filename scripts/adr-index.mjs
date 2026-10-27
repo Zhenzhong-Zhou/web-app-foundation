@@ -84,8 +84,10 @@ function listOf(value) {
 }
 
 /** The numbers an ADR's amends or amended-by names: none if it has no list. */
-const listed = (adr, field) =>
-  listOf(adr.frontMatter?.[field]?.value ?? "[]") ?? [];
+function listed(adr, field) {
+  const value = adr.frontMatter?.[field]?.value;
+  return (value && listOf(value)) || [];
+}
 
 /**
  * Where a Markdown file's front matter ends: the index of the --- line
@@ -102,7 +104,7 @@ export function frontMatterEnd(lines) {
  * not the .DS_Store a Mac leaves there; none when there is no folder.
  */
 function inFolder() {
-  const listed = execFileSync(
+  const output = execFileSync(
     "git",
     [
       "ls-files",
@@ -115,7 +117,7 @@ function inFolder() {
     ],
     { cwd: ROOT, encoding: "utf8" },
   );
-  return [...new Set(listed.split("\0"))]
+  return [...new Set(output.split("\0"))]
     .filter((file) => file && existsSync(path.join(ROOT, file)))
     .map((file) => file.slice(ADR_FOLDER.length + 1));
 }

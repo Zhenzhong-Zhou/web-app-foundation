@@ -48,13 +48,13 @@ const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], {
  * folder holding one, in the letter case git has them.
  */
 function inRepository() {
-  const listed = execFileSync(
+  const output = execFileSync(
     "git",
     ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
     { cwd: ROOT, encoding: "utf8" },
   );
   const files = new Set(
-    listed
+    output
       .split("\0")
       .filter((file) => file && existsSync(path.join(ROOT, file))),
   );
@@ -208,15 +208,11 @@ function anchorsIn(absolute) {
   return anchors;
 }
 
-/**
- * Why a link from a file leads nowhere, or null when it leads somewhere;
- * "skipped" when it is not this check's to follow.
- */
-function brokenBecause(file, target, { files, folders }) {
-  if (/^[A-Za-z][A-Za-z0-9+.-]*:/.test(target) || target.startsWith("/")) {
-    return "skipped";
-  }
+/** A link to another site (a scheme, or //), or to an app route (/inventory). */
+const NOT_A_PATH = /^(?:[A-Za-z][A-Za-z0-9+.-]*:|\/)/;
 
+/** Why a link from a file leads nowhere, or null when it leads somewhere. */
+function brokenBecause(file, target, { files, folders }) {
   const hash = target.indexOf("#");
   let linked = (hash < 0 ? target : target.slice(0, hash)).replace(/\?.*$/, "");
   let fragment = hash < 0 ? "" : target.slice(hash + 1);
@@ -226,7 +222,6 @@ function brokenBecause(file, target, { files, folders }) {
   } catch {
     return "not a valid link: its %-escapes do not decode";
   }
-  if (!linked && !fragment) return "skipped";
 
   const absolute = linked
     ? path.resolve(path.dirname(path.join(ROOT, file)), linked)
@@ -247,7 +242,7 @@ function brokenBecause(file, target, { files, folders }) {
 
   if (
     fragment &&
-    (!linked || absolute.endsWith(".md")) &&
+    absolute.endsWith(".md") &&
     files.has(relative) &&
     !anchorsIn(absolute).has(fragment)
   ) {
@@ -264,8 +259,8 @@ function links(repository) {
   let withinFile = 0;
   for (const file of markdown) {
     for (const { line, target } of linksIn(file)) {
+      if (NOT_A_PATH.test(target)) continue;
       const reason = brokenBecause(file, target, repository);
-      if (reason === "skipped") continue;
       if (target.startsWith("#")) withinFile++;
       else toPaths++;
       if (reason) failures.push(`${file}:${line}: ${target} — ${reason}`);
