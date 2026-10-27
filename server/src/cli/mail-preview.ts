@@ -25,9 +25,10 @@ const FOLDER = join(__dirname, '..', '..', '..', 'tmp', 'mail-preview');
 const USAGE = 'Usage: npm run mail:preview [-- --send]';
 
 /**
- * A byte-order mark: a browser opening the file reads it as UTF-8, which
- * nothing in an HTML fragment or a text file declares, so the Chinese
- * emails show as written.
+ * A byte-order mark before each text part: a browser opening the file
+ * reads it as UTF-8, which nothing in a text file declares, so the Chinese
+ * emails show as written. Each HTML part declares its own, in its
+ * `<meta charset>`.
  */
 const BOM = '\uFEFF';
 
@@ -55,7 +56,7 @@ function write(samples: MailSample[]): void {
   rmSync(FOLDER, { recursive: true, force: true });
   mkdirSync(FOLDER, { recursive: true });
   for (const { name, locale, mail } of samples) {
-    writeFileSync(join(FOLDER, `${name}.${locale}.html`), BOM + mail.html);
+    writeFileSync(join(FOLDER, `${name}.${locale}.html`), mail.html);
     writeFileSync(join(FOLDER, `${name}.${locale}.txt`), BOM + mail.text);
   }
   writeFileSync(join(FOLDER, 'index.html'), index(samples));

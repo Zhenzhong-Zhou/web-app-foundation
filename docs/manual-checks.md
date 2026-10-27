@@ -2624,9 +2624,9 @@ One layout for every email, from blocks (`server/src/shared/mail/`). The
 product's emails open with the header (MC-3503) and their subject as a
 heading; the invitation with Join and the organization's name, and no
 header. Confirm your email address, Reset your password and Accept the
-invitation are buttons, with the address to copy last, in small print. No word changes, and each
-email's text part is as it was, character for character
-(`mail-samples.spec.ts` holds every one). With Mailpit open and
+invitation are buttons, with the address to copy last, in small print.
+No word changes, and each email's text part is as it was, character for
+character (`mail-samples.spec.ts` holds every one). With Mailpit open and
 `npm run dev` running in `client/`, which serves the mark,
 `npm run mail:preview -- --send` in `server/` puts every email into
 Mailpit at once, in each language it is sent in, to
@@ -2640,14 +2640,15 @@ a day.
   white words on it, under Hi, then the sentence on when the link expires,
   and last, in smaller grey type, If the button doesn't open, copy this
   address into your browser: and the address, underlined in purple, a
-  link to the page the button opens. No other product email has
-  a button; the invitation's is MC-3710. The security emails keep their two links inside If it was
-  not, …, underlined in purple; their When, Browser and IP address in two
-  columns, the labels grey; and We will never ask for your password by
-  email. last, in grey. A deletion email ends with the app's address,
-  written out as its link. The operator's, Northside Naturals was set up,
-  has no Hi. In 中文 and Français the same, in their words, the Chinese
-  in the system's Chinese font, never boxes.
+  link to the page the button opens. No other product email has a
+  button; the invitation's is MC-3710. The security emails keep their two
+  links inside If it was not, …, underlined in purple; their When,
+  Browser and IP address in two columns, the labels grey; and We will
+  never ask for your password by email. last, in grey. A deletion email
+  ends with the app's address, written out as its link. The operator's,
+  Northside Naturals was set up, has no Hi. In 中文 and Français the
+  same, in their words, the Chinese in the system's Chinese font, never
+  boxes.
 - **MC-3702** The preview line. In Mailpit's list, under each subject, the
   email's first paragraph after Hi, whole: You asked for your account to
   be deleted. It will be deleted after November 25, 2026, … for the
