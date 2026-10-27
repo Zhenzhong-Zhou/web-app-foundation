@@ -19,10 +19,11 @@
  * What a rebrand changes: the accent (primary buttons, links, the selected
  * tab) and the sidebar's shade.
  *
- * The emails keep a copy of the accent, and of its dark version, in
- * server/src/shared/mail/mail-layout.ts (ADR-083), since the packages
- * share no code: a change to the accent is made to both, as ADR-082 asks
- * of the brand's colours.
+ * The emails keep a copy of the accent in
+ * server/src/shared/mail/mail-layout.ts (ADR-083), and work out its dark
+ * version from it as this file does, since the packages share no code: a
+ * change to the accent is made to both, as ADR-082 asks of the brand's
+ * colours.
  */
 export const BRAND = { accent: '#5546B8', rail: 'dark' } as const;
 
@@ -141,9 +142,9 @@ export function towardWhite(hex: string, weight: number): string {
 /**
  * How much of the accent dark mode keeps.
  *
- * The emails keep the dark accent it makes of the default one, #A299D8, in
- * server/src/shared/mail/mail-layout.ts: a change to the weight is made
- * there too.
+ * The server keeps a copy in server/src/common/dark-accent.ts, from which
+ * an organization's dark accent and the emails' are worked out: a change
+ * to the weight is made there too.
  */
 export const DARK_ACCENT_WEIGHT = 0.45;
 
@@ -176,8 +177,9 @@ export const CHOSEN_WEIGHT = 0.06;
 /**
  * Text on the accent: white on the light accent, near black on the dark.
  *
- * The emails keep a copy of both, in server/src/shared/mail/mail-layout.ts:
- * a change to either is made there too.
+ * The server keeps a copy of both, the light in
+ * server/src/shared/mail/mail-layout.ts and the dark in
+ * server/src/common/dark-accent.ts: a change to either is made there too.
  */
 export const ON_ACCENT = { light: '#FFFFFF', dark: '#10141A' } as const;
 

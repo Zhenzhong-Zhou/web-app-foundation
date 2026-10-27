@@ -1,3 +1,4 @@
+import { darkAccent, ON_DARK_ACCENT } from '../../common/dark-accent';
 import type { Locale } from '../../common/locales';
 import { t, translate } from '../../i18n/translate';
 import { escapeHtml } from './escape-html';
@@ -25,10 +26,10 @@ const LIGHT = {
 
 /** What a dark mail app shows instead (ADR-083's amendment). */
 const DARK = {
-  /** The app's dark accent, towardWhite(BRAND.accent, DARK_ACCENT_WEIGHT). */
-  accent: '#A299D8',
+  /** The app's dark accent, worked out from the light one as the app does. */
+  accent: darkAccent(LIGHT.accent),
   /** ON_ACCENT.dark. */
-  onAccent: '#10141A',
+  onAccent: ON_DARK_ACCENT,
   /** DARK.muted. */
   muted: '#A3ACBA',
   /** The boards' rule on a dark mail app's ground, which no token has. */

@@ -1,4 +1,5 @@
-import { contrast, darkAccent, nearStatus, safeAccent } from './accent';
+import { darkAccent } from '../../common/dark-accent';
+import { contrast, nearStatus, safeAccent } from './accent';
 
 /** The same cases as client/src/theme/accent.test.ts (ADR-060). */
 describe('safeAccent', () => {
