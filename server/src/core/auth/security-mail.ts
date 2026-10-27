@@ -2,8 +2,13 @@ import { UAParser } from 'ua-parser-js';
 
 import type { Locale } from '../../common/locales';
 import type { AccountEventAction } from '../../database/schema';
-import { t, type Translatable, translate } from '../../i18n/translate';
-import type { MailContent, Run } from '../../shared/mail/mail-layout';
+import {
+  t,
+  type Translatable,
+  translate,
+  translateParts,
+} from '../../i18n/translate';
+import type { MailContent } from '../../shared/mail/mail-layout';
 
 interface SecurityMailContext {
   /** The recipient's language, else the request's (ADR-054). */
@@ -135,39 +140,30 @@ export function buildSecurityMail(
   const sessions = `${context.clientUrl}/account/sessions`;
 
   // The HTML's sentence, with its two links wherever its language puts
-  // them: each placeholder given a marker, and the sentence split there.
-  const links: Record<string, Run> = {
-    reset: {
-      text: say(
-        t({
-          id: 'mail.security.resetLink',
-          defaultMessage: 'reset your password',
-        }),
-      ),
-      href: reset,
-    },
-    sessions: {
-      text: say(
-        t({
-          id: 'mail.security.sessionsLink',
-          defaultMessage: 'check which devices are signed in',
-        }),
-      ),
-      href: sessions,
-    },
-  };
-  const notYou = say(
+  // them.
+  const resetLink = t({
+    id: 'mail.security.resetLink',
+    defaultMessage: 'reset your password',
+  });
+  const sessionsLink = t({
+    id: 'mail.security.sessionsLink',
+    defaultMessage: 'check which devices are signed in',
+  });
+  const notYou = translateParts(
     t(
       {
         id: 'mail.security.notYouHtml',
         defaultMessage:
           'If it was not, {resetLink} now — that signs out every device. Then {sessionsLink}.',
       },
-      { resetLink: '\u0000reset\u0000', sessionsLink: '\u0000sessions\u0000' },
+      { resetLink, sessionsLink },
     ),
-  )
-    .split('\u0000')
-    .map((part, index) => (index % 2 === 0 ? part : links[part]));
+    context.locale,
+    {
+      resetLink: { text: say(resetLink), href: reset },
+      sessionsLink: { text: say(sessionsLink), href: sessions },
+    },
+  );
 
   return {
     to: context.to,

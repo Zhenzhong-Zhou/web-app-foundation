@@ -1,4 +1,10 @@
-import { localeOf, recipientLocale, t, translate } from './translate';
+import {
+  localeOf,
+  recipientLocale,
+  t,
+  translate,
+  translateParts,
+} from './translate';
 
 /**
  * The server's language rules (ADR-054): which language a request asks
@@ -60,6 +66,70 @@ describe('t and translate', () => {
       defaultMessage: 'Only in English',
     });
     expect(translate(unknown, 'fr-CA')).toBe('Only in English');
+  });
+});
+
+/** Words with something drawn at a placeholder: a link in an email (ADR-083). */
+describe('translateParts', () => {
+  const sentence = t(
+    {
+      id: 'mail.security.notYouHtml',
+      defaultMessage:
+        'If it was not, {resetLink} now — that signs out every device. Then {sessionsLink}.',
+    },
+    {
+      resetLink: t({
+        id: 'mail.security.resetLink',
+        defaultMessage: 'reset your password',
+      }),
+      sessionsLink: t({
+        id: 'mail.security.sessionsLink',
+        defaultMessage: 'check which devices are signed in',
+      }),
+    },
+  );
+  const parts = {
+    resetLink: { to: 'reset' },
+    sessionsLink: { to: 'sessions' },
+  };
+
+  it('leaves each value named whole, where each language puts it', () => {
+    expect(translateParts(sentence, 'en', parts)).toEqual([
+      'If it was not, ',
+      { to: 'reset' },
+      ' now — that signs out every device. Then ',
+      { to: 'sessions' },
+      '.',
+    ]);
+    expect(translateParts(sentence, 'zh-Hans', parts)).toEqual([
+      '如果不是您本人，请立即',
+      { to: 'reset' },
+      '——这会让所有设备退出登录。然后',
+      { to: 'sessions' },
+      '。',
+    ]);
+  });
+
+  it('writes the English as a sentence, the values as their words', () => {
+    expect(sentence.message).toBe(
+      'If it was not, reset your password now — that signs out every device. Then check which devices are signed in.',
+    );
+  });
+
+  it('renders the values not named as translate does', () => {
+    expect(
+      translateParts(
+        t(
+          {
+            id: 'mail.deletion.scheduled.subject',
+            defaultMessage: 'Your account will be deleted after {date}',
+          },
+          { date: '25 novembre 2026' },
+        ),
+        'fr-CA',
+        {},
+      ),
+    ).toEqual(['Votre compte sera supprimé après le 25 novembre 2026']);
   });
 });
 

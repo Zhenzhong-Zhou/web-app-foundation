@@ -1,6 +1,6 @@
 import { darkAccent, ON_DARK_ACCENT } from '../../common/dark-accent';
 import type { Locale } from '../../common/locales';
-import { t, translate } from '../../i18n/translate';
+import { t, translate, translateParts } from '../../i18n/translate';
 import { escapeHtml } from './escape-html';
 import type { Mail } from './mail.service';
 
@@ -303,7 +303,7 @@ function linkHtml(href: string, text: string): string {
  * `{link}`.
  */
 function addressLine(href: string, locale: Locale): string {
-  const sentence = translate(
+  const sentence = translateParts(
     t(
       {
         id: 'mail.button.fallback',
@@ -313,10 +313,15 @@ function addressLine(href: string, locale: Locale): string {
       { link: href },
     ),
     locale,
-  );
-  const at = sentence.lastIndexOf(href);
-  const address = `<a class="link" href="${escapeHtml(href)}" style="${LINK};word-break:break-all">${escapeHtml(href)}</a>`;
-  return `<p class="muted" style="margin:0;${SMALL}">${escapeHtml(sentence.slice(0, at))}${address}${escapeHtml(sentence.slice(at + href.length))}</p>`;
+    { link: { href } },
+  )
+    .map((part) =>
+      typeof part === 'string'
+        ? escapeHtml(part)
+        : `<a class="link" href="${escapeHtml(part.href)}" style="${LINK};word-break:break-all">${escapeHtml(part.href)}</a>`,
+    )
+    .join('');
+  return `<p class="muted" style="margin:0;${SMALL}">${sentence}</p>`;
 }
 
 /**

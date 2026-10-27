@@ -81,17 +81,21 @@ export function joinList(items: readonly string[], locale: Locale): string {
 /** Parsed once per language and message, then reused. */
 const formatters = new Map<string, IntlMessageFormat>();
 
-function render(
-  source: string,
-  values: Record<string, MessageValue> | undefined,
-  locale: Locale,
-): string {
+function formatterOf(source: string, locale: Locale): IntlMessageFormat {
   const key = `${locale}\u0000${source}`;
   let formatter = formatters.get(key);
   if (!formatter) {
     formatter = new IntlMessageFormat(source, locale);
     formatters.set(key, formatter);
   }
+  return formatter;
+}
+
+/** A message's values as words in a language. */
+function flatValues(
+  values: Record<string, MessageValue> | undefined,
+  locale: Locale,
+): Record<string, string | number | boolean | null | undefined> {
   // A nested message in the same language as the sentence it sits in.
   const nested = (value: Translatable) =>
     locale === DEFAULT_LOCALE ? value.message : translate(value, locale);
@@ -107,10 +111,17 @@ function render(
     }
     return value as string | number | boolean | null | undefined;
   };
-  const flat = Object.fromEntries(
+  return Object.fromEntries(
     Object.entries(values ?? {}).map(([key, value]) => [key, flatten(value)]),
   );
-  return String(formatter.format(flat));
+}
+
+function render(
+  source: string,
+  values: Record<string, MessageValue> | undefined,
+  locale: Locale,
+): string {
+  return String(formatterOf(source, locale).format(flatValues(values, locale)));
 }
 
 /**
@@ -138,6 +149,42 @@ export function translate(message: Translatable, locale: Locale): string {
   const source = CATALOGUES[locale][message.messageId];
   if (locale === DEFAULT_LOCALE || source === undefined) return message.message;
   return render(source, message.values, locale);
+}
+
+/**
+ * A message in a language as parts: its words, and each value named in
+ * `parts` left whole where the language puts it, for the caller to draw,
+ * as an email draws a link inside a sentence (ADR-083). The message holds
+ * those values as their words, so its English reads as a sentence; the
+ * values not named are rendered as `translate` renders them. A catalogue
+ * lacking the id gives the English, as `translate` does.
+ */
+export function translateParts<T extends object>(
+  message: Translatable,
+  locale: Locale,
+  parts: Record<string, T>,
+): (string | T)[] {
+  const language =
+    CATALOGUES[locale][message.messageId] === undefined
+      ? DEFAULT_LOCALE
+      : locale;
+  const source = CATALOGUES[language][message.messageId];
+  if (source === undefined) return [message.message];
+
+  const result: (string | T)[] = [];
+  for (const { value } of formatterOf(source, language).formatToParts<T>({
+    ...flatValues(message.values, language),
+    ...parts,
+  })) {
+    // Words next to words are one string.
+    const last = result.length - 1;
+    if (typeof value === 'string' && typeof result[last] === 'string') {
+      result[last] += value;
+    } else {
+      result.push(value);
+    }
+  }
+  return result;
 }
 
 /** Whether an exception's response body carries a message id. */
