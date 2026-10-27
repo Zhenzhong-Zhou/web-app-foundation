@@ -56,35 +56,30 @@ const OWNER: MemberSide = { isOwner: true, withAccount: false };
  * Every email the app sends (ADR-083), in each language it is sent in, the
  * operator's in English, each from its own builder with fixed values: no
  * database, no clock and no real token, so the same call always writes the
- * same emails. The product's emails go through MailBrand.send, as the
- * services send them, with the mark served; the invitation, the
- * organization's, as InvitationsService hands it to MailService.
+ * same emails. The product's emails as MailBrand.send writes them, with
+ * the mark served; the invitation, the organization's, as
+ * InvitationsService hands it to MailService.
  */
 export async function mailSamples(): Promise<MailSample[]> {
   const settings: Partial<Env> = { MAIL_FROM, CLIENT_URL };
   const config = {
     get: (key: keyof Env) => settings[key],
   } as unknown as ConfigService<Env, true>;
-  const sent: Mail[] = [];
-  const transport = {
-    send: (mail: Mail) => {
-      sent.push(mail);
-      return Promise.resolve();
-    },
-  } as unknown as MailService;
-  const brand = new MailBrand(config, () => Promise.resolve(true), transport);
+  // Nothing is sent: write() is what send() hands MailService.
+  const brand = new MailBrand(
+    config,
+    () => Promise.resolve(true),
+    {} as MailService,
+  );
   await brand.check();
 
   /** The product's email as MailBrand.send passes it on. */
-  const branded = async (content: MailContent | null): Promise<Mail> => {
-    await brand.send(content!);
-    return sent.pop()!;
-  };
+  const branded = (content: MailContent | null): Mail => brand.write(content!);
 
   const emails: {
     name: string;
     locales?: readonly Locale[];
-    build: (locale: Locale) => Promise<Mail>;
+    build: (locale: Locale) => Mail;
   }[] = [
     {
       name: 'confirm-email',
@@ -204,36 +199,30 @@ export async function mailSamples(): Promise<MailSample[]> {
     {
       name: 'invitation',
       build: (locale) =>
-        Promise.resolve(
-          invitationMail({
-            locale,
-            to: READER.to,
-            inviter: INVITER,
-            organizationName: ORGANIZATION,
-            roles: [
-              roleWords(
-                { name: 'Admin', description: null, isSystem: true },
-                locale,
-              ),
-            ],
-            system: 'Admin',
-            note: 'Start at the North site on Monday.\nBring boots: the cold room is cold.',
-            timeZone: 'America/Vancouver',
-            lastDay: '2026-11-02',
-            link: `${CLIENT_URL}/invitation?token=${TOKEN}`,
-            appName: brand.name,
-          }),
-        ),
+        invitationMail({
+          locale,
+          to: READER.to,
+          inviter: INVITER,
+          organizationName: ORGANIZATION,
+          roles: [
+            roleWords(
+              { name: 'Admin', description: null, isSystem: true },
+              locale,
+            ),
+          ],
+          system: 'Admin',
+          note: 'Start at the North site on Monday.\nBring boots: the cold room is cold.',
+          timeZone: 'America/Vancouver',
+          lastDay: '2026-11-02',
+          link: `${CLIENT_URL}/invitation?token=${TOKEN}`,
+          appName: brand.name,
+        }),
     },
   ];
 
-  const samples: MailSample[] = [];
-  for (const { name, locales = SUPPORTED_LOCALES, build } of emails) {
-    for (const locale of locales) {
-      samples.push({ name, locale, mail: await build(locale) });
-    }
-  }
-  return samples;
+  return emails.flatMap(({ name, locales = SUPPORTED_LOCALES, build }) =>
+    locales.map((locale) => ({ name, locale, mail: build(locale) })),
+  );
 }
 
 /** The reader, in a language. */
