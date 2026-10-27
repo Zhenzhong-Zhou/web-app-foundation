@@ -11,7 +11,12 @@
 #                                Markdown step and the scripts' tests; it
 #                                refuses, naming the files, when the
 #                                uncommitted changes touch anything but .md
-#                                files and scripts/, which need --quick
+#                                files and scripts/, or anything in client/,
+#                                which need --quick
+#
+# client/ is refused even for Markdown: the Help guides in
+# client/src/help/guides/ are the app's content, which
+# client/src/help/guides.test.ts checks and --docs does not run.
 #
 # Needs what each suite needs on its own: the database up
 # (docker compose up -d) and ../.env. The two end-to-end suites use their
@@ -126,17 +131,18 @@ against_main() {
 
 # --docs stands in for --quick only when the docs' checks are all a change
 # needs (ADR-086): every uncommitted change, staged or not, and every new
-# file git does not ignore, is a .md file or in scripts/. The Markdown
-# step already runs adr-index.mjs's --check, through check-docs.mjs.
+# file git does not ignore, is a .md file or in scripts/, and none is in
+# client/ (above). The Markdown step already runs adr-index.mjs's --check,
+# through check-docs.mjs.
 if $docs; then
   others="$(
     {
       git -c core.quotePath=false diff --name-only --no-renames HEAD
       git -c core.quotePath=false ls-files --others --exclude-standard
-    } | grep -v -e '\.md$' -e '^scripts/' | sort -u || true
+    } | awk '/^client\// || !/\.md$|^scripts\//' | sort -u
   )"
   if [[ -n "$others" ]]; then
-    echo 'Changed, and neither Markdown nor in scripts/, which is all --docs checks:' >&2
+    echo 'Changed, and not what --docs checks (Markdown outside client/, and scripts/):' >&2
     sed 's/^/  /' <<< "$others" >&2
     echo 'Run scripts/verify.sh --quick instead.' >&2
     exit 1
