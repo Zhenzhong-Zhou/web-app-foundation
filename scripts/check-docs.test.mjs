@@ -324,3 +324,77 @@ test("an amendment is in both ADRs' front matter", (t) => {
     "docs/adr/0003-three.md:4: amends: ADR-001 — not a list as [ADR-046, ADR-054]",
   ]);
 });
+
+test("two ADRs with one number fail, each naming the other", (t) => {
+  const root = fixture(t, {
+    "docs/adr/0012-one.md": adr(
+      "status: accepted\ndate: 2026-08-24\n",
+      "ADR-012 — One",
+    ),
+    "docs/adr/0012-two.md": adr(
+      "status: accepted\ndate: 2026-08-25\n",
+      "ADR-012 — Two",
+    ),
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    "docs/adr/0012-one.md:1: ADR-012 — also the number of docs/adr/0012-two.md; each ADR has its own",
+    "docs/adr/0012-two.md:1: ADR-012 — also the number of docs/adr/0012-one.md; each ADR has its own",
+  ]);
+});
+
+test("amends and amended-by are in ascending order, each ADR once", (t) => {
+  const root = fixture(t, {
+    "docs/adr/0001-one.md": adr(
+      "status: accepted\ndate: 2026-08-24\namended-by: [ADR-003, ADR-002]\n",
+      "ADR-001 — One",
+    ),
+    "docs/adr/0002-two.md": adr(
+      "status: accepted\ndate: 2026-08-25\namends: [ADR-001, ADR-001]\n",
+      "ADR-002 — Two",
+    ),
+    "docs/adr/0003-three.md": adr(
+      "status: accepted\ndate: 2026-08-26\namends: [ADR-001]\n",
+      "ADR-003 — Three",
+    ),
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    "docs/adr/0001-one.md:4: amended-by: [ADR-003, ADR-002] — not in ascending order, each ADR once: write it as [ADR-002, ADR-003]",
+    "docs/adr/0002-two.md:4: amends: [ADR-001, ADR-001] — not in ascending order, each ADR once: write it as [ADR-001]",
+  ]);
+});
+
+test("an ADR has no field but status, date, amends and amended-by, in any order", (t) => {
+  const root = fixture(t, {
+    "docs/adr/0001-one.md": adr(
+      "amended-by: [ADR-002]\ndate: 2026-08-24\ntitle: One\nstatus: accepted\n",
+      "ADR-001 — One",
+    ),
+    "docs/adr/0002-two.md": adr(
+      "amends: [ADR-001]\ndate: 2026-08-25\nstatus: accepted\n",
+      "ADR-002 — Two",
+    ),
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    "docs/adr/0001-one.md:4: title: One — not a field an ADR has: status, date, amends, amended-by",
+  ]);
+});
+
+test("superseded by an ADR with no file fails", (t) => {
+  const root = fixture(t, {
+    "docs/adr/0001-one.md": adr(
+      "status: superseded by ADR-002\ndate: 2026-08-24\n",
+      "ADR-001 — One",
+    ),
+    "docs/adr/0002-two.md": adr(
+      "status: superseded by ADR-009\ndate: 2026-08-25\n",
+      "ADR-002 — Two",
+    ),
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    "docs/adr/0002-two.md:2: status: superseded by ADR-009 — no such ADR in docs/adr/",
+  ]);
+});

@@ -20,13 +20,14 @@
  * other kind of file (#L10). Only ATX headings (## Heading) have anchors
  * here; a link to a setext one fails.
  *
- * Every ADR, docs/adr/NNNN-*.md, has front matter with its status
- * (accepted, deferred or superseded by ADR-NNN) and its date
- * (YYYY-MM-DD), and a heading whose number is its file's. Each ADR its
- * `amends` names exists and lists it in its `amended-by`, and each one
- * its `amended-by` names lists it in its `amends`. When
- * docs/adr/README.md exists, its index is what scripts/adr-index.mjs
- * would write.
+ * Every ADR, docs/adr/NNNN-*.md, has a number no other file has, and
+ * front matter with its status (accepted, deferred or superseded by an
+ * ADR that exists) and its date (YYYY-MM-DD), in any order, and no
+ * field but those, amends and amended-by. Its heading's number is its
+ * file's. Each ADR its `amends` names exists and lists it in its
+ * `amended-by`, and each one its `amended-by` names lists it in its
+ * `amends`; both lists are in ascending order. When docs/adr/README.md
+ * exists, its index is what scripts/adr-index.mjs would write.
  *
  * Prints each failure as `file:line: target — reason` and exits 1, or
  * what it checked and exits 0. scripts/verify.sh and the Docs workflow run
@@ -286,7 +287,10 @@ function links(files) {
   };
 }
 
-const STATUS = /^(?:accepted|deferred|superseded by ADR-\d{3,})$/;
+const STATUS = /^(?:accepted|deferred|superseded by ADR-(\d{3,}))$/;
+
+/** An ADR's front matter fields, in any order. */
+const FIELDS = ["status", "date", "amends", "amended-by"];
 
 /** A YYYY-MM-DD that is a day of the calendar. */
 const isDay = (value) =>
@@ -294,9 +298,9 @@ const isDay = (value) =>
   new Date(`${value}T00:00:00Z`).toISOString().startsWith(value);
 
 /**
- * Every ADR in docs/adr/ has its status, date and heading, each
- * amendment is in the front matter of both ADRs, and the index is
- * current.
+ * Every ADR in docs/adr/ has a number of its own, its status, date and
+ * heading, each amendment is in the front matter of both ADRs, and the
+ * index is current.
  */
 function adrs() {
   const found = readAdrs();
@@ -308,6 +312,17 @@ function adrs() {
     const fail = (line, what, reason) =>
       failures.push(`${adr.file}:${line}: ${what} — ${reason}`);
     const fields = adr.frontMatter ?? {};
+
+    const sharing = found.filter(
+      (other) => other !== adr && other.number === adr.number,
+    );
+    if (sharing.length > 0) {
+      fail(
+        1,
+        name,
+        `also the number of ${sharing.map((other) => other.file).join(", ")}; each ADR has its own`,
+      );
+    }
 
     if (!adr.frontMatter) {
       fail(
@@ -323,14 +338,32 @@ function adrs() {
         "not a field: each line is a name, a colon and its value",
       );
     }
+    for (const [field, { value, line }] of Object.entries(fields)) {
+      if (!FIELDS.includes(field)) {
+        fail(
+          line,
+          `${field}: ${value}`,
+          `not a field an ADR has: ${FIELDS.join(", ")}`,
+        );
+      }
+    }
     if (adr.frontMatter && !fields.status) {
       fail(1, "status", "missing from the front matter");
-    } else if (fields.status && !STATUS.test(fields.status.value)) {
-      fail(
-        fields.status.line,
-        `status: ${fields.status.value}`,
-        "not accepted, deferred or superseded by ADR-NNN",
-      );
+    } else if (fields.status) {
+      const status = STATUS.exec(fields.status.value);
+      if (!status) {
+        fail(
+          fields.status.line,
+          `status: ${fields.status.value}`,
+          "not accepted, deferred or superseded by ADR-NNN",
+        );
+      } else if (status[1] && !byNumber.has(Number(status[1]))) {
+        fail(
+          fields.status.line,
+          `status: ${fields.status.value}`,
+          `no such ADR in ${ADR_FOLDER}/`,
+        );
+      }
     }
     if (adr.frontMatter && !fields.date) {
       fail(1, "date", "missing from the front matter");
@@ -366,6 +399,14 @@ function adrs() {
       if (!numbers) {
         fail(line, `${field}: ${value}`, "not a list as [ADR-046, ADR-054]");
         continue;
+      }
+      if (numbers.some((number, i) => i > 0 && number <= numbers[i - 1])) {
+        const ascending = [...new Set(numbers)].sort((a, b) => a - b);
+        fail(
+          line,
+          `${field}: ${value}`,
+          `not in ascending order, each ADR once: write it as [${ascending.map(adrName).join(", ")}]`,
+        );
       }
       for (const number of numbers) {
         const named = byNumber.get(number);
