@@ -136,9 +136,13 @@ function linksIn(file) {
 }
 
 /**
- * A heading's text as GitHub shows it: code kept as written, links and
- * images as their text, tags and `_` emphasis gone. `*` and `~` need no
- * care, since the anchor drops them anyway.
+ * A heading's text as GitHub shows it, as far as its anchor can tell. The
+ * rule: undo only the markup whose characters anchorOf would keep, which
+ * is `_` emphasis (`_` counts as a letter there), a link's or image's
+ * target, and a tag's name. `*`, `~`, brackets and backticks need no care,
+ * since anchorOf drops them. Code is set aside first and put back as
+ * written, since GitHub undoes no markup inside it. The shapes are in
+ * scripts/fixtures/anchors.md, which markdownlint's MD051 checks too.
  */
 function headingText(markdown) {
   const code = [];
