@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 
 import type { Env } from '../../config/env';
 import { type Mail, MailService } from './mail.service';
-import { type MailContent, writeMail } from './mail-layout';
+import { type MailBlock, type MailContent, writeMail } from './mail-layout';
 
 const TEN_MINUTES = 10 * 60 * 1000;
 
@@ -129,27 +129,31 @@ export class MailBrand implements OnApplicationShutdown {
     return this.mail.send(this.write(content));
   }
 
-  /**
-   * The product's email written (ADR-083): the header, then its subject as
-   * its heading, in the HTML part only, then its own blocks. The text part
-   * opens with the name.
-   */
+  /** The product's email written (ADR-083): its opening, then its own blocks. */
   write(content: MailContent): Mail {
     return writeMail({
       ...content,
-      blocks: [
-        ...(this.name
-          ? [
-              {
-                kind: 'header' as const,
-                name: this.name,
-                mark: this.markServed ? this.mark : null,
-              },
-            ]
-          : []),
-        { kind: 'heading', text: content.subject, plain: null },
-        ...content.blocks,
-      ],
+      blocks: [...this.opening(content.subject), ...content.blocks],
     });
+  }
+
+  /**
+   * What every product email opens with: the header, the mark in it once
+   * it answers, then the subject as the heading, in the HTML part only, so
+   * the text part opens with the name.
+   */
+  opening(subject: string): MailBlock[] {
+    return [
+      ...(this.name
+        ? [
+            {
+              kind: 'header' as const,
+              name: this.name,
+              mark: this.markServed ? this.mark : null,
+            },
+          ]
+        : []),
+      { kind: 'heading', text: subject, plain: null },
+    ];
   }
 }

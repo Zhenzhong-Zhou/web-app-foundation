@@ -1,8 +1,8 @@
 import type { INestApplication } from '@nestjs/common';
 
-import { escapeHtml } from '../../src/shared/mail/escape-html';
 import type { Mail } from '../../src/shared/mail/mail.service';
 import { MailBrand } from '../../src/shared/mail/mail-brand';
+import { blockHtml, type MailBlock } from '../../src/shared/mail/mail-layout';
 
 /**
  * The header the product's emails open with (ADR-082): the mark's address
@@ -21,28 +21,32 @@ export function mailBrandOf(app: INestApplication): {
 }
 
 /**
- * Opens with the header, in the HTML and the text alike, and in the HTML
- * its subject as its heading straight after (ADR-083).
+ * Opens with the header, the mark in it, which the suite answers as
+ * served, in the HTML and the text alike, and in the HTML its subject as
+ * its heading after it (ADR-083): the blocks as the layout draws them,
+ * whose markup the layout's spec alone pins.
  */
 export function expectMailBrand(
   app: INestApplication,
   mail: Mail | undefined,
 ): void {
   const { mark, name } = mailBrandOf(app);
-  const html = mail?.html ?? '';
-  // The column's first row, up to the heading.
-  const column = html.slice(html.indexOf('<td class="column"'));
-  const header = column.slice(0, column.indexOf('<h1'));
-
-  // First, before anything the email says.
-  expect(header).toMatch(/^<td class="column"[^>]*><table role="presentation"/);
-  expect(header).toContain(
-    `<img src="${escapeHtml(mark)}" width="28" height="28" alt=""`,
-  );
-  expect(header).toContain(`>${escapeHtml(name)}</td>`);
-  expect(header).not.toContain('<p');
-  expect(/<h1 [^>]*>(.*?)<\/h1>/.exec(column)?.[1]).toBe(
-    escapeHtml(mail?.subject ?? ''),
-  );
+  expectBlocksInOrder(mail?.html ?? '', [
+    { kind: 'header', name, mark },
+    { kind: 'heading', text: mail?.subject ?? '' },
+  ]);
+  // First, before anything the email says: both parts come from the same
+  // blocks.
   expect(mail?.text.startsWith(`${name}\n\n`)).toBe(true);
+}
+
+/** Each block drawn in the HTML, after the one before. */
+export function expectBlocksInOrder(html: string, blocks: MailBlock[]): void {
+  let from = 0;
+  for (const block of blocks) {
+    const drawn = blockHtml(block, 'en');
+    const at = html.indexOf(drawn, from);
+    expect(at, `${block.kind} after the blocks before it`).toBeGreaterThan(-1);
+    from = at + drawn.length;
+  }
 }

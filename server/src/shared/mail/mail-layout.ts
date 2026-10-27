@@ -232,7 +232,11 @@ function htmlOf(subject: string, locale: Locale, blocks: MailBlock[]): string {
   ].join('\n');
 }
 
-function blockHtml(block: MailBlock, locale: Locale): string {
+/**
+ * One block as the layout draws it, inside its row: exported so a test
+ * finds a block in an email without pinning its markup.
+ */
+export function blockHtml(block: MailBlock, locale: Locale): string {
   switch (block.kind) {
     case 'header': {
       const cell = `padding:0 0 16px;border-bottom:1px solid ${LIGHT.rule};vertical-align:middle`;
