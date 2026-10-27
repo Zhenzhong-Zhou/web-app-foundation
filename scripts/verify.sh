@@ -7,6 +7,11 @@
 #   scripts/verify.sh            everything, about as long as CI takes
 #   scripts/verify.sh --quick    format, lint, types, checks, build and unit
 #                                tests; no end-to-end suites
+#   scripts/verify.sh --docs     the docs' checks alone, in seconds: the
+#                                Markdown step and the scripts' tests; it
+#                                refuses, naming the files, when the
+#                                uncommitted changes touch anything but .md
+#                                files and scripts/, which need --quick
 #
 # Needs what each suite needs on its own: the database up
 # (docker compose up -d) and ../.env. The two end-to-end suites use their
@@ -31,10 +36,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 quick=false
+docs=false
 if [[ "${1:-}" == "--quick" ]]; then
   quick=true
+elif [[ "${1:-}" == "--docs" ]]; then
+  docs=true
 elif [[ $# -gt 0 ]]; then
-  echo "Usage: scripts/verify.sh [--quick]" >&2
+  echo "Usage: scripts/verify.sh [--quick | --docs]" >&2
   exit 2
 fi
 
@@ -115,6 +123,29 @@ against_main() {
     scripts/check-authors.sh "$main..HEAD"
   fi
 }
+
+# --docs stands in for --quick only when the docs' checks are all a change
+# needs (ADR-086): every uncommitted change, staged or not, and every new
+# file git does not ignore, is a .md file or in scripts/. The Markdown
+# step already runs adr-index.mjs's --check, through check-docs.mjs.
+if $docs; then
+  others="$(
+    {
+      git -c core.quotePath=false diff --name-only --no-renames HEAD
+      git -c core.quotePath=false ls-files --others --exclude-standard
+    } | grep -v -e '\.md$' -e '^scripts/' | sort -u || true
+  )"
+  if [[ -n "$others" ]]; then
+    echo 'Changed, and neither Markdown nor in scripts/, which is all --docs checks:' >&2
+    sed 's/^/  /' <<< "$others" >&2
+    echo 'Run scripts/verify.sh --quick instead.' >&2
+    exit 1
+  fi
+  markdown
+  scripts_tests
+  step 'All passed'
+  exit 0
+fi
 
 markdown
 
