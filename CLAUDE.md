@@ -6,9 +6,9 @@ below, and this file says where.
 
 ## Read first
 
-- `docs/handoff.md`: where the work stands, what is next, and the
-  working agreements.
-- `docs/decisions.md`: the ADRs, why things are as they are. Read the
+- `docs/handoff.md`: where the work stands and what is next.
+- `docs/engineering.md`: the working agreements.
+- `docs/adr/`: the ADRs, one file each (index: `docs/adr/README.md`), why things are as they are. Read the
   relevant ones before changing anything structural.
 - `docs/conventions.md`: naming, code organisation and the API contract.
 - `docs/principles.md`: what the product aims for.
@@ -63,7 +63,7 @@ Karpathy's observations on LLM coding pitfalls
 - **Migrations.** `npm run migrate:new -- --name <name>` in `server/`,
   then `npm run migrate:all`, which applies it to the dev, test and e2e
   databases. The steps between, and what to check in the generated SQL,
-  are under Process in the handoff's working agreements.
+  are under Process in `docs/engineering.md`.
 - **Seeds grow with every feature** (ADR-081). `npm run seed:demo` gains
   what the feature's screens need, so its manual checks and walkthroughs
   start without setup. `npm run seed:volume` gains realistic rows for any

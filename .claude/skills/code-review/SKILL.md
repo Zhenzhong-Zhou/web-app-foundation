@@ -23,7 +23,7 @@ except to check that they changed whenever the API did.
 
 `CLAUDE.md` first, then the parts of `docs/conventions.md` and
 `docs/principles.md` the change bears on, and every ADR it names or
-amends in `docs/decisions.md`.
+amends in `docs/adr/`.
 
 ## 3. Check
 

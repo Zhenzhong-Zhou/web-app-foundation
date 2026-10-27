@@ -8,18 +8,37 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **ADR-083, the emails' design: PR #257** (`adr-083-emails`, 26 and 27
-  October 2026), built through `/build-from-brief`, green, to merge
-  with this as-built commit; ADR-083's as-built amendment says what
+- **ADR-086, docs as code: part 1 is PR #259** (`docs-moves`, 27 October
+  2026), green, to merge with this as-built commit; ADR-086's as-built
+  amendment says what building settled, and a second amendment adds to
+  part 2's list. Moves only,
+  proved by a script: `decisions.md` split into one file per ADR in
+  `docs/adr/`, each with front matter (status, date, amends, amended
+  by), an index generated from it (`docs/adr/README.md`) and Open
+  decisions in a file of its own, `decisions.md` kept as a stub; the
+  working agreements moved to `docs/engineering.md`; the pointers the
+  moves break fixed with them; and `scripts/check-docs.mjs`, checking
+  from now on every relative link in the repository's Markdown, each
+  amendment recorded both ways, and the index. Built through
+  `/build-from-brief`, with three small fixes between its steps; no
+  dependency step on either docs branch (ADR-086). **After the merge:**
+  re-sync Project knowledge (*Still to do, by hand*), and delete
+  `docs-moves` and `tmp/adr-086/`. Part 2, `docs-start-here`, follows;
+  its scope is in ADR-086 and is confirmed when it is planned.
+- **ADR-083, the emails' design: merged as #257** (`adr-083-emails`,
+  5d34faf) on 27 October 2026, built through `/build-from-brief`, with
+  its as-built commit last; ADR-083's as-built amendment says what
   building settled. One layout for every email, built from blocks into
   both parts, every text part unchanged and held by
   `mail-samples.spec.ts`; buttons where the words were; each product
   email's subject as its heading; the email's own dark colours in a
-  dark mail app; the invitation's `Reply-To` its inviter. **Before
-  merging:** Mailpit's half of section 37 (MC-3701 to MC-3704, MC-3708,
-  MC-3710, and MC-3711's Reply-To). **After the merge, by hand:** the
-  live site's half (MC-3705, MC-3706, MC-3707, MC-3709 and MC-3711's
-  reply), and `/production-readiness`'s by-hand list in
+  dark mail app; the invitation's `Reply-To` its inviter. Mailpit's half
+  of section 37 (MC-3701 to MC-3704, MC-3708, MC-3710, and MC-3711's
+  Reply-To) was the step before merging. **After the merge, by hand:**
+  once Deploy has run for 5d34faf (CI on the merge was still running that
+  morning, and Deploy waits for it), the live site's half (MC-3705,
+  MC-3706, MC-3707, MC-3709 and MC-3711's reply), and
+  `/production-readiness`'s by-hand list in
   `tmp/adr-083/review.md` (each email in the inbox, not spam, with
   Gmail's Show original reading SPF, DKIM and DMARC PASS; Resend's open
   and click tracking off; the address line on a phone); then delete
@@ -200,37 +219,34 @@ with this one, this one is current.
   request. The headers are in `render.md`, "Deploys". Render's edge
   ignores a query string and empties itself at each deploy, so no page
   stays old after one (#196's review; ADR-081's correction).
-- **The order now** (Bob, changed on 26 October 2026), with ADR-082 and
-  the square logo merged:
-    1. **#252**, CI's reliability: PR #254, merged on 26 October.
-    2. **ADR-083, the emails' design** (`adr-083-emails`, above): one
-       layout for every email, the invitation
-       included without Panivo's header (the system's font, a phone's
-       width, the main link as a button mail apps draw, the small print
-       grey, dark mail apps checked, every email keeping its words); a
-       short ADR and the canvas first. Riding along,
-       **`/build-from-brief`**, a project skill holding the ground rules
-       every build brief repeats (the author identity, staging by path,
-       `scripts/verify.sh`, lint fixups, `npm run api`, the stop rule,
-       where `/clear` is safe, the inventory step), so a brief shrinks to
-       its decisions and its prompts and a rule changed once reaches every
-       session (Bob, 25 October 2026). It carries the square logo's four
-       lessons: dependencies judged by each package's own publish time,
-       never moving one back; a migration that adds to a list the code
-       shares commits with that code; manual checks in the same commit as
-       what they check; the review step in two prompts, the findings
-       first, the fixes once Bob has chosen. The emails' own brief is the
-       first written for it.
-    3. **ADR-084, an error tracker**, a small PR with a short ADR, so real errors
+- **The order now** (Bob, changed on 27 October 2026: the docs first,
+  right after #257):
+    1. **ADR-083, the emails' design:** merged as #257 on 27 October; its
+       by-hand steps (above). Before it, #252, CI's reliability, merged as
+       #254 on 26 October.
+    2. **`docs-moves`**, ADR-086's part 1: PR #259 (above).
+    3. **`docs-start-here`**, ADR-086's part 2, docs only.
+    4. **ADR-084, an error tracker**, a small PR with a short ADR, so real errors
        show while fixing: what is sent, scrubbed of personal details
        (PIPEDA, PIPL), and browser errors carried through the app's own
        API, so the browser contacts no other site. Its branch first
        takes `typescript-eslint` 8.72.1 and `@aws-sdk/client-s3`
-       3.1157.0, old enough from 2 November.
-    4. **ADR-085, low stock** (its questions in Open decisions; #222 and
+       3.1157.0, old enough from 2 November, and the Nest packages at
+       12.3.x together, old enough from 3 November: their
+       `@nestjs/platform-express` depends on multer 2.5.0 itself, so
+       the multer override goes. It then overrides esbuild under
+       drizzle-kit to 0.28.2 (Bob, 27 October), amending ADR-019 first,
+       since that override crosses esbuild's breaking versions, with its
+       exit written down: it goes once drizzle-kit's own dependencies
+       resolve to esbuild 0.28.1 or later without it, tried at each
+       drizzle-kit update. Riding along, planned for
+       the emails' branch and not taken there: an `npm audit` step in
+       CI, and the database's size in the backup's summary.
+    5. **ADR-085, low stock** (its questions in Open decisions; #222 and
        the Movements page, #256, ride along).
-    5. **The fix-ups**, each a PR of five to ten related issues: safety
-       and scale (#181 first, then #142, #182, #225, #226, #244), orders
+    6. **The fix-ups**, each a PR of five to ten related issues, each
+       batch writing the rules files for its areas (ADR-086, part 2):
+       safety and scale (#181 first, then #142, #182, #225, #226, #244), orders
        and shipping (#156, #125, #161, #164, #128, #241, #250, #159 with
        #221, a layout decision first, #158's Receive action in the
        summary, and decisions #157 and #160), organization, roles and
@@ -239,7 +255,10 @@ with this one, this one is current.
        (#155, #170, #162, #212, #214 with a row of its own in
        `accessibility.spec.ts`, #232, #242), and words and translations
        (#148, #149, #150, #245, #249, with Bob's mother's corrections).
-    6. **The review of the whole app**, once, after the fix-ups, so it
+       #255 and #258 go together, since both change the emails' text
+       parts (`npm run mail:text -- --update`).
+    7. **One docs PR for the remaining rules files**, then **the review of
+       the whole app**, once, after the fix-ups, so it
        judges the app with the known issues fixed and finds what nobody
        has filed (`/production-readiness` with its device pass: deploys,
        backups and a restore tried, security, performance, email,
@@ -247,11 +266,15 @@ with this one, this one is current.
        closed and open, a phone held sideways); its email section reports
        DMARC's `p=none` as deferred, by decision, until the first paying
        customer. Then one round for its findings.
-    7. **New features**, in this order unless a trigger brings one
+    8. **New features**, in this order unless a trigger brings one
        forward, each with its entry in Open decisions: one person in two
        organizations, then a practice organization (ADR-077,
        *Deferred*); a public demo; plans and billing; the operator's
        console and support access.
+
+  Later: `/release` at the next tag; the chat-side planning skill after
+  `docs-start-here`; the support playbook with the operator's console;
+  a starter-kit template repository last.
 
   #245 (`translate="no"` on data) is decided and suits a cloud session
   before Bob's cloud credit ends in early November. Not checked yet, and
@@ -504,7 +527,7 @@ with this one, this one is current.
   invitation roles) and **0074** (`roles.updated_by`), in #176. Render
   holds one row per file in `drizzle.__drizzle_migrations` once `main` is
   deployed there: 75 with ADR-080, 76 with the square logo. After any new migration: `npm run migrate:all`, and
-  check its journal time (*Working agreements*, Process).
+  check its journal time (`docs/engineering.md`, Process).
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
   for typescript-eslint and the Nest CLI (ADR-067, *Deferred*); still so
@@ -659,7 +682,7 @@ with this one, this one is current.
   MC-R09); its recent work read again after its dialogs (#122, MC-R10);
   and a refused password marked on its field, with a way on, under the
   new code `password_incorrect` (#120, MC-R11).
-- **Working agreements** are below: one PR per feature, ADR
+- **Working agreements** are in `docs/engineering.md`: one PR per feature, ADR
   first; chores ride along; commits authored Zhenzhong Zhou
   <bob0823.zhou@gmail.com>; a file roadmap in every answer that changes
   code; designs on the Claude Design canvas
@@ -727,7 +750,9 @@ with this one, this one is current.
   (medium, development only), stays open as #113 left it: drizzle-kit
   0.31.11's deprecated `@esbuild-kit/esm-loader` pins esbuild
   `~0.18.20`, in a dev server nothing starts; it closes with drizzle-kit
-  1.0, whose fifth release candidate came out on 21 October. Alert 6,
+  1.0, whose fifth release candidate came out on 21 October; until then
+  ADR-084's branch overrides it (Bob, 27 October; the order, *Now*).
+  Alert 6,
   multer 2.4.0 (high, in production code), is pinned exactly by
   `@nestjs/platform-express` 12.2.0, the newest; its crash needs an
   asynchronous `fileFilter`, which no upload route sets, so it cannot be
@@ -834,7 +859,7 @@ with this one, this one is current.
   review and its walkthrough in Chinese: #117
   (two one-second windows while a deletion completes), fixed on
   `deletion-started`, and #118 (the export's column glossary and invoice
-  PDFs, also under *Open decisions* in `decisions.md`), which ADR-071
+  PDFs, also under *Open decisions* in `docs/adr/open-decisions.md`), which ADR-071
   takes up; #119 to #122 were fixed in #123. From 23 and 24 October:
   #212, #214, #221, #222, #225, #226 and #232 open; #213, #223 and #230
   closed by #228, #229 and #231. From 24 and 25 October: #233, #241,
@@ -845,12 +870,20 @@ with this one, this one is current.
   #252 closed with #254, and #246 with #251. `gh issue list` to review.
 - **Branches:** prune the merged ones, `after-adr-070` among them
   (`scripts/prune-branches.sh`).
+- **Outside any PR** (Bob's list, 27 October 2026): his user preferences
+  in claude.ai's Settings; Project knowledge slimmed to `docs/`, the
+  README, `CLAUDE.md` and `.claude/skills/`, and re-synced after each
+  docs PR; a healthchecks.io check as `BACKUP_HEALTHCHECK_URL`
+  (`docs/runbooks/services.md`); the backup key's two copies confirmed.
+  Backups to R2 (`BACKUP_DESTINATION=s3`) are recorded as live since 7
+  October: check the Backup runs before redoing anything.
 
 ### Still to do, in code
 
-- **ADR-084, an error tracker,** next (the order, *Now*). Its branch
-  first takes `typescript-eslint` 8.72.1 and `@aws-sdk/client-s3`
-  3.1157.0, published on 26 October and too new for ADR-083's.
+- **ADR-086's part 2**, `docs-start-here`, next (part 1 is #259), then
+  **ADR-084, an error tracker** (the order, *Now*). ADR-084's branch first takes `typescript-eslint`
+  8.72.1 and `@aws-sdk/client-s3` 3.1157.0, published on 26 October and
+  too new for ADR-083's.
 - `@mui/codemod@9.5.0`'s command crashes on yargs 18, which could be
   reported to MUI.
 - **From #231.** `e2e/text-size.spec.ts` still opens every screen in one
@@ -1327,7 +1360,7 @@ Then tag v0.4.0.
    Known edges, written down rather than fixed: the packing slip has no
    item names in other languages; field names inside an audit entry and
    in validation messages are the API's; the industry vocabulary
-   ("recipe", "batch") is an open decision in `decisions.md`.
+   ("recipe", "batch") is an open decision in `docs/adr/open-decisions.md`.
 
 ## What v0.4 built
 
@@ -1731,236 +1764,3 @@ in ADR-050's amendment.
       mail can be delayed or filtered there.
   - **Serving China:** a Hong Kong or Singapore region with our own
       domain; hosting inside mainland China needs an ICP filing.
-
-## Working agreements (for Claude)
-
-### Pull requests
-
-- **One PR per feature** (October 2026): its ADR, when it has a new one,
-  as the first commit, then server, client and docs as commits of their own;
-  fixes go on the branch until its checks pass, never in a follow-up PR.
-  Small chores (a CI line, a lint rule, a docs tidy) ride along in the next
-  feature PR rather than getting one of their own.
-- **The reviews, before the PR is opened** (21 October 2026, and from
-  ADR-081 four): every feature branch runs, for any PR that changes what
-  a person sees, `/usability-walkthrough` as one of its personas
-  (`.claude/skills/usability-walkthrough/personas.md`), then `/simplify`,
-  then `/code-review`, so the review sees every fix before it, then
-  `/production-readiness` on the sections the change touches
-  (conventions.md, "Production readiness"). Each
-  fix they lead to is its own commit. The PR description names the journey
-  walked and the persona who walked it. `/usability-walkthrough` was
-  missed on several recent PRs, so this branch's step 7 (ADR-079) walks
-  two journeys, to make up for ADR-077 and ADR-078.
-
-### How code is delivered
-
-- **Dependencies, on every branch** (21 October 2026): `npm outdated` in
-  `server/` and `client/`, taking the in-range updates as a commit of their
-  own at the branch's start, and again before the reviews. From ADR-081,
-  only versions at least 7 days old, judged package by package from its
-  own publish time and never moving a locked version back; not `npm
-  update --before`, which does both wrong (the square logo's step 2, 25
-  October 2026). A security fix is excepted, and any other exception is
-  Bob's, named in its commit (conventions.md, "Dependencies").
-- **Planned in this chat, built in Claude Code** (from ADR-079, 20
-  October 2026). The claude.ai chat does the check before an ADR (its
-  Deferred lines, the watch lists, Open decisions and the open issues),
-  the decisions for Bob to confirm, the ADR as the branch's first commit
-  (it tidies the handoff too), the canvas designs, and a build brief: one
-  Claude Code prompt per commit. Claude Code writes the code from each prompt, runs
-  `scripts/verify.sh`, `/simplify` and `/code-review`, and opens the PR.
-  Bob pastes its summaries back into the chat, which writes the as-built
-  amendment and the docs, as a patch for a long file (below). Until
-  ADR-078 the chat wrote
-  the code too, as one mbox per commit, and Claude Code only applied
-  them.
-- **The build, through `/build-from-brief`** (from ADR-083). The brief
-  and the canvas's boards go in `tmp/adr-NNN/`, ignored by git though
-  `scripts/verify.sh` lints its Markdown. Each prompt is one line,
-  `/build-from-brief tmp/adr-NNN/brief.md N`; the skill holds the ground
-  rules every brief repeated, so a brief holds its decisions and its
-  steps. `/clear` between steps, never inside one; a step's follow-ups
-  (an amend, an issue to file) stay in its context, and its summary is
-  pasted into the chat before clearing. A small fix between steps is a
-  plain prompt of its own, a commit, then `/clear`. The review step runs
-  in two prompts: the reviews write their findings, numbered, to
-  `tmp/adr-NNN/review.md` and stop for Bob's choices; then the fixes by
-  number, the full verify, the push and the PR.
-- **Cloud sessions** (Claude Code on the web, from October 2026): one new
-  session per task, from `main`, each cloning the repository fresh, so
-  nothing is pulled first; a long session pays for its whole history at
-  every step. The prompt names the issue, the branch, the author Zhenzhong
-  Zhou with the session as committer (the commit then shows Verified), the
-  regression check's number when several run at once, and the files to
-  leave alone; asks for `scripts/verify.sh --quick`, a pull request with
-  "Fixes #N" and a last line saying DONE or BLOCKED; and ends with the stop
-  rule: change only what the issue names, and past about 20 minutes or
-  more files than that, stop and report. A proof runs only the changed
-  tests; a sweep, a load proof or anything needing the large seed stays on
-  the Mac. PRs merge one at a time, each when green; a branch behind
-  `main` with no conflict merges as it is, and a conflict in
-  `docs/manual-checks.md` is settled on GitHub with "Accept both changes",
-  an empty line between Regressions entries, the dated list kept oldest
-  first. A session first installs the Node in `.node-version`, since a
-  container may start on an older one (one had 22, where twenty client
-  tests fail for reasons of their own). Its own "unpushed commits"
-  warning after a push can be false, since the clone tracks only `main`:
-  `git ls-remote origin <branch>` says whether the commit is there before
-  anything is pushed again.
-- **A pull request opened with `gh pr create --label full-e2e`** runs
-  Chromium only the first time: the label is not in the opened event, so
-  every browser runs from the next push or a re-label (#254).
-- **Every pull request** that changes what a person sees takes pictures
-  before and after and compares them (`npm run screenshots:compare`), and
-  its Claude Code Review comment is read before merging. The README's
-  "Which tool, when" says when each of the repo's tools runs.
-- **The chat's docs commits come as full files, not an mbox** (from
-  ADR-082, 24 October 2026): `git am` had failed on Bob's side. Each file
-  is made from `main` as Bob has it, with its `git hash-object` before
-  and after, so a copy made from another version is caught before it
-  overwrites anything; then the commands to copy it in and commit.
-  Downloads land in `~/Downloads` itself, not a folder, so each file is
-  named in full, never a glob.
-- **A long file changes by a patch, not a full replacement** (26 October
-  2026): `decisions.md`, this handoff, `manual-checks.md` and
-  `conventions.md` are changed only where they need it. Bob attaches his
-  copy from `main`, since Project knowledge's search returns a long file
-  in passages; the chat sends a patch, applied with `git apply --check`
-  and then `git apply --index`, which stages what it changed. A patch
-  that does not match Bob's copy is refused whole, and `git diff
-  --cached` shows every change before the commit. New and short files
-  still come whole.
-- **Every answer that changes files opens with a roadmap:** a tree or
-  relative paths, each marked **new**, **full replacement**, **patch** or
-  **snippet**.
-- **New files, and changes touching several places or a large chunk of one
-  file, come as full downloadable files.** Only a single small change stays
-  inline as a snippet.
-- Full replacements are made from Bob's current copy. Project knowledge
-  counts once Bob says he has resynced from `main`. Otherwise ask, or build
-  from the Project copy plus known changes and tell Bob to check `git diff`.
-- State the exact path of every file:
-  - `server/src/modules/…`;
-  - `server/src/core/…` (organizations, audit, authorization);
-  - `server/src/database/schema/…` and `…/migrations/…`;
-  - `server/test/…`;
-  - `client/src/…` (feature folders, `lib/api-names.ts`, `auth/permissions.ts`);
-  - `client/e2e/…`;
-  - `docs/decisions.md`.
-
-### Process
-
-- ADR before code for each new area. Server first with e2e tests, then the
-  client screens. Each step its own commit.
-- **At the start of every ADR,** before drafting it: check `decisions.md`'s
-  Deferred lines, this handoff's watch lists and the open issues for
-  anything in the same area, and say which triggers have fired. That is
-  when a deferred item is cheapest to pick up.
-- **The seeds grow with every feature** (from ADR-081): `seed:demo`, so
-  its screens, manual checks and walkthroughs need no setup; `seed:volume`,
-  realistic rows for any new table or hot query, timed against ADR-051's
-  budgets. Every build brief has a step for both, or says why a feature
-  adds nothing (CLAUDE.md; conventions.md, "Seeds").
-- **A change that touches many screens** starts its build with an
-  inventory step: Claude Code lists every cross-area read and link (or,
-  for ADR-081, every chunk, request and failure path) before building.
-- Migrations:
-    1. write the schema;
-    2. run `npm run migrate:new -- --name <name>`;
-    3. append the hand-written parts (triggers, backfills) after a
-       `--> statement-breakpoint`;
-    4. run `npm run migrate:all`.
-
-  Check the generated SQL keeps `NULLS NOT DISTINCT`. Check the new
-  entry's `when` in `meta/_journal.json` is later than the one before:
-  the migrator skips a migration whose time is earlier than the last one
-  applied, and still reports success. 0065's was ahead of the clock, so
-  0066 was generated earlier and skipped, with no column and no error,
-  until its time was moved after 0065's.
-- **At each release,** before tagging it, set both packages' version to
-  it: `npm version <x.y.z> --no-git-tag-version` in `server/` and in
-  `client/`.
-- A type change on the client means fixing the test fixtures that build that
-  type, in the same commit. Vitest does not type-check; `tsc` and CI do.
-- A commit that changes what a person sees, or a rule they work under,
-  updates `docs/manual-checks.md` in the same commit (`docs/conventions.md`,
-  Tests).
-
-### Commits
-
-- **Authored as Bob:** `Zhenzhong Zhou <bob0823.zhou@gmail.com>`, the
-  identity on the repo's history (`git log --format='%an <%ae>' | sort |
-  uniq -c` shows it). Every mbox or patch Claude prepares uses it, never a
-  placeholder such as `Claude (draft) <draft@example.invalid>`: removing
-  those took a history rewrite. A pre-push hook refuses a push that
-  carries one: `.git/hooks/pre-push` until ADR-082 moves it to
-  `scripts/hooks/`, with a CI check behind it.
-- Explicit `git add` per concern, never `-A`.
-- Run `git status` before every commit. Files staged earlier — even new or
-  empty ones — ride into whichever commit runs first. Unstage with
-  `git restore --staged <path>`.
-- Each commit must build on its own. When a fix is already broken on `main`,
-  it goes first.
-- Messages explain the why, as one `-m` with a subject, a blank line and
-  wrapped paragraphs.
-- To reorder unpushed commits: `git reset --soft <base>`, restage per commit,
-  and `git commit -C <old-hash>` to reuse each message.
-- Before pushing, run what CI runs: `scripts/verify.sh` from the repo
-  root (both sides, CI's order, stops at the first failure; `--quick`
-  skips the end-to-end suites). Editor auto-imports in the wrong quote
-  style fail CI.
-  (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
-  holds project references.)
-
-### Moving code (what step 1 learned)
-
-- Find every caller before moving a method, including
-  `server/src/database/seed-demo.ts`, and calls split over two lines
-  (`this.taxCodes` then `.findById`). CI runs `npm run seed:demo` on a
-  fresh database, but only once the change is pushed, so after a server
-  move run it locally too.
-- Prove a move lost nothing: every non-import line of the old file should
-  appear, as often, across the new ones.
-- Check a new comment's claims against the code it describes before
-  keeping it.
-
-### Server
-
-- Server e2e: always `npm run test:e2e`. Never run two at once — the second
-  now refuses. Don't edit server files while Playwright runs against
-  `start:dev`.
-- **`npm run api` is the truth about the document.** An enum written from
-  a TypeScript union can change order when the code around it changes,
-  since TypeScript orders a union by when it first meets each member.
-  Commit what it writes; never put an older order back by hand.
-- **Time zones by name, through one function on each side** (ADR-072):
-  `todayIn` and `dayIn`, never `AT TIME ZONE` in SQL. Node and Chromium
-  spell some zones the old way (`Asia/Calcutta`) and Safari the new;
-  both sides map the old to the current.
-- **Drizzle writes a column without its table name when a query has no
-  joins.** Inside a correlated subquery, name the outer row in plain SQL.
-  Raw SQL with every table aliased avoids it.
-- Quantities and money stay strings end to end (ADR-025); compare and sum in
-  SQL; the client never does decimal arithmetic. Values round to six places.
-- Refusals in order: malformed (400), not found (404), not allowed (409), all
-  before any write. Ids from a body that belong to another tenant are 400.
-- Every write route is audited or listed in `NOT_AUDITED` with a reason.
-  Every route has `@RequirePermissions`. Never seed a permission nothing
-  gates. New permissions default to Owner-only: add them to `PERMISSIONS`
-  and its descriptions, never to the Admin or Viewer lists, and to the
-  client's list in the same commit.
-
-### Client and copy
-
-- Dialogs take permission flags from their page rather than reading the
-  session.
-- `useSubmit`'s callback takes no result — keep ids and notices in a
-  `useRef`.
-- Hooks never inside hooks or after an early return.
-- Playwright:
-  - prefer `getByRole(…, { name, exact: true })`, and label tables
-      (`aria-label`) so row lookups stay inside them;
-  - an accessible name includes everything in the element, such as
-      `Old retail (CAD) — retired`.
-- British spelling in comments and copy is intentional.

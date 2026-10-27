@@ -102,7 +102,7 @@ export async function proFormaAmounts(
 /**
  * The calculation itself, over any lines given as rows of id, sku,
  * tax_code_id, quantity and unit_price. Raw SQL with every table aliased,
- * since the lines arrive as a subquery (handoff, Server).
+ * since the lines arrive as a subquery (engineering.md, Server).
  */
 async function amountsOver(
   tx: Transaction,

@@ -2,7 +2,7 @@
 #
 # Refuses commits authored or committed by a placeholder identity, such as
 # "Claude (draft) <draft@example.invalid>": an address at .invalid, or a
-# name with "(draft)" (docs/handoff.md, Working agreements, Commits).
+# name with "(draft)" (docs/engineering.md, Working agreements, Commits).
 # Removing those once took a history rewrite.
 #
 #     scripts/check-authors.sh origin/main..HEAD      # what a branch adds

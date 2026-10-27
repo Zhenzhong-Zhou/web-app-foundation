@@ -8,7 +8,7 @@ disable-model-invocation: true
 # Build from a brief
 
 A feature is planned in the claude.ai chat and built here, one step of its
-brief per prompt ([handoff, "How code is delivered"][delivered]). The brief
+brief per prompt ([engineering.md, "How code is delivered"][delivered]). The brief
 holds the feature's decisions and its steps; this skill holds the rules
 every brief would otherwise repeat. Do the one step named, and nothing
 else.
@@ -22,7 +22,7 @@ else.
   ADR leaves to the build, and the steps around this one, so the step
   neither redoes an earlier one nor reaches into a later one.
 - **What the brief says to read first,** usually its ADR and amendments in
-  `docs/decisions.md`, then the home of each rule below that the step
+  `docs/adr/`, then the home of each rule below that the step
   touches.
 
 A brief's own rules add to these, as "no API change is expected" does.
@@ -35,7 +35,7 @@ ways that would build different things, stop and ask rather than choose
 Each has one home, linked, and changes there. A line is copied here only
 where a step must act on it.
 
-### Commits ([handoff, "Commits"][commits]; [CLAUDE.md][rules])
+### Commits ([engineering.md, "Commits"][commits]; [CLAUDE.md][rules])
 
 - **Authored and committed as Bob,** Zhenzhong Zhou
   <bob0823.zhou@gmail.com>, as git is set up on this Mac; the message may
@@ -64,7 +64,7 @@ where a step must act on it.
 - Where the brief expects no API change and `npm run api` changes
   anything, stop and say so.
 
-### Migrations ([handoff, "Process"][process]; [conventions.md][migrations])
+### Migrations ([engineering.md, "Process"][process]; [conventions.md][migrations])
 
 - `npm run migrate:new -- --name <name>` in `server/`, the hand-written
   parts after a `--> statement-breakpoint`, then `npm run migrate:all`.
@@ -105,7 +105,7 @@ where a step must act on it.
 - **Dependencies,** as above, at the branch's start and again before the
   reviews.
 - **The inventory,** for a change across many screens or places
-  ([handoff, "Process"][process]): before building, every cross-area read
+  ([engineering.md, "Process"][process]): before building, every cross-area read
   and link, or what the brief names, written where it says, usually
   `tmp/adr-NNN/inventory.md`, which is not committed.
 - **The seeds** ([conventions.md, "Seeds"][seeds]): `npm run seed:demo`
@@ -113,7 +113,7 @@ where a step must act on it.
   realistic rows for any new table or hot query, timed against ADR-051's
   budgets (`npm run perf:plans`, `npm run perf`). Or the brief says why
   there is nothing to add, and the pull request says so.
-- **The reviews, in two prompts** ([handoff, "How code is
+- **The reviews, in two prompts** ([engineering.md, "How code is
   delivered"][delivered]):
   1. **The findings.** `/usability-walkthrough` as the persona the brief
      names, for any change a person sees; `/simplify`; `/code-review`;
@@ -148,9 +148,9 @@ which writes the as-built amendment and the docs from it:
 
 [how-to-work]: ../../../CLAUDE.md#how-to-work
 [rules]: ../../../CLAUDE.md#rules-of-this-repository
-[delivered]: ../../../docs/handoff.md#how-code-is-delivered
-[process]: ../../../docs/handoff.md#process
-[commits]: ../../../docs/handoff.md#commits
+[delivered]: ../../../docs/engineering.md#how-code-is-delivered
+[process]: ../../../docs/engineering.md#process
+[commits]: ../../../docs/engineering.md#commits
 [api]: ../../../docs/conventions.md#the-api-contract
 [migrations]: ../../../docs/conventions.md#migrations-against-the-running-release-adr-081
 [dependencies]: ../../../docs/conventions.md#dependencies

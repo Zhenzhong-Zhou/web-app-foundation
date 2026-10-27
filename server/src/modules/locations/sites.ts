@@ -129,7 +129,7 @@ export async function siteStillInUse(
  * still in use. Null when nothing shipped, or nothing above it is a site.
  *
  * Raw SQL with every table aliased, since the walk up the tree refers to
- * its own rows (handoff, Server).
+ * its own rows (engineering.md, Server).
  */
 export async function siteShippedFrom(
   tx: Tx,
