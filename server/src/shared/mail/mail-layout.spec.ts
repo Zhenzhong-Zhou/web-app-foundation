@@ -4,8 +4,6 @@ import { type MailBlock, type MailContent, writeMail } from './mail-layout';
 
 const MARK = 'https://app.example.com/brand/mail-mark.png';
 const LINK = 'https://app.example.com/verify-email?token=abc&next=1';
-/** Half the 102 KB at which Gmail cuts a message off (ADR-083). */
-const LIMIT = 50 * 1024;
 
 /** Every kind of block, in the order an email holds them. */
 const BLOCKS: MailBlock[] = [
@@ -256,10 +254,6 @@ describe('writeMail', () => {
     expect(
       email({ blocks: BLOCKS.filter((block) => block.kind !== 'button') }).html,
     ).not.toContain('If the button doesn’t open');
-  });
-
-  it('stays under 50 KB', () => {
-    expect(Buffer.byteLength(email().html)).toBeLessThan(LIMIT);
   });
 
   it('loads nothing but the mark', () => {

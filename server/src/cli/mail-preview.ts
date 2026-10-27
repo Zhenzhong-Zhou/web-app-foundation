@@ -2,9 +2,9 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { Logger } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
 
-import { type Env, envSchema } from '../config/env';
+import { configOf } from '../config/config-of';
+import { envSchema } from '../config/env';
 import { escapeHtml } from '../shared/mail/escape-html';
 import { MailService } from '../shared/mail/mail.service';
 import { type MailSample, mailSamples } from './mail/mail-samples';
@@ -114,9 +114,7 @@ async function deliver(samples: MailSample[]): Promise<number> {
       MAIL_FROM: true,
     })
     .parse(process.env);
-  const mail = new MailService({
-    get: (key: keyof typeof settings) => settings[key],
-  } as unknown as ConfigService<Env, true>);
+  const mail = new MailService(configOf(settings));
 
   try {
     for (const sample of samples) await mail.send(sample.mail);

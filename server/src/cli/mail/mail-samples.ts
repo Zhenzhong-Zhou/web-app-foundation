@@ -1,8 +1,6 @@
-import type { ConfigService } from '@nestjs/config';
-
 import { ERROR_CODES } from '../../common/error-codes';
 import { type Locale, SUPPORTED_LOCALES } from '../../common/locales';
-import type { Env } from '../../config/env';
+import { configOf } from '../../config/config-of';
 import { refusalMessage } from '../../core/auth/account-deletion.service';
 import {
   passwordResetMail,
@@ -61,13 +59,9 @@ const OWNER: MemberSide = { isOwner: true, withAccount: false };
  * InvitationsService hands it to MailService.
  */
 export async function mailSamples(): Promise<MailSample[]> {
-  const settings: Partial<Env> = { MAIL_FROM, CLIENT_URL };
-  const config = {
-    get: (key: keyof Env) => settings[key],
-  } as unknown as ConfigService<Env, true>;
   // Nothing is sent: write() is what send() hands MailService.
   const brand = new MailBrand(
-    config,
+    configOf({ MAIL_FROM, CLIENT_URL }),
     () => Promise.resolve(true),
     {} as MailService,
   );

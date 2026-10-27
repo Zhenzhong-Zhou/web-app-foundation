@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
 
+import { configOf } from '../../config/config-of';
 import type { Env } from '../../config/env';
 import { type Mail, MailService } from './mail.service';
 
@@ -22,11 +22,9 @@ describe('MailService', () => {
   };
 
   function service(settings: Partial<Env>): MailService {
-    const config = {
-      get: (key: keyof Env) =>
-        ({ MAIL_FROM: 'Panivo <no-reply@example.com>', ...settings })[key],
-    } as unknown as ConfigService<Env, true>;
-    return new MailService(config);
+    return new MailService(
+      configOf({ MAIL_FROM: 'Panivo <no-reply@example.com>', ...settings }),
+    );
   }
 
   beforeEach(() => {

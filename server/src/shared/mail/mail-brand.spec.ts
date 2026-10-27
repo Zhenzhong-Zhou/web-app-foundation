@@ -1,7 +1,6 @@
 import { Logger } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
 
-import type { Env } from '../../config/env';
+import { configOf } from '../../config/config-of';
 import type { MailService } from './mail.service';
 import {
   answersAsPng,
@@ -46,14 +45,11 @@ describe('MailBrand', () => {
     check: MarkCheck = () => Promise.resolve(true),
     clientUrl = 'https://app.example.com',
   ): MailBrand {
-    const settings: Partial<Env> = {
-      MAIL_FROM: mailFrom,
-      CLIENT_URL: clientUrl,
-    };
-    const config = {
-      get: (key: keyof Env) => settings[key],
-    } as unknown as ConfigService<Env, true>;
-    return new MailBrand(config, check, transport as unknown as MailService);
+    return new MailBrand(
+      configOf({ MAIL_FROM: mailFrom, CLIENT_URL: clientUrl }),
+      check,
+      transport as unknown as MailService,
+    );
   }
 
   afterEach(() => {

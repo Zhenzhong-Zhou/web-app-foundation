@@ -48,6 +48,13 @@ const FONT =
  */
 const OUTLOOK_FONT = "Arial, 'Microsoft YaHei', sans-serif";
 
+/**
+ * A table for layout: role="presentation", so a screen reader does not
+ * read it as a table, and no spacing of its own.
+ */
+const TABLE =
+  '<table role="presentation" cellpadding="0" cellspacing="0" border="0"';
+
 const BODY = 'font-size:16px;line-height:1.6';
 const SMALL = `font-size:14px;line-height:1.5;color:${LIGHT.muted}`;
 const LINK = `color:${LIGHT.accent};text-decoration:underline`;
@@ -215,8 +222,8 @@ function htmlOf(subject: string, locale: Locale, blocks: MailBlock[]): string {
     `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${escapeHtml(preheaderOf(blocks))}${PADDING}</div>`,
     // lang and dir again: Gmail drops <html> and its attributes.
     `<div role="article" aria-roledescription="email" aria-label="${label}" lang="${lang}" dir="ltr" style="font-family:${FONT};${BODY}">`,
-    '<!--[if mso]><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->',
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;margin:0 auto;border-collapse:collapse">',
+    `<!--[if mso]>${TABLE} width="600" align="center"><tr><td><![endif]-->`,
+    `${TABLE} width="100%" style="max-width:600px;margin:0 auto;border-collapse:collapse">`,
     // A row to a block, 16 px apart: padding on a cell, which every mail
     // app draws alike, where margins are not.
     ...rows.map((html, index) => {
@@ -245,7 +252,7 @@ export function blockHtml(block: MailBlock, locale: Locale): string {
       const mark = block.mark
         ? `<td class="rule" style="${cell};padding-right:10px"><img src="${escapeHtml(block.mark)}" width="28" height="28" alt="" style="display:block;border:0"></td>`
         : '';
-      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse"><tr>${mark}<td class="rule" width="100%" style="${cell};font-size:20px;font-weight:700;line-height:28px">${escapeHtml(block.name)}</td></tr></table>`;
+      return `${TABLE} width="100%" style="border-collapse:collapse"><tr>${mark}<td class="rule" width="100%" style="${cell};font-size:20px;font-weight:700;line-height:28px">${escapeHtml(block.name)}</td></tr></table>`;
     }
     case 'heading':
       return `<h1 style="margin:0;font-size:22px;font-weight:700;line-height:1.3">${escapeHtml(block.text)}</h1>`;
@@ -265,7 +272,7 @@ export function blockHtml(block: MailBlock, locale: Locale): string {
     case 'button':
       // The padding on the link, so the whole button is clickable, and on
       // the cell for Outlook, which pads no link and rounds no corner.
-      return `<table role="presentation" class="button" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate"><tr><td align="center" style="background-color:${LIGHT.accent};border-radius:${RADIUS.control}px;mso-padding-alt:10px 22px"><a href="${escapeHtml(block.href)}" style="display:inline-block;padding:10px 22px;color:${LIGHT.onAccent};font-size:16px;font-weight:600;line-height:24px;text-decoration:none;border-radius:${RADIUS.control}px">${escapeHtml(block.label)}</a></td></tr></table>`;
+      return `${TABLE} class="button" style="border-collapse:separate"><tr><td align="center" style="background-color:${LIGHT.accent};border-radius:${RADIUS.control}px;mso-padding-alt:10px 22px"><a href="${escapeHtml(block.href)}" style="display:inline-block;padding:10px 22px;color:${LIGHT.onAccent};font-size:16px;font-weight:600;line-height:24px;text-decoration:none;border-radius:${RADIUS.control}px">${escapeHtml(block.label)}</a></td></tr></table>`;
     case 'details': {
       const cell = `padding:4px 12px 4px 0;vertical-align:top;${BODY}`;
       // A label kept whole: on a phone a long value would break 浏览器.
@@ -278,14 +285,14 @@ export function blockHtml(block: MailBlock, locale: Locale): string {
     case 'quote': {
       // Its line breaks kept, each line escaped.
       const lines = block.text.split(/\r?\n/).map(escapeHtml).join('<br>');
-      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate"><tr><td class="rule" style="padding:12px 16px;border:1px solid ${LIGHT.border};border-radius:${RADIUS.panel}px;${BODY}"><strong>${escapeHtml(block.title)}</strong><br>${lines}</td></tr></table>`;
+      return `${TABLE} width="100%" style="border-collapse:separate"><tr><td class="rule" style="padding:12px 16px;border:1px solid ${LIGHT.border};border-radius:${RADIUS.panel}px;${BODY}"><strong>${escapeHtml(block.title)}</strong><br>${lines}</td></tr></table>`;
     }
     case 'small':
       return `<p class="muted" style="margin:0;${SMALL}">${escapeHtml(block.text)}</p>`;
     case 'link':
       return `<p style="margin:0">${linkHtml(block.href, block.href)}</p>`;
     case 'footer':
-      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse"><tr><td class="rule muted" style="padding:16px 0 0;border-top:1px solid ${LIGHT.rule};${SMALL}">${escapeHtml(block.text)}</td></tr></table>`;
+      return `${TABLE} width="100%" style="border-collapse:collapse"><tr><td class="rule muted" style="padding:16px 0 0;border-top:1px solid ${LIGHT.rule};${SMALL}">${escapeHtml(block.text)}</td></tr></table>`;
   }
 }
 
