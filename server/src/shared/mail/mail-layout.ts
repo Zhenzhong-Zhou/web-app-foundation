@@ -314,9 +314,10 @@ function linkHtml(href: string, text: string): string {
  * The button's address to copy, for a mail app where it does not open, in
  * the HTML part only: the text part already gives the address on a line of
  * its own. The address is its own link too, as a deletion notice's is, for
- * a mail app that draws no button, and breaks anywhere, so a long one never
- * widens a phone's column. The catalogue check holds every language to
- * `{link}`.
+ * a mail app that draws no button. It breaks anywhere, so a long one never
+ * widens a phone's column, and where a mail app ignores word-break, after
+ * each / ? = and &: a <wbr> there is not copied with it. The catalogue
+ * check holds every language to `{link}`.
  */
 function addressLine(href: string, locale: Locale): string {
   const sentence = translateParts(
@@ -334,7 +335,10 @@ function addressLine(href: string, locale: Locale): string {
     .map((part) =>
       typeof part === 'string'
         ? escapeHtml(part)
-        : `<a class="link" href="${escapeHtml(part.href)}" style="${LINK};word-break:break-all">${escapeHtml(part.href)}</a>`,
+        : `<a class="link" href="${escapeHtml(part.href)}" style="${LINK};word-break:break-all">${part.href
+            .split(/(?<=[/?=&])/)
+            .map(escapeHtml)
+            .join('<wbr>')}</a>`,
     )
     .join('');
   return `<p class="muted" style="margin:0;${SMALL}">${sentence}</p>`;

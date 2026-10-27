@@ -208,8 +208,11 @@ describe('writeMail', () => {
     expect(html).toContain(`aria-label="${escaped}"`);
     expect(html).toContain(`<img src="${escaped}"`);
     expect(html).toContain(`href="${escaped}"`);
-    // Every value escaped whole, the address line's and the preheader's too.
-    expect(html.replaceAll(escaped, '')).not.toContain('onerror');
+    // Every value escaped whole, the address line's and the preheader's too,
+    // the address's places to break apart.
+    expect(html.replaceAll('<wbr>', '').replaceAll(escaped, '')).not.toContain(
+      'onerror',
+    );
     // The text part is plain text: as typed.
     expect(text).toContain(`${evil}\n\n${evil}`);
     expect(text).not.toContain('&amp;');
@@ -256,11 +259,15 @@ describe('writeMail', () => {
   it('puts the address under a button in small print last, before the footer, in the HTML alone, as its own link', () => {
     const { html, text } = email({ locale: 'zh-Hans' });
     const href = LINK.replace('&', '&amp;');
+    // A place to break after each / ? = and &, for a mail app that ignores
+    // word-break; what is copied is the address.
+    const breakable =
+      'https:/<wbr>/<wbr>app.example.com/<wbr>verify-email?<wbr>token=<wbr>abc&amp;<wbr>next=<wbr>1';
 
     expectInOrder(bodyOf(html), [
       'We will never ask',
       '>https://app.example.com/account</a>',
-      `<p class="muted" style="margin:0;font-size:14px;line-height:1.5;color:#5B6575">按钮打不开时，把这个地址复制到浏览器：<a class="link" href="${href}" style="color:#5546B8;text-decoration:underline;word-break:break-all">${href}</a></p>`,
+      `<p class="muted" style="margin:0;font-size:14px;line-height:1.5;color:#5B6575">按钮打不开时，把这个地址复制到浏览器：<a class="link" href="${href}" style="color:#5546B8;text-decoration:underline;word-break:break-all">${breakable}</a></p>`,
       'Sent for Northside Naturals by Panivo.',
     ]);
     expect(text).not.toContain('按钮打不开时');

@@ -2684,9 +2684,11 @@ a day.
   address and an Outlook.com one: in Gmail on the web, Gmail's phone app
   and Outlook.com, the header, heading, button and address line in that
   order, at the column's width, and the inbox's preview line as MC-3702.
-  In each one's dark mode, the button and the links readable (Gmail's app
-  turns colours its own way: look at what it does). Images off: Panivo
-  still heads the email.
+  In Gmail's phone app, the reset's address wraps inside the column, at
+  any character or after a /, ? or =, nothing scrolling sideways; copied,
+  it is the address whole. In each one's dark mode, the button and the
+  links readable (Gmail's app turns colours its own way: look at what it
+  does). Images off: Panivo still heads the email.
 - **MC-3707** VoiceOver in Gmail on the web. In Safari, open one email:
   moving into it, VoiceOver names it an email, by its subject, and reads
   it as one, not run into Gmail's page around it; inside it, the rotor's
@@ -2699,7 +2701,7 @@ a day.
   account's language 中文 on the live site, ask for a reset to it and open
   it in QQ Mail's web view: the header, heading, button and address line
   in order, the Chinese in the system's Chinese font, the button
-  readable.
+  readable, the address wrapping inside the column as in MC-3706.
 - **MC-3710** The invitation. In Mailpit, the invitation to Northside
   Naturals, in English: no header, and no Panivo above it; Join Northside
   Naturals as its heading; Chen Jie (`chen.jie@example.com`) invited you
