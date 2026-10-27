@@ -405,6 +405,14 @@ message, and the screen keys on the code, never on the words.
 - Every integration test calls `await app.close()` in `afterAll`, or the
   `pg` pool stays open and the run hangs without explaining why.
 - One integration test per feature as it's built (ADR-008).
+- **Every email's text part has a proof** (ADR-083).
+  `server/src/shared/mail/mail-samples.spec.ts` builds each email in each
+  language it is sent in and compares its text part with its file under
+  `__text__/`. A change of layout or code never rewrites one, ADR-083's
+  layout included: a difference is the change's bug. A branch that changes
+  an email's words on purpose, as #255 or a translation corrected, runs
+  `npm run mail:text -- --update` in `server/` and commits the files with
+  the words, in a commit that changes nothing else and names them.
 - **The client's unit tests run in Tokyo**, `TZ` set in
   `vitest.config.ts`, so a test that assumes the computer is in UTC, or in
   the organization's zone, fails everywhere, not only on someone else's
