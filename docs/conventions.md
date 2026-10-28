@@ -237,6 +237,107 @@ rather than structure, copied into every e2e suite, and past the rule of three.
 They belong in `test/utils/` — deferred as a refactor across every spec file
 rather than folded into a feature commit.
 
+### Shared pieces on the server
+
+Use these rather than writing the thing again. The client's are under
+[Shared pieces for screens](#shared-pieces-for-screens-adr-055).
+
+- **`common/`:** `dto/currency.ts` (`IsCurrencyCode`, with
+  `isCurrencyCode` in `database/schema/columns.ts` for checks),
+  `dto/decimal.ts` (`IsPositiveDecimal`, `IsNonNegativeDecimal`),
+  `dto/calendar-day.ts` (`IsCalendarDay`, which reads
+  `CALENDAR_DAY_INPUT`), `today.ts` (`todayIn`, `dayIn`),
+  `dto/keyset-query.dto.ts` and `keyset.ts` (`pageOf`). A DTO never
+  restates a rule's message; `$property` names the field.
+- **`core/documents/`:** `sheet.ts` (`masthead`, `party`, `linesTable`,
+  `totals`, `banner`, `notice`) for every document's parts, `parties.ts`
+  for who and where it names, and `DocumentsService.send` with a
+  `Printable` for its route.
+- **The lookups every action starts from,** under `modules/`, each
+  scoped to the organization in its where clause: `orders/load-order.ts`,
+  `invoices/lock-draft.ts`, `production-orders/run-guards.ts`,
+  `return-authorizations/lock-open.ts`. Also `stock/rates.ts`
+  (`baseCurrency`, `rateOnOrBefore`), `stock/availability.ts`
+  (`inVariantOrder`, the one order product locks are taken in),
+  `orders/order-line-pricing.ts` (`pricedCurrencies`,
+  `assertOneSaleCurrency`), `orders/lot-items.ts` (what a shipment or
+  return moved), `return-authorizations/lines-with-progress.ts`,
+  `invoices/issued-invoice.ts` (`partiesOf`, `stored`) and
+  `invoices/credit-amounts.ts` (`computeCredit`).
+- **Services split by job:** orders → `OrdersService` (reads),
+  `OrderLifecycleService`, `OrderLinesService`, `OrderReceiptsService`;
+  invoices → `InvoicesService` (reads), `InvoiceDraftsService`,
+  `InvoiceIssuingService`; production → `ProductionOrdersService`,
+  `ProductionExecutionService`, `ProductionCloseService`; shipments →
+  `ShipmentsService` (reads), `ShippingService`, `ShipmentVoidsService`;
+  RMAs → `ReturnAuthorizationsService`,
+  `ReturnAuthorizationReceiptsService`,
+  `ReturnAuthorizationReplacementsService`; stock → `StockService` (the
+  one write path, kept whole), `StockReadsService`, `LotsService`.
+- **The server's tests, `test/utils/`:** `fixtures.ts` (`createE2eApp`,
+  `body`, `PASSWORD`, `registerOrganization`, `createPartner`,
+  `createLocation`, `createVariant`, `roleIdNamed`, `addMember`,
+  `addViewer`), `sales.ts` (`shippedSale`), `valuation.ts` (buy, move,
+  pool reads, `expectBooksToReconcile`) and `routes.ts` (the coverage
+  walk).
+
+### Reviewed and kept
+
+jscpd still reports these (`.jscpd.json` holds its paths, so a plain
+`npx jscpd` gives the report); each was read in the maintainability
+rounds of October 2026 and kept on purpose. Re-review one only when the
+code around it changes.
+
+- Create and update DTO pairs (address, contact, partner, variant,
+  licence, location): required against optional; each DTO states its own
+  shape.
+- Controller import headers and schema column blocks: declarations, not
+  rules.
+- The e2e specs' own response interfaces against the generated types:
+  separate packages, and the specs describe what a test reads, not the
+  whole response.
+- Login, register and reset: their form-state and submit blocks skip
+  `useSubmit` because they navigate away on success. Forgot-password keeps
+  its own message: it must not repeat the server's words.
+- The login and forgot-password email field, the two order-line price
+  fields, and the "Into" location select in the receive dialogs: two
+  copies each, with different help text.
+- List pages' loading and empty frames: they vary in skeleton rows and
+  wording; a component would need a prop for each difference.
+- Dialog plumbing (imports, `useSubmit`, `close`, `handleSubmit`, the
+  `update(field)` helper): sharing it would mean a form framework.
+- `products/variant-row.tsx` keeps its own `Detail` (label beside value,
+  a spec sheet); `LabelledValue` is caption above value.
+- The cost panels' top (the `useResource` guard and a six-line heading)
+  and the run cost panel's two tables (different columns).
+- Stock value's needs-cost list stays off `useKeysetList`: it is read with
+  the valuation under one banner. The multi-read pages (order detail,
+  members, inventory, exchange rates) stay off `useResource` for the same
+  reason.
+- Two order lookups stay outside `loadOrder`: one joins the partner for
+  its columns, one runs outside a transaction through `TenantDb`.
+- Repeats inside a single spec: each test should read on its own.
+- `stock.e2e-spec.ts` keeps its own `createLocation` (its own defaults;
+  the name also clashes with the fixture).
+- `lockOpen` against `lockForReceipt`, and `lockDraft` against void's
+  lock: the same lock query, different rules. A path id answers 404, a
+  body id 400; the allowed statuses differ; the receipt adds order and
+  goods checks.
+- Ship's and receive's counter updates on the order line: two limits and
+  two constraints (ordered against shipped). Each says so in a comment.
+- Closing and reopening a line: the same "confirmed only" skeleton, each
+  with its own message.
+- The order list against order detail, and the two invoice-line reads in
+  issuing and in `InvoicesService`: different columns.
+- `users.e2e-spec.ts` keeps its own `addMember` (it returns more than an
+  agent).
+- `boms/boms.service.ts` stays one service: a separate lines service would
+  first need `insertLines`, `assertNoCycle`, `assertDraft` and
+  `loadWithin` shared across two files. Revisit if it gains a second job,
+  such as costing a recipe.
+- The recipe panel's version header stays in the panel (about eight props
+  and handlers to pull it out).
+
 ---
 
 ## Comments
@@ -509,6 +610,11 @@ message, and the screen keys on the code, never on the words.
   multiplier rather than an override, so a missing variable leaves the
   real limits in place. Production never sets it above 1, which nothing
   enforces.
+- **The account spec's password tests under `--repeat-each`** meet
+  ADR-011's limit by design: the password change allows five tries in
+  five minutes, a limit `THROTTLE_FACTOR` does not raise
+  (`server/src/core/auth/account.controller.ts`). Repeat only the display
+  name's test, or wait five minutes between runs.
 - `getByRole`, never `getByLabelText`, in a component test: it finds a
   control as assistive technology does, by its role and accessible name,
   so a test also fails when the role is wrong, which a label match alone
@@ -569,7 +675,11 @@ add says so in its PR.
   feature's new screens open on real-looking records, in every state its
   checks name. CI runs it on an empty database, so a service it calls that
   changes shape fails there; run it locally after changing one ([engineering.md,
-  *Moving code*](engineering.md#moving-code)).
+  *Moving code*](engineering.md#moving-code)). Each seeded step writes the
+  audit row its route would, built with the interceptor's own
+  `auditPayload`, but names the route's action, resource type and fields
+  by hand, copied from its `@Audited` (`seed-demo-audit.ts`): change a
+  route's `@Audited`, change the seed.
 - **`npm run seed:volume`** fills a database of its own with a year at
   realistic scale (`server/perf/README.md`). A new table gets rows in the
   proportions a customer would have, and a new hot query, one run on every
@@ -827,6 +937,27 @@ Internet Explorer, and any browser's IE mode, is not supported.
   macOS versions. In CI a pull request runs Chromium only, in three shards;
   every browser runs on main, nightly, and on a pull request labelled
   full-e2e (layout, mobile, sign-in).
+- **Firefox on such a Mac,** and Linux WebKit as CI has it, run from
+  Playwright's Linux image as a remote browser, the tests still on the
+  Mac and no file changed (#231, #232). The image's version and the
+  `playwright` it runs are the client's, as `npx playwright --version`
+  in `client/` prints it:
+
+  ```bash
+  docker run -d --rm --init --name pw-browsers -p 127.0.0.1:3333:3333 --ipc=host \
+    mcr.microsoft.com/playwright:v1.64.1-noble \
+    /bin/sh -c "cd /tmp && npx -y playwright@1.64.1 run-server --port 3333 --host 0.0.0.0"
+
+  # in client/
+  E2E_FIREFOX=1 PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3333/ \
+  PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
+  npx playwright test e2e/accessibility.spec.ts --project=firefox
+  ```
+
+  `<loopback>` lets the container's browser reach the Mac's
+  `localhost:5273` and `:3100`, so the session cookies stay on
+  `localhost`. Without `E2E_FIREFOX` and with `--project=webkit`, it is
+  Linux WebKit, which showed a flake macOS WebKit never did (#232).
 - The product's name is VITE_APP_NAME in the repository's .env, with one
   per language as `VITE_APP_NAME_<TAG>` (`VITE_APP_NAME_ZH_HANS`,
   `VITE_APP_NAME_FR_CA`), each falling back to it. A tab's title comes

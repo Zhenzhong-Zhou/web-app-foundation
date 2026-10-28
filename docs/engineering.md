@@ -71,8 +71,9 @@
   October 2026). The claude.ai chat does the check before an ADR (its
   Deferred lines, the watch lists, Open decisions and the open issues),
   the decisions for Bob to confirm, the ADR as the branch's first commit
-  (it tidies the handoff too), the canvas designs, and a build brief: one
-  Claude Code prompt per commit. Claude Code writes the code from each prompt, runs
+  (it tidies the handoff too), the canvas designs (on the Claude Design
+  canvas, <https://claude.ai/artifact/RqG3iKw4V41is3w1go53EJ>), and a
+  build brief: one Claude Code prompt per commit. Claude Code writes the code from each prompt, runs
   `scripts/verify.sh`, `/simplify` and `/code-review`, and opens the PR.
   Bob pastes its summaries back into the chat, which writes the as-built
   amendment and the docs, as a patch for a long file (below). Until
@@ -101,7 +102,10 @@
 - **Cloud sessions** (Claude Code on the web, from October 2026): one new
   session per task, from `main`, each cloning the repository fresh, so
   nothing is pulled first; a long session pays for its whole history at
-  every step. The prompt names the issue, the branch, the author Zhenzhong
+  every step. The chat reads an issue's whole text before giving it to a
+  session (`gh issue list --json number,title,body`): of eight picked
+  from one-line lists on 24 and 25 October, three stopped, needing a
+  decision or more files. The prompt names the issue, the branch, the author Zhenzhong
   Zhou with the session as committer (the commit then shows Verified), the
   regression check's number when several run at once, and the files to
   leave alone; asks for `scripts/verify.sh --quick`, a pull request with
@@ -137,7 +141,7 @@
   ADR-086's part 2): a file of 600 lines or more, as
   `manual-checks.md` and `conventions.md`, is changed only where it needs
   it; a shorter one comes whole, as every ADR, `engineering.md`, and the
-  handoff once cut to status. For a long file, Bob attaches his copy from
+  handoff. For a long file, Bob attaches his copy from
   `main`, since Project knowledge's search returns a long file in
   passages; the chat sends a patch, applied with `git apply --check` and
   then `git apply --index`, which stages what it changed. A patch that
@@ -166,7 +170,7 @@
 - ADR before code for each new area. Server first with e2e tests, then the
   client screens. Each step its own commit.
 - **At the start of every ADR,** before drafting it: check the ADRs'
-  Deferred lines, the handoff's watch lists and the open issues for
+  Deferred lines, the watch lists and the open issues for
   anything in the same area, and say which triggers have fired. The
   check lists the open issues of each area the change touches with
   `gh issue list --label area:<area>`
@@ -204,7 +208,9 @@
 - **At each release,** before tagging it, set both packages' version to
   it: `npm version <x.y.z> --no-git-tag-version` in `server/` and in
   `client/`; and run `/doctor prompt-audit`
-  ([How code is delivered](#how-code-is-delivered)).
+  ([How code is delivered](#how-code-is-delivered)). Release notes are
+  release notes only: they say nothing of manual checks or the
+  walkthrough.
 - A type change on the client means fixing the test fixtures that build that
   type, in the same commit. Vitest does not type-check; `tsc` and CI do.
 - A commit that changes what a person sees, or a rule they work under,
@@ -255,6 +261,12 @@
 
 ## Moving code
 
+- **A refactor changes no behaviour** (from the maintainability rounds,
+  October 2026): a fix found on the way is its own commit, first; tests
+  stay green between commits; one extraction per commit, with the reason
+  in the message; and a duplicate that differs on purpose stays, with a
+  comment saying why. The goal is one definition per rule, not the
+  fewest lines.
 - Find every caller before moving a method, including
   `server/src/database/seed-demo.ts`, and calls split over two lines
   (`this.taxCodes` then `.findById`). CI runs `npm run seed:demo` on a
@@ -298,8 +310,9 @@
 
 - Dialogs take permission flags from their page rather than reading the
   session.
-- `useSubmit`'s callback takes no result — keep ids and notices in a
-  `useRef`.
+- `useSubmit`'s `success`, its confirmation toast, can be written from
+  the action's result (ADR-073); `onDone` takes no result, so keep an id
+  it needs in a `useRef`.
 - Hooks never inside hooks or after an early return.
 - Playwright:
   - prefer `getByRole(…, { name, exact: true })`, and label tables
