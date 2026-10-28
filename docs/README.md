@@ -42,11 +42,20 @@ flowchart TB
   actions -->|"encrypted backups"| r2
 ```
 
+An arrow is a call or a request, from the box that makes it to the one
+that answers: `modules --> core` is `modules/` calling `core/`, the other
+way round from the README's "Core → Shared Services → Application
+Features", which says what is built on what. A deploy hook is a request
+to Render to rebuild the site or the API.
+
 - **The layering rule:** `modules/` depends on `core/` and `shared/`,
   never the other way round, and nothing in `core/` knows about stock or
   recipes ([README, Architecture](../README.md#architecture)).
 - **Every query goes through `TenantDb`,** which scopes it to one
-  organization ([ADR-003](adr/0003-multi-tenancy.md)).
+  organization ([ADR-003](adr/0003-multi-tenancy.md)), but in the few
+  files with no tenant to scope to, as sign-in's, which
+  `server/eslint.config.mjs` lists with their reasons
+  ([README, Architecture](../README.md#architecture)).
 - **Where each service's settings live,** and what moving off it would
   take: [the services runbook](runbooks/services.md).
 
@@ -55,7 +64,8 @@ flowchart TB
 Grouped by [Diátaxis](https://diataxis.fr/)'s four kinds, with the
 handoff beside them as status. A new document finds its kind here and
 gets a row, in the commit that adds it; a file holds one kind, and one
-that would mix two is two files.
+that would mix two is two files. The README is the exception, the
+project's front page, its sections of more than one kind.
 
 ### Tutorial: learning by doing
 
@@ -150,3 +160,5 @@ And outside `docs/`:
   Help guides, in English, French and Chinese.
 - [`server/openapi.json`](../server/openapi.json): the API, as OpenAPI
   3.1.
+- [`server/perf/README.md`](../server/perf/README.md): measuring
+  ADR-051's budgets, and the large seed's database.
