@@ -6,6 +6,9 @@ areas: [database]
 
 # ADR-009 — Drizzle for schema, migrations, and queries
 
+> **No longer so: Drizzle's studio.**
+> `drizzle-kit studio`, which `npm run db:studio` in `server/` opens, is the equivalent of Prisma Studio that *Consequence* below says Drizzle lacks. Everything else stands.
+
 ## Context
 
 Candidates were Prisma, Drizzle, Knex, and hand-written SQL over the raw

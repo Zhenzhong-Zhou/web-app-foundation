@@ -7,6 +7,9 @@ amended-by: [ADR-073]
 
 # ADR-047 — Return authorizations, and credit notes for what comes back
 
+> **Built since, by [ADR-071](0071-documents-as-pdf-drawn-on-the-server.md).**
+> Pro forma invoices, which *Deferred* below lists as still deferred: a sale order's pro forma, a PDF drawn on the server. Everything else stands.
+
 ## Context
 
 A return is recorded when the goods arrive (ADR-043): a header
