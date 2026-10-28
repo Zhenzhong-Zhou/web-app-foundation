@@ -1,0 +1,5 @@
+# Read by `prettier --check scripts/`, which scripts/verify.sh and CI run
+# from here. scripts/fixtures/ holds Markdown in the raw shapes
+# check-docs.mjs reads, headings in __strong__ and *em* among them, which
+# Prettier would rewrite; markdownlint checks it instead.
+scripts/fixtures/

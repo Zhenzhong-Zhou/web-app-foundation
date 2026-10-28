@@ -79,7 +79,8 @@ contract() {
 }
 
 # The scripts' format, by the Prettier both packages pin, here the
-# server's, with Prettier's defaults, since no .prettierrc covers scripts/.
+# server's, with Prettier's defaults, since no .prettierrc covers scripts/;
+# the root's .prettierignore leaves out scripts/fixtures/.
 # Then their own tests, on Node's runner (node --test finds each
 # *.test.mjs): scripts/ sits outside both packages, so neither one's Vitest
 # runs them. i18n-review.test.mjs uses both packages' node_modules.

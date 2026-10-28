@@ -221,7 +221,8 @@ jobs:
         run: node --test scripts/
 
       # Their format, by the server's Prettier at its defaults, since no
-      # .prettierrc covers scripts/: the check scripts/verify.sh makes.
+      # .prettierrc covers scripts/, and scripts/fixtures/ left out by the
+      # root's .prettierignore: the check scripts/verify.sh makes.
       - name: Check the repository's scripts' format
         run: server/node_modules/.bin/prettier --check scripts/
 
