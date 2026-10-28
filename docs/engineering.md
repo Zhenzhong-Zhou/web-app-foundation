@@ -117,9 +117,9 @@
   `main` with no conflict merges as it is, and a conflict in
   `docs/manual-checks.md` is settled on GitHub with "Accept both changes",
   an empty line between Regressions entries, the dated list kept oldest
-  first. A session first installs the Node in `.node-version`, since a
-  container may start on an older one (one had 22, where twenty client
-  tests fail for reasons of their own). Its own "unpushed commits"
+  first. A session first installs the Node in `server/.node-version`,
+  since a container may start on an older one (one had 22, where twenty
+  client tests fail for reasons of their own). Its own "unpushed commits"
   warning after a push can be false, since the clone tracks only `main`:
   `git ls-remote origin <branch>` says whether the commit is there before
   anything is pushed again.
