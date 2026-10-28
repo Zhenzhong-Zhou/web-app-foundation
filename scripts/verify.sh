@@ -22,9 +22,9 @@
 # (docker compose up -d) and ../.env. The two end-to-end suites use their
 # own databases and run one after the other, never together.
 #
-# The API contract runs in both modes (ADR-068): it regenerates
-# server/openapi.json and client/src/api/, and stops if either changed,
-# leaving the fresh files in place to commit.
+# The API contract runs in full and with --quick, not with --docs
+# (ADR-068): it regenerates server/openapi.json and client/src/api/, and
+# stops if either changed, leaving the fresh files in place to commit.
 #
 # So do the three checks CI makes of a pull request against main, here
 # against origin/main as last fetched: a breaking API change raises the
