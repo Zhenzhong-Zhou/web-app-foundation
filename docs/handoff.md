@@ -155,7 +155,7 @@ Not repeated here; each list has one home:
   [ADR-051's *Watch*](adr/0051-performance.md#watch-each-with-its-trigger).
 - **[Open decisions](adr/open-decisions.md),** each raised and not yet
   decided.
-- **The open issues:** `gh issue list --state open --limit 200`, and the
+- **The open issues:** `gh issue list --state open --limit 500`, and the
   three label queries in
   [engineering.md, Issues and labels](engineering.md#issues-and-labels).
 - **Before any real customer's data:**
