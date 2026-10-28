@@ -10,6 +10,8 @@ paths:
 
 # Stock: the code rules, for Claude
 
+It loads when Claude reads, writes or edits a file its `paths` match.
+
 What to keep true when changing stock's code.
 
 - **Quantity is a ledger.** Every change is a movement, written through

@@ -11,6 +11,8 @@ paths:
 
 # Authorization: the code rules, for Claude
 
+It loads when Claude reads, writes or edits a file its `paths` match.
+
 What to keep true when changing roles and permissions.
 
 - **Every route has `@RequirePermissions`,** is public, or is listed with

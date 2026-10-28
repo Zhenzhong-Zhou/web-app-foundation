@@ -10,6 +10,8 @@ paths:
 
 # Invoices: the code rules, for Claude
 
+It loads when Claude reads, writes or edits a file its `paths` match.
+
 What invoicing allows, refuses and works out is in
 [`docs/rules/invoices.md`](../../docs/rules/invoices.md), for people; a
 commit that changes one of those rules updates it (ADR-087).

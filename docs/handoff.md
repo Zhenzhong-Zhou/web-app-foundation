@@ -18,8 +18,8 @@ On 27 October 2026:
 - **`docs-start-here`,** ADR-086's part 2 and ADR-087, is on its branch:
   [Start here](README.md), the rules written down (`docs/rules/` and
   `.claude/rules/`), headings, `areas` and a template for the ADRs, and
-  this file cut to status. The triage and [#260] come next, then ADR-084
-  (the order, below).
+  this file cut to status. [The triage](engineering.md#issues-and-labels)
+  and [#260] come next, then ADR-084 (the order, below).
 - **The last merges:** [#259] (`docs-moves`, ADR-086's part 1, 27
   October), [#257] (the emails' design, ADR-083, 27 October), [#254]
   (CI's reliability, closing [#252], 26 October), [#251] (the
@@ -92,7 +92,7 @@ On 27 October 2026:
 The order (Bob, 27 October 2026), each item a pull request or a set of
 them:
 
-1. **`docs-start-here`,** this branch. After the merge: prune the branch
+1. **`docs-start-here`,** [#291]. After the merge: prune the branch
    (`scripts/prune-branches.sh`), delete `tmp/adr-087/`, and re-sync
    Project knowledge.
 2. **Triage:** every open issue gets a group label and its area labels,
@@ -195,3 +195,4 @@ Not repeated here; each list has one home:
 [#270]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/270
 [#287]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/287
 [#288]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/288
+[#291]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/291

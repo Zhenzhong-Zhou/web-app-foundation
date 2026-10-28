@@ -10,6 +10,8 @@ paths:
 
 # Database: the code rules, for Claude
 
+It loads when Claude reads, writes or edits a file its `paths` match.
+
 What to keep true when changing the schema, a migration, a seed or a query.
 
 - **Every query goes through `TenantDb`.** `UNSAFE_GLOBAL_DB` and
