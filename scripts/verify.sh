@@ -8,8 +8,8 @@
 #   scripts/verify.sh --quick    format, lint, types, checks, build and unit
 #                                tests; no end-to-end suites
 #   scripts/verify.sh --docs     the docs' checks alone, in seconds: the
-#                                Markdown step and the scripts' tests; it
-#                                refuses, naming the files, when the
+#                                Markdown step and the scripts' format and
+#                                tests; it refuses, naming the files, when the
 #                                uncommitted changes touch anything but .md
 #                                files and scripts/, or anything in client/,
 #                                which need --quick
@@ -77,11 +77,15 @@ contract() {
   fi
 }
 
-# The scripts' own tests, on Node's runner (node --test finds each
-# *.test.mjs): scripts/ sits outside both packages, so neither one's Vitest
-# runs them. i18n-review.test.mjs uses both packages' node_modules.
+# The scripts' format, by the Prettier both packages pin, here the
+# server's, with Prettier's defaults, since no .prettierrc covers scripts/;
+# CI runs their tests (ci.yml) but not this. Then their own tests, on
+# Node's runner (node --test finds each *.test.mjs): scripts/ sits outside
+# both packages, so neither one's Vitest runs them. i18n-review.test.mjs
+# uses both packages' node_modules.
 scripts_tests() {
-  step 'Scripts: their own tests'
+  step 'Scripts: their format and their own tests'
+  server/node_modules/.bin/prettier --check scripts/
   node --test scripts/
 }
 

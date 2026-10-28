@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-09-21
-areas: [auth, notifications]
+areas: [auth, notifications, mail]
 ---
 
 # ADR-037 — Security events are emailed too; notifications expire

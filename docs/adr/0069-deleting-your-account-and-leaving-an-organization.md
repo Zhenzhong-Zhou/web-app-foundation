@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-10-14
-areas: [organizations, users]
+areas: [organizations, users, mail]
 amends: [ADR-012]
 amended-by: [ADR-070, ADR-077, ADR-079]
 ---

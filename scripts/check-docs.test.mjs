@@ -15,6 +15,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { ACROSS, AREAS } from "./adr-index.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -203,6 +204,18 @@ test("a path must be one git tracks, in the case GitHub's names are", (t) => {
 const adr = (frontMatter, heading) =>
   `---\n${frontMatter}---\n\n# ${heading}\n\nThe decision.\n`;
 
+/**
+ * A file in a folder for each area named after one, so AREAS matches the
+ * tree, all in server/src/modules/: the check does not ask which of the
+ * three folders holds it.
+ */
+const TREE = Object.fromEntries(
+  AREAS.filter((area) => !ACROSS.includes(area)).map((area) => [
+    `server/src/modules/${area}/index.ts`,
+    "",
+  ]),
+);
+
 /** The README the ADRs need, its index not written yet. */
 const INDEX =
   "# Architecture Decisions\n\n## By number\n\n<!-- adr-index:start -->\n<!-- adr-index:end -->\n\n## By area\n\n<!-- adr-areas:start -->\n<!-- adr-areas:end -->\n";
@@ -215,6 +228,7 @@ const writeIndex = (root) =>
 
 test("ADRs with front matter, amendments both ways and a current index pass, and a stale index fails", (t) => {
   const root = fixture(t, {
+    ...TREE,
     "docs/adr/0001-one.md": adr(
       "status: accepted\ndate: 2026-08-24\namended-by: [ADR-002]\nareas: [docs]\n",
       "ADR-001 — One",
@@ -246,6 +260,7 @@ test("ADRs with front matter, amendments both ways and a current index pass, and
 
 test("an ADR needs the README that holds the index", (t) => {
   const root = fixture(t, {
+    ...TREE,
     "docs/adr/0001-one.md": adr(
       "status: accepted\ndate: 2026-08-24\nareas: [docs]\n",
       "ADR-001 — One",
@@ -259,6 +274,7 @@ test("an ADR needs the README that holds the index", (t) => {
 
 test("front matter's --- lines may end in spaces, for the ADRs as for the links", (t) => {
   const root = fixture(t, {
+    ...TREE,
     "docs/adr/0001-one.md":
       "--- \nstatus: accepted\ndate: 2026-08-24\nareas: [docs]\n---  \n\n# ADR-001 — One\n\nThe decision.\n",
     "docs/adr/README.md": INDEX,
@@ -271,6 +287,7 @@ test("front matter's --- lines may end in spaces, for the ADRs as for the links"
 
 test("docs/adr/ holds ADRs named NNNN-<slug>.md, the README and open-decisions.md, and nothing else git sees", (t) => {
   const root = fixture(t, {
+    ...TREE,
     "docs/adr/0001-one.md": adr(
       "status: accepted\ndate: 2026-08-24\nareas: [docs]\n",
       "ADR-001 — One",
@@ -298,6 +315,7 @@ test("docs/adr/ holds ADRs named NNNN-<slug>.md, the README and open-decisions.m
 
 test("an ADR's front matter: none, an unknown status, a date that is not a day, a line that is not a field", (t) => {
   const root = fixture(t, {
+    ...TREE,
     "docs/adr/0001-one.md": "# ADR-001 — One\n\nThe decision.\n",
     "docs/adr/0002-two.md": adr(
       "status: approved\ndate: 2026-02-30\nareas: [docs]\n",
@@ -332,6 +350,7 @@ test("an ADR's front matter: none, an unknown status, a date that is not a day, 
 
 test("an ADR's heading has its file's number", (t) => {
   const root = fixture(t, {
+    ...TREE,
     "docs/adr/0012-twelve.md": adr(
       "status: accepted\ndate: 2026-08-24\nareas: [docs]\n",
       "ADR-013 — Twelve",
@@ -349,6 +368,7 @@ test("an ADR's heading has its file's number", (t) => {
 
 test("an amendment is in both ADRs' front matter", (t) => {
   const root = fixture(t, {
+    ...TREE,
     // Amended by ADR-003, whose amends does not say so.
     "docs/adr/0001-one.md": adr(
       "status: accepted\ndate: 2026-08-24\namended-by: [ADR-003]\nareas: [docs]\n",
@@ -377,6 +397,7 @@ test("an amendment is in both ADRs' front matter", (t) => {
 
 test("two ADRs with one number fail, each naming the other", (t) => {
   const root = fixture(t, {
+    ...TREE,
     "docs/adr/0012-one.md": adr(
       "status: accepted\ndate: 2026-08-24\nareas: [docs]\n",
       "ADR-012 — One",
@@ -396,6 +417,7 @@ test("two ADRs with one number fail, each naming the other", (t) => {
 
 test("amends and amended-by are in ascending order, each ADR once", (t) => {
   const root = fixture(t, {
+    ...TREE,
     "docs/adr/0001-one.md": adr(
       "status: accepted\ndate: 2026-08-24\namended-by: [ADR-003, ADR-002]\nareas: [docs]\n",
       "ADR-001 — One",
@@ -419,6 +441,7 @@ test("amends and amended-by are in ascending order, each ADR once", (t) => {
 
 test("an ADR has no field but status, date, areas, amends and amended-by, in any order", (t) => {
   const root = fixture(t, {
+    ...TREE,
     "docs/adr/0001-one.md": adr(
       "amended-by: [ADR-002]\ndate: 2026-08-24\ntitle: One\nstatus: accepted\nareas: [docs]\n",
       "ADR-001 — One",
@@ -437,6 +460,7 @@ test("an ADR has no field but status, date, areas, amends and amended-by, in any
 
 test("an ADR's areas: one or more, each one of AREAS, in that list's order and once", (t) => {
   const root = fixture(t, {
+    ...TREE,
     "docs/adr/0001-one.md": adr(
       "status: accepted\ndate: 2026-08-24\n",
       "ADR-001 — One",
@@ -473,14 +497,41 @@ test("an ADR's areas: one or more, each one of AREAS, in that list's order and o
     "docs/adr/0001-one.md:1: areas — missing from the front matter: one or more of AREAS in scripts/adr-index.mjs, as [invoices, api]",
     "docs/adr/0002-two.md:4: areas: invoices — not a list of one or more areas, as [invoices, api]",
     "docs/adr/0003-three.md:4: areas: [] — not a list of one or more areas, as [invoices, api]",
-    "docs/adr/0004-four.md:4: areas: invoice — not an area: boms, costs, home, invoices, locations, numbering, orders, partners, price-lists, product-licences, production-orders, products, recent, return-authorizations, search, stock, tax-codes, audit, auth, authorization, documents, files, invitations, notifications, organizations, people, users, api, database, docs, help, i18n, ops, ui",
+    "docs/adr/0004-four.md:4: areas: invoice — not an area: boms, costs, home, invoices, locations, numbering, orders, partners, price-lists, product-licences, production-orders, products, recent, return-authorizations, search, stock, tax-codes, audit, auth, authorization, documents, files, invitations, notifications, organizations, people, users, mail, api, database, docs, help, i18n, ops, ui",
     "docs/adr/0005-five.md:4: areas: [api, invoices] — not in the order AREAS lists them, each area once: write it as [invoices, api]",
     "docs/adr/0006-six.md:4: areas: [stock, stock] — not in the order AREAS lists them, each area once: write it as [stock]",
   ]);
 });
 
+test("AREAS names each folder of modules/, core/ and shared/, and no other but the seven across them", (t) => {
+  const root = fixture(t, {
+    // Every area's folder but boms's.
+    ...Object.fromEntries(
+      Object.entries(TREE).filter(([file]) => !file.includes("/boms/")),
+    ),
+    // A folder AREAS lacks in each; a file beside the folders is not one.
+    "server/src/modules/gadgets/gadgets.ts": "",
+    "server/src/core/sprockets/sprockets.ts": "",
+    "server/src/shared/widgets/widgets.ts": "",
+    "server/src/modules/README.md": "",
+    "docs/adr/0001-one.md": adr(
+      "status: accepted\ndate: 2026-08-24\nareas: [docs]\n",
+      "ADR-001 — One",
+    ),
+    "docs/adr/README.md": INDEX,
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    "server/src/modules/gadgets/: gadgets — a folder with no area: add it to AREAS in scripts/adr-index.mjs, among server/src/modules/'s",
+    "server/src/core/sprockets/: sprockets — a folder with no area: add it to AREAS in scripts/adr-index.mjs, among server/src/core/'s",
+    "server/src/shared/widgets/: widgets — a folder with no area: add it to AREAS in scripts/adr-index.mjs, among server/src/shared/'s",
+    "scripts/adr-index.mjs: AREAS: boms — no folder of that name in server/src/modules/, server/src/core/, server/src/shared/: rename it after its folder's new name, or take it out, with the ADRs' areas that name it",
+  ]);
+});
+
 test("superseded by an ADR with no file fails", (t) => {
   const root = fixture(t, {
+    ...TREE,
     "docs/adr/0001-one.md": adr(
       "status: superseded by ADR-002\ndate: 2026-08-24\nareas: [docs]\n",
       "ADR-001 — One",
@@ -499,6 +550,7 @@ test("superseded by an ADR with no file fails", (t) => {
 
 test("a path written as code names a file or folder; a command's first word, an ignored path and a module's pass", (t) => {
   const root = fixture(t, {
+    ...TREE,
     ".gitignore": "tmp/\ndist/\n",
     "README.md": `# Readme
 

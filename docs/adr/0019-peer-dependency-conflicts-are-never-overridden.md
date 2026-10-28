@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-08-31
-areas: [docs]
+areas: [ops]
 amended-by: [ADR-067, ADR-082]
 ---
 

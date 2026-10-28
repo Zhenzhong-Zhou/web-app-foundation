@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-08-24
-areas: [notifications, ops]
+areas: [mail, ops]
 ---
 
 # ADR-005 — No background jobs in V1; email sends synchronously

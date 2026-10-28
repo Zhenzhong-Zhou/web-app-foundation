@@ -18,7 +18,9 @@
  * `amended-by`, and each one its `amended-by` names lists it in its
  * `amends`; both lists are in ascending order. Once there is an ADR,
  * docs/adr/README.md holds their index, and open-decisions.md is the
- * folder's only other file.
+ * folder's only other file. AREAS then names each folder of
+ * server/src/modules/, server/src/core/ and server/src/shared/, and no
+ * other but ACROSS's seven.
  *
  * The index is two sections of the README. By number, between
  * <!-- adr-index:start --> and <!-- adr-index:end -->: one row per file,
@@ -63,12 +65,29 @@ const STATUS = /^(?:accepted|deferred|superseded by ADR-(\d{3,}))$/;
 /** An ADR's front matter fields, in any order. */
 const FIELDS = ["status", "date", "areas", "amends", "amended-by"];
 
+/** The folders whose every folder is an area of the same name. */
+const AREA_FOLDERS = [
+  "server/src/modules",
+  "server/src/core",
+  "server/src/shared",
+];
+
+/**
+ * The areas named for what they hold rather than after a folder: the API
+ * contract and errors; the schema and migrations; the docs and the
+ * working agreements; the Help guides; the languages; CI, deployment,
+ * backups and monitoring; the theme, layout and shared components.
+ */
+export const ACROSS = ["api", "database", "docs", "help", "i18n", "ops", "ui"];
+
 /**
  * The areas an ADR's `areas` names, in this order, which docs/rules/ and
  * .claude/rules/ name their files by (ADR-087): each folder of
- * server/src/modules/, then of server/src/core/, then what crosses them.
+ * server/src/modules/, then of server/src/core/, then of
+ * server/src/shared/, then what crosses them. checkAdrs() holds it to
+ * the tree.
  */
-const AREAS = [
+export const AREAS = [
   "boms",
   "costs",
   "home",
@@ -96,17 +115,8 @@ const AREAS = [
   "organizations",
   "people",
   "users",
-  // The API contract and errors; the schema and migrations; the docs and
-  // the working agreements; the Help guides; the languages; CI,
-  // deployment, backups and monitoring; the theme, layout and shared
-  // components.
-  "api",
-  "database",
-  "docs",
-  "help",
-  "i18n",
-  "ops",
-  "ui",
+  "mail",
+  ...ACROSS,
 ];
 
 /** An ADR's name as the text writes it: ADR-071. */
@@ -157,10 +167,11 @@ export function frontMatterEnd(lines) {
 }
 
 /**
- * The names of the files in docs/adr/ that git tracks or would track, so
- * not the .DS_Store a Mac leaves there; none when there is no folder.
+ * The files in a folder that git tracks or would track, by their paths
+ * from it, so not the .DS_Store a Mac leaves there; none when there is
+ * no folder.
  */
-function inFolder() {
+function filesIn(folder) {
   const output = execFileSync(
     "git",
     [
@@ -170,13 +181,45 @@ function inFolder() {
       "--others",
       "--exclude-standard",
       "--",
-      ADR_FOLDER,
+      folder,
     ],
     { cwd: ROOT, encoding: "utf8" },
   );
   return [...new Set(output.split("\0"))]
     .filter((file) => file && existsSync(path.join(ROOT, file)))
-    .map((file) => file.slice(ADR_FOLDER.length + 1));
+    .map((file) => file.slice(folder.length + 1));
+}
+
+/**
+ * AREAS against the tree: each folder in AREA_FOLDERS has its area, and
+ * each area not in ACROSS still has its folder there.
+ */
+function areasAgainstTree() {
+  const folders = new Map();
+  for (const parent of AREA_FOLDERS) {
+    for (const file of filesIn(parent)) {
+      const [name, ...rest] = file.split("/");
+      if (rest.length > 0 && !folders.has(name)) folders.set(name, parent);
+    }
+  }
+
+  const failures = [];
+  for (const [name, parent] of folders) {
+    if (!AREAS.includes(name)) {
+      failures.push(
+        `${parent}/${name}/: ${name} — a folder with no area: add it to AREAS in scripts/adr-index.mjs, among ${parent}/'s`,
+      );
+    }
+  }
+  const where = AREA_FOLDERS.map((folder) => `${folder}/`).join(", ");
+  for (const area of AREAS) {
+    if (!ACROSS.includes(area) && !folders.has(area)) {
+      failures.push(
+        `scripts/adr-index.mjs: AREAS: ${area} — no folder of that name in ${where}: rename it after its folder's new name, or take it out, with the ADRs' areas that name it`,
+      );
+    }
+  }
+  return failures;
 }
 
 /**
@@ -187,7 +230,7 @@ function inFolder() {
  * `# ADR-NNN — Title`).
  */
 function readAdrs() {
-  return inFolder()
+  return filesIn(ADR_FOLDER)
     .filter((name) => ADR_FILE.test(name))
     .sort()
     .map((name) => {
@@ -367,7 +410,7 @@ export function checkAdrs({ writing = false } = {}) {
   const byNumber = new Map(found.map((adr) => [adr.number, adr]));
   const failures = [];
 
-  for (const name of inFolder()) {
+  for (const name of filesIn(ADR_FOLDER)) {
     if (!ADR_FILE.test(name) && !OTHERS.includes(name)) {
       failures.push(
         `${ADR_FOLDER}/${name}:1: ${name} — not a name for a file here: an ADR is NNNN-<slug>.md, four digits and its title's words in lower case, and the only others are ${OTHERS.join(" and ")}`,
@@ -528,8 +571,10 @@ export function checkAdrs({ writing = false } = {}) {
     }
   }
 
-  // Writing needs the README even before the first ADR.
+  // Writing needs the README, and AREAS to match the tree, even before
+  // the first ADR.
   if (found.length > 0 || writing) {
+    failures.push(...areasAgainstTree());
     const index = readme();
     if (index.failure) {
       failures.push(index.failure);

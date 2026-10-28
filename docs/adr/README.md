@@ -196,10 +196,10 @@ script.
 ## By area
 
 Written by the same script from each file's `areas`: a line per area,
-its ADRs in number order. An area is a folder of `server/src/modules/`
-or `server/src/core/`, or `api`, `database`, `docs`, `help`, `i18n`,
-`ops` or `ui` for what crosses them; the rules files take the same
-names. An area no ADR names has no line.
+its ADRs in number order. An area is a folder of `server/src/modules/`,
+`server/src/core/` or `server/src/shared/`, or `api`, `database`,
+`docs`, `help`, `i18n`, `ops` or `ui` for what crosses them; the rules
+files take the same names. An area no ADR names has no line.
 
 <!-- adr-areas:start -->
 
@@ -221,21 +221,22 @@ names. An area no ADR names has no line.
 - `stock`: [ADR-023], [ADR-024], [ADR-025], [ADR-032], [ADR-039], [ADR-041], [ADR-042], [ADR-043], [ADR-044], [ADR-045], [ADR-048]
 - `tax-codes`: [ADR-046]
 - `audit`: [ADR-012], [ADR-018], [ADR-022], [ADR-038], [ADR-076]
-- `auth`: [ADR-006], [ADR-011], [ADR-014], [ADR-015], [ADR-017], [ADR-020], [ADR-022], [ADR-037], [ADR-065], [ADR-078], [ADR-083]
+- `auth`: [ADR-006], [ADR-011], [ADR-014], [ADR-015], [ADR-017], [ADR-020], [ADR-022], [ADR-037], [ADR-065], [ADR-078]
 - `authorization`: [ADR-004], [ADR-016], [ADR-080]
 - `documents`: [ADR-054], [ADR-071]
 - `files`: [ADR-059], [ADR-062], [ADR-063]
 - `invitations`: [ADR-077], [ADR-078], [ADR-079], [ADR-083]
-- `notifications`: [ADR-005], [ADR-036], [ADR-037], [ADR-064], [ADR-083]
+- `notifications`: [ADR-036], [ADR-037], [ADR-064]
 - `organizations`: [ADR-003], [ADR-004], [ADR-006], [ADR-060], [ADR-061], [ADR-065], [ADR-069], [ADR-070], [ADR-072], [ADR-080]
 - `people`: [ADR-063]
 - `users`: [ADR-012], [ADR-069]
+- `mail`: [ADR-005], [ADR-017], [ADR-037], [ADR-054], [ADR-069], [ADR-070], [ADR-077], [ADR-078], [ADR-082], [ADR-083]
 - `api`: [ADR-001], [ADR-013], [ADR-014], [ADR-052], [ADR-057], [ADR-068], [ADR-081]
 - `database`: [ADR-002], [ADR-003], [ADR-009], [ADR-010], [ADR-012], [ADR-025], [ADR-028], [ADR-051], [ADR-052], [ADR-056], [ADR-081]
-- `docs`: [ADR-019], [ADR-086], [ADR-087]
+- `docs`: [ADR-086], [ADR-087]
 - `help`: [ADR-079]
 - `i18n`: [ADR-054], [ADR-072], [ADR-076]
-- `ops`: [ADR-005], [ADR-008], [ADR-051], [ADR-053], [ADR-059], [ADR-067], [ADR-070], [ADR-081]
+- `ops`: [ADR-005], [ADR-008], [ADR-019], [ADR-051], [ADR-053], [ADR-059], [ADR-067], [ADR-070], [ADR-081]
 - `ui`: [ADR-007], [ADR-020], [ADR-021], [ADR-055], [ADR-057], [ADR-060], [ADR-075], [ADR-082]
 
 <!-- adr-areas:end -->

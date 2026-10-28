@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-10-24
-areas: [ui]
+areas: [mail, ui]
 amends: [ADR-019, ADR-051, ADR-055, ADR-060, ADR-067, ADR-081]
 amended-by: [ADR-083]
 ---
