@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-24
+areas: [api]
 amended-by: [ADR-081]
 ---
 
@@ -9,7 +10,9 @@ amended-by: [ADR-081]
 > **Amended by [ADR-081](0081-old-tabs-after-a-deploy.md).**
 > Within `/v1`, a change that breaks the app's own client raises the API revision, which the client sends as `X-Api-Revision` and the server checks first; `/v2` stays for a break an outside program would meet. Everything else stands.
 
-**Context.** Four options: a URL path prefix (`/v1/users`), a custom header
+## Context
+
+Four options: a URL path prefix (`/v1/users`), a custom header
 (`X-API-Version: 1`), Accept-header content negotiation
 (`application/vnd.app.v1+json`), or a query parameter (`?version=1`).
 
@@ -24,7 +27,9 @@ copy-pasted links.
 The deciding factor is that this is a foundation intended to be handed to future
 applications and, potentially, other developers. Legibility beats purity.
 
-**Decision.** URI versioning, applied globally from the first endpoint:
+## Decision
+
+URI versioning, applied globally from the first endpoint:
 
 ```ts
 app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
@@ -33,7 +38,9 @@ app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 Every API route is therefore `/v1/...`. Behind the Vite proxy (ADR-011) the browser-facing
 path is `/api/v1/users`.
 
-**Consequence.** Version is visible in every log line and reproducible with a bare `curl`.
+## Consequence
+
+Version is visible in every log line and reproducible with a bare `curl`.
 NestJS supports this natively, so no custom middleware is needed.
 
 Operational endpoints are **excluded** from versioning: `/health`, and later `/metrics`,

@@ -1,13 +1,19 @@
 ---
 status: accepted
 date: 2026-10-20
+areas: [home, invitations, help]
 amends: [ADR-016, ADR-058, ADR-063, ADR-069, ADR-077, ADR-078]
 amended-by: [ADR-080]
 ---
 
 # ADR-079 — A newcomer's first sign-in: a welcome on Home, and help on every page (amends ADR-016, ADR-058, ADR-063, ADR-069, ADR-077 and ADR-078)
 
-**Context.** ADR-077 and ADR-078 settled how a person arrives: by a link,
+> **Amended by [ADR-080](0080-job-roles.md).**
+> Permission lines are messages in the three languages, translated on the server and read in the role editor, the audit log, the export and refusals, rather than English that no screen shows. Everything else stands.
+
+## Context
+
+ADR-077 and ADR-078 settled how a person arrives: by a link,
 to an organization that exists or to one they set up. What they meet next
 is the Home everyone has. Nothing says what this account may do here, so a
 Viewer learns it from buttons that are not there and an Admin from being
@@ -21,7 +27,7 @@ the person who opens it.
 
 This is the third of the three onboarding pieces. What it builds has to
 hold when job roles come (Open decisions), and when one person belongs to
-two organizations (ADR-077, *Deferred*).
+two organizations ([ADR-077, *Deferred*](0077-invitations.md#deferred--each-with-what-brings-it-in)).
 
 Checked before drafting, as the working agreements ask:
 
@@ -55,7 +61,9 @@ Checked before drafting, as the working agreements ask:
   English left inside translated messages, stays open: the guide check
   below finds a missing translation, not English inside one.
 
-**Decision — a welcome on Home, the person's own.** A newcomer's first
+## Decision — a welcome on Home, the person's own
+
+A newcomer's first
 page is Home, as everyone's is, and it leads with a card of their own: a
 greeting by name to the organization, the inviter's note, what they can do
 here, and their first week. Not a dialog in front of the page, and not a
@@ -91,7 +99,9 @@ once.
   below the first week: what to do before what to read, and the card one
   screen long rather than two. On a computer it is open.
 
-**Decision — what you can do here, from permissions.** One sentence per
+## Decision — what you can do here, from permissions
+
+One sentence per
 area, for the areas the person may touch: stock and locations; products
 and licences; orders; production; invoices and returns; costs, prices and
 tax; partners; people and the organization. Each sentence is put together
@@ -122,7 +132,9 @@ refused.
 - `PERMISSION_DESCRIPTIONS` stays as it is, English, in the database:
   nothing a person reads comes from it.
 
-**Decision — the inviter's note.** The note an inviter wrote (ADR-077)
+## Decision — the inviter's note
+
+The note an inviter wrote (ADR-077)
 shows on the card as typed, plain text, under the inviter's name and photo
 or initials (ADR-063), the name opening their page on People. It is read
 from the invitation that made the membership, which ADR-077 keeps with it
@@ -130,7 +142,9 @@ for this. Once the inviter has left or deleted their account, the note is
 from the organization, as the email and the invitation page already say
 (ADR-077). No note and no inviter for whoever started the organization.
 
-**Decision — the first week, ticked by what the person does.** Up to five
+## Decision — the first week, ticked by what the person does
+
+Up to five
 items, each a short line with a button to where it is done, each ticked by
 what the person has done here since joining, never by hand: a ticked box
 proves nothing, and Getting started ticks the same way (ADR-058).
@@ -161,7 +175,9 @@ proves nothing, and Getting started ticks the same way (ADR-058).
 - Chosen and ticked on the server, from the member's permissions, and sent
   with Home; the client words each item and links it.
 
-**Decision — help on every page.** One button in the top bar, beside the
+## Decision — help on every page
+
+One button in the top bar, beside the
 bell, named Help. It opens the guide for the page the person is on, in
 their language, and while it is open it follows them to the next page's
 guide. At its foot, the guides for every page the person can open, and
@@ -195,7 +211,9 @@ where what they can do here is.
   and would need one per language.
 - The signed-out pages keep their own words, and have no Help.
 
-**Decision — guides with the client, and checked.** Guides change and
+## Decision — guides with the client, and checked
+
+Guides change and
 translate with the code, so they live with it, not under `docs/user/` as
 ADR-058 first had it.
 
@@ -219,7 +237,9 @@ ADR-058 first had it.
   signed-in routes become a list that `App.tsx` renders, so the test reads
   the same list the router does.
 
-**Decision — how a guide is written.** Short: what the page is for; the
+## Decision — how a guide is written
+
+Short: what the page is for; the
 few things done there, each as steps; the words met on it, as the glossary
 has them; and why something might be refused. The same for every reader:
 where a control needs a permission, the guide says so ("only someone who
@@ -229,7 +249,9 @@ described by its position or colour. English first, written from the
 screens themselves; French and Chinese drafts beside it, beta as the app's
 are (ADR-054), read by someone fluent when one can be found.
 
-**Decision — the inviter hears, and colleagues see who is new.** A
+## Decision — the inviter hears, and colleagues see who is new
+
+A
 newcomer's first day goes better when someone greets them, and today only
 the audit log knows they arrived.
 
@@ -242,7 +264,9 @@ the audit log knows they arrived.
   Oct", and its summary line says how many, so colleagues know whom to
   greet. The same two weeks as the welcome, from the membership's start.
 
-**Decision — #144 rides along: a session finds its organization again.** A
+## Decision — #144 rides along: a session finds its organization again
+
+A
 session's organization is set only by its own device, so another device of
 the same account keeps one the account has left. ADR-078 makes that a
 newcomer's problem: someone with no organization, signed in on a phone and
@@ -260,9 +284,9 @@ commit, ahead of this ADR's server, closing #144.
   so ADR-072's watch list brings its test: the auth provider passing the
   zone on.
 - Carrying the organization on each request, for one person in two
-  organizations, stays with that ADR (ADR-077, *Deferred*).
+  organizations, stays with that ADR ([ADR-077, *Deferred*](0077-invitations.md#deferred--each-with-what-brings-it-in)).
 
-**Considered and not done.**
+## Considered and not done
 
 - **A welcome dialog or page on first sign-in.** It stands between the
   person and the work, is closed unread, and cannot be found again.
@@ -281,7 +305,7 @@ commit, ahead of this ADR's server, closing #144.
 - **Help always beside the page.** Every page would get narrower when it
   opens, and each would need walking again at every width and text size.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **Searching the guides.** Trigger: enough guides that the list at the
   panel's foot is slow to scan.
@@ -297,7 +321,7 @@ commit, ahead of this ADR's server, closing #144.
 - **A keyboard shortcut for Help.** Trigger: someone asking for one, with
   a key that does not collide with typing.
 
-**Consequences.**
+## Consequences
 
 - Migration 0070: `memberships.welcome_dismissed_at`.
 - Server, in `modules/home` and `core/auth`: `GET /v1/home` gains
@@ -335,10 +359,12 @@ commit, ahead of this ADR's server, closing #144.
   handoff.
 - Build order: this ADR; #144; the server; the client after the design,
   Help, then the guides, then the welcome; the docs last, after the
-  reviews. Built by Claude Code, a prompt per commit (engineering.md, *How code
-  is delivered*).
+  reviews. Built by Claude Code, a prompt per commit ([engineering.md, *How code
+  is delivered*](../engineering.md#how-code-is-delivered)).
 
-**Amendment (October 2026) — as built.** What building it, its design
+## Amendment (October 2026) — as built
+
+What building it, its design
 review on the canvas, its reviews and its two walkthroughs settled:
 
 - **Help beside the page on a laptop, reversing "no page ever gets
@@ -461,8 +487,9 @@ review on the canvas, its reviews and its two walkthroughs settled:
   on a phone, from an organization invitation to the welcome with Getting
   started below it.
 
-**Amendment (October 2026) — any role's first week, and whom to ask
-(ADR-080).** The first week's Receive shows for whoever may receive against
+## Amendment (October 2026) — any role's first week, and whom to ask (ADR-080)
+
+The first week's Receive shows for whoever may receive against
 an order, opening the confirmed purchases for someone who may not move
 stock. Whom to ask, on Home and Your access, names up to three members who
 could give what is missing, as every refusal now does (ADR-080, as built).

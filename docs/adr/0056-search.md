@@ -1,12 +1,15 @@
 ---
 status: accepted
 date: 2026-10-07
+areas: [search, database]
 amended-by: [ADR-073]
 ---
 
 # ADR-056 — Search: one lookup in the top bar, and a search on every list
 
-**Context.** Nothing in the app finds a record by what a person has in hand.
+## Context
+
+Nothing in the app finds a record by what a person has in hand.
 A customer rings about invoice INV-000214, a supplier emails about lot
 FOC-2609-01, the recall drill starts from a lot code: each means knowing
 which list it is on, opening it and paging. Only the inventory searches
@@ -22,7 +25,7 @@ What people type is mostly short and partial: "2609", "INV-214", "focus",
 languages are read and typed, product names have translations (ADR-054),
 and identifiers mix letters, digits and dashes.
 
-**Decision — two kinds of search, one way of matching.**
+## Decision — two kinds of search, one way of matching
 
 - **The lookup**, a box in the top bar on every page, finds **records of any
   kind** and goes to one. It is not a search of the text on the page; the
@@ -32,7 +35,7 @@ and identifiers mix letters, digits and dashes.
 
 Both match the same way, so a record the lookup finds, its list finds too.
 
-**Decision — what is searched, by what.**
+## Decision — what is searched, by what
 
 | Kind | Matched on | Opens |
 | --- | --- | --- |
@@ -47,7 +50,7 @@ Both match the same way, so a record the lookup finds, its list finds too.
 Locations, members and settings are not in the lookup: few, and found from
 their own pages.
 
-**Decision — matching.**
+## Decision — matching
 
 - **Anywhere in the text, case ignored:** "2609" finds BF-2609 and
   FOC-2609-01, "inv-214" finds INV-000214. Surrounding spaces are trimmed and
@@ -83,7 +86,9 @@ their own pages.
   written: the lookup is where a typo is forgiven, and a list empty for a
   typo says so, with the lookup one key away.
 
-**Decision — order of results.** Within each kind: an exact match first, then
+## Decision — order of results
+
+Within each kind: an exact match first, then
 a match at the start, then anywhere; ties by most recent. The lookup shows at
 most **5 of each kind**, kinds in a fixed order (orders, documents, lots,
 items, partners, runs, returns), except that a query shaped like a known
@@ -91,7 +96,9 @@ number (`INV-`, `CN-`, `RMA-`, or exactly a lot code) puts that kind first.
 Each kind's group ends with "Show all in Orders" (or its list), which opens
 the list with the same search.
 
-**Decision — pinyin, written when a name is saved.** Postgres cannot turn
+## Decision — pinyin, written when a name is saved
+
+Postgres cannot turn
 Chinese into pinyin, so the server does, with `pinyin-pro` (MIT, widely used,
 no network): a new dependency. Each table with a searched name
 (`products`, `product_variants`, the two translation tables, `partners`)
@@ -103,7 +110,9 @@ library's choice for the word; a wrong reading is a miss, not an error.
 Existing rows are filled by a one-off script run with the migration, since
 the conversion lives in Node, not in SQL.
 
-**Decision — indexes: trigrams in Postgres, no search engine.** The
+## Decision — indexes: trigrams in Postgres, no search engine
+
+The
 extension `pg_trgm` and a GIN index with `gin_trgm_ops` on each searched
 column (`orders.reference`, `invoices.number`, `credit_notes.number`,
 `return_authorizations.number`, `production_orders.reference`, `lots.code`,
@@ -120,7 +129,9 @@ at today's sizes and inside the budget below; and the index covers the
 column across organizations, with the organization filter applied after.
 Both are revisited by the triggers below, not now.
 
-**Decision — one lookup endpoint; each list's own.** `GET /v1/lookup?q=`
+## Decision — one lookup endpoint; each list's own
+
+`GET /v1/lookup?q=`
 answers every kind in one response, grouped, each group its own query in one
 transaction. List search is a `search` parameter on each list's endpoint
 (orders, invoices, credit notes, returns, runs, stock already), combined
@@ -128,7 +139,9 @@ with the list's filters and keyset paging (ADR-051). Products and Partners
 keep narrowing in the browser while they load whole; past a few hundred rows
 they move to the server, the same parameter.
 
-**Decision — permissions and tenancy decide what is found.** A kind the member
+## Decision — permissions and tenancy decide what is found
+
+A kind the member
 may not view (`orders.view`, `invoices.view`, `return_authorizations.view`,
 `production.view`, `stock.view`, `products.view`, `partners.view`) is not
 queried and not shown; the lookup never says a record exists that its list
@@ -136,7 +149,7 @@ would not show. Every query goes through TenantDb (ADR-003, ADR-016), so
 another organization's records cannot match. Queries are not written to the
 audit log: a search changes nothing.
 
-**Decision — in the browser.**
+## Decision — in the browser
 
 - **The box** sits in the top bar's empty slot from 1200px; below, a search
   button there opens it full width. `/` or ⌘K / Ctrl+K focuses it from
@@ -150,12 +163,14 @@ audit log: a search changes nothing.
 - In every language, the kinds' names and the empty sentence from the
   catalogues; the records' own text as stored.
 
-**Decision — a budget before it ships.** ADR-051's volume seed gains the
+## Decision — a budget before it ships
+
+ADR-051's volume seed gains the
 lookup and a list search, and `perf/` a budget for them, set from the first
 measurement at the small scale. A plan check confirms the trigram indexes are
 used for queries of 3 characters or more.
 
-**Consequences.**
+## Consequences
 
 - Built in this order, each its own commit:
     1. Migration: `pg_trgm`, `unaccent`, the immutable wrapper, the
@@ -182,7 +197,7 @@ used for queries of 3 characters or more.
 - The *Open decisions* entry "Search and the lookup in the top bar" is
   settled by this ADR.
 
-**Considered and not done.**
+## Considered and not done
 
 - **Postgres full-text search** (`tsvector`). Built for words in prose, with
   stemming per language; it splits "FOC-2609-01" into pieces, does not match
@@ -202,7 +217,7 @@ used for queries of 3 characters or more.
 - **Recent and pinned records in the lookup.** Useful, and a separate
   question of what to remember per person; not in this ADR.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **An index per organization** (`btree_gin`, the organization id with the
   trigram) or partial indexes. Trigger: one organization's rows dominating a
@@ -214,7 +229,9 @@ used for queries of 3 characters or more.
   some regional accents do). Trigger: a Chinese-reading user missing a
   record they typed the way they say it.
 
-**Amendment (October 2026) — the organization's prefixes (ADR-073).** A
+## Amendment (October 2026) — the organization's prefixes (ADR-073)
+
+A
 query shaped like a known number is one that starts with one of the
 organization's own prefixes, the longest that fits, read when the lookup
 runs; order numbers join invoices, credit notes and RMAs. `INV-`, `CN-` and

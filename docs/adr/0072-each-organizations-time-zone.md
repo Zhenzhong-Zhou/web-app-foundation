@@ -1,12 +1,15 @@
 ---
 status: accepted
 date: 2026-10-16
-amends: [ADR-052, ADR-071]
+areas: [organizations, i18n]
+amends: [ADR-052, ADR-057, ADR-058, ADR-071]
 ---
 
 # ADR-072 — Each organization's time zone (amends ADR-052 and ADR-071)
 
-**Context.** Every calendar day the server decides is the UTC day
+## Context
+
+Every calendar day the server decides is the UTC day
 (`todayUtc`, ADR-052), and the documents that date themselves by a
 moment read it in UTC (ADR-071, amended). From 4 pm in Vancouver in
 winter, 5 pm in summer, the server is already in tomorrow: a receipt is
@@ -17,7 +20,7 @@ day was decided wrongly near midnight (#41). ADR-073 needs it too: the
 year in a document's number is a calendar fact, and an order made on the
 evening of 31 December in Vancouver is already 1 January in UTC.
 
-**Decision — the zone is the organization's, stored by name.**
+## Decision — the zone is the organization's, stored by name
 
 - `organizations.time_zone`, an IANA name such as `America/Vancouver` or
   `Asia/Shanghai`, never an offset: a name carries daylight saving and
@@ -36,13 +39,16 @@ evening of 31 December in Vancouver is already 1 January in UTC.
   `organization.updated` with the old and new zone. A change applies
   from then on: nothing already dated or printed moves.
 
-**Decision — moments stay UTC; the zone answers calendar questions.**
+## Decision — moments stay UTC; the zone answers calendar questions
+
 Every `timestamptz` is stored as it is now. The zone is read only to say
 which day a moment falls on, and what today is: `(moment AT TIME ZONE
 zone)::date` in SQL, `Intl.DateTimeFormat` with the zone in TypeScript.
 Both read the IANA tz database.
 
-**Decision — today is the organization's.** `todayUtc()` becomes
+## Decision — today is the organization's
+
+`todayUtc()` becomes
 `todayIn(zone)`, still the one place, called with the organization's
 zone by:
 
@@ -57,14 +63,16 @@ The session carries the zone, so the client counts days left, Home's
 today and the date-range presets in the organization's day rather than
 the browser's: a member travelling sees the warehouse's day.
 
-**Decision — a moment's day is the organization's.** What dates itself
+## Decision — a moment's day is the organization's
+
+What dates itself
 by a moment prints that day in the organization's zone: the packing slip
 and its file name, the purchase order, the RMA and the pro forma, and
 the arrival day a cost correction looks its rate up on (ADR-048).
 Invoices and credit notes are unchanged: their dates are calendar days
 already (ADR-046, ADR-052).
 
-**Unchanged, on purpose.**
+## Unchanged, on purpose
 
 - Screens show a moment's time in the viewer's own zone, as now: the
   clock a person reads is the one on their wall.
@@ -73,7 +81,7 @@ already (ADR-046, ADR-052).
 - Deletion days still end "in every time zone" (ADR-069, ADR-070): a
   cutoff that must hold for every member, wherever they are.
 
-**Considered and not done.**
+## Considered and not done
 
 - Guessing the zone from the registered address: the province is typed
   by hand, and Canada alone has six zones. The browser at registration
@@ -84,7 +92,7 @@ already (ADR-046, ADR-052).
   would see a licence as valid and another as expired, at the same
   moment.
 
-**Consequences.**
+## Consequences
 
 - Migration 0066. The session's and the organization profile's responses
   gain `timeZone` (`npm run api`).
@@ -93,7 +101,7 @@ already (ADR-046, ADR-052).
 - Manual checks: a receipt, a release and a packing slip made after 5 pm
   in Vancouver carry today's date.
 
-**Deferred.**
+## Deferred
 
 - A setting on the Account page for a member to see times in a zone
   other than their device's, such as someone in China reading the
@@ -102,7 +110,7 @@ already (ADR-046, ADR-052).
   first organization with sites in two zones, likely together with
   ADR-073's series per site.
 
-**Amendment (October 2026) — settled while building, and in review.**
+## Amendment (October 2026) — settled while building, and in review
 
 - **Days are decided in TypeScript only.** Node and Postgres each carry
   their own copy of the zone rules, so the server asks only Node:

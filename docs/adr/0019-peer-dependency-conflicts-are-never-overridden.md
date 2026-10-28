@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-31
+areas: [ops]
 amended-by: [ADR-067, ADR-082]
 ---
 
@@ -9,7 +10,9 @@ amended-by: [ADR-067, ADR-082]
 > **Amended by [ADR-082](0082-the-products-brand.md).**
 > An override that takes a patched release of the same major, under a package that pins the vulnerable release exactly, is allowed as js-yaml's was: multer 2.5.0 under `@nestjs/platform-express` 12.2.0. It hides no peer conflict, and goes once the package depends on the fix.
 
-**Context.** `npm outdated` is never empty, and npm offers two flags —
+## Context
+
+`npm outdated` is never empty, and npm offers two flags —
 `--force` and `--legacy-peer-deps` — that make a blocked install succeed. Both
 resolve the conflict by ignoring it: the package is installed against a version
 its maintainer has declared untested. `npm audit fix --force` does the same
@@ -19,10 +22,14 @@ The upgrade to Nest 12 is blocked by `@nestjs/throttler`, whose peer range ends
 at `^11.0.0`. The temptation is obvious — everything compiles, and the test
 suite passes either way.
 
-**Decision.** Peer ranges are respected. A blocked upgrade waits, and what
+## Decision
+
+Peer ranges are respected. A blocked upgrade waits, and what
 blocks it is recorded in the commit body rather than in someone's memory.
 
-**Consequence.** The failure this prevents is silent. `@nestjs/throttler` backs
+## Consequence
+
+The failure this prevents is silent. `@nestjs/throttler` backs
 login rate limiting (ADR-011), which keys on email + IP and is the only thing
 standing between an attacker and unlimited password attempts. A behavioural
 change under an unsupported major does not throw — it degrades, and a rate
@@ -35,7 +42,7 @@ This is the same shape as ADR-014's warning about permissive CORS: a defence
 that disappears without any test noticing, because the tests assert on
 behaviour the change leaves intact.
 
-**Currently blocked, and by what.**
+## Currently blocked, and by what
 
 | Upgrade             | Blocked by                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Unblocks when                                                                                                                                                     |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|

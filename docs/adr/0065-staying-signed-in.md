@@ -1,11 +1,14 @@
 ---
 status: accepted
 date: 2026-10-09
+areas: [auth, organizations]
 ---
 
 # ADR-065 — Staying signed in: the person's choice, and the organization's policy
 
-**Context.** A session lasts seven days idle and thirty in all (ADR-011),
+## Context
+
+A session lasts seven days idle and thirty in all (ADR-011),
 which suits a person on their own laptop. On a computer several people
 share, a warehouse PC say, whoever walks up next works as whoever signed
 in last, and the history says they did it. ADR-063 left this as an open
@@ -13,7 +16,7 @@ decision. Two layers answer it, the way most products do: the person
 says whether this computer should keep them, and the organization may
 say how long anyone stays idle.
 
-**Decision — layer one: "Keep me signed in", the person's, per sign-in.**
+## Decision — layer one: "Keep me signed in", the person's, per sign-in
 
 - A checkbox on the sign-in page, ticked by default: today's session,
   seven days idle and thirty in all, nothing changes.
@@ -27,7 +30,7 @@ say how long anyone stays idle.
   starts unticked there next time, so nobody has to remember to untick
   it, and a person's own laptop stays ticked.
 
-**Decision — layer two: an organization's policy, the owner's.**
+## Decision — layer two: an organization's policy, the owner's
 
 - Organization → a new **Security** tab, for those who may update the
   organization: "Sign out after inactivity": Off, 15 minutes, 30
@@ -42,7 +45,7 @@ say how long anyone stays idle.
   session is in. Changing the policy is audited, as every organization
   setting is.
 
-**Decision — enforced by the server, warned by the page.**
+## Decision — enforced by the server, warned by the page
 
 - The server refuses a session past its limit on the next request and
   ends it, so a page that dodged its own timer protects nothing it
@@ -63,7 +66,7 @@ say how long anyone stays idle.
 - Signed out by the limit, the sign-in page says why, and brings the
   person back to the page they were on.
 
-**Consequences.**
+## Consequences
 
 - Migration: `sessions.keep_signed_in` (true for every existing session,
   which is what they were), and the organization's
@@ -73,7 +76,7 @@ say how long anyone stays idle.
 - Built in this order, one PR: the screens on the Claude Design canvas,
   reviewed first; the migration; the server; the client; manual checks.
 
-**Considered and not done.**
+## Considered and not done
 
 - **An organization-wide idle sign-out alone.** It punishes everyone on
   their own laptop for a problem only shared computers have; the
@@ -82,7 +85,7 @@ say how long anyone stays idle.
 - **A maximum session length in the policy.** The absolute limits cover
   it today; trigger below.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **Lock instead of sign out:** after idle time the screen locks, and
   the password or a short PIN resumes on the same page. **Switch user

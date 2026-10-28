@@ -1,19 +1,21 @@
 ---
 status: accepted
 date: 2026-10-09
+areas: [products, files]
 ---
 
 # ADR-062 — Product images: a gallery per product, thumbnails in lists
 
-**Context.** ADR-059 stores photos in three sizes and has a route for
+## Context
+
+ADR-059 stores photos in three sizes and has a route for
 product images already, but nothing shows one. Products are recognised by
 sight in a warehouse as much as by SKU: two bottles of the same brand with
 different labels, a blend in a sack. A photo on the product page and a
 thumbnail in the lists that pick products answer "is this the one?" before
 anyone opens anything.
 
-**Decision — a product has a gallery: up to eight images, in order, the
-first its cover.**
+## Decision — a product has a gallery: up to eight images, in order, the first its cover
 
 - `product_images`: the organization, the product, the file (ADR-059,
   kind `product_image`, attached when added, released when removed) and its
@@ -26,7 +28,7 @@ first its cover.**
   or size far more often than in look. A variant's own picture waits
   (Deferred).
 
-**Decision — where they show.**
+## Decision — where they show
 
 - **The product page**: a gallery at the top, the cover at `display` size
   (1200 px), the others as `thumb`s beneath; clicking any opens a viewer at
@@ -39,7 +41,9 @@ first its cover.**
 - With no image: a neutral tile with the product type's icon, never a
   placeholder photo.
 
-**Decision — adding, removing, reordering.** On the product page, for
+## Decision — adding, removing, reordering
+
+On the product page, for
 whoever has `products.update`: Add images (several at once, or a phone's
 camera), each uploaded through `POST /v1/files/product-image` and then
 added with `POST /v1/products/:id/images`; Remove, which releases the file
@@ -71,7 +75,7 @@ Whoever has `products.view` sees them.
   the product's name and its place, "Focus, image 2 of 4", and "the cover"
   for the first.
 
-**Consequences.**
+## Consequences
 
 - Built in this order, one PR: the gallery and the lists on the Claude
   Design canvas, reviewed first; migration 0051 (`product_images`); the
@@ -97,7 +101,7 @@ Whoever has `products.view` sees them.
   400%, and a drag to look around once zoomed. First built with a
   double-click alone and a scrollbar.
 
-**Considered and not done.**
+## Considered and not done
 
 - **Images on variants.** Three sizes of one bottle look alike; the rare
   variant that differs (a flavour, a colour) can wait for its trigger.
@@ -113,7 +117,7 @@ Whoever has `products.view` sees them.
 - **A shared image library across products.** A different feature, and it
   makes removing an image a question of who else still uses it.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **A variant's own image.** Trigger: variants that differ in look, such as
   flavours or colours.

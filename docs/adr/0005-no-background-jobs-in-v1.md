@@ -1,22 +1,31 @@
 ---
 status: accepted
 date: 2026-08-24
+areas: [mail, ops]
 ---
 
 # ADR-005 — No background jobs in V1; email sends synchronously
 
-**Context.** A job queue means Redis, retry logic, dead-letter handling, and a second
+## Context
+
+A job queue means Redis, retry logic, dead-letter handling, and a second
 process to run and deploy. In V1 the only async candidate is a handful of transactional
 emails.
 
-**Decision.** Send email synchronously. Use Mailpit in development — no SMTP provider,
+## Decision
+
+Send email synchronously. Use Mailpit in development — no SMTP provider,
 no API keys, no signup. Defer BullMQ until sending actually becomes slow.
 
-**Consequence.** Notably less infrastructure to run and learn while building. Slow SMTP
+## Consequence
+
+Notably less infrastructure to run and learn while building. Slow SMTP
 will block request threads; that is acceptable at V1 volume and is the signal to add the
 queue. The change is purely additive — no schema or API impact.
 
-**Amended after first deployment.** Two things the local Mailpit setup could not
+## Amended after first deployment
+
+Two things the local Mailpit setup could not
 surface.
 
 Managed hosts commonly block outbound port 587 to prevent spam — Render's free

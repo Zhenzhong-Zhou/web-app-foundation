@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-09
+areas: [organizations, ui]
 amended-by: [ADR-082]
 ---
 
@@ -9,7 +10,9 @@ amended-by: [ADR-082]
 > **Amended by [ADR-082](0082-the-products-brand.md).**
 > Before sign-in, the product's mark and name, and a © line. After it, from 1200 px the organization's logo moves to the rail's top, linking Home, and "Powered by Panivo" sits at the rail's foot. An organization's documents carry no product mark.
 
-**Context.** ADR-055 made the brand a few values, the accent colour, the logo
+## Context
+
+ADR-055 made the brand a few values, the accent colour, the logo
 and the sidebar's shade, so that each organization could one day set its own.
 ADR-058 left the expiry thresholds (90 and 30 days) to the same decision, and
 ADR-059 now stores files, so a logo has somewhere to go. The open decision
@@ -28,8 +31,9 @@ What shapes it:
 - **People who are not designers.** An owner picks a colour once, from a phone
   as often as a desk. Choosing must be safe by default.
 
-**Decision — Settings → Organization → Branding, for whoever may change the
-organization.** A tab of the Organization page (ADR-061), behind
+## Decision — Settings → Organization → Branding, for whoever may change the organization
+
+A tab of the Organization page (ADR-061), behind
 `organizations.update`, with its own Save: the logo, the colour and the
 sidebar's shade, which is to say how the app looks. Every member sees the
 result; only those who may change the organization see the tab. The two
@@ -37,7 +41,7 @@ other settings this ADR adds are rules, not looks, so they sit with their
 kind: the expiry days on the Stock tab beside Licences at release, and
 "Print the logo" on the Documents tab beside Document languages.
 
-**Decision — the logo, stored as ADR-059 says.**
+## Decision — the logo, stored as ADR-059 says
 
 - Uploaded through `POST /v1/files/logo`: PNG, JPEG, WebP or SVG, at most 2 MB,
   at least 256 px wide; kept as one PNG at most 1024 px, an SVG drawn to PNG
@@ -56,7 +60,7 @@ kind: the expiry days on the Stock tab beside Licences at release, and
   *Amended (October 2026): an optional square logo beside it, for the
   places only a square fits (below).*
 
-**Decision — the colour: presets, or a custom colour made safe.**
+## Decision — the colour: presets, or a custom colour made safe
 
 - **Six presets**, each tested in both colour modes: indigo (`#5546B8`, the
   default), blue, teal, green-slate, plum and charcoal. None is near the red,
@@ -79,11 +83,15 @@ kind: the expiry days on the Stock tab beside Licences at release, and
   page is held to the same rule. `organizations.accent_color`, `#RRGGBB`, null
   for the default.
 
-**Decision — the sidebar's shade.** `dark` (the default) or `light`, ADR-055's
+## Decision — the sidebar's shade
+
+`dark` (the default) or `light`, ADR-055's
 two rails, chosen beside the colour and previewed with the logo.
 `organizations.rail`.
 
-**Decision — expiry days, the organization's** (on the Stock tab).
+## Decision — expiry days, the organization's
+
+They are on the Stock tab.
 
 - Two numbers, **warning** (default 90) and **critical** (default 30), with
   critical less than warning, both from 1 to 365.
@@ -96,21 +104,25 @@ two rails, chosen beside the colour and previewed with the logo.
 - Licence notice (60 days) and an overdue grace stay as they are (Deferred):
   nobody has asked, and each is one more number to explain.
 
-**Decision — the logo on printed documents, a choice** (on the Documents
-tab). Invoices, credit
+## Decision — the logo on printed documents, a choice
+
+It is on the Documents
+tab. Invoices, credit
 notes and packing slips print the logo at the top left, at most 18 mm tall,
 when the organization has one and `organizations.logo_on_documents` is on,
 which it is by default. Off keeps the paper as it is now, for an organization
 whose stationery already carries its logo. Documents already issued are not
 reprinted: the logo is whatever the organization has when the PDF is made.
 
-**Decision — the theme follows the organization.** After sign-in the client
+## Decision — the theme follows the organization
+
+After sign-in the client
 builds its theme from the organization's accent and rail, as it builds it
 from ADR-055's defaults today. Before sign-in, and for a person in no
 organization, the defaults. Switching organization rebuilds it. The values
 come with the organization's other settings; nothing new is fetched.
 
-**Consequences.**
+## Consequences
 
 - Built in this order, each its own commit:
     1. The section designed on the Claude Design canvas: Branding on desktop
@@ -157,7 +169,7 @@ come with the organization's other settings; nothing new is fetched.
   organization's days ("Nothing expires within 180 days") and, for those
   who may change them, links to the Stock tab: "Change the days".
 
-**Considered and not done.**
+## Considered and not done
 
 - **Refusing a colour that fails contrast.** Correct, and unkind: an owner
   with a brand colour would be told no without being offered anything. The
@@ -170,7 +182,7 @@ come with the organization's other settings; nothing new is fetched.
   no organization, and a home-screen icon belongs to the website.
 - **The logo in the database.** ADR-059 decided one store for every file.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **A second logo for dark backgrounds.** Trigger: a logo the white plate
   does not suit, such as a white wordmark.
@@ -182,7 +194,8 @@ come with the organization's other settings; nothing new is fetched.
   (ADR-037). Trigger: an organization whose customers receive email from
   the app.
 
-**Amendment (October 2026) — a square logo of the organization's own.**
+## Amendment (October 2026) — a square logo of the organization's own
+
 ADR-082 moved the logo to the rail's top and gave the folded rail one
 44 px plate, which shows the logo when it is about square and the
 organization's initials otherwise. Most logos are wordmarks, so most
@@ -228,7 +241,9 @@ Checked before drafting, as the working agreements ask:
   logo's upload says nothing while it runs but a disabled button, which a
   screen reader does not announce.
 
-**Decision — an optional square logo, beside the logo.** On Branding,
+### Decision — an optional square logo, beside the logo
+
+On Branding,
 saved with the tab's one Save: **Square logo** (« Logo carré »,
 方形标志), marked optional. On a computer the two logos sit side by
 side, one brand in two shapes; on a phone the square logo follows the
@@ -242,7 +257,7 @@ either uploads, "Uploading…" is said in words as well as shown, so a
 screen reader hears it. The preview shows each sidebar shade both open
 and folded, the plate chosen by the same rule as the rail's.
 
-**Decision — where it shows, and only there.**
+### Decision — where it shows, and only there
 
 - **The folded plate** takes the first of: the square logo; a main logo
   about square (at most 1.25 : 1), as ADR-082 built; the organization's
@@ -260,7 +275,7 @@ and folded, the plate chosen by the same rule as the rail's.
   (ADR-082); documents print the main logo (above); the invitation page
   keeps it (ADR-077); emails wait for their own design.
 
-**Decision — the file.**
+### Decision — the file
 
 - A kind of its own, `square_logo`, uploaded through
   `POST /v1/files/square-logo` behind `organizations.update` (ADR-059,
@@ -283,7 +298,7 @@ and folded, the plate chosen by the same rule as the rail's.
   carried with the session's branding on `/v1/auth/me`. Every change is
   an addition, so the API revision stays where it is (ADR-081).
 
-**Considered and not done.**
+### Considered and not done
 
 - **Edge to edge on the plate,** as a phone's app icon. Right for an icon
   with its own background; a transparent mark would touch the plate's
@@ -301,13 +316,13 @@ and folded, the plate chosen by the same rule as the rail's.
 - **A checkerboard behind the thumbnail** to show transparency. The two
   sidebar previews already show the logo on dark and on white.
 
-**Deferred.**
+### Deferred
 
 - **A smaller copy of the main logo for the rail,** which is drawn at
   most 32 px tall from a file up to 1024 px wide. Trigger: the whole-app
   review's Lighthouse run, or a perf run, naming the logo's bytes.
 
-**Consequences.**
+### Consequences
 
 - Migration **0075**: `square_logo_file_id`, and `square_logo` in
   `files_kind_check`.
@@ -329,7 +344,9 @@ and folded, the plate chosen by the same rule as the rail's.
   brief in `tmp/square-logo/`. The pull request carries `full-e2e`, since
   it adds rows to `accessibility.spec.ts`.
 
-**As built (#251, 26 October 2026).** Built as decided, in the brief's
+### As built (#251, 26 October 2026)
+
+Built as decided, in the brief's
 steps. What building corrected and settled:
 
 - **Three corrections to the amendment above.** Branding never had the

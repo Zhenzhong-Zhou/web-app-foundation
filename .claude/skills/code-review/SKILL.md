@@ -13,8 +13,9 @@ change code unless asked.
 
 - A pull request: `gh pr view <number>` for its description, and
   `gh pr diff <number>` for the diff.
-- The current branch: `git log --oneline main..HEAD` and
-  `git diff main...HEAD`.
+- The current branch: `git fetch origin main`, then
+  `git log --oneline origin/main..HEAD` and `git diff origin/main...HEAD`,
+  against the base the notice and `scripts/verify.sh` use.
 
 Skip `server/openapi.json` and `client/src/api/`, which are generated,
 except to check that they changed whenever the API did.
@@ -24,6 +25,11 @@ except to check that they changed whenever the API did.
 `CLAUDE.md` first, then the parts of `docs/conventions.md` and
 `docs/principles.md` the change bears on, and every ADR it names or
 amends in `docs/adr/`.
+
+Then the rules of each area the change touches (ADR-087), where the area
+has them: `.claude/rules/<area>.md`, Claude's code rules, whose `paths`
+say which files are the area's; and `docs/rules/<area>.md`, what the app
+allows, refuses and works out there.
 
 ## 3. Check
 
@@ -37,6 +43,14 @@ amends in `docs/adr/`.
   `docs/conventions.md` when a pattern did.
 - A commit that changes what a person sees, or a rule they work under,
   updates `docs/manual-checks.md` in the same commit.
+- A commit that changes a rule, what the app allows, refuses or works
+  out, updates its area's rules file in `docs/rules/` in the same commit
+  (ADR-087). With the branch checked out, run
+  `node scripts/check-docs.mjs`: each `notice:` names a rules file left
+  alone while its cited tests or its area's files changed. Judge each
+  one: a rule the change made or changed is reported as a rule changed
+  without its rules file; where none changed, the report says so in a
+  line, so no notice is left unanswered.
 - A client type change fixes the test fixtures that build that type in
   the same commit.
 
@@ -46,7 +60,8 @@ amends in `docs/adr/`.
   no spread table row, no `select()` of every column, raw query rows
   typed rather than `Record<string, unknown>`.
 - A write returns the detail its read returns, or as its list shows it
-  where there is no read.
+  where there is no read; or 204 when the screen reads again anyway (a
+  delete, a state change, a settings section).
 - `server/openapi.json` and `client/src/api/` regenerated in the same
   change; neither edited by hand.
 - Nothing personal beyond what the screen shows (ADR-063).
@@ -66,8 +81,8 @@ amends in `docs/adr/`.
   release reads: it adds in one deploy, and takes away in a later one
   once no released code reads the old shape (expand, then contract;
   ADR-081). CI's squawk check (`server/.squawk.toml`) cannot know which
-  key a query names, as 0067 replaced `document_sequences`' primary key
-  under one; read for it, and check each `squawk-ignore`'s reason holds.
+  key a query names, so a key replaced under a released `ON CONFLICT`
+  passes it; read for it, and check each `squawk-ignore`'s reason holds.
 - A breaking API change raises `API_REVISION` in
   `server/src/common/api-revision.ts` in the same commit, or keeps the old
   shape working, logged until nothing sends it (ADR-081): a field removed
@@ -79,10 +94,13 @@ amends in `docs/adr/`.
   list matching its check constraint.
 - Writes `@Audited`, or listed in `NOT_AUDITED` with a reason, with no
   free text in the payload (ADR-018).
-- Every route has `@RequirePermissions`. A new permission is Owner-only:
-  added to `PERMISSIONS` and its descriptions, never to the Admin or
-  Viewer lists, and to the client's list in the same commit. No
-  permission is seeded that nothing gates.
+- Every route has `@RequirePermissions`, is public, or is listed with its
+  reason in `server/test/permission-coverage.e2e-spec.ts`: `SELF_SERVICE`
+  for one acting only on the caller's own account, `GATED_INSIDE` for one
+  gating each part it returns by that part's own permission. A new
+  permission is Owner-only: added to `PERMISSIONS` and its descriptions,
+  never to the Admin or Viewer lists, and to the client's list in the
+  same commit. No permission is seeded that nothing gates.
 
 ### Behaviour
 

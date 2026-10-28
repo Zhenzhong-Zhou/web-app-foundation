@@ -1,11 +1,14 @@
 ---
 status: accepted
 date: 2026-10-02
+areas: [ops]
 ---
 
 # ADR-053 — Backups: an encrypted nightly dump we own, at another provider, restored monthly
 
-**Context.** Nothing in the repo says how the database is backed up or how
+## Context
+
+Nothing in the repo says how the database is backed up or how
 it is brought back. Production runs on Render, and a free Render database
 may have no backups at all and expires 30 days after creation. Every
 organization's data lives in one Postgres database, so one backup holds
@@ -20,7 +23,9 @@ WAL-G) for self-hosted or very large databases. The rule over all of them
 is 3-2-1-1-0: three copies, two kinds of storage, one off-site, one
 immutable, zero errors when a restore is tested.
 
-**Decision — targets first.** What the plan has to meet, stated as numbers
+## Decision — targets first
+
+What the plan has to meet, stated as numbers
 so a choice can be checked against them:
 
 | Phase | When                    | RPO (data that may be lost) | RTO (time to be running again) |
@@ -31,7 +36,9 @@ so a choice can be checked against them:
 Phase 1 is met by the nightly dump alone. Phase 2 needs the host's
 point-in-time recovery, which is a plan choice at the host, not code.
 
-**Decision — our own nightly dump is the backup that counts.** `pg_dump`
+## Decision — our own nightly dump is the backup that counts
+
+`pg_dump`
 in custom format (`-Fc`, zstd), once a night at 10:00 UTC (3am in
 Vancouver, 6am in Toronto), the quietest hour. It reads a consistent
 snapshot and does not block the app. It works against any Postgres, so it
@@ -46,7 +53,9 @@ and restoring it somewhere new is exactly how a move between hosts is done.
 - The `pg_dump` client's major version matches the server's (18). An older
   client refuses a newer server.
 
-**Decision — encrypted before it leaves, with `age`.** Each dump is
+## Decision — encrypted before it leaves, with `age`
+
+Each dump is
 encrypted on the runner with an `age` public key before upload. The public
 key can only lock, so a stolen backup job cannot read any backup. The
 private key never touches the job: one copy in Bob's password manager, one
@@ -60,7 +69,7 @@ and nothing else.
 The bucket's own encryption is on as well, as a second lock; it is not
 relied on alone, because the provider holds that key.
 
-**Decision — stored at a different provider, in Canada, immutable.**
+## Decision — stored at a different provider, in Canada, immutable
 
 - An S3-compatible bucket at a provider other than the database host.
   Every major object store speaks the S3 API (AWS S3, Backblaze B2,
@@ -81,7 +90,9 @@ relied on alone, because the provider holds that key.
   checksum beside it, so a restore can prove what it downloaded is what was
   written.
 
-**Decision — every location is a setting.** Nothing about the host, the
+## Decision — every location is a setting
+
+Nothing about the host, the
 bucket or the region is in code:
 
 | Variable                                                  | Holds                                               |
@@ -96,7 +107,9 @@ Held as GitHub Actions secrets. Moving region or provider: a new bucket,
 new values, and the next night's backup lands there; the old bucket's
 backups expire on their own or are copied if a contract says so.
 
-**Decision — restores are rehearsed, timed and written down.** A backup
+## Decision — restores are rehearsed, timed and written down
+
+A backup
 nobody has restored is a hope.
 
 - A runbook, `docs/runbooks/restore.md`: the exact commands, in order, for
@@ -119,20 +132,23 @@ nobody has restored is a hope.
       Every table carries `organization_id`, which is what makes one
       tenant's rows selectable.
 
-**Decision — a missing backup is noticed within a day.** A failed workflow
+## Decision — a missing backup is noticed within a day
+
+A failed workflow
 emails Bob. A daily check fails if the newest backup is more than 26 hours
 old, which also covers GitHub pausing scheduled workflows after 60 days
 without activity in the repository. A backup whose size moves more than
 50% from the previous one is flagged: a bug or lost data shows up there
 first.
 
-**Decision — the host's own backups are a plan choice, recorded per
-host.** Today's host is Render. Phase 0 is checking what its plan backs up
+## Decision — the host's own backups are a plan choice, recorded per host
+
+Today's host is Render. Phase 0 is checking what its plan backs up
 now; phase 2 requires a plan with point-in-time recovery. A different host
 needs the same: point-in-time recovery for RPO in minutes, and nothing in
 this ADR changes when it does.
 
-**Consequences.**
+## Consequences
 
 - Built in this order, each its own commit:
     1. Phase 0, by hand this week: check Render's plan, create the bucket
@@ -155,7 +171,7 @@ this ADR changes when it does.
 - The dump takes seconds today. Logical dumps stay practical to roughly
   50–100 GB; past that, Deferred below.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **Regional deployments.** One database means one backup region. A
   customer who needs its data in another country gets a separate
@@ -176,7 +192,7 @@ this ADR changes when it does.
 - **Two people to restore or to use the key.** Trigger: a team larger than
   one, or an audit.
 
-**Amendment — settled while building.**
+## Amendment — settled while building
 
 - **A test destination before the bucket.** `BACKUP_DESTINATION` takes
   `artifact` as well as `s3`: the encrypted dump is kept as a GitHub Actions
@@ -205,7 +221,9 @@ this ADR changes when it does.
 - **Size against the previous backup** is compared in `local` and `s3`. As
   an artifact each run starts empty, so the comparison is skipped there.
 
-**Amendment — the bucket is Cloudflare R2.** Bob chose R2 for backups, and
+## Amendment — the bucket is Cloudflare R2
+
+Bob chose R2 for backups, and
 for the app's files when they come (in their own bucket, with their own
 keys). R2 speaks the S3 API, so the scripts are unchanged: the endpoint is
 `https://<account id>.r2.cloudflarestorage.com` and the region `auto`. It

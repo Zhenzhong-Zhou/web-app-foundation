@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-08
+areas: [files, ops]
 amended-by: [ADR-070]
 ---
 
@@ -10,7 +11,9 @@ amended-by: [ADR-070]
 > A deleted organization's files are erased when its deletion completes, not released to wait 30 days: the 30 days came before it, and their rows go with the organization.
 > Its October 2026 amendment (#117) changes how every upload writes: the bytes go to storage first, under an id taken beforehand, then a short transaction saves the row, and an upload that is refused or fails deletes its bytes. A deletion run's mark then refuses any upload after it.
 
-**Context.** Nothing stores a file yet, and several things are waiting to.
+## Context
+
+Nothing stores a file yet, and several things are waiting to.
 Branding needs the organization's logo (*Open decisions*, ADR-055's brand
 tokens). The catalogue wants product images. Lots want their certificates
 of analysis, licences their documents (ADR-040), purchases their supplier
@@ -35,7 +38,7 @@ What shapes the answer:
 - **Uploads are hostile until checked.** A file named `logo.png` can be
   anything. An SVG can carry script. A photo carries its GPS position.
 
-**Decision — one store for every file: Cloudflare R2, its own bucket.**
+## Decision — one store for every file: Cloudflare R2, its own bucket
 
 - Bucket `waf-files`, in the location nearest the app's host (amended
   below). One bucket for every kind of file and every organization; the
@@ -58,7 +61,7 @@ What shapes the answer:
 tests, e2e and CI need no bucket and no network. The S3 driver is the one
 production uses; a manual check covers it against R2 (*Consequences*).
 
-**Decision — a `files` table is the record; the bucket holds bytes.**
+## Decision — a `files` table is the record; the bucket holds bytes
 
 - One row per file: `id` (UUIDv7), `organization_id`, `kind` (`logo`,
   `product_image`, `document`, `return_photo`; each user of files adds its
@@ -76,8 +79,7 @@ production uses; a manual check covers it against R2 (*Consequences*).
   adds its column or link table, with its permission and its rules (a
   certificate on a shipped lot cannot be removed, for instance).
 
-**Decision — uploads go through the app, and are checked before they are
-kept.**
+## Decision — uploads go through the app, and are checked before they are kept
 
 `POST /v1/files` with the file and its kind, as `multipart/form-data`. The
 server checks, in order, and stores only what passes:
@@ -109,7 +111,9 @@ server checks, in order, and stores only what passes:
 | `return_photo` | PNG, JPEG, WebP | 20 MB | WebP in three sizes (below) |
 | `document` | PDF, PNG, JPEG | 20 MB | PDF as uploaded, images as WebP in three sizes |
 
-**Three sizes of every photo, made once at upload.** A list or a gallery
+## Three sizes of every photo, made once at upload
+
+A list or a gallery
 strip shows many small images, a product page one clear one, and zooming
 in wants every detail the camera caught. One size cannot serve all three:
 a full photo in a list of fifty is megabytes for fifty squares, and a
@@ -141,7 +145,7 @@ A new file is unattached until the record that uses it is saved with its
 id. Unattached files older than a day are released, so an abandoned form
 leaves nothing behind.
 
-**Decision — every file is served through the app's own domain.**
+## Decision — every file is served through the app's own domain
 
 `GET /v1/files/:id`, and `?size=thumb`, `display` or `full` for a photo
 (full without one), after sign-in, the tenant's scope (another
@@ -165,14 +169,18 @@ R2 charges nothing for egress; the app's host carries the bytes twice
 (bucket to server, server to browser), which at these sizes is nothing. A
 CDN or Cloudflare Images in front comes with the trigger below.
 
-**Decision — released, then purged after 30 days.** Releasing a file (its
+## Decision — released, then purged after 30 days
+
+Releasing a file (its
 record deleted, a logo replaced, an unattached upload expired) sets
 `released_at`. A daily job deletes the bytes and the row 30 days later.
 The window means a mistake can be undone and a database restored from last
 week still finds its files. Deleting an organization releases all of its
 files.
 
-**Decision — files are backed up by copying, to the backup bucket.** Files
+## Decision — files are backed up by copying, to the backup bucket
+
+Files
 never change, so a backup is a copy of every object the backup does not
 yet hold.
 
@@ -192,14 +200,16 @@ yet hold.
   another provider than the database host; that holds. A second provider
   for the files' copy waits for the trigger below.
 
-**Decision — a limit per organization.** 1 GB each, summed from `files`
+## Decision — a limit per organization
+
+1 GB each, summed from `files`
 over every size kept, so the free 10 GB serves ten organizations before
 anyone pays; a photo in its three sizes is about 1 MB, so a thousand
 photos each. Over it, an
 upload is refused with how much is used and what can be released. A
 setting, so a plan can raise it.
 
-**Consequences.**
+## Consequences
 
 - Built in this order, each its own commit:
     1. By hand: bucket `waf-files` (Eastern North America), its token, the
@@ -256,7 +266,7 @@ setting, so a plan can raise it.
   it releases the organization's files first, as the decision above says,
   so the purge removes their bytes.
 
-**Considered and not done.**
+## Considered and not done
 
 - **The logo in the database** (`bytea`, at most 500 KB). It needs no
   bucket, and works for one small logo; but product images and documents
@@ -280,7 +290,7 @@ setting, so a plan can raise it.
 - **Cropping thumbnails square on the server.** A product's edge cut off
   stays cut off; a square is the page's choice, made with `object-fit`.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **A CDN or Cloudflare Images**, for serving nearer the reader. Trigger:
   product images on a page anyone outside the organization sees, or image

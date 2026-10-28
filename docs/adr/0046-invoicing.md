@@ -1,12 +1,18 @@
 ---
 status: accepted
 date: 2026-09-25
+areas: [invoices, orders, tax-codes]
 amended-by: [ADR-071, ADR-073]
 ---
 
 # ADR-046 — Invoicing: an invoice bills one shipment, and is reversed, never edited
 
-**Context.** The system moves goods but not money. A shipment leaves with a
+> **Amended by [ADR-073](0073-each-organizations-document-numbering.md).**
+> Invoice numbers are gapless within a series and period, rather than within the organization, and each organization sets the prefix, the width and when a series starts again, `INV-` and six digits only the defaults. Everything else stands.
+
+## Context
+
+The system moves goods but not money. A shipment leaves with a
 packing slip and nothing says what the customer owes for it. Two rules were
 waiting on this: Void shipment is refused once an order is marked shipped
 (ADR-041, amendment), because nothing else marked the point after which a
@@ -15,12 +21,16 @@ that describes a different act. Prices are already on sale lines (ADR-035),
 nullable and per line, which is the input an invoice needs and the source of
 two of the decisions below.
 
-**Decision — sales only.** This ADR covers invoices to customers. Supplier
+## Decision — sales only
+
+This ADR covers invoices to customers. Supplier
 bills and three-way matching (ADR-035's reason for prices on purchase lines)
 are the same shape seen from the other side, and wait until someone matches
 a supplier invoice in the app rather than on paper.
 
-**Decision — one invoice per shipment.** An invoice is created from a
+## Decision — one invoice per shipment
+
+An invoice is created from a
 shipment and bills exactly what that shipment carried: its lines, in the
 quantities that left. Billing on delivery is the default in SAP and NetSuite,
 and it is the grain the rest of the system already has — a shipment is a
@@ -38,7 +48,9 @@ A partial unique index on `invoices (shipment_id) where status <> 'voided'`
 enforces it: at most one standing invoice per shipment, while a voided one
 stays beside its replacement.
 
-**Decision — draft, issued, voided.** A draft is a working copy: created from
+## Decision — draft, issued, voided
+
+A draft is a working copy: created from
 the shipment, prefilled from the order lines, editable and deletable, with no
 number. Quantities come from the shipment and cannot be changed — the invoice
 bills what left, and a different quantity is a different shipment. Price and
@@ -54,7 +66,9 @@ disagree without saying so.
 Paid is not a status. It needs payments recorded against the invoice, which
 are deferred (below); "issued" means "sent and owed", nothing more.
 
-**Decision — one currency per invoice, and one currency per sale.** An
+## Decision — one currency per invoice, and one currency per sale
+
+An
 invoice is paid in one currency, taxed on one total, and owed as one amount,
 so it has a header currency. Every system that issues invoices works this way.
 
@@ -65,7 +79,9 @@ confirm: every priced line on a sale must share one currency, refused with
 and has no evidence behind it. The invoice then takes the order's currency,
 and a mixed invoice cannot exist.
 
-**Decision — a sale is priced before it is confirmed.** Confirming a sale is
+## Decision — a sale is priced before it is confirmed
+
+Confirming a sale is
 the customer's commitment, and it is the point at which a price is agreed.
 Every line on a sale must have a price at confirm, refused with 409
 otherwise. Zero is a price — a replacement, free goods — and null is not:
@@ -85,7 +101,8 @@ lines. If there are none in production, nothing more is needed; if there
 are, they are priced by hand before the migration, rather than building a
 way around the rule.
 
-**Decision — amounts are stored at issue, deliberately unlike an order.**
+## Decision — amounts are stored at issue, deliberately unlike an order
+
 ADR-035 computes an order's line totals and never stores them, because an
 order can still change and a stored copy would drift. An issued invoice
 cannot change, which removes that reason, and the opposite reason applies: an
@@ -104,7 +121,9 @@ Amounts are `numeric(18, 4)` and strings end to end, as quantities are
 from `Intl.NumberFormat`, the same source the client uses, so JPY rounds to
 whole yen without a table of currencies to maintain.
 
-**Decision — tax by code, rounded once per invoice.** A tax code is
+## Decision — tax by code, rounded once per invoice
+
+A tax code is
 organization data: a name and one or more components, each a name and a
 rate, so a code can be one tax or two applied to the same amount (a federal
 and a provincial sales tax, say) and "exempt" is a code with none. Each
@@ -122,7 +141,9 @@ Choosing the code automatically — from the ship-to region and the product —
 is deferred. Until then a person picks it, which is what a small business
 does anyway.
 
-**Decision — numbers are gapless per organization, assigned at issue.** An
+## Decision — numbers are gapless per organization, assigned at issue
+
+An
 invoice number is what the customer quotes and what an auditor counts, so
 it has no gaps and no duplicates within an organization, and drafts have
 none (a deleted draft would otherwise leave a hole).
@@ -138,7 +159,9 @@ The cost is that two invoices issued at the same moment by one organization
 queue on one row lock for the length of an issue — a few milliseconds, at
 the volume a B2B tenant issues invoices.
 
-**Decision — snapshots, as orders and movements already do.** Issuing copies
+## Decision — snapshots, as orders and movements already do
+
+Issuing copies
 the seller (organization name, registered address, tax registration number),
 the bill-to (the customer's name and default billing address, from
 `addresses.is_billing`), the ship-to as the order holds it, and per line the
@@ -151,7 +174,9 @@ The invoice date and due date are calendar days, so they are `date` columns
 from the start (#20 is the cost of not doing that). The due date is entered
 on the draft; payment terms that compute it are deferred with payments.
 
-**Decision — a mistake after issue is reversed by a credit note.** A credit
+## Decision — a mistake after issue is reversed by a credit note
+
+A credit
 note is its own document: its own number series, lines, stored amounts and
 snapshots, and a reference to the invoice it credits. Voiding an issued
 invoice, with a required reason, issues a credit note for the whole of it in
@@ -174,8 +199,9 @@ fixes only the document's shape and the full reversal.
 
 A draft is simply deleted, since nobody outside has seen it.
 
-**Decision — Void shipment is refused while an invoice stands, not while the
-order is closed.** This amends ADR-041's amendment. A shipment can be voided
+## Decision — Void shipment is refused while an invoice stands, not while the order is closed
+
+This amends ADR-041's amendment. A shipment can be voided
 while no draft or issued invoice references it and nothing from it has been
 returned. A draft is deleted first; an issued invoice is voided first. The
 order being fulfilled no longer blocks it: voiding a shipment on a fulfilled
@@ -187,13 +213,17 @@ The v0.3 workaround — a return with the reason "never left" — is no longer
 needed and no longer recommended, since it records goods coming back that
 never went.
 
-**Decision — "Mark shipped" becomes "Close order" (#24).** Ship is the box
+## Decision — "Mark shipped" becomes "Close order" (#24)
+
+Ship is the box
 going to the carrier; closing says no more shipments are coming, with every
 line shipped or closed short. The stored status stays `fulfilled` (ADR-041).
 Closing locks nothing to do with money: a closed order's shipments can still
 be invoiced, since billing after the last box leaves is ordinary.
 
-**Decision — permissions follow the people.** `invoices.view`,
+## Decision — permissions follow the people
+
+`invoices.view`,
 `invoices.create`, `invoices.update` and `invoices.delete` for drafts, and
 `invoices.issue` (issue and void). Issuing is the finance act — the one a
 customer and an auditor see — and is often held by fewer people than
@@ -203,13 +233,17 @@ own permissions. Audited as `invoice.created`, `invoice.updated`,
 `invoice.voided` and `credit_note.issued`; the permission-coverage and
 audit-coverage tests include every new route.
 
-**Decision — printable, like the packing slip.** An issued invoice and a
+## Decision — printable, like the packing slip
+
+An issued invoice and a
 credit note each print from their stored snapshot. A voided invoice prints
 with VOID and the reason, and the credit note names the invoice it reverses.
 A draft prints marked DRAFT with no number, so it cannot be mistaken for a
 sent invoice.
 
-**Performance.** Reads never recompute: an invoice, a customer's invoices,
+## Performance
+
+Reads never recompute: an invoice, a customer's invoices,
 and everything owed are sums over stored amounts. Indexes: unique
 `(organization_id, number)` per document; `(organization_id, partner_id,
 invoice_date desc)` for a customer's history; `(organization_id, status)` for
@@ -218,14 +252,16 @@ which also answers "is this shipment billed" for the Void check and the
 "not yet invoiced" list. Numbering costs one row lock per issue per
 organization.
 
-**Consequences.** New tables: `invoices`, `invoice_lines`, `invoice_taxes`,
+## Consequences
+
+New tables: `invoices`, `invoice_lines`, `invoice_taxes`,
 `credit_notes`, `credit_note_lines`, `credit_note_taxes`, `tax_codes`,
 `tax_code_components`, `document_sequences`; an owner column on `addresses`
 for the organization; a tax registration number on `organizations`. Confirm
 gains two refusals for sales (unpriced line, mixed currency). Void shipment's
 rule changes and gains a reopen. The close button is renamed.
 
-**Deferred.**
+## Deferred
 
 - **Pro forma invoices** — a valued document that creates no debt: for
   customs, prepayment, a customer's approval, a sample's declared value. Its
@@ -248,8 +284,9 @@ rule changes and gains a reopen. The close button is renamed.
 - **Sending** an invoice by email or e-invoicing network; creating a draft
   automatically on ship.
 
-**Amendment — one currency from the first priced line, not only at
-confirm.** Enforcing it only at confirm let a draft sale be built that
+## Amendment — one currency from the first priced line, not only at confirm
+
+Enforcing it only at confirm let a draft sale be built that
 confirm must refuse, and the ways a line gets its price disagreed: a list
 price in another currency was left off (ADR-049) and "Use list price"
 refused one, while a typed price was accepted. Every write now holds a
@@ -261,8 +298,9 @@ before this change can still be brought back to one; confirm keeps its own
 check for those. This is how sales documents work elsewhere: one document
 currency, chosen per order.
 
-**Amendment (October 2026) — an invoice that charges tax needs the
-seller's tax number.** The tax number stayed optional so that a business
+## Amendment (October 2026) — an invoice that charges tax needs the seller's tax number
+
+The tax number stayed optional so that a business
 not registered for GST/HST, which has none, could still invoice. But such
 a business charges no tax either, and a business that charges tax is
 registered and has a number: in Canada, an invoice of $100 or more must
@@ -299,7 +337,8 @@ IRN), this app's invoice is the company's own record and a commercial
 invoice, and the tax invoice is issued there. Trigger: the first customer,
 or legal entity, outside Canada.
 
-**Amendment (October 2026) — each organization's numbering (ADR-073).**
+## Amendment (October 2026) — each organization's numbering (ADR-073)
+
 The prefix, the width and when a series starts again are each
 organization's, `INV-` and six digits only the defaults. Invoices stay
 gapless within a series and period, rather than within the organization.

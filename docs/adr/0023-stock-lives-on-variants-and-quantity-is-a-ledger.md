@@ -1,17 +1,21 @@
 ---
 status: accepted
 date: 2026-09-03
+areas: [products, stock]
+amended-by: [ADR-025]
 ---
 
 # ADR-023 — Stock lives on variants, and quantity is a ledger
 
-**Context.** The first application on this foundation is inventory. It has to
+## Context
+
+The first application on this foundation is inventory. It has to
 hold sellable products, raw materials, packaging, samples, and office supplies,
 across warehouses, some with lot numbers and expiry and some without. The
 question underneath all of that is one question: at what granularity does a
 quantity exist, and how does it change.
 
-**Decision — products group, variants carry stock.**
+## Decision — products group, variants carry stock
 
 ```text
 products          id, organization_id, type, name, description
@@ -30,14 +34,15 @@ bought, and shipped — "Vitamin D3" is a product, "Vitamin D3, 60ct" is what
 sits on a shelf. Shopify, Medusa, and Saleor all landed here; Amazon's
 parent/child ASIN is the same shape.
 
-**Every product has at least one variant, including those with no variation.**
+## Every product has at least one variant, including those with no variation
+
 Office supplies and single-size products get one auto-created variant holding
 the SKU, and the UI hides it behind a single field. This is the part that feels
 like overhead and is not: if stock hung off a product *sometimes* and a variant
 *other times*, every query would need a branch, and each branch is a place to
 be wrong. One home for quantity, permanently.
 
-**Decision — SKUs are unique per organization, never global, never generated.**
+## Decision — SKUs are unique per organization, never global, never generated
 
 Global uniqueness would leak the customer list: two customers stocking
 `WIDGET-01` and one being rejected reveals the other exists. Same reasoning as
@@ -70,15 +75,16 @@ names who did it. Snapshotting fixes it for SKUs specifically, once
 movements store the value as text; for role changes and profile edits there is
 no equivalent, which is why the general question stays open.
 
-**Decision — `type` distinguishes what a thing is for, and does not fork the
-schema.** Sellable goods, raw material, packaging, samples, and office supplies
+## Decision — `type` distinguishes what a thing is for, and does not fork the schema
+
+Sellable goods, raw material, packaging, samples, and office supplies
 share SKU, stock, location, and movement. They differ in what they *connect*
 to — a price and sales orders, or purchase orders and production consumption,
 or neither. That is relationships and a check-constrained column, not separate
 tables. Duplicating `stock` for supplies would mean two places a quantity can
 go negative.
 
-**Decision — batch tracking is a property of the variant, not a global mode.**
+## Decision — batch tracking is a property of the variant, not a global mode
 
 `tracks_batches` on the variant, because a manufactured supplement needs lot
 numbers and a box of paperclips does not, and supplier goods vary.
@@ -100,7 +106,7 @@ overwriting it destroys the ability to value what is actually on the shelf.
 Storage and handling are period expenses, not inventory cost, and touch
 none of these tables.
 
-**Decision — quantity is a ledger, and `stock` is a cache.**
+## Decision — quantity is a ledger, and `stock` is a cache
 
 ```text
 stock_movements   id, organization_id, variant_id, batch_id,
@@ -119,11 +125,15 @@ shelf holds 45." A ledger can, and that question is the entire job. This is
 also the hardest thing to retrofit: added later, every existing quantity has
 unexplained provenance.
 
-**`actor_id` is not null.** The movement *is* the record; `@Audited` (ADR-018)
+## `actor_id` is not null
+
+The movement *is* the record; `@Audited` (ADR-018)
 sits above it and does not replace it. A manual adjustment with no name
 attached is precisely the row someone will ask about.
 
-**`note` is required when `reason = 'adjustment'`.** A receipt explains itself;
+## `note` is required when `reason = 'adjustment'`
+
+A receipt explains itself;
 an adjustment is a person saying the system is wrong, and a blank one is
 unauditable.
 
@@ -132,7 +142,7 @@ a fix. Every change is a movement. A second way to change a quantity is the
 moment the ledger stops being authoritative. The e2e assertion is that the sum
 of a variant's movements equals its stock row.
 
-**Decision — reason is a closed enum; reference is nullable.**
+## Decision — reason is a closed enum; reference is nullable
 
 Reason says *why*: receipt, shipment, transfer, adjustment, production,
 consumption, sample, return. Reference says *what caused it* — a purchase
@@ -148,7 +158,9 @@ Reference is nullable so a movement entered by hand today and one raised by an
 order later are the same row. Order management adds a reference; it does not
 change the table, and existing rows stay valid.
 
-**Consequence.** One extra join on every product read, on an indexed foreign
+## Consequence
+
+One extra join on every product read, on an indexed foreign
 key — irrelevant at any scale this will see. One extra write per stock change,
 in the same transaction.
 
@@ -158,12 +170,16 @@ reserved`, needed before anything can be oversold), costing (batch-level,
 moving average, or FIFO), and unit-of-measure conversion (buy cases, stock
 eaches). Each is recorded in open decisions.
 
-**Rejected: a flat `products` table with quantity on it.** Faster to start and
+## Rejected: a flat `products` table with quantity on it
+
+Faster to start and
 the thing every first inventory system regrets. Retrofitting variants means
 touching every table that references a product, and retrofitting a ledger means
 inventing history.
 
-**Amendment (ADR-025).** `batches` is now `lots`, `stock` is `stock_levels`,
+## Amendment (ADR-025)
+
+`batches` is now `lots`, `stock` is `stock_levels`,
 and `tracks_batches` on the variant is `tracks_lots`. The interface already
 said "lot number" while the schema said batch, and `batch` is also what a bulk
 import endpoint will be called — one word carrying two meanings in the same

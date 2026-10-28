@@ -6,7 +6,7 @@ changes before real customers' data. Render's limits as checked on 13 October 20
 check again before relying on a number.
 
 **Never paste a database URL, a password or a key into a chat, an issue or
-a commit** (restore.md, section 6).
+a commit** ([restore.md, section 6](restore.md#6-if-a-secret-leaks)).
 
 ## What runs where
 
@@ -81,7 +81,7 @@ use; the reasons are in the sections named.
    - **Auto-Deploy** Off; its **Deploy Hook** into GitHub as
      `RENDER_CLIENT_DEPLOY_HOOK`.
 4. **GitHub:** the variable `API_HEALTH_URL` ("Deploys") and the backup
-   secrets (restore.md, section 1).
+   secrets ([restore.md, section 1](restore.md#1-one-time-setup)).
 5. **The first deploy:** Manual Deploy on the web service, then, once
    `/api/health/ready` answers, on the static site. After that, a push to
    `main` that passes CI deploys both through `deploy.yml`.
@@ -192,7 +192,7 @@ a stall passed late instead, holding a run for up to 49 minutes.
 | Headers            |                                           | the three rules below                            |
 
 The database is Free too (above). With no Pre-Deploy Command, the
-migrations run in the build command (README, "Deployment") while the
+migrations run in the build command ([README, "Deployment"](../../README.md#deployment)) while the
 previous release still serves, which is why ADR-081's migrations add and
 never take away in one deploy.
 
@@ -488,7 +488,7 @@ for, this comes back every month: replace it a day or two early, not
 after, since the live app is down in between.
 
 Start empty. Nothing on the free database is real data; restoring the last
-backup instead is "The host is gone" in restore.md, if a test needs the old
+backup instead is ["The host is gone" in restore.md](restore.md#the-host-is-gone), if a test needs the old
 rows. Do every step in one sitting: the live app is down from step 1 until
 step 4.
 
@@ -573,13 +573,13 @@ business.
 - **The database on a paid instance type.** Upgrading the free database in
   place keeps its data; a new paid one is filled by a restore. It no longer
   expires, and Render's point-in-time recovery becomes available, which is
-  how "A bad deploy or a bad delete" in restore.md is answered (ADR-053,
+  how ["A bad deploy or a bad delete" in restore.md](restore.md#a-bad-deploy-or-a-bad-delete) is answered (ADR-053,
   phase 2).
 - **The web service on a paid instance type.** It stops sleeping, so the
   first request is not a minute's wait and the hourly jobs run on the hour.
   Paying for the database alone does not change this.
 - **Backups to the Canadian bucket:** `BACKUP_DESTINATION` = `s3`, with
-  object lock (restore.md, section 1). Actions artifacts are for testing
+  object lock ([restore.md, section 1](restore.md#1-one-time-setup)). Actions artifacts are for testing
   only.
 - **New secrets throughout:** the database password, both R2 tokens, the
   backup key pair and Resend's key. Every one used during development is

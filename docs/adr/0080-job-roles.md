@@ -1,12 +1,15 @@
 ---
 status: accepted
 date: 2026-10-21
+areas: [authorization, organizations]
 amends: [ADR-004, ADR-016, ADR-035, ADR-070, ADR-071, ADR-077, ADR-079]
 ---
 
 # ADR-080 — Job roles: roles an organization makes, several to a member (amends ADR-004, ADR-016, ADR-035, ADR-070, ADR-071, ADR-077 and ADR-079)
 
-**Context.** Three roles cannot say what a small firm's people do. A
+## Context
+
+Three roles cannot say what a small firm's people do. A
 receiver who manages nobody needs Admin, which also invites and removes
 members and corrects counts. Someone who should see stock and orders gets
 Viewer, which reads nearly everything: recipes, every customer and supplier
@@ -71,7 +74,9 @@ request pass one access check, made by one routine, and prefers attributes
 and relationships to roles where they fit. This ADR is the role model, with
 room for both.
 
-**Decision — roles an organization makes, from a template or a copy.** An
+## Decision — roles an organization makes, from a template or a copy
+
+An
 Owner makes a role from three things: a name, an optional line saying what
 it is for, and the permissions it grants. Making one starts from one of five
 templates, Warehouse, Sales, Finance, Production and Stock look-up, the
@@ -84,7 +89,9 @@ stored as named, in whatever language its maker wrote, and is never
 translated (ADR-054): a role named 仓库 reads 仓库 to an English reader too, and
 the Roles guide says to name roles in the language the team reads.
 
-**Decision — the built-in three stay as they are.** Owner, Admin and Viewer
+## Decision — the built-in three stay as they are
+
+Owner, Admin and Viewer
 cannot be renamed, edited or deleted. Their names and lines are the app's
 words, translated by key and shown on Invite, in the invitation email and on
 Your access, and would go on saying what an edited role no longer does. The
@@ -101,7 +108,9 @@ vary a built-in role, copy it. Two things make the copy as quick as an edit:
   role of its own, so nobody is given Viewer by default (amends ADR-077,
   where Invite starts on Viewer).
 
-**Decision — prices on orders, a permission of their own.** Seeing an order
+## Decision — prices on orders, a permission of their own
+
+Seeing an order
 has meant seeing its prices, so a role that receives and ships would show
 the dock what the organization pays its suppliers. `orders.view_prices`, See
 prices on orders, now holds them: an order's line prices, its totals and its
@@ -117,7 +126,9 @@ what Admin and Viewer already held, so it goes to them. Invoices are prices
 by nature and keep `invoices.view`; costs keep `costs.view` (amends ADR-035
 and ADR-071).
 
-**Decision — several roles to a member, added together.** A member holds one
+## Decision — several roles to a member, added together
+
+A member holds one
 or more roles, and may do whatever any of them allows. Wang works the dock
 and takes sales calls: he holds Warehouse and Sales, and can do everything
 in either. Take Sales away and he has Warehouse's alone; change Sales, and
@@ -129,14 +140,18 @@ an end date can later be a column on it (Deferred). On the day this ships,
 every member holds the one role they held (amends ADR-004, which put a
 single role on the membership).
 
-**Decision — Settings → Roles, beside Members.** `/settings/roles` lists the
+## Decision — Settings → Roles, beside Members
+
+`/settings/roles` lists the
 organization's roles, the built-in three first, each with its line and how
 many members hold it. A role's page says what it can do, in the sentences of
 Your access (ADR-079), and who holds it. Every member can read both, as
 everyone can read People; making, changing and deleting are the Owners'
 (below).
 
-**Decision — the editor.** The permissions sit in ADR-079's eight areas,
+## Decision — the editor
+
+The permissions sit in ADR-079's eight areas,
 stock, products, orders, production, invoices, costs, partners and people,
 each a checkbox with its own line.
 
@@ -161,14 +176,17 @@ each a checkbox with its own line.
   is, so those permissions' lines say it: "Also told when a line closes
   short."
 
-**Decision — a permission's words, on the server, translated.**
+## Decision — a permission's words, on the server, translated
+
 `PERMISSION_DESCRIPTIONS` were written for a role editor and never
 translated (ADR-079). They become messages in the three languages, one line
 each, sent with the editor's catalogue and used by the audit log, the export
 and the refusal below, so the four say the same thing. ADR-079's sentences
 stay the client's, for Your access and the editor's summary.
 
-**Decision — you can give only what you hold.** To give a role, by changing
+## Decision — you can give only what you hold
+
+To give a role, by changing
 a member's roles, by inviting or by Move everyone, your own roles must
 together hold every permission it grants. To change or remove a member, they
 must also hold every permission the member's roles grant together. Resending
@@ -180,7 +198,9 @@ you can't give it." `GET /v1/roles` says which roles the reader may give, so
 Members and Invite disable the rest with that reason, as Invite's Owner card
 does today (amends ADR-016 and ADR-077).
 
-**Decision — what stays the Owners'.** Making, changing and deleting roles,
+## Decision — what stays the Owners'
+
+Making, changing and deleting roles,
 by three new permissions, `roles.create`, `roles.update` and `roles.delete`,
 Owner-only as every new permission is, and closing the organization
 (`organizations.delete`, ADR-070) are never offered in the editor. Only
@@ -189,19 +209,25 @@ used to climb, and a role changed after an invitation naming it went out
 cannot grant more than its inviter held. Everything else can go into a role,
 inviting and changing roles included (amends ADR-070).
 
-**Decision — names and lines.** A made role's name is unique in the
+## Decision — names and lines
+
+A made role's name is unique in the
 organization, ignoring case, and none may read as a built-in role in any of
 the app's languages, so a message choosing its words by Owner, Admin or
 Viewer never meets a made role of that name. Names run to 50 characters,
 lines to 200; a line is optional.
 
-**Decision — deleting a role.** Only a role nobody holds and no live
+## Decision — deleting a role
+
+Only a role nobody holds and no live
 invitation names. An invitation that has ended or been revoked drops the
 role from its list, as the sweep would within 30 days (ADR-077); the audit
 log keeps what it granted. The refusal says how many hold the role, and
 offers Move everyone.
 
-**Decision — Members, and removing a member (#147).** Each member's roles
+## Decision — Members, and removing a member (#147)
+
+Each member's roles
 show side by side. Change roles is a dialog of checkboxes, and under them
 what the member could do with the roles ticked, in Your access's sentences,
 following each tick: with roles added together, the clearest way to see what
@@ -211,7 +237,9 @@ says the account stays theirs, their work keeps their name, and their access
 ends on their next click. Both follow the rule that only what you hold can
 be given.
 
-**Decision — held when two act at once.** The last Owner is counted under a
+## Decision — held when two act at once
+
+The last Owner is counted under a
 lock, so two Owners demoting or removing each other at the same moment
 cannot leave none, as counting without one could (`users.service.ts`). A
 role saved after someone else changed it is refused with `role_changed`,
@@ -219,7 +247,7 @@ naming who, rather than overwriting what they did. A member keeps at least
 one role. Move everyone writes one audit entry for each member it moves, so
 each person's history says what happened to them.
 
-**Decision — words and records.**
+## Decision — words and records
 
 - **The audit log** records a role made, changed (its name, its line, and
   the permissions added and removed, in words) and deleted, each opening the
@@ -238,13 +266,17 @@ each person's history says what happened to them.
 - **The Owner is found by `is_system` and name together,** in one helper,
   never by name alone.
 
-**Decision — the first week, for any role.** The first week's Receive item
+## Decision — the first week, for any role
+
+The first week's Receive item
 shows for whoever may receive against an order, not only for whoever may
 move stock; for someone who may not move stock, its button opens the
 confirmed purchases. Everything else in the first week already follows
 permissions (amends ADR-079).
 
-**Decision — one place decides.** Three rules keep the model open to what
+## Decision — one place decides
+
+Three rules keep the model open to what
 may follow (Deferred) without touching what reads it:
 
 - **One place answers both questions:** what may this member do, and who may
@@ -262,7 +294,7 @@ from the membership through its roles to their permissions. Sixty-one
 permissions and a few roles each take well under a millisecond, and a change
 to a role reaches its holders on their next click.
 
-**Decision — what rides along.**
+## Decision — what rides along
 
 - **#155, first.** A dialog gives focus back to whatever opened it.
   `openDialog` blurs the button that opens a dialog, so MUI has nothing to
@@ -278,7 +310,7 @@ to a role reaches its holders on their next click.
 - **The demo** gains two roles made from templates, each held by one of its
   team.
 
-**Considered and not done.**
+## Considered and not done
 
 - **Editable built-in roles.** Their translated lines would say what an
   edited role no longer does, the seed would put back what an Owner removed,
@@ -309,7 +341,7 @@ to a role reaches its holders on their next click.
   services share rules, or rules change without a deploy; here one server
   keeps them in code.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **Attributes.** A scope on a member's role, "Warehouse, at Burnaby only",
   as a column on its row, applied in one place the way `organization_id` is;
@@ -331,7 +363,7 @@ to a role reaches its holders on their next click.
 - **Caching what a member may do,** cleared whenever a role or a member's
   roles change. Trigger: the per-request query measured as slow.
 
-**Consequences.**
+## Consequences
 
 - Migration **0073**. `membership_roles` (`id`, `organization_id`,
   `membership_id`, `role_id`, `created_at`), its membership and its role
@@ -390,10 +422,12 @@ to a role reaches its holders on their next click.
 - `npm run migrate:all` once 0073 lands.
 - Build order: this ADR; #155; the schema and permissions; the server; the
   client after the design; the guides; the docs last, after the reviews.
-  Built by Claude Code, a prompt per commit (engineering.md, *How code is
-  delivered*).
+  Built by Claude Code, a prompt per commit ([engineering.md, *How code is
+  delivered*](../engineering.md#how-code-is-delivered)).
 
-**Amendment (October 2026) — as built (#176).** What building settled:
+## Amendment (October 2026) — as built (#176)
+
+What building settled:
 
 - **58 permissions, not 61.** There were 54 before it, not 57, so the four
   new ones make 58; the "Sixty-one" above reads 58.

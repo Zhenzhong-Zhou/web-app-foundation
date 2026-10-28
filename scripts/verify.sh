@@ -7,14 +7,19 @@
 #   scripts/verify.sh            everything, about as long as CI takes
 #   scripts/verify.sh --quick    format, lint, types, checks, build and unit
 #                                tests; no end-to-end suites
+#   scripts/verify.sh --docs     the docs' checks alone, in seconds: the
+#                                Markdown step and the scripts' format and
+#                                tests, for a change of docs and scripts/
+#                                alone; what it refuses is where it runs,
+#                                below
 #
 # Needs what each suite needs on its own: the database up
 # (docker compose up -d) and ../.env. The two end-to-end suites use their
 # own databases and run one after the other, never together.
 #
-# The API contract runs in both modes (ADR-068): it regenerates
-# server/openapi.json and client/src/api/, and stops if either changed,
-# leaving the fresh files in place to commit.
+# The API contract runs in full and with --quick, not with --docs
+# (ADR-068): it regenerates server/openapi.json and client/src/api/, and
+# stops if either changed, leaving the fresh files in place to commit.
 #
 # So do the three checks CI makes of a pull request against main, here
 # against origin/main as last fetched: a breaking API change raises the
@@ -31,19 +36,23 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 quick=false
-if [[ "${1:-}" == "--quick" ]]; then
-  quick=true
-elif [[ $# -gt 0 ]]; then
-  echo "Usage: scripts/verify.sh [--quick]" >&2
-  exit 2
-fi
+docs=false
+case "$#:${1:-}" in
+  0:) ;;
+  1:--quick) quick=true ;;
+  1:--docs) docs=true ;;
+  *)
+    echo "Usage: scripts/verify.sh [--quick | --docs], one at most" >&2
+    exit 2
+    ;;
+esac
 
 step() { printf '\n== %s\n\n' "$*"; }
 
 # The docs workflow's check, at the version it pins, with the repository's
 # .markdownlint-cli2.jsonc. The first run downloads it. Then its other
-# check, scripts/check-docs.mjs: links, ADR front matter and the index
-# (ADR-086).
+# check, scripts/check-docs.mjs, whose header says what it checks
+# (ADR-086, ADR-087).
 markdown() {
   step 'Markdown: every .md file, as the docs workflow checks it'
   npx --yes markdownlint-cli2@0.23.3
@@ -63,11 +72,15 @@ contract() {
   fi
 }
 
-# The scripts' own tests, on Node's runner (node --test finds each
+# The scripts' format, by the Prettier both packages pin, here the
+# server's, with Prettier's defaults, since no .prettierrc covers scripts/;
+# the root's .prettierignore leaves out scripts/fixtures/.
+# Then their own tests, on Node's runner (node --test finds each
 # *.test.mjs): scripts/ sits outside both packages, so neither one's Vitest
 # runs them. i18n-review.test.mjs uses both packages' node_modules.
 scripts_tests() {
-  step 'Scripts: their own tests'
+  step 'Scripts: their format and their own tests'
+  server/node_modules/.bin/prettier --check scripts/
   node --test scripts/
 }
 
@@ -114,6 +127,33 @@ against_main() {
     scripts/check-authors.sh "$main..HEAD"
   fi
 }
+
+# --docs stands in for --quick only when the docs' checks are all a change
+# needs (ADR-086): every uncommitted change, staged or not, and every new
+# file git does not ignore, is a .md file or in scripts/, and none is in
+# client/. client/ is refused even for Markdown: the Help guides in
+# client/src/help/guides/ are the app's content, which
+# client/src/help/guides.test.ts checks and --docs does not run. Anything
+# else, it names and stops. The Markdown step already runs adr-index.mjs's
+# --check, through check-docs.mjs.
+if $docs; then
+  others="$(
+    {
+      git -c core.quotePath=false diff --name-only --no-renames HEAD
+      git -c core.quotePath=false ls-files --others --exclude-standard
+    } | awk '/^client\// || !/\.md$|^scripts\//' | sort -u
+  )"
+  if [[ -n "$others" ]]; then
+    echo 'Changed, and not what --docs checks (Markdown outside client/, and scripts/):' >&2
+    sed 's/^/  /' <<< "$others" >&2
+    echo 'Run scripts/verify.sh --quick instead.' >&2
+    exit 1
+  fi
+  markdown
+  scripts_tests
+  step 'All passed'
+  exit 0
+fi
 
 markdown
 

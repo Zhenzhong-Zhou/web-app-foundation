@@ -1,19 +1,26 @@
 ---
 status: accepted
 date: 2026-10-07
+areas: [ui]
 amends: [ADR-021]
 amended-by: [ADR-071, ADR-075, ADR-081, ADR-082]
 ---
 
 # ADR-055 — The look: tokens, a side rail, tabs and a summary beside the work (amends ADR-021)
 
+> **Amended by [ADR-071](0071-documents-as-pdf-drawn-on-the-server.md).**
+> Paper is a PDF drawn on the server, rather than `PrintSheet` in its own light theme, and stays outside the screen tokens. Everything else stands.
+>
 > **Amended by [ADR-081](0081-old-tabs-after-a-deploy.md).**
 > The status page's discs and Home's empty line take the five tones' pairs, not MUI's derived `light` and `dark`, which fell below contrast.
 >
 > **Amended by [ADR-082](0082-the-products-brand.md).**
 > The brand layer is unchanged: its default accent and the dark rail are the product's mark's own purple and navy, so a change to either is made to the mark's masters too.
+> From 1200 px the organization's logo, or its name, tops the rail rather than sitting at the top bar's left; the top bar keeps search, Help, the bell and the account.
 
-**Context.** The client looks like Material UI's defaults because it is
+## Context
+
+The client looks like Material UI's defaults because it is
 them. `theme.ts` sets the font, the button defaults and two table rules;
 colour, type, shape, density and dark mode are MUI's. An audit of the code
 and of screenshots from `seed:demo`, in English, French and Chinese, light
@@ -53,7 +60,9 @@ each will want its own logo and colour, so the brand must be a few values
 over a structure that never changes. And the app is read in three languages,
 one of them Chinese, by people who are not designers.
 
-**Decision — tokens in two layers.** A token is a named design value (a
+## Decision — tokens in two layers
+
+A token is a named design value (a
 colour, a size, a radius) that components use by name instead of writing the
 value, so changing the token changes every screen. `client/src/theme/` holds
 them:
@@ -74,7 +83,9 @@ Shape and space: an 8px spacing unit; radius 6px for controls, 8px for
 panels, round for chips. Surfaces are flat, bordered and on a tinted page
 background; shadows only for what floats (menus, dialogs, drawers).
 
-**Decision — type.** Source Sans 3, hosted by the app
+## Decision — type
+
+Source Sans 3, hosted by the app
 (`@fontsource/source-sans-3`, Latin and Latin Extended for French), weights
 400, 600 and 700. Chinese uses the system's own font, chosen by `:lang(zh)`:
 PingFang SC, Microsoft YaHei, Noto Sans CJK SC, then `sans-serif`. Noto Sans
@@ -85,7 +96,9 @@ Numbers in tables and figures are tabular, so digits line up.
 Five sizes and no others: page title 25px, section 17px, body 14.5px, small
 13px, caption 12.5px. Line height 1.45 for Latin, 1.65 under `:lang(zh)`.
 
-**Decision — one colour per meaning.** Every status maps to one of five
+## Decision — one colour per meaning
+
+Every status maps to one of five
 tones, in one table in `client/src/theme/status.ts`; modules name a status,
 never a colour.
 
@@ -101,14 +114,16 @@ Chips are tinted with dark text in light mode and the reverse in dark; every
 pair passes AA. Colour is never the only signal: the chip's words carry the
 meaning.
 
-**Decision — expiry as days left.** A lot within 90 days of expiry shows a
+## Decision — expiry as days left
+
+A lot within 90 days of expiry shows a
 chip with the days left ("Expires in 20 days" / "20 天后过期"), warning within
 90 days and critical within 30 or past, and the date beside it in grey. Days
 are counted from the person's own calendar day to the lot's `YYYY-MM-DD`
 (ADR-052), on the client. The thresholds, 30 and 90, are one constant; per
 organization they wait with the branding decision.
 
-**Decision — quantities and money.**
+## Decision — quantities and money
 
 - Quantities show no padding zeros and are grouped in the reader's language:
   "600", "1,000", "15.5 kg", "1 234,5" in French. The value stays a string
@@ -136,7 +151,9 @@ organization they wait with the branding decision.
   is, and it may be at a lower price. The summary shows what was credited
   and flags what is not settled.
 
-**Decision — navigation: a rail beside the page.** From 1200px (`lg`) a
+## Decision — navigation: a rail beside the page
+
+From 1200px (`lg`) a
 sidebar, dark by default, with the light shade a brand token. Grouped: the
 daily work (Inventory, Movements, Orders, Invoices, Returns, Production);
 the records (Products, Partners, Locations, Trace a lot, Stock value, Audit
@@ -154,7 +171,7 @@ sits on a white plate, since most logos are made for white. A slot for a
 lookup is left beside the logo and stays empty until that has its own
 decision.
 
-**Decision — detail pages: tabs, and a summary beside them.**
+## Decision — detail pages: tabs, and a summary beside them
 
 - A detail page with three or more sections of different kinds (order,
   invoice, production run, product, partner) puts them in tabs. One with
@@ -174,29 +191,37 @@ decision.
   grey line beneath ("not counting 1 voided shipment (100)", "doesn't add to
   still to ship"). Below 900px (`md`) the panel moves above the tabs.
 
-**Decision — lists.** One filter row above each list: search, then quick
+## Decision — lists
+
+One filter row above each list: search, then quick
 filters with counts ("Expiring soon 2", "Needs a cost 1"). One empty state:
 what is missing, why it matters, what to do next, in the same frame on every
 list. Codes (SKUs, lot codes, document numbers) never wrap, like numbers.
 Every table scrolls inside its own container.
 
-**Decision — density by pointer.** With a mouse, 36px controls and 40px
+## Decision — density by pointer
+
+With a mouse, 36px controls and 40px
 table rows. With touch (`pointer: coarse`), 44px targets and taller rows,
 chosen by the device, not a setting.
 
-**Decision — paper is separate.** `PrintSheet` renders inside its own fixed
+## Decision — paper is separate
+
+`PrintSheet` renders inside its own fixed
 light theme, black on white, outside the screen tokens. The packing slip,
 invoice and credit note are unchanged by this decision; the screenshots of
 them, in print mode, are the proof.
 
-**Decision — accessibility, amending ADR-021.** WCAG 2.2 AA is the floor:
+## Decision — accessibility, amending ADR-021
+
+WCAG 2.2 AA is the floor:
 contrast for every token pair in both modes, a visible focus ring on
 everything that takes focus, everything reachable by keyboard, tabs with
 MUI's tab pattern (arrow keys, each tab tied to its panel).
 `@axe-core/playwright` scans the main pages in light and dark, in a
 Playwright spec (a new development dependency).
 
-**Consequences.**
+## Consequences
 
 - Built in this order, each step one or more commits, each building on its
   own:
@@ -220,7 +245,7 @@ Playwright spec (a new development dependency).
   retaken before step 1 and after each step.
 - One more dependency in the bundle (the font) and one in development (axe).
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **Per-organization branding**, with the expiry thresholds: Open decisions.
 - **The lookup in the top bar**, and search and sorting on lists: Open
@@ -231,7 +256,7 @@ Playwright spec (a new development dependency).
 - **A density setting per person.** Trigger: someone on a desktop asking for
   more rows.
 
-**Rejected.**
+## Rejected
 
 - **The quiet ledger** (direction A). The smallest change, but it keeps the
   top bar that has run out of room, and the people it was shown to read it
@@ -254,7 +279,9 @@ Playwright spec (a new development dependency).
 - **Brand colour on status.** One organization's red would make every action
   look like a warning.
 
-**Amendment (built).** Steps 1 to 6 are built on `ui-design-pass`. What
+## Amendment (built)
+
+Steps 1 to 6 are built on `ui-design-pass`. What
 was settled while building, against the decisions above; the method is
 unchanged.
 
@@ -290,7 +317,9 @@ unchanged.
   inside a sentence is always underlined; a control with no visible label
   carries one naming what it acts on.
 
-**Amendment (October 2026) — the text size (ADR-075).** The five type
+## Amendment (October 2026) — the text size (ADR-075)
+
+The five type
 sizes stand, and a person may scale them all by 112.5% or 125% with Text
 size. A width that holds text is rem, so it grows with them. A button
 still never shrinks beside others, but its label breaks onto a second
@@ -299,8 +328,9 @@ a phone's screen; in a table cell it stays on one line. Banners, header
 buttons, dialog footers and date ranges wrap, so no page scrolls
 sideways at 320px.
 
-**Amendment (October 2026) — a colour given as a path goes in `sx`
-(#196).** MUI 9's Typography takes its `color` prop only as a palette name
+## Amendment (October 2026) — a colour given as a path goes in `sx` (#196)
+
+MUI 9's Typography takes its `color` prop only as a palette name
 (`primary`, `error`, `textSecondary`) and ignores a path, which TypeScript
 still accepts as a string. So from the first MUI 9 commit (2 September
 2026) `color="text.secondary"`, in 214 places, drew the primary text
@@ -327,7 +357,9 @@ would fail as quietly at the next major; and renaming each to its palette
 name (`textSecondary`), which leaves one colour with two spellings, the
 prop's and `sx`'s.
 
-**As built (#224, 23 October 2026).** The count was exact: 217 written-out
+### As built (#224, 23 October 2026)
+
+The count was exact: 217 written-out
 paths on Typography and one inside a conditional, which is the 218, plus
 two on Link. MUI 9.5's Link honours a path, so those two were not broken;
 they moved only so every path is written one way. The codemod's command

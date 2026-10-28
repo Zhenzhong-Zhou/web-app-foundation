@@ -10,7 +10,7 @@ knows nothing about stock or recipes and would carry unchanged into a CRM or a b
 app; everything under `server/src/modules` is the inventory domain and depends on core,
 never the other way round.
 
-> **Status: pre-release (v0.7.0-rc.1), in daily use by its author.** Auth,
+> **Status: v0.7.0, released on 16 October 2026, in daily use by its author.** Auth,
 > tenancy, permissions and auditing work end to end, and so does the whole cycle
 > for a maker of natural health products: buying, receiving, making under a
 > licence, selling, shipping, invoicing, returns and credit — with every lot
@@ -25,7 +25,8 @@ never the other way round.
 Core  →  Shared Services  →  Application Features
 ```
 
-- **Core** — auth, users, organizations, authorization, audit, notifications
+- **Core** — auth, users, organizations, authorization, audit, notifications,
+  invitations, people, files and documents — in `server/src/core`
 - **Shared Services** — email (background jobs deferred, see ADR-005)
 - **Application Features** — products, licences, locations, stock, partners,
   orders and shipments, recipes, production, invoices and credit notes, returns,
@@ -36,7 +37,7 @@ web-app-foundation/
 ├── server/              NestJS API — all backend code
 ├── client/              React SPA (Vite + Material UI)
 ├── docker/              container init scripts
-├── docs/                decisions, conventions, manual checks, handoff, releases
+├── docs/                Start here, adr/, rules/, engineering, conventions, manual checks, runbooks, releases, the handoff
 ├── docker-compose.yml   Postgres 18 + Mailpit
 └── .env                 shared by Compose and the server
 ```
@@ -53,7 +54,8 @@ server/src/
 ├── config/       env schema + validation (zod)
 ├── database/     drizzle client, schema, migrations, TenantDb, seed
 ├── common/       filters, guards, interceptors, decorators — no business logic
-├── core/         auth, authorization, users, audit, notifications
+├── core/         auth, authorization, users, organizations, audit, notifications,
+│                 invitations, people, files, documents
 ├── modules/      the inventory domain — one folder per feature
 ├── shared/       email
 └── health/       operational endpoints, unversioned (ADR-013)
@@ -216,27 +218,28 @@ work under updates it.
 
 ### Which tool, when
 
-| When                                   | Tool                                                                                   |
-|----------------------------------------|----------------------------------------------------------------------------------------|
-| Before every push                      | `scripts/verify.sh` (`--quick` while working, in full before a pull request)           |
-| A branch's start, and before reviews   | `npm outdated` in `server/` and `client/` (conventions.md, "Dependencies")             |
-| A change people will see               | `npm run screenshots` before and after, then `npm run screenshots:compare`             |
-| A change to an email                   | `npm run mail:preview` in `server/`, before and after; `-- --send` for Mailpit         |
-| A change to an email, in pictures      | `npm run screenshots:mail` in `client/` on each preview, then `screenshots:compare`    |
-| An email's words changed on purpose    | `npm run mail:text -- --update` in `server/`; commit the files with the words          |
-| A change to what the API sends         | `npm run api` in `server/`; commit both generated files                                |
-| A change to the mark, in `docs/brand/` | `node scripts/brand-assets.mjs`; commit what it writes in `client/public/`             |
-| Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`         |
-| Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                     |
-| After a merge                          | `scripts/prune-branches.sh --yes`                                                      |
-| A test fails in code a PR didn't touch | Re-run once; if it passes, a "Flaky:" issue the same day (conventions.md, "Tests")     |
-| A server e2e test fails now and then   | `server/scripts/e2e-flake-hunt.sh <runs> <suite>`                                      |
-| A browser test fails                   | `npm run test:e2e:ui` in `client/`, to watch it step by step                           |
-| Looking inside the dev database        | `npm run db:studio` in `server/`                                                       |
-| Before a release tag                   | `/production-readiness` on the whole app; Actions → Performance; `perf:plans` at large |
-| Every Sunday, by itself                | Actions → Flake hunt (client unit tests five times, server e2e three)                  |
-| Every night and each month's 1st       | Actions → Backup, and Restore drill: check they are green                              |
-| Translations to review                 | `node scripts/i18n-review.mjs export --since <commit>`, then `import`                  |
+| When                                   | Tool                                                                                                                                            |
+|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| Before each commit                     | `scripts/verify.sh --docs` for a commit of only `scripts/` and Markdown outside `client/`, `--quick` for any other                              |
+| Before every push                      | `scripts/verify.sh`, in full                                                                                                                    |
+| A branch's start, and before reviews   | `npm outdated` in `server/` and `client/` ([conventions.md, "Dependencies"](docs/conventions.md#dependencies))                                  |
+| A change people will see               | `npm run screenshots` before and after, then `npm run screenshots:compare`                                                                      |
+| A change to an email                   | `npm run mail:preview` in `server/`, before and after; `-- --send` for Mailpit                                                                  |
+| A change to an email, in pictures      | `npm run screenshots:mail` in `client/` on each preview, then `screenshots:compare`                                                             |
+| An email's words changed on purpose    | `npm run mail:text -- --update` in `server/`; commit the files with the words                                                                   |
+| A change to what the API sends         | `npm run api` in `server/`; commit both generated files                                                                                         |
+| A change to the mark, in `docs/brand/` | `node scripts/brand-assets.mjs`; commit what it writes in `client/public/`                                                                      |
+| Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                                          |
+| Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                                                              |
+| After a merge                          | `scripts/prune-branches.sh --yes`                                                                                                               |
+| A test fails in code a PR didn't touch | Re-run once; if it passes, a "Flaky:" issue the same day ([conventions.md, "Tests"](docs/conventions.md#tests))                                 |
+| A server e2e test fails now and then   | `server/scripts/e2e-flake-hunt.sh <runs> <suite>`                                                                                               |
+| A browser test fails                   | `npm run test:e2e:ui` in `client/`, to watch it step by step                                                                                    |
+| Looking inside the dev database        | `npm run db:studio` in `server/`                                                                                                                |
+| Before a release tag                   | `/production-readiness` on the whole app; Actions → Performance; `perf:plans` at large                                                          |
+| Every Sunday, by itself                | Actions → Flake hunt (client unit tests five times, server e2e three)                                                                           |
+| Every night and each month's 1st       | Actions → Backup, and Restore drill: check they are green                                                                                       |
+| Translations to review                 | `node scripts/i18n-review.mjs export --since <commit>`, then `import`                                                                           |
 
 ---
 
@@ -283,7 +286,7 @@ saying the database is up, and `/favicon.svg` coming back as an image. Actions �
 Deploy → Run workflow does the same by hand for `main`'s newest commit whose CI
 passed, so a missed deploy never needs Render. The job runs in GitHub's
 `production` environment, limited to `main` and holding the deploy hooks; the
-settings it needs are in `docs/runbooks/render.md`, "Deploys".
+settings it needs are in [`docs/runbooks/render.md`, "Deploys"](docs/runbooks/render.md#deploys-adr-081).
 
 Everything runs on Render's free tier for now. What that costs the app,
 replacing the free database when it expires after 30 days, and what changes
@@ -368,23 +371,29 @@ each step is server-first then the screen that uses it (ADR-019):
   by whoever may, and the state recorded on the run and in the lot trace
   (ADR-050)
 
-**Next:** languages — French (Quebec) and Chinese in the app, French on
-printed documents (ADR-054) — then an end-to-end journey in the browser
-suite. Calendar days as `date` (#20, ADR-052) and backups (ADR-053) are
-done.
+**Next:** what is still to build, in its order, is in
+[the handoff](docs/handoff.md#still-to-do-in-code).
 
-**Deliberately deferred** (all additive): background jobs and queues, invitations,
-file storage, search, admin UI, billing, API docs, scheduled notifications,
-payments against invoices, pro forma invoices, CSV import and export, and
-licences beyond the product's own — site, wholesale and business licences.
+**Deliberately deferred** (all additive): background jobs and queues, admin UI,
+billing, API docs, scheduled notifications, payments against invoices, CSV
+import, and licences beyond the product's own — site, wholesale and business
+licences.
 
 ---
 
 ## Documentation
 
+- [`docs/README.md`](docs/README.md) — **Start here:** the system on one page,
+  which document answers which question, and the docs' folders
 - [`docs/adr/`](docs/adr/README.md) — why the architecture is the way it is, one ADR per file.
   **Read this before changing anything structural.**
 - [`docs/conventions.md`](docs/conventions.md) — naming and code organisation rules
+- [`docs/rules/`](docs/rules/README.md) — what the app allows, refuses and works
+  out, by area, each rule linked to its ADR and its test
+- [`docs/engineering.md`](docs/engineering.md) — the working agreements: how a
+  change is built, verified, committed and reviewed
+- [`docs/glossary.md`](docs/glossary.md) — the app's words in English, French
+  and Chinese
 - [`docs/manual-checks.md`](docs/manual-checks.md) — what to check by hand before a
   release, each check with an id
 - [`docs/principles.md`](docs/principles.md) — what the product aims for, and
@@ -395,8 +404,8 @@ licences beyond the product's own — site, wholesale and business licences.
   `/production-readiness` and `/build-from-brief`
 - [`docs/releases/`](docs/releases) — the notes each tagged release was made with
 
-Both are worth reading before a change that touches money, quantities, or the
-ledger. Three rules catch most newcomers:
+The ADRs and `docs/conventions.md` are both worth reading before a change that
+touches money, quantities, or the ledger. Three rules catch most newcomers:
 
 - **Quantities are strings end to end** — typed, stored and rendered as they arrived.
   Arithmetic happens in SQL over `numeric`, never through a JavaScript number

@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-13
+areas: [api]
 amended-by: [ADR-081]
 ---
 
@@ -9,7 +10,9 @@ amended-by: [ADR-081]
 > **Amended by [ADR-081](0081-old-tabs-after-a-deploy.md).**
 > The document's `info.version` carries the API revision, `npm run api` writes it into `client/src/api/`, and CI fails a breaking change that leaves it where it was.
 
-**Context.** The server and the client agree on the shape of every request
+## Context
+
+The server and the client agree on the shape of every request
 and response by hand. `client/src/lib/types.ts` holds 89 types in 1,164
 lines that mirror what 34 controllers send, and nothing checks them: a
 field renamed on the server still compiles on the client, and only a
@@ -21,8 +24,9 @@ no files by design, and Render builds `server/` and `client/` as separate
 roots, where files outside a service's root directory are unavailable at
 build time and at runtime.
 
-**Decision — the server describes its API in OpenAPI 3.1, generated from
-its code.** `@nestjs/swagger` with its CLI plugin, which reads the existing
+## Decision — the server describes its API in OpenAPI 3.1, generated from its code
+
+`@nestjs/swagger` with its CLI plugin, which reads the existing
 DTOs and their class-validator decorators, so request bodies need little
 new annotation. OpenAPI is the vendor-neutral standard for REST APIs (the
 OpenAPI Initiative, under the Linux Foundation), not a Nest invention, so
@@ -41,7 +45,8 @@ action, an error body's `code`.
   as the migration snapshots are checked today. The four `check-client-*`
   scripts go once their lists come from the spec.
 
-**Decision — the client's types are generated from the document.**
+## Decision — the client's types are generated from the document
+
 `@hey-api/openapi-ts`, with its TypeScript plugin, types only and lists as
 plain constants, writes one file into `client/src/api/`, committed, so the
 static site's build on Render needs nothing outside `client/`. Pinned to an
@@ -59,7 +64,7 @@ TypeScript 6 of its own while the project moves on. The client's `api()` stays: 
 errors, codes and request ids are this application's own, and a generated
 fetch client would replace what works for no gain yet.
 
-**Decision — built in two phases.**
+## Decision — built in two phases
 
 1. **The contract and the lists.** The plugin, the script, the generated
    file, the four lists read from it, and the freshness check in place of
@@ -70,14 +75,16 @@ fetch client would replace what works for no gain yet.
    module per pull request or riding along with feature work, never a
    rewrite that blocks it.
 
-**Performance.** Nothing changes at runtime. The document is built in a
+## Performance
+
+Nothing changes at runtime. The document is built in a
 script and in CI, never per request. Types are erased when the client
 compiles, and the lists that ship are the same few constants as today.
 Response classes describe the response for the document and the
 compiler; they do not validate it on the way out, so the Performance
 budgets are untouched.
 
-**Consequences.**
+## Consequences
 
 - One contract for every consumer: the client now, an integration or an
   AI model later.
@@ -86,7 +93,7 @@ budgets are untouched.
 - `conventions.md` gains how to regenerate after an API change, and the
   pull request checklist the same line as "after a new migration".
 
-**Considered and not done.**
+## Considered and not done
 
 - **Keeping the copies and their checks.** Cheap, and they work for four
   short lists; they leave the 89 response types unchecked.
@@ -101,7 +108,7 @@ budgets are untouched.
   validate every response at runtime, which costs time on the paths the
   Performance budgets measure, for checks the compiler already makes.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **A typed fetch client** generated from the spec. When `api()` itself
   needs replacing.
@@ -134,7 +141,8 @@ budgets are untouched.
 
   Trigger: the first AI integration built on this application.
 
-**Amended, October 2026: a response carries exactly what it declares.**
+## Amended, October 2026: a response carries exactly what it declares
+
 Phase 2 found that most modules returned table rows, spread into the
 response or read with `select()`: each organization's id, who created
 and voided a document, the pinyin columns the lookup searches by, the
@@ -158,7 +166,9 @@ a developer fixes; and class-transformer's `excludeExtraneousValues`,
 which strips what is undeclared instead of reporting it, hiding the
 mistake, and needs every field decorated a second time.
 
-**Phase 2 done, October 2026.** Every module's responses are declared,
+## Phase 2 done, October 2026
+
+Every module's responses are declared,
 projected to their classes and checked by the e2e suite, and
 `client/src/lib/types.ts` is gone: the client imports the generated
 types directly, and keeps in `client/src/lib/api-names.ts` only the

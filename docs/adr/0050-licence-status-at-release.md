@@ -1,12 +1,15 @@
 ---
 status: accepted
 date: 2026-09-30
+areas: [product-licences, production-orders]
 amends: [ADR-040]
 ---
 
 # ADR-050 — Licence status at release (amends ADR-040)
 
-**Context.** ADR-040 made a licence's status derived — in force from a later
+## Context
+
+ADR-040 made a licence's status derived — in force from a later
 day, current, expiring, expired, withdrawn — and the client uses it to keep
 unusable licences out of pickers. Nothing on the server reads it. Release
 copies whatever licence the recipe carries, so a run can be released under a
@@ -23,14 +26,18 @@ ADR-032 says a real event is recorded, never blocked. Release is not one: it
 is the decision to commit material, taken before anything happens, which is
 where a check belongs.
 
-**Decision — the server derives the status, by the client's rules.** One
+## Decision — the server derives the status, by the client's rules
+
+One
 function on the server, agreeing with `licence-status.ts`: withdrawn when
 `is_active` is false; not yet in force when `issued_at` is after today;
 expired when `expires_at` is before today; otherwise current. Days compare in
 UTC, as ADR-040 requires. "Expires in N days" stays a display state; to the
 server it is current.
 
-**Decision — a policy per organization, with three outcomes.** For each
+## Decision — a policy per organization, with three outcomes
+
+For each
 state the organization chooses *block* (409), *override* (409 unless an
 authorised person confirms with a reason) or *allow*:
 
@@ -45,14 +52,17 @@ authorised person confirms with a reason) or *allow*:
 Two policy columns and one boolean on `organizations`, changed under
 `organizations.update`.
 
-**Decision — checked at release, with the licence row locked.** Release
+## Decision — checked at release, with the licence row locked
+
+Release
 reads the licence `FOR SHARE` inside its own transaction, after the run
 guards and before anything moves. A withdrawal saved at the same moment
 either waits for the release or is seen by it, never half of each. The issue
 plan returns the licence and its status, so the release dialog can show it
 before Release is pressed.
 
-**Decision — an override is a permission, a reason and a record.**
+## Decision — an override is a permission, a reason and a record
+
 `production.override_licence`, Owner-only by default like every new
 permission. The release body may carry `licenceOverride: { reason }`, and a
 guard requires the permission only when it is present, as AdjustmentGuard
@@ -66,7 +76,7 @@ nothing is recorded. The run stores:
 The reason stays on the run, not in the audit payload (ADR-018). The
 release's audit row records that an override happened.
 
-**Decision — the status is shown where it is acted on.**
+## Decision — the status is shown where it is acted on
 
 - **Recipe panel**: a status chip beside the licence, so a lapse is seen
   before a run is planned.
@@ -78,7 +88,7 @@ release's audit row records that an override happened.
   links to the licence.
 - **Licences page**: unchanged — the register.
 
-**Consequences.**
+## Consequences
 
 - A migration: three columns on `organizations`, three on
   `production_orders`. Runs released before it have no recorded status, and
@@ -90,7 +100,7 @@ release's audit row records that an override happened.
 - The server function and `licence-status.ts` must agree. A test on each
   side pins the same dates either side of today.
 
-**Deferred.**
+## Deferred
 
 - **A policy per licence type or authority** — an NPN that never expires
   beside an export certificate that does. Trigger: an organization holding
@@ -101,7 +111,9 @@ release's audit row records that an override happened.
   rather than manufacture.
 - The status enum of #16 and the sixty-day notification of #17.
 
-**Amendment — settled while building.** Four points the decision left
+## Amendment — settled while building
+
+Four points the decision left
 open:
 
 - **A recipe with no licence, when one is required, is refused outright.**

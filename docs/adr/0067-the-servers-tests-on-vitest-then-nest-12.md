@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-13
+areas: [ops]
 amends: [ADR-019]
 amended-by: [ADR-082]
 ---
@@ -10,7 +11,9 @@ amended-by: [ADR-082]
 > **Amended by [ADR-082](0082-the-products-brand.md).**
 > Vitest stays the one runner for the client and the server. The repository's own scripts test with Node's runner (`scripts/*.test.mjs`), and `perf/`'s spec runs with the server's unit tests, which CI's server job now runs.
 
-**Context.** `npm outdated` lists three majors on the server, each held
+## Context
+
+`npm outdated` lists three majors on the server, each held
 for a different reason (the `npm audit` branch, October 2026):
 
 - **Nest 12.** ADR-019 held it for `@nestjs/throttler`, whose peer range
@@ -33,7 +36,7 @@ experimental flag. 22 unit and 47 e2e spec files stand between the
 server and both upgrades. The client already uses Vitest 5, and Nest
 moved its own repositories and samples from Jest to Vitest for Nest 12.
 
-**Decision — the server's tests run on Vitest, as the client's do.**
+## Decision — the server's tests run on Vitest, as the client's do
 
 - Vitest at the client's major. One config, two projects: unit
   (`src/**/*.spec.ts`), in parallel as now; e2e (`test/**/*.e2e-spec.ts`),
@@ -56,7 +59,7 @@ moved its own repositories and samples from Jest to Vitest for Nest 12.
   assertions. A test that passes on Jest and fails on Vitest is a
   difference in the runner, fixed there, never an assertion loosened.
 
-**Decision — then Nest 12 and intl-messageformat 12, together.**
+## Decision — then Nest 12 and intl-messageformat 12, together
 
 - Every `@nestjs/*` package to 12: common, core, platform-express,
   testing, config, cli and schematics. Throttler 6.7.1 and nestjs-pino
@@ -76,15 +79,17 @@ moved its own repositories and samples from Jest to Vitest for Nest 12.
   `validate` option, which `validateEnv` uses, with its stricter
   `ConfigService.get()` types.
 
-**Decision — TypeScript 7 waits for what holds it.** Overriding a peer
+## Decision — TypeScript 7 waits for what holds it
+
+Overriding a peer
 range is what ADR-019 rules out, and the Nest CLI cannot build with it
 yet. Its triggers are under *Deferred*.
 
-**Consequences.**
+## Consequences
 
 - Built as two pull requests, each revertable on its own:
     1. `adr-067-vitest`: this ADR; the spike, then the switch (server);
-       the Tests section of `conventions.md` and the handoff (docs).
+       [the Tests section of `conventions.md`](../conventions.md#tests) and the handoff (docs).
        Every suite green on Nest 11.
     2. `nest-12`: Nest 12 and intl-messageformat 12 (server); the
        handoff and release notes (docs).
@@ -94,7 +99,7 @@ yet. Its triggers are under *Deferred*.
 - One test runner for the repository: a spec reads the same on both
   sides, and one set of habits applies.
 
-**Considered and not done.**
+## Considered and not done
 
 - **Jest with its experimental ES module support**
   (`--experimental-vm-modules`). Experimental for years, every run
@@ -113,7 +118,7 @@ yet. Its triggers are under *Deferred*.
   two compilers check the code. It would need its own amendment to
   ADR-019. *(Added 20 October 2026.)*
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **TypeScript 7**, on both sides, in a branch of its own under
   ADR-019, once typescript-eslint's peer range includes 7. The server
@@ -146,6 +151,6 @@ yet. Its triggers are under *Deferred*.
   longer inherits; and the shutdown hooks (the two timers, the mail
   transport, the pool) do not depend on the order v12 now calls them in.
 - **Nest 12's own `errorCode`.** `HttpExceptionOptions` now takes an
-  `errorCode`, which does what `withCode()` does (conventions.md, "Error
-  codes"). The exception filter writes the body itself, so the two do
+  `errorCode`, which does what `withCode()` does ([conventions.md, "Error
+  codes"](../conventions.md#error-codes)). The exception filter writes the body itself, so the two do
   not collide. Moving to Nest's is a tidy for later, not part of this.

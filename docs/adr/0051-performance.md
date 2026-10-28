@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-01
+areas: [database, ops]
 amended-by: [ADR-081, ADR-082]
 ---
 
@@ -12,7 +13,9 @@ amended-by: [ADR-081, ADR-082]
 > **Amended by [ADR-082](0082-the-products-brand.md).**
 > A budget may carry a known miss: its issue, an end date and a ceiling. Until the date, a result over the budget and under the ceiling is reported and does not fail the run. The typo lookup's is the first (#225).
 
-**Context.** Nothing measures how the app behaves with a year of data.
+## Context
+
+Nothing measures how the app behaves with a year of data.
 Every test and both seeds work on a handful of rows, where any query is
 fast. The places that will slow down are known in kind but not in size:
 list pages that sum per row, the ledger reads behind stock and valuation,
@@ -20,7 +23,9 @@ choosing lots earliest-expiry first across many lots, and the tenant
 filter on every table of a shared database. Optimizing before measuring
 trades readability for guesses.
 
-**Decision — a volume seed, separate from the demo.** `npm run
+## Decision — a volume seed, separate from the demo
+
+`npm run
 seed:volume -- --scale small|large` writes several organizations of
 similar size. Small, minutes to run: about 500 products, 5,000 orders,
 50,000 stock movements, 2,000 lots and 2,000 invoices per organization.
@@ -30,7 +35,9 @@ the ledger always agree; a bulk-SQL path is added only if the services
 prove too slow to seed with. It refuses a production database, as
 `seed:demo` does, and is never part of `seed`.
 
-**Decision — budgets per endpoint, measured over HTTP.** `npm run perf`
+## Decision — budgets per endpoint, measured over HTTP
+
+`npm run perf`
 drives a running server with a small load runner written on Node's own
 `fetch`: no new dependency, and the numbers it reports (median, 95th and
 99th percentile, errors) are the ones the budgets need. Budgets, at 10
@@ -43,23 +50,29 @@ connections, against the small scale:
 - Concurrency: shipments of one product from several connections at once
   finish without a deadlock, and stock adds up afterwards.
 
-**Decision — a stress run that reports, not fails.** The same endpoints
+## Decision — a stress run that reports, not fails
+
+The same endpoints
 at 100 connections, to find where response time starts climbing. Ten
 connections with no pause between requests is already more load than
 dozens of people clicking; 100 shows the headroom. Its result is a number
 to watch between runs, not a gate.
 
-**Decision — query plans checked.** A script runs `EXPLAIN` on the main
+## Decision — query plans checked
+
+A script runs `EXPLAIN` on the main
 list and ledger queries against the volume seed and fails on a sequential
 scan of a large table: a missing index shows up here before anyone feels
 it.
 
-**Decision — where it runs.** Locally, and in CI as a manually triggered
+## Decision — where it runs
+
+Locally, and in CI as a manually triggered
 job, never on every PR: it needs minutes of seeding, and timing on shared
 runners is too noisy to block a merge. Each run writes a short report, so
 runs can be compared.
 
-**Consequences.**
+## Consequences
 
 - Three commits after this one: the volume seed, the load runner with its
   budgets, the plan check. Then a CI job to run them on demand.
@@ -67,7 +80,7 @@ runs can be compared.
   app is sold to; a manufacturer with a few hundred orders a month sits
   well inside the small scale.
 
-**Deferred.**
+## Deferred
 
 - **A dedicated load tool** (k6, autocannon) for scripted user journeys,
   ramps and soak tests. Trigger: a scenario the small runner cannot
@@ -76,7 +89,9 @@ runs can be compared.
   customer in production.
 - **Optimizations themselves.** Only where a budget or a plan check fails.
 
-**Results (2 October 2026).** Measured locally: a MacBook (ARM64), Postgres
+## Results (2 October 2026)
+
+Measured locally: a MacBook (ARM64), Postgres
 18 in Docker, the server built and run with `NODE_ENV=test`. Five
 organizations, seed 51. Per organization, small is 5,000 orders, 2,051 lots
 and 40,471 stock movements; large is 49,999, 20,410 and 410,277. Figures
@@ -115,7 +130,9 @@ so:
   an index is not a sequential scan; the growth column caught it. Keep the
   two predicates identical, or Postgres stops using the index.
 
-**Re-run after ADR-054 (6 October 2026).** Small scale, five
+## Re-run after ADR-054 (6 October 2026)
+
+Small scale, five
 organizations, seed 51, on `seed:volume` with customers whose documents
 print in French and English or in Chinese, and finished goods named in
 French or Chinese. Issuing an invoice, which now looks up product and
@@ -125,7 +142,7 @@ budget passed with no errors, the concurrency check passed, and the
 plan check found no new sequential scan; it has no probe for issuing,
 so the timing is the evidence for the name lookup.
 
-**Watch, each with its trigger.**
+## Watch, each with its trigger
 
 - **`GET /stock` sorts by names**, which no single index serves, so each
   page sorts the organization's matching rows: 4.6× from small to large, a
@@ -152,7 +169,9 @@ so the timing is the evidence for the name lookup.
   fine at today's sizes. On a production table with millions of rows and
   traffic, use `CREATE INDEX CONCURRENTLY`, outside a transaction.
 
-**Production, beyond these measurements.** Not done; each waits for its
+## Production, beyond these measurements
+
+Not done; each waits for its
 trigger.
 
 | What                              | When                                                                                                                                                                                                                          | Cost                                                  |
@@ -163,7 +182,9 @@ trigger.
 | Configurable pool, then PgBouncer | Configurable with a second server instance, or when production shows requests waiting for a connection. PgBouncer when instances × pool size nears the database's connection limit.                                           | Small, then a service to run.                         |
 | Caching                           | Only when a read is still over budget once bounded and indexed, or the same answer goes to many users.                                                                                                                        | Ongoing: stale data is its own class of bug.          |
 
-**When to run perf.** The Performance workflow once after this merges;
+## When to run perf
+
+The Performance workflow once after this merges;
 before every release (MC-1201 to MC-1204 in `docs/manual-checks.md`); and
 after any change to a list, a ledger query or an index. Small and large
 each in a database of their own, as `server/perf/README.md` describes.

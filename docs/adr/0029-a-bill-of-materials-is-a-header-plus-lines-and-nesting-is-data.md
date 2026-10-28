@@ -1,11 +1,14 @@
 ---
 status: accepted
 date: 2026-09-15
+areas: [boms, product-licences]
 ---
 
 # ADR-029 — A bill of materials is a header plus lines, and nesting is data
 
-**Context.** Production consumes components to produce something else: one
+## Context
+
+Production consumes components to produce something else: one
 bottle of Vitamin D3 60ct is 60 capsules, one bottle, one cap, one label. Open
 decisions carried this as a join table — `(parent_variant_id,
 component_variant_id, quantity)` — with two questions named as expensive to
@@ -18,7 +21,7 @@ Both questions turn out to be answerable without knowing this organization's
 answer, which matters because this foundation is meant to be re-pointed at
 another industry (ADR-001's premise) and the recipes there are not yet imagined.
 
-**Decision — components point at `product_variants`, the same table outputs do.**
+## Decision — components point at `product_variants`, the same table outputs do
 
 Nesting then costs nothing and needs no schema support. A blend that feeds three
 finished SKUs is a variant with its own BOM; a component that is simply bought
@@ -32,13 +35,13 @@ both, so it belongs in both, and the day something bought becomes something
 made, its history is in the wrong one. This is ADR-023's granularity test
 passing again: the BOM needs no change to products or variants.
 
-**Decision — the output is a variant, not a product.**
+## Decision — the output is a variant, not a product
 
 Stock, lots, and movements all sit at the variant (ADR-023). A BOM naming a
 product could not tell a production order what to increment. 60ct and 120ct are
 different recipes in any case.
 
-**Decision — a header table, and versioning by snapshot at consumption.**
+## Decision — a header table, and versioning by snapshot at consumption
 
 ```text
 boms       id, organization_id, output_variant_id, output_quantity,
@@ -71,7 +74,7 @@ rather than in the service — the reasoning `addresses.is_default` got in
 ADR-028. A second active row is writable, the picker chooses between them
 arbitrarily, and the bug is invisible until a batch is made wrong.
 
-**Decision — a `product_licences` registry, referenced from the BOM header.**
+## Decision — a `product_licences` registry, referenced from the BOM header
 
 A regulated formulation is made under a registration, and which one a given lot
 was made under is history — the one kind of fact that cannot be backfilled. In
@@ -107,7 +110,8 @@ Barcodes are a different axis and are not this. A GTIN identifies a sellable
 unit, so it belongs on the variant, two pack sizes have two of them, and two
 products sharing one is a GS1 violation rather than a shape worth modelling.
 
-**An empty registry is the expected case in most industries, not a fault.**
+## An empty registry is the expected case in most industries, not a fault
+
 Grocery licenses the facility rather than the product, clothing licenses almost
 nothing, furniture mostly self-certifies. Those tenants leave this table with no
 rows and every `licence_id` null, which is what `lots` already does for an
@@ -123,7 +127,7 @@ run, and organic certification often is too. That is a lot-level or run-level
 record and a different table when it arrives, not a widening of this one. It is
 the case most likely to surface first in food.
 
-**Decision — no unit column on `bom_lines`.**
+## Decision — no unit column on `bom_lines`
 
 A line's quantity is in the component variant's own `unit_of_measure`. A second
 unit on the line invites grams against stock kept in kilograms, and nothing
@@ -131,14 +135,16 @@ converts yet — unit-of-measure conversion is still open (ADR-023). The
 production order snapshots the unit because a run is a document; a recipe is a
 live definition and reads the variant.
 
-**Decision — a cycle guard in the service, not a constraint.**
+## Decision — a cycle guard in the service, not a constraint
 
 A BOM whose components reach its own output through any path is an infinite loop
 in the exploder. A check constraint cannot see across tables, so this is a
 recursive query at write time, in the same class as the `tracks_lots` invariant
 ADR-023 put in the service for the same reason.
 
-**Consequence.** Two tables, both of which a future industry can use unchanged.
+## Consequence
+
+Two tables, both of which a future industry can use unchanged.
 The naming carries that: `boms` not `formulas` or `recipes`, `supply_type`
 values `stocked` and `external` not `we_buy` and `copacker_buys`,
 `output_variant_id` not `finished_product_id`. Industry lives in rows, the way
@@ -152,10 +158,14 @@ numbers for engineering. Every one of those is a column added to `bom_lines`, or
 its own table keyed on it. None of them changes the two tables above, which is
 the test this decision was built to pass.
 
-**Rejected: the bare join table.** Faster, and it is the version that has to be
+## Rejected: the bare join table
+
+Faster, and it is the version that has to be
 split the first time a recipe changes.
 
-**Rejected: assuming flat.** Not because nesting was needed, but because
+## Rejected: assuming flat
+
+Not because nesting was needed, but because
 avoiding it required actively choosing a separate component table. Pointing at
 `product_variants` is both the simpler choice and the one that leaves the door
 open.

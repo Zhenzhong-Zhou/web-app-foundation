@@ -1,12 +1,15 @@
 ---
 status: accepted
 date: 2026-10-17
+areas: [invoices, numbering]
 amends: [ADR-046, ADR-047, ADR-056, ADR-071]
 ---
 
 # ADR-073 — Each organization's document numbering (amends ADR-046, ADR-047, ADR-056 and ADR-071)
 
-**Context.** Every number the app gives is fixed in code: `INV-`, `CN-`,
+## Context
+
+Every number the app gives is fixed in code: `INV-`, `CN-`,
 `RMA-`, `SO-` and `PO-` in `document-numbers.ts`, six digits, one counter
 per organization and series that never restarts (ADR-046, ADR-047,
 ADR-071 amended). That suits a new business in Canada and few others. A
@@ -19,7 +22,7 @@ chronological sequence. ADR-071 deferred numbering settings to this ADR,
 after ADR-072 gave each organization its day: which year or day a number
 belongs to is a calendar question.
 
-**Decision — five series, today's numbers as their defaults.**
+## Decision — five series, today's numbers as their defaults
 
 | Series | Default | Its date |
 | --- | --- | --- |
@@ -32,7 +35,7 @@ belongs to is a calendar question.
 Each has a prefix, a minimum width and a reset. The defaults are six
 digits and no reset, so nothing changes until an Owner changes it.
 
-**Decision — the prefix.**
+## Decision — the prefix
 
 - Capital letters, digits, `-`, `_` and `/`. It starts with a letter or a
   digit, ends with anything but a digit, and has no `//`; or it is empty.
@@ -53,10 +56,12 @@ digits and no reset, so nothing changes until an Owner changes it.
 - Not `.`, which France refuses, nor `+`, which a web address reads as a
   space.
 
-**Decision — the width.** At least 1 to 10 digits, padded with zeros. A
+## Decision — the width
+
+At least 1 to 10 digits, padded with zeros. A
 longer number simply grows: `999999`, then `1000000`.
 
-**Decision — resets and periods.**
+## Decision — resets and periods
 
 - Per series: never, yearly, monthly or daily. A reset needs its period
   in the prefix: a year for yearly, the year and month for monthly, all
@@ -76,7 +81,7 @@ longer number simply grows: `999999`, then `1000000`.
   goes on as it was, so that backdated invoice reads like the rest of
   2026, not with this year's prefix.
 
-**Decision — the next number.**
+## Decision — the next number
 
 - Shown for each series as it will be taken today, in full:
   `INV-2026-0453`.
@@ -88,9 +93,11 @@ longer number simply grows: `999999`, then `1000000`.
   neither drags the counter back nor is refused over a number nobody
   touched.
 
-**Decision — refusals, before anything is written.** Malformed settings
-are a 400. Two conflicts are a 409, each with its code (conventions.md,
-"Error codes"):
+## Decision — refusals, before anything is written
+
+Malformed settings
+are a 400. Two conflicts are a 409, each with its code ([conventions.md,
+"Error codes"](../conventions.md#error-codes)):
 
 - **Two series that could print the same prefix**
   (`numbering_prefix_shared`, naming the other series): the same text once
@@ -107,7 +114,7 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
   draft is no hole to fall through.
 - The unique indexes on each table stay, as the last guard.
 
-**Decision — date order, a switch per organization, off by default.**
+## Decision — date order, a switch per organization, off by default
 
 - When it is on, an invoice or credit note dated before the latest issued
   in its series and period is refused (`numbering_date_order`, naming that
@@ -120,7 +127,7 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
 - Off by default: Canada has no such rule, and a forgotten invoice dated
   last week must go through.
 
-**Decision — where it is kept.**
+## Decision — where it is kept
 
 - `document_numbering`: a row per organization and series, holding its
   prefix as written (tokens included), its width and its reset. Written
@@ -140,7 +147,7 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
 - A save locks today's counter for each series it changes, so a number
   taken meanwhile lands wholly before the change or wholly after it.
 
-**Decision — the screen.**
+## Decision — the screen
 
 - A Numbering section on Settings → Organization → Documents. For each
   series: its prefix, with the tokens a tap away; its width, reset and
@@ -154,7 +161,7 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
   after.
 - Designed on the Claude Design canvas before it is built.
 
-**Decision — what else reads the prefixes.**
+## Decision — what else reads the prefixes
 
 - **The lookup (ADR-056, amended):** a query starting with a series'
   printed prefix puts that kind first. The prefixes are read from the
@@ -163,7 +170,7 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
 - **File names** of each document and of the export's PDFs write `/` as
   `_`.
 
-**Unchanged.**
+## Unchanged
 
 - A number already given never changes: it is stored on its document.
 - Drafts take no number.
@@ -172,7 +179,7 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
 - An order may still have a gap left by a deleted draft (ADR-071,
   amended).
 
-**Considered and not done.**
+## Considered and not done
 
 - **A pattern with the counter anywhere,** as Odoo's `%(year)s` allows:
   text after the digits stops a number splitting one way only, and the
@@ -184,7 +191,7 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
 - **A Postgres sequence per series:** not transactional, as ADR-046
   found.
 
-**Consequences.**
+## Consequences
 
 - Migration 0067: `document_numbering` with every organization's five
   rows; `document_sequences`' period, prefix, digits and primary key;
@@ -203,7 +210,7 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
   - a save racing an issue.
 - Manual checks: a new section 27.
 
-**Deferred.**
+## Deferred
 
 - **A series per site.** Invoices and credit notes have no site, and a
   sale has none until it ships. A `{SITE}` token and a site on the
@@ -218,7 +225,7 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
 - **Run numbers, and batch codes from them:** decided in ADR-074, which
   waits for its own trigger. A run's number becomes a sixth series here.
 
-**Amendment (October 2026) — settled while building, and in review.**
+## Amendment (October 2026) — settled while building, and in review
 
 - **The counter keeps the prefix as written, not as printed.** A series
   that never starts again, or starts again each year but shows the month,
@@ -237,7 +244,7 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
 - **Refusals carry details.** `numbering_number_taken` and
   `numbering_prefix_shared` name their series in the API's names
   (`invoice`, `creditNote`), and the first the least next number accepted,
-  in `details` beside the code (conventions.md, "Error codes"), for the
+  in `details` beside the code ([conventions.md, "Error codes"](../conventions.md#error-codes)), for the
   screen's Use. `numbering_date_order` has its way out too: Change it on
   Organization → Documents, for those who may change the numbering.
 - **Going below the numbers given is the same refusal.** Below where the

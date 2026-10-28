@@ -1,13 +1,16 @@
 ---
 status: accepted
 date: 2026-10-20
+areas: [auth, invitations, mail]
 amends: [ADR-006, ADR-070, ADR-077]
 amended-by: [ADR-079]
 ---
 
 # ADR-078 — Registration: open, or by invitation (amends ADR-006, ADR-070 and ADR-077)
 
-**Context.** ADR-006 made registration self-serve: anyone who finds the
+## Context
+
+ADR-006 made registration self-serve: anyone who finds the
 sign-up page creates an account and an organization together, on the
 production server. No agreement, billing or support stands behind such an
 organization, and its data is still ours to hold and protect (ADR-070).
@@ -51,7 +54,9 @@ Checked before drafting, as the working agreements ask:
   short ADR. #129, English left inside translated messages, is the
   reminder for what the command prints (below).
 
-**Decision — one setting, `REGISTRATION`: open, or by invitation.** It
+## Decision — one setting, `REGISTRATION`: open, or by invitation
+
+It
 decides one thing: whether a person may create an organization
 themselves. Open, they register as today, and an account with no
 organization can start one from Home (below). By invitation, only an
@@ -66,7 +71,9 @@ organization invitations work under both.
   production does.
 - A public demo (Open decisions) is the same code with `open`.
 
-**Decision — closed is refused before anything is read.** By invitation,
+## Decision — closed is refused before anything is read
+
+By invitation,
 a guard refuses `POST /v1/auth/register` with 403 and
 `registration_closed` before the body is validated or the address looked
 up, so a closed form cannot tell anyone whether an address has an
@@ -82,8 +89,9 @@ stays for the day it opens.
   invite you; to start one, open the link you were sent; then Sign in. A
   bookmark or an old link reaches an explanation, not a missing page.
 
-**Decision — an organization invitation, and the organization is made
-when it is accepted.** An organization invitation offers one address the
+## Decision — an organization invitation, and the organization is made when it is accepted
+
+An organization invitation offers one address the
 chance to start one named organization, as its Owner. It is a row of its
 own in `organization_invitations`: the address, the organization's name,
 the language, when its link ends, and, once accepted, when and which
@@ -104,7 +112,9 @@ organization it started.
   registration (ADR-072); its slug comes from its name, as at
   registration; the account takes the page's language (ADR-077).
 
-**Decision — issued from the command line.** `npm run org:invite` in
+## Decision — issued from the command line
+
+`npm run org:invite` in
 `server/`. Run with nothing after it, it asks each question in turn: the
 address, the organization's name, the language from the three, then
 `CLIENT_URL` and the database's address when they are not set, so the one
@@ -151,7 +161,9 @@ authorizes the command.
   which the console's Invite an organization will call too (Open
   decisions): the command is the console's first form.
 
-**Decision — the same page, and seven days that end everywhere.** The
+## Decision — the same page, and seven days that end everywhere
+
+The
 link is `/invitation?token=…`, as ADR-077's, so a person receives one
 kind of link and the server alone tells the two apart.
 
@@ -175,7 +187,9 @@ kind of link and the server alone tells the two apart.
   cutoff does. "Until 26 October" then holds wherever the person is, and
   the page and the command name the day without a zone.
 
-**Decision — the operator hears when one is accepted.** An optional
+## Decision — the operator hears when one is accepted
+
+An optional
 setting, `OPERATOR_EMAIL`. When it is set, production emails it as an
 organization invitation is accepted: which organization, set up by whom,
 by name and address, and when. In English, from `MAIL_FROM`, as the
@@ -186,14 +200,18 @@ courtesy to the operator, not a record. The address is a setting, not one
 a member typed, so the rule on mail to a typed address (Open decisions,
 "What unverified access should be limited to") does not apply.
 
-**Decision — the first Owner starts unconfirmed.** Nothing was emailed,
+## Decision — the first Owner starts unconfirmed
+
+Nothing was emailed,
 so accepting confirms nothing, and the verification email goes out from
 production, as after registration. Until they confirm, inviting is
 refused (ADR-077, `email_unverified`), so confirming is the first thing
 they do. Getting started (ADR-058) is unchanged; a newcomer's first
 sign-in, next in the chain, can add a step for it.
 
-**Decision — an account with no organization can start one.** ADR-070's
+## Decision — an account with no organization can start one
+
+ADR-070's
 deferred item.
 
 - By invitation: through an organization invitation to its address. It
@@ -209,7 +227,7 @@ deferred item.
   banner's Keep my account is the way on. An account that belongs to an
   organization is offered neither.
 
-**Decision — what is kept, and what is recorded.**
+## Decision — what is kept, and what is recorded
 
 - Organization invitations nobody accepted are deleted 30 days after
   their link ended or they were revoked, by the hourly timer that sweeps
@@ -223,7 +241,7 @@ deferred item.
   registration: there was no organization to record into. The operator's
   own actions have no log until the console.
 
-**Considered and not done.**
+## Considered and not done
 
 - **Making the organization at issue, empty, with an ordinary invitation
   to it as Owner.** It reuses more of ADR-077. But the organization is
@@ -243,7 +261,7 @@ deferred item.
   the organization exists** (Open decisions). Each needs more built
   first: an approval queue in a console, and billing.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **A way to ask for an invitation,** a form or an address on the By
   invitation page and on Home. Trigger: the public demo, or the first
@@ -267,7 +285,7 @@ deferred item.
   pages of their own, apart from any organization. Trigger: that entry's,
   or typing the command becoming a chore.
 
-**Consequences.**
+## Consequences
 
 - Migration 0069: `organization_invitations`, with one waiting invitation
   per address (a partial unique index on the address where neither
@@ -314,7 +332,9 @@ deferred item.
   command, the sweep, e2e tests); then the client, after the design; then
   the docs.
 
-**Amendment (October 2026) — as built.** What building it, and its
+## Amendment (October 2026) — as built
+
+What building it, and its
 reviews, settled:
 
 - **Erasure.** Erasing an account (ADR-069) rewrites the address on any
@@ -373,7 +393,8 @@ reviews, settled:
   changes only on its own device. Left to an issue of its own, in
   ADR-069's area.
 
-**Amendment (October 2026) — the first Owner's first step (ADR-079).**
+## Amendment (October 2026) — the first Owner's first step (ADR-079)
+
 Getting started is still unchanged. The newcomer's welcome on Home lists
 Confirm your email address first for the first Owner, with Resend, and
 says that inviting waits for it, until they confirm.

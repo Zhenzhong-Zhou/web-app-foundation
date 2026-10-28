@@ -1,13 +1,19 @@
 ---
 status: accepted
 date: 2026-10-19
+areas: [invitations, mail]
 amends: [ADR-006, ADR-069]
 amended-by: [ADR-078, ADR-079, ADR-080, ADR-083]
 ---
 
 # ADR-077 — Invitations: how a person joins an organization (amends ADR-006 and ADR-069)
 
-**Context.** ADR-006 shipped self-serve registration and left adding
+> **Amended by [ADR-080](0080-job-roles.md).**
+> An invitation names one or more roles, and Invite starts with none chosen once the organization has made a role, rather than at Viewer; only what the inviter holds can be given. Everything else stands.
+
+## Context
+
+ADR-006 shipped self-serve registration and left adding
 people to an Owner or an Admin, who types the newcomer's name, email, role
 and a password on Members and passes the password on by hand. The first
 organization with staff meets everything that follows from that. The
@@ -21,7 +27,9 @@ organization was closed (ADR-070), can never be added to one again. And
 the newcomer arrives with a password and nothing else: nothing says who
 added them, as what, or what is expected of them.
 
-**Decision — Invite replaces Add member.** On Members, Invite asks for an
+## Decision — Invite replaces Add member
+
+On Members, Invite asks for an
 email, a role, the language to write to them in, and an optional note
 from the inviter, up to 500 characters of plain text ("You'll receive
 deliveries at the North site"). The app sends a link. The person opens
@@ -44,7 +52,9 @@ knows the password.
 - The person names themselves. The note is a message from the inviter,
   not a job title: ADR-063 keeps work details the person's own.
 
-**Decision — one invitation, by email or by a copied link.** Email is the
+## Decision — one invitation, by email or by a copied link
+
+Email is the
 default. Copy link puts the link on the clipboard instead, for an inbox
 that does not work yet, or a newcomer reached by text or WeChat. Either
 way it is one invitation with one live link: copying issues a new link
@@ -63,7 +73,9 @@ all, the link handed back, and the event recorded as the link copied.
   host, which a caller can set to a site of their own. Copy link receives
   it from the server, the only side that knows the token.
 
-**Decision — seven days, then resend.** A link lasts seven days, long
+## Decision — seven days, then resend
+
+A link lasts seven days, long
 enough for a start date next week. It works to the end of its seventh
 day in the organization's time zone, so "until 26 October" on Invited,
 on the page and in the email holds all that day. Resend and Copy link issue a fresh
@@ -85,7 +97,9 @@ count an invitation as a member.
 - An accepted invitation stays with its membership, so its note can be
   read again, and goes when the membership ends.
 
-**Decision — the token is ADR-017's third purpose.** `auth_tokens` gains
+## Decision — the token is ADR-017's third purpose
+
+`auth_tokens` gains
 the purpose `invitation`: stored as SHA-256, consumed in one statement,
 swept like the others. The link opens a page in the app,
 `/invitation?token=…`. The page reads the invitation with a POST that
@@ -119,7 +133,7 @@ mail scanner's fetch neither accepts nor burns it.
   chosen the password. A new account accepts with its name, its
   password, the page's language and Keep me signed in.
 
-**Decision — who may accept.**
+## Decision — who may accept
 
 - **An address with no account:** the person creates one by accepting.
 - **An address whose account belongs to no organization,** having left
@@ -149,7 +163,8 @@ mail scanner's fetch neither accepts nor burns it.
 - **While the organization is being deleted** (ADR-070), nobody is invited
   and no invitation is accepted: a person would join to watch it close.
 
-**Decision — inviting needs a verified address, and has a daily limit.**
+## Decision — inviting needs a verified address, and has a daily limit
+
 An invitation is mail from our domain to an address someone typed, the
 reason security emails escape names. An inviter whose own address is
 unverified is refused (`email_unverified`), with a link to resend their
@@ -162,7 +177,9 @@ moment for the screen to show; its message names the time in the
 organization's zone. This settles one half of "What unverified access
 should be limited to" (Open decisions).
 
-**Decision — in the language the inviter chooses.** The newcomer has no
+## Decision — in the language the inviter chooses
+
+The newcomer has no
 account, so no language of their own. The invitation carries one, the
 inviter's by default and changeable in the dialog. The email uses it, and
 the invitation page starts in it, with the signed-out pages' language
@@ -178,7 +195,9 @@ is signed "Sent for Northside Naturals by" the name `MAIL_FROM` gives its
 address, or "Sent for Northside Naturals." when it gives none, never an
 address.
 
-**Decision — a role described by what it lets a person do.** The dialog,
+## Decision — a role described by what it lets a person do
+
+The dialog,
 the invitation page and the email describe each role in a line a
 newcomer understands:
 
@@ -198,7 +217,9 @@ second version to keep in step.
 says the same: new organizations store it, and the migration rewrites a
 system role's description only where it still holds the old default.
 
-**Decision — an invitation is the organization's.** While its inviter is
+## Decision — an invitation is the organization's
+
+While its inviter is
 still a member, the email and the page name them, by name and by address.
 Once they have left the organization or deleted their account (ADR-069),
 the email and the page name only the organization ("Northside Naturals
@@ -209,7 +230,9 @@ no inviter then, and a resend's email is written the same way. Invited
 keeps who sent each invitation, as the organization's own record, and
 whoever may act on it resends it.
 
-**Decision — a send that fails is said, not hidden.** As for a reset
+## Decision — a send that fails is said, not hidden
+
+As for a reset
 (ADR-017), not as for verification: an invitation reported sent that
 never left leaves someone waiting for nothing. The invitation is kept,
 and the dialog says the email did not go and offers Copy link. Its link,
@@ -220,14 +243,16 @@ since the invitation exists, and its payload says the email did not go:
 the audit log reads it in words as "Email not sent", the key declared as
 ADR-076 asks.
 
-**Decision — recorded on both sides.** The organization's audit log gains
+## Decision — recorded on both sides
+
+The organization's audit log gains
 `invitation.sent`, `invitation.resent`, `invitation.link_copied` and
 `invitation.revoked`, each with the address and the role, and
 `invitation.accepted` with the new member as its actor; every payload key
 is declared in each language (ADR-076). The account's own history
 (ADR-022) gains `account.invitation_accepted`.
 
-**Considered and not done.**
+## Considered and not done
 
 - **Keeping Add member with a password, changed at first sign-in** (the
   `must_change_password` of Open decisions). It narrows the window in
@@ -241,7 +266,7 @@ is declared in each language (ADR-076). The account's own history
 - **A tour on first sign-in:** the newcomer's welcome is its own ADR, next
   but one (Open decisions, "A newcomer's first sign-in").
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **One person in two organizations:** accepting into a second, switching
   between them, and ADR-069's block naming the organization it comes
@@ -260,7 +285,7 @@ is declared in each language (ADR-076). The account's own history
   a time is simpler to build and to check. Trigger: a customer adding
   many people together, seasonal staff for one.
 
-**Consequences.**
+## Consequences
 
 - One migration: `invitations`, scoped to the organization through
   `TenantDb`, with a partial unique index allowing one pending invitation
@@ -293,7 +318,9 @@ is declared in each language (ADR-076). The account's own history
 - The open decision on forcing a password change is resolved: no route
   sets another person's password.
 
-**Amendment (October 2026) — organization invitations (ADR-078).** The
+## Amendment (October 2026) — organization invitations (ADR-078)
+
+The
 invitation page also opens an organization invitation, from the same link
 shape: reading returns one of the two, and accepting goes by the token's
 purpose. Both kinds keep this ADR's states and refusals. An organization
@@ -301,21 +328,26 @@ invitation names no inviter and carries no note, and its link ends when
 its last day has ended everywhere, there being no organization's zone
 yet.
 
-**Amendment (October 2026) — the inviter hears (ADR-079).** When an
+## Amendment (October 2026) — the inviter hears (ADR-079)
+
+When an
 invitation is accepted, its inviter, if still a member, is told in the
 bell, in their own language, and the notification opens the newcomer's
 page on People. The audit log records it as before. The note stays with
 the membership, and the newcomer's welcome shows it again.
 
-**Amendment (October 2026) — invitations with several roles (ADR-080).** An
+## Amendment (October 2026) — invitations with several roles (ADR-080)
+
+An
 invitation names one or more roles (`invitation_roles`), and Invite starts
 with no role chosen once the organization has made one. Inviting to a role,
 resending and revoking follow the rule that only what you hold can be given;
 "Only an Owner can invite an Owner" keeps its words. The messages choose an
 article only for a built-in role, and a made role goes without one.
 
-**Amendment (October 2026) — the invitation's email, and replies to
-its inviter (ADR-083).** The invitation's email takes the layout every
+## Amendment (October 2026) — the invitation's email, and replies to its inviter (ADR-083)
+
+The invitation's email takes the layout every
 email shares: Join {organization} still opens it, with no product
 header; Accept the invitation is a button, with its address under it
 for a mail app that will not open one; and its last line is small

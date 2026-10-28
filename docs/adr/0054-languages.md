@@ -1,15 +1,21 @@
 ---
 status: accepted
 date: 2026-10-03
+areas: [documents, mail, i18n]
 amended-by: [ADR-071, ADR-076, ADR-081]
 ---
 
 # ADR-054 — Languages: the person's language for the app, the customer's for documents
 
+> **Amended by [ADR-071](0071-documents-as-pdf-drawn-on-the-server.md).**
+> Documents are PDFs drawn on the server, which applies these rules from its own catalogues, rather than print pages rendered in a provider fixed to the first language. Everything else stands.
+>
 > **Amended by [ADR-081](0081-old-tabs-after-a-deploy.md).**
 > A language whose catalogue won't load says so, in its own words, and nothing is saved until it loads; at start the app falls back to English rather than a blank page.
 
-**Context.** Everything the app says is in English, from three places that
+## Context
+
+Everything the app says is in English, from three places that
 change in different ways.
 
 - **The client's copy.** About 130 components hard-code their labels. Dates
@@ -46,7 +52,9 @@ same in every language. A product's name and description are data too,
 but an organization selling to Chinese-reading customers keeps them in
 Chinese as well as English, on screen and on the customer's documents.
 
-**Decision — three languages, English the fallback.** `en`, `fr-CA` and
+## Decision — three languages, English the fallback
+
+`en`, `fr-CA` and
 `zh-Hans` (Simplified Chinese), as BCP 47 tags. English is the source the
 other catalogues are translated from and what anything missing falls back
 to; its spelling stays British, as now. One `SUPPORTED_LOCALES` constant on
@@ -58,15 +66,16 @@ A value only arrives through those DTOs or is copied from one that did, so
 adding a language is a catalogue and a constant rather than a migration,
 and a value no longer offered falls back to English instead of failing.
 
-**Decision — two settings, independent of each other.** *The person's
+## Decision — two settings, independent of each other
+
+*The person's
 language* is what the app speaks to them: screens, refusals, their emails
 and notifications. *The document language* is what a customer's paper is
 printed in. A clerk who reads Chinese prints an English invoice for an
 Ontario customer; one who reads only English prints a French one for a
 Quebec customer. Tying the two would make one of them wrong.
 
-**Decision — the person's language is on the user; null means the
-browser's.**
+## Decision — the person's language is on the user; null means the browser's
 
 - `users.locale` (`text`, nullable). Null follows the browser:
   `navigator.languages` matched against the supported list, else English.
@@ -85,8 +94,7 @@ browser's.**
 - No permission: acting on yourself is not a capability someone grants
   (the account routes' rule).
 
-**Decision — the client: FormatJS (react-intl), ICU messages, explicit
-ids.**
+## Decision — the client: FormatJS (react-intl), ICU messages, explicit ids
 
 - ICU MessageFormat, because plural rules differ in each language: French
   treats 0 and 1 as singular, Chinese has no plural, English has two
@@ -113,7 +121,7 @@ ids.**
 - Vitest renders in English through one provider in `src/test/`, so
   `getByRole(…, { name })` lookups do not change.
 
-**Decision — the rest of the page follows the language.**
+## Decision — the rest of the page follows the language
 
 - `<html lang>` is the current language: screen readers pronounce by it,
   and browsers choose Chinese glyph forms by it.
@@ -127,7 +135,9 @@ ids.**
   them in its own format, and the value is `YYYY-MM-DD` in every language
   (ADR-052).
 
-**Decision — quantities stay strings, in every language.** ADR-025 holds: a
+## Decision — quantities stay strings, in every language
+
+ADR-025 holds: a
 quantity never becomes a JavaScript number. On screen, `formatQuantity`
 swaps the decimal point for the language's separator on the string itself
 (`35,0000` in French); digits and trailing zeros stay as they arrived, so
@@ -137,7 +147,7 @@ rather than guessing what it meant, and sends a point: the API's format
 does not change. Money keeps `formatMoney` (ADR-035), now in the chosen
 language.
 
-**Decision — the server translates at the edge, in the exception filter.**
+## Decision — the server translates at the edge, in the exception filter
 
 - Services throw a message id and its values instead of a finished
   sentence: `new ConflictException(t('production.licenceExpired', { licence,
@@ -167,7 +177,8 @@ language.
   (separate `package.json`, no workspaces) and their words barely overlap.
   The same `i18n:check` runs on them.
 
-**Decision — written without a request, in the recipient's language.**
+## Decision — written without a request, in the recipient's language
+
 Emails and notifications are written where there is no browser to ask, so
 they use the recipient's `users.locale`; when that is null, the language
 of the request that caused them (a sign-in, a reset request), else
@@ -176,8 +187,7 @@ written once, in that person's language, and stored as now: rendering
 stays the writer's job. Changing language later does not rewrite old
 notifications, as it does not rewrite emails already sent.
 
-**Decision — a document prints in one language or two: the partner's
-choice, else the organization's, stored on the document.**
+## Decision — a document prints in one language or two: the partner's choice, else the organization's, stored on the document
 
 - Any supported language can be a document's, Chinese included, and a
   document may carry a second one: French with English beside it for a
@@ -219,7 +229,7 @@ choice, else the organization's, stored on the document.**
 - The Back link and the Print button never reach the paper and stay in the
   person's language.
 
-**Decision — the app's own names are translated; people's data is not.**
+## Decision — the app's own names are translated; people's data is not
 
 - Translated on display, by key: statuses, movement kinds, audit actions
   (`audit-format.ts`), permission descriptions, and the three system roles
@@ -232,8 +242,7 @@ choice, else the organization's, stored on the document.**
   names its codes as they should read there, in both languages if it
   wishes.
 
-**Decision — a product's name and description may be kept in other
-languages; which are required is the organization's setting.**
+## Decision — a product's name and description may be kept in other languages; which are required is the organization's setting
 
 - `products.name` and `description`, and `product_variants.name`, stay as
   they are: the base text, in whatever language the organization works
@@ -268,7 +277,7 @@ languages; which are required is the organization's setting.**
 - Server refusals and audit rows keep the base name (ADR-038): they name
   what the organization calls the product.
 
-**Decision — machine-drafted, reviewed by someone fluent, glossary first.**
+## Decision — machine-drafted, reviewed by someone fluent, glossary first
 
 - A glossary per language (`docs/glossary.md`) fixes the domain's terms
   before anything else is translated: lot, batch, run, packing slip,
@@ -279,7 +288,7 @@ languages; which are required is the organization's setting.**
   check in the release walkthrough: a release does not offer a language
   whose review has not passed.
 
-**Consequences.**
+## Consequences
 
 - Built in this order, each step one or more commits that build on their
   own:
@@ -315,7 +324,7 @@ languages; which are required is the organization's setting.**
   re-translation in the handoff until a translation service tracks it
   (Deferred).
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **Product descriptions on documents.** Documents print names today; a
   description line, in the document's languages, waits for a customer who
@@ -333,7 +342,7 @@ languages; which are required is the organization's setting.**
 - **Grouped digits in quantities** (`1 234,5`). Trigger: someone misreading
   a large quantity.
 
-**Rejected.**
+## Rejected
 
 - **The browser's own translation** (Chrome's Translate). It translates
   data too (product names, SKUs, lot codes), it rewrites text React owns,
@@ -362,7 +371,9 @@ languages; which are required is the organization's setting.**
   be a new value and a new catalogue; two columns hold any pair of the
   catalogues that already exist.
 
-**Amendment — a notification is written when it is read.** Reverses
+## Amendment — a notification is written when it is read
+
+Reverses
 "written once, in that person's language, and stored as now" above, for
 notifications only; emails are unchanged.
 

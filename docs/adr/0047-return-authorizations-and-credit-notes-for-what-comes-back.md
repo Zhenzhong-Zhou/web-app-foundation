@@ -1,12 +1,18 @@
 ---
 status: accepted
 date: 2026-09-26
+areas: [invoices, return-authorizations]
 amended-by: [ADR-073]
 ---
 
 # ADR-047 — Return authorizations, and credit notes for what comes back
 
-**Context.** A return is recorded when the goods arrive (ADR-043): a header
+> **Built since, by [ADR-071](0071-documents-as-pdf-drawn-on-the-server.md).**
+> Pro forma invoices, which *Deferred* below lists as still deferred: a sale order's pro forma, a PDF drawn on the server. Everything else stands.
+
+## Context
+
+A return is recorded when the goods arrive (ADR-043): a header
 and `return` movements, with nothing before it and nothing after it. There is
 no step where a customer asks, someone decides, and the goods are expected;
 and nothing turns goods coming back into money going back. ADR-043 deferred
@@ -20,7 +26,9 @@ restocking fee. So this ADR decides the records and the limits, and leaves
 the policy to the person — what is credited, and at what value, is chosen
 when crediting, within caps that make a double credit impossible.
 
-**Decision — an RMA is its own document.** A return authorization (RMA,
+## Decision — an RMA is its own document
+
+A return authorization (RMA,
 `return_authorizations`) is raised against a sale when a customer asks to
 send something back. It has a number from its own series (`RMA-000001`, a
 third type in `document_sequences`), a reason, optionally the invoice the
@@ -37,7 +45,9 @@ promise made before anything moves — often days before, sometimes for goods
 that never come — and the return is what arrived at the dock. One RMA is
 often received in more than one box.
 
-**Decision — authorized when raised; no request step.** There is no customer
+## Decision — authorized when raised; no request step
+
+There is no customer
 portal, so a request always reaches the business as a call or an email, and
 the person entering it is the person deciding. An RMA is created authorized.
 A request that is refused is not recorded as an RMA; the reason belongs in
@@ -45,7 +55,9 @@ the conversation with the customer, not in a document that authorizes
 nothing. A requested-then-approved lifecycle is deferred with any portal
 that would give it a second actor.
 
-**Decision — a resolution per line.** Each RMA line is one of:
+## Decision — a resolution per line
+
+Each RMA line is one of:
 
 - **credit** — money back for what the customer returns;
 - **replace** — the same goods sent again, at no charge;
@@ -56,12 +68,15 @@ wrong item replaced. One resolution per RMA was the alternative, and it
 would make that box two RMAs for no reason the customer would recognise.
 ERP return orders decide per item for the same reason.
 
-**Decision — goods expected, or not.** An RMA says whether goods are coming
+## Decision — goods expected, or not
+
+An RMA says whether goods are coming
 back. Usually they are. Sometimes the customer is told to destroy a damaged
 unit and is credited anyway, and waiting for a box that will never arrive
 would block the credit forever.
 
-**Decision — a return may name an RMA, and is held to it.**
+## Decision — a return may name an RMA, and is held to it
+
 `order_returns.return_authorization_id`, nullable. A return against an RMA
 can bring back at most what the RMA authorized for each line, less what
 earlier returns against it brought, and only for its lines — refused with
@@ -75,14 +90,18 @@ the return is linked to it. That link is the one change a return ever sees,
 from empty to set, once — the return stays otherwise immutable, as ADR-043
 made it.
 
-**Decision — lifecycle: open, closed, cancelled.** An RMA is open until
+## Decision — lifecycle: open, closed, cancelled
+
+An RMA is open until
 someone closes it — goods received and resolved, or the customer never sent
 the rest. It can be cancelled while nothing has been received against it
 and no credit issued; after that it is closed, not cancelled, for the
 reason a shipped order cannot be cancelled (ADR-023). Closing is a person's
 decision, as closing an order is (ADR-027); arithmetic does not do it.
 
-**Decision — a credit note credits one invoice.** Every credit note is
+## Decision — a credit note credits one invoice
+
+Every credit note is
 against one invoice, as ADR-046's schema already says, and a customer
 reconciling reads each against the invoice it names. A return that crosses
 two invoices is two credit notes.
@@ -95,7 +114,9 @@ across invoices was the alternative, and it is rejected: there is no right
 answer there, only a convention, and a wrong convention silently credits
 the wrong document.
 
-**Decision — what is credited is decided when crediting.** Inspection is
+## Decision — what is credited is decided when crediting
+
+Inspection is
 where most return policies are applied, so the quantity and value are the
 person's, not the software's, within limits:
 
@@ -113,7 +134,9 @@ The price never rises above the invoice's because a credit that pays back
 more than was charged is not a credit, and would be the easiest way to get
 money out of the business with a plausible document.
 
-**Decision — capped by value, per invoice line.** The net amounts of all
+## Decision — capped by value, per invoice line
+
+The net amounts of all
 credit notes against an invoice line can never exceed that line's net.
 Checked in SQL before any write, summed over `credit_note_lines` for that
 invoice line — the index ADR-046 put there — and refused with 409 beyond it.
@@ -124,7 +147,9 @@ would count eight of six while crediting less than was billed. The value
 cap is what makes any mix of corrections, fees and returns safe, and it is
 what stops a unit being credited twice even across two RMAs.
 
-**Decision — the invoice's rates, never today's.** A credit line's net is
+## Decision — the invoice's rates, never today's
+
+A credit line's net is
 quantity × its unit price, rounded to minor units. Tax is summed per
 component and rounded once per credit note, the invoice rule, using the
 rates the invoice was issued with — never the tax code's current rates,
@@ -142,7 +167,9 @@ less what earlier credit notes took. Partial credits each round on their
 own, and without the cap three of them could total a cent more than the
 invoice ever charged.
 
-**Decision — credits without goods need no RMA.** A price correction,
+## Decision — credits without goods need no RMA
+
+A price correction,
 goodwill, and a debt that will not be collected move no goods, so there is
 nothing to authorize: the credit route takes an invoice, lines, quantities,
 unit prices and a reason, with no RMA. The same caps apply. This replaces
@@ -154,7 +181,9 @@ credited at its full remaining value with the reason "Uncollectable". The
 invoice stays issued and its shipment stays billed, because the goods did
 leave; only the money is written off. It stands until payments exist.
 
-**Decision — previewed, then issued; still no draft.** ADR-046 created
+## Decision — previewed, then issued; still no draft
+
+ADR-046 created
 credit notes issued, and that stays. A partial credit has figures worth
 checking, so the server offers a preview — the same calculation, returned
 and not stored — and the dialog shows it before anyone confirms. What the
@@ -162,7 +191,9 @@ preview showed is what issuing stores, the rule the invoice's draft preview
 follows. A draft credit note would add a status, relaxed checks and a
 delete path for a document checked in one dialog.
 
-**Decision — replacement is a sale at zero.** For the lines resolved as
+## Decision — replacement is a sale at zero
+
+For the lines resolved as
 replace, Raise replacement creates a draft sale, each line priced at zero in
 the order's currency, linked to the RMA (`orders.return_authorization_id`).
 It then confirms, ships and traces as any sale does, and invoices at zero if
@@ -175,7 +206,9 @@ A new document type for replacements was the alternative. It would ship,
 trace and hold stock exactly as a sale does, and every one of those paths
 would need to learn it.
 
-**Decision — samples and uninvoiced goods.** A sample (ADR-042) can have an
+## Decision — samples and uninvoiced goods
+
+A sample (ADR-042) can have an
 RMA whose lines are replace or none, never credit: nothing was billed. Goods
 from a shipment not yet invoiced are credited after that shipment is
 invoiced, not before; the invoice bills what left (ADR-046), and the credit
@@ -183,7 +216,9 @@ takes back what returned. Netting returns into the invoice instead was
 rejected because it makes an invoice's quantity differ from its shipment's,
 which is the property invoicing rests on.
 
-**Decision — permissions follow the people.** An RMA is customer service:
+## Decision — permissions follow the people
+
+An RMA is customer service:
 `return_authorizations.view`, `.create` and `.update` (cancel, close, link a
 return, raise a replacement). Receiving against one stays `orders.receive`,
 the dock's permission (ADR-043). Issuing a credit note, with or without an
@@ -194,7 +229,9 @@ whoever may send an invoice is who may take money back on it. Audited as
 and `credit_note.issued`, the last being the action ADR-046 held back until
 a route recorded it.
 
-**Consequences.** New tables `return_authorizations` and
+## Consequences
+
+New tables `return_authorizations` and
 `return_authorization_lines` (each line with its resolution), and
 `invoice_line_taxes`; nullable `return_authorization_id` on `order_returns`
 and on `orders`; `credit_note_lines.return_authorization_line_id`, nullable,
@@ -203,7 +240,7 @@ added to `document_sequences`' types. Issuing writes per-line tax
 components. The returns route learns an optional RMA and its limits. The
 credit note routes gain a preview and a create beside the void.
 
-**Deferred.**
+## Deferred
 
 - **A free-standing amount** — "$50 off this invoice" — not tied to any
   line. Every credit in v0.4 credits a line; a discount on the whole is
@@ -218,7 +255,9 @@ credit note routes gain a preview and a create beside the void.
 - **Returns to suppliers** as a document (ADR-043, still deferred).
 - **Pro forma invoices** (ADR-046, still deferred).
 
-**Amendment (October 2026) — their own series (ADR-073).** Credit notes
+## Amendment (October 2026) — their own series (ADR-073)
+
+Credit notes
 and RMAs follow their series' settings, as invoices do; a credit note's
 period is its credit date, an RMA's the day it is raised in the
 organization's zone.
