@@ -70,7 +70,7 @@ that would mix two is two files.
 | --- | --- |
 | How does an organization's staff do a task, such as issuing an invoice? | The Help guides, the app's Help, in three languages: [the English ones](../client/src/help/guides/en/) (a folder), invoices' in [invoices.md](../client/src/help/guides/en/invoices.md) |
 | How is a change planned, built, verified and reviewed? | [engineering.md, How code is delivered](engineering.md#how-code-is-delivered) and [Commits](engineering.md#commits) |
-| How is a migration added? | [engineering.md, Process](engineering.md#process) |
+| How is a migration added? | [engineering.md, Process](engineering.md#process), its steps in `server/`, with [conventions.md, Migrations against the running release](conventions.md#migrations-against-the-running-release-adr-081) and [A new table](conventions.md#a-new-table-and-the-organizations-export) |
 | How is a new ADR written? | [engineering.md, Process](engineering.md#process), from [the template](adr/template.md) |
 | Which tool do I run, and when? | [README, Which tool, when](../README.md#which-tool-when) |
 | What do I check by hand before a release? | [manual-checks.md](manual-checks.md) |
