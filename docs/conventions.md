@@ -86,6 +86,15 @@ an arrow class property doesn't live on the prototype.
   makes each one only when the archive reaches it, in the request's
   tenant: `invoices/invoice-documents-export.ts`, the invoices' and credit
   notes' PDFs, is the one there is.
+- **A table with `updated_at` gets its own trigger** in the migration that
+  creates it, written by hand after a `--> statement-breakpoint`: a
+  `BEFORE UPDATE` trigger calling `set_updated_at()`, as 0010's do.
+  drizzle-kit does not model triggers, so nothing generates it and nothing
+  warns: `updated_at` stays at the insert, and every row looks as if nobody
+  edited it. Eight tables made in 0003 to 0008 went without one until 0010
+  added theirs (`server/src/database/schema/columns.ts`, beside
+  `timestamps`). `server/test/schema.e2e-spec.ts` names each table with
+  `updated_at` and no trigger.
 
 ## A new printed document
 
@@ -378,6 +387,16 @@ working everything that release reads.
   directly above it, with the reason on the line before.
 - **squawk cannot see a key a query names,** so `/code-review` checks that
   by reading, as ADR-080's 0073 and ADR-073's 0067 show it must.
+- **A snapshot copied by hand gets a fresh `id`, and the previous
+  snapshot's as its `prevId`.** Each snapshot in
+  `server/src/database/migrations/meta/` names itself and the one before,
+  and drizzle-kit generates against that chain. Copying one, the obvious
+  fix for a numbering mistake, copies both: two snapshots claim one
+  identity, and drizzle-kit refuses to generate, with a collision that
+  names the files without saying what is wrong.
+  `server/scripts/check-snapshots.js` walks the chain before every
+  `migrate:new`, in `npm run checks` and in CI, and says which `prevId` to
+  repoint.
 
 ## Error codes
 
@@ -473,6 +492,23 @@ message, and the screen keys on the code, never on the words.
   chunk to stand for a dropped connection (ADR-081).
 - `toBeVisible` passes while a popover or a menu is still fading in, so axe
   run on one just opened measures it halfway: wait until it has settled.
+- **A spec that switches the browser's session clears its cookies first:**
+  `clearCookies`, then `addCookies`, as `signInAs` does
+  (`client/e2e/support/api.ts`). The page arrives with the shared owner's
+  `sid` from storageState, and a second cookie of the same name for the
+  same host leaves it unspecified which one the browser sends, a coin flip
+  that shows up as an unrelated test failing now and then.
+- **A limit the browser suite reaches is `limit(n)` in `@Throttle`**
+  (`server/src/core/auth/throttle-limits.ts`), multiplied by
+  `THROTTLE_FACTOR`. A decorator's arguments are evaluated when its class
+  is defined, before Nest builds its injector, so `ConfigService` cannot
+  serve them and `limit()` reads `process.env` itself. The suite registers
+  an organization for every worker and every `freshOrg`, and sign-up's 5 a
+  minute would fail it rather than the feature, so
+  `client/playwright.config.ts` sets 1000. Absent, the factor is 1: a
+  multiplier rather than an override, so a missing variable leaves the
+  real limits in place. Production never sets it above 1, which nothing
+  enforces.
 - `getByRole`, never `getByLabelText`, in a component test: it finds a
   control as assistive technology does, by its role and accessible name,
   so a test also fails when the role is wrong, which a label match alone
@@ -548,6 +584,12 @@ A component keyed by a value, so it starts again when the value changes,
 gets a prefix naming what it is: `currency-${baseCurrency ?? ''}`,
 `issue-closed`. Two siblings keyed by bare values collide as soon as both
 are empty or closed, and React warns that it may drop one (#127).
+
+A dialog's key goes on the component the page renders, as Ship's does
+(`<ShipOrderDialog key={…}>`), never on MUI's `Dialog` inside it. The
+fields are that component's state, and a key on the `Dialog` it returns
+rebuilds only what is below it: the fields would open with what was typed
+the last time.
 
 ## Loading states
 
