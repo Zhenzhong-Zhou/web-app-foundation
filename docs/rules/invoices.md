@@ -45,6 +45,7 @@ is kept is in the [README](README.md).
   [ADR-046](../adr/0046-invoicing.md#decision--draft-issued-voided) ·
   [test](../../server/test/invoices.e2e-spec.ts) "refuses a quantity change" ·
   [test](../../server/test/invoices.e2e-spec.ts) "changes the due date, note, a price and a tax code" ·
+  [test](../../server/test/invoices.e2e-spec.ts) "clears the due date and note with empty values" ·
   [Help](../../client/src/help/guides/en/invoices.md#create-and-issue-an-invoice-issue)
 - **A tax code chosen for the invoice goes on every line, and a line can
   take its own.** A retired code, or another organization's, is refused.
@@ -139,6 +140,7 @@ is kept is in the [README](README.md).
   [ADR-046](../adr/0046-invoicing.md#decision--amounts-are-stored-at-issue-deliberately-unlike-an-order) ·
   [test](../../server/src/modules/invoices/invoice-amounts.spec.ts) "is 0 for a currency with no minor unit" ·
   [test](../../server/src/modules/invoices/invoice-amounts.spec.ts) "is 3 for a currency with three places" ·
+  partly tested ·
   MC-703
 - **An issued invoice keeps the tax it charged, whatever the code's rate
   becomes.** Each line's taxes are kept at the rates charged that day.
@@ -170,6 +172,7 @@ is kept is in the [README](README.md).
   is safe. The refusal says what is left.
   [ADR-047](../adr/0047-return-authorizations-and-credit-notes-for-what-comes-back.md#decision--capped-by-value-per-invoice-line) ·
   [test](../../server/test/credit-notes.e2e-spec.ts) "caps every credit on a line at the value it billed" ·
+  partly tested ·
   MC-707 · MC-710
 - **Tax is credited at the invoice's rates, never today's, and never
   comes to more than the invoice charged,** per component, however many
@@ -179,7 +182,8 @@ is kept is in the [README](README.md).
   MC-705 · MC-709
 - **A credit names each line once, and only lines of its own invoice.**
   [ADR-047](../adr/0047-return-authorizations-and-credit-notes-for-what-comes-back.md#decision--a-credit-note-credits-one-invoice) ·
-  [test](../../server/test/credit-notes.e2e-spec.ts) "refuses a line twice, and a line from another invoice"
+  [test](../../server/test/credit-notes.e2e-spec.ts) "refuses a line twice, and a line from another invoice" ·
+  partly tested
 - **A credit note needs a reason, which the customer reads on it, and is
   dated no earlier than its invoice.**
   [ADR-047](../adr/0047-return-authorizations-and-credit-notes-for-what-comes-back.md#decision--credits-without-goods-need-no-rma) ·
@@ -274,6 +278,7 @@ is the organization's, on Organization → Documents.
   [ADR-073](../adr/0073-each-organizations-document-numbering.md#unchanged) ·
   [test](../../server/test/invoices.e2e-spec.ts) "numbers in sequence, per organization, with no gap for a refusal" ·
   [test](../../server/test/numbering.e2e-spec.ts) "refuses an invoice dated before the latest, and gives its number back" ·
+  partly tested ·
   MC-701
 - **A document's own date picks the period it is numbered in:** an
   invoice's date, a credit note's credit date. An invoice dated in an
