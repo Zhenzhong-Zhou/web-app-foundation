@@ -91,8 +91,8 @@ either differs from the files. What is not yet decided is in
 | [ADR-054] | Languages: the person's language for the app, the customer's for documents | accepted | 2026-10-03 | | [ADR-071], [ADR-076], [ADR-081] |
 | [ADR-055] | The look: tokens, a side rail, tabs and a summary beside the work | accepted | 2026-10-07 | [ADR-021] | [ADR-071], [ADR-075], [ADR-081], [ADR-082] |
 | [ADR-056] | Search: one lookup in the top bar, and a search on every list | accepted | 2026-10-07 | | [ADR-073] |
-| [ADR-057] | Lists by date range, sorted where it helps, exported as CSV | accepted | 2026-10-08 | | [ADR-076] |
-| [ADR-058] | Home: what needs attention, first | accepted | 2026-10-08 | | [ADR-079] |
+| [ADR-057] | Lists by date range, sorted where it helps, exported as CSV | accepted | 2026-10-08 | | [ADR-072], [ADR-076] |
+| [ADR-058] | Home: what needs attention, first | accepted | 2026-10-08 | | [ADR-072], [ADR-079] |
 | [ADR-059] | Files: one store for every file, on R2, served through the app | accepted | 2026-10-08 | | [ADR-070] |
 | [ADR-060] | Branding: each organization's logo, colour and expiry days | accepted | 2026-10-09 | | [ADR-082] |
 | [ADR-061] | The Organization page in tabs, and a name that can change | accepted | 2026-10-09 | | |
@@ -106,7 +106,7 @@ either differs from the files. What is not yet decided is in
 | [ADR-069] | Deleting your account, and leaving an organization | accepted | 2026-10-14 | [ADR-012] | [ADR-070], [ADR-077], [ADR-079] |
 | [ADR-070] | Deleting an organization | accepted | 2026-10-15 | [ADR-012], [ADR-059], [ADR-069] | [ADR-071], [ADR-078], [ADR-080] |
 | [ADR-071] | Documents as PDF, drawn on the server | accepted | 2026-10-16 | [ADR-046], [ADR-054], [ADR-055], [ADR-070] | [ADR-072], [ADR-073], [ADR-080] |
-| [ADR-072] | Each organization's time zone | accepted | 2026-10-16 | [ADR-052], [ADR-071] | |
+| [ADR-072] | Each organization's time zone | accepted | 2026-10-16 | [ADR-052], [ADR-057], [ADR-058], [ADR-071] | |
 | [ADR-073] | Each organization's document numbering | accepted | 2026-10-17 | [ADR-046], [ADR-047], [ADR-056], [ADR-071] | |
 | [ADR-074] | Run numbers, and batch codes from them (deferred) | deferred | 2026-10-17 | | |
 | [ADR-075] | Text size: the person's choice, and text that grows | accepted | 2026-10-18 | [ADR-055] | |

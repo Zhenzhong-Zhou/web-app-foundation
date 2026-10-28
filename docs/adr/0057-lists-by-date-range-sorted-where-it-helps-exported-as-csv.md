@@ -2,11 +2,14 @@
 status: accepted
 date: 2026-10-08
 areas: [api, ui]
-amended-by: [ADR-076]
+amended-by: [ADR-072, ADR-076]
 ---
 
 # ADR-057 — Lists by date range, sorted where it helps, exported as CSV
 
+> **Amended by [ADR-072](0072-each-organizations-time-zone.md).**
+> A date range over moments turns its days into times at the organization's midnight, not the reader's, so "This month" is the same stretch of time for every member. Everything else stands.
+>
 > **Amended by [ADR-076](0076-the-audit-log-in-words.md).**
 > The audit log's export writes each entry in the words its screen shows, its details as one line, rather than the fields it recorded as JSON. Everything else stands.
 

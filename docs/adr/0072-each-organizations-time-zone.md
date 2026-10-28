@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-16
 areas: [organizations, i18n]
-amends: [ADR-052, ADR-071]
+amends: [ADR-052, ADR-057, ADR-058, ADR-071]
 ---
 
 # ADR-072 — Each organization's time zone (amends ADR-052 and ADR-071)
