@@ -5,7 +5,9 @@ date: 2026-09-02
 
 # ADR-022 — Account events are a separate table from the audit log
 
-**Context.** ADR-018 writes audit rows from an interceptor, opt in per route.
+## Context
+
+ADR-018 writes audit rows from an interceptor, opt in per route.
 It cannot cover the account routes: `audit_log.organization_id` is `NOT NULL`
 because ADR-012 made the organization the owner of every row, and every route
 under `/v1/account` runs `@AllowNoOrganization`. `@Audited()` there would fail
@@ -14,7 +16,9 @@ for exactly the users those routes exist to serve.
 The narrow fix is to make the column nullable. The wider question is whether
 these are the same kind of record at all.
 
-**Decision.** A separate `account_events` table.
+## Decision
+
+A separate `account_events` table.
 
 They answer different questions for different readers. `audit_log` answers
 "what did people do in our workspace" — read by an admin, exported for
@@ -46,7 +50,7 @@ audience once its subject is gone. Users are tombstoned rather than deleted
 pass must delete these rows explicitly, since they are personal data with no
 organizational claim on them.
 
-**Decision — events recorded.**
+## Decision — events recorded
 
 | Action                     | Why it earns a row                                                                                                                                       |
 |----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -62,7 +66,7 @@ No payload column. ADR-018's reasoning applies harder here: these rows exist to
 say *that* something happened, and the details are either already visible in
 the account or are the credential itself.
 
-**Decision — written by explicit service calls, not an interceptor.**
+## Decision — written by explicit service calls, not an interceptor
 
 This departs from ADR-018 deliberately. The actor for `session.created` is not
 in the request context — login is `@Public()`, and the handler is what produces
@@ -78,7 +82,7 @@ A failed write is logged and swallowed, as in ADR-018: the action has already
 committed, and failing the request would report failure for something that
 happened.
 
-**Decision — 90 days, swept lazily.**
+## Decision — 90 days, swept lazily
 
 `audit_log`'s 24 months comes from a compliance window for organizational
 activity. Nothing imposes one here, and this is personal data whose value
@@ -89,7 +93,9 @@ Swept on write, per user, the way `sessions` and `auth_tokens` already are
 (ADR-005). No cron, and the table stays bounded by active users rather than by
 total history.
 
-**Consequence.** Two tables to consult when reconstructing an incident, and the
+## Consequence
+
+Two tables to consult when reconstructing an incident, and the
 join between them is the user id. Accepted: the alternative is one table where
 every organizational read filters on a nullable column forever.
 

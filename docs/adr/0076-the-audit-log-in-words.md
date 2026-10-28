@@ -6,7 +6,9 @@ amends: [ADR-018, ADR-038, ADR-054, ADR-057]
 
 # ADR-076 — The audit log in words: no ids, references named, every field translated (amends ADR-018, ADR-038, ADR-054 and ADR-057)
 
-**Context.** The demo seed filled the audit log for the first time, and in
+## Context
+
+The demo seed filled the audit log for the first time, and in
 简体中文 it read like this:
 
 ```text
@@ -48,13 +50,17 @@ theirs); #129 (closed here for the audit log); #133, fields logged as
 sent rather than as stored (references are named from the stored row
 after the handler, so they read as stored; other values stay #133's).
 
-**Decision — no UUID anywhere a person reads.** Not on a screen, not in a
+## Decision — no UUID anywhere a person reads
+
+Not on a screen, not in a
 CSV, a PDF, an email or a notification. A UUID appears in two places only:
 inside a link's URL, which nobody reads, and in the API's JSON, which is
 for programs (ADR-063: CSV is for people; JSON is for programs). A CSV
 carries no id column: an integration that needs ids reads the API.
 
-**Decision — a reference is named when it is written.** ADR-038's rule
+## Decision — a reference is named when it is written
+
+ADR-038's rule
 for the record itself, extended to every reference in the payload, as
 Odoo's field tracking and Salesforce's field history keep the name a
 linked record had at the time:
@@ -80,7 +86,8 @@ linked record had at the time:
 - A list of lines (an RMA's) is named by item, its SKU and quantity, at
   write time.
 
-**Decision — one vocabulary, declared once, that the code cannot skip.**
+## Decision — one vocabulary, declared once, that the code cannot skip
+
 `AUDIT_FIELDS` on the server, beside `AUDIT_ACTIONS`, declares every key a
 payload may hold and what it is: text as typed (a reference, a reason), a
 day, a moment, money, a quantity, a yes or no, a language, a time zone, a
@@ -91,8 +98,9 @@ a reference to a kind. `@Audited({ fields })`, `recordPrevious` and
 saying how it reads fails to compile, as an undeclared action already
 does.
 
-**Decision — the server words every entry, for the screens and the CSV
-alike.** One formatter, in the reader's language, as the server already
+## Decision — the server words every entry, for the screens and the CSV alike
+
+One formatter, in the reader's language, as the server already
 words errors, emails, PDFs and CSV headers (ADR-054, ADR-071):
 
 - `GET /v1/audit`, a record's history, Your activity and a person's recent
@@ -112,7 +120,9 @@ words errors, emails, PDFs and CSV headers (ADR-054, ADR-071):
 Two formatters, one on each side, would drift: the seed's copy of the
 interceptor's payload rules did within a day.
 
-**Decision — rows already written are read, not rewritten.** ADR-038
+## Decision — rows already written are read, not rewritten
+
+ADR-038
 rejected joining today's names and refused backfills, because a log must
 not claim something was done to a name it did not have then. A bare id in
 an old row reads as its kind in words ("an order", "a tax code"), linked
@@ -121,7 +131,7 @@ values are words at read time, so old rows read translated like new ones.
 Old labels keep their English words ("· draft"); there are few, and only
 in development and demo data.
 
-**Considered and not done.**
+## Considered and not done
 
 - **Hiding ids on the client.** What the formatter already does inside
   objects: it drops information instead of naming it, and the CSV, written
@@ -132,14 +142,14 @@ in development and demo data.
   API is for programs.
 - **A formatter on each side.** Shown above.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **Payload search.** As before: when someone asks for it.
 - **A page for every kind.** A shipment links to its order and a role to
   Members; a kind with no page is plain text. Trigger: a kind that gains a
   page.
 
-**Consequences.**
+## Consequences
 
 - Built in this order, one PR: the vocabulary and the new resolvers; the
   interceptor naming references; the formatter and the response change,

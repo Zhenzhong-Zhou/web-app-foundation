@@ -5,7 +5,9 @@ date: 2026-09-15
 
 # ADR-030 — Who supplies a component is a property of the run
 
-**Context.** Manufacturing arrives in three arrangements, and only one of them
+## Context
+
+Manufacturing arrives in three arrangements, and only one of them
 is a production order.
 
 We buy the ingredients and hold them. We send some of our own material to a
@@ -22,7 +24,7 @@ comes in-house. It simply does not fire.
 The second is the case that decides the schema. It is free-issue: our stock is
 consumed at somebody else's site alongside inputs we never owned.
 
-**Decision — `supply_type` on the line, defaulted by the BOM, actual on the run.**
+## Decision — `supply_type` on the line, defaulted by the BOM, actual on the run
 
 `stocked` means ours: we buy it, hold it, and the run writes a `consumption`
 movement. `external` means whoever manufactures provides it: it never enters our
@@ -39,14 +41,13 @@ A check constraint carries the consequence: an external line's
 movement for material we never received, which is exactly how a ledger stops
 balancing.
 
-**Decision — `partner_id` on the production order, null meaning in-house.**
+## Decision — `partner_id` on the production order, null meaning in-house
 
 One nullable column separates outsourced from in-house, the way
 `stock_movements` encodes direction by which location column is null. A `kind`
 column alongside it would state the same fact twice and let the two disagree.
 
-**Decision — the manufacturer's facility is a `site` in the locations tree,
-with `locations.partner_id` marking it as theirs.**
+## Decision — the manufacturer's facility is a `site` in the locations tree, with `locations.partner_id` marking it as theirs
 
 Issuing material is then an ordinary transfer, leaf to leaf, and consumption
 happens when the run completes. This is what makes "how much of our material is
@@ -65,7 +66,7 @@ Nor is this the consignment question ADR-027 deferred. Ownership never changes:
 free-issued material is ours the whole time it is there. Consignment is stock
 that is physically elsewhere *and* owned by someone else, and it still waits.
 
-**Decision — a manufacturer's lot code is text on the line, not a `lots` row.**
+## Decision — a manufacturer's lot code is text on the line, not a `lots` row
 
 A supplement recall traces through every input, including the ones we did not
 buy, so the code has to be recorded. A `lots` row for material we never held has
@@ -73,7 +74,7 @@ no stock balance anywhere, and creating one to hold a code puts phantom quantity
 in the ledger. `external_lot_code` is free text that cannot be mistaken for
 stock, constrained to external lines.
 
-**Decision — a run's output lots are read from the ledger, not stored on it.**
+## Decision — a run's output lots are read from the ledger, not stored on it
 
 A column for the lot produced assumes one lot per run, and a run splits: it
 spans two days, QA holds part of it, some is packed to a different expiry. The
@@ -82,7 +83,9 @@ ledger the record. A pointer alongside it can hold one value where the ledger
 holds several, which makes it a cache that can only disagree. The lots for a run
 are the movements referencing it.
 
-**Consequence.** Two tables, one column on `bom_lines`, one on `locations`.
+## Consequence
+
+Two tables, one column on `bom_lines`, one on `locations`.
 `stock_movements.reason` already carried `production` and `consumption`
 (ADR-023), and `reference_type` was built nullable for precisely this — a run
 attaches a reference, it does not change the ledger.

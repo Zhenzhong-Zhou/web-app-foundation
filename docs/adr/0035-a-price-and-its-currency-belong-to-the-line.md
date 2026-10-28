@@ -6,7 +6,9 @@ amended-by: [ADR-080]
 
 # ADR-035 — A price and its currency belong to the line
 
-**Context.** ADR-027 scoped orders to purchase and sale without money, which
+## Context
+
+ADR-027 scoped orders to purchase and sale without money, which
 was right for a stock ledger and is now the largest gap in the domain. A
 purchase order without a price cannot do the one control that matters in
 procurement: three-way matching. You agreed 1000 at 1.20, you received 1000,
@@ -20,7 +22,7 @@ And unlike a selling price, it is unrecoverable. The price was agreed when the
 order was raised; reconstructing it later means reading old paperwork. Same
 class as licence history (ADR-029).
 
-**Decision — `unit_price` and `currency` both on the line.**
+## Decision — `unit_price` and `currency` both on the line
 
 An order header currency was the alternative, and it is the tidier one: a
 purchase order is usually one agreement with one supplier in one currency, and
@@ -37,8 +39,7 @@ half its lines.
 This is the same grain the previous system used, and it is right for the same
 reason: the price of an item is agreed per item.
 
-**Decision — the consequence is accepted rather than worked around: an order
-has subtotals, not a total.**
+## Decision — the consequence is accepted rather than worked around: an order has subtotals, not a total
 
 With one currency per line there is no meaningful sum across an order unless
 every line agrees. Adding CAD 500 to USD 300 needs a rate, and applying one at
@@ -52,12 +53,14 @@ the truth.
 Converting them into a single reporting figure is the exchange rate question,
 still open, and deliberately not answered by a display-time division.
 
-**Decision — the subtotals are absent when any line is unpriced.** A sum over
+## Decision — the subtotals are absent when any line is unpriced
+
+A sum over
 the priced half of an order looks complete and is not, and somebody will
 reconcile against it. A `totalsComplete` flag says which, so the screen can
 explain rather than showing a number that quietly excludes a line.
 
-**Decision — both nullable, and no default currency.**
+## Decision — both nullable, and no default currency
 
 Existing lines have neither and neither can be invented. A default currency
 would be worse than null: it would assert that an old line was priced in a
@@ -71,7 +74,9 @@ unit, and a currency with no price says nothing:
 (unit_price is null) = (currency is null)
 ```
 
-**Decision — the line total is computed, never stored.** `unit_price ×
+## Decision — the line total is computed, never stored
+
+`unit_price ×
 quantity_ordered` is derivable, and a stored copy is a third number free to
 disagree with the two it came from — the same reasoning that keeps
 `quantity_outstanding` in Postgres rather than subtracted in JavaScript
@@ -82,7 +87,9 @@ minor unit, so ¥1500 is 1500 and not 1500.00 — and doing it in the query woul
 bake one currency's convention into every order. `Intl.NumberFormat` knows each
 currency's minor units and has the currency to hand; the query does not.
 
-**Decision — a price freezes when the line does.** The existing guard already
+## Decision — a price freezes when the line does
+
+The existing guard already
 refuses to amend a line once anything has been received against it (ADR-033),
 and price rides on the same route, so this comes free. It is also right for its
 own reason: by then the price has been matched against a supplier invoice, and
@@ -96,13 +103,17 @@ onto lines — is equally safe. Neither direction loses information, which is wh
 this was worth choosing on how the work actually goes rather than on which
 schema is tidier.
 
-**Deferred.** Price *lists* — what you would pay by supplier or charge by tier —
+## Deferred
+
+Price *lists* — what you would pay by supplier or charge by tier —
 are policy that feeds an order rather than part of one. Exchange rates are a
 third thing again: a rate is meaningless without the pair it converts, so
 storing a bare number the way the previous system did breaks the moment a base
 currency changes.
 
-**Amendment (October 2026) — prices on orders (ADR-080).** A line's price,
+## Amendment (October 2026) — prices on orders (ADR-080)
+
+A line's price,
 an order's totals and its tax reach only whoever holds `orders.view_prices`;
 the server sends them to nobody else. An order's invoice money follows
 `invoices.view`.

@@ -5,7 +5,9 @@ date: 2026-08-31
 
 # ADR-020 — Client routes fall into three categories, not two
 
-**Context.** The obvious split is authenticated and public. It is wrong here,
+## Context
+
+The obvious split is authenticated and public. It is wrong here,
 and wrong in a way that looks correct: wrapping every route in a session guard
 is the safe-looking default, and it silently breaks both flows in ADR-017.
 
@@ -16,7 +18,9 @@ they lost access. A guard that redirects either one to `/login` breaks it, and
 the breakage only appears when a real email arrives, not in any test that posts
 a token directly.
 
-**Decision.** Three categories.
+## Decision
+
+Three categories.
 
 | Category  | Rule                                                 | Routes                             |
 |-----------|------------------------------------------------------|------------------------------------|
@@ -29,7 +33,9 @@ their session for nothing — login revokes the presented session and issues a
 new one (ADR-015), leaving churn in the active-sessions screen that nobody
 caused.
 
-**Consequence.** The guard is only meaningful once the boot check has resolved.
+## Consequence
+
+The guard is only meaningful once the boot check has resolved.
 `/v1/auth/me` is the sole request the app blocks on: before it answers there is
 no correct thing to draw, because "no session" and "not yet known" are
 indistinguishable and one of them redirects. Every other load renders its

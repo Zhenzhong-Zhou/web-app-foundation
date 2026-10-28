@@ -5,7 +5,9 @@ date: 2026-10-27
 
 # ADR-086 — Docs as code: one file per decision, and links that are checked
 
-**Context.** The repository holds about 226,000 words of Markdown in 85
+## Context
+
+The repository holds about 226,000 words of Markdown in 85
 files beside 213,000 lines of TypeScript. Most of it sits in two files:
 
 - `docs/decisions.md`: 13,047 lines, 120,100 words, 752 kB. The 83 ADRs
@@ -54,13 +56,17 @@ Checked before drafting, as the working agreements ask:
     `tmp/`; `.markdownlint-cli2.jsonc` ignores `tmp/**`, on purpose, by
     its own comment.
 
-**Decision — two docs-only PRs, the moves first.** Part 1, `docs-moves`,
+## Decision — two docs-only PRs, the moves first
+
+Part 1, `docs-moves`,
 moves text and fixes the pointers the moves break, and changes nothing
 else; a script proves it. Part 2, `docs-start-here`, writes. A move is
 checked by a proof and new writing by reading; in one PR, neither check
 could be trusted.
 
-**Decision — one file per ADR.** `docs/adr/NNNN-<slug>.md`, four digits.
+## Decision — one file per ADR
+
+`docs/adr/NNNN-<slug>.md`, four digits.
 The slug is the title before its first `:` or `;`, without a trailing
 `(amends …)`, `(#N)` or `(deferred)`, in lower-case ASCII, apostrophes
 and backticks dropped and every other run of characters a hyphen, with
@@ -71,7 +77,9 @@ link to it keeps working. Each file is its section of `decisions.md`
 with the heading made level one, which markdownlint asks of a file's
 first line, and its links to other ADRs made links to their files.
 
-**Decision — front matter on every ADR.** MADR 4.0, the most used ADR
+## Decision — front matter on every ADR
+
+MADR 4.0, the most used ADR
 template, carries optional YAML front matter; each file takes its
 `status` and `date`, and two fields of this repository's own:
 
@@ -99,7 +107,9 @@ what amends it; `grep -l "amended-by:.*ADR-077" docs/adr/` lists the
 same. Front matter says which ADRs amend this one, not what they
 changed: the prose notes that summarise an amendment stay as they are.
 
-**Decision — the index, generated.** `docs/adr/README.md`, which GitHub
+## Decision — the index, generated
+
+`docs/adr/README.md`, which GitHub
 shows under the folder's list of files:
 
 1. `decisions.md`'s preamble, verbatim: append, never rewrite; a
@@ -117,12 +127,15 @@ The data lives once, in the files, so nothing kept by hand can drift
 from it: `--check` fails when the table differs from what the files
 say, the way the API contract's check fails when `openapi.json` does.
 
-**Decision — Open decisions, a file beside the ADRs:**
+## Decision — Open decisions, a file beside the ADRs
+
 `docs/adr/open-decisions.md`. The check before every ADR reads it with the
 ADRs' Deferred lines, so it sits with them; one file, since most of its
 73 entries are a paragraph.
 
-**Decision — amendments stay where they are.** Every amendment is already
+## Decision — amendments stay where they are
+
+Every amendment is already
 a paragraph inside the ADR it amends, and every "Amended by" note sits at
 that ADR's top, so each moves with its ADR untouched. That differs from
 Nygard's rule, where an ADR is never edited and a change is a new ADR
@@ -132,23 +145,30 @@ amends another lists it in `amends`, adds the other's `amended-by`, puts
 its amendment in the other's text, and runs `scripts/adr-index.mjs`.
 Part 2 writes this into the working agreements.
 
-**Decision — `docs/decisions.md` stays, as a stub** naming where each part
+## Decision — `docs/decisions.md` stays, as a stub
+
+It names where each part
 went. Issues and pull requests link it, and GitHub cannot redirect a
 moved file, let alone a heading in it.
 
-**Decision — the working agreements move to `docs/engineering.md`,**
-verbatim, under a heading of their own, with their headings unchanged, so
+## Decision — the working agreements move to `docs/engineering.md`
+
+They move verbatim, under a heading of their own, with their headings unchanged, so
 a link to `#how-code-is-delivered`, `#process` or `#commits` only changes
 its file. The handoff keeps where the work stands.
 
-**Decision — the pointers move with the text.** Every link or path that a
+## Decision — the pointers move with the text
+
+Every link or path that a
 move would leave naming the old place changes in the same commit, and
 only that line: a path, a link, "this handoff" in a moved line, "are
 below". Prose naming "the working agreements" stays. The rule that a
 long file changes by a patch names the ADR files in place of
 `decisions.md`, until part 2 settles whether short files still need it.
 
-**Decision — the moves are proved.** The split is made by a script, and
+## Decision — the moves are proved
+
+The split is made by a script, and
 another turns the new files back into the old one: headings back to level
 two, file links back to anchors, the pieces joined in order. The result
 must be byte-identical to `decisions.md` as the branch found it, and both
@@ -158,7 +178,9 @@ agreements' move is
 compared the same way, apart from the pointer lines, each listed. Both
 scripts are for this branch only, in `tmp/adr-086/`, and are not kept.
 
-**Decision — links checked from now on.** `scripts/check-docs.mjs`, with
+## Decision — links checked from now on
+
+`scripts/check-docs.mjs`, with
 its test and no dependency: every relative link in every Markdown file
 the repository tracks must lead to a file, and a `#fragment` to a heading
 there, by GitHub's anchors; every ADR file must have its row in the
@@ -174,19 +196,25 @@ renaming a test or a guide can break a link from a Markdown file, and the
 workflow takes seconds. On `main` the day this was written: 47 relative
 links, none broken.
 
-**Decision — no dependency step on the two docs branches.** An exception
+## Decision — no dependency step on the two docs branches
+
+An exception
 of Bob's, as conventions.md's "Dependencies" allows, named here and in
 both PRs: package updates would put code changes into a docs branch.
 `typescript-eslint` 8.72.1 and `@aws-sdk/client-s3` 3.1157.0, old enough
 from 2 November, open ADR-084's branch as planned. A security fix is
 still taken at once, wherever it lands.
 
-**Decision — its number.** ADR-083 gave 084 to the error tracker and 085
+## Decision — its number
+
+ADR-083 gave 084 to the error tracker and 085
 to low stock, both still to be written, so this is ADR-086, written
 before them. A number is a name, not a date; the index lists the ADRs
 that exist.
 
-**Decision — part 2, `docs-start-here`, settled when it is planned.** Its
+## Decision — part 2, `docs-start-here`, settled when it is planned
+
+Its
 scope as Bob set it on 26 and 27 October 2026, each to be confirmed then:
 
 - `docs/README.md`, "Start here": the system on one page, then which
@@ -230,7 +258,7 @@ scope as Bob set it on 26 and 27 October 2026, each to be confirmed then:
 - Whether "a long file changes by a patch" is still needed once the ADRs
   are short files.
 
-**Considered and not done.**
+## Considered and not done
 
 - **`decisions.md` kept whole, with a table of contents.** Nothing about
   its size changes: the Project's search still returns passages.
@@ -258,7 +286,7 @@ scope as Bob set it on 26 and 27 October 2026, each to be confirmed then:
   only agent here. If another joins, the files are renamed and
   `CLAUDE.md` points to them.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **A docs site.** A reader from outside the repository: a customer's
   developer, or a second engineer.
@@ -267,7 +295,7 @@ scope as Bob set it on 26 and 27 October 2026, each to be confirmed then:
 - **Open decisions split by entry.** One grows past a page, or the
   Project's search misses one that matters.
 
-**Consequences.**
+## Consequences
 
 - One ADR opens whole, in the editor, on GitHub and in the Project's
   search. Bob attaches files by hand less often, and an ADR's as-built
@@ -286,7 +314,9 @@ scope as Bob set it on 26 and 27 October 2026, each to be confirmed then:
 - Part 1 changes `scripts/` and a workflow as well as Markdown, so CI runs
   on it too.
 
-**Amendment (October 2026) — as built (#259).** What building settled:
+## Amendment (October 2026) — as built (#259)
+
+What building settled:
 
 - **Editorial fixes change an old ADR in place.** A moved file's path, a
   link, or a citation of where a rule lives is corrected in the old
@@ -356,7 +386,9 @@ scope as Bob set it on 26 and 27 October 2026, each to be confirmed then:
   filters (decided above), and three minor parser edges. `docs.yml` is
   not Prettier-formatted, as `ci.yml` is not.
 
-**Amendment (October 2026) — part 2's list grows.** Found while building
+## Amendment (October 2026) — part 2's list grows
+
+Found while building
 part 1, for `docs-start-here` to settle with the rest:
 
 - Citations of a section written as links,
@@ -394,7 +426,9 @@ part 1, for `docs-start-here` to settle with the rest:
   invoices pilot come from the fix-ups and one docs PR, each checked
   against its area's code and tests, not drafted from the ADRs alone.
 
-**Amendment (October 2026) — part 2 as planned.** Settled on 27 October
+## Amendment (October 2026) — part 2 as planned
+
+Settled on 27 October
 2026, from the list above and the second amendment's. Part 2,
 `docs-start-here`, stays one docs-only pull request. Its rules files,
 Claude's code rules by area and the checks that keep both true are

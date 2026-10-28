@@ -7,7 +7,9 @@ amended-by: [ADR-072, ADR-073, ADR-080]
 
 # ADR-071 — Documents as PDF, drawn on the server (amends ADR-046, ADR-054, ADR-055 and ADR-070)
 
-**Context.** Three documents print today: the packing slip (ADR-041),
+## Context
+
+Three documents print today: the packing slip (ADR-041),
 the invoice (ADR-046) and the credit note (ADR-047). Each is a page the
 browser prints, in the look ADR-055 settled and the customer's languages
 (ADR-054). There is no PDF. A person who needs one chooses Save as PDF in
@@ -23,7 +25,8 @@ order is something a supplier is sent. A pro forma invoice was deferred
 by ADR-046: a valued document that creates no debt, sent before goods
 ship, for prepayment, an import permit or a customer's own approval.
 
-**Decision — one design per document: the PDF, drawn on the server.**
+## Decision — one design per document: the PDF, drawn on the server
+
 The server draws every document as a PDF with pdfmake (MIT, built on
 pdfkit), from the same data its page reads, the snapshots of an issued
 document included. Print opens that PDF in a new tab and the browser's
@@ -37,7 +40,9 @@ permission, `inline` for Print and `attachment` for Download PDF, named by
 the document's number. A draft invoice's PDF is marked Draft on every page
 and in its file name; a voided invoice keeps the mark it prints with now.
 
-**Decision — six documents.** The packing slip, the invoice and the credit
+## Decision — six documents
+
+The packing slip, the invoice and the credit
 note keep the look approved in ADR-055, carried over to the PDF and
 checked against screenshots of the print pages. The other three are
 designed on the canvas and approved before they are built:
@@ -50,7 +55,9 @@ designed on the canvas and approved before they are built:
   expected date; where to deliver.
 - **Pro forma invoice:** below.
 
-**Decision — the pro forma invoice (amends ADR-046's deferral).** Made on
+## Decision — the pro forma invoice (amends ADR-046's deferral)
+
+Made on
 demand, from any sale order that is not cancelled, draft or confirmed, as
 long as every line has a price; an unpriced line is refused with what to
 do, as confirming is. It is titled Pro forma invoice and says Not a tax
@@ -68,7 +75,9 @@ Odoo offers it on any quotation or sales order. A sample order (ADR-042)
 has no prices, so it gets no pro forma until declared values come with
 customs details (deferred).
 
-**Decision — the words, the rules and the paper.** The words a document
+## Decision — the words, the rules and the paper
+
+The words a document
 prints move to the server's catalogues in all three languages, under the
 ids they have now, and the server applies ADR-054's rules: each label in
 the first language, then the second, the same size and weight; dates and
@@ -79,7 +88,9 @@ has to choose, so each organization gets one, Letter or A4, set where its
 branding is and defaulting from its registered address: Letter in Canada
 and the United States, A4 elsewhere.
 
-**Decision — fonts in the repository.** Noto Sans, for English and
+## Decision — fonts in the repository
+
+Noto Sans, for English and
 French, and Noto Sans SC, for Simplified Chinese, in Regular and Bold,
 under the SIL Open Font License, are committed to `server/assets/fonts`
 with their licence: about 20 MB. They load once, when the server starts,
@@ -87,7 +98,9 @@ and each PDF embeds only the characters it uses. Nothing is fetched at
 build or at run time, so documents render offline, on any host, and in
 mainland China.
 
-**Decision — the export (#118, amends ADR-070).** The ZIP adds a
+## Decision — the export (#118, amends ADR-070)
+
+The ZIP adds a
 `documents/` folder: every invoice and credit note as a PDF, named by its
 number, exactly as Download PDF gives it. A time in the CSVs is written
 `2026-10-15 18:54:11`, in UTC, rather than as Postgres writes it with
@@ -100,14 +113,16 @@ to the database. The download link carries `?locale=` with the app's
 language, which the README follows, since a plain link cannot otherwise
 say which language the Owner reads.
 
-**Decision — performance.** Drawing a PDF is work for the processor, not
+## Decision — performance
+
+Drawing a PDF is work for the processor, not
 the database. The export draws its documents one at a time as it streams,
 so an organization with thousands of invoices takes longer but never holds
 them all in memory. Each PDF route and the export are budgeted as every
 route is under ADR-051, the figures set from their first measurement on
 the volume seed, with a probe for one invoice and one for the export.
 
-**Rejected.**
+## Rejected
 
 - **A headless browser on the print pages,** which would keep one layout
   in the browser's hands: Chromium is hundreds of megabytes and needs a
@@ -124,7 +139,7 @@ the volume seed, with a probe for one invoice and one for the export.
 - **pdfkit alone:** tables, repeated headers and page breaks by hand,
   which pdfmake already does on top of it.
 
-**Deferred.**
+## Deferred
 
 - **Emailing a document** to its customer from the app. Trigger: the first
   customer who asks.
@@ -148,7 +163,7 @@ the volume seed, with a probe for one invoice and one for the export.
   the volume seed after this ADR's pull request merges (ADR-051), or
   sooner, a PDF or the export reported slow.
 
-**Consequences.**
+## Consequences
 
 - pdfmake is a new dependency, with pdfkit and fontkit under it, its
   peers resolving without an override (ADR-019).
@@ -159,7 +174,9 @@ the volume seed, with a probe for one invoice and one for the export.
 - The manual checks for printing are rewritten for the PDFs, and gain the
   three new documents and the export's.
 
-**Amendment (October 2026) — orders get numbers of their own.** This ADR
+## Amendment (October 2026) — orders get numbers of their own
+
+This ADR
 assumed an order had a number to print. It has only its partner's
 reference, which an order placed by phone lacks and two suppliers may
 share. A purchase order sent to a supplier needs ours, and a pro forma
@@ -182,7 +199,8 @@ after the organization's time zone that its periods need (ADR-072).
 *Built by ADR-073 (October 2026):* each organization sets each series'
 prefix, width, reset and next number.
 
-**Amendment (October 2026) — where goods go, and what every page says.**
+## Amendment (October 2026) — where goods go, and what every page says
+
 The designs approved on the canvas settle what the three new documents
 print where the decisions above left it open.
 
@@ -208,7 +226,9 @@ Deferred: **payment details** on invoices and pro formas, a free text
 saying how to pay, which a pro forma sent for payment in advance needs.
 Trigger: the first customer who pays from one.
 
-**Amendment (October 2026) — two things the build settled.** A packing
+## Amendment (October 2026) — two things the build settled
+
+A packing
 slip's times, the day it says the goods shipped and names its file by,
 are read in UTC. The print page read them in the browser's time zone,
 which a server does not have, and an organization keeps no time zone of
@@ -223,11 +243,14 @@ printed. An organization that moves keeps its issued invoices on the
 paper they were issued on, as everything else they print stays as
 issued; a size the organization chose still wins for every document.
 
-**Amendment (October 2026) — order numbers by their series (ADR-073).**
+## Amendment (October 2026) — order numbers by their series (ADR-073)
+
 Sale and purchase orders follow their series' settings, their period the
 day each is made in the organization's zone. A `/` in a number is written
 `_` in a document's file name, and in the export's `documents/`.
 
-**Amendment (October 2026) — prices on orders (ADR-080).** The purchase
+## Amendment (October 2026) — prices on orders (ADR-080)
+
+The purchase
 order's and the pro forma invoice's PDFs need `orders.view_prices` beside
 `orders.view`. The packing slip, which shows no prices, does not.

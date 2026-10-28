@@ -9,7 +9,9 @@ amended-by: [ADR-015]
 > **Amended by [ADR-015](0015-multiple-concurrent-sessions-per-user.md).**
 > One binding rule — delete any prior session on login — is superseded. Everything else stands.
 
-**Context.** The choice was between a stateless JWT and a server-side session referenced
+## Context
+
+The choice was between a stateless JWT and a server-side session referenced
 by a cookie.
 
 JWT's single advantage is avoiding a database read per request. ADR-004 removes that
@@ -25,7 +27,9 @@ Two further requirements point the same way. Org switching (ADR-003) needs mutab
 per-session state, which a signed token cannot hold. And a "your active sessions" screen
 requires one enumerable, individually revocable record per login.
 
-**Decision.** Opaque session tokens, stored server-side, delivered in an httpOnly cookie.
+## Decision
+
+Opaque session tokens, stored server-side, delivered in an httpOnly cookie.
 
 Generate 32 cryptographically random bytes per login. Send the base64url value to the
 client; store only its SHA-256 hash. Hashing, not encryption — the value is only ever
@@ -49,7 +53,9 @@ sessions (
 Cookie flags: `httpOnly: true`, `secure: true` (relaxed only on localhost http),
 `sameSite: 'lax'`, `path: '/'`.
 
-**Consequence — binding rules.** Each of these is a security control, not a preference:
+## Consequence — binding rules
+
+Each of these is a security control, not a preference:
 
 | Rule                                                                                                                                                                          | Failure it prevents                                       |
 |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------|
@@ -67,7 +73,7 @@ session rows.
 Expired rows are swept lazily (delete that user's expired rows during login) rather than
 by a scheduled job, per ADR-005.
 
-**Consequence — operational traps.**
+## Consequence — operational traps
 
 Express must be told it sits behind a proxy, or it reports the proxy's address as `req.ip`
 *and* silently refuses to set `secure` cookies over a TLS-terminated connection — a
@@ -92,7 +98,9 @@ This mirrors the production topology (reverse proxy serving the SPA, forwarding 
 Calling the API cross-origin in development means debugging CORS and `sameSite: 'none'`
 problems that will never exist in production.
 
-**Consequence — deferred, and how.** Mobile or third-party clients need a non-cookie
+## Consequence — deferred, and how
+
+Mobile or third-party clients need a non-cookie
 transport. This is additive: keep the auth guard's job as "resolve a request to
 `(user, current_org)`" and read the credential at the edge, so a bearer transport is a new
 strategy rather than a rewrite. Often the same opaque token can simply be returned in a
@@ -100,7 +108,9 @@ JSON body and sent as `Authorization: Bearer` — same table, same revocation, n
 signed token is genuinely required, it carries `user_id` and `org_id` only; roles and
 permissions are resolved per request (ADR-004).
 
-**Related, landing in step 3.** `sameSite: 'lax'` blocks most but not all CSRF —
+## Related, landing in step 3
+
+`sameSite: 'lax'` blocks most but not all CSRF —
 state-changing endpoints additionally require a custom header or double-submit token.
 Login rate limiting keys on **email + IP together**: IP alone both fails against rotating
 attackers and locks out everyone behind a corporate NAT. Note that `@nestjs/throttler`

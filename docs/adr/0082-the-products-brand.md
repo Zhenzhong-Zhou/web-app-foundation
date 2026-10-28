@@ -10,7 +10,9 @@ amended-by: [ADR-083]
 > **Amended by [ADR-083](0083-the-emails.md).**
 > The product's emails share one layout with the invitation, built from blocks; the header is that layout's first block, and an email's main action is a button where it already has words.
 
-**Context.** The product was named Panivo, 品桥 in Chinese, in October
+## Context
+
+The product was named Panivo, 品桥 in Chinese, in October
 2026, and #201 gave the tab its icon and every tab the name
 `VITE_APP_NAME` sets. Nothing else says whose app it is. The sign-in and
 register pages show a form with no name above it; the rail ends with
@@ -66,7 +68,8 @@ Checked before drafting, as the working agreements ask:
     asynchronous `fileFilter`, and no upload route sets a `fileFilter`
     at all, so it cannot be reached here.
 
-**Decision — the product before sign-in, the organization after.**
+## Decision — the product before sign-in, the organization after
+
 ADR-060's line, kept and filled in:
 
 - **Signed out, every page:** the mark and the product's name above the
@@ -84,7 +87,9 @@ ADR-060's line, kept and filled in:
   ends the same way.
 - **Words:** "Powered by" in each language, around the name.
 
-**Decision — the names and the © line are settings.** Like
+## Decision — the names and the © line are settings
+
+Like
 `VITE_APP_NAME`, each is read when the site is built:
 
 - **A name per language,** `VITE_APP_NAME_` with the language's tag:
@@ -100,8 +105,9 @@ ADR-060's line, kept and filled in:
   (Bob, 24 October 2026), until a registered business's name replaces
   it.
 
-**Decision — one icon on a plate, wherever someone else paints the
-background.** The tab, the taskbar, a home screen and a mail app are
+## Decision — one icon on a plate, wherever someone else paints the background
+
+The tab, the taskbar, a home screen and a mail app are
 drawn by the browser, the system or the mail app, and the app cannot
 know their colour. So all of them take one icon that never switches:
 the mark on a small rounded navy plate, the dark app icon (Bob, 24
@@ -111,7 +117,7 @@ Inside the app, where the app paints the background, the mark switches
 with Light and Dark as everything else does: at sign-in, at the rail's
 foot, in Help's foot, while the app loads.
 
-**Decision — the home screen, the browser's bar and a shared link.**
+## Decision — the home screen, the browser's bar and a shared link
 
 - **A web manifest,** `client/public/manifest.webmanifest`: its name and
   short name from `VITE_APP_NAME`, icons at 192 and 512 px on the plate,
@@ -134,7 +140,9 @@ foot, in Help's foot, while the app loads.
   a copied invitation link shows Panivo, never the organization. WeChat
   makes its own previews.
 
-**Decision — the mark while the app loads.** `index.html` draws the mark
+## Decision — the mark while the app loads
+
+`index.html` draws the mark
 centred on the page's colour until the app's first page replaces it, in
 the mode the app will open in: the device's stored choice, else the
 system's, read by a few lines before anything draws, as ADR-075 applies
@@ -143,8 +151,9 @@ white flash. The mark appears only after about 300 ms, so a quick load
 shows the page's colour alone rather than a flicker, and it does not
 move.
 
-**Decision — the product's emails carry its mark; an invitation does
-not.** Every email the product sends about an account or an
+## Decision — the product's emails carry its mark; an invitation does not
+
+Every email the product sends about an account or an
 organization (verification, reset, the security emails, an account's or
 an organization's deletion notices) opens with the mark on its plate and
 the product's name in text beside it, from one header they share. The
@@ -157,23 +166,29 @@ blocks images loses nothing, and Gmail drops an image carried as a
 `data:` URL. An invitation is the organization's (ADR-077) and stays as
 it is.
 
-**Decision — an organization's documents carry no product mark.** An
+## Decision — an organization's documents carry no product mark
+
+An
 invoice, a credit note, a packing slip and the rest are the
 organization's papers to its customers, with its logo (ADR-060). A
 vendor's mark on a customer's invoice is a thing buyers object to.
 
-**Decision — the colours stay.** ADR-055's brand layer needs no change:
+## Decision — the colours stay
+
+ADR-055's brand layer needs no change:
 its default accent and the dark rail are already the mark's purple and
 navy. Since the two share them, a change to either is made to both: the
 masters in `docs/brand/`, the files made from them, and `tokens.ts`
 (amends ADR-055).
 
-**Decision — Help's foot names the product.** ADR-081's version line
+## Decision — Help's foot names the product
+
+ADR-081's version line
 starts with the product's name, "Panivo · Version 0.7.0 · build 4e58ebc
 · Oct 24, 2026", and the © line follows under it. No line of its own
 (amends ADR-081).
 
-**Decision — what rides along.**
+## Decision — what rides along
 
 - **#225's known miss** (amends ADR-051). A budget may carry a known
   miss: its issue, an end date and a ceiling. The typo lookup's is the
@@ -204,7 +219,9 @@ starts with the product's name, "Panivo · Version 0.7.0 · build 4e58ebc
   and tests for `scripts/i18n-review.mjs`'s export, `--since` and
   import, proved by hand until now.
 
-**Tests.** Component tests: the signed-out header and footer, with the
+## Tests
+
+Component tests: the signed-out header and footer, with the
 holder set and unset; the name in 中文 with its setting and without; the
 rail's foot on both rails and folded; Help's foot. The server's e2e
 suite: each email the product sends opens with the header, and an
@@ -215,7 +232,7 @@ served; the loading mark in the stored mode before the app starts. `perf/`: the 
 ceiling, above it and after the end date. CI's author check: a commit
 carrying the placeholder refused.
 
-**Considered and not done.**
+## Considered and not done
 
 - **The mark on an organization's documents.** Above.
 - **The mark in an invitation.** ADR-077's reasons hold.
@@ -242,7 +259,7 @@ carrying the placeholder refused.
 - **Raising the typo budget.** A known miss with an end date says it is
   owed; a raised budget forgets.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **A registered business's name on the © line.** Trigger: the
   business registered. One setting.
@@ -260,7 +277,7 @@ carrying the placeholder refused.
   colour on emails, an organization whose customers receive email from
   it.
 
-**Consequences.**
+## Consequences
 
 - No migration.
 - Client: the settings read beside `VITE_APP_NAME` by `vite.config.ts`'s
@@ -287,7 +304,9 @@ carrying the placeholder refused.
 - Designed on the canvas before building, as ADR-060's Branding was; the
   brief and the boards go in `tmp/adr-082/`.
 
-**Amendment (October 2026) — as built (#247).** What building settled:
+## Amendment (October 2026) — as built (#247)
+
+What building settled:
 
 - **The organization moves to the rail's top** (amends ADR-060). From
   1200 px its logo, or its name, tops the rail with the fold button beside

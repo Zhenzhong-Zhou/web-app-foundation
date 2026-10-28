@@ -7,7 +7,9 @@ amended-by: [ADR-071, ADR-078, ADR-080]
 
 # ADR-070 — Deleting an organization (amends ADR-012, ADR-059 and ADR-069)
 
-**Context.** ADR-069 let a person leave an organization and delete their
+## Context
+
+ADR-069 let a person leave an organization and delete their
 account, and deferred deleting the organization itself. Until that
 exists, the only member of an organization cannot delete their account,
 and that is everyone who registers: registering creates an account and
@@ -30,7 +32,9 @@ period follows that an owner can cancel; then a point of no return, after
 which the deletion runs and cannot be stopped. What varies is who keeps
 the records afterwards.
 
-**Decision — the business keeps its records, not us.** Once the 30 days
+## Decision — the business keeps its records, not us
+
+Once the 30 days
 have passed, the organization is deleted with every row it owns and every
 file. The records survive in the business's hands, through the export.
 
@@ -52,7 +56,9 @@ file. The records survive in the business's hands, through the export.
   rules for records nobody can sign in to, and a second deletion at the
   end.
 
-**Decision — an export first, or a decision not to take one.** An Owner
+## Decision — an export first, or a decision not to take one
+
+An Owner
 can download a full export of the organization at any time, as one ZIP:
 
 - **One CSV per record type:** every table the organization owns, every
@@ -99,7 +105,9 @@ organization keeps working during the 30 days, so an Owner can download
 again near the end, and the emails say to. The last export is the Owners'
 to take: once the organization is gone, nothing can make one.
 
-**Decision — any Owner deletes, confirmed with their password.** Not only
+## Decision — any Owner deletes, confirmed with their password
+
+Not only
 the Owner who registered it: Owners share the organization, and any of
 them can cancel too. The action reads "Close this organization". Two new
 permissions, Owner-only as every new one is (ADR-004):
@@ -109,7 +117,7 @@ of its own because it is useful without deleting anything: an
 accountant's year end, a move to other software. The password check is
 rate limited as ADR-069's is.
 
-**Decision — 30 days, then a point of no return.**
+## Decision — 30 days, then a point of no return
 
 - **Scheduling** sets the deletion day 30 days ahead: a calendar day,
   shown as it is (ADR-052), as ADR-069's is. Asking again while one is
@@ -141,7 +149,9 @@ arrived between the two would leave an organization whose files were
 gone. With the cutoff, a run that fails halfway is finished by the next:
 nothing can have changed the decision in between.
 
-**Decision — completing.** `OrganizationDeletionTimer`, at startup and
+## Decision — completing
+
+`OrganizationDeletionTimer`, at startup and
 hourly as the other three run (`HourlyTimer`), takes each organization
 whose day has ended everywhere, one at a time. One that fails is logged
 and left for the next run, without holding up the rest.
@@ -166,13 +176,17 @@ Its foreign key stays `RESTRICT`, ADR-012's tripwire, so nothing else can
 delete it. No audit entry records the completion, since the log goes with
 it; the server logs the organization's id and the time, and nothing more.
 
-**Decision — members keep their accounts.** Each member loses that
+## Decision — members keep their accounts
+
+Each member loses that
 membership and nothing else: their account, their other organizations,
 their own history. A member with no other organization is signed in to
 none, as after leaving one (ADR-069): they can export their own data,
 change their details, or delete their account.
 
-**Decision — the only member deletes both in one action.** When the
+## Decision — the only member deletes both in one action
+
+When the
 Owner is the organization's only member, one step does both: "Delete my
 account and my organization". One password and one request schedule both
 for the same day; every other device is signed out, as ADR-069 does; one
@@ -194,8 +208,9 @@ cancels the account's deletion and says why. The `only_member` refusal
 now names the way past: delete the organization, alone or with the
 account.
 
-**Decision — backups keep what was deleted until they age out, and never
-bring it back.** A deleted organization stays in the encrypted database
+## Decision — backups keep what was deleted until they age out, and never bring it back
+
+A deleted organization stays in the encrypted database
 backups until they expire, 30 daily and 12 monthly (ADR-053), and its
 files in the backup copy for 31 days (ADR-059). Backups are kept whole:
 taking one organization out of a dump would mean decrypting, editing and
@@ -210,7 +225,7 @@ restored server starts; its former members get the last email a second
 time. Deleted accounts behave the same (ADR-069, amended). The privacy
 policy states the retention, as ADR-053 requires.
 
-**What is deleted, and what stays.**
+## What is deleted, and what stays
 
 | What | When the deletion completes |
 | --- | --- |
@@ -221,7 +236,7 @@ policy states the retention, as ADR-053 requires.
 | The only member's account, when deleted with it | Deleted right after, as ADR-069 deletes an account |
 | Encrypted backups | Kept until they age out; never restored to bring it back |
 
-**Rejected.**
+## Rejected
 
 - **Keeping a closed organization's records for the retention period.**
   The obligation is the business's, and the export meets it. Holding them
@@ -249,7 +264,9 @@ policy states the retention, as ADR-053 requires.
 - **Freezing the organization during the 30 days.** A business winding
   down still has orders to ship, and wants them in its last export.
 
-**The ZIP library.** Node writes deflate streams (`zlib`), but not ZIP
+## The ZIP library
+
+Node writes deflate streams (`zlib`), but not ZIP
 archives, and the export is many files in one download. The format looks
 simple and is not: a central directory, a CRC-32 for each entry, and
 ZIP64 once an archive passes 4 GB, which an organization holding its
@@ -267,7 +284,7 @@ needs; `fflate`, with no dependencies, but its streaming interface pushes
 chunks out by callback, so backpressure on a Node stream would be ours to
 write.
 
-**Deferred.**
+## Deferred
 
 - **Starting a new organization from an existing account.** Decided in
   [ADR-078](0078-registration.md), once invitations
@@ -278,7 +295,7 @@ write.
 - **The export in other formats,** such as JSON or an accounting
   package's import. Trigger: a customer who asks.
 
-**Consequences.**
+## Consequences
 
 - Migration 0057: `organizations.deletion_scheduled_at`, a `date`.
 - Routes under `/v1/organization`: `GET export`, the ZIP; `POST deletion`,
@@ -305,7 +322,9 @@ write.
   cancelling, completion, the emails, e2e tests); then the client, after
   the design; then the docs (manual checks, the handoff).
 
-**Amendment (October 2026) — settled with the design.** Five points the
+## Amendment (October 2026) — settled with the design
+
+Five points the
 canvas settled before the client was built:
 
 - **The export downloads as a file, and the server says when it was
@@ -341,7 +360,9 @@ canvas settled before the client was built:
   reminder goes out, it has no ×, so nobody misses the final week; nor
   once the deletion is under way, when nothing can be done.
 
-**Amendment (October 2026) — settled while building.** Three more, from
+## Amendment (October 2026) — settled while building
+
+Three more, from
 the reviews of the build:
 
 - **"Deleted together" is recorded on the account, not guessed.** The
@@ -374,7 +395,8 @@ the reviews of the build:
   through a parent, as `role_permissions` is, cannot be left out
   unnoticed.
 
-**Amendment (October 2026) — completing marks its start first (#117).**
+## Amendment (October 2026) — completing marks its start first (#117)
+
 Completing as written above left two windows, each about a second wide.
 A cancel committing in the second of the cutoff, after a run had erased
 the files but before it took the lock, kept an organization whose files
@@ -420,6 +442,8 @@ rather than holding it.
 The mark is never cleared: a run that fails after it leaves it, and the
 next run finishes the deletion.
 
-**Amendment (October 2026) — closing stays the Owners' (ADR-080).** With
+## Amendment (October 2026) — closing stays the Owners' (ADR-080)
+
+With
 roles an organization makes, `organizations.delete` is never offered in the
 role editor, so closing the organization stays the Owners' alone.

@@ -10,7 +10,9 @@ amended-by: [ADR-072, ADR-081]
 > **Amended by [ADR-081](0081-old-tabs-after-a-deploy.md).**
 > The lenient mode is one of two ways through a breaking change; the other raises the API revision. And every migration, not only one on a large table, leaves working what the release still serving reads: expand, then contract.
 
-**Context.** Four columns hold a day somebody picked, not a moment:
+## Context
+
+Four columns hold a day somebody picked, not a moment:
 
 - a lot's expiry, `lots.expires_at`;
 - an order's expected delivery, `orders.expected_at`;
@@ -32,7 +34,9 @@ saying so: a receipt costed as it arrives looks up its rate on or before
 `current_date`, the database session's day, because a movement has no day of
 its own (#20).
 
-**Decision — `date` for every calendar day.** The four columns become
+## Decision — `date` for every calendar day
+
+The four columns become
 `date`. Drizzle declares them `date(..., { mode: 'string' })`, as invoices
 do, so a day is a `'YYYY-MM-DD'` string from the column to the screen and
 never passes through a JS `Date`.
@@ -42,7 +46,9 @@ document, `created_at` and `updated_at`. The test is how a person would
 write it. If it is written without a time — on a box, on a licence, in a
 supplier's promise — it is a `date`.
 
-**Decision — converted at UTC, in one migration.** 0038 changes each
+## Decision — converted at UTC, in one migration
+
+0038 changes each
 column's type `USING (column AT TIME ZONE 'UTC')::date`. The zone is
 explicit because a plain cast uses the session's time zone, which is the
 dependency this ADR removes.
@@ -61,7 +67,9 @@ procedure is expand and contract instead: add the `date` column, backfill it
 in batches, write both, switch the reads, then drop the old one. ADR-051
 makes the same point about building indexes.
 
-**Decision — one format on the wire, `YYYY-MM-DD`.** ISO 8601's calendar
+## Decision — one format on the wire, `YYYY-MM-DD`
+
+ISO 8601's calendar
 date: what ERP and accounting APIs use for a day, and what
 `<input type="date">` gives. Responses return the day as stored. Requests
 are checked by `IsCalendarDay()`, which invoices already use: the shape
@@ -72,7 +80,9 @@ day *means* is what differs between them (see Deferred), and keeping the
 format fixed is what lets those meanings change without touching the API or
 the columns again.
 
-**Decision — how strict is a deployment setting.** `CALENDAR_DAY_INPUT` in
+## Decision — how strict is a deployment setting
+
+`CALENDAR_DAY_INPUT` in
 `.env`:
 
 - **`strict`**, the default: only `YYYY-MM-DD`.
@@ -91,7 +101,9 @@ instants. Render runs strict: nothing outside the app calls it yet. The
 pattern is the usual one for changing an API contract: accept the old shape
 for a while, log every use, refuse it once the log is quiet.
 
-**Decision — a `date` is read as a string everywhere.** node-postgres turns a
+## Decision — a `date` is read as a string everywhere
+
+node-postgres turns a
 `date` into a JS `Date` at the server process's local midnight. In
 Vancouver that serialises as 07:00Z, so a raw query on a developer's machine
 would disagree with Drizzle, and with Render, which runs in UTC. One type
@@ -100,7 +112,9 @@ pool is created, returns the text untouched for every query, Drizzle or raw.
 Raw reads type the value as `string | null`. One registration rather than a
 cast in each query, so a raw read written next year cannot forget it.
 
-**Decision — "today" on the server is one function.** It returns the UTC day
+## Decision — "today" on the server is one function
+
+It returns the UTC day
 as `YYYY-MM-DD`. Licence status at release (ADR-050) and the rate looked up
 when a receipt is costed both ask it, instead of `new Date()` in one place
 and `current_date` in the other. Two such strings compare as days, so
@@ -108,13 +122,15 @@ neither needs a `Date`. The rate lookup stops depending on how the database
 session is configured. When an organization gets its own time zone, this
 one function changes.
 
-**Decision — the audit log reads both shapes.** Rows written before 0038
+## Decision — the audit log reads both shapes
+
+Rows written before 0038
 hold instants for these fields; rows after hold days. Neither is rewritten:
 ADR-038 does not backfill history. The audit log reads a bare `YYYY-MM-DD`
 as a day whatever its key, and keeps reading the old instants of the known
 calendar-day fields in UTC.
 
-**Consequences.**
+## Consequences
 
 - `utcMidnight` and its tests go. Nine forms send the date input's value as
   typed and prefill from the value as it arrives, without `.slice(0, 10)`.
@@ -134,7 +150,9 @@ calendar-day fields in UTC.
 - Manual checks: the day picked is the day shown on every screen, the audit
   log included, wherever the browser is.
 
-**Deferred — what a day means.** None of these changes the column or the
+## Deferred — what a day means
+
+None of these changes the column or the
 format. Each is a rule or a setting on top, and each waits for its trigger.
 
 - **An organization's time zone for "today".** Licence status, the rate at
@@ -159,7 +177,9 @@ format. Each is a rule or a setting on top, and each waits for its trigger.
   (ADR-041), per customer or per organization. Trigger: the first customer
   who asks.
 
-**Amendment — settled while building.** Three points:
+## Amendment — settled while building
+
+Three points:
 
 - **No type parser.** Drizzle 0.45's node-postgres driver already returns
   `date` and `timestamptz` as text for every query that goes through it,

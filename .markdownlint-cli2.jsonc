@@ -4,9 +4,12 @@
   // The VS Code markdownlint extension reads this same file.
   "config": {
     "default": true,
-    // The one exception. The 80-column limit also counts table rows and
+    // The one rule off. The 80-column limit also counts table rows and
     // long links, which cannot be wrapped; prose is already wrapped by hand.
-    "MD013": false
+    "MD013": false,
+    // A heading may repeat under different parents: an ADR's amendment has
+    // its own Considered and not done and Consequences beside the ADR's.
+    "MD024": { "siblings_only": true }
   },
   "globs": ["**/*.md"],
   "ignores": [

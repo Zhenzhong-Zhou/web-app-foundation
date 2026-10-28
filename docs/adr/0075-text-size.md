@@ -6,7 +6,9 @@ amends: [ADR-055]
 
 # ADR-075 — Text size: the person's choice, and text that grows (amends ADR-055)
 
-**Context.** ADR-055 set five type sizes in `rem`, body 14.5px and
+## Context
+
+ADR-055 set five type sizes in `rem`, body 14.5px and
 caption 12.5px, so a browser's font size already scales them. Two things
 keep that from the people who need it. Most never find the browser's
 setting, and many work on a shared or locked-down computer where they
@@ -19,7 +21,9 @@ Latin letters. Browser zoom (⌘ +) scales everything and stays the way to
 its narrow form, which a person who only wants larger text did not ask
 for.
 
-**Decision — a Text size choice, in three steps.** Standard, Large and
+## Decision — a Text size choice, in three steps
+
+Standard, Large and
 Larger: 100%, 112.5% and 125% of the browser's font size, set as
 `font-size` on `<html>`.
 
@@ -34,19 +38,25 @@ Larger: 100%, 112.5% and 125% of the browser's font size, set as
   text, so a larger step would crowd the wide layout rather than help;
   past that is browser zoom's job, which narrows the layout as it goes.
 
-**Decision — where it is chosen.** In the avatar menu beside the colour
+## Decision — where it is chosen
+
+In the avatar menu beside the colour
 mode and the language, and on the signed-out pages beside the language:
 a person who cannot read the sign-in page needs it before they can sign
 in. Each option is drawn at the size it gives, so the choice is seen
 before it is made.
 
-**Decision — this device's, as the colour mode is.** Kept in the
+## Decision — this device's, as the colour mode is
+
+Kept in the
 device's storage, applied before the first paint, and followed by the
 device's other open tabs. The size a person needs depends on the screen
 as much as on them: a phone held close, a monitor across a warehouse
 desk. No column and no migration.
 
-**Decision — a width that holds text is in rem.** A width beside or
+## Decision — a width that holds text is in rem
+
+A width beside or
 around text (a label column, a field, a panel, the rail, the email cut,
 a flex basis) is written with `rem()` from `theme/rem.ts`, so it grows
 with the text and the cut or the wrap falls where it does at Standard.
@@ -55,17 +65,21 @@ written in px on a page ignores the choice, so the three that were
 (Home's summary and its cards' figures, the status pages' message)
 become rem.
 
-**Decision — less motion when asked.** Under `prefers-reduced-motion:
+## Decision — less motion when asked
+
+Under `prefers-reduced-motion:
 reduce` transitions end at once and scrolling jumps: the drawer, menus,
 dialogs and the gallery's zoom. What says something is still happening,
 a spinner or a skeleton, keeps moving.
 
-**Also fixed.** A variant's chevron on a product had no name, so a screen
+## Also fixed
+
+A variant's chevron on a product had no name, so a screen
 reader announced only "button". It is now named "Details of" its SKU,
 with `aria-expanded` saying whether it is open. The accessibility spec's
 product gets a weight, so the chevron is on the page axe scans.
 
-**Considered and not done.**
+## Considered and not done
 
 - **Raising Standard.** ADR-055's sizes were compared on real screens and
   chosen; a person who needs more chooses it, and nobody's screen moves
@@ -80,7 +94,7 @@ product gets a weight, so the chevron is on the page axe scans.
 - **ADR-055's density setting** stays deferred: it is rows per screen, a
   separate question from the size of the words.
 
-**Consequences.**
+## Consequences
 
 - Client only: `theme/text-size.ts` holds the choice, `TextSizeSelect`
   offers it, and `main.tsx` applies it before rendering. `theme/rem.ts`
@@ -92,11 +106,13 @@ product gets a weight, so the chevron is on the page axe scans.
 - conventions.md's The look gains the rem rule; manual checks section 28.
 - No server change and no migration.
 
-**Deferred.** The text size on the account, applied at sign-in as the
+## Deferred
+
+The text size on the account, applied at sign-in as the
 language is (ADR-054). Trigger: someone asking for their size to follow
 them to another device.
 
-**Amendment (October 2026) — settled while building, and in review.**
+## Amendment (October 2026) — settled while building, and in review
 
 The text size was built as decided. Walking the main screens at Larger
 found pages that scrolled sideways on a phone, nearly all of them at

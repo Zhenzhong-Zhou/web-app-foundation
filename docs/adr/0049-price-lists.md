@@ -5,7 +5,9 @@ date: 2026-09-28
 
 # ADR-049 — Price lists: a default that becomes the line's price
 
-**Context.** Every sale line is priced by hand today (ADR-035), and a sale
+## Context
+
+Every sale line is priced by hand today (ADR-035), and a sale
 cannot be confirmed until each one is (ADR-046). That is correct about where
 a price belongs — on the line, agreed per order — and slow and error-prone
 about where it comes from: whoever raises the order types 24.99 from memory,
@@ -21,7 +23,9 @@ ADR-048 also makes this the point where margin becomes possible: a sale price
 and a batch's cost now both exist, which raises what, if anything, should
 show the two together.
 
-**Decision — a price list proposes; the line decides.** A list supplies the
+## Decision — a price list proposes; the line decides
+
+A list supplies the
 *default* price when a line is added. The line stores its own `unit_price`
 and `currency` exactly as now (ADR-035), editable until it freezes, and
 nothing reads the list again after that. So:
@@ -38,7 +42,7 @@ a draft's total change under someone who has not touched it, and makes
 the line is added answers that from the line alone, the way ADR-048's
 valuation snapshots a purchase price rather than reading through to it.
 
-**Decision — the shape.**
+## Decision — the shape
 
 ```text
 price_lists       id, organization_id, name, direction ('sale' |
@@ -62,7 +66,9 @@ price_list_items  id, organization_id, price_list_id, variant_id,
 - Retired with `is_active: false`, never deleted, for the reason tax codes
   are not: a line's audit history may name the list its price came from.
 
-**Decision — which list applies.** A partner may name one sale list and one
+## Decision — which list applies
+
+A partner may name one sale list and one
 purchase list (`partners.sale_price_list_id`, `partners.purchase_price_list_id`,
 both nullable, each checked to point at a list of the right direction). The
 organization may name a default sale list for customers with none
@@ -82,14 +88,18 @@ A price in the request always wins, and a request that sends one is never
 second-guessed. Samples and zero-priced replacements (ADR-047) never take a
 list price: they are priced at zero on purpose.
 
-**Decision — currency conflicts leave the line unpriced, not refused.** On a
+## Decision — currency conflicts leave the line unpriced, not refused
+
+On a
 sale whose priced lines are already in CAD, a USD list price is not copied:
 the line is added unpriced and the response says why. Refusing the line
 would block the person for a pricing policy they may not control; copying it
 would build an order that cannot be confirmed. Unpriced is the state the
 order already knows how to handle — the confirm check names the line.
 
-**Decision — the price is resolved on the server.** The add-line routes
+## Decision — the price is resolved on the server
+
+The add-line routes
 (and order creation, for each line) resolve the default themselves, rather
 than the client fetching the list and filling the field. One rule in one
 place, and an API caller gets the same price the screen would. The response
@@ -101,7 +111,9 @@ Where the line already exists and someone wants the list's price again — a
 list corrected after the order was drafted — that is an explicit action on
 the line ("Use list price"), not a background refresh.
 
-**Decision — margin is shown only where cost is visible.** A sale line's
+## Decision — margin is shown only where cost is visible
+
+A sale line's
 margin is its unit price against its item's current unit cost. It is shown
 on a sale order to people holding `costs.view` (ADR-048), and nowhere else;
 the order's own response stays free of cost, fetched separately as the cost
@@ -110,21 +122,24 @@ may cost something else, and the invoice is where the real figure could one
 day be snapshotted. Stock with no lot uses its pool's average; a pool still
 waiting for a cost shows margin as provisional.
 
-**Decision — permissions: `price_lists.view`, `price_lists.create`,
-`price_lists.update`.** Owner-only by default, as every new permission is.
+## Decision — permissions: `price_lists.view`, `price_lists.create`, `price_lists.update`
+
+Owner-only by default, as every new permission is.
 Reading a list is not needed to use one: the price arrives on the line
 through the order routes, which keep their own permissions. So a person who
 raises orders gets list prices without being able to browse or change the
 lists. Widening view or update to Admin is a deliberate edit when someone
 asks.
 
-**Performance.** Adding a line gains two indexed reads: the partner's list
+## Performance
+
+Adding a line gains two indexed reads: the partner's list
 id, and one row from `price_list_items` by `(price_list_id, variant_id)`,
 which the unique index serves. A list's page reads its items by
 `price_list_id`; a list of a few thousand items needs no paging beyond the
 existing keyset pattern if it grows past that.
 
-**Consequences.**
+## Consequences
 
 - Migration 0035: `price_lists`, `price_list_items`, three nullable columns
   on `partners` and `organizations`, checks for direction, currency format
@@ -140,7 +155,7 @@ existing keyset pattern if it grows past that.
   - a margin column on sale orders for `costs.view`.
 - Three permissions and their audit actions.
 
-**Deferred.**
+## Deferred
 
 - **Quantity breaks** — a lower price from a quantity up. The line
   snapshots its price when added, so a break would need re-resolving when
@@ -156,7 +171,9 @@ existing keyset pattern if it grows past that.
   Needs ADR-048's open decision on period close first.
 - **Importing a list from a spreadsheet**, and a supplier's price file.
 
-**Amendment — margin deferred, and derivable either way.** Showing margin to
+## Amendment — margin deferred, and derivable either way
+
+Showing margin to
 `costs.view` holders is not built in v0.4. Production systems show two
 figures, and both are already derivable here without storing anything new:
 

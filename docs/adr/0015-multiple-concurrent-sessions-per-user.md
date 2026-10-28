@@ -6,7 +6,9 @@ amends: [ADR-011]
 
 # ADR-015 — Multiple concurrent sessions per user (amends ADR-011)
 
-**Context.** ADR-011 states two rules that cannot both hold. Its binding-rules table
+## Context
+
+ADR-011 states two rules that cannot both hold. Its binding-rules table
 requires issuing a new session row on login and **deleting any prior one**, citing session
 fixation. Its own context section requires a "your active sessions" screen with
 per-device revocation — which is only meaningful if a user can hold more than one session
@@ -21,7 +23,9 @@ CSPRNG bytes on every login and has no code path that accepts an incoming value.
 other sessions does not contribute to that defence. It is a separate and stricter policy —
 single-session — that was recorded as though it were the fixation fix.
 
-**Decision.** Multiple concurrent sessions per user are normal and supported.
+## Decision
+
+Multiple concurrent sessions per user are normal and supported.
 
 Login revokes exactly one row: the session presented in the request, if any. That row's
 cookie is about to be overwritten by the response, so without the delete it would remain
@@ -31,7 +35,9 @@ token. Sessions belonging to other devices are untouched.
 ADR-011's rule "issue a new session row on login, delete any prior one" is **superseded**
 by this entry.
 
-**Consequence.** Signing in on a phone does not sign out a laptop, which is what users
+## Consequence
+
+Signing in on a phone does not sign out a laptop, which is what users
 expect and what the active-sessions screen requires. `sessions.user_id` is deliberately
 non-unique.
 

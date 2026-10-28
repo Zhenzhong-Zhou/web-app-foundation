@@ -5,7 +5,9 @@ date: 2026-10-27
 
 # ADR-087 — The rules written down: `docs/rules/` for people, `.claude/rules/` for Claude
 
-**Context.** What the app allows, refuses and works out is written in
+## Context
+
+What the app allows, refuses and works out is written in
 three kinds of place today, none of them made for looking a rule up:
 
 - The ADRs say why, at the time of deciding, and change by amendment
@@ -44,7 +46,9 @@ This is a decision of its own rather than part of ADR-086's amendment.
 decides that the rules are written down and how they stay true, and it
 changes every pull request that changes a rule.
 
-**Decision — a rules file per area, for people.** `docs/rules/<area>.md`,
+## Decision — a rules file per area, for people
+
+`docs/rules/<area>.md`,
 named by ADR-086's `areas`, says what the app allows, refuses and works
 out in that area today, in plain words, for a support person, a new
 developer, or Bob six months on. In Diátaxis's terms it is reference:
@@ -53,7 +57,9 @@ is organized (`conventions.md` and `.claude/rules/`). English only, as
 the ADRs are. `docs/rules/README.md` says what a rules file is and is
 not, gives the format and the same-commit rule, and lists the files.
 
-**Decision — the format.** Rules grouped under headings by what a person
+## Decision — the format
+
+Rules grouped under headings by what a person
 does (for invoices: drafts, issuing, credit notes, voiding, numbering,
 pro forma), one bullet per rule. The rule comes first, in bold, in the
 words a person would use; then a sentence or two where it needs them;
@@ -79,7 +85,9 @@ then its links, separated by ` · `:
 
 The rules themselves carry no ids: nothing cites a single rule yet.
 
-**Decision — the checks, in `scripts/check-docs.mjs`.** Besides the
+## Decision — the checks, in `scripts/check-docs.mjs`
+
+Besides the
 links it already checks:
 
 - every quoted test name is found in the test file linked just before
@@ -96,13 +104,17 @@ by its `.claude/rules/` paths, changed while the rules file did not.
 area's code change no rule, so a failure would teach everyone to ignore
 it; `/code-review` judges each notice instead.
 
-**Decision — the same-commit rule.** A commit that changes a rule
+## Decision — the same-commit rule
+
+A commit that changes a rule
 updates its rules file, as a commit that changes what a person sees
 updates `docs/manual-checks.md`. It goes in `CLAUDE.md`'s rules and in
 `docs/engineering.md`. `/code-review` reports a rule changed without its
 file, and any notice above left unanswered.
 
-**Decision — Claude's code rules, by area, in `.claude/rules/`,** in
+## Decision — Claude's code rules, by area, in `.claude/rules/`
+
+They go in
 place of ADR-086's five nested `CLAUDE.md` files. One file per area,
 `.claude/rules/<area>.md`, its `paths` naming the area's folders on both
 sides and its tests:
@@ -132,7 +144,9 @@ paths:
 - **The `paths` lists are the map** from an area to its files, used by
   the notice above and by `/code-review`.
 
-**Decision — the pilot, then the rest.** Part 2 writes
+## Decision — the pilot, then the rest
+
+Part 2 writes
 `docs/rules/invoices.md` from the code and the tests, then checks it
 against the ADRs it cites and the invoices guide; it is not drafted from
 the ADRs alone. Each fix-up batch then writes the rules file and the
@@ -140,7 +154,7 @@ the ADRs alone. Each fix-up batch then writes the rules file and the
 area's code and tests, and one docs pull request writes the remaining
 areas' before the whole-app review (the handoff's order).
 
-**Considered and not done.**
+## Considered and not done
 
 - **Rules as executable specifications** (Cucumber's Gherkin, "living
   documentation"). A rule cannot drift from its test when it is the
@@ -165,7 +179,7 @@ areas' before the whole-app review (the handoff's order).
   loads for its own folder only, so the client's half of an area never
   sees it.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **Ids for the rules.** Code, a test or a Help guide needs to cite one
   rule.
@@ -175,7 +189,7 @@ areas' before the whole-app review (the handoff's order).
 - **Rules files in French and Chinese.** A support person who reads one
   of them and not English.
 
-**Consequences.**
+## Consequences
 
 - A support question about an area with a rules file is answered from
   one page, each answer linked to the test that proves it.

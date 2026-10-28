@@ -6,7 +6,9 @@ amended-by: [ADR-076]
 
 # ADR-057 — Lists by date range, sorted where it helps, exported as CSV
 
-**Context.** Every list is newest first, fixed, because keyset paging
+## Context
+
+Every list is newest first, fixed, because keyset paging
 (ADR-051) pages by one order. Only the audit log filters by date. An
 accountant's questions are about periods: September's invoices, this
 quarter's credit notes, the movements on the day of a count, orders
@@ -20,7 +22,7 @@ the same paging; sorting is not, since each sortable column needs its own
 cursor and index; CSV export belongs with them, since a filtered month is
 what gets exported.
 
-**Decision — a date range on the lists that have a date people ask by.**
+## Decision — a date range on the lists that have a date people ask by
 
 | List | Filtered by | Kind |
 | --- | --- | --- |
@@ -43,12 +45,14 @@ what gets exported.
 - A draft invoice has no invoice date yet, so a date range leaves drafts
   out; the status filter still finds them.
 
-**Decision — credit notes get a list.** They have pages but no list, so a
+## Decision — credit notes get a list
+
+They have pages but no list, so a
 quarter's credit notes cannot be shown or exported. `GET /v1/credit-notes`
 and a Credit notes page beside Invoices: number, invoice, partner, date,
 amount, voided, with the date range and search (ADR-056) like the rest.
 
-**Decision — sorting where it is asked for, not on every column.**
+## Decision — sorting where it is asked for, not on every column
 
 | List | Sortable by | Why |
 | --- | --- | --- |
@@ -74,7 +78,7 @@ amount, voided, with the date range and search (ADR-056) like the rest.
 - Any other column is refused, not ignored: a sort that cannot be paged
   correctly is worse than none.
 
-**Decision — CSV export of what the list shows.**
+## Decision — CSV export of what the list shows
 
 - An **Export** button on each list above writes a `.csv` file of every
   row matching the list's current filters, search, range and sort: not
@@ -132,7 +136,7 @@ amount, voided, with the date range and search (ADR-056) like the rest.
   settings are not exported: small, read on screen, and asked for by
   nobody yet.
 
-**Decision — in the browser.**
+## Decision — in the browser
 
 - The filter row gains a **date range**: From and To date fields and a few
   presets (This month, Last month, This quarter, This year), in the
@@ -142,7 +146,7 @@ amount, voided, with the date range and search (ADR-056) like the rest.
   current filters, and says how many rows it holds before the file starts
   only when it is refused.
 
-**Consequences.**
+## Consequences
 
 - Built in this order, each its own commit:
     1. Migration: the sort indexes; the audit action `list.exported`.
@@ -161,7 +165,7 @@ amount, voided, with the date range and search (ADR-056) like the rest.
 - The *Open decisions* entry on sorting is settled by this ADR; CSV import
   stays open there.
 
-**Considered and not done.**
+## Considered and not done
 
 - **Excel files (.xlsx).** Typed cells and formatting, at the price of a
   library and a format to keep right; every spreadsheet opens CSV.
@@ -175,7 +179,7 @@ amount, voided, with the date range and search (ADR-056) like the rest.
 - **Dates by the organization's time zone.** Organizations have none; the
   reader's is what the screens already use.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **Excel files.** Trigger: an accountant whose spreadsheet mangles CSV
   (leading zeros, long numbers), or who asks.
@@ -186,7 +190,8 @@ amount, voided, with the date range and search (ADR-056) like the rest.
 - **More sortable columns.** Trigger: asked for, one at a time, each with
   its index.
 
-**Amendment (October 2026) — an instant as a spreadsheet opens it.**
+## Amendment (October 2026) — an instant as a spreadsheet opens it
+
 Instants were written as ISO 8601, `2026-10-15T18:54:11.123Z`, which
 Excel and Numbers keep as text: the `T`, the `Z` and the fractions stop
 them reading a date. ADR-071 writes the organization's full export's
@@ -194,8 +199,9 @@ times as `2026-10-15 18:54:11`, in UTC, which both open as a date; every
 CSV now does the same, through one helper, `csvMoment`, so the
 per-screen exports and the full one agree. Days stay `YYYY-MM-DD`.
 
-**Amendment (October 2026) — ranges of moments at the organization's
-midnight (ADR-072).** A date range over moments, such as movements, runs,
+## Amendment (October 2026) — ranges of moments at the organization's midnight (ADR-072)
+
+A date range over moments, such as movements, runs,
 RMAs and the audit log, turned its days into times at the reader's
 midnight. It now turns them into times at the organization's, so "This
 month" is the same stretch of time for every member, and the presets

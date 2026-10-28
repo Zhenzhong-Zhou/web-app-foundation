@@ -5,7 +5,9 @@ date: 2026-08-24
 
 # ADR-009 — Drizzle for schema, migrations, and queries
 
-**Context.** Candidates were Prisma, Drizzle, Knex, and hand-written SQL over the raw
+## Context
+
+Candidates were Prisma, Drizzle, Knex, and hand-written SQL over the raw
 `pg` driver.
 
 Knex was rejected: weak TypeScript inference (query results arrive effectively untyped)
@@ -22,7 +24,9 @@ policies, so complex DDL drops to hand-written SQL inside Prisma migrations anyw
 ADR-003 explicitly anticipates adding RLS. Its generated client is also harder to wrap in
 a tenant-scoped layer that cannot be accidentally bypassed.
 
-**Decision.** Drizzle. Specifically:
+## Decision
+
+Drizzle. Specifically:
 
 | Package              | Role                                                   |
 |----------------------|--------------------------------------------------------|
@@ -32,7 +36,9 @@ a tenant-scoped layer that cannot be accidentally bypassed.
 
 Each table is defined once; the same definition feeds migrations and query types.
 
-**Consequence.** `drizzle-kit generate` emits plain `.sql` files that are readable,
+## Consequence
+
+`drizzle-kit generate` emits plain `.sql` files that are readable,
 hand-editable, and committed as source code — the correct place to add RLS policies
 (ADR-003), partial indexes, and triggers. Queries stay close to SQL, which suits existing
 Postgres experience.

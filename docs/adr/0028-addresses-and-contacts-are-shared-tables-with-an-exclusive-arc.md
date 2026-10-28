@@ -5,7 +5,9 @@ date: 2026-09-11
 
 # ADR-028 — Addresses and contacts are shared tables with an exclusive arc
 
-**Context.** Partners need somewhere to put a billing address, a delivery address,
+## Context
+
+Partners need somewhere to put a billing address, a delivery address,
 and the people to talk to — the sales rep you order from is not the accounts
 payable clerk who chases the invoice, and one customer with three delivery sites
 is ordinary rather than an edge case. Our own `site` locations need a postal
@@ -31,7 +33,9 @@ constraint can see them. ADR-012 made the organization the owner of its data
 through `on delete cascade`; a polymorphic column opts out of that for the two
 tables most likely to accumulate rows nobody reads.
 
-**Decision.** One `addresses` table and one `contacts` table, each carrying a
+## Decision
+
+One `addresses` table and one `contacts` table, each carrying a
 real nullable foreign key per owner kind, with a check constraint asserting that
 exactly one is set:
 
@@ -53,7 +57,9 @@ in the tree makes it selectable in the move-stock dialog, and eventually someone
 transfers four hundred units into Acme's accounts payable department. The two
 concepts share the word "address" and nothing else.
 
-**Consequence.** The schema will look wrong to anyone reading it cold: two
+## Consequence
+
+The schema will look wrong to anyone reading it cold: two
 nullable foreign keys and a `num_nonnulls` check invite a tidy-up into
 `owner_type`/`owner_id`. That tidy-up is this decision being reversed, and this
 entry is the reason not to.

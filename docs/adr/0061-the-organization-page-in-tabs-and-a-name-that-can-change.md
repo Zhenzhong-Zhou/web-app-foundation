@@ -5,7 +5,9 @@ date: 2026-10-09
 
 # ADR-061 — The Organization page in tabs, and a name that can change
 
-**Context.** Settings → Organization is one page of small forms, each with
+## Context
+
+Settings → Organization is one page of small forms, each with
 its own Save: tax registration, registered address, base currency, the
 default sale price list, document languages and licences at release.
 ADR-060 adds branding, the expiry days and a printing choice. Nine forms on
@@ -14,7 +16,7 @@ money, looks and rules, and gives nothing a link can point to: Getting
 started can only send an owner to the top of the page. And the name, set at
 registration, cannot be changed at all.
 
-**Decision — five tabs, each with its own address.**
+## Decision — five tabs, each with its own address
 
 | Tab | Holds | Address |
 | --- | --- | --- |
@@ -34,7 +36,9 @@ registration, cannot be changed at all.
   links to Profile; Home's Expiring card says "within 90 days" and, for
   those who may change it, links that to Stock.
 
-**Decision — the name can change.** On the Profile tab, for whoever has
+## Decision — the name can change
+
+On the Profile tab, for whoever has
 `organizations.update`, 1 to 120 characters, audited like every change to
 the organization.
 
@@ -46,7 +50,7 @@ the organization.
 - Why now: a business that changes its logo usually changes its name with
   it, and the name was only fixed because renaming was undecided.
 
-**Consequences.**
+## Consequences
 
 - Built in this order, before ADR-060's code:
     1. The tabs on the Claude Design canvas: Profile with the name, Documents
@@ -89,14 +93,14 @@ the organization.
   links to the customer's page, for whoever holds `partners.update`.
   MC-702.
 
-**Considered and not done.**
+## Considered and not done
 
 - **One long page with an index down the side.** Shorter to build, and
   still one long page on a phone, where the index is the first thing to go.
 - **A page per group in the menu.** Five settings entries where there is one
   now, for forms most people change once.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **A "ready to invoice" summary** at the top of Profile: address set, tax
   number set. Getting started covers a new organization. Trigger: an

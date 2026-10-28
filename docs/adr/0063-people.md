@@ -6,7 +6,9 @@ amended-by: [ADR-079]
 
 # ADR-063 — People: a photo of one's own, initials otherwise, and a People page
 
-**Context.** A person shows as an icon in the top bar and as a name
+## Context
+
+A person shows as an icon in the top bar and as a name
 everywhere else: in Members, in a record's history, as who uploaded a
 photo or released a run. In a team of any size, names alone are slow:
 people know each other's faces before their surnames, and a new hire
@@ -21,14 +23,16 @@ What shapes it:
 - **It is personal data**, of a kind the app holds nowhere else. The
   person decides whether it is there.
 
-**Decision — only the person sets their photo.** On the Account page, in
+## Decision — only the person sets their photo
+
+On the Account page, in
 the Profile card beside their name, email and language: Add a photo,
 Replace, Remove. Nobody else can, an owner included: putting
 a person's face in the app is theirs to do. Removing it deletes it at
 once, bytes and all, rather than releasing it for 30 days as ADR-059 does
 for organization files: there is no undo for a face someone took back.
 
-**Decision — stored with the person, through ADR-059.**
+## Decision — stored with the person, through ADR-059
 
 - `files` gains `user_id`: a file belongs to an organization or, for a
   photo, to a person, never both. The key is the owner's id and the
@@ -41,34 +45,41 @@ for organization files: there is no undo for a face someone took back.
 - `users.photo_file_id`, null for none. A new photo replaces the old,
   which is deleted.
 
-**Decision — seen by the people one works with.** `GET
+## Decision — seen by the people one works with
+
+`GET
 /v1/people/:userId/photo?size=` answers for a person who shares the
 caller's current organization, and is a 404 for anyone else, as for any
 record. The address carries the photo's id, so a new photo is a new
 address and every browser picks it up; each is cached for a year
 (ADR-059).
 
-**Decision — initials, never a blank.** Without a photo, a person is
+## Decision — initials, never a blank
+
+Without a photo, a person is
 their initials (two letters from the name, or the first two of an email)
 on a colour taken from the name: always the same colour for the same
 person, from eight that read white text at AA in both colour modes, so
 two people with the same initials still look different.
 
-**Decision — the same face everywhere a person appears.** One component,
+## Decision — the same face everywhere a person appears
+
+One component,
 one circle, in: the top bar's account button, the account menu, the
 Account page, Members, the People page, and each entry of a record's
 history. Notifications, recently opened and the lookup keep their names
 alone for now (Deferred).
 
-**Decision — details at work, set by the person, per organization.** Job
+## Decision — details at work, set by the person, per organization
+
+Job
 title, department, location, work phone and extension, each optional,
 each set by the person on the Account page under "Your details at"
 and the organization's name. On the membership, not the account: someone in two
 organizations has a title and an extension in each. Nobody else edits
 them, as nobody else sets the photo.
 
-**Decision — a People page for finding someone, a page per person for
-everything else.**
+## Decision — a People page for finding someone, a page per person for everything else
 
 - `/people`, in the menu for every member: a card each, with what is
   looked up most: the face, name, job title, role and work phone with its
@@ -96,7 +107,8 @@ everything else.**
 - Read-only. Adding and removing people, and their roles, stay in Members,
   for those who may.
 
-**Decision — last active is what the person did, not what their tab did.**
+## Decision — last active is what the person did, not what their tab did
+
 Three things that sound alike are kept apart:
 
 | Term | What it means | Where it comes from | Shown |
@@ -127,14 +139,17 @@ Three things that sound alike are kept apart:
   set by the server to the caller, rather than `/v1/audit` trusting a
   filter the browser sends to decide who may see what.
 
-**Decision — the top bar shows the face alone.** At every width, as most
+## Decision — the top bar shows the face alone
+
+At every width, as most
 apps do: no email beside it. The email was there so that on a shared
 computer people could see whose account is signed in; a face, or initials
 on their own colour, says that at a glance. Hovering shows the name and
 email; the account menu opens with both.
 
-**Decision — your own work on your Account page, and what others see,
-said plainly.** The Account page gains "Your recent work in"
+## Decision — your own work on your Account page, and what others see, said plainly
+
+The Account page gains "Your recent work in"
 the organization: the last 20 things you did there, each linking to its
 record, titled apart from the sign-in activity it already shows. "See all
 your work" opens Your activity, `/account/activity`: the audit log's list,
@@ -145,7 +160,7 @@ integration that asks. And one line under the photo says who sees
 what: colleagues see roughly when you were last active; those who may read the history also see the exact time
 and your recent work.
 
-**Consequences.**
+## Consequences
 
 - Built in this order, one PR: the screens on the Claude Design canvas,
   reviewed first; migration 0052 (`files.user_id`, the `avatar` kind,
@@ -218,7 +233,7 @@ there the initials follow the page's language, as any label mixing two
 languages does. In the Chinese app the page is Chinese and they are read
 as Chinese anyway.
 
-**Considered and not done.**
+## Considered and not done
 
 - **An owner adding a photo for someone.** Faster for staff who never
   will, and a face in the app the person did not put there. Initials
@@ -227,7 +242,7 @@ as Chinese anyway.
   about every member's email, for a picture that is often years old.
 - **A photo per organization.** One face, wherever the person works.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **Faces in notifications, recently opened and the lookup.** Trigger:
   the first of them that reads slowly with names alone.
@@ -241,6 +256,8 @@ as Chinese anyway.
   most of a Korean team would share one. Trigger: Korean as one of the
   app's languages, or a team that asks.
 
-**Amendment (October 2026) — who is new (ADR-079).** People marks a member
+## Amendment (October 2026) — who is new (ADR-079)
+
+People marks a member
 who joined in the last two weeks, with the day they joined, and its
 summary line says how many did.

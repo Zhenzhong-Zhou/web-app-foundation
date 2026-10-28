@@ -6,7 +6,9 @@ amends: [ADR-077, ADR-082]
 
 # ADR-083 — The emails: one layout for every email (amends ADR-077 and ADR-082)
 
-**Context.** The app sends 14 emails, built one by one in six places:
+## Context
+
+The app sends 14 emails, built one by one in six places:
 
 - confirm your email and reset your password, inline in
   `core/auth/auth.service.ts`;
@@ -73,7 +75,9 @@ Checked before drafting, as the working agreements ask:
   - The README says CLAUDE.md comes "with two project skills"; there have
     been three since ADR-081.
 
-**Decision — one layout, built from blocks, in our own code.** A small
+## Decision — one layout, built from blocks, in our own code
+
+A small
 builder in `server/src/shared/mail/` takes an email as blocks: a greeting,
 a paragraph, a button, details (a label and a value per row), a quote,
 small print and a footer. It writes the HTML part and the text part from
@@ -97,7 +101,9 @@ one action and the address under it.
   React, to the server for 14 emails whose words already live in the
   catalogues.
 
-**Decision — a whole document, in its language.** `<!doctype html>`, with
+## Decision — a whole document, in its language
+
+`<!doctype html>`, with
 `lang` and `dir` on `<html>` and again on the outermost element, since
 Gmail drops the `<html>` element and its attributes. The subject as
 `<title>`. Meta tags for the character set and the viewport;
@@ -109,7 +115,7 @@ layout has `role="presentation"`, as the header's has, so a screen reader
 does not read it as a table; the security emails' details stay a table of
 data.
 
-**Decision — the look.**
+## Decision — the look
 
 - One column, at most 600 px wide, the full width on a phone. Outlook on
   Windows ignores `max-width`, so a fixed 600 px table wraps the column
@@ -126,7 +132,9 @@ data.
   its heading, Join {organization}, opens it, and its last line, Sent for
   {organization} by Panivo., is small print.
 
-**Decision — buttons only where the action already has words.** Confirm
+## Decision — buttons only where the action already has words
+
+Confirm
 your email address, Reset your password and Accept the invitation become
 buttons, one to an email.
 
@@ -151,7 +159,9 @@ buttons, one to an email.
 So every sentence an email shows is already translated; none is added in
 English alone.
 
-**Decision — dark mail apps.** No colour is set on the page or the text,
+## Decision — dark mail apps
+
+No colour is set on the page or the text,
 so each mail app's own colours apply, its dark ones too. Only the
 header's plate, the button and the rules have fixed colours, each chosen
 to stand on light and dark. The grey becomes `#A3ACBA` under
@@ -159,14 +169,17 @@ to stand on light and dark. The grey becomes `#A3ACBA` under
 Outlook.com's own selector for its dark mode. Gmail's app inverts colours
 in its own way, and the check by hand looks at what it does.
 
-**Decision — the inbox preview.** A hidden preheader carries the email's
+## Decision — the inbox preview
+
+A hidden preheader carries the email's
 first sentence after its greeting, or its first sentence where it has
 none, padded with invisible spacing so the preview ends there rather than
 running on into the header. Without it every inbox shows "Panivo Hi Bob,"
 first. Some screen readers read it before the email: an accepted trade,
 for no new words. HTML only.
 
-**Decision — the invitation answers to its inviter (amends ADR-077).**
+## Decision — the invitation answers to its inviter (amends ADR-077)
+
 While the inviter is still a member, the invitation's `Reply-To` is their
 address, as Google Docs' sharing emails do: a newcomer who replies, "which
 warehouse do I start in?", reaches a person rather than `no-reply@`. The
@@ -177,7 +190,7 @@ resend is written the same way. `Mail` gains an optional `replyTo`, which
 MailService passes to Resend's API as `reply_to` and to nodemailer as
 `replyTo`; no product email sets one.
 
-**Decision — seeing every email at once.**
+## Decision — seeing every email at once
 
 - `npm run mail:preview` in `server/` writes every email, in each
   language it is sent in, as HTML and text, into `tmp/mail-preview/` with
@@ -197,7 +210,8 @@ MailService passes to Resend's API as `reply_to` and to nodemailer as
   web view where there is an address to hand. A handful of emails, not all
   of them: Resend's free plan sends 100 a day.
 
-**Decision — `/build-from-brief`, a project skill, rides along.**
+## Decision — `/build-from-brief`, a project skill, rides along
+
 `.claude/skills/build-from-brief/SKILL.md`, run as
 `/build-from-brief tmp/adr-NNN/brief.md <step>`, in place of "Read
 tmp/adr-NNN/brief.md and do step N. End with the summary for the chat."
@@ -225,11 +239,13 @@ its decisions and its prompts.
   branch runs through it. CLAUDE.md names it, and the README lists the
   four project skills.
 
-**Decision — the numbers after it.** The error tracker is ADR-084, and low
+## Decision — the numbers after it
+
+The error tracker is ADR-084, and low
 stock moves from ADR-083 to ADR-085, as it moved for the brand on 24
 October.
 
-**Considered and not done.**
+## Considered and not done
 
 - **MJML, React Email, or templates in files.** A compiler, React on the
   server, or a second language beside TypeScript, for 14 emails whose
@@ -257,7 +273,7 @@ October.
   the test above, and click tracking rewrites every link, the sign-in and
   reset links included.
 
-**Deferred — each with what brings it in.**
+## Deferred — each with what brings it in
 
 - **A footer for the product's emails,** with a reply address and links to
   the terms and privacy policy. Trigger: those documents (ADR-082), or a
@@ -270,7 +286,7 @@ October.
   emails, and ADR-060's colour on emails, keep their triggers; with the
   layout, each is a change to one block.
 
-**Consequences.**
+## Consequences
 
 - No migration, and no change to the API.
 - Server: `shared/mail/`'s layout and its blocks; MailBrand drawing the
@@ -306,7 +322,9 @@ October.
   Code Review: its first run's time, models and any `Refused:` line are
   read against #253's table, without a re-run.
 
-**Amendment (October 2026) — settled with the design.** The canvas's
+## Amendment (October 2026) — settled with the design
+
+The canvas's
 boards (Bob, 26 October 2026) settled six points and found one fault.
 
 - **Dark mail apps take the app's own Dark accent** (the fault). The
@@ -341,7 +359,7 @@ boards (Bob, 26 October 2026) settled six points and found one fault.
   as an article, its heading first; the button the column's width on a
   phone; and the links and the button in Apple Mail's dark mode.
 
-**Deferred, added:**
+### Deferred, added
 
 - **The brand's mark beside the sender's name in an inbox (BIMI).** It
   needs DMARC enforced, at `p=quarantine` or `reject`; Panivo's own
@@ -351,12 +369,16 @@ boards (Bob, 26 October 2026) settled six points and found one fault.
   trademark. Trigger: DMARC's, the first paying customer, with Panivo's
   own domain.
 
-**Left for an issue:** the security emails print their time as
+### Left for an issue
+
+The security emails print their time as
 `toUTCString()`, "Mon, 26 Oct 2026 22:41:07 GMT", hard to read and in
 no reader's time zone: #255. Changing it changes the text part, which
 this branch keeps, so it has a branch of its own.
 
-**Amendment (October 2026) — as built (#257).** What building settled:
+## Amendment (October 2026) — as built (#257)
+
+What building settled:
 
 - **Corrections to the decisions above.**
   - The account's third deletion email is *blocked*, "your account could
