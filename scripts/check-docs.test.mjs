@@ -396,6 +396,37 @@ test("an amendment is in both ADRs' front matter", (t) => {
   ]);
 });
 
+test("an amendment headed with another ADR's number is in amended-by", (t) => {
+  const root = fixture(t, {
+    ...TREE,
+    "docs/adr/0001-one.md": `${adr(
+      "status: accepted\ndate: 2026-08-24\namended-by: [ADR-002]\nareas: [docs]\n",
+      "ADR-001 — One",
+    )}
+## Amendment (October 2026) — as built (#12)
+
+## Amendment (October 2026) — two (ADR-002)
+
+## Amendment (October 2026) — three ([ADR-003](0003-three.md), #14)
+`,
+    "docs/adr/0002-two.md": adr(
+      "status: accepted\ndate: 2026-08-25\namends: [ADR-001]\nareas: [docs]\n",
+      "ADR-002 — Two",
+    ),
+    "docs/adr/0003-three.md": `${adr(
+      "status: accepted\ndate: 2026-08-26\nareas: [docs]\n",
+      "ADR-003 — Three",
+    )}
+## Amendment (October 2026) — as built (ADR-003)
+`,
+    "docs/adr/README.md": INDEX,
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    "docs/adr/0001-one.md:16: ## Amendment (October 2026) — three ([ADR-003](0003-three.md), #14) — names ADR-003, which amended-by does not list: add it there, and ADR-001 to its amends",
+  ]);
+});
+
 test("two ADRs with one number fail, each naming the other", (t) => {
   const root = fixture(t, {
     ...TREE,

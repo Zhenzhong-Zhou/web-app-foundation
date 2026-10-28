@@ -16,7 +16,9 @@
  * amends and amended-by. Its heading, `# ADR-NNN — Title`, has its
  * file's number. Each ADR its `amends` names exists and lists it in its
  * `amended-by`, and each one its `amended-by` names lists it in its
- * `amends`; both lists are in ascending order. Once there is an ADR,
+ * `amends`; both lists are in ascending order. An amendment headed with
+ * another ADR's number, `## Amendment … (ADR-072)`, is in its file's
+ * `amended-by`. Once there is an ADR,
  * docs/adr/README.md holds their index, and open-decisions.md and
  * template.md are the folder's only other files. AREAS then names each
  * folder of server/src/modules/, server/src/core/ and
@@ -253,11 +255,25 @@ function readAdrs() {
       while (at < lines.length && !lines[at].trim()) at++;
 
       const heading = /^# ADR-(\d+) — (.+)$/.exec(lines[at] ?? "");
+      const amendments = lines.flatMap((text, i) =>
+        /^## Amendment\b/.test(text)
+          ? [
+              {
+                text,
+                line: i + 1,
+                numbers: [...text.matchAll(/ADR-(\d+)/g)].map((match) =>
+                  Number(match[1]),
+                ),
+              },
+            ]
+          : [],
+      );
       return {
         file,
         number: Number(name.slice(0, 4)),
         frontMatter,
         malformed,
+        amendments,
         heading: heading && {
           line: at + 1,
           number: Number(heading[1]),
@@ -567,6 +583,20 @@ export function checkAdrs({ writing = false } = {}) {
             `${adrName(number)}'s ${other} does not list ${name}; ${fix}`,
           );
         }
+      }
+    }
+  }
+
+  // An amendment headed with another ADR's number, as "## Amendment
+  // (October 2026) — its title (ADR-072)", is that ADR's: in amended-by.
+  for (const adr of found) {
+    const amendedBy = listed(adr, "amended-by");
+    for (const { text, line, numbers } of adr.amendments) {
+      for (const number of new Set(numbers)) {
+        if (number === adr.number || amendedBy.includes(number)) continue;
+        failures.push(
+          `${adr.file}:${line}: ${text} — names ${adrName(number)}, which amended-by does not list: add it there, and ${adrName(adr.number)} to its amends`,
+        );
       }
     }
   }
