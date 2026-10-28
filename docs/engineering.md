@@ -301,8 +301,11 @@
 - Refusals in order: malformed (400), not found (404), not allowed (409), all
   before any write. Ids from a body that belong to another tenant are 400.
 - Every write route is audited or listed in `NOT_AUDITED` with a reason.
-  Every route has `@RequirePermissions`. Never seed a permission nothing
-  gates. New permissions default to Owner-only: add them to `PERMISSIONS`
+  Every route has `@RequirePermissions`, is public, or is listed with its
+  reason in `server/test/permission-coverage.e2e-spec.ts`: `SELF_SERVICE`
+  for one acting only on the caller's own account, `GATED_INSIDE` for one
+  gating each part it returns by that part's own permission. Never seed a
+  permission nothing gates. New permissions default to Owner-only: add them to `PERMISSIONS`
   and its descriptions, never to the Admin or Viewer lists, and to the
   client's list in the same commit.
 

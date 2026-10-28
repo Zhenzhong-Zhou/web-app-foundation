@@ -14,9 +14,10 @@ paths:
 What to keep true when changing roles and permissions.
 
 - **Every route has `@RequirePermissions`,** is public, or is listed with
-  its reason in `server/test/permission-coverage.e2e-spec.ts`: the guard
-  refuses only what a route declares
-  ([engineering.md, Server](../../docs/engineering.md#server)).
+  its reason in `server/test/permission-coverage.e2e-spec.ts`:
+  `SELF_SERVICE` for one acting only on the caller's own account,
+  `GATED_INSIDE` for one gating each part it returns by that part's own
+  permission. The guard refuses only what a route declares ([engineering.md, Server](../../docs/engineering.md#server)).
 - **A new permission is Owner-only:** in `PERMISSIONS` and
   `PERMISSION_DESCRIPTIONS`, never in the Admin or Viewer lists, and in
   the client's `GRANTS` (`client/src/account/access-phrases.ts`) in the

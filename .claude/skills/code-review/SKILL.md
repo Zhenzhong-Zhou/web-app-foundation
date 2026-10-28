@@ -92,10 +92,13 @@ allows, refuses and works out there.
   list matching its check constraint.
 - Writes `@Audited`, or listed in `NOT_AUDITED` with a reason, with no
   free text in the payload (ADR-018).
-- Every route has `@RequirePermissions`. A new permission is Owner-only:
-  added to `PERMISSIONS` and its descriptions, never to the Admin or
-  Viewer lists, and to the client's list in the same commit. No
-  permission is seeded that nothing gates.
+- Every route has `@RequirePermissions`, is public, or is listed with its
+  reason in `server/test/permission-coverage.e2e-spec.ts`: `SELF_SERVICE`
+  for one acting only on the caller's own account, `GATED_INSIDE` for one
+  gating each part it returns by that part's own permission. A new
+  permission is Owner-only: added to `PERMISSIONS` and its descriptions,
+  never to the Admin or Viewer lists, and to the client's list in the
+  same commit. No permission is seeded that nothing gates.
 
 ### Behaviour
 

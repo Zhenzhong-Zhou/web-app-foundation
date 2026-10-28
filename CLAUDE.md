@@ -82,9 +82,11 @@ Karpathy's observations on LLM coding pitfalls
   are `YYYY-MM-DD` strings (ADR-052).
 - **Tenancy.** Every query goes through `TenantDb`; nothing reads across
   organizations (ADR-003).
-- **Permissions.** Every route declares `@RequirePermissions`, unless it
-  is public or listed in `SELF_SERVICE` with a reason;
-  `server/test/permission-coverage.e2e-spec.ts` enforces it
+- **Permissions.** Every route has `@RequirePermissions`, is public, or
+  is listed with its reason in `server/test/permission-coverage.e2e-spec.ts`,
+  which enforces it: `SELF_SERVICE` for one acting only on the caller's
+  own account, `GATED_INSIDE` for one gating each part it returns by that
+  part's own permission
   ([`docs/engineering.md`, Server](docs/engineering.md#server)).
 - **Refusals** carry a message that says what to do next. One whose
   screen offers a way out, such as a link to the missing setting, also
