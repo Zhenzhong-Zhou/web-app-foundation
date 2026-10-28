@@ -587,8 +587,9 @@ The script is \`scripts/verify.sh\`, the guides in \`docs/old/\`; and
   ]);
 });
 
-/** A test file and the manual checks a rules file cites. */
+/** A test file and the manual checks a rules file cites, and its area. */
 const CITED = {
+  "server/src/modules/invoices/invoices.module.ts": "",
   "server/test/invoices.e2e-spec.ts": `describe("Invoices", () => {
   it("refuses a credit note for more than is left of its invoice", () => {});
 });
@@ -601,6 +602,8 @@ const CITED = {
 test("a rules file's test names are found in their files, and its manual checks exist", (t) => {
   const root = fixture(t, {
     ...CITED,
+    // Not a rules file, so not counted.
+    "docs/rules/README.md": "# Rules\n",
     "docs/rules/invoices.md": `# Invoices
 
 ## Credit notes
@@ -626,9 +629,10 @@ test("a rules file's test names are found in their files, and its manual checks 
   );
 });
 
-test("a rules file's renamed test, missing name and unknown manual check fail", (t) => {
+test("a rules file's renamed test, missing name and unknown manual check fail, and one not named for an area", (t) => {
   const root = fixture(t, {
     ...CITED,
+    "docs/rules/inventory.md": "# Inventory\n",
     "docs/rules/invoices.md": `# Invoices
 
 - **One.** [test](../../server/test/invoices.e2e-spec.ts) "refuses a credit
@@ -640,6 +644,7 @@ test("a rules file's renamed test, missing name and unknown manual check fail", 
   });
 
   assert.deepEqual(failures(check(root)), [
+    "docs/rules/inventory.md:1: inventory — not an area: a rules file takes its area's name from AREAS in scripts/adr-index.mjs, as its .claude/rules/ file does",
     'docs/rules/invoices.md:3: "refuses a credit note for more than there is" — no test by that name in server/test/invoices.e2e-spec.ts: renamed? Quote the test\'s name as it is now, whole',
     `docs/rules/invoices.md:5: ../../server/test/invoices.e2e-spec.ts — no test's name after it: write it in quotes, as [test](…) "the test's name"`,
     'docs/rules/invoices.md:7: "a name it lacks" — no test by that name in server/test/invoices.e2e-spec.ts: renamed? Quote the test\'s name as it is now, whole',
@@ -651,6 +656,7 @@ test("a rules file's renamed test, missing name and unknown manual check fail", 
 test("a rules file's test name is a declared test's, whole: not words in a comment or a longer name", (t) => {
   const root = fixture(t, {
     ...CITED,
+    "server/src/modules/stock/stock.module.ts": "",
     "server/test/stock.e2e-spec.ts": `describe("Stock", () => {
   // was: refuses a voided shipment
   it("refuses a voided shipment, and a draft", () => {});

@@ -63,8 +63,9 @@ commit,** as a commit that changes what a person sees updates
 `docs/manual-checks.md`.
 
 `scripts/check-docs.mjs` checks every rules file on each run of
-`scripts/verify.sh` and in the Docs workflow: each link leads to a file
-and a heading; each quoted test name is found in the file linked before
+`scripts/verify.sh` and in the Docs workflow: each is named for its
+area, as the ADRs' areas name it; each link leads to a file and a
+heading; each quoted test name is found in the file linked before
 it, so renaming a test fails the check; each manual check's id exists.
 It also prints a notice, never a failure, for a rules file whose tests or
 area changed on the branch while it did not: most code changes change no

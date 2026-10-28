@@ -36,9 +36,9 @@
  *
  * - every repository path written as code, as `scripts/verify.sh`, names
  *   a file or folder there (pathsAsCode);
- * - a rules file in docs/rules/ names each test it cites as that test's
- *   file has it, and each manual check by an id docs/manual-checks.md
- *   has (rulesFiles);
+ * - a rules file, docs/rules/<area>.md by an area of AREAS, names each
+ *   test it cites as that test's file has it, and each manual check by
+ *   an id docs/manual-checks.md has (rulesFiles);
  * - each file of Claude Code's rules in .claude/rules/ has a paths list,
  *   and each pattern matches a file (claudeRules).
  *
@@ -56,7 +56,12 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import { checkAdrs, frontMatterEnd, inRepository } from "./adr-index.mjs";
+import {
+  AREAS,
+  checkAdrs,
+  frontMatterEnd,
+  inRepository,
+} from "./adr-index.mjs";
 
 /** The root of the repository it is run in. */
 const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], {
@@ -383,8 +388,19 @@ function pathsAsCode({ files, folders }) {
   };
 }
 
-/** A rules file, for people (ADR-087). */
-const RULES_FILE = /^docs\/rules\/[^/]+\.md$/;
+/** A Markdown file in docs/rules/, whose README is not a rules file. */
+const IN_RULES = /^docs\/rules\/[^/]+\.md$/;
+const RULES_README = "docs/rules/README.md";
+
+/**
+ * The rules files, for people (ADR-087): docs/rules/<area>.md, by the
+ * area's name in AREAS, as its .claude/rules/ file is named; in AREAS'
+ * order.
+ */
+const rulesFilesIn = (files) =>
+  AREAS.map((area) => `docs/rules/${area}.md`).filter((file) =>
+    files.has(file),
+  );
 
 /** A test's file, by its name: .test.mjs, .spec.ts, .e2e-spec.ts. */
 const TEST_FILE = /\.(?:test|spec|e2e-spec)\.[cm]?[jt]sx?$/;
@@ -475,8 +491,17 @@ function rulesFiles({ files }) {
     return testFiles.get(file);
   };
 
-  const rules = [...files].filter((file) => RULES_FILE.test(file)).sort();
-  const failures = [];
+  const rules = rulesFilesIn(files);
+  const failures = [...files]
+    .filter(
+      (file) =>
+        IN_RULES.test(file) && file !== RULES_README && !rules.includes(file),
+    )
+    .sort()
+    .map(
+      (file) =>
+        `${file}:1: ${path.basename(file, ".md")} — not an area: a rules file takes its area's name from AREAS in scripts/adr-index.mjs, as its .claude/rules/ file does`,
+    );
   let named = 0;
   let checked = 0;
   for (const file of rules) {
@@ -660,7 +685,7 @@ function notices({ files }) {
   ].sort();
 
   const found = [];
-  for (const file of [...files].filter((f) => RULES_FILE.test(f)).sort()) {
+  for (const file of rulesFilesIn(files)) {
     if (changed.includes(file)) continue;
     const cited = new Set(citationsIn(file).tests.map((test) => test.path));
     const area = `.claude/rules/${path.basename(file)}`;
