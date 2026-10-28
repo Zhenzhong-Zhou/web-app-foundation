@@ -213,9 +213,9 @@ either differs from the files. What is not yet decided is in
 
 Written by the same script from each file's `areas`: a line per area,
 its ADRs in number order. An area is a folder of `server/src/modules/`,
-`server/src/core/` or `server/src/shared/`, or `api`, `database`,
-`docs`, `help`, `i18n`, `ops` or `ui` for what crosses them; the rules
-files take the same names. An area no ADR names has no line.
+`server/src/core/` or `server/src/shared/`, or one of `ACROSS` in
+`scripts/adr-index.mjs` for what crosses them; the rules files take the
+same names. An area no ADR names has no line.
 
 <!-- adr-areas:start -->
 

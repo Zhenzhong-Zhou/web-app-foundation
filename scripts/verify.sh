@@ -9,14 +9,9 @@
 #                                tests; no end-to-end suites
 #   scripts/verify.sh --docs     the docs' checks alone, in seconds: the
 #                                Markdown step and the scripts' format and
-#                                tests; it refuses, naming the files, when the
-#                                uncommitted changes touch anything but .md
-#                                files and scripts/, or anything in client/,
-#                                which need --quick
-#
-# client/ is refused even for Markdown: the Help guides in
-# client/src/help/guides/ are the app's content, which
-# client/src/help/guides.test.ts checks and --docs does not run.
+#                                tests, for a change of docs and scripts/
+#                                alone; what it refuses is where it runs,
+#                                below
 #
 # Needs what each suite needs on its own: the database up
 # (docker compose up -d) and ../.env. The two end-to-end suites use their
@@ -56,9 +51,8 @@ step() { printf '\n== %s\n\n' "$*"; }
 
 # The docs workflow's check, at the version it pins, with the repository's
 # .markdownlint-cli2.jsonc. The first run downloads it. Then its other
-# check, scripts/check-docs.mjs: links, ADR front matter and the index
-# (ADR-086); paths written as code, the rules files' citations and
-# .claude/rules/'s patterns, and the notice against origin/main (ADR-087).
+# check, scripts/check-docs.mjs, whose header says what it checks
+# (ADR-086, ADR-087).
 markdown() {
   step 'Markdown: every .md file, as the docs workflow checks it'
   npx --yes markdownlint-cli2@0.23.3
@@ -137,8 +131,11 @@ against_main() {
 # --docs stands in for --quick only when the docs' checks are all a change
 # needs (ADR-086): every uncommitted change, staged or not, and every new
 # file git does not ignore, is a .md file or in scripts/, and none is in
-# client/ (above). The Markdown step already runs adr-index.mjs's --check,
-# through check-docs.mjs.
+# client/. client/ is refused even for Markdown: the Help guides in
+# client/src/help/guides/ are the app's content, which
+# client/src/help/guides.test.ts checks and --docs does not run. Anything
+# else, it names and stops. The Markdown step already runs adr-index.mjs's
+# --check, through check-docs.mjs.
 if $docs; then
   others="$(
     {
