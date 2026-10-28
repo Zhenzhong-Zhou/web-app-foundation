@@ -634,12 +634,15 @@ test("a rules file's renamed test, missing name and unknown manual check fail", 
 - **One.** [test](../../server/test/invoices.e2e-spec.ts) "refuses a credit
   note for more than there is" · MC-102
 - **Two.** [test](../../server/test/invoices.e2e-spec.ts) · MC-3
+- **Three,** its link %-escaped as the link check reads it.
+  [test](../../server/test/invoices.e2e%2Dspec.ts) "a name it lacks"
 `,
   });
 
   assert.deepEqual(failures(check(root)), [
     'docs/rules/invoices.md:3: "refuses a credit note for more than there is" — no test by that name in server/test/invoices.e2e-spec.ts: renamed? Quote the test\'s name as it is now, whole',
     `docs/rules/invoices.md:5: ../../server/test/invoices.e2e-spec.ts — no test's name after it: write it in quotes, as [test](…) "the test's name"`,
+    'docs/rules/invoices.md:7: "a name it lacks" — no test by that name in server/test/invoices.e2e-spec.ts: renamed? Quote the test\'s name as it is now, whole',
     "docs/rules/invoices.md:4: MC-102 — no such check in docs/manual-checks.md",
     "docs/rules/invoices.md:5: MC-3 — no such check in docs/manual-checks.md",
   ]);

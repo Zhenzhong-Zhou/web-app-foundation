@@ -126,6 +126,9 @@ const INLINE_LINK =
 const DEFINITION =
   /^[ \t]*\[(?!\^)(?:[^[\]\\]|\\.)+\]:[ \t]*\n?[ \t]*(<[^<>\n]*>|\S+)/dgm;
 
+/** A link's destination as written, unwrapped from its <…>. */
+const destinationOf = (match) => match[1].replace(/^<(.*)>$/, "$1");
+
 /** Every link's destination in a file, with the line it is on. */
 function linksIn(file) {
   const text = withoutCode(
@@ -139,7 +142,7 @@ function linksIn(file) {
   const lineOf = lineCounter(text);
   return found.map((match) => ({
     line: lineOf(match.indices[1][0]),
-    target: match[1].replace(/^<(.*)>$/, "$1"),
+    target: destinationOf(match),
   }));
 }
 
@@ -230,8 +233,13 @@ function anchorsIn(absolute) {
 /** A link to another site (a scheme, or //), or to an app route (/inventory). */
 const NOT_A_PATH = /^(?:[A-Za-z][A-Za-z0-9+.-]*:|\/)/;
 
-/** Why a link from a file leads nowhere, or null when it leads somewhere. */
-function brokenBecause(file, target, { files, folders }) {
+/**
+ * Where a link from a file leads: the path it names, absolute and from
+ * ROOT, the file itself for a bare #fragment, and its fragment, each
+ * %-escape decoded and any ?query cut; null when an escape does not
+ * decode.
+ */
+function resolve(file, target) {
   const hash = target.indexOf("#");
   let linked = (hash < 0 ? target : target.slice(0, hash)).replace(/\?.*$/, "");
   let fragment = hash < 0 ? "" : target.slice(hash + 1);
@@ -239,13 +247,19 @@ function brokenBecause(file, target, { files, folders }) {
     linked = decodeURIComponent(linked);
     fragment = decodeURIComponent(fragment);
   } catch {
-    return "not a valid link: its %-escapes do not decode";
+    return null;
   }
-
   const absolute = linked
     ? path.resolve(path.dirname(path.join(ROOT, file)), linked)
     : path.join(ROOT, file);
-  const relative = path.relative(ROOT, absolute);
+  return { absolute, relative: path.relative(ROOT, absolute), fragment };
+}
+
+/** Why a link from a file leads nowhere, or null when it leads somewhere. */
+function brokenBecause(file, target, { files, folders }) {
+  const link = resolve(file, target);
+  if (!link) return "not a valid link: its %-escapes do not decode";
+  const { absolute, relative, fragment } = link;
   if (relative === ".." || relative.startsWith(`..${path.sep}`)) {
     return "outside the repository";
   }
@@ -415,18 +429,15 @@ function citationsIn(file) {
   const lineOfTest = lineCounter(prose);
   const quoted = /[ \t]*\n?[ \t]*"([^"]*)"/y;
   for (const match of prose.matchAll(INLINE_LINK)) {
-    const target = match[1].replace(/^<(.*)>$/, "$1");
-    const linked = target.replace(/[#?].*$/, "");
-    if (NOT_A_PATH.test(linked) || !TEST_FILE.test(linked)) continue;
+    const target = destinationOf(match);
+    const link = NOT_A_PATH.test(target) ? null : resolve(file, target);
+    if (!link || !TEST_FILE.test(link.relative)) continue;
     quoted.lastIndex = match.index + match[0].length;
     const name = quoted.exec(text)?.[1].replace(/\s+/g, " ");
     tests.push({
       line: lineOfTest(match.index),
       target,
-      path: path.relative(
-        ROOT,
-        path.resolve(path.dirname(path.join(ROOT, file)), linked),
-      ),
+      path: link.relative,
       name: name ?? null,
     });
   }
