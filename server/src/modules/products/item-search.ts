@@ -23,9 +23,11 @@ import { namesIn } from '../stock/item-name';
  * variant's name in every language they have, and the pinyin of each. For a
  * query over product_variants joined to products; the translations are
  * reached through EXISTS, so a product with names in three languages is
- * still one row.
+ * still one row. Each EXISTS names the organization: Postgres may answer it
+ * once for the whole query, from every translation that matches, and
+ * without it would read every organization's (#226).
  */
-export function itemMatches(terms: SearchTerms): SQL {
+export function itemMatches(terms: SearchTerms, organizationId: string): SQL {
   const translatedProduct = or(
     nameMatches(productTranslations.name, terms),
     pinyinMatches(productTranslations.namePinyin, terms),
@@ -44,11 +46,13 @@ export function itemMatches(terms: SearchTerms): SQL {
     sql`exists (
       select 1 from ${productTranslations}
       where ${productTranslations.productId} = ${products.id}
+        and ${productTranslations.organizationId} = ${organizationId}
         and (${translatedProduct})
     )`,
     sql`exists (
       select 1 from ${variantTranslations}
       where ${variantTranslations.variantId} = ${productVariants.id}
+        and ${variantTranslations.organizationId} = ${organizationId}
         and (${translatedVariant})
     )`,
   )!;

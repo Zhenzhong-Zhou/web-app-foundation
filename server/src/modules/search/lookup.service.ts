@@ -416,7 +416,7 @@ export class LookupService {
                       closeMatches(productVariants.sku, terms),
                       closeMatches(products.name, terms, 'name'),
                     )
-                  : itemMatches(terms),
+                  : itemMatches(terms, organizationId),
               ),
             )
             .orderBy(

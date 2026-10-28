@@ -84,7 +84,9 @@ function filtersOf(
   // as every search in the app matches (ADR-056, common/search.ts).
   if (query.search) {
     const terms = searchTerms(query.search);
-    scope.push(or(itemMatches(terms), codeMatches(lots.code, terms))!);
+    scope.push(
+      or(itemMatches(terms, organizationId), codeMatches(lots.code, terms))!,
+    );
   }
 
   if (query.expiringWithin) {

@@ -99,7 +99,7 @@ export class ProductsService {
             eq(productVariants.organizationId, organizationId),
             eq(products.isActive, true),
             eq(productVariants.isActive, true),
-            terms ? itemMatches(terms) : undefined,
+            terms ? itemMatches(terms, organizationId) : undefined,
           ),
         )
         .orderBy(
@@ -150,7 +150,7 @@ export class ProductsService {
               terms
                 ? sql`exists (
                     select 1 from ${productVariants}
-                    where ${itsVariants} and ${itemMatches(terms)}
+                    where ${itsVariants} and ${itemMatches(terms, organizationId)}
                   )`
                 : undefined,
             ),
