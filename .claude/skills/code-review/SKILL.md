@@ -13,8 +13,9 @@ change code unless asked.
 
 - A pull request: `gh pr view <number>` for its description, and
   `gh pr diff <number>` for the diff.
-- The current branch: `git log --oneline main..HEAD` and
-  `git diff main...HEAD`.
+- The current branch: `git fetch origin main`, then
+  `git log --oneline origin/main..HEAD` and `git diff origin/main...HEAD`,
+  against the base the notice and `scripts/verify.sh` use.
 
 Skip `server/openapi.json` and `client/src/api/`, which are generated,
 except to check that they changed whenever the API did.
