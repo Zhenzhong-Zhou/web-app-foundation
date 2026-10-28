@@ -552,8 +552,7 @@ the guides. Import from \`client/src/api/types.gen\`; the build writes
     "scripts/verify.sh": "",
     "client/src/api/types.gen.ts": "",
     "docs/guide.md": GUIDE,
-    // History may name what has since gone.
-    "docs/releases/v1.md": "# v1\n\nRemoved `scripts/gone.sh`.\n",
+    // An ADR, history, may name what has since gone.
     "docs/adr/0001-one.md": `${adr("status: accepted\ndate: 2026-08-24\nareas: [docs]\n", "ADR-001 — One")}\nRan \`scripts/gone.sh\`.\n`,
     "docs/adr/README.md": INDEX,
     "tmp/brief.md": "# Brief\n\nWrite `scripts/gone.sh`.\n",
@@ -576,6 +575,10 @@ The script is \`scripts/verify.sh\`, the guides in \`docs/old/\`; and
     "scripts/verify.sh": "",
     "client/src/api/types.gen.ts": "",
     "docs/guide.md": GUIDE,
+    // Beside the ADRs, but not history.
+    "docs/adr/open-decisions.md":
+      "# Open decisions\n\n## One\n\nAs `scripts/gone.sh` would.\n",
+    "docs/releases/v1.md": "# v1\n\nRemoved `scripts/gone.sh`.\n",
   });
 
   const why =
@@ -584,6 +587,8 @@ The script is \`scripts/verify.sh\`, the guides in \`docs/old/\`; and
     `README.md:3: docs/old/ — ${why}`,
     `README.md:4: client/src/api/types.gen.js — ${why}`,
     `README.md:4: scripts/gone.sh — ${why}`,
+    `docs/adr/open-decisions.md:5: scripts/gone.sh — ${why}`,
+    `docs/releases/v1.md:3: scripts/gone.sh — ${why}`,
   ]);
 });
 

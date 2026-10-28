@@ -57,6 +57,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import {
+  ADR_FILE,
   AREAS,
   checkAdrs,
   frontMatterEnd,
@@ -310,8 +311,13 @@ function links(repository) {
   };
 }
 
-/** The Markdown that may name what has since gone: the ADRs and the release notes. */
-const HISTORY = /^docs\/(?:adr|releases)\//;
+/**
+ * The Markdown that may name what has since gone: the numbered ADRs, not
+ * the index, the template or Open decisions beside them.
+ */
+const isHistory = (file) =>
+  path.posix.dirname(file) === "docs/adr" &&
+  ADR_FILE.test(path.posix.basename(file));
 
 /** A path with a placeholder or a pattern in it: docs/adr/NNNN-<slug>.md. */
 const PLACEHOLDER = /[<*{…]|NNN/;
@@ -345,15 +351,15 @@ function ignoredByGit(paths) {
  * (`scripts/verify.sh --quick`). Passing too: a path git ignores, which a
  * build or a run makes (`client/dist/`), and a module's path as an import
  * writes it, without .ts or .tsx (`client/src/api/types.gen`). Skipped: a
- * path with a placeholder or a pattern in it, and the ADRs and release
- * notes (tmp/ is not in the repository).
+ * path with a placeholder or a pattern in it, and the numbered ADRs
+ * (tmp/ is not in the repository).
  */
 function pathsAsCode({ files, folders }) {
   const tops = [...folders].filter((folder) => folder && !folder.includes("/"));
   const missing = [];
   let checked = 0;
   for (const file of files) {
-    if (!file.endsWith(".md") || HISTORY.test(file)) continue;
+    if (!file.endsWith(".md") || isHistory(file)) continue;
     const text = withoutBlocks(readFileSync(path.join(ROOT, file), "utf8"));
     const lineOf = lineCounter(text);
     for (const match of text.matchAll(CODE_SPAN)) {

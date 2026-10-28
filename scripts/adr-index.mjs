@@ -93,7 +93,7 @@ const ADR_FOLDER = "docs/adr";
 const README = `${ADR_FOLDER}/README.md`;
 
 /** An ADR's file name; the slug is its title's words, as ADR-086 makes it. */
-const ADR_FILE = /^\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
+export const ADR_FILE = /^\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
 /** The folder's files that are not ADRs. */
 const OTHERS = ["README.md", "open-decisions.md", "template.md"];
