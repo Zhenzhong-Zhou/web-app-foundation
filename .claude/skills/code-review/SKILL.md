@@ -80,8 +80,8 @@ allows, refuses and works out there.
   release reads: it adds in one deploy, and takes away in a later one
   once no released code reads the old shape (expand, then contract;
   ADR-081). CI's squawk check (`server/.squawk.toml`) cannot know which
-  key a query names, as 0067 replaced `document_sequences`' primary key
-  under one; read for it, and check each `squawk-ignore`'s reason holds.
+  key a query names, so a key replaced under a released `ON CONFLICT`
+  passes it; read for it, and check each `squawk-ignore`'s reason holds.
 - A breaking API change raises `API_REVISION` in
   `server/src/common/api-revision.ts` in the same commit, or keeps the old
   shape working, logged until nothing sends it (ADR-081): a field removed
