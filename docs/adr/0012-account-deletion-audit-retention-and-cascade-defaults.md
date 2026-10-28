@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-24
+areas: [audit, users, database]
 amended-by: [ADR-069, ADR-070]
 ---
 

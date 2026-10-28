@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-24
+areas: [organizations, database]
 ---
 
 # ADR-003 — Multi-tenancy: shared schema with `organization_id`

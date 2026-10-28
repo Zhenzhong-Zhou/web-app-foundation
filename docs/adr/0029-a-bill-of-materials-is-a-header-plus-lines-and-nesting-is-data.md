@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-15
+areas: [boms, product-licences]
 ---
 
 # ADR-029 — A bill of materials is a header plus lines, and nesting is data

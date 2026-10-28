@@ -11,25 +11,29 @@
  * Every ADR, docs/adr/NNNN-<slug>.md (four digits, then lower-case words
  * and numbers joined by hyphens), has a number no other file has, and
  * front matter with its status (accepted, deferred or superseded by an
- * ADR that exists) and its date (YYYY-MM-DD), in any order, and no
- * field but those, amends and amended-by. Its heading, `# ADR-NNN —
- * Title`, has its file's number. Each ADR its `amends` names exists and
- * lists it in its `amended-by`, and each one its `amended-by` names lists
- * it in its `amends`; both lists are in ascending order. Once there is an
- * ADR, docs/adr/README.md holds their index, and open-decisions.md is the
+ * ADR that exists), its date (YYYY-MM-DD) and its areas (one or more of
+ * AREAS, in that list's order), in any order, and no field but those,
+ * amends and amended-by. Its heading, `# ADR-NNN — Title`, has its
+ * file's number. Each ADR its `amends` names exists and lists it in its
+ * `amended-by`, and each one its `amended-by` names lists it in its
+ * `amends`; both lists are in ascending order. Once there is an ADR,
+ * docs/adr/README.md holds their index, and open-decisions.md is the
  * folder's only other file.
  *
- * The index is one row per file, in number order, between
- * <!-- adr-index:start --> and <!-- adr-index:end --> in the README: ADR,
- * Title, Status, Date, Amends and Amended by. The title is the heading's
- * after its number, without its "(amends …)" tail, which the Amends
- * column holds. Each ADR named is a reference link, [ADR-071], defined
- * once below the table, so the raw table reads as plain text does.
+ * The index is two sections of the README. By number, between
+ * <!-- adr-index:start --> and <!-- adr-index:end -->: one row per file,
+ * in number order, with ADR, Title, Status, Date, Amends and Amended by.
+ * The title is the heading's after its number, without its "(amends …)"
+ * tail, which the Amends column holds. Each ADR named is a reference
+ * link, [ADR-071], defined once below the table, so the raw table reads
+ * as plain text does. By area, between <!-- adr-areas:start --> and
+ * <!-- adr-areas:end -->: one line per area in AREAS' order, its ADRs in
+ * number order by the same links; an area no ADR names has no line.
  *
  * Both modes check the ADRs first and stop on a failure, printed as
  * `file:line: target — reason`, so an index is written only from ADRs
  * that pass. --check then exits 1, naming the first line that differs,
- * when the README's table is not what this would write.
+ * when the README's index is not what this would write.
  * scripts/check-docs.mjs runs the same checks, --check's included, with
  * checkAdrs().
  *
@@ -47,8 +51,6 @@ const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], {
 
 const ADR_FOLDER = "docs/adr";
 const README = `${ADR_FOLDER}/README.md`;
-const START = "<!-- adr-index:start -->";
-const END = "<!-- adr-index:end -->";
 
 /** An ADR's file name; the slug is its title's words, as ADR-086 makes it. */
 const ADR_FILE = /^\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
@@ -59,7 +61,53 @@ const OTHERS = ["README.md", "open-decisions.md"];
 const STATUS = /^(?:accepted|deferred|superseded by ADR-(\d{3,}))$/;
 
 /** An ADR's front matter fields, in any order. */
-const FIELDS = ["status", "date", "amends", "amended-by"];
+const FIELDS = ["status", "date", "areas", "amends", "amended-by"];
+
+/**
+ * The areas an ADR's `areas` names, in this order, which docs/rules/ and
+ * .claude/rules/ name their files by (ADR-087): each folder of
+ * server/src/modules/, then of server/src/core/, then what crosses them.
+ */
+const AREAS = [
+  "boms",
+  "costs",
+  "home",
+  "invoices",
+  "locations",
+  "numbering",
+  "orders",
+  "partners",
+  "price-lists",
+  "product-licences",
+  "production-orders",
+  "products",
+  "recent",
+  "return-authorizations",
+  "search",
+  "stock",
+  "tax-codes",
+  "audit",
+  "auth",
+  "authorization",
+  "documents",
+  "files",
+  "invitations",
+  "notifications",
+  "organizations",
+  "people",
+  "users",
+  // The API contract and errors; the schema and migrations; the docs and
+  // the working agreements; the Help guides; the languages; CI,
+  // deployment, backups and monitoring; the theme, layout and shared
+  // components.
+  "api",
+  "database",
+  "docs",
+  "help",
+  "i18n",
+  "ops",
+  "ui",
+];
 
 /** An ADR's name as the text writes it: ADR-071. */
 const adrName = (number) => `ADR-${String(number).padStart(3, "0")}`;
@@ -87,6 +135,15 @@ function listOf(value) {
 function listed(adr, field) {
   const value = adr.frontMatter?.[field]?.value;
   return (value && listOf(value)) || [];
+}
+
+/**
+ * A front matter list of names, `[invoices, api]`, as those names; null
+ * when it is not one.
+ */
+function namesOf(value) {
+  if (!/^\[(?:[a-z0-9-]+(?:, [a-z0-9-]+)*)?\]$/.test(value)) return null;
+  return value.slice(1, -1).split(", ").filter(Boolean);
 }
 
 /**
@@ -167,8 +224,8 @@ function readAdrs() {
     });
 }
 
-/** The text between the markers: the table, then its links' definitions. */
-function indexOf(adrs) {
+/** By number, between its markers: the table, then its links' definitions. */
+function byNumber(adrs) {
   const files = new Map(adrs.map((adr) => [adr.number, adr.file]));
   // An ADR with no file stays plain text; checkAdrs() reports it.
   const named = (number) =>
@@ -209,42 +266,94 @@ ${definitions.join("\n")}
 }
 
 /**
- * The README's text and where its markers are; a failure when it has
- * none, or there is no README.
+ * By area, between its markers: a line per area, its ADRs in number
+ * order, by the links By number defines.
+ */
+function byArea(adrs) {
+  const lines = AREAS.flatMap((area) => {
+    const named = adrs.filter((adr) =>
+      namesOf(adr.frontMatter?.areas?.value ?? "")?.includes(area),
+    );
+    if (named.length === 0) return [];
+    return [
+      `- \`${area}\`: ${named.map((adr) => `[${adrName(adr.number)}]`).join(", ")}`,
+    ];
+  });
+
+  return `
+
+${lines.join("\n")}
+
+`;
+}
+
+/** The README's sections that the script writes, each between its markers. */
+const SECTIONS = [
+  {
+    heading: "By number",
+    start: "<!-- adr-index:start -->",
+    end: "<!-- adr-index:end -->",
+    write: byNumber,
+  },
+  {
+    heading: "By area",
+    start: "<!-- adr-areas:start -->",
+    end: "<!-- adr-areas:end -->",
+    write: byArea,
+  },
+];
+
+/**
+ * The README's text; a failure when there is no README, or it lacks a
+ * section's markers.
  */
 function readme() {
   if (!existsSync(path.join(ROOT, README))) {
+    const sections = SECTIONS.map(
+      ({ heading, start, end }) =>
+        `a "${heading}" heading with ${start} and ${end} under it`,
+    );
     return {
-      failure: `${README}: the index — no such file: write it with a "By number" heading, ${START} and ${END} under it, then run node scripts/adr-index.mjs`,
+      failure: `${README}: the index — no such file: write it with ${sections.join(", and ")}, then run node scripts/adr-index.mjs`,
     };
   }
   const text = readFileSync(path.join(ROOT, README), "utf8");
-  const start = text.indexOf(START);
-  const end = text.indexOf(END, start);
-  if (start < 0 || end < 0) {
-    return {
-      failure: `${README}:1: the index — no ${START} and ${END} to write it between; add them under its "By number" heading`,
-    };
+  for (const { heading, start, end } of SECTIONS) {
+    const at = text.indexOf(start);
+    if (at < 0 || text.indexOf(end, at) < 0) {
+      return {
+        failure: `${README}:1: the index — no ${start} and ${end} to write it between; add them under its "${heading}" heading`,
+      };
+    }
   }
-  return { text, from: start + START.length, to: end };
+  return { text };
+}
+
+/** The README's text with each section written from the ADRs. */
+function written(text, adrs) {
+  return SECTIONS.reduce((text, { start, end, write }) => {
+    const from = text.indexOf(start) + start.length;
+    return (
+      text.slice(0, from) + write(adrs) + text.slice(text.indexOf(end, from))
+    );
+  }, text);
 }
 
 /**
- * Why the README's table is not what the ADRs' files say, as
+ * Why the README's index is not what the ADRs' files say, as
  * `README.md:line: …`, naming its first line that differs; null when it
  * is current.
  */
-function staleIndex(adrs, { text, from, to }) {
-  const has = text.slice(from, to).split("\n");
-  const wants = indexOf(adrs).split("\n");
+function staleIndex(adrs, { text }) {
+  const has = text.split("\n");
+  const wants = written(text, adrs).split("\n");
   const length = Math.max(has.length, wants.length);
   let at = 0;
   while (at < length && has[at] === wants[at]) at++;
   if (at === length) return null;
 
-  const line = text.slice(0, from).split("\n").length + at;
-  const shown = (row) => (row === undefined ? "the index's end" : `"${row}"`);
-  return `${README}:${line}: the index — stale: it has ${shown(has[at])} where the ADRs give ${shown(wants[at])}; run node scripts/adr-index.mjs`;
+  const shown = (row) => (row === undefined ? "the README's end" : `"${row}"`);
+  return `${README}:${at + 1}: the index — stale: it has ${shown(has[at])} where the ADRs give ${shown(wants[at])}; run node scripts/adr-index.mjs`;
 }
 
 /**
@@ -332,6 +441,39 @@ export function checkAdrs({ writing = false } = {}) {
         `date: ${fields.date.value}`,
         "not a day as YYYY-MM-DD",
       );
+    }
+    if (adr.frontMatter && !fields.areas) {
+      fail(
+        1,
+        "areas",
+        "missing from the front matter: one or more of AREAS in scripts/adr-index.mjs, as [invoices, api]",
+      );
+    } else if (fields.areas) {
+      const { value, line } = fields.areas;
+      const areas = namesOf(value);
+      if (!areas?.length) {
+        fail(
+          line,
+          `areas: ${value}`,
+          "not a list of one or more areas, as [invoices, api]",
+        );
+      } else {
+        const unknown = areas.filter((area) => !AREAS.includes(area));
+        for (const area of unknown) {
+          fail(line, `areas: ${area}`, `not an area: ${AREAS.join(", ")}`);
+        }
+        const order = areas.map((area) => AREAS.indexOf(area));
+        if (
+          unknown.length === 0 &&
+          order.some((at, i) => i > 0 && at <= order[i - 1])
+        ) {
+          fail(
+            line,
+            `areas: ${value}`,
+            `not in the order AREAS lists them, each area once: write it as [${AREAS.filter((area) => areas.includes(area)).join(", ")}]`,
+          );
+        }
+      }
     }
 
     if (!adr.heading) {
@@ -428,11 +570,7 @@ if (import.meta.main) {
     console.log(summary);
   } else {
     const adrs = readAdrs();
-    const { text, from, to } = readme();
-    writeFileSync(
-      path.join(ROOT, README),
-      text.slice(0, from) + indexOf(adrs) + text.slice(to),
-    );
+    writeFileSync(path.join(ROOT, README), written(readme().text, adrs));
     console.log(`${README}: the index of ${adrs.length} ADRs written.`);
   }
 }

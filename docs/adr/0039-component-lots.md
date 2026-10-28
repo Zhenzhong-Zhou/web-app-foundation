@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-22
+areas: [production-orders, stock]
 ---
 
 # ADR-039 — Component lots: earliest expiry first, with a hand-picked override

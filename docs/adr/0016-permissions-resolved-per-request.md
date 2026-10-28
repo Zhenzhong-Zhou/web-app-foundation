@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-27
+areas: [authorization]
 amended-by: [ADR-079, ADR-080]
 ---
 

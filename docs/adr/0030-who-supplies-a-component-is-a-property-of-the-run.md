@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-15
+areas: [boms, locations, production-orders]
 ---
 
 # ADR-030 — Who supplies a component is a property of the run

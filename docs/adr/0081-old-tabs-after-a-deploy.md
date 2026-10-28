@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-22
+areas: [api, database, ops]
 amends: [ADR-013, ADR-051, ADR-052, ADR-054, ADR-055, ADR-068]
 amended-by: [ADR-082]
 ---

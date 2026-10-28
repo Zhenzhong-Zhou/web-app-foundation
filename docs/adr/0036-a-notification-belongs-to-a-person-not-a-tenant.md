@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-18
+areas: [notifications]
 ---
 
 # ADR-036 — A notification belongs to a person, not a tenant

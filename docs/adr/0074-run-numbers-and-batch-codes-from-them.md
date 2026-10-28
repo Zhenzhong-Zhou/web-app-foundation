@@ -1,6 +1,7 @@
 ---
 status: deferred
 date: 2026-10-17
+areas: [numbering, production-orders]
 ---
 
 # ADR-074 — Run numbers, and batch codes from them (deferred)

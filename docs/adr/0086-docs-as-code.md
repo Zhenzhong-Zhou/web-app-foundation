@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-27
+areas: [docs]
 ---
 
 # ADR-086 — Docs as code: one file per decision, and links that are checked

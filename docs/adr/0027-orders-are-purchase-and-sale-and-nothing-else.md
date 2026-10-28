@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-10
+areas: [orders]
 ---
 
 # ADR-027 — Orders are purchase and sale, and nothing else

@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-19
+areas: [audit, i18n]
 amends: [ADR-018, ADR-038, ADR-054, ADR-057]
 ---
 

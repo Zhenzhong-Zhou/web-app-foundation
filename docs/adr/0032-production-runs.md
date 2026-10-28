@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-15
+areas: [production-orders, stock]
 ---
 
 # ADR-032 — Production runs: partial output, actual consumption, lot identity

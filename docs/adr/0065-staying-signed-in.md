@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-09
+areas: [auth, organizations]
 ---
 
 # ADR-065 — Staying signed in: the person's choice, and the organization's policy

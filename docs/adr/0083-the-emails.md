@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-26
+areas: [auth, invitations, notifications]
 amends: [ADR-077, ADR-082]
 ---
 

@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-15
+areas: [orders]
 ---
 
 # ADR-031 — A duplicate re-resolves snapshots; it never copies history forward

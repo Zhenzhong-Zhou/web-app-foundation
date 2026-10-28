@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-07
+areas: [search, database]
 amended-by: [ADR-073]
 ---
 

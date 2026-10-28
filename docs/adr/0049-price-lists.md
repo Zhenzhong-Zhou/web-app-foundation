@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-28
+areas: [orders, price-lists]
 ---
 
 # ADR-049 — Price lists: a default that becomes the line's price

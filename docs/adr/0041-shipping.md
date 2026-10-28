@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-23
+areas: [orders, stock]
 ---
 
 # ADR-041 — Shipping: a shipment is a document, and stock leaves by lot

@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-13
+areas: [api]
 amended-by: [ADR-081]
 ---
 

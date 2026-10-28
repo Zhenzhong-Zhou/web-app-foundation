@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-26
+areas: [invoices, return-authorizations]
 amended-by: [ADR-073]
 ---
 

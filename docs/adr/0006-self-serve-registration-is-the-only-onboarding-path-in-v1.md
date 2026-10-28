@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-24
+areas: [auth, organizations]
 amended-by: [ADR-077, ADR-078]
 ---
 

@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-23
+areas: [locations, orders, stock]
 ---
 
 # ADR-042 — Samples, and stock that is not for sending

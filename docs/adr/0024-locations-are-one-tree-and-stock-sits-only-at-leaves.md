@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-04
+areas: [locations, stock]
 ---
 
 # ADR-024 — Locations are one tree, and stock sits only at leaves

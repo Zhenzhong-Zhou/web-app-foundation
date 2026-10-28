@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-02
+areas: [audit, auth]
 ---
 
 # ADR-022 — Account events are a separate table from the audit log

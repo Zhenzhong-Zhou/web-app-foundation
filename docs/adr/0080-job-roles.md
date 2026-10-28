@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-21
+areas: [authorization, organizations]
 amends: [ADR-004, ADR-016, ADR-035, ADR-070, ADR-071, ADR-077, ADR-079]
 ---
 

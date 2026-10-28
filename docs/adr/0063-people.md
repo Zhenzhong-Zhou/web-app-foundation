@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-09
+areas: [files, people]
 amended-by: [ADR-079]
 ---
 

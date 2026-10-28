@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-09
+areas: [organizations]
 ---
 
 # ADR-061 — The Organization page in tabs, and a name that can change

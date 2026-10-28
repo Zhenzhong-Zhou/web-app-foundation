@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-28
+areas: [auth]
 ---
 
 # ADR-017 — Email verification and password reset

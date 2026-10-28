@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-16
+areas: [orders]
 ---
 
 # ADR-033 — A line is editable until something depends on it

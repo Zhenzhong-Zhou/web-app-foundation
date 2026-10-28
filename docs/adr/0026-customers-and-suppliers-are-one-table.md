@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-10
+areas: [orders, partners]
 ---
 
 # ADR-026 — Customers and suppliers are one table

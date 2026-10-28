@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-09
+areas: [product-licences, notifications]
 ---
 
 # ADR-064 — Licence expiry reminders: told at 60, 30 and 7 days, and on the day

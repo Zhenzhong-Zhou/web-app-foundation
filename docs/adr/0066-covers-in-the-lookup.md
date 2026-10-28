@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-13
+areas: [products, search]
 ---
 
 # ADR-066 — Covers in the lookup

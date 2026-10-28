@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-16
+areas: [orders]
 amended-by: [ADR-080]
 ---
 

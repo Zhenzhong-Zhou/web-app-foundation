@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-24
+areas: [ui]
 ---
 
 # ADR-007 — React SPA on Vite, not Next.js

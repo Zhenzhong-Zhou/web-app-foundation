@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-03
+areas: [documents, i18n]
 amended-by: [ADR-071, ADR-076, ADR-081]
 ---
 

@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-25
+areas: [invoices, orders, tax-codes]
 amended-by: [ADR-071, ADR-073]
 ---
 

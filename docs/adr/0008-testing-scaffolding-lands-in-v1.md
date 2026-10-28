@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-24
+areas: [ops]
 ---
 
 # ADR-008 — Testing scaffolding lands in V1

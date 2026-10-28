@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-23
+areas: [orders, stock]
 ---
 
 # ADR-043 — Customer returns

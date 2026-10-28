@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-27
+areas: [docs]
 ---
 
 # ADR-087 — The rules written down: `docs/rules/` for people, `.claude/rules/` for Claude

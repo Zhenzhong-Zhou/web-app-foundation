@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-09
+areas: [products, files]
 ---
 
 # ADR-062 — Product images: a gallery per product, thumbnails in lists

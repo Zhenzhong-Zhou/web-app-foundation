@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-02
+areas: [ops]
 ---
 
 # ADR-053 — Backups: an encrypted nightly dump we own, at another provider, restored monthly

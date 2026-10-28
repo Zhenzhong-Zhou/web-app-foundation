@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-17
+areas: [invoices, numbering]
 amends: [ADR-046, ADR-047, ADR-056, ADR-071]
 ---
 

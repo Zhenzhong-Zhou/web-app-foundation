@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-02
+areas: [ui]
 amended-by: [ADR-055]
 ---
 

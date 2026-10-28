@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-16
+areas: [organizations, i18n]
 amends: [ADR-052, ADR-071]
 ---
 

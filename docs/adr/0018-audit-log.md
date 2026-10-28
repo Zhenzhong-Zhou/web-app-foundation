@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-28
+areas: [audit]
 amended-by: [ADR-076]
 ---
 

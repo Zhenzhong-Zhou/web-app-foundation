@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-11
+areas: [locations, partners, database]
 ---
 
 # ADR-028 — Addresses and contacts are shared tables with an exclusive arc

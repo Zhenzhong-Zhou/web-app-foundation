@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-24
+areas: [database]
 ---
 
 # ADR-010 — UUIDv7 primary keys

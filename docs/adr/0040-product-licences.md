@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-22
+areas: [boms, product-licences]
 amended-by: [ADR-050, ADR-052]
 ---
 

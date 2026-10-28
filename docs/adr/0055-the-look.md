@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-07
+areas: [ui]
 amends: [ADR-021]
 amended-by: [ADR-071, ADR-075, ADR-081, ADR-082]
 ---

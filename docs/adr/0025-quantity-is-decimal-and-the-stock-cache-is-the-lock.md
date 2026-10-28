@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-09-08
+areas: [stock, database]
 ---
 
 # ADR-025 — Quantity is decimal, and the stock cache is the lock

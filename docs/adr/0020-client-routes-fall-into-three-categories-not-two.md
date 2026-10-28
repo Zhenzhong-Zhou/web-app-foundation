@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-31
+areas: [auth, ui]
 ---
 
 # ADR-020 — Client routes fall into three categories, not two

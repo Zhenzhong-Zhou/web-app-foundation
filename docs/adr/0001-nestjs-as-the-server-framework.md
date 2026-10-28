@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-08-24
+areas: [api]
 ---
 
 # ADR-001 — NestJS as the server framework

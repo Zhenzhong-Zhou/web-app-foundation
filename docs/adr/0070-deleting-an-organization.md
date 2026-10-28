@@ -1,6 +1,7 @@
 ---
 status: accepted
 date: 2026-10-15
+areas: [organizations, ops]
 amends: [ADR-012, ADR-059, ADR-069]
 amended-by: [ADR-071, ADR-078, ADR-080]
 ---
