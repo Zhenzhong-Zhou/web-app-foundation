@@ -54,8 +54,28 @@ interface PendingShipment {
   parts: Part[];
 }
 
-const GOOD_NAMES = ['Focus', 'Calm', 'Immune', 'Sleep', 'Energy', 'Joint'];
-const GOOD_FORMS = ['Daily', 'Forte', 'Complex', 'Support', 'Formula', 'Max'];
+/**
+ * Each word with its Chinese, picked together, so a good named in Chinese
+ * reads as a Chinese name, 专注日常胶囊 60 粒, which its pinyin and any one
+ * of its characters find (ADR-056). As many entries as before, so the
+ * random source picks the same words.
+ */
+const GOOD_NAMES = [
+  ['Focus', '专注'],
+  ['Calm', '舒缓'],
+  ['Immune', '免疫'],
+  ['Sleep', '安眠'],
+  ['Energy', '活力'],
+  ['Joint', '关节'],
+] as const;
+const GOOD_FORMS = [
+  ['Daily', '日常'],
+  ['Forte', '强效'],
+  ['Complex', '复合'],
+  ['Support', '养护'],
+  ['Formula', '配方'],
+  ['Max', '加强'],
+] as const;
 const COUNTS = [30, 60, 90, 120];
 const MATERIALS = [
   'Ashwagandha',
@@ -67,8 +87,19 @@ const MATERIALS = [
   'Echinacea',
   'Rhodiola',
 ];
-const PARTNER_WORDS = ['Cascade', 'Harbour', 'Northside', 'Pacific', 'Summit'];
-const PARTNER_KINDS = ['Botanicals', 'Pharmacy', 'Health', 'Naturals'];
+const PARTNER_WORDS = [
+  ['Cascade', '清泉'],
+  ['Harbour', '港湾'],
+  ['Northside', '北岸'],
+  ['Pacific', '太平洋'],
+  ['Summit', '高峰'],
+] as const;
+const PARTNER_KINDS = [
+  ['Botanicals', '草本'],
+  ['Pharmacy', '药房'],
+  ['Health', '健康'],
+  ['Naturals', '天然'],
+] as const;
 
 /**
  * Writes one organization's year (ADR-051), a week at a time.
@@ -244,15 +275,17 @@ export class OrganizationWriter {
     // Every customer gets a billing address: issuing an invoice refuses a
     // customer without one (ADR-046), as it would in real use.
     for (let i = 1; i <= this.volume.customers; i++) {
+      // Some customers' documents in other languages (ADR-054), so
+      // issuing reads product names as it does in real use: every
+      // fourth in French with English beside it, every tenth in Chinese,
+      // and named in Chinese too, for Partners' search by pinyin
+      // (ADR-056). By position, not by the random source, so the rest of
+      // the year is the same data as before and the budgets compare.
+      const languages = documentLanguagesFor(i);
       const partner = await this.services.partners.create({
-        name: this.partnerName(i),
+        name: this.partnerName(i, languages.documentLanguage === 'zh-Hans'),
         code: `C${pad(i, 4)}`,
-        // Some customers' documents in other languages (ADR-054), so
-        // issuing reads product names as it does in real use: every
-        // fourth in French with English beside it, every tenth in Chinese.
-        // By position, not by the random source, so the rest of the year
-        // is the same data as before and the budgets compare.
-        ...documentLanguagesFor(i),
+        ...languages,
       });
 
       await this.services.partnerAddresses.create(partner.id, {
@@ -292,19 +325,20 @@ export class OrganizationWriter {
         kind === 'material' ||
         (kind === 'good' && this.random.chance(this.volume.trackedGoodsShare));
 
-      const input = this.productFor(kind, i, tracked);
+      const { input, chineseName } = this.productFor(kind, i, tracked);
       const product = await this.services.products.create(input);
 
       // Names in other languages on most finished goods (ADR-054): French
       // on two in three, Chinese on one in three, so an invoice in either
-      // language finds a name for most lines and falls back for the rest.
+      // language finds a name for most lines and falls back for the rest,
+      // and a Chinese reader's search has names to find (ADR-056).
       // By position again, leaving the random sequence untouched.
       const translations = [
         ...(kind === 'good' && i % 3 !== 0
           ? [{ locale: 'fr-CA' as const, name: `${input.name} (FR)` }]
           : []),
-        ...(kind === 'good' && i % 3 === 0
-          ? [{ locale: 'zh-Hans' as const, name: `${input.name}（中）` }]
+        ...(chineseName && i % 3 === 0
+          ? [{ locale: 'zh-Hans' as const, name: chineseName }]
           : []),
       ];
       if (translations.length > 0) {
@@ -888,40 +922,60 @@ export class OrganizationWriter {
   // ---------------------------------------------------------------------------
   // Naming
 
+  /** What to create, and for a good, its name in Chinese. */
   private productFor(kind: Kind, index: number, tracked: boolean) {
     if (kind === 'material') {
       return {
-        type: 'material' as const,
-        name: `${this.random.pick(MATERIALS)} extract`,
-        variant: {
-          sku: `M-${pad(index, 5)}`,
-          unitOfMeasure: 'kg',
-          tracksLots: true,
+        input: {
+          type: 'material' as const,
+          name: `${this.random.pick(MATERIALS)} extract`,
+          variant: {
+            sku: `M-${pad(index, 5)}`,
+            unitOfMeasure: 'kg',
+            tracksLots: true,
+          },
         },
+        chineseName: null,
       };
     }
 
     if (kind === 'packaging') {
       return {
-        type: 'packaging' as const,
-        name: `${this.random.pick(COUNTS)}ct bottle`,
-        variant: { sku: `P-${pad(index, 5)}`, unitOfMeasure: 'each' },
+        input: {
+          type: 'packaging' as const,
+          name: `${this.random.pick(COUNTS)}ct bottle`,
+          variant: { sku: `P-${pad(index, 5)}`, unitOfMeasure: 'each' },
+        },
+        chineseName: null,
       };
     }
 
+    // In this order, as the random source always picked them.
+    const [name, nameZh] = this.random.pick(GOOD_NAMES);
+    const [form, formZh] = this.random.pick(GOOD_FORMS);
+    const count = this.random.pick(COUNTS);
+
     return {
-      type: 'good' as const,
-      name: `${this.random.pick(GOOD_NAMES)} ${this.random.pick(GOOD_FORMS)} ${this.random.pick(COUNTS)}ct`,
-      variant: {
-        sku: `G-${pad(index, 5)}`,
-        unitOfMeasure: 'each',
-        tracksLots: tracked,
+      input: {
+        type: 'good' as const,
+        name: `${name} ${form} ${count}ct`,
+        variant: {
+          sku: `G-${pad(index, 5)}`,
+          unitOfMeasure: 'each',
+          tracksLots: tracked,
+        },
       },
+      chineseName: `${nameZh}${formZh}胶囊 ${count} 粒`,
     };
   }
 
-  private partnerName(index: number): string {
-    return `${this.random.pick(PARTNER_WORDS)} ${this.random.pick(PARTNER_KINDS)} ${pad(index, 4)}`;
+  /** In Chinese for a Chinese business, as 港湾药房 0010. */
+  private partnerName(index: number, inChinese = false): string {
+    const [word, wordZh] = this.random.pick(PARTNER_WORDS);
+    const [kind, kindZh] = this.random.pick(PARTNER_KINDS);
+    return inChinese
+      ? `${wordZh}${kindZh} ${pad(index, 4)}`
+      : `${word} ${kind} ${pad(index, 4)}`;
   }
 
   /** A lot code unique in the organization, expiring in a range of days. */
