@@ -146,8 +146,9 @@ UTC, the same day in Vancouver. The summary lists each known miss under the
 budgets, with its issue, its date and its ceiling, whether this run met it
 or not.
 
-Today's is the typo lookup's: #225, until 30 November 2026, 450 ms. The
-weekly run had measured 353 ms against its 300.
+There is none today. The typo lookup's, #225, went once #186 brought the
+lookup back within budget: weekly run 114, on 26 October 2026, measured
+207 ms against its 300.
 
 To add one, give the scenario in `perf/scenarios.ts` a `knownMiss`:
 

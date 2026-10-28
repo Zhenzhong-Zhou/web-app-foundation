@@ -244,12 +244,7 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // narrowed by its search.
     read('GET /lookup?q=code', () => '/lookup?q=LV-00001'),
     read('GET /lookup?q=name', () => '/lookup?q=focus'),
-    // Over its budget in the weekly run since 19 October 2026 (#225): known
-    // until 30 November, and failing past 450 ms (ADR-082).
-    {
-      ...read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
-      knownMiss: { issue: '#225', until: '2026-11-30', ceilingMs: 450 },
-    },
+    read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
     read('GET /orders?search', () => '/orders?status=all&search=SO-10'),
     // Home (ADR-058): the page everyone opens first, every card an owner
     // sees and Getting started, in one request.
