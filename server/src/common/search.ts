@@ -12,10 +12,26 @@ import { type SQL, sql, type SQLWrapper } from 'drizzle-orm';
  *   Latin letters and digits: "yuyou" and "shyy" find 深海鱼油.
  * - % and _ match themselves: they are escaped, never wildcards.
  *
- * The lookup asks for at least MIN_SEARCH_LENGTH characters; a list
- * narrows by whatever it is given.
+ * The lookup asks for at least MIN_SEARCH_LENGTH characters, or one Chinese
+ * character (lookupLongEnough); a list narrows by whatever it is given.
  */
 export const MIN_SEARCH_LENGTH = 2;
+
+/** One Chinese character and nothing else: 鱼, 胶. */
+const ONE_HAN = /^\p{Script=Han}$/u;
+
+/**
+ * Whether a query, trimmed, is long enough for the lookup (ADR-056): at
+ * least MIN_SEARCH_LENGTH characters, or one Chinese character, which is
+ * what a Chinese reader types, where one letter would match nearly
+ * everything in seven kinds at once. A list searches one kind and takes any
+ * length. The top bar asks by the same rule
+ * (client/src/search/lookup-minimum.ts).
+ */
+export function lookupLongEnough(raw: string): boolean {
+  const text = raw.trim();
+  return text.length >= MIN_SEARCH_LENGTH || ONE_HAN.test(text);
+}
 
 /** What a query becomes before it is matched. */
 export interface SearchTerms {

@@ -1700,7 +1700,7 @@
   "search.nothing": "未找到结果。",
   "search.placeholder": "搜索订单、批次、物品、合作伙伴…",
   "search.showAll": "在{list}中查看全部",
-  "search.typeMore": "请至少输入两个字符。",
+  "search.typeMore": "请至少输入两个字符，或一个汉字。",
   "settings.banner.hide": "今天不再显示",
   "settings.banner.keepBoth": "两者都保留",
   "settings.banner.kept": "{organization} 不会被删除。",

@@ -997,6 +997,7 @@
   "validation.isString": "{property} 必须是字符串",
   "validation.isUuid": "{property} 必须是 UUID",
   "validation.languageTwice": "某种语言出现了两次——每种语言只发送一次",
+  "validation.lookupQuery": "{property} 至少 2 个字符，或一个汉字",
   "validation.matches": "{property} 的格式不符合要求",
   "validation.max": "{property} 不能大于 {limit}",
   "validation.maxLength": "{property} 最多 {limit} 个字符",

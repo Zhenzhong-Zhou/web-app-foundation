@@ -1700,7 +1700,7 @@
   "search.nothing": "Nothing found.",
   "search.placeholder": "Search orders, lots, items, partners…",
   "search.showAll": "Show all in {list}",
-  "search.typeMore": "Type at least two characters.",
+  "search.typeMore": "Type at least two characters, or one Chinese character.",
   "settings.banner.hide": "Hide for today",
   "settings.banner.keepBoth": "Keep both",
   "settings.banner.kept": "{organization} will not be deleted.",

@@ -1700,7 +1700,7 @@
   "search.nothing": "Aucun résultat.",
   "search.placeholder": "Rechercher commandes, lots, articles, partenaires…",
   "search.showAll": "Tout afficher dans {list}",
-  "search.typeMore": "Tapez au moins deux caractères.",
+  "search.typeMore": "Tapez au moins deux caractères, ou un caractère chinois.",
   "settings.banner.hide": "Masquer pour aujourd’hui",
   "settings.banner.keepBoth": "Conserver les deux",
   "settings.banner.kept": "{organization} ne sera pas supprimée.",

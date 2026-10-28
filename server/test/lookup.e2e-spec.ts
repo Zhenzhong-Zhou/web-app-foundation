@@ -276,11 +276,28 @@ describe('Lookup (e2e)', () => {
     expect(lotsOnly).toEqual(['lot']);
   });
 
-  it('asks for at least two characters, after trimming', async () => {
+  it('asks for at least two characters, or one Chinese character, after trimming', async () => {
     const alpha = await registerOrganization(app, 'alpha');
 
     await alpha.agent.get('/v1/lookup?q=a').expect(400);
     await alpha.agent.get('/v1/lookup?q=%20%20a%20').expect(400);
+    await alpha.agent
+      .get(`/v1/lookup?q=${encodeURIComponent('，')}`)
+      .expect(400);
     await alpha.agent.get(`/v1/lookup?q=${'x'.repeat(101)}`).expect(400);
+    await alpha.agent
+      .get(`/v1/lookup?q=${encodeURIComponent(' 鱼 ')}`)
+      .expect(200);
+  });
+
+  it('finds an item by one Chinese character of its name', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await createVariant(alpha.agent, {
+      type: 'good',
+      name: '深海鱼油',
+      variant: { sku: 'OIL-90', tracksLots: false },
+    });
+
+    expect(titles(await lookup(alpha, '鱼'), 'item')).toEqual(['深海鱼油']);
   });
 });

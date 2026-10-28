@@ -997,6 +997,7 @@
   "validation.isString": "{property} must be a string",
   "validation.isUuid": "{property} must be a UUID",
   "validation.languageTwice": "A language appears twice — send each one once",
+  "validation.lookupQuery": "{property} must be at least 2 characters, or one Chinese character",
   "validation.matches": "{property} is not in the expected form",
   "validation.max": "{property} must not be greater than {limit}",
   "validation.maxLength": "{property} must be shorter than or equal to {limit} characters",

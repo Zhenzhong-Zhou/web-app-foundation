@@ -746,8 +746,10 @@ Paper is checked first because it must not change at all.
   `2609` lists BF-2609 and FOC-2609-01 under Lots, each with its SKU and
   expiry chip; arrow keys move, Enter opens the lot's trace, Escape closes.
   `fokus` shows Focus 60ct marked close match; `mdyf` or 明德 finds 明德药房; `INV-`
-  puts Invoices first. In 中文 and Français the headings and messages are
-  translated. At 375px the search is a button that opens it full screen.
+  puts Invoices first. One letter alone asks for more, but one Chinese
+  character is enough: in 中文, 专 lists 专注胶囊 60 粒 under 物品. In 中文
+  and Français the headings and messages are translated. At 375px the
+  search is a button that opens it full screen.
 - **MC-1557** Orders, Invoices, Returns and Production each have a Search box
   in their filter row: part of a number or reference, or a partner's name
   (without accents, or a Chinese name by pinyin), narrows the list as you
@@ -3765,3 +3767,5 @@ first.
   page behind it is hidden from a screen reader: MC-R27 extended.
 - 2026-10-28: ADR-056, amended, an item's name in the reader's language:
   section 38, MC-3801 to MC-3804.
+- 2026-10-28: ADR-056, amended, one Chinese character a search in the top
+  bar: MC-1556 extended.

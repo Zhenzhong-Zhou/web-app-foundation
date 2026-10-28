@@ -26,9 +26,8 @@ import { RECENT_PATHS, type RecentEntry } from '../lib/recent';
 import { RECENT_KIND_LABELS, recentTitle } from '../lib/recent-labels';
 import { rem } from '../theme/rem';
 import { KIND_LABELS, listOf, pathOf } from './lookup-kinds';
+import { lookupLongEnough } from './lookup-minimum';
 
-/** The server's minimum, after trimming (ADR-056). */
-const MIN_LENGTH = 2;
 /** Waits this long after the last key before asking. */
 const DELAY_MS = 200;
 
@@ -166,7 +165,7 @@ function LookupField({
   // the text is too short, is set where the typing happens (onInputChange).
   useEffect(() => {
     const query = text.trim();
-    if (query.length < MIN_LENGTH) return;
+    if (!lookupLongEnough(query)) return;
 
     const asked = ++latest.current;
     const timer = setTimeout(() => {
@@ -202,7 +201,7 @@ function LookupField({
     onDone?.();
   }
 
-  const short = text.trim().length < MIN_LENGTH;
+  const short = !lookupLongEnough(text);
   const empty = text.trim() === '';
 
   return (
@@ -231,7 +230,7 @@ function LookupField({
       onInputChange={(_event, value, reason) => {
         if (reason === 'reset') return;
         setText(value);
-        const long = value.trim().length >= MIN_LENGTH;
+        const long = lookupLongEnough(value);
         setLoading(long);
         if (!long) {
           // Too short to ask: forget any answer still on its way.
@@ -251,7 +250,8 @@ function LookupField({
         short
           ? intl.formatMessage({
               id: 'search.typeMore',
-              defaultMessage: 'Type at least two characters.',
+              defaultMessage:
+                'Type at least two characters, or one Chinese character.',
             })
           : intl.formatMessage({
               id: 'search.nothing',

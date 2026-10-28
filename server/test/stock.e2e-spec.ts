@@ -817,6 +817,8 @@ describe('Stock (e2e)', () => {
       expect(await skus('yuyou')).toEqual(['OIL-90']);
       expect(await skus('shyy')).toEqual(['OIL-90']);
       expect(await skus('鱼油')).toEqual(['OIL-90']);
+      // One Chinese character, as the lookup takes it; a list takes any.
+      expect(await skus('鱼')).toEqual(['OIL-90']);
       expect(await skus('50%')).toEqual(['PROMO-50%']);
     });
 

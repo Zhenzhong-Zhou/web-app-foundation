@@ -4493,7 +4493,7 @@
             "required": true,
             "in": "query",
             "schema": {
-              "minLength": 2,
+              "minLength": 1,
               "maxLength": 100,
               "type": "string"
             }
