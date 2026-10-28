@@ -54,6 +54,8 @@ On 27 October 2026:
   editor in 中文, 品牌, product photos, 同事, and 编号 (MC-2710).
 - **2 November:** `typescript-eslint` 8.72.1 and `@aws-sdk/client-s3`
   3.1157.0 are old enough, for ADR-084's branch ([#287]).
+- **3 November:** the Nest packages at 12.3.x are old enough (ADR-084,
+  [#287]).
 - **Early November:** Bob's cloud credit ends; [#245] suits a cloud session
   before then. What the cloud sessions taught is in the working
   agreements, "Cloud sessions" under
