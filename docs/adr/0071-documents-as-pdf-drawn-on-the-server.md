@@ -8,6 +8,9 @@ amended-by: [ADR-072, ADR-073, ADR-080]
 
 # ADR-071 — Documents as PDF, drawn on the server (amends ADR-046, ADR-054, ADR-055 and ADR-070)
 
+> **Amended by [ADR-080](0080-job-roles.md).**
+> The purchase order's and the pro forma invoice's PDFs need `orders.view_prices` beside their document's read permission; every other PDF is served under that permission alone. Everything else stands.
+
 ## Context
 
 Three documents print today: the packing slip (ADR-041),

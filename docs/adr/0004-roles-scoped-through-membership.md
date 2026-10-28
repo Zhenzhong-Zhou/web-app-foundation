@@ -7,6 +7,9 @@ amended-by: [ADR-080]
 
 # ADR-004 — Roles scoped through membership
 
+> **Amended by [ADR-080](0080-job-roles.md).**
+> A membership holds one or more roles, each a row of `membership_roles`, rather than one `role_id`, and an organization can make roles of its own. Everything else stands.
+
 ## Context
 
 The obvious design is `user → role → permissions`. It breaks as soon as a

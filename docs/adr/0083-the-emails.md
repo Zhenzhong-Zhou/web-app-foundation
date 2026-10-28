@@ -442,7 +442,7 @@ What building settled:
   and `npm run mail:text -- --update` rewrites the files, for a branch
   that changes an email's words on purpose (#255, a translation
   corrected), in a commit that changes nothing else; a change of layout
-  or code fixes the code, never the files (conventions.md, "Tests"). The
+  or code fixes the code, never the files ([conventions.md, "Tests"](../conventions.md#tests)). The
   samples sit beside their only user, `cli/mail-preview.ts`, since
   `shared/` imports nothing from `core/`.
 - **The tools.** `npm run mail:preview` writes `tmp/mail-preview/`, a

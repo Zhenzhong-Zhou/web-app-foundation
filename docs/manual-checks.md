@@ -2283,7 +2283,7 @@ seven (no Costs waiting).
   At no width does the page scroll sideways (MC-R39).
 
 A real deploy is a push to `main` that passes CI, with Render's settings
-as `docs/runbooks/render.md`, "Deploys", has them.
+as [`docs/runbooks/render.md`, "Deploys"](runbooks/render.md#deploys-adr-081), has them.
 
 - **MC-3424** *(ADR-081)* A tab kept open across a real deploy. Before the
   push, sign in on the live app and leave one tab on Orders and one in a

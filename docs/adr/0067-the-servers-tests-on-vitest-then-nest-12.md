@@ -89,7 +89,7 @@ yet. Its triggers are under *Deferred*.
 
 - Built as two pull requests, each revertable on its own:
     1. `adr-067-vitest`: this ADR; the spike, then the switch (server);
-       the Tests section of `conventions.md` and the handoff (docs).
+       [the Tests section of `conventions.md`](../conventions.md#tests) and the handoff (docs).
        Every suite green on Nest 11.
     2. `nest-12`: Nest 12 and intl-messageformat 12 (server); the
        handoff and release notes (docs).
@@ -151,6 +151,6 @@ yet. Its triggers are under *Deferred*.
   longer inherits; and the shutdown hooks (the two timers, the mail
   transport, the pool) do not depend on the order v12 now calls them in.
 - **Nest 12's own `errorCode`.** `HttpExceptionOptions` now takes an
-  `errorCode`, which does what `withCode()` does (conventions.md, "Error
-  codes"). The exception filter writes the body itself, so the two do
+  `errorCode`, which does what `withCode()` does ([conventions.md, "Error
+  codes"](../conventions.md#error-codes)). The exception filter writes the body itself, so the two do
   not collide. Moving to Nest's is a tidy for later, not part of this.

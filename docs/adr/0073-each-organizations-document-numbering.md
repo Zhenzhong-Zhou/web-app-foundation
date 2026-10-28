@@ -96,8 +96,8 @@ longer number simply grows: `999999`, then `1000000`.
 ## Decision — refusals, before anything is written
 
 Malformed settings
-are a 400. Two conflicts are a 409, each with its code (conventions.md,
-"Error codes"):
+are a 400. Two conflicts are a 409, each with its code ([conventions.md,
+"Error codes"](../conventions.md#error-codes)):
 
 - **Two series that could print the same prefix**
   (`numbering_prefix_shared`, naming the other series): the same text once
@@ -244,7 +244,7 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
 - **Refusals carry details.** `numbering_number_taken` and
   `numbering_prefix_shared` name their series in the API's names
   (`invoice`, `creditNote`), and the first the least next number accepted,
-  in `details` beside the code (conventions.md, "Error codes"), for the
+  in `details` beside the code ([conventions.md, "Error codes"](../conventions.md#error-codes)), for the
   screen's Use. `numbering_date_order` has its way out too: Change it on
   Organization → Documents, for those who may change the numbering.
 - **Going below the numbers given is the same refusal.** Below where the

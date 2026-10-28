@@ -104,7 +104,7 @@ product gets a weight, so the chevron is on the page axe scans.
   checks the choice applies, survives a reload and is offered signed out,
   and that at Larger the main screens never scroll sideways, at desktop
   width and at 320px (WCAG 1.4.10).
-- conventions.md's The look gains the rem rule; manual checks section 28.
+- [conventions.md's The look](../conventions.md#the-look-adr-055) gains the rem rule; manual checks section 28.
 - No server change and no migration.
 
 ## Deferred

@@ -8,6 +8,9 @@ amended-by: [ADR-080]
 
 # ADR-079 — A newcomer's first sign-in: a welcome on Home, and help on every page (amends ADR-016, ADR-058, ADR-063, ADR-069, ADR-077 and ADR-078)
 
+> **Amended by [ADR-080](0080-job-roles.md).**
+> Permission lines are messages in the three languages, translated on the server and read in the role editor, the audit log, the export and refusals, rather than English that no screen shows. Everything else stands.
+
 ## Context
 
 ADR-077 and ADR-078 settled how a person arrives: by a link,
@@ -24,7 +27,7 @@ the person who opens it.
 
 This is the third of the three onboarding pieces. What it builds has to
 hold when job roles come (Open decisions), and when one person belongs to
-two organizations (ADR-077, *Deferred*).
+two organizations ([ADR-077, *Deferred*](0077-invitations.md#deferred--each-with-what-brings-it-in)).
 
 Checked before drafting, as the working agreements ask:
 
@@ -281,7 +284,7 @@ commit, ahead of this ADR's server, closing #144.
   so ADR-072's watch list brings its test: the auth provider passing the
   zone on.
 - Carrying the organization on each request, for one person in two
-  organizations, stays with that ADR (ADR-077, *Deferred*).
+  organizations, stays with that ADR ([ADR-077, *Deferred*](0077-invitations.md#deferred--each-with-what-brings-it-in)).
 
 ## Considered and not done
 
@@ -356,8 +359,8 @@ commit, ahead of this ADR's server, closing #144.
   handoff.
 - Build order: this ADR; #144; the server; the client after the design,
   Help, then the guides, then the welcome; the docs last, after the
-  reviews. Built by Claude Code, a prompt per commit (engineering.md, *How code
-  is delivered*).
+  reviews. Built by Claude Code, a prompt per commit ([engineering.md, *How code
+  is delivered*](../engineering.md#how-code-is-delivered)).
 
 ## Amendment (October 2026) — as built
 

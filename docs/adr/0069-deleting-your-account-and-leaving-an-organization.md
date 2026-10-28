@@ -157,7 +157,7 @@ An account that
 belongs to no organization can be invited back, signing in to accept. An
 account in another organization still cannot, so a person still belongs
 to one, and "A block in another organization" stays deferred: its trigger
-is now one person in two organizations (ADR-077, *Deferred*).
+is now one person in two organizations ([ADR-077, *Deferred*](0077-invitations.md#deferred--each-with-what-brings-it-in)).
 
 ## Amendment (October 2026) — a session finds its organization again (ADR-079, #144)
 

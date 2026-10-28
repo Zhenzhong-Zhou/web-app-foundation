@@ -7,6 +7,9 @@ amended-by: [ADR-071, ADR-076, ADR-081]
 
 # ADR-054 — Languages: the person's language for the app, the customer's for documents
 
+> **Amended by [ADR-071](0071-documents-as-pdf-drawn-on-the-server.md).**
+> Documents are PDFs drawn on the server, which applies these rules from its own catalogues, rather than print pages rendered in a provider fixed to the first language. Everything else stands.
+>
 > **Amended by [ADR-081](0081-old-tabs-after-a-deploy.md).**
 > A language whose catalogue won't load says so, in its own words, and nothing is saved until it loads; at start the app falls back to English rather than a blank page.
 

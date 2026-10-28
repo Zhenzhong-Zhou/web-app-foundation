@@ -8,6 +8,9 @@ amended-by: [ADR-071, ADR-078, ADR-080]
 
 # ADR-070 — Deleting an organization (amends ADR-012, ADR-059 and ADR-069)
 
+> **Amended by [ADR-080](0080-job-roles.md).**
+> `organizations.export` can go into a role an organization makes, so it is no longer any Owner's alone; `organizations.delete` is never offered there, and closing stays the Owners'. Everything else stands.
+
 ## Context
 
 ADR-069 let a person leave an organization and delete their

@@ -8,6 +8,9 @@ amended-by: [ADR-078, ADR-079, ADR-080, ADR-083]
 
 # ADR-077 — Invitations: how a person joins an organization (amends ADR-006 and ADR-069)
 
+> **Amended by [ADR-080](0080-job-roles.md).**
+> An invitation names one or more roles, and Invite starts with none chosen once the organization has made a role, rather than at Viewer; only what the inviter holds can be given. Everything else stands.
+
 ## Context
 
 ADR-006 shipped self-serve registration and left adding

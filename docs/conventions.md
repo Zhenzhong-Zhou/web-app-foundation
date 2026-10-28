@@ -568,8 +568,8 @@ add says so in its PR.
   whose screens, manual checks and walkthroughs work without setup: a
   feature's new screens open on real-looking records, in every state its
   checks name. CI runs it on an empty database, so a service it calls that
-  changes shape fails there; run it locally after changing one (engineering.md,
-  *Moving code*).
+  changes shape fails there; run it locally after changing one ([engineering.md,
+  *Moving code*](engineering.md#moving-code)).
 - **`npm run seed:volume`** fills a database of its own with a year at
   realistic scale (`server/perf/README.md`). A new table gets rows in the
   proportions a customer would have, and a new hot query, one run on every

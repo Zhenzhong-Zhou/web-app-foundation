@@ -1,8 +1,6 @@
-# Engineering
+# Engineering: the working agreements
 
-## Working agreements (for Claude)
-
-### Pull requests
+## Pull requests
 
 - **One PR per feature** (October 2026): its ADR, when it has a new one,
   as the first commit, then server, client and docs as commits of their own;
@@ -15,13 +13,13 @@
   (`.claude/skills/usability-walkthrough/personas.md`), then `/simplify`,
   then `/code-review`, so the review sees every fix before it, then
   `/production-readiness` on the sections the change touches
-  (conventions.md, "Production readiness"). Each
+  ([conventions.md, "Production readiness"](conventions.md#production-readiness)). Each
   fix they lead to is its own commit. The PR description names the journey
   walked and the persona who walked it. `/usability-walkthrough` was
-  missed on several recent PRs, so this branch's step 7 (ADR-079) walks
+  missed on several recent PRs, so ADR-079's branch walked
   two journeys, to make up for ADR-077 and ADR-078.
 
-### How code is delivered
+## How code is delivered
 
 - **Dependencies, on every branch** (21 October 2026): `npm outdated` in
   `server/` and `client/`, taking the in-range updates as a commit of their
@@ -30,8 +28,8 @@
   own publish time and never moving a locked version back; not `npm
   update --before`, which does both wrong (the square logo's step 2, 25
   October 2026). A security fix is excepted, and any other exception is
-  Bob's, named in its commit (conventions.md, "Dependencies").
-- **Planned in this chat, built in Claude Code** (from ADR-079, 20
+  Bob's, named in its commit ([conventions.md, "Dependencies"](conventions.md#dependencies)).
+- **Planned in the claude.ai chat, built in Claude Code** (from ADR-079, 20
   October 2026). The claude.ai chat does the check before an ADR (its
   Deferred lines, the watch lists, Open decisions and the open issues),
   the decisions for Bob to confirm, the ADR as the branch's first commit
@@ -44,8 +42,8 @@
   the code too, as one mbox per commit, and Claude Code only applied
   them.
 - **The build, through `/build-from-brief`** (from ADR-083). The brief
-  and the canvas's boards go in `tmp/adr-NNN/`, ignored by git though
-  `scripts/verify.sh` lints its Markdown. Each prompt is one line,
+  and the canvas's boards go in `tmp/adr-NNN/`, ignored by git and by
+  markdownlint, so `scripts/verify.sh` does not lint its Markdown. Each prompt is one line,
   `/build-from-brief tmp/adr-NNN/brief.md N`; the skill holds the ground
   rules every brief repeated, so a brief holds its decisions and its
   steps. `/clear` between steps, never inside one; a step's follow-ups
@@ -82,7 +80,7 @@
 - **Every pull request** that changes what a person sees takes pictures
   before and after and compares them (`npm run screenshots:compare`), and
   its Claude Code Review comment is read before merging. The README's
-  "Which tool, when" says when each of the repo's tools runs.
+  ["Which tool, when"](../README.md#which-tool-when) says when each of the repo's tools runs.
 - **The chat's docs commits come as full files, not an mbox** (from
   ADR-082, 24 October 2026): `git am` had failed on Bob's side. Each file
   is made from `main` as Bob has it, with its `git hash-object` before
@@ -117,7 +115,7 @@
   - `client/e2e/…`;
   - `docs/adr/NNNN-<slug>.md`.
 
-### Process
+## Process
 
 - ADR before code for each new area. Server first with e2e tests, then the
   client screens. Each step its own commit.
@@ -129,7 +127,7 @@
   its screens, manual checks and walkthroughs need no setup; `seed:volume`,
   realistic rows for any new table or hot query, timed against ADR-051's
   budgets. Every build brief has a step for both, or says why a feature
-  adds nothing (CLAUDE.md; conventions.md, "Seeds").
+  adds nothing (CLAUDE.md; [conventions.md, "Seeds"](conventions.md#seeds)).
 - **A change that touches many screens** starts its build with an
   inventory step: Claude Code lists every cross-area read and link (or,
   for ADR-081, every chunk, request and failure path) before building.
@@ -152,10 +150,10 @@
 - A type change on the client means fixing the test fixtures that build that
   type, in the same commit. Vitest does not type-check; `tsc` and CI do.
 - A commit that changes what a person sees, or a rule they work under,
-  updates `docs/manual-checks.md` in the same commit (`docs/conventions.md`,
-  Tests).
+  updates `docs/manual-checks.md` in the same commit ([`docs/conventions.md`,
+  Tests](conventions.md#tests)).
 
-### Commits
+## Commits
 
 - **Authored as Bob:** `Zhenzhong Zhou <bob0823.zhou@gmail.com>`, the
   identity on the repo's history (`git log --format='%an <%ae>' | sort |
@@ -181,7 +179,7 @@
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
 
-### Moving code (what step 1 learned)
+## Moving code
 
 - Find every caller before moving a method, including
   `server/src/database/seed-demo.ts`, and calls split over two lines
@@ -193,7 +191,7 @@
 - Check a new comment's claims against the code it describes before
   keeping it.
 
-### Server
+## Server
 
 - Server e2e: always `npm run test:e2e`. Never run two at once — the second
   now refuses. Don't edit server files while Playwright runs against
@@ -219,7 +217,7 @@
   and its descriptions, never to the Admin or Viewer lists, and to the
   client's list in the same commit.
 
-### Client and copy
+## Client and copy
 
 - Dialogs take permission flags from their page rather than reading the
   session.

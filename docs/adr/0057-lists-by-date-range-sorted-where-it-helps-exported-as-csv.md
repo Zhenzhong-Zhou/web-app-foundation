@@ -7,6 +7,9 @@ amended-by: [ADR-076]
 
 # ADR-057 — Lists by date range, sorted where it helps, exported as CSV
 
+> **Amended by [ADR-076](0076-the-audit-log-in-words.md).**
+> The audit log's export writes each entry in the words its screen shows, its details as one line, rather than the fields it recorded as JSON. Everything else stands.
+
 ## Context
 
 Every list is newest first, fixed, because keyset paging

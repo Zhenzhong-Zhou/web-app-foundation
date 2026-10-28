@@ -27,7 +27,7 @@ organization's. This ADR fills in the product's side of that line.
 
 Checked before drafting, as the working agreements ask:
 
-- **Fired, and taken here.** The handoff's "Still to do, in code", the
+- **Fired, and taken here.** [The handoff's "Still to do, in code"](../handoff.md#still-to-do-in-code), the
   brand's next PR, item by item. From #201's `/production-readiness`:
   the ICO holds the light mark only, so its navy stem is about 1:1 on a
   dark Windows taskbar or Safari 16.4 to 18's dark tab bar; and with no

@@ -422,8 +422,8 @@ to a role reaches its holders on their next click.
 - `npm run migrate:all` once 0073 lands.
 - Build order: this ADR; #155; the schema and permissions; the server; the
   client after the design; the guides; the docs last, after the reviews.
-  Built by Claude Code, a prompt per commit (engineering.md, *How code is
-  delivered*).
+  Built by Claude Code, a prompt per commit ([engineering.md, *How code is
+  delivered*](../engineering.md#how-code-is-delivered)).
 
 ## Amendment (October 2026) — as built (#176)
 

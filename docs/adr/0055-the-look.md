@@ -8,11 +8,15 @@ amended-by: [ADR-071, ADR-075, ADR-081, ADR-082]
 
 # ADR-055 — The look: tokens, a side rail, tabs and a summary beside the work (amends ADR-021)
 
+> **Amended by [ADR-071](0071-documents-as-pdf-drawn-on-the-server.md).**
+> Paper is a PDF drawn on the server, rather than `PrintSheet` in its own light theme, and stays outside the screen tokens. Everything else stands.
+>
 > **Amended by [ADR-081](0081-old-tabs-after-a-deploy.md).**
 > The status page's discs and Home's empty line take the five tones' pairs, not MUI's derived `light` and `dark`, which fell below contrast.
 >
 > **Amended by [ADR-082](0082-the-products-brand.md).**
 > The brand layer is unchanged: its default accent and the dark rail are the product's mark's own purple and navy, so a change to either is made to the mark's masters too.
+> From 1200 px the organization's logo, or its name, tops the rail rather than sitting at the top bar's left; the top bar keeps search, Help, the bell and the account.
 
 ## Context
 

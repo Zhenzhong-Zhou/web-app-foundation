@@ -296,7 +296,7 @@ inside #175 is built here; its whole-app run follows this ADR.
 ## Decision — the browser floor, held by ESLint
 
 `eslint-plugin-compat`,
-set to the build's own target (conventions.md, "Supported browsers"),
+set to the build's own target ([conventions.md, "Supported browsers"](../conventions.md#supported-browsers)),
 fails code that uses an API newer than the floor without a guard, as
 `Intl.Segmenter` once was. The skill's browsers and China section checks
 the rest: nothing loaded from another site, `index.html`'s engine tags,
@@ -426,7 +426,7 @@ stays; conventions.md says so.
   a failure is shown; the volume seed; the server; CI; the client, after
   the design; the riders; the deploy workflow and the runbook;
   dependencies again; the reviews; the docs last. Built by Claude Code, a
-  prompt per commit (engineering.md, *How code is delivered*).
+  prompt per commit ([engineering.md, *How code is delivered*](../engineering.md#how-code-is-delivered)).
 
 ## Amendment (October 2026) — as built (#199)
 

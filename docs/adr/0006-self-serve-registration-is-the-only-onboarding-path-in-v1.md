@@ -7,6 +7,12 @@ amended-by: [ADR-077, ADR-078]
 
 # ADR-006 — Self-serve registration is the only onboarding path in V1
 
+> **Amended by [ADR-077](0077-invitations.md).**
+> Registration is no longer the only way in: a person joins an existing organization by invitation, which replaced an admin adding them with a password someone else chose. Everything else stands.
+>
+> **Amended by [ADR-078](0078-registration.md).**
+> Self-serve registration is a setting, `REGISTRATION`: in production a new organization comes from an organization invitation the operator issues, rather than from registering.
+
 ## Context
 
 Three onboarding models were on the table: self-serve registration, admin-

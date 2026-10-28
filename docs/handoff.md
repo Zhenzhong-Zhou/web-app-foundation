@@ -216,7 +216,7 @@ with this one, this one is current.
   `/api/health` and `/version.json` both named 1620e99, version 0.7.0, API
   revision 1. Deploy #2, for CI's scheduled run at 7:01, was skipped, as
   designed. The free API took about 50 seconds to wake for the first
-  request. The headers are in `render.md`, "Deploys". Render's edge
+  request. The headers are in [`render.md`, "Deploys"](runbooks/render.md#deploys-adr-081). Render's edge
   ignores a query string and empties itself at each deploy, so no page
   stays old after one (#196's review; ADR-081's correction).
 - **The order now** (Bob, changed on 27 October 2026: the docs first,
@@ -503,8 +503,8 @@ with this one, this one is current.
   (Keep me signed in, an organization's idle sign-out), covers in the
   lookup, the gallery's zooming viewer, and the invoice refusals' links to
   Organization → Profile and to the customer (`invoice-refusal-link`,
-  ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
-  "Error codes"). Since then, through #124: ADR-067 to ADR-070 below,
+  ADR-061 amended, with a `code` beside a refusal's message: [conventions.md,
+  "Error codes"](conventions.md#error-codes)). Since then, through #124: ADR-067 to ADR-070 below,
   and `deletion-started` (#117).
 - **Migrations:** through **0075** on `main` (#251's, the square logo),
   76 files in
@@ -527,10 +527,10 @@ with this one, this one is current.
   invitation roles) and **0074** (`roles.updated_by`), in #176. Render
   holds one row per file in `drizzle.__drizzle_migrations` once `main` is
   deployed there: 75 with ADR-080, 76 with the square logo. After any new migration: `npm run migrate:all`, and
-  check its journal time (`docs/engineering.md`, Process).
+  check its journal time ([`docs/engineering.md`, Process](engineering.md#process)).
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
-  for typescript-eslint and the Nest CLI (ADR-067, *Deferred*); still so
+  for typescript-eslint and the Nest CLI ([ADR-067, *Deferred*](adr/0067-the-servers-tests-on-vitest-then-nest-12.md#deferred--each-with-what-brings-it-in)); still so
   on 26 October 2026, with TypeScript 7.0.2 out since 8 July:
   typescript-eslint 8.72.0 accepts `<6.1.0`, the Nest CLI 12.0.10 depends
   on TypeScript `~6.0.2`, and `@nestjs/swagger` 12.0.4 accepts `^5 || ^6`
@@ -546,7 +546,7 @@ with this one, this one is current.
   check in CI and `scripts/verify.sh` replaces the four copy checks. After
   any API change: `npm run api` in `server/`, and commit both files.
   Phase 2 runs straight through, one PR per group of modules, before
-  ADR-069; the steps are in conventions.md, "The API contract". Done: tax
+  ADR-069; the steps are in [conventions.md, "The API contract"](conventions.md#the-api-contract). Done: tax
   codes (the pilot), invoices and credit notes (`invoices-responses`,
   which settled the page class and found `CreditNoteSummary` declared
   twice), orders (`orders-responses`, then `orders-shipments-responses`
@@ -605,7 +605,7 @@ with this one, this one is current.
   The deletion day is a calendar day, completed once it has ended in
   every time zone; `AccountDeletionTimer` runs at startup and hourly,
   cancelling a deletion a block now applies to. Migrations 0055 and
-  0056. Waiting on their triggers (ADR-069, *Deferred*): invitations
+  0056. Waiting on their triggers ([ADR-069, *Deferred*](adr/0069-deleting-your-account-and-leaving-an-organization.md#deferred)): invitations
   (ADR-006), and with them switching between organizations, which a
   block in another organization needs; and accounts an organization owns,
   through single sign-on.
@@ -697,8 +697,8 @@ with this one, this one is current.
 
 - **Panivo on Render** (#201, `brand-name-and-icon`): the static site's
   Environment, `VITE_APP_NAME=Panivo`, and the web service's `MAIL_FROM`,
-  `Panivo <the address it has now>` (runbooks/render.md, "Building the
-  services from nothing"). The static site reads the name only when it
+  `Panivo <the address it has now>` ([runbooks/render.md, "Building the
+  services from nothing"](runbooks/render.md#building-the-services-from-nothing)). The static site reads the name only when it
   builds, so set it before the merge's deploy, or deploy again after.
   Both set on 23 October, before #201 merged. MC-3501 and MC-3502 walked
   on the live app on 24 October. ADR-082's three settings went on the API
@@ -736,16 +736,16 @@ with this one, this one is current.
 - **Render's free database** (`foundation-db`) was created on 22 October
   2026; its page says it expires on 21 November 2026, and Render deletes
   it about 5 December. Replace it by about 19 November, by
-  `docs/runbooks/render.md`, "Replacing the database", and record the new
+  [`docs/runbooks/render.md`, "Replacing the database"](runbooks/render.md#replacing-the-database), and record the new
   dates here. Each free database lasts 30 days, so until a paid one this
   comes back monthly. The one before was created about 28 September and
   expired on 28 October (the 12 November an older line gave was wrong);
   the one before that was recreated on 13 October to retire a password
   pasted in a chat, the day `FILES_S3_ENDPOINT` was found ending in the
-  bucket (`render.md`, "What runs where"). Before any real customer: a
+  bucket ([`render.md`, "What runs where"](runbooks/render.md#what-runs-where)). Before any real customer: a
   paid database and web service, backups to the Canadian bucket, and
-  every development secret replaced (the runbook's "Before real
-  customers' data").
+  every development secret replaced ([the runbook's "Before real
+  customers' data"](runbooks/render.md#before-real-customers-data)).
 - **Dependabot, 24 October 2026.** Alert 4, esbuild up to 0.24.2
   (medium, development only), stays open as #113 left it: drizzle-kit
   0.31.11's deprecated `@esbuild-kit/esm-loader` pins esbuild
@@ -770,7 +770,7 @@ with this one, this one is current.
   Meanwhile, once: Gmail's Show original on one of the app's emails reads
   SPF, DKIM and DMARC PASS. A mailbox on the domain, when one is wanted (a
   support address, or DMARC's reports): forwarding through ImprovMX, as
-  `services.md` says under *Not set up yet*.
+  [`services.md` says under *Not set up yet*](runbooks/services.md#not-set-up-yet).
 - **The pre-push hook** lives in `scripts/hooks/` since #247, and Bob's
   clone has used it since 25 October (`core.hooksPath`, the old copy
   deleted). A new clone needs `git config core.hooksPath scripts/hooks`
@@ -1228,8 +1228,8 @@ Then tag v0.4.0.
   quick actions and in the empty search box.
 - **Status pages, merged** (PR #60): one shape for an unknown
   address, a record that does not exist, one the role cannot open, a server
-  out of reach and a crash (`client/src/errors/`, conventions.md "Status
-  pages"), designed on Home's canvas.
+  out of reach and a crash (`client/src/errors/`, [conventions.md "Status
+  pages"](conventions.md#status-pages)), designed on Home's canvas.
 - **Dates, sorting and export, one ADR.** Only the audit log filters by date
   today, and every list is newest first, fixed, because keyset paging
   (ADR-051) relies on one order. Date ranges are cheap, one more filter

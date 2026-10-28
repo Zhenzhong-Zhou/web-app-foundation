@@ -216,27 +216,27 @@ work under updates it.
 
 ### Which tool, when
 
-| When                                   | Tool                                                                                   |
-|----------------------------------------|----------------------------------------------------------------------------------------|
-| Before every push                      | `scripts/verify.sh` (`--quick` while working, in full before a pull request)           |
-| A branch's start, and before reviews   | `npm outdated` in `server/` and `client/` (conventions.md, "Dependencies")             |
-| A change people will see               | `npm run screenshots` before and after, then `npm run screenshots:compare`             |
-| A change to an email                   | `npm run mail:preview` in `server/`, before and after; `-- --send` for Mailpit         |
-| A change to an email, in pictures      | `npm run screenshots:mail` in `client/` on each preview, then `screenshots:compare`    |
-| An email's words changed on purpose    | `npm run mail:text -- --update` in `server/`; commit the files with the words          |
-| A change to what the API sends         | `npm run api` in `server/`; commit both generated files                                |
-| A change to the mark, in `docs/brand/` | `node scripts/brand-assets.mjs`; commit what it writes in `client/public/`             |
-| Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`         |
-| Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                     |
-| After a merge                          | `scripts/prune-branches.sh --yes`                                                      |
-| A test fails in code a PR didn't touch | Re-run once; if it passes, a "Flaky:" issue the same day (conventions.md, "Tests")     |
-| A server e2e test fails now and then   | `server/scripts/e2e-flake-hunt.sh <runs> <suite>`                                      |
-| A browser test fails                   | `npm run test:e2e:ui` in `client/`, to watch it step by step                           |
-| Looking inside the dev database        | `npm run db:studio` in `server/`                                                       |
-| Before a release tag                   | `/production-readiness` on the whole app; Actions → Performance; `perf:plans` at large |
-| Every Sunday, by itself                | Actions → Flake hunt (client unit tests five times, server e2e three)                  |
-| Every night and each month's 1st       | Actions → Backup, and Restore drill: check they are green                              |
-| Translations to review                 | `node scripts/i18n-review.mjs export --since <commit>`, then `import`                  |
+| When                                   | Tool                                                                                                            |
+|----------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| Before every push                      | `scripts/verify.sh` (`--quick` while working, in full before a pull request)                                    |
+| A branch's start, and before reviews   | `npm outdated` in `server/` and `client/` ([conventions.md, "Dependencies"](docs/conventions.md#dependencies))  |
+| A change people will see               | `npm run screenshots` before and after, then `npm run screenshots:compare`                                      |
+| A change to an email                   | `npm run mail:preview` in `server/`, before and after; `-- --send` for Mailpit                                  |
+| A change to an email, in pictures      | `npm run screenshots:mail` in `client/` on each preview, then `screenshots:compare`                             |
+| An email's words changed on purpose    | `npm run mail:text -- --update` in `server/`; commit the files with the words                                   |
+| A change to what the API sends         | `npm run api` in `server/`; commit both generated files                                                         |
+| A change to the mark, in `docs/brand/` | `node scripts/brand-assets.mjs`; commit what it writes in `client/public/`                                      |
+| Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`                                  |
+| Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                              |
+| After a merge                          | `scripts/prune-branches.sh --yes`                                                                               |
+| A test fails in code a PR didn't touch | Re-run once; if it passes, a "Flaky:" issue the same day ([conventions.md, "Tests"](docs/conventions.md#tests)) |
+| A server e2e test fails now and then   | `server/scripts/e2e-flake-hunt.sh <runs> <suite>`                                                               |
+| A browser test fails                   | `npm run test:e2e:ui` in `client/`, to watch it step by step                                                    |
+| Looking inside the dev database        | `npm run db:studio` in `server/`                                                                                |
+| Before a release tag                   | `/production-readiness` on the whole app; Actions → Performance; `perf:plans` at large                          |
+| Every Sunday, by itself                | Actions → Flake hunt (client unit tests five times, server e2e three)                                           |
+| Every night and each month's 1st       | Actions → Backup, and Restore drill: check they are green                                                       |
+| Translations to review                 | `node scripts/i18n-review.mjs export --since <commit>`, then `import`                                           |
 
 ---
 
@@ -283,7 +283,7 @@ saying the database is up, and `/favicon.svg` coming back as an image. Actions �
 Deploy → Run workflow does the same by hand for `main`'s newest commit whose CI
 passed, so a missed deploy never needs Render. The job runs in GitHub's
 `production` environment, limited to `main` and holding the deploy hooks; the
-settings it needs are in `docs/runbooks/render.md`, "Deploys".
+settings it needs are in [`docs/runbooks/render.md`, "Deploys"](docs/runbooks/render.md#deploys-adr-081).
 
 Everything runs on Render's free tier for now. What that costs the app,
 replacing the free database when it expires after 30 days, and what changes

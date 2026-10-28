@@ -7,6 +7,9 @@ amended-by: [ADR-071, ADR-073]
 
 # ADR-046 — Invoicing: an invoice bills one shipment, and is reversed, never edited
 
+> **Amended by [ADR-073](0073-each-organizations-document-numbering.md).**
+> Invoice numbers are gapless within a series and period, rather than within the organization, and each organization sets the prefix, the width and when a series starts again, `INV-` and six digits only the defaults. Everything else stands.
+
 ## Context
 
 The system moves goods but not money. A shipment leaves with a

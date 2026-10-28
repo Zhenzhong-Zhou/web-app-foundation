@@ -38,7 +38,7 @@ is `$PRODUCTION_URL/api/health`.
 ## 2. Read the rules it touches
 
 `CLAUDE.md`, then `docs/runbooks/render.md` and `docs/runbooks/restore.md`,
-the README's Deployment section, the handoff's *Still to do, by hand*, and
+[the README's Deployment section](../../../README.md#deployment), [the handoff's *Still to do, by hand*](../../../docs/handoff.md#still-to-do-by-hand), and
 the ADRs each section names. Note the date each runbook check was last
 done; a check older than a change of host, plan or region is stale.
 
@@ -65,7 +65,7 @@ done; a check older than a change of host, plan or region is stale.
   `gh variable list` naming `API_HEALTH_URL` (names only, never values);
   `gh api repos/{owner}/{repo}/environments/production` limiting
   deployments to `main`; and, by hand, Auto-Deploy off on the web service
-  and on the static site (`render.md`, Deploys). Deploy by hand (Actions →
+  and on the static site ([`render.md`, Deploys](../../../docs/runbooks/render.md#deploys-adr-081)). Deploy by hand (Actions →
   Deploy → Run workflow) offered, and run once since the last release.
 - **The version file and caching.** `curl -sI` on `/version.json`,
   `/index.html` and one `/assets/*.js` named in the live `index.html`:
@@ -94,7 +94,7 @@ done; a check older than a change of host, plan or region is stale.
   drill within the last month that restored and checked rows.
 - **Where they go.** `BACKUP_DESTINATION` must be `s3`, to the Canadian
   bucket with object lock, before real data; Actions artifacts are for
-  testing (`restore.md`, section 1). Files in R2 copied nightly (ADR-059).
+  testing ([`restore.md`, section 1](../../../docs/runbooks/restore.md#1-one-time-setup)). Files in R2 copied nightly (ADR-059).
   The values are By hand; the workflow's own logs may show the
   destination's kind without a secret.
 - **The database's plan.** By hand: free (expires; no point-in-time
@@ -119,13 +119,13 @@ done; a check older than a change of host, plan or region is stale.
   the invitation sweep) do not run while a free web service sleeps
   (`render.md`): a finding before real users.
 - **The database's own record.** `pg_stat_statements` on from the first
-  day of real use (ADR-051, "Production, beyond these measurements").
+  day of real use ([ADR-051, "Production, beyond these measurements"](../../../docs/adr/0051-performance.md#production-beyond-these-measurements)).
 
 ### Security (Open decisions, "A security review before real customers")
 
 - **Secrets.** Nothing secret committed (`.gitguardian.yaml` runs on
   pushes; spot-check `git log -p` for keys); every development secret
-  replaced before real data (`render.md`, "Before real customers' data"),
+  replaced before real data ([`render.md`, "Before real customers' data"](../../../docs/runbooks/render.md#before-real-customers-data)),
   By hand.
 - **The API's edges.** helmet on every response; the session cookie
   httpOnly, Secure and SameSite=Lax (ADR-011, ADR-014); rate limits on
@@ -147,7 +147,7 @@ done; a check older than a change of host, plan or region is stale.
 
 - **The workflow.** `gh run list --workflow perf.yml -L 5`: the weekly
   full run on `main` green, and the last release candidate's.
-- **The watch list.** ADR-051's *Watch, each with its trigger* and the
+- **The watch list.** [ADR-051's *Watch, each with its trigger*](../../../docs/adr/0051-performance.md#watch-each-with-its-trigger) and the
   handoff's, each trigger checked against the last report.
 - **Cold starts.** A free web service waits about a minute on its first
   request: a finding before real users.
@@ -201,7 +201,7 @@ done; a check older than a change of host, plan or region is stale.
   for customers in China), where data is kept (Canada) and for how long
   (ADR-012, ADR-069, ADR-070): missing is a finding before real users.
 
-### Browsers and China (ADR-081; conventions.md, "Supported browsers")
+### Browsers and China (ADR-081; [conventions.md, "Supported browsers"](../../../docs/conventions.md#supported-browsers))
 
 - **The floor.** `vite build`'s target, `eslint-plugin-compat`'s settings
   and conventions.md's list name the same browsers.

@@ -83,7 +83,7 @@ the organization.
 
 - **The refusal to issue links to Profile.** The server puts
   `code: "organization_address_missing"` beside its message
-  (conventions.md, "Error codes"), and the Issue dialog shows, under the
+  ([conventions.md, "Error codes"](../conventions.md#error-codes)), and the Issue dialog shows, under the
   message, a link to Profile for whoever holds `organizations.update`;
   anyone else gets the message alone, as Profile is a page they cannot
   change. Only the address is refused: the tax number stays optional, as

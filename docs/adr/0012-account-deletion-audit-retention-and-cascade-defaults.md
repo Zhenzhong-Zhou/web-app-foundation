@@ -101,6 +101,6 @@ a cron'd SQL statement until BullMQ arrives.
 ## Caveat
 
 Retention periods, lawful basis, and what constitutes adequate anonymization
-vary by jurisdiction, and this log is not legal advice. The decisions above make the schema
+vary by jurisdiction, and this ADR is not legal advice. The decisions above make the schema
 *capable* of compliance, which is the expensive part to retrofit; the specific policy
 warrants professional review before handling real EU user data.

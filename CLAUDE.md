@@ -63,7 +63,7 @@ Karpathy's observations on LLM coding pitfalls
 - **Migrations.** `npm run migrate:new -- --name <name>` in `server/`,
   then `npm run migrate:all`, which applies it to the dev, test and e2e
   databases. The steps between, and what to check in the generated SQL,
-  are under Process in `docs/engineering.md`.
+  are under [Process in `docs/engineering.md`](docs/engineering.md#process).
 - **Seeds grow with every feature** (ADR-081). `npm run seed:demo` gains
   what the feature's screens need, so its manual checks and walkthroughs
   start without setup. `npm run seed:volume` gains realistic rows for any
@@ -89,7 +89,7 @@ Karpathy's observations on LLM coding pitfalls
   ADR-077 does for invitations (`email_unverified`).
 - **Manual checks.** A commit that changes what a person sees, or a rule
   they work under, updates `docs/manual-checks.md` in the same commit
-  (`docs/conventions.md`, Tests).
+  ([`docs/conventions.md`, Tests](docs/conventions.md#tests)).
 - **Lint autofixes** under `client/e2e/` or `src/` are committed as a
   fixup, never restored.
 

@@ -200,7 +200,7 @@ links, none broken.
 ## Decision — no dependency step on the two docs branches
 
 An exception
-of Bob's, as conventions.md's "Dependencies" allows, named here and in
+of Bob's, as [conventions.md's "Dependencies"](../conventions.md#dependencies) allows, named here and in
 both PRs: package updates would put code changes into a docs branch.
 `typescript-eslint` 8.72.1 and `@aws-sdk/client-s3` 3.1157.0, old enough
 from 2 November, open ADR-084's branch as planned. A security fix is
