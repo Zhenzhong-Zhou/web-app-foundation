@@ -2760,6 +2760,26 @@ screen, so it reads again.
   Home's Recently opened, after opening the product, names it 专注胶囊 60
   粒 too.
 
+## 39. Products and Partners searched on the server (ADR-056, amended)
+
+Products and Partners search as the top bar's lookup does: a name in any
+language, accents, case and punctuation aside, a Chinese name by its
+pinyin or by one character, the closest match first. The list narrows a
+moment after typing stops.
+
+- **MC-3901** On Products, `zzjn` or `zhuanzhu` lists 专注胶囊 60 粒 in
+  中文, and Focus 60ct in English. `bisglycinate de magnesium`, without
+  its accent, finds Magnesium bisglycinate capsules by its French name.
+  镁 alone lists the magnesium capsules and nothing else. Discontinued
+  counts only what the search found. From the top bar, `zzjn`, then Show
+  all in Items: Products opens with zzjn in its box, listing the same.
+- **MC-3902** On Partners, `mdyf` or `mingde` lists 明德药房, and so does
+  药 alone. `cooperative`, without its accent, finds the Coopérative des
+  pharmacies indépendantes du Bas-Saint-Laurent; `pharmacie` lists
+  Pharmacie Saint-Laurent before it, the name that starts with the word
+  first. From the top bar, `saint laurent`, then Show all in Partners:
+  Partners opens with saint laurent in its box, listing both.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -3769,3 +3789,5 @@ first.
   section 38, MC-3801 to MC-3804.
 - 2026-10-28: ADR-056, amended, one Chinese character a search in the top
   bar: MC-1556 extended.
+- 2026-10-28: ADR-056, amended, Products and Partners searched on the
+  server: section 39, MC-3901 and MC-3902.

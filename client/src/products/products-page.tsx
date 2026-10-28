@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type { ProductSummary } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -27,6 +27,7 @@ import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useListSearch, withSearch } from '../lib/use-list-search';
 import { useResource } from '../lib/use-resource';
 import { CreateProductDialog } from './create-product-dialog';
 import { productTypeLabel } from './product-types';
@@ -41,35 +42,35 @@ export function ProductsPage() {
   const intl = useIntl();
   const can = useCan();
 
+  /**
+   * Searched on the server (ADR-056, amended), as the lookup finds an
+   * item: by any variant's SKU, its and its variants' names in every
+   * language, and their pinyin, best match first. From the address too:
+   * the lookup's "Show all" opens it narrowed.
+   */
+  const { text, setText, search } = useListSearch();
   const {
     data: items,
     error,
     refused,
     loading,
     reload,
-  } = useResource<ProductSummary[]>('/products');
+  } = useResource<ProductSummary[]>(withSearch('/products', search));
   const [creating, setCreating] = useState(false);
-  // From the address too: the lookup's "Show all" opens it narrowed.
-  const [params] = useSearchParams();
-  const [search, setSearch] = useState(params.get('search') ?? '');
   const [discontinuedOnly, setDiscontinuedOnly] = useState(false);
 
   const showSkeleton = useDelayedFlag(loading);
 
   /**
-   * Narrowed here: the catalogue arrives whole (GET /products is not
-   * paged), so a search over names needs no request. Discontinued ones
-   * stay listed by default, as before; the quick filter shows only them.
+   * The answer is whole, searched or not (GET /products is not paged), so
+   * Discontinued narrows it here and counts within it. Discontinued ones
+   * stay listed by default; the quick filter shows only them.
    */
   const discontinued = (items ?? []).filter((item) => !item.isActive).length;
-  const shown = useMemo(() => {
-    const needle = search.trim().toLocaleLowerCase();
-    return (items ?? []).filter(
-      (item) =>
-        (!discontinuedOnly || !item.isActive) &&
-        (!needle || item.name.toLocaleLowerCase().includes(needle)),
-    );
-  }, [items, search, discontinuedOnly]);
+  const shown = useMemo(
+    () => (items ?? []).filter((item) => !discontinuedOnly || !item.isActive),
+    [items, discontinuedOnly],
+  );
 
   if (refused) {
     return (
@@ -129,8 +130,8 @@ export function ProductsPage() {
             id: 'inventory.search',
             defaultMessage: 'Search',
           }),
-          value: search,
-          onChange: setSearch,
+          value: text,
+          onChange: setText,
         }}
         quick={[
           {
@@ -237,7 +238,7 @@ export function ProductsPage() {
           // The header offers Add product; the empty state only says why
           // the list is empty.
           <EmptyState learnMore={{ guide: 'products', section: 'add' }}>
-            {items?.length
+            {search || items?.length
               ? intl.formatMessage({
                   id: 'inventory.noMatch',
                   defaultMessage: 'Nothing matches that search.',

@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type { Partner } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -27,6 +27,7 @@ import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useListSearch, withSearch } from '../lib/use-list-search';
 import { useResource } from '../lib/use-resource';
 import { CreatePartnerDialog } from './create-partner-dialog';
 import { EditPartnerDialog } from './edit-partner-dialog';
@@ -47,41 +48,37 @@ export function PartnersPage() {
   const intl = useIntl();
   const can = useCan();
 
+  /**
+   * Searched on the server (ADR-056, amended), as the lookup finds a
+   * partner: by the name, accent-free and by pinyin, the code and the tax
+   * ID, the things a person is likely to have in hand, best match first.
+   * From the address too: the lookup's "Show all" opens it narrowed.
+   */
+  const { text, setText, search } = useListSearch();
   const {
     data: items,
     error,
     refused,
     loading,
     reload,
-  } = useResource<Partner[]>('/partners');
+  } = useResource<Partner[]>(withSearch('/partners', search));
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Partner | null>(null);
 
   const canCreate = can('partners.create');
   const canEdit = can('partners.update');
   const showSkeleton = useDelayedFlag(loading);
-  // From the address too: the lookup's "Show all" opens it narrowed.
-  const [params] = useSearchParams();
-  const [search, setSearch] = useState(params.get('search') ?? '');
   const [retiredOnly, setRetiredOnly] = useState(false);
 
   /**
-   * Narrowed here, as on Products: the list arrives whole. The search
-   * reaches the name, the code and the tax ID, the three things a person
-   * is likely to have in hand. Retired partners stay listed by default.
+   * Narrowed here, as on Products: the answer arrives whole. Retired
+   * partners stay listed by default.
    */
   const retired = (items ?? []).filter((partner) => !partner.isActive).length;
-  const shown = useMemo(() => {
-    const needle = search.trim().toLocaleLowerCase();
-    return (items ?? []).filter(
-      (partner) =>
-        (!retiredOnly || !partner.isActive) &&
-        (!needle ||
-          [partner.name, partner.code, partner.taxId].some((field) =>
-            field?.toLocaleLowerCase().includes(needle),
-          )),
-    );
-  }, [items, search, retiredOnly]);
+  const shown = useMemo(
+    () => (items ?? []).filter((partner) => !retiredOnly || !partner.isActive),
+    [items, retiredOnly],
+  );
 
   if (refused) {
     return (
@@ -129,8 +126,8 @@ export function PartnersPage() {
             id: 'inventory.search',
             defaultMessage: 'Search',
           }),
-          value: search,
-          onChange: setSearch,
+          value: text,
+          onChange: setText,
         }}
         quick={[
           {
@@ -258,7 +255,7 @@ export function PartnersPage() {
           </TableContainer>
         ) : (
           <EmptyState learnMore={{ guide: 'partners', section: 'add' }}>
-            {items?.length
+            {search || items?.length
               ? intl.formatMessage({
                   id: 'inventory.noMatch',
                   defaultMessage: 'Nothing matches that search.',

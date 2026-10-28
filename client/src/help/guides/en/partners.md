@@ -2,6 +2,8 @@
 
 A partner is a firm you buy from, sell to, or both: one list for both sides of the trade. Whether a partner is a supplier or a customer follows from the orders you raise with them, so there is nothing to choose when you add one.
 
+The **Search** box finds a partner by part of its name, with or without accents, its code or its tax ID; a Chinese name by its pinyin too, or by a single character.
+
 ## Add a partner {#add}
 
 1. Press **Add partner**.

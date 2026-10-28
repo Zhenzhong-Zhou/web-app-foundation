@@ -124,6 +124,64 @@ describe('useResource', () => {
     expect(result.current.data?.name).toBe('Second');
   });
 
+  /**
+   * A list whose search is in its path (Products, Partners): Refresh, then
+   * a search typed while the reload is still out.
+   */
+  it('ignores a reload that answers after the path has changed', async () => {
+    let held = false;
+    let answerReload: () => void = () => undefined;
+    const reloadAnswered = new Promise<void>((resolve) => {
+      answerReload = resolve;
+    });
+
+    server.use(
+      http.get(`${BASE}/things/a`, async () => {
+        if (held) await reloadAnswered;
+        return HttpResponse.json({ id: 'a', name: 'First' });
+      }),
+      http.get(`${BASE}/things/b`, () =>
+        HttpResponse.json({ id: 'b', name: 'Second' }),
+      ),
+    );
+
+    const { result, rerender } = renderHook(
+      ({ path }) => useResource<Thing>(path),
+      { initialProps: { path: '/things/a' } },
+    );
+    await waitFor(() => expect(result.current.data?.name).toBe('First'));
+
+    held = true;
+    const reloading = result.current.reload();
+    rerender({ path: '/things/b' });
+    await waitFor(() => expect(result.current.data?.name).toBe('Second'));
+
+    answerReload();
+    await act(() => reloading);
+    expect(result.current.data?.name).toBe('Second');
+  });
+
+  it('clears the last path’s error once a new path answers', async () => {
+    server.use(
+      http.get(`${BASE}/things/a`, () => HttpResponse.error()),
+      http.get(`${BASE}/things/b`, () =>
+        HttpResponse.json({ id: 'b', name: 'Second' }),
+      ),
+    );
+
+    const { result, rerender } = renderHook(
+      ({ path }) => useResource<Thing>(path),
+      { initialProps: { path: '/things/a' } },
+    );
+    await waitFor(() =>
+      expect(result.current.error).toBe('Could not reach the server.'),
+    );
+
+    rerender({ path: '/things/b' });
+    await waitFor(() => expect(result.current.data?.name).toBe('Second'));
+    expect(result.current.error).toBeNull();
+  });
+
   it('lets the page write its own errors to the same banner', async () => {
     server.use(
       http.get(`${BASE}/things/a`, () =>

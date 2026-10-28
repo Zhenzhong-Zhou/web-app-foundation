@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { api, isRevisionRefusal } from './api';
 import { useFailureWords } from './use-failure-words';
@@ -15,11 +15,12 @@ import { useFailureWords } from './use-failure-words';
  *
  * The two reads differ on purpose, as they did in every page:
  *
- * - The first read ignores a response that arrives after the path has
- *   changed or the page has gone, so a slow answer for the previous record
- *   cannot overwrite the current one.
+ * - Either read ignores a response that arrives after the path has changed
+ *   or the page has gone, so a slow answer for the previous record, or the
+ *   previous search, cannot overwrite the current one.
  * - A reload clears the error when it succeeds, which is what makes Refresh
- *   a retry. The first read does not need to: nothing has failed yet.
+ *   a retry. So does the first read of a new path, as a list's new search
+ *   starts with no error; on first opening, nothing has failed yet.
  *
  * A failed reload keeps the data already shown and sets the error beside it.
  * Stale figures with a banner saying so beat an empty page.
@@ -45,14 +46,18 @@ export function useResource<T>(path: string) {
   // refused one (LoadFailure, conventions.md "Status pages").
   const [failure, setFailure] = useState<unknown>(null);
   const error = useFailureWords(shown);
+  // The path on screen, for a reload to tell that it answered too late.
+  const current = useRef(path);
 
   useEffect(() => {
+    current.current = path;
     let ignore = false;
 
     void api<T>(path)
       .then((response) => {
         if (!ignore) {
           setData(response);
+          setShown(null);
           setFailure(null);
         }
       })
@@ -70,10 +75,13 @@ export function useResource<T>(path: string) {
 
   const reload = useCallback(async () => {
     try {
-      setData(await api<T>(path));
+      const response = await api<T>(path);
+      if (current.current !== path) return;
+      setData(response);
       setShown(null);
       setFailure(null);
     } catch (caught) {
+      if (current.current !== path) return;
       setShown(caught);
       setFailure(caught);
     }

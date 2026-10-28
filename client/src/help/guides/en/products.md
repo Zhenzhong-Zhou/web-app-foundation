@@ -2,6 +2,8 @@
 
 Products are what you buy, make and sell. Each has one or more variants, the things stock is counted in, and each variant has its own SKU: the code on its label.
 
+The **Search** box finds a product by part of a SKU, or of its name or a variant’s in any language, with or without accents; a Chinese name by its pinyin too, or by a single character.
+
 ## Add a product {#add}
 
 1. Press **Add product**.
