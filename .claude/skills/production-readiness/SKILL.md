@@ -157,7 +157,9 @@ done; a check older than a change of host, plan or region is stale.
   Lighthouse on the live site, warm and just woken (By hand); unmeasured
   is a finding, with
   [Open decisions, "Performance budgets"](../../../docs/adr/open-decisions.md#performance-budgets).
-- **Waiting deletes.** ADR-070's foreign keys without an index:
+- **Waiting deletes.** ADR-070's foreign keys without an index, which
+  [#277](https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/277)
+  holds: its state first (`gh issue view 277`); while it is open,
   `EXPLAIN ANALYZE` an organization's deletion on `seed:volume` before the
   first large customer.
 
