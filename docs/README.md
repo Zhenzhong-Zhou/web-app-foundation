@@ -68,7 +68,7 @@ that would mix two is two files.
 
 | Question | Answered in |
 | --- | --- |
-| How does an organization's staff do a task, such as issuing an invoice? | [The Help guides](../client/src/help/guides/en/), the app's Help, in three languages |
+| How does an organization's staff do a task, such as issuing an invoice? | The Help guides, the app's Help, in three languages: [the English ones](../client/src/help/guides/en/) (a folder), invoices' in [invoices.md](../client/src/help/guides/en/invoices.md) |
 | How is a change planned, built, verified and reviewed? | [engineering.md, How code is delivered](engineering.md#how-code-is-delivered) and [Commits](engineering.md#commits) |
 | How is a migration added? | [engineering.md, Process](engineering.md#process) |
 | How is a new ADR written? | [engineering.md, Process](engineering.md#process), from [the template](adr/template.md) |
@@ -87,9 +87,9 @@ that would mix two is two files.
 | Which word does the app use for a thing, in each language? | [glossary.md](glossary.md) |
 | Which outside services does the app use, with which settings? | [runbooks/services.md](runbooks/services.md) |
 | What must Claude keep true in this repository? | [CLAUDE.md](../CLAUDE.md), loaded in every session |
-| What must Claude keep true in one area's code, such as stock, and when does it load that? | [`.claude/rules/`](../.claude/rules/), one file per area; Claude Code loads one when it reads, writes or edits a file its `paths` match, on the server or the client |
+| What must Claude keep true in one area's code, such as stock, and when does it load that? | [`.claude/rules/stock.md`](../.claude/rules/stock.md) for stock: one file per area, `<area>.md`, whose `paths` at its top list the area's files; Claude Code loads it when it reads, writes or edits one of them, on the server or the client |
 | Where do the mark's files come from? | [brand/README.md](brand/README.md) |
-| What went into each release? | [releases/](releases/) |
+| What went into each release? | [releases/](releases/) (a folder), one note per tag, as [v0.7.0.txt](releases/v0.7.0.txt) |
 
 ### Explanation: why it is so
 
@@ -119,11 +119,12 @@ that would mix two is two files.
     - [open-decisions.md](adr/open-decisions.md): questions not yet an
       ADR.
   - [brand/](brand/README.md): the mark's masters.
-  - [releases/](releases/): the notes each tagged release was made with.
+  - [releases/](releases/) (a folder): the notes each tagged release was
+    made with.
   - [rules/](rules/README.md): what the app allows, refuses and works
     out, by area.
     - [invoices.md](rules/invoices.md): the first.
-  - [runbooks/](runbooks/): running production.
+  - [runbooks/](runbooks/) (a folder): running production.
     - [render.md](runbooks/render.md): the host, deploys, the database.
     - [restore.md](runbooks/restore.md): backups and restores.
     - [services.md](runbooks/services.md): every outside service.
@@ -141,10 +142,11 @@ And outside `docs/`:
 
 - [README.md](../README.md): what the project is, setup and commands.
 - [CLAUDE.md](../CLAUDE.md): the rules in brief, for Claude.
-- [`.claude/rules/`](../.claude/rules/): Claude's code rules, by area.
-- [`.claude/skills/`](../.claude/skills/): the project's skills, as
-  `/code-review`.
-- [`client/src/help/guides/`](../client/src/help/guides/): the Help
-  guides, in English, French and Chinese.
+- [`.claude/rules/`](../.claude/rules/) (a folder): Claude's code rules,
+  one `<area>.md` per area, as [stock.md](../.claude/rules/stock.md).
+- [`.claude/skills/`](../.claude/skills/) (a folder): the project's
+  skills, as [`/code-review`](../.claude/skills/code-review/SKILL.md).
+- [`client/src/help/guides/`](../client/src/help/guides/) (a folder): the
+  Help guides, in English, French and Chinese.
 - [`server/openapi.json`](../server/openapi.json): the API, as OpenAPI
   3.1.
