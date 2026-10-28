@@ -33,18 +33,31 @@
 
 ## Issues and labels
 
-- **Every open issue has one group label,** or is closed with a one-line
-  reason:
+- **Every open issue has one group label,** or is closed (below):
   - `fix-now`: a bug a user hits, a data or security problem, a flaky
     test;
   - `when-touched`: polish, or a small gap in one area, ridden along by
     the next PR that touches it;
-  - `later`: needs an ADR, or waits for a trigger.
+  - `later`: needs an ADR, or waits for a trigger, and says which in a
+    line of its body, `Trigger: …` or `Needs: …` (an ADR, a design, a
+    decision), so the next triage sees what wakes it without reading
+    the whole issue (28 October 2026).
 - **And at least one area label,** `area:<area>`, the area named exactly
   as in `AREAS` in `scripts/adr-index.mjs`, which reads the areas from
   the folders of `server/src/modules/`, `core/` and `shared/`. A new
   module folder needs its `area:` label on GitHub,
   `gh label create area:<name>`, until labels are kept as code.
+- **A close gives GitHub's reason and a one-line comment** (28 October
+  2026): `completed` when a PR or a commit fixed it, named in the
+  comment; `not planned` when it is dropped or overtaken, or is a
+  duplicate, whose comment `Duplicate of #N` marks it as one. The closed
+  list then tells what was fixed from what was let go.
+
+  ```bash
+  gh issue close <N> --reason completed --comment "Fixed by #<PR>."
+  gh issue close <N> --reason "not planned" --comment "Duplicate of #<M>"
+  ```
+
 - **A new issue carries `needs-triage`** until it is decided.
 - **The fix-up stage is the "Fix-ups" milestone,** and a PR says
   "Closes #N" for each issue it fixes.
@@ -59,6 +72,33 @@
   gh issue list --state open --limit 500 --json number,title,labels \
     --jq '.[] | select(all(.labels[]; .name | startswith("area:") | not)) | "#\(.number) \(.title)"'
   ```
+
+### Triaging the open issues
+
+When `needs-triage` builds up, and before a fix-up stage (28 October
+2026). Nothing is labelled, closed or milestoned until Bob decides.
+
+1. **Export every open issue with its comments,** into `tmp/`, which git
+   ignores:
+
+   ```bash
+   gh issue list --state open --limit 500 \
+     --json number,title,labels,milestone,body,comments,updatedAt \
+     > tmp/issues.json
+   ```
+
+   A comment counts as much as the body: a later one often says part of
+   the issue was fixed by another PR, records Bob's decision, or narrows
+   it, as on #158, #179 and #222 in the first triage.
+2. **Check that each still holds** before proposing anything: a watch or
+   a budget against its last run, a flaky test against its recent runs,
+   a small bug against `main`. One already fixed is proposed for
+   closing, not labelled.
+3. **Write the proposal to `tmp/triage.md`:** for each issue its group,
+   or a close with its reason, its areas and a few words why; then the
+   counts by group and by area, the issues that look like duplicates,
+   and the present labels that disagree.
+4. **Apply what Bob decides,** and the three checks above print nothing.
 
 ## How code is delivered
 
