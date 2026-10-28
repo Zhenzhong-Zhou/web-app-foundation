@@ -653,10 +653,38 @@ test("a rules file's renamed test, missing name and unknown manual check fail", 
   });
 
   assert.deepEqual(failures(check(root)), [
-    'docs/rules/invoices.md:3: "refuses a credit note for more than there is" — not in server/test/invoices.e2e-spec.ts: renamed? Quote the test\'s name as it is now',
+    'docs/rules/invoices.md:3: "refuses a credit note for more than there is" — no test by that name in server/test/invoices.e2e-spec.ts: renamed? Quote the test\'s name as it is now, whole',
     `docs/rules/invoices.md:5: ../../server/test/invoices.e2e-spec.ts — no test's name after it: write it in quotes, as [test](…) "the test's name"`,
     "docs/rules/invoices.md:4: MC-102 — no such check in docs/manual-checks.md",
     "docs/rules/invoices.md:5: MC-3 — no such check in docs/manual-checks.md",
+  ]);
+});
+
+test("a rules file's test name is a declared test's, whole: not words in a comment or a longer name", (t) => {
+  const root = fixture(t, {
+    ...CITED,
+    "server/test/stock.e2e-spec.ts": `describe("Stock", () => {
+  // was: refuses a voided shipment
+  it("refuses a voided shipment, and a draft", () => {});
+  it.skip('refuses a sample order, and a sample shipment', () => {});
+  test('doesn\\'t ship what is not \\
+on hand', () => {});
+});
+`,
+    "docs/rules/stock.md": `# Stock
+
+- **One.** [test](../../server/test/stock.e2e-spec.ts) "refuses a voided
+  shipment" · [test](../../server/test/stock.e2e-spec.ts) "refuses a sample"
+- **Two.** [test](../../server/test/stock.e2e-spec.ts) "doesn't ship what is
+  not on hand" · [test](../../server/test/stock.e2e-spec.ts) "Stock"
+`,
+  });
+
+  const why =
+    "no test by that name in server/test/stock.e2e-spec.ts: renamed? Quote the test's name as it is now, whole";
+  assert.deepEqual(failures(check(root)), [
+    `docs/rules/stock.md:3: "refuses a voided shipment" — ${why}`,
+    `docs/rules/stock.md:4: "refuses a sample" — ${why}`,
   ]);
 });
 

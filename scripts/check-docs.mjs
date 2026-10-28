@@ -399,6 +399,27 @@ const RULES_FILE = /^docs\/rules\/[^/]+\.md$/;
 /** A test's file, by its name: .test.mjs, .spec.ts, .e2e-spec.ts. */
 const TEST_FILE = /\.(?:test|spec|e2e-spec)\.[cm]?[jt]sx?$/;
 
+/**
+ * A test's declaration: it, test or describe, with any modifiers, then its
+ * name in quotes, escapes allowed.
+ */
+const DECLARED =
+  /\b(?:it|test|describe)(?:\.\w+)*\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/gs;
+
+/**
+ * The names a test file declares, each quote's escapes undone and its
+ * whitespace made single spaces, as a rules file's quote is: a name is a
+ * test's only where it is declared whole, not where its words appear in a
+ * comment or a longer name.
+ */
+function declaredIn(text) {
+  return new Set(
+    [...text.matchAll(DECLARED)].map((match) =>
+      match[2].replace(/\\(.)/gs, "$1").replace(/\s+/g, " "),
+    ),
+  );
+}
+
 const MANUAL_CHECKS = "docs/manual-checks.md";
 
 /** A manual check's id where docs/manual-checks.md gives it: - **MC-101** … */
@@ -444,10 +465,10 @@ function citationsIn(file) {
 
 /**
  * The rules files' citations (ADR-087): each link to a test file is
- * followed by the test's name in quotes, as the format writes it, and the
- * name is found in that file, so renaming a test fails here; each manual
- * check's id exists in docs/manual-checks.md. A link to a file that is not
- * there fails as a link, above.
+ * followed by the test's name in quotes, as the format writes it, and a
+ * test of that name is declared in that file, so renaming a test fails
+ * here; each manual check's id exists in docs/manual-checks.md. A link to
+ * a file that is not there fails as a link, above.
  */
 function rulesFiles({ files }) {
   const given = new Set();
@@ -457,9 +478,12 @@ function rulesFiles({ files }) {
   }
 
   const testFiles = new Map();
-  const textOf = (file) => {
+  const namesIn = (file) => {
     if (!testFiles.has(file)) {
-      testFiles.set(file, readFileSync(path.join(ROOT, file), "utf8"));
+      testFiles.set(
+        file,
+        declaredIn(readFileSync(path.join(ROOT, file), "utf8")),
+      );
     }
     return testFiles.get(file);
   };
@@ -479,9 +503,9 @@ function rulesFiles({ files }) {
         continue;
       }
       named++;
-      if (!textOf(test.path).includes(test.name)) {
+      if (!namesIn(test.path).has(test.name)) {
         failures.push(
-          `${file}:${test.line}: "${test.name}" — not in ${test.path}: renamed? Quote the test's name as it is now`,
+          `${file}:${test.line}: "${test.name}" — no test by that name in ${test.path}: renamed? Quote the test's name as it is now, whole`,
         );
       }
     }
