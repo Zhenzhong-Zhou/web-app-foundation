@@ -29,8 +29,9 @@ What to keep true when changing the schema, a migration, a seed or a query.
   cascades (`organization_id` cascades, actors restrict) and, with
   `updated_at`, its own trigger, which drizzle-kit never writes; with an `organization_id`, it is in the export or in `NOT_EXPORTED` ([conventions.md, A new table](../../docs/conventions.md#a-new-table-and-the-organizations-export)).
 - **Money and quantities are `numeric` and a calendar day `date`,** all
-  read as strings, the day by `database.module.ts`'s one parser (ADR-025,
-  ADR-052); a raw query's rows have a type of their own (ADR-068).
+  read as strings, as Drizzle's node-postgres driver returns them, which
+  `server/test/calendar-days.e2e-spec.ts` holds (ADR-025; ADR-052,
+  amended); a raw query's rows have a type of their own (ADR-068).
 - **No joins, no table name:** in a correlated subquery, name the outer
   row in plain SQL; and never `AT TIME ZONE`, but `todayIn` and `dayIn`
   ([engineering.md, Server](../../docs/engineering.md#server); ADR-072).
