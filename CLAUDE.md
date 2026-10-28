@@ -58,9 +58,9 @@ Karpathy's observations on LLM coding pitfalls
 - **The API contract (ADR-068).** A response is a declared class in the
   module's `dto/*-response.dto.ts`, projected to exactly its fields:
   never a spread table row, never `select()` of every column, and a raw
-  query's rows typed. A write returns the detail its read returns, or 204
-  when the screen reads again anyway (a delete, a state change, a settings
-  section). After
+  query's rows typed. A write returns the detail its read returns, or as
+  its list shows it where there is no read; or 204 when the screen reads
+  again anyway (a delete, a state change, a settings section). After
   any API change, `npm run api` in `server/`, and commit
   `server/openapi.json` with `client/src/api/`. Never edit those two by
   hand. The e2e suite checks every response against the document.

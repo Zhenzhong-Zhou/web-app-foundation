@@ -438,14 +438,12 @@ committed, and neither is edited by hand.
   - A paged list returns a page class per item type, `InvoicePage` with
     `entries` and `nextCursor`, since the document cannot describe a
     generic.
-  - A write that returns the resource returns the same detail class as
-    reading it, fetched after the write, never the row from `INSERT` or
-    `UPDATE`: one shape per resource, whichever call the client made.
-    Where the resource has no read of its own, such as a return, it comes
-    back as its list shows it.
-    A write the screen follows with a fresh read anyway, such as a delete,
-    a state change or a settings section, returns 204 instead (CLAUDE.md
-    says the same).
+  - A write returns the detail its read returns, or as its list shows it
+    where there is no read, such as a return's; or 204 when the screen
+    reads again anyway (a delete, a state change, a settings section).
+    CLAUDE.md and `/code-review` say the same. The detail is fetched after
+    the write, never the row from `INSERT` or `UPDATE`: one shape per
+    resource, whichever call the client made.
   - A list read with `select()` sends every column; select the declared
     fields instead.
   - A raw query's rows get a type of their own (`interface PoolRow`), as

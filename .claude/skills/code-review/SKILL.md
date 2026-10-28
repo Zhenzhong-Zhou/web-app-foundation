@@ -59,7 +59,8 @@ allows, refuses and works out there.
   no spread table row, no `select()` of every column, raw query rows
   typed rather than `Record<string, unknown>`.
 - A write returns the detail its read returns, or as its list shows it
-  where there is no read.
+  where there is no read; or 204 when the screen reads again anyway (a
+  delete, a state change, a settings section).
 - `server/openapi.json` and `client/src/api/` regenerated in the same
   change; neither edited by hand.
 - Nothing personal beyond what the screen shows (ADR-063).
