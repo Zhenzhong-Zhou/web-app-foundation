@@ -388,10 +388,12 @@ is the organization's, on Organization → Documents.
 - **Drafting, changing and deleting a draft each take their own
   permission; issuing, voiding and crediting share one, Issue, void or
   credit an invoice.** The Owner holds them all; an Admin drafts, changes
-  and deletes drafts; a Viewer reads. Another organization's invoices are
-  never found.
+  and deletes drafts; a Viewer reads; and anyone holds those their roles
+  grant, as the Finance template grants them all. Another organization's
+  invoices are never found.
   [ADR-046](../adr/0046-invoicing.md#decision--permissions-follow-the-people) ·
   [ADR-047](../adr/0047-return-authorizations-and-credit-notes-for-what-comes-back.md#decision--permissions-follow-the-people) ·
+  [ADR-080](../adr/0080-job-roles.md#decision--roles-an-organization-makes-from-a-template-or-a-copy) ·
   [test](../../server/test/invoices.e2e-spec.ts) "lets Admin draft and a Viewer only read" ·
   [test](../../server/test/invoices.e2e-spec.ts) "lets only the Owner issue" ·
   [test](../../server/test/invoices.e2e-spec.ts) "lets only the Owner void" ·
