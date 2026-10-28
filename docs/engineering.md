@@ -41,7 +41,10 @@
     the next PR that touches it;
   - `later`: needs an ADR, or waits for a trigger.
 - **And at least one area label,** `area:<area>`, the area named exactly
-  as in `AREAS` in `scripts/adr-index.mjs`.
+  as in `AREAS` in `scripts/adr-index.mjs`, which reads the areas from
+  the folders of `server/src/modules/`, `core/` and `shared/`. A new
+  module folder needs its `area:` label on GitHub,
+  `gh label create area:<name>`, until labels are kept as code.
 - **A new issue carries `needs-triage`** until it is decided.
 - **The fix-up stage is the "Fix-ups" milestone,** and a PR says
   "Closes #N" for each issue it fixes.

@@ -18,11 +18,9 @@
  * `amended-by`, and each one its `amended-by` names lists it in its
  * `amends`; both lists are in ascending order. An amendment headed with
  * another ADR's number, `## Amendment … (ADR-072)`, is in its file's
- * `amended-by`. Once there is an ADR,
- * docs/adr/README.md holds their index, and open-decisions.md and
- * template.md are the folder's only other files. AREAS then names each
- * folder of server/src/modules/, server/src/core/ and
- * server/src/shared/, and no other but ACROSS's seven.
+ * `amended-by`. Once there is an ADR, docs/adr/README.md holds their
+ * index, and open-decisions.md and template.md are the folder's only
+ * other files.
  *
  * The index is two sections of the README. By number, between
  * <!-- adr-index:start --> and <!-- adr-index:end -->: one row per file,
@@ -86,38 +84,19 @@ export const ACROSS = ["api", "database", "docs", "help", "i18n", "ops", "ui"];
  * The areas an ADR's `areas` names, in this order, which docs/rules/ and
  * .claude/rules/ name their files by (ADR-087): each folder of
  * server/src/modules/, then of server/src/core/, then of
- * server/src/shared/, then what crosses them. checkAdrs() holds it to
- * the tree.
+ * server/src/shared/, each folder's names in order, read from the tree,
+ * so a new folder is an area as soon as it holds a file; then ACROSS.
  */
 export const AREAS = [
-  "boms",
-  "costs",
-  "home",
-  "invoices",
-  "locations",
-  "numbering",
-  "orders",
-  "partners",
-  "price-lists",
-  "product-licences",
-  "production-orders",
-  "products",
-  "recent",
-  "return-authorizations",
-  "search",
-  "stock",
-  "tax-codes",
-  "audit",
-  "auth",
-  "authorization",
-  "documents",
-  "files",
-  "invitations",
-  "notifications",
-  "organizations",
-  "people",
-  "users",
-  "mail",
+  ...AREA_FOLDERS.flatMap((parent) =>
+    [
+      ...new Set(
+        filesIn(parent)
+          .filter((file) => file.includes("/"))
+          .map((file) => file.split("/")[0]),
+      ),
+    ].sort(),
+  ),
   ...ACROSS,
 ];
 
@@ -174,6 +153,9 @@ export function frontMatterEnd(lines) {
  * no folder.
  */
 function filesIn(folder) {
+  // git warns of a folder whose parent is missing, as server/src/ in a
+  // repository of docs alone.
+  if (!existsSync(path.join(ROOT, folder))) return [];
   const output = execFileSync(
     "git",
     [
@@ -190,38 +172,6 @@ function filesIn(folder) {
   return [...new Set(output.split("\0"))]
     .filter((file) => file && existsSync(path.join(ROOT, file)))
     .map((file) => file.slice(folder.length + 1));
-}
-
-/**
- * AREAS against the tree: each folder in AREA_FOLDERS has its area, and
- * each area not in ACROSS still has its folder there.
- */
-function areasAgainstTree() {
-  const folders = new Map();
-  for (const parent of AREA_FOLDERS) {
-    for (const file of filesIn(parent)) {
-      const [name, ...rest] = file.split("/");
-      if (rest.length > 0 && !folders.has(name)) folders.set(name, parent);
-    }
-  }
-
-  const failures = [];
-  for (const [name, parent] of folders) {
-    if (!AREAS.includes(name)) {
-      failures.push(
-        `${parent}/${name}/: ${name} — a folder with no area: add it to AREAS in scripts/adr-index.mjs, among ${parent}/'s`,
-      );
-    }
-  }
-  const where = AREA_FOLDERS.map((folder) => `${folder}/`).join(", ");
-  for (const area of AREAS) {
-    if (!ACROSS.includes(area) && !folders.has(area)) {
-      failures.push(
-        `scripts/adr-index.mjs: AREAS: ${area} — no folder of that name in ${where}: rename it after its folder's new name, or take it out, with the ADRs' areas that name it`,
-      );
-    }
-  }
-  return failures;
 }
 
 /**
@@ -601,10 +551,8 @@ export function checkAdrs({ writing = false } = {}) {
     }
   }
 
-  // Writing needs the README, and AREAS to match the tree, even before
-  // the first ADR.
+  // Writing needs the README, even before the first ADR.
   if (found.length > 0 || writing) {
-    failures.push(...areasAgainstTree());
     const index = readme();
     if (index.failure) {
       failures.push(index.failure);

@@ -22,7 +22,6 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { ACROSS, AREAS } from "./adr-index.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -57,17 +56,8 @@ The table.
 `;
 
 /**
- * A file in a folder for each area named after one, so AREAS matches the
- * tree, all in server/src/modules/: the check does not ask which of the
- * three folders holds it.
- */
-const TREE = AREAS.filter((area) => !ACROSS.includes(area)).map(
-  (area) => `server/src/modules/${area}/index.ts`,
-);
-
-/**
  * A temporary repository: three ADRs, a file that is not one, the README,
- * and the folders AREAS names.
+ * and invoices' folder, which makes it an area.
  */
 function fixture(t) {
   const root = mkdtempSync(path.join(tmpdir(), "adr-index-"));
@@ -100,7 +90,7 @@ function fixture(t) {
   );
   write(root, "docs/adr/open-decisions.md", "# Open decisions\n");
   write(root, "docs/adr/README.md", README);
-  for (const file of TREE) write(root, file, "");
+  write(root, "server/src/modules/invoices/index.ts", "");
   return root;
 }
 
