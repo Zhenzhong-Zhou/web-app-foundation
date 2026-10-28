@@ -13,14 +13,21 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 27 October 2026:
+On 28 October 2026:
 
-- **`docs-start-here`,** ADR-086's part 2 and ADR-087, is on its branch:
-  [Start here](README.md), the rules written down (`docs/rules/` and
-  `.claude/rules/`), headings, `areas` and a template for the ADRs, and
-  this file cut to status. [The triage](engineering.md#issues-and-labels)
-  and [#260] come next, then ADR-084 (the order, below).
-- **The last merges:** [#259] (`docs-moves`, ADR-086's part 1, 27
+- **`fix-260-product-names-and-search`,** [#260] with ADR-056 amended, is
+  on its branch, not yet pushed. On it so far: the triage's working
+  agreements, [#225]'s known miss taken out of the perf budgets, the nav
+  drawer and five other buttons opened through `openDialog`, and ADR-056's
+  amendment. Its build brief comes next, then ADR-084 (the order, below).
+- **The triage** is done (28 October;
+  [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
+  every open issue has its group and area labels, the 27 `fix-now` ones
+  are in the [Fix-ups milestone](https://github.com/Zhenzhong-Zhou/web-app-foundation/milestone/1),
+  [#225] is closed with the typo lookup back within budget after [#186]
+  (p95 207 and 232 ms of 300), and [#178]'s hooks are [#293] of their own.
+- **The last merges:** [#291] (`docs-start-here`, ADR-086's part 2 and
+  ADR-087, 28 October), [#259] (`docs-moves`, ADR-086's part 1, 27
   October), [#257] (the emails' design, ADR-083, 27 October), [#254]
   (CI's reliability, closing [#252], 26 October), [#251] (the
   organization's square logo, ADR-060 amended, 26 October) and [#247]
@@ -74,7 +81,7 @@ On 27 October 2026:
   backfill:pinyin` once in `server/`, against its External URL with
   `?sslmode=no-verify`, since Render runs the migrations but not that
   script (ADR-056).
-- **`foundation_perf_large` kept migrated** for [#225] and [#226]: `npm run
+- **`foundation_perf_large` kept migrated** for [#226]: `npm run
   migrate:all` does not reach it, so after each new migration run `npm run
   migrate` against it, as [`server/perf/README.md`](../server/perf/README.md)
   makes it.
@@ -92,16 +99,15 @@ On 27 October 2026:
 The order (Bob, 27 October 2026), each item a pull request or a set of
 them:
 
-1. **`docs-start-here`,** [#291]. After the merge: prune the branch
-   (`scripts/prune-branches.sh`), delete `tmp/adr-087/`, and re-sync
-   Project knowledge.
-2. **Triage:** every open issue gets a group label and its area labels,
-   and the `fix-now` issues go into a "Fix-ups" milestone
-   ([engineering.md, Issues and labels](engineering.md#issues-and-labels)).
-3. **[#260], product names and search** (ADR-056 amended), with [#250],
-   [#263]'s note wording, the esbuild override under drizzle-kit ([#270]),
-   and a `/rules-file` skill writing the products, partners and search
-   rules files.
+1. **`docs-start-here`,** [#291]: merged 28 October.
+2. **Triage:** done 28 October (above).
+3. **[#260], product names and search** (ADR-056 amended), on
+   `fix-260-product-names-and-search`: an item's name in the reader's
+   language on every screen, and Products, Partners and the item pickers
+   searched on the server; with [#250], [#263]'s note wording, the esbuild
+   override under drizzle-kit ([#270]), [#226]'s two joins not bounded by
+   organization, and a `/rules-file` skill writing the products, partners
+   and search rules files.
 4. **ADR-084, an error tracker** ([#287]), with `typescript-eslint` 8.72.1
    and `@aws-sdk/client-s3` 3.1157.0 (old enough from 2 November), and
    the Nest packages at 12.3.x (from 3 November), whose
@@ -110,9 +116,10 @@ them:
    summary ([#269]), and the per-area table diagrams.
 5. **ADR-085, low stock** ([#288]), with [#222] and [#256].
 6. **The fix-ups:** the Fix-ups milestone in batches by area, each
-   writing its areas' rules files. First [#261] with [#154], [#225] and
-   [#150]; then [#263]'s rest with [#198]; [#264]; and [#255] with [#258],
-   since both change the emails' text parts
+   writing its areas' rules files. First the flaky tests, [#183], [#232],
+   [#233], [#248] and [#290], so CI can be trusted for the rest; then
+   [#261] with [#154] and [#150]; then [#263]'s rest with [#198]; [#264];
+   and [#255] with [#258], since both change the emails' text parts
    (`npm run mail:text -- --update`).
 7. **One docs PR for the remaining rules files,** then **the review of
    the whole app**, once, after the fix-ups, so it judges the app with the
@@ -169,12 +176,18 @@ Not repeated here; each list has one home:
 
 [#150]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/150
 [#154]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/154
+[#178]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/178
+[#183]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/183
+[#186]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/186
 [#198]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/198
 [#222]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/222
 [#225]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/225
 [#226]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/226
+[#232]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/232
+[#233]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/233
 [#245]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/245
 [#247]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/247
+[#248]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/248
 [#250]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/250
 [#251]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/251
 [#252]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/252
@@ -195,4 +208,6 @@ Not repeated here; each list has one home:
 [#270]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/270
 [#287]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/287
 [#288]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/288
+[#290]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/290
 [#291]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/291
+[#293]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/293
