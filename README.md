@@ -25,7 +25,8 @@ never the other way round.
 Core  →  Shared Services  →  Application Features
 ```
 
-- **Core** — auth, users, organizations, authorization, audit, notifications
+- **Core** — auth, users, organizations, authorization, audit, notifications,
+  invitations, people, files and documents — in `server/src/core`
 - **Shared Services** — email (background jobs deferred, see ADR-005)
 - **Application Features** — products, licences, locations, stock, partners,
   orders and shipments, recipes, production, invoices and credit notes, returns,
@@ -53,7 +54,8 @@ server/src/
 ├── config/       env schema + validation (zod)
 ├── database/     drizzle client, schema, migrations, TenantDb, seed
 ├── common/       filters, guards, interceptors, decorators — no business logic
-├── core/         auth, authorization, users, audit, notifications
+├── core/         auth, authorization, users, organizations, audit, notifications,
+│                 invitations, people, files, documents
 ├── modules/      the inventory domain — one folder per feature
 ├── shared/       email
 └── health/       operational endpoints, unversioned (ADR-013)
