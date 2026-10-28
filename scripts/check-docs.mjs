@@ -438,13 +438,25 @@ const MANUAL_CHECKS = "docs/manual-checks.md";
 /** A manual check's id where docs/manual-checks.md gives it: - **MC-101** … */
 const MANUAL_CHECK = /^[ \t]*- \*\*(MC-\d+)\*\*/gm;
 
+/** A parse of a file, made once a run however many checks ask for it. */
+function once(parse) {
+  const parsed = new Map();
+  return (file) => {
+    if (!parsed.has(file)) parsed.set(file, parse(file));
+    return parsed.get(file);
+  };
+}
+
 /**
  * What a rules file cites: each link to a test file, by its path in the
  * repository, with the name in quotes after it, its whitespace made single
  * spaces since prose wraps (null when there is none); and each manual
- * check's id. Each with its line.
+ * check's id. Each with its line. Read once, for rulesFiles and the
+ * notice.
  */
-function citationsIn(file) {
+const citationsIn = once(readCitations);
+
+function readCitations(file) {
   const text = withoutBlocks(readFileSync(path.join(ROOT, file), "utf8"));
   const prose = withoutCode(text);
 
@@ -549,9 +561,11 @@ const CLAUDE_RULE = /^\.claude\/rules\/.+\.md$/;
 /**
  * The `paths` list in a file of Claude Code's rules, each pattern with its
  * line, written one to a line as - "pattern", quoted or not; or why there
- * is none.
+ * is none. Read once, for claudeRules and the notice.
  */
-function pathsIn(file) {
+const pathsIn = once(readPaths);
+
+function readPaths(file) {
   const lines = readFileSync(path.join(ROOT, file), "utf8").split("\n");
   const everySession = "or Claude Code loads it in every session";
   const end = frontMatterEnd(lines);
