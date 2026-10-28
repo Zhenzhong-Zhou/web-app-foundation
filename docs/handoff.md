@@ -98,8 +98,10 @@ them:
    and a `/rules-file` skill writing the products, partners and search
    rules files.
 4. **ADR-084, an error tracker** (#287), with `typescript-eslint` 8.72.1
-   and `@aws-sdk/client-s3` 3.1157.0 (old enough from 2 November), an
-   `npm audit` step in CI (#268), the database's size in the backup's
+   and `@aws-sdk/client-s3` 3.1157.0 (old enough from 2 November), and
+   the Nest packages at 12.3.x (from 3 November), whose
+   `@nestjs/platform-express` depends on multer 2.5.0 itself, so the
+   multer override goes (ADR-019); an `npm audit` step in CI (#268), the database's size in the backup's
    summary (#269), and the per-area table diagrams.
 5. **ADR-085, low stock** (#288), with #222 and #256.
 6. **The fix-ups:** the Fix-ups milestone in batches by area, each

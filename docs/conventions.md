@@ -232,10 +232,11 @@ library's interface shape, a stub that must match a real service) and leave
 `afterAll` / `beforeEach` block is repeated in every suite deliberately, because
 hiding it makes the `app.close()` rule above unenforceable by reading.
 
-`registerOrg`, `addViewer`, and `roleIdNamed` are the awkward middle: knowledge
-rather than structure, copied into every e2e suite, and past the rule of three.
-They belong in `test/utils/` — deferred as a refactor across every spec file
-rather than folded into a feature commit.
+`registerOrg`, `addViewer`, and `roleIdNamed` were the awkward middle: knowledge
+rather than structure, once copied into every e2e suite, and past the rule of
+three. They now live in `test/utils/fixtures.ts`, `registerOrg` as
+`registerOrganization`, with the rest of the server's test helpers under
+[Shared pieces on the server](#shared-pieces-on-the-server).
 
 ### Shared pieces on the server
 
