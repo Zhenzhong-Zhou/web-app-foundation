@@ -535,3 +535,79 @@ its client folders. The rest:
   search, which the cut is for; git holds it.
 - **Deferred, with what brings it in: a prose linter** (Vale) holding the
   glossary's words, when a second writer or a translator joins.
+
+## Amendment (October 2026) — part 2 as built (#291)
+
+What building and review settled, beyond the plan above and ADR-087's
+own amendment:
+
+- **The headings** are 817 in the ADRs (806 at `##`, 11 at `###`) and 73
+  in Open decisions, not the plan's "about 600": older ADRs also open
+  paragraphs with labels such as Performance and Status. Bold sentences
+  that state rather than label stay bold. Sixteen paragraph starts were
+  mended where a label's sentence ran on past it or ended in a colon,
+  each the smallest change that makes a sentence, and the proof undid
+  exactly those to give files byte-identical to the branch's start
+  (SHA-256 ab5e9626…). Paragraphs were not rewrapped. Only a heading
+  opening "Amendment" starts an amendment, so ADR-068's "Amended,
+  October 2026" stays at `##`, and markdownlint's MD024 is
+  `siblings_only` for the repository.
+- **The areas** are 35: each folder of `server/src/modules/`,
+  `server/src/core/` and `server/src/shared/` (`mail`, which the plan's
+  list missed), then `ACROSS`, the seven kept by hand. Since the review
+  they are read from the tree, so a new module folder is an area at once
+  and needs only its `area:` label on GitHub. Each ADR has one to three.
+  Two amendments missing from the front matter were recorded, ADR-025's
+  of ADR-023 and ADR-072's of ADR-057 and ADR-058, and `adr-index.mjs`
+  now refuses an amendment heading that names an ADR its file's
+  `amended-by` lacks.
+- **The template** must lose every comment: a leftover fails the check,
+  which names what is still to fill in. The MADR map sits after the
+  front matter, which has to open the file.
+- **The index's preamble** keeps this ADR's rule on amendments: an
+  amendment goes in the amended ADR's text, and some older ADRs carry
+  only a note at their top. It says why ADR-084 and ADR-085 have no file
+  yet.
+- **Overturned rules:** 20 of the 61 amendments by another ADR
+  overturned a rule, and the review found ADR-072's two more. Each
+  amended ADR now says so at its top: 13 new notes, 1 line added under
+  an existing note, 8 already said. ADR-047 and ADR-009 gained notes for
+  what later work made untrue, and ADR-012's note for ADR-069 was turned
+  the right way round.
+- **Citations as links:** 54 in 20 files, each keeping its words inside
+  the link. Code comments keep the plain form.
+- **Paths written as code** are checked in every Markdown file but the
+  numbered ADRs. A command's path is its first word, a path git ignores
+  passes, and a module path may leave out its `.ts`. Known limits: a
+  path at the repository's root is not checked, and any path under an
+  ignored folder passes, typo or not.
+- **`--docs`** runs markdownlint, `check-docs.mjs`, Prettier on
+  `scripts/` and the scripts' tests, in about 3.5 seconds once
+  markdownlint left out `server/storage/` and the tests were split in
+  three. It refuses anything but Markdown and `scripts/`, and anything
+  in `client/`, the Help guides included: they are app content, which
+  `guides.test.ts` checks. CI runs the same Prettier check, a step in
+  `ci.yml` beyond the plan's `docs.yml`, and `scripts/fixtures/` is in
+  `.prettierignore`.
+- **`engineering.md`** is titled "Engineering: the working agreements"
+  and gains the six practices, "Issues and labels" (whose labels were
+  made on GitHub by hand during the branch), the patch rule by size, and
+  how a new ADR amends another, in this ADR's words. Bob types `/doctor
+  prompt-audit` in the review session: a session cannot run it.
+- **Lessons with no home** went to `conventions.md` first, each checked
+  against the code: a copied snapshot's `id` and `prevId`, the
+  `updated_at` trigger, a Dialog's `key`, `clearCookies` before
+  `addCookies`, `THROTTLE_FACTOR` through `limit()`, the server's shared
+  pieces, `@Audited` and the seed, Firefox through Docker, and 22
+  reviewed clone families.
+- **Start here** is 145 lines. Its diagram draws top to bottom, every
+  arrow between two boxes, with a Guards box as the API's way in and a
+  line saying what an arrow means. VS Code's preview drew an empty frame
+  where mermaid.live drew the diagram.
+- **The handoff** went from 1,766 lines to 160, about 200 after the
+  review's fixes. Its to-dos became issues #268 to #288, each labelled,
+  and two of its headings stay as anchors. Its history is in `git show
+  504daab:docs/handoff.md`.
+- **The reviews** found 47: 39 fixed, 4 tidy-ups of the new scripts
+  filed as #289, 3 recorded above as known limits or in ADR-087's
+  amendment, and 1 that is not this repository's.

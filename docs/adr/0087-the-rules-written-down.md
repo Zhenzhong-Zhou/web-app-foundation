@@ -204,3 +204,49 @@ areas' before the whole-app review (the handoff's order).
   its areas. Since they are written from the code, the first rules file
   for an area is also a review of it: a rule with no test, or one where
   the code and its ADR disagree, is a finding for that batch.
+
+## Amendment (October 2026) — as built (#291)
+
+What building and review settled:
+
+- **The pilot,** `docs/rules/invoices.md`: 56 rules under 10 headings,
+  more than the plan named (crediting goods that came back, printing and
+  downloading, what a sale shows of its invoices, who may do what and
+  what History keeps), citing 95 tests, 32 manual checks and 25 Help
+  links. Four rules say `no test`, and nine say `partly tested`, a
+  mark the format gained for a rule its test proves only in part. What
+  the pilot found is #264.
+- **An ADR is cited by the heading** of the decision or amendment, not
+  by the file alone, now that every ADR has headings.
+- **A test is matched by its declaration,** `it`, `test` or `describe`
+  with the quoted name, not anywhere in its file, so a renamed or
+  lengthened test fails the check.
+- **`paths` is a list, one pattern a line.** Comments and blank lines
+  inside it are skipped and any other line fails; each alternative
+  inside braces must match a file on its own; files in subfolders of
+  `.claude/rules/` are checked too; Node 26's `path.matchesGlob` does
+  the matching.
+- **A rules file is `docs/rules/<area>.md`,** its name one of the areas.
+  `docs/rules/README.md` is not one.
+- **Claude's code rules:** each file opens, after its front matter, with
+  a heading saying it is for Claude. Each area's `paths` take in its
+  table files in `server/src/database/schema/`, so touching one loads
+  that area's rules and `database.md`, on purpose. `ui.md` takes every
+  client `.tsx`. `authorization.md` keeps to its own folders:
+  `permission-coverage.e2e-spec.ts` and a rule in `CLAUDE.md` hold every
+  route elsewhere. A rules file loads once a session and stays in
+  context. Checked in a new session: reading
+  `client/src/invoices/void-invoice-dialog.tsx` loaded `invoices.md` and
+  `ui.md`, and nothing else.
+- **"Under 40 lines" counts the rules, not the front matter:** the
+  `paths` list grows with its area, and three files reached 40 counting
+  it.
+- **The notice relies on the cited tests** for rules worked out outside
+  an area's paths. For invoices: the money summary in `orders/`, the
+  numbering, the permissions and the offer from an RMA. Adding those
+  folders to the paths would load the invoice rules into unrelated work.
+- **Gaps the wording keeps, recorded:** the permission test accepts a
+  route in `SELF_SERVICE` or `GATED_INSIDE` without checking which it
+  belongs in; no test checks which of the three forms a write returns;
+  and none shows a role an organization makes issuing an invoice, which
+  the general permission mechanism covers.
