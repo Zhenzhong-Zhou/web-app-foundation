@@ -35,5 +35,5 @@ What to keep true when a component styles itself (ADR-055;
   `client/e2e/accessibility.spec.ts`; a violation is fixed, never
   excluded. A link inside a sentence is `underline="always"`.
 - **No words typed into JSX:** they come from the catalogues, which lint
-  holds (ADR-054;
-  [conventions.md, Adding text](../../docs/conventions.md#adding-text)).
+  holds (ADR-054; [conventions.md, Adding text](../../docs/conventions.md#adding-text)).
+- **A dialog's key goes on the component the page renders,** never on MUI's `Dialog` inside it ([conventions.md, Keys that rebuild a component](../../docs/conventions.md#keys-that-rebuild-a-component)).

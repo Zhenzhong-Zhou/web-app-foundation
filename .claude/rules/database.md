@@ -22,12 +22,12 @@ What to keep true when changing the schema, a migration, a seed or a query.
   parts after `--> statement-breakpoint`, then `npm run migrate:all`;
   the SQL keeps `NULLS NOT DISTINCT`, and the journal's new `when` is
   later than the one before ([engineering.md, Process](../../docs/engineering.md#process)).
+  A copied snapshot gets a fresh `id`, and the previous one's as `prevId` ([conventions.md, Migrations](../../docs/conventions.md#migrations-against-the-running-release-adr-081)).
 - **Expand, then contract:** add, and take away nothing the running
-  release reads, a key a released `ON CONFLICT` names included (ADR-081;
-  [conventions.md, Migrations](../../docs/conventions.md#migrations-against-the-running-release-adr-081)).
-- **A new table** takes `primaryKey()` (UUIDv7, ADR-010) and ADR-012's
-  cascades (`organization_id` cascades, actors restrict); with an
-  `organization_id`, it is in the export or in `NOT_EXPORTED` ([conventions.md, A new table](../../docs/conventions.md#a-new-table-and-the-organizations-export)).
+  release reads, a key a released `ON CONFLICT` names included (ADR-081; [conventions.md, Migrations](../../docs/conventions.md#migrations-against-the-running-release-adr-081)).
+- **A new table** takes `primaryKey()` (UUIDv7, ADR-010), ADR-012's
+  cascades (`organization_id` cascades, actors restrict) and, with
+  `updated_at`, its own trigger, which drizzle-kit never writes; with an `organization_id`, it is in the export or in `NOT_EXPORTED` ([conventions.md, A new table](../../docs/conventions.md#a-new-table-and-the-organizations-export)).
 - **Money and quantities are `numeric` and a calendar day `date`,** all
   read as strings, the day by `database.module.ts`'s one parser (ADR-025,
   ADR-052); a raw query's rows have a type of their own (ADR-068).
