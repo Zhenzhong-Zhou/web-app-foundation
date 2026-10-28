@@ -26,8 +26,11 @@ naming this ADR; then run `node scripts/adr-index.mjs`.
 
 Both indexes below are written by that script from each file's front
 matter and heading, never by hand, and `scripts/verify.sh` fails when
-either differs from the files. What is not yet decided is in
-[Open decisions](open-decisions.md).
+either differs from the files. A number can be given before its ADR is
+written, so the index lists only the files there are: ADR-084, an error
+tracker, and ADR-085, low stock, are still to be written
+([ADR-086](0086-docs-as-code.md#decision--its-number)). What is not yet
+decided is in [Open decisions](open-decisions.md).
 
 ## By number
 
