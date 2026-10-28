@@ -20,6 +20,7 @@ import { HomeService } from '../src/modules/home/home.service';
 import { InvoicesService } from '../src/modules/invoices/invoices.service';
 import { OrdersService, sightOf } from '../src/modules/orders/orders.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
+import { PartnersService } from '../src/modules/partners/partners.service';
 import { PriceListsService } from '../src/modules/price-lists/price-lists.service';
 import { ProductsService } from '../src/modules/products/products.service';
 import {
@@ -205,6 +206,7 @@ async function buildProbes(
   const access = app.get(PermissionsService);
   const products = app.get(ProductsService);
   const priceLists = app.get(PriceListsService);
+  const partners = app.get(PartnersService);
 
   const firstOrders = await orders.list({ status: 'all' });
   const deepOrders = await cursorAfter(
@@ -391,6 +393,18 @@ async function buildProbes(
       run: () => priceLists.findById(priceList.id, 'en'),
     },
     { name: 'item pickers', run: () => products.listActiveVariants('en') },
+    // Products, Partners and the pickers searched (ADR-056, amended), as a
+    // Chinese reader asks, by pinyin, and a partner by part of its name:
+    // three characters or more, as the probes above.
+    {
+      name: 'products: search',
+      run: () => products.list('zh-Hans', 'zhuanzhu'),
+    },
+    {
+      name: 'item pickers: search',
+      run: () => products.listActiveVariants('zh-Hans', 'zhuanzhu'),
+    },
+    { name: 'partners: search', run: () => partners.list('harbour') },
   ];
 
   if (org.traceLotId) {

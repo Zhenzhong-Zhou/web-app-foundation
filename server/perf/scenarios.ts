@@ -198,13 +198,14 @@ export function readScenarios(orgs: Org[]): Scenario[] {
   const read = (
     name: string,
     path: (org: Org, n: number) => string,
+    language?: string,
   ): Scenario => ({
     name,
     kind: 'read',
     budgetMs: READ_BUDGET_MS,
     send: (worker, n) => {
       const org = orgOf(orgs, worker);
-      return org.session.send('GET', path(org, n));
+      return org.session.send('GET', path(org, n), undefined, language);
     },
   });
 
@@ -246,6 +247,21 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     read('GET /lookup?q=name', () => '/lookup?q=focus'),
     read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
     read('GET /orders?search', () => '/orders?status=all&search=SO-10'),
+    // Products, Partners and the item pickers searched on the server
+    // (ADR-056, amended): a Chinese reader's one character, which no
+    // trigram index serves; a picker asked by pinyin; and part of a
+    // partner's name, which every column of the partner match tries.
+    read(
+      'GET /products?search',
+      () => `/products?search=${encodeURIComponent('专')}`,
+      'zh-Hans',
+    ),
+    read(
+      'GET /products/variants?search',
+      () => '/products/variants?search=zhuanzhu',
+      'zh-Hans',
+    ),
+    read('GET /partners?search', () => '/partners?search=harbour'),
     // Home (ADR-058): the page everyone opens first, every card an owner
     // sees and Getting started, in one request.
     read('GET /home', () => '/home'),
