@@ -127,7 +127,6 @@
     "fsevents@2.3.3": true,
     "argon2@0.45.1": true,
     "@parcel/watcher@2.6.0": true,
-    "esbuild@0.18.20": true,
     "esbuild@0.25.12": true,
     "@scarf/scarf": false
   },
@@ -135,6 +134,9 @@
     "enabled": false
   },
   "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "0.28.2"
+    },
     "@nestjs/platform-express": {
       "multer": "2.5.0"
     }
