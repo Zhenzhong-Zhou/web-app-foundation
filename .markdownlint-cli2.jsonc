@@ -24,6 +24,9 @@
     "client/e2e/.output/**",
     "client/screenshots/.output/**",
     "review/**",
+    // Uploaded files, where the server stores them on this disk (ADR-059):
+    // ignored by git and absent in CI, but thousands of files to walk.
+    "server/storage/**",
     // Untracked scratch (briefs, inventories), ignored by git: CI never
     // sees it, so its Markdown should not fail scripts/verify.sh.
     "tmp/**"
