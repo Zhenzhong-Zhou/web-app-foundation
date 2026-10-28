@@ -39,6 +39,13 @@ Karpathy's observations on LLM coding pitfalls
 - **Goal-driven.** Make done checkable: a test that fails before the
   change and passes after, and `scripts/verify.sh` green. A new rule
   arrives with the test that proves it.
+- **Report for a quick read.** Bob reads every report in his second
+  language, so it is built to scan: short bullets of one sentence each,
+  in the same order every time; the one thing he must act on in bold; an
+  arrow for a flow (`fix -> test -> commit`), a small table or diagram to
+  compare, and an example or two sentences only where a bullet cannot
+  make it clear; a term he may not know said in plain words the first
+  time. The last line is `DONE: <why>` or `BLOCKED: <what is needed>`.
 
 ## Rules of this repository
 

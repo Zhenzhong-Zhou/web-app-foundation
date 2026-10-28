@@ -150,15 +150,21 @@ where a step must act on it.
 ## 4. The summary for the chat
 
 End every run with it, in plain Markdown, for Bob to paste into the chat,
-which writes the as-built amendment and the docs from it:
+which writes the as-built amendment and the docs from it. These five
+parts, in this order, written as [CLAUDE.md's "Report for a quick
+read"][how-to-work] says:
 
-- **Commits:** each with its short hash and subject, in order; or none,
-  and why.
-- **Verify:** which mode, and what it said; a check it skipped, and why.
-- **Filed or left:** issues filed, with their numbers; follow-ups, and
-  anything found on the way and not done; and any line the brief asks
-  every summary for.
-- **`/clear`:** safe now, or not yet and what comes first.
+1. **Done:** each commit's short hash and subject, in order, and what it
+   builds, a bullet each; or no commit, and why.
+2. **Verify:** which mode, and what it said; a check skipped, and why.
+3. **Found:** each finding on the way, with where it is now kept: an
+   issue's number, "for the as-built note", or "not kept" and why; and
+   any line the brief asks every summary for.
+4. **Decisions for Bob:** each question with its options and the one
+   recommended; or "none".
+5. **Next:** `/clear` safe now or not yet, and the next step's prompt.
+
+The last line: `DONE: <why>`, or `BLOCKED: <what is needed>`.
 
 [how-to-work]: ../../../CLAUDE.md#how-to-work
 [rules]: ../../../CLAUDE.md#rules-of-this-repository
