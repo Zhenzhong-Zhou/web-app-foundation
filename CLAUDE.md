@@ -6,6 +6,8 @@ below, and this file says where.
 
 ## Read first
 
+- `docs/README.md`: Start here, the system on one page and which
+  document answers which question.
 - `docs/handoff.md`: where the work stands and what is next.
 - `docs/engineering.md`: the working agreements.
 - `docs/adr/`: the ADRs, one file each (index: `docs/adr/README.md`), why things are as they are. Read the
@@ -14,6 +16,8 @@ below, and this file says where.
 - `docs/principles.md`: what the product aims for.
 - `docs/manual-checks.md`: what a person checks by hand, and the rules
   for keeping it current.
+- `docs/rules/`: what the app allows, refuses and works out, by area.
+- `.claude/rules/`: the code rules by area, each loaded with its area's files.
 
 ## How to work
 
@@ -46,8 +50,11 @@ Karpathy's observations on LLM coding pitfalls
 - **Dependencies.** On every branch, `npm outdated` in `server/` and
   `client/`; the in-range updates are a commit of their own, at the
   branch's start and again before the reviews.
-- **Before pushing.** `scripts/verify.sh`, or `--quick` without the
-  end-to-end suites. It runs what CI runs, markdown included.
+- **Before committing and pushing.** Before each commit,
+  `scripts/verify.sh --docs` when it changes only `scripts/` and Markdown
+  outside `client/`, and `--quick` for anything else; `scripts/verify.sh`
+  in full before each push. It runs what CI runs, markdown included
+  ([`docs/engineering.md`, Commits](docs/engineering.md#commits)).
 - **The API contract (ADR-068).** A response is a declared class in the
   module's `dto/*-response.dto.ts`, projected to exactly its fields:
   never a spread table row, never `select()` of every column, and a raw
@@ -75,6 +82,10 @@ Karpathy's observations on LLM coding pitfalls
   are `YYYY-MM-DD` strings (ADR-052).
 - **Tenancy.** Every query goes through `TenantDb`; nothing reads across
   organizations (ADR-003).
+- **Permissions.** Every route declares `@RequirePermissions`, unless it
+  is public or listed in `SELF_SERVICE` with a reason;
+  `server/test/permission-coverage.e2e-spec.ts` enforces it
+  ([`docs/engineering.md`, Server](docs/engineering.md#server)).
 - **Refusals** carry a message that says what to do next. One whose
   screen offers a way out, such as a link to the missing setting, also
   carries a snake_case code from `server/src/common/error-codes.ts`, never
@@ -90,6 +101,10 @@ Karpathy's observations on LLM coding pitfalls
 - **Manual checks.** A commit that changes what a person sees, or a rule
   they work under, updates `docs/manual-checks.md` in the same commit
   ([`docs/conventions.md`, Tests](docs/conventions.md#tests)).
+- **Rules files.** A commit that changes a rule, what the app allows,
+  refuses or works out, updates its area's file in `docs/rules/` in the
+  same commit, where the area has one (ADR-087;
+  [`docs/engineering.md`, Process](docs/engineering.md#process)).
 - **Lint autofixes** under `client/e2e/` or `src/` are committed as a
   fixup, never restored.
 
@@ -109,5 +124,6 @@ Every feature branch runs, for any PR that changes what a person sees,
 `/usability-walkthrough` as one of its personas
 (`.claude/skills/usability-walkthrough/personas.md`), then `/simplify`,
 then `/code-review`, so it sees every fix, then `/production-readiness`
-on the sections the change touches; all of them before the PR is
-opened. Each fix they lead to is its own commit.
+on the sections the change touches, then `/doctor prompt-audit`, Claude
+Code's audit of its instruction files (v2.1.283 or later); all of them
+before the PR is opened. Each fix they lead to is its own commit.

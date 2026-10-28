@@ -382,9 +382,17 @@ licences beyond the product's own — site, wholesale and business licences.
 
 ## Documentation
 
+- [`docs/README.md`](docs/README.md) — **Start here:** the system on one page,
+  which document answers which question, and the docs' folders
 - [`docs/adr/`](docs/adr/README.md) — why the architecture is the way it is, one ADR per file.
   **Read this before changing anything structural.**
 - [`docs/conventions.md`](docs/conventions.md) — naming and code organisation rules
+- [`docs/rules/`](docs/rules/README.md) — what the app allows, refuses and works
+  out, by area, each rule linked to its ADR and its test
+- [`docs/engineering.md`](docs/engineering.md) — the working agreements: how a
+  change is built, verified, committed and reviewed
+- [`docs/glossary.md`](docs/glossary.md) — the app's words in English, French
+  and Chinese
 - [`docs/manual-checks.md`](docs/manual-checks.md) — what to check by hand before a
   release, each check with an id
 - [`docs/principles.md`](docs/principles.md) — what the product aims for, and
@@ -395,8 +403,8 @@ licences beyond the product's own — site, wholesale and business licences.
   `/production-readiness` and `/build-from-brief`
 - [`docs/releases/`](docs/releases) — the notes each tagged release was made with
 
-Both are worth reading before a change that touches money, quantities, or the
-ledger. Three rules catch most newcomers:
+The ADRs and `docs/conventions.md` are both worth reading before a change that
+touches money, quantities, or the ledger. Three rules catch most newcomers:
 
 - **Quantities are strings end to end** — typed, stored and rendered as they arrived.
   Arithmetic happens in SQL over `numeric`, never through a JavaScript number

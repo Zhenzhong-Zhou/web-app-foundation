@@ -7,13 +7,16 @@
   fixes go on the branch until its checks pass, never in a follow-up PR.
   Small chores (a CI line, a lint rule, a docs tidy) ride along in the next
   feature PR rather than getting one of their own.
-- **The reviews, before the PR is opened** (21 October 2026, and from
-  ADR-081 four): every feature branch runs, for any PR that changes what
-  a person sees, `/usability-walkthrough` as one of its personas
+- **The reviews, before the PR is opened** (21 October 2026; from
+  ADR-081 four, and from ADR-086 five): every feature branch runs, for
+  any PR that changes what a person sees, `/usability-walkthrough` as one
+  of its personas
   (`.claude/skills/usability-walkthrough/personas.md`), then `/simplify`,
   then `/code-review`, so the review sees every fix before it, then
   `/production-readiness` on the sections the change touches
-  ([conventions.md, "Production readiness"](conventions.md#production-readiness)). Each
+  ([conventions.md, "Production readiness"](conventions.md#production-readiness)),
+  then `/doctor prompt-audit` on Claude's instruction files
+  ([How code is delivered](#how-code-is-delivered)). Each
   fix they lead to is its own commit. The PR description names the journey
   walked and the persona who walked it. `/usability-walkthrough` was
   missed on several recent PRs, so ADR-079's branch walked
