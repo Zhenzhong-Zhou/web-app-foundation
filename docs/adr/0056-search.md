@@ -319,11 +319,13 @@ Checked before drafting, as the working agreements ask:
   whether it has answered, so no dialog says there are no products while
   they load (#250).
 
-### Decision — one ranking and one minimum, everywhere
+### Decision — the lookup's ranking, and one minimum everywhere
 
-- **Ranked as the lookup ranks:** an exact match first, then a match at
-  the start, then anywhere; then the list's own order. A SKU typed whole
-  is first in a picker, not among twenty partial matches.
+- **Products, Partners and the pickers rank as the lookup ranks:** an
+  exact match first, then a match at the start, then anywhere; then by
+  name. A SKU typed whole is first in a picker, not among twenty partial
+  matches. The paged lists keep the order their keyset paging depends
+  on.
 - **One Chinese character is a search.** The minimum stays 2 characters,
   or 1 when it is a Chinese character: 鱼 alone is what a Chinese reader
   types. Neither length can use a trigram index, as 2 characters already
