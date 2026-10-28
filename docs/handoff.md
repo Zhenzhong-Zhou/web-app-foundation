@@ -16,7 +16,8 @@ On 27 October 2026:
 - **`docs-start-here`,** ADR-086's part 2 and ADR-087, is on its branch:
   [Start here](README.md), the rules written down (`docs/rules/` and
   `.claude/rules/`), headings, `areas` and a template for the ADRs, and
-  this file cut to status. ADR-084 comes next (the order, below).
+  this file cut to status. The triage and #260 come next, then ADR-084
+  (the order, below).
 - **The last merges:** #259 (`docs-moves`, ADR-086's part 1, 27
   October), #257 (the emails' design, ADR-083, 27 October), #254 (CI's
   reliability, closing #252, 26 October), #251 (the organization's square
