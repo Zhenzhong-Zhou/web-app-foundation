@@ -176,12 +176,27 @@ describe('ReceiveStockDialog', () => {
     expect(quantityField()).toHaveValue('5');
   });
 
-  it('says so when the catalogue is empty', async () => {
+  it('says so when the catalogue is empty, and only once it has answered', async () => {
+    let answer: () => void = () => undefined;
+    const answered = new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+    let asked = false;
     server.use(
-      http.get('/api/v1/products/variants', () => HttpResponse.json([])),
+      http.get('/api/v1/products/variants', async () => {
+        asked = true;
+        await answered;
+        return HttpResponse.json([]);
+      }),
     );
 
     open();
+
+    // While it loads, an empty list says nothing about the products (#250).
+    await expect.poll(() => asked).toBe(true);
+    expect(screen.queryByText(/no products yet/i)).not.toBeInTheDocument();
+
+    answer();
 
     /**
      * An empty picker with no explanation looks like a broken dropdown, which

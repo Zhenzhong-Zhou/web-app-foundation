@@ -11,13 +11,7 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-import type {
-  Bom,
-  Location,
-  Partner,
-  ProductionRun,
-  VariantOption,
-} from '../api/types.gen';
+import type { Bom, Location, Partner, ProductionRun } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
@@ -28,6 +22,7 @@ import {
   toApiDecimal,
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
+import { useVariants } from '../lib/use-variants';
 
 const EMPTY = {
   outputVariantId: '',
@@ -65,7 +60,7 @@ export function CreateRunDialog({
   const [form, setForm] = useState(EMPTY);
   // Set when the quantity is typed with a thousands separator (ADR-054).
   const [quantityError, setQuantityError] = useState<string | null>(null);
-  const [variants, setVariants] = useState<VariantOption[]>([]);
+  const { variants, answered } = useVariants(open);
   const [locations, setLocations] = useState<Location[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [boms, setBoms] = useState<Bom[]>([]);
@@ -84,20 +79,16 @@ export function CreateRunDialog({
   );
 
   // Loaded when the dialog opens rather than at page load: a variant or a
-  // location created a moment ago is exactly the one someone is here to use.
+  // location created a moment ago is exactly the one someone is here to use
+  // (the variants through useVariants, above).
   useEffect(() => {
     if (!open) return;
 
     let ignore = false;
 
-    void Promise.all([
-      api<VariantOption[]>('/products/variants'),
-      api<Location[]>('/locations'),
-    ])
-      .then(([variantRows, locationRows]) => {
-        if (ignore) return;
-        setVariants(variantRows);
-        setLocations(locationRows);
+    void api<Location[]>('/locations')
+      .then((locationRows) => {
+        if (!ignore) setLocations(locationRows);
       })
       .catch(() => undefined);
 
@@ -207,6 +198,7 @@ export function CreateRunDialog({
               })}
               required
               options={variants}
+              loading={!answered}
               value={form.outputVariantId}
               onChange={(outputVariantId) =>
                 setForm((current) => ({

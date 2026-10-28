@@ -52,7 +52,7 @@ export function ReceiveStockDialog({
   const [form, setForm] = useState({ ...EMPTY, locationId: defaultLocationId });
   // Set when the quantity is typed with a thousands separator (ADR-054).
   const [quantityError, setQuantityError] = useState<string | null>(null);
-  const { variants, failed: variantsError } = useVariants(open);
+  const { variants, answered, failed: variantsError } = useVariants(open);
 
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
@@ -146,7 +146,9 @@ export function ReceiveStockDialog({
               />
             )}
 
-            {!variantsError && !variants.length && (
+            {/* Only once the catalogue has answered: while it loads, an
+                empty list says nothing about the products (#250). */}
+            {answered && !variantsError && !variants.length && (
               <Alert severity="info">
                 {intl.formatMessage({
                   id: 'inventory.receive.noProducts',
@@ -164,6 +166,7 @@ export function ReceiveStockDialog({
               })}
               required
               options={variants}
+              loading={!answered}
               value={form.variantId}
               onChange={(variantId) =>
                 setForm((current) => ({ ...current, variantId }))

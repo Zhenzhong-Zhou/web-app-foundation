@@ -23,6 +23,7 @@ import { useCan } from '../auth/permissions';
 import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
+import { VariantPicker } from '../components/variant-picker';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api, isRevisionRefusal } from '../lib/api';
 import type { OrderDirection } from '../lib/api-names';
@@ -34,6 +35,7 @@ import {
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
+import { useVariants } from '../lib/use-variants';
 import { SiteSelect } from '../locations/site-select';
 import { unitLabel } from '../products/units';
 import { rem } from '../theme/rem';
@@ -73,12 +75,16 @@ export function CreateOrderPage() {
   const canSeeLocations = can('locations.view');
 
   const [partners, setPartners] = useState<Partner[]>([]);
-  const [variants, setVariants] = useState<VariantOption[]>([]);
   const intl = useIntl();
-  // Why the partners and products did not load, and a count that reads
-  // them again.
+  // Why the partners did not load, and a count that reads them and the
+  // products again.
   const [loadFailure, setLoadFailure] = useState<unknown>(null);
   const [reads, setReads] = useState(0);
+  const {
+    variants,
+    answered: catalogueAnswered,
+    failed: catalogueFailed,
+  } = useVariants(true, reads);
   // Set when a quantity or price is typed with a thousands separator.
   const [numberError, setNumberError] = useState<string | null>(null);
 
@@ -142,14 +148,10 @@ export function CreateOrderPage() {
   useEffect(() => {
     let ignore = false;
 
-    void Promise.all([
-      api<Partner[]>('/partners'),
-      api<VariantOption[]>('/products/variants'),
-    ])
-      .then(([partnerRows, variantRows]) => {
+    void api<Partner[]>('/partners')
+      .then((partnerRows) => {
         if (ignore) return;
         setPartners(partnerRows);
-        setVariants(variantRows);
         setLoadFailure(null);
       })
       .catch((caught: unknown) => {
@@ -310,7 +312,7 @@ export function CreateOrderPage() {
           })}
         </Typography>
 
-        {loadFailure !== null && (
+        {(loadFailure !== null || catalogueFailed) && (
           <Alert severity="error">
             {intl.formatMessage({
               id: 'orders.create.loadFailed',
@@ -500,29 +502,26 @@ export function CreateOrderPage() {
                   spacing={2}
                   sx={{ alignItems: 'flex-start', p: 2 }}
                 >
-                  <Autocomplete
-                    sx={{ flexGrow: 1 }}
+                  <VariantPicker
+                    id={`order-line-${line.key}`}
+                    label={intl.formatMessage({
+                      id: 'inventory.item',
+                      defaultMessage: 'Item',
+                    })}
                     options={variants.filter(
                       (option) =>
                         !chosen.has(option.id) ||
                         option.id === line.variant?.id,
                     )}
-                    getOptionLabel={(option) =>
-                      `${option.sku} — ${option.productName}`
+                    loading={!catalogueAnswered}
+                    value={line.variant?.id ?? ''}
+                    onChange={(variantId) =>
+                      updateLine(line.key, {
+                        variant:
+                          variants.find((option) => option.id === variantId) ??
+                          null,
+                      })
                     }
-                    value={line.variant}
-                    onChange={(_event, value) =>
-                      updateLine(line.key, { variant: value })
-                    }
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label={intl.formatMessage({
-                          id: 'inventory.item',
-                          defaultMessage: 'Item',
-                        })}
-                      />
-                    )}
                   />
 
                   <TextField

@@ -11,17 +11,13 @@ import {
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-import type {
-  Bom,
-  BomLine,
-  ProductLicence,
-  VariantOption,
-} from '../api/types.gen';
+import type { Bom, BomLine, ProductLicence } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { api, messageFor } from '../lib/api';
 import { displayQuantity, nameAndCode } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { useVariants } from '../lib/use-variants';
 import { licenceStatus } from '../licences/licence-status';
 import { LicenceStatusChip } from '../licences/licence-status-chip';
 import type { Variant } from '../products/products-page';
@@ -57,7 +53,6 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
   const [variantId, setVariantId] = useState(variants[0]?.id ?? '');
   const [busy, setBusy] = useState(false);
 
-  const [catalogue, setCatalogue] = useState<VariantOption[]>([]);
   const [creating, setCreating] = useState(false);
   const [addingLine, setAddingLine] = useState(false);
   const [editingLine, setEditingLine] = useState<BomLine | null>(null);
@@ -81,7 +76,15 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
    * is the one that matters — a component variant created a moment ago, to be
    * put on this recipe now — and it is the same reasoning ReceiveStockDialog
    * loads its catalogue on open.
+   *
+   * A failed catalogue costs labels, not function. The lines still render,
+   * and the error banner is reserved for the recipe itself.
    */
+  const { variants: catalogue, answered: catalogueAnswered } = useVariants(
+    canView,
+    addingLine,
+  );
+
   /**
    * The licences this recipe could be registered under. Fetched whether or
    * not any exist: for an unregulated product the list is empty and the field
@@ -103,25 +106,6 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
       ignore = true;
     };
   }, [canView]);
-
-  useEffect(() => {
-    if (!canView) return;
-
-    let ignore = false;
-
-    void api<VariantOption[]>('/products/variants')
-      .then((rows) => {
-        if (!ignore) setCatalogue(rows);
-      })
-      .catch(() => {
-        // A failed catalogue costs labels, not function. The lines still
-        // render, and the error banner is reserved for the recipe itself.
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [canView, addingLine]);
 
   async function act(
     path: string,
@@ -567,6 +551,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
         open={addingLine}
         bomId={selected?.id ?? null}
         catalogue={catalogue}
+        catalogueLoading={!catalogueAnswered}
         excludeVariantIds={[
           variantId,
           ...(selected?.lines ?? []).map((line) => line.componentVariantId),

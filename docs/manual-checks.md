@@ -2760,12 +2760,12 @@ screen, so it reads again.
   Home's Recently opened, after opening the product, names it 专注胶囊 60
   粒 too.
 
-## 39. Products and Partners searched on the server (ADR-056, amended)
+## 39. Products, Partners and the item pickers searched on the server (ADR-056, amended)
 
-Products and Partners search as the top bar's lookup does: a name in any
-language, accents, case and punctuation aside, a Chinese name by its
-pinyin or by one character, the closest match first. The list narrows a
-moment after typing stops.
+Products, Partners and every item picker search as the top bar's lookup
+does: a name in any language, accents, case and punctuation aside, a
+Chinese name by its pinyin or by one character, the closest match first.
+The list narrows a moment after typing stops.
 
 - **MC-3901** On Products, `zzjn` or `zhuanzhu` lists 专注胶囊 60 粒 in
   中文, and Focus 60ct in English. `bisglycinate de magnesium`, without
@@ -2784,6 +2784,13 @@ moment after typing stops.
   first. From the top bar, `saint laurent`, then Show all in Partners:
   Partners opens with saint laurent in its box, listing both, and so it
   does from Partners already showing `药`, which Back brings back.
+- **MC-3903** In 中文, Receive: type `zzjn` in 物品, and the list says
+  正在加载… until FOCUS-60CT — 专注胶囊 60 粒 comes, first; pick it, and
+  Quantity names its unit. 专 alone lists it and nothing else; `zzzz`
+  says 没有匹配的项目 only once the wait is over, never while it loads.
+  On a draft order's Add an item, an item already on the order is not
+  offered, typed or not. New order's Item names the variant too:
+  MAGCAP-60 — Magnesium bisglycinate capsules (60 capsules) in English.
 
 ## Regressions
 
@@ -3799,3 +3806,5 @@ first.
 - 2026-10-28: #260, Show all on the list already open, Back and Forward
   following, and the search typed kept in the address: MC-3901 and
   MC-3902 extended.
+- 2026-10-28: ADR-056, amended, every item picker searched on the server
+  and saying when it loads: section 39 renamed for them, MC-3903 added.
