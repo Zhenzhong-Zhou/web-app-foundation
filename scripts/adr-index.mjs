@@ -17,10 +17,10 @@
  * file's number. Each ADR its `amends` names exists and lists it in its
  * `amended-by`, and each one its `amended-by` names lists it in its
  * `amends`; both lists are in ascending order. Once there is an ADR,
- * docs/adr/README.md holds their index, and open-decisions.md is the
- * folder's only other file. AREAS then names each folder of
- * server/src/modules/, server/src/core/ and server/src/shared/, and no
- * other but ACROSS's seven.
+ * docs/adr/README.md holds their index, and open-decisions.md and
+ * template.md are the folder's only other files. AREAS then names each
+ * folder of server/src/modules/, server/src/core/ and
+ * server/src/shared/, and no other but ACROSS's seven.
  *
  * The index is two sections of the README. By number, between
  * <!-- adr-index:start --> and <!-- adr-index:end -->: one row per file,
@@ -58,7 +58,7 @@ const README = `${ADR_FOLDER}/README.md`;
 const ADR_FILE = /^\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
 /** The folder's files that are not ADRs. */
-const OTHERS = ["README.md", "open-decisions.md"];
+const OTHERS = ["README.md", "open-decisions.md", "template.md"];
 
 const STATUS = /^(?:accepted|deferred|superseded by ADR-(\d{3,}))$/;
 
@@ -413,7 +413,7 @@ export function checkAdrs({ writing = false } = {}) {
   for (const name of filesIn(ADR_FOLDER)) {
     if (!ADR_FILE.test(name) && !OTHERS.includes(name)) {
       failures.push(
-        `${ADR_FOLDER}/${name}:1: ${name} — not a name for a file here: an ADR is NNNN-<slug>.md, four digits and its title's words in lower case, and the only others are ${OTHERS.join(" and ")}`,
+        `${ADR_FOLDER}/${name}:1: ${name} — not a name for a file here: an ADR is NNNN-<slug>.md, four digits and its title's words in lower case, and the only others are ${OTHERS.slice(0, -1).join(", ")} and ${OTHERS.at(-1)}`,
       );
     }
   }

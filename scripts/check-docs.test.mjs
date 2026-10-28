@@ -285,7 +285,7 @@ test("front matter's --- lines may end in spaces, for the ADRs as for the links"
   assert.equal(run.status, 0, run.stderr);
 });
 
-test("docs/adr/ holds ADRs named NNNN-<slug>.md, the README and open-decisions.md, and nothing else git sees", (t) => {
+test("docs/adr/ holds ADRs named NNNN-<slug>.md, the README, open-decisions.md and the template, and nothing else git sees", (t) => {
   const root = fixture(t, {
     ...TREE,
     "docs/adr/0001-one.md": adr(
@@ -299,13 +299,14 @@ test("docs/adr/ holds ADRs named NNNN-<slug>.md, the README and open-decisions.m
     "docs/adr/0003_three.md": "# ADR-003 — Three\n",
     "docs/adr/0004-Four.md": "# ADR-004 — Four\n",
     "docs/adr/open-decisions.md": "# Open decisions\n",
+    "docs/adr/template.md": "# ADR-NNN — Title\n",
     "docs/adr/README.md": INDEX,
     // Ignored, as a Mac's .DS_Store is, so not in a checkout.
     "docs/adr/tmp/notes.md": "# Notes\n",
   });
 
   const why =
-    "not a name for a file here: an ADR is NNNN-<slug>.md, four digits and its title's words in lower case, and the only others are README.md and open-decisions.md";
+    "not a name for a file here: an ADR is NNNN-<slug>.md, four digits and its title's words in lower case, and the only others are README.md, open-decisions.md and template.md";
   assert.deepEqual(failures(check(root)), [
     `docs/adr/0003_three.md:1: 0003_three.md — ${why}`,
     `docs/adr/0004-Four.md:1: 0004-Four.md — ${why}`,

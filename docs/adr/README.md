@@ -1,19 +1,34 @@
 # Architecture Decisions
 
-A running log of structural decisions: what was chosen, why, and what it costs.
-Append new entries; don't rewrite old ones. If a decision is reversed, add a new
-entry that supersedes it and mark the old one.
+An ADR records one structural decision as it was made: the situation,
+what was chosen and why, what was considered and not done, what was
+deferred with what brings it in, and what it commits us to. Each is a
+file of its own, and is not rewritten: what it decided changes only by
+a dated amendment at its end, and a decision replaced whole is a new
+ADR, the old one's status saying so. A path or link that moves is
+corrected in place ([ADR-086](0086-docs-as-code.md)).
 
-Format: **Context** (the situation) → **Decision** (what was chosen) →
-**Consequence** (what this now commits us to).
+Status is `accepted`, `deferred` (decided, waiting for its trigger) or
+`superseded by ADR-NNN`.
+
+A new ADR, after the check
+[engineering.md, Process](../engineering.md#process) asks for: copy
+[the template](template.md) to `NNNN-<slug>.md`, its number in four
+digits and its slug from its title as
+[ADR-086](0086-docs-as-code.md#decision--one-file-per-adr) makes it; fill
+it in; list in its `amends` each ADR it changes, and add it to that one's
+`amended-by`, with the amendment in its text; then run
+`node scripts/adr-index.mjs`.
+
+Both indexes below are written by that script from each file's front
+matter and heading, never by hand, and `scripts/verify.sh` fails when
+either differs from the files. What is not yet decided is in
+[Open decisions](open-decisions.md).
 
 ## By number
 
 Written by `node scripts/adr-index.mjs` from each file's front matter
-and heading, never by hand. Status is `accepted`, `deferred` (decided,
-waiting for its trigger) or `superseded by ADR-NNN`. A new ADR: its
-file, its front matter, the `amended-by` of what it amends, then the
-script.
+and heading, never by hand.
 
 <!-- adr-index:start -->
 
@@ -240,69 +255,3 @@ files take the same names. An area no ADR names has no line.
 - `ui`: [ADR-007], [ADR-020], [ADR-021], [ADR-055], [ADR-057], [ADR-060], [ADR-075], [ADR-082]
 
 <!-- adr-areas:end -->
-
-## Resolved
-
-| Decision                               | Outcome                                               | ADR              |
-|----------------------------------------|-------------------------------------------------------|------------------|
-| ORM: Prisma vs. Drizzle vs. Knex       | Drizzle                                               | ADR-009          |
-| Primary key strategy                   | UUIDv7 on `uuid` column                               | ADR-010          |
-| PostgreSQL version                     | 18 (for native `uuidv7()`)                            | ADR-002, ADR-010 |
-| Session strategy                       | Opaque token in httpOnly cookie, no JWT               | ADR-011          |
-| Account deletion vs. audit retention   | Anonymize user, retain audit rows                     | ADR-012          |
-| Data ownership on user departure       | Org owns data, user attributed                        | ADR-012          |
-| Deleting an account                    | The person only; 30 days; sole member blocked         | ADR-069          |
-| Leaving an organization                | The person themself; last Owner and only member block | ADR-069          |
-| Deleting an organization               | Any Owner, after an export or a decline; 30 days      | ADR-070          |
-| Joining an organization                | By invitation, emailed or a copied link; 7 days       | ADR-077          |
-| Passwords set by someone else          | None; no route sets another person's password         | ADR-077          |
-| Creating an organization               | A setting: open, or by the operator's invitation      | ADR-078          |
-| Starting one from an existing account  | By an invitation; from Home when open                 | ADR-078          |
-| API versioning                         | URL prefix `/v1/`, global, from first endpoint        | ADR-013          |
-| A tab older than the API               | Its revision refused; a banner, then a reload         | ADR-081          |
-| CSRF defence                           | Custom header, no token                               | ADR-014          |
-| Concurrent sessions per user           | Multiple; login revokes only the presented session    | ADR-015          |
-| Permission resolution                  | Per request, never cached                             | ADR-016          |
-| Audit write path                       | Interceptor, opt in per route, writes only            | ADR-018          |
-| Audit pagination                       | Keyset on UUIDv7 cursor                               | ADR-018          |
-| Dependency upgrades vs. peer conflicts | Never override; a blocked upgrade waits               | ADR-019          |
-| Server test runner                     | Vitest, as the client; Nest 12 after it               | ADR-067          |
-| Client types                           | Generated from the server's OpenAPI document          | ADR-068          |
-| Client route protection                | Three categories: protected, auth-only, public        | ADR-020          |
-| Component library                      | Material UI, CSS variables, three color modes         | ADR-021          |
-| Auditing account actions               | Separate account_events table, 90-day retention       | ADR-022          |
-| Inventory stock granularity            | Variants carry stock; quantity is a ledger            | ADR-023          |
-| Address and contact ownership          | Shared tables, exclusive arc FK                       | ADR-028          |
-| Bill of materials shape                | Header plus lines; nesting is data, not schema        | ADR-029          |
-| BOM versioning                         | Version on the header, history by snapshot at run     | ADR-029          |
-| Regulatory registrations               | product_licences registry, referenced by the BOM      | ADR-029          |
-| Who supplies a component               | `supply_type` on the line; actual on the run          | ADR-030          |
-| Outsourced manufacturing               | `partner_id` on the run; external lines move nothing  | ADR-030          |
-| A run's output lots                    | Read from the ledger, not stored on the run           | ADR-030          |
-| Amending a wrong, confirmed order      | Duplicate to a draft, then cancel the original        | ADR-031          |
-| What a duplicate copies                | Re-resolves snapshots; never copies frozen ones       | ADR-031          |
-| Finishing a run that spans days        | Output repeats; closing is explicit and terminal      | ADR-032          |
-| Planned vs actual consumption          | Consume at close with actuals; variance computed      | ADR-032          |
-| Consumption over plan                  | Warn and record; never block a real event             | ADR-032          |
-| Which lot a day's output joins         | The run's open lot by default; over-recall is safe    | ADR-032          |
-| Where a run picks components from      | source_location_id per line, set at release           | ADR-032          |
-| Editing an order line                  | Editable until something depends on it                | ADR-033          |
-| Cancelling part of an order            | Line closed short with a reason, quantities kept      | ADR-034          |
-| Price on a purchase order              | unit_price and currency per line; subtotals not total | ADR-035          |
-| Where cost is recorded                 | Append-only valuation ledger beside the movements     | ADR-048          |
-| Valuation method                       | Weighted average per pool; the pool is the lot        | ADR-048          |
-| Cost of a batch                        | Its consumption values, posted to output at close     | ADR-048          |
-| Base currency and exchange rates       | On the organization; a dated rate table               | ADR-048          |
-| Licence status at release              | An organization policy; overrides kept on the run     | ADR-050          |
-| Performance testing                    | A volume seed, budgets per endpoint, plan checks      | ADR-051          |
-| Storing a calendar day                 | `date`, sent as `YYYY-MM-DD`; strictness configurable | ADR-052          |
-| Backups and restores                   | Encrypted nightly dump at another provider, drilled   | ADR-053          |
-| Language of the app                    | Per person; FormatJS ids, English the fallback        | ADR-054          |
-| Language of printed documents          | One or two languages; partner's, else organization's  | ADR-054          |
-| Look and layout                        | Two-layer tokens; side rail; tabs kept in the address | ADR-055          |
-| Status colours and expiry              | Five tones in one table; days left within 90 days     | ADR-055          |
-| Money on an order                      | Labelled before or with tax; totals from the server   | ADR-055          |
-| Product names in other languages       | Translation rows; required languages per organization | ADR-054          |
-| The product's brand                    | Panivo signed out, in emails, at the rail's foot      | ADR-082          |
-| Email layout                           | One layout from blocks; buttons where words exist     | ADR-083          |
-| Where decisions are kept               | One file per ADR; front matter; an index generated    | ADR-086          |
