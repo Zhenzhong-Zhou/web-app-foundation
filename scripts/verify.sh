@@ -42,14 +42,15 @@ cd "$(dirname "$0")/.."
 
 quick=false
 docs=false
-if [[ "${1:-}" == "--quick" ]]; then
-  quick=true
-elif [[ "${1:-}" == "--docs" ]]; then
-  docs=true
-elif [[ $# -gt 0 ]]; then
-  echo "Usage: scripts/verify.sh [--quick | --docs]" >&2
-  exit 2
-fi
+case "$#:${1:-}" in
+  0:) ;;
+  1:--quick) quick=true ;;
+  1:--docs) docs=true ;;
+  *)
+    echo "Usage: scripts/verify.sh [--quick | --docs], one at most" >&2
+    exit 2
+    ;;
+esac
 
 step() { printf '\n== %s\n\n' "$*"; }
 
