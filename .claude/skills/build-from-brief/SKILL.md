@@ -76,8 +76,8 @@ where a step must act on it.
 - Expand, then contract: a migration adds, and takes nothing away that the
   running release reads.
 - **A migration that adds to a list the code shares commits with that
-  code:** the square logo's 0075 added to `FILE_KINDS`, which
-  `files_kind_check` shares, and no split of it stayed green.
+  code,** as one adding to `FILE_KINDS` does with `files_kind_check`:
+  split in two, neither commit stays green.
 
 ### Dependencies ([conventions.md, "Dependencies"][dependencies])
 
@@ -87,7 +87,7 @@ where a step must act on it.
   least 7 × 24 hours ago, and say on which day each of the rest comes of
   age.
 - **Never move a locked version back,** and never `npm update --before`,
-  which does both wrong (the square logo's step 2).
+  which does both wrong.
 - A security fix is taken at once, its publisher and diff looked at first;
   any other exception is Bob's, named in its commit.
 - One commit, "Dependencies: …", naming each package. Nothing old enough:
@@ -99,9 +99,8 @@ where a step must act on it.
   change, passing after.
 - **Manual checks go in the same commit as what they check:** a commit
   that changes what a person sees, or a rule they work under, updates
-  `docs/manual-checks.md` itself. The square logo's client and guide went
-  in without theirs, which came later with the seeds: the brief's mistake.
-  A brief that puts them in a later step contradicts this, so ask.
+  `docs/manual-checks.md` itself. A brief that puts them in a later step
+  contradicts this, so ask.
 
 ## 3. Steps any brief may have
 
