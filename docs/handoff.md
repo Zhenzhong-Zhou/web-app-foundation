@@ -1,7 +1,9 @@
 # web-app-foundation — handoff, 27 October 2026
 
-Paste this into the new chat. Re-sync Project knowledge from `main` first, so
-the new session reads current code.
+Paste this into a new chat of the claude.ai project where features are
+planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
+Re-sync the project's knowledge, its copy of the repository, from `main`
+first, so the new session reads current code.
 
 Status only: where things stand, the dates, and what is still to do by
 hand and in code. The history this file held until 27 October 2026 is in
@@ -16,13 +18,13 @@ On 27 October 2026:
 - **`docs-start-here`,** ADR-086's part 2 and ADR-087, is on its branch:
   [Start here](README.md), the rules written down (`docs/rules/` and
   `.claude/rules/`), headings, `areas` and a template for the ADRs, and
-  this file cut to status. The triage and #260 come next, then ADR-084
+  this file cut to status. The triage and [#260] come next, then ADR-084
   (the order, below).
-- **The last merges:** #259 (`docs-moves`, ADR-086's part 1, 27
-  October), #257 (the emails' design, ADR-083, 27 October), #254 (CI's
-  reliability, closing #252, 26 October), #251 (the organization's square
-  logo, ADR-060 amended, 26 October) and #247 (the brand, ADR-082, 25
-  October).
+- **The last merges:** [#259] (`docs-moves`, ADR-086's part 1, 27
+  October), [#257] (the emails' design, ADR-083, 27 October), [#254]
+  (CI's reliability, closing [#252], 26 October), [#251] (the
+  organization's square logo, ADR-060 amended, 26 October) and [#247]
+  (the brand, ADR-082, 25 October).
 - **The release:** v0.7.0, tagged on 16 October 2026; both packages'
   versions are 0.7.0.
 - **Migrations** through 0075 (the square logo's), 76 files in
@@ -34,7 +36,7 @@ On 27 October 2026:
   The uptime monitor is UptimeRobot's, since 25 October
   ([`services.md`, "In production"](runbooks/services.md#in-production)).
 - **Claude Code Review** still rarely runs the plugin's full review
-  (#253).
+  ([#253]).
 
 ## Dates
 
@@ -51,8 +53,8 @@ On 27 October 2026:
   reads only Chinese: the close dialog (MC-2406), Roles and the role
   editor in 中文, 品牌, product photos, 同事, and 编号 (MC-2710).
 - **2 November:** `typescript-eslint` 8.72.1 and `@aws-sdk/client-s3`
-  3.1157.0 are old enough, for ADR-084's branch (#287).
-- **Early November:** Bob's cloud credit ends; #245 suits a cloud session
+  3.1157.0 are old enough, for ADR-084's branch ([#287]).
+- **Early November:** Bob's cloud credit ends; [#245] suits a cloud session
   before then. What the cloud sessions taught is in the working
   agreements, "Cloud sessions" under
   [How code is delivered](engineering.md#how-code-is-delivered).
@@ -70,7 +72,7 @@ On 27 October 2026:
   backfill:pinyin` once in `server/`, against its External URL with
   `?sslmode=no-verify`, since Render runs the migrations but not that
   script (ADR-056).
-- **`foundation_perf_large` kept migrated** for #225 and #226: `npm run
+- **`foundation_perf_large` kept migrated** for [#225] and [#226]: `npm run
   migrate:all` does not reach it, so after each new migration run `npm run
   migrate` against it, as [`server/perf/README.md`](../server/perf/README.md)
   makes it.
@@ -94,21 +96,22 @@ them:
 2. **Triage:** every open issue gets a group label and its area labels,
    and the `fix-now` issues go into a "Fix-ups" milestone
    ([engineering.md, Issues and labels](engineering.md#issues-and-labels)).
-3. **#260, product names and search** (ADR-056 amended), with #250,
-   #263's note wording, the esbuild override under drizzle-kit (#270),
+3. **[#260], product names and search** (ADR-056 amended), with [#250],
+   [#263]'s note wording, the esbuild override under drizzle-kit ([#270]),
    and a `/rules-file` skill writing the products, partners and search
    rules files.
-4. **ADR-084, an error tracker** (#287), with `typescript-eslint` 8.72.1
+4. **ADR-084, an error tracker** ([#287]), with `typescript-eslint` 8.72.1
    and `@aws-sdk/client-s3` 3.1157.0 (old enough from 2 November), and
    the Nest packages at 12.3.x (from 3 November), whose
    `@nestjs/platform-express` depends on multer 2.5.0 itself, so the
-   multer override goes (ADR-019); an `npm audit` step in CI (#268), the database's size in the backup's
-   summary (#269), and the per-area table diagrams.
-5. **ADR-085, low stock** (#288), with #222 and #256.
+   multer override goes (ADR-019); an `npm audit` step in CI ([#268]), the database's size in the backup's
+   summary ([#269]), and the per-area table diagrams.
+5. **ADR-085, low stock** ([#288]), with [#222] and [#256].
 6. **The fix-ups:** the Fix-ups milestone in batches by area, each
-   writing its areas' rules files. First #261 with #154, #225 and #150;
-   then #263's rest with #198; #264; and #255 with #258, since both change
-   the emails' text parts (`npm run mail:text -- --update`).
+   writing its areas' rules files. First [#261] with [#154], [#225] and
+   [#150]; then [#263]'s rest with [#198]; [#264]; and [#255] with [#258],
+   since both change the emails' text parts
+   (`npm run mail:text -- --update`).
 7. **One docs PR for the remaining rules files,** then **the review of
    the whole app**, once, after the fix-ups, so it judges the app with the
    known issues fixed and finds what nobody has filed:
@@ -131,11 +134,11 @@ them:
      MC-2201, MC-1558 and MC-1559.
 
    Then one round for its findings.
-8. **New features,** in this order unless a trigger brings one forward,
-   each with its entry in Open decisions: one person in two
-   organizations, then a practice organization (ADR-077, *Deferred*); a
-   public demo; plans and billing; the operator's console and support
-   access; and returns to suppliers (#262).
+8. **New features,** in this order unless a trigger brings one forward:
+   one person in two organizations, then a practice organization
+   (ADR-077, *Deferred*); a public demo, plans and billing, and the
+   operator's console and support access, each with its entry in Open
+   decisions; and returns to suppliers ([#262]).
 
 Later: `/release` at the next tag; the chat-side planning skill;
 `/file-issue`, or GitHub's issue templates; labels as code, a labels file
@@ -161,3 +164,32 @@ Not repeated here; each list has one home:
 - **Before any real customer's data:**
   [`render.md`, "Before real customers' data"](runbooks/render.md#before-real-customers-data),
   and [Open decisions, "A security review before real customers"](adr/open-decisions.md#a-security-review-before-real-customers).
+
+[#150]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/150
+[#154]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/154
+[#198]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/198
+[#222]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/222
+[#225]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/225
+[#226]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/226
+[#245]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/245
+[#247]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/247
+[#250]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/250
+[#251]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/251
+[#252]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/252
+[#253]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/253
+[#254]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/254
+[#255]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/255
+[#256]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/256
+[#257]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/257
+[#258]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/258
+[#259]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/259
+[#260]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/260
+[#261]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/261
+[#262]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/262
+[#263]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/263
+[#264]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/264
+[#268]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/268
+[#269]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/269
+[#270]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/270
+[#287]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/287
+[#288]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/288
