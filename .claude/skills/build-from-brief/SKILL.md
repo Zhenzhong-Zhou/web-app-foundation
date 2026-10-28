@@ -127,7 +127,9 @@ where a step must act on it.
   1. **The findings.** `/usability-walkthrough` as the persona the brief
      names, for any change a person sees; `/simplify`; `/code-review`;
      `/production-readiness` on the sections the change touches;
-     `/doctor prompt-audit`, which needs Claude Code v2.1.283 or later.
+     `/doctor prompt-audit`, which needs Claude Code v2.1.283 or later
+     and which Bob types in the session, since a session cannot run it:
+     ask for it, and number its findings with the rest.
      Every finding numbered and written to the file the brief names,
      usually `tmp/adr-NNN/review.md`, and nothing fixed, `/simplify`'s
      included.
