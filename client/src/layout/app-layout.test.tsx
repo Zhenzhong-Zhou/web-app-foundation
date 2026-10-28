@@ -205,7 +205,7 @@ describe('a new version', () => {
   });
 
   const NOTE =
-    'A new version is ready. It loads by itself when you open another page.';
+    'A new version is ready. It loads by itself when you open another page. Everything you’ve saved is kept; you don’t need to do anything.';
 
   /** Every width query matches, as at 390 px; jsdom has no matchMedia. */
   const onAPhone = () =>
@@ -267,7 +267,7 @@ describe('a new version', () => {
     await user.click(account);
     const first = within(screen.getByRole('menu')).getAllByRole('menuitem')[0];
     expect(first).toHaveTextContent(
-      'A new version is ready · Reload nowIt also loads by itself when you open another page.',
+      'A new version is ready · Reload nowIt also loads by itself when you open another page. Everything you’ve saved is kept; you don’t need to do anything.',
     );
     await user.click(first);
     expect(reloadPage).toHaveBeenCalledTimes(1);

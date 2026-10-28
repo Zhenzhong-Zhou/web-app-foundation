@@ -515,7 +515,7 @@ function Frame() {
                       {intl.formatMessage({
                         id: 'version.alsoLater',
                         defaultMessage:
-                          'It also loads by itself when you open another page.',
+                          'It also loads by itself when you open another page. Everything you’ve saved is kept; you don’t need to do anything.',
                       })}
                     </Typography>
                   </Box>

@@ -2038,7 +2038,8 @@ the file, or wait ten minutes.
   Orders, deploy: New version appears just before Help, a pill in the
   info tone, and the top bar keeps its height, so nothing on the page
   moves. A screen reader says once, politely, A new version is ready. It
-  loads by itself when you open another page.; with a dialog open, such as
+  loads by itself when you open another page. Everything you’ve saved is
+  kept; you don’t need to do anything.; with a dialog open, such as
   Receive on a purchase order, it says so in the dialog, and nothing more
   once the dialog closes. New version opens that note
   with Reload now, which loads the page. On an order, switching from Items
@@ -2053,8 +2054,9 @@ the file, or wait ten minutes.
   whose name a screen reader reads as …, signed in as …, a new version is
   ready, and the bar still fits its six targets. The account menu's first
   item reads A new version is ready · Reload now, It also loads by itself
-  when you open another page., and loads the page. In 中文, 新版本已就绪 ·
-  立即重新加载, 您打开其他页面时也会自动加载。
+  when you open another page. Everything you’ve saved is kept; you don’t
+  need to do anything., and loads the page. In 中文, 新版本已就绪 ·
+  立即重新加载, 您打开其他页面时也会自动加载。已保存的内容不会丢失，您无需任何操作。
 - **MC-3403** *(ADR-081)* Signed out. On sign-in, register, forgot
   password and an invitation's link, deploy: under the language and text
   size, an info banner says A new version is ready. It loads when you open

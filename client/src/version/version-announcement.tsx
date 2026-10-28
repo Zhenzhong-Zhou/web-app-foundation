@@ -33,7 +33,7 @@ export function VersionAnnouncement() {
           intl.formatMessage({
             id: 'version.note',
             defaultMessage:
-              'A new version is ready. It loads by itself when you open another page.',
+              'A new version is ready. It loads by itself when you open another page. Everything you’ve saved is kept; you don’t need to do anything.',
           })}
     </Box>
   );
