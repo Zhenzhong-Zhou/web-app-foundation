@@ -2760,10 +2760,10 @@ screen, so it reads again.
   Home's Recently opened, after opening the product, names it 专注胶囊 60
   粒 too.
 
-## 39. Products, Partners and the item pickers searched on the server (ADR-056, amended)
+## 39. Products, Partners and the pickers searched on the server (ADR-056, amended)
 
-Products, Partners and every item picker search as the top bar's lookup
-does: a name in any language, accents, case and punctuation aside, a
+Products, Partners, every item picker and every partner picker search as
+the top bar's lookup does: a name in any language, accents, case and punctuation aside, a
 Chinese name by its pinyin or by one character, the closest match first.
 The list narrows a moment after typing stops.
 
@@ -2791,6 +2791,16 @@ The list narrows a moment after typing stops.
   On a draft order's Add an item, an item already on the order is not
   offered, typed or not. New order's Item names the variant too:
   MAGCAP-60 — Magnesium bisglycinate capsules (60 capsules) in English.
+- **MC-3904** New order's Partner: `mdyf` lists 明德药房, saying
+  Loading… until it comes; `cooperative`, without its accent, finds the
+  Coopérative des pharmacies indépendantes du Bas-Saint-Laurent; `zzzz`
+  says No matching partners only once the wait is over. A retired
+  partner is not offered, typed or not. Send a sample from an Inventory
+  row: Given to finds 明德药房 by `mdyf` as well. Plan a run: Contract
+  manufacturer reads We make it ourselves before anything is chosen;
+  opened, it lists We make it ourselves first, then the partners, and
+  typing `mdyf` keeps it first, above 明德药房. Choose it back after a
+  partner, and the field reads We make it ourselves again.
 
 ## Regressions
 
@@ -3808,3 +3818,6 @@ first.
   MC-3902 extended.
 - 2026-10-28: ADR-056, amended, every item picker searched on the server
   and saying when it loads: section 39 renamed for them, MC-3903 added.
+- 2026-10-28: #260, the three partner pickers searched on the server, and
+  Plan run's We make it ourselves a row of its own and the field's value
+  (#274): section 39 renamed for them, MC-3904 added.

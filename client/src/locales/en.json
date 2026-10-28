@@ -298,6 +298,8 @@
   "components.loadMore": "Load more",
   "components.pageHeader.back": "Back",
   "components.pageHeader.breadcrumb": "breadcrumb",
+  "components.partnerPicker.failed": "Could not load the partners.",
+  "components.partnerPicker.noMatches": "No matching partners",
   "components.textSize.label": "Text size",
   "components.textSize.large": "Large text",
   "components.textSize.larger": "Larger text",

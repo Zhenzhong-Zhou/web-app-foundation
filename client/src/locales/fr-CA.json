@@ -298,6 +298,8 @@
   "components.loadMore": "Charger plus",
   "components.pageHeader.back": "Retour",
   "components.pageHeader.breadcrumb": "fil d’Ariane",
+  "components.partnerPicker.failed": "Impossible de charger les partenaires.",
+  "components.partnerPicker.noMatches": "Aucun partenaire correspondant",
   "components.textSize.label": "Taille du texte",
   "components.textSize.large": "Grand texte",
   "components.textSize.larger": "Très grand texte",

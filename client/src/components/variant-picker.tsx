@@ -1,14 +1,9 @@
 import { Autocomplete, TextField } from '@mui/material';
-import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { VariantOption } from '../api/types.gen';
-import { api } from '../lib/api';
 import { itemName } from '../lib/format';
-import { withSearch } from '../lib/use-list-search';
-
-/** As a list waits for typing to stop (useListSearch). */
-const WAIT_MS = 300;
+import { usePickerSearch } from '../lib/use-picker-search';
 
 /** "WIDGET-1 — Widget (Large)": the SKU first, because it is what people type. */
 function labelFor(option: VariantOption): string {
@@ -25,14 +20,9 @@ const asAnswered = (options: VariantOption[]) => options;
  * A select is fine at ten options and unusable at fifty: the list runs off
  * the screen and the only way to find a SKU is to read every row. Before
  * anything is typed, it lists `options`, the catalogue as the form offers it
- * (useVariants). From the first character, as a list does, it asks
- * `GET /products/variants?search=` a moment after typing stops, and shows
- * the answer in the server's order: an item by its SKU, its names in every
- * language and their pinyin, best match first. Nothing is matched here.
- *
- * The answer is kept to `options`, so what a form leaves out (a variant
- * already on the order) stays out, and every item shown is one the form can
- * read the unit of. An answer that comes after a newer search is dropped.
+ * (useVariants). From the first character it asks
+ * `GET /products/variants?search=` (usePickerSearch): an item by its SKU,
+ * its names in every language and their pinyin, best match first.
  * While it asks, or while `loading`, it says it is loading, in the popup's
  * status, which a screen reader hears; "No matching items" comes only from
  * an answer.
@@ -69,41 +59,10 @@ export function VariantPicker({
 }) {
   const intl = useIntl();
   const selected = options.find((option) => option.id === value) ?? null;
-
-  // What was typed, not the label MUI writes back on a choice or a blur.
-  const [typed, setTyped] = useState('');
-  const search = typed.trim();
-  // The last answer, with the search it answers; null ids for a failure.
-  const [found, setFound] = useState<{
-    search: string;
-    ids: string[] | null;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!search) return;
-
-    let ignore = false;
-    const timer = setTimeout(() => {
-      void api<VariantOption[]>(withSearch('/products/variants', search))
-        .then((rows) => {
-          if (!ignore) setFound({ search, ids: rows.map((row) => row.id) });
-        })
-        .catch(() => {
-          if (!ignore) setFound({ search, ids: null });
-        });
-    }, WAIT_MS);
-
-    return () => {
-      ignore = true;
-      clearTimeout(timer);
-    };
-  }, [search]);
-
-  const answer = search && found?.search === search ? found : null;
-  const offered = new Map(options.map((option) => [option.id, option]));
-  const shown = !search
-    ? options
-    : (answer?.ids ?? []).flatMap((variantId) => offered.get(variantId) ?? []);
+  const { shown, asking, failed, onInputChange } = usePickerSearch(
+    '/products/variants',
+    options,
+  );
 
   return (
     <Autocomplete
@@ -112,20 +71,18 @@ export function VariantPicker({
       filterOptions={asAnswered}
       value={selected}
       onChange={(_event, option) => onChange(option?.id ?? '')}
-      onInputChange={(_event, text, reason) =>
-        setTyped(reason === 'input' ? text : '')
-      }
+      onInputChange={onInputChange}
       getOptionLabel={labelFor}
       isOptionEqualToValue={(option, current) => option.id === current.id}
       disabled={disabled}
       fullWidth
-      loading={loading || (search !== '' && answer === null)}
+      loading={loading || asking}
       loadingText={intl.formatMessage({
         id: 'common.loading',
         defaultMessage: 'Loading…',
       })}
       noOptionsText={
-        answer?.ids === null
+        failed
           ? intl.formatMessage({
               id: 'inventory.catalogueFailed',
               defaultMessage: 'Could not load the catalogue.',

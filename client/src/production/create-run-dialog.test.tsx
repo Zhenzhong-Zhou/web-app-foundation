@@ -109,9 +109,10 @@ describe('CreateRunDialog', () => {
         'You can’t see customers and suppliers, so a contract manufacturer can’t be chosen here.',
       ),
     ).toBeInTheDocument();
+    // The empty choice named in words, as the field's value (#274).
     expect(
       screen.getByRole('combobox', { name: 'Contract manufacturer' }),
-    ).toHaveTextContent('We make it ourselves');
+    ).toHaveValue('We make it ourselves');
     await userEvent.click(screen.getByLabelText(/Made at/));
     expect(
       await screen.findByRole('option', { name: 'WIP' }),

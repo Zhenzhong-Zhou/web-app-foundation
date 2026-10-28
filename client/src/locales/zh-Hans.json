@@ -298,6 +298,8 @@
   "components.loadMore": "加载更多",
   "components.pageHeader.back": "返回",
   "components.pageHeader.breadcrumb": "导航路径",
+  "components.partnerPicker.failed": "无法加载合作伙伴。",
+  "components.partnerPicker.noMatches": "没有匹配的合作伙伴",
   "components.textSize.label": "文字大小",
   "components.textSize.large": "大字号",
   "components.textSize.larger": "特大字号",

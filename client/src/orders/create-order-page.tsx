@@ -1,7 +1,6 @@
 import Delete from '@mui/icons-material/Delete';
 import {
   Alert,
-  Autocomplete,
   Box,
   Button,
   Checkbox,
@@ -22,17 +21,13 @@ import type { Location, Partner, VariantOption } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
+import { PartnerPicker } from '../components/partner-picker';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
 import { VariantPicker } from '../components/variant-picker';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api, isRevisionRefusal } from '../lib/api';
 import type { OrderDirection } from '../lib/api-names';
-import {
-  BLANK_LINE,
-  groupedNumberMessage,
-  nameAndCode,
-  toApiDecimal,
-} from '../lib/format';
+import { BLANK_LINE, groupedNumberMessage, toApiDecimal } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
 import { useVariants } from '../lib/use-variants';
@@ -74,7 +69,8 @@ export function CreateOrderPage() {
   const can = useCan();
   const canSeeLocations = can('locations.view');
 
-  const [partners, setPartners] = useState<Partner[]>([]);
+  // Null until they come, so the picker says it is loading.
+  const [partners, setPartners] = useState<Partner[] | null>(null);
   const intl = useIntl();
   // Why the partners did not load, and a count that reads them and the
   // products again.
@@ -191,7 +187,7 @@ export function CreateOrderPage() {
    * choosing one would be a mistake — the server refuses it with a 409, and
    * an option that always fails is worse than an option that is absent.
    */
-  const selectablePartners = partners.filter((row) => row.isActive);
+  const selectablePartners = (partners ?? []).filter((row) => row.isActive);
 
   /**
    * A variant already on the order is not offered again. order_lines is
@@ -326,21 +322,22 @@ export function CreateOrderPage() {
 
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Stack spacing={2}>
-            <Autocomplete
+            <PartnerPicker
+              id="order-partner"
+              label={intl.formatMessage({
+                id: 'orders.partner',
+                defaultMessage: 'Partner',
+              })}
+              required
               options={selectablePartners}
-              getOptionLabel={(option) => nameAndCode(option.name, option.code)}
-              value={partner}
-              onChange={(_event, value) => setPartner(value)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={intl.formatMessage({
-                    id: 'orders.partner',
-                    defaultMessage: 'Partner',
-                  })}
-                  required
-                />
-              )}
+              loading={partners === null && loadFailure === null}
+              value={partner?.id ?? ''}
+              onChange={(partnerId) =>
+                setPartner(
+                  selectablePartners.find((row) => row.id === partnerId) ??
+                    null,
+                )
+              }
             />
 
             <TextField

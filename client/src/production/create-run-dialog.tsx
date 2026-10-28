@@ -14,6 +14,7 @@ import { useIntl } from 'react-intl';
 import type { Bom, Location, Partner, ProductionRun } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { PartnerPicker } from '../components/partner-picker';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
 import {
@@ -62,7 +63,8 @@ export function CreateRunDialog({
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const { variants, answered } = useVariants(open);
   const [locations, setLocations] = useState<Location[]>([]);
-  const [partners, setPartners] = useState<Partner[]>([]);
+  // Null until they come, so the picker says it is loading.
+  const [partners, setPartners] = useState<Partner[] | null>(null);
   const [boms, setBoms] = useState<Bom[]>([]);
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -98,7 +100,9 @@ export function CreateRunDialog({
         .then((partnerRows) => {
           if (!ignore) setPartners(partnerRows);
         })
-        .catch(() => undefined);
+        .catch(() => {
+          if (!ignore) setPartners([]);
+        });
     }
 
     return () => {
@@ -358,20 +362,23 @@ export function CreateRunDialog({
               ))}
             </TextField>
 
-            <TextField
+            {/* We make it ourselves is a row of its own, and the field's
+                value until a manufacturer is chosen (#274). */}
+            <PartnerPicker
               id="run-partner"
               label={intl.formatMessage({
                 id: 'production.contract',
                 defaultMessage: 'Contract manufacturer',
               })}
-              select
-              fullWidth
+              options={partners ?? []}
+              loading={canSeePartners && partners === null}
+              none={intl.formatMessage({
+                id: 'production.create.ourselves',
+                defaultMessage: 'We make it ourselves',
+              })}
               value={form.partnerId}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  partnerId: event.target.value,
-                }))
+              onChange={(partnerId) =>
+                setForm((current) => ({ ...current, partnerId }))
               }
               disabled={!canSeePartners}
               helperText={
@@ -383,28 +390,7 @@ export function CreateRunDialog({
                         'You can’t see customers and suppliers, so a contract manufacturer can’t be chosen here.',
                     })
               }
-              // Showing We make it ourselves, the one choice left.
-              slotProps={
-                canSeePartners
-                  ? undefined
-                  : {
-                      select: { displayEmpty: true },
-                      inputLabel: { shrink: true },
-                    }
-              }
-            >
-              <MenuItem value="">
-                {intl.formatMessage({
-                  id: 'production.create.ourselves',
-                  defaultMessage: 'We make it ourselves',
-                })}
-              </MenuItem>
-              {partners.map((row) => (
-                <MenuItem key={row.id} value={row.id}>
-                  {row.name}
-                </MenuItem>
-              ))}
-            </TextField>
+            />
 
             {/* The distinction people get wrong: a manufacturer who buys every
                 input and delivers finished goods is a purchase order, not a

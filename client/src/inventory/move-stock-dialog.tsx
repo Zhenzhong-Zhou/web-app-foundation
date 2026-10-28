@@ -1,6 +1,5 @@
 import {
   Alert,
-  Autocomplete,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -15,6 +14,7 @@ import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import type { Location, Partner, StockRow } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { PartnerPicker } from '../components/partner-picker';
 import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { groupedNumberMessage, nameAndCode, toApiDecimal } from '../lib/format';
@@ -148,8 +148,9 @@ export function MoveStockDialog({
    * sample to a partner you no longer deal with is a mistake worth not
    * offering.
    */
-  const [partners, setPartners] = useState<Partner[]>([]);
-  const [recipient, setRecipient] = useState<Partner | null>(null);
+  // Null until they come, so the picker says it is loading.
+  const [partners, setPartners] = useState<Partner[] | null>(null);
+  const [recipientId, setRecipientId] = useState('');
 
   useEffect(() => {
     if (!row || mode !== 'sample' || !canSeePartners) return;
@@ -162,7 +163,9 @@ export function MoveStockDialog({
       })
       // Silent: without the list the field is empty, and a sample with no
       // recipient is valid.
-      .catch(() => undefined);
+      .catch(() => {
+        if (!ignore) setPartners([]);
+      });
 
     return () => {
       ignore = true;
@@ -178,7 +181,7 @@ export function MoveStockDialog({
   );
 
   function close() {
-    setRecipient(null);
+    setRecipientId('');
     setQuantityError(null);
     setForm({
       quantity: '',
@@ -230,7 +233,7 @@ export function MoveStockDialog({
           reason: config.reason,
           reasonDetail: mode === 'adjust' ? form.reasonDetail : undefined,
           recipientPartnerId:
-            mode === 'sample' && recipient ? recipient.id : undefined,
+            mode === 'sample' && recipientId ? recipientId : undefined,
           note: mode === 'adjust' ? form.note : form.note || undefined,
         }),
       }),
@@ -322,36 +325,30 @@ export function MoveStockDialog({
             )}
 
             {mode === 'sample' && (
-              <Autocomplete
-                options={partners}
-                getOptionLabel={(option) =>
-                  nameAndCode(option.name, option.code)
-                }
-                value={recipient}
-                onChange={(_event, value) => setRecipient(value)}
+              <PartnerPicker
+                id="move-given-to"
+                label={intl.formatMessage({
+                  id: 'inventory.move.givenTo',
+                  defaultMessage: 'Given to',
+                })}
+                options={partners ?? []}
+                loading={canSeePartners && partners === null}
+                value={recipientId}
+                onChange={setRecipientId}
                 disabled={!canSeePartners}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label={intl.formatMessage({
-                      id: 'inventory.move.givenTo',
-                      defaultMessage: 'Given to',
-                    })}
-                    helperText={
-                      canSeePartners
-                        ? intl.formatMessage({
-                            id: 'inventory.move.givenTo.help',
-                            defaultMessage:
-                              'Optional. Recorded so a recall can find it.',
-                          })
-                        : intl.formatMessage({
-                            id: 'inventory.move.givenTo.unreadable',
-                            defaultMessage:
-                              'You can’t see customers and suppliers, so the sample is recorded without whom it went to.',
-                          })
-                    }
-                  />
-                )}
+                helperText={
+                  canSeePartners
+                    ? intl.formatMessage({
+                        id: 'inventory.move.givenTo.help',
+                        defaultMessage:
+                          'Optional. Recorded so a recall can find it.',
+                      })
+                    : intl.formatMessage({
+                        id: 'inventory.move.givenTo.unreadable',
+                        defaultMessage:
+                          'You can’t see customers and suppliers, so the sample is recorded without whom it went to.',
+                      })
+                }
               />
             )}
 
