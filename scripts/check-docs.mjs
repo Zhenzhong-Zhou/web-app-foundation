@@ -49,8 +49,9 @@
  * Prints each failure as `file:line: target — reason` and exits 1, or
  * what it checked and exits 0; and either way, each notice as `notice:
  * file — why`. scripts/verify.sh and the Docs workflow run it. Its tests,
- * in check-docs.test.mjs, run it in a temporary repository: `node --test
- * scripts/`.
+ * in check-docs.test.mjs, check-docs-adrs.test.mjs and
+ * check-docs-rules.test.mjs, run it in a temporary repository: `node
+ * --test scripts/`.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";

@@ -7,7 +7,7 @@
  * Each test runs the script in a temporary repository with a few ADRs
  * and a README, since it reads the docs/adr/ of the repository it is run
  * in, as git lists it.
- * check-docs.test.mjs tests the front matter's own checks.
+ * check-docs-adrs.test.mjs tests the front matter's own checks.
  */
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
