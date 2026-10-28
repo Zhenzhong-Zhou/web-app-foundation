@@ -8,7 +8,7 @@ amended-by: [ADR-069, ADR-070]
 # ADR-012 — Account deletion, audit retention, and cascade defaults
 
 > **Amended by [ADR-069](0069-deleting-your-account-and-leaving-an-organization.md).**
-> An organization's only member is not deleted with it: they cannot delete their account while it exists. The export is the person's own data, not the rows they authored, which belong to the organization. Everything else stands.
+> An organization is not deleted with its only member: they cannot delete their account while it exists. The export is the person's own data, not the rows they authored, which belong to the organization. Everything else stands.
 >
 > **Amended by [ADR-070](0070-deleting-an-organization.md).**
 > An organization is deleted with every row it owns, its audit log included: deleted on purpose by the one path that deletes an organization, not anonymized and kept, since the business keeps its records through the export. The audit log's `RESTRICT` stays, so nothing else can delete it.

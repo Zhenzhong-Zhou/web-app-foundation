@@ -57,9 +57,9 @@ either differs from the files. What is not yet decided is in
 | [ADR-020] | Client routes fall into three categories, not two | accepted | 2026-08-31 | | |
 | [ADR-021] | Material UI as the component library | accepted | 2026-09-02 | | [ADR-055] |
 | [ADR-022] | Account events are a separate table from the audit log | accepted | 2026-09-02 | | |
-| [ADR-023] | Stock lives on variants, and quantity is a ledger | accepted | 2026-09-03 | | |
+| [ADR-023] | Stock lives on variants, and quantity is a ledger | accepted | 2026-09-03 | | [ADR-025] |
 | [ADR-024] | Locations are one tree, and stock sits only at leaves | accepted | 2026-09-04 | | |
-| [ADR-025] | Quantity is decimal, and the stock cache is the lock | accepted | 2026-09-08 | | |
+| [ADR-025] | Quantity is decimal, and the stock cache is the lock | accepted | 2026-09-08 | [ADR-023] | |
 | [ADR-026] | Customers and suppliers are one table | accepted | 2026-09-10 | | |
 | [ADR-027] | Orders are purchase and sale, and nothing else | accepted | 2026-09-10 | | |
 | [ADR-028] | Addresses and contacts are shared tables with an exclusive arc | accepted | 2026-09-11 | | |

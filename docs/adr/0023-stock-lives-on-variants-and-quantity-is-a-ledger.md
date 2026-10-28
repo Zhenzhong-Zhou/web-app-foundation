@@ -2,6 +2,7 @@
 status: accepted
 date: 2026-09-03
 areas: [products, stock]
+amended-by: [ADR-025]
 ---
 
 # ADR-023 — Stock lives on variants, and quantity is a ledger
