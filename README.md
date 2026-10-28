@@ -10,7 +10,7 @@ knows nothing about stock or recipes and would carry unchanged into a CRM or a b
 app; everything under `server/src/modules` is the inventory domain and depends on core,
 never the other way round.
 
-> **Status: pre-release (v0.7.0-rc.1), in daily use by its author.** Auth,
+> **Status: v0.7.0, released on 16 October 2026, in daily use by its author.** Auth,
 > tenancy, permissions and auditing work end to end, and so does the whole cycle
 > for a maker of natural health products: buying, receiving, making under a
 > licence, selling, shipping, invoicing, returns and credit — with every lot
@@ -369,15 +369,13 @@ each step is server-first then the screen that uses it (ADR-019):
   by whoever may, and the state recorded on the run and in the lot trace
   (ADR-050)
 
-**Next:** languages — French (Quebec) and Chinese in the app, French on
-printed documents (ADR-054) — then an end-to-end journey in the browser
-suite. Calendar days as `date` (#20, ADR-052) and backups (ADR-053) are
-done.
+**Next:** what is still to build, in its order, is in
+[the handoff](docs/handoff.md#still-to-do-in-code).
 
-**Deliberately deferred** (all additive): background jobs and queues, invitations,
-file storage, search, admin UI, billing, API docs, scheduled notifications,
-payments against invoices, pro forma invoices, CSV import and export, and
-licences beyond the product's own — site, wholesale and business licences.
+**Deliberately deferred** (all additive): background jobs and queues, admin UI,
+billing, API docs, scheduled notifications, payments against invoices, CSV
+import, and licences beyond the product's own — site, wholesale and business
+licences.
 
 ---
 
