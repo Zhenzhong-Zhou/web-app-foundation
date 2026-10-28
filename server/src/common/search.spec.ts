@@ -7,6 +7,7 @@ describe('searchTerms', () => {
       exact: 'saint laurent',
       prefix: 'saint laurent%',
       anywhere: '%saint laurent%',
+      pinyinText: 'saintlaurent',
       pinyin: '%saintlaurent%',
       hasWords: true,
     });

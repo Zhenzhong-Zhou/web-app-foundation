@@ -2262,6 +2262,15 @@
         "operationId": "ProductsController_list_v1",
         "parameters": [
           {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
             "name": "accept-language",
             "in": "header",
             "required": false,
@@ -2362,6 +2371,15 @@
       "get": {
         "operationId": "ProductsController_listVariants_v1",
         "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
           {
             "name": "accept-language",
             "in": "header",
@@ -5733,7 +5751,17 @@
     "/v1/partners": {
       "get": {
         "operationId": "PartnersController_list_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",

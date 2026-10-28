@@ -8,10 +8,12 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
 
+import { SearchQueryDto } from '../../common/dto/search-query.dto';
 import { csvFile, withinLimit } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext } from '../../core/audit/audit-context';
@@ -36,8 +38,8 @@ export class PartnersController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PARTNERS_VIEW)
-  list(): Promise<Partner[]> {
-    return this.partners.list();
+  list(@Query() query: SearchQueryDto): Promise<Partner[]> {
+    return this.partners.list(query.search);
   }
 
   /** Customers and suppliers as CSV (ADR-057). Above ':id'. */

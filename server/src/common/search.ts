@@ -44,9 +44,11 @@ export interface SearchTerms {
   /** Contains the text. */
   anywhere: string;
   /**
-   * The query as pinyin is stored, lower-case letters and digits only, as a
-   * contains-pattern; null when the query has too few of them to be pinyin.
+   * The query as pinyin is stored, lower-case letters and digits only; null
+   * when the query has too few of them to be pinyin.
    */
+  pinyinText: string | null;
+  /** pinyinText as a contains-pattern. */
   pinyin: string | null;
   /**
    * Whether the query has anything to match a name with once punctuation
@@ -64,13 +66,15 @@ export function searchTerms(raw: string): SearchTerms {
   const text = raw.trim().replace(/\s+/g, ' ');
   const exact = escapeLike(text);
   const latin = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const pinyinText = latin.length >= MIN_SEARCH_LENGTH ? latin : null;
 
   return {
     text,
     exact,
     prefix: `${exact}%`,
     anywhere: `%${exact}%`,
-    pinyin: latin.length >= MIN_SEARCH_LENGTH ? `%${latin}%` : null,
+    pinyinText,
+    pinyin: pinyinText === null ? null : `%${pinyinText}%`,
     hasWords: /[\p{L}\p{N}]/u.test(text),
   };
 }
@@ -139,6 +143,33 @@ export function matchRank(
     when ${column} ilike ${terms.prefix} then 1
     else 2
   end`;
+}
+
+/**
+ * A name's pinyin column, ranked as matchRank ranks: exact when the query is
+ * the full pinyin or the initials ("zhuanzhu" or "zz" for 专注), at the
+ * start when either starts with it. Nothing to add when the query cannot be
+ * pinyin, as pinyinMatches.
+ */
+export function pinyinRank(
+  column: SQLWrapper,
+  terms: SearchTerms,
+): SQL | undefined {
+  if (terms.pinyinText === null) return undefined;
+  const full = sql`split_part(${column}, ' ', 1)`;
+  const initials = sql`split_part(${column}, ' ', 2)`;
+  const prefix = `${terms.pinyinText}%`;
+  return sql`case
+    when ${full} = ${terms.pinyinText} or ${initials} = ${terms.pinyinText} then 0
+    when ${full} like ${prefix} or ${initials} like ${prefix} then 1
+    else 2
+  end`;
+}
+
+/** The best of several ranks, leaving out those with nothing to add. */
+export function bestRank(...ranks: (SQL | undefined)[]): SQL {
+  const given = ranks.filter((rank): rank is SQL => rank !== undefined);
+  return sql`least(${sql.join(given, sql`, `)})`;
 }
 
 /**

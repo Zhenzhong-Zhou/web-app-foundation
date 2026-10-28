@@ -9,6 +9,7 @@ import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import { EXPORT_LIMIT } from '../../common/export';
 import type { Locale } from '../../common/locales';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
+import { searchTerms } from '../../common/search';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
 import {
@@ -34,6 +35,7 @@ import type {
 } from './dto/set-translations.dto';
 import type { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
+import { itemMatches, itemRank } from './item-search';
 import { coverOf, imagesOf, publicImages } from './product-images';
 
 /**
@@ -61,11 +63,18 @@ export class ProductsService {
    * discontinued first — that information is destroyed by the write.
    *
    * The cost is two booleans in a WHERE on a join already being made.
+   *
+   * With a search, the pickers' (ADR-056): only the items it finds, the
+   * closest first, then by the name shown; without one, by SKU.
    */
-  listActiveVariants(locale: Locale): Promise<VariantOption[]> {
+  listActiveVariants(
+    locale: Locale,
+    search?: string,
+  ): Promise<VariantOption[]> {
     return this.tenantDb.transaction((tx, organizationId) => {
       // In the reader's language (ADR-056).
       const shown = namesIn(locale, organizationId);
+      const terms = search ? searchTerms(search) : null;
 
       return tx
         .select({
@@ -84,33 +93,76 @@ export class ProductsService {
             eq(productVariants.organizationId, organizationId),
             eq(products.isActive, true),
             eq(productVariants.isActive, true),
+            terms ? itemMatches(terms) : undefined,
           ),
         )
-        .orderBy(asc(productVariants.sku));
+        .orderBy(
+          ...(terms
+            ? [
+                itemRank(terms, locale, organizationId),
+                productNameOrder(locale, organizationId),
+              ]
+            : []),
+          asc(productVariants.sku),
+        );
     });
   }
 
   /**
    * Every product, each with its cover's file (ADR-062), named and sorted
    * by the name the reader sees (ADR-056).
+   *
+   * With a search, only the products it finds through any of their
+   * variants, as an item is found everywhere (item-search), each ranked by
+   * its closest variant, then by the name shown. Discontinued ones are
+   * found too, as the list shows them.
    */
-  list(locale: Locale): Promise<ProductSummary[]> {
-    return this.tenantDb.transaction((tx, organizationId) =>
-      tx
-        // The fields the API returns (ADR-068): not the organization, nor
-        // the pinyin kept for search.
-        .select({
-          id: products.id,
-          type: products.type,
-          name: namesIn(locale, organizationId).productName,
-          description: products.description,
-          isActive: products.isActive,
-          coverFileId: coverOf(),
-        })
-        .from(products)
-        .where(eq(products.organizationId, organizationId))
-        .orderBy(productNameOrder(locale, organizationId), asc(products.id)),
-    );
+  list(locale: Locale, search?: string): Promise<ProductSummary[]> {
+    return this.tenantDb.transaction((tx, organizationId) => {
+      const terms = search ? searchTerms(search) : null;
+      const itsVariants = and(
+        eq(productVariants.organizationId, organizationId),
+        eq(productVariants.productId, products.id),
+      );
+
+      return (
+        tx
+          // The fields the API returns (ADR-068): not the organization, nor
+          // the pinyin kept for search.
+          .select({
+            id: products.id,
+            type: products.type,
+            name: namesIn(locale, organizationId).productName,
+            description: products.description,
+            isActive: products.isActive,
+            coverFileId: coverOf(),
+          })
+          .from(products)
+          .where(
+            and(
+              eq(products.organizationId, organizationId),
+              terms
+                ? sql`exists (
+                    select 1 from ${productVariants}
+                    where ${itsVariants} and ${itemMatches(terms)}
+                  )`
+                : undefined,
+            ),
+          )
+          .orderBy(
+            ...(terms
+              ? [
+                  sql`(
+                    select min(${itemRank(terms, locale, organizationId)})
+                    from ${productVariants} where ${itsVariants}
+                  )`,
+                ]
+              : []),
+            productNameOrder(locale, organizationId),
+            asc(products.id),
+          )
+      );
+    });
   }
 
   /**

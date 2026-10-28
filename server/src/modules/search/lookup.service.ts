@@ -8,8 +8,6 @@ import {
   closeness,
   codeMatches,
   matchRank,
-  nameMatches,
-  pinyinMatches,
   type SearchTerms,
   searchTerms,
 } from '../../common/search';
@@ -29,8 +27,12 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { literalStart } from '../numbering/numbering-format';
-import { partnerMatches } from '../partners/partner-search';
-import { itemMatches } from '../products/item-search';
+import {
+  partnerMatches,
+  partnerRank,
+  partnerRecordMatches,
+} from '../partners/partner-search';
+import { itemMatches, itemRank } from '../products/item-search';
 import { coverOf } from '../products/product-images';
 import { itemName, namesIn } from '../stock/item-name';
 
@@ -417,7 +419,7 @@ export class LookupService {
                 ? desc(
                     sql`greatest(${closeness(productVariants.sku, terms)}, ${closeness(products.name, terms, 'name')})`,
                   )
-                : sql`least(${matchRank(productVariants.sku, terms)}, ${matchRank(products.name, terms, 'name')})`,
+                : itemRank(terms, locale, organizationId),
               desc(productVariants.id),
             )
             .limit(limit)
@@ -449,18 +451,13 @@ export class LookupService {
                 excluding(partners.id, exclude),
                 close
                   ? closeMatches(partners.name, terms, 'name')
-                  : or(
-                      nameMatches(partners.name, terms),
-                      codeMatches(partners.code, terms),
-                      codeMatches(partners.taxId, terms),
-                      pinyinMatches(partners.namePinyin, terms),
-                    ),
+                  : partnerRecordMatches(terms),
               ),
             )
             .orderBy(
               close
                 ? desc(closeness(partners.name, terms, 'name'))
-                : sql`least(${matchRank(partners.name, terms, 'name')}, ${matchRank(partners.code, terms)})`,
+                : partnerRank(terms),
               desc(partners.id),
             )
             .limit(limit),

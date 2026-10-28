@@ -4681,7 +4681,9 @@ export type ProductsControllerListV1Data = {
     'accept-language'?: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    search?: string;
+  };
   url: '/v1/products';
 };
 
@@ -4732,7 +4734,9 @@ export type ProductsControllerListVariantsV1Data = {
     'accept-language'?: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    search?: string;
+  };
   url: '/v1/products/variants';
 };
 
@@ -6117,7 +6121,9 @@ export type OrderDocumentsControllerPdfV1Response =
 export type PartnersControllerListV1Data = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    search?: string;
+  };
   url: '/v1/partners';
 };
 

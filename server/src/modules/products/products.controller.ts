@@ -10,10 +10,12 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
 
+import { SearchQueryDto } from '../../common/dto/search-query.dto';
 import { csvFile, withinLimit } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext } from '../../core/audit/audit-context';
@@ -55,8 +57,11 @@ export class ProductsController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
-  list(@AcceptLanguage() acceptLanguage?: string): Promise<ProductSummary[]> {
-    return this.products.list(localeOf(acceptLanguage));
+  list(
+    @Query() query: SearchQueryDto,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<ProductSummary[]> {
+    return this.products.list(localeOf(acceptLanguage), query.search);
   }
 
   /** The catalogue as CSV (ADR-057), a row per variant. Above ':id'. */
@@ -90,9 +95,13 @@ export class ProductsController {
   @Get('variants')
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
   listVariants(
+    @Query() query: SearchQueryDto,
     @AcceptLanguage() acceptLanguage?: string,
   ): Promise<VariantOption[]> {
-    return this.products.listActiveVariants(localeOf(acceptLanguage));
+    return this.products.listActiveVariants(
+      localeOf(acceptLanguage),
+      query.search,
+    );
   }
 
   @Get(':id')

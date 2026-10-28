@@ -8,6 +8,7 @@ import { asc, eq, sql } from 'drizzle-orm';
 
 import { EXPORT_LIMIT } from '../../common/export';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
+import { searchTerms } from '../../common/search';
 import { assertLanguagePair } from '../../core/organizations/document-languages';
 import { isUniqueViolation } from '../../database/errors';
 import { addresses, contacts, partners } from '../../database/schema';
@@ -17,6 +18,7 @@ import { assertListAssignable } from '../price-lists/list-price';
 import type { CreatePartnerDto } from './dto/create-partner.dto';
 import type { Partner, PartnerDetail } from './dto/partner-response.dto';
 import type { UpdatePartnerDto } from './dto/update-partner.dto';
+import { partnerRank, partnerRecordMatches } from './partner-search';
 import { addressOf, contactOf, partnerOf } from './partner-views';
 
 /**
@@ -39,11 +41,21 @@ export class PartnersService {
    * reads this is a directory, and a name that vanished is harder to explain
    * than one shown as inactive. The order form filters them out instead —
    * that is where an inactive partner would be a mistake.
+   *
+   * With a search, only the partners it finds, as the lookup finds them
+   * (partner-search), the closest first, then by name.
    */
-  async list(): Promise<Partner[]> {
-    const rows = await this.tenantDb.select(partners, undefined, {
-      orderBy: asc(partners.name),
-    });
+  async list(search?: string): Promise<Partner[]> {
+    const terms = search ? searchTerms(search) : null;
+    const rows = await this.tenantDb.select(
+      partners,
+      terms ? partnerRecordMatches(terms) : undefined,
+      {
+        orderBy: terms
+          ? [partnerRank(terms), asc(partners.name), asc(partners.id)]
+          : asc(partners.name),
+      },
+    );
     return rows.map(partnerOf);
   }
 
