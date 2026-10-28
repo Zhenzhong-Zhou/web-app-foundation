@@ -2773,12 +2773,17 @@ moment after typing stops.
   镁 alone lists the magnesium capsules and nothing else. Discontinued
   counts only what the search found. From the top bar, `zzjn`, then Show
   all in Items: Products opens with zzjn in its box, listing the same.
+  Do it again on Products showing `calm`: the box and the list change to
+  zzjn, Back brings calm back, and Forward zzjn. What is typed is in the
+  address: reload, or open a product and come Back, and the list is
+  still narrowed.
 - **MC-3902** On Partners, `mdyf` or `mingde` lists 明德药房, and so does
   药 alone. `cooperative`, without its accent, finds the Coopérative des
   pharmacies indépendantes du Bas-Saint-Laurent; `pharmacie` lists
   Pharmacie Saint-Laurent before it, the name that starts with the word
   first. From the top bar, `saint laurent`, then Show all in Partners:
-  Partners opens with saint laurent in its box, listing both.
+  Partners opens with saint laurent in its box, listing both, and so it
+  does from Partners already showing `药`, which Back brings back.
 
 ## Regressions
 
@@ -3791,3 +3796,6 @@ first.
   bar: MC-1556 extended.
 - 2026-10-28: ADR-056, amended, Products and Partners searched on the
   server: section 39, MC-3901 and MC-3902.
+- 2026-10-28: #260, Show all on the list already open, Back and Forward
+  following, and the search typed kept in the address: MC-3901 and
+  MC-3902 extended.
