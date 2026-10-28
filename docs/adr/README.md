@@ -3,11 +3,12 @@
 An ADR records one structural decision as it was made: the situation,
 what was chosen and why, what was considered and not done, what was
 deferred with what brings it in, and what it commits us to. Each is a
-file of its own and is not rewritten. What it decided changes in one of
-two ways: a dated amendment at its end, or a later ADR that amends it,
-named in both files' front matter and in a note at the amended one's
-top. A decision replaced whole is a new ADR, and the old one's status
-says so. A path or link that moves is corrected in place
+file of its own and is not rewritten: what it decided changes by a
+dated amendment at its end, written there whether the change comes
+from building it or from a later ADR, which lists it in its `amends`.
+Some older ADRs carry only a note at their top naming the later ADR. A
+decision replaced whole is a new ADR, and the old one's status says
+so. A path or link that moves is corrected in place
 ([ADR-086](0086-docs-as-code.md)).
 
 Status is `accepted`, `deferred` (decided, waiting for its trigger) or
@@ -19,9 +20,9 @@ A new ADR, after the check
 digits and its slug from its title as
 [ADR-086](0086-docs-as-code.md#decision--one-file-per-adr) makes it; fill
 it in, its `areas` from the list in `scripts/adr-index.mjs`; list in
-its `amends` each ADR it changes, and say what it changes in its own
-text; in each ADR it changes, add it to `amended-by` and a note at the
-top; then run `node scripts/adr-index.mjs`.
+its `amends` each ADR it changes; in each of those, add it to
+`amended-by` and write the change as a dated amendment at the end,
+naming this ADR; then run `node scripts/adr-index.mjs`.
 
 Both indexes below are written by that script from each file's front
 matter and heading, never by hand, and `scripts/verify.sh` fails when
