@@ -25,6 +25,11 @@ except to check that they changed whenever the API did.
 `docs/principles.md` the change bears on, and every ADR it names or
 amends in `docs/adr/`.
 
+Then the rules of each area the change touches (ADR-087), where the area
+has them: `.claude/rules/<area>.md`, Claude's code rules, whose `paths`
+say which files are the area's; and `docs/rules/<area>.md`, what the app
+allows, refuses and works out there.
+
 ## 3. Check
 
 ### Shape of the change
@@ -37,6 +42,14 @@ amends in `docs/adr/`.
   `docs/conventions.md` when a pattern did.
 - A commit that changes what a person sees, or a rule they work under,
   updates `docs/manual-checks.md` in the same commit.
+- A commit that changes a rule, what the app allows, refuses or works
+  out, updates its area's rules file in `docs/rules/` in the same commit
+  (ADR-087). With the branch checked out, run
+  `node scripts/check-docs.mjs`: each `notice:` names a rules file left
+  alone while its cited tests or its area's files changed. Judge each
+  one: a rule the change made or changed is reported as a rule changed
+  without its rules file; where none changed, the report says so in a
+  line, so no notice is left unanswered.
 - A client type change fixes the test fixtures that build that type in
   the same commit.
 

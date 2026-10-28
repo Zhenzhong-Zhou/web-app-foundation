@@ -49,9 +49,12 @@ where a step must act on it.
   wrapped paragraphs saying why.
 - **Push and open the pull request** only in the step that says to.
 
-### Verify ([CLAUDE.md][rules]; `scripts/verify.sh`'s own header)
+### Verify ([engineering.md, "Commits"][commits]; `scripts/verify.sh`'s own header)
 
-- `scripts/verify.sh --quick` before each commit; in full before a push.
+- Before each commit, `scripts/verify.sh --docs` when it changes only
+  Markdown outside `client/`, and `scripts/`; `--quick` for anything
+  else, `client/` included, the Help guides with it. In full before a
+  push.
 - When lint reformats a file, the change is committed as a fixup of that
   step's commit (`git commit --fixup=<hash>`, then `git rebase
   --autosquash <hash>~` while unpushed), never restored.
@@ -113,18 +116,28 @@ where a step must act on it.
   realistic rows for any new table or hot query, timed against ADR-051's
   budgets (`npm run perf:plans`, `npm run perf`). Or the brief says why
   there is nothing to add, and the pull request says so.
+- **The rules files,** in a fix-up batch ([ADR-087][rules-files]): for
+  each area the batch touches, `docs/rules/<area>.md` in the format
+  `docs/rules/README.md` gives, and `.claude/rules/<area>.md`, each
+  written from that area's code and tests, not from its ADRs alone. A
+  rule with no test, or one where the code and its ADR disagree, is a
+  finding for the batch.
 - **The reviews, in two prompts** ([engineering.md, "How code is
   delivered"][delivered]):
   1. **The findings.** `/usability-walkthrough` as the persona the brief
      names, for any change a person sees; `/simplify`; `/code-review`;
-     `/production-readiness` on the sections the change touches. Every
-     finding numbered and written to the file the brief names, usually
-     `tmp/adr-NNN/review.md`, and nothing fixed, `/simplify`'s included.
+     `/production-readiness` on the sections the change touches;
+     `/doctor prompt-audit`, which needs Claude Code v2.1.283 or later.
+     Every finding numbered and written to the file the brief names,
+     usually `tmp/adr-NNN/review.md`, and nothing fixed, `/simplify`'s
+     included.
      Stop there: Bob chooses in the chat.
   2. **The fixes.** The prompt names Bob's choices by their numbers. Each
-     fix is its own commit; a finding left is filed as an issue or said in
-     the pull request. Then `scripts/verify.sh` in full, the push and the
-     pull request.
+     fix is its own commit, verified with `--docs` or `--quick` by what it
+     touches; a finding left is filed as an issue
+     ([engineering.md, "Issues and labels"][issues]) or said in the pull
+     request. Then `scripts/verify.sh` in full, the push and the pull
+     request.
 - **The stop rule.** Only the step named. Past about 30 minutes, unless
   the brief names another limit, or at a change outside the files the step
   names, stop and report what is done and what is left. A chore found on
@@ -155,4 +168,6 @@ which writes the as-built amendment and the docs from it:
 [migrations]: ../../../docs/conventions.md#migrations-against-the-running-release-adr-081
 [dependencies]: ../../../docs/conventions.md#dependencies
 [tests]: ../../../docs/conventions.md#tests
+[issues]: ../../../docs/engineering.md#issues-and-labels
+[rules-files]: ../../../docs/adr/0087-the-rules-written-down.md#decision--the-pilot-then-the-rest
 [seeds]: ../../../docs/conventions.md#seeds

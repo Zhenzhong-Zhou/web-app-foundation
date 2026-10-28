@@ -18,6 +18,41 @@
   walked and the persona who walked it. `/usability-walkthrough` was
   missed on several recent PRs, so ADR-079's branch walked
   two journeys, to make up for ADR-077 and ADR-078.
+- **Claude Code Review on Sonnet** (October 2026): the reviews in each
+  brief's review step come first, before the PR is opened, and CodeQL is
+  kept beside both.
+- **Never "Commit suggestion" on GitHub** (October 2026): every fix goes
+  through Claude Code under the repository's identity, and the local
+  branch must not fall behind the PR's.
+- **A security fix is pushed on its own** (27 October 2026), and its
+  alert seen closed, before an as-built says "fixed": on #259, CodeQL did
+  not count the first fix.
+
+## Issues and labels
+
+- **Every open issue has one group label,** or is closed with a one-line
+  reason:
+  - `fix-now`: a bug a user hits, a data or security problem, a flaky
+    test;
+  - `when-touched`: polish, or a small gap in one area, ridden along by
+    the next PR that touches it;
+  - `later`: needs an ADR, or waits for a trigger.
+- **And at least one area label,** `area:<area>`, the area named exactly
+  as in `AREAS` in `scripts/adr-index.mjs`.
+- **A new issue carries `needs-triage`** until it is decided.
+- **The fix-up stage is the "Fix-ups" milestone,** and a PR says
+  "Closes #N" for each issue it fixes.
+- Each of these prints nothing when every open issue is labelled: still
+  `needs-triage`, no group label, no area label.
+
+  ```bash
+  gh issue list --state open --limit 500 --label needs-triage \
+    --json number,title --jq '.[] | "#\(.number) \(.title)"'
+  gh issue list --state open --limit 500 --json number,title,labels \
+    --jq '.[] | select(all(.labels[]; .name != "fix-now" and .name != "when-touched" and .name != "later")) | "#\(.number) \(.title)"'
+  gh issue list --state open --limit 500 --json number,title,labels \
+    --jq '.[] | select(all(.labels[]; .name | startswith("area:") | not)) | "#\(.number) \(.title)"'
+  ```
 
 ## How code is delivered
 
@@ -50,9 +85,16 @@
   (an amend, an issue to file) stay in its context, and its summary is
   pasted into the chat before clearing. A small fix between steps is a
   plain prompt of its own, a commit, then `/clear`. The review step runs
-  in two prompts: the reviews write their findings, numbered, to
-  `tmp/adr-NNN/review.md` and stop for Bob's choices; then the fixes by
-  number, the full verify, the push and the PR.
+  in two prompts: the reviews, `/doctor prompt-audit` among them, write
+  their findings, numbered, to `tmp/adr-NNN/review.md` and stop for Bob's
+  choices; then the fixes by number, each verified with `--docs` or
+  `--quick` by what it touches ([Commits](#commits)), the full verify, the
+  push and the PR. `/doctor prompt-audit` is Claude Code's own audit of
+  its instruction files (`CLAUDE.md`, `.claude/rules/`, the skills) for
+  contradictions and references to files that no longer exist, and needs
+  Claude Code v2.1.283 or later; it changes nothing itself.
+- **`caffeinate -dims` in a second terminal** during a long Claude Code
+  step, such as the full verify (October 2026): a Mac asleep cut one off.
 - **Cloud sessions** (Claude Code on the web, from October 2026): one new
   session per task, from `main`, each cloning the repository fresh, so
   nothing is pulled first; a long session pays for its whole history at
@@ -60,7 +102,7 @@
   Zhou with the session as committer (the commit then shows Verified), the
   regression check's number when several run at once, and the files to
   leave alone; asks for `scripts/verify.sh --quick`, a pull request with
-  "Fixes #N" and a last line saying DONE or BLOCKED; and ends with the stop
+  "Closes #N" and a last line saying DONE or BLOCKED; and ends with the stop
   rule: change only what the issue names, and past about 20 minutes or
   more files than that, stop and report. A proof runs only the changed
   tests; a sweep, a load proof or anything needing the large seed stays on
@@ -88,15 +130,16 @@
   overwrites anything; then the commands to copy it in and commit.
   Downloads land in `~/Downloads` itself, not a folder, so each file is
   named in full, never a glob.
-- **A long file changes by a patch, not a full replacement** (26 October
-  2026): the ADR files in `docs/adr/`, the handoff, `manual-checks.md` and
-  `conventions.md` are changed only where they need it. Bob attaches his
-  copy from `main`, since Project knowledge's search returns a long file
-  in passages; the chat sends a patch, applied with `git apply --check`
-  and then `git apply --index`, which stages what it changed. A patch
-  that does not match Bob's copy is refused whole, and `git diff
-  --cached` shows every change before the commit. New and short files
-  still come whole.
+- **A long file changes by a patch** (26 October 2026; by size from
+  ADR-086's part 2): a file of 600 lines or more, as
+  `manual-checks.md` and `conventions.md`, is changed only where it needs
+  it; a shorter one comes whole, as every ADR, `engineering.md`, and the
+  handoff once cut to status. For a long file, Bob attaches his copy from
+  `main`, since Project knowledge's search returns a long file in
+  passages; the chat sends a patch, applied with `git apply --check` and
+  then `git apply --index`, which stages what it changed. A patch that
+  does not match Bob's copy is refused whole, and `git diff --cached`
+  shows every change before the commit. New files still come whole.
 - **Every answer that changes files opens with a roadmap:** a tree or
   relative paths, each marked **new**, **full replacement**, **patch** or
   **snippet**.
@@ -121,8 +164,19 @@
   client screens. Each step its own commit.
 - **At the start of every ADR,** before drafting it: check the ADRs'
   Deferred lines, the handoff's watch lists and the open issues for
-  anything in the same area, and say which triggers have fired. That is
-  when a deferred item is cheapest to pick up.
+  anything in the same area, and say which triggers have fired. The
+  check lists the open issues of each area the change touches with
+  `gh issue list --label area:<area>`
+  ([Issues and labels](#issues-and-labels)). That is when a deferred
+  item is cheapest to pick up.
+- **A new ADR,** after the check above: copy
+  [the template](adr/template.md) to `NNNN-<slug>.md` in `docs/adr/`,
+  its number in four digits and its slug from its title as
+  [ADR-086](adr/0086-docs-as-code.md#decision--one-file-per-adr) makes
+  it; fill it in, its `areas` from the list in `scripts/adr-index.mjs`;
+  list in its `amends` each ADR it changes; in each of those, add it to
+  `amended-by` and write the change as a dated amendment at the end,
+  naming this ADR; then run `node scripts/adr-index.mjs`.
 - **The seeds grow with every feature** (from ADR-081): `seed:demo`, so
   its screens, manual checks and walkthroughs need no setup; `seed:volume`,
   realistic rows for any new table or hot query, timed against ADR-051's
@@ -146,12 +200,19 @@
   until its time was moved after 0065's.
 - **At each release,** before tagging it, set both packages' version to
   it: `npm version <x.y.z> --no-git-tag-version` in `server/` and in
-  `client/`.
+  `client/`; and run `/doctor prompt-audit`
+  ([How code is delivered](#how-code-is-delivered)).
 - A type change on the client means fixing the test fixtures that build that
   type, in the same commit. Vitest does not type-check; `tsc` and CI do.
 - A commit that changes what a person sees, or a rule they work under,
   updates `docs/manual-checks.md` in the same commit ([`docs/conventions.md`,
   Tests](conventions.md#tests)).
+- A commit that changes a rule, what the app allows, refuses or works
+  out, updates its area's rules file in `docs/rules/` in the same commit,
+  where the area has one (ADR-087). `scripts/check-docs.mjs` prints a
+  notice when a rules file's cited tests, or its area's files by its
+  `.claude/rules/` paths, changed while it did not; `/code-review` judges
+  each.
 
 ## Commits
 
@@ -170,6 +231,9 @@
   it goes first.
 - Messages explain the why, as one `-m` with a subject, a blank line and
   wrapped paragraphs.
+- An alert is named "code scanning alert 9" or "Dependabot alert 4",
+  never "#9", in commits, PRs and comments (27 October 2026): GitHub
+  links "#9" to issue or PR 9.
 - To reorder unpushed commits: `git reset --soft <base>`, restage per commit,
   and `git commit -C <old-hash>` to reuse each message.
 - Before pushing, run what CI runs: `scripts/verify.sh` from the repo
@@ -178,6 +242,13 @@
   style fail CI.
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
+- Before each commit, `scripts/verify.sh --quick`; or `--docs`, in
+  seconds, for a commit that changes only Markdown outside `client/`,
+  and `scripts/`: the Markdown step and the scripts' format and tests.
+  `--docs` refuses, naming the files, when the uncommitted changes touch
+  anything else: `client/` is refused, the Help guides included, which
+  `client/src/help/guides.test.ts` checks. The full verify still runs
+  before each push.
 
 ## Moving code
 
@@ -190,6 +261,9 @@
   appear, as often, across the new ones.
 - Check a new comment's claims against the code it describes before
   keeping it.
+- After Claude Code moves files or adds exports, restart the editor's
+  TypeScript and ESLint servers (Cmd+Shift+P; October 2026): they go
+  stale and show errors `scripts/verify.sh` does not.
 
 ## Server
 
