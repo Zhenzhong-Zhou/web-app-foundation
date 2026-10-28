@@ -51,6 +51,44 @@ const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], {
   encoding: "utf8",
 }).trim();
 
+/** The repository's listing, once inRepository() has made it. */
+let listing = null;
+
+/**
+ * Every file git tracks or would track, relative to ROOT, so not tmp/ or
+ * the .DS_Store a Mac leaves; and every folder holding one, "" the root's;
+ * each in the letter case git has it. Listed once a run, for the ADRs'
+ * checks here and check-docs.mjs's alike.
+ */
+export function inRepository() {
+  if (listing) return listing;
+  const output = execFileSync(
+    "git",
+    ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+    { cwd: ROOT, encoding: "utf8" },
+  );
+  const files = new Set(
+    output
+      .split("\0")
+      .filter((file) => file && existsSync(path.join(ROOT, file))),
+  );
+  const folders = new Set([""]);
+  for (const file of files) {
+    for (let at = file.indexOf("/"); at > 0; at = file.indexOf("/", at + 1)) {
+      folders.add(file.slice(0, at));
+    }
+  }
+  listing = { files, folders };
+  return listing;
+}
+
+/** The files in a folder of the repository, by their paths from it. */
+function filesIn(folder) {
+  return [...inRepository().files]
+    .filter((file) => file.startsWith(`${folder}/`))
+    .map((file) => file.slice(folder.length + 1));
+}
+
 const ADR_FOLDER = "docs/adr";
 const README = `${ADR_FOLDER}/README.md`;
 
@@ -145,33 +183,6 @@ function namesOf(value) {
 export function frontMatterEnd(lines) {
   if (!/^---\s*$/.test(lines[0])) return -1;
   return lines.findIndex((line, i) => i > 0 && /^---\s*$/.test(line));
-}
-
-/**
- * The files in a folder that git tracks or would track, by their paths
- * from it, so not the .DS_Store a Mac leaves there; none when there is
- * no folder.
- */
-function filesIn(folder) {
-  // git warns of a folder whose parent is missing, as server/src/ in a
-  // repository of docs alone.
-  if (!existsSync(path.join(ROOT, folder))) return [];
-  const output = execFileSync(
-    "git",
-    [
-      "ls-files",
-      "-z",
-      "--cached",
-      "--others",
-      "--exclude-standard",
-      "--",
-      folder,
-    ],
-    { cwd: ROOT, encoding: "utf8" },
-  );
-  return [...new Set(output.split("\0"))]
-    .filter((file) => file && existsSync(path.join(ROOT, file)))
-    .map((file) => file.slice(folder.length + 1));
 }
 
 /**

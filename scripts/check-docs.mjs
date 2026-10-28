@@ -56,36 +56,12 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import { checkAdrs, frontMatterEnd } from "./adr-index.mjs";
+import { checkAdrs, frontMatterEnd, inRepository } from "./adr-index.mjs";
 
 /** The root of the repository it is run in. */
 const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], {
   encoding: "utf8",
 }).trim();
-
-/**
- * Every file git tracks or would track, relative to ROOT, and every
- * folder holding one, in the letter case git has them.
- */
-function inRepository() {
-  const output = execFileSync(
-    "git",
-    ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
-    { cwd: ROOT, encoding: "utf8" },
-  );
-  const files = new Set(
-    output
-      .split("\0")
-      .filter((file) => file && existsSync(path.join(ROOT, file))),
-  );
-  const folders = new Set([""]);
-  for (const file of files) {
-    for (let at = file.indexOf("/"); at > 0; at = file.indexOf("/", at + 1)) {
-      folders.add(file.slice(0, at));
-    }
-  }
-  return { files, folders };
-}
 
 /**
  * The text with its front matter and fenced code blanked, every line
