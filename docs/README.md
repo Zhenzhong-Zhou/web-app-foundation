@@ -7,12 +7,14 @@ answers which question, and where each one lives. Written by hand
 ## The system
 
 ```mermaid
-flowchart LR
+flowchart TB
   browser["Browser<br/>the React app, client/"]
+  actions["GitHub Actions<br/>CI, deploys, backups"]
 
   subgraph render["Render"]
     site["Static site<br/>the built client"]
     subgraph api["API, server/ (NestJS)"]
+      guards["Guards<br/>throttle, sign-in,<br/>CSRF, permission"]
       modules["modules/<br/>the inventory domain"]
       core["core/<br/>sign-in, organizations,<br/>permissions, audit, files"]
       shared["shared/<br/>mail"]
@@ -22,17 +24,20 @@ flowchart LR
 
   r2[("Cloudflare R2<br/>files and backups")]
   resend["Resend<br/>sends every email"]
-  actions["GitHub Actions<br/>CI, deploys, backups"]
 
   browser -->|"pages, and /api/*"| site
-  site -->|"/api/* rewritten"| api
+  site -->|"/api/* rewritten"| guards
+  guards --> modules
+  guards --> core
   modules --> core
   modules --> shared
   core --> shared
-  api -->|"TenantDb"| db
+  modules -->|"TenantDb"| db
+  core -->|"TenantDb"| db
   core -->|"uploads"| r2
   shared -->|"mail"| resend
-  actions -->|"deploy hooks"| render
+  actions -->|"deploy hook"| site
+  actions -->|"deploy hook"| guards
   actions -->|"nightly pg_dump"| db
   actions -->|"encrypted backups"| r2
 ```
