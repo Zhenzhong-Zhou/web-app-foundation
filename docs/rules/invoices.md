@@ -169,7 +169,9 @@ is kept is in the [README](README.md).
   [Help](../../client/src/help/guides/en/invoices.md#credit-part-of-an-invoice-credit)
 - **Everything credited on a line, together, never comes to more than
   the line billed.** By value, so any mix of corrections, fees and returns
-  is safe. The refusal says what is left.
+  is safe; with the tax cap below, every credit on an invoice together
+  never comes to more than the invoice billed. The refusal says what is
+  left.
   [ADR-047](../adr/0047-return-authorizations-and-credit-notes-for-what-comes-back.md#decision--capped-by-value-per-invoice-line) ·
   [test](../../server/test/credit-notes.e2e-spec.ts) "caps every credit on a line at the value it billed" ·
   partly tested ·
