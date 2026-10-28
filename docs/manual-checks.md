@@ -3014,9 +3014,10 @@ first.
   SO-DEMO-2, Ship, then Cancel; on PO-DEMO-9, a line's Receive, then
   Escape; on Account, Delete my account, then Cancel; on a product, History,
   then Escape; on a role made here, Delete, then Cancel, and Move everyone
-  to…, then Escape. Each time focus is back on the button that opened it,
-  with its ring, and Enter opens it again; a screen reader names that
-  button, not the page from the top.
+  to…, then Escape; at 390 px, Open navigation, then Escape, with no
+  Blocked aria-hidden warning in Chrome's console. Each time focus is back
+  on the button that opened it, with its ring, and Enter opens it again; a
+  screen reader names that button, not the page from the top.
 - **MC-R26** *(French guillemets)* In Français on a phone (390 px), read
   the note under Numbering, « Imprimé ainsi », and Security's « Rester
   connecté »: a « never ends a line with its words on the next. Profile's
@@ -3734,3 +3735,5 @@ first.
 - 2026-10-27: ADR-083, a dark mail app gets the email's own dark page
   under its light text, never white on white: MC-3705 and MC-3706
   changed.
+- 2026-10-28: the navigation drawer opens as every dialog does, so the
+  page behind it is hidden from a screen reader: MC-R27 extended.

@@ -15,6 +15,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import type { AuditRecord } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
+import { openDialog } from '../lib/open-dialog';
 import { useResource } from '../lib/use-resource';
 import { AccountPhoto } from './account-photo';
 import { ChangePasswordForm } from './change-password-form';
@@ -109,7 +110,7 @@ export function AccountPage() {
           >
             <Button
               variant="outlined"
-              onClick={() => setChangingPassword(true)}
+              onClick={openDialog(() => setChangingPassword(true))}
             >
               {intl.formatMessage({
                 id: 'account.password.title',

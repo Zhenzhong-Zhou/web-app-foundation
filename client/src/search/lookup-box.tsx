@@ -21,6 +21,7 @@ import { ProductCover } from '../components/product-cover';
 import { OPEN_LOOKUP } from '../errors/open-lookup';
 import { api } from '../lib/api';
 import type { LookupKind } from '../lib/api-names';
+import { openDialog } from '../lib/open-dialog';
 import { RECENT_PATHS, type RecentEntry } from '../lib/recent';
 import { RECENT_KIND_LABELS, recentTitle } from '../lib/recent-labels';
 import { rem } from '../theme/rem';
@@ -106,7 +107,7 @@ export function LookupBox() {
 
   return (
     <>
-      <IconButton aria-label={label} onClick={() => setOpen(true)}>
+      <IconButton aria-label={label} onClick={openDialog(() => setOpen(true))}>
         <SearchIcon />
       </IconButton>
       <Dialog

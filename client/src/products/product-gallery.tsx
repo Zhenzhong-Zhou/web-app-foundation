@@ -31,6 +31,7 @@ import { useIntl } from 'react-intl';
 import type { ProductImage } from '../api/types.gen';
 import { UndoSnackbar } from '../components/undo-snackbar';
 import { api, messageFor } from '../lib/api';
+import { openDialog } from '../lib/open-dialog';
 import { useFailureWords } from '../lib/use-failure-words';
 import { rem } from '../theme/rem';
 import { uploadProductImage, type UploadState } from './upload-image';
@@ -458,7 +459,7 @@ export function ProductGallery({
             <Box
               component="button"
               type="button"
-              onClick={() => setViewing(currentIndex)}
+              onClick={openDialog(() => setViewing(currentIndex))}
               aria-label={intl.formatMessage(
                 {
                   id: 'products.gallery.open',

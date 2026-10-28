@@ -43,6 +43,7 @@ import { useHelp } from '../help/use-help';
 import { LanguageFailureBanner } from '../i18n/language-failure';
 import { api } from '../lib/api';
 import { SEPARATOR } from '../lib/format';
+import { openDialog } from '../lib/open-dialog';
 import { initialsOf } from '../lib/person-initials';
 import { LookupBox } from '../search/lookup-box';
 import { OrganizationDeletionBanner } from '../settings/organization-deletion-banner';
@@ -373,7 +374,7 @@ function Frame() {
                 id: 'layout.openNavigation',
                 defaultMessage: 'Open navigation',
               })}
-              onClick={() => setDrawer(true)}
+              onClick={openDialog(() => setDrawer(true))}
               sx={{ display: { xs: 'inline-flex', [BAR]: 'none' } }}
             >
               <MenuIcon />
