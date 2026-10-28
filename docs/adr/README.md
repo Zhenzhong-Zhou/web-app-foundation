@@ -19,9 +19,9 @@ A new ADR, after the check
 digits and its slug from its title as
 [ADR-086](0086-docs-as-code.md#decision--one-file-per-adr) makes it; fill
 it in, its `areas` from the list in `scripts/adr-index.mjs`; list in
-its `amends` each ADR it changes, and add it to that one's
-`amended-by`, with the amendment in its text, and add the note at that
-one's top; then run `node scripts/adr-index.mjs`.
+its `amends` each ADR it changes, and say what it changes in its own
+text; in each ADR it changes, add it to `amended-by` and a note at the
+top; then run `node scripts/adr-index.mjs`.
 
 Both indexes below are written by that script from each file's front
 matter and heading, never by hand, and `scripts/verify.sh` fails when
