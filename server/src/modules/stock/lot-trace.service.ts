@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import { searchTerms } from '../../common/search';
 import type { ReleaseLicenceStatus } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
-import { itemName } from './item-name';
+import { itemName, namesIn } from './item-name';
 import type { Tx } from './stock.service';
 
 /**
@@ -45,9 +46,10 @@ export interface RelatedLot {
 export class LotTraceService {
   constructor(private readonly tenantDb: TenantDb) {}
 
-  async trace(lotId: string) {
+  /** Its item named in the reader's language (ADR-056). */
+  async trace(lotId: string, locale: Locale) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const lot = await this.header(tx, organizationId, lotId);
+      const lot = await this.header(tx, organizationId, lotId, locale);
 
       // One after another: a transaction is one connection, and queries on
       // it run in turn whatever the code says, so Promise.all would only
@@ -122,7 +124,16 @@ export class LotTraceService {
     });
   }
 
-  private async header(tx: Tx, organizationId: string, lotId: string) {
+  private async header(
+    tx: Tx,
+    organizationId: string,
+    lotId: string,
+    locale: Locale,
+  ) {
+    const shown = namesIn(locale, organizationId, {
+      product: 'pr',
+      variant: 'pv',
+    });
     const [row] = (
       await tx.execute(sql`
         select
@@ -131,8 +142,8 @@ export class LotTraceService {
           l.expires_at,
           pv.sku,
           pv.unit_of_measure,
-          pr.name as product_name,
-          pv.name as variant_name
+          ${shown.productName} as product_name,
+          ${shown.variantName} as variant_name
         from lots l
         join product_variants pv on pv.id = l.variant_id
         join products pr on pr.id = pv.product_id

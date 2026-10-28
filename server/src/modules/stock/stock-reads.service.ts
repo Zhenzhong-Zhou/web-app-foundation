@@ -4,6 +4,7 @@ import { alias } from 'drizzle-orm/pg-core';
 
 import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
+import type { Locale } from '../../common/locales';
 import { codeMatches, searchTerms } from '../../common/search';
 import { afterCursor, sortedOrder } from '../../common/sorted-page';
 import { todayOf } from '../../core/organizations/time-zone';
@@ -24,6 +25,7 @@ import { itemMatches } from '../products/item-search';
 import { coverOf } from '../products/product-images';
 import { ListMovementsDto } from './dto/list-movements.dto';
 import { ListStockDto } from './dto/list-stock.dto';
+import { namesIn } from './item-name';
 
 /** A page of the stock list unless the caller asks for fewer (ADR-051). */
 const STOCK_PAGE_SIZE = 50;
@@ -157,14 +159,18 @@ export class StockReadsService {
    * Reads the cache and never aggregates the ledger (ADR-025). The join is
    * three tables deep, which `TenantDb.selectJoined` does not express, so
    * this drops to a raw handle and applies the scope by hand.
+   *
+   * Items named in the locale given, or by their base names for null, as
+   * the CSV export and Home's cards read them (ADR-056).
    */
-  list(query: ListStockDto = {}) {
+  list(query: ListStockDto, locale: Locale | null) {
     const limit = query.limit ?? STOCK_PAGE_SIZE;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const today = await todayOf(tx, organizationId);
       const scope = filtersOf(query, organizationId, today);
       const lotOf = lotJoin(organizationId);
+      const shown = namesIn(locale, organizationId);
 
       const order = sql`(${locations.name}, ${productVariants.sku}, coalesce(${lots.code}, ''), ${stockLevels.id})`;
       // By the lot's expiry when asked (ADR-057): soonest first by default,
@@ -224,8 +230,8 @@ export class StockReadsService {
           id: stockLevels.id,
           variantId: stockLevels.variantId,
           sku: productVariants.sku,
-          productName: products.name,
-          variantName: productVariants.name,
+          productName: shown.productName,
+          variantName: shown.variantName,
           // Its product's cover, beside the name (ADR-062).
           coverFileId: coverOf(),
           unitOfMeasure: productVariants.unitOfMeasure,

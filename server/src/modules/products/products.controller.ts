@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -21,6 +20,7 @@ import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
@@ -55,8 +55,8 @@ export class ProductsController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
-  list(): Promise<ProductSummary[]> {
-    return this.products.list();
+  list(@AcceptLanguage() acceptLanguage?: string): Promise<ProductSummary[]> {
+    return this.products.list(localeOf(acceptLanguage));
   }
 
   /** The catalogue as CSV (ADR-057), a row per variant. Above ':id'. */
@@ -65,7 +65,7 @@ export class ProductsController {
   @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'products' })
   async exportProducts(
     @Res({ passthrough: true }) res: Response,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ) {
     const rows = withinLimit(await this.products.exportRows());
     recordContext({ list: 'products', filters: {}, rows: rows.length });
@@ -89,14 +89,19 @@ export class ProductsController {
    */
   @Get('variants')
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
-  listVariants(): Promise<VariantOption[]> {
-    return this.products.listActiveVariants();
+  listVariants(
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<VariantOption[]> {
+    return this.products.listActiveVariants(localeOf(acceptLanguage));
   }
 
   @Get(':id')
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
-  find(@Param('id', ParseUUIDPipe) id: string): Promise<ProductDetail> {
-    return this.products.findById(id);
+  find(
+    @Param('id', ParseUUIDPipe) id: string,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<ProductDetail> {
+    return this.products.findById(id, localeOf(acceptLanguage));
   }
 
   @Post()
@@ -107,9 +112,17 @@ export class ProductsController {
     resourceType: 'product',
     resourceId: (response: { product: { id: string } }) => response.product.id,
   })
-  async create(@Body() dto: CreateProductDto): Promise<ProductEnvelope> {
+  async create(
+    @Body() dto: CreateProductDto,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<ProductEnvelope> {
     const created = await this.products.create(dto);
-    return { product: await this.products.findById(created.id) };
+    return {
+      product: await this.products.findById(
+        created.id,
+        localeOf(acceptLanguage),
+      ),
+    };
   }
 
   /**
@@ -150,10 +163,11 @@ export class ProductsController {
   async addVariant(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreateVariantDto,
+    @AcceptLanguage() acceptLanguage?: string,
   ): Promise<VariantEnvelope> {
     const added = await this.products.addVariant(id, dto);
     // As the product's detail shows it, so a variant has one shape.
-    const product = await this.products.findById(id);
+    const product = await this.products.findById(id, localeOf(acceptLanguage));
     const variant = product.variants.find((each) => each.id === added.id);
     if (!variant) {
       throw new Error(`Variant ${added.id} is not on product ${id}`);

@@ -16,6 +16,8 @@ import { getRequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { PermissionsService } from '../../core/authorization/permissions.service';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
+import { localeOf } from '../../i18n/translate';
 import type { HomeResponse } from './dto/home-response.dto';
 import { HomeService } from './home.service';
 import { WelcomeService } from './welcome.service';
@@ -33,9 +35,12 @@ export class HomeController {
   ) {}
 
   @Get()
-  async get(@CurrentUser() user: RequestContext): Promise<HomeResponse> {
+  async get(
+    @CurrentUser() user: RequestContext,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<HomeResponse> {
     const held = await this.permissions.heldBy(user.membershipId);
-    return this.home.home(user, held);
+    return this.home.home(user, held, localeOf(acceptLanguage));
   }
 
   /**

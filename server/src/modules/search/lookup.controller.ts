@@ -1,8 +1,9 @@
-import { Controller, Get, Headers, Query } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 
 import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PermissionsService } from '../../core/authorization/permissions.service';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { LookupQueryDto } from './dto/lookup-query.dto';
 import type { LookupResponse } from './dto/lookup-response.dto';
@@ -24,7 +25,7 @@ export class LookupController {
   async lookup(
     @CurrentUser() user: RequestContext,
     @Query() query: LookupQueryDto,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ): Promise<LookupResponse> {
     const held = await this.permissions.heldBy(user.membershipId);
     return this.lookups.lookup(query.q, held, localeOf(acceptLanguage));

@@ -136,7 +136,7 @@ export function VariantRow({
           )}
         </TableCell>
 
-        <TableCell>{variant.name ?? NO_VALUE}</TableCell>
+        <TableCell>{variant.displayName ?? NO_VALUE}</TableCell>
         <TableCell>{unitLabel(variant.unitOfMeasure, intl)}</TableCell>
         <TableCell align="right">{variant.caseQuantity ?? NO_VALUE}</TableCell>
 

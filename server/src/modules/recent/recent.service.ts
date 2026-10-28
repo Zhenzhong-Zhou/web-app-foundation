@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, desc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import type { Permission } from '../../core/authorization/permissions';
 import type { Transaction } from '../../database/database.module';
 import {
@@ -18,6 +19,7 @@ import {
   returnAuthorizations,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { namesIn } from '../stock/item-name';
 
 /** A person's history is kept to this many (ADR-058). */
 export const RECENT_KEPT = 30;
@@ -108,6 +110,7 @@ export class RecentService {
     userId: string,
     kinds: readonly RecentKind[],
     limit: number,
+    locale: Locale,
   ): Promise<RecentEntry[]> {
     if (kinds.length === 0) return [];
 
@@ -138,7 +141,13 @@ export class RecentService {
 
       const names = new Map<string, Named>();
       for (const [kind, ids] of byKind) {
-        for (const named of await this.named(tx, organizationId, kind, ids)) {
+        for (const named of await this.named(
+          tx,
+          organizationId,
+          kind,
+          ids,
+          locale,
+        )) {
           names.set(`${kind}:${named.id}`, named);
         }
       }
@@ -175,13 +184,15 @@ export class RecentService {
 
   /**
    * Each kind's records as they are named now, in this organization: also
-   * how the welcome's first week names what was done (ADR-079).
+   * how the welcome's first week names what was done (ADR-079). A product
+   * in the reader's language (ADR-056).
    */
   named(
     tx: Transaction,
     organizationId: string,
     kind: RecentKind,
     ids: string[],
+    locale: Locale,
   ): Promise<Named[]> {
     switch (kind) {
       case 'order':
@@ -231,7 +242,7 @@ export class RecentService {
         return tx
           .select({
             id: products.id,
-            title: products.name,
+            title: namesIn(locale, organizationId).productName,
             detail: sql<string | null>`null`,
           })
           .from(products)

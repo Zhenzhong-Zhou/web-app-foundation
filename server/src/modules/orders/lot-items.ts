@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 
-import { itemName } from '../stock/item-name';
+import type { Locale } from '../../common/locales';
+import { itemName, namesIn } from '../stock/item-name';
 import type { Tx } from '../stock/stock.service';
 
 /**
@@ -40,20 +41,28 @@ interface OwnMovements {
  * slip and the return list, so none of them can disagree about what a
  * document moved.
  *
+ * Named in the locale given: the reader's for the lists, null for the
+ * packing slip, a document that keeps the base names (ADR-056).
+ *
  * A document with no movements has no entry.
  */
 export async function lotItemsOf(
   tx: Tx,
   organizationId: string,
   documents: OwnMovements & { ids: string[] },
+  locale: Locale | null,
 ): Promise<Map<string, LotItem[]>> {
+  const shown = namesIn(locale, organizationId, {
+    product: 'pr',
+    variant: 'pv',
+  });
   const rows = (
     await tx.execute(sql`
       select
         sm.reference_id as document_id,
         sm.sku,
-        pr.name as product_name,
-        pv.name as variant_name,
+        ${shown.productName} as product_name,
+        ${shown.variantName} as variant_name,
         pv.unit_of_measure,
         l.code as lot_code,
         l.expires_at,
@@ -69,8 +78,8 @@ export async function lotItemsOf(
           documents.ids.map((id) => sql`${id}::uuid`),
           sql`, `,
         )})
-      group by sm.reference_id, sm.sku, pr.name, pv.name, pv.unit_of_measure,
-        l.code, l.expires_at
+      group by sm.reference_id, sm.sku, pr.id, pr.name, pv.id, pv.name,
+        pv.unit_of_measure, l.code, l.expires_at
       order by sm.sku, l.expires_at asc nulls last, l.code
     `)
   ).rows as {
@@ -113,13 +122,16 @@ export async function withLotItems<Header extends { id: string }>(
   organizationId: string,
   headers: Header[],
   moved: OwnMovements,
+  locale: Locale,
 ): Promise<(Header & { items: LotItem[] })[]> {
   if (headers.length === 0) return [];
 
-  const items = await lotItemsOf(tx, organizationId, {
-    ...moved,
-    ids: headers.map((header) => header.id),
-  });
+  const items = await lotItemsOf(
+    tx,
+    organizationId,
+    { ...moved, ids: headers.map((header) => header.id) },
+    locale,
+  );
 
   return headers.map((header) => ({
     ...header,

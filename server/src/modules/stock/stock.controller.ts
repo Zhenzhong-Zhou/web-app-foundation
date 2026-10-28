@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -23,6 +22,7 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { AdjustmentGuard } from './adjustment.guard';
 import { ListLotsDto } from './dto/list-lots.dto';
@@ -66,8 +66,11 @@ export class StockController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  list(@Query() query: ListStockDto): Promise<StockPage> {
-    return this.reads.list(query);
+  list(
+    @Query() query: ListStockDto,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<StockPage> {
+    return this.reads.list(query, localeOf(acceptLanguage));
   }
 
   /** What is on hand, as the filters narrow it, as CSV (ADR-057): the list's own query, every page. */
@@ -77,10 +80,11 @@ export class StockController {
   async exportInventory(
     @Query() query: ListStockDto,
     @Res({ passthrough: true }) res: Response,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ) {
+    // The base names, as every CSV keeps them (ADR-056).
     const rows = await everyRow((before, limit) =>
-      this.reads.list({ ...query, before, limit }),
+      this.reads.list({ ...query, before, limit }, null),
     );
     recordContext({
       list: 'inventory',
@@ -139,7 +143,7 @@ export class StockController {
   async exportMovements(
     @Query() query: ListMovementsDto,
     @Res({ passthrough: true }) res: Response,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ) {
     const rows = await everyRow((before, limit) =>
       this.reads.listMovements({ ...query, before, limit }),

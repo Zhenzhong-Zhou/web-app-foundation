@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -19,6 +18,7 @@ import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CreatePartnerDto } from './dto/create-partner.dto';
 import type {
@@ -46,7 +46,7 @@ export class PartnersController {
   @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'partners' })
   async exportPartners(
     @Res({ passthrough: true }) res: Response,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ) {
     const rows = withinLimit(await this.partners.exportRows());
     recordContext({ list: 'partners', filters: {}, rows: rows.length });

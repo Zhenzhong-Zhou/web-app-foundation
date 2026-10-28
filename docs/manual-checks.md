@@ -2732,6 +2732,32 @@ a day.
   is addressed to your account's address, never `no-reply@`, and arrives
   there. Revoke the invitation on Invited afterwards.
 
+## 38. Names in the reader's language (ADR-056, amended)
+
+An item is named on every screen as the lookup names it: the product's
+and the variant's name in the screen's language where it has one, else
+the base name. The demo's Focus 60ct is 专注胶囊 60 粒 in Chinese and
+Focus, 60 capsules in French. Documents, CSV exports, the audit log and
+refusals keep the base name. Switch the language first, then open each
+screen, so it reads again.
+
+- **MC-3801** In 中文, Products lists 专注胶囊 60 粒 where Focus 60ct was,
+  sorted among the others by its pinyin (zhuanzhu…), and the names with
+  no Chinese among them by their letters, accents and case aside. In
+  English it is Focus 60ct again, in the same alphabetical order.
+- **MC-3802** In 中文, open 专注胶囊 60 粒: the heading and the gallery's
+  images are named 专注胶囊 60 粒. Edit a variant's unit and save: in
+  English the page still reads Focus 60ct and the variant keeps the name
+  it had. Edit names shows Focus 60ct as the name being translated.
+- **MC-3803** In 中文, Inventory names FOCUS-60CT's rows 专注胶囊 60 粒, as
+  does the trace of lot FOC-2609-01. On SO-DEMO-1 the line, the shipments
+  and the return name it so too; its packing slip, invoice and CSV
+  exports print Focus 60ct as before.
+- **MC-3804** In 中文, Receive: the item picker lists FOCUS-60CT —
+  专注胶囊 60 粒. So do Set price on a price list and its Item column;
+  Home's Recently opened, after opening the product, names it 专注胶囊 60
+  粒 too.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -3737,3 +3763,5 @@ first.
   changed.
 - 2026-10-28: the navigation drawer opens as every dialog does, so the
   page behind it is hidden from a screen reader: MC-R27 extended.
+- 2026-10-28: ADR-056, amended, an item's name in the reader's language:
+  section 38, MC-3801 to MC-3804.

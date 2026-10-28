@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -24,6 +23,7 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { PermissionsService } from '../../core/authorization/permissions.service';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf, translate } from '../../i18n/translate';
 import { CloseLineDto } from './dto/close-line.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -77,7 +77,7 @@ export class OrdersController {
   async exportOrders(
     @Query() query: ListOrdersDto,
     @Res({ passthrough: true }) res: Response,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ) {
     const rows = await everyRow((before, limit) =>
       this.orders.list({ ...query, before, limit }),
@@ -105,8 +105,13 @@ export class OrdersController {
   async find(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: RequestContext,
+    @AcceptLanguage() acceptLanguage?: string,
   ): Promise<OrderDetail> {
-    return this.orders.findById(id, await this.sight(user));
+    return this.orders.findById(
+      id,
+      await this.sight(user),
+      localeOf(acceptLanguage),
+    );
   }
 
   @Post()
@@ -120,10 +125,15 @@ export class OrdersController {
   async create(
     @Body() dto: CreateOrderDto,
     @CurrentUser() user: RequestContext,
+    @AcceptLanguage() acceptLanguage?: string,
   ): Promise<OrderEnvelope> {
     const created = await this.lifecycle.create(dto, user.userId);
     return {
-      order: await this.orders.findById(created.id, await this.sight(user)),
+      order: await this.orders.findById(
+        created.id,
+        await this.sight(user),
+        localeOf(acceptLanguage),
+      ),
     };
   }
 
@@ -147,10 +157,15 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: DuplicateOrderDto,
     @CurrentUser() user: RequestContext,
+    @AcceptLanguage() acceptLanguage?: string,
   ): Promise<OrderEnvelope> {
     const copy = await this.lifecycle.duplicate(id, dto, user.userId);
     return {
-      order: await this.orders.findById(copy.id, await this.sight(user)),
+      order: await this.orders.findById(
+        copy.id,
+        await this.sight(user),
+        localeOf(acceptLanguage),
+      ),
     };
   }
 
@@ -193,11 +208,16 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddOrderLineDto,
     @CurrentUser() user: RequestContext,
+    @AcceptLanguage() acceptLanguage?: string,
   ): Promise<AddedOrderLineEnvelope> {
     const added = await this.lines.addLine(id, dto);
     // As the order's detail shows it, so one line has one shape, with the
     // notice when the list had no price, in the request's language.
-    const order = await this.orders.findById(id, await this.sight(user));
+    const order = await this.orders.findById(
+      id,
+      await this.sight(user),
+      localeOf(acceptLanguage),
+    );
     const line = order.lines.find((each) => each.id === added.id);
     if (!line) throw new Error(`Line ${added.id} is not on order ${id}`);
     return {

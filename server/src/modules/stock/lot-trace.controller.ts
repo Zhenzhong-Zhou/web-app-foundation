@@ -2,6 +2,8 @@ import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
+import { localeOf } from '../../i18n/translate';
 import type { LotTrace } from './dto/lot-trace-response.dto';
 import { SearchLotsDto } from './dto/search-lots.dto';
 import type { LotMatch } from './dto/stock-response.dto';
@@ -24,7 +26,10 @@ export class LotTraceController {
 
   @Get(':id/trace')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  trace(@Param('id', ParseUUIDPipe) id: string): Promise<LotTrace> {
-    return this.traces.trace(id);
+  trace(
+    @Param('id', ParseUUIDPipe) id: string,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<LotTrace> {
+    return this.traces.trace(id, localeOf(acceptLanguage));
   }
 }

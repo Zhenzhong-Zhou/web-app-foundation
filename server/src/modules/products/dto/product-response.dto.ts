@@ -15,7 +15,7 @@ export class Product {
   isActive!: boolean;
 }
 
-/** A row of the product list, with its cover. */
+/** A row of the product list, with its cover, named for the reader. */
 export class ProductSummary extends Product {
   /** Its cover (ADR-062), or null. */
   coverFileId!: string | null;
@@ -40,6 +40,11 @@ export class Variant {
   widthMm!: number | null;
   heightMm!: number | null;
   caseQuantity!: number | null;
+  /**
+   * Its name as the reader sees it, in their language where it has one
+   * (ADR-056); `name` stays the base, which the edit forms change.
+   */
+  displayName!: string | null;
   /** Its names in other languages; on the product's detail. */
   translations?: VariantTranslation[];
 }
@@ -74,6 +79,11 @@ export class ProductImage {
 }
 
 export class ProductDetail extends Product {
+  /**
+   * Its name as the reader sees it, in their language where it has one
+   * (ADR-056); `name` stays the base, which the edit forms change.
+   */
+  displayName!: string;
   translations!: ProductTranslation[];
   variants!: Variant[];
   /** Its gallery, the cover first. */
@@ -95,7 +105,10 @@ export class ProductImageList {
   images!: ProductImage[];
 }
 
-/** The flat variant list behind any picker (ADR-023). */
+/**
+ * The flat variant list behind any picker (ADR-023), named for the reader
+ * (ADR-056).
+ */
 export class VariantOption {
   id!: string;
   sku!: string;

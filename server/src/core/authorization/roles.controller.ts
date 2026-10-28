@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Logger,
@@ -13,6 +12,7 @@ import {
   Post,
 } from '@nestjs/common';
 
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { AuditService } from '../audit/audit.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
@@ -51,7 +51,7 @@ export class RolesController {
   @RequirePermissions(PERMISSIONS.ROLES_VIEW)
   async list(
     @CurrentUser() user: RequestContext,
-    @Headers('accept-language') language?: string,
+    @AcceptLanguage() language?: string,
   ): Promise<Role[]> {
     return this.roles.list(await this.reader(user, language));
   }
@@ -59,7 +59,7 @@ export class RolesController {
   /** Every permission with its line and needs, and the templates. */
   @Get('catalogue')
   @RequirePermissions(PERMISSIONS.ROLES_VIEW)
-  catalogue(@Headers('accept-language') language?: string): RoleCatalogue {
+  catalogue(@AcceptLanguage() language?: string): RoleCatalogue {
     return this.roles.catalogue(localeOf(language));
   }
 
@@ -68,7 +68,7 @@ export class RolesController {
   async find(
     @CurrentUser() user: RequestContext,
     @Param('id', ParseUUIDPipe) id: string,
-    @Headers('accept-language') language?: string,
+    @AcceptLanguage() language?: string,
   ): Promise<RoleDetail> {
     return this.roles.detail(id, await this.reader(user, language));
   }
@@ -85,7 +85,7 @@ export class RolesController {
   async create(
     @CurrentUser() user: RequestContext,
     @Body() dto: CreateRoleDto,
-    @Headers('accept-language') language?: string,
+    @AcceptLanguage() language?: string,
   ): Promise<RoleDetail> {
     const id = await this.roles.create(dto, user);
     return this.roles.detail(id, await this.reader(user, language));
@@ -108,7 +108,7 @@ export class RolesController {
     @CurrentUser() user: RequestContext,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateRoleDto,
-    @Headers('accept-language') language?: string,
+    @AcceptLanguage() language?: string,
   ): Promise<RoleDetail> {
     await this.roles.update(id, dto, user);
     return this.roles.detail(id, await this.reader(user, language));
@@ -139,7 +139,7 @@ export class RolesController {
     @CurrentUser() user: RequestContext,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: MoveRoleDto,
-    @Headers('accept-language') language?: string,
+    @AcceptLanguage() language?: string,
   ): Promise<RoleDetail> {
     const moved = await this.roles.move(id, dto.toRoleId, user);
     for (const member of moved) {

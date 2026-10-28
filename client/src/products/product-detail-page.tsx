@@ -160,7 +160,8 @@ export function ProductDetailPage() {
             to: '/products',
           },
         ]}
-        title={product.name}
+        // The reader's language; the forms edit `name`, the base (ADR-056).
+        title={product.displayName}
         status={{
           label: productTypeLabel(product.type, intl),
           color: 'default',
@@ -201,7 +202,7 @@ export function ProductDetailPage() {
       <ProductGallery
         key={product.images.map((image) => image.fileId).join()}
         productId={product.id}
-        productName={product.name}
+        productName={product.displayName}
         images={product.images}
         canEdit={can('products.update')}
       />

@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Headers,
   Param,
   ParseUUIDPipe,
   Query,
@@ -11,6 +10,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
@@ -44,7 +44,7 @@ export class PeopleController {
   async find(
     @CurrentUser() user: RequestContext,
     @Param('userId', ParseUUIDPipe) userId: string,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ): Promise<PersonDetail> {
     const person = await this.people.find(
       userId,

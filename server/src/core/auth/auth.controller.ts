@@ -4,7 +4,6 @@ import {
   ConflictException,
   Controller,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Post,
@@ -19,6 +18,7 @@ import type { Request, Response } from 'express';
 import { registrationMode } from '../../common/registration';
 import type { Env } from '../../config/env';
 import { isUniqueViolation } from '../../database/errors';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { t } from '../../i18n/translate';
 import { AllowNoOrganization } from './allow-no-organization.decorator';
 import { AuthService } from './auth.service';
@@ -273,7 +273,7 @@ export class AuthController {
   @Throttle({ default: { limit: 3, ttl: 300_000 } })
   async resendVerification(
     @CurrentUser() user: RequestContext,
-    @Headers('accept-language') language?: string,
+    @AcceptLanguage() language?: string,
   ): Promise<SentEmail> {
     await this.auth.resendVerification(user, language);
     return { sent: true };
@@ -302,7 +302,7 @@ export class AuthController {
   })
   async forgotPassword(
     @Body() dto: ForgotPasswordDto,
-    @Headers('accept-language') language?: string,
+    @AcceptLanguage() language?: string,
   ): Promise<SentEmail> {
     await this.auth.requestPasswordReset(dto.email, language);
     return { sent: true };

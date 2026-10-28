@@ -24,7 +24,7 @@ export class ShipmentsService {
    * Read from the ledger: the movements are the record, the shipment row is
    * only the header they hang from.
    */
-  async listForOrder(orderId: string): Promise<Shipment[]> {
+  async listForOrder(orderId: string, locale: Locale): Promise<Shipment[]> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       // The fields the API returns (ADR-068), not the row.
       const headers = await tx
@@ -47,10 +47,13 @@ export class ShipmentsService {
         )
         .orderBy(desc(shipments.createdAt));
 
-      return withLotItems(tx, organizationId, headers, {
-        referenceType: 'shipment',
-        reason: 'shipment',
-      });
+      return withLotItems(
+        tx,
+        organizationId,
+        headers,
+        { referenceType: 'shipment', reason: 'shipment' },
+        locale,
+      );
     });
   }
 
@@ -134,11 +137,13 @@ export class ShipmentsService {
           }),
         );
 
-      const items = await lotItemsOf(tx, organizationId, {
-        referenceType: 'shipment',
-        reason: 'shipment',
-        ids: [shipmentId],
-      });
+      // The base names: a document, in its own languages (ADR-056, #161).
+      const items = await lotItemsOf(
+        tx,
+        organizationId,
+        { referenceType: 'shipment', reason: 'shipment', ids: [shipmentId] },
+        null,
+      );
 
       return {
         id: row.id,

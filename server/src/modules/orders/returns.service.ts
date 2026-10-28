@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { and, desc, eq, sql } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
 import {
@@ -275,7 +276,7 @@ export class ReturnsService {
   }
 
   /** An order's returns, newest first, each with what came back by lot. */
-  async listForOrder(orderId: string): Promise<OrderReturn[]> {
+  async listForOrder(orderId: string, locale: Locale): Promise<OrderReturn[]> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       // The fields the API returns (ADR-068), not the row.
       const headers = await tx
@@ -296,10 +297,13 @@ export class ReturnsService {
         )
         .orderBy(desc(orderReturns.createdAt));
 
-      return withLotItems(tx, organizationId, headers, {
-        referenceType: 'order_return',
-        reason: 'return',
-      });
+      return withLotItems(
+        tx,
+        organizationId,
+        headers,
+        { referenceType: 'order_return', reason: 'return' },
+        locale,
+      );
     });
   }
 

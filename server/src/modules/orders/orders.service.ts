@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, or, type SQL, sql } from 'drizzle-orm';
 
 import { calendarRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
+import type { Locale } from '../../common/locales';
 import { codeMatches, searchTerms } from '../../common/search';
 import { pagedBy } from '../../common/sorted-page';
 import type { Permission } from '../../core/authorization/permissions';
@@ -25,7 +26,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { partnerMatches } from '../partners/partner-search';
-import { itemName } from '../stock/item-name';
+import { itemName, namesIn } from '../stock/item-name';
 import { ListOrdersDto } from './dto/list-orders.dto';
 import type {
   OrderDetail,
@@ -217,8 +218,14 @@ export class OrdersService {
    * here rather than in the client because comparing two numeric(18,4) values
    * means parsing them into doubles (ADR-025) — Postgres knows the answer and
    * a boolean survives the trip intact.
+   *
+   * Its lines name their items in the reader's language (ADR-056).
    */
-  async findById(orderId: string, sight: OrderSight): Promise<OrderDetail> {
+  async findById(
+    orderId: string,
+    sight: OrderSight,
+    locale: Locale,
+  ): Promise<OrderDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [order] = await tx
         .select({
@@ -424,13 +431,14 @@ export class OrdersService {
           t({ id: 'orders.suchOrder', defaultMessage: 'No such order' }),
         );
 
+      const shown = namesIn(locale, organizationId);
       const lines = await tx
         .select({
           id: orderLines.id,
           variantId: orderLines.variantId,
           sku: orderLines.sku,
-          productName: products.name,
-          variantName: productVariants.name,
+          productName: shown.productName,
+          variantName: shown.variantName,
           // Live, not snapshotted: a receipt follows the item as it is now.
           tracksLots: productVariants.tracksLots,
           unitOfMeasure: productVariants.unitOfMeasure,

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, eq, type SQL, sql } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import { addDays, dayIn, todayIn } from '../../common/today';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import type { RequestContext } from '../../core/auth/request-context';
@@ -152,11 +153,12 @@ export class WelcomeService {
    * The card, or null once dismissed, past its last day, or with every
    * item done. `startShows` while Getting started is on Home, whose steps
    * are then this member's list, so the week keeps only their own two.
+   * What was done is named in the reader's language (ADR-056).
    */
   async of(
     context: Pick<RequestContext, 'userId' | 'organizationId'>,
     held: ReadonlySet<Permission>,
-    options: { timeZone: string; startShows: boolean },
+    options: { timeZone: string; startShows: boolean; locale: Locale },
   ): Promise<Welcome | null> {
     const membership = await this.membership(context.userId);
     if (!membership || membership.dismissedAt) return null;
@@ -171,6 +173,7 @@ export class WelcomeService {
         membership,
         chosen(held, membership, options.startShows),
         held,
+        options.locale,
       ),
       this.inviter(membership.id),
       this.access.given(context, membership.roles, held),
@@ -282,14 +285,20 @@ export class WelcomeService {
     membership: Membership,
     keys: WelcomeItemKey[],
     held: ReadonlySet<Permission>,
+    locale: Locale,
   ): Promise<WelcomeItem[]> {
-    const acts = this.acts(userId, membership.createdAt, keys.filter(isAct));
+    const acts = this.acts(
+      userId,
+      membership.createdAt,
+      keys.filter(isAct),
+      locale,
+    );
 
     return Promise.all(
       keys.map(async (key) => {
         const what = isAct(key)
           ? ((await acts).get(key) ?? null)
-          : await this.own(userId, key, membership, held);
+          : await this.own(userId, key, membership, held, locale);
         return { key, done: what !== null, what };
       }),
     );
@@ -305,6 +314,7 @@ export class WelcomeService {
     key: Exclude<WelcomeItemKey, Act>,
     membership: Membership,
     held: ReadonlySet<Permission>,
+    locale: Locale,
   ): Promise<WelcomeDone | null> {
     switch (key) {
       case 'confirmEmail':
@@ -327,6 +337,7 @@ export class WelcomeService {
           userId,
           kindsVisibleWith(held).filter((kind) => about.includes(kind)),
           1,
+          locale,
         );
         return entry
           ? {
@@ -347,6 +358,7 @@ export class WelcomeService {
     userId: string,
     since: Date,
     wanted: Act[],
+    locale: Locale,
   ): Promise<Map<Act, WelcomeDone>> {
     if (wanted.length === 0)
       return Promise.resolve(new Map<Act, WelcomeDone>());
@@ -377,7 +389,7 @@ export class WelcomeService {
 
       const done = new Map<Act, WelcomeDone>();
       for (const row of result.rows) {
-        done.set(row.item, await this.named(tx, organizationId, row));
+        done.set(row.item, await this.named(tx, organizationId, row, locale));
       }
       return done;
     });
@@ -393,6 +405,7 @@ export class WelcomeService {
     tx: Transaction,
     organizationId: string,
     row: ActRow,
+    locale: Locale,
   ): Promise<WelcomeDone> {
     let kind: DoneRecord;
     let id = row.resourceId;
@@ -419,7 +432,13 @@ export class WelcomeService {
       kind = KIND_OF[row.resourceType];
     }
 
-    const [record] = await this.recent.named(tx, organizationId, kind, [id]);
+    const [record] = await this.recent.named(
+      tx,
+      organizationId,
+      kind,
+      [id],
+      locale,
+    );
     return record
       ? { kind, id: record.id, words: record.title ?? record.detail }
       : { kind, id: null, words: null };

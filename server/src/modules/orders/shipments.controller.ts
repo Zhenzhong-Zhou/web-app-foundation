@@ -22,6 +22,8 @@ import {
   DownloadAsked,
   PdfResponse,
 } from '../../core/documents/pdf-response.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
+import { localeOf } from '../../i18n/translate';
 import { PreviewShipmentDto, ShipOrderDto } from './dto/ship-order.dto';
 import type {
   PackingSlip,
@@ -51,8 +53,11 @@ export class ShipmentsController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
-  list(@Param('id', ParseUUIDPipe) id: string): Promise<Shipment[]> {
-    return this.shipments.listForOrder(id);
+  list(
+    @Param('id', ParseUUIDPipe) id: string,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<Shipment[]> {
+    return this.shipments.listForOrder(id, localeOf(acceptLanguage));
   }
 
   /**

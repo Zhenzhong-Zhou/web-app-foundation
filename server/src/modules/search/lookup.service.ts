@@ -24,7 +24,6 @@ import {
   partners,
   productionOrders,
   products,
-  productTranslations,
   productVariants,
   returnAuthorizations,
 } from '../../database/schema';
@@ -33,6 +32,7 @@ import { literalStart } from '../numbering/numbering-format';
 import { partnerMatches } from '../partners/partner-search';
 import { itemMatches } from '../products/item-search';
 import { coverOf } from '../products/product-images';
+import { itemName, namesIn } from '../stock/item-name';
 
 /** At most this many of each kind (ADR-056). */
 export const LOOKUP_LIMIT = 5;
@@ -376,17 +376,15 @@ export class LookupService {
             .limit(limit),
         );
 
-      case 'item':
+      case 'item': {
+        const shown = namesIn(locale, organizationId);
         return pass((exclude, close, limit) =>
           tx
             .select({
               id: productVariants.id,
-              // In the reader's language where the product has one.
-              title: sql<string>`coalesce((
-                select ${productTranslations.name} from ${productTranslations}
-                where ${productTranslations.productId} = ${products.id}
-                  and ${productTranslations.locale} = ${locale}
-              ), ${products.name})`,
+              // In the reader's language, as every screen names it (ADR-056).
+              productName: shown.productName,
+              variantName: shown.variantName,
               detail: productVariants.sku,
               status: NONE.status,
               expiresAt: NONE.expiresAt,
@@ -422,8 +420,15 @@ export class LookupService {
                 : sql`least(${matchRank(productVariants.sku, terms)}, ${matchRank(products.name, terms, 'name')})`,
               desc(productVariants.id),
             )
-            .limit(limit),
+            .limit(limit)
+            .then((rows) =>
+              rows.map(({ productName, variantName, ...row }) => ({
+                ...row,
+                title: itemName(productName, variantName),
+              })),
+            ),
         );
+      }
 
       case 'partner':
         return pass((exclude, close, limit) =>

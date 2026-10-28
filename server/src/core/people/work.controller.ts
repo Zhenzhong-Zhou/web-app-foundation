@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Patch,
@@ -12,6 +11,7 @@ import {
 import type { Response } from 'express';
 
 import { csvFile, everyRow, exportFilters } from '../../common/export';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { AuditService } from '../audit/audit.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
@@ -57,7 +57,7 @@ export class WorkController {
   activity(
     @CurrentUser() context: RequestContext,
     @Query() query: ListAuditDto,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ): Promise<AuditPage> {
     return this.audit.list(
       { ...query, actorId: context.userId },
@@ -72,7 +72,7 @@ export class WorkController {
     @CurrentUser() context: RequestContext,
     @Query() query: ListAuditDto,
     @Res({ passthrough: true }) res: Response,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ) {
     const mine = { ...query, actorId: context.userId };
     const locale = localeOf(acceptLanguage);

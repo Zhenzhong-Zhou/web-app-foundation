@@ -7,6 +7,7 @@ import {
 import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 
 import { EXPORT_LIMIT } from '../../common/export';
+import type { Locale } from '../../common/locales';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
@@ -18,12 +19,14 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { namesIn, productNameOrder } from '../stock/item-name';
 import type { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import type {
   ProductDetail,
   ProductSummary,
   Variant,
+  VariantOption,
 } from './dto/product-response.dto';
 import type {
   SetProductTranslationsDto,
@@ -59,27 +62,39 @@ export class ProductsService {
    *
    * The cost is two booleans in a WHERE on a join already being made.
    */
-  listActiveVariants() {
-    return this.tenantDb.selectJoined(
-      productVariants,
-      products,
-      eq(products.id, productVariants.productId),
-      {
-        id: productVariants.id,
-        sku: productVariants.sku,
-        variantName: productVariants.name,
-        productName: products.name,
-        type: products.type,
-        unitOfMeasure: productVariants.unitOfMeasure,
-        tracksLots: productVariants.tracksLots,
-      },
-      and(eq(products.isActive, true), eq(productVariants.isActive, true)),
-      { orderBy: asc(productVariants.sku) },
-    );
+  listActiveVariants(locale: Locale): Promise<VariantOption[]> {
+    return this.tenantDb.transaction((tx, organizationId) => {
+      // In the reader's language (ADR-056).
+      const shown = namesIn(locale, organizationId);
+
+      return tx
+        .select({
+          id: productVariants.id,
+          sku: productVariants.sku,
+          variantName: shown.variantName,
+          productName: shown.productName,
+          type: products.type,
+          unitOfMeasure: productVariants.unitOfMeasure,
+          tracksLots: productVariants.tracksLots,
+        })
+        .from(productVariants)
+        .innerJoin(products, eq(products.id, productVariants.productId))
+        .where(
+          and(
+            eq(productVariants.organizationId, organizationId),
+            eq(products.isActive, true),
+            eq(productVariants.isActive, true),
+          ),
+        )
+        .orderBy(asc(productVariants.sku));
+    });
   }
 
-  /** Every product, by name, each with its cover's file (ADR-062). */
-  list(): Promise<ProductSummary[]> {
+  /**
+   * Every product, each with its cover's file (ADR-062), named and sorted
+   * by the name the reader sees (ADR-056).
+   */
+  list(locale: Locale): Promise<ProductSummary[]> {
     return this.tenantDb.transaction((tx, organizationId) =>
       tx
         // The fields the API returns (ADR-068): not the organization, nor
@@ -87,14 +102,14 @@ export class ProductsService {
         .select({
           id: products.id,
           type: products.type,
-          name: products.name,
+          name: namesIn(locale, organizationId).productName,
           description: products.description,
           isActive: products.isActive,
           coverFileId: coverOf(),
         })
         .from(products)
         .where(eq(products.organizationId, organizationId))
-        .orderBy(asc(products.name)),
+        .orderBy(productNameOrder(locale, organizationId), asc(products.id)),
     );
   }
 
@@ -132,7 +147,12 @@ export class ProductsService {
     });
   }
 
-  async findById(productId: string): Promise<ProductDetail> {
+  /**
+   * `name` is the base name, which the edit forms fill from and send back;
+   * `displayName` is the one the reader sees, the product's and each
+   * variant's (ADR-056).
+   */
+  async findById(productId: string, locale: Locale): Promise<ProductDetail> {
     const [product] = await this.tenantDb.select(
       products,
       eq(products.id, productId),
@@ -166,15 +186,44 @@ export class ProductsService {
       ),
     ]);
 
-    // Its gallery, the cover first (ADR-062).
-    const images = await this.tenantDb.transaction((tx, organizationId) =>
-      imagesOf(tx, organizationId, productId),
-    );
+    // Its gallery, the cover first (ADR-062), and the names shown.
+    const { images, displayName, variantDisplayNames } =
+      await this.tenantDb.transaction(async (tx, organizationId) => {
+        const shown = namesIn(locale, organizationId);
+
+        const [named] = await tx
+          .select({ displayName: shown.productName })
+          .from(products)
+          .where(
+            and(
+              eq(products.organizationId, organizationId),
+              eq(products.id, productId),
+            ),
+          );
+        const namedVariants = await tx
+          .select({ id: productVariants.id, displayName: shown.variantName })
+          .from(productVariants)
+          .where(
+            and(
+              eq(productVariants.organizationId, organizationId),
+              eq(productVariants.productId, productId),
+            ),
+          );
+
+        return {
+          images: await imagesOf(tx, organizationId, productId),
+          displayName: named?.displayName ?? product.name,
+          variantDisplayNames: new Map(
+            namedVariants.map((row) => [row.id, row.displayName]),
+          ),
+        };
+      });
 
     return {
       id: product.id,
       type: product.type,
       name: product.name,
+      displayName,
       description: product.description,
       isActive: product.isActive,
       images: publicImages(images),
@@ -185,6 +234,7 @@ export class ProductsService {
       })),
       variants: variants.map((variant) => ({
         ...variantOf(variant),
+        displayName: variantDisplayNames.get(variant.id) ?? variant.name,
         translations: variantNames
           .filter((row) => row.variantId === variant.id)
           .map(({ locale, name }) => ({ locale, name })),
@@ -511,7 +561,9 @@ export class ProductsService {
  * product it belongs to, the pinyin kept for search, or the case
  * dimensions no screen reads yet.
  */
-function variantOf(row: Variant): Variant {
+function variantOf(
+  row: Omit<Variant, 'displayName'>,
+): Omit<Variant, 'displayName'> {
   return {
     id: row.id,
     sku: row.sku,
