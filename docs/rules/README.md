@@ -45,7 +45,8 @@ sentence or two where it needs them; then its links, separated by ` · `.
 - **The test** that proves it: a link to the test's file, then its name
   in quotes, exactly as the file has it. A rule proved in several places,
   on the server, in the browser, cites each. A rule with no test says
-  `no test`, which is a finding for the area's next fix-up, not a reason
+  `no test`, and one its tests prove only in part says `partly tested`
+  after them: each is a finding for the area's next fix-up, not a reason
   to leave the rule out.
 - **The Help section** where a person meets the rule, if one does, in the
   English guide and by GitHub's anchor (`#void-an-invoice-void`), not the

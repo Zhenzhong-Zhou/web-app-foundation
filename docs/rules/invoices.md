@@ -111,6 +111,7 @@ is kept is in the [README](README.md).
   [ADR-046](../adr/0046-invoicing.md#decision--snapshots-as-orders-and-movements-already-do) ·
   [test](../../server/test/invoices.e2e-spec.ts) "refuses when the customer has no billing address, with its code" ·
   [test](../../client/src/invoices/issue-invoice-dialog.test.tsx) "links a customer with no billing address to the customer" ·
+  partly tested ·
   [Help](../../client/src/help/guides/en/invoices.md#if-something-is-refused-refused) ·
   MC-702
 - **An invoice that charges tax needs the organization's tax number; one
@@ -153,6 +154,7 @@ is kept is in the [README](README.md).
   [ADR-047](../adr/0047-return-authorizations-and-credit-notes-for-what-comes-back.md#decision--a-credit-note-credits-one-invoice) ·
   [test](../../server/test/credit-notes.e2e-spec.ts) "credits two units at the invoice price, and leaves the invoice issued" ·
   [test](../../server/test/credit-notes.e2e-spec.ts) "refuses a credit on a voided invoice" ·
+  partly tested ·
   [Help](../../client/src/help/guides/en/invoices.md#credit-part-of-an-invoice-credit) ·
   MC-707
 - **Each line is credited by a quantity and a unit price. The price can
@@ -211,7 +213,8 @@ is kept is in the [README](README.md).
   order, settles a credit.** A line resolved as replace or as neither, a
   closed or cancelled RMA, or another item is refused.
   [ADR-047](../adr/0047-return-authorizations-and-credit-notes-for-what-comes-back.md#decision--a-resolution-per-line) ·
-  [test](../../server/test/credit-notes.e2e-spec.ts) "refuses a line resolved as replace, a closed RMA, and another item"
+  [test](../../server/test/credit-notes.e2e-spec.ts) "refuses a line resolved as replace, a closed RMA, and another item" ·
+  partly tested
 - **Credit on, on an open RMA, offers the invoice the RMA names, or else
   each issued invoice of its sale.** The dialog opens with each credit
   line filled in with what came back, or what was authorized when no goods
@@ -219,6 +222,7 @@ is kept is in the [README](README.md).
   fill in.
   [ADR-047](../adr/0047-return-authorizations-and-credit-notes-for-what-comes-back.md#decision--a-credit-note-credits-one-invoice) ·
   [test](../../client/e2e/invoicing.spec.ts) "credits from an RMA, prefilled with what it authorized" ·
+  partly tested ·
   [Help](../../client/src/help/guides/en/returns.md#credit-or-replace-resolve)
 
 ## Voiding an invoice
@@ -231,6 +235,7 @@ is kept is in the [README](README.md).
   [test](../../server/test/invoices.e2e-spec.ts) "issues a credit note for the whole invoice" ·
   [test](../../server/test/invoices.e2e-spec.ts) "lists the credit note on the invoice" ·
   [test](../../client/e2e/invoicing.spec.ts) "taxes a draft, issues it, and voids it with a credit note" ·
+  partly tested ·
   [Help](../../client/src/help/guides/en/invoices.md#void-an-invoice-void) ·
   MC-704
 - **Only an issued invoice with nothing credited yet is voided.** A
