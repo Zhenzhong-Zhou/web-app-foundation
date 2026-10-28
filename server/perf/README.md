@@ -109,12 +109,20 @@ quicker run.
 At 10 connections, each sending its next request as soon as the last one
 answers:
 
-- **Reads, p95 under 300 ms:** the order list (open, all, a deep page), an
-  order, the Inventory page's two calls (`/stock` and
-  `/stock/availability?promised=true`), a deep page of `/stock` and a search,
-  the unfiltered availability list (no screen reads it; kept to watch it),
-  the movement list (first page, a deep page, one product), the invoice
-  list, and a lot trace.
+- **Reads, p95 under 300 ms:**
+  - the order list (open, all, a deep page), an order, the Inventory page's
+    two calls (`/stock` and `/stock/availability?promised=true`), a deep
+    page of `/stock` and a search, the unfiltered availability list (no
+    screen reads it; kept to watch it), the movement list (first page, a
+    deep page, one product), the invoice list, and a lot trace;
+  - search (ADR-056): the lookup for a code in part, a name and a typo; the
+    order list searched; Products by one Chinese character and the item
+    pickers by pinyin, both asked in Chinese; and Partners by part of a
+    name;
+  - Home (ADR-058), an owner's and a newcomer's, and Recently opened;
+  - dates and sorting (ADR-057): the first page of the invoices by total,
+    the orders by expected date and the stock by expiry, and the invoices
+    and movements of the last thirty days.
 - **Writes, p95 under 500 ms:** receiving into a new lot, shipping with
   lots chosen earliest expiry first, issuing an invoice, issuing a credit.
   Perf makes its own orders and invoices for these before timing, so it
