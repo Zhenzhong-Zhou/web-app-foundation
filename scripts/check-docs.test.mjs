@@ -754,6 +754,33 @@ paths:
   ]);
 });
 
+test("Claude Code's rules: a comment or blank line in paths is skipped and the patterns after it checked; any other line fails", (t) => {
+  const root = fixture(t, {
+    ...AREA,
+    ".claude/rules/invoices.md": `---
+paths:
+  - "server/src/modules/invoices/**"
+  # the browser tests
+
+  - "client/e2e/invoices.spec.ts"
+description: Invoicing.
+---
+`,
+    ".claude/rules/stock.md": `---
+paths:
+  - "server/test/invoices.e2e-spec.ts"
+  server/test/credit-notes.e2e-spec.ts
+  - "server/src/modules/stock/**"
+---
+`,
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    ".claude/rules/invoices.md:6: client/e2e/invoices.spec.ts — matches no file in the repository, and Claude Code skips it without a word",
+    '.claude/rules/stock.md:4: server/test/credit-notes.e2e-spec.ts — not a pattern: under paths:, one - "pattern" to a line, or a # comment',
+  ]);
+});
+
 /** git in the fixture, as a person with no identity of their own. */
 const git = (root, ...args) =>
   execFileSync(

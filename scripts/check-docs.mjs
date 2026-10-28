@@ -551,8 +551,16 @@ function pathsIn(file) {
   const patterns = [];
   if (/^paths:\s*$/.test(lines[at])) {
     for (let i = at + 1; i < end; i++) {
+      // A comment or a blank line is skipped, and a field at the margin
+      // ends the list; any other line would hide the patterns after it.
+      if (/^\s*(?:#.*)?$/.test(lines[i])) continue;
+      if (/^[\w-]+:/.test(lines[i])) break;
       const item = /^\s+-\s+(?:"([^"]*)"|'([^']*)'|(\S.*?))\s*$/.exec(lines[i]);
-      if (!item) break;
+      if (!item) {
+        return {
+          failure: `${file}:${i + 1}: ${lines[i].trim()} — not a pattern: under paths:, one - "pattern" to a line, or a # comment`,
+        };
+      }
       patterns.push({ line: i + 1, pattern: item[1] ?? item[2] ?? item[3] });
     }
   }
