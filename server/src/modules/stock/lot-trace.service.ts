@@ -146,7 +146,8 @@ export class LotTraceService {
           ${shown.variantName} as variant_name
         from lots l
         join product_variants pv on pv.id = l.variant_id
-        join products pr on pr.id = pv.product_id
+        join products pr
+          on pr.id = pv.product_id and pr.organization_id = ${organizationId}::uuid
         where l.organization_id = ${organizationId}::uuid
           and l.id = ${lotId}::uuid
       `)

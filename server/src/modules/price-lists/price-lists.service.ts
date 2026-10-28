@@ -90,9 +90,18 @@ export class PriceListsService {
         .from(priceListItems)
         .innerJoin(
           productVariants,
-          eq(productVariants.id, priceListItems.variantId),
+          and(
+            eq(productVariants.id, priceListItems.variantId),
+            eq(productVariants.organizationId, organizationId),
+          ),
         )
-        .innerJoin(products, eq(products.id, productVariants.productId))
+        .innerJoin(
+          products,
+          and(
+            eq(products.id, productVariants.productId),
+            eq(products.organizationId, organizationId),
+          ),
+        )
         .where(
           and(
             eq(priceListItems.organizationId, organizationId),

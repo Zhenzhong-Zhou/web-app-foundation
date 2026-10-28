@@ -239,12 +239,17 @@ export class LookupService {
                   ? or(
                       closeMatches(orders.number, terms),
                       closeMatches(orders.reference, terms),
-                      partnerMatches(orders.partnerId, terms, 'close'),
+                      partnerMatches(
+                        orders.partnerId,
+                        terms,
+                        organizationId,
+                        'close',
+                      ),
                     )
                   : or(
                       codeMatches(orders.number, terms),
                       codeMatches(orders.reference, terms),
-                      partnerMatches(orders.partnerId, terms),
+                      partnerMatches(orders.partnerId, terms, organizationId),
                     ),
               ),
             )

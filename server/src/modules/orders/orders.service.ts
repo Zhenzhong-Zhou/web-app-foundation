@@ -157,7 +157,7 @@ export class OrdersService {
         const match = or(
           codeMatches(orders.number, terms),
           codeMatches(orders.reference, terms),
-          partnerMatches(orders.partnerId, terms),
+          partnerMatches(orders.partnerId, terms, organizationId),
         );
         if (match) scope.push(match);
       }
@@ -542,7 +542,13 @@ export class OrdersService {
           productVariants,
           eq(productVariants.id, orderLines.variantId),
         )
-        .innerJoin(products, eq(products.id, productVariants.productId))
+        .innerJoin(
+          products,
+          and(
+            eq(products.id, productVariants.productId),
+            eq(products.organizationId, organizationId),
+          ),
+        )
         .leftJoin(priceLists, eq(priceLists.id, orderLines.priceListId))
         .where(
           and(

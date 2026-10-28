@@ -87,7 +87,13 @@ export class ProductsService {
           tracksLots: productVariants.tracksLots,
         })
         .from(productVariants)
-        .innerJoin(products, eq(products.id, productVariants.productId))
+        .innerJoin(
+          products,
+          and(
+            eq(products.id, productVariants.productId),
+            eq(products.organizationId, organizationId),
+          ),
+        )
         .where(
           and(
             eq(productVariants.organizationId, organizationId),
@@ -192,7 +198,13 @@ export class ProductsService {
           nameChinese: translated('zh-Hans'),
         })
         .from(productVariants)
-        .innerJoin(products, eq(products.id, productVariants.productId))
+        .innerJoin(
+          products,
+          and(
+            eq(products.id, productVariants.productId),
+            eq(products.organizationId, organizationId),
+          ),
+        )
         .where(eq(productVariants.organizationId, organizationId))
         .orderBy(asc(products.name), asc(productVariants.sku))
         .limit(EXPORT_LIMIT + 1);

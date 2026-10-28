@@ -20,6 +20,8 @@ import { HomeService } from '../src/modules/home/home.service';
 import { InvoicesService } from '../src/modules/invoices/invoices.service';
 import { OrdersService, sightOf } from '../src/modules/orders/orders.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
+import { PriceListsService } from '../src/modules/price-lists/price-lists.service';
+import { ProductsService } from '../src/modules/products/products.service';
 import {
   kindsVisibleWith,
   RecentService,
@@ -201,6 +203,8 @@ async function buildProbes(
   const home = app.get(HomeService);
   const recent = app.get(RecentService);
   const access = app.get(PermissionsService);
+  const products = app.get(ProductsService);
+  const priceLists = app.get(PriceListsService);
 
   const firstOrders = await orders.list({ status: 'all' });
   const deepOrders = await cursorAfter(
@@ -225,6 +229,9 @@ async function buildProbes(
   if (!org.threeRoleMembershipId) {
     throw new Error('No member holding three made roles: seed again.');
   }
+
+  const [priceList] = await priceLists.list({});
+  if (!priceList) throw new Error('No price list: was this volume-seeded?');
 
   // An open sale to preview: what earliest expiry first reads before a ship.
   const sale = await firstSale(orders, stock);
@@ -375,6 +382,15 @@ async function buildProbes(
       run: () => stock.listMovements({ ...MONTH_INSTANTS }),
     },
     { name: 'valuation', run: () => costs.stockValuation() },
+    // The catalogue's reads that join products (#226), each with the
+    // organization on its join: without it, Postgres reads every tenant's
+    // products to join one tenant's variants.
+    { name: 'product export', run: () => products.exportRows() },
+    {
+      name: 'price list',
+      run: () => priceLists.findById(priceList.id, 'en'),
+    },
+    { name: 'item pickers', run: () => products.listActiveVariants('en') },
   ];
 
   if (org.traceLotId) {

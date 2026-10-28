@@ -99,7 +99,7 @@ export class InvoicesService {
         const terms = searchTerms(query.search);
         const match = or(
           codeMatches(invoices.number, terms),
-          partnerMatches(invoices.partnerId, terms),
+          partnerMatches(invoices.partnerId, terms, organizationId),
         );
         if (match) scope.push(match);
       }
@@ -203,7 +203,7 @@ export class InvoicesService {
         const terms = searchTerms(query.search);
         const match = or(
           codeMatches(creditNotes.number, terms),
-          partnerMatches(creditNotes.partnerId, terms),
+          partnerMatches(creditNotes.partnerId, terms, organizationId),
         );
         if (match) scope.push(match);
       }

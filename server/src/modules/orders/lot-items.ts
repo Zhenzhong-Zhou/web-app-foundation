@@ -69,7 +69,8 @@ export async function lotItemsOf(
         sum(sm.quantity)::text as quantity
       from stock_movements sm
       join product_variants pv on pv.id = sm.variant_id
-      join products pr on pr.id = pv.product_id
+      join products pr
+        on pr.id = pv.product_id and pr.organization_id = ${organizationId}::uuid
       left join lots l on l.id = sm.lot_id
       where sm.organization_id = ${organizationId}::uuid
         and sm.reference_type = ${documents.referenceType}
