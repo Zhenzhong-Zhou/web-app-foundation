@@ -220,6 +220,11 @@ jobs:
       - name: Test the repository's scripts
         run: node --test scripts/
 
+      # Their format, by the server's Prettier at its defaults, since no
+      # .prettierrc covers scripts/: the check scripts/verify.sh makes.
+      - name: Check the repository's scripts' format
+        run: server/node_modules/.bin/prettier --check scripts/
+
       # From an empty database every time, which is the path production takes
       # and the one that rarely gets exercised locally.
       - name: Migrate

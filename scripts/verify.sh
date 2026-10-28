@@ -78,11 +78,10 @@ contract() {
 }
 
 # The scripts' format, by the Prettier both packages pin, here the
-# server's, with Prettier's defaults, since no .prettierrc covers scripts/;
-# CI runs their tests (ci.yml) but not this. Then their own tests, on
-# Node's runner (node --test finds each *.test.mjs): scripts/ sits outside
-# both packages, so neither one's Vitest runs them. i18n-review.test.mjs
-# uses both packages' node_modules.
+# server's, with Prettier's defaults, since no .prettierrc covers scripts/.
+# Then their own tests, on Node's runner (node --test finds each
+# *.test.mjs): scripts/ sits outside both packages, so neither one's Vitest
+# runs them. i18n-review.test.mjs uses both packages' node_modules.
 scripts_tests() {
   step 'Scripts: their format and their own tests'
   server/node_modules/.bin/prettier --check scripts/
