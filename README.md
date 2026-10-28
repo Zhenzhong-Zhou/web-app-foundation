@@ -218,7 +218,8 @@ work under updates it.
 
 | When                                   | Tool                                                                                                                                            |
 |----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| Before every push                      | `scripts/verify.sh`: `--docs` for a commit of only `scripts/` and Markdown outside `client/`, `--quick` for any other, in full before each push |
+| Before each commit                     | `scripts/verify.sh --docs` for a commit of only `scripts/` and Markdown outside `client/`, `--quick` for any other                              |
+| Before every push                      | `scripts/verify.sh`, in full                                                                                                                    |
 | A branch's start, and before reviews   | `npm outdated` in `server/` and `client/` ([conventions.md, "Dependencies"](docs/conventions.md#dependencies))                                  |
 | A change people will see               | `npm run screenshots` before and after, then `npm run screenshots:compare`                                                                      |
 | A change to an email                   | `npm run mail:preview` in `server/`, before and after; `-- --send` for Mailpit                                                                  |
