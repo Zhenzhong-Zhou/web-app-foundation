@@ -9,13 +9,32 @@ import { type SQL, sql, type SQLWrapper } from 'drizzle-orm';
  *   (migrations 0042, 0043): "eleuthero" finds "Éleuthéro", "saint
  *   laurent" finds "Saint-Laurent". Codes compared as stored.
  * - Chinese names also by their pinyin, full or initials, when the query is
- *   Latin letters and digits: "yuyou" and "shyy" find 深海鱼油.
+ *   Latin letters and digits: "yuyou" and "shyy" find 深海鱼油, and so does
+ *   "yúyóu", its tone marks set aside.
+ * - Full-width letters, digits and punctuation read as their usual forms:
+ *   "ＦＯＣ" finds FOC-2609-01.
  * - % and _ match themselves: they are escaped, never wildcards.
  *
- * The lookup asks for at least MIN_SEARCH_LENGTH characters; a list
- * narrows by whatever it is given.
+ * The lookup asks for at least MIN_SEARCH_LENGTH characters, or one Chinese
+ * character (lookupLongEnough); a list narrows by whatever it is given.
  */
 export const MIN_SEARCH_LENGTH = 2;
+
+/** One Chinese character and nothing else: 鱼, 胶. */
+const ONE_HAN = /^\p{Script=Han}$/u;
+
+/**
+ * Whether a query, trimmed, is long enough for the lookup (ADR-056): at
+ * least MIN_SEARCH_LENGTH characters, or one Chinese character, which is
+ * what a Chinese reader types, where one letter would match nearly
+ * everything in seven kinds at once. A list searches one kind and takes any
+ * length. The top bar asks by the same rule
+ * (client/src/search/lookup-minimum.ts).
+ */
+export function lookupLongEnough(raw: string): boolean {
+  const text = raw.trim();
+  return text.length >= MIN_SEARCH_LENGTH || ONE_HAN.test(text);
+}
 
 /** What a query becomes before it is matched. */
 export interface SearchTerms {
@@ -28,9 +47,11 @@ export interface SearchTerms {
   /** Contains the text. */
   anywhere: string;
   /**
-   * The query as pinyin is stored, lower-case letters and digits only, as a
-   * contains-pattern; null when the query has too few of them to be pinyin.
+   * The query as pinyin is stored, lower-case letters and digits only; null
+   * when the query has too few of them to be pinyin.
    */
+  pinyinText: string | null;
+  /** pinyinText as a contains-pattern. */
   pinyin: string | null;
   /**
    * Whether the query has anything to match a name with once punctuation
@@ -44,17 +65,31 @@ function escapeLike(text: string): string {
   return text.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
 
+/** Pinyin's four tone marks over a vowel, once decomposed: ā á ǎ à. */
+const TONE_MARKS = /[\u0300\u0301\u0304\u030c]/g;
+
 export function searchTerms(raw: string): SearchTerms {
-  const text = raw.trim().replace(/\s+/g, ' ');
+  // Full width (全角), as an input method can type it, read as usual:
+  // ＦＯＣ－２６０９ is FOC-2609, and its wide space a space.
+  const text = raw.normalize('NFKC').trim().replace(/\s+/g, ' ');
   const exact = escapeLike(text);
-  const latin = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+  // Pinyin is stored without tones, so zhuānzhù is zhuanzhu; ü keeps its
+  // dots and goes with the rest, as namePinyin leaves it out.
+  const latin = text
+    .normalize('NFD')
+    .replace(TONE_MARKS, '')
+    .normalize('NFC')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+  const pinyinText = latin.length >= MIN_SEARCH_LENGTH ? latin : null;
 
   return {
     text,
     exact,
     prefix: `${exact}%`,
     anywhere: `%${exact}%`,
-    pinyin: latin.length >= MIN_SEARCH_LENGTH ? `%${latin}%` : null,
+    pinyinText,
+    pinyin: pinyinText === null ? null : `%${pinyinText}%`,
     hasWords: /[\p{L}\p{N}]/u.test(text),
   };
 }
@@ -103,7 +138,9 @@ function comparable(
 /**
  * For ORDER BY, lowest first: 0 for an exact match, 1 for a match at the
  * start, 2 for anywhere (ADR-056). Names compared as nameMatches compares
- * them, codes case ignored.
+ * them, codes case ignored. Neither needs a wildcard escaped here: a code's
+ * prefix is escaped by searchTerms, and search_text() turns a % or _ in a
+ * name's query into a space, as for nameMatches.
  */
 export function matchRank(
   column: SQLWrapper,
@@ -123,6 +160,33 @@ export function matchRank(
     when ${column} ilike ${terms.prefix} then 1
     else 2
   end`;
+}
+
+/**
+ * A name's pinyin column, ranked as matchRank ranks: exact when the query is
+ * the full pinyin or the initials ("zhuanzhu" or "zz" for 专注), at the
+ * start when either starts with it. Nothing to add when the query cannot be
+ * pinyin, as pinyinMatches.
+ */
+export function pinyinRank(
+  column: SQLWrapper,
+  terms: SearchTerms,
+): SQL | undefined {
+  if (terms.pinyinText === null) return undefined;
+  const full = sql`split_part(${column}, ' ', 1)`;
+  const initials = sql`split_part(${column}, ' ', 2)`;
+  const prefix = `${terms.pinyinText}%`;
+  return sql`case
+    when ${full} = ${terms.pinyinText} or ${initials} = ${terms.pinyinText} then 0
+    when ${full} like ${prefix} or ${initials} like ${prefix} then 1
+    else 2
+  end`;
+}
+
+/** The best of several ranks, leaving out those with nothing to add. */
+export function bestRank(...ranks: (SQL | undefined)[]): SQL {
+  const given = ranks.filter((rank): rank is SQL => rank !== undefined);
+  return sql`least(${sql.join(given, sql`, `)})`;
 }
 
 /**

@@ -8,8 +8,6 @@ import {
   closeness,
   codeMatches,
   matchRank,
-  nameMatches,
-  pinyinMatches,
   type SearchTerms,
   searchTerms,
 } from '../../common/search';
@@ -24,15 +22,19 @@ import {
   partners,
   productionOrders,
   products,
-  productTranslations,
   productVariants,
   returnAuthorizations,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { literalStart } from '../numbering/numbering-format';
-import { partnerMatches } from '../partners/partner-search';
-import { itemMatches } from '../products/item-search';
+import {
+  partnerMatches,
+  partnerRank,
+  partnerRecordMatches,
+} from '../partners/partner-search';
+import { itemMatches, itemRank } from '../products/item-search';
 import { coverOf } from '../products/product-images';
+import { itemName, namesIn } from '../stock/item-name';
 
 /** At most this many of each kind (ADR-056). */
 export const LOOKUP_LIMIT = 5;
@@ -237,12 +239,17 @@ export class LookupService {
                   ? or(
                       closeMatches(orders.number, terms),
                       closeMatches(orders.reference, terms),
-                      partnerMatches(orders.partnerId, terms, 'close'),
+                      partnerMatches(
+                        orders.partnerId,
+                        terms,
+                        organizationId,
+                        'close',
+                      ),
                     )
                   : or(
                       codeMatches(orders.number, terms),
                       codeMatches(orders.reference, terms),
-                      partnerMatches(orders.partnerId, terms),
+                      partnerMatches(orders.partnerId, terms, organizationId),
                     ),
               ),
             )
@@ -376,17 +383,15 @@ export class LookupService {
             .limit(limit),
         );
 
-      case 'item':
+      case 'item': {
+        const shown = namesIn(locale, organizationId);
         return pass((exclude, close, limit) =>
           tx
             .select({
               id: productVariants.id,
-              // In the reader's language where the product has one.
-              title: sql<string>`coalesce((
-                select ${productTranslations.name} from ${productTranslations}
-                where ${productTranslations.productId} = ${products.id}
-                  and ${productTranslations.locale} = ${locale}
-              ), ${products.name})`,
+              // In the reader's language, as every screen names it (ADR-056).
+              productName: shown.productName,
+              variantName: shown.variantName,
               detail: productVariants.sku,
               status: NONE.status,
               expiresAt: NONE.expiresAt,
@@ -411,7 +416,7 @@ export class LookupService {
                       closeMatches(productVariants.sku, terms),
                       closeMatches(products.name, terms, 'name'),
                     )
-                  : itemMatches(terms),
+                  : itemMatches(terms, organizationId),
               ),
             )
             .orderBy(
@@ -419,11 +424,18 @@ export class LookupService {
                 ? desc(
                     sql`greatest(${closeness(productVariants.sku, terms)}, ${closeness(products.name, terms, 'name')})`,
                   )
-                : sql`least(${matchRank(productVariants.sku, terms)}, ${matchRank(products.name, terms, 'name')})`,
+                : itemRank(terms, locale, organizationId),
               desc(productVariants.id),
             )
-            .limit(limit),
+            .limit(limit)
+            .then((rows) =>
+              rows.map(({ productName, variantName, ...row }) => ({
+                ...row,
+                title: itemName(productName, variantName),
+              })),
+            ),
         );
+      }
 
       case 'partner':
         return pass((exclude, close, limit) =>
@@ -444,18 +456,13 @@ export class LookupService {
                 excluding(partners.id, exclude),
                 close
                   ? closeMatches(partners.name, terms, 'name')
-                  : or(
-                      nameMatches(partners.name, terms),
-                      codeMatches(partners.code, terms),
-                      codeMatches(partners.taxId, terms),
-                      pinyinMatches(partners.namePinyin, terms),
-                    ),
+                  : partnerRecordMatches(terms),
               ),
             )
             .orderBy(
               close
                 ? desc(closeness(partners.name, terms, 'name'))
-                : sql`least(${matchRank(partners.name, terms, 'name')}, ${matchRank(partners.code, terms)})`,
+                : partnerRank(terms),
               desc(partners.id),
             )
             .limit(limit),

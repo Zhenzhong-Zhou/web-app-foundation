@@ -109,12 +109,21 @@ quicker run.
 At 10 connections, each sending its next request as soon as the last one
 answers:
 
-- **Reads, p95 under 300 ms:** the order list (open, all, a deep page), an
-  order, the Inventory page's two calls (`/stock` and
-  `/stock/availability?promised=true`), a deep page of `/stock` and a search,
-  the unfiltered availability list (no screen reads it; kept to watch it),
-  the movement list (first page, a deep page, one product), the invoice
-  list, and a lot trace.
+- **Reads, p95 under 300 ms:**
+  - the order list (open, all, a deep page), an order, the Inventory page's
+    two calls (`/stock` and `/stock/availability?promised=true`), a deep
+    page of `/stock` and a search, the unfiltered availability list (no
+    screen reads it; kept to watch it), the movement list (first page, a
+    deep page, one product), the invoice list, and a lot trace;
+  - search (ADR-056): the lookup for a code in part, a name and a typo; the
+    order list searched; Products by one Chinese character and the item
+    pickers by pinyin, both asked in Chinese; and Partners by part of a
+    name; and Products unsearched, asked in Chinese, which sorts and names
+    every product by the name shown;
+  - Home (ADR-058), an owner's and a newcomer's, and Recently opened;
+  - dates and sorting (ADR-057): the first page of the invoices by total,
+    the orders by expected date and the stock by expiry, and the invoices
+    and movements of the last thirty days.
 - **Writes, p95 under 500 ms:** receiving into a new lot, shipping with
   lots chosen earliest expiry first, issuing an invoice, issuing a credit.
   Perf makes its own orders and invoices for these before timing, so it
@@ -146,8 +155,16 @@ UTC, the same day in Vancouver. The summary lists each known miss under the
 budgets, with its issue, its date and its ceiling, whether this run met it
 or not.
 
-Today's is the typo lookup's: #225, until 30 November 2026, 450 ms. The
-weekly run had measured 353 ms against its 300.
+Three today, each until 30 November 2026 with a ceiling of 400 ms:
+
+- **The typo lookup's, #225.** It went once weekly run 114 measured 207
+  ms on 26 October 2026, too soon: on 29 October, on runners about 1.45×
+  slower than the day before, `main` measured 340 ms and #260's branch
+  333, 358 and 363.
+- **Home's, #276.** Its watch fired the same day: `main` measured 301 ms
+  and #260's branch 325.
+- **A newcomer's Home, #276 too.** It measured 288 ms the same day, 12 ms
+  under its budget, on the page that missed.
 
 To add one, give the scenario in `perf/scenarios.ts` a `knownMiss`:
 

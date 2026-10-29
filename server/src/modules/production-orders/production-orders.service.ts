@@ -10,11 +10,14 @@ import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
 import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
-import { isForeignKeyViolation } from '../../database/errors';
+import { assertOwnIds } from '../../database/own-ids';
 import {
   boms,
+  locations,
+  partners,
   productionOrderLines,
   productionOrders,
+  productVariants,
   stockMovements,
   users,
 } from '../../database/schema';
@@ -344,6 +347,8 @@ export class ProductionOrdersService {
 
   async create(input: CreateProductionOrderDto): Promise<ProductionOrder> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
+      await this.assertOwnRecords(tx, organizationId, input);
+
       if (input.bomId) {
         await this.assertBomMatches(
           tx,
@@ -353,36 +358,23 @@ export class ProductionOrdersService {
         );
       }
 
-      try {
-        const [run] = await tx
-          .insert(productionOrders)
-          .values({
-            organizationId,
-            outputVariantId: input.outputVariantId,
-            bomId: input.bomId,
-            locationId: input.locationId,
-            partnerId: input.partnerId,
-            quantityPlanned: input.quantityPlanned,
-            reference: input.reference,
-            notes: input.notes,
-            status: 'draft',
-          })
-          .returning();
+      const [run] = await tx
+        .insert(productionOrders)
+        .values({
+          organizationId,
+          outputVariantId: input.outputVariantId,
+          bomId: input.bomId,
+          locationId: input.locationId,
+          partnerId: input.partnerId,
+          quantityPlanned: input.quantityPlanned,
+          reference: input.reference,
+          notes: input.notes,
+          status: 'draft',
+        })
+        .returning();
 
-        this.logger.log(`Production order ${run.id} created`);
-        return run;
-      } catch (error) {
-        if (isForeignKeyViolation(error)) {
-          throw new BadRequestException(
-            t({
-              id: 'production.outputvariantidBomidLocationidPartnerid',
-              defaultMessage:
-                'outputVariantId, bomId, locationId, or partnerId does not exist',
-            }),
-          );
-        }
-        throw error;
-      }
+      this.logger.log(`Production order ${run.id} created`);
+      return run;
     });
   }
 
@@ -391,6 +383,8 @@ export class ProductionOrdersService {
       const run = await loadWithin(tx, organizationId, runId);
 
       assertStatus(run.status, 'draft', 'edited');
+
+      await this.assertOwnRecords(tx, organizationId, input);
 
       if (input.bomId) {
         await this.assertBomMatches(
@@ -401,22 +395,10 @@ export class ProductionOrdersService {
         );
       }
 
-      try {
-        await tx
-          .update(productionOrders)
-          .set(input)
-          .where(eq(productionOrders.id, runId));
-      } catch (error) {
-        if (isForeignKeyViolation(error)) {
-          throw new BadRequestException(
-            t({
-              id: 'production.bomidLocationidPartneridDoes',
-              defaultMessage: 'bomId, locationId, or partnerId does not exist',
-            }),
-          );
-        }
-        throw error;
-      }
+      await tx
+        .update(productionOrders)
+        .set(input)
+        .where(eq(productionOrders.id, runId));
 
       this.logger.log(`Production order ${runId} updated`);
     });
@@ -487,6 +469,54 @@ export class ProductionOrdersService {
   }
 
   // ---------------------------------------------------------------------------
+
+  /**
+   * Each id in the body is looked for in this organization first: another
+   * tenant's partner, location or variant is refused as unknown (ADR-003).
+   */
+  private async assertOwnRecords(
+    tx: Tx,
+    organizationId: string,
+    ids: {
+      outputVariantId?: string;
+      locationId?: string;
+      partnerId?: string | null;
+    },
+  ): Promise<void> {
+    await assertOwnIds(
+      tx,
+      productVariants,
+      organizationId,
+      [ids.outputVariantId],
+      t({
+        id: 'production.unknownVariant',
+        defaultMessage:
+          'That item is not in this organization. Choose one from the list.',
+      }),
+    );
+    await assertOwnIds(
+      tx,
+      locations,
+      organizationId,
+      [ids.locationId],
+      t({
+        id: 'production.unknownLocation',
+        defaultMessage:
+          'That location is not in this organization. Choose one from the list.',
+      }),
+    );
+    await assertOwnIds(
+      tx,
+      partners,
+      organizationId,
+      [ids.partnerId],
+      t({
+        id: 'production.unknownPartner',
+        defaultMessage:
+          'That partner is not in this organization. Choose one from the list.',
+      }),
+    );
+  }
 
   /**
    * A BOM for a different variant would issue the wrong components and credit

@@ -47,7 +47,7 @@ export function AddOrderLineDialog({
    */
   onAdded: (priceNotice: string | null) => Promise<void> | void;
 }) {
-  const { variants, failed } = useVariants(open);
+  const { variants, answered, failed } = useVariants(open);
   const [variantId, setVariantId] = useState('');
   const intl = useIntl();
   const [quantity, setQuantity] = useState('');
@@ -161,6 +161,7 @@ export function AddOrderLineDialog({
               })}
               required
               options={choices}
+              loading={!answered}
               value={variantId}
               onChange={setVariantId}
               helperText={

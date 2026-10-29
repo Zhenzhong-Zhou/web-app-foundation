@@ -2,6 +2,8 @@
 
 Les produits sont ce que vous achetez, fabriquez et vendez. Chacun a une ou plusieurs variantes, ce dans quoi le stock est compté, et chaque variante a sa propre UGS : le code inscrit sur son étiquette.
 
+Le champ **Rechercher** trouve un produit par une partie d’une UGS, ou de son nom ou de celui d’une variante dans n’importe quelle langue, avec ou sans accents; un nom chinois aussi par son pinyin, ou par un seul caractère.
+
 ## Ajouter un produit {#add}
 
 1. Appuyez sur **Ajouter un produit**.

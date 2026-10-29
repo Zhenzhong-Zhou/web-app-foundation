@@ -3,6 +3,7 @@ import { useIntl } from 'react-intl';
 
 import type { VariantOption } from '../api/types.gen';
 import { itemName } from '../lib/format';
+import { usePickerSearch } from '../lib/use-picker-search';
 
 /** "WIDGET-1 — Widget (Large)": the SKU first, because it is what people type. */
 function labelFor(option: VariantOption): string {
@@ -10,11 +11,18 @@ function labelFor(option: VariantOption): string {
 }
 
 /**
- * Choosing a variant by typing rather than scrolling.
+ * Choosing a variant by typing rather than scrolling, behind every item
+ * picker (ADR-056, amended).
  *
  * A select is fine at ten options and unusable at fifty: the list runs off
- * the screen and the only way to find a SKU is to read every row. Autocomplete
- * filters on the whole label, so either the SKU or the product name finds it.
+ * the screen and the only way to find a SKU is to read every row. Before
+ * anything is typed, it lists `options`, the catalogue as the form offers it
+ * (useVariants). From the first character it asks
+ * `GET /products/variants?search=` (usePickerSearch): an item by its SKU,
+ * its names in every language and their pinyin, best match first.
+ * While it asks, or while `loading`, it says it is loading, in the popup's
+ * status, which a screen reader hears; "No matching items" comes only from
+ * an answer.
  *
  * Takes and reports an id, not the option, so the forms using it keep the
  * `variantId: string` they already submit and reset. A value missing from
@@ -28,6 +36,7 @@ export function VariantPicker({
   id,
   label,
   options,
+  loading = false,
   value,
   onChange,
   required = false,
@@ -37,6 +46,8 @@ export function VariantPicker({
   id: string;
   label: string;
   options: VariantOption[];
+  /** The catalogue has not come back yet (useVariants' `answered`). */
+  loading?: boolean;
   value: string;
   onChange: (variantId: string) => void;
   required?: boolean;
@@ -45,21 +56,33 @@ export function VariantPicker({
 }) {
   const intl = useIntl();
   const selected = options.find((option) => option.id === value) ?? null;
+  const { shown, autocomplete } = usePickerSearch(
+    '/products/variants',
+    options,
+    {
+      loading,
+      noMatches: intl.formatMessage({
+        id: 'components.variantPicker.noMatches',
+        defaultMessage: 'No matching items',
+      }),
+      failed: intl.formatMessage({
+        id: 'inventory.catalogueFailed',
+        defaultMessage: 'Could not load the catalogue.',
+      }),
+    },
+  );
 
   return (
     <Autocomplete
+      {...autocomplete}
       id={id}
-      options={options}
+      options={shown}
       value={selected}
       onChange={(_event, option) => onChange(option?.id ?? '')}
       getOptionLabel={labelFor}
       isOptionEqualToValue={(option, current) => option.id === current.id}
       disabled={disabled}
       fullWidth
-      noOptionsText={intl.formatMessage({
-        id: 'components.variantPicker.noMatches',
-        defaultMessage: 'No matching items',
-      })}
       renderInput={(params) => (
         <TextField
           {...params}

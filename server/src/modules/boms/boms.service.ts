@@ -8,11 +8,14 @@ import {
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
 import { recordContext } from '../../core/audit/audit-context';
+import { isUniqueViolation } from '../../database/errors';
+import { assertOwnIds } from '../../database/own-ids';
 import {
-  isForeignKeyViolation,
-  isUniqueViolation,
-} from '../../database/errors';
-import { bomLines, boms, productionOrders } from '../../database/schema';
+  bomLines,
+  boms,
+  productionOrders,
+  productVariants,
+} from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { ProductLicencesService } from '../product-licences/product-licences.service';
@@ -59,8 +62,9 @@ export class BomsService {
   /**
    * The licence foreign key is global, like every id here: without this check
    * another organization's licence would be accepted by the database, and the
-   * recall trail would point outside the tenant (ADR-003). The foreign-key
-   * catch below still covers an id that exists nowhere at all.
+   * recall trail would point outside the tenant (ADR-003). An id that exists
+   * nowhere is refused the same way, and nothing deletes a licence, so no
+   * foreign key can fail after it.
    */
   private async assertLicenceWithin(licenceId: string | undefined) {
     if (!licenceId) return;
@@ -73,6 +77,29 @@ export class BomsService {
         }),
       );
     }
+  }
+
+  /**
+   * The variant foreign keys are global too, so the output and each
+   * component are looked for in this organization first: another tenant's
+   * variant is refused as unknown (ADR-003).
+   */
+  private async assertOwnVariants(
+    tx: Tx,
+    organizationId: string,
+    variantIds: string[],
+  ): Promise<void> {
+    await assertOwnIds(
+      tx,
+      productVariants,
+      organizationId,
+      variantIds,
+      t({
+        id: 'boms.unknownVariant',
+        defaultMessage:
+          'That item is not in this organization. Choose one from the list.',
+      }),
+    );
   }
 
   async list(query: ListBomsDto): Promise<Bom[]> {
@@ -144,6 +171,11 @@ export class BomsService {
    */
   async create(input: CreateBomDto): Promise<BomRow> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
+      await this.assertOwnVariants(tx, organizationId, [
+        input.outputVariantId,
+        ...(input.lines ?? []).map((line) => line.componentVariantId),
+      ]);
+
       const version = await this.nextVersion(
         tx,
         organizationId,
@@ -198,19 +230,7 @@ export class BomsService {
       });
     }
 
-    try {
-      await this.tenantDb.update(boms, input, eq(boms.id, bomId));
-    } catch (error) {
-      if (isForeignKeyViolation(error)) {
-        throw new BadRequestException(
-          t({
-            id: 'boms.licenceidDoesExist',
-            defaultMessage: 'licenceId does not exist',
-          }),
-        );
-      }
-      throw error;
-    }
+    await this.tenantDb.update(boms, input, eq(boms.id, bomId));
 
     this.logger.log(`BOM ${bomId} updated`);
   }
@@ -279,6 +299,10 @@ export class BomsService {
       const bom = await this.loadWithin(tx, organizationId, bomId);
 
       this.assertDraft(bom.status, 'edited');
+
+      await this.assertOwnVariants(tx, organizationId, [
+        input.componentVariantId,
+      ]);
 
       await this.assertNoCycle(
         tx,
@@ -492,14 +516,6 @@ export class BomsService {
       const [bom] = await tx.insert(boms).values(values).returning();
       return bom;
     } catch (error) {
-      if (isForeignKeyViolation(error)) {
-        throw new BadRequestException(
-          t({
-            id: 'boms.outputvariantidLicenceidDoesExist',
-            defaultMessage: 'outputVariantId or licenceId does not exist',
-          }),
-        );
-      }
       if (isUniqueViolation(error)) {
         // Two drafts raced for the same version number.
         throw new ConflictException(
@@ -600,14 +616,6 @@ export class BomsService {
             id: 'boms.componentLineBomEdit',
             defaultMessage:
               'That component is already a line on this BOM — edit the quantity instead',
-          }),
-        );
-      }
-      if (isForeignKeyViolation(error)) {
-        throw new BadRequestException(
-          t({
-            id: 'boms.componentvariantidDoesExist',
-            defaultMessage: 'componentVariantId does not exist',
           }),
         );
       }

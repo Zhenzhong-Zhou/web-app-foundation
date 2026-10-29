@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Headers,
   Param,
   ParseUUIDPipe,
   Query,
@@ -20,6 +19,7 @@ import {
   DownloadAsked,
   PdfResponse,
 } from '../../core/documents/pdf-response.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { printableCreditNote } from './credit-note-document';
 import type {
@@ -60,7 +60,7 @@ export class CreditNotesController {
   async exportCreditNotes(
     @Query() query: ListCreditNotesDto,
     @Res({ passthrough: true }) res: Response,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ) {
     const rows = await everyRow((before, limit) =>
       this.invoices.listCreditNotes({ ...query, before, limit }),

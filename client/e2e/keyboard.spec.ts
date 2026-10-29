@@ -55,6 +55,41 @@ test('a dialog closed by Cancel or by Escape gives focus back to its button', as
 });
 
 /**
+ * The navigation drawer opens through openDialog, as a dialog does. Left
+ * out, its button kept focus, so Chrome refused the aria-hidden on the page
+ * behind the drawer, and a screen reader could still reach it. Chrome
+ * checks only while its accessibility tree is on, which a screen reader
+ * turns on and Playwright does not, so the test turns it on.
+ */
+test('the navigation drawer closed by Escape gives focus back to its button, with nothing left reachable behind it', async ({
+  page,
+}) => {
+  const refused: string[] = [];
+  page.on('console', (message) => {
+    if (message.text().includes('Blocked aria-hidden')) {
+      refused.push(message.text());
+    }
+  });
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Accessibility.enable');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  const opener = page.getByRole('button', { name: 'Open navigation' });
+  const drawer = page.getByRole('dialog', { name: 'Navigation' });
+
+  await opener.click();
+  await expect(drawer).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(drawer).toBeHidden();
+  await expect(opener).toBeFocused();
+  // Past the close, so a refusal made during it has been heard.
+  await expect(page.locator('#root')).not.toHaveAttribute('aria-hidden');
+  expect(refused).toEqual([]);
+});
+
+/**
  * On a phone, an order's summary sits above its tabs, and Tab reaches it
  * first too (WCAG 1.3.2, #155): Ship came after Items and the lines'
  * actions, though it is seen before them.

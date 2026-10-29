@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -10,6 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
@@ -61,7 +61,7 @@ export class NotificationsController {
   list(
     @CurrentUser() user: RequestContext,
     @Query() query: ListNotificationsDto,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ): Promise<NotificationPage> {
     return this.notifications.list(
       user.userId,

@@ -276,11 +276,63 @@ describe('Lookup (e2e)', () => {
     expect(lotsOnly).toEqual(['lot']);
   });
 
-  it('asks for at least two characters, after trimming', async () => {
+  it('asks for at least two characters, or one Chinese character, after trimming', async () => {
     const alpha = await registerOrganization(app, 'alpha');
 
     await alpha.agent.get('/v1/lookup?q=a').expect(400);
     await alpha.agent.get('/v1/lookup?q=%20%20a%20').expect(400);
+    await alpha.agent
+      .get(`/v1/lookup?q=${encodeURIComponent('，')}`)
+      .expect(400);
     await alpha.agent.get(`/v1/lookup?q=${'x'.repeat(101)}`).expect(400);
+    await alpha.agent
+      .get(`/v1/lookup?q=${encodeURIComponent(' 鱼 ')}`)
+      .expect(200);
+  });
+
+  it('finds an item by one Chinese character of its name', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await createVariant(alpha.agent, {
+      type: 'good',
+      name: '深海鱼油',
+      variant: { sku: 'OIL-90', tracksLots: false },
+    });
+
+    expect(titles(await lookup(alpha, '鱼'), 'item')).toEqual(['深海鱼油']);
+  });
+
+  // The ranking Products and the pickers share (item-search's itemRank).
+  it("ranks an exact match on the reader's name for an item first", async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { product } = body<{ product: { id: string } }>(
+      await alpha.agent
+        .post('/v1/products')
+        .send({
+          type: 'good',
+          name: 'Focus',
+          variant: { sku: 'FOCUS-60', tracksLots: false },
+        })
+        .expect(201),
+    );
+    await alpha.agent
+      .put(`/v1/products/${product.id}/translations`)
+      .send({ translations: [{ locale: 'zh-Hans', name: '专注胶囊' }] })
+      .expect(204);
+    // Made second, so the newer, which comes first among equals.
+    await createVariant(alpha.agent, {
+      type: 'good',
+      name: '安神专注胶囊',
+      variant: { sku: 'CALM-60', tracksLots: false },
+    });
+
+    for (const q of ['专注胶囊', 'zhuanzhujiaonang']) {
+      const groups = body<LookupResponse>(
+        await alpha.agent
+          .get(`/v1/lookup?q=${encodeURIComponent(q)}`)
+          .set('Accept-Language', 'zh-Hans')
+          .expect(200),
+      ).groups;
+      expect(titles(groups, 'item')).toEqual(['专注胶囊', '安神专注胶囊']);
+    }
   });
 });

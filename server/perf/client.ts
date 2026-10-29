@@ -37,10 +37,12 @@ export class Session {
     readonly label: string,
   ) {}
 
+  /** In `language` when given, as the browser sends the screen's (ADR-056). */
   async send(
     method: 'GET' | 'POST' | 'PATCH',
     path: string,
     body?: unknown,
+    language?: string,
   ): Promise<ApiResponse> {
     const response = await fetch(`${this.baseUrl}/v1${path}`, {
       method,
@@ -48,6 +50,7 @@ export class Session {
         cookie: this.cookie,
         'x-requested-with': 'perf',
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+        ...(language === undefined ? {} : { 'accept-language': language }),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(TIMEOUT_MS),

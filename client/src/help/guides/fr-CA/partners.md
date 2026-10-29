@@ -2,6 +2,8 @@
 
 Un partenaire est une entreprise auprès de laquelle vous achetez, à laquelle vous vendez, ou les deux : une seule liste pour les deux côtés du commerce. Qu’un partenaire soit fournisseur ou client découle des commandes que vous passez avec lui; il n’y a donc rien à choisir quand vous l’ajoutez.
 
+Le champ **Rechercher** trouve un partenaire par une partie de son nom, avec ou sans accents, de son code ou de son numéro de taxe; un nom chinois aussi par son pinyin, ou par un seul caractère.
+
 ## Ajouter un partenaire {#add}
 
 1. Appuyez sur **Ajouter un partenaire**.

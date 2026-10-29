@@ -1,7 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
+import { useLanguage } from '../i18n/use-language';
 import { server } from '../test/setup';
 import { deploy, OUTDATED, outdatedRefusal } from '../test/version';
 import { useResource } from './use-resource';
@@ -122,6 +123,144 @@ describe('useResource', () => {
     // Give the stale response every chance to land before checking it didn't.
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(result.current.data?.name).toBe('Second');
+  });
+
+  /**
+   * A new search on Products or Partners waits as a keyset list does: the
+   * last search's rows are not its answer (review finding 1 of #260).
+   */
+  it('reports loading for a new path, with none of the last one’s data, until it answers', async () => {
+    let answerSecond: () => void = () => undefined;
+    const secondAnswered = new Promise<void>((resolve) => {
+      answerSecond = resolve;
+    });
+
+    server.use(
+      http.get(`${BASE}/things/a`, () =>
+        HttpResponse.json({ id: 'a', name: 'First' }),
+      ),
+      http.get(`${BASE}/things/b`, async () => {
+        await secondAnswered;
+        return HttpResponse.json({ id: 'b', name: 'Second' });
+      }),
+    );
+
+    const { result, rerender } = renderHook(
+      ({ path }) => useResource<Thing>(path),
+      { initialProps: { path: '/things/a' } },
+    );
+    await waitFor(() => expect(result.current.data?.name).toBe('First'));
+
+    rerender({ path: '/things/b' });
+    expect(result.current.loading).toBe(true);
+    expect(result.current.data).toBeNull();
+
+    answerSecond();
+    await waitFor(() => expect(result.current.data?.name).toBe('Second'));
+    expect(result.current.loading).toBe(false);
+  });
+
+  describe('when the language changes', () => {
+    afterEach(() => localStorage.clear());
+
+    /**
+     * Names come in the reader's language (ADR-056, amended), so a screen
+     * reads again in the new one, as a reload does: what it shows stays
+     * until the answer lands (#297).
+     */
+    it('reads again in the new language, keeping what is shown until it answers', async () => {
+      let answer: () => void = () => undefined;
+      const answered = new Promise<void>((resolve) => {
+        answer = resolve;
+      });
+      const asked: (string | null)[] = [];
+      server.use(
+        http.get(`${BASE}/things/a`, async ({ request }) => {
+          const language = request.headers.get('accept-language');
+          asked.push(language);
+          if (language !== 'zh-Hans')
+            return HttpResponse.json({ id: 'a', name: 'Focus 60ct' });
+          await answered;
+          return HttpResponse.json({ id: 'a', name: '专注胶囊 60 粒' });
+        }),
+      );
+
+      const { result } = renderHook(() => ({
+        read: useResource<Thing>('/things/a'),
+        language: useLanguage(),
+      }));
+      await waitFor(() =>
+        expect(result.current.read.data?.name).toBe('Focus 60ct'),
+      );
+
+      await act(() => result.current.language.setLocale('zh-Hans'));
+      await expect.poll(() => asked).toEqual(['en', 'zh-Hans']);
+      expect(result.current.read.data?.name).toBe('Focus 60ct');
+      expect(result.current.read.loading).toBe(false);
+
+      answer();
+      await waitFor(() =>
+        expect(result.current.read.data?.name).toBe('专注胶囊 60 粒'),
+      );
+    });
+  });
+
+  /**
+   * A list whose search is in its path (Products, Partners): Refresh, then
+   * a search typed while the reload is still out.
+   */
+  it('ignores a reload that answers after the path has changed', async () => {
+    let held = false;
+    let answerReload: () => void = () => undefined;
+    const reloadAnswered = new Promise<void>((resolve) => {
+      answerReload = resolve;
+    });
+
+    server.use(
+      http.get(`${BASE}/things/a`, async () => {
+        if (held) await reloadAnswered;
+        return HttpResponse.json({ id: 'a', name: 'First' });
+      }),
+      http.get(`${BASE}/things/b`, () =>
+        HttpResponse.json({ id: 'b', name: 'Second' }),
+      ),
+    );
+
+    const { result, rerender } = renderHook(
+      ({ path }) => useResource<Thing>(path),
+      { initialProps: { path: '/things/a' } },
+    );
+    await waitFor(() => expect(result.current.data?.name).toBe('First'));
+
+    held = true;
+    const reloading = result.current.reload();
+    rerender({ path: '/things/b' });
+    await waitFor(() => expect(result.current.data?.name).toBe('Second'));
+
+    answerReload();
+    await act(() => reloading);
+    expect(result.current.data?.name).toBe('Second');
+  });
+
+  it('clears the last path’s error once a new path answers', async () => {
+    server.use(
+      http.get(`${BASE}/things/a`, () => HttpResponse.error()),
+      http.get(`${BASE}/things/b`, () =>
+        HttpResponse.json({ id: 'b', name: 'Second' }),
+      ),
+    );
+
+    const { result, rerender } = renderHook(
+      ({ path }) => useResource<Thing>(path),
+      { initialProps: { path: '/things/a' } },
+    );
+    await waitFor(() =>
+      expect(result.current.error).toBe('Could not reach the server.'),
+    );
+
+    rerender({ path: '/things/b' });
+    await waitFor(() => expect(result.current.data?.name).toBe('Second'));
+    expect(result.current.error).toBeNull();
   });
 
   it('lets the page write its own errors to the same banner', async () => {

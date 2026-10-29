@@ -1365,6 +1365,130 @@ describe('Production orders (e2e)', () => {
       expect(await onHand(s.blend, s.shelf)).toBe('10000.0000');
     });
 
+    // A foreign key takes a row of any organization, so each id in the body
+    // is checked against the caller's before anything is written (ADR-003).
+    it('refuses another organization’s partner, location and variant on a new run, and writes nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const s = await scenario(alpha);
+      const [theirLocation, theirVariant, theirPartner] = await Promise.all([
+        makeLocation(beta, 'SITE'),
+        makeVariant(beta, 'D3-60CT'),
+        createPartner(beta.agent, { name: 'Theirs' }),
+      ]);
+
+      const plan = {
+        outputVariantId: s.output,
+        locationId: s.wip,
+        quantityPlanned: '500',
+      };
+      for (const [fields, message] of [
+        [
+          { partnerId: theirPartner },
+          'That partner is not in this organization. Choose one from the list.',
+        ],
+        [
+          { locationId: theirLocation },
+          'That location is not in this organization. Choose one from the list.',
+        ],
+        [
+          { outputVariantId: theirVariant },
+          'That item is not in this organization. Choose one from the list.',
+        ],
+      ] as const) {
+        const refused = await alpha.agent
+          .post('/v1/production-orders')
+          .send({ ...plan, ...fields })
+          .expect(400);
+        expect(body<{ message: string }>(refused).message).toBe(message);
+      }
+
+      const written = await db
+        .select()
+        .from(productionOrders)
+        .where(eq(productionOrders.organizationId, alpha.organizationId));
+      expect(written).toHaveLength(0);
+    });
+
+    it('refuses another organization’s partner and location on a run’s change, and leaves it as it was', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const s = await scenario(alpha);
+      const ours = await createPartner(alpha.agent, { name: 'Ours' });
+      const run = await createRun(alpha, {
+        outputVariantId: s.output,
+        bomId: s.bomId,
+        locationId: s.wip,
+        partnerId: ours,
+        quantityPlanned: '500',
+      });
+      const [theirLocation, theirPartner] = await Promise.all([
+        makeLocation(beta, 'SITE'),
+        createPartner(beta.agent, { name: 'Theirs' }),
+      ]);
+
+      for (const [fields, message] of [
+        [
+          { partnerId: theirPartner },
+          'That partner is not in this organization. Choose one from the list.',
+        ],
+        [
+          { locationId: theirLocation },
+          'That location is not in this organization. Choose one from the list.',
+        ],
+      ] as const) {
+        const refused = await alpha.agent
+          .patch(`/v1/production-orders/${run.id}`)
+          .send(fields)
+          .expect(400);
+        expect(body<{ message: string }>(refused).message).toBe(message);
+      }
+
+      const [stored] = await db
+        .select()
+        .from(productionOrders)
+        .where(eq(productionOrders.id, run.id));
+      expect(stored).toMatchObject({ partnerId: ours, locationId: s.wip });
+    });
+
+    it('refuses another organization’s location as a release’s source, its own or a line’s, and writes nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const s = await scenario(alpha);
+      const run = await createRun(alpha, {
+        outputVariantId: s.output,
+        bomId: s.bomId,
+        locationId: s.wip,
+        quantityPlanned: '500',
+      });
+      const theirLocation = await makeLocation(beta, 'SHELF');
+
+      for (const release of [
+        { sourceLocationId: theirLocation },
+        {
+          sourceLocationId: s.shelf,
+          overrides: [
+            { componentVariantId: s.blend, sourceLocationId: theirLocation },
+          ],
+        },
+      ]) {
+        const refused = await alpha.agent
+          .post(`/v1/production-orders/${run.id}/release`)
+          .send(release)
+          .expect(400);
+        expect(body<{ message: string }>(refused).message).toBe(
+          'That location is not in this organization. Choose one from the list.',
+        );
+      }
+
+      const lines = await db
+        .select()
+        .from(productionOrderLines)
+        .where(eq(productionOrderLines.productionOrderId, run.id));
+      expect(lines).toHaveLength(0);
+      expect(await onHand(s.blend, s.shelf)).toBe('10000.0000');
+    });
+
     it('requires a session', async () => {
       await authedAgent(app).get('/v1/production-orders').expect(401);
     });

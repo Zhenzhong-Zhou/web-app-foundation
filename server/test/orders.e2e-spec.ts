@@ -239,14 +239,27 @@ describe('Orders (e2e)', () => {
         .expect(409);
     });
 
-    it('refuses a partner from another organization', async () => {
+    // Each refusal says what to do next (CLAUDE.md, Refusals).
+    it('refuses a partner or an item from another organization, saying to choose one from the list', async () => {
       const alpha = await setup('alpha');
       const beta = await setup('beta');
 
-      await alpha.agent
-        .post('/v1/orders')
-        .send(purchase(beta.partnerId, alpha.variant.id))
-        .expect(400);
+      for (const [order, message] of [
+        [
+          purchase(beta.partnerId, alpha.variant.id),
+          'That partner is not in this organization. Choose one from the list.',
+        ],
+        [
+          purchase(alpha.partnerId, beta.variant.id),
+          'That item is not in this organization. Choose one from the list.',
+        ],
+      ] as const) {
+        const refused = await alpha.agent
+          .post('/v1/orders')
+          .send(order)
+          .expect(400);
+        expect(body<{ message: string }>(refused).message).toBe(message);
+      }
     });
 
     it('refuses a Viewer, which lacks orders.create', async () => {

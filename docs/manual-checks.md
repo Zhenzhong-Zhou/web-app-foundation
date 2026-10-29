@@ -696,9 +696,10 @@ Paper is checked first because it must not change at all.
   Returns) shows no 0, and Returned 0 carries no note.
 - **MC-1546** Products has a page header (Licences, Refresh, Add product),
   then Search and a Discontinued quick filter with its count. Typing part of a
-  name narrows the list as you type; pressing Discontinued shows only those
-  (ZINC-60's product). Discontinued reads as a grey chip; a search that
-  matches nothing says so, and Add product stays in the header only.
+  name narrows the list a moment after typing stops; pressing Discontinued
+  shows only those (ZINC-60's product). Discontinued reads as a grey chip; a
+  search that matches nothing says so, and Add product stays in the header
+  only.
 - **MC-1547** Partners has Search and a Retired quick filter with its count.
   The search finds a partner by part of its name, its code or its tax ID.
   Pressing Retired shows only Old Mill Herbs. Retired reads as a grey chip.
@@ -746,8 +747,10 @@ Paper is checked first because it must not change at all.
   `2609` lists BF-2609 and FOC-2609-01 under Lots, each with its SKU and
   expiry chip; arrow keys move, Enter opens the lot's trace, Escape closes.
   `fokus` shows Focus 60ct marked close match; `mdyf` or 明德 finds 明德药房; `INV-`
-  puts Invoices first. In 中文 and Français the headings and messages are
-  translated. At 375px the search is a button that opens it full screen.
+  puts Invoices first. One letter alone asks for more, but one Chinese
+  character is enough: in 中文, 专 lists 专注胶囊 60 粒 under 物品. In 中文
+  and Français the headings and messages are translated. At 375px the
+  search is a button that opens it full screen.
 - **MC-1557** Orders, Invoices, Returns and Production each have a Search box
   in their filter row: part of a number or reference, or a partner's name
   (without accents, or a Chinese name by pinyin), narrows the list as you
@@ -762,6 +765,9 @@ Paper is checked first because it must not change at all.
   Expires lists the soonest first; Movements, Production and Returns narrow by
   their date range; Products, Partners, a price list, Stock value and the
   Audit log each export, and the Audit log shows the export as an entry.
+  Products with `focus` typed and Discontinued pressed exports only what
+  the list shows, and so does Partners with `mill` and Retired; the Audit
+  log's entry names the filter, not what was typed.
   Orders' Created, Movements' When and the Audit log's When read like
   `2026-10-15 18:54:11`, in UTC, and open as dates.
 - **MC-1559** Sign in as the demo owner: Home opens, greeting by the time of
@@ -2036,7 +2042,8 @@ the file, or wait ten minutes.
   Orders, deploy: New version appears just before Help, a pill in the
   info tone, and the top bar keeps its height, so nothing on the page
   moves. A screen reader says once, politely, A new version is ready. It
-  loads by itself when you open another page.; with a dialog open, such as
+  loads by itself when you open another page. Everything you’ve saved is
+  kept; you don’t need to do anything.; with a dialog open, such as
   Receive on a purchase order, it says so in the dialog, and nothing more
   once the dialog closes. New version opens that note
   with Reload now, which loads the page. On an order, switching from Items
@@ -2051,8 +2058,9 @@ the file, or wait ten minutes.
   whose name a screen reader reads as …, signed in as …, a new version is
   ready, and the bar still fits its six targets. The account menu's first
   item reads A new version is ready · Reload now, It also loads by itself
-  when you open another page., and loads the page. In 中文, 新版本已就绪 ·
-  立即重新加载, 您打开其他页面时也会自动加载。
+  when you open another page. Everything you’ve saved is kept; you don’t
+  need to do anything., and loads the page. In 中文, 新版本已就绪 ·
+  立即重新加载, 您打开其他页面时也会自动加载。已保存的内容不会丢失，您无需任何操作。
 - **MC-3403** *(ADR-081)* Signed out. On sign-in, register, forgot
   password and an invitation's link, deploy: under the language and text
   size, an info banner says A new version is ready. It loads when you open
@@ -2732,6 +2740,79 @@ a day.
   is addressed to your account's address, never `no-reply@`, and arrives
   there. Revoke the invitation on Invited afterwards.
 
+## 38. Names in the reader's language (ADR-056, amended)
+
+An item is named on every screen as the lookup names it: the product's
+and the variant's name in the screen's language where it has one, else
+the base name. The demo's Focus 60ct is 专注胶囊 60 粒 in Chinese and
+Focus, 60 capsules in French. Documents, CSV exports, the audit log and
+refusals keep the base name.
+
+- **MC-3801** In 中文, Products lists 专注胶囊 60 粒 where Focus 60ct was,
+  sorted among the others by its pinyin (zhuanzhu…), and the names with
+  no Chinese among them by their letters, accents and case aside. In
+  English it is Focus 60ct again, in the same alphabetical order. Switch
+  the language while Products, the product's page or Inventory is open:
+  the names change with the screen's words, without leaving it.
+- **MC-3802** In 中文, open 专注胶囊 60 粒: the heading and the gallery's
+  images are named 专注胶囊 60 粒, and 其他语言名称 starts with 基础名称：Focus
+  60ct, the name documents print. Edit a variant's unit and save: in
+  English the page still reads Focus 60ct and the variant keeps the name
+  it had. Edit names shows Focus 60ct as the name being translated.
+- **MC-3803** In 中文, Inventory names FOCUS-60CT's rows 专注胶囊 60 粒, as
+  does the trace of lot FOC-2609-01. On SO-DEMO-1 the line, the shipments
+  and the return name it so too; its packing slip, invoice and CSV
+  exports print Focus 60ct as before.
+- **MC-3804** In 中文, Receive: the item picker lists FOCUS-60CT —
+  专注胶囊 60 粒. So do Set price on a price list and its Item column;
+  Home's Recently opened, after opening the product, names it 专注胶囊 60
+  粒 too.
+
+## 39. Products, Partners and the pickers searched on the server (ADR-056, amended)
+
+Products, Partners, every item picker and every partner picker search as
+the top bar's lookup does: a name in any language, accents, case and punctuation aside, a
+Chinese name by its pinyin or by one character, the closest match first.
+The list narrows a moment after typing stops.
+
+- **MC-3901** On Products, `zzjn`, `zhuanzhu` or `zhuānzhù` lists
+  专注胶囊 60 粒 in 中文, and Focus 60ct in English; so does `ＦＯＣＵＳ`,
+  typed full width with a Chinese input method. `bisglycinate de magnesium`, without
+  its accent, finds Magnesium bisglycinate capsules by its French name.
+  镁 alone lists the magnesium capsules and nothing else. Discontinued
+  counts only what the search found. From the top bar, `zzjn`, then Show
+  all in Items: Products opens with zzjn in its box, listing the same.
+  Do it again on Products showing `calm`: the box and the list change to
+  zzjn, Back brings calm back, and Forward zzjn. What is typed is in the
+  address: reload, or open a product and come Back, and the list is
+  still narrowed. With DevTools' network set to Slow 4G, type `calm`:
+  the rows go, the list waits, and Calm 90ct comes; Partners does the
+  same with `mingde`.
+- **MC-3902** On Partners, `mdyf` or `mingde` lists 明德药房, and so does
+  药 alone. `cooperative`, without its accent, finds the Coopérative des
+  pharmacies indépendantes du Bas-Saint-Laurent; `pharmacie` lists
+  Pharmacie Saint-Laurent before it, the name that starts with the word
+  first. From the top bar, `saint laurent`, then Show all in Partners:
+  Partners opens with saint laurent in its box, listing both, and so it
+  does from Partners already showing `药`, which Back brings back.
+- **MC-3903** In 中文, Receive: type `zzjn` in 物品, and the list says
+  正在加载… until FOCUS-60CT — 专注胶囊 60 粒 comes, first; pick it, and
+  Quantity names its unit. 专 alone lists it and nothing else; `zzzz`
+  says 没有匹配的项目 only once the wait is over, never while it loads.
+  On a draft order's Add an item, an item already on the order is not
+  offered, typed or not. New order's Item names the variant too:
+  MAGCAP-60 — Magnesium bisglycinate capsules (60 capsules) in English.
+- **MC-3904** New order's Partner: `mdyf` lists 明德药房, saying
+  Loading… until it comes; `cooperative`, without its accent, finds the
+  Coopérative des pharmacies indépendantes du Bas-Saint-Laurent; `zzzz`
+  says No matching partners only once the wait is over. A retired
+  partner is not offered, typed or not. Send a sample from an Inventory
+  row: Given to finds 明德药房 by `mdyf` as well. Plan a run: Contract
+  manufacturer reads We make it ourselves before anything is chosen;
+  opened, it lists We make it ourselves first, then the partners, and
+  typing `mdyf` keeps it first, above 明德药房. Choose it back after a
+  partner, and the field reads We make it ourselves again.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -3014,9 +3095,10 @@ first.
   SO-DEMO-2, Ship, then Cancel; on PO-DEMO-9, a line's Receive, then
   Escape; on Account, Delete my account, then Cancel; on a product, History,
   then Escape; on a role made here, Delete, then Cancel, and Move everyone
-  to…, then Escape. Each time focus is back on the button that opened it,
-  with its ring, and Enter opens it again; a screen reader names that
-  button, not the page from the top.
+  to…, then Escape; at 390 px, Open navigation, then Escape, with no
+  Blocked aria-hidden warning in Chrome's console. Each time focus is back
+  on the button that opened it, with its ring, and Enter opens it again; a
+  screen reader names that button, not the page from the top.
 - **MC-R26** *(French guillemets)* In Français on a phone (390 px), read
   the note under Numbering, « Imprimé ainsi », and Security's « Rester
   connecté »: a « never ends a line with its words on the next. Profile's
@@ -3734,3 +3816,32 @@ first.
 - 2026-10-27: ADR-083, a dark mail app gets the email's own dark page
   under its light text, never white on white: MC-3705 and MC-3706
   changed.
+- 2026-10-28: the navigation drawer opens as every dialog does, so the
+  page behind it is hidden from a screen reader: MC-R27 extended.
+- 2026-10-28: ADR-056, amended, an item's name in the reader's language:
+  section 38, MC-3801 to MC-3804.
+- 2026-10-28: ADR-056, amended, one Chinese character a search in the top
+  bar: MC-1556 extended.
+- 2026-10-28: ADR-056, amended, Products and Partners searched on the
+  server: section 39, MC-3901 and MC-3902.
+- 2026-10-28: #260, Show all on the list already open, Back and Forward
+  following, and the search typed kept in the address: MC-3901 and
+  MC-3902 extended.
+- 2026-10-28: ADR-056, amended, every item picker searched on the server
+  and saying when it loads: section 39 renamed for them, MC-3903 added.
+- 2026-10-28: #260, the three partner pickers searched on the server, and
+  Plan run's We make it ourselves a row of its own and the field's value
+  (#274): section 39 renamed for them, MC-3904 added.
+- 2026-10-28: #260's reviews, the product page saying its base name first
+  among its names in other languages: MC-3802 extended.
+- 2026-10-28: #260's reviews, Products and Partners waiting for a new
+  search's answer rather than showing the last one's rows: MC-3901
+  extended.
+- 2026-10-28: #297, a screen already open reading its names again when
+  the language changes: section 38's workaround gone, MC-3801 extended.
+- 2026-10-28: #260's reviews, pinyin typed with tone marks and a search
+  typed full width found as typed without them: MC-3901 extended.
+- 2026-10-28: Products searched on the server, the list narrowing once
+  typing stops rather than as each letter is typed: MC-1546 reworded.
+- 2026-10-28: Products' and Partners' exports following the list's search
+  and its quick filter, as ADR-057 says: MC-1558 extended.

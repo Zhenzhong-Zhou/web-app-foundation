@@ -48,7 +48,7 @@ export function SetPriceDialog({
   onSaved: () => Promise<void>;
 }) {
   const intl = useIntl();
-  const { variants, failed } = useVariants(open && item === null);
+  const { variants, answered, failed } = useVariants(open && item === null);
   const [variantId, setVariantId] = useState(item?.variantId ?? '');
   // Shown the reader's way, 12,5000 in French, and read back the same.
   const [unitPrice, setUnitPrice] = useState(
@@ -133,6 +133,7 @@ export function SetPriceDialog({
                 })}
                 required
                 options={choices}
+                loading={!answered}
                 value={variantId}
                 onChange={setVariantId}
                 helperText={

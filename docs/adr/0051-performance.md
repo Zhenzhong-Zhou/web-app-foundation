@@ -161,7 +161,15 @@ so the timing is the evidence for the name lookup.
   organization's variants (#187). The index knows no organization, so
   other organizations' matching lots are read and filtered out: 79% of
   the candidates for `LV-0001` at large. Trigger: ADR-056's for an index
-  per organization, which the typo lookup's missed budget meets (#225).
+  per organization, one organization's rows dominating a table or a
+  budget missed. Not met: the typo lookup's missed budget (#225) went once
+  #186 put the organization on the lookup's joins, without the index (28
+  October 2026).
+- **One Chinese character on a large catalogue.** `GET /products?search=专`
+  in `zh-Hans`, at large, in its largest organization: 63.5 ms, reading
+  every organization's translations through the trigram index (29
+  October 2026, #317). Trigger: a large organization's search past 100
+  ms. Then ADR-056's index per organization.
 - **Valuation** reads every pool by definition. Trigger: an organization
   whose valuation no longer fits a screen. Then an export.
 - **Migrations on large live tables.** 0036 builds its index inside the

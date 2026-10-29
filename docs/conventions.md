@@ -449,6 +449,11 @@ committed, and neither is edited by hand.
   - A raw query's rows get a type of their own (`interface PoolRow`), as
     Postgres returns them, never `Record<string, unknown>`: a response
     built from unknowns cannot be checked against its declaration.
+- **The reader's language** comes from Accept-Language, read through
+  `@AcceptLanguage()`, which also documents it as optional; never
+  `@Headers('accept-language')`, which documents it as required (ADR-056,
+  as built). A service that names something takes the locale as an
+  argument, null meaning the base name.
 - **The API revision** (ADR-081). One number,
   `server/src/common/api-revision.ts`, carried as the document's
   `info.version` (`1.<revision>`) and written by `npm run api` into

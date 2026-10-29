@@ -1,7 +1,6 @@
 import Delete from '@mui/icons-material/Delete';
 import {
   Alert,
-  Autocomplete,
   Box,
   Button,
   Checkbox,
@@ -22,18 +21,17 @@ import type { Location, Partner, VariantOption } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
+import { PartnerPicker } from '../components/partner-picker';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
+import { VariantPicker } from '../components/variant-picker';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api, isRevisionRefusal } from '../lib/api';
 import type { OrderDirection } from '../lib/api-names';
-import {
-  BLANK_LINE,
-  groupedNumberMessage,
-  nameAndCode,
-  toApiDecimal,
-} from '../lib/format';
+import { BLANK_LINE, groupedNumberMessage, toApiDecimal } from '../lib/format';
+import { usePartners } from '../lib/use-partners';
 import { useSubmit } from '../lib/use-submit';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
+import { useVariants } from '../lib/use-variants';
 import { SiteSelect } from '../locations/site-select';
 import { unitLabel } from '../products/units';
 import { rem } from '../theme/rem';
@@ -72,13 +70,19 @@ export function CreateOrderPage() {
   const can = useCan();
   const canSeeLocations = can('locations.view');
 
-  const [partners, setPartners] = useState<Partner[]>([]);
-  const [variants, setVariants] = useState<VariantOption[]>([]);
   const intl = useIntl();
-  // Why the partners and products did not load, and a count that reads
-  // them again.
-  const [loadFailure, setLoadFailure] = useState<unknown>(null);
+  // A count that reads the partners and the products again.
   const [reads, setReads] = useState(0);
+  const {
+    partners,
+    answered: partnersAnswered,
+    failure: loadFailure,
+  } = usePartners(true, reads);
+  const {
+    variants,
+    answered: catalogueAnswered,
+    failed: catalogueFailed,
+  } = useVariants(true, reads);
   // Set when a quantity or price is typed with a thousands separator.
   const [numberError, setNumberError] = useState<string | null>(null);
 
@@ -138,28 +142,6 @@ export function CreateOrderPage() {
       }),
     },
   );
-
-  useEffect(() => {
-    let ignore = false;
-
-    void Promise.all([
-      api<Partner[]>('/partners'),
-      api<VariantOption[]>('/products/variants'),
-    ])
-      .then(([partnerRows, variantRows]) => {
-        if (ignore) return;
-        setPartners(partnerRows);
-        setVariants(variantRows);
-        setLoadFailure(null);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setLoadFailure(caught);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [reads]);
 
   // Apart from the partners and products: without them the field is not
   // offered, and the server still delivers to the one site there is. Asked
@@ -310,7 +292,7 @@ export function CreateOrderPage() {
           })}
         </Typography>
 
-        {loadFailure !== null && (
+        {(loadFailure !== null || catalogueFailed) && (
           <Alert severity="error">
             {intl.formatMessage({
               id: 'orders.create.loadFailed',
@@ -324,21 +306,22 @@ export function CreateOrderPage() {
 
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Stack spacing={2}>
-            <Autocomplete
+            <PartnerPicker
+              id="order-partner"
+              label={intl.formatMessage({
+                id: 'orders.partner',
+                defaultMessage: 'Partner',
+              })}
+              required
               options={selectablePartners}
-              getOptionLabel={(option) => nameAndCode(option.name, option.code)}
-              value={partner}
-              onChange={(_event, value) => setPartner(value)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={intl.formatMessage({
-                    id: 'orders.partner',
-                    defaultMessage: 'Partner',
-                  })}
-                  required
-                />
-              )}
+              loading={!partnersAnswered}
+              value={partner?.id ?? ''}
+              onChange={(partnerId) =>
+                setPartner(
+                  selectablePartners.find((row) => row.id === partnerId) ??
+                    null,
+                )
+              }
             />
 
             <TextField
@@ -500,29 +483,26 @@ export function CreateOrderPage() {
                   spacing={2}
                   sx={{ alignItems: 'flex-start', p: 2 }}
                 >
-                  <Autocomplete
-                    sx={{ flexGrow: 1 }}
+                  <VariantPicker
+                    id={`order-line-${line.key}`}
+                    label={intl.formatMessage({
+                      id: 'inventory.item',
+                      defaultMessage: 'Item',
+                    })}
                     options={variants.filter(
                       (option) =>
                         !chosen.has(option.id) ||
                         option.id === line.variant?.id,
                     )}
-                    getOptionLabel={(option) =>
-                      `${option.sku} — ${option.productName}`
+                    loading={!catalogueAnswered}
+                    value={line.variant?.id ?? ''}
+                    onChange={(variantId) =>
+                      updateLine(line.key, {
+                        variant:
+                          variants.find((option) => option.id === variantId) ??
+                          null,
+                      })
                     }
-                    value={line.variant}
-                    onChange={(_event, value) =>
-                      updateLine(line.key, { variant: value })
-                    }
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label={intl.formatMessage({
-                          id: 'inventory.item',
-                          defaultMessage: 'Item',
-                        })}
-                      />
-                    )}
                   />
 
                   <TextField

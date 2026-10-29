@@ -1,7 +1,8 @@
-import { Controller, Get, Headers, Query, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
 
 import { csvFile, everyRow, exportFilters } from '../../common/export';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { PERMISSIONS } from '../authorization/permissions';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
@@ -25,7 +26,7 @@ export class AuditController {
   @RequirePermissions(PERMISSIONS.AUDIT_VIEW)
   list(
     @Query() query: ListAuditDto,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ): Promise<AuditPage> {
     return this.audit.list(query, localeOf(acceptLanguage));
   }
@@ -40,7 +41,7 @@ export class AuditController {
   async exportAudit(
     @Query() query: ListAuditDto,
     @Res({ passthrough: true }) res: Response,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ) {
     const locale = localeOf(acceptLanguage);
     const rows = await everyRow((before, limit) =>
@@ -64,7 +65,7 @@ export class AuditController {
   @Get('actions')
   @RequirePermissions(PERMISSIONS.AUDIT_VIEW)
   listActions(
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ): Promise<AuditActionName[]> {
     return this.audit.listActions(localeOf(acceptLanguage));
   }

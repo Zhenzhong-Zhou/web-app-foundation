@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-10-07
-areas: [search, database]
+areas: [partners, products, search, database, i18n, ui]
 amended-by: [ADR-073]
 ---
 
@@ -236,3 +236,210 @@ query shaped like a known number is one that starts with one of the
 organization's own prefixes, the longest that fits, read when the lookup
 runs; order numbers join invoices, credit notes and RMAs. `INV-`, `CN-` and
 `RMA-` are only the defaults.
+
+## Amendment (October 2026) — names in the reader's language, and Products, Partners and the item pickers searched on the server
+
+The Products page shows each product by its base name, and its search box,
+Partners' and the item pickers' match what they have loaded, in the
+browser, by case alone. A reader in Chinese sees Focus 60ct where the top
+bar's lookup says 专注胶囊 60 粒, and cannot find it on Products, or pick
+it in Receive, by its Chinese name, its pinyin or a part of its SKU
+(#260). ADR-054 already says a screen names an item in the reader's
+language; only the lookup does. This amendment brings every screen and
+every search box to what the lookup does (Bob, 28 October 2026, as
+recommended).
+
+Checked before drafting, as the working agreements ask:
+
+- **Fired: none.** This ADR's Deferred: an index per organization, whose
+  missed budget (#225) went once #186 put the organization on the
+  lookup's joins, without one; a search engine; pinyin with tones or
+  fuzzy pinyin. ADR-054's Deferred. ADR-062's images on order lines and
+  the shipping screen, whose trigger is picking errors. Open decisions'
+  "Product list pagination": both lists still load whole.
+- **Taken here.** #250: Receive says "No products yet" while the
+  catalogue loads, the same fault a picker asking the server would
+  repeat. #263's note wording. #270, the esbuild override under
+  drizzle-kit. #226's two joins not bounded by organization, the product
+  export's and a price list's items', in services this changes.
+- **Kept in step.** #261 (people in the lookup, runs found by their
+  product, Help on search) waits for the first fix-up batch, with #154
+  (settings in the lookup) and #150. The names parts of #167 and #256 are
+  met here; the rest of each stays. #161's packing slip names are a
+  document's (ADR-071), fixed with the documents.
+- **Found while checking.** On the server, only the lookup names an item
+  in the reader's language; Inventory, Movements, orders, price lists,
+  recipes, runs, the lot trace and the pickers show the base name.
+  Products, Partners, People and the pickers match in the browser; the
+  other lists on the server, by this ADR's matching.
+
+### Decision — an item's name in the reader's language, on every screen
+
+- **Resolved on the server,** by one rule every read that names an item
+  for a person uses: the product's and the variant's name in the
+  request's language (Accept-Language, which the client sets to the
+  screen's, as errors and notifications already use), else the base
+  name. The client never chooses among translations.
+- **Every such read,** listed by the build's first step before anything
+  changes: Products and the product page, the item pickers, Inventory,
+  Movements, an order's lines, shipments and returns, a price list's
+  items, recipes, runs and the lot trace. The list becomes a test that
+  asks each in Chinese and expects the Chinese name, so a screen added
+  later that skips the rule fails.
+- **Unchanged.** The audit log and the server's refusals keep the base
+  name (ADR-054). Documents print in their own languages (ADR-054,
+  ADR-071). CSV exports keep the base name; the product export already
+  has every language. The SKU stays the identifier everyone shares.
+- **Sorted by the name shown:** a Chinese name by its pinyin, the
+  `name_pinyin` kept for search, as a Chinese reader expects; any other
+  accent-free, as `search_text()` reads it.
+
+### Decision — Products, Partners and the item pickers searched on the server
+
+- **Products and Partners** take `search` on `GET /v1/products` and
+  `GET /v1/partners`, matched as the lookup matches items and partners:
+  a product by its SKUs, its and its variants' names in every language,
+  and their pinyin; a partner by name, accent-free and by pinyin, code
+  and tax ID. Without a search both still load whole; paging waits for
+  Open decisions' trigger. This replaces "Products and Partners keep
+  narrowing in the browser while they load whole" above.
+- **Both pages** keep their search in the address through
+  `useListSearch`, as Orders does, so Show all from the lookup lands on a
+  list showing what it found.
+- **The item pickers,** a third kind of search beside the lookup and the
+  lists: the one shared picker behind Receive, Add line, New order, Set
+  price, the recipe, Plan run and Movements' filter.
+  `GET /v1/products/variants` takes `search`. The picker lists the catalogue
+  before anything is typed and asks the server once the minimum is
+  typed, waiting as the lists do and dropping an answer that arrives
+  after a newer one.
+- **Loading said, nothing found only once known.** While a picker asks,
+  it shows that it is loading, and a screen reader hears it; "No
+  matching items" comes only from an answer. The catalogue hook says
+  whether it has answered, so no dialog says there are no products while
+  they load (#250).
+
+### Decision — the lookup's ranking, and one minimum everywhere
+
+- **Products, Partners and the pickers rank as the lookup ranks:** an
+  exact match first, then a match at the start, then anywhere; then by
+  name. A SKU typed whole is first in a picker, not among twenty partial
+  matches. The paged lists keep the order their keyset paging depends
+  on.
+- **One Chinese character is a search.** The minimum stays 2 characters,
+  or 1 when it is a Chinese character: 鱼 alone is what a Chinese reader
+  types. Neither length can use a trigram index, as 2 characters already
+  could not, and the budget watches it. This amends "At least 2
+  characters" above, for the lookup as well.
+
+### Considered and not done
+
+- **The pickers filtering in the browser,** with every name and its
+  pinyin sent with the catalogue. Two places that match, and the pinyin
+  is written only on the server.
+- **Translations sent to the browser to choose from.** Every screen would
+  repeat the rule this amendment keeps in one place.
+- **Paging Products and Partners now.** Not needed while they load whole;
+  Open decisions' "Product list pagination" keeps its trigger.
+
+### Deferred
+
+- **Why a row matched,** shown beside it (on pinyin, another language's
+  name, a tax ID). A Chinese reader knows why "yuyou" found 深海鱼油, and
+  it needs a design. Trigger: a reader who cannot tell why a row was
+  found.
+- **Covers in the pickers.** ADR-062 defers images on order lines and the
+  shipping screen; the pickers wait with them. Trigger: picking errors a
+  picture would have prevented.
+- **Recent or most-used items first in a picker,** a question of what to
+  remember per person, as recent and pinned records in the lookup are
+  above. Trigger: someone picking the same few items over and over, or
+  asking for it.
+- **A search engine** stays deferred above, its trigger unchanged.
+- **The pickers' whole catalogue,** read before anything is typed, its
+  search kept to those rows (added as built). Trigger: an organization
+  with thousands of variants, or a picker's first read over its budget.
+  Then the picker shows only what the server finds.
+
+### Consequences
+
+- No migration: the pinyin columns and the trigram indexes exist.
+- Server: the one name rule, used by every read the first step lists;
+  `search` on products, partners and variants through the shared
+  matching, ranked as the lookup; the minimum by script, in
+  `common/search.ts`; the organization on the product export's and a
+  price list's items' joins (#226).
+- Client: Products and Partners through `useListSearch`; the shared
+  picker searching the server, with its loading state; the catalogue
+  hook saying whether it has answered.
+- Tests: for Products, Partners and a picker, the cases this ADR's lists
+  have (partial, case, accents, another language, pinyin, one Chinese
+  character, the ranking, another organization's record not found); the
+  reads that name an item, each asked in Chinese.
+- Perf: budgets for `GET /products?search`, `GET /partners?search` and
+  `GET /products/variants?search`, each with a plan probe, so a join not
+  bounded by organization shows at the small scale; `seed:volume` rows
+  for them. `seed:demo` already names products and partners in Chinese
+  and French, and gains whatever the first step finds a screen lacking.
+- Help: the Products and Partners guides say what their search looks
+  in, in three languages; #261 writes the rest.
+- Rules files for products, partners and search, through a
+  `/rules-file` skill (ADR-087).
+- Manual checks: a section for names in Chinese across the screens, and
+  search by pinyin and by one character on Products, Partners and a
+  picker.
+- Riders: #250, #263's note wording, #270 with `package.json`'s
+  `allowScripts`, #226's two joins. Already on the branch: the triage's
+  working agreements, #225's known miss removed, and six buttons opened
+  through `openDialog`. The pull request closes #260, #250 and #270.
+
+### As built (#317, 29 October 2026)
+
+Built step by step from a brief; where it differs from the decisions
+above, this holds.
+
+- **The reader's language** is Accept-Language, read through one
+  decorator, `@AcceptLanguage()`, which documents it as optional on all
+  44 operations that take it: 25 went from required to optional and 19
+  gained it, nothing breaking and the revision unchanged. Services take
+  the locale as an argument, null meaning the base name, so the packing
+  slip and the CSV exports pass null through the same functions.
+- **The product page** keeps `name`, which its edit forms fill from and
+  send back, and shows `displayName`, with the base name first under
+  Names in other languages. A Chinese reader's edit leaves the base name
+  as it was (`server/test/item-names.e2e-spec.ts`).
+- **The reads that name an item,** listed first and kept by that test,
+  which also scans `openapi.json` for any read that names an item without
+  the rule. Recipes, runs, RMAs, costs, availability and Movements show
+  only a SKU and are unchanged here: #296, and Movements is #256's, in
+  ADR-085's branch, not "met here" as "Kept in step" says. Recent and
+  Home's welcome take the rule.
+- **The minimum is the lookup's alone:** 2 characters, or 1 Chinese one;
+  its `q` went to `minLength: 1`, refused by `validation.lookupQuery`, and
+  the top bar's hint says the rule. The lists and pickers narrow from the
+  first character, as the lists already did.
+- **The ranking:** `itemRank` reads the SKU, the name shown and stored and
+  the pinyin of each, a full pinyin or its initials counting as exact;
+  `partnerRank` the name, code, tax ID and pinyin. The lookup uses both.
+  Tone marks and full-width (全角) input are folded first.
+- **The partner pickers too:** New order, Send a sample and Plan run
+  search the server through one `PartnerPicker`, sharing
+  `usePickerSearch` with the item picker; Plan run's "We make it
+  ourselves" is a first row and the field's text, never a placeholder.
+- **The lists keep their search in the address:** typing writes
+  `?search=`, replacing the history entry; "Show all" while on the list,
+  and Back and Forward, follow it. Switching language reads the open
+  screen again (#297).
+- **The joins to products** name the organization in ON, #226's two and
+  six more, and so do the translation subqueries; the trigram indexes
+  still find every organization's matches before the filter drops them,
+  as the index per organization above defers.
+- **The exports** of Products and Partners follow the list's search and
+  filters (ADR-057).
+- **Budgets:** `GET /products`, its search, the pickers' and Partners'
+  searches, each with a plan probe, and one for 专 alone; p95 8 to 17 ms
+  against 300 at small. The typo lookup (#225, reopened) and Home (#276)
+  carry known misses until 30 November: CI's runners ran about 1.45×
+  slower on 29 October, main as much as this branch.
+- **Found and fixed on the way:** three tenancy checks, production runs,
+  recipes and a run's release, through one `assertOwnIds` (ADR-003).

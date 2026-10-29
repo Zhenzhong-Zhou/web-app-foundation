@@ -87,7 +87,7 @@ export class ReturnAuthorizationsService {
         const terms = searchTerms(query.search);
         const match = or(
           codeMatches(returnAuthorizations.number, terms),
-          partnerMatches(returnAuthorizations.partnerId, terms),
+          partnerMatches(returnAuthorizations.partnerId, terms, organizationId),
         );
         if (match) scope.push(match);
       }

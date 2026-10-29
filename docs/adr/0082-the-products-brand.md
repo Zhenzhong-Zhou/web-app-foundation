@@ -256,7 +256,8 @@ carrying the placeholder refused.
 - **An override for esbuild.** drizzle-kit's loader pins 0.18, and 0.25
   is seven breaking releases on in a 0.x package, under a deprecated one
   nobody tests against it: the kind ADR-019 rules out, for an alert that
-  cannot be reached.
+  cannot be reached. ADR-019's amendment of October 2026 has since
+  allowed it for that one copy, which no drizzle-kit command loads (#270).
 - **Raising the typo budget.** A known miss with an end date says it is
   owed; a raised budget forgets.
 

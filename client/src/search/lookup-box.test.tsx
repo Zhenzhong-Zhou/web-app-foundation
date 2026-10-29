@@ -84,7 +84,9 @@ describe('LookupBox', () => {
     const box = await openLookup(user);
     await user.type(box, 'b');
     expect(
-      await screen.findByText('Type at least two characters.'),
+      await screen.findByText(
+        'Type at least two characters, or one Chinese character.',
+      ),
     ).toBeTruthy();
 
     await user.type(box, 'f');
@@ -101,6 +103,22 @@ describe('LookupBox', () => {
     expect(screen.getByText('close match')).toBeTruthy();
     // One question for the whole word, never for one character.
     expect(asked).toEqual(['bf']);
+  });
+
+  it('asks for one Chinese character alone', async () => {
+    const asked: string[] = [];
+    server.use(
+      http.get('/api/v1/lookup', ({ request }) => {
+        asked.push(new URL(request.url).searchParams.get('q') ?? '');
+        return HttpResponse.json(ANSWER);
+      }),
+    );
+    const user = userEvent.setup();
+    renderBox();
+
+    await user.type(await openLookup(user), '鱼');
+    expect(await screen.findByText('Lots')).toBeTruthy();
+    expect(asked).toEqual(['鱼']);
   });
 
   it('opens a result, and "Show all" opens its list already narrowed', async () => {

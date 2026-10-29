@@ -1081,6 +1081,7 @@ export type Variant = {
   widthMm: number | null;
   heightMm: number | null;
   caseQuantity: number | null;
+  displayName: string | null;
   translations?: Array<VariantTranslation>;
 };
 
@@ -1103,6 +1104,7 @@ export type ProductImage = {
 };
 
 export type ProductDetail = {
+  displayName: string;
   translations: Array<ProductTranslation>;
   variants: Array<Variant>;
   images: Array<ProductImage>;
@@ -3454,8 +3456,8 @@ export type AuthControllerVerifyEmailV1Response =
 
 export type AuthControllerResendVerificationV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: never;
@@ -3471,8 +3473,8 @@ export type AuthControllerResendVerificationV1Response =
 
 export type AuthControllerForgotPasswordV1Data = {
   body: ForgotPasswordDto;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: never;
@@ -3742,8 +3744,8 @@ export type OrganizationStartControllerStartV1Response =
 
 export type RolesControllerListV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: never;
@@ -3759,8 +3761,8 @@ export type RolesControllerListV1Response =
 
 export type RolesControllerCreateV1Data = {
   body: CreateRoleDto;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: never;
@@ -3776,8 +3778,8 @@ export type RolesControllerCreateV1Response =
 
 export type RolesControllerCatalogueV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: never;
@@ -3809,8 +3811,8 @@ export type RolesControllerRemoveV1Response =
 
 export type RolesControllerFindV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path: {
     id: string;
@@ -3828,8 +3830,8 @@ export type RolesControllerFindV1Response =
 
 export type RolesControllerUpdateV1Data = {
   body: UpdateRoleDto;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path: {
     id: string;
@@ -3847,8 +3849,8 @@ export type RolesControllerUpdateV1Response =
 
 export type RolesControllerMoveV1Data = {
   body: MoveRoleDto;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path: {
     id: string;
@@ -3866,8 +3868,8 @@ export type RolesControllerMoveV1Response =
 
 export type AuditControllerListV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: {
@@ -3977,8 +3979,8 @@ export type AuditControllerListV1Response =
 
 export type AuditControllerExportAuditV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: {
@@ -4088,8 +4090,8 @@ export type AuditControllerExportAuditV1Response =
 
 export type AuditControllerListActionsV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: never;
@@ -4176,8 +4178,8 @@ export type NotificationsControllerUnreadCountV1Response =
 
 export type NotificationsControllerListV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: {
@@ -4240,8 +4242,8 @@ export type PeopleControllerListV1Response =
 
 export type PeopleControllerFindV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path: {
     userId: string;
@@ -4303,8 +4305,8 @@ export type WorkControllerUpdateDetailsV1Response =
 
 export type WorkControllerActivityV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: {
@@ -4414,8 +4416,8 @@ export type WorkControllerActivityV1Response =
 
 export type WorkControllerExportActivityV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: {
@@ -4675,8 +4677,13 @@ export type InvitationsControllerAcceptV1Response =
 
 export type ProductsControllerListV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
-  query?: never;
+  query?: {
+    search?: string;
+  };
   url: '/v1/products';
 };
 
@@ -4689,6 +4696,9 @@ export type ProductsControllerListV1Response =
 
 export type ProductsControllerCreateV1Data = {
   body: CreateProductDto;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
   query?: never;
   url: '/v1/products';
@@ -4703,11 +4713,14 @@ export type ProductsControllerCreateV1Response =
 
 export type ProductsControllerExportProductsV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    search?: string;
+    discontinued?: string;
+  };
   url: '/v1/products/export';
 };
 
@@ -4720,8 +4733,13 @@ export type ProductsControllerExportProductsV1Response =
 
 export type ProductsControllerListVariantsV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
-  query?: never;
+  query?: {
+    search?: string;
+  };
   url: '/v1/products/variants';
 };
 
@@ -4734,6 +4752,9 @@ export type ProductsControllerListVariantsV1Response =
 
 export type ProductsControllerFindV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path: {
     id: string;
   };
@@ -4766,6 +4787,9 @@ export type ProductsControllerUpdateV1Response =
 
 export type ProductsControllerAddVariantV1Data = {
   body: CreateVariantDto;
+  headers?: {
+    'accept-language'?: string;
+  };
   path: {
     id: string;
   };
@@ -5311,6 +5335,9 @@ export type ProductionOrdersControllerCancelV1Response =
 
 export type StockControllerListV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
   query?: {
     locationId?: string;
@@ -5336,8 +5363,8 @@ export type StockControllerListV1Response =
 
 export type StockControllerExportInventoryV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: {
@@ -5434,8 +5461,8 @@ export type StockControllerCountsV1Response =
 
 export type StockControllerExportMovementsV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: {
@@ -5516,6 +5543,9 @@ export type LotTraceControllerSearchV1Response =
 
 export type LotTraceControllerTraceV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path: {
     id: string;
   };
@@ -5564,8 +5594,8 @@ export type AvailabilityControllerForOrderV1Response =
 
 export type LookupControllerLookupV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query: {
@@ -5583,6 +5613,9 @@ export type LookupControllerLookupV1Response =
 
 export type HomeControllerGetV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
   query?: never;
   url: '/v1/home';
@@ -5693,6 +5726,9 @@ export type OrdersControllerListV1Response =
 
 export type OrdersControllerCreateV1Data = {
   body: CreateOrderDto;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
   query?: never;
   url: '/v1/orders';
@@ -5707,8 +5743,8 @@ export type OrdersControllerCreateV1Response =
 
 export type OrdersControllerExportOrdersV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: {
@@ -5736,6 +5772,9 @@ export type OrdersControllerExportOrdersV1Response =
 
 export type OrdersControllerFindV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path: {
     id: string;
   };
@@ -5768,6 +5807,9 @@ export type OrdersControllerUpdateV1Response =
 
 export type OrdersControllerDuplicateV1Data = {
   body: DuplicateOrderDto;
+  headers?: {
+    'accept-language'?: string;
+  };
   path: {
     id: string;
   };
@@ -5784,6 +5826,9 @@ export type OrdersControllerDuplicateV1Response =
 
 export type OrdersControllerAddLineV1Data = {
   body: AddOrderLineDto;
+  headers?: {
+    'accept-language'?: string;
+  };
   path: {
     id: string;
   };
@@ -5902,6 +5947,9 @@ export type OrdersControllerReceiveV1Response =
 
 export type ShipmentsControllerListV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path: {
     id: string;
   };
@@ -6003,6 +6051,9 @@ export type ShipmentsControllerVoidV1Response =
 
 export type ReturnsControllerListV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path: {
     id: string;
   };
@@ -6019,6 +6070,9 @@ export type ReturnsControllerListV1Response =
 
 export type ReturnsControllerReceiveV1Data = {
   body: ReturnOrderDto;
+  headers?: {
+    'accept-language'?: string;
+  };
   path: {
     id: string;
   };
@@ -6070,7 +6124,9 @@ export type OrderDocumentsControllerPdfV1Response =
 export type PartnersControllerListV1Data = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    search?: string;
+  };
   url: '/v1/partners';
 };
 
@@ -6097,11 +6153,14 @@ export type PartnersControllerCreateV1Response =
 
 export type PartnersControllerExportPartnersV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    search?: string;
+    retired?: string;
+  };
   url: '/v1/partners/export';
 };
 
@@ -6467,8 +6526,8 @@ export type InvoicesControllerCreateV1Response =
 
 export type InvoicesControllerExportInvoicesV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: {
@@ -6666,8 +6725,8 @@ export type CreditNotesControllerListV1Response =
 
 export type CreditNotesControllerExportCreditNotesV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: {
@@ -6760,6 +6819,9 @@ export type RecentControllerClearV1Response =
 
 export type RecentControllerListV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
   query?: {
     limit?: number;
@@ -6908,8 +6970,8 @@ export type CostsControllerStockValuationV1Response =
 
 export type CostsControllerExportValuationV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path?: never;
   query?: never;
@@ -7036,6 +7098,9 @@ export type PriceListsControllerListV1Response =
 
 export type PriceListsControllerCreateV1Data = {
   body: CreatePriceListDto;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
   query?: never;
   url: '/v1/price-lists';
@@ -7050,8 +7115,8 @@ export type PriceListsControllerCreateV1Response =
 
 export type PriceListsControllerExportPriceListV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
+  headers?: {
+    'accept-language'?: string;
   };
   path: {
     id: string;
@@ -7069,6 +7134,9 @@ export type PriceListsControllerExportPriceListV1Response =
 
 export type PriceListsControllerFindOneV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path: {
     id: string;
   };
@@ -7118,6 +7186,9 @@ export type PriceListsControllerRemoveItemV1Response =
 
 export type PriceListsControllerSetItemV1Data = {
   body: SetPriceListItemDto;
+  headers?: {
+    'accept-language'?: string;
+  };
   path: {
     id: string;
     variantId: string;

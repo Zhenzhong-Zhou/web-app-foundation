@@ -71,3 +71,14 @@ date, and the Nest row kept, marked cleared. The client's one override,
 exactly 4.2.0, which has three high advisories, and the override takes a
 patched release of the same major, so it hides no peer conflict. It goes
 once the ref-parser's own dependency is 4.3.2 or later.
+
+*Amended (October 2026, #270):* an override across breaking versions
+is allowed where the vulnerable code never runs and every command
+that uses the package is shown working with it. `drizzle-kit`
+0.31.x reaches esbuild `~0.18.20` through `@esbuild-kit/esm-loader`
+and `@esbuild-kit/core-utils`, both deprecated (Dependabot alert 4:
+esbuild's development server, fixed in 0.25.0, which nothing here
+starts). The override takes that one copy to 0.28.2, the version
+already in the tree. It goes once `drizzle-kit`'s own dependencies
+resolve to esbuild 0.28.1 or later without it, tried at each
+`drizzle-kit` update.

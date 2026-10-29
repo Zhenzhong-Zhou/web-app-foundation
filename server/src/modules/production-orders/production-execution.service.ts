@@ -7,6 +7,7 @@ import {
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
 import { recordContext } from '../../core/audit/audit-context';
+import { assertOwnIds } from '../../database/own-ids';
 import {
   locations,
   productionOrderLines,
@@ -92,6 +93,20 @@ export class ProductionExecutionService {
         input.sourceLocationId,
         ...(input.overrides ?? []).map((line) => line.sourceLocationId),
       ];
+
+      // Each source is stored on a line, so another tenant's is refused
+      // before the first write (ADR-003), as a run's own location is.
+      await assertOwnIds(
+        tx,
+        locations,
+        organizationId,
+        sources,
+        t({
+          id: 'production.unknownLocation',
+          defaultMessage:
+            'That location is not in this organization. Choose one from the list.',
+        }),
+      );
 
       const [held] = await tx
         .select({ name: locations.name })

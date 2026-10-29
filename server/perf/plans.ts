@@ -20,6 +20,9 @@ import { HomeService } from '../src/modules/home/home.service';
 import { InvoicesService } from '../src/modules/invoices/invoices.service';
 import { OrdersService, sightOf } from '../src/modules/orders/orders.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
+import { PartnersService } from '../src/modules/partners/partners.service';
+import { PriceListsService } from '../src/modules/price-lists/price-lists.service';
+import { ProductsService } from '../src/modules/products/products.service';
 import {
   kindsVisibleWith,
   RecentService,
@@ -201,6 +204,9 @@ async function buildProbes(
   const home = app.get(HomeService);
   const recent = app.get(RecentService);
   const access = app.get(PermissionsService);
+  const products = app.get(ProductsService);
+  const priceLists = app.get(PriceListsService);
+  const partners = app.get(PartnersService);
 
   const firstOrders = await orders.list({ status: 'all' });
   const deepOrders = await cursorAfter(
@@ -212,16 +218,22 @@ async function buildProbes(
     20,
   );
 
-  const shelf = (await stock.list({ limit: 100 })).entries.find(
+  const shelf = (await stock.list({ limit: 100 }, 'en')).entries.find(
     (row) => row.lotId,
   );
-  const deepStock = await cursorAfter((before) => stock.list({ before }), 20);
+  const deepStock = await cursorAfter(
+    (before) => stock.list({ before }, 'en'),
+    20,
+  );
   if (!shelf) throw new Error('No lot-tracked stock: was this volume-seeded?');
   // A manifest written before the team (ADR-081) names nobody, and the
   // access probe would then send nothing and drop out without a word.
   if (!org.threeRoleMembershipId) {
     throw new Error('No member holding three made roles: seed again.');
   }
+
+  const [priceList] = await priceLists.list({});
+  if (!priceList) throw new Error('No price list: was this volume-seeded?');
 
   // An open sale to preview: what earliest expiry first reads before a ship.
   const sale = await firstSale(orders, stock);
@@ -240,24 +252,24 @@ async function buildProbes(
     {
       name: 'order detail',
       // As the Owner reads it, every figure on it.
-      run: () => orders.findById(firstOrders.entries[0].id, EVERYTHING),
+      run: () => orders.findById(firstOrders.entries[0].id, EVERYTHING, 'en'),
     },
-    { name: 'inventory', run: () => stock.list({}) },
+    { name: 'inventory', run: () => stock.list({}, 'en') },
     {
       name: 'inventory: page 21',
-      run: () => stock.list({ before: deepStock }),
+      run: () => stock.list({ before: deepStock }, 'en'),
     },
     {
       name: 'inventory: search',
-      run: () => stock.list({ search: 'G-001' }),
+      run: () => stock.list({ search: 'G-001' }, 'en'),
     },
     {
       name: 'inventory: one shelf',
-      run: () => stock.list({ locationId: shelf.locationId }),
+      run: () => stock.list({ locationId: shelf.locationId }, 'en'),
     },
     {
       name: 'inventory: one product',
-      run: () => stock.list({ variantId: shelf.variantId }),
+      run: () => stock.list({ variantId: shelf.variantId }, 'en'),
     },
     { name: 'availability', run: () => availability.list() },
     {
@@ -314,12 +326,13 @@ async function buildProbes(
     // steps, as an owner sees them.
     {
       name: 'home',
-      run: () => home.home(org, EVERY_PERMISSION),
+      run: () => home.home(org, EVERY_PERMISSION, 'en'),
     },
     // Recently opened (ADR-058): a person's history, newest first, named.
     {
       name: 'recently opened',
-      run: () => recent.list(org.userId, kindsVisibleWith(EVERY_PERMISSION), 6),
+      run: () =>
+        recent.list(org.userId, kindsVisibleWith(EVERY_PERMISSION), 6, 'en'),
     },
     // Access (ADR-080): what a member holding three made roles may do, read
     // on every request they make, and who may update an order, as a
@@ -360,7 +373,7 @@ async function buildProbes(
     },
     {
       name: 'inventory: by expiry',
-      run: () => stock.list({ sort: 'expiry' }),
+      run: () => stock.list({ sort: 'expiry' }, 'en'),
     },
     {
       name: 'invoices: a month',
@@ -371,11 +384,41 @@ async function buildProbes(
       run: () => stock.listMovements({ ...MONTH_INSTANTS }),
     },
     { name: 'valuation', run: () => costs.stockValuation() },
+    // The catalogue's reads that join products (#226), each with the
+    // organization on its join: without it, Postgres reads every tenant's
+    // products to join one tenant's variants.
+    { name: 'product export', run: () => products.exportRows() },
+    {
+      name: 'price list',
+      run: () => priceLists.findById(priceList.id, 'en'),
+    },
+    { name: 'item pickers', run: () => products.listActiveVariants('en') },
+    // Products as it opens, in Chinese: sorted and named by the name shown,
+    // through a translation subquery a product (ADR-056, amended).
+    { name: 'products', run: () => products.list('zh-Hans') },
+    // Products, Partners and the pickers searched (ADR-056, amended), as a
+    // Chinese reader asks, by pinyin, and a partner by part of its name:
+    // three characters or more, as the probes above.
+    {
+      name: 'products: search',
+      run: () => products.list('zh-Hans', 'zhuanzhu'),
+    },
+    // One Chinese character, which no trigram index serves: the search
+    // reads the translations that hold it, at large about 64 ms.
+    {
+      name: 'products: one character',
+      run: () => products.list('zh-Hans', '专'),
+    },
+    {
+      name: 'item pickers: search',
+      run: () => products.listActiveVariants('zh-Hans', 'zhuanzhu'),
+    },
+    { name: 'partners: search', run: () => partners.list('harbour') },
   ];
 
   if (org.traceLotId) {
     const lotId = org.traceLotId;
-    probes.push({ name: 'lot trace', run: () => traces.trace(lotId) });
+    probes.push({ name: 'lot trace', run: () => traces.trace(lotId, 'en') });
   }
 
   // A newcomer's Home (ADR-079): the same, with their welcome, its first
@@ -386,14 +429,14 @@ async function buildProbes(
     organizationId: org.organizationId,
   };
   const admin = new Set(SYSTEM_ROLE_PERMISSIONS.Admin);
-  if (!(await home.home(newcomer, admin)).welcome) {
+  if (!(await home.home(newcomer, admin, 'en')).welcome) {
     new Logger('PlanCheck').warn(
       'The volume seed’s newcomer joined over two weeks ago, so their welcome is not explained. Seed again to check it.',
     );
   }
   probes.push({
     name: 'home: a newcomer',
-    run: () => home.home(newcomer, admin),
+    run: () => home.home(newcomer, admin, 'en'),
   });
 
   // Missing it would drop the earliest-expiry-first read from the check
@@ -449,7 +492,7 @@ async function firstSale(orders: OrdersService, stock: StockReadsService) {
     for (const candidate of entries) {
       if (candidate.direction !== 'sale') continue;
 
-      const order = await orders.findById(candidate.id, EVERYTHING);
+      const order = await orders.findById(candidate.id, EVERYTHING, 'en');
       const line = order.lines.find(
         (entry) => entry.quantityFulfilled !== entry.quantityOrdered,
       );
@@ -457,10 +500,10 @@ async function firstSale(orders: OrdersService, stock: StockReadsService) {
 
       // The shelf holding most of it: the volume seed keeps each product on
       // one shelf, and ships from there.
-      const { entries: rows } = await stock.list({
-        variantId: line.variantId,
-        limit: 100,
-      });
+      const { entries: rows } = await stock.list(
+        { variantId: line.variantId, limit: 100 },
+        'en',
+      );
       const shelf = rows.sort((a, b) =>
         toUnits(b.quantity) > toUnits(a.quantity) ? 1 : -1,
       )[0];

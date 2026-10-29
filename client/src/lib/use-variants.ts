@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 
 import type { VariantOption } from '../api/types.gen';
+import { useLanguage } from '../i18n/use-language';
 import { api } from './api';
 
 /**
  * The catalogue, fetched each time `active` turns true — when a dialog opens,
- * not when its page mounts.
+ * not when its page mounts — and again whenever `again` changes while it is:
+ * New order's retry, and the recipe panel's Add opening and closing. Every
+ * item picker reads it here (ADR-056, amended).
  *
  * The stale case is the one that matters: a variant created a moment ago in
  * another tab, to be ordered or received now. A list fetched at page load
@@ -14,16 +17,30 @@ import { api } from './api';
  * first; this is that decision in one place.
  *
  * The cost is one request per open, for a list the server returns without
- * pagination. Worth revisiting — with a search endpoint the picker queries as
- * you type — once catalogues reach thousands.
+ * pagination. What is typed into a picker is searched on the server
+ * (VariantPicker); this list is what it shows before anything is, and what
+ * the forms read a chosen item's unit from.
  */
-export function useVariants(active: boolean): {
+export function useVariants(
+  active: boolean,
+  again?: unknown,
+): {
   variants: VariantOption[];
+  /**
+   * The catalogue has come back, rows or a failure. Until then an empty list
+   * is not an empty catalogue, and nothing says there are no products
+   * (#250). The last answer stays while the next is read, as the rows do.
+   */
+  answered: boolean;
   /** The picker is empty because the request failed, not the catalogue. */
   failed: boolean;
 } {
   const [variants, setVariants] = useState<VariantOption[]>([]);
+  const [answered, setAnswered] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Named in the reader's language, so a change of language reads it again
+  // (#297).
+  const { locale } = useLanguage();
 
   useEffect(() => {
     if (!active) return;
@@ -35,15 +52,18 @@ export function useVariants(active: boolean): {
         if (ignore) return;
         setVariants(rows);
         setFailed(false);
+        setAnswered(true);
       })
       .catch(() => {
-        if (!ignore) setFailed(true);
+        if (ignore) return;
+        setFailed(true);
+        setAnswered(true);
       });
 
     return () => {
       ignore = true;
     };
-  }, [active]);
+  }, [active, again, locale]);
 
-  return { variants, failed };
+  return { variants, answered, failed };
 }

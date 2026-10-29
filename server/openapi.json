@@ -156,8 +156,8 @@
         "parameters": [
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -186,8 +186,8 @@
         "parameters": [
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -621,8 +621,8 @@
         "parameters": [
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -652,8 +652,8 @@
         "parameters": [
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -692,8 +692,8 @@
         "parameters": [
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -730,8 +730,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -766,8 +766,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -835,8 +835,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -1026,8 +1026,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -1207,8 +1207,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -1237,8 +1237,8 @@
         "parameters": [
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -1409,8 +1409,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -1508,8 +1508,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -1776,8 +1776,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -1957,8 +1957,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -2260,7 +2260,25 @@
     "/v1/products": {
       "get": {
         "operationId": "ProductsController_list_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2282,7 +2300,16 @@
       },
       "post": {
         "operationId": "ProductsController_create_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2315,9 +2342,26 @@
         "operationId": "ProductsController_exportProducts_v1",
         "parameters": [
           {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "discontinued",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -2343,7 +2387,25 @@
     "/v1/products/variants": {
       "get": {
         "operationId": "ProductsController_listVariants_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2372,6 +2434,14 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -2433,6 +2503,14 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -3726,6 +3804,14 @@
               "maximum": 100,
               "type": "number"
             }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -3846,8 +3932,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -4204,8 +4290,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -4340,6 +4426,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4434,15 +4528,15 @@
             "required": true,
             "in": "query",
             "schema": {
-              "minLength": 2,
+              "minLength": 1,
               "maxLength": 100,
               "type": "string"
             }
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -4468,7 +4562,16 @@
     "/v1/home": {
       "get": {
         "operationId": "HomeController_get_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -4687,7 +4790,16 @@
       },
       "post": {
         "operationId": "OrdersController_create_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4833,8 +4945,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -4865,6 +4977,14 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -4929,6 +5049,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -4966,6 +5094,14 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -5230,6 +5366,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5470,6 +5614,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -5498,6 +5650,14 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -5608,7 +5768,17 @@
     "/v1/partners": {
       "get": {
         "operationId": "PartnersController_list_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -5663,9 +5833,26 @@
         "operationId": "PartnersController_exportPartners_v1",
         "parameters": [
           {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "retired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -6615,8 +6802,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -7164,8 +7351,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -7322,6 +7509,14 @@
               "minimum": 1,
               "maximum": 30,
               "type": "number"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -7586,8 +7781,8 @@
         "parameters": [
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -7845,7 +8040,16 @@
       },
       "post": {
         "operationId": "PriceListsController_create_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -7887,8 +8091,8 @@
           },
           {
             "name": "accept-language",
-            "required": true,
             "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -7919,6 +8123,14 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -7988,6 +8200,14 @@
             "name": "variantId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -11148,6 +11368,12 @@
               "null"
             ]
           },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "translations": {
             "type": "array",
             "items": {
@@ -11166,7 +11392,8 @@
           "lengthMm",
           "widthMm",
           "heightMm",
-          "caseQuantity"
+          "caseQuantity",
+          "displayName"
         ]
       },
       "StoredImageSize": {
@@ -11224,6 +11451,9 @@
       "ProductDetail": {
         "type": "object",
         "properties": {
+          "displayName": {
+            "type": "string"
+          },
           "translations": {
             "type": "array",
             "items": {
@@ -11262,6 +11492,7 @@
           }
         },
         "required": [
+          "displayName",
           "translations",
           "variants",
           "images",

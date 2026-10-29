@@ -75,9 +75,20 @@ rule, so the review judges each notice.
 
 - [Invoices](invoices.md): invoices, credit notes and the pro forma, the
   pilot, written from the code and the tests on 27 October 2026.
+- [Partners](partners.md): customers and suppliers, with their addresses,
+  contacts, price lists, document languages, search and export, written
+  from the code and the tests on 28 October 2026.
+- [Products](products.md): products and their variants, names in other
+  languages and the name each reader sees, the Products search and the
+  item pickers, images, the catalogue export, and who may change them,
+  written from the code and the tests on 28 October 2026.
+- [Search](search.md): the top bar's search, a list's search box and the
+  item and partner pickers, how each matches, ranks and refuses, written
+  from the code and the tests on 28 October 2026.
 
 The other areas, stock, orders, return authorizations and the rest of
-the ADRs' [areas](../adr/README.md#by-area), follow: each fix-up batch
-writes the rules files of the areas it touches, checked against their
-code and tests, and one docs pull request writes the remaining ones
+the ADRs' [areas](../adr/README.md#by-area), follow, each written by
+[`/rules-file <area>`](../../.claude/skills/rules-file/SKILL.md) from
+its code and tests: each fix-up batch writes the rules files of the
+areas it touches, and one docs pull request writes the remaining ones
 before the whole-app review.

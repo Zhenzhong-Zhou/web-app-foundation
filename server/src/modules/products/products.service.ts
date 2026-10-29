@@ -4,10 +4,12 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, notInArray, type SQL, sql } from 'drizzle-orm';
 
 import { EXPORT_LIMIT } from '../../common/export';
+import type { Locale } from '../../common/locales';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
+import { type SearchTerms, searchTerms } from '../../common/search';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
 import {
@@ -18,12 +20,15 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { namesIn, productNameOrder } from '../stock/item-name';
 import type { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
+import type { ExportProductsDto } from './dto/export-products.dto';
 import type {
   ProductDetail,
   ProductSummary,
   Variant,
+  VariantOption,
 } from './dto/product-response.dto';
 import type {
   SetProductTranslationsDto,
@@ -31,6 +36,7 @@ import type {
 } from './dto/set-translations.dto';
 import type { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
+import { itemMatches, itemRank } from './item-search';
 import { coverOf, imagesOf, publicImages } from './product-images';
 
 /**
@@ -43,6 +49,25 @@ function describeNames(translations: { locale: string; name: string }[]) {
         .map((translation) => `${translation.locale} ${translation.name}`)
         .join(' · ')
     : 'none';
+}
+
+/** The outer product's variants, in the organization. */
+function variantsOf(organizationId: string): SQL {
+  return and(
+    eq(productVariants.organizationId, organizationId),
+    eq(productVariants.productId, products.id),
+  )!;
+}
+
+/**
+ * The products a search finds, through any of their variants, as an item
+ * is found everywhere (item-search): the list's and its export's.
+ */
+function foundBy(terms: SearchTerms, organizationId: string): SQL {
+  return sql`exists (
+    select 1 from ${productVariants}
+    where ${variantsOf(organizationId)} and ${itemMatches(terms, organizationId)}
+  )`;
 }
 
 @Injectable()
@@ -58,52 +83,116 @@ export class ProductsService {
    * discontinued first — that information is destroyed by the write.
    *
    * The cost is two booleans in a WHERE on a join already being made.
+   *
+   * With a search, the pickers' (ADR-056): only the items it finds, the
+   * closest first, then by the name shown; without one, by SKU.
    */
-  listActiveVariants() {
-    return this.tenantDb.selectJoined(
-      productVariants,
-      products,
-      eq(products.id, productVariants.productId),
-      {
-        id: productVariants.id,
-        sku: productVariants.sku,
-        variantName: productVariants.name,
-        productName: products.name,
-        type: products.type,
-        unitOfMeasure: productVariants.unitOfMeasure,
-        tracksLots: productVariants.tracksLots,
-      },
-      and(eq(products.isActive, true), eq(productVariants.isActive, true)),
-      { orderBy: asc(productVariants.sku) },
-    );
+  listActiveVariants(
+    locale: Locale,
+    search?: string,
+  ): Promise<VariantOption[]> {
+    return this.tenantDb.transaction((tx, organizationId) => {
+      // In the reader's language (ADR-056).
+      const shown = namesIn(locale, organizationId);
+      const terms = search ? searchTerms(search) : null;
+
+      return tx
+        .select({
+          id: productVariants.id,
+          sku: productVariants.sku,
+          variantName: shown.variantName,
+          productName: shown.productName,
+          type: products.type,
+          unitOfMeasure: productVariants.unitOfMeasure,
+          tracksLots: productVariants.tracksLots,
+        })
+        .from(productVariants)
+        .innerJoin(
+          products,
+          and(
+            eq(products.id, productVariants.productId),
+            eq(products.organizationId, organizationId),
+          ),
+        )
+        .where(
+          and(
+            eq(productVariants.organizationId, organizationId),
+            eq(products.isActive, true),
+            eq(productVariants.isActive, true),
+            terms ? itemMatches(terms, organizationId) : undefined,
+          ),
+        )
+        .orderBy(
+          ...(terms
+            ? [
+                itemRank(terms, locale, organizationId),
+                productNameOrder(locale, organizationId),
+              ]
+            : []),
+          asc(productVariants.sku),
+        );
+    });
   }
 
-  /** Every product, by name, each with its cover's file (ADR-062). */
-  list(): Promise<ProductSummary[]> {
-    return this.tenantDb.transaction((tx, organizationId) =>
-      tx
-        // The fields the API returns (ADR-068): not the organization, nor
-        // the pinyin kept for search.
-        .select({
-          id: products.id,
-          type: products.type,
-          name: products.name,
-          description: products.description,
-          isActive: products.isActive,
-          coverFileId: coverOf(),
-        })
-        .from(products)
-        .where(eq(products.organizationId, organizationId))
-        .orderBy(asc(products.name)),
-    );
+  /**
+   * Every product, each with its cover's file (ADR-062), named and sorted
+   * by the name the reader sees (ADR-056).
+   *
+   * With a search, only the products it finds through any of their
+   * variants, as an item is found everywhere (item-search), each ranked by
+   * its closest variant, then by the name shown. Discontinued ones are
+   * found too, as the list shows them.
+   */
+  list(locale: Locale, search?: string): Promise<ProductSummary[]> {
+    return this.tenantDb.transaction((tx, organizationId) => {
+      const terms = search ? searchTerms(search) : null;
+      const itsVariants = variantsOf(organizationId);
+
+      return (
+        tx
+          // The fields the API returns (ADR-068): not the organization, nor
+          // the pinyin kept for search.
+          .select({
+            id: products.id,
+            type: products.type,
+            name: namesIn(locale, organizationId).productName,
+            description: products.description,
+            isActive: products.isActive,
+            coverFileId: coverOf(),
+          })
+          .from(products)
+          .where(
+            and(
+              eq(products.organizationId, organizationId),
+              terms ? foundBy(terms, organizationId) : undefined,
+            ),
+          )
+          .orderBy(
+            ...(terms
+              ? [
+                  sql`(
+                    select min(${itemRank(terms, locale, organizationId)})
+                    from ${productVariants} where ${itsVariants}
+                  )`,
+                ]
+              : []),
+            productNameOrder(locale, organizationId),
+            asc(products.id),
+          )
+      );
+    });
   }
 
   /**
    * The catalogue as a spreadsheet (ADR-057): a row per variant, with its
-   * product, and the product's name in each language it has. One query, at
-   * most EXPORT_LIMIT + 1 rows, for withinLimit to judge.
+   * product, and the product's name in each language it has. The products
+   * its list shows: those its search finds, and only the discontinued ones
+   * when asked, each with every variant. One query, at most EXPORT_LIMIT +
+   * 1 rows, for withinLimit to judge.
    */
-  exportRows() {
+  exportRows(query: ExportProductsDto = {}) {
+    const terms = query.search ? searchTerms(query.search) : null;
+
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const translated = (locale: string) => sql<string | null>`(
         select ${productTranslations.name} from ${productTranslations}
@@ -125,14 +214,33 @@ export class ProductsService {
           nameChinese: translated('zh-Hans'),
         })
         .from(productVariants)
-        .innerJoin(products, eq(products.id, productVariants.productId))
-        .where(eq(productVariants.organizationId, organizationId))
+        .innerJoin(
+          products,
+          and(
+            eq(products.id, productVariants.productId),
+            eq(products.organizationId, organizationId),
+          ),
+        )
+        .where(
+          and(
+            eq(productVariants.organizationId, organizationId),
+            terms ? foundBy(terms, organizationId) : undefined,
+            query.discontinued === 'true'
+              ? eq(products.isActive, false)
+              : undefined,
+          ),
+        )
         .orderBy(asc(products.name), asc(productVariants.sku))
         .limit(EXPORT_LIMIT + 1);
     });
   }
 
-  async findById(productId: string): Promise<ProductDetail> {
+  /**
+   * `name` is the base name, which the edit forms fill from and send back;
+   * `displayName` is the one the reader sees, the product's and each
+   * variant's (ADR-056).
+   */
+  async findById(productId: string, locale: Locale): Promise<ProductDetail> {
     const [product] = await this.tenantDb.select(
       products,
       eq(products.id, productId),
@@ -143,10 +251,37 @@ export class ProductsService {
         t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
       );
 
-    const variants = await this.tenantDb.select(
-      productVariants,
-      eq(productVariants.productId, productId),
-      { orderBy: asc(productVariants.id) },
+    // Its variants with the names shown, and its gallery, the cover first
+    // (ADR-062).
+    const { variants, images } = await this.tenantDb.transaction(
+      async (tx, organizationId) => {
+        const shown = namesIn(locale, organizationId);
+
+        return {
+          variants: await tx
+            .select({
+              variant: productVariants,
+              productName: shown.productName,
+              variantName: shown.variantName,
+            })
+            .from(productVariants)
+            .innerJoin(
+              products,
+              and(
+                eq(products.id, productVariants.productId),
+                eq(products.organizationId, organizationId),
+              ),
+            )
+            .where(
+              and(
+                eq(productVariants.organizationId, organizationId),
+                eq(productVariants.productId, productId),
+              ),
+            )
+            .orderBy(asc(productVariants.id)),
+          images: await imagesOf(tx, organizationId, productId),
+        };
+      },
     );
 
     // Its names in other languages, and each variant's (ADR-054).
@@ -160,21 +295,18 @@ export class ProductsService {
         variantTranslations,
         inArray(
           variantTranslations.variantId,
-          variants.map((variant) => variant.id),
+          variants.map(({ variant }) => variant.id),
         ),
         { orderBy: asc(variantTranslations.locale) },
       ),
     ]);
 
-    // Its gallery, the cover first (ADR-062).
-    const images = await this.tenantDb.transaction((tx, organizationId) =>
-      imagesOf(tx, organizationId, productId),
-    );
-
     return {
       id: product.id,
       type: product.type,
       name: product.name,
+      // Every product has a variant (ADR-023), and each row names it alike.
+      displayName: variants[0].productName,
       description: product.description,
       isActive: product.isActive,
       images: publicImages(images),
@@ -183,8 +315,9 @@ export class ProductsService {
         name,
         description,
       })),
-      variants: variants.map((variant) => ({
+      variants: variants.map(({ variant, variantName }) => ({
         ...variantOf(variant),
+        displayName: variantName,
         translations: variantNames
           .filter((row) => row.variantId === variant.id)
           .map(({ locale, name }) => ({ locale, name })),
@@ -511,7 +644,9 @@ export class ProductsService {
  * product it belongs to, the pinyin kept for search, or the case
  * dimensions no screen reads yet.
  */
-function variantOf(row: Variant): Variant {
+function variantOf(
+  row: Omit<Variant, 'displayName'>,
+): Omit<Variant, 'displayName'> {
   return {
     id: row.id,
     sku: row.sku,

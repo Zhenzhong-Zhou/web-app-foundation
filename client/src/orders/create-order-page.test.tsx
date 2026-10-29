@@ -118,3 +118,65 @@ describe('CreateOrderPage refused as outdated', () => {
     ).toBeNull();
   });
 });
+
+/**
+ * The partner searched on the server (ADR-056, amended), as Partners is:
+ * by pinyin and without accents, which the browser could not match, the
+ * answer listed as it comes.
+ */
+describe('CreateOrderPage Partner', () => {
+  const MINGDE: Partner = {
+    ...PARTNER,
+    id: 'partner-mingde',
+    name: '明德药房',
+  };
+  const COOP: Partner = {
+    ...PARTNER,
+    id: 'partner-coop',
+    name: 'Coopérative des pharmacies indépendantes du Bas-Saint-Laurent',
+  };
+
+  /** Every partner without a search; with one, what `found` names. */
+  function servePartners(found: Record<string, Partner[]>) {
+    const asked: string[] = [];
+    server.use(
+      http.get('/api/v1/partners', ({ request }) => {
+        const search = new URL(request.url).searchParams.get('search');
+        if (search === null) {
+          return HttpResponse.json([PARTNER, MINGDE, COOP]);
+        }
+        asked.push(search);
+        return HttpResponse.json(found[search] ?? []);
+      }),
+    );
+    return asked;
+  }
+
+  async function pick(typed: string, name: string) {
+    const user = userEvent.setup();
+    const box = await screen.findByRole('combobox', { name: 'Partner' });
+    await user.type(box, typed);
+    await user.click(await screen.findByRole('option', { name }));
+    return box;
+  }
+
+  it('finds a partner by its pinyin', async () => {
+    const asked = servePartners({ mdyf: [MINGDE] });
+    renderPage();
+
+    const box = await pick('mdyf', '明德药房');
+
+    expect(asked).toEqual(['mdyf']);
+    expect(box).toHaveValue('明德药房');
+  });
+
+  it('finds a partner by its name without accents', async () => {
+    const asked = servePartners({ cooperative: [COOP] });
+    renderPage();
+
+    const box = await pick('cooperative', COOP.name);
+
+    expect(asked).toEqual(['cooperative']);
+    expect(box).toHaveValue(COOP.name);
+  });
+});

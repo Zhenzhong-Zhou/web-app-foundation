@@ -474,7 +474,7 @@ function Section<T>({
         </Typography>
 
         {onAdd && (
-          <Button variant="text" onClick={onAdd}>
+          <Button variant="text" onClick={openDialog(onAdd)}>
             {addLabel}
           </Button>
         )}

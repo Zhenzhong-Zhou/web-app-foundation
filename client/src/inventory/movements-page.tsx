@@ -1,5 +1,4 @@
 import {
-  Autocomplete,
   Box,
   Chip,
   MenuItem,
@@ -18,24 +17,21 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-import type { Location, Movement, VariantOption } from '../api/types.gen';
+import type { Location, Movement } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { ExportButton } from '../components/export-button';
 import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { VariantPicker } from '../components/variant-picker';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api } from '../lib/api';
 import { type DayRange, withInstants } from '../lib/date-range';
-import {
-  formatMoment,
-  formatQuantity,
-  itemName,
-  relativeTime,
-} from '../lib/format';
+import { formatMoment, formatQuantity, relativeTime } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { useVariants } from '../lib/use-variants';
 import { leavesOf } from '../locations/tree';
 import { rem } from '../theme/rem';
 import { describeMovement } from './describe-movement';
@@ -67,10 +63,12 @@ export function MovementsPage() {
   // Sales sees stock but not locations (ADR-080): without them the page
   // does not ask, and leaves the Location filter out.
   const canSeeLocations = can('locations.view');
-  const [variants, setVariants] = useState<VariantOption[]>([]);
+  // Silent if it fails: the filter degrades to an empty picker, and the
+  // table below is the point of the page.
+  const { variants, answered } = useVariants(true);
   const [locations, setLocations] = useState<Location[]>([]);
 
-  const [variant, setVariant] = useState<VariantOption | null>(null);
+  const [variantId, setVariantId] = useState('');
   const [locationId, setLocationId] = useState('');
   const [reason, setReason] = useState('');
   const [range, setRange] = useState<DayRange>({});
@@ -82,11 +80,11 @@ export function MovementsPage() {
    */
   const query = useMemo(() => {
     const params = new URLSearchParams({ limit: String(PAGE_SIZE) });
-    if (variant) params.set('variantId', variant.id);
+    if (variantId) params.set('variantId', variantId);
     if (locationId) params.set('locationId', locationId);
     if (reason) params.set('reason', reason);
     return params.toString();
-  }, [variant, locationId, reason]);
+  }, [variantId, locationId, reason]);
   // When recorded, the reader's days as instants (ADR-057).
   const path = withInstants(`/stock/movements?${query}`, range);
 
@@ -109,19 +107,15 @@ export function MovementsPage() {
   const showSkeleton = useDelayedFlag(loading);
 
   useEffect(() => {
+    if (!canSeeLocations) return;
+
     let ignore = false;
 
-    void Promise.all([
-      api<VariantOption[]>('/products/variants'),
-      canSeeLocations ? api<Location[]>('/locations') : Promise.resolve([]),
-    ])
-      .then(([variantRows, locationRows]) => {
-        if (ignore) return;
-        setVariants(variantRows);
-        setLocations(locationRows);
+    void api<Location[]>('/locations')
+      .then((locationRows) => {
+        if (!ignore) setLocations(locationRows);
       })
-      // Silent: the filters degrade to empty pickers, and the table below is
-      // the point of the page.
+      // Silent, as the item filter is.
       .catch(() => undefined);
 
     return () => {
@@ -170,20 +164,13 @@ export function MovementsPage() {
       />
 
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-        <Autocomplete
-          sx={{ flexGrow: 1 }}
+        <VariantPicker
+          id="movements-item"
+          label={intl.formatMessage(MOVEMENT_HEADINGS.item)}
           options={variants}
-          getOptionLabel={(option) =>
-            `${option.sku} — ${itemName(option.productName, option.variantName)}`
-          }
-          value={variant}
-          onChange={(_event, value) => setVariant(value)}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label={intl.formatMessage(MOVEMENT_HEADINGS.item)}
-            />
-          )}
+          loading={!answered}
+          value={variantId}
+          onChange={setVariantId}
         />
 
         {canSeeLocations && (
@@ -353,7 +340,7 @@ export function MovementsPage() {
             </TableContainer>
           ) : (
             <Typography sx={{ color: 'text.secondary', p: 3 }}>
-              {variant || locationId || reason
+              {variantId || locationId || reason
                 ? intl.formatMessage({
                     id: 'inventory.movements.noMatch',
                     defaultMessage: 'Nothing matches those filters.',

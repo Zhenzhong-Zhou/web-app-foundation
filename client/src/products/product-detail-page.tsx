@@ -160,7 +160,8 @@ export function ProductDetailPage() {
             to: '/products',
           },
         ]}
-        title={product.name}
+        // The reader's language; the forms edit `name`, the base (ADR-056).
+        title={product.displayName}
         status={{
           label: productTypeLabel(product.type, intl),
           color: 'default',
@@ -201,7 +202,7 @@ export function ProductDetailPage() {
       <ProductGallery
         key={product.images.map((image) => image.fileId).join()}
         productId={product.id}
-        productName={product.name}
+        productName={product.displayName}
         images={product.images}
         canEdit={can('products.update')}
       />
@@ -242,21 +243,35 @@ export function ProductDetailPage() {
           </Stack>
 
           {product.translations.length > 0 ? (
-            product.translations.map((row) => (
-              <Typography key={row.locale} variant="body2">
-                {/* The component, not intl.formatMessage: a value that is an
+            <>
+              {/* The name the edit form fills from, and documents print in
+                  a language with none of its own, which the heading above
+                  hides from a reader in another language (ADR-056). */}
+              <Typography variant="body2">
+                {intl.formatMessage(
+                  {
+                    id: 'products.translations.base',
+                    defaultMessage: 'Base name: {name}',
+                  },
+                  { name: product.name },
+                )}
+              </Typography>
+              {product.translations.map((row) => (
+                <Typography key={row.locale} variant="body2">
+                  {/* The component, not intl.formatMessage: a value that is an
                     element comes back as a list, which React would want keys
                     for. */}
-                <FormattedMessage
-                  id="products.translations.line"
-                  defaultMessage="{language}: {name}"
-                  values={{
-                    language: LANGUAGE_NAMES[row.locale] ?? row.locale,
-                    name: <span lang={row.locale}>{row.name}</span>,
-                  }}
-                />
-              </Typography>
-            ))
+                  <FormattedMessage
+                    id="products.translations.line"
+                    defaultMessage="{language}: {name}"
+                    values={{
+                      language: LANGUAGE_NAMES[row.locale] ?? row.locale,
+                      name: <span lang={row.locale}>{row.name}</span>,
+                    }}
+                  />
+                </Typography>
+              ))}
+            </>
           ) : (
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({

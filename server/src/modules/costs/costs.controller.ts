@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -21,6 +20,7 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { poolsOf, VALUATION_COLUMNS } from './cost-exports';
 import { CostsService } from './costs.service';
@@ -66,7 +66,7 @@ export class CostsController {
   @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'stock_value' })
   async exportValuation(
     @Res({ passthrough: true }) res: Response,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ) {
     const rows = withinLimit(poolsOf(await this.costs.stockValuation()));
     recordContext({ list: 'stock_value', filters: {}, rows: rows.length });

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { useLanguage } from '../i18n/use-language';
 import { api, isRevisionRefusal } from './api';
 import { useFailureWords } from './use-failure-words';
 
@@ -7,9 +8,10 @@ import { useFailureWords } from './use-failure-words';
 export type KeysetPage<T> = { entries: T[]; nextCursor: string | null };
 
 type Read<T> = {
-  /** Which list these rows belong to, and which reload of it. */
+  /** Which list these rows belong to, which reload of it, in which language. */
   path: string | null;
   reloads: number;
+  locale: string | null;
   entries: T[] | null;
   cursor: string | null;
   /** The last read's failure as it came, worded as the page renders. */
@@ -19,6 +21,7 @@ type Read<T> = {
 const NOTHING_READ = {
   path: null,
   reloads: 0,
+  locale: null,
   entries: null,
   cursor: null,
   failure: null,
@@ -82,9 +85,12 @@ export function useKeysetList<T>(path: string | null) {
   const [reloads, setReloads] = useState(0);
   const [read, setRead] = useState<Read<T>>(NOTHING_READ);
   const [loadingMore, setLoadingMore] = useState(false);
+  // A change of language reads the first page again, as a reload does, so
+  // the names the server gives follow the screen's words (#297).
+  const { locale } = useLanguage();
 
   const samePath = read.path === path;
-  const fresh = samePath && read.reloads === reloads;
+  const fresh = samePath && read.reloads === reloads && read.locale === locale;
 
   // A reload in flight shows the rows it will replace, but not their cursor:
   // a page read after the old head would be appended to the new one.
@@ -92,7 +98,7 @@ export function useKeysetList<T>(path: string | null) {
     ? read
     : samePath
       ? { ...read, cursor: null }
-      : { ...NOTHING_READ, path, reloads };
+      : { ...NOTHING_READ, path, reloads, locale };
 
   useEffect(() => {
     if (path === null) return;
@@ -105,6 +111,7 @@ export function useKeysetList<T>(path: string | null) {
         setRead({
           path,
           reloads,
+          locale,
           entries: page.entries,
           cursor: page.nextCursor,
           failure: null,
@@ -112,13 +119,13 @@ export function useKeysetList<T>(path: string | null) {
       })
       .catch((caught: unknown) => {
         if (ignore) return;
-        setRead({ ...NOTHING_READ, path, reloads, failure: caught });
+        setRead({ ...NOTHING_READ, path, reloads, locale, failure: caught });
       });
 
     return () => {
       ignore = true;
     };
-  }, [path, reloads]);
+  }, [path, reloads, locale]);
 
   const { cursor } = current;
 
@@ -128,7 +135,9 @@ export function useKeysetList<T>(path: string | null) {
     // Whether an answer still belongs: the list it was asked for is the one
     // on screen, not a newer filter or a reload that has replaced it.
     const stillCurrent = (latest: Read<T>) =>
-      latest.path === path && latest.reloads === reloads;
+      latest.path === path &&
+      latest.reloads === reloads &&
+      latest.locale === locale;
 
     setLoadingMore(true);
 
@@ -152,7 +161,7 @@ export function useKeysetList<T>(path: string | null) {
     } finally {
       setLoadingMore(false);
     }
-  }, [path, reloads, cursor]);
+  }, [path, reloads, locale, cursor]);
 
   /**
    * Reads the first page again after a write that adds a row, keeping the

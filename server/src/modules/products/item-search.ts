@@ -1,9 +1,13 @@
 import { or, type SQL, sql } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import {
+  bestRank,
   codeMatches,
+  matchRank,
   nameMatches,
   pinyinMatches,
+  pinyinRank,
   type SearchTerms,
 } from '../../common/search';
 import {
@@ -12,15 +16,18 @@ import {
   productVariants,
   variantTranslations,
 } from '../../database/schema';
+import { namesIn, translationOf } from '../stock/item-name';
 
 /**
  * Whether an item matches a search (ADR-056): its SKU, its product's and its
  * variant's name in every language they have, and the pinyin of each. For a
  * query over product_variants joined to products; the translations are
  * reached through EXISTS, so a product with names in three languages is
- * still one row.
+ * still one row. Each EXISTS names the organization: Postgres may answer it
+ * once for the whole query, from every translation that matches, and
+ * without it would read every organization's (#226).
  */
-export function itemMatches(terms: SearchTerms): SQL {
+export function itemMatches(terms: SearchTerms, organizationId: string): SQL {
   const translatedProduct = or(
     nameMatches(productTranslations.name, terms),
     pinyinMatches(productTranslations.namePinyin, terms),
@@ -39,12 +46,44 @@ export function itemMatches(terms: SearchTerms): SQL {
     sql`exists (
       select 1 from ${productTranslations}
       where ${productTranslations.productId} = ${products.id}
+        and ${productTranslations.organizationId} = ${organizationId}
         and (${translatedProduct})
     )`,
     sql`exists (
       select 1 from ${variantTranslations}
       where ${variantTranslations.variantId} = ${productVariants.id}
+        and ${variantTranslations.organizationId} = ${organizationId}
         and (${translatedVariant})
     )`,
   )!;
+}
+
+/**
+ * How closely an item matches, for ORDER BY, lowest first (ADR-056): exact,
+ * then at the start, then anywhere, on its SKU, its product's name as the
+ * reader sees it and as stored, and the pinyin of each. A reader in Chinese
+ * who types 专注胶囊 or zhuanzhujiaonang has the product of that name first,
+ * not among every name it is part of. For the same query as itemMatches;
+ * the lookup, the pickers and Products rank by it.
+ */
+export function itemRank(
+  terms: SearchTerms,
+  locale: Locale,
+  organizationId: string,
+): SQL {
+  const shownPinyin = translationOf(
+    'product',
+    'products',
+    locale,
+    organizationId,
+    sql`tr.name_pinyin`,
+  );
+
+  return bestRank(
+    matchRank(productVariants.sku, terms),
+    matchRank(namesIn(locale, organizationId).productName, terms, 'name'),
+    matchRank(products.name, terms, 'name'),
+    pinyinRank(shownPinyin, terms),
+    pinyinRank(products.namePinyin, terms),
+  );
 }

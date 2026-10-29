@@ -83,7 +83,8 @@ export class OrderLifecycleService {
           throw new BadRequestException(
             t({
               id: 'orders.unknownPartner',
-              defaultMessage: 'Unknown partner',
+              defaultMessage:
+                'That partner is not in this organization. Choose one from the list.',
             }),
           );
 

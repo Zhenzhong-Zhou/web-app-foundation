@@ -2,25 +2,28 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
 
+import { SearchQueryDto } from '../../common/dto/search-query.dto';
 import { csvFile, withinLimit } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CreatePartnerDto } from './dto/create-partner.dto';
+import { ExportPartnersDto } from './dto/export-partners.dto';
 import type {
   Partner,
   PartnerDetail,
@@ -36,20 +39,30 @@ export class PartnersController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PARTNERS_VIEW)
-  list(): Promise<Partner[]> {
-    return this.partners.list();
+  list(@Query() query: SearchQueryDto): Promise<Partner[]> {
+    return this.partners.list(query.search);
   }
 
-  /** Customers and suppliers as CSV (ADR-057). Above ':id'. */
+  /**
+   * Customers and suppliers as CSV (ADR-057), those its list shows. Above
+   * ':id'.
+   */
   @Get('export')
   @RequirePermissions(PERMISSIONS.PARTNERS_VIEW)
   @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'partners' })
   async exportPartners(
+    @Query() query: ExportPartnersDto,
     @Res({ passthrough: true }) res: Response,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ) {
-    const rows = withinLimit(await this.partners.exportRows());
-    recordContext({ list: 'partners', filters: {}, rows: rows.length });
+    const rows = withinLimit(await this.partners.exportRows(query));
+    // The quick filter, not the search: a search is text a person typed,
+    // which stays out of History (ADR-018).
+    recordContext({
+      list: 'partners',
+      filters: query.retired ? { retired: query.retired } : {},
+      rows: rows.length,
+    });
     return csvFile(
       res,
       'partners',

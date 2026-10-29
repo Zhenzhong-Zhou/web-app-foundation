@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -28,6 +27,7 @@ import {
   DownloadAsked,
   PdfResponse,
 } from '../../core/documents/pdf-response.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CreditNotesService } from './credit-notes.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -76,7 +76,7 @@ export class InvoicesController {
   async exportInvoices(
     @Query() query: ListInvoicesDto,
     @Res({ passthrough: true }) res: Response,
-    @Headers('accept-language') acceptLanguage?: string,
+    @AcceptLanguage() acceptLanguage?: string,
   ) {
     const rows = await everyRow((before, limit) =>
       this.invoices.list({ ...query, before, limit }),

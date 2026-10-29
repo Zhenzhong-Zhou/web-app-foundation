@@ -198,13 +198,14 @@ export function readScenarios(orgs: Org[]): Scenario[] {
   const read = (
     name: string,
     path: (org: Org, n: number) => string,
+    language?: string,
   ): Scenario => ({
     name,
     kind: 'read',
     budgetMs: READ_BUDGET_MS,
     send: (worker, n) => {
       const org = orgOf(orgs, worker);
-      return org.session.send('GET', path(org, n));
+      return org.session.send('GET', path(org, n), undefined, language);
     },
   });
 
@@ -244,16 +245,40 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // narrowed by its search.
     read('GET /lookup?q=code', () => '/lookup?q=LV-00001'),
     read('GET /lookup?q=name', () => '/lookup?q=focus'),
-    // Over its budget in the weekly run since 19 October 2026 (#225): known
-    // until 30 November, and failing past 450 ms (ADR-082).
+    // Over its budget again on 29 October 2026, main and #260's branch
+    // alike (#225): known until 30 November, and failing past 400 ms
+    // (ADR-082).
     {
       ...read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
-      knownMiss: { issue: '#225', until: '2026-11-30', ceilingMs: 450 },
+      knownMiss: { issue: '#225', until: '2026-11-30', ceilingMs: 400 },
     },
     read('GET /orders?search', () => '/orders?status=all&search=SO-10'),
+    // Products, Partners and the item pickers searched on the server
+    // (ADR-056, amended): a Chinese reader's one character, which no
+    // trigram index serves; a picker asked by pinyin; and part of a
+    // partner's name, which every column of the partner match tries. And
+    // Products unsearched, as it opens: sorted and named by the name shown,
+    // two correlated subqueries a product.
+    read('GET /products', () => '/products', 'zh-Hans'),
+    read(
+      'GET /products?search',
+      () => `/products?search=${encodeURIComponent('专')}`,
+      'zh-Hans',
+    ),
+    read(
+      'GET /products/variants?search',
+      () => '/products/variants?search=zhuanzhu',
+      'zh-Hans',
+    ),
+    read('GET /partners?search', () => '/partners?search=harbour'),
     // Home (ADR-058): the page everyone opens first, every card an owner
-    // sees and Getting started, in one request.
-    read('GET /home', () => '/home'),
+    // sees and Getting started, in one request. Over its budget on 29
+    // October 2026, main and #260's branch alike (#276): known until 30
+    // November, and failing past 400 ms (ADR-082).
+    {
+      ...read('GET /home', () => '/home'),
+      knownMiss: { issue: '#276', until: '2026-11-30', ceilingMs: 400 },
+    },
     // Recently opened (ADR-058), read with Home and on each search's focus.
     read('GET /recent', () => '/recent?limit=6'),
     // Dates and sorting (ADR-057): a sorted list's first page and a month's
@@ -273,11 +298,14 @@ export function readScenarios(orgs: Org[]): Scenario[] {
 
   // A newcomer's Home (ADR-079): the cards an Admin sees, and the welcome,
   // its first week ticked from their own audit entries and what they opened.
+  // 288 ms on 29 October 2026, the day the owner's Home missed (#276): known
+  // with it until 30 November, and failing past 400 ms (ADR-082).
   scenarios.push({
     name: 'GET /home (a newcomer)',
     kind: 'read',
     budgetMs: READ_BUDGET_MS,
     send: (worker) => orgOf(orgs, worker).newcomer.send('GET', '/home'),
+    knownMiss: { issue: '#276', until: '2026-11-30', ceilingMs: 400 },
   });
 
   if (orgs.every((org) => org.anchors.traceLotId)) {

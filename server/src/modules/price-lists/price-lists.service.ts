@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, eq, sql } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
 import {
@@ -16,7 +17,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
-import { itemName } from '../stock/item-name';
+import { itemName, namesIn } from '../stock/item-name';
 import type { Tx } from '../stock/stock.service';
 import type { CreatePriceListDto } from './dto/create-price-list.dto';
 import type { ListPriceListsDto } from './dto/list-price-lists.dto';
@@ -63,17 +64,25 @@ export class PriceListsService {
     );
   }
 
-  /** One list and every item on it, ordered by SKU. */
-  findById(priceListId: string): Promise<PriceListDetail> {
+  /**
+   * One list and every item on it, ordered by SKU, named in the locale
+   * given: the reader's on its page, null for its CSV, which keeps the base
+   * names (ADR-056).
+   */
+  findById(
+    priceListId: string,
+    locale: Locale | null,
+  ): Promise<PriceListDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const list = await this.load(tx, organizationId, priceListId);
+      const shown = namesIn(locale, organizationId);
 
       const items = await tx
         .select({
           variantId: priceListItems.variantId,
           sku: productVariants.sku,
-          productName: products.name,
-          variantName: productVariants.name,
+          productName: shown.productName,
+          variantName: shown.variantName,
           unitOfMeasure: productVariants.unitOfMeasure,
           unitPrice: priceListItems.unitPrice,
           updatedAt: priceListItems.updatedAt,
@@ -81,9 +90,18 @@ export class PriceListsService {
         .from(priceListItems)
         .innerJoin(
           productVariants,
-          eq(productVariants.id, priceListItems.variantId),
+          and(
+            eq(productVariants.id, priceListItems.variantId),
+            eq(productVariants.organizationId, organizationId),
+          ),
         )
-        .innerJoin(products, eq(products.id, productVariants.productId))
+        .innerJoin(
+          products,
+          and(
+            eq(products.id, productVariants.productId),
+            eq(products.organizationId, organizationId),
+          ),
+        )
         .where(
           and(
             eq(priceListItems.organizationId, organizationId),

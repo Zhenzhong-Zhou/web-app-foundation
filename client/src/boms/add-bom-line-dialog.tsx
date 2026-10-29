@@ -38,6 +38,7 @@ export function AddBomLineDialog({
   open,
   bomId,
   catalogue,
+  catalogueLoading,
   excludeVariantIds,
   onClose,
   onAdded,
@@ -45,6 +46,8 @@ export function AddBomLineDialog({
   open: boolean;
   bomId: string | null;
   catalogue: VariantOption[];
+  /** The catalogue has not come back yet (useVariants). */
+  catalogueLoading: boolean;
   excludeVariantIds: string[];
   onClose: () => void;
   onAdded: () => Promise<void> | void;
@@ -135,6 +138,7 @@ export function AddBomLineDialog({
               })}
               required
               options={choices}
+              loading={catalogueLoading}
               value={form.componentVariantId}
               onChange={(componentVariantId) =>
                 setForm((current) => ({ ...current, componentVariantId }))

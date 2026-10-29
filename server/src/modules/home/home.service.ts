@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, asc, eq, lt, lte, type SQL, sql } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import { todayIn } from '../../common/today';
 import type { RequestContext } from '../../core/auth/request-context';
 import type { Permission } from '../../core/authorization/permissions';
@@ -142,6 +143,7 @@ export class HomeService {
   async home(
     context: Pick<RequestContext, 'userId' | 'organizationId'>,
     held: ReadonlySet<Permission>,
+    locale: Locale,
   ) {
     const kinds = CARDS.flatMap(({ kind, permission }) =>
       held.has(permission) ? [kind] : [],
@@ -164,6 +166,7 @@ export class HomeService {
     const welcome = await this.welcome.of(context, held, {
       timeZone,
       startShows: !gettingStarted.complete && !gettingStarted.dismissed,
+      locale,
     });
     return { gettingStarted, welcome, cards };
   }
@@ -333,12 +336,16 @@ export class HomeService {
       }
 
       case 'expiring': {
-        const page = await this.stock.list({
-          expiringWithin,
-          sort: 'expiry',
-          order: 'asc',
-          limit: HOME_ROWS,
-        });
+        // Named by SKU and lot, so the base names are enough.
+        const page = await this.stock.list(
+          {
+            expiringWithin,
+            sort: 'expiry',
+            order: 'asc',
+            limit: HOME_ROWS,
+          },
+          null,
+        );
         return page.entries.map((row) => ({
           // A row opens its lot's trace.
           id: row.lotId ?? row.id,
@@ -350,10 +357,10 @@ export class HomeService {
       }
 
       case 'costsWaiting': {
-        const page = await this.stock.list({
-          needsCost: 'true',
-          limit: HOME_ROWS,
-        });
+        const page = await this.stock.list(
+          { needsCost: 'true', limit: HOME_ROWS },
+          null,
+        );
         return page.entries.map((row) => ({
           id: row.variantId,
           title: row.sku,

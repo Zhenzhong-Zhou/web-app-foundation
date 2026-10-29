@@ -12,6 +12,8 @@ import {
 import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PermissionsService } from '../../core/authorization/permissions.service';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
+import { localeOf } from '../../i18n/translate';
 import { ListRecentDto } from './dto/list-recent.dto';
 import type { RecentList } from './dto/recent-response.dto';
 import { RecordOpenedDto } from './dto/record-opened.dto';
@@ -37,12 +39,14 @@ export class RecentController {
   async list(
     @CurrentUser() user: RequestContext,
     @Query() query: ListRecentDto,
+    @AcceptLanguage() acceptLanguage?: string,
   ): Promise<RecentList> {
     return {
       recent: await this.recent.list(
         user.userId,
         kindsVisibleWith(await this.permissions.heldBy(user.membershipId)),
         query.limit ?? 6,
+        localeOf(acceptLanguage),
       ),
     };
   }
