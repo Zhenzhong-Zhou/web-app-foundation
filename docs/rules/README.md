@@ -78,6 +78,10 @@ rule, so the review judges each notice.
 - [Partners](partners.md): customers and suppliers, with their addresses,
   contacts, price lists, document languages, search and export, written
   from the code and the tests on 28 October 2026.
+- [Products](products.md): products and their variants, names in other
+  languages and the name each reader sees, the Products search and the
+  item pickers, images, the catalogue export, and who may change them,
+  written from the code and the tests on 28 October 2026.
 
 The other areas, stock, orders, return authorizations and the rest of
 the ADRs' [areas](../adr/README.md#by-area), follow, each written by
