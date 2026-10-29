@@ -128,6 +128,7 @@ Karpathy's observations on LLM coding pitfalls
 - `/build-from-brief`: runs one step of a build brief in `tmp/`, as
   `/build-from-brief tmp/adr-NNN/brief.md <step>`, under the rules every
   brief shares; only when a prompt names it.
+- `/rules-file`: writes an area's rules files from its code and tests.
 
 Every feature branch runs, for any PR that changes what a person sees,
 `/usability-walkthrough` as one of its personas
