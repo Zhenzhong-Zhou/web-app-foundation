@@ -16,7 +16,7 @@ import {
   productVariants,
   variantTranslations,
 } from '../../database/schema';
-import { namesIn } from '../stock/item-name';
+import { namesIn, translationOf } from '../stock/item-name';
 
 /**
  * Whether an item matches a search (ADR-056): its SKU, its product's and its
@@ -71,12 +71,13 @@ export function itemRank(
   locale: Locale,
   organizationId: string,
 ): SQL {
-  const shownPinyin = sql`(
-    select pt.name_pinyin from product_translations pt
-    where pt.product_id = ${products.id}
-      and pt.locale = ${locale}
-      and pt.organization_id = ${organizationId}::uuid
-  )`;
+  const shownPinyin = translationOf(
+    'product',
+    'products',
+    locale,
+    organizationId,
+    sql`tr.name_pinyin`,
+  );
 
   return bestRank(
     matchRank(productVariants.sku, terms),

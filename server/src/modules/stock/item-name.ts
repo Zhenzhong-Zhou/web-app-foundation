@@ -30,6 +30,33 @@ export interface ItemTables {
 const TABLES: ItemTables = { product: 'products', variant: 'product_variants' };
 
 /**
+ * The outer product's or variant's translation in the locale, as a
+ * correlated subquery giving `column`, read from the translation as `tr`:
+ * its name unless asked otherwise, and null where it has none. Every read
+ * of a translation beside its item goes through it, so each names the
+ * organization (ADR-003).
+ */
+export function translationOf(
+  item: 'product' | 'variant',
+  outer: string,
+  locale: Locale,
+  organizationId: string,
+  column: SQL = sql`tr.name`,
+): SQL {
+  const [table, key] =
+    item === 'product'
+      ? ['product_translations', 'product_id']
+      : ['variant_translations', 'variant_id'];
+
+  return sql`(
+    select ${column} from ${sql.raw(table)} tr
+    where tr.${sql.raw(key)} = ${sql.raw(outer)}.id
+      and tr.locale = ${locale}
+      and tr.organization_id = ${organizationId}::uuid
+  )`;
+}
+
+/**
  * An item's names in the reader's language (ADR-054, ADR-056), for every
  * read that names an item for a person: the product's and the variant's
  * translation in the locale, each else the base name. A variant with no
@@ -54,19 +81,9 @@ export function namesIn(
   }
 
   return {
-    productName: sql<string>`coalesce((
-      select pt.name from product_translations pt
-      where pt.product_id = ${product}.id
-        and pt.locale = ${locale}
-        and pt.organization_id = ${organizationId}::uuid
-    ), ${product}.name)`,
+    productName: sql<string>`coalesce(${translationOf('product', tables.product, locale, organizationId)}, ${product}.name)`,
     variantName: sql<string | null>`case when ${variant}.name is not null
-      then coalesce((
-        select vt.name from variant_translations vt
-        where vt.variant_id = ${variant}.id
-          and vt.locale = ${locale}
-          and vt.organization_id = ${organizationId}::uuid
-      ), ${variant}.name)
+      then coalesce(${translationOf('variant', tables.variant, locale, organizationId)}, ${variant}.name)
     end`,
   };
 }
@@ -84,12 +101,13 @@ export function productNameOrder(
   product = TABLES.product,
 ): SQL {
   const outer = sql.raw(product);
+  const shown = translationOf(
+    'product',
+    product,
+    locale,
+    organizationId,
+    sql`coalesce(tr.name_pinyin, search_text(tr.name))`,
+  );
 
-  return sql`coalesce((
-    select coalesce(pt.name_pinyin, search_text(pt.name))
-    from product_translations pt
-    where pt.product_id = ${outer}.id
-      and pt.locale = ${locale}
-      and pt.organization_id = ${organizationId}::uuid
-  ), ${outer}.name_pinyin, search_text(${outer}.name))`;
+  return sql`coalesce(${shown}, ${outer}.name_pinyin, search_text(${outer}.name))`;
 }
