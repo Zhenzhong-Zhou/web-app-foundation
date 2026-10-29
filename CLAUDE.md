@@ -55,8 +55,10 @@ Andrej Karpathy's observations on LLM coding pitfalls
   feature: the ADR or amendment first, then server, client and docs
   commits. PR descriptions are plain Markdown.
 - **Dependencies.** On every branch, `npm outdated` in `server/` and
-  `client/`; the in-range updates are a commit of their own, at the
-  branch's start and again before the reviews.
+  `client/`; the in-range updates at least 7 days old, each package by
+  its own publish time, are a commit of their own, at the branch's
+  start and again before the reviews
+  ([`docs/conventions.md`, Dependencies](docs/conventions.md#dependencies)).
 - **Before committing and pushing.** Before each commit,
   `scripts/verify.sh --docs` when it changes only `scripts/` and Markdown
   outside `client/`, and `--quick` for anything else; `scripts/verify.sh`
