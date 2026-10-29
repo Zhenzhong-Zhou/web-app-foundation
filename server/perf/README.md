@@ -118,7 +118,8 @@ answers:
   - search (ADR-056): the lookup for a code in part, a name and a typo; the
     order list searched; Products by one Chinese character and the item
     pickers by pinyin, both asked in Chinese; and Partners by part of a
-    name;
+    name; and Products unsearched, asked in Chinese, which sorts and names
+    every product by the name shown;
   - Home (ADR-058), an owner's and a newcomer's, and Recently opened;
   - dates and sorting (ADR-057): the first page of the invoices by total,
     the orders by expected date and the stock by expiry, and the invoices

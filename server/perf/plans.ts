@@ -393,6 +393,9 @@ async function buildProbes(
       run: () => priceLists.findById(priceList.id, 'en'),
     },
     { name: 'item pickers', run: () => products.listActiveVariants('en') },
+    // Products as it opens, in Chinese: sorted and named by the name shown,
+    // through a translation subquery a product (ADR-056, amended).
+    { name: 'products', run: () => products.list('zh-Hans') },
     // Products, Partners and the pickers searched (ADR-056, amended), as a
     // Chinese reader asks, by pinyin, and a partner by part of its name:
     // three characters or more, as the probes above.

@@ -250,7 +250,10 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // Products, Partners and the item pickers searched on the server
     // (ADR-056, amended): a Chinese reader's one character, which no
     // trigram index serves; a picker asked by pinyin; and part of a
-    // partner's name, which every column of the partner match tries.
+    // partner's name, which every column of the partner match tries. And
+    // Products unsearched, as it opens: sorted and named by the name shown,
+    // two correlated subqueries a product.
+    read('GET /products', () => '/products', 'zh-Hans'),
     read(
       'GET /products?search',
       () => `/products?search=${encodeURIComponent('专')}`,
