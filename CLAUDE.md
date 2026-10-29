@@ -129,6 +129,9 @@ Andrej Karpathy's observations on LLM coding pitfalls
   `/build-from-brief tmp/adr-NNN/brief.md <step>`, under the rules every
   brief shares; only when a prompt names it.
 - `/rules-file`: writes an area's rules files from its code and tests.
+- `/triage`: proposes a group, areas or a close for each open issue in
+  `tmp/triage.md`, then, with Bob's choices, writes the `gh` commands
+  for him to run; only when typed.
 
 Every feature branch runs, for any PR that changes what a person sees,
 `/usability-walkthrough` as one of its personas

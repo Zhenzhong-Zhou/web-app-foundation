@@ -77,7 +77,10 @@
 ### Triaging the open issues
 
 When `needs-triage` builds up, and before a fix-up stage (28 October
-2026). Nothing is labelled, closed or milestoned until Bob decides.
+2026). Nothing is labelled, closed or milestoned until Bob decides. It
+runs as `/triage` (29 October 2026, #322), whose
+[skill](../.claude/skills/triage/SKILL.md) holds what a run does in these
+steps; this section stays the rule.
 
 1. **Export every open issue with its comments,** into `tmp/`, which git
    ignores:
