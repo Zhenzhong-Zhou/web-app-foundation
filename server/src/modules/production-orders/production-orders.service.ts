@@ -10,11 +10,13 @@ import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
 import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
-import { isForeignKeyViolation } from '../../database/errors';
 import {
   boms,
+  locations,
+  partners,
   productionOrderLines,
   productionOrders,
+  productVariants,
   stockMovements,
   users,
 } from '../../database/schema';
@@ -62,6 +64,20 @@ export interface IssuePlanLine {
 }
 
 const DEFAULT_LIMIT = 25;
+
+/** Whether the row with this id is the organization's. */
+async function isOwn(
+  tx: Tx,
+  table: typeof productVariants | typeof locations | typeof partners,
+  organizationId: string,
+  id: string,
+): Promise<boolean> {
+  const [row] = await tx
+    .select({ id: table.id })
+    .from(table)
+    .where(and(eq(table.organizationId, organizationId), eq(table.id, id)));
+  return row !== undefined;
+}
 
 /**
  * How the batch itself came out against its plan (ADR-032's rule applied to
@@ -344,6 +360,8 @@ export class ProductionOrdersService {
 
   async create(input: CreateProductionOrderDto): Promise<ProductionOrder> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
+      await this.assertOwnRecords(tx, organizationId, input);
+
       if (input.bomId) {
         await this.assertBomMatches(
           tx,
@@ -353,36 +371,23 @@ export class ProductionOrdersService {
         );
       }
 
-      try {
-        const [run] = await tx
-          .insert(productionOrders)
-          .values({
-            organizationId,
-            outputVariantId: input.outputVariantId,
-            bomId: input.bomId,
-            locationId: input.locationId,
-            partnerId: input.partnerId,
-            quantityPlanned: input.quantityPlanned,
-            reference: input.reference,
-            notes: input.notes,
-            status: 'draft',
-          })
-          .returning();
+      const [run] = await tx
+        .insert(productionOrders)
+        .values({
+          organizationId,
+          outputVariantId: input.outputVariantId,
+          bomId: input.bomId,
+          locationId: input.locationId,
+          partnerId: input.partnerId,
+          quantityPlanned: input.quantityPlanned,
+          reference: input.reference,
+          notes: input.notes,
+          status: 'draft',
+        })
+        .returning();
 
-        this.logger.log(`Production order ${run.id} created`);
-        return run;
-      } catch (error) {
-        if (isForeignKeyViolation(error)) {
-          throw new BadRequestException(
-            t({
-              id: 'production.outputvariantidBomidLocationidPartnerid',
-              defaultMessage:
-                'outputVariantId, bomId, locationId, or partnerId does not exist',
-            }),
-          );
-        }
-        throw error;
-      }
+      this.logger.log(`Production order ${run.id} created`);
+      return run;
     });
   }
 
@@ -391,6 +396,8 @@ export class ProductionOrdersService {
       const run = await loadWithin(tx, organizationId, runId);
 
       assertStatus(run.status, 'draft', 'edited');
+
+      await this.assertOwnRecords(tx, organizationId, input);
 
       if (input.bomId) {
         await this.assertBomMatches(
@@ -401,22 +408,10 @@ export class ProductionOrdersService {
         );
       }
 
-      try {
-        await tx
-          .update(productionOrders)
-          .set(input)
-          .where(eq(productionOrders.id, runId));
-      } catch (error) {
-        if (isForeignKeyViolation(error)) {
-          throw new BadRequestException(
-            t({
-              id: 'production.bomidLocationidPartneridDoes',
-              defaultMessage: 'bomId, locationId, or partnerId does not exist',
-            }),
-          );
-        }
-        throw error;
-      }
+      await tx
+        .update(productionOrders)
+        .set(input)
+        .where(eq(productionOrders.id, runId));
 
       this.logger.log(`Production order ${runId} updated`);
     });
@@ -487,6 +482,58 @@ export class ProductionOrdersService {
   }
 
   // ---------------------------------------------------------------------------
+
+  /**
+   * A foreign key takes a row of any organization, so each id in the body is
+   * looked for in this one first: another tenant's partner, location or
+   * variant is refused as unknown, a 400 (ADR-003). Nothing is deleted from
+   * these tables, so no foreign key can fail after the check.
+   */
+  private async assertOwnRecords(
+    tx: Tx,
+    organizationId: string,
+    ids: {
+      outputVariantId?: string;
+      locationId?: string;
+      partnerId?: string | null;
+    },
+  ): Promise<void> {
+    if (
+      ids.outputVariantId &&
+      !(await isOwn(tx, productVariants, organizationId, ids.outputVariantId))
+    ) {
+      throw new BadRequestException(
+        t({
+          id: 'production.unknownVariant',
+          defaultMessage: 'Unknown variant',
+        }),
+      );
+    }
+
+    if (
+      ids.locationId &&
+      !(await isOwn(tx, locations, organizationId, ids.locationId))
+    ) {
+      throw new BadRequestException(
+        t({
+          id: 'production.unknownLocation',
+          defaultMessage: 'Unknown location',
+        }),
+      );
+    }
+
+    if (
+      ids.partnerId &&
+      !(await isOwn(tx, partners, organizationId, ids.partnerId))
+    ) {
+      throw new BadRequestException(
+        t({
+          id: 'production.unknownPartner',
+          defaultMessage: 'Unknown partner',
+        }),
+      );
+    }
+  }
 
   /**
    * A BOM for a different variant would issue the wrong components and credit
