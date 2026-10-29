@@ -227,10 +227,37 @@ export class ProductsService {
         t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
       );
 
-    const variants = await this.tenantDb.select(
-      productVariants,
-      eq(productVariants.productId, productId),
-      { orderBy: asc(productVariants.id) },
+    // Its variants with the names shown, and its gallery, the cover first
+    // (ADR-062).
+    const { variants, images } = await this.tenantDb.transaction(
+      async (tx, organizationId) => {
+        const shown = namesIn(locale, organizationId);
+
+        return {
+          variants: await tx
+            .select({
+              variant: productVariants,
+              productName: shown.productName,
+              variantName: shown.variantName,
+            })
+            .from(productVariants)
+            .innerJoin(
+              products,
+              and(
+                eq(products.id, productVariants.productId),
+                eq(products.organizationId, organizationId),
+              ),
+            )
+            .where(
+              and(
+                eq(productVariants.organizationId, organizationId),
+                eq(productVariants.productId, productId),
+              ),
+            )
+            .orderBy(asc(productVariants.id)),
+          images: await imagesOf(tx, organizationId, productId),
+        };
+      },
     );
 
     // Its names in other languages, and each variant's (ADR-054).
@@ -244,50 +271,18 @@ export class ProductsService {
         variantTranslations,
         inArray(
           variantTranslations.variantId,
-          variants.map((variant) => variant.id),
+          variants.map(({ variant }) => variant.id),
         ),
         { orderBy: asc(variantTranslations.locale) },
       ),
     ]);
 
-    // Its gallery, the cover first (ADR-062), and the names shown.
-    const { images, displayName, variantDisplayNames } =
-      await this.tenantDb.transaction(async (tx, organizationId) => {
-        const shown = namesIn(locale, organizationId);
-
-        const [named] = await tx
-          .select({ displayName: shown.productName })
-          .from(products)
-          .where(
-            and(
-              eq(products.organizationId, organizationId),
-              eq(products.id, productId),
-            ),
-          );
-        const namedVariants = await tx
-          .select({ id: productVariants.id, displayName: shown.variantName })
-          .from(productVariants)
-          .where(
-            and(
-              eq(productVariants.organizationId, organizationId),
-              eq(productVariants.productId, productId),
-            ),
-          );
-
-        return {
-          images: await imagesOf(tx, organizationId, productId),
-          displayName: named?.displayName ?? product.name,
-          variantDisplayNames: new Map(
-            namedVariants.map((row) => [row.id, row.displayName]),
-          ),
-        };
-      });
-
     return {
       id: product.id,
       type: product.type,
       name: product.name,
-      displayName,
+      // Every product has a variant (ADR-023), and each row names it alike.
+      displayName: variants[0].productName,
       description: product.description,
       isActive: product.isActive,
       images: publicImages(images),
@@ -296,9 +291,9 @@ export class ProductsService {
         name,
         description,
       })),
-      variants: variants.map((variant) => ({
+      variants: variants.map(({ variant, variantName }) => ({
         ...variantOf(variant),
-        displayName: variantDisplayNames.get(variant.id) ?? variant.name,
+        displayName: variantName,
         translations: variantNames
           .filter((row) => row.variantId === variant.id)
           .map(({ locale, name }) => ({ locale, name })),
