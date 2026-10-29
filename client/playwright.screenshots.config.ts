@@ -109,7 +109,6 @@ export default defineConfig({
         PORT: '3200',
         DATABASE_URL,
         RATE_LIMIT_MAX: '10000',
-        RATE_LIMIT_AUTH_MAX: '10000',
         THROTTLE_FACTOR: '1000',
       },
     },

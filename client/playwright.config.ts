@@ -167,7 +167,6 @@ export default defineConfig({
         // `freshOrg` fixture registers, so the production limit would fail the
         // suite rather than the feature.
         RATE_LIMIT_MAX: '10000',
-        RATE_LIMIT_AUTH_MAX: '10000',
         // Registration is throttled to 5/min per IP. Every worker and every
         // freshOrg fixture registers, so the production limit fails the suite
         // rather than the feature.

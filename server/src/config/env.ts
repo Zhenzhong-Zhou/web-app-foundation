@@ -88,7 +88,6 @@ export const envSchema = z.object({
 
   RATE_LIMIT_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
-  RATE_LIMIT_AUTH_MAX: z.coerce.number().int().positive().default(5),
 
   // Files (ADR-059). `local` keeps them on disk, for development, tests and
   // CI; `s3` in a bucket, which needs the five FILES_S3_* and FILES_BUCKET.
