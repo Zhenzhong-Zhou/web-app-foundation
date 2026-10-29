@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+/** How long a list or a picker waits after typing stops before it asks. */
+export const SEARCH_WAIT_MS = 300;
+
 /**
  * A list's search box (ADR-056): what is typed, and what the list asks for,
  * a moment after typing stops. The search lives in the address as
@@ -48,7 +51,7 @@ export function useListSearch(): {
           },
           { replace: true },
         ),
-      300,
+      SEARCH_WAIT_MS,
     );
     return () => clearTimeout(timer);
   }, [text, search, setParams]);

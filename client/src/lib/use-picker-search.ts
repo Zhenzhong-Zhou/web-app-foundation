@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import { api } from './api';
-import { withSearch } from './use-list-search';
-
-/** As a list waits for typing to stop (useListSearch). */
-const WAIT_MS = 300;
+import { SEARCH_WAIT_MS, withSearch } from './use-list-search';
 
 /**
  * A picker's search on the server (ADR-056, amended): the item pickers'
@@ -80,7 +77,7 @@ export function usePickerSearch<T extends { id: string }, C = T>(
         .catch(() => {
           if (!ignore) setFound({ search, ids: null });
         });
-    }, WAIT_MS);
+    }, SEARCH_WAIT_MS);
 
     return () => {
       ignore = true;
