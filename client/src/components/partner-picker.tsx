@@ -14,9 +14,6 @@ const NONE = { id: '', none: true } as const;
 
 type Choice = Partner | typeof NONE;
 
-/** The rows as given: the server has matched and ordered the partners. */
-const asAnswered = (choices: Choice[]) => choices;
-
 /**
  * Choosing a partner by typing, behind every partner picker: New order's
  * Partner, a sample's Given to and Plan run's contract manufacturer
@@ -63,14 +60,24 @@ export function PartnerPicker({
   helperText?: string;
 }) {
   const intl = useIntl();
-  const { shown, asking, failed, onInputChange } = usePickerSearch(
+  const { shown, waiting, autocomplete } = usePickerSearch<Partner, Choice>(
     '/partners',
     options,
+    {
+      loading,
+      noMatches: intl.formatMessage({
+        id: 'components.partnerPicker.noMatches',
+        defaultMessage: 'No matching partners',
+      }),
+      failed: intl.formatMessage({
+        id: 'components.partnerPicker.failed',
+        defaultMessage: 'Could not load the partners.',
+      }),
+    },
   );
   const selected: Choice | null =
     options.find((option) => option.id === value) ??
     (value === '' && none !== undefined ? NONE : null);
-  const waiting = loading || asking;
   const listed: Choice[] = waiting
     ? []
     : none !== undefined
@@ -79,34 +86,17 @@ export function PartnerPicker({
 
   return (
     <Autocomplete
+      {...autocomplete}
       id={id}
       options={listed}
-      filterOptions={asAnswered}
       value={selected}
       onChange={(_event, choice) => onChange(choice?.id ?? '')}
-      onInputChange={onInputChange}
       getOptionLabel={(choice) =>
         'none' in choice ? (none ?? '') : nameAndCode(choice.name, choice.code)
       }
       isOptionEqualToValue={(choice, current) => choice.id === current.id}
       disabled={disabled}
       fullWidth
-      loading={waiting}
-      loadingText={intl.formatMessage({
-        id: 'common.loading',
-        defaultMessage: 'Loading…',
-      })}
-      noOptionsText={
-        failed
-          ? intl.formatMessage({
-              id: 'components.partnerPicker.failed',
-              defaultMessage: 'Could not load the partners.',
-            })
-          : intl.formatMessage({
-              id: 'components.partnerPicker.noMatches',
-              defaultMessage: 'No matching partners',
-            })
-      }
       renderInput={(params) => (
         <TextField
           {...params}

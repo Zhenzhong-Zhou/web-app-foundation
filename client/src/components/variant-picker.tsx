@@ -10,9 +10,6 @@ function labelFor(option: VariantOption): string {
   return `${option.sku} — ${itemName(option.productName, option.variantName)}`;
 }
 
-/** The options as given: the server has matched and ordered them. */
-const asAnswered = (options: VariantOption[]) => options;
-
 /**
  * Choosing a variant by typing rather than scrolling, behind every item
  * picker (ADR-056, amended).
@@ -59,39 +56,33 @@ export function VariantPicker({
 }) {
   const intl = useIntl();
   const selected = options.find((option) => option.id === value) ?? null;
-  const { shown, asking, failed, onInputChange } = usePickerSearch(
+  const { shown, autocomplete } = usePickerSearch(
     '/products/variants',
     options,
+    {
+      loading,
+      noMatches: intl.formatMessage({
+        id: 'components.variantPicker.noMatches',
+        defaultMessage: 'No matching items',
+      }),
+      failed: intl.formatMessage({
+        id: 'inventory.catalogueFailed',
+        defaultMessage: 'Could not load the catalogue.',
+      }),
+    },
   );
 
   return (
     <Autocomplete
+      {...autocomplete}
       id={id}
       options={shown}
-      filterOptions={asAnswered}
       value={selected}
       onChange={(_event, option) => onChange(option?.id ?? '')}
-      onInputChange={onInputChange}
       getOptionLabel={labelFor}
       isOptionEqualToValue={(option, current) => option.id === current.id}
       disabled={disabled}
       fullWidth
-      loading={loading || asking}
-      loadingText={intl.formatMessage({
-        id: 'common.loading',
-        defaultMessage: 'Loading…',
-      })}
-      noOptionsText={
-        failed
-          ? intl.formatMessage({
-              id: 'inventory.catalogueFailed',
-              defaultMessage: 'Could not load the catalogue.',
-            })
-          : intl.formatMessage({
-              id: 'components.variantPicker.noMatches',
-              defaultMessage: 'No matching items',
-            })
-      }
       renderInput={(params) => (
         <TextField
           {...params}
