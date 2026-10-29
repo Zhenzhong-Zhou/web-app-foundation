@@ -356,6 +356,10 @@ Checked before drafting, as the working agreements ask:
   above. Trigger: someone picking the same few items over and over, or
   asking for it.
 - **A search engine** stays deferred above, its trigger unchanged.
+- **The pickers' whole catalogue,** read before anything is typed, its
+  search kept to those rows (added as built). Trigger: an organization
+  with thousands of variants, or a picker's first read over its budget.
+  Then the picker shows only what the server finds.
 
 ### Consequences
 
@@ -388,3 +392,54 @@ Checked before drafting, as the working agreements ask:
   `allowScripts`, #226's two joins. Already on the branch: the triage's
   working agreements, #225's known miss removed, and six buttons opened
   through `openDialog`. The pull request closes #260, #250 and #270.
+
+### As built (#317, 29 October 2026)
+
+Built step by step from a brief; where it differs from the decisions
+above, this holds.
+
+- **The reader's language** is Accept-Language, read through one
+  decorator, `@AcceptLanguage()`, which documents it as optional on all
+  44 operations that take it: 25 went from required to optional and 19
+  gained it, nothing breaking and the revision unchanged. Services take
+  the locale as an argument, null meaning the base name, so the packing
+  slip and the CSV exports pass null through the same functions.
+- **The product page** keeps `name`, which its edit forms fill from and
+  send back, and shows `displayName`, with the base name first under
+  Names in other languages. A Chinese reader's edit leaves the base name
+  as it was (`server/test/item-names.e2e-spec.ts`).
+- **The reads that name an item,** listed first and kept by that test,
+  which also scans `openapi.json` for any read that names an item without
+  the rule. Recipes, runs, RMAs, costs, availability and Movements show
+  only a SKU and are unchanged here: #296, and Movements is #256's, in
+  ADR-085's branch, not "met here" as "Kept in step" says. Recent and
+  Home's welcome take the rule.
+- **The minimum is the lookup's alone:** 2 characters, or 1 Chinese one;
+  its `q` went to `minLength: 1`, refused by `validation.lookupQuery`, and
+  the top bar's hint says the rule. The lists and pickers narrow from the
+  first character, as the lists already did.
+- **The ranking:** `itemRank` reads the SKU, the name shown and stored and
+  the pinyin of each, a full pinyin or its initials counting as exact;
+  `partnerRank` the name, code, tax ID and pinyin. The lookup uses both.
+  Tone marks and full-width (全角) input are folded first.
+- **The partner pickers too:** New order, Send a sample and Plan run
+  search the server through one `PartnerPicker`, sharing
+  `usePickerSearch` with the item picker; Plan run's "We make it
+  ourselves" is a first row and the field's text, never a placeholder.
+- **The lists keep their search in the address:** typing writes
+  `?search=`, replacing the history entry; "Show all" while on the list,
+  and Back and Forward, follow it. Switching language reads the open
+  screen again (#297).
+- **The joins to products** name the organization in ON, #226's two and
+  six more, and so do the translation subqueries; the trigram indexes
+  still find every organization's matches before the filter drops them,
+  as the index per organization above defers.
+- **The exports** of Products and Partners follow the list's search and
+  filters (ADR-057).
+- **Budgets:** `GET /products`, its search, the pickers' and Partners'
+  searches, each with a plan probe, and one for 专 alone; p95 8 to 17 ms
+  against 300 at small. The typo lookup (#225, reopened) and Home (#276)
+  carry known misses until 30 November: CI's runners ran about 1.45×
+  slower on 29 October, main as much as this branch.
+- **Found and fixed on the way:** three tenancy checks, production runs,
+  recipes and a run's release, through one `assertOwnIds` (ADR-003).

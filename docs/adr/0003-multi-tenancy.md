@@ -33,3 +33,11 @@ Postgres Row-Level Security may be added later as defence in depth. It is cheap 
 
 Deferred as additive, not blocking: organization signup/onboarding, org switcher UI,
 per-org settings overrides, per-org billing.
+
+## Deferred
+
+- **Composite foreign keys,** `(organization_id, id)`, so the database
+  itself refuses another organization's id (added 29 October 2026, #317).
+  Every write checks each id from a body in its service today, through
+  `assertOwnIds`; three services were found without that check and fixed.
+  Trigger: a fourth found writing another organization's id.

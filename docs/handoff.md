@@ -13,19 +13,20 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 28 October 2026:
+On 29 October 2026:
 
-- **`fix-260-product-names-and-search`,** [#260] with ADR-056 amended, is
-  on its branch, not yet pushed. On it so far: the triage's working
-  agreements, [#225]'s known miss taken out of the perf budgets, the nav
-  drawer and five other buttons opened through `openDialog`, and ADR-056's
-  amendment. Its build brief comes next, then ADR-084 (the order, below).
+- **[#317],** [#260]'s pull request (ADR-056 amended), is open with its
+  checks green; it merges after its as-built docs. Next comes [#316], one
+  rate limit per person rather than per address (ADR-011 amended first),
+  then ADR-084 (the order, below).
 - **The triage** is done (28 October;
   [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
-  every open issue has its group and area labels, the 27 `fix-now` ones
-  are in the [Fix-ups milestone](https://github.com/Zhenzhong-Zhou/web-app-foundation/milestone/1),
-  [#225] is closed with the typo lookup back within budget after [#186]
-  (p95 207 and 232 ms of 300), and [#178]'s hooks are [#293] of their own.
+  every open issue has its group and area labels, the `fix-now` ones are
+  in the [Fix-ups milestone](https://github.com/Zhenzhong-Zhou/web-app-foundation/milestone/1),
+  and [#178]'s hooks are [#293] of their own. [#225] was closed after
+  [#186], then reopened on 29 October, when slower runners put the typo
+  lookup at 333 to 363 ms; it and [#276] carry known misses until 30
+  November.
 - **The last merges:** [#291] (`docs-start-here`, ADR-086's part 2 and
   ADR-087, 28 October), [#259] (`docs-moves`, ADR-086's part 1, 27
   October), [#257] (the emails' design, ADR-083, 27 October), [#254]
@@ -59,10 +60,14 @@ On 28 October 2026:
   space where the page writes 到 2026年. And, on a phone, to someone who
   reads only Chinese: the close dialog (MC-2406), Roles and the role
   editor in 中文, 品牌, product photos, 同事, and 编号 (MC-2710).
-- **2 November:** `typescript-eslint` 8.72.1 and `@aws-sdk/client-s3`
-  3.1157.0 are old enough, for ADR-084's branch ([#287]).
+- **2 November:** `typescript-eslint` 8.72.1 is old enough, for ADR-084's
+  branch ([#287]).
 - **3 November:** the Nest packages at 12.3.x are old enough (ADR-084,
   [#287]).
+- **4 November:** `@aws-sdk/client-s3` 3.1159.0 (18:45 UTC) and the eight
+  updates #260 left (by 20:26 UTC) are old enough, for ADR-084's branch.
+- **30 November:** the known misses for the typo lookup ([#225]) and Home
+  ([#276]) end; fixed by then, or decided again.
 - **Early November:** Bob's cloud credit ends; [#245] suits a cloud session
   before then. What the cloud sessions taught is in the working
   agreements, "Cloud sessions" under
@@ -77,6 +82,13 @@ On 28 October 2026:
 
 ## Still to do, by hand
 
+- **Before [#317]'s merge:** `RATE_LIMIT_MAX` at 600 on Render's web
+  service, a stopgap until [#316], since every person shares one counter;
+  and Chinese typed with a pinyin input method in Receive stock and on
+  Products. After it: Dependabot's alert 4 closing by itself.
+- **Lighthouse on the live site, and the site reached from China,**
+  before the first paying customer (`/production-readiness`'s H5 and H6,
+  #317's review).
 - **The pinyin backfill** on the current database: `npm run
   backfill:pinyin` once in `server/`, against its External URL with
   `?sslmode=no-verify`, since Render runs the migrations but not that
@@ -101,23 +113,22 @@ them:
 
 1. **`docs-start-here`,** [#291]: merged 28 October.
 2. **Triage:** done 28 October (above).
-3. **[#260], product names and search** (ADR-056 amended), on
-   `fix-260-product-names-and-search`: an item's name in the reader's
-   language on every screen, and Products, Partners and the item pickers
-   searched on the server; with [#250], [#263]'s note wording, the esbuild
-   override under drizzle-kit ([#270]), [#226]'s two joins not bounded by
-   organization, and a `/rules-file` skill writing the products, partners
-   and search rules files.
+3. **[#260], product names and search** (ADR-056 amended): [#317], open.
+   Then [#316], the rate limit keyed on the person, its own branch.
 4. **ADR-084, an error tracker** ([#287]), with `typescript-eslint` 8.72.1
-   and `@aws-sdk/client-s3` 3.1157.0 (old enough from 2 November), and
-   the Nest packages at 12.3.x (from 3 November), whose
+   (old enough from 2 November), the Nest packages at 12.3.x (from 3
+   November), `@aws-sdk/client-s3` 3.1159.0 and the eight #260 left
+   (`@nestjs/cli`, `@nestjs/swagger`, `@nestjs/schematics`,
+   `@formatjs/cli`, `react-intl`, `react-router-dom`, `@types/node`,
+   `dotenv-cli`; all by 4 November, 20:26 UTC), whose
    `@nestjs/platform-express` depends on multer 2.5.0 itself, so the
    multer override goes (ADR-019); an `npm audit` step in CI ([#268]), the database's size in the backup's
    summary ([#269]), and the per-area table diagrams.
 5. **ADR-085, low stock** ([#288]), with [#222] and [#256].
 6. **The fix-ups:** the Fix-ups milestone in batches by area, each
    writing its areas' rules files. First the flaky tests, [#183], [#232],
-   [#233], [#248] and [#290], so CI can be trusted for the rest; then
+   [#233], [#248] and [#290], so CI can be trusted for the rest; [#225]
+   and [#276] before their known misses end on 30 November; then
    [#261] with [#154] and [#150]; then [#263]'s rest with [#198]; [#264];
    and [#255] with [#258], since both change the emails' text parts
    (`npm run mail:text -- --update`).
@@ -147,7 +158,9 @@ them:
    one person in two organizations, then a practice organization
    (ADR-077, *Deferred*); a public demo, plans and billing, and the
    operator's console and support access, each with its entry in Open
-   decisions; and returns to suppliers ([#262]).
+   decisions; returns to suppliers ([#262]); a partner's history and when
+   a customer will order next ([#300]); and special prices with a
+   quantity limit ([#298]).
 
 Later: `/release` at the next tag; the chat-side planning skill;
 `/file-issue`, or GitHub's issue templates; labels as code, a labels file
@@ -188,7 +201,6 @@ Not repeated here; each list has one home:
 [#245]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/245
 [#247]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/247
 [#248]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/248
-[#250]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/250
 [#251]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/251
 [#252]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/252
 [#253]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/253
@@ -205,9 +217,13 @@ Not repeated here; each list has one home:
 [#264]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/264
 [#268]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/268
 [#269]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/269
-[#270]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/270
+[#276]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/276
 [#287]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/287
 [#288]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/288
 [#290]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/290
 [#291]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/291
 [#293]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/293
+[#298]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/298
+[#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
+[#316]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/316
+[#317]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/317

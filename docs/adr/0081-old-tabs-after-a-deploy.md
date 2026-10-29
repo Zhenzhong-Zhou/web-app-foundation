@@ -580,3 +580,10 @@ wrong in that. The version check keeps its query string and
 read-only check of the live site after each deploy came with #196 (#224);
 the deploy job runs in GitHub's `production` environment, limited to
 `main` and holding the hooks.
+
+## Amendment (October 2026) — the note says saved work is kept
+
+The note quoted above now ends "Everything you've saved is kept; you
+don't need to do anything.", on a computer and, at the end of the menu's
+item, on a phone, in all three languages (#317). The rest of #263, the
+signed-out note among it, amends this ADR when it is planned.
