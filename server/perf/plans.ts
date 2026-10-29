@@ -403,6 +403,12 @@ async function buildProbes(
       name: 'products: search',
       run: () => products.list('zh-Hans', 'zhuanzhu'),
     },
+    // One Chinese character, which no trigram index serves: the search
+    // reads the translations that hold it, at large about 64 ms.
+    {
+      name: 'products: one character',
+      run: () => products.list('zh-Hans', '专'),
+    },
     {
       name: 'item pickers: search',
       run: () => products.listActiveVariants('zh-Hans', 'zhuanzhu'),
