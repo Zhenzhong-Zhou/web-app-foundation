@@ -132,7 +132,9 @@ export function stockRowsOf(
   return sql`${stockLevels}
     inner join ${productVariants}
       on ${productVariants.id} = ${stockLevels.variantId}
-    inner join ${products} on ${products.id} = ${productVariants.productId}
+    inner join ${products}
+      on ${products.id} = ${productVariants.productId}
+      and ${products.organizationId} = ${organizationId}::uuid
     inner join ${locations} on ${locations.id} = ${stockLevels.locationId}
     left join ${lots} on ${lotJoin(organizationId)}
     where ${and(...filtersOf(query, organizationId, today))}`;
@@ -255,7 +257,13 @@ export class StockReadsService {
         )
         // Inner: every variant belongs to a product, and the product name
         // is what people recognise — most variants have no name of their own.
-        .innerJoin(products, eq(products.id, productVariants.productId))
+        .innerJoin(
+          products,
+          and(
+            eq(products.id, productVariants.productId),
+            eq(products.organizationId, organizationId),
+          ),
+        )
         .innerJoin(locations, eq(locations.id, stockLevels.locationId))
         // Left, because lot_id is null for every untracked variant and an
         // inner join would silently drop most of the warehouse.
