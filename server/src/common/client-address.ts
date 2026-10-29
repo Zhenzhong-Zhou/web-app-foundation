@@ -7,9 +7,9 @@ import type { Request } from 'express';
  * #316): the value of the header CLIENT_IP_HEADER names, when it holds one
  * IP address, else req.ip. On Render req.ip is one of Render's own
  * proxies, and cf-connecting-ip the address that reached Cloudflare, which
- * sets it and replaces any a caller sends. Where nothing in front sets the
- * header, a caller could choose its own address, so the setting stays
- * empty there.
+ * sets it and refuses a request that sends its own. Where nothing in front
+ * sets the header, a caller could choose its own address, so the setting
+ * stays empty there.
  *
  * Read per request, as registrationMode() reads REGISTRATION, so a spec
  * can change it; the env schema checks the name at boot. A list, or

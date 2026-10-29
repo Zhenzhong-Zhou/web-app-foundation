@@ -2819,8 +2819,9 @@ Every limit counts for one signed-in person, or signed out, for one
 client address: on Render the address Cloudflare saw, which it sends as
 `CF-Connecting-IP`. Checked on the live site after a deploy, once the web
 service has `CLIENT_IP_HEADER=cf-connecting-ip`, from a terminal. Each
-request is answered 401, since it signs nobody in, after the limiter has
-counted it in `X-RateLimit-Remaining`, as #316's probe read it. First:
+request that reaches the API is answered 401, since it signs nobody in,
+after the limiter has counted it in `X-RateLimit-Remaining`, as #316's
+probe read it. First:
 
 ```bash
 site=https://web-app-foundation-client.onrender.com
@@ -2839,10 +2840,12 @@ remaining() { curl -s -o /dev/null -D - "$@" | grep -i '^x-ratelimit-remaining';
 - **MC-4002** *(#316)* A caller cannot choose its address by sending
   `CF-Connecting-IP`. On each path, the rewrite and the API's own
   address:
-  `for url in "$site/api/v1/auth/me" "$api/v1/auth/me"; do remaining -4 "$url"; remaining -4 -H 'CF-Connecting-IP: 203.0.113.7' "$url"; done`.
-  In each pair the second line is one below the first: Cloudflare
-  replaced the header, and the request counted on your own address. The
-  same number twice means the header sent was believed.
+  `for url in "$site/api/v1/auth/me" "$api/v1/auth/me"; do curl -s -4 -H 'CF-Connecting-IP: 203.0.113.7' -D - "$url" | grep -iE '^HTTP/|^x-ratelimit-remaining|error code'; done`.
+  Each path prints `HTTP/2 403` and `error code: 1000`, and no
+  `X-RateLimit-Remaining` line: Cloudflare refused the request before it
+  reached the API, so the header sent was never believed. An
+  `X-RateLimit-Remaining` line means the request reached the API with the
+  address it chose.
 - **MC-4003** *(#316)* The address recorded is your own. In a private
   window, open `$site/cdn-cgi/trace`: its `ip=` line is the address
   Cloudflare saw. Sign in from that window. The new-sign-in email's IP
@@ -3888,3 +3891,6 @@ first.
   address (#316): section 40, MC-4001 and MC-4002.
 - 2026-10-29: ADR-011, amended, the client's own address recorded on
   sessions, account events and the audit log (#316): MC-4003.
+- 2026-10-29: #316's reviews, Cloudflare refusing a request that sends
+  its own `CF-Connecting-IP` rather than replacing the header: MC-4002
+  reworded.
