@@ -123,6 +123,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-083] | The emails: one layout for every email | accepted | 2026-10-26 | [ADR-077], [ADR-082] | |
 | [ADR-086] | Docs as code: one file per decision, and links that are checked | accepted | 2026-10-27 | | |
 | [ADR-087] | The rules written down: `docs/rules/` for people, `.claude/rules/` for Claude | accepted | 2026-10-27 | | |
+| [ADR-088] | Planning in the chat, as a skill: kept here, compared with main, tested by prompts | accepted | 2026-10-29 | | |
 
 [ADR-001]: 0001-nestjs-as-the-server-framework.md
 [ADR-002]: 0002-postgresql-as-the-database.md
@@ -209,6 +210,7 @@ decided is in [Open decisions](open-decisions.md).
 [ADR-083]: 0083-the-emails.md
 [ADR-086]: 0086-docs-as-code.md
 [ADR-087]: 0087-the-rules-written-down.md
+[ADR-088]: 0088-planning-in-the-chat-as-a-skill.md
 
 <!-- adr-index:end -->
 
@@ -252,10 +254,10 @@ same names. An area no ADR names has no line.
 - `mail`: [ADR-005], [ADR-017], [ADR-037], [ADR-054], [ADR-069], [ADR-070], [ADR-077], [ADR-078], [ADR-082], [ADR-083]
 - `api`: [ADR-001], [ADR-013], [ADR-014], [ADR-052], [ADR-057], [ADR-068], [ADR-081]
 - `database`: [ADR-002], [ADR-003], [ADR-009], [ADR-010], [ADR-012], [ADR-025], [ADR-028], [ADR-051], [ADR-052], [ADR-056], [ADR-081]
-- `docs`: [ADR-086], [ADR-087]
+- `docs`: [ADR-086], [ADR-087], [ADR-088]
 - `help`: [ADR-079]
 - `i18n`: [ADR-054], [ADR-056], [ADR-072], [ADR-076]
-- `ops`: [ADR-005], [ADR-008], [ADR-019], [ADR-051], [ADR-053], [ADR-059], [ADR-067], [ADR-070], [ADR-081]
+- `ops`: [ADR-005], [ADR-008], [ADR-019], [ADR-051], [ADR-053], [ADR-059], [ADR-067], [ADR-070], [ADR-081], [ADR-088]
 - `ui`: [ADR-007], [ADR-020], [ADR-021], [ADR-055], [ADR-056], [ADR-057], [ADR-060], [ADR-075], [ADR-082]
 
 <!-- adr-areas:end -->
