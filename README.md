@@ -233,6 +233,7 @@ work under updates it.
 | Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                                          |
 | Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                                                              |
 | After a merge                          | `scripts/prune-branches.sh --yes`                                                                                                               |
+| After a merge, now and then            | `scripts/clean-local.sh`, then `--yes`; `--docker` for Docker's space                                                                           |
 | A test fails in code a PR didn't touch | Re-run once; if it passes, a "Flaky:" issue the same day ([conventions.md, "Tests"](docs/conventions.md#tests))                                 |
 | A server e2e test fails now and then   | `server/scripts/e2e-flake-hunt.sh <runs> <suite>`                                                                                               |
 | A browser test fails                   | `npm run test:e2e:ui` in `client/`, to watch it step by step                                                                                    |
