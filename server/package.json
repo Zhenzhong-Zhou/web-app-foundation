@@ -123,10 +123,7 @@
   },
   "allowScripts": {
     "esbuild@0.28.2": true,
-    "unrs-resolver@1.12.2": true,
-    "fsevents@2.3.3": true,
     "argon2@0.45.1": true,
-    "@parcel/watcher@2.6.0": true,
     "esbuild@0.25.12": true,
     "@scarf/scarf": false
   },
