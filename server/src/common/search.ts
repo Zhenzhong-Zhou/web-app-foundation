@@ -138,7 +138,9 @@ function comparable(
 /**
  * For ORDER BY, lowest first: 0 for an exact match, 1 for a match at the
  * start, 2 for anywhere (ADR-056). Names compared as nameMatches compares
- * them, codes case ignored.
+ * them, codes case ignored. Neither needs a wildcard escaped here: a code's
+ * prefix is escaped by searchTerms, and search_text() turns a % or _ in a
+ * name's query into a space, as for nameMatches.
  */
 export function matchRank(
   column: SQLWrapper,
