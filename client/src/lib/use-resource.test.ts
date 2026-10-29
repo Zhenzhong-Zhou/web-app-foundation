@@ -125,6 +125,41 @@ describe('useResource', () => {
   });
 
   /**
+   * A new search on Products or Partners waits as a keyset list does: the
+   * last search's rows are not its answer (review finding 1 of #260).
+   */
+  it('reports loading for a new path, with none of the last one’s data, until it answers', async () => {
+    let answerSecond: () => void = () => undefined;
+    const secondAnswered = new Promise<void>((resolve) => {
+      answerSecond = resolve;
+    });
+
+    server.use(
+      http.get(`${BASE}/things/a`, () =>
+        HttpResponse.json({ id: 'a', name: 'First' }),
+      ),
+      http.get(`${BASE}/things/b`, async () => {
+        await secondAnswered;
+        return HttpResponse.json({ id: 'b', name: 'Second' });
+      }),
+    );
+
+    const { result, rerender } = renderHook(
+      ({ path }) => useResource<Thing>(path),
+      { initialProps: { path: '/things/a' } },
+    );
+    await waitFor(() => expect(result.current.data?.name).toBe('First'));
+
+    rerender({ path: '/things/b' });
+    expect(result.current.loading).toBe(true);
+    expect(result.current.data).toBeNull();
+
+    answerSecond();
+    await waitFor(() => expect(result.current.data?.name).toBe('Second'));
+    expect(result.current.loading).toBe(false);
+  });
+
+  /**
    * A list whose search is in its path (Products, Partners): Refresh, then
    * a search typed while the reload is still out.
    */

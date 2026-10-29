@@ -1,4 +1,4 @@
-import { act, screen, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import {
@@ -108,6 +108,38 @@ describe('ProductsPage', () => {
     // Every chance for the late answer to land before checking it didn't.
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(names()).toEqual(['Focus 60ct']);
+  });
+
+  it('waits for a new search’s answer, rather than showing the last one’s rows', async () => {
+    const user = userEvent.setup();
+    let answer: () => void = () => undefined;
+    const answered = new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+    server.use(
+      http.get('/api/v1/products', async ({ request }) => {
+        if (new URL(request.url).searchParams.get('search') === null)
+          return HttpResponse.json([product('Focus 60ct')]);
+        await answered;
+        return HttpResponse.json([product('Calm 90ct')]);
+      }),
+    );
+
+    renderAt('/products');
+    await screen.findByRole('link', { name: 'Focus 60ct' });
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search' }), 'calm');
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('link', { name: 'Focus 60ct' }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByText('Nothing matches that search.')).toBeNull();
+
+    answer();
+    expect(
+      await screen.findByRole('link', { name: 'Calm 90ct' }),
+    ).toBeVisible();
   });
 
   it('says no products yet for an empty catalogue, and nothing matches for an empty search', async () => {

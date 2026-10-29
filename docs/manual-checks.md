@@ -2779,7 +2779,9 @@ The list narrows a moment after typing stops.
   Do it again on Products showing `calm`: the box and the list change to
   zzjn, Back brings calm back, and Forward zzjn. What is typed is in the
   address: reload, or open a product and come Back, and the list is
-  still narrowed.
+  still narrowed. With DevTools' network set to Slow 4G, type `calm`:
+  the rows go, the list waits, and Calm 90ct comes; Partners does the
+  same with `mingde`.
 - **MC-3902** On Partners, `mdyf` or `mingde` lists 明德药房, and so does
   药 alone. `cooperative`, without its accent, finds the Coopérative des
   pharmacies indépendantes du Bas-Saint-Laurent; `pharmacie` lists
@@ -3826,3 +3828,6 @@ first.
   (#274): section 39 renamed for them, MC-3904 added.
 - 2026-10-28: #260's reviews, the product page saying its base name first
   among its names in other languages: MC-3802 extended.
+- 2026-10-28: #260's reviews, Products and Partners waiting for a new
+  search's answer rather than showing the last one's rows: MC-3901
+  extended.

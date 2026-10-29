@@ -278,11 +278,15 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../client/src/partners/partners-page.test.tsx) "asks with the address’s search, and lists the answer in its order" ·
   partly tested ·
   MC-3901 · MC-3902
-- **A list asks a moment after typing stops, and drops an answer that
-  comes after a newer one.**
+- **A list asks a moment after typing stops, waits for the answer
+  without showing the last search's rows, and drops an answer that comes
+  after a newer one.**
   [ADR-056, amended](../adr/0056-search.md#decision--products-partners-and-the-item-pickers-searched-on-the-server) ·
   [test](../../client/src/products/products-page.test.tsx) "asks again once typing stops, and drops an answer that comes after a newer one" ·
-  [test](../../client/src/partners/partners-page.test.tsx) "asks again once typing stops, and drops an answer that comes after a newer one"
+  [test](../../client/src/partners/partners-page.test.tsx) "asks again once typing stops, and drops an answer that comes after a newer one" ·
+  [test](../../client/src/products/products-page.test.tsx) "waits for a new search’s answer, rather than showing the last one’s rows" ·
+  [test](../../client/src/lib/use-resource.test.ts) "reports loading for a new path, with none of the last one’s data, until it answers" ·
+  MC-3901
 - **A search that finds nothing says "Nothing matches that search.",**
   not the empty list's first-time message.
   [ADR-056](../adr/0056-search.md#decision--matching) ·
