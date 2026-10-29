@@ -103,7 +103,8 @@ export class ProductionExecutionService {
         sources,
         t({
           id: 'production.unknownLocation',
-          defaultMessage: 'Unknown location',
+          defaultMessage:
+            'That location is not in this organization. Choose one from the list.',
         }),
       );
 

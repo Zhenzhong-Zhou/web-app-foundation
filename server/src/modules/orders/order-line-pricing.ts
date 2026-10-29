@@ -90,7 +90,11 @@ export async function insertLines(
 
     if (!variant)
       throw new BadRequestException(
-        t({ id: 'orders.unknownVariant', defaultMessage: 'Unknown variant' }),
+        t({
+          id: 'orders.unknownVariant',
+          defaultMessage:
+            'That item is not in this organization. Choose one from the list.',
+        }),
       );
 
     let unitPrice: string | null = line.unitPrice ?? null;

@@ -683,7 +683,7 @@ describe('BOMs (e2e)', () => {
           .send(payload)
           .expect(400);
         expect(body<{ message: string }>(refused).message).toBe(
-          'Unknown variant',
+          'That item is not in this organization. Choose one from the list.',
         );
       }
 
@@ -707,7 +707,7 @@ describe('BOMs (e2e)', () => {
         .send({ componentVariantId: theirs, quantity: '100' })
         .expect(400);
       expect(body<{ message: string }>(refused).message).toBe(
-        'Unknown variant',
+        'That item is not in this organization. Choose one from the list.',
       );
 
       const lines = await db

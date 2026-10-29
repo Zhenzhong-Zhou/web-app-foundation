@@ -488,7 +488,11 @@ export class ProductionOrdersService {
       productVariants,
       organizationId,
       [ids.outputVariantId],
-      t({ id: 'production.unknownVariant', defaultMessage: 'Unknown variant' }),
+      t({
+        id: 'production.unknownVariant',
+        defaultMessage:
+          'That item is not in this organization. Choose one from the list.',
+      }),
     );
     await assertOwnIds(
       tx,
@@ -497,7 +501,8 @@ export class ProductionOrdersService {
       [ids.locationId],
       t({
         id: 'production.unknownLocation',
-        defaultMessage: 'Unknown location',
+        defaultMessage:
+          'That location is not in this organization. Choose one from the list.',
       }),
     );
     await assertOwnIds(
@@ -505,7 +510,11 @@ export class ProductionOrdersService {
       partners,
       organizationId,
       [ids.partnerId],
-      t({ id: 'production.unknownPartner', defaultMessage: 'Unknown partner' }),
+      t({
+        id: 'production.unknownPartner',
+        defaultMessage:
+          'That partner is not in this organization. Choose one from the list.',
+      }),
     );
   }
 

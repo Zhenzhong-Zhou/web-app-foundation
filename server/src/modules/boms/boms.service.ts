@@ -84,7 +84,7 @@ export class BomsService {
   /**
    * The variant foreign keys are global too, so the output and each
    * component are looked for in this organization first: another tenant's
-   * variant is refused as unknown, in production's words (ADR-003).
+   * variant is refused as unknown (ADR-003).
    */
   private async assertOwnVariants(
     tx: Tx,
@@ -96,7 +96,11 @@ export class BomsService {
       productVariants,
       organizationId,
       variantIds,
-      t({ id: 'production.unknownVariant', defaultMessage: 'Unknown variant' }),
+      t({
+        id: 'boms.unknownVariant',
+        defaultMessage:
+          'That item is not in this organization. Choose one from the list.',
+      }),
     );
   }
 

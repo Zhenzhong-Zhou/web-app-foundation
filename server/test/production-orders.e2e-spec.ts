@@ -1383,9 +1383,18 @@ describe('Production orders (e2e)', () => {
         quantityPlanned: '500',
       };
       for (const [fields, message] of [
-        [{ partnerId: theirPartner }, 'Unknown partner'],
-        [{ locationId: theirLocation }, 'Unknown location'],
-        [{ outputVariantId: theirVariant }, 'Unknown variant'],
+        [
+          { partnerId: theirPartner },
+          'That partner is not in this organization. Choose one from the list.',
+        ],
+        [
+          { locationId: theirLocation },
+          'That location is not in this organization. Choose one from the list.',
+        ],
+        [
+          { outputVariantId: theirVariant },
+          'That item is not in this organization. Choose one from the list.',
+        ],
       ] as const) {
         const refused = await alpha.agent
           .post('/v1/production-orders')
@@ -1419,8 +1428,14 @@ describe('Production orders (e2e)', () => {
       ]);
 
       for (const [fields, message] of [
-        [{ partnerId: theirPartner }, 'Unknown partner'],
-        [{ locationId: theirLocation }, 'Unknown location'],
+        [
+          { partnerId: theirPartner },
+          'That partner is not in this organization. Choose one from the list.',
+        ],
+        [
+          { locationId: theirLocation },
+          'That location is not in this organization. Choose one from the list.',
+        ],
       ] as const) {
         const refused = await alpha.agent
           .patch(`/v1/production-orders/${run.id}`)
@@ -1462,7 +1477,7 @@ describe('Production orders (e2e)', () => {
           .send(release)
           .expect(400);
         expect(body<{ message: string }>(refused).message).toBe(
-          'Unknown location',
+          'That location is not in this organization. Choose one from the list.',
         );
       }
 
