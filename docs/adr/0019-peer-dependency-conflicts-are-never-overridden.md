@@ -82,3 +82,10 @@ starts). The override takes that one copy to 0.28.2, the version
 already in the tree. It goes once `drizzle-kit`'s own dependencies
 resolve to esbuild 0.28.1 or later without it, tried at each
 `drizzle-kit` update.
+
+*Amended (October 2026, #316):* `smoke-auth.sh` is gone, and the
+Consequence's one test of the real limiter is now
+`server/test/rate-limits.e2e-spec.ts`. It runs the limiter at the
+production default and checks what each counter is keyed on: the
+person, the client's own address, sign-in's email and address, and
+sign-up's 5 a minute (ADR-011, amended).

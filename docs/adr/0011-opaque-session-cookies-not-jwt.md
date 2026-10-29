@@ -200,9 +200,9 @@ Checked before drafting, as the working agreements ask:
   unset: `req.ip`, today's behaviour. Set: that header's value when it
   holds one valid IP address, else `req.ip`.
 - **On Render, `cf-connecting-ip`:** the header Cloudflare, in front of
-  every Render service, sets to the address that reached it, replacing
-  any a caller sends. Set by hand after the deploy, then checked by the
-  probes below.
+  every Render service, sets to the address that reached it. A request
+  that brings its own is refused (as built, below). Set by hand after
+  the deploy, then checked by the probes below.
 - **Never an `X-Forwarded-For` entry,** which a direct caller writes
   itself.
 - A header nothing in front sets is one any caller can set. So the
@@ -253,8 +253,8 @@ nothing is rewritten.
 - **After the deploy, by hand:** H2's probe again, through the rewrite
   over IPv4 and over IPv6, each answering with its own
   `X-RateLimit-Remaining`; and a request that sends its own
-  `CF-Connecting-IP`, which continues its address's count rather than
-  starting a new one.
+  `CF-Connecting-IP`, which Cloudflare refuses (manual checks, MC-4001
+  to MC-4003).
 
 ### Considered and not done
 
@@ -291,6 +291,13 @@ nothing is rewritten.
   leaked passwords (Open decisions) answer the same guessing better.
   Trigger: failed sign-ins for one email from many addresses in the
   logs, or the first paying customer.
+- **A limit per address across every email,** on sign-in: one address
+  gets 10 tries on each email in 15 minutes, on as many emails as it
+  knows, since sign-in's own key replaces the per-address one. Before
+  #316 the address was everyone's, so this could not be set; now it
+  can, at a number an office behind one address never reaches. Trigger:
+  failed sign-ins from one address across many emails in the logs, or
+  the first paying customer, with the per-email limit above.
 - **Allowances by plan.** Trigger: plans and billing (Open decisions).
 
 ### Consequences
@@ -312,3 +319,61 @@ nothing is rewritten.
   addresses; the riders; dependencies again; the reviews; the docs last.
   Built by Claude Code, a prompt per commit
   ([engineering.md, *How code is delivered*](../engineering.md#how-code-is-delivered)).
+
+### As built (#325, 29 October 2026)
+
+Built step by step from a brief; where it differs from the decisions
+above, this holds.
+
+- **The header, checked before the merge.** Render's request log keeps
+  each request's headers, all but cookies and authorization. On 29
+  October 2026 a request through the rewrite carried the visitor's own
+  address in `cf-connecting-ip`, the same as Cloudflare's
+  `/cdn-cgi/trace` showed. So the rewrite, the app's only path, passes
+  it on.
+- **A caller's own `CF-Connecting-IP` is refused, not replaced.**
+  Cloudflare answers 403 with `error code: 1000` on both paths, the
+  rewrite and the API's own address, so the address cannot be chosen
+  from outside. MC-4002 checks that.
+- **Where it lives.** `server/src/common/client-address.ts`, and the
+  tracker in `server/src/core/auth/throttle-tracker.ts`, given as
+  `getTracker` in `ThrottlerModule`'s options. `CLIENT_IP_HEADER`
+  accepts letters, digits and hyphens only, and is lowercased. The audit
+  row and Start an organization read the address from the request's
+  context, which the session middleware fills from `clientAddress`.
+  ESLint's `no-restricted-properties` refuses `req.ip` and `request.ip`
+  everywhere but `client-address.ts`, so a new read cannot record a
+  proxy's address again.
+- **The spec.** `server/test/rate-limits.e2e-spec.ts`, nine cases: those
+  above, and sign-up's 5 a minute, which no test had reached. It is the
+  only spec with the real limiter. It sets `RATE_LIMIT_MAX` to 100 and
+  `THROTTLE_FACTOR` to 1 with `vi.hoisted`, since both are read when
+  the app module is imported, and CI's factor of 100 would let a sixth
+  sign-up through. Each sign-up uses its own agent: a plain request
+  fails the CSRF check, and a reused agent is counted as a signed-in
+  person. On the old code, run together, every case fails; run alone,
+  seven fail and two pass, one person on two addresses and the header
+  ignored while the setting is empty. Those two guard against a wrong
+  fix. `security.e2e-spec.ts` never tested the limiter; the comments
+  that said so now name this spec.
+- **Riders.** `/triage` (#322). `CLAUDE.md`'s dependency rule now says
+  "at least 7 days old". The demo's own session has a browser and an
+  address, so Your devices no longer calls it an unknown device.
+  `RATE_LIMIT_AUTH_MAX` left 7 files; a host that still sets it starts
+  as before, since the settings check drops names it does not declare.
+- **Dependencies.** None taken: every in-range update was under 7 days
+  old on 29 October, and none was a security fix. TypeScript 7.0.2 is
+  still held by `typescript-eslint`, `@nestjs/cli` and
+  `@nestjs/swagger` (ADR-019).
+- **The reviews** found 23. Eleven fixed, each its own commit; two
+  filed, #323 (a full IPv6 address on a phone) and #324 (one sign-in
+  worded three ways); 18 deferred, above; 7, what to do if a probe
+  fails, in `render.md`; the rest left, each with its reason in the pull
+  request. A place beside the address, asked for
+  during the review, is #326.
+- **Slips.** The review sent one `OPTIONS` request and the
+  `CF-Connecting-IP` probe to the live site, where
+  `/production-readiness` allows only `GET` and `HEAD`; both changed
+  nothing. The sign-up case was pushed after `--quick` alone, as the
+  chat's prompt said, where `CLAUDE.md` asks for the full verify before
+  a push; CI ran the rest.

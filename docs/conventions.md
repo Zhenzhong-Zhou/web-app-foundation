@@ -614,6 +614,13 @@ message, and the screen keys on the code, never on the words.
   multiplier rather than an override, so a missing variable leaves the
   real limits in place. Production never sets it above 1, which nothing
   enforces.
+- **A limit counts per person, or per the client's own address** (ADR-011,
+  amended): `user:<id>` for a signed-in request, else
+  `clientAddress(req)` (`server/src/common/client-address.ts`), IPv6 by
+  its /64. Never `req.ip`, which on Render is a proxy's address and which
+  lint refuses outside that file. The real limiter runs in one spec,
+  `server/test/rate-limits.e2e-spec.ts`; every other spec swaps in
+  `unlimitedThrottler`, so a new limit's test goes there.
 - **The account spec's password tests under `--repeat-each`** meet
   ADR-011's limit by design: the password change allows five tries in
   five minutes, a limit `THROTTLE_FACTOR` does not raise

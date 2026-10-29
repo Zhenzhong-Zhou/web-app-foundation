@@ -240,6 +240,7 @@ work under updates it.
 | Every Sunday, by itself                | Actions → Flake hunt (client unit tests five times, server e2e three)                                                                           |
 | Every night and each month's 1st       | Actions → Backup, and Restore drill: check they are green                                                                                       |
 | Translations to review                 | `node scripts/i18n-review.mjs export --since <commit>`, then `import`                                                                           |
+| Triaging the open issues               | `/triage`, then `/triage <choices>`; run the script it writes                                                                                   |
 
 ---
 
@@ -399,9 +400,9 @@ licences.
 - [`docs/principles.md`](docs/principles.md) — what the product aims for, and
   the ADRs that hold to each aim
 - [`docs/handoff.md`](docs/handoff.md) — where the work stands and what is next
-- [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with four project
+- [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with six project
   skills in `.claude/skills/`: `/code-review`, `/usability-walkthrough`,
-  `/production-readiness` and `/build-from-brief`
+  `/production-readiness`, `/build-from-brief`, `/rules-file` and `/triage`
 - [`docs/releases/`](docs/releases) — the notes each tagged release was made with
 
 The ADRs and `docs/conventions.md` are both worth reading before a change that
