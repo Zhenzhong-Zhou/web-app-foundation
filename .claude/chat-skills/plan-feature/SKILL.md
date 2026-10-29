@@ -113,7 +113,8 @@ For each summary Bob pastes:
   As patches.
 - When work ends in a pull request: its title, and its description as
   plain Markdown, unasked.
-- After the merge: `scripts/prune-branches.sh --yes`, the checks the
+- After the merge: `scripts/prune-branches.sh --yes`, then
+  `scripts/clean-local.sh` (a dry run, then `--yes`), the checks the
   runbook names for the deploy, and Project knowledge re-synced.
 
 ## 7. Every reply

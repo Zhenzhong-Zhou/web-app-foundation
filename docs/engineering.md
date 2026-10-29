@@ -127,7 +127,10 @@ steps; this section stays the rule.
   repository (below). Until
   ADR-078 the chat wrote
   the code too, as one mbox per commit, and Claude Code only applied
-  them.
+  them. Since ADR-088 the chat's half is a claude.ai skill,
+  `plan-feature`, kept in `.claude/chat-skills/plan-feature/`, packed by
+  `scripts/pack-chat-skill.mjs` and uploaded by hand after each change;
+  its first step compares the uploaded copy with `main`'s.
 - **The build, through `/build-from-brief`** (from ADR-083). The brief
   and the canvas's boards go in `tmp/adr-NNN/`, ignored by git and by
   markdownlint, so `scripts/verify.sh` does not lint its Markdown. Each prompt is one line,
@@ -189,15 +192,27 @@ steps; this section stays the rule.
   the commands to copy each in and commit. Every file a reply tells Bob
   to copy is attached to that same reply. Downloads land in
   `~/Downloads` itself, not a folder, so each file is named in full,
-  never a glob.
+  never a glob, and moved out, never copied (ADR-088, 29 October 2026):
+  one file with `mv ~/Downloads/<file> <path>`, a patch into
+  `tmp/<branch>/` before it is applied. With `cp`, a newer download
+  saved as "x (1).patch" leaves the older file under the name the
+  command copies. Several files in one reply come as one zip the chat
+  packs itself, laid out as the repository is and named for its step
+  (`adr-088-step-07.zip`, ending `-v2` when corrected), unpacked from
+  the repository's root with `unzip ~/Downloads/<zip> && rm
+  ~/Downloads/<zip>`; `unzip` asks before overwriting a file.
 - **A file already in the repository changes by a patch, never sent
   whole** (29 October 2026; from 26 October, only a file of 600 lines or
-  more). The patch is made against `main`, from Project knowledge once
-  Bob has resynced it, or from his copy when he attaches one, and
-  applied with `git apply --check`, then `git apply --index`, which
-  stages what it changed. A patch that does not match Bob's copy is
-  refused whole, and `git diff --cached` shows every change before the
-  commit. New files, and Bob's own working files in `tmp/`, come whole,
+  more). The chat makes it from a shallow, read-only clone of the
+  repository in its own container, at `main`'s commit or at the
+  branch's once Bob has pushed it and named the commit, and its first
+  line names that base, which `git apply` passes over (ADR-088): Project
+  knowledge's search returns passages, and a patch built from them can
+  miss a line. It is applied with `git apply --check`, then `git apply
+  --index`, which stages what it changed. A patch that does not match
+  Bob's copy is refused whole, and is made again from a fresh clone,
+  never mended by hand; `git diff --cached` shows every change before
+  the commit. New files, and Bob's own working files in `tmp/`, come whole,
   as downloadable files; only a single small change stays inline as a
   snippet.
 - **Every answer that changes files opens with a roadmap,** before the
