@@ -20,9 +20,7 @@ for him to run. Where the two differ, the home holds.
   is a command in the script, which Bob runs.
 - **Files in `tmp/` only,** which git ignores: no commit, and no file
   outside it changed.
-- **Labels and closes as [Issues and labels][labels] gives them:** one
-  group label, at least one area label, a `later` issue's `Trigger:` or
-  `Needs:` line, and a close with GitHub's reason and a one-line comment.
+- **Labels and closes as [Issues and labels][labels] gives them.**
 
 ## 1. The proposal: `/triage`
 
@@ -57,16 +55,14 @@ With no arguments.
      commit or pull request.
    - **A check that cannot be made,** as a run past its artifact's 30
      days or no run since, is said in its row, never guessed.
-3. **The proposal, `tmp/triage.md`,** the home's step 3, built to scan as
-   [CLAUDE.md's "Report for a quick read"][report] says:
-   - **A table, a row per issue,** by number: its title, the group
-     proposed or the close with its reason, its areas, the check made and
-     what it found, and a few words why;
+3. **The proposal, `tmp/triage.md`,** the home's step 3, as a table with a
+   row per issue by number, which adds its title, and the check made and
+   what it found; built to scan as [CLAUDE.md's "Report for a quick
+   read"][report] says. Besides:
    - **a `later` issue's line,** `Trigger: …` or `Needs: …`, proposed
      under the table where its body has none;
-   - **then** the counts by group and by area, the issues that look like
-     duplicates, each with the one it duplicates, and the present labels
-     that disagree with the proposal;
+   - **each issue that looks like a duplicate** named with the one it
+     duplicates;
    - **a last line** saying how to answer: `/triage` with the choices, as
      proposed or by issue number, as `/triage as proposed, except #301
      when-touched`.
