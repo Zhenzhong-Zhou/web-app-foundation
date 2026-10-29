@@ -11,7 +11,7 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-import type { Bom, Location, Partner, ProductionRun } from '../api/types.gen';
+import type { Bom, Location, ProductionRun } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { PartnerPicker } from '../components/partner-picker';
@@ -22,6 +22,7 @@ import {
   groupedNumberMessage,
   toApiDecimal,
 } from '../lib/format';
+import { usePartners } from '../lib/use-partners';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
 
@@ -63,8 +64,9 @@ export function CreateRunDialog({
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const { variants, answered } = useVariants(open);
   const [locations, setLocations] = useState<Location[]>([]);
-  // Null until they come, so the picker says it is loading.
-  const [partners, setPartners] = useState<Partner[] | null>(null);
+  const { partners, answered: partnersAnswered } = usePartners(
+    open && canSeePartners,
+  );
   const [boms, setBoms] = useState<Bom[]>([]);
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -82,7 +84,7 @@ export function CreateRunDialog({
 
   // Loaded when the dialog opens rather than at page load: a variant or a
   // location created a moment ago is exactly the one someone is here to use
-  // (the variants through useVariants, above).
+  // (the variants and partners through their hooks, above).
   useEffect(() => {
     if (!open) return;
 
@@ -94,21 +96,10 @@ export function CreateRunDialog({
       })
       .catch(() => undefined);
 
-    // Apart, so the item and the place come even when this does not.
-    if (canSeePartners) {
-      void api<Partner[]>('/partners')
-        .then((partnerRows) => {
-          if (!ignore) setPartners(partnerRows);
-        })
-        .catch(() => {
-          if (!ignore) setPartners([]);
-        });
-    }
-
     return () => {
       ignore = true;
     };
-  }, [open, canSeePartners]);
+  }, [open]);
 
   // Recipes for whatever is being made. Refetched per variant, because a BOM
   // outputs one variant and offering another product's would be nonsense.
@@ -370,8 +361,8 @@ export function CreateRunDialog({
                 id: 'production.contract',
                 defaultMessage: 'Contract manufacturer',
               })}
-              options={partners ?? []}
-              loading={canSeePartners && partners === null}
+              options={partners}
+              loading={canSeePartners && !partnersAnswered}
               none={intl.formatMessage({
                 id: 'production.create.ourselves',
                 defaultMessage: 'We make it ourselves',

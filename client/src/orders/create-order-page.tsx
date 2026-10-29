@@ -28,6 +28,7 @@ import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api, isRevisionRefusal } from '../lib/api';
 import type { OrderDirection } from '../lib/api-names';
 import { BLANK_LINE, groupedNumberMessage, toApiDecimal } from '../lib/format';
+import { usePartners } from '../lib/use-partners';
 import { useSubmit } from '../lib/use-submit';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
 import { useVariants } from '../lib/use-variants';
@@ -69,13 +70,14 @@ export function CreateOrderPage() {
   const can = useCan();
   const canSeeLocations = can('locations.view');
 
-  // Null until they come, so the picker says it is loading.
-  const [partners, setPartners] = useState<Partner[] | null>(null);
   const intl = useIntl();
-  // Why the partners did not load, and a count that reads them and the
-  // products again.
-  const [loadFailure, setLoadFailure] = useState<unknown>(null);
+  // A count that reads the partners and the products again.
   const [reads, setReads] = useState(0);
+  const {
+    partners,
+    answered: partnersAnswered,
+    failure: loadFailure,
+  } = usePartners(true, reads);
   const {
     variants,
     answered: catalogueAnswered,
@@ -141,24 +143,6 @@ export function CreateOrderPage() {
     },
   );
 
-  useEffect(() => {
-    let ignore = false;
-
-    void api<Partner[]>('/partners')
-      .then((partnerRows) => {
-        if (ignore) return;
-        setPartners(partnerRows);
-        setLoadFailure(null);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setLoadFailure(caught);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [reads]);
-
   // Apart from the partners and products: without them the field is not
   // offered, and the server still delivers to the one site there is. Asked
   // only by whoever may see locations, which Sales may not (ADR-080); the
@@ -187,7 +171,7 @@ export function CreateOrderPage() {
    * choosing one would be a mistake — the server refuses it with a 409, and
    * an option that always fails is worse than an option that is absent.
    */
-  const selectablePartners = (partners ?? []).filter((row) => row.isActive);
+  const selectablePartners = partners.filter((row) => row.isActive);
 
   /**
    * A variant already on the order is not offered again. order_lines is
@@ -330,7 +314,7 @@ export function CreateOrderPage() {
               })}
               required
               options={selectablePartners}
-              loading={partners === null && loadFailure === null}
+              loading={!partnersAnswered}
               value={partner?.id ?? ''}
               onChange={(partnerId) =>
                 setPartner(

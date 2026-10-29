@@ -8,16 +8,17 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 
-import type { Location, Partner, StockRow } from '../api/types.gen';
+import type { Location, StockRow } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { PartnerPicker } from '../components/partner-picker';
 import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { groupedNumberMessage, nameAndCode, toApiDecimal } from '../lib/format';
+import { usePartners } from '../lib/use-partners';
 import { useSubmit } from '../lib/use-submit';
 import { unitLabel, withUnit } from '../products/units';
 import { REASON_DETAILS, reasonDetailLabel } from './movement-reasons';
@@ -148,29 +149,13 @@ export function MoveStockDialog({
    * sample to a partner you no longer deal with is a mistake worth not
    * offering.
    */
-  // Null until they come, so the picker says it is loading.
-  const [partners, setPartners] = useState<Partner[] | null>(null);
+  // Silent if they fail: without the list the field is empty, and a sample
+  // with no recipient is valid.
+  const { partners, answered: partnersAnswered } = usePartners(
+    row !== null && mode === 'sample' && canSeePartners,
+  );
+  const recipients = partners.filter((partner) => partner.isActive);
   const [recipientId, setRecipientId] = useState('');
-
-  useEffect(() => {
-    if (!row || mode !== 'sample' || !canSeePartners) return;
-
-    let ignore = false;
-
-    void api<Partner[]>('/partners')
-      .then((rows) => {
-        if (!ignore) setPartners(rows.filter((partner) => partner.isActive));
-      })
-      // Silent: without the list the field is empty, and a sample with no
-      // recipient is valid.
-      .catch(() => {
-        if (!ignore) setPartners([]);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [row, mode, canSeePartners]);
 
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
@@ -331,8 +316,8 @@ export function MoveStockDialog({
                   id: 'inventory.move.givenTo',
                   defaultMessage: 'Given to',
                 })}
-                options={partners ?? []}
-                loading={canSeePartners && partners === null}
+                options={recipients}
+                loading={canSeePartners && !partnersAnswered}
                 value={recipientId}
                 onChange={setRecipientId}
                 disabled={!canSeePartners}

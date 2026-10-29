@@ -4,6 +4,7 @@ paths:
   - "server/src/database/schema/{partners,addresses,contacts}.ts"
   - "client/src/partners/**"
   - "client/src/components/partner-picker*.tsx"
+  - "client/src/lib/use-partners.ts"
   - "server/test/partners.e2e-spec.ts"
   - "client/e2e/{partners,partner-detail}.spec.ts"
 ---
@@ -40,8 +41,9 @@ commit that changes one of those rules updates it (ADR-087).
   pinyin (ADR-068).
 - **Partners matches nothing itself:** its search is in the address
   through `useListSearch`, and it shows the server's answer in its order;
-  every partner picker is `PartnerPicker`, searching through
-  `usePickerSearch` within the `options` its form gives, so a form leaves
-  retired partners out there (ADR-056, amended).
+  every partner picker is `PartnerPicker`, its `options` from
+  `usePartners` and its `loading` the hook's `!answered`, searching
+  through `usePickerSearch` within the `options` its form gives, so a
+  form leaves retired partners out there (ADR-056, amended).
 - **The export's columns are `PARTNER_COLUMNS`,** its rows through
   `withinLimit`, its route audited as `list.exported` (ADR-057).
