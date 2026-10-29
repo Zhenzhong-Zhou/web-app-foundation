@@ -165,11 +165,16 @@ How this file is kept is in the [README](README.md).
   asks in, on every read that names an item: Products and the product's
   page, the item pickers, Inventory, a lot's trace, an order's lines,
   shipments and returns, a price list's items, Recently opened, Home and
-  the top bar's lookup. The screen never chooses among the names. A read
-  added later that names an item fails a test until it does the same, or
-  is listed as keeping the base name.
+  the top bar's lookup. The screen never chooses among the names. A
+  screen already open reads again when the language changes, keeping what
+  it shows until the answer comes. A read added later that names an item
+  fails a test until it does the same, or is listed as keeping the base
+  name.
   [ADR-056, amended](../adr/0056-search.md#decision--an-items-name-in-the-readers-language-on-every-screen) ·
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
+  [test](../../client/src/lib/use-resource.test.ts) "reads again in the new language, keeping what is shown until it answers" ·
+  [test](../../client/src/lib/use-keyset-list.test.ts) "reads the first page again when the language changes, keeping the rows up meanwhile (#297)" ·
+  [test](../../client/src/lib/use-variants.test.ts) "reads the catalogue again when the language changes (#297)" ·
   [test](../../server/test/item-names.e2e-spec.ts) "Names in the reader’s language (e2e)" ·
   [test](../../server/test/item-names.e2e-spec.ts) "lists every operation that names an item, each reading the language or keeping the base" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "names what it finds in the reader’s language" ·

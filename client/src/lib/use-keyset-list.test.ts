@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
+import { useLanguage } from '../i18n/use-language';
 import { server } from '../test/setup';
 import { deploy, OUTDATED, outdatedRefusal } from '../test/version';
 import { useKeysetList } from './use-keyset-list';
@@ -271,6 +272,45 @@ describe('useKeysetList', () => {
       expect(ids(result.current.entries)).toEqual(['a0', 'a1']),
     );
     expect(result.current.hasMore).toBe(true);
+  });
+
+  it('reads the first page again when the language changes, keeping the rows up meanwhile (#297)', async () => {
+    const { answer, answered } = held();
+    const asked: (string | null)[] = [];
+    server.use(
+      http.get(`${BASE}/things`, async ({ request }) => {
+        const language = request.headers.get('accept-language');
+        asked.push(language);
+        if (language !== 'zh-Hans')
+          return HttpResponse.json({ entries: rows('a'), nextCursor: 'c1' });
+        await answered;
+        return HttpResponse.json({ entries: rows('甲'), nextCursor: null });
+      }),
+    );
+
+    const { result } = renderHook(() => ({
+      list: useKeysetList<Row>('/things'),
+      language: useLanguage(),
+    }));
+    await waitFor(() =>
+      expect(ids(result.current.list.entries)).toEqual(['a']),
+    );
+
+    try {
+      await act(() => result.current.language.setLocale('zh-Hans'));
+      await expect.poll(() => asked).toEqual(['en', 'zh-Hans']);
+      // The rows stay up, but not their cursor: the next page would be the
+      // old language's.
+      expect(ids(result.current.list.entries)).toEqual(['a']);
+      expect(result.current.list.hasMore).toBe(false);
+
+      answer();
+      await waitFor(() =>
+        expect(ids(result.current.list.entries)).toEqual(['甲']),
+      );
+    } finally {
+      localStorage.clear();
+    }
   });
 
   it('reads nothing for a null path', async () => {

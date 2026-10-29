@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useLanguage } from '../i18n/use-language';
 import { api, isRevisionRefusal } from './api';
 import { useFailureWords } from './use-failure-words';
 
 /**
  * One GET: read when the page opens and again whenever `path` changes, with
- * a `reload` for a Refresh button and for after a write.
+ * a `reload` for a Refresh button and for after a write. A change of
+ * language reads it again too, as a reload does, so the names the server
+ * gives in the reader's language follow the screen's own words (ADR-056,
+ * amended; #297).
  *
  * Extracted after the same pair appeared in a dozen pages: an effect with an
  * `ignore` flag for the first read, and a `load` callback repeating the same
@@ -53,11 +57,13 @@ export function useResource<T>(path: string) {
   // refused one (LoadFailure, conventions.md "Status pages").
   const [failure, setFailure] = useState<unknown>(null);
   const error = useFailureWords(shown);
-  // The path on screen, for a reload to tell that it answered too late.
-  const current = useRef(path);
+  const { locale } = useLanguage();
+  // The path on screen and its language, for a reload to tell that it
+  // answered too late.
+  const current = useRef(`${locale} ${path}`);
 
   useEffect(() => {
-    current.current = path;
+    current.current = `${locale} ${path}`;
     let ignore = false;
 
     void api<T>(path)
@@ -78,21 +84,23 @@ export function useResource<T>(path: string) {
     return () => {
       ignore = true;
     };
-  }, [path]);
+  }, [path, locale]);
 
   const reload = useCallback(async () => {
+    const asked = `${locale} ${path}`;
+
     try {
       const response = await api<T>(path);
-      if (current.current !== path) return;
+      if (current.current !== asked) return;
       setRead({ path, data: response });
       setShown(null);
       setFailure(null);
     } catch (caught) {
-      if (current.current !== path) return;
+      if (current.current !== asked) return;
       setShown(caught);
       setFailure(caught);
     }
-  }, [path]);
+  }, [path, locale]);
 
   const setError = useCallback(
     (message: string | null) => setShown(message),

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { VariantOption } from '../api/types.gen';
+import { useLanguage } from '../i18n/use-language';
 import { api } from './api';
 
 /**
@@ -37,6 +38,9 @@ export function useVariants(
   const [variants, setVariants] = useState<VariantOption[]>([]);
   const [answered, setAnswered] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Named in the reader's language, so a change of language reads it again
+  // (#297).
+  const { locale } = useLanguage();
 
   useEffect(() => {
     if (!active) return;
@@ -59,7 +63,7 @@ export function useVariants(
     return () => {
       ignore = true;
     };
-  }, [active, again]);
+  }, [active, again, locale]);
 
   return { variants, answered, failed };
 }

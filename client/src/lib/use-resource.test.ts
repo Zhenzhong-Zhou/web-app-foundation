@@ -1,7 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
+import { useLanguage } from '../i18n/use-language';
 import { server } from '../test/setup';
 import { deploy, OUTDATED, outdatedRefusal } from '../test/version';
 import { useResource } from './use-resource';
@@ -157,6 +158,51 @@ describe('useResource', () => {
     answerSecond();
     await waitFor(() => expect(result.current.data?.name).toBe('Second'));
     expect(result.current.loading).toBe(false);
+  });
+
+  describe('when the language changes', () => {
+    afterEach(() => localStorage.clear());
+
+    /**
+     * Names come in the reader's language (ADR-056, amended), so a screen
+     * reads again in the new one, as a reload does: what it shows stays
+     * until the answer lands (#297).
+     */
+    it('reads again in the new language, keeping what is shown until it answers', async () => {
+      let answer: () => void = () => undefined;
+      const answered = new Promise<void>((resolve) => {
+        answer = resolve;
+      });
+      const asked: (string | null)[] = [];
+      server.use(
+        http.get(`${BASE}/things/a`, async ({ request }) => {
+          const language = request.headers.get('accept-language');
+          asked.push(language);
+          if (language !== 'zh-Hans')
+            return HttpResponse.json({ id: 'a', name: 'Focus 60ct' });
+          await answered;
+          return HttpResponse.json({ id: 'a', name: '专注胶囊 60 粒' });
+        }),
+      );
+
+      const { result } = renderHook(() => ({
+        read: useResource<Thing>('/things/a'),
+        language: useLanguage(),
+      }));
+      await waitFor(() =>
+        expect(result.current.read.data?.name).toBe('Focus 60ct'),
+      );
+
+      await act(() => result.current.language.setLocale('zh-Hans'));
+      await expect.poll(() => asked).toEqual(['en', 'zh-Hans']);
+      expect(result.current.read.data?.name).toBe('Focus 60ct');
+      expect(result.current.read.loading).toBe(false);
+
+      answer();
+      await waitFor(() =>
+        expect(result.current.read.data?.name).toBe('专注胶囊 60 粒'),
+      );
+    });
   });
 
   /**

@@ -2742,13 +2742,14 @@ An item is named on every screen as the lookup names it: the product's
 and the variant's name in the screen's language where it has one, else
 the base name. The demo's Focus 60ct is 专注胶囊 60 粒 in Chinese and
 Focus, 60 capsules in French. Documents, CSV exports, the audit log and
-refusals keep the base name. Switch the language first, then open each
-screen, so it reads again.
+refusals keep the base name.
 
 - **MC-3801** In 中文, Products lists 专注胶囊 60 粒 where Focus 60ct was,
   sorted among the others by its pinyin (zhuanzhu…), and the names with
   no Chinese among them by their letters, accents and case aside. In
-  English it is Focus 60ct again, in the same alphabetical order.
+  English it is Focus 60ct again, in the same alphabetical order. Switch
+  the language while Products, the product's page or Inventory is open:
+  the names change with the screen's words, without leaving it.
 - **MC-3802** In 中文, open 专注胶囊 60 粒: the heading and the gallery's
   images are named 专注胶囊 60 粒, and 其他语言名称 starts with 基础名称：Focus
   60ct, the name documents print. Edit a variant's unit and save: in
@@ -3831,3 +3832,5 @@ first.
 - 2026-10-28: #260's reviews, Products and Partners waiting for a new
   search's answer rather than showing the last one's rows: MC-3901
   extended.
+- 2026-10-28: #297, a screen already open reading its names again when
+  the language changes: section 38's workaround gone, MC-3801 extended.
