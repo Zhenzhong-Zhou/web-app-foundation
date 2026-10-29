@@ -14,7 +14,9 @@
  * The check (checkSkill): SKILL.md's front matter has a name, the
  * folder's, of lower-case letters, digits and hyphens, at most 64
  * characters, and a description of at most 1,024, each field on one
- * line; and every relative link in the skill's Markdown, outside code,
+ * line; the name holds neither anthropic nor claude, and neither field an
+ * XML tag, as the Claude API's skills guide lists for an upload; and
+ * every relative link in the skill's Markdown, outside code,
  * leads to a file it uploads. evals.md is not uploaded, so a link to it
  * fails too. Each failure is printed as `file: reason`, and it exits 1.
  *
@@ -82,6 +84,12 @@ const prose = (text) =>
 /** Each inline link's destination, and each reference definition's. */
 const LINK = /\]\(\s*<?([^\s<>()]+)|^ {0,3}\[[^\]^][^\]]*\]:\s*<?([^\s<>]+)/gm;
 
+/** The words an upload refuses in a name. */
+const RESERVED = /anthropic|claude/i;
+
+/** An XML tag, which an upload refuses in the name or the description. */
+const XML_TAG = /<\/?[A-Za-z][^<>]*>/;
+
 /** A link to another site (a scheme, or //), or from /. */
 const NOT_RELATIVE = /^(?:[A-Za-z][A-Za-z0-9+.-]*:|\/)/;
 
@@ -119,12 +127,23 @@ export function checkSkill(folder) {
       if (fields.name.length > 64) {
         fail("SKILL.md", `name is ${fields.name.length} characters, over 64`);
       }
+      const reserved = RESERVED.exec(fields.name);
+      if (reserved) {
+        fail(
+          "SKILL.md",
+          `name ${fields.name} holds ${reserved[0]}, a word claude.ai reserves`,
+        );
+      }
     }
     const description = [...(fields.description ?? "")].length;
     if (description === 0) {
       fail("SKILL.md", "no description in its front matter");
     } else if (description > 1024) {
       fail("SKILL.md", `description is ${description} characters, over 1,024`);
+    }
+    for (const field of ["name", "description"]) {
+      const tag = XML_TAG.exec(fields[field] ?? "");
+      if (tag) fail("SKILL.md", `${field} holds an XML tag, ${tag[0]}`);
     }
   }
 

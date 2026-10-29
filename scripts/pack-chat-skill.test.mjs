@@ -115,6 +115,41 @@ test("a name missing, not the folder's, of other characters or over 64 fails", (
   );
 });
 
+test("a name holding anthropic or claude, words an upload reserves, fails", (t) => {
+  const description = "description: Plans a feature.\n";
+  assert.deepEqual(
+    failuresOf(t, `name: claude-planner\n${description}`, "claude-planner"),
+    [
+      "claude-planner/SKILL.md: name claude-planner holds claude, a word claude.ai reserves",
+    ],
+  );
+  assert.deepEqual(
+    failuresOf(t, `name: plan-anthropic\n${description}`, "plan-anthropic"),
+    [
+      "plan-anthropic/SKILL.md: name plan-anthropic holds anthropic, a word claude.ai reserves",
+    ],
+  );
+});
+
+test("a name or a description holding an XML tag fails", (t) => {
+  assert.deepEqual(
+    failuresOf(t, "name: <b>\ndescription: Plans a feature.\n", "<b>"),
+    [
+      "<b>/SKILL.md: name <b> holds more than lower-case letters, digits and hyphens",
+      "<b>/SKILL.md: name holds an XML tag, <b>",
+    ],
+  );
+  const name = "name: plan-feature\n";
+  assert.deepEqual(
+    failuresOf(t, `${name}description: Plans a </feature> for Bob.\n`),
+    ["plan-feature/SKILL.md: description holds an XML tag, </feature>"],
+  );
+  assert.deepEqual(
+    failuresOf(t, `${name}description: Plans when a < b and b > c.\n`),
+    [],
+  );
+});
+
 test("a description missing, empty or over 1,024 characters fails", (t) => {
   const name = "name: plan-feature\n";
   for (const frontMatter of [name, `${name}description:\n`]) {
