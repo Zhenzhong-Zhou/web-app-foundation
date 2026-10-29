@@ -14,10 +14,12 @@ It is not:
 
 - **why** a rule is so, which is its ADR's, in [`docs/adr/`](../adr/README.md);
 - **how to** do a task, which is the Help guides', in the app and in
-  `client/src/help/guides/`;
+  [`client/src/help/guides/`](../../client/src/help/guides/), invoices'
+  in [`en/invoices.md`](../../client/src/help/guides/en/invoices.md);
 - **how the code is organized,** which is
   [`conventions.md`](../conventions.md) and Claude's code rules for the
-  area;
+  area, in [`.claude/rules/`](../../.claude/rules/), invoices' in
+  [`invoices.md`](../../.claude/rules/invoices.md);
 - **history.** When a rule changes, its bullet changes; the amendment that
   changed it says why.
 
@@ -28,7 +30,9 @@ ADRs are.
 ## The format
 
 Rules are grouped under headings by what a person does: for invoices,
-drafting, issuing, crediting, voiding, numbering, printing. One bullet per
+drafting, issuing, crediting part of an invoice, crediting goods that
+came back, voiding, numbering, printing and downloading, making a pro
+forma, what a sale shows of its invoices, and who may do what. One bullet per
 rule: the rule first, in bold, in the words a person would use; then a
 sentence or two where it needs them; then its links, separated by ` · `.
 

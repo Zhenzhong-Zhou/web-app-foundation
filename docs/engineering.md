@@ -286,7 +286,7 @@ steps; this section stays the rule.
 
 Each command in `server/`:
 
-1. write the schema, a new table as
+1. write the schema, in `server/src/database/schema/`, a new table as
    [conventions.md, "A new table and the organization's export"](conventions.md#a-new-table-and-the-organizations-export)
    says;
 2. run `npm run migrate:new -- --name <name>`;
@@ -294,19 +294,19 @@ Each command in `server/`:
    `--> statement-breakpoint`;
 4. run `npm run migrate:all`, for the dev, test and e2e databases;
 5. where `foundation_perf_large` exists, which `migrate:all` does not
-   reach, `DATABASE_URL=$PERF_DB_LARGE npm run migrate`, as
+   reach, `DATABASE_URL=$PERF_DB_LARGE npm run migrate`, `PERF_DB_LARGE`
+   being that database's URL, as
    [`server/perf/README.md`](../server/perf/README.md#running-it-locally)
-   makes it.
+   sets it.
 
 What a migration may take away while the running release reads it is
 [conventions.md, "Migrations against the running release (ADR-081)"](conventions.md#migrations-against-the-running-release-adr-081),
-which squawk and CI check. Check the generated SQL keeps
+which CI checks with squawk, a linter for Postgres migrations
+(`scripts/check-migrations.sh`). Check the generated SQL keeps
 `NULLS NOT DISTINCT`. Check the new entry's `when` in
 `meta/_journal.json` is later than the one before: the migrator skips a
 migration whose time is earlier than the last one applied, and still
-reports success. 0065's was ahead of the clock, so
-0066 was generated earlier and skipped, with no column and no error,
-until its time was moved after 0065's.
+reports success.
 
 ## Commits
 
