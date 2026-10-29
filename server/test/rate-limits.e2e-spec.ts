@@ -16,12 +16,14 @@ import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
 /**
- * RATE_LIMIT_MAX at its default, set before the app's module is imported,
- * which is when the settings it reads at boot are validated. CI's own is
- * far higher, so no test here could reach it.
+ * RATE_LIMIT_MAX at its default, and THROTTLE_FACTOR at production's 1,
+ * set before the app's module is imported: that is when the settings it
+ * reads at boot are validated, and when limit() reads the factor. CI's own
+ * are far higher, so no test here could reach them.
  */
 const MAX = vi.hoisted(() => {
   vi.stubEnv('RATE_LIMIT_MAX', '100');
+  vi.stubEnv('THROTTLE_FACTOR', '1');
   return 100;
 });
 
@@ -139,6 +141,27 @@ describe('Rate limits (e2e)', () => {
     expect(remaining(first)).toBe(MAX - 1);
     expect(remaining(sameNetwork)).toBe(MAX - 2);
     expect(remaining(otherNetwork)).toBe(MAX - 1);
+  });
+
+  /** A new agent for each, signed out, so each is counted by its address. */
+  it('allows five sign-ups a minute from one address, and more from another', async () => {
+    const register = (address: string, name: string) =>
+      authedAgent(app)
+        .post('/v1/auth/register')
+        .set(HEADER, address)
+        .send({
+          email: `owner@${name}.example.com`,
+          password: PASSWORD,
+          name: 'Owner',
+          organizationName: `${name} Co`,
+        });
+
+    for (let i = 1; i <= 5; i++) {
+      await register('192.0.2.60', `crowd${i}`).expect(201);
+    }
+    await register('192.0.2.60', 'crowd6').expect(429);
+
+    await register('192.0.2.61', 'elsewhere').expect(201);
   });
 
   it("leaves the owner's sign-in open after a stranger's failed ones from another address", async () => {
