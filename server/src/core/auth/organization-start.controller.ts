@@ -10,6 +10,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 
+import { clientAddress } from '../../common/client-address';
 import { AllowNoOrganization } from './allow-no-organization.decorator';
 import { CurrentUser } from './current-user.decorator';
 import type { AuthenticatedUserEnvelope } from './dto/auth-response.dto';
@@ -45,7 +46,7 @@ export class OrganizationStartController {
   ): Promise<AuthenticatedUserEnvelope> {
     return {
       user: await this.organizations.start(context, dto, {
-        ip: req.ip,
+        ip: clientAddress(req),
         userAgent: req.headers['user-agent'],
       }),
     };

@@ -15,6 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 
+import { clientAddress } from '../../common/client-address';
 import { registrationMode } from '../../common/registration';
 import type { Env } from '../../config/env';
 import { isUniqueViolation } from '../../database/errors';
@@ -105,7 +106,7 @@ export class AuthController {
   ): Promise<AuthenticatedUserEnvelope> {
     try {
       const { user, session } = await this.auth.register(dto, {
-        ip: req.ip,
+        ip: clientAddress(req),
         userAgent: req.headers['user-agent'],
         language: req.headers['accept-language'],
       });
@@ -166,7 +167,7 @@ export class AuthController {
     const { user, session } = await this.auth.login(
       dto,
       {
-        ip: req.ip,
+        ip: clientAddress(req),
         userAgent: req.headers['user-agent'],
         language: req.headers['accept-language'],
       },
@@ -241,7 +242,7 @@ export class AuthController {
     @Req() req: Request,
   ): Promise<VerifiedEmail> {
     const verified = await this.auth.verifyEmail(dto.token, {
-      ip: req.ip,
+      ip: clientAddress(req),
       userAgent: req.headers['user-agent'],
       language: req.headers['accept-language'],
     });
@@ -324,7 +325,7 @@ export class AuthController {
     @Req() req: Request,
   ): Promise<void> {
     const reset = await this.auth.resetPassword(dto.token, dto.password, {
-      ip: req.ip,
+      ip: clientAddress(req),
       userAgent: req.headers['user-agent'],
       language: req.headers['accept-language'],
     });

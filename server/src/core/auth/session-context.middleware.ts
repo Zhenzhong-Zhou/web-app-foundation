@@ -2,6 +2,7 @@ import { Inject, Injectable, type NestMiddleware } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import type { NextFunction, Request, Response } from 'express';
 
+import { clientAddress } from '../../common/client-address';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import {
@@ -128,7 +129,7 @@ export class SessionContextMiddleware implements NestMiddleware {
       // Captured per request rather than read off the session row: ADR-012
       // wants these at event time, and the session's values are from
       // whenever it was created.
-      ip: req.ip,
+      ip: clientAddress(req),
       userAgent: req.headers['user-agent'],
       language: req.headers['accept-language'],
     };

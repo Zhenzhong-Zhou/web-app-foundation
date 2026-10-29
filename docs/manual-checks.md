@@ -2843,6 +2843,14 @@ remaining() { curl -s -o /dev/null -D - "$@" | grep -i '^x-ratelimit-remaining';
   In each pair the second line is one below the first: Cloudflare
   replaced the header, and the request counted on your own address. The
   same number twice means the header sent was believed.
+- **MC-4003** *(#316)* The address recorded is your own. In a private
+  window, open `$site/cdn-cgi/trace`: its `ip=` line is the address
+  Cloudflare saw. Sign in from that window. The new-sign-in email's IP
+  address, and that window's row in Account, Your devices, are that
+  address, IPv4 or IPv6 as the trace shows it. An address not yours, the
+  same for every sign-in, is one of Render's proxies: the setting is
+  missing. A session from before the deploy keeps the proxy's address;
+  nothing is rewritten.
 
 ## Regressions
 
@@ -3878,3 +3886,5 @@ first.
   and its quick filter, as ADR-057 says: MC-1558 extended.
 - 2026-10-29: ADR-011, amended, every limit per person or per client
   address (#316): section 40, MC-4001 and MC-4002.
+- 2026-10-29: ADR-011, amended, the client's own address recorded on
+  sessions, account events and the audit log (#316): MC-4003.

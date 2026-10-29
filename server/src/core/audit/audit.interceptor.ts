@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { concatMap, type Observable } from 'rxjs';
 
+import { clientAddress } from '../../common/client-address';
 import { getRequestContext } from '../auth/request-context';
 import { AuditService } from './audit.service';
 import {
@@ -113,7 +114,7 @@ export class AuditInterceptor implements NestInterceptor {
          */
         payload,
 
-        ip: req.ip,
+        ip: clientAddress(req),
         userAgent: req.headers['user-agent'],
       });
     } catch (error) {

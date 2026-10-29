@@ -15,6 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 
+import { clientAddress } from '../../common/client-address';
 import type { Env } from '../../config/env';
 import { localeOf } from '../../i18n/translate';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
@@ -176,7 +177,7 @@ export class InvitationsController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<AuthenticatedUserEnvelope> {
     const meta = {
-      ip: req.ip,
+      ip: clientAddress(req),
       userAgent: req.headers['user-agent'],
       language: req.headers['accept-language'],
     };

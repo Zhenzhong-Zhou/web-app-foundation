@@ -188,4 +188,31 @@ describe('Rate limits (e2e)', () => {
     expect(res.headers['x-ratelimit-limit']).toBe(String(limit(1000)));
     expect(remaining(res)).toBe(limit(1000) - MAX - 1);
   });
+
+  /**
+   * The address the limiter counts is the one recorded: Your devices, the
+   * account's history and the new-sign-in email all read these rows.
+   */
+  it("records a sign-in's address from the header, on the session and its event", async () => {
+    const alpha = await signUp('alpha');
+    const phone = authedAgent(app);
+
+    await phone
+      .post('/v1/auth/login')
+      .set(HEADER, '192.0.2.50')
+      .send({ email: alpha.email, password: PASSWORD })
+      .expect(200);
+
+    const sessions = body<{ current: boolean; ip: string | null }[]>(
+      await phone.get('/v1/account/sessions').expect(200),
+    );
+    expect(sessions.find((session) => session.current)?.ip).toBe('192.0.2.50');
+
+    const events = body<{ action: string; ip: string | null }[]>(
+      await phone.get('/v1/account/events').expect(200),
+    );
+    expect(events.find((event) => event.action === 'session.created')?.ip).toBe(
+      '192.0.2.50',
+    );
+  });
 });
