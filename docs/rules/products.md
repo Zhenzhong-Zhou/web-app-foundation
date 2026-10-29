@@ -322,14 +322,19 @@ How this file is kept is in the [README](README.md).
 
 ## Exporting the catalogue
 
-- **Export writes the whole catalogue as a CSV file, a row per variant:**
-  its SKU, product, variant, type, unit, whether it tracks lots, whether
-  it or its product is discontinued, and the product's name in French and
-  in Chinese. Names are the base ones, the headers in the reader's
-  language. It holds every product, whatever the list's search or
-  Discontinued filter, up to 50,000 rows, and History records each export.
+- **Export writes the catalogue the list shows as a CSV file, a row per
+  variant:** its SKU, product, variant, type, unit, whether it tracks
+  lots, whether it or its product is discontinued, and the product's name
+  in French and in Chinese. Names are the base ones, the headers in the
+  reader's language. It holds the products the list's search finds, each
+  with every variant, and only the discontinued ones while Discontinued is
+  pressed, up to 50,000 rows. History records each export with its
+  Discontinued filter, never what was typed.
   [ADR-057](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#decision--csv-export-of-what-the-list-shows) ·
   [test](../../server/test/exports.e2e-spec.ts) "writes the catalogue, a row per variant" ·
+  [test](../../server/test/exports.e2e-spec.ts) "writes the products the list shows: its search and Discontinued" ·
+  [test](../../client/src/products/products-page.test.tsx) "exports what the list shows, its search and Discontinued" ·
+  MC-1558 ·
   partly tested
 
 ## Who may do what, and what History keeps

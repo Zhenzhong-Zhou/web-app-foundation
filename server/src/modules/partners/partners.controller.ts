@@ -23,6 +23,7 @@ import { RequirePermissions } from '../../core/authorization/require-permissions
 import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CreatePartnerDto } from './dto/create-partner.dto';
+import { ExportPartnersDto } from './dto/export-partners.dto';
 import type {
   Partner,
   PartnerDetail,
@@ -42,16 +43,26 @@ export class PartnersController {
     return this.partners.list(query.search);
   }
 
-  /** Customers and suppliers as CSV (ADR-057). Above ':id'. */
+  /**
+   * Customers and suppliers as CSV (ADR-057), those its list shows. Above
+   * ':id'.
+   */
   @Get('export')
   @RequirePermissions(PERMISSIONS.PARTNERS_VIEW)
   @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'partners' })
   async exportPartners(
+    @Query() query: ExportPartnersDto,
     @Res({ passthrough: true }) res: Response,
     @AcceptLanguage() acceptLanguage?: string,
   ) {
-    const rows = withinLimit(await this.partners.exportRows());
-    recordContext({ list: 'partners', filters: {}, rows: rows.length });
+    const rows = withinLimit(await this.partners.exportRows(query));
+    // The quick filter, not the search: a search is text a person typed,
+    // which stays out of History (ADR-018).
+    recordContext({
+      list: 'partners',
+      filters: query.retired ? { retired: query.retired } : {},
+      rows: rows.length,
+    });
     return csvFile(
       res,
       'partners',

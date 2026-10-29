@@ -765,6 +765,9 @@ Paper is checked first because it must not change at all.
   Expires lists the soonest first; Movements, Production and Returns narrow by
   their date range; Products, Partners, a price list, Stock value and the
   Audit log each export, and the Audit log shows the export as an entry.
+  Products with `focus` typed and Discontinued pressed exports only what
+  the list shows, and so does Partners with `mill` and Retired; the Audit
+  log's entry names the filter, not what was typed.
   Orders' Created, Movements' When and the Audit log's When read like
   `2026-10-15 18:54:11`, in UTC, and open as dates.
 - **MC-1559** Sign in as the demo owner: Home opens, greeting by the time of
@@ -3840,3 +3843,5 @@ first.
   typed full width found as typed without them: MC-3901 extended.
 - 2026-10-28: Products searched on the server, the list narrowing once
   typing stops rather than as each letter is typed: MC-1546 reworded.
+- 2026-10-28: Products' and Partners' exports following the list's search
+  and its quick filter, as ADR-057 says: MC-1558 extended.

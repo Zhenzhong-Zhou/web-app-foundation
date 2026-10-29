@@ -4717,7 +4717,10 @@ export type ProductsControllerExportProductsV1Data = {
     'accept-language'?: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    search?: string;
+    discontinued?: string;
+  };
   url: '/v1/products/export';
 };
 
@@ -6154,7 +6157,10 @@ export type PartnersControllerExportPartnersV1Data = {
     'accept-language'?: string;
   };
   path?: never;
-  query?: never;
+  query?: {
+    search?: string;
+    retired?: string;
+  };
   url: '/v1/partners/export';
 };
 

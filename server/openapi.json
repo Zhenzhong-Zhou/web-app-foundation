@@ -2342,6 +2342,23 @@
         "operationId": "ProductsController_exportProducts_v1",
         "parameters": [
           {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "discontinued",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "accept-language",
             "in": "header",
             "required": false,
@@ -5815,6 +5832,23 @@
       "get": {
         "operationId": "PartnersController_exportPartners_v1",
         "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "retired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "accept-language",
             "in": "header",

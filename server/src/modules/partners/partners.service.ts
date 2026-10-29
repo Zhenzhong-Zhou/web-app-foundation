@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 
 import { EXPORT_LIMIT } from '../../common/export';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
@@ -16,6 +16,7 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { assertListAssignable } from '../price-lists/list-price';
 import type { CreatePartnerDto } from './dto/create-partner.dto';
+import type { ExportPartnersDto } from './dto/export-partners.dto';
 import type { Partner, PartnerDetail } from './dto/partner-response.dto';
 import type { UpdatePartnerDto } from './dto/update-partner.dto';
 import { partnerRank, partnerRecordMatches } from './partner-search';
@@ -62,9 +63,13 @@ export class PartnersService {
   /**
    * Customers and suppliers as a spreadsheet (ADR-057), each with its
    * billing address on one line: the default one, else the first, of those
-   * still in use. At most EXPORT_LIMIT + 1 rows, for withinLimit to judge.
+   * still in use. The partners its list shows: those its search finds, and
+   * only the retired ones when asked. At most EXPORT_LIMIT + 1 rows, for
+   * withinLimit to judge.
    */
-  exportRows() {
+  exportRows(query: ExportPartnersDto = {}) {
+    const terms = query.search ? searchTerms(query.search) : null;
+
     return this.tenantDb.transaction(async (tx, organizationId) =>
       tx
         .select({
@@ -89,7 +94,13 @@ export class PartnersService {
           )`,
         })
         .from(partners)
-        .where(eq(partners.organizationId, organizationId))
+        .where(
+          and(
+            eq(partners.organizationId, organizationId),
+            terms ? partnerRecordMatches(terms) : undefined,
+            query.retired === 'true' ? eq(partners.isActive, false) : undefined,
+          ),
+        )
         .orderBy(asc(partners.name))
         .limit(EXPORT_LIMIT + 1),
     );

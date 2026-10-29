@@ -7,6 +7,7 @@ import {
 } from '../src/database/database.module';
 import { auditLog } from '../src/database/schema';
 import {
+  body,
   createE2eApp,
   createPartner,
   createVariant,
@@ -181,6 +182,75 @@ describe('Exports (e2e)', () => {
     expect(res.text).toContain(
       'Northside Pharmacy,NORTH,,,false,"12 King St, Toronto, ON, M5H 1A1, CA"',
     );
+  });
+
+  // What the list shows, its search and its quick filter, and History
+  // keeps the filter but not the search, text a person typed (ADR-018).
+  it('writes the products the list shows: its search and Discontinued', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const added = async (name: string, sku: string) =>
+      body<{ product: { id: string } }>(
+        await alpha.agent
+          .post('/v1/products')
+          .send({ type: 'good', name, variant: { sku } })
+          .expect(201),
+      ).product.id;
+    await added('Focus 60ct', 'FOCUS-60');
+    const calm = await added('Calm 90ct', 'CALM-90');
+    await alpha.agent
+      .patch(`/v1/products/${calm}`)
+      .send({ isActive: false })
+      .expect(204);
+
+    const skus = async (query: string) =>
+      linesOf(
+        (await alpha.agent.get(`/v1/products/export${query}`).expect(200)).text,
+      )
+        .slice(1)
+        .map((line) => line.split(',')[0]);
+
+    expect(await skus('')).toEqual(['CALM-90', 'FOCUS-60']);
+    expect(await skus('?search=focus')).toEqual(['FOCUS-60']);
+    expect(await skus('?discontinued=true')).toEqual(['CALM-90']);
+    expect(await skus('?search=focus&discontinued=true')).toEqual([]);
+
+    const entries = await db
+      .select()
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.organizationId, alpha.organizationId),
+          eq(auditLog.action, 'list.exported'),
+        ),
+      );
+    const filters = entries.map(
+      (entry) => (entry.payload as { filters: object }).filters,
+    );
+    expect(filters).toEqual(
+      expect.arrayContaining([{}, { discontinued: 'true' }]),
+    );
+    expect(JSON.stringify(filters)).not.toContain('focus');
+  });
+
+  it('writes the partners the list shows: its search and Retired', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await createPartner(alpha.agent, { name: 'Northside Pharmacy' });
+    const mill = await createPartner(alpha.agent, { name: 'Old Mill Herbs' });
+    await alpha.agent
+      .patch(`/v1/partners/${mill}`)
+      .send({ isActive: false })
+      .expect(204);
+
+    const names = async (query: string) =>
+      linesOf(
+        (await alpha.agent.get(`/v1/partners/export${query}`).expect(200)).text,
+      )
+        .slice(1)
+        .map((line) => line.split(',')[0]);
+
+    expect(await names('')).toEqual(['Northside Pharmacy', 'Old Mill Herbs']);
+    expect(await names('?search=north')).toEqual(['Northside Pharmacy']);
+    expect(await names('?retired=true')).toEqual(['Old Mill Herbs']);
   });
 
   it("writes one price list's items, and audits which list left", async () => {

@@ -215,12 +215,15 @@ kept is in the [README](README.md).
 
 ## Exporting partners
 
-- **Export writes every partner, retired ones included, each with one
-  billing address: the default if invoices go there, else the oldest in
-  use where invoices go.** It does not follow the search or Retired: the
-  file always holds the whole directory.
+- **Export writes the partners the list shows, each with one billing
+  address: the default if invoices go there, else the oldest in use where
+  invoices go.** It follows the list's search, and holds only the retired
+  partners while Retired is pressed; History records each export with its
+  Retired filter, never what was typed.
   [ADR-057](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#decision--csv-export-of-what-the-list-shows) ·
   [test](../../server/test/exports.e2e-spec.ts) "writes partners with their billing address on one line" ·
+  [test](../../server/test/exports.e2e-spec.ts) "writes the partners the list shows: its search and Retired" ·
+  [test](../../client/src/partners/partners-page.test.tsx) "exports what the list shows, its search and Retired" ·
   partly tested ·
   MC-1558
 

@@ -96,8 +96,16 @@ export function PartnersPage() {
         })}
         actions={
           <>
-            {/* Every partner, with billing addresses (ADR-057). */}
-            <ExportButton path="/partners/export" />
+            {/* What the list shows, its search and Retired, with billing
+                addresses (ADR-057). */}
+            <ExportButton
+              path={withSearch(
+                retiredOnly
+                  ? '/partners/export?retired=true'
+                  : '/partners/export',
+                search,
+              )}
+            />
             <Button
               variant="text"
               disabled={loading}

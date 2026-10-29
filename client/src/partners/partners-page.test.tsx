@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { Partner } from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
@@ -131,5 +131,41 @@ describe('PartnersPage', () => {
     expect(
       await screen.findByText('Nothing matches that search.'),
     ).toBeVisible();
+  });
+
+  /**
+   * The export writes what the list shows (ADR-057): its search, and
+   * Retired, which the list applies itself.
+   */
+  it('exports what the list shows, its search and Retired', async () => {
+    const user = userEvent.setup();
+    URL.createObjectURL = vi.fn(() => 'blob:export');
+    URL.revokeObjectURL = vi.fn();
+    const clicked = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+    const exported: string[] = [];
+    server.use(
+      http.get('/api/v1/partners', () =>
+        HttpResponse.json([partner('Old Mill Herbs')]),
+      ),
+      http.get('/api/v1/partners/export', ({ request }) => {
+        exported.push(new URL(request.url).search);
+        return new HttpResponse('\uFEFFName\r\n', {
+          headers: { 'Content-Type': 'text/csv; charset=utf-8' },
+        });
+      }),
+    );
+
+    try {
+      renderAt('/partners?search=mill');
+      await screen.findByText('Old Mill Herbs');
+      await user.click(screen.getByRole('button', { name: /Retired/ }));
+      await user.click(screen.getByRole('button', { name: 'Export' }));
+
+      await expect.poll(() => exported).toEqual(['?retired=true&search=mill']);
+    } finally {
+      clicked.mockRestore();
+    }
   });
 });

@@ -4,12 +4,12 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, notInArray, type SQL, sql } from 'drizzle-orm';
 
 import { EXPORT_LIMIT } from '../../common/export';
 import type { Locale } from '../../common/locales';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
-import { searchTerms } from '../../common/search';
+import { type SearchTerms, searchTerms } from '../../common/search';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
 import {
@@ -23,6 +23,7 @@ import { t } from '../../i18n/translate';
 import { namesIn, productNameOrder } from '../stock/item-name';
 import type { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
+import type { ExportProductsDto } from './dto/export-products.dto';
 import type {
   ProductDetail,
   ProductSummary,
@@ -48,6 +49,25 @@ function describeNames(translations: { locale: string; name: string }[]) {
         .map((translation) => `${translation.locale} ${translation.name}`)
         .join(' · ')
     : 'none';
+}
+
+/** The outer product's variants, in the organization. */
+function variantsOf(organizationId: string): SQL {
+  return and(
+    eq(productVariants.organizationId, organizationId),
+    eq(productVariants.productId, products.id),
+  )!;
+}
+
+/**
+ * The products a search finds, through any of their variants, as an item
+ * is found everywhere (item-search): the list's and its export's.
+ */
+function foundBy(terms: SearchTerms, organizationId: string): SQL {
+  return sql`exists (
+    select 1 from ${productVariants}
+    where ${variantsOf(organizationId)} and ${itemMatches(terms, organizationId)}
+  )`;
 }
 
 @Injectable()
@@ -126,10 +146,7 @@ export class ProductsService {
   list(locale: Locale, search?: string): Promise<ProductSummary[]> {
     return this.tenantDb.transaction((tx, organizationId) => {
       const terms = search ? searchTerms(search) : null;
-      const itsVariants = and(
-        eq(productVariants.organizationId, organizationId),
-        eq(productVariants.productId, products.id),
-      );
+      const itsVariants = variantsOf(organizationId);
 
       return (
         tx
@@ -147,12 +164,7 @@ export class ProductsService {
           .where(
             and(
               eq(products.organizationId, organizationId),
-              terms
-                ? sql`exists (
-                    select 1 from ${productVariants}
-                    where ${itsVariants} and ${itemMatches(terms, organizationId)}
-                  )`
-                : undefined,
+              terms ? foundBy(terms, organizationId) : undefined,
             ),
           )
           .orderBy(
@@ -173,10 +185,14 @@ export class ProductsService {
 
   /**
    * The catalogue as a spreadsheet (ADR-057): a row per variant, with its
-   * product, and the product's name in each language it has. One query, at
-   * most EXPORT_LIMIT + 1 rows, for withinLimit to judge.
+   * product, and the product's name in each language it has. The products
+   * its list shows: those its search finds, and only the discontinued ones
+   * when asked, each with every variant. One query, at most EXPORT_LIMIT +
+   * 1 rows, for withinLimit to judge.
    */
-  exportRows() {
+  exportRows(query: ExportProductsDto = {}) {
+    const terms = query.search ? searchTerms(query.search) : null;
+
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const translated = (locale: string) => sql<string | null>`(
         select ${productTranslations.name} from ${productTranslations}
@@ -205,7 +221,15 @@ export class ProductsService {
             eq(products.organizationId, organizationId),
           ),
         )
-        .where(eq(productVariants.organizationId, organizationId))
+        .where(
+          and(
+            eq(productVariants.organizationId, organizationId),
+            terms ? foundBy(terms, organizationId) : undefined,
+            query.discontinued === 'true'
+              ? eq(products.isActive, false)
+              : undefined,
+          ),
+        )
         .orderBy(asc(products.name), asc(productVariants.sku))
         .limit(EXPORT_LIMIT + 1);
     });

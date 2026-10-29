@@ -6,7 +6,7 @@ import {
   MemoryRouter,
   RouterProvider,
 } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { ProductSummary } from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
@@ -216,5 +216,43 @@ describe('ProductsPage', () => {
     ).toBeVisible();
     expect(box).toHaveValue('zzjn');
     expect(asked).toEqual(['calm', 'zzjn', 'calm', 'calm 90', 'zzjn']);
+  });
+
+  /**
+   * The export writes what the list shows (ADR-057): its search, and
+   * Discontinued, which the list applies itself.
+   */
+  it('exports what the list shows, its search and Discontinued', async () => {
+    const user = userEvent.setup();
+    URL.createObjectURL = vi.fn(() => 'blob:export');
+    URL.revokeObjectURL = vi.fn();
+    const clicked = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+    const exported: string[] = [];
+    server.use(
+      http.get('/api/v1/products', () =>
+        HttpResponse.json([product('Calm 90ct')]),
+      ),
+      http.get('/api/v1/products/export', ({ request }) => {
+        exported.push(new URL(request.url).search);
+        return new HttpResponse('\uFEFFSKU\r\n', {
+          headers: { 'Content-Type': 'text/csv; charset=utf-8' },
+        });
+      }),
+    );
+
+    try {
+      renderAt('/products?search=calm');
+      await screen.findByRole('link', { name: 'Calm 90ct' });
+      await user.click(screen.getByRole('button', { name: /Discontinued/ }));
+      await user.click(screen.getByRole('button', { name: 'Export' }));
+
+      await expect
+        .poll(() => exported)
+        .toEqual(['?discontinued=true&search=calm']);
+    } finally {
+      clicked.mockRestore();
+    }
   });
 });

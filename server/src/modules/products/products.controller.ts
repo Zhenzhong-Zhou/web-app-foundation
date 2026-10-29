@@ -26,6 +26,7 @@ import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
+import { ExportProductsDto } from './dto/export-products.dto';
 import {
   AddProductImageDto,
   OrderProductImagesDto,
@@ -64,16 +65,26 @@ export class ProductsController {
     return this.products.list(localeOf(acceptLanguage), query.search);
   }
 
-  /** The catalogue as CSV (ADR-057), a row per variant. Above ':id'. */
+  /**
+   * The catalogue as CSV (ADR-057), a row per variant, of the products its
+   * list shows. Above ':id'.
+   */
   @Get('export')
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
   @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'products' })
   async exportProducts(
+    @Query() query: ExportProductsDto,
     @Res({ passthrough: true }) res: Response,
     @AcceptLanguage() acceptLanguage?: string,
   ) {
-    const rows = withinLimit(await this.products.exportRows());
-    recordContext({ list: 'products', filters: {}, rows: rows.length });
+    const rows = withinLimit(await this.products.exportRows(query));
+    // The quick filter, not the search: a search is text a person typed,
+    // which stays out of History (ADR-018).
+    recordContext({
+      list: 'products',
+      filters: query.discontinued ? { discontinued: query.discontinued } : {},
+      rows: rows.length,
+    });
     return csvFile(
       res,
       'products',

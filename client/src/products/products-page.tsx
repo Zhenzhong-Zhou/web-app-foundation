@@ -88,8 +88,16 @@ export function ProductsPage() {
         })}
         actions={
           <>
-            {/* The whole catalogue, every language's names (ADR-057). */}
-            <ExportButton path="/products/export" />
+            {/* What the list shows, its search and Discontinued, every
+                language's names (ADR-057). */}
+            <ExportButton
+              path={withSearch(
+                discontinuedOnly
+                  ? '/products/export?discontinued=true'
+                  : '/products/export',
+                search,
+              )}
+            />
             {/* Reference data for recipes, so it hangs off the catalogue
                 rather than the navigation. */}
             {can('product_licences.view') && (
