@@ -82,6 +82,9 @@ rule, so the review judges each notice.
   languages and the name each reader sees, the Products search and the
   item pickers, images, the catalogue export, and who may change them,
   written from the code and the tests on 28 October 2026.
+- [Search](search.md): the top bar's search, a list's search box and the
+  item and partner pickers, how each matches, ranks and refuses, written
+  from the code and the tests on 28 October 2026.
 
 The other areas, stock, orders, return authorizations and the rest of
 the ADRs' [areas](../adr/README.md#by-area), follow, each written by
