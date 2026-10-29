@@ -75,6 +75,9 @@ rule, so the review judges each notice.
 
 - [Invoices](invoices.md): invoices, credit notes and the pro forma, the
   pilot, written from the code and the tests on 27 October 2026.
+- [Partners](partners.md): customers and suppliers, with their addresses,
+  contacts, price lists, document languages, search and export, written
+  from the code and the tests on 28 October 2026.
 
 The other areas, stock, orders, return authorizations and the rest of
 the ADRs' [areas](../adr/README.md#by-area), follow, each written by
