@@ -15,10 +15,9 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 29 October 2026:
 
-- **[#317],** [#260]'s pull request (ADR-056 amended), is open with its
-  checks green; it merges after its as-built docs. Next comes [#316], one
-  rate limit per person rather than per address (ADR-011 amended first),
-  then ADR-084 (the order, below).
+- **[#316],** one rate limit per person rather than per address: ADR-011
+  amended on `fix-316-rate-limit-per-person`, the build next, from
+  `tmp/fix-316/brief.md`. Then ADR-084 (the order, below).
 - **The triage** is done (28 October;
   [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
   every open issue has its group and area labels, the `fix-now` ones are
@@ -27,10 +26,11 @@ On 29 October 2026:
   [#186], then reopened on 29 October, when slower runners put the typo
   lookup at 333 to 363 ms; it and [#276] carry known misses until 30
   November.
-- **The last merges:** [#291] (`docs-start-here`, ADR-086's part 2 and
-  ADR-087, 28 October), [#259] (`docs-moves`, ADR-086's part 1, 27
-  October), [#257] (the emails' design, ADR-083, 27 October), [#254]
-  (CI's reliability, closing [#252], 26 October), [#251] (the
+- **The last merges:** [#317] ([#260], product names and search,
+  ADR-056 amended, 29 October), [#291] (`docs-start-here`, ADR-086's
+  part 2 and ADR-087, 28 October), [#259] (`docs-moves`, ADR-086's part
+  1, 27 October), [#257] (the emails' design, ADR-083, 27 October),
+  [#254] (CI's reliability, closing [#252], 26 October), [#251] (the
   organization's square logo, ADR-060 amended, 26 October) and [#247]
   (the brand, ADR-082, 25 October).
 - **The release:** v0.7.0, tagged on 16 October 2026; both packages'
@@ -82,10 +82,13 @@ On 29 October 2026:
 
 ## Still to do, by hand
 
-- **Before [#317]'s merge:** `RATE_LIMIT_MAX` at 600 on Render's web
-  service, a stopgap until [#316], since every person shares one counter;
-  and Chinese typed with a pinyin input method in Receive stock and on
-  Products. After it: Dependabot's alert 4 closing by itself.
+- **Dependabot alert 4** closes by itself now that [#317]'s lockfile is
+  on `main`: check it did.
+- **After [#316]'s deploy:** on Render's web service, `CLIENT_IP_HEADER`
+  set to `cf-connecting-ip`; then the two probes in
+  [ADR-011's amendment](adr/0011-opaque-session-cookies-not-jwt.md#decision--proved-by-tests-then-by-probes-after-the-deploy);
+  then `RATE_LIMIT_MAX` deleted, the 600 stopgap, so the default of 100
+  per person per route applies.
 - **Lighthouse on the live site, and the site reached from China,**
   before the first paying customer (`/production-readiness`'s H5 and H6,
   #317's review).
@@ -113,8 +116,13 @@ them:
 
 1. **`docs-start-here`,** [#291]: merged 28 October.
 2. **Triage:** done 28 October (above).
-3. **[#260], product names and search** (ADR-056 amended): [#317], open.
-   Then [#316], the rate limit keyed on the person, its own branch.
+3. **[#260], product names and search** (ADR-056 amended): [#317],
+   merged 29 October. Then [#316], the rate limit keyed on the person,
+   its own branch, with `/triage` riding along. Then the chat-side
+   planning skill ([#318]), a small docs PR, its source kept in this
+   repository (Bob, 29 October 2026): ADR-084's package updates come of
+   age only from 2 to 4 November, and ADR-084 and ADR-085 each start
+   with the routine it holds.
 4. **ADR-084, an error tracker** ([#287]), with `typescript-eslint` 8.72.1
    (old enough from 2 November), the Nest packages at 12.3.x (from 3
    November), `@aws-sdk/client-s3` 3.1159.0 and the eight #260 left
@@ -162,11 +170,11 @@ them:
    a customer will order next ([#300]); and special prices with a
    quantity limit ([#298]).
 
-Later: `/release` at the next tag; the chat-side planning skill;
-`/file-issue`, or GitHub's issue templates; labels as code, a labels file
-in `.github/` synced by a free Action, with a check that each area in
-`AREAS` has its label; the support playbook with the operator's console;
-and last, the starter kit: the process kit and engineering defaults,
+Later: `/release` at the next tag ([#320]); `/file-issue`, or GitHub's
+issue templates ([#319]); labels as code, a labels file in `.github/`
+synced by a free Action, with a check that each area in `AREAS` has its
+label; the support playbook with the operator's console; and last, the
+starter kit ([#321]): the process kit and engineering defaults,
 `/code-review` rewritten as a general skill, and the general skills in a
 repository of their own, installed as a versioned plugin, never copied
 into `~/.claude/skills/`.
@@ -227,3 +235,7 @@ Not repeated here; each list has one home:
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
 [#316]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/316
 [#317]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/317
+[#318]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/318
+[#319]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/319
+[#320]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/320
+[#321]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/321
