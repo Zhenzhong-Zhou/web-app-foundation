@@ -145,6 +145,8 @@ if [[ $mode == docs ]]; then
   )"
   if [[ -n "$others" ]]; then
     echo 'Changed, and not what --docs checks (Markdown outside client/, and scripts/):' >&2
+    # sed indents every line alike; ${others//…} would need the first apart.
+    # shellcheck disable=SC2001
     sed 's/^/  /' <<< "$others" >&2
     echo 'Run scripts/verify.sh --quick instead.' >&2
     exit 1
