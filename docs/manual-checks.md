@@ -2829,14 +2829,22 @@ api=https://web-app-foundation.onrender.com
 remaining() { curl -s -o /dev/null -D - "$@" | grep -i '^x-ratelimit-remaining'; }
 ```
 
-- **MC-4001** *(#316)* Through the site's `/api/*` rewrite, over IPv4 and
-  then IPv6:
+- **MC-4001** *(#316)* Two addresses, two counters. First, what
+  Cloudflare saw of each path:
+  `for v in -4 -6; do curl -s $v "$site/cdn-cgi/trace" | grep '^ip='; done`.
+  An IPv4 address, then an IPv6 one: through the site's `/api/*`
+  rewrite,
   `for v in -4 -6; do for i in 1 2 3; do remaining $v "$site/api/v1/auth/me"; done; done`.
   IPv4's three lines count down by one, and IPv6's three start again,
-  never one below IPv4's last: two counters, your two addresses'. A count
-  shared with everyone else at the same Cloudflare edge, as before #316,
-  continues from one to the next. `curl -6` needs a network with IPv6;
-  where it cannot connect, try from a phone's hotspot.
+  never one below IPv4's last: two counters, your two addresses'. The
+  same address twice, or no answer to `-6`, as on a network without
+  IPv6 (an office's, on 29 October 2026, connected `curl -6` as IPv4):
+  `for i in 1 2 3; do remaining -4 "$site/api/v1/auth/me"; done` on one
+  network, then on another, such as a phone's hotspot, whose `ip=`
+  differs, within a minute of the first run's first line; a count that
+  starts again after that minute proves nothing. The second network's
+  three start again. A count shared with everyone else at the same
+  Cloudflare edge, as before #316, continues from one to the next.
 - **MC-4002** *(#316)* A caller cannot choose its address by sending
   `CF-Connecting-IP`. On each path, the rewrite and the API's own
   address:
@@ -3894,3 +3902,6 @@ first.
 - 2026-10-29: #316's reviews, Cloudflare refusing a request that sends
   its own `CF-Connecting-IP` rather than replacing the header: MC-4002
   reworded.
+- 2026-10-29: #316's deploy, MC-4001 reading first what Cloudflare saw,
+  and running across two networks where it saw one address: MC-4001
+  rewritten.

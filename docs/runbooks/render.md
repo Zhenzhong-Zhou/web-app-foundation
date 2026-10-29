@@ -569,14 +569,20 @@ pinyin backfill is not needed, and new credentials retire the old ones.
 ## Rate limits and the client's address (ADR-011, amended, #316)
 
 Every limit counts per signed-in person, or per the client's own
-address. Two settings on the web service, under Environment; saving
-redeploys it:
+address. Two settings on the web service, under Environment. Save each
+change with Save and deploy, then confirm it took effect, here by the
+`x-ratelimit-limit` header and MC-4003: `RATE_LIMIT_MAX=600`, saved with
+Save only before #317's merge, was still not in effect on 29 October
+2026 after #317's and #325's deploys, and took effect only with a Save
+and deploy.
 
 - **`CLIENT_IP_HEADER=cf-connecting-ip`.** The header Cloudflare, in
   front of every Render service, sets to the address that reached it.
   Unset, the server counts by `req.ip`, which on Render is one of its
   proxies: one counter for everyone. Checked on 29 October 2026 in this
-  service's Logs: a request through the rewrite carried the visitor's
+  service's Logs, which show the app's own request log
+  (`server/src/common/request-log.ts`, every header but cookies and
+  authorization): a request through the rewrite carried the visitor's
   own address there, as `/cdn-cgi/trace` showed it. On another host, set
   the header its own front sets, or leave it empty; never one nothing in
   front sets, which any caller could send.
@@ -591,12 +597,25 @@ After #316's deploy, in this order:
 3. Set `RATE_LIMIT_MAX` from 600, #317's stopgap, to 100, and delete
    `RATE_LIMIT_AUTH_MAX`, which nothing reads since #316.
 
-If MC-4001 shows one counter through the rewrite, Render's hop to the
-API no longer carries the visitor's address in that header. Keep 600,
-and look at what arrives: this service → Logs, reload the site in
-another tab, then Cmd+F for `cf-connecting-ip`, and compare its address
-with `ip=` in `/cdn-cgi/trace`. Say which header carries yours before
-changing the setting.
+If MC-4001 shows one counter, first check that its two runs reached
+Cloudflare as two addresses, as its first command shows: a network
+without IPv6 can still connect `curl -6`, as IPv4. If they did, keep
+600, or put it back, and find where the address is lost. MC-4003 says
+whether the app records the header's address. Then this service → Logs,
+reload the site in another tab, Cmd+F for `cf-connecting-ip`, and
+compare its address with `ip=` in `/cdn-cgi/trace`. Say which header
+carries yours before changing the setting.
+
+Done on 29 October 2026, after #325's deploy (`c58debd4`):
+`CLIENT_IP_HEADER` set, then MC-4002 passed on both paths, and MC-4003
+on a phone's network, which recorded its own address; `RATE_LIMIT_MAX`
+then read 100, and `RATE_LIMIT_AUTH_MAX` was deleted. MC-4001 ran only
+on an office network without IPv6, whose two runs reached Cloudflare
+as one address, so it could not show two counters: it is owed, across
+two networks. A sign-in from that office at 14:14 Pacific, minutes
+after the setting was saved, recorded one of Render's proxies; the
+phone's, later, its own. MC-4001 across both networks also says whether
+the office's path was at fault.
 
 ## Before real customers' data
 
