@@ -12,12 +12,13 @@
   any PR that changes what a person sees, `/usability-walkthrough` as one
   of its personas
   (`.claude/skills/usability-walkthrough/personas.md`), then `/simplify`,
-  then `/code-review`, so the review sees every fix before it, then
+  then `/code-review`, then
   `/production-readiness` on the sections the change touches
   ([conventions.md, "Production readiness"](conventions.md#production-readiness)),
   then `/doctor prompt-audit` on Claude's instruction files
-  ([How code is delivered](#how-code-is-delivered)). Each
-  fix they lead to is its own commit. The PR description names the journey
+  ([How code is delivered](#how-code-is-delivered)). Their findings are
+  numbered together and nothing is fixed until Bob chooses; each fix
+  chosen is its own commit. The PR description names the journey
   walked and the persona who walked it. `/usability-walkthrough` was
   missed on several recent PRs, so ADR-079's branch walked
   two journeys, to make up for ADR-077 and ADR-078.

@@ -133,8 +133,9 @@ Andrej Karpathy's observations on LLM coding pitfalls
 Every feature branch runs, for any PR that changes what a person sees,
 `/usability-walkthrough` as one of its personas
 (`.claude/skills/usability-walkthrough/personas.md`), then `/simplify`,
-then `/code-review`, so it sees every fix, then `/production-readiness`
-on the sections the change touches, then `/doctor prompt-audit`, Claude
-Code's audit of its instruction files (v2.1.283 or later), which Bob
-types in the session, since a session cannot run it; all of them before
-the PR is opened. Each fix they lead to is its own commit.
+then `/code-review`, then `/production-readiness` on the sections the
+change touches, then `/doctor prompt-audit`, Claude Code's audit of its
+instruction files (v2.1.283 or later), which Bob types in the session,
+since a session cannot run it; all of them before the PR is opened.
+Their findings are numbered together and nothing is fixed until Bob
+chooses; each fix chosen is its own commit.
