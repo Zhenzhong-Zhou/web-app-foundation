@@ -35,12 +35,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-quick=false
-docs=false
+mode=full
 case "$#:${1:-}" in
   0:) ;;
-  1:--quick) quick=true ;;
-  1:--docs) docs=true ;;
+  1:--quick) mode=quick ;;
+  1:--docs) mode=docs ;;
   *)
     echo "Usage: scripts/verify.sh [--quick | --docs], one at most" >&2
     exit 2
@@ -136,7 +135,7 @@ against_main() {
 # client/src/help/guides.test.ts checks and --docs does not run. Anything
 # else, it names and stops. The Markdown step already runs adr-index.mjs's
 # --check, through check-docs.mjs.
-if $docs; then
+if [[ $mode == docs ]]; then
   others="$(
     {
       git -c core.quotePath=false diff --name-only --no-renames HEAD
@@ -149,15 +148,13 @@ if $docs; then
     echo 'Run scripts/verify.sh --quick instead.' >&2
     exit 1
   fi
-  markdown
-  scripts_tests
-  step 'All passed'
-  exit 0
 fi
 
 markdown
 
-if $quick; then
+if [[ $mode == docs ]]; then
+  scripts_tests
+elif [[ $mode == quick ]]; then
   step 'Server: format, lint, types, checks, build, unit tests'
   (cd server && npm run format:check && npm run lint:ci && npm run typecheck \
     && npm run checks && npm run build && npm test)
