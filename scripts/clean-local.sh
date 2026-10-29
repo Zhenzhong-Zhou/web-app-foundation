@@ -13,7 +13,9 @@
 #                 parts when the second is a number (tmp/fix-316 for
 #                 fix-316-rate-limit-per-person). The branches are read from
 #                 origin/main's merge commits after a fetch, since a merged
-#                 branch is pruned. The current branch's folder stays.
+#                 branch is pruned. A folder stays that the current branch,
+#                 or any branch main has not merged, local or on origin,
+#                 also matches.
 #   Playwright's  output folders, as client/playwright*.config.ts name them,
 #                 and client/test-results/ where an older run left it.
 #                 client/screenshots/out/ stays: a comparison may need it.
@@ -148,11 +150,16 @@ fi
 
 # Each branch main merged, newest first: the pull request's number, the
 # branch and its start, from GitHub's "Merge pull request #N from
-# <owner>/<branch>".
+# <owner>/<branch>". And each branch main has not merged, local or on
+# origin, with its start: a tmp/ folder one of them matches stays.
 MERGED=""
+OPEN=""
 if git rev-parse --verify --quiet "$BASE" > /dev/null; then
   MERGED="$(git log --merges --format=%s "$BASE" |
     sed -n 's|^Merge pull request #\([0-9][0-9]*\) from [^/]*/\(.*\)$|\1 \2|p' |
+    with_start)"
+  OPEN="$(git for-each-ref --no-merged="$BASE" --format='%(refname)' refs/heads refs/remotes/origin |
+    sed -e 's|^refs/heads/||' -e 's|^refs/remotes/origin/||' |
     with_start)"
 else
   echo "No $BASE: no tmp/ folder can be matched to a merged branch."
@@ -170,8 +177,11 @@ for folder in tmp/*/; do
   path="${folder%/}"
   name="${path#tmp/}"
   merge="$(awk -v name="$name" '$2 == name || $3 == name { print "#" $1 ", " $2; exit }' <<< "$MERGED")"
+  open="$(awk -v name="$name" '$1 == name || $2 == name { print $1; exit }' <<< "$OPEN")"
   if [ "$name" = "$CURRENT" ] || [ "$name" = "$CURRENT_START" ]; then
     mark keep "$path" "the current branch's, $CURRENT"
+  elif [ -n "$open" ]; then
+    mark keep "$path" "a branch not merged yet, $open"
   elif [ -n "$merge" ]; then
     mark remove "$path" "merged by $merge"
   else

@@ -5,7 +5,7 @@
  *     node --test scripts/
  *
  * Each test runs the script in a temporary checkout: a repository whose
- * main merged three branches, as GitHub merges a pull request, pushed to a
+ * main merged four branches, as GitHub merges a pull request, pushed to a
  * bare origin the script fetches from; on a branch of its own, with tmp/
  * and Playwright's output folders filled. Stand-ins for docker and pmset
  * come first on the PATH, docker recording each call. The script runs
@@ -67,6 +67,7 @@ const MERGED = [
   [12, "fix-12-rate-limit"],
   [15, "docs-tidy"],
   [18, "adr-090-first-part"],
+  [316, "fix-316-rate-limit"],
 ];
 
 const CURRENT = "adr-090-second-part";
@@ -211,6 +212,34 @@ test("--yes removes the merged branches' tmp/ folders and Playwright's, and noth
     "tmp/someday/notes.md",
   ]);
 });
+
+/** Where fix-316-followup, not merged yet, is: set up from a local branch. */
+const FOLLOWUP = {
+  locally: () => {},
+  "on origin alone": (root) => {
+    git(root, "push", "--quiet", "origin", "fix-316-followup");
+    git(root, "branch", "--quiet", "-D", "fix-316-followup");
+  },
+};
+
+for (const [where, arrange] of Object.entries(FOLLOWUP)) {
+  test(`tmp/fix-316 stays while fix-316-followup is open ${where}, though fix-316-rate-limit has merged`, (t) => {
+    const root = checkout(t);
+    write(root, "tmp/fix-316/brief.md", "Both fix-316 branches' brief.\n");
+    git(root, "checkout", "--quiet", "-b", "fix-316-followup", "main");
+    git(root, "commit", "--quiet", "--allow-empty", "-m", "Follow fix-316 up");
+    git(root, "checkout", "--quiet", CURRENT);
+    arrange(root);
+    const run = clean(t, root, ["--yes"]);
+
+    assert.equal(run.status, 0, run.stderr);
+    assert.equal(
+      foldersOf(run)["tmp/fix-316"],
+      "keep: a branch not merged yet, fix-316-followup",
+    );
+    assert.ok(existsSync(path.join(root, "tmp/fix-316/brief.md")));
+  });
+}
 
 test("offline, it says so and uses origin/main as last fetched, or has none", (t) => {
   const fetched = checkout(t);
