@@ -134,6 +134,8 @@ Andrej Karpathy's observations on LLM coding pitfalls
 - `/triage`: proposes a group, areas or a close for each open issue in
   `tmp/triage.md`, then, with Bob's choices, writes the `gh` commands
   for him to run; only when typed.
+- `.claude/chat-skills/`: the chat's skill, `plan-feature`, uploaded to
+  claude.ai (ADR-088); Claude Code neither loads nor runs it.
 
 Every feature branch runs, for any PR that changes what a person sees,
 `/usability-walkthrough` as one of its personas

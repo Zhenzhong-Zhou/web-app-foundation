@@ -229,6 +229,7 @@ work under updates it.
 | An email's words changed on purpose    | `npm run mail:text -- --update` in `server/`; commit the files with the words                                                                   |
 | A change to what the API sends         | `npm run api` in `server/`; commit both generated files                                                                                         |
 | A change to the mark, in `docs/brand/` | `node scripts/brand-assets.mjs`; commit what it writes in `client/public/`                                                                      |
+| The planning skill changed             | `node scripts/pack-chat-skill.mjs`; in claude.ai, Settings → Capabilities → Skills, replace it with `tmp/plan-feature.zip`; walk `evals.md`     |
 | Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                                          |
 | Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                                                              |
 | After a merge                          | `scripts/prune-branches.sh --yes`                                                                                                               |
@@ -402,7 +403,9 @@ licences.
 - [`docs/handoff.md`](docs/handoff.md) — where the work stands and what is next
 - [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with six project
   skills in `.claude/skills/`: `/code-review`, `/usability-walkthrough`,
-  `/production-readiness`, `/build-from-brief`, `/rules-file` and `/triage`
+  `/production-readiness`, `/build-from-brief`, `/rules-file` and `/triage`;
+  and the chat's planning skill, `plan-feature`, in `.claude/chat-skills/`,
+  uploaded to claude.ai (ADR-088)
 - [`docs/releases/`](docs/releases) — the notes each tagged release was made with
 
 The ADRs and `docs/conventions.md` are both worth reading before a change that
