@@ -155,7 +155,7 @@ UTC, the same day in Vancouver. The summary lists each known miss under the
 budgets, with its issue, its date and its ceiling, whether this run met it
 or not.
 
-Two today, each until 30 November 2026 with a ceiling of 400 ms:
+Three today, each until 30 November 2026 with a ceiling of 400 ms:
 
 - **The typo lookup's, #225.** It went once weekly run 114 measured 207
   ms on 26 October 2026, too soon: on 29 October, on runners about 1.45×
@@ -163,6 +163,8 @@ Two today, each until 30 November 2026 with a ceiling of 400 ms:
   333, 358 and 363.
 - **Home's, #276.** Its watch fired the same day: `main` measured 301 ms
   and #260's branch 325.
+- **A newcomer's Home, #276 too.** It measured 288 ms the same day, 12 ms
+  under its budget, on the page that missed.
 
 To add one, give the scenario in `perf/scenarios.ts` a `knownMiss`:
 

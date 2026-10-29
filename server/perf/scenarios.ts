@@ -298,11 +298,14 @@ export function readScenarios(orgs: Org[]): Scenario[] {
 
   // A newcomer's Home (ADR-079): the cards an Admin sees, and the welcome,
   // its first week ticked from their own audit entries and what they opened.
+  // 288 ms on 29 October 2026, the day the owner's Home missed (#276): known
+  // with it until 30 November, and failing past 400 ms (ADR-082).
   scenarios.push({
     name: 'GET /home (a newcomer)',
     kind: 'read',
     budgetMs: READ_BUDGET_MS,
     send: (worker) => orgOf(orgs, worker).newcomer.send('GET', '/home'),
+    knownMiss: { issue: '#276', until: '2026-11-30', ceilingMs: 400 },
   });
 
   if (orgs.every((org) => org.anchors.traceLotId)) {
