@@ -139,7 +139,7 @@ done; a check older than a change of host, plan or region is stale.
   the Render, GitHub, Cloudflare and Resend accounts (By hand).
 - **Dependencies.** `npm audit` in `server/` and `client/`, and code
   scanning alerts if `gh` can read them, each new one against the reason
-  given on the alert or its issue (#270, for Dependabot alert 4), and
+  given on the alert or its issue, and
   [ADR-019's rule on overrides](../../../docs/adr/0019-peer-dependency-conflicts-are-never-overridden.md).
 - **Tenancy.** Every controller added since the last review has an e2e
   test that another organization's id is refused (ADR-003).
