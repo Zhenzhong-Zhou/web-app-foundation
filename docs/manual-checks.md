@@ -2813,6 +2813,37 @@ The list narrows a moment after typing stops.
   typing `mdyf` keeps it first, above 明德药房. Choose it back after a
   partner, and the field reads We make it ourselves again.
 
+## 40. Rate limits (ADR-011, amended)
+
+Every limit counts for one signed-in person, or signed out, for one
+client address: on Render the address Cloudflare saw, which it sends as
+`CF-Connecting-IP`. Checked on the live site after a deploy, once the web
+service has `CLIENT_IP_HEADER=cf-connecting-ip`, from a terminal. Each
+request is answered 401, since it signs nobody in, after the limiter has
+counted it in `X-RateLimit-Remaining`, as #316's probe read it. First:
+
+```bash
+site=https://web-app-foundation-client.onrender.com
+api=https://web-app-foundation.onrender.com
+remaining() { curl -s -o /dev/null -D - "$@" | grep -i '^x-ratelimit-remaining'; }
+```
+
+- **MC-4001** *(#316)* Through the site's `/api/*` rewrite, over IPv4 and
+  then IPv6:
+  `for v in -4 -6; do for i in 1 2 3; do remaining $v "$site/api/v1/auth/me"; done; done`.
+  IPv4's three lines count down by one, and IPv6's three start again,
+  never one below IPv4's last: two counters, your two addresses'. A count
+  shared with everyone else at the same Cloudflare edge, as before #316,
+  continues from one to the next. `curl -6` needs a network with IPv6;
+  where it cannot connect, try from a phone's hotspot.
+- **MC-4002** *(#316)* A caller cannot choose its address by sending
+  `CF-Connecting-IP`. On each path, the rewrite and the API's own
+  address:
+  `for url in "$site/api/v1/auth/me" "$api/v1/auth/me"; do remaining -4 "$url"; remaining -4 -H 'CF-Connecting-IP: 203.0.113.7' "$url"; done`.
+  In each pair the second line is one below the first: Cloudflare
+  replaced the header, and the request counted on your own address. The
+  same number twice means the header sent was believed.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -3845,3 +3876,5 @@ first.
   typing stops rather than as each letter is typed: MC-1546 reworded.
 - 2026-10-28: Products' and Partners' exports following the list's search
   and its quick filter, as ADR-057 says: MC-1558 extended.
+- 2026-10-29: ADR-011, amended, every limit per person or per client
+  address (#316): section 40, MC-4001 and MC-4002.

@@ -18,6 +18,7 @@ import { AuditInterceptor } from './core/audit/audit.interceptor';
 import { AuditModule } from './core/audit/audit.module';
 import { AuthModule } from './core/auth/auth.module';
 import { SessionGuard } from './core/auth/session.guard';
+import { throttleTracker } from './core/auth/throttle-tracker';
 import { AuthorizationModule } from './core/authorization/authorization.module';
 import { PermissionGuard } from './core/authorization/permission.guard';
 import { FilesModule } from './core/files/files.module';
@@ -74,6 +75,8 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
             limit: config.get('RATE_LIMIT_MAX', { infer: true }),
           },
         ],
+        // The signed-in person, or the client's own address (ADR-011).
+        getTracker: throttleTracker,
       }),
     }),
 
@@ -118,7 +121,8 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
     // Guards run in registration order, and the order is deliberate: throttle
     // before authenticating, authenticate before authorizing. A flood is cheap
     // to reject, and an anonymous request reads as 401 rather than 403 or as a
-    // CSRF failure.
+    // CSRF failure. The session is read before any of them, by
+    // SessionContextMiddleware, so the throttler already counts per person.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: SessionGuard },
     { provide: APP_GUARD, useClass: CsrfGuard },

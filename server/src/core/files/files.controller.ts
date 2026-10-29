@@ -13,12 +13,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 
 import type { OrganizationFileKind } from '../../database/schema';
 import { t } from '../../i18n/translate';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
+import { limit } from '../auth/throttle-limits';
 import { PERMISSIONS } from '../authorization/permissions';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
 import type { UploadedFileEnvelope } from './dto/file-response.dto';
@@ -83,8 +85,12 @@ export class FilesController {
    * One size of a file. The kind's view permission is checked in the
    * service, since the file's kind is known only once it is read. A file
    * never changes, so a browser keeps it until it is gone.
+   *
+   * Its own allowance, per person as every other (ADR-011): the first
+   * scroll through a long list asks for each new picture at once.
    */
   @Get(':id')
+  @Throttle({ default: { limit: limit(1000), ttl: 60_000 } })
   async read(
     @CurrentUser() user: RequestContext,
     @Param('id', ParseUUIDPipe) id: string,
