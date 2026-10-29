@@ -607,29 +607,26 @@ function readPaths(file) {
 
 /**
  * A glob's brace alternatives, each as a pattern of its own, nested ones
- * too: server/test/{invoices,credit-notes}.e2e-spec.ts gives two.
+ * too: server/test/{invoices,credit-notes}.e2e-spec.ts gives two. The
+ * innermost braces are expanded first, so a pattern nested braces give
+ * twice is kept once.
  */
 function expandBraces(pattern) {
-  const open = pattern.indexOf("{");
-  if (open < 0) return [pattern];
-  const parts = [];
-  let depth = 0;
-  let from = open + 1;
-  for (let at = open; at < pattern.length; at++) {
-    if (pattern[at] === "{") {
-      depth++;
-    } else if (pattern[at] === "," && depth === 1) {
-      parts.push(pattern.slice(from, at));
-      from = at + 1;
-    } else if (pattern[at] === "}" && --depth === 0) {
-      parts.push(pattern.slice(from, at));
-      const before = pattern.slice(0, open);
-      const after = pattern.slice(at + 1);
-      return parts.flatMap((part) => expandBraces(before + part + after));
-    }
-  }
-  return [pattern];
+  const inner = /\{([^{}]*)\}/.exec(pattern);
+  if (!inner) return [pattern];
+  const before = pattern.slice(0, inner.index);
+  const after = pattern.slice(inner.index + inner[0].length);
+  const parts = inner[1].split(",");
+  return [
+    ...new Set(parts.flatMap((part) => expandBraces(before + part + after))),
+  ];
 }
+
+/**
+ * A glob's start before its first special character, which every path it
+ * matches starts with: compared first, it spares most paths matchesGlob.
+ */
+const fixedStart = (glob) => /^[^*?[{(!@+\\]*/.exec(glob)[0];
 
 /**
  * Claude Code's rules by area (ADR-087): each file under .claude/rules/
@@ -652,7 +649,10 @@ function claudeRules({ files }) {
     for (const { line, pattern } of patterns) {
       for (const each of expandBraces(pattern)) {
         checked++;
-        if (!known.some((named) => path.matchesGlob(named, each))) {
+        const start = fixedStart(each);
+        const matches = (named) =>
+          named.startsWith(start) && path.matchesGlob(named, each);
+        if (!known.some(matches)) {
           const written = each === pattern ? each : `${each}, in ${pattern},`;
           failures.push(
             `${file}:${line}: ${written} — matches no file in the repository, and Claude Code skips it without a word`,
@@ -683,7 +683,7 @@ function someOf(names) {
  * so /code-review judges each one. Uncommitted changes count, and new
  * files git does not ignore.
  */
-function notices({ files }) {
+function notices({ files, untracked }) {
   const base = spawnSync("git", ["merge-base", "origin/main", "HEAD"], {
     cwd: ROOT,
     encoding: "utf8",
@@ -694,15 +694,13 @@ function notices({ files }) {
     ];
   }
 
-  const git = (...args) =>
-    execFileSync("git", args, { cwd: ROOT, encoding: "utf8" })
-      .split("\0")
-      .filter(Boolean);
+  const diff = execFileSync(
+    "git",
+    ["diff", "--name-only", "--no-renames", "-z", base.stdout.trim()],
+    { cwd: ROOT, encoding: "utf8" },
+  );
   const changed = [
-    ...new Set([
-      ...git("diff", "--name-only", "--no-renames", "-z", base.stdout.trim()),
-      ...git("ls-files", "-z", "--others", "--exclude-standard"),
-    ]),
+    ...new Set([...diff.split("\0").filter(Boolean), ...untracked]),
   ].sort();
 
   const found = [];
@@ -744,9 +742,9 @@ if (import.meta.main) {
     console.error(
       `${failures.length} ${failures.length === 1 ? "failure" : "failures"}.`,
     );
-    for (const line of notice) console.log(line);
-    process.exit(1);
+    process.exitCode = 1;
+  } else {
+    for (const result of results) console.log(result.summary);
   }
-  for (const result of results) console.log(result.summary);
   for (const line of notice) console.log(line);
 }

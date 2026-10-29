@@ -231,10 +231,11 @@ paths:
     `.claude/rules/other.md:1: paths — missing from the front matter: list the area's files, ${every}`,
     `.claude/rules/stock.md:3: server/src/modules/stock/** — ${nothing}`,
     `.claude/rules/stock.md:4: server/test/stock.e2e-spec.ts, in server/test/{stock,invoices}.e2e-spec.ts, — ${nothing}`,
+    // The innermost braces first, so invoice's alternatives, then quote's.
     `.claude/rules/stock.md:5: client/src/invoices/invoice-page.ts, in ${braces}, — ${nothing}`,
+    `.claude/rules/stock.md:5: server/src/modules/invoices/invoices.service.tsx, in ${braces}, — ${nothing}`,
     `.claude/rules/stock.md:5: client/src/invoices/quote-page.ts, in ${braces}, — ${nothing}`,
     `.claude/rules/stock.md:5: client/src/invoices/quote-page.tsx, in ${braces}, — ${nothing}`,
-    `.claude/rules/stock.md:5: server/src/modules/invoices/invoices.service.tsx, in ${braces}, — ${nothing}`,
   ]);
 });
 

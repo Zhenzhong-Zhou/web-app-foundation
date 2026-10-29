@@ -101,10 +101,11 @@ against_main() {
   # see what main has added since as taken away, and be told to raise the
   # API revision for nothing. CI compares with main as the change merges.
   base="$(git merge-base "$main" HEAD 2> /dev/null || true)"
+  local no_base="Skipped: no $main to compare with. git fetch origin main, then run again."
 
   step 'Against origin/main: a breaking API change raises the revision'
   if [[ -z "$base" ]]; then
-    echo "Skipped: no $main to compare with. git fetch origin main, then run again."
+    echo "$no_base"
   elif ! docker info > /dev/null 2>&1; then
     echo 'Skipped: Docker is not running, and oasdiff runs in a container.'
     echo 'CI runs it on the pull request.'
@@ -114,14 +115,14 @@ against_main() {
 
   step 'Against origin/main: new migrations leave the running release working'
   if [[ -z "$base" ]]; then
-    echo "Skipped: no $main to compare with. git fetch origin main, then run again."
+    echo "$no_base"
   else
     may_skip scripts/check-migrations.sh "$base"
   fi
 
   step 'Against origin/main: every commit by a real identity'
   if [[ -z "$base" ]]; then
-    echo "Skipped: no $main to compare with. git fetch origin main, then run again."
+    echo "$no_base"
   else
     scripts/check-authors.sh "$main..HEAD"
   fi

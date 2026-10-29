@@ -56,29 +56,34 @@ let listing = null;
 
 /**
  * Every file git tracks or would track, relative to ROOT, so not tmp/ or
- * the .DS_Store a Mac leaves; and every folder holding one, "" the root's;
+ * the .DS_Store a Mac leaves; every folder holding one, "" the root's; and
+ * the files git would track but does not yet, for check-docs.mjs's notice;
  * each in the letter case git has it. Listed once a run, for the ADRs'
  * checks here and check-docs.mjs's alike.
  */
 export function inRepository() {
   if (listing) return listing;
+  // -t tags each file: ? for one git does not track yet.
   const output = execFileSync(
     "git",
-    ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+    ["ls-files", "-z", "-t", "--cached", "--others", "--exclude-standard"],
     { cwd: ROOT, encoding: "utf8" },
   );
-  const files = new Set(
-    output
-      .split("\0")
-      .filter((file) => file && existsSync(path.join(ROOT, file))),
-  );
+  const files = new Set();
+  const untracked = new Set();
+  for (const entry of output.split("\0")) {
+    const file = entry.slice(2);
+    if (!file || !existsSync(path.join(ROOT, file))) continue;
+    files.add(file);
+    if (entry[0] === "?") untracked.add(file);
+  }
   const folders = new Set([""]);
   for (const file of files) {
     for (let at = file.indexOf("/"); at > 0; at = file.indexOf("/", at + 1)) {
       folders.add(file.slice(0, at));
     }
   }
-  listing = { files, folders };
+  listing = { files, folders, untracked };
   return listing;
 }
 
@@ -403,7 +408,7 @@ export function checkAdrs({ writing = false } = {}) {
   for (const name of filesIn(ADR_FOLDER)) {
     if (!ADR_FILE.test(name) && !OTHERS.includes(name)) {
       failures.push(
-        `${ADR_FOLDER}/${name}:1: ${name} — not a name for a file here: an ADR is NNNN-<slug>.md, four digits and its title's words in lower case, and the only others are ${OTHERS.slice(0, -1).join(", ")} and ${OTHERS.at(-1)}`,
+        `${ADR_FOLDER}/${name}:1: ${name} — not a name for a file here: an ADR is NNNN-<slug>.md, four digits and its title's words in lower case, and the only others are ${new Intl.ListFormat("en-GB").format(OTHERS)}`,
       );
     }
   }
