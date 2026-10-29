@@ -245,8 +245,7 @@ that would hurt them first. Then the findings, most serious first:
   something they rely on would quietly not happen.
 - **Before the first paying customer**: what a contract or a support
   request would need.
-- **Worth considering**: the three most valuable only, then one line
-  saying how many were left out.
+- **Worth considering**: the most valuable first, each in a line.
 
 Write each as the section, what is wrong, its evidence (a `path:line`, a
 workflow run, a command and its output, a runbook line), the ADR, runbook

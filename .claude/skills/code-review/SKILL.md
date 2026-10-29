@@ -126,8 +126,8 @@ most serious first:
 
 - **Must fix**: breaks a rule, a test, or the contract.
 - **Should fix**: works, but against a convention or a principle.
-- **Worth considering**: a simpler or clearer way. The three most
-  valuable only, then one line saying how many were left out.
+- **Worth considering**: a simpler or clearer way, the most valuable
+  first, each in a line.
 
 Pre-existing findings go last, under **Noticed, not this PR's**. They are
 never counted as must or should fix, however serious: the change did not
