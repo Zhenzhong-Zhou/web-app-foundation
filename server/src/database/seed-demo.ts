@@ -962,12 +962,22 @@ async function freshAccount(
 
   const email = `demo-${stamp}@example.com`;
 
-  const { user } = await auth.register({
-    email,
-    password: DEMO_PASSWORD,
-    name: 'Demo Owner',
-    organizationName: `Demo ${stamp}`,
-  });
+  // From a browser on this machine, as the Register page would send it, so
+  // Your devices knows the demo's own session and its account's opening.
+  const { user } = await auth.register(
+    {
+      email,
+      password: DEMO_PASSWORD,
+      name: 'Demo Owner',
+      organizationName: `Demo ${stamp}`,
+    },
+    {
+      ip: '127.0.0.1',
+      userAgent:
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
+        '(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+    },
+  );
 
   if (!user.organizationId) {
     throw new Error('Registration created no organization');

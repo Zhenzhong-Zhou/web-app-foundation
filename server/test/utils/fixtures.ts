@@ -48,7 +48,7 @@ export function longDay(day: string): string {
  *
  * Throttling is off because every test registers, and registration is
  * limited to five a minute; the limit keeps its own coverage in
- * security.e2e-spec.ts. Mail is recorded rather than sent — pass the
+ * rate-limits.e2e-spec.ts. Mail is recorded rather than sent — pass the
  * recorder in when the spec reads what was sent.
  */
 export async function createE2eApp(

@@ -46,7 +46,9 @@ use; the reasons are in the sections named.
      URL), `CLIENT_URL` (the static site's address), the mail settings and
      `RESEND_API_KEY`, `FILE_STORAGE` with the `FILES_*` settings for R2
      ("What runs where"), `REGISTRATION=invitation` and, optionally,
-     `OPERATOR_EMAIL` ("Registration and organization invitations").
+     `OPERATOR_EMAIL` ("Registration and organization invitations"),
+     and `CLIENT_IP_HEADER` with `RATE_LIMIT_MAX` ("Rate limits and the
+     client's address").
      No `VITE_` setting goes here: the API never reads one (step 3).
      `MAIL_FROM` names the product, `Panivo <the address it has now>`: its
      name is the sender an inbox shows, the one each invitation is signed
@@ -563,6 +565,38 @@ pinyin backfill is not needed, and new credentials retire the old ones.
 | `psql: invalid connection option "<postgresql…` | the `<` and `>` around the URL were kept: leave them out |
 | `org:invite` or `psql` times out | the database's **Access Control** doesn't let your address in: add it there |
 | Render won't create a free database | the old one still exists: step 1 first |
+
+## Rate limits and the client's address (ADR-011, amended, #316)
+
+Every limit counts per signed-in person, or per the client's own
+address. Two settings on the web service, under Environment; saving
+redeploys it:
+
+- **`CLIENT_IP_HEADER=cf-connecting-ip`.** The header Cloudflare, in
+  front of every Render service, sets to the address that reached it.
+  Unset, the server counts by `req.ip`, which on Render is one of its
+  proxies: one counter for everyone. Checked on 29 October 2026 in this
+  service's Logs: a request through the rewrite carried the visitor's
+  own address there, as `/cdn-cgi/trace` showed it. On another host, set
+  the header its own front sets, or leave it empty; never one nothing in
+  front sets, which any caller could send.
+- **`RATE_LIMIT_MAX=100`,** per route, per person or address, per minute,
+  for routes without a limit of their own. Pictures have their own
+  1,000; sign-in, sign-up, resets and invitations theirs, in the code.
+
+After #316's deploy, in this order:
+
+1. Set `CLIENT_IP_HEADER`, and wait for the redeploy.
+2. Manual checks, MC-4001 to MC-4003.
+3. Set `RATE_LIMIT_MAX` from 600, #317's stopgap, to 100, and delete
+   `RATE_LIMIT_AUTH_MAX`, which nothing reads since #316.
+
+If MC-4001 shows one counter through the rewrite, Render's hop to the
+API no longer carries the visitor's address in that header. Keep 600,
+and look at what arrives: this service → Logs, reload the site in
+another tab, then Cmd+F for `cf-connecting-ip`, and compare its address
+with `ip=` in `/cdn-cgi/trace`. Say which header carries yours before
+changing the setting.
 
 ## Before real customers' data
 

@@ -84,3 +84,25 @@ describe('validateEnv, REGISTRATION and OPERATOR_EMAIL', () => {
     ).toThrow(/OPERATOR_EMAIL/);
   });
 });
+
+/**
+ * ADR-011, amended for #316: a header's name, so a value that cannot be
+ * one, such as the address itself, fails at boot.
+ */
+describe('validateEnv, CLIENT_IP_HEADER', () => {
+  it('takes a header name, lowercased, and counts empty as unset', () => {
+    expect(
+      validateEnv({ ...REQUIRED, CLIENT_IP_HEADER: 'CF-Connecting-IP' })
+        .CLIENT_IP_HEADER,
+    ).toBe('cf-connecting-ip');
+    expect(
+      validateEnv({ ...REQUIRED, CLIENT_IP_HEADER: '' }).CLIENT_IP_HEADER,
+    ).toBeUndefined();
+  });
+
+  it('refuses a value that is not a header name, naming it', () => {
+    expect(() =>
+      validateEnv({ ...REQUIRED, CLIENT_IP_HEADER: '203.0.113.7' }),
+    ).toThrow(/CLIENT_IP_HEADER/);
+  });
+});

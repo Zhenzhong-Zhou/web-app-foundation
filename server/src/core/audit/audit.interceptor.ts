@@ -113,8 +113,8 @@ export class AuditInterceptor implements NestInterceptor {
          */
         payload,
 
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
+        ip: context.ip,
+        userAgent: context.userAgent,
       });
     } catch (error) {
       this.logger.error(`Audit write failed: ${String(error)}`);

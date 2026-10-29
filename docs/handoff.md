@@ -15,10 +15,10 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 29 October 2026:
 
-- **[#317],** [#260]'s pull request (ADR-056 amended), is open with its
-  checks green; it merges after its as-built docs. Next comes [#316], one
-  rate limit per person rather than per address (ADR-011 amended first),
-  then ADR-084 (the order, below).
+- **[#325],** [#316]'s pull request (ADR-011 amended): one rate limit per
+  person rather than per address, built and reviewed; it merges after its
+  as-built docs. Then the planning skill ([#318]), then ADR-084 (the
+  order, below).
 - **The triage** is done (28 October;
   [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
   every open issue has its group and area labels, the `fix-now` ones are
@@ -27,10 +27,11 @@ On 29 October 2026:
   [#186], then reopened on 29 October, when slower runners put the typo
   lookup at 333 to 363 ms; it and [#276] carry known misses until 30
   November.
-- **The last merges:** [#291] (`docs-start-here`, ADR-086's part 2 and
-  ADR-087, 28 October), [#259] (`docs-moves`, ADR-086's part 1, 27
-  October), [#257] (the emails' design, ADR-083, 27 October), [#254]
-  (CI's reliability, closing [#252], 26 October), [#251] (the
+- **The last merges:** [#317] ([#260], product names and search,
+  ADR-056 amended, 29 October), [#291] (`docs-start-here`, ADR-086's
+  part 2 and ADR-087, 28 October), [#259] (`docs-moves`, ADR-086's part
+  1, 27 October), [#257] (the emails' design, ADR-083, 27 October),
+  [#254] (CI's reliability, closing [#252], 26 October), [#251] (the
   organization's square logo, ADR-060 amended, 26 October) and [#247]
   (the brand, ADR-082, 25 October).
 - **The release:** v0.7.0, tagged on 16 October 2026; both packages'
@@ -66,6 +67,8 @@ On 29 October 2026:
   [#287]).
 - **4 November:** `@aws-sdk/client-s3` 3.1159.0 (18:45 UTC) and the eight
   updates #260 left (by 20:26 UTC) are old enough, for ADR-084's branch.
+- **5 November:** `nodemailer` 10.3.1 (12:31 UTC) is old enough, for
+  ADR-084's branch.
 - **30 November:** the known misses for the typo lookup ([#225]) and Home
   ([#276]) end; fixed by then, or decided again.
 - **Early November:** Bob's cloud credit ends; [#245] suits a cloud session
@@ -82,10 +85,14 @@ On 29 October 2026:
 
 ## Still to do, by hand
 
-- **Before [#317]'s merge:** `RATE_LIMIT_MAX` at 600 on Render's web
-  service, a stopgap until [#316], since every person shares one counter;
-  and Chinese typed with a pinyin input method in Receive stock and on
-  Products. After it: Dependabot's alert 4 closing by itself.
+- **Dependabot alert 4** closes by itself now that [#317]'s lockfile is
+  on `main`: check it did.
+- **After [#325]'s deploy:** on Render's web service, `CLIENT_IP_HEADER`
+  set to `cf-connecting-ip`; then MC-4001 to MC-4003; then
+  `RATE_LIMIT_MAX` from 600 to 100, and `RATE_LIMIT_AUTH_MAX` deleted.
+  If MC-4001 shows one counter, keep 600:
+  [`render.md`, "Rate limits and the client's address"](runbooks/render.md#rate-limits-and-the-clients-address-adr-011-amended-316)
+  says what to look at.
 - **Lighthouse on the live site, and the site reached from China,**
   before the first paying customer (`/production-readiness`'s H5 and H6,
   #317's review).
@@ -113,8 +120,13 @@ them:
 
 1. **`docs-start-here`,** [#291]: merged 28 October.
 2. **Triage:** done 28 October (above).
-3. **[#260], product names and search** (ADR-056 amended): [#317], open.
-   Then [#316], the rate limit keyed on the person, its own branch.
+3. **[#260], product names and search** (ADR-056 amended): [#317],
+   merged 29 October. Then [#316], the rate limit keyed on the person,
+   with `/triage` riding along: [#325], open. Then the chat-side
+   planning skill ([#318]), a small docs PR, its source kept in this
+   repository (Bob, 29 October 2026): ADR-084's package updates come of
+   age only from 2 to 4 November, and ADR-084 and ADR-085 each start
+   with the routine it holds.
 4. **ADR-084, an error tracker** ([#287]), with `typescript-eslint` 8.72.1
    (old enough from 2 November), the Nest packages at 12.3.x (from 3
    November), `@aws-sdk/client-s3` 3.1159.0 and the eight #260 left
@@ -130,7 +142,8 @@ them:
    [#233], [#248] and [#290], so CI can be trusted for the rest; [#225]
    and [#276] before their known misses end on 30 November; then
    [#261] with [#154] and [#150]; then [#263]'s rest with [#198]; [#264];
-   and [#255] with [#258], since both change the emails' text parts
+   and [#255] with [#258], [#324] and [#326], since all four change the
+   security emails' lines and their text parts
    (`npm run mail:text -- --update`).
 7. **One docs PR for the remaining rules files,** then **the review of
    the whole app**, once, after the fix-ups, so it judges the app with the
@@ -162,11 +175,11 @@ them:
    a customer will order next ([#300]); and special prices with a
    quantity limit ([#298]).
 
-Later: `/release` at the next tag; the chat-side planning skill;
-`/file-issue`, or GitHub's issue templates; labels as code, a labels file
-in `.github/` synced by a free Action, with a check that each area in
-`AREAS` has its label; the support playbook with the operator's console;
-and last, the starter kit: the process kit and engineering defaults,
+Later: `/release` at the next tag ([#320]); `/file-issue`, or GitHub's
+issue templates ([#319]); labels as code, a labels file in `.github/`
+synced by a free Action, with a check that each area in `AREAS` has its
+label; the support playbook with the operator's console; and last, the
+starter kit ([#321]): the process kit and engineering defaults,
 `/code-review` rewritten as a general skill, and the general skills in a
 repository of their own, installed as a versioned plugin, never copied
 into `~/.claude/skills/`.
@@ -227,3 +240,10 @@ Not repeated here; each list has one home:
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
 [#316]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/316
 [#317]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/317
+[#318]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/318
+[#319]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/319
+[#320]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/320
+[#321]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/321
+[#324]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/324
+[#325]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/325
+[#326]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/326

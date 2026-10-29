@@ -50,7 +50,7 @@ describe('Auth (e2e)', () => {
     mail = new RecordingMailService();
 
     // Registration is limited to 5/minute and both suites register on every
-    // test. The limit keeps its own coverage in security.e2e-spec.ts.
+    // test. The limit keeps its own coverage in rate-limits.e2e-spec.ts.
     app = await createE2eApp(mail);
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
   });

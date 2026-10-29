@@ -133,7 +133,6 @@ jobs:
           MAIL_FROM="Panivo <no-reply@localhost>"
           RATE_LIMIT_TTL_SECONDS=60
           RATE_LIMIT_MAX=1000000
-          RATE_LIMIT_AUTH_MAX=1000
           THROTTLE_FACTOR=100
           ENVFILE
 

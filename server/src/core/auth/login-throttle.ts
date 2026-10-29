@@ -1,7 +1,11 @@
 import type { ThrottlerGetTrackerFunction } from '@nestjs/throttler';
+import type { Request } from 'express';
+
+import { trackedAddress } from './throttle-tracker';
 
 /**
- * Login rate limiting, keyed on email **and** IP together (ADR-011).
+ * Login rate limiting, keyed on email **and** IP together (ADR-011), the IP
+ * the client's own (clientAddress), counted as every limit counts it.
  *
  * IP alone fails twice over: an attacker rotating addresses walks past it, and
  * one corporate NAT locks out everyone behind it. Email alone is worse — it
@@ -32,6 +36,5 @@ export const loginTracker: ThrottlerGetTrackerFunction = (req) => {
       ? body.email.trim().toLowerCase()
       : '';
 
-  const ip: unknown = req.ip;
-  return `${email}|${typeof ip === 'string' ? ip : 'unknown'}`;
+  return `${email}|${trackedAddress(req as Request)}`;
 };

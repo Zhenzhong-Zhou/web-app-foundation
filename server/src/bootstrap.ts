@@ -13,8 +13,10 @@ import { TranslatingValidationPipe } from './i18n/validation';
  * the /v1 prefix, DTOs without validation — and pass while production breaks.
  */
 export function configureApp(app: INestApplication): INestApplication {
-  // ADR-011: without this, Express behind a TLS-terminating proxy reports the
-  // proxy's IP as req.ip AND silently refuses to set `secure` cookies.
+  // ADR-011: without this, Express behind a TLS-terminating proxy silently
+  // refuses to set `secure` cookies. It does not give the client's address:
+  // on Render the hop it trusts is one of Render's own proxies, so the
+  // address the app records and counts is clientAddress()'s (amended, #316).
   (app.getHttpAdapter().getInstance() as Express).set('trust proxy', 1);
 
   app.use(helmet());

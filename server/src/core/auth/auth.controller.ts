@@ -15,6 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 
+import { clientAddress } from '../../common/client-address';
 import { registrationMode } from '../../common/registration';
 import type { Env } from '../../config/env';
 import { isUniqueViolation } from '../../database/errors';
@@ -105,7 +106,7 @@ export class AuthController {
   ): Promise<AuthenticatedUserEnvelope> {
     try {
       const { user, session } = await this.auth.register(dto, {
-        ip: req.ip,
+        ip: clientAddress(req),
         userAgent: req.headers['user-agent'],
         language: req.headers['accept-language'],
       });
@@ -152,9 +153,10 @@ export class AuthController {
       limit: LOGIN_ATTEMPT_LIMIT,
       ttl: LOGIN_ATTEMPT_WINDOW_MS,
       blockDuration: LOGIN_ATTEMPT_WINDOW_MS,
-      // Replaces the global IP-only limit on this route rather than stacking
-      // with it — @Throttle overrides the named 'default' throttler here, so
-      // there is no second IP-keyed counter to lock out a NAT (ADR-011).
+      // Replaces the global limit, per person or per address, on this route
+      // rather than stacking with it — @Throttle overrides the named
+      // 'default' throttler here, so there is no second counter keyed on the
+      // address alone to lock out a NAT (ADR-011).
       getTracker: loginTracker,
     },
   })
@@ -166,7 +168,7 @@ export class AuthController {
     const { user, session } = await this.auth.login(
       dto,
       {
-        ip: req.ip,
+        ip: clientAddress(req),
         userAgent: req.headers['user-agent'],
         language: req.headers['accept-language'],
       },
@@ -241,7 +243,7 @@ export class AuthController {
     @Req() req: Request,
   ): Promise<VerifiedEmail> {
     const verified = await this.auth.verifyEmail(dto.token, {
-      ip: req.ip,
+      ip: clientAddress(req),
       userAgent: req.headers['user-agent'],
       language: req.headers['accept-language'],
     });
@@ -324,7 +326,7 @@ export class AuthController {
     @Req() req: Request,
   ): Promise<void> {
     const reset = await this.auth.resetPassword(dto.token, dto.password, {
-      ip: req.ip,
+      ip: clientAddress(req),
       userAgent: req.headers['user-agent'],
       language: req.headers['accept-language'],
     });

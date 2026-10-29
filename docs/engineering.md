@@ -77,7 +77,10 @@
 ### Triaging the open issues
 
 When `needs-triage` builds up, and before a fix-up stage (28 October
-2026). Nothing is labelled, closed or milestoned until Bob decides.
+2026). Nothing is labelled, closed or milestoned until Bob decides. It
+runs as `/triage` (29 October 2026, #322), whose
+[skill](../.claude/skills/triage/SKILL.md) holds what a run does in these
+steps; this section stays the rule.
 
 1. **Export every open issue with its comments,** into `tmp/`, which git
    ignores:
@@ -120,7 +123,8 @@ When `needs-triage` builds up, and before a fix-up stage (28 October
   build brief: one Claude Code prompt per commit. Claude Code writes the code from each prompt, runs
   `scripts/verify.sh`, `/simplify` and `/code-review`, and opens the PR.
   Bob pastes its summaries back into the chat, which writes the as-built
-  amendment and the docs, as a patch for a long file (below). Until
+  amendment and the docs, as a patch for each file already in the
+  repository (below). Until
   ADR-078 the chat wrote
   the code too, as one mbox per commit, and Claude Code only applied
   them.
@@ -132,7 +136,10 @@ When `needs-triage` builds up, and before a fix-up stage (28 October
   steps. `/clear` between steps, never inside one; a step's follow-ups
   (an amend, an issue to file) stay in its context, and its summary is
   pasted into the chat before clearing. A small fix between steps is a
-  plain prompt of its own, a commit, then `/clear`. The review step runs
+  plain prompt of its own, a commit, then `/clear`. While building, the
+  chat changes the brief only when an answer changes a step not yet run,
+  and keeps the as-built notes in the chat (29 October 2026): #260's
+  brief was sent again after nearly every step. The review step runs
   in two prompts: the reviews, `/doctor prompt-audit` among them, write
   their findings, numbered, to `tmp/adr-NNN/review.md` and stop for Bob's
   choices; then the fixes by number, each verified with `--docs` or
@@ -176,32 +183,36 @@ When `needs-triage` builds up, and before a fix-up stage (28 October
   before and after and compares them (`npm run screenshots:compare`), and
   its Claude Code Review comment is read before merging. The README's
   ["Which tool, when"](../README.md#which-tool-when) says when each of the repo's tools runs.
-- **The chat's docs commits come as full files, not an mbox** (from
-  ADR-082, 24 October 2026): `git am` had failed on Bob's side. Each file
-  is made from `main` as Bob has it, with its `git hash-object` before
-  and after, so a copy made from another version is caught before it
-  overwrites anything; then the commands to copy it in and commit.
-  Downloads land in `~/Downloads` itself, not a folder, so each file is
-  named in full, never a glob.
-- **A long file changes by a patch** (26 October 2026; by size from
-  ADR-086's part 2): a file of 600 lines or more, as
-  `manual-checks.md` and `conventions.md`, is changed only where it needs
-  it; a shorter one comes whole, as every ADR, `engineering.md`, and the
-  handoff. For a long file, Bob attaches his copy from
-  `main`, since Project knowledge's search returns a long file in
-  passages; the chat sends a patch, applied with `git apply --check` and
-  then `git apply --index`, which stages what it changed. A patch that
-  does not match Bob's copy is refused whole, and `git diff --cached`
-  shows every change before the commit. New files still come whole.
-- **Every answer that changes files opens with a roadmap:** a tree or
-  relative paths, each marked **new**, **full replacement**, **patch** or
-  **snippet**.
-- **New files, and changes touching several places or a large chunk of one
-  file, come as full downloadable files.** Only a single small change stays
-  inline as a snippet.
-- Full replacements are made from Bob's current copy. Project knowledge
-  counts once Bob says he has resynced from `main`. Otherwise ask, or build
-  from the Project copy plus known changes and tell Bob to check `git diff`.
+- **The chat's commits come as files, not an mbox** (from ADR-082, 24
+  October 2026): `git am` had failed on Bob's side. A new file comes
+  whole; a file already in the repository comes as a patch (below); then
+  the commands to copy each in and commit. Every file a reply tells Bob
+  to copy is attached to that same reply. Downloads land in
+  `~/Downloads` itself, not a folder, so each file is named in full,
+  never a glob.
+- **A file already in the repository changes by a patch, never sent
+  whole** (29 October 2026; from 26 October, only a file of 600 lines or
+  more). The patch is made against `main`, from Project knowledge once
+  Bob has resynced it, or from his copy when he attaches one, and
+  applied with `git apply --check`, then `git apply --index`, which
+  stages what it changed. A patch that does not match Bob's copy is
+  refused whole, and `git diff --cached` shows every change before the
+  commit. New files, and Bob's own working files in `tmp/`, come whole,
+  as downloadable files; only a single small change stays inline as a
+  snippet.
+- **Every answer that changes files opens with a roadmap,** before the
+  Recap: a tree or relative paths, each marked **new**, **full
+  replacement**, **patch** or **snippet**.
+- **The chat's replies, in five parts** (28 and 29 October 2026):
+  Recap; New findings, each with its issue's number once filed;
+  Recorded where; Decisions needed, each with its options and a
+  recommendation, or "none"; and Next, the exact commands or prompt,
+  numbered, in order. Every bullet starts with its status: ✅ done, ⏳
+  waiting for Bob, 📝 noted for later. One short sentence per bullet,
+  the one thing Bob must act on in bold, arrows for a flow, a small
+  table or diagram to compare, a new term in plain words the first time;
+  an empty section is left out, but Decisions needed never is. After any
+  new migration, the reply reminds Bob to run `npm run migrate:all`.
 - State the exact path of every file:
   - `server/src/modules/…`;
   - `server/src/core/…` (organizations, audit, authorization);
