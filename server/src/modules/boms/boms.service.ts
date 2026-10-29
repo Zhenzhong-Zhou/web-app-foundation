@@ -8,10 +8,7 @@ import {
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
 import { recordContext } from '../../core/audit/audit-context';
-import {
-  isForeignKeyViolation,
-  isUniqueViolation,
-} from '../../database/errors';
+import { isUniqueViolation } from '../../database/errors';
 import { assertOwnIds } from '../../database/own-ids';
 import {
   bomLines,
@@ -65,8 +62,9 @@ export class BomsService {
   /**
    * The licence foreign key is global, like every id here: without this check
    * another organization's licence would be accepted by the database, and the
-   * recall trail would point outside the tenant (ADR-003). The foreign-key
-   * catch below still covers an id that exists nowhere at all.
+   * recall trail would point outside the tenant (ADR-003). An id that exists
+   * nowhere is refused the same way, and nothing deletes a licence, so no
+   * foreign key can fail after it.
    */
   private async assertLicenceWithin(licenceId: string | undefined) {
     if (!licenceId) return;
@@ -232,19 +230,7 @@ export class BomsService {
       });
     }
 
-    try {
-      await this.tenantDb.update(boms, input, eq(boms.id, bomId));
-    } catch (error) {
-      if (isForeignKeyViolation(error)) {
-        throw new BadRequestException(
-          t({
-            id: 'boms.licenceidDoesExist',
-            defaultMessage: 'licenceId does not exist',
-          }),
-        );
-      }
-      throw error;
-    }
+    await this.tenantDb.update(boms, input, eq(boms.id, bomId));
 
     this.logger.log(`BOM ${bomId} updated`);
   }
