@@ -657,6 +657,66 @@ describe('BOMs (e2e)', () => {
       await alpha.agent.get(`/v1/boms/${bom.id}`).expect(404);
     });
 
+    // A foreign key takes a variant of any organization, so the output and
+    // each component are checked against the caller's before anything is
+    // written (ADR-003).
+    it('refuses another organization’s variant as a new recipe’s output or component, and writes nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const { output, blend } = await fixtures(alpha);
+      const theirs = await makeVariant(beta, 'THEIRS', 'material');
+
+      for (const payload of [
+        {
+          outputVariantId: theirs,
+          outputQuantity: '1000',
+          lines: [{ componentVariantId: blend, quantity: '2400' }],
+        },
+        {
+          outputVariantId: output,
+          outputQuantity: '1000',
+          lines: [{ componentVariantId: theirs, quantity: '2400' }],
+        },
+      ]) {
+        const refused = await alpha.agent
+          .post('/v1/boms')
+          .send(payload)
+          .expect(400);
+        expect(body<{ message: string }>(refused).message).toBe(
+          'Unknown variant',
+        );
+      }
+
+      expect(await db.select().from(boms)).toHaveLength(0);
+      expect(await db.select().from(bomLines)).toHaveLength(0);
+    });
+
+    it('refuses another organization’s variant as a line added to a recipe, and writes nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const { output, blend } = await fixtures(alpha);
+      const bom = await createBom(alpha, {
+        outputVariantId: output,
+        outputQuantity: '1000',
+        lines: [{ componentVariantId: blend, quantity: '2400' }],
+      });
+      const theirs = await makeVariant(beta, 'THEIRS', 'material');
+
+      const refused = await alpha.agent
+        .post(`/v1/boms/${bom.id}/lines`)
+        .send({ componentVariantId: theirs, quantity: '100' })
+        .expect(400);
+      expect(body<{ message: string }>(refused).message).toBe(
+        'Unknown variant',
+      );
+
+      const lines = await db
+        .select()
+        .from(bomLines)
+        .where(eq(bomLines.bomId, bom.id));
+      expect(lines.map((line) => line.componentVariantId)).toEqual([blend]);
+    });
+
     it('is readable by a Viewer, which holds boms.view', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
