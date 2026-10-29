@@ -8,10 +8,10 @@
 #   scripts/verify.sh --quick    format, lint, types, checks, build and unit
 #                                tests; no end-to-end suites
 #   scripts/verify.sh --docs     the docs' checks alone, in seconds: the
-#                                Markdown step and the scripts' format and
-#                                tests, for a change of docs and scripts/
-#                                alone; what it refuses is where it runs,
-#                                below
+#                                Markdown step and the scripts' format,
+#                                tests and ShellCheck, for a change of docs
+#                                and scripts/ alone; what it refuses is
+#                                where it runs, below
 #
 # Needs what each suite needs on its own: the database up
 # (docker compose up -d) and ../.env. The two end-to-end suites use their
@@ -77,10 +77,20 @@ contract() {
 # Then their own tests, on Node's runner (node --test finds each
 # *.test.mjs): scripts/ sits outside both packages, so neither one's Vitest
 # runs them. i18n-review.test.mjs uses both packages' node_modules.
+# Then ShellCheck over every shell script, server/scripts/ among them, in
+# Docker as oasdiff runs (ADR-088).
 scripts_tests() {
   step 'Scripts: their format and their own tests'
   server/node_modules/.bin/prettier --check scripts/
   node --test scripts/
+
+  step 'Scripts: ShellCheck over every shell script'
+  if ! docker info > /dev/null 2>&1; then
+    echo 'Skipped: Docker is not running, and ShellCheck runs in a container.'
+    echo 'CI runs it.'
+  else
+    may_skip scripts/check-shell.sh
+  fi
 }
 
 # A check that exits 3 when it cannot run, having said why: reported and
