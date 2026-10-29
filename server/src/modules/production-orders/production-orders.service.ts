@@ -10,6 +10,7 @@ import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
 import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
+import { assertOwnIds } from '../../database/own-ids';
 import {
   boms,
   locations,
@@ -64,20 +65,6 @@ export interface IssuePlanLine {
 }
 
 const DEFAULT_LIMIT = 25;
-
-/** Whether the row with this id is the organization's. */
-async function isOwn(
-  tx: Tx,
-  table: typeof productVariants | typeof locations | typeof partners,
-  organizationId: string,
-  id: string,
-): Promise<boolean> {
-  const [row] = await tx
-    .select({ id: table.id })
-    .from(table)
-    .where(and(eq(table.organizationId, organizationId), eq(table.id, id)));
-  return row !== undefined;
-}
 
 /**
  * How the batch itself came out against its plan (ADR-032's rule applied to
@@ -484,10 +471,8 @@ export class ProductionOrdersService {
   // ---------------------------------------------------------------------------
 
   /**
-   * A foreign key takes a row of any organization, so each id in the body is
-   * looked for in this one first: another tenant's partner, location or
-   * variant is refused as unknown, a 400 (ADR-003). Nothing is deleted from
-   * these tables, so no foreign key can fail after the check.
+   * Each id in the body is looked for in this organization first: another
+   * tenant's partner, location or variant is refused as unknown (ADR-003).
    */
   private async assertOwnRecords(
     tx: Tx,
@@ -498,41 +483,30 @@ export class ProductionOrdersService {
       partnerId?: string | null;
     },
   ): Promise<void> {
-    if (
-      ids.outputVariantId &&
-      !(await isOwn(tx, productVariants, organizationId, ids.outputVariantId))
-    ) {
-      throw new BadRequestException(
-        t({
-          id: 'production.unknownVariant',
-          defaultMessage: 'Unknown variant',
-        }),
-      );
-    }
-
-    if (
-      ids.locationId &&
-      !(await isOwn(tx, locations, organizationId, ids.locationId))
-    ) {
-      throw new BadRequestException(
-        t({
-          id: 'production.unknownLocation',
-          defaultMessage: 'Unknown location',
-        }),
-      );
-    }
-
-    if (
-      ids.partnerId &&
-      !(await isOwn(tx, partners, organizationId, ids.partnerId))
-    ) {
-      throw new BadRequestException(
-        t({
-          id: 'production.unknownPartner',
-          defaultMessage: 'Unknown partner',
-        }),
-      );
-    }
+    await assertOwnIds(
+      tx,
+      productVariants,
+      organizationId,
+      [ids.outputVariantId],
+      t({ id: 'production.unknownVariant', defaultMessage: 'Unknown variant' }),
+    );
+    await assertOwnIds(
+      tx,
+      locations,
+      organizationId,
+      [ids.locationId],
+      t({
+        id: 'production.unknownLocation',
+        defaultMessage: 'Unknown location',
+      }),
+    );
+    await assertOwnIds(
+      tx,
+      partners,
+      organizationId,
+      [ids.partnerId],
+      t({ id: 'production.unknownPartner', defaultMessage: 'Unknown partner' }),
+    );
   }
 
   /**

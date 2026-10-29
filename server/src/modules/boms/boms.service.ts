@@ -5,13 +5,14 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
 import { recordContext } from '../../core/audit/audit-context';
 import {
   isForeignKeyViolation,
   isUniqueViolation,
 } from '../../database/errors';
+import { assertOwnIds } from '../../database/own-ids';
 import {
   bomLines,
   boms,
@@ -83,32 +84,20 @@ export class BomsService {
   /**
    * The variant foreign keys are global too, so the output and each
    * component are looked for in this organization first: another tenant's
-   * variant is refused as unknown, a 400, in production's words (ADR-003).
-   * Nothing deletes a variant, so no key can fail after the check.
+   * variant is refused as unknown, in production's words (ADR-003).
    */
   private async assertOwnVariants(
     tx: Tx,
     organizationId: string,
     variantIds: string[],
   ): Promise<void> {
-    const ids = [...new Set(variantIds)];
-    const found = await tx
-      .select({ id: productVariants.id })
-      .from(productVariants)
-      .where(
-        and(
-          eq(productVariants.organizationId, organizationId),
-          inArray(productVariants.id, ids),
-        ),
-      );
-
-    if (found.length !== ids.length)
-      throw new BadRequestException(
-        t({
-          id: 'production.unknownVariant',
-          defaultMessage: 'Unknown variant',
-        }),
-      );
+    await assertOwnIds(
+      tx,
+      productVariants,
+      organizationId,
+      variantIds,
+      t({ id: 'production.unknownVariant', defaultMessage: 'Unknown variant' }),
+    );
   }
 
   async list(query: ListBomsDto): Promise<Bom[]> {
