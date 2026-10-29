@@ -155,9 +155,14 @@ UTC, the same day in Vancouver. The summary lists each known miss under the
 budgets, with its issue, its date and its ceiling, whether this run met it
 or not.
 
-There is none today. The typo lookup's, #225, went once #186 brought the
-lookup back within budget: weekly run 114, on 26 October 2026, measured
-207 ms against its 300.
+Two today, each until 30 November 2026 with a ceiling of 400 ms:
+
+- **The typo lookup's, #225.** It went once weekly run 114 measured 207
+  ms on 26 October 2026, too soon: on 29 October, on runners about 1.45×
+  slower than the day before, `main` measured 340 ms and #260's branch
+  333, 358 and 363.
+- **Home's, #276.** Its watch fired the same day: `main` measured 301 ms
+  and #260's branch 325.
 
 To add one, give the scenario in `perf/scenarios.ts` a `knownMiss`:
 
