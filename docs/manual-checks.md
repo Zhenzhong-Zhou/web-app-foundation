@@ -2750,7 +2750,8 @@ screen, so it reads again.
   no Chinese among them by their letters, accents and case aside. In
   English it is Focus 60ct again, in the same alphabetical order.
 - **MC-3802** In 中文, open 专注胶囊 60 粒: the heading and the gallery's
-  images are named 专注胶囊 60 粒. Edit a variant's unit and save: in
+  images are named 专注胶囊 60 粒, and 其他语言名称 starts with 基础名称：Focus
+  60ct, the name documents print. Edit a variant's unit and save: in
   English the page still reads Focus 60ct and the variant keeps the name
   it had. Edit names shows Focus 60ct as the name being translated.
 - **MC-3803** In 中文, Inventory names FOCUS-60CT's rows 专注胶囊 60 粒, as
@@ -3823,3 +3824,5 @@ first.
 - 2026-10-28: #260, the three partner pickers searched on the server, and
   Plan run's We make it ourselves a row of its own and the field's value
   (#274): section 39 renamed for them, MC-3904 added.
+- 2026-10-28: #260's reviews, the product page saying its base name first
+  among its names in other languages: MC-3802 extended.

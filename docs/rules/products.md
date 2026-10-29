@@ -175,10 +175,12 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/whole-list-search.e2e-spec.ts) "names what it finds in the reader’s language" ·
   MC-3801 · MC-3803 · MC-3804
 - **A product's page is headed with the name the reader sees, and names
-  its variants and images so too; Edit names and Edit start from the base
+  its variants and images so too; it says its base name first among its
+  names in other languages; Edit names and Edit start from the base
   name, and saving keeps it.**
   [ADR-056, amended](../adr/0056-search.md#decision--an-items-name-in-the-readers-language-on-every-screen) ·
   [test](../../server/test/item-names.e2e-spec.ts) "keeps the base name where the product page edits it, for a reader in Chinese (4.2)" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "names the base name beside the others, under a translated heading" ·
   partly tested ·
   MC-3802
 - **A product's description on its page is the base one, whatever the

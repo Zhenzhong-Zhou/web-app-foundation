@@ -1480,6 +1480,7 @@
   "products.sku.help": "Saisi, non généré — c’est le code inscrit sur l’étiquette.",
   "products.tracksLots": "Suivre les numéros de lot et les dates de péremption",
   "products.tracksLots.fixed": "Le suivi des lots ne peut pas être modifié par la suite.",
+  "products.translations.base": "Nom de base : {name}",
   "products.translations.descriptionNeedsName": "Une description en {language} nécessite aussi un nom en {language}.",
   "products.translations.edit": "Modifier les noms",
   "products.translations.intro": "Lorsqu’une langue est laissée vide, les documents dans cette langue affichent le nom de base, {name}.",
