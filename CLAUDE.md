@@ -21,8 +21,8 @@ below, and this file says where.
 
 ## How to work
 
-Four habits, adapted from the guidelines distilled from Andrej
-Karpathy's observations on LLM coding pitfalls
+Five habits, the first four adapted from the guidelines distilled from
+Andrej Karpathy's observations on LLM coding pitfalls
 (forrestchang/andrej-karpathy-skills), in this repository's terms:
 
 - **Think before coding.** State the assumptions and the reading you
