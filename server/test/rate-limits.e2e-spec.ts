@@ -87,8 +87,9 @@ describe('Rate limits (e2e)', () => {
     return { agent, email };
   }
 
-  function signedOut(address: string) {
-    return request(httpServer(app)).get('/v1/auth/me').set(HEADER, address);
+  /** GET /v1/auth/me from an address, as a person's agent or signed out. */
+  function me(address: string, agent = request(httpServer(app))) {
+    return agent.get('/v1/auth/me').set(HEADER, address);
   }
 
   it('keeps an allowance for each person behind one address', async () => {
@@ -96,50 +97,44 @@ describe('Rate limits (e2e)', () => {
     const beta = await signUp('beta');
 
     for (let i = 0; i < MAX; i++) {
-      await alpha.agent.get('/v1/auth/me').set(HEADER, '192.0.2.1').expect(200);
+      await me('192.0.2.1', alpha.agent).expect(200);
     }
-    await alpha.agent.get('/v1/auth/me').set(HEADER, '192.0.2.1').expect(429);
+    await me('192.0.2.1', alpha.agent).expect(429);
 
-    const res = await beta.agent
-      .get('/v1/auth/me')
-      .set(HEADER, '192.0.2.1')
-      .expect(200);
+    const res = await me('192.0.2.1', beta.agent).expect(200);
     expect(remaining(res)).toBe(MAX - 1);
   });
 
   it('keeps one allowance for one person on two addresses', async () => {
     const alpha = await signUp('alpha');
 
-    await alpha.agent.get('/v1/auth/me').set(HEADER, '192.0.2.10').expect(200);
-    const res = await alpha.agent
-      .get('/v1/auth/me')
-      .set(HEADER, '192.0.2.11')
-      .expect(200);
+    await me('192.0.2.10', alpha.agent).expect(200);
+    const res = await me('192.0.2.11', alpha.agent).expect(200);
 
     expect(remaining(res)).toBe(MAX - 2);
   });
 
   it('keeps an allowance for each address signed out', async () => {
-    for (let i = 0; i < MAX; i++) await signedOut('192.0.2.20').expect(401);
-    await signedOut('192.0.2.20').expect(429);
+    for (let i = 0; i < MAX; i++) await me('192.0.2.20').expect(401);
+    await me('192.0.2.20').expect(429);
 
-    const res = await signedOut('192.0.2.21').expect(401);
+    const res = await me('192.0.2.21').expect(401);
     expect(remaining(res)).toBe(MAX - 1);
   });
 
   it('ignores the header while the setting is empty', async () => {
     vi.stubEnv('CLIENT_IP_HEADER', '');
 
-    const first = await signedOut('192.0.2.30').expect(401);
-    const second = await signedOut('192.0.2.31').expect(401);
+    const first = await me('192.0.2.30').expect(401);
+    const second = await me('192.0.2.31').expect(401);
 
     expect(remaining(second)).toBe(remaining(first) - 1);
   });
 
   it('counts IPv6 addresses by their /64', async () => {
-    const first = await signedOut('2001:db8:1:1::1').expect(401);
-    const sameNetwork = await signedOut('2001:db8:1:1:ffff::2').expect(401);
-    const otherNetwork = await signedOut('2001:db8:1:2::1').expect(401);
+    const first = await me('2001:db8:1:1::1').expect(401);
+    const sameNetwork = await me('2001:db8:1:1:ffff::2').expect(401);
+    const otherNetwork = await me('2001:db8:1:2::1').expect(401);
 
     expect(remaining(first)).toBe(MAX - 1);
     expect(remaining(sameNetwork)).toBe(MAX - 2);
@@ -149,20 +144,14 @@ describe('Rate limits (e2e)', () => {
   it("leaves the owner's sign-in open after a stranger's failed ones from another address", async () => {
     const alpha = await signUp('alpha');
     const stranger = authedAgent(app);
-    const guess = { email: alpha.email, password: 'not-the-password-at-all' };
-
-    for (let i = 0; i < LOGIN_ATTEMPT_LIMIT; i++) {
-      await stranger
+    const guess = () =>
+      stranger
         .post('/v1/auth/login')
         .set(HEADER, '192.0.2.40')
-        .send(guess)
-        .expect(401);
-    }
-    await stranger
-      .post('/v1/auth/login')
-      .set(HEADER, '192.0.2.40')
-      .send(guess)
-      .expect(429);
+        .send({ email: alpha.email, password: 'not-the-password-at-all' });
+
+    for (let i = 0; i < LOGIN_ATTEMPT_LIMIT; i++) await guess().expect(401);
+    await guess().expect(429);
 
     await authedAgent(app)
       .post('/v1/auth/login')
@@ -180,10 +169,9 @@ describe('Rate limits (e2e)', () => {
         .expect(201),
     ).file;
 
-    let res = await alpha.agent.get(`/v1/files/${logo.id}`).expect(200);
-    for (let i = 1; i <= MAX; i++) {
-      res = await alpha.agent.get(`/v1/files/${logo.id}`).expect(200);
-    }
+    const picture = () => alpha.agent.get(`/v1/files/${logo.id}`).expect(200);
+    let res = await picture();
+    for (let i = 1; i <= MAX; i++) res = await picture();
 
     expect(res.headers['x-ratelimit-limit']).toBe(String(limit(1000)));
     expect(remaining(res)).toBe(limit(1000) - MAX - 1);
