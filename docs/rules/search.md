@@ -43,8 +43,9 @@ leave how it matches to this file. How this file is kept is in the
   [Help](../../client/src/help/guides/en/products.md#products) ·
   MC-3901
 - **A Chinese name is found by its characters, one being enough, and by
-  its pinyin, typed without tones or spaces, in full or by its initials.**
-  "鱼", "yuyou", "shenhaiyuyou" and "shyy" all find 深海鱼油. The server
+  its pinyin, in full or by its initials, its tone marks and spaces set
+  aside.** "鱼", "yuyou", "yúyóu", "shenhaiyuyou" and "shyy" all find
+  深海鱼油. The server
   writes a name's pinyin whenever the name is saved: a product's, a
   variant's, a translation's or a partner's. A character with two readings
   takes the reading of the word it is in, and a wrong one is a search that
@@ -55,12 +56,18 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a Chinese name by characters, pinyin, initials or one character" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a Chinese name by its pinyin, its initials or one character" ·
   [test](../../server/test/list-search.e2e-spec.ts) "finds orders by part of their reference or their partner, in any script" ·
+  [test](../../server/src/common/search.spec.ts) "folds pinyin’s tone marks, keeping ü out as the stored pinyin does" ·
+  [test](../../server/test/whole-list-search.e2e-spec.ts) "finds pinyin typed with tone marks, and a SKU or pinyin typed full width" ·
   partly tested ·
   [Help](../../client/src/help/guides/en/partners.md#partners) ·
   MC-3901 · MC-3902
 - **Spaces around a search are dropped and a run of spaces inside reads
-  as one; % and _ match themselves,** never anything else.
+  as one; % and _ match themselves,** never anything else. Letters,
+  digits, punctuation and spaces typed full width (全角) read as their
+  usual forms: "ＦＯＣ" finds FOC-2609-01.
   [ADR-056](../adr/0056-search.md#decision--matching) ·
+  [test](../../server/src/common/search.spec.ts) "reads full-width letters, digits, punctuation and spaces as their usual forms" ·
+  [test](../../server/test/whole-list-search.e2e-spec.ts) "finds pinyin typed with tone marks, and a SKU or pinyin typed full width" ·
   [test](../../server/src/common/search.spec.ts) "trims, reads inner spaces as one, and builds the patterns" ·
   [test](../../server/src/common/search.spec.ts) "escapes LIKE wildcards, so % and _ match themselves" ·
   [test](../../server/test/stock.e2e-spec.ts) "searches the SKU, the product name and the lot code" ·

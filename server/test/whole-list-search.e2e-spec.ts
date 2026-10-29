@@ -147,6 +147,16 @@ describe('Whole-list search (e2e)', () => {
       expect(await products(alpha, '鱼')).toEqual(['深海鱼油']);
     });
 
+    // As an input method can type them: pinyin with its tones, and letters
+    // and digits at full width (全角).
+    it('finds pinyin typed with tone marks, and a SKU or pinyin typed full width', async () => {
+      const alpha = await catalogue('alpha');
+
+      expect(await products(alpha, 'shēnhǎiyúyóu')).toEqual(['深海鱼油']);
+      expect(await products(alpha, 'ｓｈｙｙ')).toEqual(['深海鱼油']);
+      expect(await products(alpha, 'ＦＯＣＵＳ－１２０')).toEqual(['Focus']);
+    });
+
     it('ranks exact, then at the start, then anywhere, before the name’s order', async () => {
       const alpha = await catalogue('alpha');
 

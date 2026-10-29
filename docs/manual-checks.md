@@ -2771,8 +2771,9 @@ the top bar's lookup does: a name in any language, accents, case and punctuation
 Chinese name by its pinyin or by one character, the closest match first.
 The list narrows a moment after typing stops.
 
-- **MC-3901** On Products, `zzjn` or `zhuanzhu` lists 专注胶囊 60 粒 in
-  中文, and Focus 60ct in English. `bisglycinate de magnesium`, without
+- **MC-3901** On Products, `zzjn`, `zhuanzhu` or `zhuānzhù` lists
+  专注胶囊 60 粒 in 中文, and Focus 60ct in English; so does `ＦＯＣＵＳ`,
+  typed full width with a Chinese input method. `bisglycinate de magnesium`, without
   its accent, finds Magnesium bisglycinate capsules by its French name.
   镁 alone lists the magnesium capsules and nothing else. Discontinued
   counts only what the search found. From the top bar, `zzjn`, then Show
@@ -3834,3 +3835,5 @@ first.
   extended.
 - 2026-10-28: #297, a screen already open reading its names again when
   the language changes: section 38's workaround gone, MC-3801 extended.
+- 2026-10-28: #260's reviews, pinyin typed with tone marks and a search
+  typed full width found as typed without them: MC-3901 extended.

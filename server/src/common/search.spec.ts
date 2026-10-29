@@ -25,6 +25,25 @@ describe('searchTerms', () => {
     expect(searchTerms('a').pinyin).toBeNull();
   });
 
+  it('folds pinyin’s tone marks, keeping ü out as the stored pinyin does', () => {
+    expect(searchTerms('zhuānzhù').pinyinText).toBe('zhuanzhu');
+    expect(searchTerms('Shēn Hǎi').pinyinText).toBe('shenhai');
+    // namePinyin writes 绿色 as "lse": ü is not a letter it keeps.
+    expect(searchTerms('lǜsè').pinyinText).toBe('lse');
+  });
+
+  it('reads full-width letters, digits, punctuation and spaces as their usual forms', () => {
+    expect(searchTerms('ＦＯＣ－２６０９')).toMatchObject({
+      text: 'FOC-2609',
+      anywhere: '%FOC-2609%',
+      pinyinText: 'foc2609',
+    });
+    expect(searchTerms('ｚｈｕａｎ\u3000ｚｈｕ')).toMatchObject({
+      text: 'zhuan zhu',
+      pinyinText: 'zhuanzhu',
+    });
+  });
+
   it('knows a query of punctuation alone has nothing to match a name with', () => {
     expect(searchTerms('--').hasWords).toBe(false);
     expect(searchTerms('鱼油').hasWords).toBe(true);
