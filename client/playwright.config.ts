@@ -163,9 +163,7 @@ export default defineConfig({
         NODE_ENV: 'development',
         PORT: '3100',
         DATABASE_URL: E2E_DATABASE_URL,
-        // Registration is throttled to 5/min per IP. Every worker and every
-        // `freshOrg` fixture registers, so the production limit would fail the
-        // suite rather than the feature.
+        // The limit on every route without one of its own.
         RATE_LIMIT_MAX: '10000',
         // Registration is throttled to 5/min per IP. Every worker and every
         // freshOrg fixture registers, so the production limit fails the suite
