@@ -152,27 +152,41 @@ function isDay(value) {
 }
 
 /**
- * A front matter list, `[ADR-046, ADR-054]`, as the numbers it names;
- * null when it is not one.
+ * A front matter list, `[a, b]`, as its items, each matching `item`; null
+ * when it is not one.
  */
-function listOf(value) {
-  if (!/^\[(?:ADR-\d{3,}(?:, ADR-\d{3,})*)?\]$/.test(value)) return null;
-  return [...value.matchAll(/ADR-(\d+)/g)].map((match) => Number(match[1]));
+function listOf(value, item) {
+  const items = `${item.source}(?:, ${item.source})*`;
+  if (!new RegExp(`^\\[(?:${items})?\\]$`).test(value)) return null;
+  return value.slice(1, -1).split(", ").filter(Boolean);
 }
+
+/**
+ * An amends or amended-by list, `[ADR-046, ADR-054]`, as the numbers it
+ * names; null when it is not one.
+ */
+const numbersOf = (value) =>
+  listOf(value, /ADR-\d{3,}/)?.map((name) => Number(name.slice(4)));
 
 /** The numbers an ADR's amends or amended-by names: none if it has no list. */
 function listed(adr, field) {
   const value = adr.frontMatter?.[field]?.value;
-  return (value && listOf(value)) || [];
+  return (value && numbersOf(value)) || [];
+}
+
+/** The areas an ADR's areas names, `[invoices, api]`: none if it has no list. */
+function areasOf(adr) {
+  const value = adr.frontMatter?.areas?.value;
+  return (value && listOf(value, /[a-z0-9-]+/)) || [];
 }
 
 /**
- * A front matter list of names, `[invoices, api]`, as those names; null
- * when it is not one.
+ * A list's items, each once, sorted by `compare`; null when the list is
+ * that already.
  */
-function namesOf(value) {
-  if (!/^\[(?:[a-z0-9-]+(?:, [a-z0-9-]+)*)?\]$/.test(value)) return null;
-  return value.slice(1, -1).split(", ").filter(Boolean);
+function inOrder(items, compare) {
+  const sorted = [...new Set(items)].sort(compare);
+  return sorted.join() === items.join() ? null : sorted;
 }
 
 /**
@@ -290,10 +304,9 @@ ${definitions.join("\n")}
  * order, by the links By number defines.
  */
 function byArea(adrs) {
+  const areas = new Map(adrs.map((adr) => [adr, areasOf(adr)]));
   const lines = AREAS.flatMap((area) => {
-    const named = adrs.filter((adr) =>
-      namesOf(adr.frontMatter?.areas?.value ?? "")?.includes(area),
-    );
+    const named = adrs.filter((adr) => areas.get(adr).includes(area));
     if (named.length === 0) return [];
     return [
       `- \`${area}\`: ${named.map((adr) => `[${adrName(adr.number)}]`).join(", ")}`,
@@ -470,8 +483,8 @@ export function checkAdrs({ writing = false } = {}) {
       );
     } else if (fields.areas) {
       const { value, line } = fields.areas;
-      const areas = namesOf(value);
-      if (!areas?.length) {
+      const areas = areasOf(adr);
+      if (areas.length === 0) {
         fail(
           line,
           `areas: ${value}`,
@@ -482,15 +495,14 @@ export function checkAdrs({ writing = false } = {}) {
         for (const area of unknown) {
           fail(line, `areas: ${area}`, `not an area: ${AREAS.join(", ")}`);
         }
-        const order = areas.map((area) => AREAS.indexOf(area));
-        if (
+        const ordered =
           unknown.length === 0 &&
-          order.some((at, i) => i > 0 && at <= order[i - 1])
-        ) {
+          inOrder(areas, (a, b) => AREAS.indexOf(a) - AREAS.indexOf(b));
+        if (ordered) {
           fail(
             line,
             `areas: ${value}`,
-            `not in the order AREAS lists them, each area once: write it as [${AREAS.filter((area) => areas.includes(area)).join(", ")}]`,
+            `not in the order AREAS lists them, each area once: write it as [${ordered.join(", ")}]`,
           );
         }
       }
@@ -516,13 +528,13 @@ export function checkAdrs({ writing = false } = {}) {
     ]) {
       if (!fields[field]) continue;
       const { value, line } = fields[field];
-      const numbers = listOf(value);
+      const numbers = numbersOf(value);
       if (!numbers) {
         fail(line, `${field}: ${value}`, "not a list as [ADR-046, ADR-054]");
         continue;
       }
-      if (numbers.some((number, i) => i > 0 && number <= numbers[i - 1])) {
-        const ascending = [...new Set(numbers)].sort((a, b) => a - b);
+      const ascending = inOrder(numbers, (a, b) => a - b);
+      if (ascending) {
         fail(
           line,
           `${field}: ${value}`,
