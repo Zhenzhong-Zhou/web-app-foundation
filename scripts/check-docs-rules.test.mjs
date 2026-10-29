@@ -4,10 +4,9 @@
  *
  *     node --test scripts/
  *
- * What they share is in check-docs-fixture.mjs.
+ * What they share is in check-docs-fixture.mjs and git-fixture.mjs.
  */
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import { test } from "node:test";
 
 import {
@@ -17,9 +16,9 @@ import {
   fixture,
   GUIDE,
   INDEX,
-  write,
   writeIndex,
 } from "./check-docs-fixture.mjs";
+import { git, write } from "./git-fixture.mjs";
 
 test("a path written as code names a file or folder; a command's first word, an ignored path and a module's pass", (t) => {
   const root = fixture(t, {
@@ -265,22 +264,6 @@ paths:
     '.claude/rules/stock.md:4: server/test/credit-notes.e2e-spec.ts — not a pattern: under paths:, one - "pattern" to a line, or a # comment',
   ]);
 });
-
-/** git in the fixture, as a person with no identity of their own. */
-const git = (root, ...args) =>
-  execFileSync(
-    "git",
-    [
-      "-c",
-      "user.name=Test",
-      "-c",
-      "user.email=test@example.com",
-      "-c",
-      "commit.gpgsign=false",
-      ...args,
-    ],
-    { cwd: root },
-  );
 
 test("the notice names a rules file left alone while its tests or area changed, and never fails", (t) => {
   const root = fixture(t, {

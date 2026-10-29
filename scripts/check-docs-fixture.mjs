@@ -3,7 +3,8 @@
  * check-docs-adrs.test.mjs (the ADRs) and check-docs-rules.test.mjs
  * (ADR-087's checks): split so node --test, which runs a file's tests in
  * turn but the files at once, runs them side by side. Not a test file,
- * so node --test runs nothing here.
+ * so node --test runs nothing here. adr-index.test.mjs takes its ADRs and
+ * README from here too.
  *
  * Each test runs the script in a temporary repository of a few Markdown
  * files, since it checks the repository it is run in. git init is
@@ -11,28 +12,16 @@
  */
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { repository } from "./git-fixture.mjs";
+
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-export function write(root, file, text) {
-  mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
-  writeFileSync(path.join(root, file), text);
-}
-
 /** A temporary repository: a .gitignore of tmp/, and the files. */
-export function fixture(t, files) {
-  const root = mkdtempSync(path.join(tmpdir(), "check-docs-"));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
-
-  execFileSync("git", ["init", "--quiet"], { cwd: root });
-  write(root, ".gitignore", "tmp/\n");
-  for (const [file, text] of Object.entries(files)) write(root, file, text);
-  return root;
-}
+export const fixture = (t, files) =>
+  repository(t, "check-docs", { ".gitignore": "tmp/\n", ...files });
 
 /** The script, run in the fixture as verify.sh runs it in the repository. */
 export const check = (root) =>
@@ -53,9 +42,30 @@ export const GUIDE = "# Guide\n\n## Setup\n\nThe steps.\n";
 export const adr = (frontMatter, heading) =>
   `---\n${frontMatter}---\n\n# ${heading}\n\nThe decision.\n`;
 
-/** The README the ADRs need, its index not written yet. */
-export const INDEX =
-  "# Architecture Decisions\n\n## By number\n\n<!-- adr-index:start -->\n<!-- adr-index:end -->\n\n## By area\n\n<!-- adr-areas:start -->\n<!-- adr-areas:end -->\n";
+/**
+ * The README the ADRs need, its index not written yet, among text the
+ * script leaves as it is.
+ */
+export const INDEX = `# Architecture Decisions
+
+The preamble.
+
+## By number
+
+Written by the script.
+
+<!-- adr-index:start -->
+<!-- adr-index:end -->
+
+## By area
+
+<!-- adr-areas:start -->
+<!-- adr-areas:end -->
+
+## Resolved
+
+The table.
+`;
 
 /** The index script, run in the fixture as a person runs it. */
 export const writeIndex = (root) =>

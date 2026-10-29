@@ -11,21 +11,19 @@
  * client/ and server/ first.
  */
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import {
   copyFileSync,
   mkdirSync,
-  mkdtempSync,
   readFileSync,
-  rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { git, repository, write } from "./git-fixture.mjs";
 import { readWorkbook, workbook } from "./i18n-review.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -69,11 +67,6 @@ const HEADER = [
   "Placeholders to keep",
 ];
 
-function write(root, file, text) {
-  mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
-  writeFileSync(path.join(root, file), text);
-}
-
 const writeJson = (root, file, value) =>
   write(root, file, `${JSON.stringify(value, null, 2)}\n`);
 
@@ -83,9 +76,7 @@ const sheet = (root, file) => readWorkbook(readFileSync(path.join(root, file)));
 
 /** A temporary repository: the script, the catalogues and their sources. */
 function fixture(t) {
-  const root = mkdtempSync(path.join(tmpdir(), "i18n-review-"));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
-
+  const root = repository(t, "i18n-review");
   mkdirSync(path.join(root, "scripts"));
   copyFileSync(
     path.join(ROOT, "scripts/i18n-review.mjs"),
@@ -188,26 +179,15 @@ test("export writes a row per message, the screens' then the server's", (t) => {
 
 test("export --since leaves out English changed only in its apostrophes", (t) => {
   const root = fixture(t);
-  const git = (...args) =>
-    execFileSync("git", args, { cwd: root, encoding: "utf8" });
-
-  // An identity of its own, as CI's runner has none, and no signing,
-  // which would ask for a key.
-  git("init", "--quiet");
-  git("add", ".");
+  git(root, "add", ".");
   git(
-    "-c",
-    "user.name=i18n-review test",
-    "-c",
-    "user.email=i18n-review@example.com",
-    "-c",
-    "commit.gpgsign=false",
+    root,
     "commit",
     "--quiet",
     "--message",
     "The catalogues the last round was exported at",
   );
-  const baseline = git("rev-parse", "--short", "HEAD").trim();
+  const baseline = git(root, "rev-parse", "--short", "HEAD").trim();
 
   writeJson(root, "client/src/locales/en.json", {
     farewell: "Don’t go",
