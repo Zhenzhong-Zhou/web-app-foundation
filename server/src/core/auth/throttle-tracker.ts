@@ -9,10 +9,10 @@ import { getRequestContext } from './request-context';
 
 /**
  * Whose count a request adds to (ADR-011, amended for #316): the signed-in
- * person, whose tabs and devices share one allowance; signed out, the
- * client's own address. Every route's limit takes it, but sign-in's and
- * the forgotten password's, which key on the email and the address
- * (loginTracker).
+ * person, whose tabs and devices share one allowance on each route; signed
+ * out, the client's own address. Every route's limit takes it, but
+ * sign-in's and the forgotten password's, which key on the email and the
+ * address (loginTracker).
  *
  * The session middleware has resolved the cookie before any guard runs,
  * so the person is known here. Never the cookie itself, which a flood

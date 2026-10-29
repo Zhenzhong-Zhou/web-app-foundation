@@ -86,8 +86,9 @@ export class FilesController {
    * service, since the file's kind is known only once it is read. A file
    * never changes, so a browser keeps it until it is gone.
    *
-   * Its own allowance, per person as every other (ADR-011): the first
-   * scroll through a long list asks for each new picture at once.
+   * Its own allowance, counted per person on this route as on every other
+   * (ADR-011): the first scroll through a long list asks for each new
+   * picture at once.
    */
   @Get(':id')
   @Throttle({ default: { limit: limit(1000), ttl: 60_000 } })
