@@ -165,6 +165,29 @@ export default tseslint.config(
   },
 
   {
+    // The client's address is worked out in one place (ADR-011, amended for
+    // #316): on Render req.ip is one of Render's own proxies, so a new read
+    // of it would record the proxy again. no-restricted-properties rather
+    // than no-restricted-syntax, which the rule above sets for most of these
+    // files, and a second setting would replace it.
+    files: ['src/**/*.ts'],
+    ignores: ['src/common/client-address.ts'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        ...['req', 'request'].map((object) => ({
+          object,
+          property: 'ip',
+          message:
+            "The client's address is clientAddress(req), from " +
+            'common/client-address.ts (ADR-011): req.ip is the proxy in ' +
+            'front, never the person. Signed in, context.ip already holds it.',
+        })),
+      ],
+    },
+  },
+
+  {
     files: ['**/*.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
