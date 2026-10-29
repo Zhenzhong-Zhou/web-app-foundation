@@ -92,7 +92,7 @@ export async function seedPermissions(app: INestApplication): Promise<void> {
  *
  * Suites that register or log in repeatedly hit the real limits and fail in a
  * way that looks like a bug in the thing under test. Rate limiting keeps its
- * own coverage in security.e2e-spec.ts, which uses the real storage.
+ * own coverage in rate-limits.e2e-spec.ts, which uses the real storage.
  */
 export const unlimitedThrottler: ThrottlerStorage = {
   increment: () =>

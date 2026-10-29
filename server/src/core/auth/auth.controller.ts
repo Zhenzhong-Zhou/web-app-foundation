@@ -153,9 +153,10 @@ export class AuthController {
       limit: LOGIN_ATTEMPT_LIMIT,
       ttl: LOGIN_ATTEMPT_WINDOW_MS,
       blockDuration: LOGIN_ATTEMPT_WINDOW_MS,
-      // Replaces the global IP-only limit on this route rather than stacking
-      // with it — @Throttle overrides the named 'default' throttler here, so
-      // there is no second IP-keyed counter to lock out a NAT (ADR-011).
+      // Replaces the global limit, per person or per address, on this route
+      // rather than stacking with it — @Throttle overrides the named
+      // 'default' throttler here, so there is no second counter keyed on the
+      // address alone to lock out a NAT (ADR-011).
       getTracker: loginTracker,
     },
   })
