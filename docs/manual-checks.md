@@ -696,9 +696,10 @@ Paper is checked first because it must not change at all.
   Returns) shows no 0, and Returned 0 carries no note.
 - **MC-1546** Products has a page header (Licences, Refresh, Add product),
   then Search and a Discontinued quick filter with its count. Typing part of a
-  name narrows the list as you type; pressing Discontinued shows only those
-  (ZINC-60's product). Discontinued reads as a grey chip; a search that
-  matches nothing says so, and Add product stays in the header only.
+  name narrows the list a moment after typing stops; pressing Discontinued
+  shows only those (ZINC-60's product). Discontinued reads as a grey chip; a
+  search that matches nothing says so, and Add product stays in the header
+  only.
 - **MC-1547** Partners has Search and a Retired quick filter with its count.
   The search finds a partner by part of its name, its code or its tax ID.
   Pressing Retired shows only Old Mill Herbs. Retired reads as a grey chip.
@@ -3837,3 +3838,5 @@ first.
   the language changes: section 38's workaround gone, MC-3801 extended.
 - 2026-10-28: #260's reviews, pinyin typed with tone marks and a search
   typed full width found as typed without them: MC-3901 extended.
+- 2026-10-28: Products searched on the server, the list narrowing once
+  typing stops rather than as each letter is typed: MC-1546 reworded.
