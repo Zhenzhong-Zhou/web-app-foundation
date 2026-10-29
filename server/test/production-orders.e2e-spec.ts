@@ -1436,6 +1436,44 @@ describe('Production orders (e2e)', () => {
       expect(stored).toMatchObject({ partnerId: ours, locationId: s.wip });
     });
 
+    it('refuses another organization’s location as a release’s source, its own or a line’s, and writes nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const s = await scenario(alpha);
+      const run = await createRun(alpha, {
+        outputVariantId: s.output,
+        bomId: s.bomId,
+        locationId: s.wip,
+        quantityPlanned: '500',
+      });
+      const theirLocation = await makeLocation(beta, 'SHELF');
+
+      for (const release of [
+        { sourceLocationId: theirLocation },
+        {
+          sourceLocationId: s.shelf,
+          overrides: [
+            { componentVariantId: s.blend, sourceLocationId: theirLocation },
+          ],
+        },
+      ]) {
+        const refused = await alpha.agent
+          .post(`/v1/production-orders/${run.id}/release`)
+          .send(release)
+          .expect(400);
+        expect(body<{ message: string }>(refused).message).toBe(
+          'Unknown location',
+        );
+      }
+
+      const lines = await db
+        .select()
+        .from(productionOrderLines)
+        .where(eq(productionOrderLines.productionOrderId, run.id));
+      expect(lines).toHaveLength(0);
+      expect(await onHand(s.blend, s.shelf)).toBe('10000.0000');
+    });
+
     it('requires a session', async () => {
       await authedAgent(app).get('/v1/production-orders').expect(401);
     });
