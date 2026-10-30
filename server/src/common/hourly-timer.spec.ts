@@ -74,6 +74,26 @@ describe('HourlyTimer', () => {
     expect(reportFault).toHaveBeenCalledWith(failure, { job: 'Probe' });
   });
 
+  it('reports a fault that lasts once, and again after a run succeeds', async () => {
+    const timer = new Probe();
+    timer.run
+      .mockRejectedValueOnce(new Error('storage unreachable'))
+      .mockRejectedValueOnce(new Error('storage unreachable at 05:00'))
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('storage unreachable'));
+
+    // Fail, fail: both logged, one report.
+    timer.start();
+    await vi.advanceTimersByTimeAsync(HOUR);
+    expect(error).toHaveBeenCalledTimes(2);
+    expect(reportFault).toHaveBeenCalledTimes(1);
+
+    // Succeed, fail: reported again.
+    await vi.advanceTimersByTimeAsync(2 * HOUR);
+    expect(timer.run).toHaveBeenCalledTimes(4);
+    expect(reportFault).toHaveBeenCalledTimes(2);
+  });
+
   it('stops at shutdown', async () => {
     const timer = new Probe();
 
