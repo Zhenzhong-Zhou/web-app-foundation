@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { MARK, MARK_SHAPE } from './src/theme/tokens.ts';
-import { brandSettings, withTokens } from './vite.config.ts';
+import { brandSettings, sourceMapUpload, withTokens } from './vite.config.ts';
 
 /**
  * ADR-082's settings as a build reads them, each with what it falls back
@@ -125,6 +125,63 @@ describe('withTokens', () => {
     // Only the name's placeholder, the app-name plugin's, is left.
     expect(new Set(filled.match(/%[A-Z_]+%/g))).toEqual(
       new Set(['%APP_NAME%']),
+    );
+  });
+});
+
+/**
+ * ADR-084's readable browser traces: hidden source maps uploaded to the
+ * tracker under the release the reporter names, then deleted, only where
+ * the upload's settings are, as on Render's static site.
+ */
+describe('sourceMapUpload', () => {
+  const build = {
+    build: '983c1d8f0e5a4b7c9d2e6f1a3b5c7d9e0f2a4b6c',
+    builtAt: '2026-10-30T03:00:00.000Z',
+    version: '0.7.0',
+  };
+  const settings = {
+    SENTRY_AUTH_TOKEN: 'sntrys_token',
+    SENTRY_ORG: 'panivo',
+    SENTRY_PROJECT: 'panivo',
+  };
+
+  it('uploads nothing and writes no maps without the token, as in CI and on a laptop', () => {
+    expect(sourceMapUpload({}, build)).toBeNull();
+    expect(
+      sourceMapUpload({ ...settings, SENTRY_AUTH_TOKEN: '' }, build),
+    ).toBeNull();
+  });
+
+  it("uploads to the project under the reporter's release, then deletes the maps", () => {
+    const upload = sourceMapUpload(settings, build);
+
+    expect(upload).toMatchObject({
+      authToken: 'sntrys_token',
+      org: 'panivo',
+      project: 'panivo',
+      release: {
+        name: '0.7.0+983c1d8f0e5a4b7c9d2e6f1a3b5c7d9e0f2a4b6c',
+        inject: false,
+        setCommits: false,
+      },
+      sourcemaps: {
+        filesToDeleteAfterUpload: path.join(
+          import.meta.dirname,
+          'dist/**/*.map',
+        ),
+      },
+      telemetry: false,
+    });
+  });
+
+  it('logs a failed upload, and the build goes on', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { errorHandler } = sourceMapUpload(settings, build) ?? {};
+
+    expect(() => errorHandler?.(new Error('401 Unauthorized'))).not.toThrow();
+    expect(warn).toHaveBeenCalledWith(
+      'Source maps not uploaded to Sentry. 401 Unauthorized',
     );
   });
 });

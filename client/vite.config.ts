@@ -3,6 +3,10 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import {
+  sentryVitePlugin,
+  type SentryVitePluginOptions,
+} from '@sentry/vite-plugin';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 
@@ -11,6 +15,7 @@ import { Locale } from './src/api/types.gen.ts';
 import { LOADING_FAILED } from './src/lib/loading-words.ts';
 import { INDICATOR_DELAY_MS } from './src/lib/use-delayed-flag.ts';
 import { DARK, LIGHT, MARK, MARK_SHAPE, RADIUS } from './src/theme/tokens.ts';
+import type { Build } from './src/version/build.ts';
 
 /**
  * Recompiles the catalogues while `npm run dev` runs (ADR-054).
@@ -373,7 +378,7 @@ function fromTokens(): Plugin {
  * The dev server answers /version.json itself, naming the build `dev`,
  * which the check never counts as newer.
  */
-function versionFile(command: 'build' | 'serve'): Plugin {
+function thisBuild(command: 'build' | 'serve'): Build {
   const builtAt = new Date().toISOString();
   const build =
     command === 'serve'
@@ -382,6 +387,11 @@ function versionFile(command: 'build' | 'serve'): Plugin {
   const { version } = JSON.parse(
     readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
   ) as { version: string };
+  return { build, builtAt, version };
+}
+
+/** The build compiled into the app as __BUILD__, and written as version.json. */
+function versionFile({ build, builtAt, version }: Build): Plugin {
   const file = JSON.stringify({
     build,
     builtAt,
@@ -420,56 +430,106 @@ function gitCommit(): string | undefined {
   }
 }
 
-export default defineConfig(({ command, mode }) => ({
-  plugins: [
-    react(),
-    recompileCatalogues(),
-    appName(mode),
-    fromTokens(),
-    loadingScript(),
-    versionFile(command),
-  ],
-  resolve: {
-    /**
-     * In a production build, the ICU parser is swapped for its stub (ADR-054).
-     * Every catalogue reaches the browser already parsed (npm run
-     * i18n:compile), so the parser would be weight with nothing to do. Dev
-     * and the tests keep it, so a message added in code and not yet
-     * extracted still renders from its English while someone works on it.
-     */
-    alias:
-      command === 'build'
-        ? [
-            {
-              find: /^@formatjs\/icu-messageformat-parser$/,
-              replacement: '@formatjs/icu-messageformat-parser/no-parser.js',
-            },
-          ]
-        : [],
-  },
-  // Raised from Vite's 500KB default. MUI is most of the bundle, and ADR-021
-  // accepts that: this surface sits behind a login wall, where first paint is
-  // not a conversion metric. Revisit when step 9 adds Refine — that is when
-  // route-level lazy() starts to pay.
-  build: { chunkSizeWarningLimit: 700 },
-  server: {
-    port: 5173,
-    // Fail rather than drift to 5174: CLIENT_URL is baked into every
-    // verification and reset link (ADR-017), and a silently moved port turns
-    // those into dead links with nothing in the logs.
-    strictPort: true,
-    proxy: {
-      '/api': {
-        // Playwright sets this so the e2e stack runs on its own ports and
-        // cannot be confused with the dev one.
-        target: process.env.VITE_API_TARGET ?? 'http://localhost:3000',
-        changeOrigin: true,
-        // Nest has no global prefix — it serves /v1/... (ADR-013). /api is a
-        // browser-side convention only, stripped before forwarding. Without
-        // this every request 404s at /api/v1/... and the failure looks like a
-        // missing route rather than a proxy misconfiguration.
-        rewrite: (path) => path.replace(/^\/api/, ''),
+/**
+ * Readable browser traces (ADR-084). With SENTRY_AUTH_TOKEN set, as on
+ * Render's static site, the build writes hidden source maps (files that map
+ * the minified code back to the source, named by no published file), and
+ * Sentry's plugin uploads them to SENTRY_ORG's SENTRY_PROJECT under the
+ * release the error tracker names, `<version>+<commit>`, then deletes them,
+ * so the site serves none. Without the token, no maps and no plugin: the
+ * build is as it was.
+ *
+ * An upload that fails is logged and the build goes on; the maps are
+ * deleted either way. The settings are the process's own, never the
+ * repository's .env, so a build on a developer's machine uploads nothing.
+ */
+export function sourceMapUpload(
+  env: Record<string, string | undefined>,
+  { build, version }: Build,
+): SentryVitePluginOptions | null {
+  if (!env.SENTRY_AUTH_TOKEN) return null;
+  return {
+    authToken: env.SENTRY_AUTH_TOKEN,
+    org: env.SENTRY_ORG,
+    project: env.SENTRY_PROJECT,
+    release: {
+      // As src/errors/tracker.ts names it, which sets it on each report, so
+      // nothing is injected; and no commits read from git for Sentry.
+      name: `${version}+${build}`,
+      inject: false,
+      setCommits: false,
+    },
+    sourcemaps: {
+      filesToDeleteAfterUpload: path.join(import.meta.dirname, 'dist/**/*.map'),
+    },
+    errorHandler: (error) => {
+      console.warn(`Source maps not uploaded to Sentry. ${error.message}`);
+    },
+    // Nothing about this build sent to Sentry's own project.
+    telemetry: false,
+  };
+}
+
+export default defineConfig(({ command, mode }) => {
+  const build = thisBuild(command);
+  const upload =
+    command === 'build' ? sourceMapUpload(process.env, build) : null;
+  // The CLI the plugin uploads with sends Sentry its own usage reports,
+  // naming the organization and the project, unless its setting says not to.
+  if (upload) process.env.SENTRY_CLI_NO_TELEMETRY = '1';
+
+  return {
+    plugins: [
+      react(),
+      recompileCatalogues(),
+      appName(mode),
+      fromTokens(),
+      loadingScript(),
+      versionFile(build),
+      upload && sentryVitePlugin(upload),
+    ],
+    resolve: {
+      /**
+       * In a production build, the ICU parser is swapped for its stub (ADR-054).
+       * Every catalogue reaches the browser already parsed (npm run
+       * i18n:compile), so the parser would be weight with nothing to do. Dev
+       * and the tests keep it, so a message added in code and not yet
+       * extracted still renders from its English while someone works on it.
+       */
+      alias:
+        command === 'build'
+          ? [
+              {
+                find: /^@formatjs\/icu-messageformat-parser$/,
+                replacement: '@formatjs/icu-messageformat-parser/no-parser.js',
+              },
+            ]
+          : [],
+    },
+    // Raised from Vite's 500KB default. MUI is most of the bundle, and ADR-021
+    // accepts that: this surface sits behind a login wall, where first paint is
+    // not a conversion metric. Revisit when step 9 adds Refine — that is when
+    // route-level lazy() starts to pay.
+    build: { chunkSizeWarningLimit: 700, sourcemap: upload ? 'hidden' : false },
+    server: {
+      port: 5173,
+      // Fail rather than drift to 5174: CLIENT_URL is baked into every
+      // verification and reset link (ADR-017), and a silently moved port turns
+      // those into dead links with nothing in the logs.
+      strictPort: true,
+      proxy: {
+        '/api': {
+          // Playwright sets this so the e2e stack runs on its own ports and
+          // cannot be confused with the dev one.
+          target: process.env.VITE_API_TARGET ?? 'http://localhost:3000',
+          changeOrigin: true,
+          // Nest has no global prefix — it serves /v1/... (ADR-013). /api is a
+          // browser-side convention only, stripped before forwarding. Without
+          // this every request 404s at /api/v1/... and the failure looks like a
+          // missing route rather than a proxy misconfiguration.
+          rewrite: (path) => path.replace(/^\/api/, ''),
+        },
       },
     },
-  },
-}));
+  };
+});

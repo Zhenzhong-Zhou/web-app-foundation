@@ -2900,6 +2900,15 @@ site, after a deploy that changes the setting, the route or the relay.
   tab: Can’t reach the server shows. Set it back online: the page loads
   by itself. Network shows no `POST /api/errors` at any point, and no new
   event arrives.
+- **MC-4105** *(ADR-084)* A live report's trace is readable, and the
+  site serves no source map. After a deploy of the static site with
+  `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT` set, its build
+  log has no line `Source maps not uploaded to Sentry`. Crash a page on
+  the live site as MC-4102 does: the event's stack names the app's own
+  files under `src/`, with their lines, not only `assets/index-*.js`.
+  Then `curl -s <the site>/assets/<the main chunk's name>.map | head -c
+  15` prints `<!doctype html>`, the `/*` rewrite's page, never a map's
+  `{"version":3`.
 
 ## Regressions
 
@@ -3971,3 +3980,5 @@ first.
 - 2026-10-30: #244's crash page also for a fault in the session read, the
   new-version check, the start-up screens or the signed-in layout's
   frame, through the app's route: MC-R65 extended.
+- 2026-10-30: ADR-084, the browser's traces readable from source maps
+  uploaded at the build and never published: MC-4105.
