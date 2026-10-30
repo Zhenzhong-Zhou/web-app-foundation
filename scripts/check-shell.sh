@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# Every shell script in scripts/, scripts/hooks/ and server/scripts/,
-# through ShellCheck, a linter for shell scripts (ADR-088), at its default
-# strictness: every level of finding, down to style. A finding it is wrong
-# about is turned off on its line, with the reason on the line above, as
-# the scripts' other disables carry one.
+# Every shell script in the repository, through ShellCheck, a linter for
+# shell scripts (ADR-088), at its default strictness: every level of
+# finding, down to style. A finding it is wrong about is turned off on its
+# line, with the reason on the line above, as the scripts' other disables
+# carry one.
 #
 #     scripts/check-shell.sh
 #
@@ -39,8 +39,22 @@ if ! docker image inspect "$image" > /dev/null 2>&1 \
   exit 3
 fi
 
-# The hook has no extension, so its folder is taken whole.
-files=(scripts/*.sh scripts/hooks/* server/scripts/*.sh)
+# Each file git tracks or would track that is a .sh, or whose #! line
+# names a shell ShellCheck reads, as the hook's does; one deleted and not
+# yet committed is left out.
+files=()
+while IFS= read -r file; do
+  if [[ -f "$file" ]]; then
+    files+=("$file")
+  fi
+done < <(
+  {
+    git ls-files --cached --others --exclude-standard -- '*.sh'
+    git grep -I -n --untracked \
+      -E '^#! ?(/usr)?/bin/(env +)?(ba|da|k)?sh([[:space:]]|$)' \
+      | sed -n 's/^\([^:]*\):1:.*/\1/p'
+  } | sort -u
+)
 
 # No network, and the repository read only: nothing else is wanted. From
 # its root, so each finding names the script's path there.

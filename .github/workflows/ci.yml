@@ -225,9 +225,9 @@ jobs:
       - name: Check the repository's scripts' format
         run: server/node_modules/.bin/prettier --check scripts/
 
-      # Every shell script in scripts/, scripts/hooks/ and server/scripts/,
-      # through ShellCheck from a pinned container image (ADR-088): the
-      # check scripts/verify.sh makes where Docker is up.
+      # Every shell script in the repository, through ShellCheck from a
+      # pinned container image (ADR-088): the check scripts/verify.sh makes
+      # where Docker is up.
       - name: Check the repository's shell scripts
         run: scripts/check-shell.sh
 
