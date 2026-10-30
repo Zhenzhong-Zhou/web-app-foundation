@@ -129,8 +129,9 @@ steps; this section stays the rule.
   the code too, as one mbox per commit, and Claude Code only applied
   them. Since ADR-088 the chat's half is a claude.ai skill,
   `plan-feature`, kept in `.claude/chat-skills/plan-feature/`, packed by
-  `scripts/pack-chat-skill.mjs` and uploaded by hand after each change;
-  its first step compares the uploaded copy with `main`'s.
+  `scripts/pack-chat-skill.mjs`, which packs only at `origin/main`'s
+  commit, and uploaded by hand once each change has merged (ADR-084); its
+  first step compares the uploaded copy with `main`'s.
 - **The build, through `/build-from-brief`** (from ADR-083). The brief
   and the canvas's boards go in `tmp/adr-NNN/`, ignored by git and by
   markdownlint, so `scripts/verify.sh` does not lint its Markdown. Each prompt is one line,
@@ -337,11 +338,12 @@ reports success.
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
 - Before each commit, `scripts/verify.sh --quick`; or `--docs`, in
-  seconds, for a commit that changes only Markdown outside `client/`,
-  and `scripts/`: the Markdown step and the scripts' format and tests.
-  `--docs` refuses, naming the files, when the uncommitted changes touch
-  anything else: `client/` is refused, the Help guides included, which
-  `client/src/help/guides.test.ts` checks. The full verify still runs
+  seconds, for a commit that changes only Markdown outside `client/` and
+  `docs/tables/`, and `scripts/`: the Markdown step and the scripts'
+  format and tests. `--docs` refuses, naming the files, when the
+  uncommitted changes touch anything else: `client/` is refused, the
+  Help guides included, which `client/src/help/guides.test.ts` checks,
+  and so is `docs/tables/`, which `npm run diagrams -- --check` checks. The full verify still runs
   before each push.
 
 ## Moving code

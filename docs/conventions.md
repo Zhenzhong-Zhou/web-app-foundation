@@ -95,6 +95,11 @@ an arrow class property doesn't live on the prototype.
   added theirs (`server/src/database/schema/columns.ts`, beside
   `timestamps`). `server/test/schema.e2e-spec.ts` names each table with
   `updated_at` and no trigger.
+- **A new table gets its area** in `TABLE_AREAS`
+  (`server/src/cli/table-diagrams.ts`); then `npm run diagrams` in
+  `server/` writes its area's page in `docs/tables/` (ADR-086). The check
+  `scripts/verify.sh` runs fails on a table in no area, or a page that
+  is not what the schema gives.
 
 ## A new printed document
 
@@ -538,6 +543,23 @@ message, and the screen keys on the code, never on the words.
   and `api_updating` (ADR-081). `send()` marks the tab, reads the version
   file and lets `messageFor` word them as they render; a screen does
   nothing of its own for either.
+
+## Faults reported
+
+The error tracker hears of real faults only (ADR-084).
+
+- **A failure caught so the request or the job goes on,** and only
+  logged, also goes to `reportFault` from `server/src/common/faults/`,
+  with the error itself, never `String(error)`, beside its log line,
+  which stays. The seeds and `src/cli/` are left out.
+- **Never reported:** a refusal (any 4xx, a body the parser refuses
+  among them), a dropped connection, a newer build.
+- **In the browser,** a fault goes to `reportFault` from
+  `client/src/errors/report-fault.ts`; an `ApiError` never does, since
+  the server reported its own 500s and the rest are refusals.
+- **Ids only.** `server/src/common/faults/scrub.ts` is the one list of
+  what a report may carry; a field not on it is dropped, on the server
+  and on what the browser sends.
 - **With a code, the message still says what to do next, but names no
   control on the screen.** The screen, keyed on the code, adds the link or
   the words naming its own control, from the client's catalogue, so
@@ -779,7 +801,10 @@ failure needs reporting) and the cases built on it.
   back when there is a page to go back to, and Go home, and a reference to
   quote (the server's request id, or one made and logged). Three, since a
   broken page is left most often for the one before it, and it clears when
-  the address's path changes.
+  the address's path changes. Before sign-in, and around every page (the
+  session's read, the new-version check, the frame), the page stands alone
+  with Reload only, since Go home could lead back to what broke (#244).
+  Every crash is reported with its reference (ADR-084).
 - Tones: calm (info) for what is not there, amber for what is not yours,
   red only for a real failure.
 

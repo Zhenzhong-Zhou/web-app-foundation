@@ -111,8 +111,9 @@ done; a check older than a change of host, plan or region is stale.
 - **Health.** `/health` and `/health/ready` answer; the readiness probe
   checks the database.
 - **Being told.** An uptime check on `/api/health/ready` from outside, and
-  an error tracker for the server and the client (Open decisions, "The
-  operator"): absent is a finding, with that entry's trigger. GitHub's
+  the error tracker for the server and the client (ADR-084): the deploy
+  log's first lines saying "Error tracker on", and by hand one crash
+  page's reference found in Sentry (MC-4102). Off is a finding. GitHub's
   email for a failed workflow, backups above all, reaches someone who
   reads it (By hand).
 - **Jobs that run hourly** (licence reminders, deletions, the files purge,

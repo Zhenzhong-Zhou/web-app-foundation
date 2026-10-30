@@ -52,8 +52,9 @@ where a step must act on it.
 ### Verify ([engineering.md, "Commits"][commits]; `scripts/verify.sh`'s own header)
 
 - Before each commit, `scripts/verify.sh --docs` when it changes only
-  Markdown outside `client/`, and `scripts/`; `--quick` for anything
-  else, `client/` included, the Help guides with it. In full before a
+  Markdown outside `client/` and `docs/tables/`, and `scripts/`;
+  `--quick` for anything else, `client/` and `docs/tables/` included,
+  the Help guides with them. In full before a
   push.
 - When lint reformats a file, the change is committed as a fixup of that
   step's commit (`git commit --fixup=<hash>`, then `git rebase

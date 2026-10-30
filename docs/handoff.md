@@ -15,17 +15,20 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 30 October 2026:
 
-- **ADR-084, an error tracker** ([#287]): planned on 30 October,
-  [ADR-084](adr/0084-an-error-tracker.md) the first commit of branch
-  `adr-084-error-tracker`, its brief in `tmp/adr-084/brief.md`. Its
-  build starts after 18:46 UTC on 5 November, when the last of its
-  package updates is old enough (Dates, below).
+- **ADR-084, an error tracker** ([#287]): planned and built on 30
+  October, through step 16 of 21, on branch `adr-084-error-tracker`
+  (pushed), its brief in `tmp/adr-084/brief.md`. Step 17, the second
+  pass of updates, waits for 18:46 UTC on 5 November, when the last is
+  old enough (Dates, below); the reviews, the pull request and the
+  as-built follow. After the merge, by hand: the tracker set up as
+  [`render.md`, "The error tracker"](runbooks/render.md#the-error-tracker-adr-084)
+  says, and the planning skill packed from `main` and uploaded.
 - **The planning skill** ([ADR-088](adr/0088-planning-in-the-chat-as-a-skill.md))
   was uploaded on 30 October. The chat's container holds the copy at
   `/mnt/skills/plugins/plan-feature/`, read only and without `evals.md`;
-  each session compares it with `main`'s first. ADR-084's planning
-  walked `evals.md`'s prompts 1 and 2; 3 and 5 follow as it builds, and
-  4 only when a patch is refused. Prompt 2 found the issue command
+  each session compares it with `main`'s first. ADR-084's session
+  walked `evals.md`'s prompts 1, 2, 3 and 5; 4 waits for a patch that is
+  refused. Prompt 2 found the issue command
   printing no issue's text, so the skill's fix rides with ADR-084. The
   fixed skill is packed from `main` and uploaded once ADR-084 merges;
   until then v1 stays (ADR-088's amendment).
@@ -146,19 +149,19 @@ them:
    chat-side planning skill ([#318], ADR-088), a docs PR, its source
    kept in this repository (Bob, 29 October 2026): [#327], merged 29
    October; the skill uploaded on 30 October (above).
-4. **ADR-084, an error tracker** ([#287]): planned on 30 October
-   ([ADR-084](adr/0084-an-error-tracker.md)), built from 5 November, with
-   [#244] and [#266] riding along beside what follows, and the planning
-   skill's fix with a guard that packs it only from `main`. With
-   `typescript-eslint` 8.72.1 (old enough from 2 November), the Nest
-   packages at 12.3.x (from 3
-   November), `@aws-sdk/client-s3` 3.1160.0 (from 5 November) and the
-   eight #260 left (`@nestjs/cli`, `@nestjs/swagger`, `@nestjs/schematics`,
+4. **ADR-084, an error tracker** ([#287]): planned and built on 30
+   October ([ADR-084](adr/0084-an-error-tracker.md)), with [#244] and
+   [#266] riding along, the planning skill's fix with a guard that packs
+   it only from `main`, an `npm audit` step in CI ([#268]), the
+   database's size in the backup's summary ([#269]), and the per-area
+   table diagrams. Its step 17, not before 18:46 UTC on 5 November,
+   takes `typescript-eslint` 8.72.1, the Nest packages at 12.3.x,
+   `@aws-sdk/client-s3` 3.1160.0, `nodemailer` 10.3.1 and the eight #260
+   left (`@nestjs/cli`, `@nestjs/swagger`, `@nestjs/schematics`,
    `@formatjs/cli`, `react-intl`, `react-router-dom`, `@types/node`,
-   `dotenv-cli`; all by 4 November, 20:26 UTC), whose
-   `@nestjs/platform-express` depends on multer 2.5.0 itself, so the
-   multer override goes (ADR-019); an `npm audit` step in CI ([#268]), the database's size in the backup's
-   summary ([#269]), and the per-area table diagrams.
+   `dotenv-cli`), and moves the Sentry packages to 11.10.0;
+   `@nestjs/platform-express` 12.3.2 depends on multer 2.5.0 itself, so
+   the multer override goes (ADR-019).
 5. **ADR-085, low stock** ([#288]), with [#222] and [#256].
 6. **The fix-ups:** the Fix-ups milestone in batches by area, each
    writing its areas' rules files. First the flaky tests, [#183], [#232],

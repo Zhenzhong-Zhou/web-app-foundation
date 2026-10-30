@@ -47,8 +47,8 @@ use; the reasons are in the sections named.
      `RESEND_API_KEY`, `FILE_STORAGE` with the `FILES_*` settings for R2
      ("What runs where"), `REGISTRATION=invitation` and, optionally,
      `OPERATOR_EMAIL` ("Registration and organization invitations"),
-     and `CLIENT_IP_HEADER` with `RATE_LIMIT_MAX` ("Rate limits and the
-     client's address").
+     `CLIENT_IP_HEADER` with `RATE_LIMIT_MAX` ("Rate limits and the
+     client's address"), and `ERROR_TRACKER_DSN` ("The error tracker").
      No `VITE_` setting goes here: the API never reads one (step 3).
      `MAIL_FROM` names the product, `Panivo <the address it has now>`: its
      name is the sender an inbox shows, the one each invitation is signed
@@ -67,8 +67,10 @@ use; the reasons are in the sections named.
      `VITE_COPYRIGHT_HOLDER=Zhenzhong (Bob) Zhou`, the © line's holder,
      until a registered business's name replaces it; and `VITE_SITE_URL`,
      the site's own address (`https://web-app-foundation-client.onrender.com`),
-     which a shared link's picture needs in full. `.env.example` says what
-     each falls back to. They are read only when the site builds, so a
+     which a shared link's picture needs in full; and, for readable
+     browser traces, the source-map upload's three settings ("The error
+     tracker"). `.env.example` says what each `VITE_` setting falls back
+     to. They are read only when the site builds, so a
      change shows from the next deploy, and the three are set before the
      deploy that first reads them. **Every `VITE_` setting goes on the
      static site, never on the web service.** The two services'
@@ -616,6 +618,51 @@ two networks. A sign-in from that office at 14:14 Pacific, minutes
 after the setting was saved, recorded one of Render's proxies; the
 phone's, later, its own. MC-4001 across both networks also says whether
 the office's path was at fault.
+
+## The error tracker (ADR-084)
+
+Sentry's free Developer plan: one person, 5,000 errors a month, one
+project for both sides. The browser reports through the app's own
+`/api/errors`, so only the web service knows the project's address; the
+static site knows only how to upload source maps.
+
+- **On the web service: `ERROR_TRACKER_DSN`,** the project's address
+  (Sentry → the project → Settings → Client Keys). Unset, nothing starts
+  and nothing leaves. A badly formed one stops the server at startup,
+  naming the setting, never its value. `ERROR_TRACKER_ENVIRONMENT` is
+  optional; unset, reports name `NODE_ENV`'s value. The deploy log's
+  first lines say "Error tracker on: environment production, release
+  `<version>+<commit>`", or "Error tracker off", never the address.
+- **On the static site: `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and
+  `SENTRY_PROJECT`.** The token is an organization token, whose only
+  use is uploading source maps; the other two are the organization's and
+  the project's slugs. With them, each build uploads its hidden source
+  maps under the release, then deletes them, so the site serves none;
+  without them it builds as before. A failed upload is logged and never
+  fails the build. The token stays on the static site: never on the web
+  service, in GitHub or in `.env`.
+
+Set up after ADR-084's deploy, by hand, in this order:
+
+1. **Sentry:** sign up on the Developer plan, and choose the data
+   region, which cannot change later. Make one project.
+2. **Its settings:** Security & Privacy, with the Data Scrubber and its
+   default scrubbers on, and IP addresses not stored. Inbound Filters,
+   with browser extensions and legacy browsers filtered, and localhost
+   left in, so the development checks still show. Alerts: an email for
+   each new issue, and for each issue that comes back after being
+   resolved.
+3. **`ERROR_TRACKER_DSN` on the web service,** then Save and deploy; its
+   log's first lines say "Error tracker on".
+4. **The three on the static site,** then Actions → Deploy → Run
+   workflow.
+5. **From `server/`:** `npm run error-tracker:test --
+   https://web-app-foundation-client.onrender.com` prints 204 and an id,
+   and the report shows in Sentry (MC-4101). Again after each deploy
+   that changes the tracker's code.
+6. **On the live site:** MC-4102, a crash page's reference found in
+   Sentry, and MC-4105, a report's stack naming the files under `src/`
+   while `/assets/<chunk>.map` serves no map.
 
 ## Before real customers' data
 

@@ -61,7 +61,7 @@ Andrej Karpathy's observations on LLM coding pitfalls
   ([`docs/conventions.md`, Dependencies](docs/conventions.md#dependencies)).
 - **Before committing and pushing.** Before each commit,
   `scripts/verify.sh --docs` when it changes only `scripts/` and Markdown
-  outside `client/`, and `--quick` for anything else; `scripts/verify.sh`
+  outside `client/` and `docs/tables/`, and `--quick` for anything else; `scripts/verify.sh`
   in full before each push. It runs what CI runs, markdown included
   ([`docs/engineering.md`, Commits](docs/engineering.md#commits)).
 - **The API contract (ADR-068).** A response is a declared class in the

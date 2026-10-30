@@ -33,7 +33,10 @@
 #
 # Not run here, though CI runs it: npm run seed:demo, which would add a demo
 # organization to the dev database on every run. Run it after changing a
-# service the demo calls (engineering.md, Moving code).
+# service the demo calls (engineering.md, Moving code). Nor npm audit
+# (#268, ADR-084): it judges the registry's state that day, not the
+# change, and needs the network; CI runs it after each job's tests, and
+# every night.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
