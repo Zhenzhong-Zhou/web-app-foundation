@@ -21,14 +21,15 @@ upload.
 
 ## 2. The check before an ADR
 
-*Bob pastes `gh issue list` output for the areas asked for.*
+*Bob attaches `tmp/adr-NNN/check.txt`, written by the skill's block
+for the areas asked for.*
 
 - Fired, not fired and found while checking, each item naming its issue
   or ADR.
 - The Deferred lines, ADR-051's watch list and Open decisions are each
   said to be checked, with what they held.
-- Each `when-touched` issue in those areas is read whole, then taken or
-  left with a reason.
+- Each `when-touched` issue in those areas is read whole, its own text
+  as well as its comments, then taken or left with a reason.
 - Decisions numbered, options a, b and c, one recommended with its
   reason; no ADR drafted yet.
 
