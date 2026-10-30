@@ -106,3 +106,37 @@ describe('validateEnv, CLIENT_IP_HEADER', () => {
     ).toThrow(/CLIENT_IP_HEADER/);
   });
 });
+
+/**
+ * ADR-084: read by the error tracker's own parser, so an address it cannot
+ * read fails at boot, naming the setting, rather than a tracker said to be
+ * on that reaches nothing.
+ */
+describe('validateEnv, ERROR_TRACKER_DSN', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("takes a project's address, and counts empty as unset", () => {
+    const dsn = 'https://publickey@o1.ingest.example.invalid/42';
+
+    expect(
+      validateEnv({ ...REQUIRED, ERROR_TRACKER_DSN: dsn }).ERROR_TRACKER_DSN,
+    ).toBe(dsn);
+    expect(
+      validateEnv({ ...REQUIRED, ERROR_TRACKER_DSN: '' }).ERROR_TRACKER_DSN,
+    ).toBeUndefined();
+  });
+
+  it.each([
+    ['no key', 'https://o1.ingest.example.invalid/42'],
+    ['no project', 'https://publickey@o1.ingest.example.invalid'],
+    ['a project that is not a number', 'https://publickey@example.invalid/x'],
+    ['another protocol', 'ftp://publickey@o1.ingest.example.invalid/42'],
+  ])('refuses an address with %s, naming it', (_case, dsn) => {
+    // The SDK prints an address its pattern cannot read.
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    expect(() => validateEnv({ ...REQUIRED, ERROR_TRACKER_DSN: dsn })).toThrow(
+      /ERROR_TRACKER_DSN: the project's address/,
+    );
+  });
+});

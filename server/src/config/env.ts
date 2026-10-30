@@ -1,3 +1,4 @@
+import { makeDsn } from '@sentry/core';
 import { z } from 'zod';
 
 import { CALENDAR_DAY_INPUTS } from '../common/dto/calendar-day';
@@ -88,10 +89,18 @@ export const envSchema = z.object({
 
   // ADR-084: the error tracker's project address. Unset, nothing starts
   // and nothing leaves, as on a developer's machine and in CI; empty counts
-  // as unset. The deployment's name in the tracker, NODE_ENV when unset.
+  // as unset. Read by the SDK's own parser, so one it cannot read fails at
+  // boot rather than a tracker said to be on that reaches nothing. The
+  // deployment's name in the tracker, NODE_ENV when unset.
   ERROR_TRACKER_DSN: z.preprocess(
     (value) => (value === '' ? undefined : value),
-    z.url().optional(),
+    z
+      .string()
+      .refine(
+        (value) => makeDsn(value) !== undefined,
+        "the project's address as the tracker gives it: https://<key>@<host>/<project number>",
+      )
+      .optional(),
   ),
   ERROR_TRACKER_ENVIRONMENT: z.preprocess(
     (value) => (value === '' ? undefined : value),
