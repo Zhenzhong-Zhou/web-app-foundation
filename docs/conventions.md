@@ -1045,6 +1045,13 @@ names.
   taken at once, its publisher and diff looked at first; any other
   exception is Bob's, named in its commit message.
 - **A new tool or package** is pinned to a release at least 14 days old.
+- **A high advisory in what ships, with no fixed release yet,** fails
+  CI's audit (#268, ADR-084), and with it every deploy, a hotfix's too,
+  since the deploy follows CI on `main` (ADR-081). `npm audit` has no
+  list of findings to ignore, so: an override to a release that fixes
+  it, as above, where one exists; where none does, the audit's level
+  lowered to `critical` in `ci.yml`, in a commit of its own that names
+  the advisory, and raised back once a fixed release is taken.
 
 ## Production readiness
 
