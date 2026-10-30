@@ -136,11 +136,12 @@ const DEFINITION =
 /** A link's destination as written, unwrapped from its <…>. */
 const destinationOf = (match) => match[1].replace(/^<(.*)>$/, "$1");
 
-/** Every link's destination in a file, with the line it is on. */
-function linksIn(file) {
-  const text = withoutCode(
-    withoutBlocks(readFileSync(path.join(ROOT, file), "utf8")),
-  );
+/**
+ * Every link's destination in a Markdown text, with the line it is on;
+ * pack-chat-skill.mjs reads the chat's skill with it too.
+ */
+export function linksIn(markdown) {
+  const text = withoutCode(withoutBlocks(markdown));
   const found = [
     ...text.matchAll(INLINE_LINK),
     ...text.matchAll(DEFINITION),
@@ -298,7 +299,8 @@ function links(repository) {
   let toPaths = 0;
   let withinFile = 0;
   for (const file of markdown) {
-    for (const { line, target } of linksIn(file)) {
+    const text = readFileSync(path.join(ROOT, file), "utf8");
+    for (const { line, target } of linksIn(text)) {
       if (NOT_A_PATH.test(target)) continue;
       const reason = brokenBecause(file, target, repository);
       if (target.startsWith("#")) withinFile++;

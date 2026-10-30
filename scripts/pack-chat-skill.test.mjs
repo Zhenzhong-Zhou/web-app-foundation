@@ -66,6 +66,7 @@ test("links that lead to an uploaded file pass, and none in code is read", (t) =
       [
         "See [the format](reference/format.md#top), [a site](https://example.com),",
         "[the root](/SKILL.md) and `[code](missing.md)`.",
+        "[Spaced](<reference/a b.md>) and [bracketed](reference/x(1).md) too.",
         "",
         "```md",
         "[fenced](missing.md)",
@@ -76,6 +77,8 @@ test("links that lead to an uploaded file pass, and none in code is read", (t) =
       ].join("\n"),
     ),
     "reference/format.md": "Back to [the skill](../SKILL.md).\n",
+    "reference/a b.md": "Spaced.\n",
+    "reference/x(1).md": "Bracketed.\n",
   });
   assert.deepEqual(checkSkill(folder), []);
 });

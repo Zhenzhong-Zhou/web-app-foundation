@@ -16,22 +16,24 @@
  * characters, and a description of at most 1,024, each field on one
  * line; the name holds neither anthropic nor claude, and neither field an
  * XML tag, as the Claude API's skills guide lists for an upload; and
- * every relative link in the skill's Markdown, outside code,
- * leads to a file it uploads. evals.md is not uploaded, so a link to it
- * fails too. Each failure is printed as `file: reason`, and it exits 1.
+ * every relative link in the skill's Markdown, read as check-docs.mjs
+ * reads links, leads to a file it uploads. evals.md is not uploaded, so a
+ * link to it fails too. Each failure is printed as `file: reason`, and it exits 1.
  *
  * The pack: tmp/plan-feature.zip, written fresh by the system's zip, run
  * from .claude/chat-skills/ so plan-feature/ is the archive's root, with
  * every file but evals.md. Upload it in claude.ai under Settings →
  * Capabilities → Skills, in place of the old one, then walk evals.md.
  *
- * Node's own modules only. Its test, in pack-chat-skill.test.mjs, checks
+ * Node's own modules only, with check-docs.mjs's. Its test, in pack-chat-skill.test.mjs, checks
  * the skill itself: `node --test scripts/`.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { linksIn } from "./check-docs.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SKILLS = path.join(ROOT, ".claude/chat-skills");
@@ -74,15 +76,6 @@ function frontMatter(text) {
   }
   return fields;
 }
-
-/** The text without its fenced code and code spans, where no link is. */
-const prose = (text) =>
-  text
-    .replace(/^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?^ {0,3}\1[ \t]*$/gm, "")
-    .replace(/(`+)[\s\S]*?\1/g, "");
-
-/** Each inline link's destination, and each reference definition's. */
-const LINK = /\]\(\s*<?([^\s<>()]+)|^ {0,3}\[[^\]^][^\]]*\]:\s*<?([^\s<>]+)/gm;
 
 /** The words an upload refuses in a name. */
 const RESERVED = /anthropic|claude/i;
@@ -148,9 +141,8 @@ export function checkSkill(folder) {
   }
 
   for (const file of files.filter((file) => file.endsWith(".md"))) {
-    const text = prose(readFileSync(path.join(folder, file), "utf8"));
-    for (const match of text.matchAll(LINK)) {
-      const target = match[1] ?? match[2];
+    const text = readFileSync(path.join(folder, file), "utf8");
+    for (const { target } of linksIn(text)) {
       if (NOT_RELATIVE.test(target)) continue;
       let linked = target.replace(/[?#].*$/, "");
       if (!linked) continue;
