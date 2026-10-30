@@ -68,6 +68,30 @@ jobs:
       - run: npm ci
         working-directory: client
 
+      # The audit (ADR-084, #268), right after the install. It fails on a
+      # high finding in what ships, --omit=dev leaving out the tools that
+      # build and test it, whose findings are often fixable only by a major
+      # version. Run nightly too, so an advisory published against
+      # main fails the next morning's run with no change of code. In CI
+      # only, not in scripts/verify.sh: it judges the registry's advisories
+      # that day, not the change, and would fail every verify offline.
+      - name: Audit what ships
+        run: npm audit --omit=dev --audit-level=high
+        working-directory: client
+
+      # Every finding, the tools' included, printed for whoever reads the
+      # run and never failing it: Dependabot raises them as pull requests.
+      - name: Audit everything, printed
+        run: npm audit || true
+        working-directory: client
+
+      # The registry's signature, and any provenance attestation, on every
+      # package npm ci installed: one altered after the registry signed it
+      # fails here.
+      - name: Check the registry's signatures
+        run: npm audit signatures
+        working-directory: client
+
       # lint:ci, not lint: the local script runs eslint --fix and prettier
       # --write, which in CI rewrites files and then reports success — a
       # failing lint becoming a silent pass.
@@ -165,6 +189,19 @@ jobs:
           ENVFILE
 
       - run: npm ci
+        working-directory: server
+
+      # The client job's three audit steps, for what the API runs.
+      - name: Audit what ships
+        run: npm audit --omit=dev --audit-level=high
+        working-directory: server
+
+      - name: Audit everything, printed
+        run: npm audit || true
+        working-directory: server
+
+      - name: Check the registry's signatures
+        run: npm audit signatures
         working-directory: server
 
       - run: npm run lint:ci
