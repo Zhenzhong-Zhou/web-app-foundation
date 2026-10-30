@@ -5,6 +5,7 @@ import sharp from 'sharp';
 
 import { addDays, dayIn, todayIn } from '../src/common/today';
 import type { Env } from '../src/config/env';
+import { AuditService } from '../src/core/audit/audit.service';
 import {
   AccountDeletionService,
   deletionDayFor,
@@ -1392,6 +1393,34 @@ describe('Invitations (e2e)', () => {
         'account.email_verified',
         'account.invitation_accepted',
       ]);
+    });
+
+    describe('an acceptance whose entry cannot be written', () => {
+      const faults = new RecordingTracker();
+      afterEach(() => faults.stop());
+
+      it('is reported naming the new member and the organization (ADR-084)', async () => {
+        const alpha = await organization('alpha');
+        await invite(alpha, 'sam@example.com');
+        faults.start();
+        vi.spyOn(app.get(AuditService), 'record').mockRejectedValueOnce(
+          new Error('canceling statement due to lock timeout'),
+        );
+
+        const { user } = body<Accepted>(
+          await acceptNew(invitationToken(app, 'sam@example.com')).expect(200),
+        );
+
+        const sent = await faults.sent();
+        expect(sent).toHaveLength(1);
+        expect(sent[0]).toMatchObject({
+          tags: {
+            failed: 'an audit write',
+            organization: alpha.organizationId,
+          },
+          user: { id: user.id },
+        });
+      });
     });
   });
 

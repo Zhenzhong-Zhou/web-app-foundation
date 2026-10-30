@@ -512,11 +512,11 @@ export class InvitationAcceptanceService {
       await this.events.record(userId, 'account.email_verified', meta);
     }
 
-    try {
-      await runInTenantContext(
-        { userId, organizationId: invitation.organizationId },
-        () =>
-          this.audit.record({
+    await runInTenantContext(
+      { userId, organizationId: invitation.organizationId },
+      async () => {
+        try {
+          await this.audit.record({
             actorId: userId,
             action: AUDIT_ACTIONS.INVITATION_ACCEPTED,
             resourceType: 'invitation',
@@ -524,12 +524,15 @@ export class InvitationAcceptanceService {
             payload: { roleIds: invitation.roleIds },
             ip: meta.ip,
             userAgent: meta.userAgent,
-          }),
-      );
-    } catch (error) {
-      this.logger.error(`Audit write failed: ${String(error)}`);
-      reportFault(error, { failed: 'an audit write' });
-    }
+          });
+        } catch (error) {
+          this.logger.error(`Audit write failed: ${String(error)}`);
+          // Inside the context, so the report names the new member and
+          // the organization (ADR-084).
+          reportFault(error, { failed: 'an audit write' });
+        }
+      },
+    );
   }
 
   /**
