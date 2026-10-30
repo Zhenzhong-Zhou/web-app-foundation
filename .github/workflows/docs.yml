@@ -55,3 +55,8 @@ jobs:
       # (ADR-086), and the rules files, with a notice that never fails
       # (ADR-087). Node and git, nothing to install.
       - run: node scripts/check-docs.mjs
+
+      # The chat's planning skill, checked as claude.ai checks an upload
+      # (ADR-088). Its test runs in ci.yml, which skips a change of
+      # Markdown alone, as a change of the skill often is. Node and git.
+      - run: node scripts/pack-chat-skill.mjs --check

@@ -4,7 +4,7 @@
  * packed for it (ADR-088).
  *
  *     node scripts/pack-chat-skill.mjs            # checks, then writes tmp/plan-feature.zip
- *     node scripts/pack-chat-skill.mjs --check    # checks only
+ *     node scripts/pack-chat-skill.mjs --check    # checks only, as the Docs workflow does
  *
  * The skill is .claude/chat-skills/plan-feature/, its files the ones git
  * tracks or would track there, so what is packed is what main's copy
