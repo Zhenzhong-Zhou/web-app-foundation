@@ -334,7 +334,8 @@ backup scripts or workflows. The steps are in `docs/runbooks/restore.md`.
 
 - **MC-1301** Actions → Backup: last night's run is green, and the backup
   it made is in the destination (an artifact, or the bucket), with its
-  `.sha256`.
+  `.sha256`. The run's summary gives the dump's size and the database's,
+  each readable (`2115 kB`, `30 MB`), never `not read`.
 - **MC-1302** Actions → Restore drill: the last run is green, and its
   summary shows the organizations restored and how long it took, under 4
   hours (ADR-053's RTO); with `s3`, its step "Check every file has
@@ -3982,3 +3983,5 @@ first.
   frame, through the app's route: MC-R65 extended.
 - 2026-10-30: ADR-084, the browser's traces readable from source maps
   uploaded at the build and never published: MC-4105.
+- 2026-10-30: #269, the backup run's summary giving the dump's size and
+  the database's: MC-1301 extended.

@@ -18,9 +18,10 @@
 #   BACKUP_BUCKET, BACKUP_S3_REGION, BACKUP_S3_ENDPOINT,
 #   BACKUP_S3_ACCESS_KEY_ID, BACKUP_S3_SECRET_ACCESS_KEY      for s3
 #
-# Prints the backup's path (local) or key (s3) on the last line. Exits non-zero
-# on any failure, so a scheduler sees it: a failed pg_dump never leaves an
-# encrypted empty file behind looking like a backup.
+# Prints the backup's path (local) or key (s3) on the last line, and, in
+# GitHub Actions, writes the dump's size and the database's to the run's
+# summary. Exits non-zero on any failure, so a scheduler sees it: a failed
+# pg_dump never leaves an encrypted empty file behind looking like a backup.
 
 set -euo pipefail
 source "$(dirname "$0")/lib-backup.sh"
@@ -32,6 +33,7 @@ require_env BACKUP_DATABASE_URL BACKUP_AGE_RECIPIENT
   die "BACKUP_AGE_RECIPIENT must be an age public key (age1…), never the private key"
 
 require_pg_client pg_dump
+require_tool psql "It comes with pg_dump."
 require_tool age "macOS: brew install age. Ubuntu: apt install age."
 
 environment=${BACKUP_ENVIRONMENT:-production}
@@ -104,3 +106,26 @@ case $destination in
     die "BACKUP_DESTINATION must be local or s3, not $destination"
     ;;
 esac
+
+# The database's own size beside the dump's (#269): the dump is compressed,
+# and the host's storage limit counts the database. Read once the backup is
+# stored, so a size that cannot be read is a warning, never a lost backup.
+if sizes=$(PGSSLMODE=${BACKUP_PGSSLMODE:-require} \
+  psql "$BACKUP_DATABASE_URL" -XAt -F '|' -c \
+  "select pg_size_pretty(${bytes}::bigint), pg_size_pretty(pg_database_size(current_database()))"); then
+  dump_size=${sizes%|*} database_size=${sizes#*|}
+else
+  echo "::warning::The database's size could not be read; the backup is stored." >&2
+  dump_size="$bytes bytes" database_size="not read"
+fi
+note "The dump is $dump_size, the database $database_size"
+
+if [[ -n ${GITHUB_STEP_SUMMARY:-} ]]; then
+  {
+    echo "### Backup"
+    echo
+    echo "| Backup | Dump | Database |"
+    echo "|---|---|---|"
+    echo "| $name | $dump_size | $database_size |"
+  } >>"$GITHUB_STEP_SUMMARY"
+fi

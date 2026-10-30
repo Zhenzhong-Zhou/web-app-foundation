@@ -10,7 +10,7 @@ issue or a commit.** If one leaks, change it (sections 1 and 6).
 
 | What            | When                                                                                       | Where to look                                  |
 |-----------------|--------------------------------------------------------------------------------------------|------------------------------------------------|
-| Backup          | 10:00 UTC daily (3am Vancouver): the database, then the files                              | Actions → **Backup**                           |
+| Backup          | 10:00 UTC daily (3am Vancouver): the database, then the files                              | Actions → **Backup**, the run's summary        |
 | Freshness check | 16:30 UTC daily: fails if the newest backup is over 26 hours old                           | Actions → **Backup**                           |
 | Restore drill   | 11:00 UTC on the 1st: restores the newest backup, times it, checks every file has its copy | Actions → **Restore drill**, the run's summary |
 
