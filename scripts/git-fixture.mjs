@@ -1,8 +1,9 @@
 /**
  * A throwaway git repository, for the tests of scripts/ that run a script
  * in one: check-docs.mjs's (through check-docs-fixture.mjs), adr-index.mjs's,
- * i18n-review.mjs's, pack-chat-skill.mjs's and clean-local.sh's. Not a test
- * file, so node --test runs nothing here.
+ * i18n-review.mjs's, pack-chat-skill.mjs's and clean-local.sh's (through
+ * clean-local-fixture.mjs). Not a test file, so node --test runs nothing
+ * here.
  */
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
