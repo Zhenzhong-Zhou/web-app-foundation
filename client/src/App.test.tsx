@@ -1,13 +1,26 @@
 import { render, screen } from '@testing-library/react';
 import { delay, http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from './App';
 import { AuthProvider } from './auth/auth-provider';
+import { reportFault } from './errors/report-fault';
 import { apiError } from './test/handlers';
 import { server } from './test/setup';
 import { outdatedRefusal, serveVersion } from './test/version';
+
+/** A screen before sign-in broken in this build (#244); no other test here opens it. */
+vi.mock('./auth/forgot-password-page', () => ({
+  ForgotPasswordPage: () => {
+    throw new Error('Forgot your password broken in this build');
+  },
+}));
+
+vi.mock('./errors/report-fault', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./errors/report-fault')>()),
+  reportFault: vi.fn(),
+}));
 
 const renderApp = (at = '/', container?: HTMLElement) =>
   render(
@@ -112,6 +125,36 @@ it('shows its spinner while the session is read, once the mark is down', async (
   renderApp();
 
   expect(await screen.findByRole('progressbar')).toBeVisible();
+});
+
+/**
+ * A screen before sign-in that throws as it draws (#244): the crash page on
+ * its own, in their frame, reported as a signed-in page's is. It was React
+ * Router's default error page, in English, with the code's stack.
+ */
+it('shows the crash page before sign-in, with Reload and the reference it reports', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  vi.mocked(reportFault).mockClear();
+  server.use(http.get('/api/v1/auth/me', () => apiError(401, 'Not signed in')));
+  renderApp('/forgot-password');
+
+  const title = await screen.findByRole('heading', {
+    level: 1,
+    name: 'Something went wrong',
+  });
+  // In the frame of the screens before sign-in, with Reload alone: Go home
+  // would lead to Sign in.
+  expect(screen.getByRole('main')).toContainElement(title);
+  expect(screen.getByRole('button', { name: 'Reload' })).toBeVisible();
+  expect(screen.queryByRole('link', { name: 'Go home' })).toBeNull();
+
+  const reference = screen
+    .getByText(/^Reference:/)
+    .querySelector('code')?.textContent;
+  expect(reference).toEqual(expect.any(String));
+  expect(reportFault).toHaveBeenCalledExactlyOnceWith(expect.any(Error), {
+    reference,
+  });
 });
 
 /**

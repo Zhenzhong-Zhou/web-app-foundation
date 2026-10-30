@@ -1,6 +1,6 @@
 import { CircularProgress, Skeleton, Stack } from '@mui/material';
 import { type ComponentType, type ReactNode, Suspense } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 
 import { ForgotPasswordPage } from './auth/forgot-password-page';
 import { InvitationPage } from './auth/invitation-page';
@@ -9,6 +9,7 @@ import { RegisterPage } from './auth/register-page';
 import { ResetPasswordPage } from './auth/reset-password-page';
 import { useAuth } from './auth/use-auth';
 import { VerifyEmailPage } from './auth/verify-email-page';
+import { ErrorBoundary } from './components/error-boundary';
 import { NotFoundRoute } from './errors/not-found-page';
 import { OfflinePage } from './errors/offline-page';
 import { RevisionRefusalPage } from './errors/revision-refusal-page';
@@ -44,6 +45,21 @@ function Protected({ children }: { children: ReactNode }) {
 function AuthOnly({ children }: { children: ReactNode }) {
   const { session } = useAuth();
   return session ? <Navigate to="/" replace /> : children;
+}
+
+/**
+ * The screens before sign-in, and Page not found, in a boundary of their
+ * own (#244): one that throws as it draws shows the crash page on its own,
+ * in the product's frame, where it showed React Router's default error
+ * page. Cleared by the address's path, as the signed-in pages' is.
+ */
+function SignedOut() {
+  const location = useLocation();
+  return (
+    <ErrorBoundary resetKey={location.pathname} standalone>
+      <Outlet />
+    </ErrorBoundary>
+  );
 }
 
 /**
@@ -124,41 +140,50 @@ export default function App() {
 
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={
-          <AuthOnly>
-            <LoginPage />
-          </AuthOnly>
-        }
-      />
+      <Route element={<SignedOut />}>
+        <Route
+          path="/login"
+          element={
+            <AuthOnly>
+              <LoginPage />
+            </AuthOnly>
+          }
+        />
 
-      <Route
-        path="/register"
-        element={
-          <AuthOnly>
-            <RegisterPage />
-          </AuthOnly>
-        }
-      />
+        <Route
+          path="/register"
+          element={
+            <AuthOnly>
+              <RegisterPage />
+            </AuthOnly>
+          }
+        />
 
-      {/* Public by necessity, not by oversight: these are entered from a link
-          in an inbox (ADR-017). Verify is normally reached *while* signed in,
-          since registration signs you in and then mails you; reset is reached
-          while signed out by definition. Neither may sit behind Protected. */}
-      <Route path="/verify-email" element={<VerifyEmailPage />} />
-      {/* Signed in or out: whoever holds the link reads it (ADR-077). */}
-      <Route path="/invitation" element={<InvitationPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
+        {/* Public by necessity, not by oversight: these are entered from a
+            link in an inbox (ADR-017). Verify is normally reached *while*
+            signed in, since registration signs you in and then mails you;
+            reset is reached while signed out by definition. Neither may sit
+            behind Protected. */}
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        {/* Signed in or out: whoever holds the link reads it (ADR-077). */}
+        <Route path="/invitation" element={<InvitationPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-      <Route
-        path="/forgot-password"
-        element={
-          <AuthOnly>
-            <ForgotPasswordPage />
-          </AuthOnly>
-        }
-      />
+        <Route
+          path="/forgot-password"
+          element={
+            <AuthOnly>
+              <ForgotPasswordPage />
+            </AuthOnly>
+          }
+        />
+
+        {/* Outside both guards deliberately. Inside Protected, a signed-out
+            user following a bad link would sign in only to land on a 404 —
+            two steps to learn the link was wrong. Nothing leaks: every route
+            is readable in the bundle, and access is enforced server-side. */}
+        <Route path="*" element={<NotFoundRoute />} />
+      </Route>
 
       {/* Protected wraps the layout, not each child: one guard, and the
           header does not re-mount on navigation. */}
@@ -173,12 +198,6 @@ export default function App() {
           <Route key={path} path={path} element={split(page)} />
         ))}
       </Route>
-
-      {/* Outside both guards deliberately. Inside Protected, a signed-out
-          user following a bad link would sign in only to land on a 404 —
-          two steps to learn the link was wrong. Nothing leaks: every route
-          is readable in the bundle, and access is enforced server-side. */}
-      <Route path="*" element={<NotFoundRoute />} />
     </Routes>
   );
 }

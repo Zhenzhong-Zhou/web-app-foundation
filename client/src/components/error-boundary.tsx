@@ -18,6 +18,12 @@ interface Props {
    * rather than back to the same message.
    */
   resetKey?: string;
+  /**
+   * Before sign-in (#244): the status page on its own, in the product's
+   * frame, with Reload alone, since Go home leads to Sign in, which may be
+   * the page that broke.
+   */
+  standalone?: boolean;
 }
 
 interface State {
@@ -39,6 +45,9 @@ interface State {
  * It clears when resetKey changes, as react-error-boundary's resetKeys and
  * React Router's error pages do: without that, the failure outlived the
  * page that caused it, and every way out led back to it until a reload.
+ *
+ * One inside the layout, around the signed-in pages; one around the
+ * screens before sign-in, `standalone` (App.tsx).
  */
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null, reference: null };
@@ -70,24 +79,32 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     const { error, reference } = this.state;
+    const { standalone } = this.props;
     if (!error) return this.props.children;
 
     if (error instanceof ChunkLoadError && error.failure === 'offline') {
-      return <OfflinePage />;
+      return <OfflinePage standalone={standalone} />;
     }
     if (error instanceof ChunkLoadError && error.failure === 'newer') {
-      return <NewVersionPage />;
+      return <NewVersionPage standalone={standalone} />;
     }
-    return <Failure reference={reference} />;
+    return <Failure reference={reference} standalone={standalone} />;
   }
 }
 
-function Failure({ reference }: { reference: string | null }) {
+function Failure({
+  reference,
+  standalone = false,
+}: {
+  reference: string | null;
+  standalone?: boolean;
+}) {
   const intl = useIntl();
 
   return (
     <StatusPage
       kind="crash"
+      standalone={standalone}
       title={intl.formatMessage({
         id: 'components.errorBoundary.title',
         defaultMessage: 'Something went wrong',
@@ -98,19 +115,23 @@ function Failure({ reference }: { reference: string | null }) {
           'This page stopped working. Reloading usually fixes it. If it happens again, send the reference below.',
       })}
       actions={
-        <>
+        standalone ? (
           <Reload primary />
-          {/* Where they came from, when there is somewhere to go back to. */}
-          {window.history.length > 1 && (
-            <Button variant="outlined" onClick={() => window.history.back()}>
-              <FormattedMessage
-                id="components.errorBoundary.goBack"
-                defaultMessage="Go back"
-              />
-            </Button>
-          )}
-          <GoHome />
-        </>
+        ) : (
+          <>
+            <Reload primary />
+            {/* Where they came from, when there is somewhere to go back to. */}
+            {window.history.length > 1 && (
+              <Button variant="outlined" onClick={() => window.history.back()}>
+                <FormattedMessage
+                  id="components.errorBoundary.goBack"
+                  defaultMessage="Go back"
+                />
+              </Button>
+            )}
+            <GoHome />
+          </>
+        )
       }
       reference={
         reference && (

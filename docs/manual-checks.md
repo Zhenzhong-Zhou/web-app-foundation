@@ -2906,6 +2906,18 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R65** *(the crash page before sign-in, #244)* Signed out, make Sign
+  in crash (for a developer: throw in `LoginPage`'s render), then open
+  Create an account and follow its Sign in link. Something went wrong
+  shows on its own, as Sign in would: the product's name above it, the
+  language and text size at the top, the © line below, with Reload and a
+  reference to quote; never React Router's Unexpected Application Error!
+  or the code's stack. In 简体中文 it reads 出错了, with 重新加载. Reload
+  shows it again, the page still broken. The browser's Back shows Create
+  an account, not the message. With the tracker set up as section 41
+  says, one `POST /api/errors`, answered 204, and its event holds the
+  reference shown, with no user.
+
 - **MC-R64** *(a role deleted while it is being given, refused in words,
   #179)* Giving a role and deleting it at the same moment is too narrow to
   aim for by hand; the server's e2e tests hold it open, and the delete
@@ -3949,3 +3961,5 @@ first.
   crashed, MC-4103, a refusal, and MC-4104, a dropped connection.
 - 2026-10-30: ADR-084, a browser's report naming the person signed in
   and the organization by id: MC-4102 extended.
+- 2026-10-30: #244, the crash page before sign-in, in the product's
+  frame with Reload and a reference: MC-R65.
