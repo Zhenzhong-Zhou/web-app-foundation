@@ -10,10 +10,12 @@ import {
   httpContextIntegration,
   init,
   linkedErrorsIntegration,
+  setTag,
+  setUser,
 } from '@sentry/browser';
 
 import { BUILD } from '../version/build';
-import { isFault, MAX_REPORTS, type SendFault } from './report-fault';
+import { isFault, MAX_REPORTS, type Tracker } from './report-fault';
 
 /**
  * The project the browser's reports name: a stand-in on a host that cannot
@@ -32,12 +34,12 @@ export interface TrackerOptions {
  * report-fault.ts loads after the first screen has drawn. Reports go to
  * the app's own route, /api/errors, which relays them; they carry the
  * error, its stack, the release, the reference, the language, the browser
- * and the page's path, never its query, and none of the SDK's personal
- * data. Besides what reportFault hands it, the SDK's own handlers report
+ * and the page's path, never its query; while signed in, the person and the
+ * organization by id alone; and none of the SDK's personal data. Besides what reportFault hands it, the SDK's own handlers report
  * an error or a rejection no code caught. Each passes the same drops as
  * reportFault, comes from the app's own files, and is one of at most ten.
  */
-export function startTracker({ transport }: TrackerOptions = {}): SendFault {
+export function startTracker({ transport }: TrackerOptions = {}): Tracker {
   let sent = 0;
 
   init({
@@ -87,21 +89,29 @@ export function startTracker({ transport }: TrackerOptions = {}): SendFault {
     ...(transport ? { transport } : {}),
   });
 
-  return (error, { reference }) => {
-    captureException(error, reference ? { tags: { reference } } : undefined);
+  return {
+    send: (error, { reference }) => {
+      captureException(error, reference ? { tags: { reference } } : undefined);
+    },
+    reportAs: (who) => {
+      setUser(who && { id: who.userId });
+      setTag('organization', who?.organizationId ?? undefined);
+    },
   };
 }
 
 /**
  * The browser's half of ADR-084's scrubbing, which the server repeats
  * before relaying: the page's path without its query, which can hold a
- * search term; of the headers, only the browser's name; and the language.
+ * search term; of the headers, only the browser's name; of the person,
+ * only their id; and the language.
  */
 function scrubbed(event: ErrorEvent): ErrorEvent {
-  const { request } = event;
+  const { request, user } = event;
   const browser = request?.headers?.['User-Agent'];
   return {
     ...event,
+    user: user?.id ? { id: user.id } : undefined,
     request: request && {
       url: request.url && withoutQuery(request.url),
       headers: browser ? { 'User-Agent': browser } : undefined,

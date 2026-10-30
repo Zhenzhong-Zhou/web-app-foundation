@@ -8,8 +8,17 @@ export interface FaultContext {
   reference?: string | null;
 }
 
-/** Sends one fault: tracker.ts's, once its chunk has loaded. */
-export type SendFault = (error: unknown, context: FaultContext) => void;
+/** The person signed in and their organization, by id alone (ADR-084). */
+export interface ReportedAs {
+  userId: string;
+  organizationId: string | null;
+}
+
+/** tracker.ts's, once its chunk has loaded. */
+export interface Tracker {
+  send: (error: unknown, context: FaultContext) => void;
+  reportAs: (who: ReportedAs | null) => void;
+}
 
 /**
  * The most reports one page load sends (ADR-084), so one fault in a loop
@@ -17,9 +26,11 @@ export type SendFault = (error: unknown, context: FaultContext) => void;
  */
 export const MAX_REPORTS = 10;
 
-let send: SendFault | null = null;
+let tracker: Tracker | null = null;
 /** Faults before the tracker has loaded; null once it would not. */
 let held: [unknown, FaultContext][] | null = [];
+/** Whom the reports name: no one while signed out. */
+let reportedAs: ReportedAs | null = null;
 
 /**
  * Reports a fault to the error tracker (ADR-084), where it ends: the error
@@ -29,8 +40,18 @@ let held: [unknown, FaultContext][] | null = [];
  */
 export function reportFault(error: unknown, context: FaultContext = {}): void {
   if (!isFault(error)) return;
-  if (send) send(error, context);
+  if (tracker) tracker.send(error, context);
   else if (held && held.length < MAX_REPORTS) held.push([error, context]);
+}
+
+/**
+ * Names the person signed in and their organization on every report from
+ * now on, or no one: AuthProvider calls it as the session changes, so a
+ * sign-out clears both and a switch of organization replaces it.
+ */
+export function reportAs(who: ReportedAs | null): void {
+  reportedAs = who;
+  tracker?.reportAs(who);
 }
 
 /**
@@ -43,12 +64,13 @@ export async function startReporting(options?: TrackerOptions): Promise<void> {
   await firstScreenShown;
   try {
     const { startTracker } = await import('./tracker');
-    send = startTracker(options);
+    tracker = startTracker(options);
   } catch {
     held = null;
     return;
   }
-  for (const [error, context] of held ?? []) send(error, context);
+  tracker.reportAs(reportedAs);
+  for (const [error, context] of held ?? []) tracker.send(error, context);
   held = [];
 }
 

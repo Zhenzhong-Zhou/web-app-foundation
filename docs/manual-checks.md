@@ -2888,9 +2888,10 @@ site, after a deploy that changes the setting, the route or the relay.
   shows one `POST /api/errors`, answered 204, and nothing before the page
   first drew. Within a minute, `reference:<the reference>` in the
   project's Issues search opens one event: the error, tagged `side`
-  `browser`, release `<version>+dev`, its language, the browser, and the
-  page's address without `?search=Jane`; no name, email address or IP
-  address anywhere in it.
+  `browser`, release `<version>+dev`, its language, the browser, the
+  page's address without `?search=Jane`, the user by id alone and an
+  `organization` tag holding the organization's id; no name, email
+  address or IP address anywhere in it.
 - **MC-4103** *(ADR-084)* A refusal is not reported. Signed out, sign in
   with a wrong password: the refusal shows, Network shows no `POST
   /api/errors`, and no new event arrives.
@@ -3946,3 +3947,5 @@ first.
   report through the site.
 - 2026-10-30: ADR-084, the browser reporting its faults: MC-4102, a page
   crashed, MC-4103, a refusal, and MC-4104, a dropped connection.
+- 2026-10-30: ADR-084, a browser's report naming the person signed in
+  and the organization by id: MC-4102 extended.

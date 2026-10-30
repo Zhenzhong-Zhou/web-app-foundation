@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
+import { reportAs } from '../errors/report-fault';
 import { useLanguage } from '../i18n/use-language';
 import { api, ApiError, isRevisionRefusal } from '../lib/api';
 import { isLocale } from '../lib/locales';
@@ -159,6 +160,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // renders, before anything below asks what today is, as the language
   // provider passes the formatting locale.
   setOrganizationTimeZone(state.session?.organization?.timeZone ?? null);
+
+  // Whom the error tracker's reports name, by id alone (ADR-084), passed on
+  // the same way, so a fault below already carries them: signing out
+  // clears both, and a switch of organization replaces it.
+  reportAs(
+    state.session && {
+      userId: state.session.user.id,
+      organizationId: state.session.organization?.id ?? null,
+    },
+  );
 
   // The organization's look follows it the same way (ADR-060): the theme
   // reads it from here, and signing out returns the defaults.

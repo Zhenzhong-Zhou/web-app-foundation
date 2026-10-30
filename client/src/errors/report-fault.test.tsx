@@ -1,11 +1,17 @@
 import { createTransport, type Event, flush } from '@sentry/browser';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { AuthProvider } from '../auth/auth-provider';
+import { useAuth } from '../auth/use-auth';
 import { ErrorBoundary } from '../components/error-boundary';
 import { ApiError } from '../lib/api';
 import { removeLoadingMark } from '../lib/loading-mark';
+import { sessionFor } from '../test/render-with-auth';
+import { server } from '../test/setup';
 import { ChunkLoadError } from '../version/load-chunk';
 import { MAX_REPORTS, reportFault, startReporting } from './report-fault';
 import type { TrackerOptions } from './tracker';
@@ -54,6 +60,20 @@ function uncaught(error: unknown) {
   window.removeEventListener('error', quiet);
 }
 
+const USER = '0193a7c4-5b6d-7e8f-9a0b-1c2d3e4f5a6b';
+const ORGANIZATION = '0193a7c4-0000-7e8f-9a0b-1c2d3e4f5a6b';
+
+/** Sign out, as the account menu does once the session is read. */
+function SignOut() {
+  const { session, signedOut } = useAuth();
+  if (!session) return <p>Signed out</p>;
+  return (
+    <button type="button" onClick={signedOut}>
+      Sign out
+    </button>
+  );
+}
+
 const failed = (cause = 'Failed to fetch dynamically imported module') =>
   new TypeError(cause);
 
@@ -85,6 +105,38 @@ describe('the error tracker in the browser (ADR-084)', () => {
       tags: { side: 'browser', language: 'zh-Hans' },
     });
     expect(sent[0].user).toBeUndefined();
+  });
+
+  it('names the person and the organization by id while signed in, and neither after', async () => {
+    server.use(
+      http.get('/api/v1/auth/me', () =>
+        HttpResponse.json(
+          sessionFor({
+            user: { id: USER },
+            organization: { id: ORGANIZATION },
+          }),
+        ),
+      ),
+    );
+    render(
+      <AuthProvider>
+        <SignOut />
+      </AuthProvider>,
+    );
+
+    const signOut = await screen.findByRole('button', { name: 'Sign out' });
+    reportFault(own(new Error('Broken, signed in')));
+    await flush();
+    await userEvent.click(signOut);
+    expect(await screen.findByText('Signed out')).toBeInTheDocument();
+    reportFault(own(new Error('Broken, signed out')));
+    await flush();
+
+    expect(sent).toHaveLength(2);
+    expect(sent[0].user).toEqual({ id: USER });
+    expect(sent[0].tags).toMatchObject({ organization: ORGANIZATION });
+    expect(sent[1].user).toBeUndefined();
+    expect(sent[1].tags).not.toHaveProperty('organization');
   });
 
   it('sends one report for a render error, with the reference the page shows', async () => {
