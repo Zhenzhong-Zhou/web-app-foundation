@@ -160,18 +160,32 @@ function withoutQuery(url: string): string {
  * IP addresses, queries, and the values a database error quotes. A name or
  * a postal address in free text has no shape to find, so it is kept out
  * where the text is written: a catch site reports the error itself, whose
- * message the code wrote (ADR-084).
+ * message the code wrote (ADR-084). At most MAX_TEXT of it is kept, cut
+ * after the rules have run, so a cut never leaves half an email behind.
  */
 export function scrubText(text: string): string {
-  return TEXT_RULES.reduce(
-    (scrubbed, [pattern, replacement]) =>
-      scrubbed.replace(pattern, replacement),
+  const scrubbed = TEXT_RULES.reduce(
+    (scrubbing, [pattern, replacement]) =>
+      scrubbing.replace(pattern, replacement),
     text,
   );
+  return scrubbed.length > MAX_TEXT
+    ? `${scrubbed.slice(0, MAX_TEXT)}…`
+    : scrubbed;
 }
 
+/** A message's most, in characters: its start is what reads it. */
+const MAX_TEXT = 8 * 1024;
+
+/**
+ * Each rule takes time in step with the text's length, as the route takes
+ * up to 200 KB from anyone: a match starts only where one can, and never
+ * reads on past where the next one starts. Retried from every position, a
+ * pattern took seconds on one long word (scrub.spec.ts).
+ */
 const TEXT_RULES: [RegExp, string][] = [
-  [/[^\s@"'<>()]+@[^\s@"'<>()]+\.[^\s@"'<>()]+/g, '[email]'],
+  // Only where a run of an address's characters starts.
+  [/(?<![^\s@"'<>()])[^\s@"'<>()]+@[^\s@"'<>()]+\.[^\s@"'<>()]+/g, '[email]'],
   // An address's query, from its ? to the next space or quote; a ? that
   // ends a question has no = after it.
   [/\?[^\s"'?]*=[^\s"']*/g, ''],
@@ -188,8 +202,12 @@ const TEXT_RULES: [RegExp, string][] = [
   //   after its own word, stays.
   [/(: |\bvalue |\bnear )"[^"]*"/g, '$1"[value]"'],
   // Its detail, when a driver puts it in the message: Key (email)=(…).
-  [/\bKey \((.+?)\)=\(.*\)/g, 'Key ($1)=([value])'],
-  [/\bFailing row contains \(.*\)/g, 'Failing row contains ([value])'],
+  // Its columns end before the next detail starts.
+  [/\bKey \(((?:(?!Key \().)+?)\)=\(.*\)/g, 'Key ($1)=([value])'],
+  [
+    /\bFailing row contains \((?:(?!Failing row contains \().)*\)/g,
+    'Failing row contains ([value])',
+  ],
   // Drizzle's "Failed query: …" names its parameters' values after "params:".
   [/\bparams: .*/g, 'params: [value]'],
 ];

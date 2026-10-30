@@ -175,4 +175,30 @@ describe('scrubText', () => {
       scrubText('from 2001:0db8:0000:0000:0000:ff00:0042:8329 and ::1'),
     ).toBe('from [ip] and [ip]');
   });
+
+  // A report is up to 200 KB from anyone: each rule's worst case, where a
+  // pattern retried from every position took up to 30 s.
+  it.each([
+    ['one long word', 'a'],
+    ['words joined by @', 'a@'],
+    ['a key’s detail never closed', 'Key ('],
+    ['a failing row never closed', 'Failing row contains ('],
+  ])('scrubs 200 KB of %s in under 100 ms', (_case, unit) => {
+    const text = unit.repeat(Math.ceil((200 * 1024) / unit.length));
+
+    const started = performance.now();
+    scrubText(text);
+
+    expect(performance.now() - started).toBeLessThan(100);
+  });
+
+  it('keeps 8 KB of a message, never half of an email at the cut', () => {
+    // Cut first, "wang.fang@exam" would stay: no address to find.
+    const scrubbed = scrubText(
+      `${'a '.repeat(4089)}wang.fang@example.com${' b'.repeat(100)}`,
+    );
+
+    expect(scrubbed).toHaveLength(8 * 1024 + 1);
+    expect(scrubbed).not.toContain('wang');
+  });
 });

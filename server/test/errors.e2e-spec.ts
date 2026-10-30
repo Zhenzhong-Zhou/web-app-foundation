@@ -270,6 +270,8 @@ describe('Error reports (e2e)', () => {
 
   it('sends nothing while the setting is unset, and still answers 204', async () => {
     await report(unset, envelope(event())).expect(204);
+    // Nor parses what it would not send.
+    await report(unset, 'hello').expect(204);
     expect(received).toEqual([]);
   });
 

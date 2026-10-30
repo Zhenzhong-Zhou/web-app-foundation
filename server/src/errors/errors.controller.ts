@@ -10,7 +10,7 @@ import type { Request } from 'express';
 
 import { Public } from '../core/auth/public.decorator';
 import { ErrorsService } from './errors.service';
-import { eventOf, readReport } from './report-body';
+import { readReport } from './report-body';
 
 /**
  * The browser's error reports (ADR-084), posted to the site's /api/errors.
@@ -31,6 +31,6 @@ export class ErrorsController {
   @Post()
   @HttpCode(HttpStatus.NO_CONTENT)
   async report(@Req() request: Request): Promise<void> {
-    await this.errors.relay(eventOf(await readReport(request)));
+    await this.errors.relay(await readReport(request));
   }
 }

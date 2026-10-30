@@ -9,7 +9,8 @@ import {
   serializeEnvelope,
   uuid4,
 } from '@sentry/core';
-import type { Event } from '@sentry/node';
+
+import { eventOf } from './report-body';
 
 /**
  * Where the browser's reports go, the project ERROR_TRACKER_DSN names or
@@ -42,12 +43,15 @@ export class ErrorsService {
   }
 
   /**
-   * Sends one scrubbed event on, filed under this deployment, which only
-   * the server knows; nothing while the setting is unset. A failure is a
-   * warning, never a report, which would loop.
+   * Sends the report's event on, scrubbed, filed under this deployment,
+   * which only the server knows. While the setting is unset, nothing: the
+   * report is not even parsed. A failure is a warning, never a report,
+   * which would loop.
    */
-  async relay(event: Event | undefined): Promise<void> {
-    if (!event || !this.project) return;
+  async relay(report: Uint8Array): Promise<void> {
+    if (!this.project) return;
+    const event = eventOf(report);
+    if (!event) return;
 
     const envelope = createEnvelope<EventEnvelope>(
       {
