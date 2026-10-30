@@ -2,6 +2,7 @@ import { BadRequestException, PayloadTooLargeException } from '@nestjs/common';
 import { parseEnvelope } from '@sentry/core';
 import type { Event } from '@sentry/node';
 import type { Request } from 'express';
+import getRawBody from 'raw-body';
 
 import { scrubEvent } from '../common/faults/scrub';
 import { t } from '../i18n/translate';
@@ -12,32 +13,22 @@ const MAX_BYTES = 200 * 1024;
 /**
  * A report's body, read here for this route alone: the app's parsers take
  * JSON and forms, and the tracker's SDK sends text. Past 200 KB, 413 at
- * once, as declared or as it arrives, and Node discards the rest. A JSON or
- * form body, which those parsers have read already, and one cut short, are
- * no report.
+ * once, as declared or as it arrives, and the rest is read and thrown away.
+ * A JSON or form body, which those parsers have read already, and one cut
+ * short or not the length it declared, are no report.
  */
-export function readReport(request: Request): Promise<Buffer> {
-  if (request.readableEnded) return Promise.reject(unreadable());
-  if (Number(request.headers['content-length']) > MAX_BYTES) {
-    return Promise.reject(tooLarge());
+export async function readReport(request: Request): Promise<Buffer> {
+  try {
+    return await getRawBody(request, {
+      length: request.headers['content-length'],
+      limit: MAX_BYTES,
+    });
+  } catch (error) {
+    request.resume();
+    throw (error as { type?: string }).type === 'entity.too.large'
+      ? tooLarge()
+      : unreadable();
   }
-
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    let size = 0;
-    const take = (chunk: Buffer) => {
-      size += chunk.length;
-      if (size <= MAX_BYTES) {
-        chunks.push(chunk);
-        return;
-      }
-      request.off('data', take);
-      reject(tooLarge());
-    };
-    request.on('data', take);
-    request.on('end', () => resolve(Buffer.concat(chunks)));
-    request.on('error', () => reject(unreadable()));
-  });
 }
 
 /**
