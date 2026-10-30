@@ -4,7 +4,6 @@ import {
   type ErrorInfo,
   type ReactNode,
   useEffect,
-  useRef,
   useState,
 } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
@@ -124,12 +123,10 @@ const NO_SESSION: AuthState = {
 export function RouteCrash() {
   const error = useRouteError();
   const [reference] = useState(() => referenceFor(error));
-  // Once, though StrictMode runs an effect twice in development.
-  const reported = useRef(false);
 
+  // Twice under StrictMode in development, where the tracker drops the
+  // second report of the same error.
   useEffect(() => {
-    if (reported.current) return;
-    reported.current = true;
     console.error(`Render error (reference ${reference}):`, error);
     reportFault(error, { reference });
   }, [error, reference]);
