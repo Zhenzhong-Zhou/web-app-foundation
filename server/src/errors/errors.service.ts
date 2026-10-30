@@ -10,6 +10,7 @@ import {
   uuid4,
 } from '@sentry/core';
 
+import type { RequestContext } from '../core/auth/request-context';
 import { eventOf } from './report-body';
 
 /**
@@ -44,11 +45,16 @@ export class ErrorsService {
 
   /**
    * Sends the report's event on, scrubbed, filed under this deployment,
-   * which only the server knows. While the setting is unset, nothing: the
-   * report is not even parsed. A failure is a warning, never a report,
-   * which would loop.
+   * which only the server knows, and under the person and organization the
+   * request's own session names, by id: never what the browser says of
+   * either, nor of which side it came from, since anyone may post here.
+   * While the setting is unset, nothing: the report is not even parsed. A
+   * failure is a warning, never a report, which would loop.
    */
-  async relay(report: Uint8Array): Promise<void> {
+  async relay(
+    report: Uint8Array,
+    who?: Pick<RequestContext, 'userId' | 'organizationId'>,
+  ): Promise<void> {
     if (!this.project) return;
     const event = eventOf(report);
     if (!event) return;
@@ -62,7 +68,16 @@ export class ErrorsService {
       [
         [
           { type: 'event' },
-          { ...event, environment: this.tracker.environment },
+          {
+            ...event,
+            environment: this.tracker.environment,
+            user: who && { id: who.userId },
+            tags: {
+              ...event.tags,
+              side: 'browser',
+              organization: who?.organizationId ?? undefined,
+            },
+          },
         ],
       ],
     );

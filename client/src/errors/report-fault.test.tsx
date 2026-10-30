@@ -6,7 +6,6 @@ import {
   getCurrentScope,
 } from '@sentry/browser';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -76,15 +75,10 @@ function rejected(reason: unknown) {
 const USER = '0193a7c4-5b6d-7e8f-9a0b-1c2d3e4f5a6b';
 const ORGANIZATION = '0193a7c4-0000-7e8f-9a0b-1c2d3e4f5a6b';
 
-/** Sign out, as the account menu does once the session is read. */
-function SignOut() {
-  const { session, signedOut } = useAuth();
-  if (!session) return <p>Signed out</p>;
-  return (
-    <button type="button" onClick={signedOut}>
-      Sign out
-    </button>
-  );
+/** Says so once the session is read. */
+function SignedIn() {
+  const { session } = useAuth();
+  return session ? <p>Signed in</p> : null;
 }
 
 const failed = (cause = 'Failed to fetch dynamically imported module') =>
@@ -120,7 +114,9 @@ describe('the error tracker in the browser (ADR-084)', () => {
     expect(sent[0].user).toBeUndefined();
   });
 
-  it('names the person and the organization by id while signed in, and neither after', async () => {
+  // The server names them, from the session it reads, and drops what a
+  // browser says of either, since anyone may post a report.
+  it('names neither the person nor the organization, even signed in', async () => {
     server.use(
       http.get('/api/v1/auth/me', () =>
         HttpResponse.json(
@@ -133,23 +129,17 @@ describe('the error tracker in the browser (ADR-084)', () => {
     );
     render(
       <AuthProvider>
-        <SignOut />
+        <SignedIn />
       </AuthProvider>,
     );
 
-    const signOut = await screen.findByRole('button', { name: 'Sign out' });
+    await screen.findByText('Signed in');
     reportFault(own(new Error('Broken, signed in')));
     await flush();
-    await userEvent.click(signOut);
-    expect(await screen.findByText('Signed out')).toBeInTheDocument();
-    reportFault(own(new Error('Broken, signed out')));
-    await flush();
 
-    expect(sent).toHaveLength(2);
-    expect(sent[0].user).toEqual({ id: USER });
-    expect(sent[0].tags).toMatchObject({ organization: ORGANIZATION });
-    expect(sent[1].user).toBeUndefined();
-    expect(sent[1].tags).not.toHaveProperty('organization');
+    expect(sent).toHaveLength(1);
+    expect(sent[0].user).toBeUndefined();
+    expect(sent[0].tags).not.toHaveProperty('organization');
   });
 
   it('sends one report for a render error, with the reference the page shows', async () => {

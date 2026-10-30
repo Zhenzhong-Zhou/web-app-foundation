@@ -10,6 +10,7 @@ import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 
 import { Public } from '../core/auth/public.decorator';
+import { getRequestContext } from '../core/auth/request-context';
 import { limit } from '../core/auth/throttle-limits';
 import { ErrorsService } from './errors.service';
 import { readReport } from './report-body';
@@ -27,7 +28,8 @@ export class ErrorsController {
 
   /**
    * One report, as the tracker's SDK sends it: read after the guards, so a
-   * request they refuse is never read. 204 whether it was relayed or not.
+   * request they refuse is never read, and filed under whoever the session
+   * names, if anyone. 204 whether it was relayed or not.
    */
   @Post()
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -36,6 +38,9 @@ export class ErrorsController {
   // general limit would spend the tracker's 5,000 a month in an hour.
   @Throttle({ default: { limit: limit(10), ttl: 60_000 } })
   async report(@Req() request: Request): Promise<void> {
-    await this.errors.relay(await readReport(request));
+    await this.errors.relay(
+      await readReport(request),
+      getRequestContext(request),
+    );
   }
 }

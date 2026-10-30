@@ -10,8 +10,6 @@ import {
   httpContextIntegration,
   init,
   linkedErrorsIntegration,
-  setTag,
-  setUser,
 } from '@sentry/browser';
 
 import { BUILD } from '../version/build';
@@ -32,10 +30,11 @@ export interface TrackerOptions {
 /**
  * The error tracker in the browser (ADR-084), in a chunk of its own that
  * report-fault.ts loads after the first screen has drawn. Reports go to
- * the app's own route, /api/errors, which relays them; they carry the
+ * the app's own route, /api/errors, which relays them, adding the person
+ * and the organization by id from the session it reads; they carry the
  * error, its stack, the release, the reference, the language, the browser
- * and the page's path, never its query; while signed in, the person and the
- * organization by id alone; and none of the SDK's personal data. Besides what reportFault hands it, the SDK's own handlers report
+ * and the page's path, never its query, and none of the SDK's personal
+ * data. Besides what reportFault hands it, the SDK's own handlers report
  * an error or a rejection no code caught. Each passes the same drops as
  * reportFault, comes from the app's own files, and is one of at most ten.
  */
@@ -93,25 +92,21 @@ export function startTracker({ transport }: TrackerOptions = {}): Tracker {
     send: (error, { reference }) => {
       captureException(error, reference ? { tags: { reference } } : undefined);
     },
-    reportAs: (who) => {
-      setUser(who && { id: who.userId });
-      setTag('organization', who?.organizationId ?? undefined);
-    },
   };
 }
 
 /**
  * The browser's half of ADR-084's scrubbing, which the server repeats
  * before relaying: the page's path without its query, which can hold a
- * search term; of the headers, only the browser's name; of the person,
- * only their id; and the language.
+ * search term; of the headers, only the browser's name; no person, whom
+ * the server names; and the language.
  */
 function scrubbed(event: ErrorEvent): ErrorEvent {
-  const { request, user } = event;
+  const { request } = event;
   const browser = request?.headers?.['User-Agent'];
   return {
     ...event,
-    user: user?.id ? { id: user.id } : undefined,
+    user: undefined,
     request: request && {
       url: request.url && withoutQuery(request.url),
       headers: browser ? { 'User-Agent': browser } : undefined,

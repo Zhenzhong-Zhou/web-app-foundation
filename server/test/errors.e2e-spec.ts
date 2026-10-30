@@ -11,12 +11,17 @@ import {
   TRACKER_PROJECT,
   type TrackerProject,
 } from '../src/errors/errors.service';
+import { MailService } from '../src/shared/mail/mail.service';
 import {
   createTestApp,
   httpServer,
+  seedPermissions,
   unlimitedThrottler,
 } from './utils/create-test-app';
+import { registerOrganization } from './utils/fixtures';
+import { RecordingMailService } from './utils/recording-mail';
 import { RecordingTracker } from './utils/recording-tracker';
+import { resetDatabase } from './utils/reset-db';
 
 /** What the browser's envelope names: a stand-in, never the project. */
 const STAND_IN = 'https://public@errors.invalid/1';
@@ -82,7 +87,9 @@ describe('Error reports (e2e)', () => {
         .overrideProvider(TRACKER_PROJECT)
         .useValue(project)
         .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler),
+        .useValue(unlimitedThrottler)
+        .overrideProvider(MailService)
+        .useValue(new RecordingMailService()),
     );
   }
 
@@ -113,6 +120,7 @@ describe('Error reports (e2e)', () => {
       environment: 'staging',
     });
     unset = await appWith({ dsn: undefined, environment: 'test' });
+    await seedPermissions(app);
   });
 
   beforeEach(() => {
@@ -210,12 +218,47 @@ describe('Error reports (e2e)', () => {
     }
     const [[, payload]] = received[0].items;
     expect(payload).toMatchObject({
-      user: { id: '0b6f2a8e-6a1e-4c7a-9f53-2f1f4c8f5e11' },
       request: {
         url: 'https://app.example.com/orders',
         headers: { 'User-Agent': 'Firefox/140.0' },
       },
       breadcrumbs: [{ category: 'navigation', data: { to: '/orders/1' } }],
+    });
+  });
+
+  // Anyone may post here: a report naming a customer's organization, or
+  // passing for the server's own, is filed under the caller's session.
+  it('files a report under the person and organization the session names, never the browser’s', async () => {
+    await resetDatabase(app);
+    const claimed = envelope(
+      event({
+        user: { id: '0b6f2a8e-6a1e-4c7a-9f53-2f1f4c8f5e11' },
+        tags: {
+          side: 'server',
+          reference: 'a1b2c3d4',
+          organization: '0b6f2a8e-0000-4c7a-9f53-2f1f4c8f5e11',
+        },
+      }),
+    );
+    const owner = await registerOrganization(app, 'alpha');
+
+    await report(app, claimed).expect(204);
+    await owner.agent
+      .post('/errors')
+      .set('Content-Type', 'text/plain;charset=UTF-8')
+      .send(claimed)
+      .expect(204);
+
+    const [signedOut, signedIn] = received.map(
+      ({ items: [[, payload]] }) => payload as Event,
+    );
+    expect(signedOut.user).toBeUndefined();
+    expect(signedOut.tags).toEqual({ side: 'browser', reference: 'a1b2c3d4' });
+    expect(signedIn.user).toEqual({ id: owner.userId });
+    expect(signedIn.tags).toEqual({
+      side: 'browser',
+      reference: 'a1b2c3d4',
+      organization: owner.organizationId,
     });
   });
 
