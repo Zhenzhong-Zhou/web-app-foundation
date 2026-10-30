@@ -639,8 +639,10 @@ static site knows only how to upload source maps.
   the project's slugs. With them, each build uploads its hidden source
   maps under the release, then deletes them, so the site serves none;
   without them it builds as before. A failed upload is logged and never
-  fails the build. The token stays on the static site: never on the web
-  service, in GitHub or in `.env`.
+  fails the build. `NODE_ENV=development` never goes there: Sentry's
+  plugin then skips the upload, saying so only in its debug log. The
+  token stays on the static site: never on the web service, in GitHub or
+  in `.env`.
 
 Set up after ADR-084's deploy, by hand, in this order:
 
