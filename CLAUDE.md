@@ -135,7 +135,9 @@ Andrej Karpathy's observations on LLM coding pitfalls
   `tmp/triage.md`, then, with Bob's choices, writes the `gh` commands
   for him to run; only when typed.
 - `.claude/chat-skills/`: the chat's skill, `plan-feature`, uploaded to
-  claude.ai (ADR-088); Claude Code neither loads nor runs it.
+  claude.ai (ADR-088). Its uploaded copy also shows in Claude Code's
+  skill list, as `anthropic-skills:plan-feature`; it is the chat's alone,
+  so Claude Code never runs it.
 
 Every feature branch runs, for any PR that changes what a person sees,
 `/usability-walkthrough` as one of its personas
