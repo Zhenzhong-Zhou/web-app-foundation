@@ -33,7 +33,6 @@ require_env BACKUP_DATABASE_URL BACKUP_AGE_RECIPIENT
   die "BACKUP_AGE_RECIPIENT must be an age public key (age1…), never the private key"
 
 require_pg_client pg_dump
-require_tool psql "It comes with pg_dump."
 require_tool age "macOS: brew install age. Ubuntu: apt install age."
 
 environment=${BACKUP_ENVIRONMENT:-production}

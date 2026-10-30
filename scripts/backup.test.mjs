@@ -33,7 +33,9 @@ const UNREACHABLE = 'echo "psql: error: connection refused" >&2\nexit 2';
 
 /**
  * One local backup into a folder holding `previous`, when given, with psql
- * running `psql`. The run, with the summary it wrote and psql's arguments.
+ * running `psql`, or with no stand-in for it when `psql` is null and only
+ * the system's own folders after the stand-ins on the PATH. The run, with
+ * the summary it wrote and psql's arguments.
  */
 function backUp(t, { previous, psql = SIZES } = {}) {
   const bin = folder(t, "backup-bin");
@@ -47,7 +49,9 @@ function backUp(t, { previous, psql = SIZES } = {}) {
     '[ "$1" = --version ] && echo "pg_dump (PostgreSQL) 18.0" && exit 0\nhead -c 20000 /dev/zero',
   );
   standIn("age", "cat");
-  standIn("psql", `printf '%s\\n' "$@" > '${log}'\n${psql}`);
+  if (psql !== null) {
+    standIn("psql", `printf '%s\\n' "$@" > '${log}'\n${psql}`);
+  }
 
   const backups = folder(t, "backups");
   if (previous) write(backups, previous.file, "x".repeat(previous.bytes));
@@ -56,7 +60,10 @@ function backUp(t, { previous, psql = SIZES } = {}) {
     encoding: "utf8",
     env: {
       ...process.env,
-      PATH: `${bin}${path.delimiter}${process.env.PATH}`,
+      PATH: [
+        bin,
+        ...(psql === null ? ["/usr/bin", "/bin"] : [process.env.PATH]),
+      ].join(path.delimiter),
       BACKUP_DATABASE_URL: "postgresql://backup@localhost:5432/foundation",
       BACKUP_AGE_RECIPIENT: "age1test",
       BACKUP_ENVIRONMENT: "test",
@@ -102,6 +109,19 @@ test("the run's summary is one row: the backup's name, the dump's size and the d
   assert.match(
     run.psql,
     /^select pg_size_pretty\(20000::bigint\), pg_size_pretty\(pg_database_size\(current_database\(\)\)\)$/m,
+  );
+});
+
+// A Mac's system folders hold no psql. GitHub's Ubuntu runner's do, and
+// its psql finds no database to read, so the outcome is the same there.
+test("without psql, the backup is kept, the database's size 'not read'", (t) => {
+  const run = backUp(t, { psql: null });
+
+  assert.equal(run.status, 0, run.stderr);
+  assert.ok(existsSync(run.stdout.trimEnd()), run.stdout);
+  assert.equal(
+    run.summary,
+    table(`| ${nameOf(run)} | 20000 bytes | not read |`),
   );
 });
 
