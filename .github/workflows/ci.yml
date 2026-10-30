@@ -1,13 +1,19 @@
 name: CI
 
-# Docs-only changes skip CI: prose cannot break the build, and the suites
-# take minutes. A Markdown file anywhere counts as docs, except Help's
-# guides, which ship in the client and are checked with it (ADR-079): the
-# deploy follows CI on main (deploy.yml, ADR-081), so a guide changed
-# alone would otherwise never go live. And except the table diagrams in
-# docs/tables/, which the server's job checks against the schema
-# (ADR-086), so a page changed alone is checked too. A later pattern
-# overrides an earlier one.
+# Docs-only changes skip the suites: prose cannot break the build, and the
+# suites take minutes. A Markdown file anywhere counts as docs, except
+# Help's guides, which ship in the client and are checked with it
+# (ADR-079): the deploy follows CI on main (deploy.yml, ADR-081), so a
+# guide changed alone would otherwise never go live. And except the table
+# diagrams in docs/tables/, which the server's job checks against the
+# schema (ADR-086), so a page changed alone is checked too. A later
+# pattern overrides an earlier one.
+#
+# On main, the push's paths start no run for docs alone, so nothing
+# deploys. A pull request always starts one, and its first job, changes,
+# reads the same rule from the files (ADR-085): a run that never started
+# would leave the required check waiting, and only a bypass merged it.
+# claude-code-review.yml's paths are these too.
 on:
   push:
     branches: [main]
@@ -16,7 +22,6 @@ on:
     # labeled, so adding full-e2e to a pull request runs every browser on it
     # without another push.
     types: [opened, synchronize, reopened, labeled]
-    paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**', 'docs/tables/**']
   # Every browser nightly, so a WebKit, Firefox or iPhone regression from a
   # day of merges shows the next morning rather than at the next release.
   schedule:
@@ -33,7 +38,8 @@ on:
 # is checked and deployed (deploy.yml). Before tagging a release, its
 # commit's run must be there and green.
 # Adding any other label gets a group of its own, so it cannot cancel a run
-# in progress; its jobs are then skipped (each job's `if`).
+# in progress; its jobs are then skipped (the changes job's `if`, which
+# every other job needs).
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'full-e2e' && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -50,9 +56,54 @@ permissions:
   contents: read
 
 jobs:
+  # Whether the change holds code, by the rule at the top as a case: a
+  # file is code unless it is Markdown or under docs/, Help's guides and
+  # docs/tables/ excepted (ADR-085). Every other job needs it and runs only
+  # when it says code; skipped by that condition, a job's check reports as
+  # passed. Every event but a pull request is code: a push to main has
+  # passed the paths already, and the nightly and a run by hand test all.
+  changes:
+    name: Changes — code or docs only
+    if: github.event.action != 'labeled' || github.event.label.name == 'full-e2e'
+    runs-on: ubuntu-24.04
+    outputs:
+      code: ${{ steps.files.outputs.code }}
+    steps:
+      # A pull request checks out its merge into main. Two commits deep, so
+      # the merge's first parent, HEAD^1, is there: main as the change
+      # merges into it, which docs.yml compares with too.
+      - uses: actions/checkout@v7
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 2
+
+      # The list read into a variable first, so a failed git diff fails
+      # the step rather than reading as no code. --no-renames, so a file
+      # moved into docs/ counts where it came from as well.
+      - id: files
+        name: Code changed, or docs alone
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          code=true
+          if [ "$EVENT" = pull_request ]; then
+            files=$(git diff --name-only --no-renames HEAD^1 HEAD)
+            code=false
+            while IFS= read -r file; do
+              case "$file" in
+                client/src/help/guides/* | docs/tables/*) code=true ;;
+                docs/* | *.md) ;;
+                *) code=true ;;
+              esac
+            done <<< "$files"
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Code changed: $code"
+
   client:
     name: Client — lint, types, unit
-    if: github.event.action != 'labeled' || github.event.label.name == 'full-e2e'
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -120,7 +171,8 @@ jobs:
 
   server:
     name: Server — lint, build, integration
-    if: github.event.action != 'labeled' || github.event.label.name == 'full-e2e'
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
 
     services:
@@ -305,7 +357,8 @@ jobs:
   # the server's suites.
   against-main:
     name: Against main — API revision, migrations
-    if: github.event_name == 'pull_request' && (github.event.action != 'labeled' || github.event.label.name == 'full-e2e')
+    needs: changes
+    if: github.event_name == 'pull_request' && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       # A pull request checks out its merge into main. The merge's first
@@ -329,13 +382,15 @@ jobs:
       - name: New migrations leave the running release working
         run: scripts/check-migrations.sh HEAD^1
 
-  # Three machines, each a third of the suite (--shard). No `needs`: it
-  # starts beside the other two instead of after them, which took the
-  # longest path from about 10 minutes to the slowest of the three jobs.
-  # A lint failure still fails the run; the browsers just do not wait for it.
+  # Three machines, each a third of the suite (--shard). It needs only
+  # changes, seconds long, so it starts beside the other two instead of
+  # after them, which took the longest path from about 10 minutes to the
+  # slowest of the three jobs. A lint failure still fails the run; the
+  # browsers just do not wait for it.
   browser:
     name: Client — Playwright ${{ matrix.shard }}/3
-    if: github.event.action != 'labeled' || github.event.label.name == 'full-e2e'
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     # A shard takes 5 to 8 minutes with every browser. This ends one that
     # stalls long before GitHub's default of 6 hours, with room for Install
@@ -497,3 +552,30 @@ jobs:
           name: playwright-report-${{ matrix.shard }}
           path: client/playwright-report/
           retention-days: 7
+
+  # The one check main's ruleset requires (ADR-085): it fails when any job
+  # failed or was cancelled, and passes when each passed or was skipped by
+  # its condition, as on a docs-only pull request. Not each job by name: a
+  # matrix job skipped by its condition never expands its name, so the
+  # shards would report as one check named with the expression itself,
+  # and a required "Client — Playwright 1/3" would wait for ever.
+  all-jobs:
+    name: CI — all jobs
+    needs: [changes, client, server, against-main, browser]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: No job failed or was cancelled
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            case "$result" in
+              success | skipped) ;;
+              *)
+                echo "::error title=CI::A job ended $result: open it above."
+                exit 1
+                ;;
+            esac
+          done
+          echo "Every job passed or was skipped: $RESULTS"

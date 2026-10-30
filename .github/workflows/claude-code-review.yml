@@ -3,12 +3,10 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+    # Not for prose alone (ADR-085): the paths ci.yml's push takes, Markdown
+    # and docs/ left out, Help's guides and docs/tables/ kept, since both
+    # are checked as code. A docs-only pull request then starts no review.
+    paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**', 'docs/tables/**']
 
 jobs:
   claude-review:
@@ -26,10 +24,14 @@ jobs:
       id-token: write
 
     steps:
+      # Two commits deep, so the merge's first parent, HEAD^1, main as the
+      # change merges into it, is there for git diff (#253): a large pull
+      # request's diff read a path at a time, where gh pr diff gives it
+      # whole and the allowed tools cannot cut it up.
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
-          fetch-depth: 1
+          fetch-depth: 2
 
       - name: Run Claude Code Review
         id: claude-review
@@ -52,13 +54,18 @@ jobs:
             --allowedTools "mcp__github_inline_comment__create_inline_comment,
             Bash(gh issue view:*), Bash(gh search:*), Bash(gh issue list:*),
             Bash(gh pr comment:*), Bash(gh pr diff:*), Bash(gh pr view:*),
-            Bash(gh pr list:*)"
+            Bash(gh pr list:*), Bash(git diff:*)"
             --append-system-prompt "Review the pull request's diff as it
             stands now, and finish every step of the review in this run.
             Never wait for the pull request's checks, CI or other workflow
             runs, and never end by saying you will continue later: nothing
             returns to this run once it ends. Post the review, or say on the
-            pull request that there is nothing to flag, before ending."
+            pull request that there is nothing to flag, before ending. The
+            checkout is the pull request merged into main: for a diff too
+            large to read whole, list its files with git diff --name-only
+            HEAD^1 HEAD, then read each with git diff HEAD^1 HEAD -- and
+            the file's path, one command at a time, with no pipe or
+            redirect, which are refused."
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
 

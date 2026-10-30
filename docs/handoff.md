@@ -26,9 +26,12 @@ On 30 October 2026:
   each session compares it with `main`'s first. ADR-084's session
   walked `evals.md`'s prompts 1, 2, 3 and 5; 4 waits for a patch that is
   refused. Prompt 2 found the issue command
-  printing no issue's text, so the skill's fix rode with ADR-084. With
-  ADR-084 merged, the fixed skill is packed from `main` and uploaded
-  (Still to do, by hand).
+  printing no issue's text, so the skill's fix rode with ADR-084, and
+  the fixed skill was packed from `main` and uploaded again on 30
+  October, after [#329]. It differs from `main`'s copy only in the
+  quotes claude.ai's upload puts around its description, which
+  ADR-085's first commit adds to `main`'s, so the two match from its
+  merge with no upload.
 - **The triage** is done (28 October;
   [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
   every open issue has its group and area labels, the `fix-now` ones are
@@ -101,11 +104,8 @@ On 30 October 2026:
 
 ## Still to do, by hand
 
-- **After [#329]:** `scripts/prune-branches.sh --yes` and
-  `scripts/clean-local.sh` (a dry run, then `--yes`); on `main`, `node
-  scripts/pack-chat-skill.mjs`, `tmp/plan-feature.zip` uploaded in place
-  of v1, and `evals.md` walked in a new chat; Project knowledge
-  re-synced.
+- **After [#329]:** `evals.md` walked in a new chat, against the skill
+  uploaded on 30 October.
 - **On 31 October:** the web service's memory on Render's Metrics, a day
   with the tracker on; the review measured about 326 MiB at rest, of the
   free plan's 512 MB.
@@ -156,11 +156,23 @@ them:
 4. **ADR-084, an error tracker** ([#287]): [#329], merged 30 October,
    closing [#244], [#266], [#268] and [#269] beside [#287]; live and
    checked the same day.
-5. **ADR-085, low stock** ([#288]), with [#222] and [#256], starting
+5. **ADR-085, low stock** ([#288]), planned on 30 October: a reorder
+   point per item, bought or made, in Inventory's Reorder points,
+   against usable stock and what is on its way; Raise a purchase order
+   and Plan a run filled in; a Home card; and a bell once each time an
+   item falls below ([ADR-085](adr/0085-low-stock.md)). With [#222] and
+   [#256]; [#301], [#265], [#313], [#309] and [#296]'s availability
+   part; and [#276] first, since the card adds to `GET /home`. Starting
    with the updates ADR-084 left (Dates) and the multer override's
-   removal (ADR-019). Riding along: Claude Code Review skips docs-only
-   pull requests, by the paths rule `.github/workflows/ci.yml` uses (Bob,
-   30 October 2026).
+   removal (ADR-019).
+   Riding along in its first commit (Bob, 30 October 2026): Claude Code
+   Review skips docs-only pull requests, by the paths rule
+   `.github/workflows/ci.yml`'s push uses; CI's first job, `changes`,
+   with the other jobs skipped by their condition when only docs
+   changed, and a last job as the one required check, so docs pull
+   requests merge without the bypass; [#253]'s review read a path at a
+   time; and the planning skill's description quoted. After its merge,
+   by hand: `main`'s ruleset requires that last job alone.
 6. **The fix-ups:** the Fix-ups milestone in batches by area, each
    writing its areas' rules files. First the flaky tests, [#183], [#232],
    [#233], [#248] and [#290], so CI can be trusted for the rest; [#225]
@@ -253,6 +265,7 @@ Not repeated here; each list has one home:
 [#262]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/262
 [#263]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/263
 [#264]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/264
+[#265]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/265
 [#266]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/266
 [#268]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/268
 [#269]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/269
@@ -262,8 +275,12 @@ Not repeated here; each list has one home:
 [#290]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/290
 [#291]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/291
 [#293]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/293
+[#296]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/296
 [#298]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/298
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
+[#301]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/301
+[#309]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/309
+[#313]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/313
 [#316]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/316
 [#317]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/317
 [#318]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/318
