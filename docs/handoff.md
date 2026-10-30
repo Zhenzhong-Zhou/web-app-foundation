@@ -158,7 +158,9 @@ them:
    checked the same day.
 5. **ADR-085, low stock** ([#288]), with [#222] and [#256], starting
    with the updates ADR-084 left (Dates) and the multer override's
-   removal (ADR-019).
+   removal (ADR-019). Riding along: Claude Code Review skips docs-only
+   pull requests, by the paths rule `.github/workflows/ci.yml` uses (Bob,
+   30 October 2026).
 6. **The fix-ups:** the Fix-ups milestone in batches by area, each
    writing its areas' rules files. First the flaky tests, [#183], [#232],
    [#233], [#248] and [#290], so CI can be trusted for the rest; [#225]
