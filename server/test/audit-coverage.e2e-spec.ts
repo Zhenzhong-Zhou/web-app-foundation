@@ -117,6 +117,10 @@ const NOT_AUDITED = new Map<string, string>([
     'InvoicesController.previewCredit',
     'Computes a credit and stores nothing — a POST only because it carries a body (ADR-047)',
   ],
+  [
+    'ErrorsController.report',
+    'Relays a browser’s error report to the tracker and stores nothing; public, so a fault before sign-in reaches it (ADR-084)',
+  ],
 ]);
 
 describe('audit coverage', () => {

@@ -415,6 +415,8 @@
   "documents.whatHappens": "What happens",
   "documents.yourOrder": "Your order {reference}",
   "documents.yourReference": "Your reference {reference}",
+  "errors.report.tooLarge": "An error report can be at most 200 KB. Send a shorter one.",
+  "errors.report.unreadable": "That is not an error report the app can read. Send one as the app’s own pages do.",
   "exports.column.action": "Action",
   "exports.column.billingAddress": "Billing address",
   "exports.column.by": "By",

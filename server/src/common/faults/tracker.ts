@@ -44,7 +44,7 @@ export function startTracker(
     return 'Error tracker off: ERROR_TRACKER_DSN is unset';
   }
 
-  const environment = settings.ERROR_TRACKER_ENVIRONMENT ?? settings.NODE_ENV;
+  const environment = trackerEnvironment(settings);
   const release = `${VERSION}+${process.env.RENDER_GIT_COMMIT ?? 'dev'}`;
   Sentry.init({
     dsn: settings.ERROR_TRACKER_DSN,
@@ -77,6 +77,16 @@ export function startTracker(
     ...(transport ? { transport } : {}),
   });
   return `Error tracker on: environment ${environment}, release ${release}`;
+}
+
+/**
+ * The deployment's name in the tracker, on the server's reports and on the
+ * browser's it relays: ERROR_TRACKER_ENVIRONMENT, or NODE_ENV when unset.
+ */
+export function trackerEnvironment(
+  settings: Pick<Env, 'ERROR_TRACKER_ENVIRONMENT' | 'NODE_ENV'>,
+): string {
+  return settings.ERROR_TRACKER_ENVIRONMENT ?? settings.NODE_ENV;
 }
 
 /**

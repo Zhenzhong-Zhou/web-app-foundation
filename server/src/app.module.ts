@@ -29,6 +29,7 @@ import { OrganizationsModule } from './core/organizations/organizations.module';
 import { PeopleModule } from './core/people/people.module';
 import { UsersModule } from './core/users/users.module';
 import { DatabaseModule } from './database/database.module';
+import { ErrorsModule } from './errors/errors.module';
 import { HealthModule } from './health/health.module';
 import { BomsModule } from './modules/boms/boms.module';
 import { CostsModule } from './modules/costs/costs.module';
@@ -114,8 +115,10 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
     InvoicesModule,
     ReturnAuthorizationsModule,
 
-    // Infrastructure, not domain: a liveness probe, unversioned and public.
+    // Infrastructure, not domain: a liveness probe, and the browser's error
+    // reports, each unversioned and public.
     HealthModule,
+    ErrorsModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

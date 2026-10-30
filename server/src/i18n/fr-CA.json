@@ -415,6 +415,8 @@
   "documents.whatHappens": "Suite donnée",
   "documents.yourOrder": "Votre commande {reference}",
   "documents.yourReference": "Votre référence {reference}",
+  "errors.report.tooLarge": "Un rapport d’erreur peut faire au plus 200 Ko. Envoyez-en un plus court.",
+  "errors.report.unreadable": "Ce n’est pas un rapport d’erreur que l’application peut lire. Envoyez-le comme le font les pages de l’application.",
   "exports.column.action": "Action",
   "exports.column.billingAddress": "Adresse de facturation",
   "exports.column.by": "Par",
