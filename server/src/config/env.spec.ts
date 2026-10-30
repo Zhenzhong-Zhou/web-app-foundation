@@ -132,11 +132,33 @@ describe('validateEnv, ERROR_TRACKER_DSN', () => {
     ['a project that is not a number', 'https://publickey@example.invalid/x'],
     ['another protocol', 'ftp://publickey@o1.ingest.example.invalid/42'],
   ])('refuses an address with %s, naming it', (_case, dsn) => {
-    // The SDK prints an address its pattern cannot read.
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
     expect(() => validateEnv({ ...REQUIRED, ERROR_TRACKER_DSN: dsn })).toThrow(
       /ERROR_TRACKER_DSN: the project's address/,
     );
+  });
+
+  // Another secret pasted into the wrong setting. The SDK's parser prints
+  // a value it cannot read, whole.
+  it.each([
+    ['an API key', 're_Xq7bLm2N_9vTzR4kPw8sYc3D'],
+    ['a database address', 'postgres://app:s3cret-pw@db.example.com:5432/app'],
+  ])('names the setting and never prints the value of %s', (_case, secret) => {
+    const printed: unknown[] = [];
+    for (const level of ['error', 'warn', 'log', 'info', 'debug'] as const) {
+      vi.spyOn(console, level).mockImplementation((...args: unknown[]) => {
+        printed.push(...args);
+      });
+    }
+
+    let refusal = '';
+    try {
+      validateEnv({ ...REQUIRED, ERROR_TRACKER_DSN: secret });
+    } catch (error) {
+      refusal = (error as Error).message;
+    }
+
+    expect(refusal).toContain('ERROR_TRACKER_DSN');
+    expect(refusal).not.toContain(secret);
+    expect(printed.map(String).join('\n')).not.toContain(secret);
   });
 });

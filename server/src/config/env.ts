@@ -97,7 +97,7 @@ export const envSchema = z.object({
     z
       .string()
       .refine(
-        (value) => makeDsn(value) !== undefined,
+        trackerCanRead,
         "the project's address as the tracker gives it: https://<key>@<host>/<project number>",
       )
       .optional(),
@@ -168,6 +168,22 @@ export function validateEnv(raw: Record<string, unknown>): Env {
   }
 
   return parsed.data;
+}
+
+/**
+ * Whether the error tracker's SDK can read an address (ADR-084). Its parser
+ * prints one it cannot, whole, with console.error, and the value may be
+ * another secret pasted into the wrong setting: silenced here, so the
+ * refusal names ERROR_TRACKER_DSN and never prints its value.
+ */
+function trackerCanRead(value: string): boolean {
+  const print = console.error;
+  console.error = () => undefined;
+  try {
+    return makeDsn(value) !== undefined;
+  } finally {
+    console.error = print;
+  }
 }
 
 const S3_SETTINGS = [
