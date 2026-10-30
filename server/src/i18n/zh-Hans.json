@@ -334,6 +334,8 @@
   "boms.suchLineBom": "此配方中没有该行",
   "boms.unknownVariant": "该物品不属于本组织。请从列表中选择。",
   "common.apiUpdating": "新版本正在安装。请一分钟后再试；没有保存任何内容。",
+  "common.bodyTooLarge": "一次发送的内容过多。请缩短后重试。",
+  "common.bodyUnreadable": "应用无法读取发送的内容。请重新加载页面后重试。",
   "common.clientOutdated": "此标签页运行的是旧版本的应用，因此没有保存任何内容。请先复制您输入的内容，再重新加载。",
   "common.internalError": "服务器内部错误",
   "common.missingCsrfHeaderHeader": "修改数据的请求缺少 {CSRF_HEADER} 请求头",

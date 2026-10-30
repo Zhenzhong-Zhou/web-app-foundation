@@ -1,8 +1,10 @@
 import { INestApplication, VersioningType } from '@nestjs/common';
+import type { AbstractHttpAdapter } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import type { Express } from 'express';
 import helmet from 'helmet';
 
+import { isBodyRefusal } from './common/filters/all-exceptions.filter';
 import { TranslatingValidationPipe } from './i18n/validation';
 
 /**
@@ -22,6 +24,18 @@ export function configureApp(app: INestApplication): INestApplication {
   app.use(helmet());
 
   app.use(cookieParser());
+
+  // A body Express's parser refuses reaches AllExceptionsFilter as it is,
+  // which answers it with the parser's own 4xx, in the request's language,
+  // and never reports it (ADR-084). Nest's own mapping would make it a 500
+  // anyone could send, or, for JSON that does not parse, a 400 in
+  // JSON.parse's English.
+  const adapter = app.getHttpAdapter() as AbstractHttpAdapter;
+  const mapException = adapter.mapException.bind(
+    adapter,
+  ) as AbstractHttpAdapter['mapException'];
+  adapter.mapException = (error: unknown) =>
+    isBodyRefusal(error) ? error : mapException(error);
 
   // ADR-013: every API route is /v1/... . /health opts out via VERSION_NEUTRAL.
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });

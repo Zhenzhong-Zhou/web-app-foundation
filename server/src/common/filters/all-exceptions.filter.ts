@@ -36,6 +36,26 @@ interface ErrorBody {
 }
 
 /**
+ * A body Express's parser refused (http-errors): too large, not JSON, cut
+ * short or in an encoding it cannot read, each a 4xx it marks as safe to
+ * show. configureApp hands it to this filter as it is, which Nest would
+ * otherwise turn into a 500, or for JSON that does not parse into a 400
+ * holding JSON.parse's English.
+ */
+export function isBodyRefusal(
+  error: unknown,
+): error is { status: HttpStatus; expose: true } {
+  if (typeof error !== 'object' || error === null) return false;
+  const { expose, status } = error as { expose?: unknown; status?: unknown };
+  return (
+    expose === true &&
+    typeof status === 'number' &&
+    status >= 400 &&
+    status < 500
+  );
+}
+
+/**
  * One error shape for the whole API. Clients parse a single contract instead of
  * guessing whether a failure came from a controller, a pipe, or an unhandled
  * throw somewhere in a service.
@@ -59,7 +79,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const isHttp = exception instanceof HttpException;
     const status: HttpStatus = isHttp
       ? exception.getStatus()
-      : HttpStatus.INTERNAL_SERVER_ERROR;
+      : isBodyRefusal(exception)
+        ? exception.status
+        : HttpStatus.INTERNAL_SERVER_ERROR;
     const code = isHttp ? codeOf(exception.getResponse()) : undefined;
     const details = isHttp ? detailsOf(exception.getResponse()) : undefined;
 
@@ -110,6 +132,24 @@ export class AllExceptionsFilter implements ExceptionFilter {
     req: Request,
   ): string | string[] {
     const locale = localeOf(req.headers['accept-language']);
+
+    // A refused body: never the parser's own words, which can quote it.
+    if (isBodyRefusal(exception)) {
+      return translate(
+        exception.status === HttpStatus.PAYLOAD_TOO_LARGE
+          ? t({
+              id: 'common.bodyTooLarge',
+              defaultMessage:
+                'That is too much to send at once. Shorten it, then try again.',
+            })
+          : t({
+              id: 'common.bodyUnreadable',
+              defaultMessage:
+                'The app could not read what was sent. Reload the page, then try again.',
+            }),
+        locale,
+      );
+    }
 
     // Never surface an unexpected error's text: it leaks table names,
     // file paths, and driver internals to whoever triggered it.
