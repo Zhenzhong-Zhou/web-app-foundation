@@ -116,8 +116,7 @@ Andrej Karpathy's observations on LLM coding pitfalls
   refuses or works out, updates its area's file in `docs/rules/` in the
   same commit, where the area has one (ADR-087;
   [`docs/engineering.md`, Process](docs/engineering.md#process)).
-- **Lint autofixes** under `client/e2e/` or `src/` are committed as a
-  fixup, never restored.
+- **Lint autofixes** are committed as a fixup, never restored.
 
 ## Skills
 
