@@ -305,3 +305,81 @@ repository").
   guard; the diagrams; the docs, by the chat; dependencies again; the
   reviews; the as-built, by the chat. Built from `tmp/adr-084/brief.md`,
   a step per prompt, by `/build-from-brief`.
+
+## Amendment (October 2026) — as built (#329)
+
+Built on 30 October 2026 in 47 commits, from `tmp/adr-084/brief.md`.
+Where the building differs from the decisions above, or adds to them:
+
+- **No step waited for a date** (Bob, 30 October). Each dependency step
+  took what was old enough that day, which was nothing, so the updates
+  that come of age from 2 to 6 November move to ADR-085's start: the
+  Nest packages at 12.3.x, whose `@nestjs/platform-express` 12.3.2 needs
+  multer 2.5.0 itself, so the multer override goes then (ADR-019);
+  `typescript-eslint` 8.72.1, `nodemailer` 10.3.1, `@aws-sdk/client-s3`
+  3.1160.0, `eslint` 10.14.0, the eight #260 left, and the four
+  `@sentry` packages to 11.10.0.
+- **The packages.** `@sentry/node`, `@sentry/browser` and
+  `@sentry/vite-plugin` at 11.8.0, since a new package waits 14 days
+  (`conventions.md`, "Dependencies"); `@sentry/core` too, directly, for
+  its address parser; and `raw-body` 3.0.2, already installed through
+  Express. Sentry 11 has no `sendDefaultPii`: every `dataCollection`
+  option is off, on both sides. Its default kept the process running
+  after an uncaught exception, so it is set to strict, and a 0.6 s test
+  proves Node still exits.
+- **The setting.** A tracker address the SDK cannot read stops startup,
+  naming `ERROR_TRACKER_DSN` and never its value, since the value may be
+  another secret pasted into the wrong setting; the startup line says
+  whether the tracker is on, never its address.
+- **Who and where come from the session.** The relay names the user and
+  the organization from the request's own session, and sets `side:
+  browser`, dropping what the browser sends; the browser's own ids, built
+  first, went in the review (finding 5). `reportFault` reads the tenant
+  context for the server's own reports.
+- **The relay.** One event per envelope; a body of fields of the wrong
+  type, a JSON body, or one not the length it declares gets 400; ten
+  reports a minute per person or address; nothing parsed while the
+  tracker is off.
+- **Scrubbing in time with its length.** The review found one anonymous
+  report of 150 KB stalled the server for 16 seconds, through the email
+  pattern and two database-message patterns, whose time grew with the
+  square of the text's length. All three are linear now, and each text
+  is cut to 8 KB after scrubbing, never before, so no half-address is
+  left; the same report takes about 15 ms.
+- **What else reports, and what does not.** A failure caught and only
+  logged reports through `reportFault` at 18 places, the password rehash
+  among them. A job that keeps failing reports once, then again only
+  after a run succeeds. A body the parser refuses is a 4xx, never a
+  reported 500, and malformed JSON's message no longer echoes the body.
+  The filter's 500 line names the path without its query (#193). In the
+  browser: a broken language catalogue or Help guide reports; a dropped
+  connection's three messages and an `AbortError` do not, with the SDK's
+  rewriting of "Failed to fetch" turned off; faults before the tracker's
+  chunk loads are held by two listeners, then sent once.
+- **#244 was worse than filed:** a crash before sign-in showed React
+  Router's own page, in English with a stack, and reported nothing. The
+  signed-out pages have a boundary, and the root route an error page, so
+  a crash around any page shows the crash page alone, with Reload and
+  "give the reference below to the person who invited you".
+- **Source maps** are written only when the upload's token is set;
+  Sentry's CLI sends no usage reports (`SENTRY_CLI_NO_TELEMETRY`); the
+  release is named in one place for both the reports and the maps; and
+  `NODE_ENV=development` on the static site would skip the upload.
+- **The riders.** The audit runs after each CI job's tests, so their
+  results always show; it found nothing on 30 October, #268's seven
+  findings having gone with later updates. The backup's summary (#269)
+  has its tests, and a size-change warning that broke the workflow's
+  path output now goes to stderr, a bug on `main` before this branch; a
+  missing `psql` no longer stops a backup. The diagrams cover 23 areas,
+  and `docs/tables/` is treated as Help's guides are. The planning skill
+  packs only from `main`, lints its Markdown before sending, and says it
+  is for the chat alone.
+- **Found and filed:** #328, the API document's enum order following the
+  order TypeScript meets a union's values.
+- **Measured:** memory at rest the same with the tracker on or off,
+  about 326 MiB of the free plan's 512 MB, loading `@sentry/node` costing
+  30 MiB; the main chunk 145.36 kB gzipped before, about 145.9 kB after,
+  the tracker's own 31.34 kB loading after the first screen.
+- **The reviews' 23 findings:** fixed but four. #14 is #328, #17 and #18
+  are cosmetic or defensive, and #22 keeps Bob typing `/doctor
+  prompt-audit`.

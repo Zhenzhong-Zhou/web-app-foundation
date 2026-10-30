@@ -15,14 +15,14 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 30 October 2026:
 
-- **ADR-084, an error tracker** ([#287]): planned and built on 30
-  October, through step 16 of 21, on branch `adr-084-error-tracker`
-  (pushed), its brief in `tmp/adr-084/brief.md`. Step 17, the second
-  pass of updates, waits for 18:46 UTC on 5 November, when the last is
-  old enough (Dates, below); the reviews, the pull request and the
-  as-built follow. After the merge, by hand: the tracker set up as
+- **ADR-084, an error tracker** ([#287]): built and reviewed on 30
+  October in 47 commits, its as-built in
+  [ADR-084](adr/0084-an-error-tracker.md); [#329] open, merging once CI
+  is green. After the merge, by hand: the tracker set up as
   [`render.md`, "The error tracker"](runbooks/render.md#the-error-tracker-adr-084)
-  says, and the planning skill packed from `main` and uploaded.
+  says, with Sentry's spike protection on; MC-4101, MC-4102 and MC-4105
+  on the live site; the web service's memory on Render's Metrics a day
+  later; and the planning skill packed from `main` and uploaded.
 - **The planning skill** ([ADR-088](adr/0088-planning-in-the-chat-as-a-skill.md))
   was uploaded on 30 October. The chat's container holds the copy at
   `/mnt/skills/plugins/plan-feature/`, read only and without `evals.md`;
@@ -80,15 +80,13 @@ On 30 October 2026:
   space where the page writes 到 2026年. And, on a phone, to someone who
   reads only Chinese: the close dialog (MC-2406), Roles and the role
   editor in 中文, 品牌, product photos, 同事, and 编号 (MC-2710).
-- **2 November:** `typescript-eslint` 8.72.1 is old enough, for ADR-084's
-  branch ([#287]).
-- **3 November:** the Nest packages at 12.3.x are old enough (ADR-084,
-  [#287]).
-- **4 November:** the eight updates #260 left (by 20:26 UTC) are old
-  enough, for ADR-084's branch.
-- **5 November:** `nodemailer` 10.3.1 (12:32 UTC) and
-  `@aws-sdk/client-s3` 3.1160.0 (18:46 UTC), the last of ADR-084's
-  updates, are old enough.
+- **2 to 6 November:** the updates ADR-084 left come of age, for
+  ADR-085's start (UTC): `typescript-eslint` 8.72.1 on 2 November, 17:10;
+  the Nest packages at 12.3.x on 3 November, 12:04, so the multer
+  override goes; the eight #260 left by 4 November, 20:27; the four
+  `@sentry` packages to 11.10.0 on 4 November, 16:21; `nodemailer`
+  10.3.1 and `@aws-sdk/client-s3` 3.1160.0 on 5 November, by 18:47; and
+  `eslint` 10.14.0 on 6 November, 14:13.
 - **30 November:** the known misses for the typo lookup ([#225]) and Home
   ([#276]) end; fixed by then, or decided again.
 - **Early November:** Bob's cloud credit ends; [#245] suits a cloud session
@@ -149,20 +147,12 @@ them:
    chat-side planning skill ([#318], ADR-088), a docs PR, its source
    kept in this repository (Bob, 29 October 2026): [#327], merged 29
    October; the skill uploaded on 30 October (above).
-4. **ADR-084, an error tracker** ([#287]): planned and built on 30
-   October ([ADR-084](adr/0084-an-error-tracker.md)), with [#244] and
-   [#266] riding along, the planning skill's fix with a guard that packs
-   it only from `main`, an `npm audit` step in CI ([#268]), the
-   database's size in the backup's summary ([#269]), and the per-area
-   table diagrams. Its step 17, not before 18:46 UTC on 5 November,
-   takes `typescript-eslint` 8.72.1, the Nest packages at 12.3.x,
-   `@aws-sdk/client-s3` 3.1160.0, `nodemailer` 10.3.1 and the eight #260
-   left (`@nestjs/cli`, `@nestjs/swagger`, `@nestjs/schematics`,
-   `@formatjs/cli`, `react-intl`, `react-router-dom`, `@types/node`,
-   `dotenv-cli`), and moves the Sentry packages to 11.10.0;
-   `@nestjs/platform-express` 12.3.2 depends on multer 2.5.0 itself, so
-   the multer override goes (ADR-019).
-5. **ADR-085, low stock** ([#288]), with [#222] and [#256].
+4. **ADR-084, an error tracker** ([#287]): [#329], open; it closes
+   [#244], [#266], [#268] and [#269] beside [#287]. After its merge, the
+   by-hand list under "Where things stand".
+5. **ADR-085, low stock** ([#288]), with [#222] and [#256], starting
+   with the updates ADR-084 left (Dates) and the multer override's
+   removal (ADR-019).
 6. **The fix-ups:** the Fix-ups milestone in batches by area, each
    writing its areas' rules files. First the flaky tests, [#183], [#232],
    [#233], [#248] and [#290], so CI can be trusted for the rest; [#225]
@@ -276,3 +266,4 @@ Not repeated here; each list has one home:
 [#325]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/325
 [#326]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/326
 [#327]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/327
+[#329]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/329
