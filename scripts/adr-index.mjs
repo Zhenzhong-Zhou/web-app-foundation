@@ -325,8 +325,11 @@ ${lines.join("\n")}
 `;
 }
 
-/** The README's sections that the script writes, each between its markers. */
-const SECTIONS = [
+/**
+ * The README's sections that the script writes, each between its markers;
+ * check-docs-fixture.mjs builds its README from them.
+ */
+export const SECTIONS = [
   {
     heading: "By number",
     start: "<!-- adr-index:start -->",

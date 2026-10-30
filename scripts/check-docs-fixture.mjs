@@ -15,6 +15,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { SECTIONS } from "./adr-index.mjs";
 import { repository } from "./git-fixture.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -42,9 +43,11 @@ export const GUIDE = "# Guide\n\n## Setup\n\nThe steps.\n";
 export const adr = (frontMatter, heading) =>
   `---\n${frontMatter}---\n\n# ${heading}\n\nThe decision.\n`;
 
+const [NUMBER, AREA] = SECTIONS;
+
 /**
  * The README the ADRs need, its index not written yet, among text the
- * script leaves as it is.
+ * script leaves as it is; its markers are the script's own.
  */
 export const INDEX = `# Architecture Decisions
 
@@ -54,13 +57,13 @@ The preamble.
 
 Written by the script.
 
-<!-- adr-index:start -->
-<!-- adr-index:end -->
+${NUMBER.start}
+${NUMBER.end}
 
 ## By area
 
-<!-- adr-areas:start -->
-<!-- adr-areas:end -->
+${AREA.start}
+${AREA.end}
 
 ## Resolved
 
