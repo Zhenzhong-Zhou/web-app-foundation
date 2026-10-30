@@ -2863,6 +2863,25 @@ remaining() { curl -s -o /dev/null -D - "$@" | grep -i '^x-ratelimit-remaining';
   missing. A session from before the deploy keeps the proxy's address;
   nothing is rewritten.
 
+## 41. The error tracker (ADR-084)
+
+The operator's checks: whether a report reaches the tracker, and what it
+carries. Locally, with a development project's address as
+`ERROR_TRACKER_DSN` in the root `.env` and the API restarted; on the live
+site, after a deploy that changes the setting, the route or the relay.
+
+- **MC-4101** *(ADR-084)* A test report goes through the site to the
+  tracker. With `npm run start:dev` in `server/` and `npm run dev` in
+  `client/`, the API's log says early on `Error tracker on: environment
+  development, release <version>+dev`, with no address in it. From
+  `server/`: `npm run error-tracker:test -- http://localhost:5173`. It
+  prints `204 No Content` and the report's id. Within a minute, the id
+  pasted in the project's Issues search opens the event, "A test report,
+  sent by npm run error-tracker:test", under environment `development`,
+  with no user and no IP address. With `ERROR_TRACKER_DSN` empty and the
+  API restarted, the log says `Error tracker off`, the command still
+  prints 204, and no new event arrives.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -3905,3 +3924,5 @@ first.
 - 2026-10-29: #316's deploy, MC-4001 reading first what Cloudflare saw,
   and running across two networks where it saw one address: MC-4001
   rewritten.
+- 2026-10-30: ADR-084, the error tracker: section 41, MC-4101, a test
+  report through the site.
