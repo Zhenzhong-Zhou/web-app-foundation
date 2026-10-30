@@ -21,7 +21,8 @@ Their home is `docs/engineering.md`, "How code is delivered" and
 - The first line names the base, `base: <sha> (<branch>), <step>`; `git
   apply` passes over it.
 - Checked before sending: on a fresh clone at that base, `git apply
-  --check` passes, and so does each later patch on top.
+  --check` passes, and so does each later patch on top; then, with every
+  patch applied, `npx --yes markdownlint-cli2@0.23.3` finds no issue.
 - Bob runs `git apply --check <patch> && git apply --index <patch>`,
   which stages what it changed.
 - A patch Bob's copy refuses is made again from a fresh clone, under a

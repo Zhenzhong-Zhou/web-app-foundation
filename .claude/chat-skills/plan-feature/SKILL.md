@@ -23,9 +23,12 @@ copies only what every reply acts on.
    For a branch Bob has pushed, add `--branch <branch>`; for a commit he
    names, `git -C /tmp/waf fetch --depth 1 origin <sha>`, then check it
    out. Nothing installed, no script of the repository run, nothing
-   pushed: the checks are `scripts/verify.sh`'s, on Bob's Mac. With no
-   network, say so, search Project knowledge, and ask Bob to attach any
-   file a patch needs.
+   pushed: the checks are `scripts/verify.sh`'s, on Bob's Mac. One
+   exception, before sending Markdown: `npx --yes
+   markdownlint-cli2@0.23.3` from the clone's root, the version and the
+   settings `scripts/verify.sh` and CI use; it adds nothing to the clone
+   (ADR-084's as-built). With no network, say so, search Project
+   knowledge, and ask Bob to attach any file a patch needs.
 2. **This skill against main's:** `diff -r -x evals.md <this skill's
    folder> /tmp/waf/.claude/chat-skills/plan-feature`, the folder being
    where the skills list says this file is. Any difference: the reply's
