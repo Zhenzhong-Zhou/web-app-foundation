@@ -18,6 +18,7 @@ off it is a matter of settings, not code. Checked on 25 October 2026.
 | **GitHub** | The repository (public), Actions, Dependabot, the ruleset for `main`, the `production` environment | `.github/workflows/`; [render.md](render.md), "Setting it up, by hand, in this order", for the environment and the ruleset | `production`: `RENDER_API_DEPLOY_HOOK`, `RENDER_CLIENT_DEPLOY_HOOK`; repository: the `BACKUP_*` secrets and variables, `CLAUDE_CODE_OAUTH_TOKEN` | Another CI means rewriting the workflows; the code and its history move with git |
 | **Anthropic** | Claude Code Review on each pull request, and Claude Code's cloud sessions | `.github/workflows/claude-code-review.yml` and `claude.yml` | `CLAUDE_CODE_OAUTH_TOKEN` | Nothing in the app depends on it |
 | **healthchecks.io** | The backups' heartbeat: emails when a day passes without a backup (ADR-053) | healthchecks.io's dashboard | `BACKUP_HEALTHCHECK_URL`; unset, the step is skipped | Any heartbeat monitor: its URL |
+| **Sentry** | The error tracker ([ADR-084](../adr/0084-an-error-tracker.md)): the server's faults, and the browser's through the app's own `/api/errors`, scrubbed of personal details; an email to Bob for each new, regressed or escalating issue; since 30 October 2026 | [render.md](render.md#the-error-tracker-adr-084), "The error tracker"; Sentry's dashboard: the free Developer plan, organization `panivo`, data stored in the United States, project `web-app-foundation` | `ERROR_TRACKER_DSN` on the web service; `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT` on the static site | GlitchTip or Bugsink accept the same SDK: a new `ERROR_TRACKER_DSN`, and their own source-map upload, or none |
 | **UptimeRobot** | Asks `/api/health` and the site every 5 minutes and emails Bob when either stops answering, since 25 October 2026; its pings keep the free API awake, about 744 of the 750 free hours Render gives a month | UptimeRobot's dashboard, the free plan: two HTTP(s) monitors, `https://web-app-foundation-client.onrender.com/api/health` and `https://web-app-foundation-client.onrender.com/`, and no more. Decline the monitors it offers on common paths (`/blog`, `/cart`, `/pricing`, `/wp-admin` and so on): the static site answers every path with `index.html` and a 200, so each would check the same file again and multiply the alert emails. The 11 it added were deleted on 26 October 2026 | None in the repository | Any uptime monitor: the two addresses |
 
 ## Email's DNS (25 October 2026)
@@ -47,13 +48,6 @@ Panivo's own is deferred to the first customers (ADR-082).
 
 ## Not set up yet
 
-- **An error tracker:** Sentry's free Developer plan, decided in
-  [ADR-084](../adr/0084-an-error-tracker.md) (#287), and set up by hand
-  after its deploy, as
-  [`render.md`, "The error tracker"](render.md#the-error-tracker-adr-084)
-  says. Personal details are scrubbed before anything is sent, and
-  browser errors go through the app's own API, so the browser contacts
-  no other site.
 - **A mailbox on `wide-naturals.ca`,** for when one is wanted: a
   support address, or DMARC's reports at the first paying customer
   (Bob, 26 October 2026). Forward through ImprovMX's free plan, with two

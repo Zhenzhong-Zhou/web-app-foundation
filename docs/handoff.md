@@ -15,23 +15,20 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 30 October 2026:
 
-- **ADR-084, an error tracker** ([#287]): built and reviewed on 30
-  October in 47 commits, its as-built in
-  [ADR-084](adr/0084-an-error-tracker.md); [#329] open, merging once CI
-  is green. After the merge, by hand: the tracker set up as
+- **ADR-084, an error tracker** ([#287]): [#329] merged and deployed on
+  30 October, its as-built in [ADR-084](adr/0084-an-error-tracker.md).
+  Sentry was set up the same day, as
   [`render.md`, "The error tracker"](runbooks/render.md#the-error-tracker-adr-084)
-  says, with Sentry's spike protection on; MC-4101, MC-4102 and MC-4105
-  on the live site; the web service's memory on Render's Metrics a day
-  later; and the planning skill packed from `main` and uploaded.
+  records, and MC-4101, MC-4102 and MC-4105 passed on the live site.
 - **The planning skill** ([ADR-088](adr/0088-planning-in-the-chat-as-a-skill.md))
   was uploaded on 30 October. The chat's container holds the copy at
   `/mnt/skills/plugins/plan-feature/`, read only and without `evals.md`;
   each session compares it with `main`'s first. ADR-084's session
   walked `evals.md`'s prompts 1, 2, 3 and 5; 4 waits for a patch that is
   refused. Prompt 2 found the issue command
-  printing no issue's text, so the skill's fix rides with ADR-084. The
-  fixed skill is packed from `main` and uploaded once ADR-084 merges;
-  until then v1 stays (ADR-088's amendment).
+  printing no issue's text, so the skill's fix rode with ADR-084. With
+  ADR-084 merged, the fixed skill is packed from `main` and uploaded
+  (Still to do, by hand).
 - **The triage** is done (28 October;
   [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
   every open issue has its group and area labels, the `fix-now` ones are
@@ -40,7 +37,8 @@ On 30 October 2026:
   [#186], then reopened on 29 October, when slower runners put the typo
   lookup at 333 to 363 ms; it and [#276] carry known misses until 30
   November.
-- **The last merges:** [#327] ([#318], the chat-side planning skill,
+- **The last merges:** [#329] (ADR-084, the error tracker, 30
+  October), [#327] ([#318], the chat-side planning skill,
   ADR-088, 29 October, deployed; on 30 October its branches pruned and
   `scripts/clean-local.sh` run for the first time), [#325] ([#316], one
   rate limit per person, ADR-011 amended, 29 October), [#317] ([#260],
@@ -103,6 +101,14 @@ On 30 October 2026:
 
 ## Still to do, by hand
 
+- **After [#329]:** `scripts/prune-branches.sh --yes` and
+  `scripts/clean-local.sh` (a dry run, then `--yes`); on `main`, `node
+  scripts/pack-chat-skill.mjs`, `tmp/plan-feature.zip` uploaded in place
+  of v1, and `evals.md` walked in a new chat; Project knowledge
+  re-synced.
+- **On 31 October:** the web service's memory on Render's Metrics, a day
+  with the tracker on; the review measured about 326 MiB at rest, of the
+  free plan's 512 MB.
 - **MC-4001 across two networks,** owed from [#325]'s deploy: on 29
   October an office network without IPv6 reached Cloudflare as one
   address both times, so it could not show two counters. MC-4002 and
@@ -147,9 +153,9 @@ them:
    chat-side planning skill ([#318], ADR-088), a docs PR, its source
    kept in this repository (Bob, 29 October 2026): [#327], merged 29
    October; the skill uploaded on 30 October (above).
-4. **ADR-084, an error tracker** ([#287]): [#329], open; it closes
-   [#244], [#266], [#268] and [#269] beside [#287]. After its merge, the
-   by-hand list under "Where things stand".
+4. **ADR-084, an error tracker** ([#287]): [#329], merged 30 October,
+   closing [#244], [#266], [#268] and [#269] beside [#287]; live and
+   checked the same day.
 5. **ADR-085, low stock** ([#288]), with [#222] and [#256], starting
    with the updates ADR-084 left (Dates) and the multer override's
    removal (ADR-019).

@@ -627,16 +627,20 @@ project for both sides. The browser reports through the app's own
 static site knows only how to upload source maps.
 
 - **On the web service: `ERROR_TRACKER_DSN`,** the project's address
-  (Sentry → the project → Settings → Client Keys). Unset, nothing starts
+  (Sentry → Settings → Projects → `web-app-foundation` → Client Keys
+  (DSN)). Unset, nothing starts
   and nothing leaves. A badly formed one stops the server at startup,
   naming the setting, never its value. `ERROR_TRACKER_ENVIRONMENT` is
   optional; unset, reports name `NODE_ENV`'s value. The deploy log's
   first lines say "Error tracker on: environment production, release
   `<version>+<commit>`", or "Error tracker off", never the address.
 - **On the static site: `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and
-  `SENTRY_PROJECT`.** The token is an organization token, whose only
-  use is uploading source maps; the other two are the organization's and
-  the project's slugs. With them, each build uploads its hidden source
+  `SENTRY_PROJECT`.** The token is an Organization Token (Settings →
+  Developer Settings → Organization Tokens, or
+  `https://panivo.sentry.io/settings/auth-tokens/`), never a personal
+  one: it can only upload releases and source maps. The other two are
+  the organization's slug, `panivo`, and the project's,
+  `web-app-foundation`. With them, each build uploads its hidden source
   maps under the release, then deletes them, so the site serves none;
   without them it builds as before. A failed upload is logged and never
   fails the build. `NODE_ENV=development` never goes there: Sentry's
@@ -644,27 +648,55 @@ static site knows only how to upload source maps.
   token stays on the static site: never on the web service, in GitHub or
   in `.env`.
 
-Set up after ADR-084's deploy, by hand, in this order:
+Set up by hand on 30 October 2026, after ADR-084's merge, in this
+order; to set it up again, the same:
 
-1. **Sentry:** sign up on the Developer plan, and choose the data
-   region, which cannot change later. Make one project.
-2. **Its settings:** Security & Privacy, with the Data Scrubber and its
-   default scrubbers on, and IP addresses not stored. Inbound Filters,
-   with browser extensions and legacy browsers filtered, and localhost
-   left in, so the development checks still show. Alerts: an email for
-   each new issue, and for each issue that comes back after being
-   resolved.
-3. **`ERROR_TRACKER_DSN` on the web service,** then Save and deploy; its
-   log's first lines say "Error tracker on".
-4. **The three on the static site,** then Actions → Deploy → Run
-   workflow.
-5. **From `server/`:** `npm run error-tracker:test --
-   https://web-app-foundation-client.onrender.com` prints 204 and an id,
-   and the report shows in Sentry (MC-4101). Again after each deploy
-   that changes the tracker's code.
-6. **On the live site:** MC-4102, a crash page's reference found in
-   Sentry, and MC-4105, a report's stack naming the files under `src/`
-   while `/assets/<chunk>.map` serves no map.
+1. **Sentry's organization:** sign up on the free Developer plan with an
+   email you keep, since the alerts go to it. The organization is
+   **Panivo**, slug `panivo` (Settings → General Settings), its **Data
+   Storage Region the United States**, chosen at sign-up and fixed.
+   **Show Generative AI Features** is off, so no fault goes to Sentry's
+   AI (Seer). Its only member is Bob.
+2. **The project:** Create project → **Node.js**, then **"Nope,
+   Vanilla"**, since the server uses `@sentry/node` itself; **Error
+   monitoring** only, not Logging, Tracing, Profiling, Session replay or
+   Application Metrics; no repository linked; the name
+   `web-app-foundation`, the team `#panivo`; **Alert frequency: High
+   priority issues**, which alerts on new, regressed and escalating
+   issues, by **Email**. The install instructions it then shows are
+   skipped: the code holds the SDK at the version the 14-day rule
+   allowed, and their `npm install` would take the newest.
+3. **The project's settings:** Security & Privacy, with the Data
+   Scrubber, Use Default Scrubbers and Prevent Storing of IP Addresses
+   on. Inbound Filters: browser extensions, legacy browsers (each
+   version listed sits below the browser floor) and known web crawlers
+   on; localhost off, so the development checks still show; and **Filter
+   out ChunkLoadError(s) off**, since the app drops the harmless ones
+   ("offline", "newer") itself and sends only "broken", the kind that
+   matters. IP Addresses and the custom filters stay empty. Spike
+   Protection on.
+4. **On Render, each with "Save only":** `ERROR_TRACKER_DSN` on the web
+   service; the token, `SENTRY_ORG` and `SENTRY_PROJECT` on the static
+   site. Then Actions → Deploy → Run workflow, since a service takes a
+   new setting only when it deploys. The web service's log then says
+   "Error tracker on"; the static site's build runs `sentry-vite-plugin`
+   and has no line "Source maps not uploaded to Sentry".
+5. **The checks,** each passed on 30 October 2026: MC-4101, `npm run
+   error-tracker:test -- https://web-app-foundation-client.onrender.com`
+   from `server/`, 204 and an id that Sentry's Issues search opens;
+   MC-4102 and MC-4105 on the live site, a page's script blocked as
+   MC-4102 says. Again after each deploy that changes the tracker's code.
+
+Reading the reports: in Sentry's **Issues**, not the project's overview,
+whose search is for releases. `reference:` and the reference a crash page
+shows find its event; a report's id pasted alone opens it. On the
+overview, the default tab "Unhandled" lists none, since the app catches
+each fault it reports; "All Issues" lists them. A report's User →
+Geography is where Sentry places the address that sent it, the web
+service relaying, never the person. The overview's Crash Free Sessions,
+Crash Free Users and Apdex stay unset: they need session counts and
+tracing, which ADR-084 leaves off. Releases name the commit in full,
+`<version>+<commit>`, the same on both sides.
 
 ## Before real customers' data
 

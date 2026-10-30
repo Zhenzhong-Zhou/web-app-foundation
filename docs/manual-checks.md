@@ -2884,15 +2884,23 @@ site, after a deploy that changes the setting, the route or the relay.
   prints 204, and no new event arrives.
 - **MC-4102** *(ADR-084)* A page that crashes is reported once, with the
   reference it shows. Signed in, with the browser's developer tools open
-  on Network, crash a page as MC-R12 does, opened with `?search=Jane` added
-  to its address: it shows Something went wrong and a reference. Network
-  shows one `POST /api/errors`, answered 204, and nothing before the page
-  first drew. Within a minute, `reference:<the reference>` in the
-  project's Issues search opens one event: the error, tagged `side`
-  `browser`, release `<version>+dev`, its language, the browser, the
-  page's address without `?search=Jane`, the user by id alone and an
-  `organization` tag holding the organization's id; no name, email
-  address or IP address anywhere in it.
+  on Network, crash a page as MC-R12 does, or, with no code changed and on
+  the live site too, block its script: the tools' Command Menu
+  (Cmd+Shift+P) → "Enable request blocking and throttling" → Request
+  conditions → `+` → the whole address as a pattern,
+  `http://localhost:5173/*orders-page*` or
+  `https://web-app-foundation-client.onrender.com/*orders-page*` → Block;
+  untick it afterwards. Open the page with `?search=Jane` added to its
+  address: it shows Something went wrong and a reference. Network shows
+  one `POST /api/errors`, answered 204, and nothing before the page first
+  drew. Within a minute, `reference:<the reference>` in Sentry's Issues
+  search (Issues in the side bar, not the project's overview) opens one
+  event: the error, tagged `side` `browser`, release `<version>+dev`
+  (live, `<version>+<commit>`, as the server's log names it), its
+  language, the browser, the page's address without `?search=Jane`, the
+  user by id alone and an `organization` tag holding the organization's
+  id; no name, email address or IP address anywhere in it. A Geography,
+  if shown, is the web service's, which relayed it.
 - **MC-4103** *(ADR-084)* A refusal is not reported. Signed out, sign in
   with a wrong password: the refusal shows, Network shows no `POST
   /api/errors`, and no new event arrives.
@@ -3990,3 +3998,5 @@ first.
   the database's: MC-1301 extended.
 - 2026-10-30: ADR-084's reviews, the crash page on its own saying whom to
   give the reference, the person who invited you: MC-R65 extended.
+- 2026-10-30: ADR-084's setup, a page crashed with no code changed by
+  blocking its script, and where Sentry's search is: MC-4102 reworded.
