@@ -11,6 +11,7 @@ import {
   sql,
 } from 'drizzle-orm';
 
+import { reportFault } from '../../common/faults/tracker';
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
 import {
@@ -134,6 +135,7 @@ export class NotificationsService {
       );
     } catch (error) {
       this.logger.error(`Notification write failed: ${String(error)}`);
+      reportFault(error, { failed: 'a notification write' });
     }
 
     await this.sweep([...new Set(rows.map((row) => row.userId))]);
@@ -183,6 +185,7 @@ export class NotificationsService {
         );
     } catch (error) {
       this.logger.error(`Notification sweep failed: ${String(error)}`);
+      reportFault(error, { failed: 'the notifications sweep' });
     }
   }
 

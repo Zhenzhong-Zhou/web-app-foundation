@@ -9,6 +9,7 @@ import {
 import { and, eq, isNull, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
+import { reportFault } from '../../common/faults/tracker';
 import type { Locale } from '../../common/locales';
 import type { Database, Transaction } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
@@ -527,6 +528,7 @@ export class InvitationAcceptanceService {
       );
     } catch (error) {
       this.logger.error(`Audit write failed: ${String(error)}`);
+      reportFault(error, { failed: 'an audit write' });
     }
   }
 
@@ -596,6 +598,7 @@ export class InvitationAcceptanceService {
       ]);
     } catch (error) {
       this.logger.error(`Telling the inviter failed: ${String(error)}`);
+      reportFault(error, { failed: 'telling the inviter' });
     }
   }
 

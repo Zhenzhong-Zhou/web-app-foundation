@@ -38,6 +38,7 @@ import {
 } from './utils/fixtures';
 import { mailBrandOf } from './utils/mail-brand';
 import { RecordingMailService } from './utils/recording-mail';
+import { RecordingTracker } from './utils/recording-tracker';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -662,6 +663,37 @@ describe('Invitations (e2e)', () => {
       );
       expect(copied.invitation.link.status).toBe('copied');
       expect(await read(copied.link.split('token=')[1])).not.toBeNull();
+    });
+
+    describe('one that does not go', () => {
+      const faults = new RecordingTracker();
+      afterEach(() => faults.stop());
+
+      it('is reported to the error tracker, without the address (ADR-084)', async () => {
+        const alpha = await organization('alpha');
+        faults.start();
+        vi.spyOn(mail, 'send').mockRejectedValueOnce(
+          new Error('550 5.1.1 <sam@example.com>: Recipient address rejected'),
+        );
+
+        await invite(alpha, 'sam@example.com');
+
+        const sent = await faults.sent();
+        expect(sent).toHaveLength(1);
+        expect(sent[0]).toMatchObject({
+          tags: {
+            side: 'server',
+            failed: 'the invitation email',
+            organization: alpha.organizationId,
+          },
+          user: { id: alpha.userId },
+          exception: {
+            values: [
+              { value: '550 5.1.1 <[email]>: Recipient address rejected' },
+            ],
+          },
+        });
+      });
     });
 
     it('names only the organization once the inviter has left, or deleted their account', async () => {

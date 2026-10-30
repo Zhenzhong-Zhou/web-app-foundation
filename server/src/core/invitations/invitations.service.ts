@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { and, desc, eq, gt, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
+import { reportFault } from '../../common/faults/tracker';
 import type { Env } from '../../config/env';
 import type { Transaction } from '../../database/database.module';
 import {
@@ -546,6 +547,7 @@ export class InvitationsService {
       return true;
     } catch (error) {
       this.logger.error(`Could not email invitation ${id}: ${String(error)}`);
+      reportFault(error, { failed: 'the invitation email' });
       await this.tenantDb.transaction(async (tx) => {
         await tx
           .update(invitations)

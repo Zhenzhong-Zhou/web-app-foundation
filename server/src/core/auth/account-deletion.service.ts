@@ -20,6 +20,7 @@ import {
 } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
+import { reportFault } from '../../common/faults/tracker';
 import type { Locale } from '../../common/locales';
 import { todayIn } from '../../common/today';
 import type { Env } from '../../config/env';
@@ -362,6 +363,7 @@ export class AccountDeletionService {
           `Could not complete the deletion of ${id}`,
           error instanceof Error ? error.stack : String(error),
         );
+        reportFault(error, { failed: "an account's deletion" });
       }
     }
 
@@ -567,6 +569,7 @@ export class AccountDeletionService {
         this.logger.error(
           `Could not erase the photo of ${userId}; the next run will: ${String(error)}`,
         );
+        reportFault(error, { failed: "a deleted account's photo" });
       }
     }
     return { kind: 'completed' };
@@ -594,6 +597,7 @@ export class AccountDeletionService {
         this.logger.error(
           `Could not erase the photo of ${userId}; the next run will: ${String(error)}`,
         );
+        reportFault(error, { failed: "a deleted account's photo" });
       }
     }
   }
@@ -710,6 +714,7 @@ export class AccountDeletionService {
       // The deletion itself stands; a lost email is logged, not thrown, as
       // the security emails are (ADR-037).
       this.logger.error(`Could not email ${person.id}: ${String(error)}`);
+      reportFault(error, { failed: 'a deletion email' });
     }
   }
 }

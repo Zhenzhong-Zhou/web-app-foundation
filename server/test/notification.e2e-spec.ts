@@ -1,6 +1,10 @@
+import { randomUUID } from 'node:crypto';
+
 import type { INestApplication } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 
+import { NOTIFICATION_TYPES } from '../src/core/notifications/notification-types';
+import { NotificationsService } from '../src/core/notifications/notifications.service';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -14,6 +18,7 @@ import {
 } from './utils/fixtures';
 import { expectMailBrand } from './utils/mail-brand';
 import { RecordingMailService } from './utils/recording-mail';
+import { RecordingTracker } from './utils/recording-tracker';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -396,6 +401,34 @@ describe('Notifications (e2e)', () => {
       await signInFromNewBrowser(alpha);
 
       expect(await titles(beta.userId)).toEqual(['old read']);
+    });
+  });
+
+  /**
+   * Emit never throws, since what it tells of has happened; a write that
+   * fails is logged and reported (ADR-084).
+   */
+  describe('a notification that cannot be written', () => {
+    const faults = new RecordingTracker();
+    afterEach(() => faults.stop());
+
+    it('is reported to the error tracker, without the values in its query', async () => {
+      faults.start();
+      // Nobody: a recipient the database's foreign key refuses.
+      const nobody = randomUUID();
+
+      await app.get(NotificationsService).emit([
+        {
+          userId: nobody,
+          type: NOTIFICATION_TYPES.SESSION_CREATED,
+          title: 'A new sign-in to your account',
+        },
+      ]);
+
+      const sent = await faults.sent();
+      expect(sent).toHaveLength(1);
+      expect(sent[0].tags).toMatchObject({ failed: 'a notification write' });
+      expect(JSON.stringify(sent[0])).not.toContain(nobody);
     });
   });
 

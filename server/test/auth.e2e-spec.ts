@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq, isNull } from 'drizzle-orm';
 
+import { PasswordService } from '../src/core/auth/password.service';
 import { ALL_PERMISSIONS } from '../src/core/authorization/permissions';
 import * as provisioning from '../src/core/organizations/provision-organization';
 import {
@@ -25,6 +26,7 @@ import {
   mailBrandOf,
 } from './utils/mail-brand';
 import { RecordingMailService } from './utils/recording-mail';
+import { RecordingTracker } from './utils/recording-tracker';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -174,6 +176,30 @@ describe('Auth (e2e)', () => {
       // in the table with no cookie pointing at it (ADR-011).
       expect(rows).toHaveLength(1);
       expect(rows[0].id).not.toBe(first.id);
+    });
+
+    // The sign-in goes on; the fault is reported (ADR-084).
+    describe('when the stronger hash cannot be written', () => {
+      const faults = new RecordingTracker();
+      afterEach(() => faults.stop());
+
+      it('signs in, and reports it to the error tracker', async () => {
+        const passwords = app.get(PasswordService);
+        vi.spyOn(passwords, 'needsRehash').mockReturnValueOnce(true);
+        vi.spyOn(passwords, 'hash').mockRejectedValueOnce(
+          new Error('Connection terminated unexpectedly'),
+        );
+        faults.start();
+
+        await authedAgent(app)
+          .post('/v1/auth/login')
+          .send({ email: EMAIL, password: PASSWORD })
+          .expect(200);
+
+        const sent = await faults.sent();
+        expect(sent).toHaveLength(1);
+        expect(sent[0].tags).toMatchObject({ failed: 'the password rehash' });
+      });
     });
   });
 

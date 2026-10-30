@@ -11,6 +11,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { eq, sql } from 'drizzle-orm';
 
+import { reportFault } from '../../common/faults/tracker';
 import { DEFAULT_LOCALE, type Locale } from '../../common/locales';
 import type { Env } from '../../config/env';
 import type { Database } from '../../database/database.module';
@@ -268,6 +269,7 @@ export class AuthService implements OnModuleInit {
         this.logger.warn(
           `Password rehash failed for ${row.id}: ${String(error)}`,
         );
+        reportFault(error, { failed: 'the password rehash' });
       }
     }
 
@@ -479,6 +481,7 @@ export class AuthService implements OnModuleInit {
       this.logger.error(
         `Could not send verification for ${userId}: ${String(error)}`,
       );
+      reportFault(error, { failed: 'the verification email' });
     }
   }
 
