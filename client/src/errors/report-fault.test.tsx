@@ -1,4 +1,10 @@
-import { createTransport, type Event, flush } from '@sentry/browser';
+import {
+  close,
+  createTransport,
+  type Event,
+  flush,
+  getCurrentScope,
+} from '@sentry/browser';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -58,6 +64,13 @@ function uncaught(error: unknown) {
     }),
   );
   window.removeEventListener('error', quiet);
+}
+
+/** A promise's rejection no code caught, as the browser tells the page. */
+function rejected(reason: unknown) {
+  window.dispatchEvent(
+    Object.assign(new Event('unhandledrejection'), { reason }),
+  );
 }
 
 const USER = '0193a7c4-5b6d-7e8f-9a0b-1c2d3e4f5a6b';
@@ -267,5 +280,35 @@ describe('the error tracker in the browser (ADR-084)', () => {
     } finally {
       vi.doUnmock('./tracker');
     }
+  });
+
+  it('hears a rejection no code caught before the chunk loads, and reports it once', async () => {
+    // No tracker yet, as on a page load: beforeEach's goes, handlers and all.
+    await close();
+    getCurrentScope().setClient(undefined);
+    vi.resetModules();
+    const reporting = await import('./report-fault');
+    const mark = await import('../lib/loading-mark');
+
+    const removed = vi.spyOn(window, 'removeEventListener');
+    const started = reporting.startReporting({ transport });
+    rejected(own(new Error('Rejected before the first screen')));
+    mark.removeLoadingMark();
+    await started;
+    await flush();
+
+    expect(sent).toHaveLength(1);
+    expect(sent[0].exception?.values?.[0]?.value).toBe(
+      'Rejected before the first screen',
+    );
+
+    // From here, the tracker's own handlers hear them, and they alone.
+    for (const type of ['error', 'unhandledrejection']) {
+      expect(removed).toHaveBeenCalledWith(type, expect.any(Function));
+    }
+    rejected('Rejected once the tracker is on');
+    await flush();
+
+    expect(sent).toHaveLength(2);
   });
 });

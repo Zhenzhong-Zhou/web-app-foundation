@@ -59,19 +59,37 @@ export function reportAs(who: ReportedAs | null): void {
  * then sends what was held. A chunk that will not load leaves reporting
  * off for this tab, and nothing else: no reload, no status page.
  * `options` is for the tests, which record instead of sending.
+ *
+ * Until then, an error or a rejection no code caught is held as the rest
+ * are; from then, the tracker's own handlers hear them, and these listeners
+ * are gone, so none is reported twice.
  */
 export async function startReporting(options?: TrackerOptions): Promise<void> {
-  await firstScreenShown;
+  window.addEventListener('error', heardError);
+  window.addEventListener('unhandledrejection', heardRejection);
   try {
+    await firstScreenShown;
     const { startTracker } = await import('./tracker');
     tracker = startTracker(options);
   } catch {
     held = null;
     return;
+  } finally {
+    window.removeEventListener('error', heardError);
+    window.removeEventListener('unhandledrejection', heardRejection);
   }
   tracker.reportAs(reportedAs);
   for (const [error, context] of held ?? []) tracker.send(error, context);
   held = [];
+}
+
+/** An error no code caught; one from another origin's script carries none. */
+function heardError(event: ErrorEvent) {
+  if (event.error) reportFault(event.error);
+}
+
+function heardRejection(event: PromiseRejectionEvent) {
+  reportFault(event.reason);
 }
 
 /** fetch's TypeError for a dropped connection: Chrome's, Firefox's, Safari's. */
