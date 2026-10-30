@@ -47,11 +47,11 @@ Panivo's own is deferred to the first customers (ADR-082).
 
 ## Not set up yet
 
-- **An error tracker,** such as Sentry or GlitchTip: a small pull request
-  of its own with a short ADR, after the emails' design and before
-  ADR-083 (Bob, 25 October 2026). Personal details are scrubbed before
-  anything is sent, and browser errors go through the app's own API, so
-  the browser contacts no other site.
+- **An error tracker:** Sentry's free Developer plan, decided in
+  [ADR-084](../adr/0084-an-error-tracker.md) (#287) and set up by hand
+  after its deploy. Personal details are scrubbed before anything is
+  sent, and browser errors go through the app's own API, so the browser
+  contacts no other site.
 - **A mailbox on `wide-naturals.ca`,** for when one is wanted: a
   support address, or DMARC's reports at the first paying customer
   (Bob, 26 October 2026). Forward through ImprovMX's free plan, with two

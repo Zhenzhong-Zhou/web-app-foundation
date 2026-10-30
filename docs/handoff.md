@@ -13,13 +13,22 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 29 October 2026:
+On 30 October 2026:
 
-- **[#327],** [#318]'s pull request, the chat-side planning skill
-  ([ADR-088](adr/0088-planning-in-the-chat-as-a-skill.md)), with a
-  script that cleans the Mac's working folders, ShellCheck, [#289] and
-  [#292]'s wording riding along: built and reviewed; it merges after its
-  as-built docs. Then ADR-084 (the order, below).
+- **ADR-084, an error tracker** ([#287]): planned on 30 October,
+  [ADR-084](adr/0084-an-error-tracker.md) the first commit of branch
+  `adr-084-error-tracker`, its brief in `tmp/adr-084/brief.md`. Its
+  build starts after 18:46 UTC on 5 November, when the last of its
+  package updates is old enough (Dates, below).
+- **The planning skill** ([ADR-088](adr/0088-planning-in-the-chat-as-a-skill.md))
+  was uploaded on 30 October. The chat's container holds the copy at
+  `/mnt/skills/plugins/plan-feature/`, read only and without `evals.md`;
+  each session compares it with `main`'s first. ADR-084's planning
+  walked `evals.md`'s prompts 1 and 2; 3 and 5 follow as it builds, and
+  4 only when a patch is refused. Prompt 2 found the issue command
+  printing no issue's text, so the skill's fix rides with ADR-084. The
+  fixed skill is packed from `main` and uploaded once ADR-084 merges;
+  until then v1 stays (ADR-088's amendment).
 - **The triage** is done (28 October;
   [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
   every open issue has its group and area labels, the `fix-now` ones are
@@ -28,14 +37,16 @@ On 29 October 2026:
   [#186], then reopened on 29 October, when slower runners put the typo
   lookup at 333 to 363 ms; it and [#276] carry known misses until 30
   November.
-- **The last merges:** [#325] ([#316], one rate limit per person,
-  ADR-011 amended, 29 October), [#317] ([#260], product names and search,
-  ADR-056 amended, 29 October), [#291] (`docs-start-here`, ADR-086's
-  part 2 and ADR-087, 28 October), [#259] (`docs-moves`, ADR-086's part
-  1, 27 October), [#257] (the emails' design, ADR-083, 27 October),
-  [#254] (CI's reliability, closing [#252], 26 October), [#251] (the
-  organization's square logo, ADR-060 amended, 26 October) and [#247]
-  (the brand, ADR-082, 25 October).
+- **The last merges:** [#327] ([#318], the chat-side planning skill,
+  ADR-088, 29 October, deployed; on 30 October its branches pruned and
+  `scripts/clean-local.sh` run for the first time), [#325] ([#316], one
+  rate limit per person, ADR-011 amended, 29 October), [#317] ([#260],
+  product names and search, ADR-056 amended, 29 October), [#291]
+  (`docs-start-here`, ADR-086's part 2 and ADR-087, 28 October), [#259]
+  (`docs-moves`, ADR-086's part 1, 27 October), [#257] (the emails'
+  design, ADR-083, 27 October), [#254] (CI's reliability, closing
+  [#252], 26 October), [#251] (the organization's square logo, ADR-060
+  amended, 26 October) and [#247] (the brand, ADR-082, 25 October).
 - **The release:** v0.7.0, tagged on 16 October 2026; both packages'
   versions are 0.7.0.
 - **Migrations** through 0075 (the square logo's), 76 files in
@@ -96,6 +107,10 @@ On 29 October 2026:
   address both times, so it could not show two counters. MC-4002 and
   MC-4003 passed, and `RATE_LIMIT_MAX` is 100
   ([`render.md`, "Rate limits and the client's address"](runbooks/render.md#rate-limits-and-the-clients-address-adr-011-amended-316)).
+- **Confirm `RATE_LIMIT_AUTH_MAX` is gone** from the API's Environment
+  page on Render. `render.md` records it deleted on 29 October; one left
+  behind does nothing, since the settings check drops names it does not
+  declare (ADR-011's as-built).
 - **Lighthouse on the live site, and the site reached from China,**
   before the first paying customer (`/production-readiness`'s H5 and H6,
   #317's review).
@@ -129,14 +144,14 @@ them:
    merged 29 October. Then [#316], the rate limit keyed on the person,
    with `/triage` riding along: [#325], merged 29 October. Then the
    chat-side planning skill ([#318], ADR-088), a docs PR, its source
-   kept in this repository (Bob, 29 October 2026): [#327], open.
-   ADR-084's package updates come of age only from 2 to 5 November, and
-   ADR-084 and ADR-085 each start with the routine it holds. Once it
-   merges, by hand: `scripts/clean-local.sh`'s first run, a dry run
-   first; the skill packed and uploaded, where its copy sits in the
-   chat's container noted, and its `evals.md` walked.
-4. **ADR-084, an error tracker** ([#287]), with `typescript-eslint` 8.72.1
-   (old enough from 2 November), the Nest packages at 12.3.x (from 3
+   kept in this repository (Bob, 29 October 2026): [#327], merged 29
+   October; the skill uploaded on 30 October (above).
+4. **ADR-084, an error tracker** ([#287]): planned on 30 October
+   ([ADR-084](adr/0084-an-error-tracker.md)), built from 5 November, with
+   [#244] and [#266] riding along beside what follows, and the planning
+   skill's fix with a guard that packs it only from `main`. With
+   `typescript-eslint` 8.72.1 (old enough from 2 November), the Nest
+   packages at 12.3.x (from 3
    November), `@aws-sdk/client-s3` 3.1160.0 (from 5 November) and the
    eight #260 left (`@nestjs/cli`, `@nestjs/swagger`, `@nestjs/schematics`,
    `@formatjs/cli`, `react-intl`, `react-router-dom`, `@types/node`,
@@ -219,6 +234,7 @@ Not repeated here; each list has one home:
 [#226]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/226
 [#232]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/232
 [#233]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/233
+[#244]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/244
 [#245]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/245
 [#247]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/247
 [#248]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/248
@@ -236,15 +252,14 @@ Not repeated here; each list has one home:
 [#262]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/262
 [#263]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/263
 [#264]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/264
+[#266]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/266
 [#268]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/268
 [#269]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/269
 [#276]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/276
 [#287]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/287
 [#288]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/288
-[#289]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/289
 [#290]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/290
 [#291]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/291
-[#292]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/292
 [#293]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/293
 [#298]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/298
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
