@@ -1,3 +1,4 @@
+import { parseEnvelope } from '@sentry/core';
 import * as Sentry from '@sentry/node';
 
 import { flushFaults, startTracker } from '../../src/common/faults/tracker';
@@ -19,12 +20,10 @@ export class RecordingTracker {
       },
       (options) =>
         Sentry.createTransport(options, (request) => {
-          const lines = String(request.body).split('\n');
-          for (let i = 1; i < lines.length; i += 2) {
-            const item = JSON.parse(lines[i]) as { type: string };
-            if (item.type === 'event') {
-              this.events.push(JSON.parse(lines[i + 1]) as Sentry.Event);
-            }
+          const [, items] = parseEnvelope(request.body);
+          for (const [item, payload] of items) {
+            if (item.type === 'event')
+              this.events.push(payload as Sentry.Event);
           }
           return Promise.resolve({ statusCode: 200 });
         }),

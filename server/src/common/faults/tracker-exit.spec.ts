@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { join, resolve } from 'node:path';
 
+import { parseEnvelope } from '@sentry/core';
 import type { Event } from '@sentry/node';
 
 const SERVER = resolve(__dirname, '..', '..', '..');
@@ -18,12 +19,9 @@ const stub = createServer((request, response) => {
   request.setEncoding('utf8');
   request.on('data', (chunk: string) => (body += chunk));
   request.on('end', () => {
-    const lines = body.split('\n');
-    for (let i = 1; i < lines.length; i += 2) {
-      const item = JSON.parse(lines[i]) as { type: string };
-      if (item.type === 'event') {
-        received.push(JSON.parse(lines[i + 1]) as Event);
-      }
+    const [, items] = parseEnvelope(body);
+    for (const [item, payload] of items) {
+      if (item.type === 'event') received.push(payload as Event);
     }
     response.writeHead(200).end('{}');
   });
