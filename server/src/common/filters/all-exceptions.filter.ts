@@ -76,13 +76,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // 5xx means a bug — log the full error with its stack. 4xx is the client
     // being told no, which is normal traffic and not worth an error log. So
     // is a client newer than the API told to wait, whose 503 is logged where
-    // it was refused (ADR-081).
+    // it was refused (ADR-081). The path without its query, which can hold
+    // a search term: that lands in the request's own log line only (#193).
     if (
       status >= HttpStatus.INTERNAL_SERVER_ERROR &&
       !ApiRevisionMiddleware.refused(req)
     ) {
       this.logger.error(
-        `${req.method} ${body.path} -> ${status}`,
+        `${req.method} ${body.path.split('?')[0]} -> ${status}`,
         exception instanceof Error ? exception.stack : String(exception),
       );
     }
