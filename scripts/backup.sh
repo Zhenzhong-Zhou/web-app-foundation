@@ -18,7 +18,7 @@
 #   BACKUP_BUCKET, BACKUP_S3_REGION, BACKUP_S3_ENDPOINT,
 #   BACKUP_S3_ACCESS_KEY_ID, BACKUP_S3_SECRET_ACCESS_KEY      for s3
 #
-# Prints the backup's path (local) or key (s3) on the last line, and, in
+# Prints the backup's path (local) or key (s3) alone on stdout, and, in
 # GitHub Actions, writes the dump's size and the database's to the run's
 # summary. Exits non-zero on any failure, so a scheduler sees it: a failed
 # pg_dump never leaves an encrypted empty file behind looking like a backup.
@@ -70,7 +70,7 @@ check_size() {
   [[ -n $previous && $previous -gt 0 ]] || return 0
   local change=$(((bytes - previous) * 100 / previous))
   if ((change > 50 || change < -50)); then
-    echo "::warning::Backup size changed ${change}% ($previous → $bytes bytes). Check before trusting it."
+    echo "::warning::Backup size changed ${change}% ($previous → $bytes bytes). Check before trusting it." >&2
     note "warning: size changed ${change}% from the previous backup"
   fi
 }
