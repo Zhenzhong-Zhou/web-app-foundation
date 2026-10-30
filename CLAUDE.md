@@ -62,7 +62,8 @@ Andrej Karpathy's observations on LLM coding pitfalls
 - **Before committing and pushing.** Before each commit,
   `scripts/verify.sh --docs` when it changes only `scripts/` and Markdown
   outside `client/` and `docs/tables/`, and `--quick` for anything else; `scripts/verify.sh`
-  in full before each push. It runs what CI runs, markdown included
+  in full before each push. It runs what CI runs, markdown included, but
+  for the checks its header leaves to CI, `npm audit` among them
   ([`docs/engineering.md`, Commits](docs/engineering.md#commits)).
 - **The API contract (ADR-068).** A response is a declared class in the
   module's `dto/*-response.dto.ts`, projected to exactly its fields:
