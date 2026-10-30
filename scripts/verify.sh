@@ -142,20 +142,19 @@ against_main() {
 # client/. client/ is refused even for Markdown: the Help guides in
 # client/src/help/guides/ are the app's content, which
 # client/src/help/guides.test.ts checks and --docs does not run. Anything
-# else, it names and stops. The Markdown step already runs adr-index.mjs's
-# --check, through check-docs.mjs.
+# else, it names and stops, each file indented as it is printed. The
+# Markdown step already runs adr-index.mjs's --check, through
+# check-docs.mjs.
 if [[ $mode == docs ]]; then
   others="$(
     {
       git -c core.quotePath=false diff --name-only --no-renames HEAD
       git -c core.quotePath=false ls-files --others --exclude-standard
-    } | awk '/^client\// || !/\.md$|^scripts\//' | sort -u
+    } | awk '/^client\// || !/\.md$|^scripts\//' | sort -u | sed 's/^/  /'
   )"
   if [[ -n "$others" ]]; then
     echo 'Changed, and not what --docs checks (Markdown outside client/, and scripts/):' >&2
-    # sed indents every line alike; ${others//…} would need the first apart.
-    # shellcheck disable=SC2001
-    sed 's/^/  /' <<< "$others" >&2
+    echo "$others" >&2
     echo 'Run scripts/verify.sh --quick instead.' >&2
     exit 1
   fi
