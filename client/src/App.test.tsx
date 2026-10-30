@@ -145,6 +145,12 @@ it('shows the crash page before sign-in, with Reload and the reference it report
   // In the frame of the screens before sign-in, with Reload alone: Go home
   // would lead to Sign in.
   expect(screen.getByRole('main')).toContainElement(title);
+  // No Help here, nor an owner to ask: whom to give the reference.
+  expect(
+    screen.getByText(
+      'Try again later. If it keeps happening, give the reference below to the person who invited you.',
+    ),
+  ).toBeVisible();
   expect(screen.getByRole('button', { name: 'Reload' })).toBeVisible();
   expect(screen.queryByRole('link', { name: 'Go home' })).toBeNull();
 

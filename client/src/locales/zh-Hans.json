@@ -1963,6 +1963,7 @@
   "settings.tax.removeThis": "移除此税种",
   "settings.tax.saved": "税码已保存",
   "status.crash.message": "此页面出现故障。重新加载通常可以解决。如再次发生，请发送下方的参考编号。",
+  "status.crash.signedOut": "请稍后再试。如果仍然出错，请把下方的参考编号告诉邀请您的人。",
   "status.forbidden.title": "您无权访问此内容",
   "status.goHome": "返回首页",
   "status.goToList": "前往{list}",

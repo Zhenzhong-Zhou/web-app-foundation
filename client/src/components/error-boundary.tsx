@@ -30,7 +30,8 @@ interface Props {
   /**
    * Before sign-in (#244): the status page on its own, in the product's
    * frame, with Reload alone, since Go home leads to Sign in, which may be
-   * the page that broke.
+   * the page that broke; and saying whom to give the reference, since no
+   * Help is there.
    */
   standalone?: boolean;
 }
@@ -157,11 +158,19 @@ function Failure({
         id: 'components.errorBoundary.title',
         defaultMessage: 'Something went wrong',
       })}
-      message={intl.formatMessage({
-        id: 'status.crash.message',
-        defaultMessage:
-          'This page stopped working. Reloading usually fixes it. If it happens again, send the reference below.',
-      })}
+      message={
+        standalone
+          ? intl.formatMessage({
+              id: 'status.crash.signedOut',
+              defaultMessage:
+                'Try again later. If it keeps happening, give the reference below to the person who invited you.',
+            })
+          : intl.formatMessage({
+              id: 'status.crash.message',
+              defaultMessage:
+                'This page stopped working. Reloading usually fixes it. If it happens again, send the reference below.',
+            })
+      }
       actions={
         standalone ? (
           <Reload primary />

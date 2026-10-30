@@ -64,6 +64,11 @@ describe('the app’s route, when what it draws breaks', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: '出错了' }),
     ).toBeVisible();
+    expect(
+      screen.getByText(
+        '请稍后再试。如果仍然出错，请把下方的参考编号告诉邀请您的人。',
+      ),
+    ).toBeVisible();
     expect(screen.getByRole('button', { name: '重新加载' })).toBeVisible();
     expect(screen.queryByText('Unexpected Application Error!')).toBeNull();
 

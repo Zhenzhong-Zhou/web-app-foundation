@@ -1963,6 +1963,7 @@
   "settings.tax.removeThis": "Remove this tax",
   "settings.tax.saved": "Tax code saved",
   "status.crash.message": "This page stopped working. Reloading usually fixes it. If it happens again, send the reference below.",
+  "status.crash.signedOut": "Try again later. If it keeps happening, give the reference below to the person who invited you.",
   "status.forbidden.title": "You don’t have access to this",
   "status.goHome": "Go home",
   "status.goToList": "Go to {list}",

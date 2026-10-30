@@ -2922,15 +2922,18 @@ first.
   shows on its own, as Sign in would: the product's name above it, the
   language and text size at the top, the © line below, with Reload and a
   reference to quote; never React Router's Unexpected Application Error!
-  or the code's stack. In 简体中文 it reads 出错了, with 重新加载. Reload
+  or the code's stack. It says whom to give the reference: Try again
+  later, and if it keeps happening, the person who invited you. In 简体中文
+  it reads 出错了, 请稍后再试…告诉邀请您的人, with 重新加载. Reload
   shows it again, the page still broken. The browser's Back shows Create
   an account, not the message. With the tracker set up as section 41
   says, one `POST /api/errors`, answered 204, and its event holds the
   reference shown, with no user. The same, in the language chosen, for
   the parts around every page: for a developer, throw in `AuthProvider`'s
   render, then, with that undone and signed in, in `AppLayout`'s. Each
-  shows Something went wrong on its own, with Reload and a reference,
-  never React Router's page, and sends one `POST /api/errors`; on the
+  shows Something went wrong on its own, in the same words, with Reload
+  and a reference, never React Router's page, and sends one `POST
+  /api/errors`; on the
   first, the language select still switches the page's language.
 
 - **MC-R64** *(a role deleted while it is being given, refused in words,
@@ -3985,3 +3988,5 @@ first.
   uploaded at the build and never published: MC-4105.
 - 2026-10-30: #269, the backup run's summary giving the dump's size and
   the database's: MC-1301 extended.
+- 2026-10-30: ADR-084's reviews, the crash page on its own saying whom to
+  give the reference, the person who invited you: MC-R65 extended.
