@@ -20,6 +20,9 @@
 # The API contract runs in full and with --quick, not with --docs
 # (ADR-068): it regenerates server/openapi.json and client/src/api/, and
 # stops if either changed, leaving the fresh files in place to commit.
+# So do the table diagrams in docs/tables/ (ADR-086), which change nothing
+# and stop when a page is not what the schema gives or a table is in no
+# area.
 #
 # So do the three checks CI makes of a pull request against main, here
 # against origin/main as last fetched: a breaking API change raises the
@@ -69,6 +72,13 @@ contract() {
     echo '(conventions.md, "The API contract").' >&2
     exit 1
   fi
+}
+
+# One diagram per area of its tables, written from the Drizzle schema by
+# `npm run diagrams` in server/, which names what differs.
+diagrams() {
+  step 'Table diagrams: docs/tables/ is the schema, every table in an area'
+  (cd server && npm run diagrams -- --check)
 }
 
 # The scripts' format, by the Prettier both packages pin, here the
@@ -170,6 +180,7 @@ elif [[ $mode == quick ]]; then
     && npm run checks && npm run build && npm test)
 
   contract
+  diagrams
   scripts_tests
   against_main
 
@@ -180,6 +191,7 @@ else
   (cd server && npm run verify)
 
   contract
+  diagrams
   scripts_tests
   against_main
 

@@ -143,6 +143,9 @@ export default tseslint.config(
       // The export, writing what each role may do and each member's role.
       'src/core/organizations/organization-export.service.ts',
       'src/core/organizations/organization-tables.ts',
+      // The table diagrams, naming each table to give it its area; they
+      // read no row (ADR-086).
+      'src/cli/table-diagrams.ts',
     ],
     rules: {
       'no-restricted-syntax': [

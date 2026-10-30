@@ -233,6 +233,12 @@ jobs:
           test -z "$(git status --porcelain -- openapi.json ../client/src/api)"
         working-directory: server
 
+      # The table diagrams in docs/tables/ against the schema, every table
+      # in an area (ADR-086): the check scripts/verify.sh makes.
+      - name: Check the table diagrams
+        run: npm run diagrams -- --check
+        working-directory: server
+
       # The server's own catalogues against its t() calls (ADR-054).
       - name: Check server catalogues
         run: npm run i18n:check

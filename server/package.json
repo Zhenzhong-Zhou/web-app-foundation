@@ -13,6 +13,7 @@
     "build": "nest build",
     "api:spec": "nest build -p tsconfig.openapi.json && node dist-openapi/openapi/write-openapi.js",
     "api": "npm run api:spec && npm --prefix ../client run api:types",
+    "diagrams": "ts-node src/cli/table-diagrams.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
