@@ -139,12 +139,12 @@ Andrej Karpathy's observations on LLM coding pitfalls
   skill list, as `anthropic-skills:plan-feature`; it is the chat's alone,
   so Claude Code never runs it.
 
-Every feature branch runs, for any PR that changes what a person sees,
+Every feature branch runs, before the PR is opened,
 `/usability-walkthrough` as one of its personas
-(`.claude/skills/usability-walkthrough/personas.md`), then `/simplify`,
-then `/code-review`, then `/production-readiness` on the sections the
-change touches, then `/doctor prompt-audit`, Claude Code's audit of its
-instruction files (v2.1.283 or later), which Bob types in the session,
-since a session cannot run it; all of them before the PR is opened.
-Their findings are numbered together and nothing is fixed until Bob
-chooses; each fix chosen is its own commit.
+(`.claude/skills/usability-walkthrough/personas.md`) when the PR changes
+what a person sees, then `/simplify`, then `/code-review`, then
+`/production-readiness` on the sections the change touches, then
+`/doctor prompt-audit`, Claude Code's audit of its instruction files
+(v2.1.283 or later), which Bob types in the session, since a session
+cannot run it. Their findings are numbered together and nothing is fixed
+until Bob chooses; each fix chosen is its own commit.
