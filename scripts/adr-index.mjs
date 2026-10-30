@@ -63,20 +63,17 @@ let listing = null;
  */
 export function inRepository() {
   if (listing) return listing;
-  // -t tags each file: ? for one git does not track yet.
-  const output = execFileSync(
-    "git",
-    ["ls-files", "-z", "-t", "--cached", "--others", "--exclude-standard"],
-    { cwd: ROOT, encoding: "utf8" },
-  );
-  const files = new Set();
-  const untracked = new Set();
-  for (const entry of output.split("\0")) {
-    const file = entry.slice(2);
-    if (!file || !existsSync(path.join(ROOT, file))) continue;
-    files.add(file);
-    if (entry[0] === "?") untracked.add(file);
-  }
+  // Two listings rather than -t's tags, which git's manual calls
+  // semi-deprecated: every file, then the ones git does not track yet.
+  const list = (...args) =>
+    execFileSync("git", ["ls-files", "-z", ...args], {
+      cwd: ROOT,
+      encoding: "utf8",
+    })
+      .split("\0")
+      .filter((file) => file && existsSync(path.join(ROOT, file)));
+  const files = new Set(list("--cached", "--others", "--exclude-standard"));
+  const untracked = new Set(list("--others", "--exclude-standard"));
   const folders = new Set([""]);
   for (const file of files) {
     for (let at = file.indexOf("/"); at > 0; at = file.indexOf("/", at + 1)) {
