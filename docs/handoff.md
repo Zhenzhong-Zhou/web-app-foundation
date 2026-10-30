@@ -13,13 +13,25 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 29 October 2026:
+On 30 October 2026:
 
-- **[#327],** [#318]'s pull request, the chat-side planning skill
-  ([ADR-088](adr/0088-planning-in-the-chat-as-a-skill.md)), with a
-  script that cleans the Mac's working folders, ShellCheck, [#289] and
-  [#292]'s wording riding along: built and reviewed; it merges after its
-  as-built docs. Then ADR-084 (the order, below).
+- **ADR-084, an error tracker** ([#287]): built and reviewed on 30
+  October in 47 commits, its as-built in
+  [ADR-084](adr/0084-an-error-tracker.md); [#329] open, merging once CI
+  is green. After the merge, by hand: the tracker set up as
+  [`render.md`, "The error tracker"](runbooks/render.md#the-error-tracker-adr-084)
+  says, with Sentry's spike protection on; MC-4101, MC-4102 and MC-4105
+  on the live site; the web service's memory on Render's Metrics a day
+  later; and the planning skill packed from `main` and uploaded.
+- **The planning skill** ([ADR-088](adr/0088-planning-in-the-chat-as-a-skill.md))
+  was uploaded on 30 October. The chat's container holds the copy at
+  `/mnt/skills/plugins/plan-feature/`, read only and without `evals.md`;
+  each session compares it with `main`'s first. ADR-084's session
+  walked `evals.md`'s prompts 1, 2, 3 and 5; 4 waits for a patch that is
+  refused. Prompt 2 found the issue command
+  printing no issue's text, so the skill's fix rides with ADR-084. The
+  fixed skill is packed from `main` and uploaded once ADR-084 merges;
+  until then v1 stays (ADR-088's amendment).
 - **The triage** is done (28 October;
   [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
   every open issue has its group and area labels, the `fix-now` ones are
@@ -28,14 +40,16 @@ On 29 October 2026:
   [#186], then reopened on 29 October, when slower runners put the typo
   lookup at 333 to 363 ms; it and [#276] carry known misses until 30
   November.
-- **The last merges:** [#325] ([#316], one rate limit per person,
-  ADR-011 amended, 29 October), [#317] ([#260], product names and search,
-  ADR-056 amended, 29 October), [#291] (`docs-start-here`, ADR-086's
-  part 2 and ADR-087, 28 October), [#259] (`docs-moves`, ADR-086's part
-  1, 27 October), [#257] (the emails' design, ADR-083, 27 October),
-  [#254] (CI's reliability, closing [#252], 26 October), [#251] (the
-  organization's square logo, ADR-060 amended, 26 October) and [#247]
-  (the brand, ADR-082, 25 October).
+- **The last merges:** [#327] ([#318], the chat-side planning skill,
+  ADR-088, 29 October, deployed; on 30 October its branches pruned and
+  `scripts/clean-local.sh` run for the first time), [#325] ([#316], one
+  rate limit per person, ADR-011 amended, 29 October), [#317] ([#260],
+  product names and search, ADR-056 amended, 29 October), [#291]
+  (`docs-start-here`, ADR-086's part 2 and ADR-087, 28 October), [#259]
+  (`docs-moves`, ADR-086's part 1, 27 October), [#257] (the emails'
+  design, ADR-083, 27 October), [#254] (CI's reliability, closing
+  [#252], 26 October), [#251] (the organization's square logo, ADR-060
+  amended, 26 October) and [#247] (the brand, ADR-082, 25 October).
 - **The release:** v0.7.0, tagged on 16 October 2026; both packages'
   versions are 0.7.0.
 - **Migrations** through 0075 (the square logo's), 76 files in
@@ -66,15 +80,13 @@ On 29 October 2026:
   space where the page writes 到 2026年. And, on a phone, to someone who
   reads only Chinese: the close dialog (MC-2406), Roles and the role
   editor in 中文, 品牌, product photos, 同事, and 编号 (MC-2710).
-- **2 November:** `typescript-eslint` 8.72.1 is old enough, for ADR-084's
-  branch ([#287]).
-- **3 November:** the Nest packages at 12.3.x are old enough (ADR-084,
-  [#287]).
-- **4 November:** the eight updates #260 left (by 20:26 UTC) are old
-  enough, for ADR-084's branch.
-- **5 November:** `nodemailer` 10.3.1 (12:32 UTC) and
-  `@aws-sdk/client-s3` 3.1160.0 (18:46 UTC), the last of ADR-084's
-  updates, are old enough.
+- **2 to 6 November:** the updates ADR-084 left come of age, for
+  ADR-085's start (UTC): `typescript-eslint` 8.72.1 on 2 November, 17:10;
+  the Nest packages at 12.3.x on 3 November, 12:04, so the multer
+  override goes; the eight #260 left by 4 November, 20:27; the four
+  `@sentry` packages to 11.10.0 on 4 November, 16:21; `nodemailer`
+  10.3.1 and `@aws-sdk/client-s3` 3.1160.0 on 5 November, by 18:47; and
+  `eslint` 10.14.0 on 6 November, 14:13.
 - **30 November:** the known misses for the typo lookup ([#225]) and Home
   ([#276]) end; fixed by then, or decided again.
 - **Early November:** Bob's cloud credit ends; [#245] suits a cloud session
@@ -96,6 +108,10 @@ On 29 October 2026:
   address both times, so it could not show two counters. MC-4002 and
   MC-4003 passed, and `RATE_LIMIT_MAX` is 100
   ([`render.md`, "Rate limits and the client's address"](runbooks/render.md#rate-limits-and-the-clients-address-adr-011-amended-316)).
+- **Confirm `RATE_LIMIT_AUTH_MAX` is gone** from the API's Environment
+  page on Render. `render.md` records it deleted on 29 October; one left
+  behind does nothing, since the settings check drops names it does not
+  declare (ADR-011's as-built).
 - **Lighthouse on the live site, and the site reached from China,**
   before the first paying customer (`/production-readiness`'s H5 and H6,
   #317's review).
@@ -129,22 +145,14 @@ them:
    merged 29 October. Then [#316], the rate limit keyed on the person,
    with `/triage` riding along: [#325], merged 29 October. Then the
    chat-side planning skill ([#318], ADR-088), a docs PR, its source
-   kept in this repository (Bob, 29 October 2026): [#327], open.
-   ADR-084's package updates come of age only from 2 to 5 November, and
-   ADR-084 and ADR-085 each start with the routine it holds. Once it
-   merges, by hand: `scripts/clean-local.sh`'s first run, a dry run
-   first; the skill packed and uploaded, where its copy sits in the
-   chat's container noted, and its `evals.md` walked.
-4. **ADR-084, an error tracker** ([#287]), with `typescript-eslint` 8.72.1
-   (old enough from 2 November), the Nest packages at 12.3.x (from 3
-   November), `@aws-sdk/client-s3` 3.1160.0 (from 5 November) and the
-   eight #260 left (`@nestjs/cli`, `@nestjs/swagger`, `@nestjs/schematics`,
-   `@formatjs/cli`, `react-intl`, `react-router-dom`, `@types/node`,
-   `dotenv-cli`; all by 4 November, 20:26 UTC), whose
-   `@nestjs/platform-express` depends on multer 2.5.0 itself, so the
-   multer override goes (ADR-019); an `npm audit` step in CI ([#268]), the database's size in the backup's
-   summary ([#269]), and the per-area table diagrams.
-5. **ADR-085, low stock** ([#288]), with [#222] and [#256].
+   kept in this repository (Bob, 29 October 2026): [#327], merged 29
+   October; the skill uploaded on 30 October (above).
+4. **ADR-084, an error tracker** ([#287]): [#329], open; it closes
+   [#244], [#266], [#268] and [#269] beside [#287]. After its merge, the
+   by-hand list under "Where things stand".
+5. **ADR-085, low stock** ([#288]), with [#222] and [#256], starting
+   with the updates ADR-084 left (Dates) and the multer override's
+   removal (ADR-019).
 6. **The fix-ups:** the Fix-ups milestone in batches by area, each
    writing its areas' rules files. First the flaky tests, [#183], [#232],
    [#233], [#248] and [#290], so CI can be trusted for the rest; [#225]
@@ -219,6 +227,7 @@ Not repeated here; each list has one home:
 [#226]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/226
 [#232]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/232
 [#233]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/233
+[#244]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/244
 [#245]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/245
 [#247]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/247
 [#248]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/248
@@ -236,15 +245,14 @@ Not repeated here; each list has one home:
 [#262]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/262
 [#263]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/263
 [#264]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/264
+[#266]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/266
 [#268]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/268
 [#269]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/269
 [#276]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/276
 [#287]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/287
 [#288]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/288
-[#289]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/289
 [#290]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/290
 [#291]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/291
-[#292]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/292
 [#293]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/293
 [#298]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/298
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
@@ -258,3 +266,4 @@ Not repeated here; each list has one home:
 [#325]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/325
 [#326]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/326
 [#327]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/327
+[#329]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/329

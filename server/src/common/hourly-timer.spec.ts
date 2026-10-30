@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { MockInstance } from 'vitest';
 
+import { reportFault } from './faults/tracker';
 import { HourlyTimer } from './hourly-timer';
+
+vi.mock('./faults/tracker', () => ({ reportFault: vi.fn() }));
 
 const HOUR = 60 * 60 * 1000;
 
@@ -15,6 +18,7 @@ describe('HourlyTimer', () => {
   let error: MockInstance;
 
   beforeEach(() => {
+    vi.mocked(reportFault).mockClear();
     vi.useFakeTimers();
     error = vi
       .spyOn(Logger.prototype, 'error')
@@ -56,6 +60,38 @@ describe('HourlyTimer', () => {
 
     await vi.advanceTimersByTimeAsync(HOUR);
     expect(timer.run).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports a run that fails once, by the job', async () => {
+    const timer = new Probe();
+    const failure = new Error('storage unreachable');
+    timer.run.mockRejectedValueOnce(failure);
+
+    timer.start();
+    await vi.advanceTimersByTimeAsync(HOUR);
+
+    expect(reportFault).toHaveBeenCalledTimes(1);
+    expect(reportFault).toHaveBeenCalledWith(failure, { job: 'Probe' });
+  });
+
+  it('reports a fault that lasts once, and again after a run succeeds', async () => {
+    const timer = new Probe();
+    timer.run
+      .mockRejectedValueOnce(new Error('storage unreachable'))
+      .mockRejectedValueOnce(new Error('storage unreachable at 05:00'))
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('storage unreachable'));
+
+    // Fail, fail: both logged, one report.
+    timer.start();
+    await vi.advanceTimersByTimeAsync(HOUR);
+    expect(error).toHaveBeenCalledTimes(2);
+    expect(reportFault).toHaveBeenCalledTimes(1);
+
+    // Succeed, fail: reported again.
+    await vi.advanceTimersByTimeAsync(2 * HOUR);
+    expect(timer.run).toHaveBeenCalledTimes(4);
+    expect(reportFault).toHaveBeenCalledTimes(2);
   });
 
   it('stops at shutdown', async () => {

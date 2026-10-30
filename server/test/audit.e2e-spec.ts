@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
 import { todayIn } from '../src/common/today';
+import { AuditService } from '../src/core/audit/audit.service';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -13,6 +14,7 @@ import {
   createE2eApp,
   registerOrganization,
 } from './utils/fixtures';
+import { RecordingTracker } from './utils/recording-tracker';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 import { clearOfMidnight } from './utils/time-zones';
@@ -379,6 +381,32 @@ describe('Audit (e2e)', () => {
       const alpha = await registerOrganization(app, 'alpha');
 
       await alpha.agent.get('/v1/audit?from=not-a-date').expect(400);
+    });
+  });
+
+  /**
+   * The write has happened, so a failed entry is logged and reported, not
+   * answered as a failed write (ADR-018, ADR-084).
+   */
+  describe('an entry that cannot be written', () => {
+    const faults = new RecordingTracker();
+    afterEach(() => faults.stop());
+
+    it('leaves the write done, and is reported to the error tracker', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      faults.start();
+      vi.spyOn(app.get(AuditService), 'record').mockRejectedValueOnce(
+        new Error('canceling statement due to lock timeout'),
+      );
+
+      await makeProduct(alpha, 'BOLT-1');
+
+      const sent = await faults.sent();
+      expect(sent).toHaveLength(1);
+      expect(sent[0]).toMatchObject({
+        tags: { failed: 'an audit write', organization: alpha.organizationId },
+        user: { id: alpha.userId },
+      });
     });
   });
 });

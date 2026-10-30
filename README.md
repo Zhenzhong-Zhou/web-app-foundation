@@ -176,6 +176,8 @@ Run from `server/`.
 | `npm run seed:volume`               | A year of data for several organizations (`-- --scale small` or `large`), for `perf` |
 | `npm run perf`                      | Response-time budgets over HTTP against the volume seed                              |
 | `npm run perf:plans`                | Query plans: fails on a sequential scan of a large table                             |
+| `npm run diagrams`                  | Each area's tables as a diagram in `docs/tables/`; `-- --check` as verify runs it    |
+| `npm run error-tracker:test`        | `-- <site>`: one test report through that site's `/api/errors` (ADR-084)             |
 | `npm test`                          | Unit tests                                                                           |
 | `npm run test:e2e`                  | Integration tests; migrates the test database first                                  |
 | `npm run lint` / `lint:ci`          | Lint and fix / lint only, as CI runs it                                              |
@@ -220,7 +222,7 @@ work under updates it.
 
 | When                                   | Tool                                                                                                                                            |
 |----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| Before each commit                     | `scripts/verify.sh --docs` for a commit of only `scripts/` and Markdown outside `client/`, `--quick` for any other                              |
+| Before each commit                     | `scripts/verify.sh --docs` for a commit of only `scripts/` and Markdown outside `client/` and `docs/tables/`, `--quick` for any other           |
 | Before every push                      | `scripts/verify.sh`, in full                                                                                                                    |
 | A branch's start, and before reviews   | `npm outdated` in `server/` and `client/` ([conventions.md, "Dependencies"](docs/conventions.md#dependencies))                                  |
 | A change people will see               | `npm run screenshots` before and after, then `npm run screenshots:compare`                                                                      |
@@ -228,8 +230,10 @@ work under updates it.
 | A change to an email, in pictures      | `npm run screenshots:mail` in `client/` on each preview, then `screenshots:compare`                                                             |
 | An email's words changed on purpose    | `npm run mail:text -- --update` in `server/`; commit the files with the words                                                                   |
 | A change to what the API sends         | `npm run api` in `server/`; commit both generated files                                                                                         |
+| A new table                            | Its area in `TABLE_AREAS`, then `npm run diagrams` in `server/`; commit what it writes in `docs/tables/`                                        |
+| A deploy that changes the tracker      | `npm run error-tracker:test -- <site>` in `server/` ([render.md](docs/runbooks/render.md#the-error-tracker-adr-084))                            |
 | A change to the mark, in `docs/brand/` | `node scripts/brand-assets.mjs`; commit what it writes in `client/public/`                                                                      |
-| The planning skill changed             | `node scripts/pack-chat-skill.mjs`; in claude.ai, Settings → Capabilities → Skills, replace it with `tmp/plan-feature.zip`; walk `evals.md`     |
+| The planning skill changed             | After its merge, on `main`: `node scripts/pack-chat-skill.mjs`; replace it in claude.ai's Settings → Skills; walk `evals.md`                    |
 | Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                                          |
 | Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                                                              |
 | After a merge                          | `scripts/prune-branches.sh --yes`                                                                                                               |

@@ -3,8 +3,8 @@
  * The chat's planning skill, checked as claude.ai checks an upload, then
  * packed for it (ADR-088).
  *
- *     node scripts/pack-chat-skill.mjs            # checks, then writes tmp/plan-feature.zip
- *     node scripts/pack-chat-skill.mjs --check    # checks only, as the Docs workflow does
+ *     node scripts/pack-chat-skill.mjs            # checks, then, at main only, writes tmp/plan-feature.zip
+ *     node scripts/pack-chat-skill.mjs --check    # checks only, anywhere, as the Docs workflow does
  *
  * The skill is .claude/chat-skills/plan-feature/, its files the ones git
  * tracks or would track there, so what is packed is what main's copy
@@ -20,6 +20,15 @@
  * in the skill's Markdown, read as check-docs.mjs reads links, leads to a
  * file it uploads. evals.md is not uploaded, so a link to it fails too.
  * Each failure is printed as `file: reason`, and it exits 1.
+ *
+ * The guard (whyNotMain), before the pack and never with --check: after
+ * `git fetch origin main`, it packs only when HEAD is origin/main's
+ * commit and git status shows nothing changed or added under
+ * .claude/chat-skills/, so an upload is always main's copy, the one each
+ * session compares it with (ADR-088's amendment). Otherwise it says to
+ * merge first and pack from main, or to commit or restore the skill's
+ * changes, and exits 1; so too when origin cannot be reached, since
+ * then whether this is main's commit is unknown.
  *
  * The pack: tmp/plan-feature.zip, written fresh by the system's zip, run
  * from .claude/chat-skills/ so plan-feature/ is the archive's root, with
@@ -185,6 +194,45 @@ export function checkSkill(folder) {
 }
 
 /**
+ * Why the skill may not be packed from the folder's repository, or null
+ * when it may: only at origin/main's commit, fetched now, with nothing
+ * under the folder changed or added. Each reason says what to do.
+ */
+export function whyNotMain(folder) {
+  const fetched = spawnSync("git", ["fetch", "--quiet", "origin", "main"], {
+    cwd: folder,
+    encoding: "utf8",
+  });
+  if (fetched.status !== 0) {
+    return "Could not fetch main from origin, so whether this is main's commit is unknown: the skill is packed only from main, so run this again once origin can be reached.";
+  }
+
+  const [head, main] = execFileSync(
+    "git",
+    ["rev-parse", "HEAD", "origin/main"],
+    { cwd: folder, encoding: "utf8" },
+  )
+    .trim()
+    .split("\n");
+  if (head !== main) {
+    return "This is not origin/main's commit, and the skill is packed only from main: merge its change first, then pack on main, pulled.";
+  }
+
+  const changed = execFileSync(
+    "git",
+    ["status", "--porcelain", "--untracked-files=all", "--", "."],
+    { cwd: folder, encoding: "utf8" },
+  )
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => line.slice(3));
+  if (changed.length > 0) {
+    return `The skill's folder has changes not committed, ${changed.join(", ")}: commit or restore them, then pack again, since an upload is main's copy.`;
+  }
+  return null;
+}
+
+/**
  * The skill's archive, written fresh, its folder at the root: an entry
  * for the folder and each one holding a file, then each file. zip adds
  * to an archive already there, so the old one goes first.
@@ -230,6 +278,12 @@ if (import.meta.main) {
   }
   console.log(`The skill ${NAME} passes the upload's checks.`);
   if (checking) process.exit(0);
+
+  const refused = whyNotMain(SKILLS);
+  if (refused) {
+    console.error(refused);
+    process.exit(1);
+  }
 
   const zipped = pack(folder, ARCHIVE);
   if (zipped.error?.code === "ENOENT") {

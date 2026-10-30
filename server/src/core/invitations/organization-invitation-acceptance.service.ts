@@ -2,6 +2,7 @@ import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
+import { reportFault } from '../../common/faults/tracker';
 import type { Locale } from '../../common/locales';
 import { operatorEmail } from '../../common/registration';
 import type { Database, Transaction } from '../../database/database.module';
@@ -363,6 +364,7 @@ export class OrganizationInvitationAcceptanceService {
       this.logger.error(
         `Could not tell the operator of invitation ${invitation.id}: ${String(error)}`,
       );
+      reportFault(error, { failed: 'telling the operator' });
     }
   }
 }

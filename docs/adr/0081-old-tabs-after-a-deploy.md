@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-22
 areas: [api, database, ops]
 amends: [ADR-013, ADR-051, ADR-052, ADR-054, ADR-055, ADR-068]
-amended-by: [ADR-082]
+amended-by: [ADR-082, ADR-084]
 ---
 
 # ADR-081 — Old tabs after a deploy: a newer build noticed, an outdated client told (amends ADR-013, ADR-051, ADR-052, ADR-054, ADR-055 and ADR-068)
@@ -587,3 +587,19 @@ The note quoted above now ends "Everything you've saved is kept; you
 don't need to do anything.", on a computer and, at the end of the menu's
 item, on a phone, in all three languages (#317). The rest of #263, the
 signed-out note among it, amends this ADR when it is planned.
+
+## Amendment (October 2026) — failed loads reported, refusals not (ADR-084)
+
+This settles the *Deferred* "Reporting failed loads and refusals to an
+error tracker", whose trigger was the monitoring decision,
+[ADR-084](0084-an-error-tracker.md):
+
+- **A page's code that will not load in this build,** "broken", is
+  reported, with the reference the crash page shows.
+- **"offline" and "newer" are not:** a dropped connection or a deploy,
+  which waiting or reloading fixes.
+- **Refusals are not,** `client_outdated` and `api_updating` among them:
+  the app working as designed. Each is logged where it is refused, as
+  before.
+- **The route the browser reports through** is version-neutral, so a
+  tab older than the API still reports.

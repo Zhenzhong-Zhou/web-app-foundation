@@ -1963,6 +1963,7 @@
   "settings.tax.removeThis": "Retirer cette taxe",
   "settings.tax.saved": "Code de taxe enregistré",
   "status.crash.message": "Cette page a cessé de fonctionner. Recharger règle généralement le problème. Si cela se reproduit, envoyez la référence ci-dessous.",
+  "status.crash.signedOut": "Réessayez plus tard. Si cela se reproduit, donnez la référence ci-dessous à la personne qui vous a envoyé l’invitation.",
   "status.forbidden.title": "Vous n’avez pas accès à ceci",
   "status.goHome": "Retour à l’accueil",
   "status.goToList": "Aller à {list}",

@@ -9,6 +9,7 @@ import {
 import { and, eq, isNull, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
+import { reportFault } from '../../common/faults/tracker';
 import type { Locale } from '../../common/locales';
 import type { Database, Transaction } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
@@ -511,11 +512,11 @@ export class InvitationAcceptanceService {
       await this.events.record(userId, 'account.email_verified', meta);
     }
 
-    try {
-      await runInTenantContext(
-        { userId, organizationId: invitation.organizationId },
-        () =>
-          this.audit.record({
+    await runInTenantContext(
+      { userId, organizationId: invitation.organizationId },
+      async () => {
+        try {
+          await this.audit.record({
             actorId: userId,
             action: AUDIT_ACTIONS.INVITATION_ACCEPTED,
             resourceType: 'invitation',
@@ -523,11 +524,15 @@ export class InvitationAcceptanceService {
             payload: { roleIds: invitation.roleIds },
             ip: meta.ip,
             userAgent: meta.userAgent,
-          }),
-      );
-    } catch (error) {
-      this.logger.error(`Audit write failed: ${String(error)}`);
-    }
+          });
+        } catch (error) {
+          this.logger.error(`Audit write failed: ${String(error)}`);
+          // Inside the context, so the report names the new member and
+          // the organization (ADR-084).
+          reportFault(error, { failed: 'an audit write' });
+        }
+      },
+    );
   }
 
   /**
@@ -596,6 +601,7 @@ export class InvitationAcceptanceService {
       ]);
     } catch (error) {
       this.logger.error(`Telling the inviter failed: ${String(error)}`);
+      reportFault(error, { failed: 'telling the inviter' });
     }
   }
 

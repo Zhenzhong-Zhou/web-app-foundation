@@ -334,7 +334,8 @@ backup scripts or workflows. The steps are in `docs/runbooks/restore.md`.
 
 - **MC-1301** Actions → Backup: last night's run is green, and the backup
   it made is in the destination (an artifact, or the bucket), with its
-  `.sha256`.
+  `.sha256`. The run's summary gives the dump's size and the database's,
+  each readable (`2115 kB`, `30 MB`), never `not read`.
 - **MC-1302** Actions → Restore drill: the last run is green, and its
   summary shows the organizations restored and how long it took, under 4
   hours (ADR-053's RTO); with `s3`, its step "Check every file has
@@ -2863,10 +2864,77 @@ remaining() { curl -s -o /dev/null -D - "$@" | grep -i '^x-ratelimit-remaining';
   missing. A session from before the deploy keeps the proxy's address;
   nothing is rewritten.
 
+## 41. The error tracker (ADR-084)
+
+The operator's checks: whether a report reaches the tracker, and what it
+carries. Locally, with a development project's address as
+`ERROR_TRACKER_DSN` in the root `.env` and the API restarted; on the live
+site, after a deploy that changes the setting, the route or the relay.
+
+- **MC-4101** *(ADR-084)* A test report goes through the site to the
+  tracker. With `npm run start:dev` in `server/` and `npm run dev` in
+  `client/`, the API's log says early on `Error tracker on: environment
+  development, release <version>+dev`, with no address in it. From
+  `server/`: `npm run error-tracker:test -- http://localhost:5173`. It
+  prints `204 No Content` and the report's id. Within a minute, the id
+  pasted in the project's Issues search opens the event, "A test report,
+  sent by npm run error-tracker:test", under environment `development`,
+  with no user and no IP address. With `ERROR_TRACKER_DSN` empty and the
+  API restarted, the log says `Error tracker off`, the command still
+  prints 204, and no new event arrives.
+- **MC-4102** *(ADR-084)* A page that crashes is reported once, with the
+  reference it shows. Signed in, with the browser's developer tools open
+  on Network, crash a page as MC-R12 does, opened with `?search=Jane` added
+  to its address: it shows Something went wrong and a reference. Network
+  shows one `POST /api/errors`, answered 204, and nothing before the page
+  first drew. Within a minute, `reference:<the reference>` in the
+  project's Issues search opens one event: the error, tagged `side`
+  `browser`, release `<version>+dev`, its language, the browser, the
+  page's address without `?search=Jane`, the user by id alone and an
+  `organization` tag holding the organization's id; no name, email
+  address or IP address anywhere in it.
+- **MC-4103** *(ADR-084)* A refusal is not reported. Signed out, sign in
+  with a wrong password: the refusal shows, Network shows no `POST
+  /api/errors`, and no new event arrives.
+- **MC-4104** *(ADR-084)* A dropped connection is not reported. Signed
+  in, set Network to Offline, then open a page not opened yet in this
+  tab: Can’t reach the server shows. Set it back online: the page loads
+  by itself. Network shows no `POST /api/errors` at any point, and no new
+  event arrives.
+- **MC-4105** *(ADR-084)* A live report's trace is readable, and the
+  site serves no source map. After a deploy of the static site with
+  `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT` set, its build
+  log has no line `Source maps not uploaded to Sentry`. Crash a page on
+  the live site as MC-4102 does: the event's stack names the app's own
+  files under `src/`, with their lines, not only `assets/index-*.js`.
+  Then `curl -s <the site>/assets/<the main chunk's name>.map | head -c
+  15` prints `<!doctype html>`, the `/*` rewrite's page, never a map's
+  `{"version":3`.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R65** *(the crash page before sign-in, #244)* Signed out, make Sign
+  in crash (for a developer: throw in `LoginPage`'s render), then open
+  Create an account and follow its Sign in link. Something went wrong
+  shows on its own, as Sign in would: the product's name above it, the
+  language and text size at the top, the © line below, with Reload and a
+  reference to quote; never React Router's Unexpected Application Error!
+  or the code's stack. It says whom to give the reference: Try again
+  later, and if it keeps happening, the person who invited you. In 简体中文
+  it reads 出错了, 请稍后再试…告诉邀请您的人, with 重新加载. Reload
+  shows it again, the page still broken. The browser's Back shows Create
+  an account, not the message. With the tracker set up as section 41
+  says, one `POST /api/errors`, answered 204, and its event holds the
+  reference shown, with no user. The same, in the language chosen, for
+  the parts around every page: for a developer, throw in `AuthProvider`'s
+  render, then, with that undone and signed in, in `AppLayout`'s. Each
+  shows Something went wrong on its own, in the same words, with Reload
+  and a reference, never React Router's page, and sends one `POST
+  /api/errors`; on the
+  first, the language select still switches the page's language.
 
 - **MC-R64** *(a role deleted while it is being given, refused in words,
   #179)* Giving a role and deleting it at the same moment is too narrow to
@@ -3905,3 +3973,20 @@ first.
 - 2026-10-29: #316's deploy, MC-4001 reading first what Cloudflare saw,
   and running across two networks where it saw one address: MC-4001
   rewritten.
+- 2026-10-30: ADR-084, the error tracker: section 41, MC-4101, a test
+  report through the site.
+- 2026-10-30: ADR-084, the browser reporting its faults: MC-4102, a page
+  crashed, MC-4103, a refusal, and MC-4104, a dropped connection.
+- 2026-10-30: ADR-084, a browser's report naming the person signed in
+  and the organization by id: MC-4102 extended.
+- 2026-10-30: #244, the crash page before sign-in, in the product's
+  frame with Reload and a reference: MC-R65.
+- 2026-10-30: #244's crash page also for a fault in the session read, the
+  new-version check, the start-up screens or the signed-in layout's
+  frame, through the app's route: MC-R65 extended.
+- 2026-10-30: ADR-084, the browser's traces readable from source maps
+  uploaded at the build and never published: MC-4105.
+- 2026-10-30: #269, the backup run's summary giving the dump's size and
+  the database's: MC-1301 extended.
+- 2026-10-30: ADR-084's reviews, the crash page on its own saying whom to
+  give the reference, the person who invited you: MC-R65 extended.

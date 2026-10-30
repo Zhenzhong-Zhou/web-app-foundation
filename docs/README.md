@@ -93,6 +93,7 @@ project's front page, its sections of more than one kind.
 | --- | --- |
 | What does the app allow, refuse and work out in one area? Can a credit note give back more than is left of its invoice, and which test proves it? | [docs/rules/](rules/README.md), one file per area, invoices first; each rule linked to its ADR and its test |
 | How is code named and organised, and what is the API contract? | [conventions.md](conventions.md) |
+| Which tables does an area keep, and how do they join? | [docs/tables/](tables/README.md), one diagram per area, written from the schema by `npm run diagrams` in `server/` |
 | What does an endpoint take and return? | [`server/openapi.json`](../server/openapi.json), written by `npm run api` from the server's code ([ADR-068](adr/0068-openapi-from-the-server-the-clients-types-generated.md)) |
 | Which word does the app use for a thing, in each language? | [glossary.md](glossary.md) |
 | Which outside services does the app use, with which settings? | [runbooks/services.md](runbooks/services.md) |
@@ -138,6 +139,8 @@ project's front page, its sections of more than one kind.
     - [render.md](runbooks/render.md): the host, deploys, the database.
     - [restore.md](runbooks/restore.md): backups and restores.
     - [services.md](runbooks/services.md): every outside service.
+  - [tables/](tables/README.md): each area's tables and their foreign
+    keys, as diagrams written from the schema.
   - [conventions.md](conventions.md): naming, code organisation, the API
     contract.
   - [decisions.md](decisions.md): where the ADRs were until October

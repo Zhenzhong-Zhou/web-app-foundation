@@ -84,7 +84,8 @@ interface SessionOptions {
   organization?: Partial<NonNullable<CurrentSession['organization']>>;
 }
 
-function sessionFor({
+/** A session as GET /auth/me answers it, with what a spec sets over it. */
+export function sessionFor({
   permissions = [],
   user = {},
   organization = {},

@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LanguageSelect } from '../components/language-select';
+import { reportFault } from '../errors/report-fault';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { serveVersion } from '../test/version';
@@ -16,6 +17,11 @@ import {
   LanguageFailureToast,
 } from './language-failure';
 import { useLanguage } from './use-language';
+
+vi.mock('../errors/report-fault', async (original) => ({
+  ...(await original<typeof import('../errors/report-fault')>()),
+  reportFault: vi.fn(),
+}));
 
 /** The next catalogue's chunk will not load: the connection dropped. */
 function failNextLoad() {
@@ -253,6 +259,19 @@ describe('a language that won’t load', () => {
         await screen.findByRole('combobox', { name: '语言' }),
       ).toBeInTheDocument();
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+
+    it('hands a catalogue broken in this build to the error tracker (ADR-084)', async () => {
+      localStorage.setItem('language', 'zh-Hans');
+      const broken = new ChunkLoadError(
+        'broken',
+        new TypeError('Failed to fetch dynamically imported module'),
+      );
+      vi.mocked(loadMessages).mockRejectedValueOnce(broken);
+      renderWithAuth(<LanguageFailureBanner />);
+
+      expect(await screen.findByRole('status')).toBeInTheDocument();
+      expect(reportFault).toHaveBeenCalledWith(broken);
     });
 
     it('says it is loading again while Try again tries, and why once more if it fails', async () => {

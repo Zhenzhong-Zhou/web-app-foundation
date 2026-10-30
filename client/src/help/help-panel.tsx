@@ -28,6 +28,7 @@ import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { reportFault } from '../errors/report-fault';
 import { Reload } from '../errors/status-actions';
 import { useLanguage } from '../i18n/use-language';
 import { copyrightLine, useAppName } from '../lib/app-name';
@@ -262,6 +263,8 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
       },
       (error: unknown) => {
         if (ignore) return;
+        // A guide broken in this build (ADR-084); the rest are dropped.
+        reportFault(error);
         const newer =
           error instanceof ChunkLoadError && error.failure === 'newer';
         setLoaded({ key, text: null, newer });

@@ -164,6 +164,23 @@ describe('Rate limits (e2e)', () => {
     await register('192.0.2.61', 'elsewhere').expect(201);
   });
 
+  // Public, so a script could otherwise spend the tracker's month (ADR-084).
+  it('allows ten error reports a minute from one address, and more from another', async () => {
+    const report = (address: string) =>
+      request(httpServer(app))
+        .post('/errors')
+        .set(HEADER, address)
+        .set('X-Requested-With', 'XMLHttpRequest')
+        .set('Content-Type', 'text/plain;charset=UTF-8')
+        // The tracker is off here, so what it says is never read.
+        .send('a report');
+
+    for (let i = 1; i <= 10; i++) await report('192.0.2.70').expect(204);
+    await report('192.0.2.70').expect(429);
+
+    await report('192.0.2.71').expect(204);
+  });
+
   it("leaves the owner's sign-in open after a stranger's failed ones from another address", async () => {
     const alpha = await signUp('alpha');
     const stranger = authedAgent(app);

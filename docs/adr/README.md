@@ -27,8 +27,8 @@ naming this ADR; then run `node scripts/adr-index.mjs`.
 Both indexes below are written by that script from each file's front
 matter and heading, never by hand, and `scripts/verify.sh` fails when
 either differs from the files. A number can be given before its ADR is
-written, so the index lists only the files there are: ADR-084, an error
-tracker, and ADR-085, low stock, are still to be written
+written, so the index lists only the files there are: ADR-085, low
+stock, is still to be written
 ([ADR-086](0086-docs-as-code.md#decision--its-number)). What is not yet
 decided is in [Open decisions](open-decisions.md).
 
@@ -118,12 +118,13 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-078] | Registration: open, or by invitation | accepted | 2026-10-20 | [ADR-006], [ADR-070], [ADR-077] | [ADR-079] |
 | [ADR-079] | A newcomer's first sign-in: a welcome on Home, and help on every page | accepted | 2026-10-20 | [ADR-016], [ADR-058], [ADR-063], [ADR-069], [ADR-077], [ADR-078] | [ADR-080] |
 | [ADR-080] | Job roles: roles an organization makes, several to a member | accepted | 2026-10-21 | [ADR-004], [ADR-016], [ADR-035], [ADR-070], [ADR-071], [ADR-077], [ADR-079] | |
-| [ADR-081] | Old tabs after a deploy: a newer build noticed, an outdated client told | accepted | 2026-10-22 | [ADR-013], [ADR-051], [ADR-052], [ADR-054], [ADR-055], [ADR-068] | [ADR-082] |
+| [ADR-081] | Old tabs after a deploy: a newer build noticed, an outdated client told | accepted | 2026-10-22 | [ADR-013], [ADR-051], [ADR-052], [ADR-054], [ADR-055], [ADR-068] | [ADR-082], [ADR-084] |
 | [ADR-082] | The product's brand: Panivo before sign-in, the organization's after | accepted | 2026-10-24 | [ADR-019], [ADR-051], [ADR-055], [ADR-060], [ADR-067], [ADR-081] | [ADR-083] |
 | [ADR-083] | The emails: one layout for every email | accepted | 2026-10-26 | [ADR-077], [ADR-082] | |
+| [ADR-084] | An error tracker: real faults reported, through the app's own API, scrubbed of personal details | accepted | 2026-10-30 | [ADR-081], [ADR-088] | |
 | [ADR-086] | Docs as code: one file per decision, and links that are checked | accepted | 2026-10-27 | | |
 | [ADR-087] | The rules written down: `docs/rules/` for people, `.claude/rules/` for Claude | accepted | 2026-10-27 | | |
-| [ADR-088] | Planning in the chat, as a skill: kept here, compared with main, tested by prompts | accepted | 2026-10-29 | | |
+| [ADR-088] | Planning in the chat, as a skill: kept here, compared with main, tested by prompts | accepted | 2026-10-29 | | [ADR-084] |
 
 [ADR-001]: 0001-nestjs-as-the-server-framework.md
 [ADR-002]: 0002-postgresql-as-the-database.md
@@ -208,6 +209,7 @@ decided is in [Open decisions](open-decisions.md).
 [ADR-081]: 0081-old-tabs-after-a-deploy.md
 [ADR-082]: 0082-the-products-brand.md
 [ADR-083]: 0083-the-emails.md
+[ADR-084]: 0084-an-error-tracker.md
 [ADR-086]: 0086-docs-as-code.md
 [ADR-087]: 0087-the-rules-written-down.md
 [ADR-088]: 0088-planning-in-the-chat-as-a-skill.md
@@ -252,12 +254,12 @@ same names. An area no ADR names has no line.
 - `people`: [ADR-063]
 - `users`: [ADR-012], [ADR-069]
 - `mail`: [ADR-005], [ADR-017], [ADR-037], [ADR-054], [ADR-069], [ADR-070], [ADR-077], [ADR-078], [ADR-082], [ADR-083]
-- `api`: [ADR-001], [ADR-013], [ADR-014], [ADR-052], [ADR-057], [ADR-068], [ADR-081]
+- `api`: [ADR-001], [ADR-013], [ADR-014], [ADR-052], [ADR-057], [ADR-068], [ADR-081], [ADR-084]
 - `database`: [ADR-002], [ADR-003], [ADR-009], [ADR-010], [ADR-012], [ADR-025], [ADR-028], [ADR-051], [ADR-052], [ADR-056], [ADR-081]
 - `docs`: [ADR-086], [ADR-087], [ADR-088]
 - `help`: [ADR-079]
 - `i18n`: [ADR-054], [ADR-056], [ADR-072], [ADR-076]
-- `ops`: [ADR-005], [ADR-008], [ADR-019], [ADR-051], [ADR-053], [ADR-059], [ADR-067], [ADR-070], [ADR-081], [ADR-088]
-- `ui`: [ADR-007], [ADR-020], [ADR-021], [ADR-055], [ADR-056], [ADR-057], [ADR-060], [ADR-075], [ADR-082]
+- `ops`: [ADR-005], [ADR-008], [ADR-019], [ADR-051], [ADR-053], [ADR-059], [ADR-067], [ADR-070], [ADR-081], [ADR-084], [ADR-088]
+- `ui`: [ADR-007], [ADR-020], [ADR-021], [ADR-055], [ADR-056], [ADR-057], [ADR-060], [ADR-075], [ADR-082], [ADR-084]
 
 <!-- adr-areas:end -->

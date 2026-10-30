@@ -4,17 +4,19 @@ name: CI
 # take minutes. A Markdown file anywhere counts as docs, except Help's
 # guides, which ship in the client and are checked with it (ADR-079): the
 # deploy follows CI on main (deploy.yml, ADR-081), so a guide changed
-# alone would otherwise never go live. A later pattern overrides an
-# earlier one.
+# alone would otherwise never go live. And except the table diagrams in
+# docs/tables/, which the server's job checks against the schema
+# (ADR-086), so a page changed alone is checked too. A later pattern
+# overrides an earlier one.
 on:
   push:
     branches: [main]
-    paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**']
+    paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**', 'docs/tables/**']
   pull_request:
     # labeled, so adding full-e2e to a pull request runs every browser on it
     # without another push.
     types: [opened, synchronize, reopened, labeled]
-    paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**']
+    paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**', 'docs/tables/**']
   # Every browser nightly, so a WebKit, Firefox or iPhone regression from a
   # day of merges shows the next morning rather than at the next release.
   schedule:
@@ -89,6 +91,31 @@ jobs:
         working-directory: client
 
       - run: npm test
+        working-directory: client
+
+      # The audit (ADR-084, #268), after the tests, so a finding fails the
+      # job without hiding the lint's and the tests' results. It fails on a
+      # high finding in what ships, --omit=dev leaving out the tools that
+      # build and test it, whose findings are often fixable only by a major
+      # version. Run nightly too, so an advisory published against main
+      # fails the next morning's run with no change of code. In CI only, not
+      # in scripts/verify.sh: it judges the registry's advisories that day,
+      # not the change, and would fail every verify offline.
+      - name: Audit what ships
+        run: npm audit --omit=dev --audit-level=high
+        working-directory: client
+
+      # Every finding, the tools' included, printed for whoever reads the
+      # run and never failing it: Dependabot raises them as pull requests.
+      - name: Audit everything, printed
+        run: npm audit || true
+        working-directory: client
+
+      # The registry's signature, and any provenance attestation, on every
+      # package npm ci installed: one altered after the registry signed it
+      # fails here.
+      - name: Check the registry's signatures
+        run: npm audit signatures
         working-directory: client
 
   server:
@@ -208,6 +235,12 @@ jobs:
           test -z "$(git status --porcelain -- openapi.json ../client/src/api)"
         working-directory: server
 
+      # The table diagrams in docs/tables/ against the schema, every table
+      # in an area (ADR-086): the check scripts/verify.sh makes.
+      - name: Check the table diagrams
+        run: npm run diagrams -- --check
+        working-directory: server
+
       # The server's own catalogues against its t() calls (ADR-054).
       - name: Check server catalogues
         run: npm run i18n:check
@@ -250,6 +283,19 @@ jobs:
         working-directory: server
 
       - run: npm run test:e2e
+        working-directory: server
+
+      # The client job's three audit steps, for what the API runs.
+      - name: Audit what ships
+        run: npm audit --omit=dev --audit-level=high
+        working-directory: server
+
+      - name: Audit everything, printed
+        run: npm audit || true
+        working-directory: server
+
+      - name: Check the registry's signatures
+        run: npm audit signatures
         working-directory: server
 
   # Two checks of a pull request against main (ADR-081), in scripts that

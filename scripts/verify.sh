@@ -20,6 +20,9 @@
 # The API contract runs in full and with --quick, not with --docs
 # (ADR-068): it regenerates server/openapi.json and client/src/api/, and
 # stops if either changed, leaving the fresh files in place to commit.
+# So do the table diagrams in docs/tables/ (ADR-086), which change nothing
+# and stop when a page is not what the schema gives or a table is in no
+# area.
 #
 # So do the three checks CI makes of a pull request against main, here
 # against origin/main as last fetched: a breaking API change raises the
@@ -30,7 +33,10 @@
 #
 # Not run here, though CI runs it: npm run seed:demo, which would add a demo
 # organization to the dev database on every run. Run it after changing a
-# service the demo calls (engineering.md, Moving code).
+# service the demo calls (engineering.md, Moving code). Nor npm audit
+# (#268, ADR-084): it judges the registry's state that day, not the
+# change, and needs the network; CI runs it after each job's tests, and
+# every night.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -69,6 +75,13 @@ contract() {
     echo '(conventions.md, "The API contract").' >&2
     exit 1
   fi
+}
+
+# One diagram per area of its tables, written from the Drizzle schema by
+# `npm run diagrams` in server/, which names what differs.
+diagrams() {
+  step 'Table diagrams: docs/tables/ is the schema, every table in an area'
+  (cd server && npm run diagrams -- --check)
 }
 
 # The scripts' format, by the Prettier both packages pin, here the
@@ -139,9 +152,11 @@ against_main() {
 # --docs stands in for --quick only when the docs' checks are all a change
 # needs (ADR-086): every uncommitted change, staged or not, and every new
 # file git does not ignore, is a .md file or in scripts/, and none is in
-# client/. client/ is refused even for Markdown: the Help guides in
-# client/src/help/guides/ are the app's content, which
-# client/src/help/guides.test.ts checks and --docs does not run. Anything
+# client/ or docs/tables/. client/ is refused even for Markdown: the Help
+# guides in client/src/help/guides/ are the app's content, which
+# client/src/help/guides.test.ts checks and --docs does not run. So is
+# docs/tables/: its pages are written from the schema, which
+# `npm run diagrams -- --check` checks and --docs does not run. Anything
 # else, it names and stops, each file indented as it is printed. The
 # Markdown step already runs adr-index.mjs's --check, through
 # check-docs.mjs.
@@ -150,10 +165,11 @@ if [[ $mode == docs ]]; then
     {
       git -c core.quotePath=false diff --name-only --no-renames HEAD
       git -c core.quotePath=false ls-files --others --exclude-standard
-    } | awk '/^client\// || !/\.md$|^scripts\//' | sort -u | sed 's/^/  /'
+    } | awk '/^client\/|^docs\/tables\// || !/\.md$|^scripts\//' |
+      sort -u | sed 's/^/  /'
   )"
   if [[ -n "$others" ]]; then
-    echo 'Changed, and not what --docs checks (Markdown outside client/, and scripts/):' >&2
+    echo 'Changed, and not what --docs checks (Markdown outside client/ and docs/tables/, and scripts/):' >&2
     echo "$others" >&2
     echo 'Run scripts/verify.sh --quick instead.' >&2
     exit 1
@@ -170,6 +186,7 @@ elif [[ $mode == quick ]]; then
     && npm run checks && npm run build && npm test)
 
   contract
+  diagrams
   scripts_tests
   against_main
 
@@ -180,6 +197,7 @@ else
   (cd server && npm run verify)
 
   contract
+  diagrams
   scripts_tests
   against_main
 

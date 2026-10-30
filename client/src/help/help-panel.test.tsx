@@ -10,6 +10,7 @@ import {
 } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
+import { reportFault } from '../errors/report-fault';
 import { stubNames } from '../test/app-names';
 import { renderWithAuth } from '../test/render-with-auth';
 import { ChunkLoadError } from '../version/load-chunk';
@@ -34,6 +35,11 @@ vi.mock('./guides', async (original) => {
         : actual.loadGuide(...args),
   };
 });
+
+vi.mock('../errors/report-fault', async (original) => ({
+  ...(await original<typeof import('../errors/report-fault')>()),
+  reportFault: vi.fn(),
+}));
 
 function Where() {
   const location = useLocation();
@@ -156,6 +162,22 @@ describe('Help', () => {
       within(status).getByRole('button', { name: 'Reload' }),
     );
     expect(reloadPage).toHaveBeenCalledTimes(1);
+    failing.error = null;
+  });
+
+  it('hands a guide broken in this build to the error tracker (ADR-084)', async () => {
+    const broken = new ChunkLoadError('broken', new TypeError('Failed'));
+    failing.loads = 1;
+    failing.error = broken;
+    renderFrame('/orders');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Help' }));
+    expect(
+      await within(help()).findByText(
+        'This guide could not be opened. Check your connection, then try again.',
+      ),
+    ).toBeVisible();
+    expect(reportFault).toHaveBeenCalledWith(broken);
     failing.error = null;
   });
 

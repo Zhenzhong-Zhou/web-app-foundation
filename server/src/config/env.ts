@@ -1,3 +1,4 @@
+import { makeDsn } from '@sentry/core';
 import { z } from 'zod';
 
 import { CALENDAR_DAY_INPUTS } from '../common/dto/calendar-day';
@@ -86,6 +87,26 @@ export const envSchema = z.object({
       .optional(),
   ),
 
+  // ADR-084: the error tracker's project address. Unset, nothing starts
+  // and nothing leaves, as on a developer's machine and in CI; empty counts
+  // as unset. Read by the SDK's own parser, so one it cannot read fails at
+  // boot rather than a tracker said to be on that reaches nothing. The
+  // deployment's name in the tracker, NODE_ENV when unset.
+  ERROR_TRACKER_DSN: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z
+      .string()
+      .refine(
+        trackerCanRead,
+        "the project's address as the tracker gives it: https://<key>@<host>/<project number>",
+      )
+      .optional(),
+  ),
+  ERROR_TRACKER_ENVIRONMENT: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.string().optional(),
+  ),
+
   RATE_LIMIT_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
 
@@ -147,6 +168,22 @@ export function validateEnv(raw: Record<string, unknown>): Env {
   }
 
   return parsed.data;
+}
+
+/**
+ * Whether the error tracker's SDK can read an address (ADR-084). Its parser
+ * prints one it cannot, whole, with console.error, and the value may be
+ * another secret pasted into the wrong setting: silenced here, so the
+ * refusal names ERROR_TRACKER_DSN and never prints its value.
+ */
+function trackerCanRead(value: string): boolean {
+  const print = console.error;
+  console.error = () => undefined;
+  try {
+    return makeDsn(value) !== undefined;
+  } finally {
+    console.error = print;
+  }
 }
 
 const S3_SETTINGS = [

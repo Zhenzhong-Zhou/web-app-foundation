@@ -1,6 +1,6 @@
 ---
 name: plan-feature
-description: The planning routine for Bob's web-app-foundation repository (Panivo, github.com/Zhenzhong-Zhou/web-app-foundation), in its claude.ai Project. Use at the start of every session there, and whenever Bob plans a feature, an ADR or a fix, answers decisions, pastes a Claude Code /build-from-brief summary or question, or asks for patches, files, the as-built or a pull request. Holds the session's order (main cloned and read whole, the check before an ADR, decisions answered in one line, the ADR as the first commit, the build brief, the as-built) with the reply format and the delivery rules. Not for any other repository.
+description: The planning routine for Bob's web-app-foundation repository (Panivo, github.com/Zhenzhong-Zhou/web-app-foundation), in its claude.ai Project: for the claude.ai chat only, never Claude Code. Use at the start of every session there, and whenever Bob plans a feature, an ADR or a fix, answers decisions, pastes a Claude Code /build-from-brief summary or question, or asks for patches, files, the as-built or a pull request. Holds the session's order (main cloned and read whole, the check before an ADR, decisions answered in one line, the ADR as the first commit, the build brief, the as-built) with the reply format and the delivery rules. Not for any other repository.
 ---
 
 # Plan a feature for web-app-foundation
@@ -23,15 +23,19 @@ copies only what every reply acts on.
    For a branch Bob has pushed, add `--branch <branch>`; for a commit he
    names, `git -C /tmp/waf fetch --depth 1 origin <sha>`, then check it
    out. Nothing installed, no script of the repository run, nothing
-   pushed: the checks are `scripts/verify.sh`'s, on Bob's Mac. With no
-   network, say so, search Project knowledge, and ask Bob to attach any
-   file a patch needs.
+   pushed: the checks are `scripts/verify.sh`'s, on Bob's Mac. One
+   exception, before sending Markdown: `npx --yes
+   markdownlint-cli2@0.23.3` from the clone's root, the version and the
+   settings `scripts/verify.sh` and CI use; it adds nothing to the clone
+   (ADR-084's as-built). With no network, say so, search Project
+   knowledge, and ask Bob to attach any file a patch needs.
 2. **This skill against main's:** `diff -r -x evals.md <this skill's
    folder> /tmp/waf/.claude/chat-skills/plan-feature`, the folder being
    where the skills list says this file is. Any difference: the reply's
-   first bullet says to pack and upload the skill again (the README's
-   "Which tool, when"), and this session follows main's copy, read from
-   the clone.
+   first bullet says to pack the skill from `main` and upload it again
+   (the README's "Which tool, when"), and this session follows main's
+   copy, read from the clone. A change to the skill on a branch is
+   uploaded only after its merge (ADR-088's amendment).
 3. **Read whole, from the clone:** `docs/handoff.md`, then
    `docs/engineering.md`, then `CLAUDE.md`. The handoff says where things
    stand and what is next; Bob's first message says which part he wants.
@@ -47,11 +51,38 @@ For each area the change touches, by its name in `AREAS`
 - the Deferred lines of the area's ADRs, found through
   `docs/adr/README.md`'s "By area", and ADR-051's watch list;
 - `docs/adr/open-decisions.md`;
-- the area's open issues: ask Bob for `gh issue list --state open
-  --label area:<area> --limit 100`, then `gh issue view <N> --comments`
-  for each `when-touched` one, which rides along with the next branch
-  that touches its area. GitHub's API without a token shares its limit
-  with every container behind the same address, so it is not relied on.
+- the area's open issues, and the text and comments of each
+  `when-touched` one, which rides along with the next branch that
+  touches its area. Bob runs this from the repository's root, the
+  areas and the issues the feature names filled in, and attaches
+  `tmp/adr-NNN/check.txt`. It asks for JSON because `gh issue view
+  --comments`, saved to a file, prints the comments without the
+  issue's text (ADR-084's check).
+
+  ```bash
+  areas=(api ops ui) named=(287)
+  mkdir -p tmp/adr-NNN
+  {
+    for a in "${areas[@]}"; do
+      echo "== area:$a"
+      gh issue list --state open --label "area:$a" --limit 100
+    done
+    {
+      printf '%s\n' "${named[@]}"
+      for a in "${areas[@]}"; do
+        gh issue list --state open --label "area:$a" --label when-touched \
+          --limit 100 --json number --jq '.[].number'
+      done
+    } | sort -un | while read -r n; do
+      gh issue view "$n" --json number,title,body,comments --jq \
+        '"== #\(.number) \(.title)\n\(.body)", (.comments[] | "-- \(.author.login):\n\(.body)")'
+    done
+  } > tmp/adr-NNN/check.txt 2>&1
+  ```
+
+  GitHub's API without a token shares its limit with every container
+  behind the same address, so it is not relied on; an issue's page on
+  github.com still reads from the clone's container when one is missing.
 
 Write it as the ADRs' Context does, under "Checked before drafting":
 **Fired, and taken here**; **Not fired, and left**; **Found while
@@ -115,7 +146,9 @@ For each summary Bob pastes:
   plain Markdown, unasked.
 - After the merge: `scripts/prune-branches.sh --yes`, then
   `scripts/clean-local.sh` (a dry run, then `--yes`), the checks the
-  runbook names for the deploy, and Project knowledge re-synced.
+  runbook names for the deploy, and Project knowledge re-synced. When
+  the merge changed this skill: `node scripts/pack-chat-skill.mjs` on
+  `main`, the upload, and `evals.md` walked.
 
 ## 7. Every reply
 

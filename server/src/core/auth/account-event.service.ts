@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { and, desc, eq, isNull, lt, sql } from 'drizzle-orm';
 
+import { reportFault } from '../../common/faults/tracker';
 import type { Env } from '../../config/env';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
@@ -121,6 +122,7 @@ export class AccountEventService {
       this.logger.error(
         `Could not record ${action} for ${userId}: ${String(error)}`,
       );
+      reportFault(error, { failed: 'an account event' });
     }
   }
 
@@ -261,6 +263,7 @@ export class AccountEventService {
       this.logger.error(
         `Could not email ${action} to ${userId}: ${String(error)}`,
       );
+      reportFault(error, { failed: 'a security email' });
     });
   }
 

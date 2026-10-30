@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { concatMap, type Observable } from 'rxjs';
 
+import { reportFault } from '../../common/faults/tracker';
 import { getRequestContext } from '../auth/request-context';
 import { AuditService } from './audit.service';
 import {
@@ -118,6 +119,7 @@ export class AuditInterceptor implements NestInterceptor {
       });
     } catch (error) {
       this.logger.error(`Audit write failed: ${String(error)}`);
+      reportFault(error, { failed: 'an audit write' });
     }
   }
 }

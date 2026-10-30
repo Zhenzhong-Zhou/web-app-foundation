@@ -2,6 +2,7 @@
 status: accepted
 date: 2026-10-29
 areas: [docs, ops]
+amended-by: [ADR-084]
 ---
 
 # ADR-088 — Planning in the chat, as a skill: kept here, compared with main, tested by prompts
@@ -289,3 +290,16 @@ Built from `tmp/adr-088/brief.md`, a step per prompt, on 29 October
 - **The stop rule:** step 14, fifteen fixes with the full verify and the
   pull request in one prompt, ran well past its 30 minutes; nothing
   outside the chosen findings was added.
+
+## Amendment (October 2026) — packed only from main (ADR-084)
+
+[ADR-084](0084-an-error-tracker.md) fixed the skill's issue command on
+its branch, and an upload from there would have differed from `main`'s
+copy until the merge, so every session's comparison would have asked
+for an upload and then followed `main`'s older copy. So:
+
+- **`scripts/pack-chat-skill.mjs` packs only at `origin/main`'s
+  commit,** with the skill's folder unchanged, and otherwise refuses,
+  saying to merge first; its `--check` still runs anywhere.
+- **A change to the skill is uploaded after its pull request merges,**
+  packed from `main`, then `evals.md` is walked.

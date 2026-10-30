@@ -12,6 +12,7 @@ import {
   Post,
 } from '@nestjs/common';
 
+import { reportFault } from '../../common/faults/tracker';
 import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
 import { AuditService } from '../audit/audit.service';
@@ -157,6 +158,7 @@ export class RolesController {
         });
       } catch (error) {
         this.logger.error(`Audit write failed: ${String(error)}`);
+        reportFault(error, { failed: 'an audit write' });
       }
     }
     return this.roles.detail(id, await this.reader(user, language));

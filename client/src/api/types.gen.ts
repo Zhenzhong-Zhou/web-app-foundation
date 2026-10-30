@@ -2490,7 +2490,7 @@ export type ReturnAuthorizationLine = {
   variantId: string;
   sku: string;
   quantity: string;
-  resolution: 'replace' | 'credit' | 'none';
+  resolution: 'replace' | 'none' | 'credit';
   quantityReceived: string;
   quantityCredited: string;
 };
@@ -7231,3 +7231,17 @@ export type HealthControllerReadyResponses = {
 
 export type HealthControllerReadyResponse =
   HealthControllerReadyResponses[keyof HealthControllerReadyResponses];
+
+export type ErrorsControllerReportData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/errors';
+};
+
+export type ErrorsControllerReportResponses = {
+  204: void;
+};
+
+export type ErrorsControllerReportResponse =
+  ErrorsControllerReportResponses[keyof ErrorsControllerReportResponses];

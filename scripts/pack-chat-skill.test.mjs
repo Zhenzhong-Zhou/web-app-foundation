@@ -8,7 +8,9 @@
  * scripts/verify.sh and CI. Each failure comes from a small skill in a
  * temporary repository, its files listed as git would track them. Where
  * the system has zip and unzip, the archive is made into a temporary
- * folder, never over tmp/plan-feature.zip.
+ * folder, never over tmp/plan-feature.zip. The guard's tests clone a
+ * temporary repository whose main holds a skill, so origin is a folder
+ * and never GitHub.
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -17,8 +19,8 @@ import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { folder, repository } from "./git-fixture.mjs";
-import { checkSkill, pack, uploaded } from "./pack-chat-skill.mjs";
+import { folder, git, repository, write } from "./git-fixture.mjs";
+import { checkSkill, pack, uploaded, whyNotMain } from "./pack-chat-skill.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SKILL = path.join(ROOT, ".claude/chat-skills/plan-feature");
@@ -198,6 +200,66 @@ test("a link to no file, outside the folder or to evals.md fails, named with its
     "plan-feature/reference/format.md: ../../docs/engineering.md leads outside the skill's folder",
     "plan-feature/reference/format.md: %E0 is not a valid link: its %-escapes do not decode",
   ]);
+});
+
+/**
+ * A repository whose main holds a skill, and a clone of it at main: the
+ * first's root, as origin, and the clone's skill folder.
+ */
+function cloned(t) {
+  const origin = path.dirname(skill(t, { "SKILL.md": skillMd(FRONT_MATTER) }));
+  git(origin, "symbolic-ref", "HEAD", "refs/heads/main");
+  git(origin, "add", ".");
+  git(origin, "commit", "--quiet", "-m", "The skill");
+
+  const clone = folder(t, "pack-chat-skill-clone");
+  git(clone, "clone", "--quiet", origin, ".");
+  return { origin, folder: path.join(clone, "plan-feature") };
+}
+
+const NOT_MAIN =
+  "This is not origin/main's commit, and the skill is packed only from main: merge its change first, then pack on main, pulled.";
+
+test("the pack goes ahead at origin/main's commit, a change outside the skill's folder aside", (t) => {
+  const { folder } = cloned(t);
+  assert.equal(whyNotMain(folder), null);
+
+  write(path.dirname(folder), "notes.md", "Not the skill's.\n");
+  assert.equal(whyNotMain(folder), null);
+});
+
+test("the pack is refused on a branch ahead of main", (t) => {
+  const { folder } = cloned(t);
+  git(folder, "switch", "--quiet", "-c", "a-feature");
+  write(folder, "SKILL.md", skillMd(FRONT_MATTER, "# A change\n"));
+  git(folder, "commit", "--quiet", "-am", "A change");
+  assert.equal(whyNotMain(folder), NOT_MAIN);
+});
+
+test("the pack is refused behind origin's main, as fetched now", (t) => {
+  const { origin, folder } = cloned(t);
+  write(origin, "plan-feature/SKILL.md", skillMd(FRONT_MATTER, "# Merged\n"));
+  git(origin, "commit", "--quiet", "-am", "Merged since");
+  assert.equal(whyNotMain(folder), NOT_MAIN);
+});
+
+test("the pack is refused with the skill's folder changed, or a file added to it", (t) => {
+  const { folder } = cloned(t);
+  write(folder, "SKILL.md", skillMd(FRONT_MATTER, "# A change\n"));
+  write(folder, "reference/new.md", "Not committed.\n");
+  assert.equal(
+    whyNotMain(folder),
+    "The skill's folder has changes not committed, plan-feature/SKILL.md, plan-feature/reference/new.md: commit or restore them, then pack again, since an upload is main's copy.",
+  );
+});
+
+test("the pack is refused when origin cannot be reached", (t) => {
+  const { folder } = cloned(t);
+  git(folder, "remote", "set-url", "origin", path.join(folder, "nowhere"));
+  assert.equal(
+    whyNotMain(folder),
+    "Could not fetch main from origin, so whether this is main's commit is unknown: the skill is packed only from main, so run this again once origin can be reached.",
+  );
 });
 
 /** Why the archive's tests are skipped, or false when they run. */

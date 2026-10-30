@@ -18,6 +18,7 @@ import {
 } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
+import { reportFault } from '../../common/faults/tracker';
 import type { Locale } from '../../common/locales';
 import { todayIn } from '../../common/today';
 import type { Database, Transaction } from '../../database/database.module';
@@ -314,6 +315,7 @@ export class OrganizationDeletionService {
           `Could not complete the deletion of organization ${id}`,
           error instanceof Error ? error.stack : String(error),
         );
+        reportFault(error, { failed: "an organization's deletion" });
       }
     }
 
@@ -367,6 +369,7 @@ export class OrganizationDeletionService {
           `Could not remind organization ${organization.id}`,
           error instanceof Error ? error.stack : String(error),
         );
+        reportFault(error, { failed: "an organization's deletion reminder" });
       }
     }
     return claimed.length;

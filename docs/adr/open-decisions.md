@@ -173,9 +173,8 @@ grants access, for a time, with every action in its audit log as
 support; never a silent sign-in as a customer, which customers ask
 about in contracts and privacy law (PIPEDA, PIPL) cares about.
 Monitoring the app itself is a different need: an error tracker and an
-uptime check beside the logs. The error tracker is a small pull request
-of its own with a short ADR, ADR-084, after the emails' design (Bob, 25 October
-2026); the uptime check is set up by hand
+uptime check beside the logs. The error tracker is decided in
+[ADR-084](0084-an-error-tracker.md); the uptime check is set up by hand
 (`docs/runbooks/services.md`). A "Report a problem" link in Help
 belongs here too, sending the version, build, page, language and
 browser with the person's words. Trigger: more organizations than the
@@ -801,9 +800,9 @@ actually asks, which says which of the two.
 
 What is built covers the
 application: hashed tokens, rate limits, tenant isolation tested per
-lookup, an audit log, TLS from the host. What is not decided: two-factor
-sign-in (at least for Owners), dependency scanning on every PR rather
-than an occasional `npm audit`, how secrets are rotated, and what the
+lookup, an audit log, TLS from the host; dependency scanning on every
+pull request comes with ADR-084 (#268). What is not decided: two-factor
+sign-in (at least for Owners), how secrets are rotated, and what the
 host encrypts at rest. Trigger: the same as backups.
 
 ## Reports
