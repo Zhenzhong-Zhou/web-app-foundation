@@ -42,8 +42,7 @@ trap 'rm -rf "$work"' EXIT
 if ! docker image inspect "$image" > /dev/null 2>&1 \
   && ! docker pull --quiet "$image" > /dev/null 2>&1; then
   echo 'Could not run: the oasdiff image is neither here nor to be fetched' >&2
-  echo '(Docker not answering, offline, or the registry down). CI runs it on' >&2
-  echo 'the pull request.' >&2
+  echo '(Docker not answering, offline, or the registry down).' >&2
   exit 3
 fi
 

@@ -35,7 +35,7 @@ image='koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09a484ebcc6feea46f17825325
 if ! docker image inspect "$image" > /dev/null 2>&1 \
   && ! docker pull --quiet "$image" > /dev/null 2>&1; then
   echo 'Could not run: the ShellCheck image is neither here nor to be fetched' >&2
-  echo '(Docker not answering, offline, or the registry down). CI runs it.' >&2
+  echo '(Docker not answering, offline, or the registry down).' >&2
   exit 3
 fi
 

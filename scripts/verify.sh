@@ -85,21 +85,20 @@ scripts_tests() {
   node --test scripts/
 
   step 'Scripts: ShellCheck over every shell script'
-  if ! docker info > /dev/null 2>&1; then
-    echo 'Skipped: Docker is not running, and ShellCheck runs in a container.'
-    echo 'CI runs it.'
-  else
-    may_skip scripts/check-shell.sh
-  fi
+  may_skip 'CI runs it.' scripts/check-shell.sh
 }
 
-# A check that exits 3 when it cannot run, having said why: reported and
-# gone on from, as Docker not running is. Any other failure stops here.
+# A check that exits 3 when it cannot run, Docker not running or offline,
+# having said why: reported and gone on from, with where it runs instead,
+# said here since in CI it would not be true. Any other failure stops here.
+#
+#   may_skip <where it runs instead> <command>...
 may_skip() {
-  local status=0
+  local instead="$1" status=0
+  shift
   "$@" || status=$?
   if [[ $status -eq 3 ]]; then
-    echo 'Skipped, as it says above.'
+    echo "Skipped, as it says above. $instead"
     return 0
   fi
   return "$status"
@@ -116,18 +115,17 @@ against_main() {
   step 'Against origin/main: a breaking API change raises the revision'
   if [[ -z "$base" ]]; then
     echo "$no_base"
-  elif ! docker info > /dev/null 2>&1; then
-    echo 'Skipped: Docker is not running, and oasdiff runs in a container.'
-    echo 'CI runs it on the pull request.'
   else
-    may_skip scripts/check-api-breaking.sh "$base"
+    may_skip 'CI runs it on the pull request.' \
+      scripts/check-api-breaking.sh "$base"
   fi
 
   step 'Against origin/main: new migrations leave the running release working'
   if [[ -z "$base" ]]; then
     echo "$no_base"
   else
-    may_skip scripts/check-migrations.sh "$base"
+    may_skip 'CI runs it on the pull request.' \
+      scripts/check-migrations.sh "$base"
   fi
 
   step 'Against origin/main: every commit by a real identity'
