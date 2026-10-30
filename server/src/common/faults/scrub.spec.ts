@@ -160,6 +160,12 @@ describe('scrubEvent (ADR-084)', () => {
 
     expect(scrubbed.tags).toEqual({ side: 'server' });
   });
+
+  it('drops an organization that is no UUID', () => {
+    const scrubbed = scrubEvent({ tags: { organization: '-'.repeat(36) } });
+
+    expect(scrubbed.tags).toEqual({});
+  });
 });
 
 describe('scrubText', () => {

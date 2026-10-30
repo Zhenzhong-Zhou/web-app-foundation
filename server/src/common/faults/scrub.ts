@@ -50,6 +50,8 @@ export function scrubEvent(event: Event): Event {
   };
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * The tags a report may carry, each one the app sets: `side`, `server` or
  * `browser`; `reference`, the id a person can quote, kept only when it is
@@ -64,11 +66,9 @@ const TAGS: Record<string, RegExp> = {
   route: /^\/[\w\-/:.*]{0,200}$/,
   job: /^\w{1,100}$/,
   failed: /^[\w ,.'-]{1,200}$/,
-  organization: /^[0-9a-f-]{36}$/i,
+  organization: UUID,
   language: /^[A-Za-z-]{2,20}$/,
 };
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Page changes and requests, by path; console lines and clicks are off. */
 const BREADCRUMBS = new Set(['navigation', 'fetch', 'xhr']);
