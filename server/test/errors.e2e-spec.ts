@@ -2,6 +2,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 import { type INestApplication, Logger } from '@nestjs/common';
+import { ThrottlerStorage } from '@nestjs/throttler';
 import { parseEnvelope } from '@sentry/core';
 import type { Event } from '@sentry/node';
 import request from 'supertest';
@@ -10,7 +11,11 @@ import {
   TRACKER_PROJECT,
   type TrackerProject,
 } from '../src/errors/errors.service';
-import { createTestApp, httpServer } from './utils/create-test-app';
+import {
+  createTestApp,
+  httpServer,
+  unlimitedThrottler,
+} from './utils/create-test-app';
 import { RecordingTracker } from './utils/recording-tracker';
 
 /** What the browser's envelope names: a stand-in, never the project. */
@@ -70,9 +75,14 @@ describe('Error reports (e2e)', () => {
   let app: INestApplication;
   let unset: INestApplication;
 
+  /** The route's own limit keeps its coverage in rate-limits.e2e-spec.ts. */
   function appWith(project: TrackerProject): Promise<INestApplication> {
     return createTestApp((builder) =>
-      builder.overrideProvider(TRACKER_PROJECT).useValue(project),
+      builder
+        .overrideProvider(TRACKER_PROJECT)
+        .useValue(project)
+        .overrideProvider(ThrottlerStorage)
+        .useValue(unlimitedThrottler),
     );
   }
 
