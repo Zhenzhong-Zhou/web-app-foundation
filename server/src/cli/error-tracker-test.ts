@@ -1,9 +1,5 @@
-import {
-  HELP,
-  reportAddress,
-  testReport,
-  UsageError,
-} from './error-tracker-report';
+import { HELP, reportAddress, testReport } from './error-tracker-report';
+import { UsageError } from './org-invite-options';
 
 /**
  * `npm run error-tracker:test -- <site>` (ADR-084): one test report, posted

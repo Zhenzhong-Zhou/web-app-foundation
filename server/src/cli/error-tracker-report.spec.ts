@@ -1,12 +1,8 @@
 import { parseEnvelope } from '@sentry/core';
 
 import { eventOf } from '../errors/report-body';
-import {
-  reportAddress,
-  STAND_IN,
-  testReport,
-  UsageError,
-} from './error-tracker-report';
+import { reportAddress, STAND_IN, testReport } from './error-tracker-report';
+import { UsageError } from './org-invite-options';
 
 describe('npm run error-tracker:test', () => {
   it('builds an envelope the route relays, naming the stand-in project', () => {

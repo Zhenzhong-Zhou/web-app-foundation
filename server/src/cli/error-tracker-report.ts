@@ -7,6 +7,8 @@ import {
   uuid4,
 } from '@sentry/core';
 
+import { checkedClientUrl, UsageError } from './org-invite-options';
+
 /**
  * What `npm run error-tracker:test` sends, and where (ADR-084), kept apart
  * from the request so each is a unit test. Everything here speaks English:
@@ -31,14 +33,6 @@ to find in the tracker. The project is the API's ERROR_TRACKER_DSN, so
 nothing secret is needed here.
 `;
 
-/** A command line or a site the command cannot use, said as it is. */
-export class UsageError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'UsageError';
-  }
-}
-
 /** The command line, after `--`: the site's /api/errors. */
 export function reportAddress(argv: string[]): URL {
   let positionals: string[];
@@ -50,19 +44,7 @@ export function reportAddress(argv: string[]): URL {
   if (positionals.length !== 1) {
     throw new UsageError('Give the site’s address, and only that.');
   }
-
-  let site: URL;
-  try {
-    site = new URL(positionals[0]);
-  } catch {
-    throw new UsageError(`Not an address: ${positionals[0]}`);
-  }
-  if (site.protocol !== 'http:' && site.protocol !== 'https:') {
-    throw new UsageError(
-      `Not a site’s address: ${positionals[0]}. It starts with http:// or https://.`,
-    );
-  }
-  return new URL('/api/errors', site);
+  return new URL('/api/errors', checkedClientUrl(positionals[0]));
 }
 
 /** One test report, its id, and the envelope that carries it. */
