@@ -1,7 +1,16 @@
 import { Button, Typography } from '@mui/material';
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import {
+  Component,
+  type ErrorInfo,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
+import { useRouteError } from 'react-router-dom';
 
+import { AuthContext, type AuthState } from '../auth/auth-context';
 import { NewVersionPage } from '../errors/new-version-page';
 import { OfflinePage } from '../errors/offline-page';
 import { reportFault } from '../errors/report-fault';
@@ -59,11 +68,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    const reference =
-      error instanceof ApiError && error.requestId
-        ? error.requestId
-        : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-    return { error, reference };
+    return { error, reference: referenceFor(error) };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -90,6 +95,49 @@ export class ErrorBoundary extends Component<Props, State> {
     }
     return <Failure reference={reference} standalone={standalone} />;
   }
+}
+
+function referenceFor(error: unknown): string {
+  return error instanceof ApiError && error.requestId
+    ? error.requestId
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/** No one signed in: the crash page's language select saves to no account. */
+const NO_SESSION: AuthState = {
+  session: null,
+  loading: false,
+  error: null,
+  refresh: () => Promise.resolve(),
+  signedOut: () => undefined,
+};
+
+/**
+ * The app's route's errorElement (root-route.tsx): a fault in what no
+ * boundary of ours holds, the session read, the new-version check, the
+ * start-up screens or the signed-in layout's frame, shows the crash page
+ * on its own, as one before sign-in does, never React Router's own page,
+ * and is reported once with the reference it shows (ADR-084). Drawn in
+ * place of AuthProvider, which may be what broke, so with no session.
+ */
+export function RouteCrash() {
+  const error = useRouteError();
+  const [reference] = useState(() => referenceFor(error));
+  // Once, though StrictMode runs an effect twice in development.
+  const reported = useRef(false);
+
+  useEffect(() => {
+    if (reported.current) return;
+    reported.current = true;
+    console.error(`Render error (reference ${reference}):`, error);
+    reportFault(error, { reference });
+  }, [error, reference]);
+
+  return (
+    <AuthContext.Provider value={NO_SESSION}>
+      <Failure reference={reference} standalone />
+    </AuthContext.Provider>
+  );
 }
 
 function Failure({

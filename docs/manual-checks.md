@@ -2916,7 +2916,12 @@ first.
   shows it again, the page still broken. The browser's Back shows Create
   an account, not the message. With the tracker set up as section 41
   says, one `POST /api/errors`, answered 204, and its event holds the
-  reference shown, with no user.
+  reference shown, with no user. The same, in the language chosen, for
+  the parts around every page: for a developer, throw in `AuthProvider`'s
+  render, then, with that undone and signed in, in `AppLayout`'s. Each
+  shows Something went wrong on its own, with Reload and a reference,
+  never React Router's page, and sends one `POST /api/errors`; on the
+  first, the language select still switches the page's language.
 
 - **MC-R64** *(a role deleted while it is being given, refused in words,
   #179)* Giving a role and deleting it at the same moment is too narrow to
@@ -3963,3 +3968,6 @@ first.
   and the organization by id: MC-4102 extended.
 - 2026-10-30: #244, the crash page before sign-in, in the product's
   frame with Reload and a reference: MC-R65.
+- 2026-10-30: #244's crash page also for a fault in the session read, the
+  new-version check, the start-up screens or the signed-in layout's
+  frame, through the app's route: MC-R65 extended.
