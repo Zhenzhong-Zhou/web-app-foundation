@@ -17,15 +17,15 @@ Candidates were Prisma, Drizzle, Knex, and hand-written SQL over the raw
 Knex was rejected: weak TypeScript inference (query results arrive effectively untyped)
 and every migration hand-written, which gives up the main reason for choosing TypeScript.
 
-Raw `pg` was rejected as the primary query layer for a reason specific to ADR-003. SQL
+Raw `pg` was rejected as the primary query layer for a reason specific to [ADR-003](0003-multi-tenancy.md). SQL
 strings scattered across services provide no central place to enforce the
 `organization_id` filter. Every query becomes an independent opportunity to forget it,
 and one omission is a cross-tenant data leak.
 
 Prisma has the stronger schema-first migration experience, but two things counted against
-it here. Its schema language cannot express partial indexes, check constraints, or RLS
-policies, so complex DDL drops to hand-written SQL inside Prisma migrations anyway — and
-ADR-003 explicitly anticipates adding RLS. Its generated client is also harder to wrap in
+it here. Its schema language cannot express partial indexes, check constraints, or
+row-level security (RLS) policies, so complex DDL drops to hand-written SQL inside Prisma
+migrations anyway — and [ADR-003](0003-multi-tenancy.md) explicitly anticipates adding RLS. Its generated client is also harder to wrap in
 a tenant-scoped layer that cannot be accidentally bypassed.
 
 ## Decision
@@ -44,10 +44,10 @@ Each table is defined once; the same definition feeds migrations and query types
 
 `drizzle-kit generate` emits plain `.sql` files that are readable,
 hand-editable, and committed as source code — the correct place to add RLS policies
-(ADR-003), partial indexes, and triggers. Queries stay close to SQL, which suits existing
+([ADR-003](0003-multi-tenancy.md)), partial indexes, and triggers. Queries stay close to SQL, which suits existing
 Postgres experience.
 
-Binding rule from ADR-003: **services must not import `db` directly.** They go through a
+Binding rule from [ADR-003](0003-multi-tenancy.md): **services must not import `db` directly.** They go through a
 tenant-scoped query helper that always applies the `organization_id` filter. Direct `db`
 access in a service is a review-blocking defect.
 

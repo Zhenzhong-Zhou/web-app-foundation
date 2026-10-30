@@ -8,10 +8,10 @@
 #   scripts/verify.sh --quick    format, lint, types, checks, build and unit
 #                                tests; no end-to-end suites
 #   scripts/verify.sh --docs     the docs' checks alone, in seconds: the
-#                                Markdown step and the scripts' format and
-#                                tests, for a change of docs and scripts/
-#                                alone; what it refuses is where it runs,
-#                                below
+#                                Markdown step and the scripts' format,
+#                                tests and ShellCheck, for a change of docs
+#                                and scripts/ alone; what it refuses is
+#                                where it runs, below
 #
 # Needs what each suite needs on its own: the database up
 # (docker compose up -d) and ../.env. The two end-to-end suites use their
@@ -35,12 +35,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-quick=false
-docs=false
+mode=full
 case "$#:${1:-}" in
   0:) ;;
-  1:--quick) quick=true ;;
-  1:--docs) docs=true ;;
+  1:--quick) mode=quick ;;
+  1:--docs) mode=docs ;;
   *)
     echo "Usage: scripts/verify.sh [--quick | --docs], one at most" >&2
     exit 2
@@ -78,19 +77,28 @@ contract() {
 # Then their own tests, on Node's runner (node --test finds each
 # *.test.mjs): scripts/ sits outside both packages, so neither one's Vitest
 # runs them. i18n-review.test.mjs uses both packages' node_modules.
+# Then ShellCheck over every shell script, server/scripts/ among them, in
+# Docker as oasdiff runs (ADR-088).
 scripts_tests() {
   step 'Scripts: their format and their own tests'
   server/node_modules/.bin/prettier --check scripts/
   node --test scripts/
+
+  step 'Scripts: ShellCheck over every shell script'
+  may_skip 'CI runs it.' scripts/check-shell.sh
 }
 
-# A check that exits 3 when it cannot run, having said why: reported and
-# gone on from, as Docker not running is. Any other failure stops here.
+# A check that exits 3 when it cannot run, Docker not running or offline,
+# having said why: reported and gone on from, with where it runs instead,
+# said here since in CI it would not be true. Any other failure stops here.
+#
+#   may_skip <where it runs instead> <command>...
 may_skip() {
-  local status=0
+  local instead="$1" status=0
+  shift
   "$@" || status=$?
   if [[ $status -eq 3 ]]; then
-    echo 'Skipped, as it says above.'
+    echo "Skipped, as it says above. $instead"
     return 0
   fi
   return "$status"
@@ -102,27 +110,27 @@ against_main() {
   # see what main has added since as taken away, and be told to raise the
   # API revision for nothing. CI compares with main as the change merges.
   base="$(git merge-base "$main" HEAD 2> /dev/null || true)"
+  local no_base="Skipped: no $main to compare with. git fetch origin main, then run again."
 
   step 'Against origin/main: a breaking API change raises the revision'
   if [[ -z "$base" ]]; then
-    echo "Skipped: no $main to compare with. git fetch origin main, then run again."
-  elif ! docker info > /dev/null 2>&1; then
-    echo 'Skipped: Docker is not running, and oasdiff runs in a container.'
-    echo 'CI runs it on the pull request.'
+    echo "$no_base"
   else
-    may_skip scripts/check-api-breaking.sh "$base"
+    may_skip 'CI runs it on the pull request.' \
+      scripts/check-api-breaking.sh "$base"
   fi
 
   step 'Against origin/main: new migrations leave the running release working'
   if [[ -z "$base" ]]; then
-    echo "Skipped: no $main to compare with. git fetch origin main, then run again."
+    echo "$no_base"
   else
-    may_skip scripts/check-migrations.sh "$base"
+    may_skip 'CI runs it on the pull request.' \
+      scripts/check-migrations.sh "$base"
   fi
 
   step 'Against origin/main: every commit by a real identity'
   if [[ -z "$base" ]]; then
-    echo "Skipped: no $main to compare with. git fetch origin main, then run again."
+    echo "$no_base"
   else
     scripts/check-authors.sh "$main..HEAD"
   fi
@@ -134,30 +142,29 @@ against_main() {
 # client/. client/ is refused even for Markdown: the Help guides in
 # client/src/help/guides/ are the app's content, which
 # client/src/help/guides.test.ts checks and --docs does not run. Anything
-# else, it names and stops. The Markdown step already runs adr-index.mjs's
-# --check, through check-docs.mjs.
-if $docs; then
+# else, it names and stops, each file indented as it is printed. The
+# Markdown step already runs adr-index.mjs's --check, through
+# check-docs.mjs.
+if [[ $mode == docs ]]; then
   others="$(
     {
       git -c core.quotePath=false diff --name-only --no-renames HEAD
       git -c core.quotePath=false ls-files --others --exclude-standard
-    } | awk '/^client\// || !/\.md$|^scripts\//' | sort -u
+    } | awk '/^client\// || !/\.md$|^scripts\//' | sort -u | sed 's/^/  /'
   )"
   if [[ -n "$others" ]]; then
     echo 'Changed, and not what --docs checks (Markdown outside client/, and scripts/):' >&2
-    sed 's/^/  /' <<< "$others" >&2
+    echo "$others" >&2
     echo 'Run scripts/verify.sh --quick instead.' >&2
     exit 1
   fi
-  markdown
-  scripts_tests
-  step 'All passed'
-  exit 0
 fi
 
 markdown
 
-if $quick; then
+if [[ $mode == docs ]]; then
+  scripts_tests
+elif [[ $mode == quick ]]; then
   step 'Server: format, lint, types, checks, build, unit tests'
   (cd server && npm run format:check && npm run lint:ci && npm run typecheck \
     && npm run checks && npm run build && npm test)

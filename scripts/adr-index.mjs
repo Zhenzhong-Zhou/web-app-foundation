@@ -56,29 +56,31 @@ let listing = null;
 
 /**
  * Every file git tracks or would track, relative to ROOT, so not tmp/ or
- * the .DS_Store a Mac leaves; and every folder holding one, "" the root's;
+ * the .DS_Store a Mac leaves; every folder holding one, "" the root's; and
+ * the files git would track but does not yet, for check-docs.mjs's notice;
  * each in the letter case git has it. Listed once a run, for the ADRs'
  * checks here and check-docs.mjs's alike.
  */
 export function inRepository() {
   if (listing) return listing;
-  const output = execFileSync(
-    "git",
-    ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
-    { cwd: ROOT, encoding: "utf8" },
-  );
-  const files = new Set(
-    output
+  // Two listings rather than -t's tags, which git's manual calls
+  // semi-deprecated: every file, then the ones git does not track yet.
+  const list = (...args) =>
+    execFileSync("git", ["ls-files", "-z", ...args], {
+      cwd: ROOT,
+      encoding: "utf8",
+    })
       .split("\0")
-      .filter((file) => file && existsSync(path.join(ROOT, file))),
-  );
+      .filter((file) => file && existsSync(path.join(ROOT, file)));
+  const files = new Set(list("--cached", "--others", "--exclude-standard"));
+  const untracked = new Set(list("--others", "--exclude-standard"));
   const folders = new Set([""]);
   for (const file of files) {
     for (let at = file.indexOf("/"); at > 0; at = file.indexOf("/", at + 1)) {
       folders.add(file.slice(0, at));
     }
   }
-  listing = { files, folders };
+  listing = { files, folders, untracked };
   return listing;
 }
 
@@ -152,27 +154,41 @@ function isDay(value) {
 }
 
 /**
- * A front matter list, `[ADR-046, ADR-054]`, as the numbers it names;
- * null when it is not one.
+ * A front matter list, `[a, b]`, as its items, each matching `item`; null
+ * when it is not one.
  */
-function listOf(value) {
-  if (!/^\[(?:ADR-\d{3,}(?:, ADR-\d{3,})*)?\]$/.test(value)) return null;
-  return [...value.matchAll(/ADR-(\d+)/g)].map((match) => Number(match[1]));
+function listOf(value, item) {
+  const items = `${item.source}(?:, ${item.source})*`;
+  if (!new RegExp(`^\\[(?:${items})?\\]$`).test(value)) return null;
+  return value.slice(1, -1).split(", ").filter(Boolean);
 }
+
+/**
+ * An amends or amended-by list, `[ADR-046, ADR-054]`, as the numbers it
+ * names; null when it is not one.
+ */
+const numbersOf = (value) =>
+  listOf(value, /ADR-\d{3,}/)?.map((name) => Number(name.slice(4)));
 
 /** The numbers an ADR's amends or amended-by names: none if it has no list. */
 function listed(adr, field) {
   const value = adr.frontMatter?.[field]?.value;
-  return (value && listOf(value)) || [];
+  return (value && numbersOf(value)) || [];
+}
+
+/** The areas an ADR's areas names, `[invoices, api]`: none if it has no list. */
+function areasOf(adr) {
+  const value = adr.frontMatter?.areas?.value;
+  return (value && listOf(value, /[a-z0-9-]+/)) || [];
 }
 
 /**
- * A front matter list of names, `[invoices, api]`, as those names; null
- * when it is not one.
+ * A list's items, each once, sorted by `compare`; null when the list is
+ * that already.
  */
-function namesOf(value) {
-  if (!/^\[(?:[a-z0-9-]+(?:, [a-z0-9-]+)*)?\]$/.test(value)) return null;
-  return value.slice(1, -1).split(", ").filter(Boolean);
+function inOrder(items, compare) {
+  const sorted = [...new Set(items)].sort(compare);
+  return sorted.join() === items.join() ? null : sorted;
 }
 
 /**
@@ -290,10 +306,9 @@ ${definitions.join("\n")}
  * order, by the links By number defines.
  */
 function byArea(adrs) {
+  const areas = new Map(adrs.map((adr) => [adr, areasOf(adr)]));
   const lines = AREAS.flatMap((area) => {
-    const named = adrs.filter((adr) =>
-      namesOf(adr.frontMatter?.areas?.value ?? "")?.includes(area),
-    );
+    const named = adrs.filter((adr) => areas.get(adr).includes(area));
     if (named.length === 0) return [];
     return [
       `- \`${area}\`: ${named.map((adr) => `[${adrName(adr.number)}]`).join(", ")}`,
@@ -307,8 +322,11 @@ ${lines.join("\n")}
 `;
 }
 
-/** The README's sections that the script writes, each between its markers. */
-const SECTIONS = [
+/**
+ * The README's sections that the script writes, each between its markers;
+ * check-docs-fixture.mjs builds its README from them.
+ */
+export const SECTIONS = [
   {
     heading: "By number",
     start: "<!-- adr-index:start -->",
@@ -390,7 +408,7 @@ export function checkAdrs({ writing = false } = {}) {
   for (const name of filesIn(ADR_FOLDER)) {
     if (!ADR_FILE.test(name) && !OTHERS.includes(name)) {
       failures.push(
-        `${ADR_FOLDER}/${name}:1: ${name} — not a name for a file here: an ADR is NNNN-<slug>.md, four digits and its title's words in lower case, and the only others are ${OTHERS.slice(0, -1).join(", ")} and ${OTHERS.at(-1)}`,
+        `${ADR_FOLDER}/${name}:1: ${name} — not a name for a file here: an ADR is NNNN-<slug>.md, four digits and its title's words in lower case, and the only others are ${new Intl.ListFormat("en-GB").format(OTHERS)}`,
       );
     }
   }
@@ -470,8 +488,8 @@ export function checkAdrs({ writing = false } = {}) {
       );
     } else if (fields.areas) {
       const { value, line } = fields.areas;
-      const areas = namesOf(value);
-      if (!areas?.length) {
+      const areas = areasOf(adr);
+      if (areas.length === 0) {
         fail(
           line,
           `areas: ${value}`,
@@ -482,15 +500,14 @@ export function checkAdrs({ writing = false } = {}) {
         for (const area of unknown) {
           fail(line, `areas: ${area}`, `not an area: ${AREAS.join(", ")}`);
         }
-        const order = areas.map((area) => AREAS.indexOf(area));
-        if (
+        const ordered =
           unknown.length === 0 &&
-          order.some((at, i) => i > 0 && at <= order[i - 1])
-        ) {
+          inOrder(areas, (a, b) => AREAS.indexOf(a) - AREAS.indexOf(b));
+        if (ordered) {
           fail(
             line,
             `areas: ${value}`,
-            `not in the order AREAS lists them, each area once: write it as [${AREAS.filter((area) => areas.includes(area)).join(", ")}]`,
+            `not in the order AREAS lists them, each area once: write it as [${ordered.join(", ")}]`,
           );
         }
       }
@@ -516,13 +533,13 @@ export function checkAdrs({ writing = false } = {}) {
     ]) {
       if (!fields[field]) continue;
       const { value, line } = fields[field];
-      const numbers = listOf(value);
+      const numbers = numbersOf(value);
       if (!numbers) {
         fail(line, `${field}: ${value}`, "not a list as [ADR-046, ADR-054]");
         continue;
       }
-      if (numbers.some((number, i) => i > 0 && number <= numbers[i - 1])) {
-        const ascending = [...new Set(numbers)].sort((a, b) => a - b);
+      const ascending = inOrder(numbers, (a, b) => a - b);
+      if (ascending) {
         fail(
           line,
           `${field}: ${value}`,

@@ -69,5 +69,6 @@ each finding:
 - **Why it matters**: the principle, heuristic or WCAG criterion.
 - **Suggestion**: the smallest change that would help.
 
-Close with what worked well. When asked, file each blocker or major
-finding with `gh issue create`, one issue per finding.
+Then what worked well; the last line is `DONE` or `BLOCKED`, as
+`CLAUDE.md`'s "Report for a quick read" says. When asked, file each
+blocker or major finding with `gh issue create`, one issue per finding.

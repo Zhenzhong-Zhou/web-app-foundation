@@ -4,10 +4,9 @@
  *
  *     node --test scripts/
  *
- * What they share is in check-docs-fixture.mjs.
+ * What they share is in check-docs-fixture.mjs and git-fixture.mjs.
  */
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import { test } from "node:test";
 
 import {
@@ -17,9 +16,9 @@ import {
   fixture,
   GUIDE,
   INDEX,
-  write,
   writeIndex,
 } from "./check-docs-fixture.mjs";
+import { git, write } from "./git-fixture.mjs";
 
 test("a path written as code names a file or folder; a command's first word, an ignored path and a module's pass", (t) => {
   const root = fixture(t, {
@@ -232,10 +231,11 @@ paths:
     `.claude/rules/other.md:1: paths — missing from the front matter: list the area's files, ${every}`,
     `.claude/rules/stock.md:3: server/src/modules/stock/** — ${nothing}`,
     `.claude/rules/stock.md:4: server/test/stock.e2e-spec.ts, in server/test/{stock,invoices}.e2e-spec.ts, — ${nothing}`,
+    // The innermost braces first, so invoice's alternatives, then quote's.
     `.claude/rules/stock.md:5: client/src/invoices/invoice-page.ts, in ${braces}, — ${nothing}`,
+    `.claude/rules/stock.md:5: server/src/modules/invoices/invoices.service.tsx, in ${braces}, — ${nothing}`,
     `.claude/rules/stock.md:5: client/src/invoices/quote-page.ts, in ${braces}, — ${nothing}`,
     `.claude/rules/stock.md:5: client/src/invoices/quote-page.tsx, in ${braces}, — ${nothing}`,
-    `.claude/rules/stock.md:5: server/src/modules/invoices/invoices.service.tsx, in ${braces}, — ${nothing}`,
   ]);
 });
 
@@ -265,22 +265,6 @@ paths:
     '.claude/rules/stock.md:4: server/test/credit-notes.e2e-spec.ts — not a pattern: under paths:, one - "pattern" to a line, or a # comment',
   ]);
 });
-
-/** git in the fixture, as a person with no identity of their own. */
-const git = (root, ...args) =>
-  execFileSync(
-    "git",
-    [
-      "-c",
-      "user.name=Test",
-      "-c",
-      "user.email=test@example.com",
-      "-c",
-      "commit.gpgsign=false",
-      ...args,
-    ],
-    { cwd: root },
-  );
 
 test("the notice names a rules file left alone while its tests or area changed, and never fails", (t) => {
   const root = fixture(t, {

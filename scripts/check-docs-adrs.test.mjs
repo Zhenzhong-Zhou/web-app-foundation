@@ -4,7 +4,7 @@
  *
  *     node --test scripts/
  *
- * What they share is in check-docs-fixture.mjs.
+ * What they share is in check-docs-fixture.mjs and git-fixture.mjs.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -15,9 +15,9 @@ import {
   failures,
   fixture,
   INDEX,
-  write,
   writeIndex,
 } from "./check-docs-fixture.mjs";
+import { write } from "./git-fixture.mjs";
 
 test("ADRs with front matter, amendments both ways and a current index pass, and a stale index fails", (t) => {
   const root = fixture(t, {
@@ -46,7 +46,7 @@ test("ADRs with front matter, amendments both ways and a current index pass, and
     ),
   );
   const [stale, ...rest] = failures(check(root));
-  assert.match(stale, /^docs\/adr\/README\.md:9: .*stale/);
+  assert.match(stale, /^docs\/adr\/README\.md:13: .*stale/);
   assert.deepEqual(rest, []);
 });
 

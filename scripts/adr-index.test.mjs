@@ -10,89 +10,39 @@
  * check-docs-adrs.test.mjs tests the front matter's own checks.
  */
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
+import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { adr, INDEX } from "./check-docs-fixture.mjs";
+import { repository, write } from "./git-fixture.mjs";
+
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-
-function write(root, file, text) {
-  mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
-  writeFileSync(path.join(root, file), text);
-}
-
-/** An ADR's file: its front matter, a blank line, its heading and text. */
-const adr = (frontMatter, heading) =>
-  `---\n${frontMatter}---\n\n# ${heading}\n\nThe decision.\n`;
-
-const README = `# Architecture Decisions
-
-The preamble.
-
-## By number
-
-Written by the script.
-
-<!-- adr-index:start -->
-<!-- adr-index:end -->
-
-## By area
-
-<!-- adr-areas:start -->
-<!-- adr-areas:end -->
-
-## Resolved
-
-The table.
-`;
 
 /**
  * A temporary repository: three ADRs, a file that is not one, the README,
  * and invoices' folder, which makes it an area.
  */
-function fixture(t) {
-  const root = mkdtempSync(path.join(tmpdir(), "adr-index-"));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
-
-  execFileSync("git", ["init", "--quiet"], { cwd: root });
-  write(
-    root,
-    "docs/adr/0001-the-first.md",
-    adr(
+const fixture = (t) =>
+  repository(t, "adr-index", {
+    "docs/adr/0001-the-first.md": adr(
       "status: superseded by ADR-003\ndate: 2026-08-24\nareas: [invoices, api]\namended-by: [ADR-002]\n",
       "ADR-001 — The first",
     ),
-  );
-  write(
-    root,
-    "docs/adr/0002-calendar-days-are-date.md",
-    adr(
+    "docs/adr/0002-calendar-days-are-date.md": adr(
       "status: accepted\ndate: 2026-08-25\nareas: [api, database]\namends: [ADR-001]\n",
       "ADR-002 — Calendar days are `date`, sent as YYYY-MM-DD (amends ADR-001)",
     ),
-  );
-  write(
-    root,
-    "docs/adr/0003-the-third.md",
-    adr(
+    "docs/adr/0003-the-third.md": adr(
       "status: deferred\ndate: 2026-08-26\nareas: [invoices]\n",
       "ADR-003 — The third (deferred)",
     ),
-  );
-  write(root, "docs/adr/open-decisions.md", "# Open decisions\n");
-  write(root, "docs/adr/README.md", README);
-  write(root, "server/src/modules/invoices/index.ts", "");
-  return root;
-}
+    "docs/adr/open-decisions.md": "# Open decisions\n",
+    "docs/adr/README.md": INDEX,
+    "server/src/modules/invoices/index.ts": "",
+  });
 
 /** The script, run in the fixture as a person runs it. */
 const run = (root, ...args) =>
@@ -181,7 +131,7 @@ test("an ADR that fails its checks stops both modes, and nothing is written", (t
     written.stderr,
     `${failure}\nNothing written: the index is written only from ADRs that pass.\n`,
   );
-  assert.equal(readme(root), README);
+  assert.equal(readme(root), INDEX);
 
   const checked = run(root, "--check");
   assert.equal(checked.status, 1, checked.stdout);
@@ -232,7 +182,7 @@ test("a changed area is found stale in By area, by its line", (t) => {
 
 test("a README without By area's markers fails, and nothing is written", (t) => {
   const root = fixture(t);
-  const withoutAreas = README.replace(
+  const withoutAreas = INDEX.replace(
     "<!-- adr-areas:start -->\n<!-- adr-areas:end -->\n",
     "",
   );

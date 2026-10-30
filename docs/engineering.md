@@ -127,7 +127,10 @@ steps; this section stays the rule.
   repository (below). Until
   ADR-078 the chat wrote
   the code too, as one mbox per commit, and Claude Code only applied
-  them.
+  them. Since ADR-088 the chat's half is a claude.ai skill,
+  `plan-feature`, kept in `.claude/chat-skills/plan-feature/`, packed by
+  `scripts/pack-chat-skill.mjs` and uploaded by hand after each change;
+  its first step compares the uploaded copy with `main`'s.
 - **The build, through `/build-from-brief`** (from ADR-083). The brief
   and the canvas's boards go in `tmp/adr-NNN/`, ignored by git and by
   markdownlint, so `scripts/verify.sh` does not lint its Markdown. Each prompt is one line,
@@ -189,15 +192,27 @@ steps; this section stays the rule.
   the commands to copy each in and commit. Every file a reply tells Bob
   to copy is attached to that same reply. Downloads land in
   `~/Downloads` itself, not a folder, so each file is named in full,
-  never a glob.
+  never a glob, and moved out, never copied (ADR-088, 29 October 2026):
+  one file with `mv ~/Downloads/<file> <path>`, a patch into
+  `tmp/<branch>/` before it is applied. With `cp`, a newer download
+  saved as "x (1).patch" leaves the older file under the name the
+  command copies. Several files in one reply come as one zip the chat
+  packs itself, laid out as the repository is and named for its step
+  (`adr-088-step-07.zip`, ending `-v2` when corrected), unpacked from
+  the repository's root with `unzip ~/Downloads/<zip> && rm
+  ~/Downloads/<zip>`; `unzip` asks before overwriting a file.
 - **A file already in the repository changes by a patch, never sent
   whole** (29 October 2026; from 26 October, only a file of 600 lines or
-  more). The patch is made against `main`, from Project knowledge once
-  Bob has resynced it, or from his copy when he attaches one, and
-  applied with `git apply --check`, then `git apply --index`, which
-  stages what it changed. A patch that does not match Bob's copy is
-  refused whole, and `git diff --cached` shows every change before the
-  commit. New files, and Bob's own working files in `tmp/`, come whole,
+  more). The chat makes it from a shallow, read-only clone of the
+  repository in its own container, at `main`'s commit or at the
+  branch's once Bob has pushed it and named the commit, and its first
+  line names that base, which `git apply` passes over (ADR-088): Project
+  knowledge's search returns passages, and a patch built from them can
+  miss a line. It is applied with `git apply --check`, then `git apply
+  --index`, which stages what it changed. A patch that does not match
+  Bob's copy is refused whole, and is made again from a fresh clone,
+  never mended by hand; `git diff --cached` shows every change before
+  the commit. New files, and Bob's own working files in `tmp/`, come whole,
   as downloadable files; only a single small change stays inline as a
   snippet.
 - **Every answer that changes files opens with a roadmap,** before the
@@ -271,7 +286,7 @@ steps; this section stays the rule.
 
 Each command in `server/`:
 
-1. write the schema, a new table as
+1. write the schema, in `server/src/database/schema/`, a new table as
    [conventions.md, "A new table and the organization's export"](conventions.md#a-new-table-and-the-organizations-export)
    says;
 2. run `npm run migrate:new -- --name <name>`;
@@ -279,19 +294,19 @@ Each command in `server/`:
    `--> statement-breakpoint`;
 4. run `npm run migrate:all`, for the dev, test and e2e databases;
 5. where `foundation_perf_large` exists, which `migrate:all` does not
-   reach, `DATABASE_URL=$PERF_DB_LARGE npm run migrate`, as
+   reach, `DATABASE_URL=$PERF_DB_LARGE npm run migrate`, `PERF_DB_LARGE`
+   being that database's URL, as
    [`server/perf/README.md`](../server/perf/README.md#running-it-locally)
-   makes it.
+   sets it.
 
 What a migration may take away while the running release reads it is
 [conventions.md, "Migrations against the running release (ADR-081)"](conventions.md#migrations-against-the-running-release-adr-081),
-which squawk and CI check. Check the generated SQL keeps
+which CI checks with squawk, a linter for Postgres migrations
+(`scripts/check-migrations.sh`). Check the generated SQL keeps
 `NULLS NOT DISTINCT`. Check the new entry's `when` in
 `meta/_journal.json` is later than the one before: the migrator skips a
 migration whose time is earlier than the last one applied, and still
-reports success. 0065's was ahead of the clock, so
-0066 was generated earlier and skipped, with no column and no error,
-until its time was moved after 0065's.
+reports success.
 
 ## Commits
 

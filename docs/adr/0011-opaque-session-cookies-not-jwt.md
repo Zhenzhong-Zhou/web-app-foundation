@@ -325,8 +325,10 @@ nothing is rewritten.
 Built step by step from a brief; where it differs from the decisions
 above, this holds.
 
-- **The header, checked before the merge.** Render's request log keeps
-  each request's headers, all but cookies and authorization. On 29
+- **The header, checked before the merge.** The app's own request
+  log, which Render's Logs show, keeps each request's headers, all but
+  cookies and authorization (`common/request-log.ts`). *(Corrected 29
+  October 2026: it was called Render's.)* On 29
   October 2026 a request through the rewrite carried the visitor's own
   address in `cf-connecting-ip`, the same as Cloudflare's
   `/cdn-cgi/trace` showed. So the rewrite, the app's only path, passes

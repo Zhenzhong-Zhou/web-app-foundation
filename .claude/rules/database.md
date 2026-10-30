@@ -23,7 +23,7 @@ What to keep true when changing the schema, a migration, a seed or a query.
 - **A migration:** `npm run migrate:new -- --name <name>`, hand-written
   parts after `--> statement-breakpoint`, then `npm run migrate:all`;
   the SQL keeps `NULLS NOT DISTINCT`, and the journal's new `when` is
-  later than the one before ([engineering.md, Process](../../docs/engineering.md#process)).
+  later than the one before ([engineering.md, Adding a migration](../../docs/engineering.md#adding-a-migration)).
   A copied snapshot gets a fresh `id`, and the previous one's as `prevId` ([conventions.md, Migrations](../../docs/conventions.md#migrations-against-the-running-release-adr-081)).
 - **Expand, then contract:** add, and take away nothing the running
   release reads, a key a released `ON CONFLICT` names included (ADR-081; [conventions.md, Migrations](../../docs/conventions.md#migrations-against-the-running-release-adr-081)).

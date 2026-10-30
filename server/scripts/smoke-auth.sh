@@ -108,7 +108,7 @@ check 200 "$(get /auth/me)" "me"
 check 200 "$(get /audit)" "audit log"
 check 409 "$(registration "$EMAIL" | post /auth/register)" "register again"
 check 200 "$(credentials "$EMAIL" "$PASSWORD" | post /auth/login)" "login"
-check 200 "$(credentials "$(echo "$EMAIL" | tr 'a-z' 'A-Z')" "$PASSWORD" | post /auth/login)" "login, mixed case"
+check 200 "$(credentials "$(echo "$EMAIL" | tr '[:lower:]' '[:upper:]')" "$PASSWORD" | post /auth/login)" "login, mixed case"
 check 401 "$(credentials "$EMAIL" "wrong" | post /auth/login "$NAKED")" "login, wrong password"
 
 check 400 "$(printf '{"email":"%s","password":"%s","extra":1}' "$EMAIL" "$PASSWORD" \

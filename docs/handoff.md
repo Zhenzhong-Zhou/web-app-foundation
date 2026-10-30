@@ -15,10 +15,11 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 29 October 2026:
 
-- **[#325],** [#316]'s pull request (ADR-011 amended): one rate limit per
-  person rather than per address, built and reviewed; it merges after its
-  as-built docs. Then the planning skill ([#318]), then ADR-084 (the
-  order, below).
+- **[#327],** [#318]'s pull request, the chat-side planning skill
+  ([ADR-088](adr/0088-planning-in-the-chat-as-a-skill.md)), with a
+  script that cleans the Mac's working folders, ShellCheck, [#289] and
+  [#292]'s wording riding along: built and reviewed; it merges after its
+  as-built docs. Then ADR-084 (the order, below).
 - **The triage** is done (28 October;
   [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
   every open issue has its group and area labels, the `fix-now` ones are
@@ -27,7 +28,8 @@ On 29 October 2026:
   [#186], then reopened on 29 October, when slower runners put the typo
   lookup at 333 to 363 ms; it and [#276] carry known misses until 30
   November.
-- **The last merges:** [#317] ([#260], product names and search,
+- **The last merges:** [#325] ([#316], one rate limit per person,
+  ADR-011 amended, 29 October), [#317] ([#260], product names and search,
   ADR-056 amended, 29 October), [#291] (`docs-start-here`, ADR-086's
   part 2 and ADR-087, 28 October), [#259] (`docs-moves`, ADR-086's part
   1, 27 October), [#257] (the emails' design, ADR-083, 27 October),
@@ -44,6 +46,9 @@ On 29 October 2026:
   deploy hooks (ADR-081; [`render.md`, "Deploys"](runbooks/render.md#deploys-adr-081)).
   The uptime monitor is UptimeRobot's, since 25 October
   ([`services.md`, "In production"](runbooks/services.md#in-production)).
+  Since 29 October each limit counts per person, or per the address
+  Cloudflare saw, at 100 a minute
+  ([`render.md`, "Rate limits and the client's address"](runbooks/render.md#rate-limits-and-the-clients-address-adr-011-amended-316)).
 - **Claude Code Review** still rarely runs the plugin's full review
   ([#253]).
 
@@ -65,10 +70,11 @@ On 29 October 2026:
   branch ([#287]).
 - **3 November:** the Nest packages at 12.3.x are old enough (ADR-084,
   [#287]).
-- **4 November:** `@aws-sdk/client-s3` 3.1159.0 (18:45 UTC) and the eight
-  updates #260 left (by 20:26 UTC) are old enough, for ADR-084's branch.
-- **5 November:** `nodemailer` 10.3.1 (12:31 UTC) is old enough, for
-  ADR-084's branch.
+- **4 November:** the eight updates #260 left (by 20:26 UTC) are old
+  enough, for ADR-084's branch.
+- **5 November:** `nodemailer` 10.3.1 (12:32 UTC) and
+  `@aws-sdk/client-s3` 3.1160.0 (18:46 UTC), the last of ADR-084's
+  updates, are old enough.
 - **30 November:** the known misses for the typo lookup ([#225]) and Home
   ([#276]) end; fixed by then, or decided again.
 - **Early November:** Bob's cloud credit ends; [#245] suits a cloud session
@@ -85,14 +91,11 @@ On 29 October 2026:
 
 ## Still to do, by hand
 
-- **Dependabot alert 4** closes by itself now that [#317]'s lockfile is
-  on `main`: check it did.
-- **After [#325]'s deploy:** on Render's web service, `CLIENT_IP_HEADER`
-  set to `cf-connecting-ip`; then MC-4001 to MC-4003; then
-  `RATE_LIMIT_MAX` from 600 to 100, and `RATE_LIMIT_AUTH_MAX` deleted.
-  If MC-4001 shows one counter, keep 600:
-  [`render.md`, "Rate limits and the client's address"](runbooks/render.md#rate-limits-and-the-clients-address-adr-011-amended-316)
-  says what to look at.
+- **MC-4001 across two networks,** owed from [#325]'s deploy: on 29
+  October an office network without IPv6 reached Cloudflare as one
+  address both times, so it could not show two counters. MC-4002 and
+  MC-4003 passed, and `RATE_LIMIT_MAX` is 100
+  ([`render.md`, "Rate limits and the client's address"](runbooks/render.md#rate-limits-and-the-clients-address-adr-011-amended-316)).
 - **Lighthouse on the live site, and the site reached from China,**
   before the first paying customer (`/production-readiness`'s H5 and H6,
   #317's review).
@@ -104,7 +107,9 @@ On 29 October 2026:
   migrate:all` does not reach it, so after each new migration run `npm run
   migrate` against it, as [`server/perf/README.md`](../server/perf/README.md)
   makes it.
-- **Bob's general preferences** into claude.ai's Settings.
+- **Bob's general preferences** into claude.ai's Settings: what is his
+  in any project, since this repository's routine is the planning
+  skill's (ADR-088).
 - **Project knowledge** slimmed to `docs/`, `README.md`, `CLAUDE.md` and
   `.claude/`, and re-synced after each docs PR.
 - **A healthchecks.io check** as `BACKUP_HEALTHCHECK_URL`
@@ -122,15 +127,18 @@ them:
 2. **Triage:** done 28 October (above).
 3. **[#260], product names and search** (ADR-056 amended): [#317],
    merged 29 October. Then [#316], the rate limit keyed on the person,
-   with `/triage` riding along: [#325], open. Then the chat-side
-   planning skill ([#318]), a small docs PR, its source kept in this
-   repository (Bob, 29 October 2026): ADR-084's package updates come of
-   age only from 2 to 4 November, and ADR-084 and ADR-085 each start
-   with the routine it holds.
+   with `/triage` riding along: [#325], merged 29 October. Then the
+   chat-side planning skill ([#318], ADR-088), a docs PR, its source
+   kept in this repository (Bob, 29 October 2026): [#327], open.
+   ADR-084's package updates come of age only from 2 to 5 November, and
+   ADR-084 and ADR-085 each start with the routine it holds. Once it
+   merges, by hand: `scripts/clean-local.sh`'s first run, a dry run
+   first; the skill packed and uploaded, where its copy sits in the
+   chat's container noted, and its `evals.md` walked.
 4. **ADR-084, an error tracker** ([#287]), with `typescript-eslint` 8.72.1
    (old enough from 2 November), the Nest packages at 12.3.x (from 3
-   November), `@aws-sdk/client-s3` 3.1159.0 and the eight #260 left
-   (`@nestjs/cli`, `@nestjs/swagger`, `@nestjs/schematics`,
+   November), `@aws-sdk/client-s3` 3.1160.0 (from 5 November) and the
+   eight #260 left (`@nestjs/cli`, `@nestjs/swagger`, `@nestjs/schematics`,
    `@formatjs/cli`, `react-intl`, `react-router-dom`, `@types/node`,
    `dotenv-cli`; all by 4 November, 20:26 UTC), whose
    `@nestjs/platform-express` depends on multer 2.5.0 itself, so the
@@ -233,8 +241,10 @@ Not repeated here; each list has one home:
 [#276]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/276
 [#287]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/287
 [#288]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/288
+[#289]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/289
 [#290]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/290
 [#291]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/291
+[#292]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/292
 [#293]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/293
 [#298]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/298
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
@@ -247,3 +257,4 @@ Not repeated here; each list has one home:
 [#324]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/324
 [#325]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/325
 [#326]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/326
+[#327]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/327

@@ -48,7 +48,7 @@ squawk='squawk-cli@2.68.0'
 # in the migrations.
 if ! npx --yes "$squawk" --version > /dev/null 2>&1; then
   echo "Could not run: $squawk is not cached and could not be fetched" >&2
-  echo '(offline, or the registry is down). CI runs it on the pull request.' >&2
+  echo '(offline, or the registry is down).' >&2
   exit 3
 fi
 

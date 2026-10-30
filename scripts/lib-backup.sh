@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Shared by backup.sh, restore.sh and backup-latest.sh (ADR-053). Sourced,
 # never run: it only defines functions.
 
