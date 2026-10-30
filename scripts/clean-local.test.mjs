@@ -37,28 +37,36 @@ const SCRIPT = path.join(ROOT, "scripts/clean-local.sh");
  * report's playwright-report/ where it names no outputFolder; and
  * test-results/, where an older run left it. The checkout holds each, so
  * a folder a configuration names and the script does not fails the tests.
+ * And each outputDir or outputFolder given other than as a quoted
+ * literal, as `config: key`, whose folder cannot be read here: a test
+ * fails on it, so the check never passes without its folder.
  */
 function playwrightFolders() {
   const client = path.join(ROOT, "client");
   const folders = new Set(["client/test-results"]);
+  const unread = [];
   const configs = readdirSync(client).filter((file) =>
     /^playwright.*\.config\.ts$/.test(file),
   );
   for (const config of configs) {
     const text = readFileSync(path.join(client, config), "utf8");
-    const named = [
-      ...text.matchAll(/(?:outputDir|outputFolder):\s*'([^']+)'/g),
-    ].map(([, folder]) => folder);
+    const named = [];
+    for (const [, key, , folder] of text.matchAll(
+      /(outputDir|outputFolder):\s*(?:(['"])([^'"\n]+)\2)?/g,
+    )) {
+      if (folder) named.push(folder);
+      else unread.push(`${config}: ${key}`);
+    }
     if (!/outputDir:/.test(text)) named.push("test-results");
-    if (/'html'/.test(text) && !/outputFolder:/.test(text)) {
+    if (/['"]html['"]/.test(text) && !/outputFolder:/.test(text)) {
       named.push("playwright-report");
     }
     for (const folder of named) folders.add(path.posix.join("client", folder));
   }
-  return [...folders];
+  return { folders: [...folders], unread };
 }
 
-const PLAYWRIGHT = playwrightFolders();
+const { folders: PLAYWRIGHT, unread: UNREAD } = playwrightFolders();
 
 /** The pull requests main merged: each one's number and branch. */
 const MERGED = [
@@ -165,6 +173,10 @@ const foldersOf = (run) =>
       why ? `${action}: ${why}` : action,
     ]),
   );
+
+test("each output folder the Playwright configurations name is read, as a quoted literal", () => {
+  assert.deepEqual(UNREAD, []);
+});
 
 test("the dry run removes nothing, and names each folder with what --yes does", (t) => {
   const root = checkout(t);
