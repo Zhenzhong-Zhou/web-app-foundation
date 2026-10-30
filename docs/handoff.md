@@ -15,11 +15,11 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 29 October 2026:
 
-- **[#318],** the chat-side planning skill
-  ([ADR-088](adr/0088-planning-in-the-chat-as-a-skill.md)): a docs pull
-  request on `adr-088-planning-skill`, with a script that cleans the
-  Mac's working folders, ShellCheck, [#289] and [#292]'s wording riding
-  along. Then ADR-084 (the order, below).
+- **[#327],** [#318]'s pull request, the chat-side planning skill
+  ([ADR-088](adr/0088-planning-in-the-chat-as-a-skill.md)), with a
+  script that cleans the Mac's working folders, ShellCheck, [#289] and
+  [#292]'s wording riding along: built and reviewed; it merges after its
+  as-built docs. Then ADR-084 (the order, below).
 - **The triage** is done (28 October;
   [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
   every open issue has its group and area labels, the `fix-now` ones are
@@ -70,10 +70,11 @@ On 29 October 2026:
   branch ([#287]).
 - **3 November:** the Nest packages at 12.3.x are old enough (ADR-084,
   [#287]).
-- **4 November:** `@aws-sdk/client-s3` 3.1159.0 (18:45 UTC) and the eight
-  updates #260 left (by 20:26 UTC) are old enough, for ADR-084's branch.
-- **5 November:** `nodemailer` 10.3.1 (12:31 UTC) is old enough, for
-  ADR-084's branch.
+- **4 November:** the eight updates #260 left (by 20:26 UTC) are old
+  enough, for ADR-084's branch.
+- **5 November:** `nodemailer` 10.3.1 (12:32 UTC) and
+  `@aws-sdk/client-s3` 3.1160.0 (18:46 UTC), the last of ADR-084's
+  updates, are old enough.
 - **30 November:** the known misses for the typo lookup ([#225]) and Home
   ([#276]) end; fixed by then, or decided again.
 - **Early November:** Bob's cloud credit ends; [#245] suits a cloud session
@@ -128,14 +129,16 @@ them:
    merged 29 October. Then [#316], the rate limit keyed on the person,
    with `/triage` riding along: [#325], merged 29 October. Then the
    chat-side planning skill ([#318], ADR-088), a docs PR, its source
-   kept in this repository (Bob, 29 October 2026): open. ADR-084's
-   package updates come of age only from 2 to 4 November, and ADR-084
-   and ADR-085 each start with the routine it holds. Once it merges, by
-   hand: the skill packed and uploaded, and its `evals.md` walked.
+   kept in this repository (Bob, 29 October 2026): [#327], open.
+   ADR-084's package updates come of age only from 2 to 5 November, and
+   ADR-084 and ADR-085 each start with the routine it holds. Once it
+   merges, by hand: `scripts/clean-local.sh`'s first run, a dry run
+   first; the skill packed and uploaded, where its copy sits in the
+   chat's container noted, and its `evals.md` walked.
 4. **ADR-084, an error tracker** ([#287]), with `typescript-eslint` 8.72.1
    (old enough from 2 November), the Nest packages at 12.3.x (from 3
-   November), `@aws-sdk/client-s3` 3.1159.0 and the eight #260 left
-   (`@nestjs/cli`, `@nestjs/swagger`, `@nestjs/schematics`,
+   November), `@aws-sdk/client-s3` 3.1160.0 (from 5 November) and the
+   eight #260 left (`@nestjs/cli`, `@nestjs/swagger`, `@nestjs/schematics`,
    `@formatjs/cli`, `react-intl`, `react-router-dom`, `@types/node`,
    `dotenv-cli`; all by 4 November, 20:26 UTC), whose
    `@nestjs/platform-express` depends on multer 2.5.0 itself, so the
@@ -254,3 +257,4 @@ Not repeated here; each list has one home:
 [#324]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/324
 [#325]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/325
 [#326]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/326
+[#327]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/327

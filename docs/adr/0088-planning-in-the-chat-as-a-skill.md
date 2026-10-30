@@ -215,3 +215,77 @@ scripts are numbered with the reviews', for Bob to fix or file.
   ShellCheck; the docs, by the chat; dependencies again; the reviews;
   the as-built last. Built from `tmp/adr-088/brief.md`, a step per
   prompt, by `/build-from-brief`.
+
+## Amendment (October 2026) — as built (#327)
+
+Built from `tmp/adr-088/brief.md`, a step per prompt, on 29 October
+2026; where it differs from the decisions above, this holds.
+
+- **The skill,** written by the chat as planned: `SKILL.md` in eight
+  sections, `reference/` (the reply format, the delivery rules and a
+  brief's shape) and `evals.md`. A session reads the handoff,
+  `engineering.md` and `CLAUDE.md` whole, from the clone. The open
+  issues by area come from Bob's `gh issue list`: GitHub's API without
+  a token shares its 60 requests an hour with every container behind
+  the same address, and was found used up. Its after-merge list names
+  `scripts/clean-local.sh`. Where claude.ai puts the uploaded copy in
+  the chat's container is confirmed at the first upload, after the
+  merge.
+- **One zip per reply** (Bob, 29 October 2026, after this ADR was
+  committed): a reply with several files sends one zip the chat packs,
+  laid out as the repository is and named for its step; one file still
+  comes alone, moved by `mv`. In `engineering.md` and the skill's
+  delivery rules.
+- **The pack script** takes only the files git knows, so a `.DS_Store`
+  never reaches the upload or the comparison; its archive holds folder
+  entries, as Finder's Compress makes them. Its check also refuses
+  "anthropic" or "claude" in a name and an XML tag in a name or a
+  description, as the Claude API's skills guide lists (added after its
+  step); a front matter field written over several lines (review 6);
+  and a link to `evals.md`, which is not uploaded. It reads links with
+  `check-docs.mjs`'s reader (review 4), and CI's Docs workflow runs its
+  `--check` (review 5), so a change to the skill alone is checked in CI.
+- **`scripts/clean-local.sh`** keeps a `tmp/` folder that a branch not
+  yet merged also matches, local or on origin, and names that branch: a
+  gap found by its own step, before any real run. Merged branches come
+  from "Merge pull request" commits only (13 of `main`'s 158 merges are
+  not), so a pull request squashed or rebased leaves its folder kept,
+  the safe side. Playwright's folders are `client/e2e/.output/`,
+  `client/screenshots/.output/`, `client/playwright-report/` and
+  `client/test-results/`, which its tests check against both
+  configurations. Its tests, in three files sharing one built checkout,
+  brought the scripts' tests from 12.5 s to 3.1 s and `--docs` from
+  16.5 s to 7.5 s (review 23).
+- **ShellCheck** v0.11.0, one digest for arm64 and amd64, through
+  `scripts/check-shell.sh`: exit 0 when clean, 1 when it finds
+  something, 3 when it cannot run; ShellCheck's own 3, a bad flag,
+  becomes 1, so it never passes as a skip. It checks every shell script
+  git knows in the repository, 18 with `docker/init-test-db.sh`, not the
+  three folders above (review 7). It runs in every `verify.sh` mode,
+  `--docs` included (Bob, 29 October 2026). Its first run's five
+  findings in older scripts were numbered in step 10's own notes rather
+  than with the reviews', and each fixed in a commit. `verify.sh` asks
+  Docker once, through each check, for ShellCheck, oasdiff and squawk
+  alike (reviews 8 and 11).
+- **#289:** item 30 made `scripts/git-fixture.mjs`, its `TREE` part
+  already gone with finding 19, and the tests' README markers now come
+  from `adr-index.mjs`'s exported `SECTIONS` (review 1). Item 28's index
+  is byte for byte the same. Item 31 was compared old against new in 16
+  cases. Item 32's bullet 5 writes the skip text once in `verify.sh`;
+  the three lists of changed files stay apart, since each answers its
+  own question; and its `git ls-files -t` became a second listing
+  (review 2).
+- **#292:** its wording fixes. Manual-check ids as links, and naming the
+  part "partly tested" leaves out, stay in #292.
+- **The reviews** found 28. Fixed: 1 to 8, 11 to 13, 17, 19, 21, 23 and
+  25 to 27. Left, each with its reason in #327: 9, 14 to 16, 18, 20, 22,
+  24 and 28. `/doctor prompt-audit` found two skills ending their report
+  on what went well, against `CLAUDE.md`'s DONE or BLOCKED last line,
+  and a lint-autofix rule naming a `src/` that does not exist, now one
+  rule.
+- **Dependencies:** none taken; nothing in range was 7 days old on 29
+  October. `@aws-sdk/client-s3` moved to 3.1160.0, old enough on 5
+  November at 18:46 UTC, the last of ADR-084's updates.
+- **The stop rule:** step 14, fifteen fixes with the full verify and the
+  pull request in one prompt, ran well past its 30 minutes; nothing
+  outside the chosen findings was added.
