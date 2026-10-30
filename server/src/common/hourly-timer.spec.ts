@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { MockInstance } from 'vitest';
 
+import { reportFault } from './faults/tracker';
 import { HourlyTimer } from './hourly-timer';
+
+vi.mock('./faults/tracker', () => ({ reportFault: vi.fn() }));
 
 const HOUR = 60 * 60 * 1000;
 
@@ -15,6 +18,7 @@ describe('HourlyTimer', () => {
   let error: MockInstance;
 
   beforeEach(() => {
+    vi.mocked(reportFault).mockClear();
     vi.useFakeTimers();
     error = vi
       .spyOn(Logger.prototype, 'error')
@@ -56,6 +60,18 @@ describe('HourlyTimer', () => {
 
     await vi.advanceTimersByTimeAsync(HOUR);
     expect(timer.run).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports a run that fails once, by the job', async () => {
+    const timer = new Probe();
+    const failure = new Error('storage unreachable');
+    timer.run.mockRejectedValueOnce(failure);
+
+    timer.start();
+    await vi.advanceTimersByTimeAsync(HOUR);
+
+    expect(reportFault).toHaveBeenCalledTimes(1);
+    expect(reportFault).toHaveBeenCalledWith(failure, { job: 'Probe' });
   });
 
   it('stops at shutdown', async () => {

@@ -2,6 +2,7 @@ import {
   type MiddlewareConsumer,
   Module,
   type NestModule,
+  type OnApplicationShutdown,
   RequestMethod,
 } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -9,6 +10,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 
+import { flushFaults } from './common/faults/tracker';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { ApiRevisionMiddleware } from './common/middleware/api-revision.middleware';
@@ -132,7 +134,7 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],
 })
-export class AppModule implements NestModule {
+export class AppModule implements NestModule, OnApplicationShutdown {
   configure(consumer: MiddlewareConsumer): void {
     // AppModule's middleware runs after the global LoggerModule's, so the
     // request has its id, and before every imported module's, so the API
@@ -148,5 +150,11 @@ export class AppModule implements NestModule {
         version: '1',
       })
       .forRoutes('*');
+  }
+
+  // Reports still pending, sent before the process ends, a deploy's
+  // included: for at most two seconds (ADR-084).
+  async onApplicationShutdown(): Promise<void> {
+    await flushFaults();
   }
 }

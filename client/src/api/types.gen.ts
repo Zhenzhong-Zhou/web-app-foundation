@@ -2490,7 +2490,7 @@ export type ReturnAuthorizationLine = {
   variantId: string;
   sku: string;
   quantity: string;
-  resolution: 'replace' | 'credit' | 'none';
+  resolution: 'replace' | 'none' | 'credit';
   quantityReceived: string;
   quantityCredited: string;
 };

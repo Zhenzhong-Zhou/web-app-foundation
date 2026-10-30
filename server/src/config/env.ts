@@ -86,6 +86,18 @@ export const envSchema = z.object({
       .optional(),
   ),
 
+  // ADR-084: the error tracker's project address. Unset, nothing starts
+  // and nothing leaves, as on a developer's machine and in CI; empty counts
+  // as unset. The deployment's name in the tracker, NODE_ENV when unset.
+  ERROR_TRACKER_DSN: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.url().optional(),
+  ),
+  ERROR_TRACKER_ENVIRONMENT: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.string().optional(),
+  ),
+
   RATE_LIMIT_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
 

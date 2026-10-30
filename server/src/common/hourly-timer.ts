@@ -1,5 +1,7 @@
 import { Logger, type OnApplicationShutdown } from '@nestjs/common';
 
+import { reportFault } from './faults/tracker';
+
 const HOUR = 60 * 60 * 1000;
 
 /**
@@ -7,7 +9,8 @@ const HOUR = 60 * 60 * 1000;
  * is up. Startup too, because the server sleeps after 15 minutes without a
  * request: woken for less than an hour at a time, an hourly timer alone
  * would never fire. Each job must be safe to run on two instances at once.
- * A run that fails is logged, and the next one tries again.
+ * A run that fails is logged and reported (ADR-084), and the next one tries
+ * again.
  *
  * Started by main.ts once the server listens, not when the application
  * boots: the tests and the seed scripts boot the same modules. The tests
@@ -38,6 +41,7 @@ export abstract class HourlyTimer implements OnApplicationShutdown {
         'Run failed',
         error instanceof Error ? error.stack : String(error),
       );
+      reportFault(error, { job: this.constructor.name });
     }
   }
 }

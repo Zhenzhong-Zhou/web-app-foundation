@@ -17236,8 +17236,8 @@
             "type": "string",
             "enum": [
               "replace",
-              "credit",
-              "none"
+              "none",
+              "credit"
             ]
           },
           "quantityReceived": {
