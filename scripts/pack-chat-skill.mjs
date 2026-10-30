@@ -13,12 +13,13 @@
  *
  * The check (checkSkill): SKILL.md's front matter has a name, the
  * folder's, of lower-case letters, digits and hyphens, at most 64
- * characters, and a description of at most 1,024, each field on one
- * line; the name holds neither anthropic nor claude, and neither field an
- * XML tag, as the Claude API's skills guide lists for an upload; and
- * every relative link in the skill's Markdown, read as check-docs.mjs
- * reads links, leads to a file it uploads. evals.md is not uploaded, so a
- * link to it fails too. Each failure is printed as `file: reason`, and it exits 1.
+ * characters, and a description of at most 1,024, every line between
+ * its --- lines a field on one line, as `key: value`; the name holds
+ * neither anthropic nor claude, and neither field an XML tag, as the
+ * Claude API's skills guide lists for an upload; and every relative link
+ * in the skill's Markdown, read as check-docs.mjs reads links, leads to a
+ * file it uploads. evals.md is not uploaded, so a link to it fails too.
+ * Each failure is printed as `file: reason`, and it exits 1.
  *
  * The pack: tmp/plan-feature.zip, written fresh by the system's zip, run
  * from .claude/chat-skills/ so plan-feature/ is the archive's root, with
@@ -33,6 +34,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { frontMatterEnd } from "./adr-index.mjs";
 import { linksIn } from "./check-docs.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -62,19 +64,22 @@ export const uploaded = (folder) =>
 
 /**
  * The front matter's fields, each `key: value` on its line, a value's
- * quotes taken off; null when the file has none.
+ * quotes taken off, and the number of each line that is not one, as a
+ * field folded over several lines is not; null when the file has none.
  */
 function frontMatter(text) {
   const lines = text.split(/\r?\n/);
-  const end = lines.indexOf("---", 1);
-  if (lines[0] !== "---" || end < 0) return null;
+  const end = frontMatterEnd(lines);
+  if (end < 0) return null;
 
   const fields = {};
-  for (const line of lines.slice(1, end)) {
-    const field = /^([\w-]+):\s*(.*?)\s*$/.exec(line);
+  const malformed = [];
+  for (let at = 1; at < end; at++) {
+    const field = /^([\w-]+):\s*(.*?)\s*$/.exec(lines[at]);
     if (field) fields[field[1]] = field[2].replace(/^(["'])(.*)\1$/, "$2");
+    else malformed.push(at + 1);
   }
-  return fields;
+  return { fields, malformed };
 }
 
 /** The words an upload refuses in a name. */
@@ -99,12 +104,19 @@ export function checkSkill(folder) {
     return failures;
   }
 
-  const fields = frontMatter(
+  const front = frontMatter(
     readFileSync(path.join(folder, "SKILL.md"), "utf8"),
   );
-  if (!fields) {
+  if (!front) {
     fail("SKILL.md", "no front matter, between --- lines at its start");
   } else {
+    const { fields, malformed } = front;
+    for (const line of malformed) {
+      fail(
+        "SKILL.md",
+        `line ${line} is not a field on one line, key: value, as the front matter's lines must be`,
+      );
+    }
     if (!fields.name) {
       fail("SKILL.md", "no name in its front matter");
     } else {

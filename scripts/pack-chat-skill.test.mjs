@@ -169,6 +169,20 @@ test("a description missing, empty or over 1,024 characters fails", (t) => {
   );
 });
 
+test("a front matter line that is not a field on one line fails, named by its number", (t) => {
+  const folded = [
+    "name: plan-feature",
+    "description: >-",
+    `  Plans a feature, ${"over many lines ".repeat(70)}`,
+    "  with <b>a tag</b>.",
+    "",
+  ].join("\n");
+  assert.deepEqual(failuresOf(t, folded), [
+    "plan-feature/SKILL.md: line 4 is not a field on one line, key: value, as the front matter's lines must be",
+    "plan-feature/SKILL.md: line 5 is not a field on one line, key: value, as the front matter's lines must be",
+  ]);
+});
+
 test("a link to no file, outside the folder or to evals.md fails, named with its file", (t) => {
   const folder = skill(t, {
     "SKILL.md": skillMd(
