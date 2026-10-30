@@ -33,11 +33,16 @@ export const git = (root, ...args) =>
     { cwd: root, encoding: "utf8" },
   );
 
+/** A temporary folder, removed when the test ends. */
+export function folder(t, name) {
+  const made = mkdtempSync(path.join(tmpdir(), `${name}-`));
+  t.after(() => rmSync(made, { recursive: true, force: true }));
+  return made;
+}
+
 /** A temporary repository holding the files, removed when the test ends. */
 export function repository(t, name, files = {}) {
-  const root = mkdtempSync(path.join(tmpdir(), `${name}-`));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
-
+  const root = folder(t, name);
   git(root, "init", "--quiet");
   for (const [file, text] of Object.entries(files)) write(root, file, text);
   return root;

@@ -12,13 +12,12 @@
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { rmSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { repository } from "./git-fixture.mjs";
+import { folder, repository } from "./git-fixture.mjs";
 import { checkSkill, pack, uploaded } from "./pack-chat-skill.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -207,11 +206,8 @@ const noZip =
   "no zip or unzip on this machine";
 
 /** An archive's path in a temporary folder, removed when the test ends. */
-function archiveIn(t) {
-  const folder = mkdtempSync(path.join(tmpdir(), "pack-chat-skill-"));
-  t.after(() => rmSync(folder, { recursive: true, force: true }));
-  return path.join(folder, "plan-feature.zip");
-}
+const archiveIn = (t) =>
+  path.join(folder(t, "pack-chat-skill"), "plan-feature.zip");
 
 /** The entries an archive lists, each on its line. */
 const entriesOf = (archive) =>

@@ -16,19 +16,17 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
   existsSync,
-  mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { git, repository, write } from "./git-fixture.mjs";
+import { folder, git, repository, write } from "./git-fixture.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SCRIPT = path.join(ROOT, "scripts/clean-local.sh");
@@ -83,13 +81,6 @@ const FILES = {
   ".env": "SESSION_SECRET=secret\n",
   "server/storage/org-1/invoice.pdf": "Kept by FILE_STORAGE=local.\n",
 };
-
-/** A temporary folder, removed when the test ends. */
-function folder(t, name) {
-  const made = mkdtempSync(path.join(tmpdir(), `${name}-`));
-  t.after(() => rmSync(made, { recursive: true, force: true }));
-  return made;
-}
 
 /** The checkout, as the header says, origin/main not yet fetched. */
 function checkout(t) {
