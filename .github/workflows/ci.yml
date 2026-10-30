@@ -4,17 +4,19 @@ name: CI
 # take minutes. A Markdown file anywhere counts as docs, except Help's
 # guides, which ship in the client and are checked with it (ADR-079): the
 # deploy follows CI on main (deploy.yml, ADR-081), so a guide changed
-# alone would otherwise never go live. A later pattern overrides an
-# earlier one.
+# alone would otherwise never go live. And except the table diagrams in
+# docs/tables/, which the server's job checks against the schema
+# (ADR-086), so a page changed alone is checked too. A later pattern
+# overrides an earlier one.
 on:
   push:
     branches: [main]
-    paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**']
+    paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**', 'docs/tables/**']
   pull_request:
     # labeled, so adding full-e2e to a pull request runs every browser on it
     # without another push.
     types: [opened, synchronize, reopened, labeled]
-    paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**']
+    paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**', 'docs/tables/**']
   # Every browser nightly, so a WebKit, Firefox or iPhone regression from a
   # day of merges shows the next morning rather than at the next release.
   schedule:

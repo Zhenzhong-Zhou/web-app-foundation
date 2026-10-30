@@ -149,9 +149,11 @@ against_main() {
 # --docs stands in for --quick only when the docs' checks are all a change
 # needs (ADR-086): every uncommitted change, staged or not, and every new
 # file git does not ignore, is a .md file or in scripts/, and none is in
-# client/. client/ is refused even for Markdown: the Help guides in
-# client/src/help/guides/ are the app's content, which
-# client/src/help/guides.test.ts checks and --docs does not run. Anything
+# client/ or docs/tables/. client/ is refused even for Markdown: the Help
+# guides in client/src/help/guides/ are the app's content, which
+# client/src/help/guides.test.ts checks and --docs does not run. So is
+# docs/tables/: its pages are written from the schema, which
+# `npm run diagrams -- --check` checks and --docs does not run. Anything
 # else, it names and stops, each file indented as it is printed. The
 # Markdown step already runs adr-index.mjs's --check, through
 # check-docs.mjs.
@@ -160,10 +162,11 @@ if [[ $mode == docs ]]; then
     {
       git -c core.quotePath=false diff --name-only --no-renames HEAD
       git -c core.quotePath=false ls-files --others --exclude-standard
-    } | awk '/^client\// || !/\.md$|^scripts\//' | sort -u | sed 's/^/  /'
+    } | awk '/^client\/|^docs\/tables\// || !/\.md$|^scripts\//' |
+      sort -u | sed 's/^/  /'
   )"
   if [[ -n "$others" ]]; then
-    echo 'Changed, and not what --docs checks (Markdown outside client/, and scripts/):' >&2
+    echo 'Changed, and not what --docs checks (Markdown outside client/ and docs/tables/, and scripts/):' >&2
     echo "$others" >&2
     echo 'Run scripts/verify.sh --quick instead.' >&2
     exit 1
