@@ -4,6 +4,7 @@ import { FormattedMessage, useIntl } from 'react-intl';
 
 import { NewVersionPage } from '../errors/new-version-page';
 import { OfflinePage } from '../errors/offline-page';
+import { reportFault } from '../errors/report-fault';
 import { GoHome, Reload } from '../errors/status-actions';
 import { StatusPage } from '../errors/status-page';
 import { ApiError } from '../lib/api';
@@ -57,13 +58,14 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // Console only for now. When an error reporter is added, this is where
-    // it goes, with the reference the person sees.
     console.error(
       `Render error (reference ${this.state.reference ?? '?'}):`,
       error,
       info.componentStack,
     );
+    // To the error tracker, with the reference the person sees (ADR-084);
+    // the offline and new version pages' failures are dropped there.
+    reportFault(error, { reference: this.state.reference });
   }
 
   render() {

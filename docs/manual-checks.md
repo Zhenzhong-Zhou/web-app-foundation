@@ -2881,6 +2881,24 @@ site, after a deploy that changes the setting, the route or the relay.
   with no user and no IP address. With `ERROR_TRACKER_DSN` empty and the
   API restarted, the log says `Error tracker off`, the command still
   prints 204, and no new event arrives.
+- **MC-4102** *(ADR-084)* A page that crashes is reported once, with the
+  reference it shows. Signed in, with the browser's developer tools open
+  on Network, crash a page as MC-R12 does, opened with `?search=Jane` added
+  to its address: it shows Something went wrong and a reference. Network
+  shows one `POST /api/errors`, answered 204, and nothing before the page
+  first drew. Within a minute, `reference:<the reference>` in the
+  project's Issues search opens one event: the error, tagged `side`
+  `browser`, release `<version>+dev`, its language, the browser, and the
+  page's address without `?search=Jane`; no name, email address or IP
+  address anywhere in it.
+- **MC-4103** *(ADR-084)* A refusal is not reported. Signed out, sign in
+  with a wrong password: the refusal shows, Network shows no `POST
+  /api/errors`, and no new event arrives.
+- **MC-4104** *(ADR-084)* A dropped connection is not reported. Signed
+  in, set Network to Offline, then open a page not opened yet in this
+  tab: Can’t reach the server shows. Set it back online: the page loads
+  by itself. Network shows no `POST /api/errors` at any point, and no new
+  event arrives.
 
 ## Regressions
 
@@ -3926,3 +3944,5 @@ first.
   rewritten.
 - 2026-10-30: ADR-084, the error tracker: section 41, MC-4101, a test
   report through the site.
+- 2026-10-30: ADR-084, the browser reporting its faults: MC-4102, a page
+  crashed, MC-4103, a refusal, and MC-4104, a dropped connection.

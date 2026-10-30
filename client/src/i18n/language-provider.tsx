@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { type IntlShape, RawIntlProvider } from 'react-intl';
 
+import { reportFault } from '../errors/report-fault';
 import { setRequestLanguage } from '../lib/api';
 import { setFormatLocale } from '../lib/format';
 import {
@@ -129,6 +130,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       },
       (caught: unknown) => {
         if (latest.current !== request) return;
+        // A catalogue broken in this build (ADR-084); the rest are dropped.
+        reportFault(caught);
         if (!shown.current) {
           shown.current = 'en';
           setActive(apply('en', ENGLISH));

@@ -12,6 +12,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App.tsx';
 import { AuthProvider } from './auth/auth-provider';
 import { ToastProvider } from './components/toast-provider';
+import { reportFault, startReporting } from './errors/report-fault';
 import { LanguageFailureToast } from './i18n/language-failure';
 import { LanguageProvider } from './i18n/language-provider';
 import { LocalizedTheme } from './i18n/localized-theme';
@@ -46,12 +47,18 @@ const router = createBrowserRouter([
 /**
  * A render error no boundary caught leaves the page empty, and no screen
  * would ever take the loading mark down (ADR-082): it goes with the app,
- * rather than seem to load for ever. Reported as React reports it.
+ * rather than seem to load for ever. Reported as React reports it, and to
+ * the error tracker (ADR-084), whose handler also hears the first: the
+ * SDK sends one report of the two.
  */
 const onUncaughtError = (error: unknown) => {
   removeLoadingMark();
+  reportFault(error);
   reportError(error);
 };
+
+// The error tracker, once the first screen has drawn (ADR-084).
+void startReporting();
 
 createRoot(document.getElementById('root')!, { onUncaughtError }).render(
   <StrictMode>

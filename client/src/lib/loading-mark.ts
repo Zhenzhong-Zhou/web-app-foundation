@@ -13,9 +13,21 @@ import { useEffect } from 'react';
  */
 const ID = 'loading-mark';
 
+let shown: () => void;
+
+/**
+ * Settled once the first screen is on view, or the app has failed without
+ * one: the error tracker's chunk loads then, so the first load does not
+ * wait for it (ADR-084).
+ */
+export const firstScreenShown = new Promise<void>((resolve) => {
+  shown = resolve;
+});
+
 export function removeLoadingMark(): void {
   document.getElementById(ID)?.remove();
   document.getElementById('root')?.removeAttribute('aria-hidden');
+  shown();
 }
 
 /** Takes the loading mark down once this screen is on view. */

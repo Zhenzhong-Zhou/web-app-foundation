@@ -172,6 +172,9 @@ export default defineConfig({
         // Every worker and freshOrg registers, so sign-up is open here
         // whatever the root .env says (ADR-078).
         REGISTRATION: 'open',
+        // The pages the suite breaks on purpose report to no tracker, even
+        // where the root .env names a development project (ADR-084).
+        ERROR_TRACKER_DSN: '',
       },
     },
     {
