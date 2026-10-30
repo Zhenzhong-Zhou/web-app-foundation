@@ -121,9 +121,8 @@ guard() {
   fi
 }
 
-COUNT=0
 TOTAL=0
-REMOVE=""
+REMOVE=()
 
 # Prints a folder's size, what is or would be done with it, and why. One
 # marked remove is guarded first, and removed only once all are listed.
@@ -136,10 +135,8 @@ mark() {
   printf '  %-6s  %9s  %-30s  %s\n' "$action" "$(readable "$size")" "$path" "$why" |
     sed 's/ *$//'
   if [ "$action" = remove ]; then
-    COUNT=$((COUNT + 1))
     TOTAL=$((TOTAL + size))
-    REMOVE="$REMOVE$path
-"
+    REMOVE+=("$path")
   fi
 }
 
@@ -206,14 +203,10 @@ if [ "$found" -eq 0 ]; then
 fi
 
 echo
-if [ "$COUNT" -eq 0 ]; then
+if [ "${#REMOVE[@]}" -eq 0 ]; then
   echo "Nothing to remove."
 elif [ "$DO_DELETE" -eq 1 ]; then
-  while IFS= read -r path; do
-    if [ -n "$path" ]; then
-      rm -rf -- "$path"
-    fi
-  done <<< "$REMOVE"
+  rm -rf -- "${REMOVE[@]}"
   echo "Removed what is marked remove: $(readable "$TOTAL")."
 else
   echo "Dry run: nothing removed. --yes removes what is marked remove: $(readable "$TOTAL")."
