@@ -12,6 +12,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 
 import { API_REVISION } from './src/api/revision.gen.ts';
 import { Locale } from './src/api/types.gen.ts';
+import { releaseOf } from './src/errors/release.ts';
 import { LOADING_FAILED } from './src/lib/loading-words.ts';
 import { INDICATOR_DELAY_MS } from './src/lib/use-delayed-flag.ts';
 import { DARK, LIGHT, MARK, MARK_SHAPE, RADIUS } from './src/theme/tokens.ts';
@@ -445,7 +446,7 @@ function gitCommit(): string | undefined {
  */
 export function sourceMapUpload(
   env: Record<string, string | undefined>,
-  { build, version }: Build,
+  build: Build,
 ): SentryVitePluginOptions | null {
   if (!env.SENTRY_AUTH_TOKEN) return null;
   return {
@@ -453,9 +454,9 @@ export function sourceMapUpload(
     org: env.SENTRY_ORG,
     project: env.SENTRY_PROJECT,
     release: {
-      // As src/errors/tracker.ts names it, which sets it on each report, so
-      // nothing is injected; and no commits read from git for Sentry.
-      name: `${version}+${build}`,
+      // The reports' own, which tracker.ts sets on each, so nothing is
+      // injected; and no commits read from git for Sentry.
+      name: releaseOf(build),
       inject: false,
       setCommits: false,
     },

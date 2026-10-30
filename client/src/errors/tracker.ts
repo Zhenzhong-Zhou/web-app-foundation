@@ -13,6 +13,7 @@ import {
 } from '@sentry/browser';
 
 import { BUILD } from '../version/build';
+import { releaseOf } from './release';
 import { isFault, MAX_REPORTS, type Tracker } from './report-fault';
 
 /**
@@ -47,7 +48,7 @@ export function startTracker({ transport }: TrackerOptions = {}): Tracker {
     // The route's ADR-014 header, and no X-Api-Revision: the route is
     // version-neutral, so a tab older than the API still reports.
     transportOptions: { headers: { 'X-Requested-With': 'XMLHttpRequest' } },
-    release: `${BUILD.version}+${BUILD.build}`,
+    release: releaseOf(BUILD),
     // sendDefaultPii's successor in SDK 11, whose every default collects:
     // nothing personal, the browser's name aside.
     dataCollection: {
