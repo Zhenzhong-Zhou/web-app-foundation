@@ -14,11 +14,13 @@
  * The check (checkSkill): SKILL.md's front matter has a name, the
  * folder's, of lower-case letters, digits and hyphens, at most 64
  * characters, and a description of at most 1,024, every line between
- * its --- lines a field on one line, as `key: value`; the name holds
- * neither anthropic nor claude, and neither field an XML tag, as the
- * Claude API's skills guide lists for an upload; and every relative link
- * in the skill's Markdown, read as check-docs.mjs reads links, leads to a
- * file it uploads. evals.md is not uploaded, so a link to it fails too.
+ * its --- lines a field on one line, as `key: value`, and a value
+ * holding a colon and a space in quotes, since a YAML reader refuses it
+ * bare (ADR-085); the name holds neither anthropic nor claude, and
+ * neither field an XML tag, as the Claude API's skills guide lists for
+ * an upload; and every relative link in the skill's Markdown, read as
+ * check-docs.mjs reads links, leads to a file it uploads. evals.md is
+ * not uploaded, so a link to it fails too.
  * Each failure is printed as `file: reason`, and it exits 1.
  *
  * The guard (whyNotMain), before the pack and never with --check: after
@@ -71,10 +73,14 @@ function filesIn(folder) {
 export const uploaded = (folder) =>
   filesIn(folder).filter((file) => file !== EVALS);
 
+/** A value in quotes, single or double, and what they hold. */
+const QUOTED = /^(["'])(.*)\1$/;
+
 /**
  * The front matter's fields, each `key: value` on its line, a value's
- * quotes taken off, and the number of each line that is not one, as a
- * field folded over several lines is not; null when the file has none.
+ * quotes taken off; the keys whose values were not in quotes; and the
+ * number of each line that is not a field, as one folded over several
+ * lines is not; null when the file has none.
  */
 function frontMatter(text) {
   const lines = text.split(/\r?\n/);
@@ -82,13 +88,19 @@ function frontMatter(text) {
   if (end < 0) return null;
 
   const fields = {};
+  const unquoted = new Set();
   const malformed = [];
   for (let at = 1; at < end; at++) {
     const field = /^([\w-]+):\s*(.*?)\s*$/.exec(lines[at]);
-    if (field) fields[field[1]] = field[2].replace(/^(["'])(.*)\1$/, "$2");
-    else malformed.push(at + 1);
+    if (!field) {
+      malformed.push(at + 1);
+      continue;
+    }
+    const [, key, value] = field;
+    fields[key] = value.replace(QUOTED, "$2");
+    if (!QUOTED.test(value)) unquoted.add(key);
   }
-  return { fields, malformed };
+  return { fields, unquoted, malformed };
 }
 
 /** The words an upload refuses in a name. */
@@ -119,12 +131,20 @@ export function checkSkill(folder) {
   if (!front) {
     fail("SKILL.md", "no front matter, between --- lines at its start");
   } else {
-    const { fields, malformed } = front;
+    const { fields, unquoted, malformed } = front;
     for (const line of malformed) {
       fail(
         "SKILL.md",
         `line ${line} is not a field on one line, key: value, as the front matter's lines must be`,
       );
+    }
+    for (const key of unquoted) {
+      if (fields[key].includes(": ")) {
+        fail(
+          "SKILL.md",
+          `${key} holds a colon and a space, not in quotes, which a YAML reader refuses: put its value in double quotes`,
+        );
+      }
     }
     if (!fields.name) {
       fail("SKILL.md", "no name in its front matter");

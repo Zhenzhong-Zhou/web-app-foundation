@@ -184,6 +184,30 @@ test("a front matter line that is not a field on one line fails, named by its nu
   ]);
 });
 
+test("a value holding a colon and a space fails unless in quotes, named by its key", (t) => {
+  const name = "name: plan-feature\n";
+  assert.deepEqual(
+    failuresOf(
+      t,
+      `${name}description: The routine, in its Project: for the chat.\nlicense: See LICENSE: all rights.\n`,
+    ),
+    [
+      "plan-feature/SKILL.md: description holds a colon and a space, not in quotes, which a YAML reader refuses: put its value in double quotes",
+      "plan-feature/SKILL.md: license holds a colon and a space, not in quotes, which a YAML reader refuses: put its value in double quotes",
+    ],
+  );
+  for (const quoted of [
+    `"The routine, in its Project: for the chat."`,
+    `'The routine, in its Project: for the chat.'`,
+  ]) {
+    assert.deepEqual(failuresOf(t, `${name}description: ${quoted}\n`), []);
+  }
+  assert.deepEqual(
+    failuresOf(t, `${name}description: The routine, at 9:30 each day.\n`),
+    [],
+  );
+});
+
 test("a link to no file, outside the folder or to evals.md fails, named with its file", (t) => {
   const folder = skill(t, {
     "SKILL.md": skillMd(
