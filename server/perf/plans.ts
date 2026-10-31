@@ -30,6 +30,7 @@ import {
 import { LookupService } from '../src/modules/search/lookup.service';
 import { AvailabilityService } from '../src/modules/stock/availability.service';
 import { LotTraceService } from '../src/modules/stock/lot-trace.service';
+import { ReorderPointsReadsService } from '../src/modules/stock/reorder-points-reads.service';
 import { StockReadsService } from '../src/modules/stock/stock-reads.service';
 import { type Captured, QueryCapture } from './capture';
 import { readManifest } from './manifest';
@@ -207,6 +208,7 @@ async function buildProbes(
   const products = app.get(ProductsService);
   const priceLists = app.get(PriceListsService);
   const partners = app.get(PartnersService);
+  const reorder = app.get(ReorderPointsReadsService);
 
   const firstOrders = await orders.list({ status: 'all' });
   const deepOrders = await cursorAfter(
@@ -382,6 +384,12 @@ async function buildProbes(
     {
       name: 'movements: a month',
       run: () => stock.listMovements({ ...MONTH_INSTANTS }),
+    },
+    // Reorder points (ADR-085): the low list, every point's position
+    // worked out, read only from the items that have one.
+    {
+      name: 'reorder points: low',
+      run: () => reorder.list({ status: 'low' }, 'en'),
     },
     { name: 'valuation', run: () => costs.stockValuation() },
     // The catalogue's reads that join products (#226), each with the

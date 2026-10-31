@@ -9,6 +9,7 @@ import { LotTraceService } from './lot-trace.service';
 import { LotsService } from './lots.service';
 import { ReorderPointsController } from './reorder-points.controller';
 import { ReorderPointsService } from './reorder-points.service';
+import { ReorderPointsReadsService } from './reorder-points-reads.service';
 import { StockController } from './stock.controller';
 import { StockService } from './stock.service';
 import { StockReadsService } from './stock-reads.service';
@@ -38,6 +39,7 @@ import { StockReadsService } from './stock-reads.service';
     LotTraceService,
     AvailabilityService,
     ReorderPointsService,
+    ReorderPointsReadsService,
   ],
   exports: [StockService, StockReadsService],
 })

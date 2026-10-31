@@ -222,7 +222,8 @@ async function refuseMaximumAtOrBelowPoint(
     );
 }
 
-function noPoint(): NotFoundException {
+/** An item with no point: not found, as another organization's is. */
+export function noPoint(): NotFoundException {
   return new NotFoundException(
     t({
       id: 'stock.noReorderPoint',

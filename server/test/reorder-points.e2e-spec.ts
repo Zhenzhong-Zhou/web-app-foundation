@@ -9,11 +9,24 @@ import { auditLog, reorderPoints } from '../src/database/schema';
 import {
   addMember,
   addViewer,
+  body,
   createE2eApp,
   createVariant,
   customRole,
   registerOrganization,
 } from './utils/fixtures';
+import {
+  item,
+  order,
+  output,
+  partner,
+  point,
+  receive,
+  recipe,
+  run,
+  ship,
+  site,
+} from './utils/reorder-world';
 import { resetDatabase } from './utils/reset-db';
 
 type Org = Awaited<ReturnType<typeof registerOrganization>>;
@@ -21,6 +34,28 @@ type Org = Awaited<ReturnType<typeof registerOrganization>>;
 interface Refusal {
   message: string;
   code?: string;
+}
+
+interface Row {
+  id: string;
+  variantId: string;
+  sku: string;
+  productName: string;
+  status: string;
+  position: string;
+  suggestion: string;
+  suggestedMultiples: string | null;
+  drafts: {
+    kind: string;
+    id: string;
+    number: string | null;
+    quantity: string;
+  }[];
+}
+
+interface Page {
+  entries: Row[];
+  nextCursor: string | null;
 }
 
 /**
@@ -398,6 +433,456 @@ describe('Reorder points (e2e)', () => {
       expect((await entries(d3)).map((entry) => entry.action)).toEqual([
         'reorder_point.created',
       ]);
+    });
+  });
+
+  /** A page of the list, as the screen asks for it. */
+  async function listed(org: Org, query = ''): Promise<Page> {
+    return body<Page>(
+      await org.agent.get(`/v1/stock/reorder-points${query}`).expect(200),
+    );
+  }
+
+  const skus = (page: Page) => page.entries.map((row) => row.sku);
+
+  /**
+   * Six items with a point, each with all its stock on one shelf, so each
+   * position is its stock: out, three low at different shares of their
+   * point, and two with enough.
+   */
+  async function sixItems(org: Org) {
+    const shelf = await site(org.agent, 'SHELF');
+    const items: [string, string, string][] = [
+      ['A-ENOUGH', '300', '100'],
+      ['B-HALF', '50', '100'],
+      ['C-OUT', '0', '10'],
+      ['D-NEAR', '90', '100'],
+      ['E-AT', '100', '100'],
+      ['F-QUARTER', '250', '1000'],
+    ];
+    for (const [sku, onHand, reorderPoint] of items) {
+      const id = await item(org.agent, sku);
+      if (onHand !== '0') await receive(org.agent, id, shelf, onHand);
+      await point(org.agent, id, reorderPoint);
+    }
+    return shelf;
+  }
+
+  describe('the list', () => {
+    it('puts the low first, the furthest below its point as a share of it first, then the rest by SKU', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await sixItems(alpha);
+
+      const page = await listed(alpha);
+
+      expect(skus(page)).toEqual([
+        'C-OUT',
+        'F-QUARTER',
+        'B-HALF',
+        'D-NEAR',
+        'A-ENOUGH',
+        'E-AT',
+      ]);
+      expect(page.entries.map((row) => row.status)).toEqual([
+        'out',
+        'low',
+        'low',
+        'low',
+        'enough',
+        'enough',
+      ]);
+      expect(page.entries[1]).toMatchObject({
+        sku: 'F-QUARTER',
+        productName: 'F-QUARTER',
+        position: '250.0000',
+        suggestion: '750.0000',
+        suggestedMultiples: null,
+      });
+      expect(page.nextCursor).toBeNull();
+    });
+
+    it('filters to the low, the out among them, or the out alone, and counts each', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await sixItems(alpha);
+
+      expect(skus(await listed(alpha, '?status=low'))).toEqual([
+        'C-OUT',
+        'F-QUARTER',
+        'B-HALF',
+        'D-NEAR',
+      ]);
+      expect(skus(await listed(alpha, '?status=out'))).toEqual(['C-OUT']);
+      expect(
+        body(
+          await alpha.agent
+            .get('/v1/stock/reorder-points/counts?status=out')
+            .expect(200),
+        ),
+      ).toEqual({ all: 6, low: 4, out: 1 });
+
+      await alpha.agent
+        .get('/v1/stock/reorder-points?status=enough')
+        .expect(400);
+    });
+
+    it('searches as every list does, its counts with it', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await sixItems(alpha);
+
+      expect(skus(await listed(alpha, '?search=half'))).toEqual(['B-HALF']);
+      expect(skus(await listed(alpha, '?status=low&search=-'))).toHaveLength(4);
+      expect(
+        body(
+          await alpha.agent
+            .get('/v1/stock/reorder-points/counts?search=out')
+            .expect(200),
+        ),
+      ).toEqual({ all: 1, low: 1, out: 1 });
+    });
+
+    it('pages in its order, each page after the last, and refuses a cursor not in it', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      await sixItems(alpha);
+
+      const seen: string[] = [];
+      let cursor: string | null = null;
+      do {
+        const query: string = cursor ? `?limit=4&before=${cursor}` : '?limit=4';
+        const page = await listed(alpha, query);
+        seen.push(...skus(page));
+        cursor = page.nextCursor;
+      } while (cursor);
+
+      expect(seen).toEqual([
+        'C-OUT',
+        'F-QUARTER',
+        'B-HALF',
+        'D-NEAR',
+        'A-ENOUGH',
+        'E-AT',
+      ]);
+
+      const theirs = await item(beta.agent, 'THEIRS');
+      await point(beta.agent, theirs, '5');
+      const [their] = (await listed(beta)).entries;
+      await alpha.agent
+        .get(`/v1/stock/reorder-points?before=${their.id}`)
+        .expect(400);
+    });
+
+    it('shows each draft on its row, newest first, and suggests what they leave', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const d3 = await item(alpha.agent, 'D3-1000');
+      const bottle = await item(alpha.agent, 'BOTTLE');
+      const shelf = await site(alpha.agent, 'SHELF');
+      const supplier = await partner(alpha.agent, 'Nordic Supply');
+      await point(alpha.agent, d3, '2000', {
+        rule: 'fixed',
+        fixedQuantity: '1000',
+      });
+
+      const purchase = await order(
+        alpha.agent,
+        'purchase',
+        supplier,
+        d3,
+        '500',
+        {
+          draft: true,
+        },
+      );
+      const bomId = await recipe(alpha.agent, d3, bottle, '1');
+      const runId = await run(alpha.agent, {
+        outputId: d3,
+        bomId,
+        locationId: shelf,
+        quantityPlanned: '250',
+        reference: 'B-0042',
+      });
+
+      const [row] = (await listed(alpha)).entries;
+
+      expect(row).toMatchObject({
+        status: 'out',
+        suggestion: '2000.0000',
+        suggestedMultiples: '2',
+        drafts: [
+          { kind: 'run', id: runId, number: 'B-0042', quantity: '250.0000' },
+          {
+            kind: 'purchase',
+            id: purchase.id,
+            number: purchase.number,
+            quantity: '500.0000',
+          },
+        ],
+      });
+    });
+
+    it('lists only its own organization’s points', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      await point(alpha.agent, await item(alpha.agent, 'OURS'), '5');
+      await point(beta.agent, await item(beta.agent, 'THEIRS'), '5');
+
+      expect(skus(await listed(alpha))).toEqual(['OURS']);
+      expect(
+        body(
+          await alpha.agent.get('/v1/stock/reorder-points/counts').expect(200),
+        ),
+      ).toEqual({ all: 1, low: 1, out: 1 });
+    });
+
+    it('is read with stock.view alone, as a Viewer holds it', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const d3 = await item(alpha.agent, 'D3-1000');
+      await point(alpha.agent, d3, '5');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
+
+      for (const path of [
+        '/v1/stock/reorder-points',
+        '/v1/stock/reorder-points/counts',
+        '/v1/stock/reorder-points/export',
+        `/v1/stock/reorder-points/${d3}`,
+      ]) {
+        await viewer.get(path).expect(200);
+      }
+
+      await customRole(app, alpha.organizationId, 'Sales', [
+        'users.view',
+        'roles.view',
+        'organizations.view',
+        'orders.view',
+      ]);
+      const sales = await addMember(
+        app,
+        alpha,
+        'sales@alpha.example.com',
+        'Sales',
+      );
+      await sales.get('/v1/stock/reorder-points').expect(403);
+      await sales.get(`/v1/stock/reorder-points/${d3}`).expect(403);
+    });
+  });
+
+  describe('an item’s detail', () => {
+    interface Detail {
+      usable: {
+        locationName: string;
+        usable: string;
+        expired: string;
+        issued: string;
+      }[];
+      expired: string;
+      issued: string;
+      coming: {
+        kind: string;
+        number: string | null;
+        partnerName: string | null;
+        quantity: string;
+        expectedAt: string | null;
+        late: boolean;
+      }[];
+      stillNeeded: {
+        number: string;
+        partnerName: string;
+        quantity: string;
+      }[];
+      drafts: { kind: string; quantity: string }[];
+    }
+
+    async function detailOf(org: Org, variantId: string) {
+      return body<Detail>(await org.agent.get(path(variantId)).expect(200));
+    }
+
+    it('lists usable stock by location marked available, with what was left out', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const bottle = await item(alpha.agent, 'BOTTLE', true);
+      const focus = await item(alpha.agent, 'FOCUS-60CT');
+      const shelf = await site(alpha.agent, 'SHELF');
+      const kitchen = await site(alpha.agent, 'KITCHEN');
+      const quarantine = await site(alpha.agent, 'QUARANTINE', false);
+      await receive(alpha.agent, bottle, shelf, '40', {
+        code: 'L-OLD',
+        expiresAt: '2020-01-01',
+      });
+      await receive(alpha.agent, bottle, shelf, '500', {
+        code: 'L-NEW',
+        expiresAt: '2099-01-01',
+      });
+      await receive(alpha.agent, bottle, quarantine, '30', {
+        code: 'L-NEW',
+      });
+      await point(alpha.agent, bottle, '100');
+      const bomId = await recipe(alpha.agent, focus, bottle, '1');
+      // Earliest expiry first takes the expired lot first, then 60 more.
+      await run(
+        alpha.agent,
+        { outputId: focus, bomId, locationId: kitchen, quantityPlanned: '100' },
+        shelf,
+      );
+
+      const detail = await detailOf(alpha, bottle);
+
+      expect(detail).toMatchObject({
+        usable: [
+          {
+            locationName: 'KITCHEN',
+            usable: '0.0000',
+            expired: '40.0000',
+            issued: '60.0000',
+          },
+          {
+            locationName: 'SHELF',
+            usable: '440.0000',
+            expired: '0.0000',
+            issued: '0.0000',
+          },
+        ],
+        expired: '40.0000',
+        issued: '60.0000',
+      });
+      // The row's usable is what the lines add up to.
+      const [row] = (await listed(alpha)).entries;
+      expect(row.position).toBe('440.0000');
+    });
+
+    it('lists each purchase and run coming, a purchase late once its day has passed, and each sale still needing it', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const focus = await item(alpha.agent, 'FOCUS-60CT');
+      const bottle = await item(alpha.agent, 'BOTTLE');
+      const shelf = await site(alpha.agent, 'SHELF');
+      const supplier = await partner(alpha.agent, 'Nordic Supply');
+      const customer = await partner(alpha.agent, 'Northside Pharmacy');
+      await receive(alpha.agent, bottle, shelf, '1000');
+      await receive(alpha.agent, focus, shelf, '50');
+      await point(alpha.agent, focus, '100');
+
+      const late = await order(alpha.agent, 'purchase', supplier, focus, '60', {
+        expectedAt: '2020-01-01',
+      });
+      const due = await order(alpha.agent, 'purchase', supplier, focus, '40', {
+        expectedAt: '2099-01-01',
+      });
+      const bomId = await recipe(alpha.agent, focus, bottle, '1');
+      const runId = await run(
+        alpha.agent,
+        {
+          outputId: focus,
+          bomId,
+          locationId: shelf,
+          quantityPlanned: '30',
+          reference: 'B-0007',
+        },
+        shelf,
+      );
+      await output(alpha.agent, runId, '10');
+      const sale = await order(alpha.agent, 'sale', customer, focus, '45');
+      await ship(alpha.agent, sale, shelf, '5');
+
+      const detail = await detailOf(alpha, focus);
+
+      expect(detail.coming).toEqual([
+        {
+          kind: 'purchase',
+          id: late.id,
+          number: late.number,
+          partnerName: 'Nordic Supply',
+          quantity: '60.0000',
+          expectedAt: '2020-01-01',
+          late: true,
+        },
+        {
+          kind: 'purchase',
+          id: due.id,
+          number: due.number,
+          partnerName: 'Nordic Supply',
+          quantity: '40.0000',
+          expectedAt: '2099-01-01',
+          late: false,
+        },
+        {
+          kind: 'run',
+          id: runId,
+          number: 'B-0007',
+          partnerName: null,
+          quantity: '20.0000',
+          expectedAt: null,
+          late: false,
+        },
+      ]);
+      expect(detail.stillNeeded).toEqual([
+        {
+          orderId: sale.id,
+          number: sale.number,
+          partnerName: 'Northside Pharmacy',
+          quantity: '40.0000',
+          expectedAt: null,
+        },
+      ]);
+      // 55 usable, 120 coming, 40 still needed.
+      const [row] = (await listed(alpha)).entries;
+      expect(row).toMatchObject({ position: '135.0000', status: 'enough' });
+    });
+
+    it('finds no item without a point, nor another organization’s', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const none = await item(alpha.agent, 'NONE');
+      const theirs = await item(beta.agent, 'THEIRS');
+      await point(beta.agent, theirs, '5');
+
+      const res = await alpha.agent.get(path(none)).expect(404);
+      expect((res.body as Refusal).message).toBe(
+        'That item has no reorder point',
+      );
+      await alpha.agent.get(path(theirs)).expect(404);
+      await alpha.agent.get(path('NONE')).expect(400);
+    });
+  });
+
+  describe('the export', () => {
+    it('writes the list as CSV, filtered as asked, with headers in the reader’s language, and records it', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await sixItems(alpha);
+
+      const res = await alpha.agent
+        .get('/v1/stock/reorder-points/export?status=out')
+        .set('Accept-Language', 'zh-Hans')
+        .expect(200);
+      const lines = res.text
+        .replace(/^\uFEFF/, '')
+        .trim()
+        .split('\r\n');
+
+      expect(lines).toEqual([
+        'SKU,物品,规格,状态,采购或自制,现有可用,在途,待发,预计可用,再订货点,订货量,固定订货量,最高库存,草稿中,建议订货,单位',
+        'C-OUT,C-OUT,,out,bought,0.0000,0.0000,0.0000,0.0000,10.0000,just_enough,,,0.0000,10.0000,each',
+      ]);
+      expect(res.headers['content-disposition']).toMatch(
+        /^attachment; filename="reorder-points-\d{4}-\d{2}-\d{2}\.csv"$/,
+      );
+
+      const [entry] = await db
+        .select({
+          resourceType: auditLog.resourceType,
+          payload: auditLog.payload,
+        })
+        .from(auditLog)
+        .where(
+          and(
+            eq(auditLog.organizationId, alpha.organizationId),
+            eq(auditLog.action, 'list.exported'),
+          ),
+        );
+      expect(entry).toEqual({
+        resourceType: 'reorder_points',
+        payload: {
+          list: 'reorder_points',
+          filters: { status: 'out' },
+          rows: 1,
+        },
+      });
     });
   });
 });

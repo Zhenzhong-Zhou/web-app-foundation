@@ -128,6 +128,21 @@ const NAMED_READS: NamedRead[] = [
     },
   },
   {
+    operation: 'GET /v1/stock/reorder-points',
+    of: 'item',
+    ask: async (world, language) => {
+      const page = await read<{ entries: (Named & { variantId: string })[] }>(
+        world,
+        language,
+        '/v1/stock/reorder-points',
+      );
+      const row = page.entries.find(
+        (entry) => entry.variantId === world.variantId,
+      )!;
+      return itemName(row.productName, row.variantName);
+    },
+  },
+  {
     operation: 'GET /v1/stock/lots/{id}/trace',
     of: 'item',
     ask: async (world, language) =>
@@ -522,6 +537,12 @@ describe('Names in the reader’s language (e2e)', () => {
       .send({ unitPrice: '12' })
       .expect(200);
 
+    // A reorder point, so the reorder points list names it (ADR-085).
+    await agent
+      .post(`/v1/stock/reorder-points/${variantId}`)
+      .send({ source: 'bought', reorderPoint: '10', rule: 'just_enough' })
+      .expect(204);
+
     // Opened, so Recently opened and the welcome name it.
     await agent
       .post('/v1/recent')
@@ -597,6 +618,7 @@ describe('Names in the reader’s language (e2e)', () => {
     for (const path of [
       `/v1/price-lists/${priceListId}/export`,
       '/v1/stock/export',
+      '/v1/stock/reorder-points/export',
     ]) {
       const csv = (
         await agent.get(path).set('Accept-Language', 'zh-Hans').expect(200)

@@ -1,0 +1,501 @@
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { and, eq, type SQL, sql } from 'drizzle-orm';
+
+import { pageOf } from '../../common/keyset';
+import type { Locale } from '../../common/locales';
+import { searchTerms } from '../../common/search';
+import { todayOf } from '../../core/organizations/time-zone';
+import {
+  products,
+  productVariants,
+  reorderPoints,
+  type ReorderRule,
+  type ReorderSource,
+} from '../../database/schema';
+import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
+import { itemMatches } from '../products/item-search';
+import type { ListReorderPointsDto } from './dto/list-reorder-points.dto';
+import type {
+  ComingSupply,
+  ReorderPointCounts,
+  ReorderPointDetail,
+  ReorderPointDraft,
+  ReorderPointPage,
+  StillNeeded,
+  UsableStock,
+} from './dto/reorder-point-response.dto';
+import { namesIn } from './item-name';
+import { noPoint } from './reorder-points.service';
+import {
+  positionsOf,
+  type ReorderStatus,
+  usableByLocation,
+} from './reorder-position';
+import type { Tx } from './stock.service';
+
+/** A page of the list unless the caller asks for fewer (ADR-051). */
+const PAGE_SIZE = 50;
+
+/** A row of the list, as Postgres returns it. */
+type PositionRow = {
+  id: string;
+  variant_id: string;
+  sku: string;
+  product_name: string;
+  variant_name: string | null;
+  unit_of_measure: string;
+  source: ReorderSource;
+  reorder_point: string;
+  rule: ReorderRule;
+  fixed_quantity: string | null;
+  maximum_quantity: string | null;
+  usable: string;
+  coming: string;
+  still_needed: string;
+  in_draft: string;
+  position: string;
+  status: ReorderStatus;
+  suggestion: string;
+  suggested_multiples: string | null;
+};
+
+type DraftRow = {
+  variant_id: string;
+  kind: 'purchase' | 'run';
+  id: string;
+  number: string | null;
+  quantity: string;
+};
+
+type UsableRow = {
+  location_id: string;
+  location_name: string;
+  usable: string;
+  expired: string;
+  issued: string;
+};
+
+type ComingRow = {
+  kind: 'purchase' | 'run';
+  id: string;
+  number: string | null;
+  partner_name: string | null;
+  quantity: string;
+  expected_at: string | null;
+  late: boolean;
+};
+
+type NeededRow = {
+  order_id: string;
+  number: string;
+  partner_name: string;
+  quantity: string;
+  expected_at: string | null;
+};
+
+/**
+ * The positions with the item each is for, its variant and product named
+ * by their tables, as itemMatches and namesIn read them. For a statement
+ * whose WITH makes `p` from positionsOf.
+ */
+function namedPositions(organizationId: string): SQL {
+  return sql`p
+    join ${productVariants}
+      on ${productVariants.id} = p.variant_id
+      and ${productVariants.organizationId} = ${organizationId}::uuid
+    join ${products}
+      on ${products.id} = ${productVariants.productId}
+      and ${products.organizationId} = ${organizationId}::uuid`;
+}
+
+/** The search, as every list in the app matches it (ADR-056). */
+function searched(query: ListReorderPointsDto, organizationId: string): SQL[] {
+  return query.search
+    ? [itemMatches(searchTerms(query.search), organizationId)]
+    : [];
+}
+
+function whereOf(conditions: SQL[]): SQL {
+  return conditions.length > 0 ? sql`where ${and(...conditions)}` : sql``;
+}
+
+/** Quantities as the API sends them: four places, as the columns hold them. */
+function quantity(column: SQL): SQL {
+  return sql`(${column})::numeric(18, 4)::text`;
+}
+
+/**
+ * Reading reorder points (ADR-085): the list of every item with a point
+ * and where it stands, its counts, and an opened row's lines. Each reads
+ * positionsOf, so the list, its counts and Home's card agree; nothing
+ * here writes.
+ */
+@Injectable()
+export class ReorderPointsReadsService {
+  constructor(private readonly tenantDb: TenantDb) {}
+
+  /**
+   * A page of the list, in ADR-085's order: the low first, the furthest
+   * below their point as a share of it first; then the rest, by SKU.
+   *
+   * The order is worked out, not indexed, so each page works out every
+   * point's position and reads its slice; the cursor is a point's id, its
+   * place read back from the same positions. The list grows with the
+   * points an organization sets, not with its history, and ADR-051's
+   * plan check holds the reads under it to their indexes.
+   *
+   * Items named in the locale given, or by their base names for null, as
+   * the CSV export reads them (ADR-056).
+   */
+  list(
+    query: ListReorderPointsDto,
+    locale: Locale | null,
+  ): Promise<ReorderPointPage> {
+    const limit = query.limit ?? PAGE_SIZE;
+
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const today = await todayOf(tx, organizationId);
+      const shown = namesIn(locale, organizationId);
+      const conditions = searched(query, organizationId);
+
+      if (query.status === 'low') {
+        conditions.push(sql`p.status in ('low', 'out')`);
+      } else if (query.status === 'out') {
+        conditions.push(sql`p.status = 'out'`);
+      }
+
+      if (query.before) {
+        // Another organization's point, or one removed since: not a place
+        // in this list, and a 400 says nothing about whether it exists.
+        const [cursor] = await tx
+          .select({ id: reorderPoints.id })
+          .from(reorderPoints)
+          .where(
+            and(
+              eq(reorderPoints.organizationId, organizationId),
+              eq(reorderPoints.id, query.before),
+            ),
+          );
+
+        if (!cursor) {
+          throw new BadRequestException(
+            t({
+              id: 'stock.cursorList',
+              defaultMessage: 'That cursor is not in this list',
+            }),
+          );
+        }
+
+        conditions.push(sql`(p.low_first, p.share, ${productVariants.sku}, p.id) > (
+          select c.low_first, c.share, cv.sku, c.id
+          from p c
+          join product_variants cv
+            on cv.id = c.variant_id
+            and cv.organization_id = ${organizationId}::uuid
+          where c.id = ${query.before}::uuid
+        )`);
+      }
+
+      const { rows } = await tx.execute<PositionRow>(sql`
+        with p as materialized (${positionsOf(organizationId, today)})
+        select
+          p.id,
+          p.variant_id,
+          ${productVariants.sku} as sku,
+          ${shown.productName} as product_name,
+          ${shown.variantName} as variant_name,
+          ${productVariants.unitOfMeasure} as unit_of_measure,
+          p.source,
+          ${quantity(sql`p.reorder_point`)} as reorder_point,
+          p.rule,
+          ${quantity(sql`p.fixed_quantity`)} as fixed_quantity,
+          ${quantity(sql`p.maximum_quantity`)} as maximum_quantity,
+          ${quantity(sql`p.usable`)} as usable,
+          ${quantity(sql`p.coming`)} as coming,
+          ${quantity(sql`p.still_needed`)} as still_needed,
+          ${quantity(sql`p.in_draft`)} as in_draft,
+          ${quantity(sql`p.position`)} as position,
+          p.status,
+          ${quantity(sql`p.suggestion`)} as suggestion,
+          p.suggested_multiples::text as suggested_multiples
+        from ${namedPositions(organizationId)}
+        ${whereOf(conditions)}
+        order by p.low_first, p.share, ${productVariants.sku}, p.id
+        limit ${limit + 1}
+      `);
+
+      const page = pageOf(rows, limit);
+      const drafts = await draftsOf(
+        tx,
+        organizationId,
+        page.entries.map((row) => row.variant_id),
+      );
+
+      return {
+        entries: page.entries.map((row) => ({
+          id: row.id,
+          variantId: row.variant_id,
+          sku: row.sku,
+          productName: row.product_name,
+          variantName: row.variant_name,
+          unitOfMeasure: row.unit_of_measure,
+          source: row.source,
+          reorderPoint: row.reorder_point,
+          rule: row.rule,
+          fixedQuantity: row.fixed_quantity,
+          maximumQuantity: row.maximum_quantity,
+          usable: row.usable,
+          coming: row.coming,
+          stillNeeded: row.still_needed,
+          inDraft: row.in_draft,
+          position: row.position,
+          status: row.status,
+          suggestion: row.suggestion,
+          suggestedMultiples: row.suggested_multiples,
+          drafts: drafts.get(row.variant_id) ?? [],
+        })),
+        nextCursor: page.nextCursor,
+      };
+    });
+  }
+
+  /**
+   * How many rows each of the list's filters shows, All, Low and Out,
+   * with its search and the filter left off, so each number is the rows
+   * pressing that one shows (ADR-055). The low count holds the out.
+   */
+  counts(query: ListReorderPointsDto = {}): Promise<ReorderPointCounts> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const today = await todayOf(tx, organizationId);
+
+      const { rows } = await tx.execute<{
+        all: number;
+        low: number;
+        out: number;
+      }>(sql`
+        with p as materialized (${positionsOf(organizationId, today)})
+        select
+          count(*)::int as "all",
+          (count(*) filter (where p.status in ('low', 'out')))::int as "low",
+          (count(*) filter (where p.status = 'out'))::int as "out"
+        from ${namedPositions(organizationId)}
+        ${whereOf(searched(query, organizationId))}
+      `);
+
+      return rows[0];
+    });
+  }
+
+  /**
+   * An opened row's lines (ADR-085): usable stock by location, with what
+   * was left out as expired or issued to a run; each purchase and run
+   * still coming, a purchase late once its day has passed; each sale still
+   * needing it; and each draft. Read by the rules positionsOf adds up, so
+   * the lines make the row's figures. An item with no point is not found,
+   * as another organization's is.
+   */
+  detail(variantId: string): Promise<ReorderPointDetail> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const [point] = await tx
+        .select({ id: reorderPoints.id })
+        .from(reorderPoints)
+        .where(
+          and(
+            eq(reorderPoints.organizationId, organizationId),
+            eq(reorderPoints.variantId, variantId),
+          ),
+        );
+
+      if (!point) throw noPoint();
+
+      const today = await todayOf(tx, organizationId);
+      const org = sql`${organizationId}::uuid`;
+      const item = sql`${variantId}::uuid`;
+
+      const usable = await tx.execute<UsableRow>(sql`
+        select
+          u.location_id,
+          loc.name as location_name,
+          ${quantity(sql`u.usable`)} as usable,
+          ${quantity(sql`u.expired`)} as expired,
+          ${quantity(sql`u.issued`)} as issued
+        from (${usableByLocation(organizationId, today, sql`(${item})`)}) u
+        join locations loc
+          on loc.id = u.location_id
+          and loc.organization_id = ${org}
+        order by loc.name, loc.id
+      `);
+
+      const leftOut = await tx.execute<{ expired: string; issued: string }>(
+        sql`
+          select
+            ${quantity(sql`coalesce(sum(u.expired), 0)`)} as expired,
+            ${quantity(sql`coalesce(sum(u.issued), 0)`)} as issued
+          from (${usableByLocation(organizationId, today, sql`(${item})`)}) u
+        `,
+      );
+
+      const coming = await tx.execute<ComingRow>(sql`
+        select * from (
+          select
+            'purchase' as kind,
+            o.id,
+            o.number,
+            pa.name as partner_name,
+            ${quantity(sql`ol.quantity_ordered - ol.quantity_fulfilled`)} as quantity,
+            o.expected_at::text as expected_at,
+            coalesce(o.expected_at < ${today}::date, false) as late
+          from order_lines ol
+          join orders o
+            on o.id = ol.order_id
+            and o.organization_id = ${org}
+          join partners pa
+            on pa.id = o.partner_id
+            and pa.organization_id = ${org}
+          where ol.organization_id = ${org}
+            and ol.variant_id = ${item}
+            and o.direction = 'purchase'
+            and o.status = 'confirmed'
+            and not ol.is_closed_short
+            and ol.quantity_ordered > ol.quantity_fulfilled
+          union all
+          select
+            'run' as kind,
+            po.id,
+            po.reference,
+            pa.name,
+            ${quantity(sql`po.quantity_planned - po.quantity_produced`)},
+            null,
+            false
+          from production_orders po
+          left join partners pa
+            on pa.id = po.partner_id
+            and pa.organization_id = ${org}
+          where po.organization_id = ${org}
+            and po.output_variant_id = ${item}
+            and po.status = 'released'
+            and po.quantity_planned > po.quantity_produced
+        ) c
+        order by c.kind, c.expected_at nulls last, c.id
+      `);
+
+      const needed = await tx.execute<NeededRow>(sql`
+        select
+          o.id as order_id,
+          o.number,
+          pa.name as partner_name,
+          ${quantity(sql`ol.quantity_ordered - ol.quantity_fulfilled`)} as quantity,
+          o.expected_at::text as expected_at
+        from order_lines ol
+        join orders o
+          on o.id = ol.order_id
+          and o.organization_id = ${org}
+        join partners pa
+          on pa.id = o.partner_id
+          and pa.organization_id = ${org}
+        where ol.organization_id = ${org}
+          and ol.variant_id = ${item}
+          and o.direction = 'sale'
+          and o.status = 'confirmed'
+          and not ol.is_closed_short
+          and ol.quantity_ordered > ol.quantity_fulfilled
+        order by o.expected_at nulls last, o.number, o.id
+      `);
+
+      const drafts = await draftsOf(tx, organizationId, [variantId]);
+
+      return {
+        usable: usable.rows.map((row): UsableStock => ({
+          locationId: row.location_id,
+          locationName: row.location_name,
+          usable: row.usable,
+          expired: row.expired,
+          issued: row.issued,
+        })),
+        expired: leftOut.rows[0].expired,
+        issued: leftOut.rows[0].issued,
+        coming: coming.rows.map((row): ComingSupply => ({
+          kind: row.kind,
+          id: row.id,
+          number: row.number,
+          partnerName: row.partner_name,
+          quantity: row.quantity,
+          expectedAt: row.expected_at,
+          late: row.late,
+        })),
+        stillNeeded: needed.rows.map((row): StillNeeded => ({
+          orderId: row.order_id,
+          number: row.number,
+          partnerName: row.partner_name,
+          quantity: row.quantity,
+          expectedAt: row.expected_at,
+        })),
+        drafts: drafts.get(variantId) ?? [],
+      };
+    });
+  }
+}
+
+/**
+ * The drafts adding to each item, newest first: draft purchases' lines
+ * and draft runs, as positionsOf counts them in draft.
+ */
+async function draftsOf(
+  tx: Tx,
+  organizationId: string,
+  variantIds: string[],
+): Promise<Map<string, ReorderPointDraft[]>> {
+  const found = new Map<string, ReorderPointDraft[]>();
+  if (variantIds.length === 0) return found;
+
+  const org = sql`${organizationId}::uuid`;
+  const items = sql.join(
+    variantIds.map((id) => sql`${id}::uuid`),
+    sql`, `,
+  );
+
+  const { rows } = await tx.execute<DraftRow>(sql`
+    select * from (
+      select
+        ol.variant_id,
+        'purchase' as kind,
+        o.id,
+        o.number,
+        ${quantity(sql`ol.quantity_ordered`)} as quantity
+      from orders o
+      join order_lines ol
+        on ol.order_id = o.id
+        and ol.organization_id = ${org}
+      where o.organization_id = ${org}
+        and o.direction = 'purchase'
+        and o.status = 'draft'
+        and ol.variant_id in (${items})
+      union all
+      select
+        po.output_variant_id,
+        'run',
+        po.id,
+        po.reference,
+        ${quantity(sql`po.quantity_planned`)}
+      from production_orders po
+      where po.organization_id = ${org}
+        and po.status = 'draft'
+        and po.output_variant_id in (${items})
+    ) d
+    order by d.id desc
+  `);
+
+  for (const row of rows) {
+    const drafts = found.get(row.variant_id) ?? [];
+    drafts.push({
+      kind: row.kind,
+      id: row.id,
+      number: row.number,
+      quantity: row.quantity,
+    });
+    found.set(row.variant_id, drafts);
+  }
+
+  return found;
+}

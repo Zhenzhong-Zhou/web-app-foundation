@@ -183,6 +183,10 @@ const LIST_WORDS: Record<string, Translatable> = {
     id: 'audit.value.list.movements',
     defaultMessage: 'Movements',
   }),
+  reorder_points: t({
+    id: 'audit.value.list.reorderPoints',
+    defaultMessage: 'Reorder points',
+  }),
   audit: t({ id: 'audit.value.list.audit', defaultMessage: 'The audit log' }),
   'your-activity': t({
     id: 'audit.value.list.yourActivity',

@@ -430,6 +430,10 @@ export const RESOURCE_TYPE_NAMES: Record<string, Translatable> = {
   partners: t({ id: 'audit.type.partners', defaultMessage: 'Partners' }),
   movements: t({ id: 'audit.type.movements', defaultMessage: 'Movements' }),
   inventory: t({ id: 'audit.type.inventory', defaultMessage: 'Inventory' }),
+  reorder_points: t({
+    id: 'audit.type.reorderPoints',
+    defaultMessage: 'Reorder points',
+  }),
   stock_value: t({
     id: 'audit.type.stockValue',
     defaultMessage: 'Stock value',

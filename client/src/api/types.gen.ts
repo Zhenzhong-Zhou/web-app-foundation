@@ -1829,6 +1829,82 @@ export type LineHold = {
   short: string;
 };
 
+export type ReorderPointDraft = {
+  kind: 'purchase' | 'run';
+  id: string;
+  number: string | null;
+  quantity: string;
+};
+
+export type ReorderPointRow = {
+  id: string;
+  variantId: string;
+  sku: string;
+  productName: string;
+  variantName: string | null;
+  unitOfMeasure: string;
+  source: 'bought' | 'made';
+  reorderPoint: string;
+  rule: 'fixed' | 'just_enough' | 'maximum';
+  fixedQuantity: string | null;
+  maximumQuantity: string | null;
+  usable: string;
+  coming: string;
+  stillNeeded: string;
+  inDraft: string;
+  position: string;
+  status: 'out' | 'low' | 'enough' | 'discontinued';
+  suggestion: string;
+  suggestedMultiples: string | null;
+  drafts: Array<ReorderPointDraft>;
+};
+
+export type ReorderPointPage = {
+  entries: Array<ReorderPointRow>;
+  nextCursor: string | null;
+};
+
+export type ReorderPointCounts = {
+  all: number;
+  low: number;
+  out: number;
+};
+
+export type UsableStock = {
+  locationId: string;
+  locationName: string;
+  usable: string;
+  expired: string;
+  issued: string;
+};
+
+export type ComingSupply = {
+  kind: 'purchase' | 'run';
+  id: string;
+  number: string | null;
+  partnerName: string | null;
+  quantity: string;
+  expectedAt: string | null;
+  late: boolean;
+};
+
+export type StillNeeded = {
+  orderId: string;
+  number: string;
+  partnerName: string;
+  quantity: string;
+  expectedAt: string | null;
+};
+
+export type ReorderPointDetail = {
+  usable: Array<UsableStock>;
+  expired: string;
+  issued: string;
+  coming: Array<ComingSupply>;
+  stillNeeded: Array<StillNeeded>;
+  drafts: Array<ReorderPointDraft>;
+};
+
 export type SetReorderPointDto = {
   source: 'bought' | 'made';
   reorderPoint: string;
@@ -5626,6 +5702,69 @@ export type AvailabilityControllerForOrderV1Responses = {
 export type AvailabilityControllerForOrderV1Response =
   AvailabilityControllerForOrderV1Responses[keyof AvailabilityControllerForOrderV1Responses];
 
+export type ReorderPointsControllerListV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query?: {
+    status?: 'low' | 'out';
+    search?: string;
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/stock/reorder-points';
+};
+
+export type ReorderPointsControllerListV1Responses = {
+  200: ReorderPointPage;
+};
+
+export type ReorderPointsControllerListV1Response =
+  ReorderPointsControllerListV1Responses[keyof ReorderPointsControllerListV1Responses];
+
+export type ReorderPointsControllerCountsV1Data = {
+  body?: never;
+  path?: never;
+  query?: {
+    status?: 'low' | 'out';
+    search?: string;
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/stock/reorder-points/counts';
+};
+
+export type ReorderPointsControllerCountsV1Responses = {
+  200: ReorderPointCounts;
+};
+
+export type ReorderPointsControllerCountsV1Response =
+  ReorderPointsControllerCountsV1Responses[keyof ReorderPointsControllerCountsV1Responses];
+
+export type ReorderPointsControllerExportReorderPointsV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query?: {
+    status?: 'low' | 'out';
+    search?: string;
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/stock/reorder-points/export';
+};
+
+export type ReorderPointsControllerExportReorderPointsV1Responses = {
+  200: string;
+};
+
+export type ReorderPointsControllerExportReorderPointsV1Response =
+  ReorderPointsControllerExportReorderPointsV1Responses[keyof ReorderPointsControllerExportReorderPointsV1Responses];
+
 export type ReorderPointsControllerRemoveV1Data = {
   body?: never;
   path: {
@@ -5641,6 +5780,22 @@ export type ReorderPointsControllerRemoveV1Responses = {
 
 export type ReorderPointsControllerRemoveV1Response =
   ReorderPointsControllerRemoveV1Responses[keyof ReorderPointsControllerRemoveV1Responses];
+
+export type ReorderPointsControllerDetailV1Data = {
+  body?: never;
+  path: {
+    variantId: string;
+  };
+  query?: never;
+  url: '/v1/stock/reorder-points/{variantId}';
+};
+
+export type ReorderPointsControllerDetailV1Responses = {
+  200: ReorderPointDetail;
+};
+
+export type ReorderPointsControllerDetailV1Response =
+  ReorderPointsControllerDetailV1Responses[keyof ReorderPointsControllerDetailV1Responses];
 
 export type ReorderPointsControllerCreateV1Data = {
   body: SetReorderPointDto;
