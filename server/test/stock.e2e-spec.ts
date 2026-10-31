@@ -782,6 +782,64 @@ describe('Stock (e2e)', () => {
     });
 
     /**
+     * A lot's stock waits on that lot's cost alone: costing one lot leaves
+     * its row, and the other lot of the same item stays, as does stock with
+     * no lot (#276 matches the pool by its lot, or the nil uuid for none).
+     */
+    it('narrows by the lot whose cost is waiting, not the item', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      // A cost is set in the base currency, which a new organization lacks.
+      await org.agent
+        .patch('/v1/organization')
+        .send({ baseCurrency: 'CAD' })
+        .expect(204);
+      const shelf = await createLocation(org.agent);
+      const scoop = await createVariant(org.agent, { sku: 'SCOOP' });
+      const calm = await createVariant(org.agent, {
+        sku: 'CALM-30',
+        tracksLots: true,
+      });
+
+      await org.agent
+        .post('/v1/stock/movements')
+        .send(receipt(scoop.id, shelf, '10'))
+        .expect(201);
+      for (const code of ['C-1', 'C-2']) {
+        await org.agent
+          .post('/v1/stock/movements')
+          .send({ ...receipt(calm.id, shelf, '10'), lot: { code } })
+          .expect(201);
+      }
+
+      const waiting = async () =>
+        (await stockRows(org.agent, '?needsCost=true'))
+          .map((row) => `${row.sku} ${row.lotCode ?? '-'}`)
+          .sort();
+      expect(await waiting()).toEqual([
+        'CALM-30 C-1',
+        'CALM-30 C-2',
+        'SCOOP -',
+      ]);
+
+      const toCost = body<{
+        entries: { id: string; lotCode: string | null }[];
+      }>(await org.agent.get('/v1/costs/needs-cost').expect(200)).entries.find(
+        (entry) => entry.lotCode === 'C-1',
+      );
+      await org.agent
+        .put(`/v1/costs/valuations/${toCost!.id}`)
+        .send({ unitPrice: '2', currency: 'CAD' })
+        .expect(200);
+
+      expect(await waiting()).toEqual(['CALM-30 C-2', 'SCOOP -']);
+      expect(
+        body<{ needsCost: number }>(
+          await org.agent.get('/v1/stock/counts').expect(200),
+        ),
+      ).toMatchObject({ needsCost: 2 });
+    });
+
+    /**
      * The search matches as every search does (ADR-056): a name without its
      * accents, a Chinese name by its pinyin and initials, by characters, and
      * % as itself, not a wildcard.
