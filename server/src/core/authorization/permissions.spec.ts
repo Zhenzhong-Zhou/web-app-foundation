@@ -47,9 +47,9 @@ const ROLES: [string, readonly Permission[]][] = [
  * templates a role starts from.
  */
 describe('permissions', () => {
-  it('has 58, each once', () => {
-    expect(ALL_PERMISSIONS).toHaveLength(58);
-    expect(new Set(ALL_PERMISSIONS).size).toBe(58);
+  it('has 59, each once', () => {
+    expect(ALL_PERMISSIONS).toHaveLength(59);
+    expect(new Set(ALL_PERMISSIONS).size).toBe(59);
   });
 
   describe('their words', () => {
@@ -234,6 +234,12 @@ describe('permissions', () => {
       expect([...SYSTEM_ROLE_PERMISSIONS.Admin].sort()).toEqual(
         [...admin, 'orders.view_prices'].sort(),
       );
+    });
+
+    it('keeps setting reorder points the Owner’s, giveable in a made role (ADR-085)', () => {
+      expect(SYSTEM_ROLE_PERMISSIONS.Admin).not.toContain('stock.reorder');
+      expect(SYSTEM_ROLE_PERMISSIONS.Viewer).not.toContain('stock.reorder');
+      expect(NEVER_OFFERED).not.toContain('stock.reorder');
     });
 
     it('gives the Owner everything', () => {

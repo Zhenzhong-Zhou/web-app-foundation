@@ -159,6 +159,11 @@ export const AUDIT_ACTIONS = {
   PRICE_LIST_ITEM_SET: 'price_list.item_set',
   PRICE_LIST_ITEM_REMOVED: 'price_list.item_removed',
 
+  /** Each carries its numbers, its rule, and bought or made (ADR-085). */
+  REORDER_POINT_CREATED: 'reorder_point.created',
+  REORDER_POINT_UPDATED: 'reorder_point.updated',
+  REORDER_POINT_REMOVED: 'reorder_point.removed',
+
   /**
    * A list exported as CSV (ADR-057): which list, its filters, how many
    * rows. Data leaving in bulk, partners' addresses and the audit log among

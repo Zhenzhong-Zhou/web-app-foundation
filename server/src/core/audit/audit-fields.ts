@@ -7,6 +7,8 @@ import type {
   OrderStatus,
   OrganizationRail,
   PaperSize,
+  ReorderRule,
+  ReorderSource,
   ReturnResolution,
 } from '../../database/schema';
 import { t, type Translatable } from '../../i18n/translate';
@@ -131,6 +133,28 @@ const REASON_WORDS: Record<MovementReason, Translatable> = {
   }),
   sample: t({ id: 'audit.value.reason.sample', defaultMessage: 'Sample' }),
   return: t({ id: 'audit.value.reason.return', defaultMessage: 'Return' }),
+};
+
+/** source */
+const SOURCE_WORDS: Record<ReorderSource, Translatable> = {
+  bought: t({ id: 'audit.value.source.bought', defaultMessage: 'Bought' }),
+  made: t({ id: 'audit.value.source.made', defaultMessage: 'Made' }),
+};
+
+/** rule */
+const RULE_WORDS: Record<ReorderRule, Translatable> = {
+  just_enough: t({
+    id: 'audit.value.rule.justEnough',
+    defaultMessage: 'Just enough',
+  }),
+  fixed: t({
+    id: 'audit.value.rule.fixed',
+    defaultMessage: 'A fixed quantity',
+  }),
+  maximum: t({
+    id: 'audit.value.rule.maximum',
+    defaultMessage: 'Up to a maximum',
+  }),
 };
 
 /** list */
@@ -607,6 +631,32 @@ export const AUDIT_FIELDS = {
   reason: {
     name: t({ id: 'audit.field.reason', defaultMessage: 'Reason' }),
     read: { set: REASON_WORDS },
+  },
+  source: {
+    name: t({ id: 'audit.field.source', defaultMessage: 'Bought or made' }),
+    read: { set: SOURCE_WORDS },
+  },
+  reorderPoint: {
+    name: t({
+      id: 'audit.field.reorderPoint',
+      defaultMessage: 'Reorder point',
+    }),
+    read: 'text',
+  },
+  rule: {
+    name: t({ id: 'audit.field.rule', defaultMessage: 'How much to order' }),
+    read: { set: RULE_WORDS },
+  },
+  fixedQuantity: {
+    name: t({
+      id: 'audit.field.fixedQuantity',
+      defaultMessage: 'Fixed quantity',
+    }),
+    read: 'text',
+  },
+  maximumQuantity: {
+    name: t({ id: 'audit.field.maximumQuantity', defaultMessage: 'Maximum' }),
+    read: 'text',
   },
   list: {
     name: t({ id: 'audit.field.list', defaultMessage: 'List' }),

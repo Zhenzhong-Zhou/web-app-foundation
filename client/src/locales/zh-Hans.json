@@ -8,6 +8,7 @@
   "account.access.act.rolesAssign": "修改成员的角色",
   "account.access.act.stockAdjust": "更正库存数量",
   "account.access.act.stockMove": "收货、发货和移库",
+  "account.access.act.stockReorder": "设置再订货点",
   "account.access.actedOn.drafts": "{verbs}草稿",
   "account.access.actedOn.invoices": "{verbs}发票",
   "account.access.actedOn.members": "{verbs}成员",

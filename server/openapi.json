@@ -974,6 +974,9 @@
                 "price_list.updated",
                 "price_list.item_set",
                 "price_list.item_removed",
+                "reorder_point.created",
+                "reorder_point.updated",
+                "reorder_point.removed",
                 "list.exported"
               ]
             }
@@ -1155,6 +1158,9 @@
                 "price_list.updated",
                 "price_list.item_set",
                 "price_list.item_removed",
+                "reorder_point.created",
+                "reorder_point.updated",
+                "reorder_point.removed",
                 "list.exported"
               ]
             }
@@ -1724,6 +1730,9 @@
                 "price_list.updated",
                 "price_list.item_set",
                 "price_list.item_removed",
+                "reorder_point.created",
+                "reorder_point.updated",
+                "reorder_point.removed",
                 "list.exported"
               ]
             }
@@ -1905,6 +1914,9 @@
                 "price_list.updated",
                 "price_list.item_set",
                 "price_list.item_removed",
+                "reorder_point.created",
+                "reorder_point.updated",
+                "reorder_point.removed",
                 "list.exported"
               ]
             }
@@ -4516,6 +4528,91 @@
         },
         "tags": [
           "Availability"
+        ]
+      }
+    },
+    "/v1/stock/reorder-points/{variantId}": {
+      "post": {
+        "operationId": "ReorderPointsController_create_v1",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetReorderPointDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReorderPoints"
+        ]
+      },
+      "put": {
+        "operationId": "ReorderPointsController_update_v1",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetReorderPointDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReorderPoints"
+        ]
+      },
+      "delete": {
+        "operationId": "ReorderPointsController_remove_v1",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReorderPoints"
         ]
       }
     },
@@ -8557,6 +8654,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -9369,6 +9467,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -9453,6 +9552,7 @@
               "stock.view",
               "stock.move",
               "stock.adjust",
+              "stock.reorder",
               "costs.view",
               "costs.update",
               "price_lists.view",
@@ -9527,6 +9627,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -9625,6 +9726,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -9789,6 +9891,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -9900,6 +10003,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -9988,6 +10092,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -14517,6 +14622,46 @@
           "outstanding",
           "held",
           "short"
+        ]
+      },
+      "SetReorderPointDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "enum": [
+              "bought",
+              "made"
+            ],
+            "type": "string"
+          },
+          "reorderPoint": {
+            "type": "string"
+          },
+          "rule": {
+            "enum": [
+              "just_enough",
+              "fixed",
+              "maximum"
+            ],
+            "type": "string"
+          },
+          "fixedQuantity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maximumQuantity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "reorderPoint",
+          "rule"
         ]
       },
       "LookupResult": {
@@ -20077,6 +20222,7 @@
           "stock.view",
           "stock.move",
           "stock.adjust",
+          "stock.reorder",
           "costs.view",
           "costs.update",
           "price_lists.view",
@@ -20197,6 +20343,9 @@
           "price_list.updated",
           "price_list.item_set",
           "price_list.item_removed",
+          "reorder_point.created",
+          "reorder_point.updated",
+          "reorder_point.removed",
           "list.exported"
         ]
       },
@@ -20226,7 +20375,9 @@
           "permission_requires",
           "role_name_unavailable",
           "client_outdated",
-          "api_updating"
+          "api_updating",
+          "reorder_point_exists",
+          "reorder_maximum_not_above_point"
         ]
       },
       "ApiVocabulary": {

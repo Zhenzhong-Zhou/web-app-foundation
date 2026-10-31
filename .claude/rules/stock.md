@@ -1,9 +1,9 @@
 ---
 paths:
   - "server/src/modules/stock/**"
-  - "server/src/database/schema/{stock-levels,stock-movements,stock-valuations,valuation-pools,lots}.ts"
+  - "server/src/database/schema/{stock-levels,stock-movements,stock-valuations,valuation-pools,lots,reorder-points}.ts"
   - "client/src/inventory/**"
-  - "server/test/{stock,lot-trace,valuation,reservations,samples}.e2e-spec.ts"
+  - "server/test/{stock,lot-trace,valuation,reservations,samples,reorder-points}.e2e-spec.ts"
   - "server/test/utils/valuation.ts"
   - "client/e2e/{inventory,movements}.spec.ts"
 ---

@@ -8,6 +8,7 @@
   "account.access.act.rolesAssign": "change members’ roles",
   "account.access.act.stockAdjust": "correct a count",
   "account.access.act.stockMove": "receive, ship and move stock",
+  "account.access.act.stockReorder": "set reorder points",
   "account.access.actedOn.drafts": "{verbs} drafts",
   "account.access.actedOn.invoices": "{verbs} invoices",
   "account.access.actedOn.members": "{verbs} members",

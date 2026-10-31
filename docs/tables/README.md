@@ -40,7 +40,7 @@ in `server/src/cli/table-diagrams.ts`, named as the ADRs' areas are.
 | [products](products.md) | `product_images`, `product_translations`, `product_variants`, `products`, `variant_translations` |
 | [recent](recent.md) | `recent_records` |
 | [return-authorizations](return-authorizations.md) | `return_authorization_lines`, `return_authorizations` |
-| [stock](stock.md) | `lots`, `stock_levels`, `stock_movements`, `stock_valuations`, `valuation_pools` |
+| [stock](stock.md) | `lots`, `reorder_points`, `stock_levels`, `stock_movements`, `stock_valuations`, `valuation_pools` |
 | [tax-codes](tax-codes.md) | `tax_code_components`, `tax_codes` |
 | [audit](audit.md) | `audit_log` |
 | [auth](auth.md) | `account_events`, `auth_tokens`, `sessions` |

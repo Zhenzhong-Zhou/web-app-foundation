@@ -83,6 +83,9 @@ export const PERMISSIONS = {
   STOCK_VIEW: 'stock.view',
   STOCK_MOVE: 'stock.move',
   STOCK_ADJUST: 'stock.adjust',
+  // Planning, neither moving stock nor changing the catalogue, so neither
+  // stock.move nor products.update says it (ADR-085).
+  STOCK_REORDER: 'stock.reorder',
 
   COSTS_VIEW: 'costs.view',
   COSTS_UPDATE: 'costs.update',
@@ -282,6 +285,10 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, Translatable> = {
     id: 'permissions.stock.adjust',
     defaultMessage: 'Correct a count when the system is wrong',
   }),
+  'stock.reorder': t({
+    id: 'permissions.stock.reorder',
+    defaultMessage: 'Set, change or remove an item’s reorder point',
+  }),
   'costs.view': t({
     id: 'permissions.costs.view',
     defaultMessage: 'See what stock, lots and batches cost, and exchange rates',
@@ -439,6 +446,8 @@ export const PERMISSION_NEEDS: Partial<
   // Receiving names the item and where it goes.
   'stock.move': ['stock.view', 'products.view', 'locations.view'],
   'stock.adjust': ['stock.move'],
+  // Setting a point names the item.
+  'stock.reorder': ['stock.view', 'products.view'],
   'costs.update': ['costs.view'],
   'price_lists.create': ['price_lists.view'],
   'price_lists.update': ['price_lists.view', 'products.view'],

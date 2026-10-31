@@ -62,6 +62,7 @@ const TABLE_AREAS: Record<string, readonly string[]> = {
   ],
   stock: [
     'lots',
+    'reorder_points',
     'stock_levels',
     'stock_movements',
     'stock_valuations',

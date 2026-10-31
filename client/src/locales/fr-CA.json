@@ -8,6 +8,7 @@
   "account.access.act.rolesAssign": "changer les rôles des membres",
   "account.access.act.stockAdjust": "corriger un compte",
   "account.access.act.stockMove": "recevoir, expédier et déplacer du stock",
+  "account.access.act.stockReorder": "définir les points de commande",
   "account.access.actedOn.drafts": "{verbs} les brouillons",
   "account.access.actedOn.invoices": "{verbs} des factures",
   "account.access.actedOn.members": "{verbs} des membres",

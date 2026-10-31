@@ -166,6 +166,15 @@ describe('what you can do here', () => {
     ]);
   });
 
+  it('says setting reorder points as an act of its own (ADR-085)', () => {
+    expect(sentences(['stock.view', 'stock.reorder'])).toEqual([
+      [
+        'Stock and locations',
+        'See what is on hand and each lot’s history; set reorder points.',
+      ],
+    ]);
+  });
+
   it('leaves out every area out of reach', () => {
     expect(sentences(['stock.view'])).toEqual([
       ['Stock and locations', 'See what is on hand and each lot’s history.'],
