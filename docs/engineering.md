@@ -329,6 +329,14 @@ reports success.
 - An alert is named "code scanning alert 9" or "Dependabot alert 4",
   never "#9", in commits, PRs and comments (27 October 2026): GitHub
   links "#9" to issue or PR 9.
+- **Public text names no one** (30 October 2026): commit messages,
+  issues, comments and PR descriptions say "the maintainer", "a reviewer
+  who reads only Chinese" or "a first-time user", never a person's name
+  or a family relation, since the repository is public. The git identity
+  above is the one exception.
+- **Dates and times are Vancouver's** (30 October 2026), America/Vancouver
+  as PDT or PST, never UTC: in commits, issues, comments and PRs, and in
+  what Claude reports in the chat or in a summary.
 - To reorder unpushed commits: `git reset --soft <base>`, restage per commit,
   and `git commit -C <old-hash>` to reuse each message.
 - Before pushing, run what CI runs: `scripts/verify.sh` from the repo
