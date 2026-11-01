@@ -494,11 +494,14 @@ export const NEVER_OFFERED: readonly Permission[] = [
 ];
 
 /**
- * Who is told (ADR-080). Three notifications go to whoever holds a
+ * Who is told (ADR-080). Four notifications go to whoever holds a
  * permission, so a made role changes who that is: named here once, for
  * the services that send them (licence-reminders.service.ts,
- * order-lines.service.ts, production-close.service.ts) and for the
- * line each of those permissions has in the editor (PERMISSION_NOTES).
+ * order-lines.service.ts, production-close.service.ts,
+ * low-stock-notices.service.ts) and for the line each of those
+ * permissions has in the editor (PERMISSION_NOTES). An item fallen low
+ * goes to whoever may order it, or plan its run, by how it is
+ * replenished (ADR-085), and only with TOLD_LOW_NEEDS held too.
  */
 export const TOLD = {
   licenceExpiring: [
@@ -507,7 +510,16 @@ export const TOLD = {
   ],
   closedShort: [PERMISSIONS.ORDERS_UPDATE],
   variance: [PERMISSIONS.PRODUCTION_COMPLETE],
+  lowBought: [PERMISSIONS.ORDERS_CREATE],
+  lowMade: [PERMISSIONS.PRODUCTION_CREATE],
 } as const satisfies Record<string, readonly Permission[]>;
+
+/**
+ * What whoever is told of an item fallen low holds as well (ADR-085): the
+ * list its notice opens, which a role may leave out beside raising orders
+ * or planning runs.
+ */
+export const TOLD_LOW_NEEDS: Permission = PERMISSIONS.STOCK_VIEW;
 
 const TOLD_NOTES: Record<keyof typeof TOLD, Translatable> = {
   licenceExpiring: t({
@@ -522,6 +534,16 @@ const TOLD_NOTES: Record<keyof typeof TOLD, Translatable> = {
   variance: t({
     id: 'permissions.note.variance',
     defaultMessage: 'Also told when a run closes off its plan.',
+  }),
+  lowBought: t({
+    id: 'permissions.note.lowBought',
+    defaultMessage:
+      'Also told when a bought item falls below its reorder point, if the role can see stock too.',
+  }),
+  lowMade: t({
+    id: 'permissions.note.lowMade',
+    defaultMessage:
+      'Also told when a made item falls below its reorder point, if the role can see stock too.',
   }),
 };
 

@@ -1833,8 +1833,10 @@ The pages, in a private window unless a check says otherwise.
   areas says so; untick See purchase and sales orders and everything that
   needs it unticks, said the same way. See prices on orders says what
   leaving it out does; Edit, confirm or cancel an order says it is also told
-  when a line closes short. Tick Read the audit log under People and the
-  organization: See prices on orders and See purchase and sales orders tick
+  when a line closes short, and Raise an order when a bought item falls
+  below its reorder point, if the role can see stock too. Tick Read the
+  audit log under People and the organization: See prices on orders and
+  See purchase and sales orders tick
   with it, since the log keeps what orders were priced at. People and the
   organization shows its first three ticked and greyed, with why, and no
   Make a role or Close the organization. Tick all and Clear on Stock and
@@ -2919,6 +2921,24 @@ site, after a deploy that changes the setting, the route or the relay.
   15` prints `<!doctype html>`, the `/*` rewrite's page, never a map's
   `{"version":3`.
 
+## 42. Low stock (ADR-085)
+
+- **MC-4201** *(ADR-085)* The bell, once each time an item falls below
+  its reorder point. As the demo Owner, on Reorder points, give a bought
+  item with stock a point above what it has, and restart the server (it
+  checks at start, then hourly): the bell gets one notice, "… fell below
+  its reorder point" with the item's SKU, then its name and "Raise a
+  purchase order from Reorder points.", with no quantity anywhere.
+  Restart again: no second notice. Give two more items points above what
+  they have, one of them made, and restart: one notice, "2 items fell
+  below their reorder point", naming both SKUs, then "Order or plan them
+  from Reorder points.". Daniel Okafor (Admin) has the same; Tom Becker
+  (Warehouse) and Chloé Tremblay (Viewer), neither. Receive enough of the
+  first item to pass its point and restart: nothing. Confirm a sale that
+  needs it back below, and restart: told again. With the Owner's account
+  in 中文, a notice reads naturally, the item under its Chinese name
+  where it has one.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -4000,3 +4020,6 @@ first.
   give the reference, the person who invited you: MC-R65 extended.
 - 2026-10-30: ADR-084's setup, a page crashed with no code changed by
   blocking its script, and where Sentry's search is: MC-4102 reworded.
+- 2026-10-31: ADR-085, the bell once each time an item falls below its
+  reorder point: section 42, MC-4201; the role editor's line under Raise
+  an order: MC-3309 extended.

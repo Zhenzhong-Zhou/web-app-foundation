@@ -3,7 +3,7 @@ paths:
   - "server/src/modules/stock/**"
   - "server/src/database/schema/{stock-levels,stock-movements,stock-valuations,valuation-pools,lots,reorder-points}.ts"
   - "client/src/inventory/**"
-  - "server/test/{stock,lot-trace,valuation,reservations,samples,reorder-points,reorder-position}.e2e-spec.ts"
+  - "server/test/{stock,lot-trace,valuation,reservations,samples,reorder-points,reorder-position,low-stock-notices}.e2e-spec.ts"
   - "server/test/utils/{valuation,reorder-world}.ts"
   - "client/e2e/{inventory,movements}.spec.ts"
 ---
