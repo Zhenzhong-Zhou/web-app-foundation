@@ -711,8 +711,9 @@ add says so in its PR.
   *Moving code*](engineering.md#moving-code)). Each seeded step writes the
   audit row its route would, built with the interceptor's own
   `auditPayload`, but names the route's action, resource type and fields
-  by hand, copied from its `@Audited` (`seed-demo-audit.ts`): change a
-  route's `@Audited`, change the seed.
+  by hand, copied from its `@Audited` (`seed-demo-audit.ts`; the Owner's
+  order steps in `seed-demo-orders.ts`): change a route's `@Audited`,
+  change the seed.
 - **`npm run seed:volume`** fills a database of its own with a year at
   realistic scale (`server/perf/README.md`). A new table gets rows in the
   proportions a customer would have, and a new hot query, one run on every

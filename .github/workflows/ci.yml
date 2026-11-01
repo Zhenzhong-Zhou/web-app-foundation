@@ -334,6 +334,31 @@ jobs:
       - run: npm run seed:demo
         working-directory: server
 
+      # The demo's own orders keep each step in their History, written as
+      # the seed takes it (#222): SO-DEMO-1's reads created, confirmed,
+      # shipped, in that order, not created alone or created last.
+      - name: Check the demo's order History
+        env:
+          PGPASSWORD: ci_password
+        run: |
+          steps=$(psql -h localhost -U app -d foundation -XAtc "
+            select string_agg(
+              a.action || coalesce(':' || (a.payload->>'status'), ''),
+              ',' order by a.id)
+            from (
+              select a.id, a.action, a.payload
+              from audit_log a
+              join (
+                select id, organization_id from orders
+                where reference = 'SO-DEMO-1'
+                order by created_at desc limit 1
+              ) o on a.organization_id = o.organization_id
+                and a.resource_type = 'order' and a.resource_id = o.id
+              order by a.id limit 3
+            ) a")
+          echo "SO-DEMO-1's History begins: $steps"
+          test "$steps" = 'order.created,order.updated:confirmed,order.shipped'
+
       - run: npm run test:e2e
         working-directory: server
 

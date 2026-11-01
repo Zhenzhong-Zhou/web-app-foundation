@@ -630,7 +630,11 @@ Paper is checked first because it must not change at all.
   nor the link.
 - **MC-1524** History is a tab, listing the order's changes with Load more and
   Open in audit log; a member without audit.view has no History tab. The
-  History button no longer appears on the order.
+  History button no longer appears on the order. On SO-DEMO-1 it reads,
+  newest first: Shipment voided, Order shipped, Return received twice
+  (the newer with Return: RMA-000001), Order shipped (Items: FOCUS-60CT
+  400), Order updated (Status: Confirmed), and Order created last, each by
+  the demo's Owner. Every demo order starts so, from Order created.
 - **MC-1525** On Orders, Open, Fulfilled, Cancelled and All are a row of
   buttons above the list, Open pressed. Pressing Cancelled shows SO-DEMO-4
   alone and presses only Cancelled; pressing it again keeps it.
@@ -4050,3 +4054,5 @@ first.
   gains them; MC-4201 opens with the notice the seeded points give.
 - 2026-10-31: ADR-085, the nine named in all three languages: the
   demo's list says so; MC-3901's 镁 finds the sample bag too.
+- 2026-10-31: #222, each step on the demo's own orders in their History:
+  MC-1524 extended.
