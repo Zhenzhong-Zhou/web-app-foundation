@@ -1987,7 +1987,7 @@
   "status.offline.triesItself": "This page tries again by itself when your connection comes back.",
   "status.signIn": "Sign in",
   "status.tryAgain": "Try again",
-  "timeZones.label": "{zone} ({city})",
+  "timeZones.label": "{zone} — {city}",
   "unsaved.leave": "Leave",
   "unsaved.stay": "Stay",
   "unsaved.title": "Leave without saving?",

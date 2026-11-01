@@ -1,8 +1,14 @@
-import { SUPPORTED_LOCALES } from '../../common/locales';
+import { type Locale, SUPPORTED_LOCALES } from '../../common/locales';
+import { canonicalTimeZone } from '../../common/today';
 import { AUDIT_ACTIONS } from './audit-actions';
 import { AUDIT_FIELDS, type FieldSpec } from './audit-fields';
 import { REFERENCE_KINDS } from './audit-references';
-import { actionNameOf, type Reading, wordEntry } from './audit-words';
+import {
+  actionNameOf,
+  type Reading,
+  wordEntry,
+  zoneLabel,
+} from './audit-words';
 
 const ID = '01a1522b-9d85-7367-8cdd-796c3ee07a68';
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
@@ -240,19 +246,32 @@ function zoneChange(from: string, to: string) {
   return entry({ timeZone: { from, to } });
 }
 
+/** The dash before the city: spaced in English and French, doubled in Chinese. */
+const DASH: Record<Locale, string> = {
+  en: ' — ',
+  'fr-CA': ' — ',
+  'zh-Hans': '——',
+};
+
 /**
  * A zone reads as the client's picker says it (ADR-072, ADR-076): its name
- * in the reader's language, then its city, never its id.
+ * in the reader's language, then its city, never its id. The name is
+ * ICU's, and ICU renames zones (#343), so these check the label's shape,
+ * never the name's words.
  */
 describe('wordEntry, a time zone', () => {
-  it('names the zone, then its city', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('names the zone, then its city after a dash', () => {
     const [detail] = wordEntry(
       zoneChange('UTC', 'America/Vancouver'),
       IN_ENGLISH,
     ).details;
 
     expect(detail.field).toBe('Time zone');
-    expect(detail.value?.text).toBe('Pacific Time (Vancouver)');
+    expect(detail.value?.text).toMatch(/^\S.* — Vancouver$/);
   });
 
   it('reads an older name as the zone is called now', () => {
@@ -261,7 +280,29 @@ describe('wordEntry, a time zone', () => {
       IN_ENGLISH,
     ).details;
 
-    expect(detail.value?.text).toMatch(/\(Kolkata\)$/);
+    expect(detail.value?.text).toMatch(/^\S.* — Kolkata$/);
+  });
+
+  // On a winter day, when ICU's own names for some zones carry brackets:
+  // Vancouver's, "Pacific Time (Canada)", since British Columbia stayed on
+  // UTC−7 (#343). A city in brackets after it would double them.
+  it('puts every city after the dash, never in brackets, in every zone and language', () => {
+    vi.useFakeTimers({
+      now: new Date('2026-12-01T20:00:00.000Z'),
+      toFake: ['Date'],
+    });
+
+    for (const locale of SUPPORTED_LOCALES) {
+      for (const zone of Intl.supportedValuesOf('timeZone')) {
+        const current = canonicalTimeZone(zone) ?? zone;
+        const city = (current.split('/').pop() ?? current).replace(/_/g, ' ');
+        const label = zoneLabel(locale, zone);
+
+        expect(label.endsWith(`${DASH[locale]}${city}`), label).toBe(true);
+        expect(label.length).toBeGreaterThan(`${DASH[locale]}${city}`.length);
+        expect(label).not.toMatch(/[)）]\s*[(（]/);
+      }
+    }
   });
 
   it('keeps the id when there is no zone to name', () => {

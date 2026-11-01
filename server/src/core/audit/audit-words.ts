@@ -334,9 +334,11 @@ function displayName(
 /**
  * A zone as people read it (ADR-072), as the client's zoneLabel says it:
  * its generic name in the reader's language, then the city its id ends
- * in, "Pacific Time (Vancouver)". Under its current name, so an older one
- * the request sent reads as the zone does now; the id itself when Intl
- * cannot name it.
+ * in, after a dash, "Pacific Time (Canada) — Vancouver". Never the city in
+ * brackets: ICU's own name can carry some, as Vancouver's has in winter
+ * since British Columbia stayed on UTC−7 (#343). Under its current name,
+ * so an older one the request sent reads as the zone does now; the id
+ * itself when Intl cannot name it.
  */
 export function zoneLabel(locale: Locale, zone: string): string {
   const current = canonicalTimeZone(zone);
@@ -352,7 +354,7 @@ export function zoneLabel(locale: Locale, zone: string): string {
     const city = (current.split('/').pop() ?? current).replace(/_/g, ' ');
     return translate(
       t(
-        { id: 'audit.value.timeZone', defaultMessage: '{zone} ({city})' },
+        { id: 'audit.value.timeZone', defaultMessage: '{zone} — {city}' },
         { zone: name, city },
       ),
       locale,

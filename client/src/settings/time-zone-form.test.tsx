@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { zoneLabel } from '../lib/time-zone-label';
 import { server } from '../test/setup';
 import { TimeZoneForm } from './time-zone-form';
 
@@ -72,7 +73,9 @@ describe('TimeZoneForm', () => {
     await user.click(screen.getByRole('combobox', { name: 'Time zone' }));
     await user.keyboard('shanghai');
     await user.click(
-      screen.getByRole('option', { name: /China Standard Time \(Shanghai\)/ }),
+      screen.getByRole('option', {
+        name: `${zoneLabel('Asia/Shanghai')} UTC+8 · Asia/Shanghai`,
+      }),
     );
 
     expect(
@@ -92,12 +95,12 @@ describe('TimeZoneForm', () => {
 
     await user.click(
       screen.getByRole('button', {
-        name: 'Use this device’s: Pacific Time (Vancouver)',
+        name: `Use this device’s: ${zoneLabel('America/Vancouver')}`,
       }),
     );
 
     expect(screen.getByRole('combobox', { name: 'Time zone' })).toHaveValue(
-      'Pacific Time (Vancouver)',
+      zoneLabel('America/Vancouver'),
     );
     // Still the same day in Vancouver as in UTC at 4:28 pm: nothing moves.
     expect(screen.queryByText(/today becomes/)).not.toBeInTheDocument();
@@ -115,7 +118,7 @@ describe('TimeZoneForm', () => {
     );
 
     const box = screen.getByRole('combobox', { name: 'Time zone' });
-    expect(box).toHaveValue('India Standard Time (Kolkata)');
+    expect(box).toHaveValue(zoneLabel('Asia/Kolkata'));
     expect(
       screen.getByRole('button', { name: 'Save time zone' }),
     ).toBeDisabled();
@@ -124,7 +127,7 @@ describe('TimeZoneForm', () => {
     await user.keyboard('kolkata');
     expect(
       screen.getByRole('option', {
-        name: 'India Standard Time (Kolkata) UTC+5:30 · Asia/Kolkata',
+        name: `${zoneLabel('Asia/Kolkata')} UTC+5:30 · Asia/Kolkata`,
       }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: /Calcutta/ })).toBeNull();

@@ -210,3 +210,13 @@ in development and demo data.
   and as "one person" to anyone else; never as a name (ADR-038).
 - **Old rows read a reference as its kind in words** ("an order", "a tax
   code"), never as today's name.
+
+## Amendment (November 2026) — a zone's city after a dash (#343)
+
+British Columbia's zone has been called Pacific Time since its 2026 move
+to UTC−7 all year, and the time zone data now names it "Pacific Time
+(Canada)", so the label read "Pacific Time (Canada) (Vancouver)". A zone
+now reads as its generic name, a dash, then its city: "Pacific Time
+(Canada) — Vancouver", in every language, never with brackets doubled.
+Its tests check that shape, not today's wording, since the data renames
+zones, and with the season too.

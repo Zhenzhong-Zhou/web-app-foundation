@@ -1987,7 +1987,7 @@
   "status.offline.triesItself": "网络恢复后，此页面会自动重试。",
   "status.signIn": "登录",
   "status.tryAgain": "重试",
-  "timeZones.label": "{zone}（{city}）",
+  "timeZones.label": "{zone}——{city}",
   "unsaved.leave": "离开",
   "unsaved.stay": "留下",
   "unsaved.title": "不保存就离开？",
