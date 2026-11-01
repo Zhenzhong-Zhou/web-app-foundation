@@ -1633,11 +1633,13 @@ The pages, in a private window unless a check says otherwise.
   stays centred, and Help dims with the page.
 - **MC-3204** *(ADR-079)* Help on a phone, about 390 px: the bar shows
   Help as its icon alone. It opens full screen, headed Help · Orders, with
-  Close, which returns to the page. On a real phone at 320 px wide (or
-  DevTools) with Larger text (ADR-075), the organization shows its logo,
-  or its initials, alone (VoiceOver reads the initials, then the name),
-  and nothing scrolls sideways. At Standard and at Larger, on the phone
-  and on a computer, every control in the bar,
+  Close, which returns to the page. Closed by Close, and again by Esc,
+  focus is back on Help, which a screen reader names, with no Blocked
+  aria-hidden warning in Chrome's console (#294). On a real phone at
+  320 px wide (or DevTools) with Larger text (ADR-075), the organization
+  shows its logo, or its initials, alone (VoiceOver reads the initials,
+  then the name), and nothing scrolls sideways. At Standard and at
+  Larger, on the phone and on a computer, every control in the bar,
   the organization and the search box among them, is a full fingertip
   wide and tall (44 px, DevTools' box model).
 - **MC-3205** *(ADR-079)* Learn more: on a new organization's Home, each
@@ -4210,3 +4212,5 @@ first.
   Home's quick action, none from the menu or a new tab: MC-R69.
 - 2026-11-01: #341 finished, Back from every link inside the app to a
   top-level page, and Licences under the shared header: MC-R69 extended.
+- 2026-11-01: #294, Help on a phone giving focus back to Help once the
+  page is no longer hidden from a screen reader: MC-3204 extended.

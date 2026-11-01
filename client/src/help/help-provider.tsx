@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { guideFor, type GuideName } from './guides';
@@ -41,16 +41,17 @@ export function HelpProvider({ children }: { children: ReactNode }) {
   }
 
   /**
-   * Back to whatever opened Help: the button, or the Learn more pressed,
-   * unless it has gone with the page, when the button. After the render
-   * that closes it, so a phone's dialog has let go of focus first.
+   * Back to whatever opened Help, when Close or Esc closed it: the button,
+   * or the Learn more pressed, unless it has gone with the page, when the
+   * button. The frame calls it as Help goes, which on a phone is once its
+   * dialog has closed and MUI has shown the page again (#294).
    */
-  useEffect(() => {
-    if (open || !restore.current) return;
+  const giveFocusBack = () => {
+    if (!restore.current) return;
     restore.current = false;
     const target = opener.current?.isConnected ? opener.current : null;
     (target ?? buttonRef.current)?.focus();
-  }, [open]);
+  };
 
   // Safari focuses no button on a click, so what had focus may be <body>,
   // which is no opener: the button takes it back instead.
@@ -98,6 +99,7 @@ export function HelpProvider({ children }: { children: ReactNode }) {
       takeFocusRef.current = true;
       setChosen(null);
     },
+    giveFocusBack,
     takeFocusRef,
     buttonRef,
   };
