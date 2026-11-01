@@ -52,6 +52,7 @@ import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { useListSearch } from '../lib/use-list-search';
 import { useListSort } from '../lib/use-list-sort';
 import { useTab } from '../lib/use-tab';
 import { displayWithUnit } from '../products/units';
@@ -151,11 +152,11 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
 
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [locationId, setLocationId] = useState('');
-  // From the address too: the lookup's "Show all" opens it narrowed.
   const [params] = useSearchParams();
-  const [searchText, setSearchText] = useState(params.get('search') ?? '');
+  // In the address, as every list's (#301): the lookup's "Show all" narrows
+  // it while open, and Reorder points shares it, the same ?search=.
+  const { text: searchText, setText: setSearchText, search } = useListSearch();
   const { sort, toggle } = useListSort<'expiry'>();
-  const [search, setSearch] = useState((params.get('search') ?? '').trim());
   const [setupError, setSetupError] = useState<string | null>(null);
   const [receiving, setReceiving] = useState(false);
   const [moving, setMoving] = useState<{
@@ -191,12 +192,6 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
    * catalogue, 5,000 rows at ADR-051's large scale.
    */
   const [availability, setAvailability] = useState<Availability[] | null>(null);
-
-  // Applied a moment after typing stops, so each keystroke is not a request.
-  useEffect(() => {
-    const timer = setTimeout(() => setSearch(searchText.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [searchText]);
 
   /**
    * A page at a time since ADR-051: the whole list was 520 ms at the large

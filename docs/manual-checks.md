@@ -3065,6 +3065,14 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R67** *(Inventory's search not following the address, #301)* As
+  the demo Owner, on Inventory's Stock tab, type `2609` in the top bar and
+  choose Show all in Lots: the search box reads 2609 and the list narrows
+  to BF-2609 and FOC-2609-01, with no reload. Type `D3` in the search
+  instead and open Reorder points: the same search is in its box and its
+  list is narrowed by it. Change it there to `ELDER` and go back to Stock:
+  Stock is searched for ELDER. Reload: the tab and the search stay.
+
 - **MC-R66** *(a zone's city in brackets after a name with brackets of its
   own, #343)* Between November and March, with the organization in
   Vancouver: the box in Profile → Time zone, Home's note with the
@@ -4174,3 +4182,6 @@ first.
 - 2026-11-01: ADR-085, Reorder points in the client, the dialog: Add
   and Edit with Today, the refusals at their fields, Remove, a row's menu,
   the Stock row's Reorder point… and the empty states: MC-4207 to MC-4212.
+- 2026-11-01: #301, Inventory's search in the address: Show all in Lots
+  narrows Stock while it is open, and Stock and Reorder points share one
+  search: MC-R67.
