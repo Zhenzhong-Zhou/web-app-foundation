@@ -15,6 +15,19 @@ export const REORDER_STATUSES = [
 
 export type ReorderStatus = (typeof REORDER_STATUSES)[number];
 
+/**
+ * A point as the dialog holds it before saving (ADR-085): the preview
+ * works the item out against these, not its kept point. The quantity its
+ * rule does not use is null.
+ */
+export interface TypedPoint {
+  source: string;
+  reorderPoint: string;
+  rule: string;
+  fixedQuantity: string | null;
+  maximumQuantity: string | null;
+}
+
 /** A point's figures, as SQL, for the status and the suggestion. */
 export interface PositionFigures {
   position: SQL;
@@ -186,11 +199,16 @@ export function usableByLocation(
  * Its order is the list's: the low first, the furthest below their point
  * as a share of it first (`low_first`, `share`), then the rest, by SKU,
  * which the caller joins.
+ *
+ * With `typed`, the one item asked for is worked out against the values
+ * given instead of its kept point, whether it has one or not: the
+ * dialog's preview, before anything is saved. Its row's id is null.
  */
 export function positionsOf(
   organizationId: string,
   today: string,
   variantId?: string,
+  typed?: TypedPoint,
 ): SQL {
   const org = sql`${organizationId}::uuid`;
   const only = variantId ? sql`and rp.variant_id = ${variantId}::uuid` : sql``;
@@ -208,24 +226,42 @@ export function positionsOf(
 
   return sql`
     with points as materialized (
-      select
-        rp.id,
-        rp.variant_id,
-        rp.source,
-        rp.reorder_point,
-        rp.rule,
-        rp.fixed_quantity,
-        rp.maximum_quantity,
-        (pv.is_active and pr.is_active) as active
-      from reorder_points rp
-      join product_variants pv
-        on pv.id = rp.variant_id
-        and pv.organization_id = ${org}
-      join products pr
-        on pr.id = pv.product_id
-        and pr.organization_id = ${org}
-      where rp.organization_id = ${org}
-        ${only}
+      ${
+        typed && variantId
+          ? sql`select
+              null::uuid as id,
+              pv.id as variant_id,
+              ${typed.source}::text as source,
+              ${typed.reorderPoint}::numeric as reorder_point,
+              ${typed.rule}::text as rule,
+              ${typed.fixedQuantity}::numeric as fixed_quantity,
+              ${typed.maximumQuantity}::numeric as maximum_quantity,
+              (pv.is_active and pr.is_active) as active
+            from product_variants pv
+            join products pr
+              on pr.id = pv.product_id
+              and pr.organization_id = ${org}
+            where pv.organization_id = ${org}
+              and pv.id = ${variantId}::uuid`
+          : sql`select
+              rp.id,
+              rp.variant_id,
+              rp.source,
+              rp.reorder_point,
+              rp.rule,
+              rp.fixed_quantity,
+              rp.maximum_quantity,
+              (pv.is_active and pr.is_active) as active
+            from reorder_points rp
+            join product_variants pv
+              on pv.id = rp.variant_id
+              and pv.organization_id = ${org}
+            join products pr
+              on pr.id = pv.product_id
+              and pr.organization_id = ${org}
+            where rp.organization_id = ${org}
+              ${only}`
+      }
     ),
     usable as (
       select u.variant_id, sum(u.usable) as quantity

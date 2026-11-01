@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { and, eq, type SQL, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
@@ -22,15 +26,22 @@ import type {
   ReorderPointDetail,
   ReorderPointDraft,
   ReorderPointPage,
+  ReorderPointPreview,
   ReorderPointRow,
   StillNeeded,
   UsableStock,
 } from './dto/reorder-point-response.dto';
+import type { SetReorderPointDto } from './dto/set-reorder-point.dto';
 import { namesIn } from './item-name';
-import { noPoint } from './reorder-points.service';
+import {
+  keptOf,
+  noPoint,
+  refuseMaximumAtOrBelowPoint,
+} from './reorder-points.service';
 import {
   positionsOf,
   type ReorderStatus,
+  statusOf,
   usableByLocation,
 } from './reorder-position';
 import type { Tx } from './stock.service';
@@ -364,13 +375,20 @@ export class ReorderPointsReadsService {
    * was left out as expired or issued to a run; each purchase and run
    * still coming, a purchase late once its day has passed; each sale still
    * needing it; and each draft. Read by the rules positionsOf adds up, so
-   * the lines make the row's figures. An item with no point is not found,
-   * as another organization's is.
+   * the lines make the row's figures, and the point itself, for Edit. An
+   * item with no point is not found, as another organization's is, which
+   * is how the dialog knows to add one.
    */
   detail(variantId: string): Promise<ReorderPointDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [point] = await tx
-        .select({ id: reorderPoints.id })
+        .select({
+          source: reorderPoints.source,
+          reorderPoint: reorderPoints.reorderPoint,
+          rule: reorderPoints.rule,
+          fixedQuantity: reorderPoints.fixedQuantity,
+          maximumQuantity: reorderPoints.maximumQuantity,
+        })
         .from(reorderPoints)
         .where(
           and(
@@ -478,6 +496,14 @@ export class ReorderPointsReadsService {
       const drafts = await draftsOf(tx, organizationId, [variantId]);
 
       return {
+        // Text columns its check constraints hold to the two lists.
+        point: {
+          source: point.source as ReorderSource,
+          reorderPoint: point.reorderPoint,
+          rule: point.rule as ReorderRule,
+          fixedQuantity: point.fixedQuantity,
+          maximumQuantity: point.maximumQuantity,
+        },
         usable: usable.rows.map((row): UsableStock => ({
           locationId: row.location_id,
           locationName: row.location_name,
@@ -504,6 +530,74 @@ export class ReorderPointsReadsService {
           expectedAt: row.expected_at,
         })),
         drafts: drafts.get(variantId) ?? [],
+      };
+    });
+  }
+
+  /**
+   * What the dialog's values would make of an item today (ADR-085), before
+   * anything is saved: its position, where it would stand, the suggestion
+   * the values' rule gives and the position once that arrives. Worked out
+   * by positionsOf against the values, so it says what the list will say
+   * once they are saved; for an item with a point or without one. Refused
+   * as saving refuses: an item not this organization's is not found, and a
+   * maximum at or below the point is a 400 with its code.
+   */
+  preview(
+    variantId: string,
+    input: SetReorderPointDto,
+  ): Promise<ReorderPointPreview> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      await refuseMaximumAtOrBelowPoint(tx, input);
+
+      const today = await todayOf(tx, organizationId);
+      const typed = keptOf(input);
+      const after = sql`p.position + p.suggestion`;
+      const afterStatus = statusOf({
+        position: after,
+        reorderPoint: sql`p.reorder_point`,
+        rule: sql`p.rule`,
+        fixedQuantity: sql`p.fixed_quantity`,
+        maximumQuantity: sql`p.maximum_quantity`,
+        inDraft: sql`p.in_draft`,
+        active: sql`p.status <> 'discontinued'`,
+      });
+
+      const { rows } = await tx.execute<{
+        position: string;
+        status: ReorderStatus;
+        suggestion: string;
+        suggested_multiples: string | null;
+        drafted: boolean;
+        after: string;
+        after_status: ReorderStatus;
+      }>(sql`
+        select
+          ${quantity(sql`p.position`)} as position,
+          p.status,
+          ${quantity(sql`p.suggestion`)} as suggestion,
+          p.suggested_multiples::text as suggested_multiples,
+          p.drafted,
+          ${quantity(after)} as after,
+          ${afterStatus} as after_status
+        from (${positionsOf(organizationId, today, variantId, typed)}) p
+      `);
+
+      // Its row comes from the item, so none means no such item here.
+      const [row] = rows;
+      if (!row)
+        throw new NotFoundException(
+          t({ id: 'stock.suchItem', defaultMessage: 'No such item' }),
+        );
+
+      return {
+        position: row.position,
+        status: row.status,
+        suggestion: row.suggestion,
+        suggestedMultiples: row.suggested_multiples,
+        drafted: row.drafted,
+        after: row.after,
+        afterStatus: row.after_status,
       };
     });
   }

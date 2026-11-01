@@ -4862,6 +4862,91 @@
         ]
       }
     },
+    "/v1/stock/reorder-points/{variantId}/preview": {
+      "get": {
+        "operationId": "ReorderPointsController_preview_v1",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "bought",
+                "made"
+              ]
+            }
+          },
+          {
+            "name": "reorderPoint",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rule",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "just_enough",
+                "fixed",
+                "maximum"
+              ]
+            }
+          },
+          {
+            "name": "fixedQuantity",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "maximumQuantity",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderPointPreview"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReorderPoints"
+        ]
+      }
+    },
     "/v1/lookup": {
       "get": {
         "operationId": "LookupController_lookup_v1",
@@ -15090,6 +15175,48 @@
           "out"
         ]
       },
+      "ReorderPointValues": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "bought",
+              "made"
+            ]
+          },
+          "reorderPoint": {
+            "type": "string"
+          },
+          "rule": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "just_enough",
+              "maximum"
+            ]
+          },
+          "fixedQuantity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maximumQuantity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "reorderPoint",
+          "rule",
+          "fixedQuantity",
+          "maximumQuantity"
+        ]
+      },
       "UsableStock": {
         "type": "object",
         "properties": {
@@ -15198,6 +15325,9 @@
       "ReorderPointDetail": {
         "type": "object",
         "properties": {
+          "point": {
+            "$ref": "#/components/schemas/ReorderPointValues"
+          },
           "usable": {
             "type": "array",
             "items": {
@@ -15230,12 +15360,63 @@
           }
         },
         "required": [
+          "point",
           "usable",
           "expired",
           "issued",
           "coming",
           "stillNeeded",
           "drafts"
+        ]
+      },
+      "ReorderPointPreview": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "out",
+              "low",
+              "enough",
+              "discontinued"
+            ]
+          },
+          "suggestion": {
+            "type": "string"
+          },
+          "suggestedMultiples": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "drafted": {
+            "type": "boolean"
+          },
+          "after": {
+            "type": "string"
+          },
+          "afterStatus": {
+            "type": "string",
+            "enum": [
+              "out",
+              "low",
+              "enough",
+              "discontinued"
+            ]
+          }
+        },
+        "required": [
+          "position",
+          "status",
+          "suggestion",
+          "suggestedMultiples",
+          "drafted",
+          "after",
+          "afterStatus"
         ]
       },
       "SetReorderPointDto": {

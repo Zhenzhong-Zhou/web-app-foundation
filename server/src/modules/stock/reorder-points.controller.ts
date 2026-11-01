@@ -27,6 +27,7 @@ import type {
   ReorderPointCounts,
   ReorderPointDetail,
   ReorderPointPage,
+  ReorderPointPreview,
 } from './dto/reorder-point-response.dto';
 import { SetReorderPointDto } from './dto/set-reorder-point.dto';
 import { ReorderPointsService } from './reorder-points.service';
@@ -42,7 +43,8 @@ import { REORDER_POINT_COLUMNS } from './stock-exports';
  * Audited by the item, so a removed point keeps its SKU in the log.
  *
  * The reads need only stock.view: the list of every item with a point
- * and where it stands, its counts, its CSV and an opened row's lines.
+ * and where it stands, its counts, its CSV and an opened row's lines;
+ * the dialog's preview needs stock.reorder, as its writes do.
  * Declared before the item's own route, which would take "counts" for
  * an id.
  */
@@ -106,6 +108,20 @@ export class ReorderPointsController {
     @Param('variantId', ParseUUIDPipe) variantId: string,
   ): Promise<ReorderPointDetail> {
     return this.reads.detail(variantId);
+  }
+
+  /**
+   * The dialog's Today (ADR-085): what the values typed would make of the
+   * item, worked out as the list will once they are saved, and refused as
+   * saving refuses them. The dialog's own read, so its write's permission.
+   */
+  @Get(':variantId/preview')
+  @RequirePermissions(PERMISSIONS.STOCK_REORDER)
+  preview(
+    @Param('variantId', ParseUUIDPipe) variantId: string,
+    @Query() query: SetReorderPointDto,
+  ): Promise<ReorderPointPreview> {
+    return this.reads.preview(variantId, query);
   }
 
   @Post(':variantId')

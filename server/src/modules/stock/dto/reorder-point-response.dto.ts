@@ -116,8 +116,42 @@ export class StillNeeded {
   expectedAt!: string | null;
 }
 
+/** A point's own values, as the dialog's Edit opens with them. */
+export class ReorderPointValues {
+  source!: ReorderSource;
+  reorderPoint!: string;
+  rule!: ReorderRule;
+  /** A fixed rule's quantity; null for the other rules. */
+  fixedQuantity!: string | null;
+  /** A maximum rule's level; null for the other rules. */
+  maximumQuantity!: string | null;
+}
+
+/**
+ * GET /stock/reorder-points/:variantId/preview: what the dialog's values
+ * would make of the item today, before anything is saved, worked out as
+ * the list works out a kept point.
+ */
+export class ReorderPointPreview {
+  /** Usable, plus coming, less still needed; the point does not change it. */
+  position!: string;
+  status!: ReorderStatus;
+  /** What the values' rule asks for, less what is in draft; zero when not low. */
+  suggestion!: string;
+  /** How many of the fixed quantity the suggestion is; null for the other rules. */
+  suggestedMultiples!: string | null;
+  /** Low, with its drafts leaving nothing to suggest. */
+  drafted!: boolean;
+  /** The position once the suggestion arrives: the position and the suggestion. */
+  after!: string;
+  /** Where the item would stand then. */
+  afterStatus!: ReorderStatus;
+}
+
 /** GET /stock/reorder-points/:variantId: an opened row's lines. */
 export class ReorderPointDetail {
+  /** The point itself, so Edit opens with what is kept. */
+  point!: ReorderPointValues;
   /** By location, each marked available that holds the item. */
   usable!: UsableStock[];
   /** Left out in all, as expired. */

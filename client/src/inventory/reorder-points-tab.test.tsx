@@ -73,6 +73,13 @@ const ROWS = [
 ];
 
 const DETAIL: ReorderPointDetail = {
+  point: {
+    source: 'bought',
+    reorderPoint: '96.0000',
+    rule: 'fixed',
+    fixedQuantity: '48.0000',
+    maximumQuantity: null,
+  },
   usable: [
     {
       locationId: 'loc-1',

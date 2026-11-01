@@ -161,7 +161,7 @@ export class ReorderPointsService {
 }
 
 /** What a point keeps of the request: the rule's own quantity alone. */
-function keptOf(input: SetReorderPointDto): PointValues {
+export function keptOf(input: SetReorderPointDto): PointValues {
   return {
     source: input.source,
     reorderPoint: input.reorderPoint,
@@ -194,9 +194,10 @@ function loggedOf(point: PointValues): FieldValues {
 
 /**
  * A maximum fills to a level above the point, which the check constraint
- * also holds. Compared in Postgres, never as JavaScript numbers (ADR-025).
+ * also holds; the preview refuses it alike. Compared in Postgres, never as
+ * JavaScript numbers (ADR-025).
  */
-async function refuseMaximumAtOrBelowPoint(
+export async function refuseMaximumAtOrBelowPoint(
   tx: Tx,
   input: SetReorderPointDto,
 ): Promise<void> {

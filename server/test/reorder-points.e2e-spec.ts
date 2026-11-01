@@ -109,6 +109,14 @@ describe('Reorder points (e2e)', () => {
     maximumQuantity: null,
   };
 
+  /** FIXED as a query string carries it: no quantity its rule does not use. */
+  const FIXED_QUERY = {
+    source: 'bought',
+    reorderPoint: '2000',
+    rule: 'fixed',
+    fixedQuantity: '1000',
+  };
+
   describe('adding', () => {
     it('keeps each rule with its own quantity alone', async () => {
       const alpha = await registerOrganization(app, 'alpha');
@@ -321,6 +329,10 @@ describe('Reorder points (e2e)', () => {
       await member.post(path(d3)).send(FIXED).expect(403);
       await member.put(path(d3)).send(FIXED).expect(403);
       await member.delete(path(d3)).expect(403);
+      await member
+        .get(`${path(d3)}/preview`)
+        .query(FIXED_QUERY)
+        .expect(403);
     }
 
     await customRole(app, alpha.organizationId, 'Buyer', [
@@ -337,6 +349,10 @@ describe('Reorder points (e2e)', () => {
       'buyer@alpha.example.com',
       'Buyer',
     );
+    await buyer
+      .get(`${path(d3)}/preview`)
+      .query(FIXED_QUERY)
+      .expect(200);
     await buyer
       .put(path(d3))
       .send({ ...FIXED, reorderPoint: '2500' })
@@ -669,6 +685,13 @@ describe('Reorder points (e2e)', () => {
 
   describe('an item’s detail', () => {
     interface Detail {
+      point: {
+        source: string;
+        reorderPoint: string;
+        rule: string;
+        fixedQuantity: string | null;
+        maximumQuantity: string | null;
+      };
       usable: {
         locationName: string;
         usable: string;
@@ -827,6 +850,20 @@ describe('Reorder points (e2e)', () => {
       expect(row).toMatchObject({ position: '135.0000', status: 'enough' });
     });
 
+    it('carries the point itself, as Edit opens with it', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const d3 = await variant(alpha, 'D3-1000');
+      await alpha.agent.post(path(d3)).send(FIXED).expect(204);
+
+      expect((await detailOf(alpha, d3)).point).toEqual({
+        source: 'bought',
+        reorderPoint: '2000.0000',
+        rule: 'fixed',
+        fixedQuantity: '1000.0000',
+        maximumQuantity: null,
+      });
+    });
+
     it('finds no item without a point, nor another organization’s', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const beta = await registerOrganization(app, 'beta');
@@ -840,6 +877,122 @@ describe('Reorder points (e2e)', () => {
       );
       await alpha.agent.get(path(theirs)).expect(404);
       await alpha.agent.get(path('NONE')).expect(400);
+    });
+  });
+
+  describe('the preview', () => {
+    interface Preview {
+      position: string;
+      status: string;
+      suggestion: string;
+      suggestedMultiples: string | null;
+      drafted: boolean;
+      after: string;
+      afterStatus: string;
+    }
+
+    const preview = (org: Org, variantId: string, query: object) =>
+      org.agent.get(`${path(variantId)}/preview`).query(query);
+
+    it('works an item out against the values typed, with no point yet, and saves nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const d3 = await item(alpha.agent, 'D3-1000');
+      const shelf = await site(alpha.agent, 'SHELF');
+      await receive(alpha.agent, d3, shelf, '800');
+
+      const fixed = await preview(alpha, d3, FIXED_QUERY).expect(200);
+      expect(fixed.body as Preview).toEqual({
+        position: '800.0000',
+        status: 'low',
+        suggestion: '2000.0000',
+        suggestedMultiples: '2',
+        drafted: false,
+        after: '2800.0000',
+        afterStatus: 'enough',
+      });
+
+      const upTo = await preview(alpha, d3, {
+        source: 'bought',
+        reorderPoint: '1000',
+        rule: 'maximum',
+        maximumQuantity: '1500',
+      }).expect(200);
+      expect(upTo.body as Preview).toMatchObject({
+        status: 'low',
+        suggestion: '700.0000',
+        suggestedMultiples: null,
+        after: '1500.0000',
+        afterStatus: 'enough',
+      });
+
+      const enough = await preview(alpha, d3, {
+        source: 'bought',
+        reorderPoint: '500',
+        rule: 'just_enough',
+      }).expect(200);
+      expect(enough.body as Preview).toMatchObject({
+        status: 'enough',
+        suggestion: '0.0000',
+        after: '800.0000',
+        afterStatus: 'enough',
+      });
+
+      expect(await pointOf(d3)).toBeUndefined();
+    });
+
+    it('follows the values typed, not the point kept', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const d3 = await item(alpha.agent, 'D3-1000');
+      const shelf = await site(alpha.agent, 'SHELF');
+      await receive(alpha.agent, d3, shelf, '800');
+      await point(alpha.agent, d3, '100');
+
+      const res = await preview(alpha, d3, {
+        source: 'bought',
+        reorderPoint: '1000',
+        rule: 'just_enough',
+      }).expect(200);
+      expect(res.body as Preview).toMatchObject({
+        status: 'low',
+        suggestion: '200.0000',
+        after: '1000.0000',
+      });
+      expect((await pointOf(d3)).reorderPoint).toBe('100.0000');
+    });
+
+    it('refuses as saving refuses', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const cap = await item(alpha.agent, 'CAP-38MM');
+      const theirs = await item(beta.agent, 'THEIRS');
+
+      const atPoint = await preview(alpha, cap, {
+        source: 'bought',
+        reorderPoint: '200',
+        rule: 'maximum',
+        maximumQuantity: '200',
+      }).expect(400);
+      expect(atPoint.body as Refusal).toMatchObject({
+        message: 'The maximum must be above the reorder point, 200.',
+        code: 'reorder_maximum_not_above_point',
+      });
+
+      for (const refused of [
+        { ...FIXED_QUERY, reorderPoint: '0' },
+        { ...FIXED_QUERY, fixedQuantity: '-5' },
+        { ...FIXED_QUERY, fixedQuantity: undefined },
+        { ...FIXED_QUERY, rule: 'whenever' },
+      ]) {
+        await preview(alpha, cap, refused).expect(400);
+      }
+
+      await preview(alpha, theirs, FIXED_QUERY).expect(404);
+      await preview(
+        alpha,
+        '019a3a3c-0000-7000-8000-000000000000',
+        FIXED_QUERY,
+      ).expect(404);
+      await preview(alpha, 'CAP-38MM', FIXED_QUERY).expect(400);
     });
   });
 
