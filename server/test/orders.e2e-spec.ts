@@ -1588,6 +1588,25 @@ describe('Orders (e2e)', () => {
         .expect(404);
     });
 
+    it('refuses a location from another organization, saying to choose one from the list, and moves nothing', async () => {
+      const alpha = await setup('alpha');
+      const beta = await setup('beta');
+      const order = await confirmed(alpha);
+
+      // From the body, so unknown, a 400, not a 404 (engineering.md, Server).
+      const refused = await alpha.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: beta.locationId, quantity: '10' })
+        .expect(400);
+
+      expect(body<{ message: string }>(refused).message).toBe(
+        'That location is not in this organization. Choose one from the list.',
+      );
+      expect(await db.select().from(stockMovements)).toHaveLength(0);
+      const [line] = await db.select().from(orderLines);
+      expect(line.quantityFulfilled).toBe('0.0000');
+    });
+
     it('refuses a Viewer, which lacks orders.receive', async () => {
       const ctx = await setup('alpha');
       const order = await confirmed(ctx);

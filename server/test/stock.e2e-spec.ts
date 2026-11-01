@@ -503,16 +503,46 @@ describe('Stock (e2e)', () => {
       expect(rows).toHaveLength(0);
     });
 
-    it('refuses a variant from another organization', async () => {
+    it('refuses a variant or a location from another organization, saying to choose one from the list, and moves nothing', async () => {
       const alpha = await setup('alpha');
       const beta = await setup('beta');
 
-      // Scoped, so beta's variant is simply not found rather than forbidden —
-      // a 403 would confirm the id exists somewhere.
       await alpha.agent
         .post('/v1/stock/movements')
-        .send(receipt(beta.variant.id, alpha.locationId, '40'))
-        .expect(404);
+        .send(receipt(alpha.variant.id, alpha.locationId, '40'))
+        .expect(201);
+
+      const item =
+        'That item is not in this organization. Choose one from the list.';
+      const location =
+        'That location is not in this organization. Choose one from the list.';
+
+      // Ids from a body, so unknown, a 400, as one that does not exist is:
+      // neither a 403 nor a 404 says beta's exists (engineering.md, Server).
+      for (const [movement, message] of [
+        [receipt(beta.variant.id, alpha.locationId, '40'), item],
+        [receipt(alpha.variant.id, beta.locationId, '40'), location],
+        [
+          {
+            variantId: alpha.variant.id,
+            fromLocationId: alpha.locationId,
+            toLocationId: beta.locationId,
+            quantity: '10',
+            reason: 'transfer',
+          },
+          location,
+        ],
+      ] as const) {
+        const refused = await alpha.agent
+          .post('/v1/stock/movements')
+          .send(movement)
+          .expect(400);
+        expect(body<{ message: string }>(refused).message).toBe(message);
+      }
+
+      const levels = await db.select().from(stockLevels);
+      expect(levels.map((level) => level.quantity)).toEqual(['40.0000']);
+      expect(await db.select().from(stockMovements)).toHaveLength(1);
     });
 
     it('is readable by a Viewer, which holds stock.view', async () => {
