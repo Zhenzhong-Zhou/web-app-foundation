@@ -22,6 +22,7 @@ import type {
   ReorderPointDetail,
   ReorderPointDraft,
   ReorderPointPage,
+  ReorderPointRow,
   StillNeeded,
   UsableStock,
 } from './dto/reorder-point-response.dto';
@@ -59,6 +60,10 @@ type PositionRow = {
   suggestion: string;
   suggested_multiples: string | null;
   drafted: boolean;
+  /** With counted, every row the statement's conditions match. */
+  matched?: number;
+  /** With counted, the out among them. */
+  matched_out?: number;
 };
 
 type DraftRow = {
@@ -126,8 +131,22 @@ function whereOf(conditions: SQL[]): SQL {
  * on the positions as `p`: the list, its counts and Home's card count by
  * them alike, so See all opens what the card counted.
  */
-export const IS_LOW = sql`p.status in ('low', 'out')`;
-export const IS_OUT = sql`p.status = 'out'`;
+const IS_LOW = sql`p.status in ('low', 'out')`;
+const IS_OUT = sql`p.status = 'out'`;
+
+/** Every row a page's filter and search match, and the out among them. */
+interface Matched {
+  all: number;
+  out: number;
+}
+
+/** Home's Low stock (ADR-085): the list's first rows on Low, and its counts. */
+export interface FirstLow {
+  entries: ReorderPointRow[];
+  /** Every row Low shows, the out among them. */
+  low: number;
+  out: number;
+}
 
 /** Quantities as the API sends them: four places, as the columns hold them. */
 function quantity(column: SQL): SQL {
@@ -157,10 +176,41 @@ export class ReorderPointsReadsService {
    * Items named in the locale given, or by their base names for null, as
    * the CSV export reads them (ADR-056).
    */
-  list(
+  async list(
     query: ListReorderPointsDto,
     locale: Locale | null,
   ): Promise<ReorderPointPage> {
+    const { entries, nextCursor } = await this.page(query, locale, false);
+    return { entries, nextCursor };
+  }
+
+  /**
+   * Home's card (ADR-085; ADR-058, as amended): the list's first rows on
+   * Low, and beside them how many rows Low shows and the out among them,
+   * counted over the same positions in the same statement. So each
+   * point's position is worked out once a Home request, and See all opens
+   * what the card counted.
+   */
+  async firstLow(limit: number, locale: Locale): Promise<FirstLow> {
+    const { entries, matched } = await this.page(
+      { status: 'low', limit },
+      locale,
+      true,
+    );
+    return { entries, low: matched?.all ?? 0, out: matched?.out ?? 0 };
+  }
+
+  /**
+   * A page of the list, as list() reads it; with `counted`, also every
+   * row its filter and search match and the out among them, by window
+   * counts over the statement's own rows. Never counted with a cursor,
+   * which would count only the rows after it.
+   */
+  private page(
+    query: ListReorderPointsDto,
+    locale: Locale | null,
+    counted: boolean,
+  ): Promise<ReorderPointPage & { matched: Matched | null }> {
     const limit = query.limit ?? PAGE_SIZE;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -229,6 +279,13 @@ export class ReorderPointsReadsService {
           ${quantity(sql`p.suggestion`)} as suggestion,
           p.suggested_multiples::text as suggested_multiples,
           p.drafted
+          ${
+            counted
+              ? sql`,
+                (count(*) over ())::int as matched,
+                (count(*) filter (where ${IS_OUT}) over ())::int as matched_out`
+              : sql``
+          }
         from ${namedPositions(organizationId)}
         ${whereOf(conditions)}
         order by p.low_first, p.share, ${productVariants.sku}, p.id
@@ -267,6 +324,10 @@ export class ReorderPointsReadsService {
           drafts: drafts.get(row.variant_id) ?? [],
         })),
         nextCursor: page.nextCursor,
+        // On every row alike; none when nothing matches.
+        matched: counted
+          ? { all: rows[0]?.matched ?? 0, out: rows[0]?.matched_out ?? 0 }
+          : null,
       };
     });
   }

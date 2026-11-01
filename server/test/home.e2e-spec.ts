@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { inArray } from 'drizzle-orm';
+import { Client } from 'pg';
 
 import {
   type Database,
@@ -470,6 +471,41 @@ describe('Home (e2e)', () => {
       detail: '专注胶囊 (60粒)',
       late: true,
     });
+  });
+
+  // Every point's position is worked out once a Home request (ADR-085):
+  // the card's counts come with its rows, from one read of the list.
+  it('works out the positions once a request', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const shelf = await site(alpha.agent, 'SHELF');
+    await point(alpha.agent, await item(alpha.agent, 'A-OUT'), '10');
+    const half = await item(alpha.agent, 'B-HALF');
+    await receive(alpha.agent, half, shelf, '50');
+    await point(alpha.agent, half, '100');
+
+    // Every statement the app sends goes through pg's Client#query, as the
+    // plan check records them (perf/capture.ts); read before the spy is
+    // restored, which forgets them.
+    const sent = vi.spyOn(Client.prototype, 'query');
+    let cards: HomeResponse['cards'];
+    let texts: string[];
+    try {
+      cards = await home(alpha);
+      texts = sent.mock.calls.map(([config]) =>
+        typeof config === 'string'
+          ? config
+          : ((config as { text?: string } | null)?.text ?? ''),
+      );
+    } finally {
+      sent.mockRestore();
+    }
+
+    const lowStock = card(cards, 'lowStock');
+    expect(lowStock).toMatchObject({ count: 2, late: 1 });
+    expect(lowStock?.rows.map((row) => row.title)).toEqual(['A-OUT', 'B-HALF']);
+    expect(
+      texts.filter((text) => /from reorder_points rp\b/.test(text)),
+    ).toHaveLength(1);
   });
 
   it('shows only the cards the member may view', async () => {

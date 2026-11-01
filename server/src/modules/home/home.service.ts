@@ -20,12 +20,7 @@ import { OrdersService, outstandingOrder } from '../orders/orders.service';
 import { ProductionOrdersService } from '../production-orders/production-orders.service';
 import { ReturnAuthorizationsService } from '../return-authorizations/return-authorizations.service';
 import { itemName } from '../stock/item-name';
-import {
-  IS_LOW,
-  IS_OUT,
-  ReorderPointsReadsService,
-} from '../stock/reorder-points-reads.service';
-import { positionsOf } from '../stock/reorder-position';
+import { ReorderPointsReadsService } from '../stock/reorder-points-reads.service';
 import { StockReadsService, stockRowsOf } from '../stock/stock-reads.service';
 import { WelcomeService } from './welcome.service';
 
@@ -97,6 +92,13 @@ export interface GettingStarted {
   complete: boolean;
 }
 
+/**
+ * The cards counted in totals()' one statement: all but Low stock, whose
+ * counts come with its rows from one read of its list (lowStock()), so a
+ * Home request works each point's position out once (ADR-085).
+ */
+type TotalledKind = Exclude<HomeKind, 'lowStock'>;
+
 /** The cards in the order of a working day, and who may see each. */
 const CARDS: { kind: HomeKind; permission: Permission }[] = [
   { kind: 'toShip', permission: 'orders.view' },
@@ -140,8 +142,9 @@ function licencesDue(organizationId: string, today: string) {
  * the card's "See all" link sets, so the five shown are that list's first
  * five; each count uses the same conditions, so "See all 12" opens twelve.
  * The counts are one statement for every card (totals()), the rows a read
- * per card. A card the member may not view is never queried. The
- * member's own welcome comes with them (ADR-079).
+ * per card; Low stock's counts come with its rows instead. A card the
+ * member may not view is never queried. The member's own welcome comes
+ * with them (ADR-079).
  */
 @Injectable()
 export class HomeService {
@@ -175,15 +178,23 @@ export class HomeService {
     // and its today.
     const { days: expiringWithin, timeZone } = await this.organization();
     const today = todayIn(timeZone);
-    const totals = await this.totals(kinds, today, expiringWithin);
+    const totals = await this.totals(
+      kinds.filter((kind): kind is TotalledKind => kind !== 'lowStock'),
+      today,
+      expiringWithin,
+    );
 
     const cards: HomeCard[] = [];
     for (const kind of kinds) {
-      cards.push({
-        kind,
-        ...totals.get(kind)!,
-        rows: await this.rows(kind, today, expiringWithin, locale),
-      });
+      cards.push(
+        kind === 'lowStock'
+          ? { kind, ...(await this.lowStock(locale)) }
+          : {
+              kind,
+              ...totals.get(kind)!,
+              rows: await this.rows(kind, today, expiringWithin),
+            },
+      );
     }
     const gettingStarted = await this.gettingStarted();
     const welcome = await this.welcome.of(context, held, {
@@ -293,12 +304,12 @@ export class HomeService {
    * page pays for one round trip instead of eight.
    */
   private totals(
-    kinds: HomeKind[],
+    kinds: TotalledKind[],
     today: string,
     expiringWithin: number,
-  ): Promise<Map<HomeKind, Totals>> {
+  ): Promise<Map<TotalledKind, Totals>> {
     if (kinds.length === 0) {
-      return Promise.resolve(new Map<HomeKind, Totals>());
+      return Promise.resolve(new Map<TotalledKind, Totals>());
     }
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -307,8 +318,8 @@ export class HomeService {
           sql`(${totalOf(kind, organizationId, today, expiringWithin)})`,
       );
       const result = await tx.execute(sql.join(branches, sql` union all `));
-      const rows = result.rows as ({ kind: HomeKind } & Totals)[];
-      return new Map<HomeKind, Totals>(
+      const rows = result.rows as ({ kind: TotalledKind } & Totals)[];
+      return new Map<TotalledKind, Totals>(
         rows.map(({ kind, count, late }) => [kind, { count, late }]),
       );
     });
@@ -332,14 +343,41 @@ export class HomeService {
   }
 
   /**
-   * A card's five most urgent rows, from its list's own read. Named in
-   * the reader's language where the list names an item (ADR-056).
+   * Low stock (ADR-085): the reorder points list's first five on Low, and
+   * beside them the rows Low shows and the out among them, late, from one
+   * read of the list, so See all opens what the card counted. Each item
+   * named in the reader's language (ADR-056).
    */
+  private async lowStock(locale: Locale): Promise<Omit<HomeCard, 'kind'>> {
+    const { entries, low, out } = await this.reorder.firstLow(
+      HOME_ROWS,
+      locale,
+    );
+    return {
+      count: low,
+      late: out,
+      rows: entries.map((row) => ({
+        // The item, which Reorder points and Stock both open by its id.
+        id: row.variantId,
+        title: row.sku,
+        detail: itemName(row.productName, row.variantName),
+        due: null,
+        // Out, nothing usable and nothing coming: red, as overdue is.
+        late: row.status === 'out',
+        reorder: {
+          position: row.position,
+          reorderPoint: row.reorderPoint,
+          drafted: row.drafted,
+        },
+      })),
+    };
+  }
+
+  /** A card's five most urgent rows, from its list's own read. */
   private async rows(
-    kind: HomeKind,
+    kind: TotalledKind,
     today: string,
     expiringWithin: number,
-    locale: Locale,
   ): Promise<HomeRow[]> {
     switch (kind) {
       case 'toShip':
@@ -360,29 +398,6 @@ export class HomeService {
           due: row.expectedAt,
           late: row.expectedAt !== null && row.expectedAt < today,
           reorder: null,
-        }));
-      }
-
-      case 'lowStock': {
-        // The reorder points list on Low, in its order (ADR-085): the
-        // furthest below its point first.
-        const page = await this.reorder.list(
-          { status: 'low', limit: HOME_ROWS },
-          locale,
-        );
-        return page.entries.map((row) => ({
-          // The item, which Reorder points and Stock both open by its id.
-          id: row.variantId,
-          title: row.sku,
-          detail: itemName(row.productName, row.variantName),
-          due: null,
-          // Out, nothing usable and nothing coming: red, as overdue is.
-          late: row.status === 'out',
-          reorder: {
-            position: row.position,
-            reorderPoint: row.reorderPoint,
-            drafted: row.drafted,
-          },
         }));
       }
 
@@ -499,7 +514,7 @@ export class HomeService {
  * lateness applies, under the same conditions as its list's filter.
  */
 function totalOf(
-  kind: HomeKind,
+  kind: TotalledKind,
   organizationId: string,
   today: string,
   expiringWithin: number,
@@ -525,14 +540,6 @@ function totalOf(
         lt(orders.expectedAt, today),
       );
     }
-
-    // The reorder points list's own positions under its Low filter, so
-    // the count is what See all opens; the out among them late (ADR-085).
-    case 'lowStock':
-      return counted(
-        sql`(${positionsOf(organizationId, today)}) p where ${IS_LOW}`,
-        IS_OUT,
-      );
 
     // The stock list's own rows (stockRowsOf), so the counts are the
     // list's. The expired are counted among the expiring.
