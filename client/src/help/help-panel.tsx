@@ -186,13 +186,28 @@ export function HelpFrame({
             aria-labelledby={HELP_HEADING_ID}
             // Focus goes back to what opened Help: the state sees to it.
             disableRestoreFocus
-            // Help, as on a computer: no amber line (ADR-081).
-            slotProps={{ paper: { component: 'div' } }}
+            slotProps={{
+              // Help, as on a computer: no amber line (ADR-081).
+              paper: { component: 'div' },
+              // Once the dialog has gone and MUI has shown the page again:
+              // before, focus would land where a screen reader cannot
+              // reach (#294). It takes the place of the theme's returnFocus,
+              // which only a dialog opened through openDialog needs.
+              transition: { onExited: help.giveFocusBack },
+            }}
           >
             <PanelBody help={help} phone />
           </Dialog>
         ) : (
-          <Slide in={help.open} direction="left" mountOnEnter unmountOnExit>
+          <Slide
+            in={help.open}
+            direction="left"
+            mountOnEnter
+            unmountOnExit
+            // Nothing of the page is hidden beside Help: focus goes back as
+            // it starts to slide away.
+            onExit={help.giveFocusBack}
+          >
             <Box
               component="aside"
               id={HELP_PANEL_ID}

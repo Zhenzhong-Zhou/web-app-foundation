@@ -195,7 +195,7 @@ describe('Help', () => {
     await waitFor(() => expect(title).toHaveFocus());
     await userEvent.keyboard('{Escape}');
 
-    // Given back in an effect once Help has closed (#210).
+    // Given back as Help starts to slide away (#294).
     await waitFor(() => expect(button).toHaveFocus());
     expect(button).toHaveAttribute('aria-expanded', 'false');
 
@@ -206,6 +206,63 @@ describe('Help', () => {
 
     await waitFor(() => expect(button).toHaveFocus());
     expect(button).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  /**
+   * On a phone Help is a dialog, and MUI hides the page from a screen reader
+   * until the dialog has closed. Focus given back before then lands where a
+   * screen reader cannot reach, which Chrome refuses with a warning (#294).
+   */
+  it('on a phone, gives focus back to the button only once the page is no longer hidden', async () => {
+    // Every width query matches, as at 390 px; jsdom has no matchMedia.
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('max-width'),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    try {
+      renderFrame('/orders');
+      const button = screen.getByRole('button', { name: 'Help' });
+      const open = async () => {
+        await userEvent.click(button);
+        const dialog = await screen.findByRole('dialog', {
+          name: 'Help · Orders',
+        });
+        const title = await within(dialog).findByRole('heading', {
+          level: 2,
+          name: 'Orders',
+        });
+        // In Help before it closes, as on a computer (#210).
+        await waitFor(() => expect(title).toHaveFocus());
+        return dialog;
+      };
+      // Once the dialog has gone, its transition out ended.
+      const closed = async (dialog: HTMLElement) => {
+        await waitFor(() => expect(dialog).not.toBeInTheDocument());
+        expect(button).toHaveFocus();
+      };
+
+      let dialog = await open();
+      // From here, each time the button takes focus: whether it was hidden.
+      const hiddenWhenFocused: boolean[] = [];
+      button.addEventListener('focus', () =>
+        hiddenWhenFocused.push(button.closest('[aria-hidden="true"]') !== null),
+      );
+      await userEvent.keyboard('{Escape}');
+      await closed(dialog);
+
+      dialog = await open();
+      await userEvent.click(
+        within(dialog).getByRole('button', { name: 'Close help' }),
+      );
+      await closed(dialog);
+
+      // Once for Esc, once for Close, and never while hidden.
+      expect(hiddenWhenFocused).toEqual([false, false]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('opens at a Learn more’s section, marked, and returns to it on Esc', async () => {
