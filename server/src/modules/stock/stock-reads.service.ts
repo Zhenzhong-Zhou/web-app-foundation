@@ -1,5 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, gt, lt, or, type SQL, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  inArray,
+  lt,
+  or,
+  type SQL,
+  sql,
+} from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 import { instantRange } from '../../common/date-range';
@@ -26,6 +37,7 @@ import { coverOf } from '../products/product-images';
 import { ListMovementsDto } from './dto/list-movements.dto';
 import { ListStockDto } from './dto/list-stock.dto';
 import { namesIn } from './item-name';
+import type { Tx } from './stock.service';
 
 /** A page of the stock list unless the caller asks for fewer (ADR-051). */
 const STOCK_PAGE_SIZE = 50;
@@ -353,9 +365,14 @@ export class StockReadsService {
    * to preserve.
    *
    * The SKU is not joined. It is snapshotted on the row (ADR-023) so a rename
-   * does not rewrite history.
+   * does not rewrite history. The item's names beside it are the catalogue's,
+   * in the locale given, or the base names for null, as the CSV export reads
+   * them (ADR-056): read for the page alone, once it is taken. Joined here,
+   * they were worked out for every movement a filter matched before the
+   * newest were kept, a scan of every variant for one shelf at ADR-051's
+   * large scale.
    */
-  listMovements(query: ListMovementsDto) {
+  listMovements(query: ListMovementsDto, locale: Locale | null) {
     const limit = query.limit ?? 50;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -384,6 +401,7 @@ export class StockReadsService {
       const rows = await tx
         .select({
           id: stockMovements.id,
+          variantId: stockMovements.variantId,
           sku: stockMovements.sku,
           quantity: stockMovements.quantity,
           reason: stockMovements.reason,
@@ -392,7 +410,13 @@ export class StockReadsService {
           fromLocationName: from.name,
           toLocationName: to.name,
           lotCode: lots.code,
-          actorEmail: users.email,
+          // Who, by name with their email (ADR-063). An anonymised account
+          // keeps its row and its name, Deleted User, and its address is a
+          // placeholder, which no one should read as theirs (ADR-012).
+          actorName: users.name,
+          actorEmail: sql<
+            string | null
+          >`case when ${users.deletedAt} is null then ${users.email} end`,
           createdAt: stockMovements.createdAt,
         })
         .from(stockMovements)
@@ -404,7 +428,58 @@ export class StockReadsService {
         .orderBy(desc(stockMovements.id))
         .limit(limit + 1);
 
-      return pageOf(rows, limit);
+      const page = pageOf(rows, limit);
+      const names = await namesOfItems(
+        tx,
+        organizationId,
+        page.entries.map((row) => row.variantId),
+        locale,
+      );
+
+      return {
+        ...page,
+        entries: page.entries.map(({ variantId, ...movement }) => ({
+          ...movement,
+          ...names.get(variantId)!,
+        })),
+      };
     });
   }
+}
+
+/**
+ * Items' names by the item's id, in the locale given or the base names for
+ * null (ADR-056), for the few a page shows.
+ */
+async function namesOfItems(
+  tx: Tx,
+  organizationId: string,
+  variantIds: string[],
+  locale: Locale | null,
+): Promise<Map<string, { productName: string; variantName: string | null }>> {
+  if (variantIds.length === 0) return new Map();
+
+  const shown = namesIn(locale, organizationId);
+  const rows = await tx
+    .select({
+      id: productVariants.id,
+      productName: shown.productName,
+      variantName: shown.variantName,
+    })
+    .from(productVariants)
+    .innerJoin(
+      products,
+      and(
+        eq(products.id, productVariants.productId),
+        eq(products.organizationId, organizationId),
+      ),
+    )
+    .where(
+      and(
+        eq(productVariants.organizationId, organizationId),
+        inArray(productVariants.id, [...new Set(variantIds)]),
+      ),
+    );
+
+  return new Map(rows.map(({ id, ...names }) => [id, names]));
 }

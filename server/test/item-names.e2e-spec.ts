@@ -142,6 +142,17 @@ const NAMED_READS: NamedRead[] = [
     },
   },
   {
+    operation: 'GET /v1/stock/movements',
+    of: 'item',
+    ask: async (world, language) => {
+      const page = await read<{
+        entries: (Omit<Named, 'id'> & { sku: string })[];
+      }>(world, language, '/v1/stock/movements');
+      const row = page.entries.find((entry) => entry.sku === 'FOCUS-60CT')!;
+      return itemName(row.productName, row.variantName);
+    },
+  },
+  {
     operation: 'GET /v1/stock/reorder-points',
     of: 'item',
     ask: async (world, language) => {
@@ -632,6 +643,7 @@ describe('Names in the reader’s language (e2e)', () => {
     for (const path of [
       `/v1/price-lists/${priceListId}/export`,
       '/v1/stock/export',
+      '/v1/stock/movements/export',
       '/v1/stock/reorder-points/export',
     ]) {
       const csv = (

@@ -216,7 +216,7 @@ async function buildProbes(
     20,
   );
   const deepMovements = await cursorAfter(
-    (before) => stock.listMovements({ before }),
+    (before) => stock.listMovements({ before }, 'en'),
     20,
   );
 
@@ -278,22 +278,22 @@ async function buildProbes(
       name: 'availability: promised',
       run: () => availability.list('en', true),
     },
-    { name: 'movements', run: () => stock.listMovements({}) },
+    { name: 'movements', run: () => stock.listMovements({}, 'en') },
     {
       name: 'movements: page 21',
-      run: () => stock.listMovements({ before: deepMovements }),
+      run: () => stock.listMovements({ before: deepMovements }, 'en'),
     },
     {
       name: 'movements: one product',
-      run: () => stock.listMovements({ variantId: shelf.variantId }),
+      run: () => stock.listMovements({ variantId: shelf.variantId }, 'en'),
     },
     {
       name: 'movements: one lot',
-      run: () => stock.listMovements({ lotId: shelf.lotId! }),
+      run: () => stock.listMovements({ lotId: shelf.lotId! }, 'en'),
     },
     {
       name: 'movements: one shelf',
-      run: () => stock.listMovements({ locationId: shelf.locationId }),
+      run: () => stock.listMovements({ locationId: shelf.locationId }, 'en'),
     },
     { name: 'invoices', run: () => invoices.list({}) },
     {
@@ -383,7 +383,7 @@ async function buildProbes(
     },
     {
       name: 'movements: a month',
-      run: () => stock.listMovements({ ...MONTH_INSTANTS }),
+      run: () => stock.listMovements({ ...MONTH_INSTANTS }, 'en'),
     },
     // Reorder points (ADR-085): the low list, every point's position
     // worked out, read only from the items that have one.

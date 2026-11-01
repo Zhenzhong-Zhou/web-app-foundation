@@ -12,6 +12,7 @@ import {
   roles,
   stockLevels,
   stockMovements,
+  users,
 } from '../src/database/schema';
 import {
   addMember,
@@ -976,6 +977,97 @@ describe('Stock (e2e)', () => {
 
       const res = await alpha.agent.get('/v1/stock/movements').expect(200);
       expect(body<{ entries: unknown[] }>(res).entries).toHaveLength(0);
+    });
+
+    it('names the item beside its SKU and who by name, with no address once their account is anonymised, and so does its CSV', async () => {
+      const ctx = await setup('alpha');
+      const member = await addMember(
+        app,
+        ctx,
+        'admin@alpha.example.com',
+        'Admin',
+      );
+
+      await ctx.agent
+        .post('/v1/stock/movements')
+        .send(receipt(ctx.variant.id, ctx.locationId, '5'))
+        .expect(201);
+      await member
+        .post('/v1/stock/movements')
+        .send(receipt(ctx.variant.id, ctx.locationId, '3'))
+        .expect(201);
+
+      // As account deletion leaves the row (ADR-012): a tombstone, its name
+      // Deleted User and its address a placeholder.
+      const [admin] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, 'admin@alpha.example.com'));
+      await db
+        .update(users)
+        .set({
+          name: 'Deleted User',
+          email: `deleted-${admin.id}@invalid`,
+          deletedAt: new Date(),
+        })
+        .where(eq(users.id, admin.id));
+
+      const page = body<{
+        entries: {
+          sku: string;
+          productName: string;
+          variantName: string | null;
+          actorName: string | null;
+          actorEmail: string | null;
+        }[];
+      }>(await ctx.agent.get('/v1/stock/movements').expect(200));
+
+      // Newest first: the member's, then the Owner's.
+      expect(page.entries).toEqual([
+        expect.objectContaining({
+          sku: 'WIDGET-1',
+          productName: 'Product WIDGET',
+          variantName: null,
+          actorName: 'Deleted User',
+          actorEmail: null,
+        }),
+        expect.objectContaining({
+          sku: 'WIDGET-1',
+          productName: 'Product WIDGET',
+          variantName: null,
+          actorName: 'Owner',
+          actorEmail: 'owner@alpha.example.com',
+        }),
+      ]);
+
+      const csv = (
+        await ctx.agent.get('/v1/stock/movements/export').expect(200)
+      ).text;
+      const [header, ...rows] = csv
+        .replace(/^\uFEFF/, '')
+        .trimEnd()
+        .split('\r\n')
+        .map((line) => line.split(','));
+      const column = (name: string) =>
+        rows.map((row) => row[header.indexOf(name)]);
+
+      expect(header).toEqual([
+        'When',
+        'Reason',
+        'SKU',
+        'Item',
+        'Variant',
+        'Lot',
+        'Quantity',
+        'From',
+        'To',
+        'By',
+        'Email',
+        'Note',
+      ]);
+      expect(column('Item')).toEqual(['Product WIDGET', 'Product WIDGET']);
+      expect(column('By')).toEqual(['Deleted User', 'Owner']);
+      expect(column('Email')).toEqual(['', 'owner@alpha.example.com']);
     });
   });
 

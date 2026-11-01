@@ -12,7 +12,10 @@ type MovementRow = Awaited<
   ReturnType<StockReadsService['listMovements']>
 >['entries'][number];
 
-/** The variant's own name, in the inventory's and the reorder points'. */
+/**
+ * The variant's own name, in the inventory's, the movements' and the
+ * reorder points'.
+ */
 const VARIANT = t({ id: 'exports.column.variant', defaultMessage: 'Variant' });
 
 /**
@@ -41,6 +44,8 @@ export const MOVEMENT_COLUMNS: ExportColumn<MovementRow>[] = [
     value: (row) => row.reason,
   },
   { header: HEADERS.sku, value: (row) => row.sku },
+  { header: HEADERS.item, value: (row) => row.productName },
+  { header: VARIANT, value: (row) => row.variantName },
   { header: HEADERS.lot, value: (row) => row.lotCode },
   { header: HEADERS.quantity, value: (row) => row.quantity },
   {
@@ -51,8 +56,13 @@ export const MOVEMENT_COLUMNS: ExportColumn<MovementRow>[] = [
     header: t({ id: 'exports.column.to', defaultMessage: 'To' }),
     value: (row) => row.toLocationName,
   },
+  // The person by name and email, as the audit log's export (ADR-063).
   {
     header: t({ id: 'exports.column.by', defaultMessage: 'By' }),
+    value: (row) => row.actorName,
+  },
+  {
+    header: t({ id: 'exports.column.email', defaultMessage: 'Email' }),
     value: (row) => row.actorEmail,
   },
   {

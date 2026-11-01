@@ -1709,6 +1709,8 @@ export type StockCounts = {
 export type Movement = {
   id: string;
   sku: string;
+  productName: string;
+  variantName: string | null;
   quantity: string;
   reason: string;
   reasonDetail: string | null;
@@ -1716,6 +1718,7 @@ export type Movement = {
   fromLocationName: string | null;
   toLocationName: string | null;
   lotCode: string | null;
+  actorName: string | null;
   actorEmail: string | null;
   createdAt: string;
 };
@@ -5512,6 +5515,9 @@ export type StockControllerExportInventoryV1Response =
 
 export type StockControllerListMovementsV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
   query?: {
     variantId?: string;

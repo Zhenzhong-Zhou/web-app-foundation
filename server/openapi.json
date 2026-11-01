@@ -4080,6 +4080,14 @@
               "maximum": 100,
               "type": "number"
             }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -14335,6 +14343,15 @@
           "sku": {
             "type": "string"
           },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "quantity": {
             "type": "string"
           },
@@ -14371,6 +14388,12 @@
               "null"
             ]
           },
+          "actorName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "actorEmail": {
             "type": [
               "string",
@@ -14385,6 +14408,8 @@
         "required": [
           "id",
           "sku",
+          "productName",
+          "variantName",
           "quantity",
           "reason",
           "reasonDetail",
@@ -14392,6 +14417,7 @@
           "fromLocationName",
           "toLocationName",
           "lotCode",
+          "actorName",
           "actorEmail",
           "createdAt"
         ]
