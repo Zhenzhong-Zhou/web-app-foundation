@@ -7,6 +7,9 @@
 export class Availability {
   variantId!: string;
   sku!: string;
+  /** In the reader's language (ADR-056). */
+  productName!: string;
+  variantName!: string | null;
   unitOfMeasure!: string;
   /** Stock at locations marked available: what could be promised. */
   onHand!: string;

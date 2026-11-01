@@ -128,6 +128,20 @@ const NAMED_READS: NamedRead[] = [
     },
   },
   {
+    operation: 'GET /v1/stock/availability',
+    of: 'item',
+    ask: async (world, language) => {
+      const row = (
+        await read<(Omit<Named, 'id'> & { variantId: string })[]>(
+          world,
+          language,
+          '/v1/stock/availability',
+        )
+      ).find((each) => each.variantId === world.variantId)!;
+      return itemName(row.productName, row.variantName);
+    },
+  },
+  {
     operation: 'GET /v1/stock/reorder-points',
     of: 'item',
     ask: async (world, language) => {

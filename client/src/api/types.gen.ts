@@ -1815,6 +1815,8 @@ export type LotTrace = {
 export type Availability = {
   variantId: string;
   sku: string;
+  productName: string;
+  variantName: string | null;
   unitOfMeasure: string;
   onHand: string;
   held: string;
@@ -5681,6 +5683,9 @@ export type LotTraceControllerTraceV1Response =
 
 export type AvailabilityControllerListV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
   query?: {
     promised?: string;

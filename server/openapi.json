@@ -4476,6 +4476,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -14805,6 +14813,15 @@
           "sku": {
             "type": "string"
           },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "unitOfMeasure": {
             "type": "string"
           },
@@ -14824,6 +14841,8 @@
         "required": [
           "variantId",
           "sku",
+          "productName",
+          "variantName",
           "unitOfMeasure",
           "onHand",
           "held",

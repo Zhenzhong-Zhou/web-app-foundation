@@ -273,10 +273,10 @@ async function buildProbes(
       name: 'inventory: one product',
       run: () => stock.list({ variantId: shelf.variantId }, 'en'),
     },
-    { name: 'availability', run: () => availability.list() },
+    { name: 'availability', run: () => availability.list('en') },
     {
       name: 'availability: promised',
-      run: () => availability.list(true),
+      run: () => availability.list('en', true),
     },
     { name: 'movements', run: () => stock.listMovements({}) },
     {
