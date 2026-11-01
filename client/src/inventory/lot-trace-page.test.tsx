@@ -1,12 +1,14 @@
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import type { LotSource, LotTrace } from '../api/types.gen';
+import type { LotMatch, LotSource, LotTrace } from '../api/types.gen';
+import { OFFER_BACK } from '../lib/offer-back';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
-import { LotTracePage } from './lot-trace-page';
+import { LotSearchPage, LotTracePage } from './lot-trace-page';
 
 const SOURCE: LotSource = {
   kind: 'receipt',
@@ -146,5 +148,44 @@ describe('LotTracePage', () => {
       expect(screen.queryByRole('link', { name })).not.toBeInTheDocument();
       expect(screen.getByText(name, { exact: false })).toBeInTheDocument();
     }
+  });
+});
+
+describe('LotSearchPage', () => {
+  // Opened by a link that offered Back, a search keeps it (#341).
+  it('keeps Back after a search, when a link inside the app opened it', async () => {
+    const lot = (code: string): LotMatch => ({
+      id: `lot-${code}`,
+      code,
+      expiresAt: null,
+      sku: 'FOCUS-60CT',
+    });
+    server.use(
+      http.get('/api/v1/stock/lots/search', () =>
+        HttpResponse.json([lot('BF-2609'), lot('FOC-2609-01')]),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter
+        initialEntries={[
+          '/inventory',
+          { pathname: '/lots', state: OFFER_BACK },
+        ]}
+        initialIndex={1}
+      >
+        <Routes>
+          <Route path="/lots" element={<LotSearchPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+
+    await userEvent.type(
+      screen.getByRole('textbox', { name: 'Lot code' }),
+      '2609{Enter}',
+    );
+
+    expect(await screen.findByRole('link', { name: 'BF-2609' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
   });
 });

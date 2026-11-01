@@ -13,6 +13,7 @@ import type { ReactNode, Ref } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
+import { offersBack } from '../lib/offer-back';
 import { useTabTitle } from '../lib/tab-title';
 import { rem } from '../theme/rem';
 
@@ -70,6 +71,15 @@ export function PageHeader({
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  /**
+   * A detail page offers Back always; a top-level page only when a link
+   * inside the app brought the person here and said so (OFFER_BACK, #341),
+   * with some of this app's history behind it to go back through.
+   */
+  const hasBack =
+    crumbs.length > 0 ||
+    (location.key !== 'default' && offersBack(location.state));
 
   /**
    * Back through this app's own history when there is some; up to the
@@ -153,9 +163,9 @@ export function PageHeader({
           spacing={1.5}
           sx={{ alignItems: 'center', flex: `1 1 ${rem(280)}`, minWidth: 0 }}
         >
-          {/* Detail pages only: a top-level page is reached from the
-              navigation, and has nowhere to go up to. */}
-          {crumbs.length > 0 && (
+          {/* Not on a top-level page reached from the navigation, a new
+              tab or a bookmark: it has nowhere to go up to. */}
+          {hasBack && (
             <Tooltip title={back}>
               <IconButton
                 aria-label={back}

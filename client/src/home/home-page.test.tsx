@@ -3,10 +3,11 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import type { ReactElement } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { HomeResponse } from '../api/types.gen';
+import { LotSearchPage } from '../inventory/lot-trace-page';
 import type { HomeKind } from '../lib/api-names';
 import { browserTimeZone, setOrganizationTimeZone } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
@@ -246,6 +247,29 @@ describe('HomePage', () => {
       await screen.findByRole('link', { name: 'Trace a lot' }),
     ).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Raise an order' })).toBeNull();
+  });
+
+  // Trace a lot is a top-level page: Back returns to Home (#341).
+  it('opens Trace a lot with Back to Home', async () => {
+    serve({ gettingStarted: COMPLETE, cards: [] });
+    renderWithAuth(
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/lots" element={<LotSearchPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+
+    await userEvent.click(
+      await screen.findByRole('link', { name: 'Trace a lot' }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(
+      await screen.findByRole('link', { name: 'Trace a lot' }),
+    ).toBeVisible();
   });
 
   it('says a dropped connection in words, not the browser’s', async () => {

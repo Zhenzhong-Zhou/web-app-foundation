@@ -25,6 +25,7 @@ import { useCoverUnverifiedBanner } from '../layout/use-cover-unverified-banner'
 import { api, isRevisionRefusal } from '../lib/api';
 import { daysUntil } from '../lib/expiry';
 import { formatDay } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import {
   differsFromBrowser,
   organizationTimeZone,
@@ -201,6 +202,8 @@ function OrganizationHome() {
     },
     can('stock.view') && {
       to: '/lots',
+      // A top-level page, which offers Back to Home only when told (#341).
+      state: OFFER_BACK,
       label: intl.formatMessage({
         id: 'inventory.trace.title',
         defaultMessage: 'Trace a lot',
@@ -213,7 +216,10 @@ function OrganizationHome() {
         defaultMessage: 'Plan a run',
       }),
     },
-  ].filter((item): item is { to: string; label: string } => Boolean(item));
+  ].filter(
+    (item): item is { to: string; label: string; state?: typeof OFFER_BACK } =>
+      Boolean(item),
+  );
 
   if (!home && isRevisionRefusal(error)) {
     return <RevisionRefusalPage failure={error} onRetry={load} />;
@@ -388,6 +394,7 @@ function OrganizationHome() {
                   key={item.to + item.label}
                   component={RouterLink}
                   to={item.to}
+                  state={item.state}
                   // While Getting started shows, its first open step is the
                   // page's one primary action (ADR-058).
                   variant={index === 0 && !showStart ? 'contained' : 'outlined'}

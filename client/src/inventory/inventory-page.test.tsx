@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { Link, MemoryRouter } from 'react-router-dom';
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { StockRow } from '../api/types.gen';
@@ -9,6 +9,7 @@ import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { InventoryPage } from './inventory-page';
+import { LotSearchPage } from './lot-trace-page';
 
 const ROW: StockRow = {
   id: 'stock-1',
@@ -118,6 +119,34 @@ describe('InventoryPage', () => {
     );
     expect(await screen.findByText('Nothing here yet.')).toBeVisible();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  // Trace a lot is a top-level page: Back returns here (#341).
+  it('opens Trace a lot with Back to Inventory', async () => {
+    server.use(
+      http.get('/api/v1/stock', () =>
+        HttpResponse.json({ entries: [ROW], nextCursor: null }),
+      ),
+      http.get('/api/v1/stock/counts', () =>
+        HttpResponse.json({ expiring: 0, needsCost: 0 }),
+      ),
+      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/inventory']}>
+        <Routes>
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/lots" element={<LotSearchPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+    await screen.findByText('VITD-60');
+
+    await userEvent.click(screen.getByRole('link', { name: 'Trace a lot' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(await screen.findByText('VITD-60')).toBeVisible();
   });
 
   /**

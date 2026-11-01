@@ -19,6 +19,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import {
   Link as RouterLink,
+  useLocation,
   useNavigate,
   useParams,
   useSearchParams,
@@ -57,6 +58,7 @@ export function LotSearchPage() {
   const intl = useIntl();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const code = params.get('code') ?? '';
   const [typed, setTyped] = useState(code);
@@ -110,7 +112,10 @@ export function LotSearchPage() {
         onSubmit={(event) => {
           event.preventDefault();
           setMatches(null);
-          setParams(typed.trim() ? { code: typed.trim() } : {});
+          // The link's state kept, so Back stays after a search (#341).
+          setParams(typed.trim() ? { code: typed.trim() } : {}, {
+            state: location.state,
+          });
         }}
       >
         <TextField

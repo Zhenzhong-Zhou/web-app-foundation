@@ -48,6 +48,7 @@ import {
   nameAndCode,
   NO_VALUE,
 } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
@@ -333,8 +334,14 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                 .replace('/stock?', '/stock/export?')
                 .replace(/(^|[?&])limit=\d+&?/, '$1')}
             />
-            {/* A recall starts from a code off a label (ADR-044). */}
-            <Button variant="text" component={RouterLink} to="/lots">
+            {/* A recall starts from a code off a label (ADR-044). Back
+                returns here (#341). */}
+            <Button
+              variant="text"
+              component={RouterLink}
+              to="/lots"
+              state={OFFER_BACK}
+            >
               {intl.formatMessage({
                 id: 'inventory.trace.title',
                 defaultMessage: 'Trace a lot',
