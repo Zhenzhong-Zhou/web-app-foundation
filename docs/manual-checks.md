@@ -1145,18 +1145,24 @@ Set the computer's own zone in System Settings → General → Date & Time, or
 in Chrome with DevTools → More tools → Sensors → Location → Timezone
 override, then reload.
 
+A zone reads as its name, then a dash and its city. The name comes from
+the time zone data and can change with the season: Vancouver reads
+Pacific Time (Canada) — Vancouver from November to March, and Pacific
+Time — Vancouver while Los Angeles is on UTC−7 too (#343).
+
 - **MC-2601** *(ADR-072)* Register a new organization with the computer
   in Shanghai. Settings → Organization → Profile → Time zone shows China
-  Standard Time (Shanghai), UTC+8 now · Asia/Shanghai, and what time it is
+  Standard Time — Shanghai, UTC+8 now · Asia/Shanghai, and what time it is
   there.
 - **MC-2602** *(ADR-072)* An organization from before ADR-072 is on UTC:
   Time zone shows an amber note, Still on UTC. In Français it ends « le
   soir, dans les Amériques, il est déjà demain en UTC. » With the computer in
-  Vancouver, press Use this device's: Pacific Time (Vancouver): the box
+  Vancouver, press Use this device's: Pacific Time (Canada) — Vancouver: the box
   fills, the line below says what time it is in Vancouver, and Save time
   zone saves it, saying Time zone saved. The audit log's entry reads Time
-  zone: Coordinated Universal Time (UTC) → Pacific Time (Vancouver). Save
-  again unchanged: Save is greyed out, and no entry is added.
+  zone: Coordinated Universal Time — UTC → Pacific Time (Canada) —
+  Vancouver. Save again unchanged: Save is greyed out, and no entry is
+  added.
 - **MC-2603** *(ADR-072)* Finding a zone: type pacific t, then +8: each
   finds its zones, each named with its city, its offset and its standard
   name, and This device's zone comes first; on a phone in 中文 the group
@@ -1179,7 +1185,7 @@ override, then reload.
 - **MC-2606** *(ADR-072)* Another clock: with the organization in
   Vancouver and the computer set to Shanghai, Home shows Vancouver's date
   and, under it, Dates follow the organization's time zone: Pacific Time
-  (Vancouver), then, for an Owner, Change the time zone, which opens
+  (Canada) — Vancouver, then, for an Owner, Change the time zone, which opens
   Organization → Profile; an Admin or a Viewer has no link. Times on
   screens, a stock movement's say, are Shanghai's.
   At 9 am on the 1st in Shanghai, still the last evening of the month in
@@ -1187,16 +1193,16 @@ override, then reload.
   this afternoon in Vancouver, though their times read the 1st. Set the
   computer back to Vancouver: the note goes.
 - **MC-2607** *(ADR-072)* In 简体中文 on a phone: 概况 → 时区 reads as
-  the canvas does; typing 中国 finds 中国标准时间（Shanghai）; the time
+  the canvas does; typing 中国 finds 中国标准时间——Shanghai; the time
   there, the note before saving and Home's note read in Chinese.
 - **MC-2608** *(ADR-072)* With VoiceOver on, choose a zone: it reads It is
   … there once. Leave the page open three minutes: nothing more is read,
   though the time on screen moves on.
 - **MC-2609** *(ADR-072)* Zone names: in Safari, with the computer in
   Kolkata, register a new organization. Profile → Time zone shows India
-  Standard Time (Kolkata) in the box, and Save time zone is greyed out.
+  Standard Time — Kolkata in the box, and Save time zone is greyed out.
   Open the same organization in Chrome, which lists the zone as Calcutta:
-  the box shows India Standard Time (Kolkata) too, typing kolkata finds
+  the box shows India Standard Time — Kolkata too, typing kolkata finds
   it, and Save stays greyed out. Safari's list has no Etc/GMT zones.
 - **MC-2610** *(ADR-072)* A computer on a zone the server does not take:
   in Chrome, override the timezone to Etc/GMT-3 (DevTools → Sensors) and
@@ -1336,7 +1342,7 @@ Signed in as the demo Owner the seed prints.
   one line in words. There is no id column and no id anywhere in the file; a moment in
   the details reads like When, `2026-10-15 18:54:11`.
 - **MC-2905** *(ADR-076, ADR-072)* Set the organization's time zone to
-  China Standard Time (Shanghai). On the audit log, set From to 1 October
+  China Standard Time — Shanghai. On the audit log, set From to 1 October
   and To to 7 October, and export: the export's entry reads From
   2026-10-01, To 2026-10-07, the days chosen, not the 8th that To is sent
   as. Export Your activity: its entry reads Person you. Signed in as Anika
@@ -2924,6 +2930,15 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R66** *(a zone's city in brackets after a name with brackets of its
+  own, #343)* Between November and March, with the organization in
+  Vancouver: the box in Profile → Time zone, Home's note with the
+  computer in Shanghai, the audit log's entry for a change of time zone,
+  and an invitation's email, where it says until when the link works,
+  name the zone Pacific Time (Canada) — Vancouver, never with two pairs of
+  brackets; in 简体中文 北美太平洋时间（加拿大）——Vancouver, in Français
+  heure du Pacifique — Vancouver.
+
 - **MC-R65** *(the crash page before sign-in, #244)* Signed out, make Sign
   in crash (for a developer: throw in `LoginPage`'s render), then open
   Create an account and follow its Sign in link. Something went wrong
@@ -4000,3 +4015,9 @@ first.
   give the reference, the person who invited you: MC-R65 extended.
 - 2026-10-30: ADR-084's setup, a page crashed with no code changed by
   blocking its script, and where Sentry's search is: MC-4102 reworded.
+- 2026-11-01: #343, a zone's city after a dash, never in brackets, on the
+  server: section 26's note on zone names added, MC-2602 reworded, MC-R66
+  added.
+- 2026-11-01: #343 on the client, the picker and Home's note: MC-2601,
+  MC-2602, MC-2606, MC-2607, MC-2609 and MC-2905 reworded, MC-R66
+  extended.

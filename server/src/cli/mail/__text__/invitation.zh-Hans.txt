@@ -11,7 +11,7 @@ Bring boots: the cold room is cold.
 接受邀请
 http://localhost:5173/invitation?token=sample-token
 
-链接只能用一次，有效期到2026年11月2日结束，北美太平洋时间（Vancouver）。密码由您自己设置。
+链接只能用一次，有效期到2026年11月2日结束，北美太平洋时间（加拿大）——Vancouver。密码由您自己设置。
 
 没有在等这封邮件？忽略即可：不接受就什么都不会发生。
 

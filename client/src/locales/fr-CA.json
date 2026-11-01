@@ -1986,7 +1986,7 @@
   "status.offline.triesItself": "Cette page réessaie d’elle-même quand votre connexion revient.",
   "status.signIn": "Se connecter",
   "status.tryAgain": "Réessayer",
-  "timeZones.label": "{zone} ({city})",
+  "timeZones.label": "{zone} — {city}",
   "unsaved.leave": "Quitter",
   "unsaved.stay": "Rester",
   "unsaved.title": "Quitter sans enregistrer?",
