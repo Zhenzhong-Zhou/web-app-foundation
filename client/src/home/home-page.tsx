@@ -202,8 +202,6 @@ function OrganizationHome() {
     },
     can('stock.view') && {
       to: '/lots',
-      // A top-level page, which offers Back to Home only when told (#341).
-      state: OFFER_BACK,
       label: intl.formatMessage({
         id: 'inventory.trace.title',
         defaultMessage: 'Trace a lot',
@@ -216,10 +214,7 @@ function OrganizationHome() {
         defaultMessage: 'Plan a run',
       }),
     },
-  ].filter(
-    (item): item is { to: string; label: string; state?: typeof OFFER_BACK } =>
-      Boolean(item),
-  );
+  ].filter((item): item is { to: string; label: string } => Boolean(item));
 
   if (!home && isRevisionRefusal(error)) {
     return <RevisionRefusalPage failure={error} onRetry={load} />;
@@ -322,6 +317,7 @@ function OrganizationHome() {
             <Link
               component={RouterLink}
               to="/settings/organization?tab=profile"
+              state={OFFER_BACK}
               underline="always"
             >
               {intl.formatMessage({
@@ -394,7 +390,7 @@ function OrganizationHome() {
                   key={item.to + item.label}
                   component={RouterLink}
                   to={item.to}
-                  state={item.state}
+                  state={OFFER_BACK}
                   // While Getting started shows, its first open step is the
                   // page's one primary action (ADR-058).
                   variant={index === 0 && !showStart ? 'contained' : 'outlined'}
@@ -538,7 +534,12 @@ function CardPanel({ card, today }: { card: KnownCard; today: string }) {
           </Typography>
         </Stack>
         {card.count > 0 && (
-          <Link component={RouterLink} to={meta.list} underline="always">
+          <Link
+            component={RouterLink}
+            to={meta.list}
+            state={OFFER_BACK}
+            underline="always"
+          >
             {intl.formatMessage(
               { id: 'home.seeAll', defaultMessage: 'See all {count}' },
               { count: card.count },
@@ -552,6 +553,7 @@ function CardPanel({ card, today }: { card: KnownCard; today: string }) {
           <Link
             component={RouterLink}
             to="/settings/organization?tab=stock"
+            state={OFFER_BACK}
             underline="always"
             variant="body2"
             sx={{ color: 'text.secondary' }}
@@ -665,7 +667,12 @@ function RowLine({
     >
       <Box sx={{ minWidth: 0 }}>
         {path ? (
-          <Link component={RouterLink} to={path} sx={{ fontWeight: 600 }}>
+          <Link
+            component={RouterLink}
+            to={path}
+            state={OFFER_BACK}
+            sx={{ fontWeight: 600 }}
+          >
             {row.title}
           </Link>
         ) : (

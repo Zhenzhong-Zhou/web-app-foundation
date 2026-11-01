@@ -20,6 +20,7 @@ import { useLanguage } from '../i18n/use-language';
 import { api, ApiError, hasCode, messageFor } from '../lib/api';
 import { formatDayLong } from '../lib/format';
 import type { Locale } from '../lib/locales';
+import { OFFER_BACK } from '../lib/offer-back';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { looksLikeToken } from '../lib/validation';
 import { authMessageFor } from './auth-message';
@@ -601,7 +602,12 @@ function OtherOrganization({ invitation }: { invitation: InvitationPreview }) {
             )}
       </Typography>
       <Box>
-        <Button variant="outlined" component={RouterLink} to="/account">
+        <Button
+          variant="outlined"
+          component={RouterLink}
+          to="/account"
+          state={OFFER_BACK}
+        >
           {intl.formatMessage({
             id: 'invitation.otherOrganization.account',
             defaultMessage: 'Go to your account',

@@ -32,6 +32,7 @@ import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { PersonAvatar } from '../components/person-avatar';
 import { LoadFailure } from '../errors/load-failure';
+import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -383,6 +384,7 @@ function Holders({
                       <Link
                         component={RouterLink}
                         to="/members"
+                        state={OFFER_BACK}
                         underline="always"
                       >
                         {chunks}

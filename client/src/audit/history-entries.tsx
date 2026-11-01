@@ -21,6 +21,7 @@ import {
   relativeTime,
   SEPARATOR,
 } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { AuditDetails } from './audit-details';
@@ -163,6 +164,7 @@ export function HistoryEntries({ resourceId }: { resourceId: string }) {
         <Link
           component={RouterLink}
           to={`/audit?${new URLSearchParams({ resourceId }).toString()}`}
+          state={OFFER_BACK}
           variant="body2"
           underline="hover"
         >

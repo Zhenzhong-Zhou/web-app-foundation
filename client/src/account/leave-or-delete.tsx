@@ -22,6 +22,7 @@ import { FormError } from '../components/form-error';
 import { PasswordField } from '../components/password-field';
 import { api, download, hasCode, messageFor } from '../lib/api';
 import { formatDay } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useSubmit } from '../lib/use-submit';
 import { PASSWORD_MAX_LENGTH } from '../lib/validation';
@@ -52,7 +53,7 @@ function Refusal({
     <FormError id={id} message={error}>
       {hasCode(code, 'password_incorrect') && <ForgottenPasswordHint />}
       {settledOnMembers && (
-        <Link component={RouterLink} to="/members">
+        <Link component={RouterLink} to="/members" state={OFFER_BACK}>
           {intl.formatMessage({
             id: 'account.leave.goToMembers',
             defaultMessage: 'Go to Members',
@@ -62,7 +63,11 @@ function Refusal({
       {canClose && (
         <>
           {' · '}
-          <Link component={RouterLink} to="/settings/organization">
+          <Link
+            component={RouterLink}
+            to="/settings/organization"
+            state={OFFER_BACK}
+          >
             {intl.formatMessage({
               id: 'account.leave.closeOrganization',
               defaultMessage: 'Close the organization',
@@ -219,6 +224,7 @@ export function LeaveOrDelete({
                   underline="always"
                   component={RouterLink}
                   to="/settings/organization"
+                  state={OFFER_BACK}
                 >
                   {chunks}
                 </Link>

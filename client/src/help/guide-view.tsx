@@ -1,6 +1,7 @@
 import { Box, Link, Stack, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { OFFER_BACK } from '../lib/offer-back';
 import { GUIDE_TITLE_ID, sectionElementId } from './help-ids';
 import type { Block, Inline, ParsedGuide } from './markdown';
 
@@ -129,6 +130,7 @@ function Words({
             key={index}
             component={RouterLink}
             to={part.section ? `${part.path}#${part.section}` : part.path}
+            state={OFFER_BACK}
             // In a sentence, so underlined: colour alone does not tell it
             // from the words around it (WCAG 1.4.1).
             underline="always"

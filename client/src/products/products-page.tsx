@@ -25,6 +25,7 @@ import { PageHeader } from '../components/page-header';
 import { ProductCover } from '../components/product-cover';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useListSearch, withSearch } from '../lib/use-list-search';
@@ -101,7 +102,12 @@ export function ProductsPage() {
             {/* Reference data for recipes, so it hangs off the catalogue
                 rather than the navigation. */}
             {can('product_licences.view') && (
-              <Button variant="text" component={RouterLink} to="/licences">
+              <Button
+                variant="text"
+                component={RouterLink}
+                to="/licences"
+                state={OFFER_BACK}
+              >
                 {intl.formatMessage({
                   id: 'products.licences',
                   defaultMessage: 'Licences',

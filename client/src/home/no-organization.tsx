@@ -23,6 +23,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../auth/use-auth';
 import { useRegistration } from '../auth/use-registration';
 import { api, ApiError, hasCode, messageFor } from '../lib/api';
+import { OFFER_BACK } from '../lib/offer-back';
 import { browserTimeZone } from '../lib/time-zone';
 import { ORGANIZATION_NAME_MAX_LENGTH } from '../lib/validation';
 import { greeting } from './greeting';
@@ -120,7 +121,12 @@ export function NoOrganization() {
               'Your details, your devices and your own data are on your account page.',
           })}
         </Typography>
-        <Button variant="outlined" component={RouterLink} to="/account">
+        <Button
+          variant="outlined"
+          component={RouterLink}
+          to="/account"
+          state={OFFER_BACK}
+        >
           {intl.formatMessage({
             id: 'invitation.otherOrganization.account',
             defaultMessage: 'Go to your account',

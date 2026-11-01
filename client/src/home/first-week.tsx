@@ -16,6 +16,7 @@ import type { WelcomeDone, WelcomeItem } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
 import { useResendConfirmation } from '../auth/use-resend-confirmation';
 import { NAV_LABELS } from '../layout/navigation';
+import { OFFER_BACK } from '../lib/offer-back';
 import { RECENT_PATHS } from '../lib/recent';
 
 type Key = WelcomeItem['key'];
@@ -317,7 +318,12 @@ function Item({
     detail = intl.formatMessage(hint, { products: String(canSeeProducts) });
     const { to, label } = actionOf(item.key, canSeeProducts, canMoveStock);
     action = (
-      <Button component={RouterLink} to={to} variant="outlined">
+      <Button
+        component={RouterLink}
+        to={to}
+        state={OFFER_BACK}
+        variant="outlined"
+      >
         {intl.formatMessage(label)}
       </Button>
     );
@@ -380,7 +386,12 @@ function Item({
 function Did({ keyOf, what }: { keyOf: Key; what: WelcomeDone }) {
   const intl = useIntl();
   const account = (words: ReactNode) => (
-    <Link component={RouterLink} to="/account" underline="always">
+    <Link
+      component={RouterLink}
+      to="/account"
+      state={OFFER_BACK}
+      underline="always"
+    >
       {words}
     </Link>
   );

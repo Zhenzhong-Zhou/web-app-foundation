@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 import type { ReorderPointRow } from '../api/types.gen';
 import { withQuery } from '../lib/api';
+import { OFFER_BACK } from '../lib/offer-back';
 
 type Choice = 'edit' | 'stock' | 'remove';
 
@@ -36,7 +37,9 @@ export function ReorderPointActions({
     else if (pending === 'remove') onRemove(row);
     // Stock, searched for the item: Inventory's Stock tab reads it.
     else if (pending === 'stock')
-      void navigate(withQuery('/inventory', { search: row.sku }));
+      void navigate(withQuery('/inventory', { search: row.sku }), {
+        state: OFFER_BACK,
+      });
     setPending(null);
   }
 

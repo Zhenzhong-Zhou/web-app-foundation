@@ -2,10 +2,11 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useRef } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Welcome } from '../api/types.gen';
+import { PageHeader } from '../components/page-header';
 import { HelpButton } from '../help/help-button';
 import { HelpFrame } from '../help/help-panel';
 import { HelpProvider } from '../help/help-provider';
@@ -130,6 +131,35 @@ describe('the welcome card', () => {
     ).toHaveAttribute('href', '/orders');
     expect(
       within(region).getByText(/at the top, beside the bell/),
+    ).toBeVisible();
+  });
+
+  // Look up opens a top-level page, which offers Back to Home (#341).
+  it('opens Look up with Back to Home', async () => {
+    serve(welcome());
+    renderWithAuth(
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route
+            path="*"
+            element={<PageHeader crumbs={[]} title="A top-level page" />}
+          />
+        </Routes>
+      </MemoryRouter>,
+      {
+        permissions: VIEWER,
+        user: { name: 'Wang Fang', email: 'wang.fang@alpha.example' },
+      },
+    );
+
+    await userEvent.click(
+      within(await card()).getByRole('link', { name: 'Products' }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(
+      within(await card()).getByRole('link', { name: 'Products' }),
     ).toBeVisible();
   });
 

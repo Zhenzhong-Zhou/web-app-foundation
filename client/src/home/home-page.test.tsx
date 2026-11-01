@@ -7,7 +7,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { HomeResponse } from '../api/types.gen';
-import { LotSearchPage } from '../inventory/lot-trace-page';
+import { PageHeader } from '../components/page-header';
 import type { HomeKind } from '../lib/api-names';
 import { browserTimeZone, setOrganizationTimeZone } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
@@ -249,27 +249,78 @@ describe('HomePage', () => {
     expect(screen.queryByRole('link', { name: 'Raise an order' })).toBeNull();
   });
 
-  // Trace a lot is a top-level page: Back returns to Home (#341).
-  it('opens Trace a lot with Back to Home', async () => {
-    serve({ gettingStarted: COMPLETE, cards: [] });
-    renderWithAuth(
-      <MemoryRouter>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/lots" element={<LotSearchPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { permissions: ['stock.view'] },
-    );
+  /**
+   * A link from Home to a top-level page offers Back to Home (#341): each
+   * quick action, a card's See all, and a step of Getting started.
+   */
+  describe('Back to Home', () => {
+    /** Home, and a top-level page for each link to land on. */
+    function atHome(permissions: string[]) {
+      renderWithAuth(
+        <MemoryRouter>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route
+              path="*"
+              element={<PageHeader crumbs={[]} title="A top-level page" />}
+            />
+          </Routes>
+        </MemoryRouter>,
+        { permissions },
+      );
+    }
 
-    await userEvent.click(
-      await screen.findByRole('link', { name: 'Trace a lot' }),
-    );
-    await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+    it('from each quick action', async () => {
+      serve({ gettingStarted: COMPLETE, cards: [] });
+      atHome(['stock.view', 'stock.move', 'production.create']);
 
-    expect(
-      await screen.findByRole('link', { name: 'Trace a lot' }),
-    ).toBeVisible();
+      for (const name of ['Receive stock', 'Trace a lot', 'Plan a run']) {
+        await userEvent.click(await screen.findByRole('link', { name }));
+        await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+      }
+
+      expect(
+        await screen.findByRole('link', { name: 'Plan a run' }),
+      ).toBeVisible();
+    });
+
+    it('from a card’s See all', async () => {
+      serve({
+        gettingStarted: COMPLETE,
+        cards: [{ kind: 'toShip', count: 3, late: 0, rows: [] }],
+      });
+      atHome(['orders.view']);
+
+      await userEvent.click(
+        await screen.findByRole('link', { name: 'See all 3' }),
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+      expect(
+        await screen.findByRole('link', { name: 'See all 3' }),
+      ).toBeVisible();
+    });
+
+    it('from a step of Getting started', async () => {
+      serve({
+        gettingStarted: {
+          ...COMPLETE,
+          steps: { ...COMPLETE.steps, organization: false },
+          complete: false,
+        },
+        cards: [],
+      });
+      atHome(['organizations.update']);
+
+      await userEvent.click(
+        await screen.findByRole('link', { name: 'Open settings' }),
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+      expect(
+        await screen.findByRole('link', { name: 'Open settings' }),
+      ).toBeVisible();
+    });
   });
 
   it('says a dropped connection in words, not the browser’s', async () => {

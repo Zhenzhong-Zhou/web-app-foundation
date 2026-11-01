@@ -4,11 +4,14 @@ import { http, HttpResponse } from 'msw';
 import {
   createMemoryRouter,
   MemoryRouter,
+  Route,
   RouterProvider,
+  Routes,
 } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ProductSummary } from '../api/types.gen';
+import { LicencesPage } from '../licences/licences-page';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { ProductsPage } from './products-page';
@@ -254,5 +257,32 @@ describe('ProductsPage', () => {
     } finally {
       clicked.mockRestore();
     }
+  });
+
+  // Licences is not in the menu: reached from here, it offers Back (#341).
+  it('opens Licences with Back to Products', async () => {
+    server.use(
+      http.get('/api/v1/products', () => HttpResponse.json([])),
+      http.get('/api/v1/product-licences', () => HttpResponse.json([])),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/products']}>
+        <Routes>
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/licences" element={<LicencesPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['products.view', 'product_licences.view'] },
+    );
+
+    await userEvent.click(
+      await screen.findByRole('link', { name: 'Licences' }),
+    );
+    expect(
+      await screen.findByRole('heading', { name: 'Licences' }),
+    ).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(await screen.findByRole('link', { name: 'Licences' })).toBeVisible();
   });
 });

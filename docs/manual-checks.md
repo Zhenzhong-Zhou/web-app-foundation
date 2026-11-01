@@ -3065,14 +3065,21 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
-- **MC-R69** *(Trace a lot with no way back, #341)* As the demo Owner,
-  on Inventory press Trace a lot: Back shows beside its title and returns
-  to Inventory. From Home's quick action Trace a lot, Back returns to
-  Home. Type `2609` and press Enter: Back is still there, and steps back
-  to before the search, then to where you came from, as the browser's
-  Back does. A lot opened from the list keeps its trail and its Back.
-  Trace a lot opened from the menu, or `/lots` in a new tab, shows no
-  Back.
+- **MC-R69** *(a top-level page opened by a link with no way back, such
+  as Trace a lot, #341)* As the demo Owner, on Inventory press Trace a
+  lot: Back shows beside its title and returns to Inventory. From Home's
+  quick action Trace a lot, Back returns to Home. Type `2609` and press
+  Enter: Back is still there, and steps back to before the search, then
+  to where you came from, as the browser's Back does. A lot opened from
+  the list keeps its trail and its Back. Then the other links inside the
+  app to a top-level page, each showing Back to where you were: Home's
+  Receive stock and Plan a run; a card's See all; Change the days; a
+  step of Getting started; Look up in a newcomer's first week (a Viewer
+  just invited, as MC-3207 sets up); the top bar's Show all in Orders; a licence's notice in the
+  bell; Licences from Products, now under the header every list has;
+  Stock of the item from a Reorder points row; a page linked from a Help
+  guide. Any of these pages opened from the menu, from the trail above a
+  record, or by its address in a new tab, shows no Back.
 
 - **MC-R68** *(Receive leaving focus on the dialog, not its first field,
   #313)* On Inventory, press Receive stock with the keyboard: the cursor
@@ -4201,3 +4208,5 @@ first.
 - 2026-11-01: #313, Receive opening in its first field, Item: MC-R68.
 - 2026-11-01: #341, Back on Trace a lot opened from Inventory's button or
   Home's quick action, none from the menu or a new tab: MC-R69.
+- 2026-11-01: #341 finished, Back from every link inside the app to a
+  top-level page, and Licences under the shared header: MC-R69 extended.

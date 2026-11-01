@@ -19,6 +19,7 @@ import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
 import { api, hasCode } from '../lib/api';
 import { formatMoney } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { organizationToday } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
 import { DateOrderLink } from './date-order-link';
@@ -159,6 +160,7 @@ export function IssueInvoiceDialog({
                   <Link
                     component={RouterLink}
                     to={fix.to}
+                    state={OFFER_BACK}
                     color="inherit"
                     underline="always"
                   >

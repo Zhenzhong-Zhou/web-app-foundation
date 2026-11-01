@@ -6,6 +6,7 @@ import type { AuditRecord } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
 import { ReferencesWhole } from '../components/reference';
 import { relativeTime, SEPARATOR } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 
 /**
  * Your recent work here (ADR-063): the last 20 things you did, titled
@@ -70,6 +71,7 @@ export function RecentWork({ entries }: { entries?: AuditRecord[] }) {
       <Link
         component={RouterLink}
         to="/account/activity"
+        state={OFFER_BACK}
         sx={{ fontWeight: 600, alignSelf: 'flex-start' }}
       >
         {intl.formatMessage({

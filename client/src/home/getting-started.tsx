@@ -15,6 +15,7 @@ import type { HomeResponse } from '../api/types.gen';
 import type { LearnMoreTarget } from '../help/guides';
 import { LearnMore } from '../help/learn-more';
 import type { GettingStartedStep } from '../lib/api-names';
+import { OFFER_BACK } from '../lib/offer-back';
 
 interface StepMeta {
   title: MessageDescriptor;
@@ -301,6 +302,7 @@ export function GettingStarted({
                   <Button
                     component={RouterLink}
                     to={meta.to}
+                    state={OFFER_BACK}
                     variant={key === next ? 'contained' : 'outlined'}
                   >
                     {intl.formatMessage(meta.action)}

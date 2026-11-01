@@ -38,4 +38,9 @@ What to keep true when a component styles itself (ADR-055;
   excluded. A link inside a sentence is `underline="always"`.
 - **No words typed into JSX:** they come from the catalogues, which lint
   holds (ADR-054; [conventions.md, Adding text](../../docs/conventions.md#adding-text)).
+- **A link inside the app to a top-level page passes `OFFER_BACK`**
+  (`client/src/lib/offer-back.ts`) as its router state, `navigate(to, {
+  state: OFFER_BACK })` in code, so the page offers Back (#341). The menu,
+  the trail, an "up" link and a move after an action, such as a delete,
+  pass none.
 - **A dialog's key goes on the component the page renders,** never on MUI's `Dialog` inside it, which lint refuses ([conventions.md, Keys that rebuild a component](../../docs/conventions.md#keys-that-rebuild-a-component)).

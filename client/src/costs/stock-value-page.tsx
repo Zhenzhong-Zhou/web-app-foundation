@@ -38,6 +38,7 @@ import {
   formatUnitCost,
   NO_VALUE,
 } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useFailureWords } from '../lib/use-failure-words';
@@ -221,6 +222,7 @@ export function StockValuePage() {
                   underline="always"
                   component={RouterLink}
                   to="/settings/organization?tab=money"
+                  state={OFFER_BACK}
                 >
                   {chunks}
                 </Link>

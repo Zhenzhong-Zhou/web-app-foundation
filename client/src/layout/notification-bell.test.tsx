@@ -6,6 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Notification } from '../api/types.gen';
+import { PageHeader } from '../components/page-header';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -112,6 +113,45 @@ describe('NotificationBell', () => {
     expect(
       await screen.findByRole('heading', { name: 'Their page' }),
     ).toBeVisible();
+  });
+
+  // Licences is a top-level page: Back returns to where the bell was (#341).
+  it('opens a licence’s notice on Licences, with Back', async () => {
+    serveOneEntry({
+      type: 'licence.expiring',
+      title: 'NPN 80012345 expires soon',
+      resourceType: 'product_licence',
+      resourceId: 'licence-1',
+    });
+    server.use(
+      http.post(
+        '/api/v1/notifications/n-1/read',
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+        <Routes>
+          <Route path="/" element={<p>Where the bell was</p>} />
+          <Route
+            path="/licences"
+            element={<PageHeader crumbs={[]} title="Licences" />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Notifications, 1 unread' }),
+    );
+    await user.click(
+      await screen.findByRole('menuitem', { name: /NPN 80012345/ }),
+    );
+    await user.click(await screen.findByRole('button', { name: 'Back' }));
+
+    expect(await screen.findByText('Where the bell was')).toBeVisible();
   });
 
   // Above the list rather than in it: in a menu, Tab closed it and the
