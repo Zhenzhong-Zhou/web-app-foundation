@@ -712,6 +712,21 @@ export async function addTeamWork(
       name: 'Vitamin C 500 mg, 100 tablets',
       variant: { sku: 'VITC-100', unitOfMeasure: 'each', tracksLots: true },
     });
+    await audited(
+      actor,
+      {
+        action: AUDIT_ACTIONS.PRODUCT_UPDATED,
+        type: 'product',
+        id: vitaminC.id,
+      },
+      () =>
+        products.setTranslations(vitaminC.id, {
+          translations: [
+            { locale: 'fr-CA', name: 'Vitamine C 500 mg, 100 comprimés' },
+            { locale: 'zh-Hans', name: '维生素 C 500 毫克，100 片' },
+          ],
+        }),
+    );
     const chamomile = await product(actor, {
       type: 'material',
       name: 'Chamomile flower extract, 4:1',
@@ -1080,6 +1095,17 @@ export async function addTeamWork(
       name: 'Sleep 60ct',
       variant: { sku: 'SLEEP-60CT', unitOfMeasure: 'each', tracksLots: true },
     });
+    await audited(
+      actor,
+      { action: AUDIT_ACTIONS.PRODUCT_UPDATED, type: 'product', id: sleep.id },
+      () =>
+        products.setTranslations(sleep.id, {
+          translations: [
+            { locale: 'fr-CA', name: 'Sommeil, 60 capsules' },
+            { locale: 'zh-Hans', name: '助眠胶囊 60 粒' },
+          ],
+        }),
+    );
     const blendVariant = blend.variants[0].id;
     const sleepVariant = sleep.variants[0].id;
 

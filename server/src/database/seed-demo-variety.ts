@@ -214,7 +214,9 @@ export async function addVariety(
   await products.update(zinc.productId, { isActive: false });
 
   // Names in the other languages, so the Chinese and French screens show
-  // translated names beside the untranslated rest (ADR-054).
+  // translated names beside the untranslated rest (ADR-054). Every item
+  // given a reorder point (seed-demo-team-work.ts) has all three, so Low
+  // stock reads whole in each.
   await products.setTranslations(calm.productId, {
     translations: [
       { locale: 'fr-CA', name: 'Calme, 90 capsules' },
@@ -225,6 +227,36 @@ export async function addVariety(
     translations: [
       { locale: 'fr-CA', name: 'Vitamine D3 1000 UI, 120 capsules molles' },
       { locale: 'zh-Hans', name: '维生素 D3 1000 IU，120 粒软胶囊' },
+    ],
+  });
+  await products.setTranslations(omega.productId, {
+    translations: [
+      { locale: 'fr-CA', name: 'Huile de poisson oméga-3, 90 capsules molles' },
+      { locale: 'zh-Hans', name: 'Omega-3 鱼油，90 粒软胶囊' },
+    ],
+  });
+  await products.setTranslations(elderberry.productId, {
+    translations: [
+      { locale: 'fr-CA', name: 'Sirop de sureau, 250 ml' },
+      { locale: 'zh-Hans', name: '接骨木莓糖浆，250 毫升' },
+    ],
+  });
+  await products.setTranslations(bottle.productId, {
+    translations: [
+      { locale: 'fr-CA', name: 'Flacon pour 90 capsules' },
+      { locale: 'zh-Hans', name: '90 粒装空瓶' },
+    ],
+  });
+  await products.setTranslations(carton.productId, {
+    translations: [
+      { locale: 'fr-CA', name: 'Carton d’expédition, 24 flacons' },
+      { locale: 'zh-Hans', name: '运输纸箱，24 瓶装' },
+    ],
+  });
+  await products.setTranslations(zinc.productId, {
+    translations: [
+      { locale: 'fr-CA', name: 'Pastilles de zinc, 60 unités' },
+      { locale: 'zh-Hans', name: '锌含片，60 片' },
     ],
   });
 

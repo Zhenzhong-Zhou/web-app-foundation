@@ -87,6 +87,8 @@ made twelve from a bottle by **MCS-RUN-01** at the **Office**, 12 of 36;
 **SLEEP-60CT**, made, 970 of 1,200; **CARTON-24** under its point on the
 shelf, kept above it by what is on its way; **BOTTLE-90** enough, half of
 it issued to CALM-RUN-01 and left out; and **ZINC-60** discontinued.
+Each of the nine is named in English, French and Chinese, so the list
+reads whole in every language.
 
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.
@@ -2797,8 +2799,8 @@ The list narrows a moment after typing stops.
   专注胶囊 60 粒 in 中文, and Focus 60ct in English; so does `ＦＯＣＵＳ`,
   typed full width with a Chinese input method. `bisglycinate de magnesium`, without
   its accent, finds Magnesium bisglycinate capsules by its French name.
-  镁 alone lists the magnesium capsules and nothing else. Discontinued
-  counts only what the search found. From the top bar, `zzjn`, then Show
+  镁 alone lists the magnesium capsules and their sample bag, nothing
+  else. Discontinued counts only what the search found. From the top bar, `zzjn`, then Show
   all in Items: Products opens with zzjn in its box, listing the same.
   Do it again on Products showing `calm`: the box and the list change to
   zzjn, Back brings calm back, and Forward zzjn. What is typed is in the
@@ -4046,3 +4048,5 @@ first.
   once, then Home.
 - 2026-10-31: ADR-085, the demo's nine reorder points: the demo's list
   gains them; MC-4201 opens with the notice the seeded points give.
+- 2026-10-31: ADR-085, the nine named in all three languages: the
+  demo's list says so; MC-3901's 镁 finds the sample bag too.
