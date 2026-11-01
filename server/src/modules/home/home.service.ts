@@ -121,8 +121,15 @@ function addDays(day: string, days: number): string {
 /** A card's count, and how many of those are overdue or expired. */
 type Totals = Pick<HomeCard, 'count' | 'late'>;
 
+/** The two cards of outstanding orders, a direction each. */
+type OrderKind = 'toShip' | 'toReceive';
+
+function isOrderKind(kind: TotalledKind): kind is OrderKind {
+  return kind === 'toShip' || kind === 'toReceive';
+}
+
 /** To ship is the sales, to receive the purchases. */
-function directionOf(kind: 'toShip' | 'toReceive') {
+function directionOf(kind: OrderKind) {
   return kind === 'toShip' ? 'sale' : 'purchase';
 }
 
@@ -301,7 +308,9 @@ export class HomeService {
    * stock cards between them read the organization's stock seven times.
    * Now a `union all` with a branch per card the member may see: Postgres
    * plans each branch on its own, as it planned each query before, and the
-   * page pays for one round trip instead of eight.
+   * page pays for one round trip instead of eight. To ship and To receive
+   * share one branch, outstandingTotals(), which reads the orders once for
+   * both.
    */
   private totals(
     kinds: TotalledKind[],
@@ -313,15 +322,27 @@ export class HomeService {
     }
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const branches = kinds.map(
-        (kind) =>
-          sql`(${totalOf(kind, organizationId, today, expiringWithin)})`,
-      );
+      const ordered = kinds.filter(isOrderKind);
+      const branches = [
+        ...(ordered.length > 0
+          ? [outstandingTotals(organizationId, today)]
+          : []),
+        ...kinds.flatMap((kind) =>
+          isOrderKind(kind)
+            ? []
+            : [totalOf(kind, organizationId, today, expiringWithin)],
+        ),
+      ].map((branch) => sql`(${branch})`);
       const result = await tx.execute(sql.join(branches, sql` union all `));
       const rows = result.rows as ({ kind: TotalledKind } & Totals)[];
-      return new Map<TotalledKind, Totals>(
+      const totals = new Map<TotalledKind, Totals>(
         rows.map(({ kind, count, late }) => [kind, { count, late }]),
       );
+      // A direction with nothing outstanding has no group, so no row.
+      for (const kind of ordered) {
+        if (!totals.has(kind)) totals.set(kind, { count: 0, late: 0 });
+      }
+      return totals;
     });
   }
 
@@ -510,11 +531,40 @@ export class HomeService {
 }
 
 /**
+ * To ship's and To receive's branch of totals(): the outstanding orders,
+ * as their list filters them (outstandingOrder()), counted by direction,
+ * the overdue among them late. A direction with none has no row.
+ *
+ * One read for both cards. As a branch each, they read the organization's
+ * orders and open lines twice, and the planner, pricing the two, ran the
+ * whole statement on parallel workers, which took longer to start than
+ * the counts took to read.
+ */
+function outstandingTotals(organizationId: string, today: string): SQL {
+  const where = and(
+    eq(orders.organizationId, organizationId),
+    outstandingOrder(),
+  );
+  return sql`
+    select
+      case ${orders.direction}
+        when ${directionOf('toShip')} then 'toShip'
+        when ${directionOf('toReceive')} then 'toReceive'
+      end as kind,
+      count(*)::int as count,
+      count(*) filter (where ${lt(orders.expectedAt, today)})::int as late
+    from ${orders}
+    where ${where}
+    group by ${orders.direction}
+  `;
+}
+
+/**
  * One card's branch of totals(): its count, and its late count where
  * lateness applies, under the same conditions as its list's filter.
  */
 function totalOf(
-  kind: TotalledKind,
+  kind: Exclude<TotalledKind, OrderKind>,
   organizationId: string,
   today: string,
   expiringWithin: number,
@@ -528,19 +578,6 @@ function totalOf(
   };
 
   switch (kind) {
-    case 'toShip':
-    case 'toReceive': {
-      const where = and(
-        eq(orders.organizationId, organizationId),
-        eq(orders.direction, directionOf(kind)),
-        outstandingOrder(),
-      );
-      return counted(
-        sql`${orders} where ${where}`,
-        lt(orders.expectedAt, today),
-      );
-    }
-
     // The stock list's own rows (stockRowsOf), so the counts are the
     // list's. The expired are counted among the expiring.
     case 'expiring':

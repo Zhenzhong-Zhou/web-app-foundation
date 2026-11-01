@@ -508,6 +508,49 @@ describe('Home (e2e)', () => {
     ).toHaveLength(1);
   });
 
+  // To ship and To receive are counted from one read of the orders, by
+  // direction, each as its list filters it, the overdue late.
+  it('counts To ship and To receive from one read of the orders', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const goods = await item(alpha.agent, 'FOCUS-60');
+    const customer = await partner(alpha.agent, 'Customer');
+    const supplier = await partner(alpha.agent, 'Supplier');
+    for (const expectedAt of [day(-3), day(4)]) {
+      await order(alpha.agent, 'sale', customer, goods, '5', { expectedAt });
+    }
+    await order(alpha.agent, 'purchase', supplier, goods, '5', {
+      expectedAt: day(4),
+    });
+    // A draft has nothing to ship yet, overdue or not.
+    await order(alpha.agent, 'sale', customer, goods, '5', {
+      draft: true,
+      expectedAt: day(-3),
+    });
+
+    const sent = vi.spyOn(Client.prototype, 'query');
+    let cards: HomeResponse['cards'];
+    let texts: string[];
+    try {
+      cards = await home(alpha);
+      texts = sent.mock.calls.map(([config]) =>
+        typeof config === 'string'
+          ? config
+          : ((config as { text?: string } | null)?.text ?? ''),
+      );
+    } finally {
+      sent.mockRestore();
+    }
+
+    expect(card(cards, 'toShip')).toMatchObject({ count: 2, late: 1 });
+    expect(card(cards, 'toReceive')).toMatchObject({ count: 1, late: 0 });
+    // The statement of counts reads the orders once, not once a card.
+    const counts = texts.filter((text) =>
+      /as kind,\s*count\(\*\)::int as count/.test(text),
+    );
+    expect(counts).toHaveLength(1);
+    expect(counts[0].match(/from "orders"/g)).toHaveLength(1);
+  });
+
   it('shows only the cards the member may view', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const [role] = await db
