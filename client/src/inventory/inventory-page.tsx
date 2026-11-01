@@ -1,22 +1,31 @@
 import {
   Alert,
+  Box,
   Button,
   Chip,
   MenuItem,
   Paper,
   Skeleton,
   Stack,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useIntl } from 'react-intl';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import type { Availability, Location, StockRow } from '../api/types.gen';
@@ -44,12 +53,14 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSort } from '../lib/use-list-sort';
+import { useTab } from '../lib/use-tab';
 import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { MovementHistoryDialog } from './movement-history-dialog';
 import { ReceiveStockDialog } from './receive-stock-dialog';
+import { ReorderPointsTab } from './reorder-points-tab';
 import { StockActions } from './stock-actions';
 
 /** A page of the stock list (ADR-051). */
@@ -74,6 +85,55 @@ function leavesOf(locations: Location[]): Location[] {
   );
 }
 
+/** Inventory's two views (ADR-085): what is where, and what runs short. */
+const INVENTORY_TABS = ['stock', 'reorder-points'] as const;
+type InventoryTab = (typeof INVENTORY_TABS)[number];
+
+const TAB_LABEL = defineMessages<InventoryTab>({
+  stock: { id: 'inventory.tab.stock', defaultMessage: 'Stock' },
+  'reorder-points': {
+    id: 'inventory.tab.reorderPoints',
+    defaultMessage: 'Reorder points',
+  },
+});
+
+/**
+ * Inventory: Stock, and Reorder points beside it (ADR-085), the open one
+ * in the address as `?tab=` (useTab). Each tab draws the page's header
+ * with its own actions, then the tabs, then its list; only the open one
+ * is drawn, so the tabs name no panel.
+ */
+export function InventoryPage() {
+  const intl = useIntl();
+  const [tab, setTab] = useTab<InventoryTab>(INVENTORY_TABS);
+
+  const tabs = (
+    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Tabs
+        value={tab}
+        onChange={(_, next: InventoryTab) => setTab(next)}
+        aria-label={intl.formatMessage({
+          id: 'layout.nav.inventory',
+          defaultMessage: 'Inventory',
+        })}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+      >
+        {INVENTORY_TABS.map((id) => (
+          <Tab key={id} value={id} label={intl.formatMessage(TAB_LABEL[id])} />
+        ))}
+      </Tabs>
+    </Box>
+  );
+
+  return tab === 'stock' ? (
+    <StockTab tabs={tabs} />
+  ) : (
+    <ReorderPointsTab tabs={tabs} />
+  );
+}
+
 /**
  * One screen for receiving stock and seeing what is where.
  *
@@ -82,7 +142,7 @@ function leavesOf(locations: Location[]): Location[] {
  * and the movements ledger against each other, which is the only way to find
  * out whether the three actually fit together.
  */
-export function InventoryPage() {
+function StockTab({ tabs }: { tabs: ReactNode }) {
   const intl = useIntl();
   const can = useCan();
   // The organization's own days (ADR-060): what Expiring soon means here.
@@ -310,6 +370,8 @@ export function InventoryPage() {
           </>
         }
       />
+
+      {tabs}
 
       <ListError error={error} onRetry={failed ? reload : undefined} />
 

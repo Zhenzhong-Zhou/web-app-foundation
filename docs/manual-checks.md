@@ -2968,6 +2968,48 @@ site, after a deploy that changes the setting, the route or the relay.
   needs it back below, and restart: told again. With the Owner's account
   in 中文, a notice reads naturally, the item under its Chinese name
   where it has one.
+- **MC-4202** *(ADR-085)* The list. As the demo Owner, Inventory → Reorder
+  points: the address gains `?tab=reorder-points`, the switch reads All 9
+  · Low 6 · Out 1, and "Position = usable + coming − still needed" sits
+  above the list. VITC-100 comes first, every low row before every other,
+  and the rest by SKU. Each row has its SKU in bold, its name beside it
+  and a small line under it: "Bought · 48 at a time" for D3-1000-120,
+  "Made · just enough" for SLEEP-60CT, "Bought · up to 192" for
+  ELDER-250. Out is red, Low amber, Enough green, each with an icon.
+  VITC-100's position is bold and red, its bar empty and outlined red;
+  a low bar is filled amber short of its mark in the middle, an enough
+  one green. D3-1000-120 suggests 96 with "2 × 48" under it; OMEGA3-90
+  says Drafted, with PO-DEMO-13 and its quantity, linked. ZINC-60 is
+  grey, "Discontinued · never low, its point kept", with no chevron.
+  The digits line up down each column.
+- **MC-4203** *(ADR-085)* Low, Out, the search and Export. Low shows the
+  six, VITC-100 among them; Out, VITC-100 alone; All, the nine. Type
+  ELDER: the counts follow the search, All 1 · Low 1 · Out 0. With Low
+  on and the search cleared, Export saves a CSV of the six. Open
+  `/inventory?tab=reorder-points&status=low` in a new tab: it opens on
+  Low.
+- **MC-4204** *(ADR-085)* An opened row. ELDER-250's chevron opens four
+  boxes: Usable by location; + Coming, PO-DEMO-12 with its supplier and
+  Late; − Still needed, SO-DEMO-9 and SO-DEMO-10 with their customers;
+  = Position, 58 against its point of 96, "Up to 192 · suggested order"
+  and its quantity. Each number opens its order. VITC-100's Usable says
+  how much was left out as expired; BOTTLE-90's, how much was left out as
+  issued to a run. The chevron again closes it.
+- **MC-4205** *(ADR-085)* Choosing. As the Owner, only bought low rows
+  with something to suggest have a box: VITC-100, ELDER-250 and
+  D3-1000-120 among them, none on MAGCAP-SAMPLE or SLEEP-60CT, which are
+  made, or on the rows with enough. OMEGA3-90's box is greyed, and
+  hovering it says it is in a draft already. Choose two: a dark bar
+  floats at the foot of the list, "2 chosen", each SKU with its
+  suggestion; Clear empties it. The header's box chooses every row with
+  a box, and unticked, none. Choose one, search for another item and
+  choose it too: the bar holds both.
+- **MC-4206** *(ADR-085)* Read only, and in 中文. As Chloé Tremblay
+  (Viewer): the same list, with no boxes, no header box and no bar; the
+  chevron still opens a row. In 中文: the tab reads 再订货点, the
+  statuses 缺货, 不足 and 充足, the line 预计可用 = 现有可用 + 在途 −
+  待发; SLEEP-60CT's opened row says 建议生产, D3-1000-120's 建议订货,
+  and each item shows its Chinese name.
 
 ## Regressions
 
@@ -4077,3 +4119,6 @@ first.
 - 2026-11-01: #343 on the client, the picker and Home's note: MC-2601,
   MC-2602, MC-2606, MC-2607, MC-2609 and MC-2905 reworded, MC-R66
   extended.
+- 2026-11-01: ADR-085, Reorder points in the client, the list: its tab
+  in Inventory, All, Low and Out, an opened row, choosing and a Viewer's
+  read-only list: MC-4202 to MC-4206.

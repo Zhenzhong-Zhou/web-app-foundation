@@ -5,6 +5,7 @@ import type {
   InvitationLinkStatus,
   InvoiceStatus,
   OrderStatus,
+  ReorderStatus,
   ReturnAuthorizationStatus,
   RunStatus,
 } from '../lib/api-names';
@@ -27,6 +28,7 @@ export const STATUS_TONES: {
   run: Record<RunStatus, ToneName>;
   recipe: Record<BomStatus, ToneName>;
   invitation: Record<InvitationLinkStatus, ToneName>;
+  reorder: Record<ReorderStatus, ToneName>;
 } = {
   order: {
     draft: 'neutral',
@@ -53,6 +55,13 @@ export const STATUS_TONES: {
     copied: 'info',
     notSent: 'warning',
     ended: 'warning',
+  },
+  // Against a reorder point (ADR-085): out is late, as an overdue order is.
+  reorder: {
+    out: 'critical',
+    low: 'warning',
+    enough: 'positive',
+    discontinued: 'neutral',
   },
 };
 
