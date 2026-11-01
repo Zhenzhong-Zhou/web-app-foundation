@@ -3065,6 +3065,10 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R68** *(Receive leaving focus on the dialog, not its first field,
+  #313)* On Inventory, press Receive stock with the keyboard: the cursor
+  is in Item, and typing a SKU there needs no Tab first.
+
 - **MC-R67** *(Inventory's search not following the address, #301)* As
   the demo Owner, on Inventory's Stock tab, type `2609` in the top bar and
   choose Show all in Lots: the search box reads 2609 and the list narrows
@@ -4185,3 +4189,4 @@ first.
 - 2026-11-01: #301, Inventory's search in the address: Show all in Lots
   narrows Stock while it is open, and Stock and Reorder points share one
   search: MC-R67.
+- 2026-11-01: #313, Receive opening in its first field, Item: MC-R68.

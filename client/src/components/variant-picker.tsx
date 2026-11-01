@@ -42,6 +42,7 @@ export function VariantPicker({
   required = false,
   disabled = false,
   helperText,
+  autoFocus = false,
 }: {
   id: string;
   label: string;
@@ -53,6 +54,8 @@ export function VariantPicker({
   required?: boolean;
   disabled?: boolean;
   helperText?: string;
+  /** The dialog's first field, where typing starts once it opens (#313). */
+  autoFocus?: boolean;
 }) {
   const intl = useIntl();
   const selected = options.find((option) => option.id === value) ?? null;
@@ -89,6 +92,7 @@ export function VariantPicker({
           label={label}
           required={required}
           helperText={helperText}
+          autoFocus={autoFocus}
         />
       )}
     />

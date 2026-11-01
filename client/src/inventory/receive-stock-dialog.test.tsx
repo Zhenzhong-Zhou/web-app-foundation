@@ -67,6 +67,13 @@ function quantityField() {
 }
 
 describe('ReceiveStockDialog', () => {
+  // A keyboard user types the item at once, with no Tab first (#313).
+  it('starts in its first field, the item', () => {
+    open();
+
+    expect(screen.getByRole('combobox', { name: 'Item' })).toHaveFocus();
+  });
+
   it('hides the lot fields for an item that does not track lots', async () => {
     open();
 
