@@ -733,7 +733,7 @@ A dialog's key goes on the component the page renders, as Ship's does
 (`<ShipOrderDialog key={…}>`), never on MUI's `Dialog` inside it. The
 fields are that component's state, and a key on the `Dialog` it returns
 rebuilds only what is below it: the fields would open with what was typed
-the last time.
+the last time. Lint refuses a key on `Dialog` (`client/eslint.config.js`).
 
 ## Loading states
 

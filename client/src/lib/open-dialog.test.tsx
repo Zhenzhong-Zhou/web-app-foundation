@@ -95,6 +95,7 @@ function Keyed() {
         Ship
       </button>
       <Dialog
+        // eslint-disable-next-line no-restricted-syntax -- no fields of its own: the key is what #155 is about, unmounting at once
         key={open ? 'ship' : 'ship-closed'}
         open={open}
         onClose={() => setOpen(false)}

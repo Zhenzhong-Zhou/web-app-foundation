@@ -92,6 +92,18 @@ export default defineConfig([
           message:
             'A colour path goes in sx: MUI 9 ignores a path in a color prop and draws the primary text colour (#196). The prop takes only a name, such as primary, error or inherit.',
         })),
+        /**
+         * A dialog's key goes on the component the page renders, never on
+         * MUI's Dialog inside it: the fields are that component's state,
+         * which a key on the Dialog leaves as it was (conventions.md, Keys
+         * that rebuild a component; #265).
+         */
+        {
+          selector:
+            "JSXOpeningElement[name.name='Dialog'] > JSXAttribute[name.name='key']",
+          message:
+            "A dialog's key goes on the component the page renders, never on MUI's Dialog inside it, which leaves the fields as they were (#265).",
+        },
       ],
     },
   },
