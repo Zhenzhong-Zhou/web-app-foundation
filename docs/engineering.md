@@ -335,8 +335,9 @@ reports success.
   or a family relation, since the repository is public. The git identity
   above is the one exception.
 - **Dates and times are Vancouver's** (30 October 2026), America/Vancouver
-  as PDT or PST, never UTC: in commits, issues, comments and PRs, and in
-  what Claude reports in the chat or in a summary.
+  at UTC−7 all year since British Columbia's 2026 change, never in UTC: in
+  commits, issues, comments and PRs, and in what Claude reports in the
+  chat or in a summary.
 - To reorder unpushed commits: `git reset --soft <base>`, restage per commit,
   and `git commit -C <old-hash>` to reuse each message.
 - Before pushing, run what CI runs: `scripts/verify.sh` from the repo
