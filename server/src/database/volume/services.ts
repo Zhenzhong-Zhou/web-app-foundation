@@ -19,6 +19,7 @@ import { ProductionExecutionService } from '../../modules/production-orders/prod
 import { ProductionOrdersService } from '../../modules/production-orders/production-orders.service';
 import { ProductsService } from '../../modules/products/products.service';
 import { ReturnAuthorizationsService } from '../../modules/return-authorizations/return-authorizations.service';
+import { ReorderPointsService } from '../../modules/stock/reorder-points.service';
 import { StockService } from '../../modules/stock/stock.service';
 import { TaxCodesService } from '../../modules/tax-codes/tax-codes.service';
 
@@ -51,6 +52,7 @@ export interface Services {
   invoiceIssuing: InvoiceIssuingService;
   creditNotes: CreditNotesService;
   rmas: ReturnAuthorizationsService;
+  reorderPoints: ReorderPointsService;
 }
 
 export function servicesOf(app: INestApplicationContext): Services {
@@ -76,5 +78,6 @@ export function servicesOf(app: INestApplicationContext): Services {
     invoiceIssuing: app.get(InvoiceIssuingService),
     creditNotes: app.get(CreditNotesService),
     rmas: app.get(ReturnAuthorizationsService),
+    reorderPoints: app.get(ReorderPointsService),
   };
 }

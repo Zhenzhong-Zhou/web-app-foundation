@@ -56,6 +56,7 @@ const COUNTED = [
   'stock_levels',
   'stock_movements',
   'stock_valuations',
+  'reorder_points',
 ] as const;
 
 interface Account {

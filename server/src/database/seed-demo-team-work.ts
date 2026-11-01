@@ -21,10 +21,13 @@ import { ProductionOrdersService } from '../modules/production-orders/production
 import { ProductsService } from '../modules/products/products.service';
 import { ReturnAuthorizationReplacementsService } from '../modules/return-authorizations/return-authorization-replacements.service';
 import { ReturnAuthorizationsService } from '../modules/return-authorizations/return-authorizations.service';
+import type { SetReorderPointDto } from '../modules/stock/dto/set-reorder-point.dto';
 import { LotsService } from '../modules/stock/lots.service';
+import { ReorderPointsService } from '../modules/stock/reorder-points.service';
+import { ReorderPointsReadsService } from '../modules/stock/reorder-points-reads.service';
 import { StockService } from '../modules/stock/stock.service';
 import type { Database } from './database.module';
-import { lots, productVariants } from './schema';
+import { lots, partners as partnerRows, productVariants } from './schema';
 import type { Audited } from './seed-demo-audit';
 import type { DemoOwner, Team } from './seed-demo-team';
 import { daysFromNow } from './seed-demo-variety';
@@ -66,6 +69,9 @@ export interface TeamAnchors {
  * - 李静 (finance): the invoice drafts.
  * - The Owner: what only an Owner may do, as the permissions say (ADR-016):
  *   exchange rates, price lists, and issuing the invoices.
+ * - Low stock (ADR-085), last: what each of them did that leaves nine items
+ *   where Reorder points can show every state, and the points the Owner
+ *   set on them (`stock.reorder` is the Owner's until a role gives it).
  *
  * Run after seed-demo-variety.ts and on items of its own, except where it
  * says otherwise below, so the figures the manual checks name are untouched.
@@ -101,6 +107,7 @@ export async function addTeamWork(
   const issuing = app.get(InvoiceIssuingService);
   const rmas = app.get(ReturnAuthorizationsService);
   const replacements = app.get(ReturnAuthorizationReplacementsService);
+  const reorderPoints = app.get(ReorderPointsService);
 
   const organizationId = owner.organizationId;
 
@@ -134,6 +141,20 @@ export async function addTeamWork(
       .from(lots)
       .where(and(eq(lots.organizationId, organizationId), eq(lots.code, code)));
     if (!row) throw new Error(`The demo has no lot ${code}`);
+    return row.id;
+  }
+
+  async function partnerOf(code: string): Promise<string> {
+    const [row] = await db
+      .select({ id: partnerRows.id })
+      .from(partnerRows)
+      .where(
+        and(
+          eq(partnerRows.organizationId, organizationId),
+          eq(partnerRows.code, code),
+        ),
+      );
+    if (!row) throw new Error(`The demo has no partner ${code}`);
     return row.id;
   }
 
@@ -1433,6 +1454,251 @@ export async function addTeamWork(
     return made;
   });
 
+  /**
+   * Low stock (ADR-085): nine items with a reorder point, so Reorder
+   * points, Home's card and the bell have every state to show, All 9 ·
+   * Low 6 · Out 1, on items whose figures the manual checks above do not
+   * name. Nothing out feeds a run, and the run below takes only unheld
+   * stock, as a release must.
+   *
+   * 王建国 finds Vitamin C's other lot past its date too, so it is out
+   * with stock still on the shelf, left out as expired.
+   */
+  const vitaminC = catalogue.vitaminC;
+  await actingAs(team.jianguo.id, async (actor) => {
+    const lot = await lotOf('VC-0402');
+    await audited(
+      actor,
+      { action: AUDIT_ACTIONS.STOCK_LOT_UPDATED, type: 'lot', id: lot },
+      () => lotsService.updateLot(lot, { expiresAt: daysFromNow(-2) }),
+    );
+  });
+
+  /**
+   * Daniel raises two purchases from Prairie: elderberry syrup, confirmed
+   * and five days late, and Omega-3, a draft not yet sent, which leaves
+   * nothing to suggest for it, so its row says Drafted.
+   */
+  const prairie = await partnerOf('PRAIRIE');
+  const elderberry = await variantOf('ELDER-250');
+  const omega = await variantOf('OMEGA3-90');
+  await actingAs(team.daniel.id, async (actor) => {
+    const late = await order(actor, {
+      partnerId: prairie,
+      direction: 'purchase',
+      reference: 'PO-DEMO-12',
+      expectedAt: daysFromNow(-5),
+      lines: [
+        {
+          variantId: elderberry,
+          quantityOrdered: '48',
+          unitPrice: '7.2000',
+          currency: 'CAD',
+        },
+      ],
+    });
+    await setStatus(actor, late.id, 'confirmed');
+
+    await order(actor, {
+      partnerId: prairie,
+      direction: 'purchase',
+      reference: 'PO-DEMO-13',
+      lines: [
+        {
+          variantId: omega,
+          quantityOrdered: '60',
+          unitPrice: '8.7500',
+          currency: 'CAD',
+        },
+      ],
+    });
+  });
+
+  // Sarah confirms two sales that need the elderberry: 60 of its 70 held.
+  await actingAs(team.sarah.id, async (actor) => {
+    for (const sale of [
+      {
+        partnerId: anchors.quebecId,
+        reference: 'SO-DEMO-9',
+        quantity: '36',
+        dueInDays: 3,
+      },
+      {
+        partnerId: anchors.chineseId,
+        reference: 'SO-DEMO-10',
+        quantity: '24',
+        dueInDays: 10,
+      },
+    ]) {
+      const raised = await order(actor, {
+        partnerId: sale.partnerId,
+        direction: 'sale',
+        reference: sale.reference,
+        expectedAt: daysFromNow(sale.dueInDays),
+        lines: [
+          {
+            variantId: elderberry,
+            quantityOrdered: sale.quantity,
+            unitPrice: '12.4900',
+            currency: 'CAD',
+          },
+        ],
+      });
+      await setStatus(actor, raised.id, 'confirmed');
+    }
+  });
+
+  /**
+   * Marc-André packs sample bags at the office: twelve bags from one
+   * 60-capsule bottle of MAGCAP, made by a run there from two bottles,
+   * which take free stock alone. Sarah hands out half at a trade show.
+   */
+  const sampleBag = await actingAs(team.marc.id, async (actor) => {
+    const office = await location(actor, {
+      type: 'bin',
+      name: 'Office',
+      code: 'OFFICE',
+      parentId: anchors.siteId,
+    });
+    const bag = await product(actor, {
+      type: 'good',
+      name: 'Magnesium sample bag, 5 capsules',
+      variant: {
+        sku: 'MAGCAP-SAMPLE',
+        unitOfMeasure: 'each',
+        tracksLots: true,
+      },
+    });
+    await audited(
+      actor,
+      { action: AUDIT_ACTIONS.PRODUCT_UPDATED, type: 'product', id: bag.id },
+      () =>
+        products.setTranslations(bag.id, {
+          translations: [
+            {
+              locale: 'fr-CA',
+              name: 'Sachet d’essai de magnésium, 5 capsules',
+            },
+            { locale: 'zh-Hans', name: '甘氨酸镁试用装，5 粒' },
+          ],
+        }),
+    );
+    const variantId = bag.variants[0].id;
+    const recipe = await bom(actor, {
+      outputVariantId: variantId,
+      outputQuantity: '12',
+      lines: [{ componentVariantId: catalogue.magcap60, quantity: '1' }],
+    });
+    const packing = await run(actor, {
+      outputVariantId: variantId,
+      bomId: recipe.id,
+      locationId: office.id,
+      quantityPlanned: '24',
+      reference: 'MCS-RUN-01',
+    });
+    await release(actor, packing.id, { sourceLocationId: richmond.shelfA });
+    const made = await output(actor, packing.id, {
+      quantity: '24',
+      lot: { code: 'MCS-001', expiresAt: daysFromNow(690) },
+    });
+    await close(actor, packing.id);
+    return { variantId, officeId: office.id, lotId: made.lotId };
+  });
+
+  await actingAs(team.sarah.id, (actor) =>
+    move(actor, {
+      variantId: sampleBag.variantId,
+      lotId: sampleBag.lotId ?? undefined,
+      fromLocationId: sampleBag.officeId,
+      quantity: '12',
+      reason: 'sample',
+      recipientPartnerId: anchors.customerId,
+      note: 'Trade show, one bag a visitor',
+    }),
+  );
+
+  /**
+   * The Owner's points, one per state: out, its lots expired; low and
+   * bought in cases; the sample bag, made and low; Sleep, made and low with
+   * stock usable; Omega-3, low and drafted; elderberry, low with a late
+   * purchase coming and two sales needing it, up to a maximum; cartons,
+   * under their point on the shelf but kept above it by what is on its
+   * way; 90-count bottles, enough, with half issued to CALM-RUN-01 and
+   * left out; and Zinc, discontinued, its point kept.
+   */
+  const points: [string, SetReorderPointDto][] = [
+    [vitaminC, { source: 'bought', reorderPoint: '48', rule: 'just_enough' }],
+    [
+      await variantOf('D3-1000-120'),
+      {
+        source: 'bought',
+        reorderPoint: '240',
+        rule: 'fixed',
+        fixedQuantity: '48',
+      },
+    ],
+    [
+      sampleBag.variantId,
+      { source: 'made', reorderPoint: '36', rule: 'just_enough' },
+    ],
+    [
+      await variantOf('SLEEP-60CT'),
+      { source: 'made', reorderPoint: '1200', rule: 'just_enough' },
+    ],
+    [omega, { source: 'bought', reorderPoint: '180', rule: 'just_enough' }],
+    [
+      elderberry,
+      {
+        source: 'bought',
+        reorderPoint: '96',
+        rule: 'maximum',
+        maximumQuantity: '192',
+      },
+    ],
+    [
+      await variantOf('CARTON-24'),
+      {
+        source: 'bought',
+        reorderPoint: '100',
+        rule: 'fixed',
+        fixedQuantity: '100',
+      },
+    ],
+    [
+      await variantOf('BOTTLE-90'),
+      {
+        source: 'bought',
+        reorderPoint: '500',
+        rule: 'fixed',
+        fixedQuantity: '1000',
+      },
+    ],
+    [
+      await variantOf('ZINC-60'),
+      { source: 'bought', reorderPoint: '24', rule: 'just_enough' },
+    ],
+  ];
+  for (const [variantId, point] of points) {
+    await audited(
+      owner.userId,
+      {
+        action: AUDIT_ACTIONS.REORDER_POINT_CREATED,
+        type: 'reorder_point',
+        id: variantId,
+      },
+      () => reorderPoints.create(variantId, point),
+    );
+  }
+
+  // Read back as the list counts them, so a change upstream that moves an
+  // item to another state fails the seed, and CI with it.
+  const counts = await app.get(ReorderPointsReadsService).counts();
+  if (counts.all !== 9 || counts.low !== 6 || counts.out !== 1) {
+    throw new Error(
+      `Reorder points read All ${counts.all} · Low ${counts.low} · Out ${counts.out}, where the demo sets All 9 · Low 6 · Out 1`,
+    );
+  }
+
   return [
     'Team work added: Richmond warehouse with zones, shelves and a quarantine',
     'MAGCAP in three sizes',
@@ -1446,5 +1712,6 @@ export async function addTeamWork(
     `SO-DEMO-7 from Co-op members CAD and SO-DEMO-8 in USD, invoiced as ${numbers.join(' and ')}`,
     `${rma.number} to replace two bottles`,
     'Retail CAD 2025 retired',
+    'reorder points on nine items, All 9 · Low 6 · Out 1: VC-0402 past its date too, PO-DEMO-12 late and PO-DEMO-13 a draft, SO-DEMO-9 and SO-DEMO-10 holding elderberry, MAGCAP-SAMPLE packed by MCS-RUN-01 at the Office',
   ].join('; ');
 }

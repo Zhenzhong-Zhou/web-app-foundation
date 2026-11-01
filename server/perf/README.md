@@ -71,6 +71,9 @@ Each organization also gets a team (ADR-081): 15 members at small and 150
 at large, the Owner and the newcomer among them, holding one to three roles
 of the 4 or 12 its Owner made, and a few invitations pending. The manifest
 names one member holding three made roles, for the access query's plan.
+At the year's end, a fifth of each organization's items get a reorder
+point, about a third of them set above what is free, so low unless enough
+is on its way (ADR-085).
 
 For large, give it a database of its own and skip the commit flush while
 seeding. It is safe for a throwaway database and several times faster, but

@@ -77,6 +77,17 @@ replace two bottles; **SO-DEMO-8** invoiced in US dollars; and **Retail CAD
 2025** retired. Exchange rates, price lists and issuing invoices are the
 Owner's, as the roles allow.
 
+Last, nine reorder points, set by the Owner, which Reorder points counts
+**All 9 · Low 6 · Out 1** (ADR-085): **VITC-100** out, lot **VC-0402**
+past its date too and left on the shelf; **MAGCAP-SAMPLE**, sample bags
+made twelve from a bottle by **MCS-RUN-01** at the **Office**, 12 of 36;
+**ELDER-250**, 58 of 96 up to 192, with **PO-DEMO-12** five days late and
+**SO-DEMO-9** and **SO-DEMO-10** needing it; **OMEGA3-90** drafted by
+**PO-DEMO-13**; **D3-1000-120**, bought 48 at a time, suggesting 2 × 48;
+**SLEEP-60CT**, made, 970 of 1,200; **CARTON-24** under its point on the
+shelf, kept above it by what is on its way; **BOTTLE-90** enough, half of
+it issued to CALM-RUN-01 and left out; and **ZINC-60** discontinued.
+
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.
 
@@ -2928,7 +2939,10 @@ site, after a deploy that changes the setting, the route or the relay.
 ## 42. Low stock (ADR-085)
 
 - **MC-4201** *(ADR-085)* The bell, once each time an item falls below
-  its reorder point. As the demo Owner, on Reorder points, give a bought
+  its reorder point. On a fresh demo, the server's first start tells the
+  six low items in one notice: "6 items fell below their reorder point",
+  then "VITC-100, MAGCAP-SAMPLE and 4 more. Order or plan them from
+  Reorder points.". As the demo Owner, on Reorder points, give a bought
   item with stock a point above what it has, and restart the server (it
   checks at start, then hourly): the bell gets one notice, "… fell below
   its reorder point" with the item's SKU, then its name and "Raise a
@@ -4030,3 +4044,5 @@ first.
 - 2026-10-31: ADR-085, Home's ninth card raising the API revision to 2:
   MC-3424 extended, a tab left on Home across the deploy asked to reload
   once, then Home.
+- 2026-10-31: ADR-085, the demo's nine reorder points: the demo's list
+  gains them; MC-4201 opens with the notice the seeded points give.
