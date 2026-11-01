@@ -19,7 +19,8 @@
 #
 # The API contract runs in full and with --quick, not with --docs
 # (ADR-068): it regenerates server/openapi.json and client/src/api/, and
-# stops if either changed, leaving the fresh files in place to commit.
+# stops if that changed either, committed or not, leaving the fresh files
+# in place to commit.
 # So do the table diagrams in docs/tables/ (ADR-086), which change nothing
 # and stop when a page is not what the schema gives or a table is in no
 # area.
@@ -64,15 +65,35 @@ markdown() {
   node scripts/check-docs.mjs
 }
 
+# What the regenerated files hold in the working tree, staged or not and
+# committed or not, as one git tree id: HEAD's files, with those paths as
+# the working tree has them, files git ignores aside (a Mac's .DS_Store).
+# Written through an index of its own, the path given, so what is staged
+# stays as it is.
+api_tree() (
+  export GIT_INDEX_FILE="$1"
+  git read-tree HEAD &&
+    git add --all -- server/openapi.json client/src/api &&
+    git write-tree
+)
+
+# Stale when npm run api changes what the working tree holds, so files
+# regenerated and not yet committed pass, and --quick passes before the
+# commit that adds them (#346). Its tests, in verify.test.mjs, run the
+# script with stand-ins for the other steps.
 contract() {
-  step 'API contract: the committed document and client types are current'
+  step 'API contract: the document and client types are what npm run api writes'
+  local index before after changed
+  index="$(git rev-parse --git-path verify-api-index)"
+  before="$(api_tree "$index")"
   (cd server && npm run api)
-  local changed
-  changed="$(git status --porcelain -- server/openapi.json client/src/api)"
+  after="$(api_tree "$index")"
+  rm -f "$index"
+  changed="$(git diff --name-status "$before" "$after")"
   if [[ -n "$changed" ]]; then
     echo "$changed"
-    echo 'The API changed without its regenerated files. Commit them' >&2
-    echo '(conventions.md, "The API contract").' >&2
+    echo 'npm run api changed the files above, so they were not current. Check' >&2
+    echo 'what it wrote and commit it (conventions.md, "The API contract").' >&2
     exit 1
   fi
 }
