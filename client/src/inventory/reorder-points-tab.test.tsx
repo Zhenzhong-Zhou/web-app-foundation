@@ -99,15 +99,16 @@ const DETAIL: ReorderPointDetail = {
 function open(
   permissions: string[],
   address = '/inventory?tab=reorder-points',
+  { rows = ROWS, counts = { all: 4, low: 3, out: 0 } } = {},
 ) {
   const asked: URL[] = [];
   server.use(
     http.get('/api/v1/stock/reorder-points', ({ request }) => {
       asked.push(new URL(request.url));
-      return HttpResponse.json({ entries: ROWS, nextCursor: null });
+      return HttpResponse.json({ entries: rows, nextCursor: null });
     }),
     http.get('/api/v1/stock/reorder-points/counts', () =>
-      HttpResponse.json({ all: 4, low: 3, out: 0 }),
+      HttpResponse.json(counts),
     ),
     http.get('/api/v1/stock/reorder-points/:variantId', () =>
       HttpResponse.json(DETAIL),
@@ -180,6 +181,78 @@ describe('Reorder points', () => {
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expect(await screen.findByText('Shelf A')).toBeInTheDocument();
     expect(screen.getByText('6 left out as expired')).toBeInTheDocument();
+  });
+
+  it('gives whoever may set a point Add and a menu on each row', async () => {
+    open(['stock.view', 'stock.reorder']);
+
+    expect(
+      await screen.findByRole('button', { name: 'Add reorder point' }),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      await screen.findByRole('button', {
+        name: 'Actions for D3-1000’s reorder point',
+      }),
+    );
+    const menu = await screen.findByRole('menu');
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      'Edit reorder point',
+      'Stock of the item',
+      'Remove reorder point',
+    ]);
+  });
+
+  it('gives a Viewer no Add and no menu', async () => {
+    open(['stock.view']);
+
+    expect(
+      await screen.findByRole('button', { name: 'Where D3-1000 stands' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Add reorder point' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /^Actions for/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('says what a point does while there is none, with Add', async () => {
+    open(['stock.view', 'stock.reorder'], undefined, {
+      rows: [],
+      counts: { all: 0, low: 0, out: 0 },
+    });
+
+    expect(
+      await screen.findByText('No reorder points yet.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/A reorder point says when an item runs short/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('button', { name: 'Add reorder point' }),
+    ).toHaveLength(2);
+  });
+
+  it('says nothing is low, with how many have a point, and shows all', async () => {
+    const asked = open(
+      ['stock.view'],
+      '/inventory?tab=reorder-points&status=low',
+      { rows: [], counts: { all: 9, low: 0, out: 0 } },
+    );
+
+    expect(
+      await screen.findByText('Nothing is low. 9 items have a reorder point.'),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Show all' }));
+
+    expect(
+      await screen.findByRole('button', { name: /^All\s*9$/, pressed: true }),
+    ).toBeInTheDocument();
+    expect(asked.at(-1)?.searchParams.has('status')).toBe(false);
   });
 
   it('opens on Low from the address, with the counts beside each view', async () => {

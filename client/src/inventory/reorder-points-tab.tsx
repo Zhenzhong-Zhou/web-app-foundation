@@ -1,5 +1,6 @@
 import CheckCircleOutlined from '@mui/icons-material/CheckCircleOutlined';
 import ErrorOutlined from '@mui/icons-material/ErrorOutlined';
+import Inventory2Outlined from '@mui/icons-material/Inventory2Outlined';
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUp from '@mui/icons-material/KeyboardArrowUp';
 import WarningAmberOutlined from '@mui/icons-material/WarningAmberOutlined';
@@ -44,14 +45,22 @@ import { fromAddress } from '../lib/address-filter';
 import { api } from '../lib/api';
 import type { ReorderStatus } from '../lib/api-names';
 import { displayQuantity, itemName, NO_VALUE } from '../lib/format';
+import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch } from '../lib/use-list-search';
 import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
+import { PositionBar } from './position-bar';
+import { RemoveReorderPointDialog } from './remove-reorder-point-dialog';
+import { ReorderPointActions } from './reorder-point-actions';
 import { DraftLines, ReorderPointDetail } from './reorder-point-detail';
-import { atOrBelowZero, barFill, choiceOf } from './reorder-points';
+import {
+  type ReorderOpening,
+  ReorderPointDialog,
+} from './reorder-point-dialog';
+import { atOrBelowZero, choiceOf } from './reorder-points';
 
 /** A page of the list (ADR-051), as the server's own default. */
 const PAGE_SIZE = 50;
@@ -74,49 +83,6 @@ function pathOf(base: string, query: Record<string, string>): string {
   );
   const text = params.toString();
   return text ? `${base}?${text}` : base;
-}
-
-/**
- * The bar beside a position (ADR-085): its scale twice the point, so the
- * mark in the middle is the point. Filled amber when low, green when not;
- * empty and outlined red when out. Hidden from screen readers, since the
- * number beside it says it.
- */
-function PositionBar({ row }: { row: ReorderPointRow }) {
-  const out = row.status === 'out';
-
-  return (
-    <Box
-      aria-hidden
-      sx={{
-        position: 'relative',
-        width: rem(120),
-        height: 8,
-        borderRadius: 999,
-        bgcolor: 'action.hover',
-        ...(out && { outline: 1, outlineColor: 'error.main' }),
-      }}
-    >
-      <Box
-        sx={{
-          width: `${barFill(row.position, row.reorderPoint)}%`,
-          height: '100%',
-          borderRadius: 999,
-          bgcolor: row.status === 'low' ? 'warning.main' : 'success.main',
-        }}
-      />
-      <Box
-        sx={{
-          position: 'absolute',
-          left: '50%',
-          top: -3,
-          bottom: -3,
-          width: 2,
-          bgcolor: 'text.primary',
-        }}
-      />
-    </Box>
-  );
 }
 
 /** What a row's item is: bought or made, and how much its rule orders. */
@@ -197,6 +163,7 @@ function PointRow({
   choosing,
   chosen,
   onChoose,
+  actions,
 }: {
   row: ReorderPointRow;
   columns: number;
@@ -204,6 +171,8 @@ function PointRow({
   choosing: boolean;
   chosen: boolean;
   onChoose: (row: ReorderPointRow, on: boolean) => void;
+  /** The row's menu, for whoever may set a point (stock.reorder). */
+  actions: ReactNode;
 }) {
   const intl = useIntl();
   const kindLine = useKindLine();
@@ -306,29 +275,45 @@ function PointRow({
         >
           {displayWithUnit(row.position, row.unitOfMeasure, intl)}
         </TableCell>
-        <TableCell>{!grey && <PositionBar row={row} />}</TableCell>
+        <TableCell>
+          {!grey && (
+            <PositionBar
+              position={row.position}
+              point={row.reorderPoint}
+              status={row.status}
+            />
+          )}
+        </TableCell>
         <TableCell align="right">{displayQuantity(row.reorderPoint)}</TableCell>
         <TableCell align="right">
           <Suggestion row={row} />
         </TableCell>
         <TableCell padding="checkbox">
-          {!grey && (
-            <IconButton
-              size="small"
-              aria-expanded={open}
-              aria-controls={open ? detailId : undefined}
-              aria-label={intl.formatMessage(
-                {
-                  id: 'inventory.reorder.details',
-                  defaultMessage: 'Where {sku} stands',
-                },
-                { sku: row.sku },
-              )}
-              onClick={() => setOpen((was) => !was)}
-            >
-              {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-            </IconButton>
-          )}
+          {/* Apart, so each is a target of its own (WCAG 2.5.8). */}
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ justifyContent: 'flex-end' }}
+          >
+            {!grey && (
+              <IconButton
+                size="small"
+                aria-expanded={open}
+                aria-controls={open ? detailId : undefined}
+                aria-label={intl.formatMessage(
+                  {
+                    id: 'inventory.reorder.details',
+                    defaultMessage: 'Where {sku} stands',
+                  },
+                  { sku: row.sku },
+                )}
+                onClick={() => setOpen((was) => !was)}
+              >
+                {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+              </IconButton>
+            )}
+            {actions}
+          </Stack>
         </TableCell>
       </TableRow>
       {open && (
@@ -431,6 +416,10 @@ function ChosenBar({
  * chosen for a purchase order by someone who may raise one. The figures
  * are the server's, never added up here (ADR-025).
  *
+ * Whoever may set a point (stock.reorder) adds one at the title's right,
+ * and edits or removes it from its row's menu; the list and its counts
+ * read again after each.
+ *
  * Home's card and the bell open it on Low: `?tab=reorder-points&status=low`.
  */
 export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
@@ -447,8 +436,13 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const [chosen, setChosen] = useState<Map<string, ReorderPointRow>>(
     () => new Map(),
   );
+  const [opening, setOpening] = useState<ReorderOpening | null>(null);
+  const [removing, setRemoving] = useState<ReorderPointRow | null>(null);
+  /** Bumped by each save and removal, so the counts read again too. */
+  const [changes, setChanges] = useState(0);
 
   const choosing = can('orders.create');
+  const setting = can('stock.reorder');
   const query = { status: filter, search };
   const listPath = pathOf('/stock/reorder-points', {
     ...query,
@@ -481,7 +475,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
     return () => {
       ignore = true;
     };
-  }, [countsPath]);
+  }, [countsPath, changes]);
 
   const choosable = useMemo(
     () => (rows ?? []).filter((row) => choiceOf(row) === 'open'),
@@ -509,6 +503,33 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
 
   const columns = choosing ? 8 : 7;
 
+  /**
+   * After a point is added, changed or removed: the list from its first
+   * page and its counts, since its order and its numbers change with the
+   * point; and the item off the chosen, whose suggestion is no longer so.
+   */
+  function saved(variantId?: string) {
+    setOpening(null);
+    setRemoving(null);
+    reload();
+    setChanges((count) => count + 1);
+    if (variantId)
+      setChosen((was) => {
+        const next = new Map(was);
+        next.delete(variantId);
+        return next;
+      });
+  }
+
+  const add = setting && (
+    <Button onClick={openDialog(() => setOpening({ kind: 'add' }))}>
+      {intl.formatMessage({
+        id: 'inventory.reorder.add',
+        defaultMessage: 'Add reorder point',
+      })}
+    </Button>
+  );
+
   if (refused) {
     return <RevisionRefusalPage failure={refused} onRetry={reload} />;
   }
@@ -522,8 +543,13 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
           defaultMessage: 'Inventory',
         })}
         actions={
-          // Every row the filter and search match, not the page (ADR-057).
-          <ExportButton path={pathOf('/stock/reorder-points/export', query)} />
+          <>
+            {/* Every row the filter and search match, not the page (ADR-057). */}
+            <ExportButton
+              path={pathOf('/stock/reorder-points/export', query)}
+            />
+            {add}
+          </>
         }
       />
 
@@ -667,33 +693,40 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                       choosing={choosing}
                       chosen={chosen.has(row.variantId)}
                       onChoose={choose}
+                      actions={
+                        setting && (
+                          <ReorderPointActions
+                            row={row}
+                            onEdit={(edited) =>
+                              setOpening({
+                                kind: 'edit',
+                                item: edited,
+                                point: {
+                                  source: edited.source,
+                                  reorderPoint: edited.reorderPoint,
+                                  rule: edited.rule,
+                                  fixedQuantity: edited.fixedQuantity,
+                                  maximumQuantity: edited.maximumQuantity,
+                                },
+                              })
+                            }
+                            onRemove={setRemoving}
+                          />
+                        )
+                      }
                     />
                   ))}
                 </TableBody>
               </Table>
             </TableContainer>
           ) : (
-            <EmptyState>
-              {search
-                ? intl.formatMessage({
-                    id: 'inventory.noMatch',
-                    defaultMessage: 'Nothing matches that search.',
-                  })
-                : filter === 'out'
-                  ? intl.formatMessage({
-                      id: 'inventory.reorder.nothingOut',
-                      defaultMessage: 'Nothing is out.',
-                    })
-                  : filter === 'low'
-                    ? intl.formatMessage({
-                        id: 'inventory.reorder.nothingLow',
-                        defaultMessage: 'Nothing is low.',
-                      })
-                    : intl.formatMessage({
-                        id: 'inventory.reorder.none',
-                        defaultMessage: 'No reorder points yet.',
-                      })}
-            </EmptyState>
+            <Nothing
+              searched={!!search}
+              filter={filter}
+              all={counts?.all ?? null}
+              add={add}
+              onShowAll={() => setFilter('')}
+            />
           )}
         </Paper>
       )}
@@ -710,6 +743,125 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
           onClear={() => setChosen(new Map())}
         />
       )}
+
+      {opening && (
+        <ReorderPointDialog
+          opening={opening}
+          onClose={() => setOpening(null)}
+          onSaved={() =>
+            saved(opening.kind === 'add' ? undefined : opening.item.variantId)
+          }
+        />
+      )}
+
+      {removing && (
+        <RemoveReorderPointDialog
+          variantId={removing.variantId}
+          sku={removing.sku}
+          onClose={() => setRemoving(null)}
+          onRemoved={() => saved(removing.variantId)}
+        />
+      )}
     </Stack>
+  );
+}
+
+/**
+ * The list with no rows (ADR-085): nothing matching the search; no point
+ * yet, saying what one does, with Add; nothing low, in the positive tone,
+ * with how many have a point and Show all; or nothing out.
+ */
+function Nothing({
+  searched,
+  filter,
+  all,
+  add,
+  onShowAll,
+}: {
+  searched: boolean;
+  filter: Filter;
+  /** Every item with a point, once counted. */
+  all: number | null;
+  add: ReactNode;
+  onShowAll: () => void;
+}) {
+  const intl = useIntl();
+
+  if (searched) {
+    return (
+      <EmptyState>
+        {intl.formatMessage({
+          id: 'inventory.noMatch',
+          defaultMessage: 'Nothing matches that search.',
+        })}
+      </EmptyState>
+    );
+  }
+
+  if (filter === '' || all === 0) {
+    return (
+      <EmptyState action={add}>
+        <Box component="span" sx={{ display: 'flex', gap: 1.5 }}>
+          <Inventory2Outlined aria-hidden sx={{ color: 'text.secondary' }} />
+          <span>
+            <Box component="span" sx={{ display: 'block', fontWeight: 600 }}>
+              {intl.formatMessage({
+                id: 'inventory.reorder.none',
+                defaultMessage: 'No reorder points yet.',
+              })}
+            </Box>
+            {intl.formatMessage({
+              id: 'inventory.reorder.noneLine',
+              defaultMessage:
+                'A reorder point says when an item runs short: below it, the item shows as low here, on Home and in the bell, with what to order.',
+            })}
+          </span>
+        </Box>
+      </EmptyState>
+    );
+  }
+
+  if (filter === 'low') {
+    return (
+      <EmptyState
+        action={
+          <Button variant="outlined" onClick={onShowAll}>
+            {intl.formatMessage({
+              id: 'inventory.reorder.showAll',
+              defaultMessage: 'Show all',
+            })}
+          </Button>
+        }
+      >
+        <Box
+          component="span"
+          sx={{ display: 'flex', gap: 1, alignItems: 'center' }}
+        >
+          <CheckCircleOutlined aria-hidden sx={{ color: 'success.main' }} />
+          {all === null
+            ? intl.formatMessage({
+                id: 'inventory.reorder.nothingLow',
+                defaultMessage: 'Nothing is low.',
+              })
+            : intl.formatMessage(
+                {
+                  id: 'inventory.reorder.nothingLowOf',
+                  defaultMessage:
+                    '{count, plural, one {Nothing is low. # item has a reorder point.} other {Nothing is low. # items have a reorder point.}}',
+                },
+                { count: all },
+              )}
+        </Box>
+      </EmptyState>
+    );
+  }
+
+  return (
+    <EmptyState>
+      {intl.formatMessage({
+        id: 'inventory.reorder.nothingOut',
+        defaultMessage: 'Nothing is out.',
+      })}
+    </EmptyState>
   );
 }

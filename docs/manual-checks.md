@@ -3010,6 +3010,55 @@ site, after a deploy that changes the setting, the route or the relay.
   statuses 缺货, 不足 and 充足, the line 预计可用 = 现有可用 + 在途 −
   待发; SLEEP-60CT's opened row says 建议生产, D3-1000-120's 建议订货,
   and each item shows its Chinese name.
+- **MC-4207** *(ADR-085)* Add reorder point. As the demo Owner, on
+  Reorder points, Add reorder point sits beside Export. It opens a dialog
+  with the item picker: choose GLOVES-100 and Bought is chosen; choose
+  FOCUS-60CT and Made is, since it has an active recipe. The point's unit
+  sits inside its field at the right. How much to order has three cards,
+  Just enough, A fixed quantity and Up to a maximum, each with its line;
+  choosing the fixed or the maximum card shows its field inside it. Once
+  the typing pauses, Today shows two bars, Now and After the suggested
+  order, with their numbers, and one sentence, such as "Below 500 now, so
+  it would suggest 600, 3 of 200.". Typing on changes it once more, never
+  one answer per key. Add: the item shows in the list at once, and All
+  counts one more.
+- **MC-4208** *(ADR-085)* The dialog's refusals, each at its field. A point
+  of 0 says "Type a number above zero." under it, and Today goes until it
+  is fixed; so does a quantity of 0, or one with five decimal places.
+  "1,000" in English gets the message about separators between thousands.
+  Up to a maximum of 150 on a point of 200 says, while typing, "The maximum
+  must be above the reorder point, 200." under the maximum. Add a point
+  for D3-1000-120, which has one: under the item, "D3-1000-120 already has
+  a reorder point. Change it instead." and Edit it, linked; Edit it opens
+  Edit with what is kept, 240, A fixed quantity of 48.
+- **MC-4209** *(ADR-085)* A row's menu, Edit and Remove. Each row's ⋯
+  holds Edit reorder point, Stock of the item and Remove reorder point, in
+  red. ZINC-60's row has the ⋯ and no chevron. Edit on ELDER-250 opens
+  with Bought, 96 and Up to a maximum of 192; make it 150 and Save: the
+  row's line and suggestion change, and the dialog closes. Edit's foot has
+  Remove reorder point at the left, in red, which asks first: "Remove
+  ELDER-250’s reorder point? It will no longer show as low, on Home or in
+  the bell. Its stock and its orders do not change." Keep it changes
+  nothing; Remove reorder point takes the row off the list and the counts
+  down by one. The menu's Remove asks the same. Stock of the item opens
+  Stock, searched for the SKU.
+- **MC-4210** *(ADR-085)* From a Stock row, and who sees what. On
+  Inventory's Stock tab, a row's ⋯ ends with Reorder point…: on a
+  D3-1000-120 row it opens Edit with its point; on a GLOVES-100 row, Add
+  with GLOVES-100 named and no picker. Daniel Okafor (Admin), Tom Becker
+  (Warehouse) and Chloé Tremblay (Viewer) hold no `stock.reorder`: no
+  Reorder point… on Stock, and no Add reorder point and no ⋯ on Reorder
+  points, while the chevron still opens a row.
+- **MC-4211** *(ADR-085)* The empty states. Register a new organization:
+  Reorder points shows an icon, "No reorder points yet.", a sentence on
+  what a point does, and Add reorder point. Receive 50 of an item, give
+  it a point of 10, and press Low: a tick in green, "Nothing is low. 1 item
+  has a reorder point.", and Show all, which shows All with the row.
+- **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
+  the button reads 添加再订货点, the switch 采购 and 自制, the cards
+  补足到再订货点, 固定订货量 and 补到最高库存, Today's bars 现在 and
+  按建议订货后, and its sentence reads naturally, such as "目前低于 500，因此建议订
+  600，即 3 个 200。". Remove asks 删除 D3-1000-120 的再订货点？
 
 ## Regressions
 
@@ -4122,3 +4171,6 @@ first.
 - 2026-11-01: ADR-085, Reorder points in the client, the list: its tab
   in Inventory, All, Low and Out, an opened row, choosing and a Viewer's
   read-only list: MC-4202 to MC-4206.
+- 2026-11-01: ADR-085, Reorder points in the client, the dialog: Add
+  and Edit with Today, the refusals at their fields, Remove, a row's menu,
+  the Stock row's Reorder point… and the empty states: MC-4207 to MC-4212.

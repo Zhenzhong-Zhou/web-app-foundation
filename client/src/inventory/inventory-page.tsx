@@ -60,6 +60,7 @@ import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { MovementHistoryDialog } from './movement-history-dialog';
 import { ReceiveStockDialog } from './receive-stock-dialog';
+import { ReorderPointDialog } from './reorder-point-dialog';
 import { ReorderPointsTab } from './reorder-points-tab';
 import { StockActions } from './stock-actions';
 
@@ -177,6 +178,8 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   /** Bumped by Refresh and by every dialog that moves stock. */
   const [changes, setChanges] = useState(0);
   const [editingLot, setEditingLot] = useState<StockRow | null>(null);
+  // The item's reorder point, from its row's menu (ADR-085).
+  const [reordering, setReordering] = useState<StockRow | null>(null);
 
   /**
    * Per product across available locations: what is held for confirmed sales,
@@ -574,6 +577,8 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                           }
                           onHistory={setViewing}
                           onEditLot={setEditingLot}
+                          canReorder={can('stock.reorder')}
+                          onReorder={setReordering}
                         />
                       </TableCell>
                     </TableRow>
@@ -742,6 +747,15 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
         onClose={() => setEditingLot(null)}
         onSaved={refresh}
       />
+
+      {/* A point moves no stock, so nothing here reads again after it. */}
+      {reordering && (
+        <ReorderPointDialog
+          opening={{ kind: 'find', item: reordering }}
+          onClose={() => setReordering(null)}
+          onSaved={() => setReordering(null)}
+        />
+      )}
     </Stack>
   );
 }

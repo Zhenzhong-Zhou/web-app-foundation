@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import type { StockRow } from '../api/types.gen';
 import type { MoveMode } from './move-stock-dialog';
 
-type Choice = MoveMode | 'history' | 'lot' | 'trace';
+type Choice = MoveMode | 'history' | 'lot' | 'trace' | 'reorder';
 
 /**
  * A menu rather than a row of buttons. Shipping, sampling, moving and
@@ -26,6 +26,8 @@ export function StockActions({
   onSelect,
   onHistory,
   onEditLot,
+  canReorder,
+  onReorder,
 }: {
   row: StockRow;
   /** stock.move: moving, shipping out, sampling and a lot's details. */
@@ -34,6 +36,9 @@ export function StockActions({
   onSelect: (mode: MoveMode, row: StockRow) => void;
   onHistory: (row: StockRow) => void;
   onEditLot: (row: StockRow) => void;
+  /** stock.reorder: setting the item's reorder point (ADR-085). */
+  canReorder: boolean;
+  onReorder: (row: StockRow) => void;
 }) {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -54,6 +59,7 @@ export function StockActions({
     if (pending === 'history') onHistory(row);
     else if (pending === 'lot') onEditLot(row);
     else if (pending === 'trace') void navigate(`/lots/${row.lotId!}`);
+    else if (pending === 'reorder') onReorder(row);
     else onSelect(pending, row);
 
     setPending(null);
@@ -182,6 +188,21 @@ export function StockActions({
             defaultMessage: 'History',
           })}
         </MenuItem>
+        {/* The item's, not the row's: one point across every location
+            (ADR-085). Whether it has one yet, the dialog reads. */}
+        {canReorder && (
+          <MenuItem
+            onClick={() => {
+              setPending('reorder');
+              setAnchor(null);
+            }}
+          >
+            {intl.formatMessage({
+              id: 'inventory.actions.reorderPoint',
+              defaultMessage: 'Reorder point…',
+            })}
+          </MenuItem>
+        )}
       </Menu>
     </>
   );

@@ -1,4 +1,5 @@
-import { Button, DialogActions } from '@mui/material';
+import { Box, Button, DialogActions } from '@mui/material';
+import type { ReactNode } from 'react';
 import { useIntl } from 'react-intl';
 
 /**
@@ -19,6 +20,9 @@ import { useIntl } from 'react-intl';
  *
  * `disabled` is the dialog's own reason not to go yet (nothing chosen, a
  * total that does not add up), on top of a save being in flight.
+ *
+ * `start` is an action of another kind, at the left, away from the two:
+ * Edit's Remove, which asks first.
  */
 export function DialogFooter({
   submitting,
@@ -30,6 +34,7 @@ export function DialogFooter({
   cancelLabel,
   onConfirm,
   describedBy,
+  start,
 }: {
   submitting: boolean;
   onCancel: () => void;
@@ -45,11 +50,13 @@ export function DialogFooter({
   onConfirm?: () => void;
   /** The id of what says why the action is off, for screen readers. */
   describedBy?: string;
+  start?: ReactNode;
 }) {
   const intl = useIntl();
 
   return (
     <DialogActions>
+      {start && <Box sx={{ mr: 'auto' }}>{start}</Box>}
       <Button variant="text" onClick={onCancel} disabled={submitting}>
         {cancelLabel ??
           intl.formatMessage({

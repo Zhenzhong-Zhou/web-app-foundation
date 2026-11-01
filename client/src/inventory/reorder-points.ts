@@ -1,5 +1,6 @@
 import type { ReorderPointRow } from '../api/types.gen';
 import { toScaled } from '../lib/decimal';
+import { formatQuantity } from '../lib/format';
 
 /**
  * Zero or less, as the server writes a quantity: "-12.0000", "0.0000".
@@ -42,4 +43,25 @@ export function choiceOf(
   if (row.status !== 'low' && row.status !== 'out') return 'none';
   if (row.drafted) return 'drafted';
   return atOrBelowZero(row.suggestion) ? 'none' : 'open';
+}
+
+/**
+ * Whether what a reorder point's field sends is a number above zero with
+ * at most four places (ADR-085), as the server's own check refuses
+ * otherwise. Read on the text, never parsed (ADR-025), so the dialog says
+ * so at the field and asks no preview until it holds; the server still
+ * decides on save.
+ */
+export function aboveZero(decimal: string): boolean {
+  return /^\d+(\.\d{1,4})?$/.test(decimal) && !atOrBelowZero(decimal);
+}
+
+/**
+ * A kept quantity as a field shows it: "2000.0000" is "2000", "12.5000"
+ * "12.5", in the language's decimals, so Edit opens with what was typed.
+ */
+export function fieldQuantity(quantity: string): string {
+  return formatQuantity(
+    quantity.includes('.') ? quantity.replace(/\.?0+$/, '') : quantity,
+  );
 }

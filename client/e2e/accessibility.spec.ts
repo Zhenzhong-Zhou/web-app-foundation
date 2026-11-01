@@ -209,6 +209,20 @@ const SCREENS: Screen[] = [
     ready: (page) => page.getByText('+ Coming', { exact: true }),
   },
   {
+    // Edit from a row's menu: the rule's cards and Today (ADR-085).
+    name: 'reorder points, the Edit dialog',
+    path: () => '/inventory?tab=reorder-points',
+    open: async (page) => {
+      await page
+        .getByRole('button', { name: /^Actions for .* reorder point$/ })
+        .first()
+        .click();
+      await page.getByRole('menuitem', { name: 'Edit reorder point' }).click();
+    },
+    ready: (page) =>
+      page.getByRole('dialog').getByText(/^Below .* now, so it would suggest/),
+  },
+  {
     name: 'the lookup, the keyboard on a result',
     path: () => '/inventory',
     open: async (page) => {
