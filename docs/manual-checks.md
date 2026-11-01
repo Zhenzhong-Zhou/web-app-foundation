@@ -1145,6 +1145,11 @@ Set the computer's own zone in System Settings → General → Date & Time, or
 in Chrome with DevTools → More tools → Sensors → Location → Timezone
 override, then reload.
 
+A zone reads as its name, then a dash and its city. The name comes from
+the time zone data and can change with the season: Vancouver reads
+Pacific Time (Canada) — Vancouver from November to March, and Pacific
+Time — Vancouver while Los Angeles is on UTC−7 too (#343).
+
 - **MC-2601** *(ADR-072)* Register a new organization with the computer
   in Shanghai. Settings → Organization → Profile → Time zone shows China
   Standard Time (Shanghai), UTC+8 now · Asia/Shanghai, and what time it is
@@ -1155,8 +1160,9 @@ override, then reload.
   Vancouver, press Use this device's: Pacific Time (Vancouver): the box
   fills, the line below says what time it is in Vancouver, and Save time
   zone saves it, saying Time zone saved. The audit log's entry reads Time
-  zone: Coordinated Universal Time (UTC) → Pacific Time (Vancouver). Save
-  again unchanged: Save is greyed out, and no entry is added.
+  zone: Coordinated Universal Time — UTC → Pacific Time (Canada) —
+  Vancouver. Save again unchanged: Save is greyed out, and no entry is
+  added.
 - **MC-2603** *(ADR-072)* Finding a zone: type pacific t, then +8: each
   finds its zones, each named with its city, its offset and its standard
   name, and This device's zone comes first; on a phone in 中文 the group
@@ -2924,6 +2930,14 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R66** *(a zone's city in brackets after a name with brackets of its
+  own, #343)* Between November and March, with the organization in
+  Vancouver: the audit log's entry for a change of time zone, and an
+  invitation's email, where it says until when the link works, name the
+  zone Pacific Time (Canada) — Vancouver, never with two pairs of
+  brackets; in 简体中文 北美太平洋时间（加拿大）——Vancouver, in Français
+  heure du Pacifique — Vancouver.
+
 - **MC-R65** *(the crash page before sign-in, #244)* Signed out, make Sign
   in crash (for a developer: throw in `LoginPage`'s render), then open
   Create an account and follow its Sign in link. Something went wrong
@@ -4000,3 +4014,6 @@ first.
   give the reference, the person who invited you: MC-R65 extended.
 - 2026-10-30: ADR-084's setup, a page crashed with no code changed by
   blocking its script, and where Sentry's search is: MC-4102 reworded.
+- 2026-11-01: #343, a zone's city after a dash, never in brackets, on the
+  server: section 26's note on zone names added, MC-2602 reworded, MC-R66
+  added.

@@ -299,7 +299,7 @@
   "audit.value.status.confirmed": "Confirmée",
   "audit.value.status.draft": "Brouillon",
   "audit.value.status.fulfilled": "Terminée",
-  "audit.value.timeZone": "{zone} ({city})",
+  "audit.value.timeZone": "{zone} — {city}",
   "audit.word.detail": "Détail",
   "audit.word.imageAdded": "une image ajoutée",
   "audit.word.imagesReordered": "images réordonnées",

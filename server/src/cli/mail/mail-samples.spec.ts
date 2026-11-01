@@ -15,7 +15,16 @@ const ON_PURPOSE =
 
 /** Every email the app sends, in each language it is sent in, built once. */
 describe('every email', async () => {
+  // Built on one winter day, whatever day the test runs: ICU names some
+  // zones by the season, Vancouver "Pacific Time (Canada)" in winter and
+  // "Pacific Time" in summer (#343), and the invitation's last line names
+  // its zone.
+  vi.useFakeTimers({
+    now: new Date('2026-12-01T20:00:00.000Z'),
+    toFake: ['Date'],
+  });
   const samples = await mailSamples();
+  vi.useRealTimers();
   const named = samples.map((sample): [string, MailSample] => [
     `${sample.name}.${sample.locale}`,
     sample,

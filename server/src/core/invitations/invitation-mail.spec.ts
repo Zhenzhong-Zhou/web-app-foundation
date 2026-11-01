@@ -28,8 +28,9 @@ describe('invitationMail', () => {
     expect(text).toContain(
       'Mei Lin (mei.lin@example.com) invited you to join as an Admin.',
     );
-    expect(text).toContain(
-      'until the end of October 26, 2026, Pacific Time (Vancouver).',
+    // The zone's name is ICU's, and moves with it (#343): its shape only.
+    expect(text).toMatch(
+      /until the end of October 26, 2026, \S[^\n]* — Vancouver\./,
     );
   });
 

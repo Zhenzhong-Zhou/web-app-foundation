@@ -11,7 +11,7 @@ Bring boots: the cold room is cold.
 Accepter l’invitation
 http://localhost:5173/invitation?token=sample-token
 
-Le lien ne sert qu’une fois, jusqu’à la fin du 2 novembre 2026, heure du Pacifique (Vancouver). Vous choisirez votre propre mot de passe.
+Le lien ne sert qu’une fois, jusqu’à la fin du 2 novembre 2026, heure du Pacifique — Vancouver. Vous choisirez votre propre mot de passe.
 
 Vous ne vous y attendiez pas? Ignorez ce message : rien ne se passe à moins que vous n’acceptiez.
 
