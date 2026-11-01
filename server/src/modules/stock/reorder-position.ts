@@ -80,6 +80,14 @@ export function suggestionOf(f: PositionFigures): SQL {
 }
 
 /**
+ * Drafted (ADR-085): low, and what is in draft leaves nothing to suggest,
+ * so its row says so and nobody orders it twice.
+ */
+export function draftedOf(f: PositionFigures): SQL {
+  return sql`(${isLow(f)} and (${suggestionOf(f)}) = 0)`;
+}
+
+/**
  * Stock where it can be used, per item and per location marked
  * available (ADR-085): on hand in lots not expired by the organization's
  * today (ADR-072), less what released runs at that location were issued
@@ -164,7 +172,9 @@ export function usableByLocation(
  *   short, as ADR-045 counts them;
  * - in draft: draft purchases' quantities and draft runs' planned output,
  *   which do not change the position, since a draft may never be sent;
- * - position: usable, plus coming, less still needed.
+ * - position: usable, plus coming, less still needed;
+ * - drafted: low, and what is in draft leaves nothing to suggest, so
+ *   nobody orders it twice.
  *
  * The open lines are read on order_lines_open_idx's own predicate, as
  * the holds are (availability.ts): keep the two the same. Draft
@@ -311,6 +321,7 @@ export function positionsOf(
       ${statusOf(figures)} as status,
       ${suggestionOf(figures)} as suggestion,
       ${multiplesOf(figures)} as suggested_multiples,
+      ${draftedOf(figures)} as drafted,
       case when ${isLow(figures)} then 0 else 1 end as low_first,
       case when ${isLow(figures)} then f.position / f.reorder_point else 0 end as share
     from figures f

@@ -282,6 +282,7 @@ export {
   type HomeControllerSkipTeamV1Responses,
   type HomeResponse,
   type HomeRow,
+  type HomeRowReorder,
   type ImageSizes,
   type Invitation,
   type InvitationEnvelope,

@@ -8656,7 +8656,7 @@
   "info": {
     "title": "web-app-foundation API",
     "description": "",
-    "version": "1.1",
+    "version": "1.2",
     "contact": {}
   },
   "tags": [],
@@ -14971,6 +14971,9 @@
               "null"
             ]
           },
+          "drafted": {
+            "type": "boolean"
+          },
           "drafts": {
             "type": "array",
             "items": {
@@ -14998,6 +15001,7 @@
           "status",
           "suggestion",
           "suggestedMultiples",
+          "drafted",
           "drafts"
         ]
       },
@@ -15525,6 +15529,25 @@
           "items"
         ]
       },
+      "HomeRowReorder": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "string"
+          },
+          "reorderPoint": {
+            "type": "string"
+          },
+          "drafted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "position",
+          "reorderPoint",
+          "drafted"
+        ]
+      },
       "HomeRow": {
         "type": "object",
         "properties": {
@@ -15548,6 +15571,16 @@
           },
           "late": {
             "type": "boolean"
+          },
+          "reorder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HomeRowReorder"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -15555,7 +15588,8 @@
           "title",
           "detail",
           "due",
-          "late"
+          "late",
+          "reorder"
         ]
       },
       "HomeCard": {
@@ -15568,6 +15602,7 @@
               "expiring",
               "toShip",
               "toReceive",
+              "lowStock",
               "costsWaiting",
               "invoicesToIssue",
               "returnsOpen",

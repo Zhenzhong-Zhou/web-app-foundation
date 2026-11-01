@@ -6,6 +6,7 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import {
+  draftedOf,
   multiplesOf,
   type PositionFigures,
   positionsOf,
@@ -94,11 +95,13 @@ describe('A reorder point’s position (e2e)', () => {
       status: string;
       suggestion: string;
       multiples: string | null;
+      drafted: boolean;
     }>(sql`
       select
         ${statusOf(figures)} as status,
         (${suggestionOf(figures)})::numeric(18, 4)::text as suggestion,
-        (${multiplesOf(figures)})::text as multiples
+        (${multiplesOf(figures)})::text as multiples,
+        ${draftedOf(figures)} as drafted
     `);
     return rows[0];
   }
@@ -236,6 +239,42 @@ describe('A reorder point’s position (e2e)', () => {
         (await ruled({ position: '2000', point: '2000', rule: 'just_enough' }))
           .multiples,
       ).toBeNull();
+    });
+  });
+
+  describe('drafted', () => {
+    it('is low with nothing left to suggest once its drafts are taken off', async () => {
+      const fixed = { point: '2000', rule: 'fixed', fixed: '1000' } as const;
+
+      // Its drafts cover the shortfall: drafted, so not ordered twice.
+      expect(
+        (await ruled({ ...fixed, position: '100', inDraft: '3000' })).drafted,
+      ).toBe(true);
+      // A draft short of it still leaves an order to suggest.
+      expect(
+        (await ruled({ ...fixed, position: '100', inDraft: '500' })).drafted,
+      ).toBe(false);
+      // Out, a draft planned for all it needs: drafted too.
+      expect(
+        (
+          await ruled({
+            position: '0',
+            point: '200',
+            rule: 'just_enough',
+            inDraft: '200',
+          })
+        ).drafted,
+      ).toBe(true);
+      // Not low, or discontinued: nothing to draft for, whatever is in draft.
+      for (const figures of [
+        { position: '2500', point: '2000' },
+        { position: '100', point: '2000', active: false },
+      ]) {
+        expect(
+          (await ruled({ ...figures, rule: 'just_enough', inDraft: '5000' }))
+            .drafted,
+        ).toBe(false);
+      }
     });
   });
 

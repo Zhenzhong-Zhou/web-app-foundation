@@ -2308,7 +2308,11 @@ as [`docs/runbooks/render.md`, "Deploys"](runbooks/render.md#deploys-adr-081), h
   check and sends no revision, which the API serves as today. From the
   next deploy on, coming back to the Orders tab shows New version beside
   Help (MC-3401), Inventory from the rail loads in full, and Help's foot
-  names the commit `/api/health` names (MC-3405).
+  names the commit `/api/health` names (MC-3405). A deploy that raises the
+  API revision, as ADR-085's does from 1 to 2: leave a third tab on Home
+  before the push. Back in it once the static site is out, the amber
+  banner asks it to reload (MC-3404); Reload, once: Home, with its cards
+  and no banner, and switching away and back asks nothing more.
 - **MC-3425** *(ADR-081)* Deploy by hand. Once merged, since GitHub offers
   Run workflow only for a workflow on the default branch: Actions → Deploy
   → Run workflow, on `main`. Its first step names the commit already live
@@ -4023,3 +4027,6 @@ first.
 - 2026-10-31: ADR-085, the bell once each time an item falls below its
   reorder point: section 42, MC-4201; the role editor's line under Raise
   an order: MC-3309 extended.
+- 2026-10-31: ADR-085, Home's ninth card raising the API revision to 2:
+  MC-3424 extended, a tab left on Home across the deploy asked to reload
+  once, then Home.

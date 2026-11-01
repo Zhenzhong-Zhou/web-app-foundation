@@ -9,6 +9,7 @@ import PrecisionManufacturingOutlined from '@mui/icons-material/PrecisionManufac
 import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
 import { defineMessages, type MessageDescriptor } from 'react-intl';
 
+import type { HomeCard } from '../api/types.gen';
 import type { HomeKind } from '../lib/api-names';
 
 /**
@@ -28,7 +29,14 @@ interface CardMeta {
   lateIsExpired: boolean;
 }
 
-const TITLES = defineMessages<HomeKind>({
+/**
+ * The kinds this build has a card for. Low stock's comes with its words
+ * and its rows' look (ADR-085); until then Home skips it, as it skips any
+ * kind it does not know.
+ */
+type KnownKind = Exclude<HomeKind, 'lowStock'>;
+
+const TITLES = defineMessages<KnownKind>({
   toShip: { id: 'home.card.toShip', defaultMessage: 'To ship' },
   toReceive: { id: 'home.card.toReceive', defaultMessage: 'To receive' },
   expiring: { id: 'home.card.expiring', defaultMessage: 'Expiring soon' },
@@ -45,7 +53,7 @@ const TITLES = defineMessages<HomeKind>({
   licences: { id: 'home.card.licences', defaultMessage: 'Licences' },
 });
 
-const EMPTY = defineMessages<HomeKind>({
+const EMPTY = defineMessages<KnownKind>({
   toShip: { id: 'home.empty.toShip', defaultMessage: 'Nothing to ship.' },
   toReceive: {
     id: 'home.empty.toReceive',
@@ -77,7 +85,7 @@ const EMPTY = defineMessages<HomeKind>({
   },
 });
 
-export const CARDS: Record<HomeKind, CardMeta> = {
+export const CARDS: Record<KnownKind, CardMeta> = {
   toShip: {
     title: TITLES.toShip,
     empty: EMPTY.toShip,
@@ -143,3 +151,18 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     lateIsExpired: true,
   },
 };
+
+/** A card this build knows how to show. */
+export type KnownCard = HomeCard & { kind: KnownKind };
+
+/**
+ * Whether this build has a card for it. A server deployed after the tab
+ * opened may send a kind the tab has never heard of: Home skips it rather
+ * than crash, so a new card reaches an open tab as nothing until it
+ * reloads, with no API revision raised for it (ADR-081). oasdiff still
+ * reports the new value, which goes in server/openapi-breaking-accepted.txt
+ * with this as its reason.
+ */
+export function isKnownCard(card: HomeCard): card is KnownCard {
+  return Object.hasOwn(CARDS, card.kind);
+}

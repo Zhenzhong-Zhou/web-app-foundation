@@ -607,6 +607,8 @@ describe('Reorder points (e2e)', () => {
         status: 'out',
         suggestion: '2000.0000',
         suggestedMultiples: '2',
+        // 750 in draft leaves two cases to order: not drafted.
+        drafted: false,
         drafts: [
           { kind: 'run', id: runId, number: 'B-0042', quantity: '250.0000' },
           {

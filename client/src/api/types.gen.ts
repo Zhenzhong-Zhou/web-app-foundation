@@ -1856,6 +1856,7 @@ export type ReorderPointRow = {
   status: 'out' | 'low' | 'enough' | 'discontinued';
   suggestion: string;
   suggestedMultiples: string | null;
+  drafted: boolean;
   drafts: Array<ReorderPointDraft>;
 };
 
@@ -2003,12 +2004,19 @@ export type Welcome = {
   items: Array<WelcomeItem>;
 };
 
+export type HomeRowReorder = {
+  position: string;
+  reorderPoint: string;
+  drafted: boolean;
+};
+
 export type HomeRow = {
   id: string;
   title: string;
   detail: string | null;
   due: string | null;
   late: boolean;
+  reorder: HomeRowReorder | null;
 };
 
 export type HomeCard = {
@@ -2017,6 +2025,7 @@ export type HomeCard = {
     | 'expiring'
     | 'toShip'
     | 'toReceive'
+    | 'lowStock'
     | 'costsWaiting'
     | 'invoicesToIssue'
     | 'returnsOpen'

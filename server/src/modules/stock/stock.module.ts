@@ -21,7 +21,8 @@ import { StockReadsService } from './stock-reads.service';
  * Exports StockService because receiving against an order line writes a
  * movement, and OrdersModule has to go through the service rather than the
  * tables directly — one write path into the ledger is what makes it
- * authoritative (ADR-023).
+ * authoritative (ADR-023). The reads go to Home, whose cards read through
+ * each list's own service (ADR-058).
  */
 @Module({
   // For PermissionsService, which AdjustmentGuard resolves per request.
@@ -47,6 +48,6 @@ import { StockReadsService } from './stock-reads.service';
     LowStockNoticesService,
     LowStockNoticesTimer,
   ],
-  exports: [StockService, StockReadsService],
+  exports: [StockService, StockReadsService, ReorderPointsReadsService],
 })
 export class StockModule {}

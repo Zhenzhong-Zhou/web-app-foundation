@@ -58,6 +58,7 @@ type PositionRow = {
   status: ReorderStatus;
   suggestion: string;
   suggested_multiples: string | null;
+  drafted: boolean;
 };
 
 type DraftRow = {
@@ -120,6 +121,14 @@ function whereOf(conditions: SQL[]): SQL {
   return conditions.length > 0 ? sql`where ${and(...conditions)}` : sql``;
 }
 
+/**
+ * The list's Low filter, the out among the low, and its Out (ADR-085),
+ * on the positions as `p`: the list, its counts and Home's card count by
+ * them alike, so See all opens what the card counted.
+ */
+export const IS_LOW = sql`p.status in ('low', 'out')`;
+export const IS_OUT = sql`p.status = 'out'`;
+
 /** Quantities as the API sends them: four places, as the columns hold them. */
 function quantity(column: SQL): SQL {
   return sql`(${column})::numeric(18, 4)::text`;
@@ -160,9 +169,9 @@ export class ReorderPointsReadsService {
       const conditions = searched(query, organizationId);
 
       if (query.status === 'low') {
-        conditions.push(sql`p.status in ('low', 'out')`);
+        conditions.push(IS_LOW);
       } else if (query.status === 'out') {
-        conditions.push(sql`p.status = 'out'`);
+        conditions.push(IS_OUT);
       }
 
       if (query.before) {
@@ -218,7 +227,8 @@ export class ReorderPointsReadsService {
           ${quantity(sql`p.position`)} as position,
           p.status,
           ${quantity(sql`p.suggestion`)} as suggestion,
-          p.suggested_multiples::text as suggested_multiples
+          p.suggested_multiples::text as suggested_multiples,
+          p.drafted
         from ${namedPositions(organizationId)}
         ${whereOf(conditions)}
         order by p.low_first, p.share, ${productVariants.sku}, p.id
@@ -253,6 +263,7 @@ export class ReorderPointsReadsService {
           status: row.status,
           suggestion: row.suggestion,
           suggestedMultiples: row.suggested_multiples,
+          drafted: row.drafted,
           drafts: drafts.get(row.variant_id) ?? [],
         })),
         nextCursor: page.nextCursor,
@@ -277,8 +288,8 @@ export class ReorderPointsReadsService {
         with p as materialized (${positionsOf(organizationId, today)})
         select
           count(*)::int as "all",
-          (count(*) filter (where p.status in ('low', 'out')))::int as "low",
-          (count(*) filter (where p.status = 'out'))::int as "out"
+          (count(*) filter (where ${IS_LOW}))::int as "low",
+          (count(*) filter (where ${IS_OUT}))::int as "out"
         from ${namedPositions(organizationId)}
         ${whereOf(searched(query, organizationId))}
       `);

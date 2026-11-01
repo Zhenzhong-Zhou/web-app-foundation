@@ -7,6 +7,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { HomeResponse } from '../api/types.gen';
+import type { HomeKind } from '../lib/api-names';
 import { browserTimeZone, setOrganizationTimeZone } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
 import { drawnIn } from '../test/drawn-colour';
@@ -67,6 +68,7 @@ describe('HomePage', () => {
               detail: 'Northside',
               due: day(-2),
               late: true,
+              reorder: null,
             },
             {
               id: 'o2',
@@ -74,6 +76,7 @@ describe('HomePage', () => {
               detail: '明德药房',
               due: day(3),
               late: false,
+              reorder: null,
             },
           ],
         },
@@ -111,6 +114,43 @@ describe('HomePage', () => {
     ).toBeTruthy();
   });
 
+  // A server deployed after the tab opened may send a kind this build has
+  // never heard of (ADR-081): Home shows the rest, and its sentence leaves
+  // the newcomer out, rather than crash.
+  it('skips a card kind it does not know', async () => {
+    serve({
+      gettingStarted: COMPLETE,
+      cards: [
+        {
+          kind: 'toShip',
+          count: 1,
+          late: 0,
+          rows: [
+            {
+              id: 'o1',
+              title: 'SO-1',
+              detail: 'Northside',
+              due: null,
+              late: false,
+              reorder: null,
+            },
+          ],
+        },
+        {
+          kind: 'fromANewerServer' as string as HomeKind,
+          count: 4,
+          late: 2,
+          rows: [],
+        },
+      ],
+    });
+    renderWithAuth(routed(<HomePage />), { permissions: ['orders.view'] });
+
+    expect(await screen.findByText('1 thing needs attention.')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'To ship' })).toBeTruthy();
+    expect(document.getElementById('fromANewerServer')).toBeNull();
+  });
+
   // The board's Northside row (ADR-081): the customer's SO-DEMO-1 broke at
   // its hyphen at 390 px, and the detail sat a margin from the number, with
   // nowhere for the line to break between them.
@@ -129,6 +169,7 @@ describe('HomePage', () => {
               detail: 'Northside Pharmacy · SO-DEMO-1',
               due: null,
               late: false,
+              reorder: null,
             },
           ],
         },

@@ -54,6 +54,8 @@ export class ReorderPointRow {
   suggestion!: string;
   /** How many of the fixed quantity the suggestion is; null for the other rules. */
   suggestedMultiples!: string | null;
+  /** Low, with its drafts leaving nothing to suggest, so nobody orders it twice. */
+  drafted!: boolean;
   /** Each draft adding to it, newest first. */
   drafts!: ReorderPointDraft[];
 }

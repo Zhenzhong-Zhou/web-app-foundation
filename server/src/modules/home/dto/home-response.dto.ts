@@ -7,6 +7,18 @@ import type { WelcomeDoneKind, WelcomeItemKey } from '../welcome.service';
  * OpenAPI document by the CLI plugin.
  */
 
+/**
+ * A low item's figures on Home, "800 of 2,000" (ADR-085): numeric(18,4)
+ * strings in the item's unit, as the reorder points list gives them.
+ */
+export class HomeRowReorder {
+  /** Usable, plus coming, less still needed. */
+  position!: string;
+  reorderPoint!: string;
+  /** Its drafts leave nothing to suggest, so nobody orders it twice. */
+  drafted!: boolean;
+}
+
 /** One record a card lists. */
 export class HomeRow {
   id!: string;
@@ -15,6 +27,8 @@ export class HomeRow {
   /** A calendar day, YYYY-MM-DD (ADR-052). */
   due!: string | null;
   late!: boolean;
+  /** Low stock's figures; null on every other card. */
+  reorder!: HomeRowReorder | null;
 }
 
 /** One of Home's cards, in the order of a working day. */

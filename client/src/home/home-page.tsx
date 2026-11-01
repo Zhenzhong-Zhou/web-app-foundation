@@ -14,7 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { HomeCard, HomeResponse, HomeRow } from '../api/types.gen';
+import type { HomeResponse, HomeRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { ReferencesWhole } from '../components/reference';
@@ -38,7 +38,7 @@ import { TYPE } from '../theme/tokens';
 import { evenRowsSx } from './even-rows';
 import { GettingStarted } from './getting-started';
 import { greeting } from './greeting';
-import { CARDS } from './home-cards';
+import { CARDS, isKnownCard, type KnownCard } from './home-cards';
 import { NoOrganization } from './no-organization';
 import { RecentCard } from './recent-card';
 import { WelcomeCard } from './welcome-card';
@@ -143,7 +143,9 @@ function OrganizationHome() {
         : !error),
   );
 
-  const cards = home?.cards ?? [];
+  // Only the cards this build knows: a newer server's kind is skipped,
+  // never a crash, and the sentence counts only what shows.
+  const cards = (home?.cards ?? []).filter(isKnownCard);
   const count = cards.reduce((sum, card) => sum + card.count, 0);
   const late = cards.reduce((sum, card) => sum + card.late, 0);
   const started = home?.gettingStarted;
@@ -441,7 +443,7 @@ function OrganizationHome() {
 }
 
 /** A count at a glance, tinted only when something in it is late. */
-function CountTile({ card }: { card: HomeCard }) {
+function CountTile({ card }: { card: KnownCard }) {
   const intl = useIntl();
   const meta = CARDS[card.kind];
   const tone = card.late > 0 ? 'critical' : null;
@@ -502,7 +504,7 @@ function CountTile({ card }: { card: HomeCard }) {
 }
 
 /** One card: its title, "See all", and its five most urgent rows. */
-function CardPanel({ card, today }: { card: HomeCard; today: string }) {
+function CardPanel({ card, today }: { card: KnownCard; today: string }) {
   const intl = useIntl();
   const can = useCan();
   // The organization's days (ADR-060), for "Nothing expires within".

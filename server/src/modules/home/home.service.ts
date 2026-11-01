@@ -19,6 +19,13 @@ import { InvoicesService } from '../invoices/invoices.service';
 import { OrdersService, outstandingOrder } from '../orders/orders.service';
 import { ProductionOrdersService } from '../production-orders/production-orders.service';
 import { ReturnAuthorizationsService } from '../return-authorizations/return-authorizations.service';
+import { itemName } from '../stock/item-name';
+import {
+  IS_LOW,
+  IS_OUT,
+  ReorderPointsReadsService,
+} from '../stock/reorder-points-reads.service';
+import { positionsOf } from '../stock/reorder-position';
 import { StockReadsService, stockRowsOf } from '../stock/stock-reads.service';
 import { WelcomeService } from './welcome.service';
 
@@ -30,12 +37,24 @@ export const LICENCE_WARNING_DAYS = 60;
 export type HomeKind =
   | 'toShip'
   | 'toReceive'
+  | 'lowStock'
   | 'expiring'
   | 'costsWaiting'
   | 'invoicesToIssue'
   | 'returnsOpen'
   | 'production'
   | 'licences';
+
+/**
+ * A low item's figures, "800 of 2,000" (ADR-085): quantities as the list
+ * gives them, in the item's unit, for the screen to format.
+ */
+export interface HomeRowReorder {
+  position: string;
+  reorderPoint: string;
+  /** Its drafts leave nothing to suggest, so nobody orders it twice. */
+  drafted: boolean;
+}
 
 /** One row: what to open, its name, a second line, and why it is here. */
 export interface HomeRow {
@@ -45,6 +64,8 @@ export interface HomeRow {
   /** The day it is due or expires, for its chip. */
   due: string | null;
   late: boolean;
+  /** Low stock's figures; null on every other card. */
+  reorder: HomeRowReorder | null;
 }
 
 export interface HomeCard {
@@ -80,6 +101,7 @@ export interface GettingStarted {
 const CARDS: { kind: HomeKind; permission: Permission }[] = [
   { kind: 'toShip', permission: 'orders.view' },
   { kind: 'toReceive', permission: 'orders.view' },
+  { kind: 'lowStock', permission: 'stock.view' },
   { kind: 'expiring', permission: 'stock.view' },
   { kind: 'costsWaiting', permission: 'costs.view' },
   { kind: 'invoicesToIssue', permission: 'invoices.view' },
@@ -127,6 +149,7 @@ export class HomeService {
     private readonly tenantDb: TenantDb,
     private readonly orders: OrdersService,
     private readonly stock: StockReadsService,
+    private readonly reorder: ReorderPointsReadsService,
     private readonly invoices: InvoicesService,
     private readonly returns: ReturnAuthorizationsService,
     private readonly runs: ProductionOrdersService,
@@ -159,7 +182,7 @@ export class HomeService {
       cards.push({
         kind,
         ...totals.get(kind)!,
-        rows: await this.rows(kind, today, expiringWithin),
+        rows: await this.rows(kind, today, expiringWithin, locale),
       });
     }
     const gettingStarted = await this.gettingStarted();
@@ -308,11 +331,15 @@ export class HomeService {
     });
   }
 
-  /** A card's five most urgent rows, from its list's own read. */
+  /**
+   * A card's five most urgent rows, from its list's own read. Named in
+   * the reader's language where the list names an item (ADR-056).
+   */
   private async rows(
     kind: HomeKind,
     today: string,
     expiringWithin: number,
+    locale: Locale,
   ): Promise<HomeRow[]> {
     switch (kind) {
       case 'toShip':
@@ -332,6 +359,30 @@ export class HomeService {
           detail: [row.partnerName, row.reference].filter(Boolean).join(' · '),
           due: row.expectedAt,
           late: row.expectedAt !== null && row.expectedAt < today,
+          reorder: null,
+        }));
+      }
+
+      case 'lowStock': {
+        // The reorder points list on Low, in its order (ADR-085): the
+        // furthest below its point first.
+        const page = await this.reorder.list(
+          { status: 'low', limit: HOME_ROWS },
+          locale,
+        );
+        return page.entries.map((row) => ({
+          // The item, which Reorder points and Stock both open by its id.
+          id: row.variantId,
+          title: row.sku,
+          detail: itemName(row.productName, row.variantName),
+          due: null,
+          // Out, nothing usable and nothing coming: red, as overdue is.
+          late: row.status === 'out',
+          reorder: {
+            position: row.position,
+            reorderPoint: row.reorderPoint,
+            drafted: row.drafted,
+          },
         }));
       }
 
@@ -353,6 +404,7 @@ export class HomeService {
           detail: `${row.sku} · ${row.locationName}`,
           due: row.lotExpiresAt,
           late: row.lotExpiresAt !== null && row.lotExpiresAt < today,
+          reorder: null,
         }));
       }
 
@@ -367,6 +419,7 @@ export class HomeService {
           detail: row.lotCode ?? row.locationName,
           due: null,
           late: false,
+          reorder: null,
         }));
       }
 
@@ -381,6 +434,7 @@ export class HomeService {
           detail: row.orderNumber,
           due: null,
           late: false,
+          reorder: null,
         }));
       }
 
@@ -395,6 +449,7 @@ export class HomeService {
           detail: row.partnerName,
           due: null,
           late: false,
+          reorder: null,
         }));
       }
 
@@ -409,6 +464,7 @@ export class HomeService {
           detail: null,
           due: null,
           late: false,
+          reorder: null,
         }));
       }
 
@@ -431,6 +487,7 @@ export class HomeService {
             detail: row.authority,
             due: row.expiresAt,
             late: row.expiresAt !== null && row.expiresAt < today,
+            reorder: null,
           }));
         });
     }
@@ -468,6 +525,14 @@ function totalOf(
         lt(orders.expectedAt, today),
       );
     }
+
+    // The reorder points list's own positions under its Low filter, so
+    // the count is what See all opens; the out among them late (ADR-085).
+    case 'lowStock':
+      return counted(
+        sql`(${positionsOf(organizationId, today)}) p where ${IS_LOW}`,
+        IS_OUT,
+      );
 
     // The stock list's own rows (stockRowsOf), so the counts are the
     // list's. The expired are counted among the expiring.
