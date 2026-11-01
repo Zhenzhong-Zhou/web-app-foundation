@@ -276,11 +276,16 @@ function aboutOne(
 
 /**
  * When several fell below: how many, and the first few SKUs, so points
- * set on a hundred items at once do not fill the bell (ADR-085).
+ * set on a hundred items at once do not fill the bell (ADR-085). What to
+ * do follows the items, as one item's notice does: order them when all
+ * are bought, plan them when all are made, either when both. Someone who
+ * only buys is told of bought items alone, so always reads "Order them".
  */
 function aboutSeveral(items: Claimed[]): Pick<Emission, 'title' | 'body'> {
   const shown = items.length <= NAMED + 1 ? items : items.slice(0, NAMED);
   const more = items.length - shown.length;
+  const sources = new Set(items.map((item) => item.source));
+  const what = sources.size === 1 ? items[0].source : 'both';
 
   return {
     title: t(
@@ -294,9 +299,11 @@ function aboutSeveral(items: Claimed[]): Pick<Emission, 'title' | 'body'> {
     body: t(
       {
         id: 'notifications.stockLow.severalBody',
-        defaultMessage: '{items}. Order or plan them from Reorder points.',
+        defaultMessage:
+          '{what, select, bought {{items}. Order them from Reorder points.} made {{items}. Plan them from Reorder points.} other {{items}. Order or plan them from Reorder points.}}',
       },
       {
+        what,
         items: [
           ...shown.map((item) => item.sku),
           ...(more > 0

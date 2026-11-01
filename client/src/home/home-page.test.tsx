@@ -115,6 +115,94 @@ describe('HomePage', () => {
     ).toBeTruthy();
   });
 
+  // The ninth card (ADR-085): the list's first five on Low, each against
+  // its point, out in red, and drafted where a draft already covers it.
+  it('shows Low stock, red with its out count, its rows against their points', async () => {
+    const reorder = (position: string, drafted = false) => ({
+      position,
+      reorderPoint: '2000.0000',
+      drafted,
+    });
+    serve({
+      gettingStarted: COMPLETE,
+      cards: [
+        {
+          kind: 'lowStock',
+          count: 3,
+          late: 1,
+          rows: [
+            {
+              id: 'v1',
+              title: 'VITC-100',
+              detail: 'Vitamin C (100ct)',
+              due: null,
+              late: true,
+              reorder: reorder('-12.0000'),
+            },
+            {
+              id: 'v2',
+              title: 'D3-1000-120',
+              detail: 'Vitamin D3 (120ct)',
+              due: null,
+              late: false,
+              reorder: reorder('800.0000'),
+            },
+            {
+              id: 'v3',
+              title: 'OMEGA3-90',
+              detail: 'Omega-3 (90ct)',
+              due: null,
+              late: false,
+              reorder: reorder('1500.5000', true),
+            },
+          ],
+        },
+      ],
+    });
+    renderWithAuth(
+      routed(
+        <ThemeProvider theme={themeFor('en')}>
+          <HomePage />
+        </ThemeProvider>,
+      ),
+      { permissions: ['stock.view'] },
+    );
+
+    expect(
+      await screen.findByText('3 things need attention, 1 of them overdue.'),
+    ).toBeTruthy();
+    const tile = document.querySelector<HTMLElement>('a[href="#lowStock"]')!;
+    expect(tile).toHaveTextContent('Low stock31 out');
+    expect(getComputedStyle(tile).color).toBe(
+      'var(--mui-palette-tone-critical-fg)',
+    );
+
+    const low = screen.getByRole('region', { name: 'Low stock' });
+    expect(
+      within(low).getByRole('link', { name: 'See all 3' }).getAttribute('href'),
+    ).toBe('/inventory?tab=reorder-points&status=low');
+    // Reorder points is where each is dealt with: the rows open nothing.
+    expect(within(low).getAllByRole('link')).toHaveLength(1);
+    expect(within(low).getByText('VITC-100')).toBeTruthy();
+    expect(within(low).getByText('Vitamin C (100ct)')).toBeTruthy();
+    expect(within(low).getByText('out')).toBeTruthy();
+    expect(within(low).getByText('800 of 2,000')).toBeTruthy();
+    expect(within(low).getByText('1,500.5 of 2,000')).toBeTruthy();
+    expect(within(low).getAllByText('drafted')).toHaveLength(1);
+  });
+
+  it('says when nothing is low, with no See all', async () => {
+    serve({
+      gettingStarted: COMPLETE,
+      cards: [{ kind: 'lowStock', count: 0, late: 0, rows: [] }],
+    });
+    renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
+
+    const low = await screen.findByRole('region', { name: 'Low stock' });
+    expect(within(low).getByText('Nothing is low.')).toBeTruthy();
+    expect(within(low).queryByRole('link')).toBeNull();
+  });
+
   // A server deployed after the tab opened may send a kind this build has
   // never heard of (ADR-081): Home shows the rest, and its sentence leaves
   // the newcomer out, rather than crash.

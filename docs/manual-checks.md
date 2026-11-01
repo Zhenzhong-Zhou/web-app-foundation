@@ -3061,6 +3061,28 @@ site, after a deploy that changes the setting, the route or the relay.
   补足到再订货点, 固定订货量 and 补到最高库存, Today's bars 现在 and
   按建议订货后, and its sentence reads naturally, such as "目前低于 500，因此建议订
   600，即 3 个 200。". Remove asks 删除 D3-1000-120 的再订货点？
+- **MC-4213** *(ADR-085)* Home's Low stock. On a fresh demo, as the Owner:
+  the tile after To receive reads Low stock, 6 and "1 out", in red. Its
+  card lists five rows, each its SKU in bold and its name: VITC-100 with
+  "out" in red; MAGCAP-SAMPLE, "12 of 36"; ELDER-250, "58 of 96";
+  OMEGA3-90, "130 of 180" and "drafted"; D3-1000-120, "180 of 240".
+  SLEEP-60CT, the sixth, is left off. The rows open nothing; See all 6
+  opens Reorder points on Low, with Back to Home. Receive 100 of
+  VITC-100 and Refresh: Low stock reads 5, as the plain tiles do, and
+  the card starts at MAGCAP-SAMPLE. In 中文: 库存不足, "1 项缺货",
+  "12 / 36", 已下草稿 and 缺货; in French: Stock bas, "1 épuisé", "12 sur
+  36" and "brouillon fait".
+- **MC-4214** *(ADR-085)* The bell's notice, opened, and its words by
+  the items. On a fresh demo, as the Owner, the bell's "6 items fell
+  below their reorder point" opens Inventory's Reorder points on Low,
+  with Back to where the bell was. Sign in as Fatima Haddad (Sales), who
+  raises orders but plans no runs: her notice names only the four bought
+  items, "VITC-100, ELDER-250 and 2 more. Order them from Reorder
+  points.". As the Owner, give two bought items with stock points above
+  what they have, and restart the server: one notice, both SKUs, then
+  "Order them from Reorder points.", though the Owner may plan runs too.
+  Two made items: "Plan them from Reorder points."; one of each: "Order
+  or plan them from Reorder points.".
 
 ## Regressions
 
@@ -4214,3 +4236,7 @@ first.
   top-level page, and Licences under the shared header: MC-R69 extended.
 - 2026-11-01: #294, Help on a phone giving focus back to Help once the
   page is no longer hidden from a screen reader: MC-3204 extended.
+- 2026-11-01: ADR-085, Home's Low stock card and the bell's link: its
+  tile, red with its out count, and its five rows against their points:
+  MC-4213; the notice opening Reorder points on Low, its several items'
+  words following them, Order, Plan, or both: MC-4214.

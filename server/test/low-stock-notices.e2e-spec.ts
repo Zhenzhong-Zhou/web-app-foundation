@@ -109,7 +109,7 @@ describe('Low stock notices (e2e)', () => {
     expect(await bell(alpha.agent)).toHaveLength(2);
   });
 
-  it('tells each person once, of the items they can act on', async () => {
+  it('tells each person once, of the items they can act on, and what to do with them', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const shelf = await site(alpha.agent, 'SHELF');
     // The furthest below their point first: out, then a tenth, a fifth.
@@ -117,6 +117,7 @@ describe('Low stock notices (e2e)', () => {
     await stocked(alpha.agent, shelf, 'CAP-38MM', '10');
     await stocked(alpha.agent, shelf, 'LID-38MM', '20');
     await stocked(alpha.agent, shelf, 'SAMPLE-BAG', '30', 'made');
+    await stocked(alpha.agent, shelf, 'SCOOP-BAG', '40', 'made');
 
     await customRole(app, alpha.organizationId, 'Buyer', [
       ...EVERY_ROLE,
@@ -164,35 +165,42 @@ describe('Low stock notices (e2e)', () => {
     );
     const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
-    // Another organization's item, told to its own people alone.
+    // Another organization's items, told to its own people alone.
     const beta = await registerOrganization(app, 'beta');
-    await stocked(beta.agent, await site(beta.agent, 'SHELF'), 'BETA-1', '5');
+    const betaShelf = await site(beta.agent, 'SHELF');
+    await stocked(beta.agent, betaShelf, 'BETA-1', '5');
+    await stocked(beta.agent, betaShelf, 'BETA-2', '6');
 
-    expect(await notices.check(now)).toBe(5);
+    expect(await notices.check(now)).toBe(7);
 
+    // Bought and made: either.
     expect(await bell(alpha.agent)).toEqual([
       expect.objectContaining({
-        title: '4 items fell below their reorder point',
-        body: 'CALM-90, CAP-38MM and 2 more. Order or plan them from Reorder points.',
+        title: '5 items fell below their reorder point',
+        body: 'CALM-90, CAP-38MM and 3 more. Order or plan them from Reorder points.',
       }),
     ]);
     // Three are all named: "and 1 more" would be no shorter.
     expect(await bell(buyer)).toEqual([
       expect.objectContaining({
         title: '3 items fell below their reorder point',
-        body: 'CALM-90, CAP-38MM and LID-38MM. Order or plan them from Reorder points.',
+        body: 'CALM-90, CAP-38MM and LID-38MM. Order them from Reorder points.',
       }),
     ]);
     expect(await bell(maker)).toEqual([
       expect.objectContaining({
-        title: 'SAMPLE-BAG fell below its reorder point',
-        body: 'SAMPLE-BAG. Plan a run from Reorder points.',
+        title: '2 items fell below their reorder point',
+        body: 'SAMPLE-BAG and SCOOP-BAG. Plan them from Reorder points.',
       }),
     ]);
     expect(await bell(clerk)).toEqual([]);
     expect(await bell(viewer)).toEqual([]);
+    // The Owner may plan runs too, but both items are bought.
     expect(await bell(beta.agent)).toEqual([
-      expect.objectContaining({ title: 'BETA-1 fell below its reorder point' }),
+      expect.objectContaining({
+        title: '2 items fell below their reorder point',
+        body: 'BETA-1 and BETA-2. Order them from Reorder points.',
+      }),
     ]);
   });
 

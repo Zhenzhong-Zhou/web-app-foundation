@@ -24,7 +24,7 @@ import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { useCoverUnverifiedBanner } from '../layout/use-cover-unverified-banner';
 import { api, isRevisionRefusal } from '../lib/api';
 import { daysUntil } from '../lib/expiry';
-import { formatDay } from '../lib/format';
+import { displayQuantity, formatDay } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import {
   differsFromBrowser,
@@ -35,6 +35,7 @@ import { zoneLabel } from '../lib/time-zone-label';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useFailureWords } from '../lib/use-failure-words';
 import { rem } from '../theme/rem';
+import { STATUS_TONES } from '../theme/status';
 import { TYPE } from '../theme/tokens';
 import { evenRowsSx } from './even-rows';
 import { GettingStarted } from './getting-started';
@@ -485,7 +486,7 @@ function CountTile({ card }: { card: KnownCard }) {
       </Typography>
       {card.late > 0 && (
         <Typography variant="body2" sx={{ color: 'inherit' }}>
-          {meta.lateIsExpired
+          {meta.late === 'expired'
             ? intl.formatMessage(
                 {
                   id: 'home.count.expired',
@@ -493,13 +494,21 @@ function CountTile({ card }: { card: KnownCard }) {
                 },
                 { count: card.late },
               )
-            : intl.formatMessage(
-                {
-                  id: 'home.count.late',
-                  defaultMessage: '{count, plural, other {# overdue}}',
-                },
-                { count: card.late },
-              )}
+            : meta.late === 'out'
+              ? intl.formatMessage(
+                  {
+                    id: 'home.count.out',
+                    defaultMessage: '{count, plural, other {# out}}',
+                  },
+                  { count: card.late },
+                )
+              : intl.formatMessage(
+                  {
+                    id: 'home.count.late',
+                    defaultMessage: '{count, plural, other {# overdue}}',
+                  },
+                  { count: card.late },
+                )}
         </Typography>
       )}
     </Paper>
@@ -585,7 +594,7 @@ function CardPanel({ card, today }: { card: KnownCard; today: string }) {
             key={row.id}
             row={row}
             path={meta.rowPath(row.id)}
-            expired={meta.lateIsExpired}
+            expired={meta.late === 'expired'}
             today={today}
           />
         ))
@@ -610,7 +619,30 @@ function RowLine({
 
   let chip: { tone: 'critical' | 'warning'; label: string } | null = null;
   let note: string | null = null;
-  if (days !== null && row.due) {
+  // Low stock (ADR-085): out, red, as overdue is; otherwise where it
+  // stands against its point. The server's figures, never added up here.
+  if (row.reorder) {
+    if (row.late) {
+      chip = {
+        tone: 'critical',
+        label: intl.formatMessage({
+          id: 'home.chip.out',
+          defaultMessage: 'out',
+        }),
+      };
+    } else {
+      note = intl.formatMessage(
+        {
+          id: 'home.chip.ofPoint',
+          defaultMessage: '{position} of {point}',
+        },
+        {
+          position: displayQuantity(row.reorder.position),
+          point: displayQuantity(row.reorder.reorderPoint),
+        },
+      );
+    }
+  } else if (days !== null && row.due) {
     if (expired) {
       if (days < 0) {
         chip = {
@@ -653,6 +685,22 @@ function RowLine({
     }
   }
 
+  const figure = chip ? (
+    <StatusChip tone={chip.tone} label={chip.label} />
+  ) : note ? (
+    <Typography
+      variant="body2"
+      sx={{
+        color: 'text.secondary',
+        whiteSpace: 'nowrap',
+        // Low stock's figures line up down the card.
+        ...(row.reorder && { fontVariantNumeric: 'tabular-nums' }),
+      }}
+    >
+      {note}
+    </Typography>
+  ) : null;
+
   return (
     <Stack
       direction="row"
@@ -693,16 +741,21 @@ function RowLine({
           </>
         )}
       </Box>
-      {chip ? (
-        <StatusChip tone={chip.tone} label={chip.label} />
-      ) : note ? (
-        <Typography
-          variant="body2"
-          sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}
-        >
-          {note}
-        </Typography>
-      ) : null}
+      {row.reorder?.drafted ? (
+        // What is in draft already covers it, so nobody orders it twice.
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          {figure}
+          <StatusChip
+            tone={STATUS_TONES.order.draft}
+            label={intl.formatMessage({
+              id: 'home.chip.drafted',
+              defaultMessage: 'drafted',
+            })}
+          />
+        </Stack>
+      ) : (
+        figure
+      )}
     </Stack>
   );
 }
