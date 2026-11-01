@@ -158,12 +158,16 @@ UTC, the same day in Vancouver. The summary lists each known miss under the
 budgets, with its issue, its date and its ceiling, whether this run met it
 or not.
 
-One today, until 30 November 2026 with a ceiling of 400 ms:
+Two today, each until 30 November 2026 with a ceiling of 400 ms:
 
 - **The typo lookup's, #225.** It went once weekly run 114 measured 207
   ms on 26 October 2026, too soon: on 29 October, on runners about 1.45×
   slower than the day before, `main` measured 340 ms and #260's branch
   333, 358 and 363.
+- **Home's, #276.** Back over its budget on 1 November 2026: 249 ms the
+  night before, then 329, 321 and 308 in three runs on ADR-085's
+  branch, on runners about 1.35× slower on every other budget too, with
+  the same plans.
 
 To add one, give the scenario in `perf/scenarios.ts` a `knownMiss`:
 
