@@ -24,6 +24,11 @@ export interface HelpState {
   /** A link in a guide was followed: the page it opens shows its own guide. */
   follow: () => void;
   /**
+   * Help is going: focus goes back to whatever opened it, if Close or Esc
+   * closed it. The frame calls it once nothing hides the page (#294).
+   */
+  giveFocusBack: () => void;
+  /**
    * Whether the next guide or section shown takes focus, because the person
    * asked for it in Help or by a Learn more; a page they moved to on their
    * own leaves focus where they are.
