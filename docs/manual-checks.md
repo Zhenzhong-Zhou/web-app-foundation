@@ -4059,3 +4059,21 @@ first.
   give the reference, the person who invited you: MC-R65 extended.
 - 2026-10-30: ADR-084's setup, a page crashed with no code changed by
   blocking its script, and where Sentry's search is: MC-4102 reworded.
+- 2026-10-31: ADR-085, the bell once each time an item falls below its
+  reorder point: section 42, MC-4201; the role editor's line under Raise
+  an order: MC-3309 extended.
+- 2026-10-31: ADR-085, Home's ninth card raising the API revision to 2:
+  MC-3424 extended, a tab left on Home across the deploy asked to reload
+  once, then Home.
+- 2026-10-31: ADR-085, the demo's nine reorder points: the demo's list
+  gains them; MC-4201 opens with the notice the seeded points give.
+- 2026-10-31: ADR-085, the nine named in all three languages: the
+  demo's list says so; MC-3901's 镁 finds the sample bag too.
+- 2026-10-31: #222, each step on the demo's own orders in their History:
+  MC-1524 extended.
+- 2026-11-01: #343, a zone's city after a dash, never in brackets, on the
+  server: section 26's note on zone names added, MC-2602 reworded, MC-R66
+  added.
+- 2026-11-01: #343 on the client, the picker and Home's note: MC-2601,
+  MC-2602, MC-2606, MC-2607, MC-2609 and MC-2905 reworded, MC-R66
+  extended.
