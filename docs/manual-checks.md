@@ -3165,7 +3165,7 @@ first.
   just invited, as MC-3207 sets up); the top bar's Show all in Orders; a licence's notice in the
   bell; Licences from Products, now under the header every list has;
   Stock of the item from a Reorder points row; a page linked from a Help
-  guide. Any of these pages opened from the menu, from the trail above a
+  guide, and Your account at Help's foot. Any of these pages opened from the menu, from the trail above a
   record, or by its address in a new tab, shows no Back. Opened by a
   link, a list keeps its Back through a search typed, a tab or a filter
   chosen: Reorder points from Low stock's See all, after a letter in its
@@ -4332,3 +4332,5 @@ first.
   run's link: MC-4207, MC-4208 and MC-4216 extended.
 - 2026-11-01: ADR-085's review, Back kept through a list's search, a tab,
   History's filters and Members' Invite closed: MC-R69 extended.
+- 2026-11-01: ADR-085's review, Back from Your account at Help's foot:
+  MC-R69 extended.

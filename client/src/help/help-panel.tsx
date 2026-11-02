@@ -33,6 +33,7 @@ import { Reload } from '../errors/status-actions';
 import { useLanguage } from '../i18n/use-language';
 import { copyrightLine, useAppName } from '../lib/app-name';
 import { formatDate, SEPARATOR } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { rem } from '../theme/rem';
 import { useTextSize } from '../theme/text-size';
@@ -545,6 +546,7 @@ function AllGuides({ help }: { help: HelpState }) {
                 <Link
                   component={RouterLink}
                   to="/account#your-access"
+                  state={OFFER_BACK}
                   underline="always"
                   onClick={help.follow}
                 >
