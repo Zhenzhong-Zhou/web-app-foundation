@@ -120,9 +120,10 @@ steps; this section stays the rule.
   the decisions for Bob to confirm, the ADR as the branch's first commit
   (it tidies the handoff too), the canvas designs (on the Claude Design
   canvas, <https://claude.ai/artifact/RqG3iKw4V41is3w1go53EJ>), and a
-  build brief: one Claude Code prompt per commit. Claude Code writes the code from each prompt, runs
+  build brief, whose steps Claude Code runs in a row (below). Claude Code
+  writes the code from each step, runs
   `scripts/verify.sh`, `/simplify` and `/code-review`, and opens the PR.
-  Bob pastes its summaries back into the chat, which writes the as-built
+  Bob pastes the stops back into the chat, which writes the as-built
   amendment and the docs, as a patch for each file already in the
   repository (below). Until
   ADR-078 the chat wrote
