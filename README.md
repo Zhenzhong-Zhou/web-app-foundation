@@ -411,8 +411,9 @@ licences.
 - [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with six project
   skills in `.claude/skills/`: `/code-review`, `/usability-walkthrough`,
   `/production-readiness`, `/build-from-brief`, `/rules-file` and `/triage`;
-  and the chat's planning skill, `plan-feature`, in `.claude/chat-skills/`,
-  uploaded to claude.ai (ADR-088)
+  one subagent, `brief-step`, in `.claude/agents/`, which runs a brief's
+  step (ADR-089); and the chat's planning skill, `plan-feature`, in
+  `.claude/chat-skills/`, uploaded to claude.ai (ADR-088)
 - [`docs/releases/`](docs/releases) — the notes each tagged release was made with
 
 The ADRs and `docs/conventions.md` are both worth reading before a change that
