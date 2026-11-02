@@ -10,11 +10,12 @@ on:
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+    # Not on Dependabot's pull requests, where a run Dependabot starts
+    # fails twice over: the action refuses a run a bot starts ("Workflow
+    # initiated by non-human actor", run 41495616658), and the run gets
+    # none of the repository's Actions secrets, CLAUDE_CODE_OAUTH_TOKEN
+    # among them. So the review failed on every one of #367 to #370.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
 
     runs-on: ubuntu-24.04
     permissions:

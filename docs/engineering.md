@@ -120,9 +120,10 @@ steps; this section stays the rule.
   the decisions for Bob to confirm, the ADR as the branch's first commit
   (it tidies the handoff too), the canvas designs (on the Claude Design
   canvas, <https://claude.ai/artifact/RqG3iKw4V41is3w1go53EJ>), and a
-  build brief: one Claude Code prompt per commit. Claude Code writes the code from each prompt, runs
+  build brief, whose steps Claude Code runs in a row (below). Claude Code
+  writes the code from each step, runs
   `scripts/verify.sh`, `/simplify` and `/code-review`, and opens the PR.
-  Bob pastes its summaries back into the chat, which writes the as-built
+  Bob pastes the stops back into the chat, which writes the as-built
   amendment and the docs, as a patch for each file already in the
   repository (below). Until
   ADR-078 the chat wrote
@@ -132,19 +133,33 @@ steps; this section stays the rule.
   `scripts/pack-chat-skill.mjs`, which packs only at `origin/main`'s
   commit, and uploaded by hand once each change has merged (ADR-084); its
   first step compares the uploaded copy with `main`'s.
-- **The build, through `/build-from-brief`** (from ADR-083). The brief
-  and the canvas's boards go in `tmp/adr-NNN/`, ignored by git and by
-  markdownlint, so `scripts/verify.sh` does not lint its Markdown. Each prompt is one line,
-  `/build-from-brief tmp/adr-NNN/brief.md N`; the skill holds the ground
-  rules every brief repeated, so a brief holds its decisions and its
-  steps. `/clear` between steps, never inside one; a step's follow-ups
-  (an amend, an issue to file) stay in its context, and its summary is
-  pasted into the chat before clearing. A small fix between steps is a
-  plain prompt of its own, a commit, then `/clear`. While building, the
-  chat changes the brief only when an answer changes a step not yet run,
-  and keeps the as-built notes in the chat (29 October 2026): #260's
-  brief was sent again after nearly every step. The review step runs
-  in two prompts: the reviews, `/doctor prompt-audit` among them, write
+- **The build, through `/build-from-brief`** (from ADR-083; in a row
+  from ADR-089). The brief and the canvas's boards go in `tmp/adr-NNN/`,
+  ignored by git and by markdownlint, so `scripts/verify.sh` does not
+  lint its Markdown. A brief's steps table names who runs each step:
+  Claude Code, Claude Code's main session (the reviews), the chat or
+  Bob. `/build-from-brief tmp/adr-NNN/brief.md from <N>` runs step N and
+  each one after it, each in a new `brief-step` subagent, whose
+  `.claude/agents/brief-step.md` holds the ground rules every brief
+  repeated, so a brief holds its decisions and its steps;
+  `/build-from-brief tmp/adr-NNN/brief.md <N>` runs one step the same
+  way. A run stops at a step that is the chat's or Bob's; before a
+  main-session step; at a step BLOCKED, by a question the brief does not
+  answer or by verify failing after one honest retry; before anything
+  that would push, open a pull request, merge or change `main`; after
+  the current step when a file named `STOP` is beside the brief, which
+  the run removes; and at the stop rule. Each step's summary is appended
+  to `summaries.md` beside the brief: Bob pastes only the stops into the
+  chat and, at the brief's end, attaches the file for the as-built.
+  `/clear` after a stop, once its summary is pasted, never inside a step
+  nor while a run goes on; a step's follow-ups (an amend, an issue to
+  file) stay in the session until they are done. A small fix between
+  steps is a plain prompt of its own, a commit, then `/clear`. While
+  building, the chat changes the brief only when an answer changes a
+  step not yet run, and keeps the as-built notes in the chat (29 October
+  2026): #260's brief was sent again after nearly every step. The review
+  step runs in the main session, in two prompts, each step named alone:
+  the reviews, `/doctor prompt-audit` among them, write
   their findings, numbered, to `tmp/adr-NNN/review.md` and stop for Bob's
   choices; then the fixes by number, each verified with `--docs` or
   `--quick` by what it touches ([Commits](#commits)), the full verify, the
@@ -249,10 +264,14 @@ steps; this section stays the rule.
 - **At the start of every ADR,** before drafting it: check the ADRs'
   Deferred lines, the watch lists and the open issues for
   anything in the same area, and say which triggers have fired. The
-  check lists the open issues of each area the change touches with
-  `gh issue list --label area:<area>`
-  ([Issues and labels](#issues-and-labels)). That is when a deferred
-  item is cheapest to pick up.
+  open issues are gathered with a script (ADR-089), the areas the
+  change touches and the issues it names given:
+  `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n,m>`. It
+  writes `tmp/adr-NNN/check.txt`, which the chat reads: each area's
+  open issues ([Issues and labels](#issues-and-labels)), then the text
+  and comments of each issue named and each `when-touched` one. It
+  refuses an area not in `scripts/adr-index.mjs`, writing nothing. That
+  is when a deferred item is cheapest to pick up.
 - **A new ADR,** after the check above: copy
   [the template](adr/template.md) to `NNNN-<slug>.md` in `docs/adr/`,
   its number in four digits and its slug from its title as
