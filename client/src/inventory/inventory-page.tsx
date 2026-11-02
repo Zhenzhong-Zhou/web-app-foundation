@@ -657,6 +657,12 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                         defaultMessage: 'SKU',
                       })}
                     </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.item',
+                        defaultMessage: 'Item',
+                      })}
+                    </TableCell>
                     <TableCell align="right">
                       {intl.formatMessage({
                         id: 'inventory.promised.onHand',
@@ -692,6 +698,11 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                     .map((row) => (
                       <TableRow key={row.variantId}>
                         <TableCell>{row.sku}</TableCell>
+                        {/* In the reader's language, as Stock above names
+                          it (#296). */}
+                        <TableCell>
+                          {itemName(row.productName, row.variantName)}
+                        </TableCell>
                         <TableCell align="right">
                           {displayWithUnit(row.onHand, row.unitOfMeasure, intl)}
                         </TableCell>

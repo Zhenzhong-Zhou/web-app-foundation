@@ -121,6 +121,51 @@ describe('InventoryPage', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  // Named in the reader's language beside the SKU, as Stock names it (#296).
+  it('names each item promised to customers beside its SKU', async () => {
+    server.use(
+      http.get('/api/v1/stock', () =>
+        HttpResponse.json({ entries: [ROW], nextCursor: null }),
+      ),
+      http.get('/api/v1/stock/counts', () =>
+        HttpResponse.json({ expiring: 0, needsCost: 0 }),
+      ),
+      http.get('/api/v1/stock/availability', () =>
+        HttpResponse.json([
+          {
+            variantId: 'variant-1',
+            sku: 'VITD-60',
+            productName: '维生素 D',
+            variantName: '60 粒',
+            unitOfMeasure: 'each',
+            onHand: '120.0000',
+            held: '24.0000',
+            free: '96.0000',
+            backordered: '0.0000',
+          },
+        ]),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter>
+        <InventoryPage />
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+
+    const promised = (
+      await screen.findByRole('heading', { name: 'Promised to customers' })
+    ).parentElement as HTMLElement;
+    const row = within(promised).getAllByRole('row')[1];
+    expect(within(row).getByRole('cell', { name: 'VITD-60' })).toBeVisible();
+    expect(
+      within(row).getByRole('cell', { name: '维生素 D (60 粒)' }),
+    ).toBeVisible();
+    expect(
+      within(promised).getByRole('columnheader', { name: 'Item' }),
+    ).toBeVisible();
+  });
+
   // Trace a lot is a top-level page: Back returns here (#341).
   it('opens Trace a lot with Back to Inventory', async () => {
     server.use(

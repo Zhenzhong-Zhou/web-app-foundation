@@ -25,16 +25,22 @@ import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { VariantPicker } from '../components/variant-picker';
+import { NameAndEmail } from '../components/who-and-when';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api } from '../lib/api';
 import { type DayRange, withInstants } from '../lib/date-range';
-import { formatMoment, formatQuantity, relativeTime } from '../lib/format';
+import {
+  displayQuantity,
+  formatMoment,
+  itemName,
+  relativeTime,
+} from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useVariants } from '../lib/use-variants';
 import { leavesOf } from '../locations/tree';
 import { rem } from '../theme/rem';
-import { describeMovement } from './describe-movement';
+import { describeMovement, movementActor } from './describe-movement';
 import {
   MOVEMENT_HEADINGS,
   MOVEMENT_REASONS,
@@ -275,10 +281,28 @@ export function MovementsPage() {
                           </span>
                         </TableCell>
 
-                        {/* Snapshotted on the row (ADR-023), so a rename does not
-                        rewrite what this movement said at the time. */}
+                        {/* The SKU snapshotted on the row (ADR-023), so a rename
+                        does not rewrite what this movement said at the time;
+                        the name beside it from the catalogue, in the reader's
+                        language (#256), as Reorder points names an item. */}
                         <TableCell>
-                          {movement.sku}
+                          {intl.formatMessage(
+                            {
+                              id: 'inventory.movements.item',
+                              defaultMessage: '{sku} {name}',
+                            },
+                            {
+                              sku: (
+                                <Box component="span" sx={{ fontWeight: 600 }}>
+                                  {movement.sku}
+                                </Box>
+                              ),
+                              name: itemName(
+                                movement.productName,
+                                movement.variantName,
+                              ),
+                            },
+                          )}
                           {movement.lotCode && (
                             <Chip
                               label={movement.lotCode}
@@ -288,13 +312,13 @@ export function MovementsPage() {
                           )}
                         </TableCell>
 
-                        {/* Rendered as it arrived, with only its decimal
-                        separator the language's (formatQuantity). Parsing it
-                        would put a numeric through a JS double, the precision
-                        loss ADR-025 exists to avoid. */}
+                        {/* Read without padding zeros, grouped the language's
+                        way (displayQuantity, #256), but never parsed: a
+                        numeric through a JS double is the loss ADR-025
+                        exists to avoid. */}
                         <TableCell align="right">
                           {sign}
-                          {formatQuantity(movement.quantity)}
+                          {displayQuantity(movement.quantity)}
                         </TableCell>
 
                         <TableCell>{where}</TableCell>
@@ -325,12 +349,16 @@ export function MovementsPage() {
                           )}
                         </TableCell>
 
-                        {/* Null when the actor was anonymised (ADR-012). The row
-                        survives its author, which is what RESTRICT on actor_id
-                        is for. */}
+                        {/* Who by name, their email beneath (#256); Deleted
+                        user once anonymised (ADR-012). The row survives its
+                        author, which is what RESTRICT on actor_id is for. */}
                         <TableCell>
-                          {movement.actorEmail ??
-                            intl.formatMessage(MOVEMENT_HEADINGS.deletedUser)}
+                          <NameAndEmail
+                            {...movementActor(
+                              movement,
+                              intl.formatMessage(MOVEMENT_HEADINGS.deletedUser),
+                            )}
+                          />
                         </TableCell>
                       </TableRow>
                     );

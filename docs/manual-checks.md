@@ -3115,6 +3115,23 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R71** *(the promised table naming an item by its SKU alone, #296)*
+  As the demo Owner in 中文, on Inventory, 已承诺给客户 has 物品 beside
+  SKU: ELDER-250, which SO-DEMO-9 and SO-DEMO-10 wait for, reads
+  接骨木莓糖浆…, as Stock above it names it. In English the same row
+  reads its base name.
+
+- **MC-R70** *(Movements naming an item by its SKU alone, with padding
+  zeros, and who by email alone, #256)* As the demo Owner in 中文, on
+  库存变动: D3-1000-120's move of 40 to Richmond reads D3-1000-120 in
+  bold, then 维生素 D3 1000 IU，120 粒软胶囊, then its lot; its change
+  reads 40, not 40.0000; 操作人 reads 王建国 with their email beneath,
+  whole on hover. Open D3-1000-120's History on an Inventory row: its
+  title names the item beside the SKU (and the lot, for a lot's row),
+  and its rows read their changes and who the same way. A member who has
+  since deleted their account shows as 已删除的用户, with no email. In
+  English the names are the base names.
+
 - **MC-R69** *(a top-level page opened by a link with no way back, such
   as Trace a lot, #341)* As the demo Owner, on Inventory press Trace a
   lot: Back shows beside its title and returns to Inventory. From Home's
@@ -4270,3 +4287,7 @@ first.
   points: Raise a purchase order opening New order with the chosen lines
   and a note, MC-4215; Plan a run on a made low row, with the run
   dialog's Uses scaled by the server, MC-4216.
+- 2026-11-01: #256, Movements and an inventory row's history naming the
+  item beside its SKU, its change without padding zeros, and who by name
+  with their email beneath: MC-R70. #296, Inventory's Promised to
+  customers naming each item beside its SKU: MC-R71.
