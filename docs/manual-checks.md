@@ -3056,7 +3056,15 @@ site, after a deploy that changes the setting, the route or the relay.
   with GLOVES-100 named and no picker. Daniel Okafor (Admin), Tom Becker
   (Warehouse) and Chloé Tremblay (Viewer) hold no `stock.reorder`: no
   Reorder point… on Stock, and no Add reorder point and no ⋯ on Reorder
-  points, while the chevron still opens a row.
+  points, while the chevron still opens a row. Make a role, Nothing
+  ticked: under Stock and locations, tick Set, change or remove an item’s
+  reorder point, and See what is on hand and where and See the product
+  catalogue tick with it, the line above the areas saying so; the summary
+  beside the boxes says the role can set reorder points. Save it as
+  Reorder clerk and give it to Tom Becker: his Your access says he can
+  set reorder points, in 中文 设置再订货点, in Français définir les points
+  de commande, and Reorder points now shows him Add reorder point and
+  each row's ⋯.
 - **MC-4211** *(ADR-085)* The empty states. Register a new organization:
   Reorder points shows an icon, "No reorder points yet.", a sentence on
   what a point does, Add reorder point, and Learn more, which opens Help
@@ -4340,3 +4348,6 @@ first.
   MC-R69 extended.
 - 2026-11-01: ADR-085's review, a changed reorder point logged from what
   was saved, a change of rule naming both quantities: MC-4209 extended.
+- 2026-11-01: ADR-085's review, the reorder point permission's box in
+  Make a role, what ticks with it, and its Your access phrase: MC-4210
+  extended.
