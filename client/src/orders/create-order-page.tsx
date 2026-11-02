@@ -285,9 +285,11 @@ export function CreateOrderPage() {
         }),
       });
 
-      // Saved: on to the order, without asking.
+      // Saved: on to the order, without asking. Filled from Reorder points,
+      // the order takes New order's place in the history, so Back returns
+      // to the list, not to the same lines filled in again (ADR-085).
       release();
-      navigate(`/orders/${created.order.id}`);
+      navigate(`/orders/${created.order.id}`, { replace: fill !== null });
     });
   }
 

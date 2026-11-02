@@ -3093,8 +3093,9 @@ site, after a deploy that changes the setting, the route or the relay.
   raise it as a draft.", and two lines, D3-1000-120 at 96 and ELDER-250
   at 134. Nothing is saved yet: Cancel goes back to Orders and Reorder
   points is as it was. Raise it again, choose Prairie and Raise as
-  draft: the order opens as a draft; back on Reorder points, both rows
-  read Drafted with the order's number, and neither has a box to choose.
+  draft: the order opens as a draft, and Back returns to Reorder points,
+  not to New order filled in again; there, both rows read Drafted with
+  the order's number, and neither has a box to choose.
   Fatima Haddad (Sales) has the boxes and the bar; Chloé Tremblay
   (Viewer), neither.
 - **MC-4216** *(ADR-085)* Plan a run, filled in from the list. On a fresh
@@ -4305,3 +4306,6 @@ first.
 - 2026-11-01: ADR-085, Help's Inventory and Home guides: Reorder points'
   four sections, Home's Low stock, and Learn more beside the position's
   line and on the list with no point yet: MC-4217; MC-4211 extended.
+- 2026-11-01: ADR-085's review, Back after raising a filled purchase
+  order returning to Reorder points, not to the lines filled in again:
+  MC-4215 extended.

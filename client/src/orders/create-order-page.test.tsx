@@ -43,19 +43,29 @@ function serve() {
   return sent;
 }
 
-/** A data router, which the page's unsaved-changes guard needs. */
-function renderPage(state?: unknown) {
+/**
+ * A data router, which the page's unsaved-changes guard needs; `from`, the
+ * page that opened New order, one step back.
+ */
+function renderPage(state?: unknown, from?: string) {
   const router = createMemoryRouter(
     [
       { path: '/orders/new', element: <CreateOrderPage /> },
       { path: '/orders/:id', element: <p>The order</p> },
+      { path: '/inventory', element: <p>Reorder points</p> },
     ],
-    { initialEntries: [{ pathname: '/orders/new', state }] },
+    {
+      initialEntries: [
+        ...(from ? [from] : []),
+        { pathname: '/orders/new', state },
+      ],
+    },
   );
   renderWithAuth(<RouterProvider router={router} />, {
     // Deliver to reads the sites, which only locations.view may (ADR-080).
     permissions: ['orders.create', 'locations.view'],
   });
+  return router;
 }
 
 async function raise(user: ReturnType<typeof userEvent.setup>) {
@@ -231,6 +241,30 @@ describe('CreateOrderPage filled from Reorder points', () => {
         { variantId: 'variant-lotted', quantityOrdered: '12.5' },
       ],
     });
+  });
+
+  it('leaves Back to Reorder points once raised, not the lines filled again', async () => {
+    serve();
+    const router = renderPage(
+      fillState({
+        lines: [{ variantId: 'variant-plain', quantity: '2000.0000' }],
+      }),
+      '/inventory?tab=reorder-points',
+    );
+    const user = userEvent.setup();
+
+    await screen.findByText(/Filled from Reorder points/);
+    await user.click(screen.getByRole('combobox', { name: 'Partner' }));
+    await user.click(await screen.findByRole('option', { name: /Acme/ }));
+    await user.click(screen.getByRole('button', { name: 'Raise as draft' }));
+    await screen.findByText('The order');
+
+    await router.navigate(-1);
+
+    expect(await screen.findByText('Reorder points')).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Filled from Reorder points/),
+    ).not.toBeInTheDocument();
   });
 
   it('opens empty, with no note, from a link that fills nothing', async () => {
