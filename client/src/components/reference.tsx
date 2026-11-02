@@ -19,15 +19,22 @@ const LONGEST = 16;
  * white-space: nowrap rather than an inline block, which Chrome reads as a
  * word of its own ("Void INV-1 ?"); and never U+2011, the non-breaking
  * hyphen, since a copied reference must paste into the lookup as typed.
+ *
+ * translate="no" on every one, the long ones too: a browser translating the
+ * page leaves the code as typed, where it would turn m2 into 平方米 (#245).
  */
 export function Reference({
   children,
 }: {
   children: string | null | undefined;
 }) {
-  if (!children || children.length > LONGEST) return children;
+  if (!children) return children;
   return (
-    <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
+    <Box
+      component="span"
+      translate="no"
+      sx={children.length > LONGEST ? undefined : { whiteSpace: 'nowrap' }}
+    >
       {children}
     </Box>
   );

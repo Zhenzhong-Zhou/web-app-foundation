@@ -3164,6 +3164,14 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R72** *(codes changed by a browser's translation, m2 read as 平方米,
+  #245)* As the demo Owner in English, in Chrome, give a location the code
+  m2 on Locations, then translate the page into Chinese (right-click,
+  Translate to 中文): the location's line still reads m2, its name and the
+  page's words translated. On Home, translated the same way, To ship's
+  SO-DEMO-1 stays as typed. Switch the app to 简体中文 and reload: Chrome
+  offers no translation, the page saying it is Chinese from the start.
+
 - **MC-R71** *(the promised table naming an item by its SKU alone, #296)*
   As the demo Owner in 中文, on Inventory, 已承诺给客户 has 物品 beside
   SKU: ELDER-250, which SO-DEMO-9 and SO-DEMO-10 wait for, reads
@@ -4402,3 +4410,5 @@ first.
   field changes: MC-4208 extended.
 - 2026-11-01: ADR-085's review, a Reorder points row's ⋯ said as a menu
   button: MC-4209 extended.
+- 2026-11-02: #245, codes kept as typed under a browser's translation:
+  MC-R72 added.
