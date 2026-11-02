@@ -3026,7 +3026,8 @@ site, after a deploy that changes the setting, the route or the relay.
   counts one more.
 - **MC-4208** *(ADR-085)* The dialog's refusals, each at its field. A point
   of 0 says "Type a number above zero." under it, and Today goes until it
-  is fixed; so does a quantity of 0, or one with five decimal places.
+  is fixed; so does a quantity of 0. One with five decimal places, such
+  as 1.23456, says "Type a number with up to 4 decimal places." instead.
   "1,000" in English gets the message about separators between thousands.
   Up to a maximum of 150 on a point of 200 says, while typing, "The maximum
   must be above the reorder point, 200." under the maximum. Add a point
@@ -4356,3 +4357,5 @@ first.
   with Add reorder point, as its button reads: MC-4217 extended.
 - 2026-11-01: ADR-085's review, Reorder points' All in French, Tous, not
   Invoices' Toutes: MC-4203 extended.
+- 2026-11-01: ADR-085's review, a reorder point's quantity past four
+  decimal places refused in words of its own: MC-4208 reworded.

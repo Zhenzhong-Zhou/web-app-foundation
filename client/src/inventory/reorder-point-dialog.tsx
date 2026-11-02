@@ -44,7 +44,12 @@ import { displayWithUnit, unitLabel } from '../products/units';
 import { rem } from '../theme/rem';
 import { PositionBar } from './position-bar';
 import { RemoveReorderPointDialog } from './remove-reorder-point-dialog';
-import { aboveZero, atOrBelowZero, fieldQuantity } from './reorder-points';
+import {
+  aboveZero,
+  atOrBelowZero,
+  fieldQuantity,
+  pastFourPlaces,
+} from './reorder-points';
 
 /** The item a point is for, as the list's row and the Stock row both name it. */
 export type ReorderItem = Pick<
@@ -130,17 +135,21 @@ function formOf(point: ReorderPointValues): Form {
 
 /**
  * A field's text as the API takes it, or why not: grouped digits get the
- * shared message; anything not a number above zero with four places at
- * most, "Type a number above zero." Blank is neither, until it is sent.
+ * shared message; more than four decimal places, the places; anything
+ * else not a number above zero, "Type a number above zero." Blank is
+ * neither, until it is sent.
  */
 function readField(
   text: string,
-  aboveZeroMessage: string,
+  refusals: { aboveZero: string; places: string },
 ): { decimal: string | null; problem: string | null } {
   if (text.trim() === '') return { decimal: null, problem: null };
   const decimal = toApiDecimal(text);
   if (decimal === null) return { decimal, problem: groupedNumberMessage() };
-  if (!aboveZero(decimal)) return { decimal: null, problem: aboveZeroMessage };
+  if (pastFourPlaces(decimal))
+    return { decimal: null, problem: refusals.places };
+  if (!aboveZero(decimal))
+    return { decimal: null, problem: refusals.aboveZero };
   return { decimal, problem: null };
 }
 
@@ -287,13 +296,19 @@ export function ReorderPointDialog({
       ? 'made'
       : 'bought');
 
-  const aboveZeroMessage = intl.formatMessage({
-    id: 'inventory.reorder.aboveZero',
-    defaultMessage: 'Type a number above zero.',
-  });
-  const point = readField(form.reorderPoint, aboveZeroMessage);
-  const fixed = readField(form.fixedQuantity, aboveZeroMessage);
-  const maximum = readField(form.maximumQuantity, aboveZeroMessage);
+  const refusals = {
+    aboveZero: intl.formatMessage({
+      id: 'inventory.reorder.aboveZero',
+      defaultMessage: 'Type a number above zero.',
+    }),
+    places: intl.formatMessage({
+      id: 'inventory.reorder.places',
+      defaultMessage: 'Type a number with up to 4 decimal places.',
+    }),
+  };
+  const point = readField(form.reorderPoint, refusals);
+  const fixed = readField(form.fixedQuantity, refusals);
+  const maximum = readField(form.maximumQuantity, refusals);
   const quantity =
     form.rule === 'fixed' ? fixed : form.rule === 'maximum' ? maximum : null;
 

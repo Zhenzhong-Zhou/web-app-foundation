@@ -653,6 +653,7 @@
   "inventory.reorder.nothingLow": "Rien n’est bas.",
   "inventory.reorder.nothingLowOf": "{count, plural, one {Rien n’est bas. # article a un point de commande.} other {Rien n’est bas. # articles ont un point de commande.}}",
   "inventory.reorder.nothingOut": "Rien n’est épuisé.",
+  "inventory.reorder.places": "Saisissez un nombre d’au plus 4 décimales.",
   "inventory.reorder.planRun": "Planifier un ordre de {sku}",
   "inventory.reorder.point": "Point de commande",
   "inventory.reorder.position": "Position",

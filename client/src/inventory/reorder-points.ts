@@ -73,6 +73,15 @@ export function aboveZero(decimal: string): boolean {
 }
 
 /**
+ * Whether a decimal has more places than the four a quantity keeps
+ * (ADR-025), which the dialog refuses in words of their own, since the
+ * number may well be above zero.
+ */
+export function pastFourPlaces(decimal: string): boolean {
+  return /\.\d{5,}$/.test(decimal);
+}
+
+/**
  * A kept quantity as a field shows it: "2000.0000" is "2000", "12.5000"
  * "12.5", in the language's decimals, so Edit opens with what was typed.
  */

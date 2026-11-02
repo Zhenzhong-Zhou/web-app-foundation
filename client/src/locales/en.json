@@ -653,6 +653,7 @@
   "inventory.reorder.nothingLow": "Nothing is low.",
   "inventory.reorder.nothingLowOf": "{count, plural, one {Nothing is low. # item has a reorder point.} other {Nothing is low. # items have a reorder point.}}",
   "inventory.reorder.nothingOut": "Nothing is out.",
+  "inventory.reorder.places": "Type a number with up to 4 decimal places.",
   "inventory.reorder.planRun": "Plan a run of {sku}",
   "inventory.reorder.point": "Reorder point",
   "inventory.reorder.position": "Position",

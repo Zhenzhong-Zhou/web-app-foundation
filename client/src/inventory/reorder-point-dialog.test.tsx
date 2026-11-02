@@ -163,6 +163,22 @@ describe('ReorderPointDialog', () => {
     expect(asked).toHaveLength(1);
   });
 
+  // A number above zero with a fifth place is told what to do about it.
+  it('says a point past four decimal places is that, not below zero', async () => {
+    previews(() => HttpResponse.json(LOW));
+    open({ kind: 'edit', item: D3, point: DETAIL.point });
+
+    await userEvent.clear(pointField());
+    await userEvent.type(pointField(), '1.23456');
+
+    expect(
+      await screen.findByText('Type a number with up to 4 decimal places.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Type a number above zero.'),
+    ).not.toBeInTheDocument();
+  });
+
   it('marks a maximum at or below the point at its field, from the preview', async () => {
     previews(() =>
       apiError(
