@@ -150,6 +150,22 @@ describe('wordEntry, every declared field', () => {
  * A day reads as the day it names (ADR-052, ADR-072): a filter on a list of
  * moments is the organization's midnight, an old day its UTC midnight.
  */
+/** An export of Reorder points names its filter in words (ADR-085). */
+describe('wordEntry, a filter on Low or Out', () => {
+  it('reads Reorder points’ status filter in the reader’s language', () => {
+    const filters = (status: string, locale: Locale) =>
+      wordEntry(entry({ list: 'reorder_points', filters: { status } }), {
+        locale,
+        timeZone: 'UTC',
+        readerId: null,
+      }).details.find((detail) => detail.field !== 'List')?.value?.text;
+
+    expect(filters('low', 'en')).toBe('Status Low');
+    expect(filters('out', 'en')).toBe('Status Out');
+    expect(filters('low', 'zh-Hans')).not.toMatch(/low/);
+  });
+});
+
 describe('wordEntry, a day', () => {
   it('reads a filter on moments as the organization’s day', () => {
     const { details } = wordEntry(

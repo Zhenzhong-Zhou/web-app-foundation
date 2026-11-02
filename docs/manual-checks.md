@@ -2987,7 +2987,8 @@ site, after a deploy that changes the setting, the route or the relay.
 - **MC-4203** *(ADR-085)* Low, Out, the search and Export. Low shows the
   six, VITC-100 among them; Out, VITC-100 alone; All, the nine. Type
   ELDER: the counts follow the search, All 1 · Low 1 · Out 0. With Low
-  on and the search cleared, Export saves a CSV of the six. Open
+  on and the search cleared, Export saves a CSV of the six, and the audit
+  log's line for it reads its filter as Status Low, in 中文 不足. Open
   `/inventory?tab=reorder-points&status=low` in a new tab: it opens on
   Low. In French the three read Tous, Bas and Épuisé.
 - **MC-4204** *(ADR-085)* An opened row. ELDER-250's chevron opens four
@@ -4385,3 +4386,5 @@ first.
   it: MC-4208 reworded.
 - 2026-11-01: ADR-085's review, the chosen rule card drawn as every
   chosen card is: MC-4207 extended.
+- 2026-11-01: ADR-085's review, an export of Reorder points read in the
+  audit log by its filter's words: MC-4203 extended.

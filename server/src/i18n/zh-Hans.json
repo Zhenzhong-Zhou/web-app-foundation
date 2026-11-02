@@ -315,6 +315,8 @@
   "audit.value.status.confirmed": "已确认",
   "audit.value.status.draft": "草稿",
   "audit.value.status.fulfilled": "已完成",
+  "audit.value.status.low": "不足",
+  "audit.value.status.out": "缺货",
   "audit.value.timeZone": "{zone}——{city}",
   "audit.word.detail": "详情",
   "audit.word.imageAdded": "已添加一张图片",

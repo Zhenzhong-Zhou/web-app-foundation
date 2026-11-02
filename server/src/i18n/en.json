@@ -315,6 +315,8 @@
   "audit.value.status.confirmed": "Confirmed",
   "audit.value.status.draft": "Draft",
   "audit.value.status.fulfilled": "Completed",
+  "audit.value.status.low": "Low",
+  "audit.value.status.out": "Out",
   "audit.value.timeZone": "{zone} — {city}",
   "audit.word.detail": "Detail",
   "audit.word.imageAdded": "an image added",

@@ -41,8 +41,11 @@ export interface FieldSpec {
   read: Reader;
 }
 
-/** status */
-const STATUS_WORDS: Record<OrderStatus, Translatable> = {
+/**
+ * status: an order's, and Reorder points' Low and Out, which an export of
+ * that list names as its filter (ADR-085).
+ */
+const STATUS_WORDS: Record<OrderStatus | 'low' | 'out', Translatable> = {
   draft: t({ id: 'audit.value.status.draft', defaultMessage: 'Draft' }),
   confirmed: t({
     id: 'audit.value.status.confirmed',
@@ -56,6 +59,8 @@ const STATUS_WORDS: Record<OrderStatus, Translatable> = {
     id: 'audit.value.status.cancelled',
     defaultMessage: 'Cancelled',
   }),
+  low: t({ id: 'audit.value.status.low', defaultMessage: 'Low' }),
+  out: t({ id: 'audit.value.status.out', defaultMessage: 'Out' }),
 };
 
 /** direction */
