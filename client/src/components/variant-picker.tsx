@@ -23,7 +23,8 @@ function labelFor(option: VariantOption): string {
  * its names in every language and their pinyin, best match first.
  * While it asks, or while `loading`, it says it is loading, in the popup's
  * status, which a screen reader hears; "No matching items" comes only from
- * an answer.
+ * an answer. A catalogue that failed to load (`failed`) says so in the list
+ * instead, never that nothing matches (#303).
  *
  * Takes and reports an id, not the option, so the forms using it keep the
  * `variantId: string` they already submit and reset. A value missing from
@@ -42,6 +43,7 @@ export function VariantPicker({
   label,
   options,
   loading = false,
+  failed = false,
   value,
   onChange,
   required = false,
@@ -55,6 +57,8 @@ export function VariantPicker({
   options: VariantOption[];
   /** The catalogue has not come back yet (useVariants' `answered`). */
   loading?: boolean;
+  /** The catalogue's read failed (useVariants' `failed`). */
+  failed?: boolean;
   value: string;
   onChange: (variantId: string) => void;
   required?: boolean;
@@ -68,6 +72,10 @@ export function VariantPicker({
 }) {
   const intl = useIntl();
   const selected = options.find((option) => option.id === value) ?? null;
+  const catalogueFailed = intl.formatMessage({
+    id: 'inventory.catalogueFailed',
+    defaultMessage: 'Could not load the catalogue.',
+  });
   const { shown, autocomplete } = usePickerSearch(
     '/products/variants',
     options,
@@ -77,16 +85,14 @@ export function VariantPicker({
         id: 'components.variantPicker.noMatches',
         defaultMessage: 'No matching items',
       }),
-      failed: intl.formatMessage({
-        id: 'inventory.catalogueFailed',
-        defaultMessage: 'Could not load the catalogue.',
-      }),
+      failed: catalogueFailed,
     },
   );
 
   return (
     <Autocomplete
       {...autocomplete}
+      noOptionsText={failed ? catalogueFailed : autocomplete.noOptionsText}
       id={id}
       options={shown}
       value={selected}

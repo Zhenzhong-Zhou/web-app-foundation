@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
+import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { CreateRunDialog } from './create-run-dialog';
@@ -118,6 +119,39 @@ describe('CreateRunDialog', () => {
       await screen.findByRole('option', { name: 'WIP' }),
     ).toBeInTheDocument();
     expect(askedForPartners).toBe(false);
+  });
+
+  /**
+   * A catalogue that failed to load says so, as Receive does, above the
+   * picker and in its list, never as "No matching items" (#303).
+   */
+  it('says the catalogue could not be loaded, not that nothing matches', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/v1/products/variants', () =>
+        apiError(500, 'Something went wrong'),
+      ),
+    );
+
+    renderWithAuth(
+      <CreateRunDialog
+        open
+        canSeePartners={false}
+        onClose={() => undefined}
+        onCreated={() => undefined}
+      />,
+    );
+
+    expect(
+      await screen.findByRole('alert', { name: 'Error' }),
+    ).toHaveTextContent('Could not load the catalogue.');
+
+    await user.click(screen.getByRole('combobox', { name: 'Making' }));
+
+    expect(screen.getAllByText('Could not load the catalogue.')).toHaveLength(
+      2,
+    );
+    expect(screen.queryByText('No matching items')).not.toBeInTheDocument();
   });
 
   /**

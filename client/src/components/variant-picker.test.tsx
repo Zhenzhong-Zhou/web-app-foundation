@@ -13,6 +13,7 @@ const [PLAIN, LOTTED] = VARIANTS as VariantOption[];
 function renderPicker({
   options = VARIANTS as VariantOption[],
   loading = false,
+  failed = false,
   onChange = vi.fn(),
 } = {}) {
   render(
@@ -21,6 +22,7 @@ function renderPicker({
       label="Item"
       options={options}
       loading={loading}
+      failed={failed}
       value=""
       onChange={onChange}
     />,
@@ -124,6 +126,27 @@ describe('VariantPicker', () => {
     await user.click(box());
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading…');
+    expect(screen.queryByText('No matching items')).not.toBeInTheDocument();
+  });
+
+  // A catalogue that failed to load is not one where nothing matches (#303).
+  it('says the catalogue could not be loaded when it failed, never that nothing matches', async () => {
+    const user = userEvent.setup();
+    const asked = serve(async () => []);
+    renderPicker({ options: [], failed: true });
+
+    await user.click(box());
+
+    expect(screen.getByText('Could not load the catalogue.')).toBeVisible();
+    expect(screen.queryByText('No matching items')).not.toBeInTheDocument();
+
+    // A search's answer cannot offer what was never loaded either.
+    await user.type(box(), 'pl');
+    await expect.poll(() => asked).toEqual(['pl']);
+
+    expect(
+      await screen.findByText('Could not load the catalogue.'),
+    ).toBeVisible();
     expect(screen.queryByText('No matching items')).not.toBeInTheDocument();
   });
 

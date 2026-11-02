@@ -134,6 +134,7 @@ export function SetPriceDialog({
                 required
                 options={choices}
                 loading={!answered}
+                failed={failed}
                 value={variantId}
                 onChange={setVariantId}
                 helperText={
