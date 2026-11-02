@@ -278,8 +278,9 @@ export class PriceListsService {
           }),
         );
 
-      recordPrevious({ unitPrice: removed.unitPrice });
-      recordContext({ variantId });
+      // What it was, so the log says what went: the route names no
+      // fields, so a previous value alone would be dropped (#339).
+      recordContext({ variantId, unitPrice: removed.unitPrice });
 
       this.logger.log(`Price list ${priceListId}: ${variantId} removed`);
     });

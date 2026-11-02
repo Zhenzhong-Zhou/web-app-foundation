@@ -17,6 +17,9 @@ import { Plate } from './plate';
  * (ADR-079). The name follows the initials for a screen reader, so the
  * link is named for the organization and still by what it shows (WCAG
  * 2.5.3); a logo alone is named for it.
+ *
+ * The name and its initials are translate="no", so a browser translating
+ * the page leaves them as typed (#245).
  */
 export function OrganizationMark({
   name,
@@ -47,7 +50,7 @@ export function OrganizationMark({
   if (!branding?.logoFileId && initials) {
     const short = organizationInitialsOf(name);
     return (
-      <Typography variant="h6" component="div">
+      <Typography variant="h6" component="div" translate="no">
         <span lang={initialsLang(short)}>{short}</span>
         {/* Placed out of sight, it is a block of its own, which a name
             is read with a space before. */}
@@ -68,6 +71,7 @@ export function OrganizationMark({
           variant={onRail ? 'subtitle1' : 'h6'}
           component="div"
           noWrap
+          translate="no"
           sx={onRail ? { color: 'rail.strong' } : undefined}
         >
           {name}

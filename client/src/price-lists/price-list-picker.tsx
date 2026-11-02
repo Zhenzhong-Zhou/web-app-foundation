@@ -14,6 +14,10 @@ import { nameAndCode } from '../lib/format';
  * picker never offers a purchase list the server would refuse. A retired list
  * is offered only when it is the current choice, disabled, so the field still
  * says what is set without inviting anyone to set it again.
+ *
+ * An active list's name and currency are translate="no", in the menu and as
+ * the field's value, so a browser translating the page leaves them as typed
+ * (#245).
  */
 export function PriceListPicker({
   id,
@@ -84,15 +88,17 @@ export function PriceListPicker({
       </MenuItem>
       {shown.map((list) => (
         <MenuItem key={list.id} value={list.id} disabled={!list.isActive}>
-          {list.isActive
-            ? nameAndCode(list.name, list.currency)
-            : intl.formatMessage(
-                {
-                  id: 'priceLists.picker.retired',
-                  defaultMessage: '{list} — retired',
-                },
-                { list: nameAndCode(list.name, list.currency) },
-              )}
+          {list.isActive ? (
+            <span translate="no">{nameAndCode(list.name, list.currency)}</span>
+          ) : (
+            intl.formatMessage(
+              {
+                id: 'priceLists.picker.retired',
+                defaultMessage: '{list} — retired',
+              },
+              { list: nameAndCode(list.name, list.currency) },
+            )
+          )}
         </MenuItem>
       ))}
     </TextField>

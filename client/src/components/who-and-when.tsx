@@ -18,16 +18,24 @@ const ONE_LINE = {
  * the email takes no width of its own, so the name sets it, between a
  * floor that leaves a short name's email readable and a ceiling. Whole on
  * hover, as a tooltip.
+ *
+ * Both translate="no", the tooltips too, so a browser translating the page
+ * leaves them as typed (#245); `removed` when `name` is the app's words for
+ * a removed account, which stay translatable.
  */
 export function NameAndEmail({
   name,
   email,
   nameVariant = 'body2',
+  removed = false,
 }: {
   name: string;
   email: string | null;
   nameVariant?: 'body2' | 'subtitle2';
+  removed?: boolean;
 }) {
+  const nameTranslate = removed ? undefined : 'no';
+
   return (
     <Box
       sx={{
@@ -36,15 +44,29 @@ export function NameAndEmail({
         maxWidth: EMAIL_MAX_WIDTH,
       }}
     >
-      <Tooltip title={name} placement="top-start" enterDelay={600}>
-        <Typography variant={nameVariant} sx={ONE_LINE}>
+      <Tooltip
+        title={name}
+        placement="top-start"
+        enterDelay={600}
+        slotProps={{ tooltip: { translate: nameTranslate } }}
+      >
+        <Typography
+          variant={nameVariant}
+          translate={nameTranslate}
+          sx={ONE_LINE}
+        >
           {name}
         </Typography>
       </Tooltip>
       {email && (
-        <Tooltip title={email} placement="bottom-start">
+        <Tooltip
+          title={email}
+          placement="bottom-start"
+          slotProps={{ tooltip: { translate: 'no' } }}
+        >
           <Typography
             variant="caption"
+            translate="no"
             sx={{
               color: 'text.secondary',
               ...ONE_LINE,
@@ -99,6 +121,7 @@ export function Who({
       <NameAndEmail
         name={name || email || removed}
         email={name ? email : null}
+        removed={!name && !email}
       />
     </Stack>
   );
