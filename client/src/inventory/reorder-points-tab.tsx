@@ -418,6 +418,11 @@ function ChosenBar({
         py: 1.25,
         bgcolor: 'text.primary',
         color: 'background.paper',
+        // The theme's ring, the accent, is under 3 : 1 on the dark bar
+        // (WCAG 1.4.11): in the bar's own text colour, which is.
+        '& .MuiButtonBase-root.Mui-focusVisible': {
+          outlineColor: (theme) => theme.palette.background.paper,
+        },
       }}
     >
       <Stack

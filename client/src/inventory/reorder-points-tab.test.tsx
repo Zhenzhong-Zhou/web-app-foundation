@@ -194,6 +194,13 @@ describe('Reorder points', () => {
     expect(within(bar).getByText('D3-1000 · 96')).toBeInTheDocument();
     // Said to a screen reader too, from a status there before the bar.
     expect(screen.getByRole('status')).toHaveTextContent('1 chosen');
+    // Its focus ring in the bar's own text colour, not the faint accent.
+    const clear = within(bar).getByRole('button', { name: 'Clear' });
+    clear.classList.add('Mui-focusVisible');
+    expect(getComputedStyle(clear).outlineColor).toBe(
+      getComputedStyle(bar).color,
+    );
+    clear.classList.remove('Mui-focusVisible');
 
     await userEvent.click(within(bar).getByRole('button', { name: 'Clear' }));
     expect(

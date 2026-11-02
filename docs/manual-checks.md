@@ -3007,7 +3007,9 @@ site, after a deploy that changes the setting, the route or the relay.
   suggestion; Clear empties it. The header's box chooses every row with
   a box, and unticked, none. Choose one, search for another item and
   choose it too: the bar holds both. With VoiceOver on, ticking a box
-  says "1 chosen", then "2 chosen", as the bar appears and grows.
+  says "1 chosen", then "2 chosen", as the bar appears and grows. Tab to
+  Clear and Raise a purchase order: each one's focus ring is drawn in
+  the bar's own text colour, plain on the dark bar, in both modes.
 - **MC-4206** *(ADR-085)* Read only, and in 中文. As Chloé Tremblay
   (Viewer): the same list, with no boxes, no header box and no bar; the
   chevron still opens a row. In 中文: the tab reads 再订货点, the
@@ -4388,3 +4390,5 @@ first.
   chosen card is: MC-4207 extended.
 - 2026-11-01: ADR-085's review, an export of Reorder points read in the
   audit log by its filter's words: MC-4203 extended.
+- 2026-11-01: ADR-085's review, the dark bar's focus ring in its own text
+  colour: MC-4205 extended.
