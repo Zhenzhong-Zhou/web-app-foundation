@@ -721,8 +721,6 @@ describe('Reorder points (e2e)', () => {
       usable: {
         locationName: string;
         usable: string;
-        expired: string;
-        issued: string;
       }[];
       expired: string;
       issued: string;
@@ -731,7 +729,6 @@ describe('Reorder points (e2e)', () => {
         number: string | null;
         partnerName: string | null;
         quantity: string;
-        expectedAt: string | null;
         late: boolean;
       }[];
       stillNeeded: {
@@ -739,7 +736,6 @@ describe('Reorder points (e2e)', () => {
         partnerName: string;
         quantity: string;
       }[];
-      drafts: { kind: string; quantity: string }[];
     }
 
     async function detailOf(org: Org, variantId: string) {
@@ -777,22 +773,20 @@ describe('Reorder points (e2e)', () => {
 
       expect(detail).toMatchObject({
         usable: [
-          {
-            locationName: 'KITCHEN',
-            usable: '0.0000',
-            expired: '40.0000',
-            issued: '60.0000',
-          },
-          {
-            locationName: 'SHELF',
-            usable: '440.0000',
-            expired: '0.0000',
-            issued: '0.0000',
-          },
+          { locationName: 'KITCHEN', usable: '0.0000' },
+          { locationName: 'SHELF', usable: '440.0000' },
         ],
+        // Left out at every location, in all.
         expired: '40.0000',
         issued: '60.0000',
       });
+      // Only what the opened row shows: no field it does not read.
+      expect(Object.keys(detail.usable[0]).sort()).toEqual([
+        'locationId',
+        'locationName',
+        'usable',
+      ]);
+      expect(detail).not.toHaveProperty('drafts');
       // The row's usable is what the lines add up to.
       const [row] = (await listed(alpha)).entries;
       expect(row.position).toBe('440.0000');
@@ -840,7 +834,6 @@ describe('Reorder points (e2e)', () => {
           number: late.number,
           partnerName: 'Nordic Supply',
           quantity: '60.0000',
-          expectedAt: '2020-01-01',
           late: true,
         },
         {
@@ -849,7 +842,6 @@ describe('Reorder points (e2e)', () => {
           number: due.number,
           partnerName: 'Nordic Supply',
           quantity: '40.0000',
-          expectedAt: '2099-01-01',
           late: false,
         },
         {
@@ -858,7 +850,6 @@ describe('Reorder points (e2e)', () => {
           number: 'B-0007',
           partnerName: null,
           quantity: '20.0000',
-          expectedAt: null,
           late: false,
         },
       ]);
@@ -868,7 +859,6 @@ describe('Reorder points (e2e)', () => {
           number: sale.number,
           partnerName: 'Northside Pharmacy',
           quantity: '40.0000',
-          expectedAt: null,
         },
       ]);
       // 55 usable, 120 coming, 40 still needed.

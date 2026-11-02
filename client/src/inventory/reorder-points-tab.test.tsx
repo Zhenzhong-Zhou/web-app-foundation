@@ -89,15 +89,12 @@ const DETAIL: ReorderPointDetail = {
       locationId: 'loc-1',
       locationName: 'Shelf A',
       usable: '20.0000',
-      expired: '0.0000',
-      issued: '0.0000',
     },
   ],
   expired: '6.0000',
   issued: '0.0000',
   coming: [],
   stillNeeded: [],
-  drafts: [],
 };
 
 /** Where Raise a purchase order goes: what it fills New order with. */
@@ -218,6 +215,18 @@ describe('Reorder points', () => {
         '1 chosen',
       ),
     ).toBeInTheDocument();
+  });
+
+  // What is in draft is the row's own: the opened row shows it from there.
+  it('shows an opened row’s drafts from the row', async () => {
+    open(['stock.view', 'orders.view']);
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Where OMEGA3-90 stands' }),
+    );
+
+    expect(await screen.findByText('In draft')).toBeInTheDocument();
+    expect(screen.getAllByText('PO-DEMO-13').length).toBeGreaterThan(1);
   });
 
   // A quick read shows no skeleton (conventions, Loading states).

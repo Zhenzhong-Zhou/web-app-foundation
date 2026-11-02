@@ -1902,8 +1902,6 @@ export type UsableStock = {
   locationId: string;
   locationName: string;
   usable: string;
-  expired: string;
-  issued: string;
 };
 
 export type ComingSupply = {
@@ -1912,7 +1910,6 @@ export type ComingSupply = {
   number: string | null;
   partnerName: string | null;
   quantity: string;
-  expectedAt: string | null;
   late: boolean;
 };
 
@@ -1921,7 +1918,6 @@ export type StillNeeded = {
   number: string;
   partnerName: string;
   quantity: string;
-  expectedAt: string | null;
 };
 
 export type ReorderPointDetail = {
@@ -1931,7 +1927,6 @@ export type ReorderPointDetail = {
   issued: string;
   coming: Array<ComingSupply>;
   stillNeeded: Array<StillNeeded>;
-  drafts: Array<ReorderPointDraft>;
 };
 
 export type ReorderPointPreview = {

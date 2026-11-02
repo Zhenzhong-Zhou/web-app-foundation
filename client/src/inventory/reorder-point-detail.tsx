@@ -345,7 +345,8 @@ export function ReorderPointDetail({ row }: { row: ReorderPointRow }) {
             )}
           </Typography>
         </Line>
-        {!!data.drafts.length && (
+        {/* What is in draft is the row's own, as the list sent it. */}
+        {!!row.drafts.length && (
           <>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {intl.formatMessage({
@@ -353,7 +354,7 @@ export function ReorderPointDetail({ row }: { row: ReorderPointRow }) {
                 defaultMessage: 'In draft',
               })}
             </Typography>
-            <DraftLines drafts={data.drafts} />
+            <DraftLines drafts={row.drafts} />
           </>
         )}
       </Part>

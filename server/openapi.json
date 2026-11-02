@@ -15331,20 +15331,12 @@
           },
           "usable": {
             "type": "string"
-          },
-          "expired": {
-            "type": "string"
-          },
-          "issued": {
-            "type": "string"
           }
         },
         "required": [
           "locationId",
           "locationName",
-          "usable",
-          "expired",
-          "issued"
+          "usable"
         ]
       },
       "ComingSupply": {
@@ -15375,12 +15367,6 @@
           "quantity": {
             "type": "string"
           },
-          "expectedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "late": {
             "type": "boolean"
           }
@@ -15391,7 +15377,6 @@
           "number",
           "partnerName",
           "quantity",
-          "expectedAt",
           "late"
         ]
       },
@@ -15409,20 +15394,13 @@
           },
           "quantity": {
             "type": "string"
-          },
-          "expectedAt": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
         "required": [
           "orderId",
           "number",
           "partnerName",
-          "quantity",
-          "expectedAt"
+          "quantity"
         ]
       },
       "ReorderPointDetail": {
@@ -15454,12 +15432,6 @@
             "items": {
               "$ref": "#/components/schemas/StillNeeded"
             }
-          },
-          "drafts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ReorderPointDraft"
-            }
           }
         },
         "required": [
@@ -15468,8 +15440,7 @@
           "expired",
           "issued",
           "coming",
-          "stillNeeded",
-          "drafts"
+          "stillNeeded"
         ]
       },
       "ReorderPointPreview": {

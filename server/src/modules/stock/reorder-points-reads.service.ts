@@ -89,8 +89,9 @@ type UsableRow = {
   location_id: string;
   location_name: string;
   usable: string;
-  expired: string;
-  issued: string;
+  /** Left out at every location, the same on each row. */
+  expired_in_all: string;
+  issued_in_all: string;
 };
 
 type ComingRow = {
@@ -108,7 +109,6 @@ type NeededRow = {
   number: string;
   partner_name: string;
   quantity: string;
-  expected_at: string | null;
 };
 
 /**
@@ -414,28 +414,22 @@ export class ReorderPointsReadsService {
       const org = sql`${organizationId}::uuid`;
       const item = sql`${variantId}::uuid`;
 
+      // By location, and what was left out at all of them, from one
+      // reading of where the item sits.
       const usable = await tx.execute<UsableRow>(sql`
         select
           u.location_id,
           loc.name as location_name,
           ${quantity(sql`u.usable`)} as usable,
-          ${quantity(sql`u.expired`)} as expired,
-          ${quantity(sql`u.issued`)} as issued
+          ${quantity(sql`sum(u.expired) over ()`)} as expired_in_all,
+          ${quantity(sql`sum(u.issued) over ()`)} as issued_in_all
         from (${usableByLocation(organizationId, today, sql`(${item})`)}) u
         join locations loc
           on loc.id = u.location_id
           and loc.organization_id = ${org}
         order by loc.name, loc.id
       `);
-
-      const leftOut = await tx.execute<{ expired: string; issued: string }>(
-        sql`
-          select
-            ${quantity(sql`coalesce(sum(u.expired), 0)`)} as expired,
-            ${quantity(sql`coalesce(sum(u.issued), 0)`)} as issued
-          from (${usableByLocation(organizationId, today, sql`(${item})`)}) u
-        `,
-      );
+      const [anywhere] = usable.rows;
 
       const coming = await tx.execute<ComingRow>(sql`
         select * from (
@@ -486,8 +480,7 @@ export class ReorderPointsReadsService {
           o.id as order_id,
           o.number,
           pa.name as partner_name,
-          ${quantity(sql`ol.quantity_ordered - ol.quantity_fulfilled`)} as quantity,
-          o.expected_at::text as expected_at
+          ${quantity(sql`ol.quantity_ordered - ol.quantity_fulfilled`)} as quantity
         from order_lines ol
         join orders o
           on o.id = ol.order_id
@@ -504,8 +497,6 @@ export class ReorderPointsReadsService {
         order by o.expected_at nulls last, o.number, o.id
       `);
 
-      const drafts = await draftsOf(tx, organizationId, [variantId]);
-
       return {
         // Text columns its check constraints hold to the two lists.
         point: {
@@ -519,18 +510,15 @@ export class ReorderPointsReadsService {
           locationId: row.location_id,
           locationName: row.location_name,
           usable: row.usable,
-          expired: row.expired,
-          issued: row.issued,
         })),
-        expired: leftOut.rows[0].expired,
-        issued: leftOut.rows[0].issued,
+        expired: anywhere?.expired_in_all ?? '0.0000',
+        issued: anywhere?.issued_in_all ?? '0.0000',
         coming: coming.rows.map((row): ComingSupply => ({
           kind: row.kind,
           id: row.id,
           number: row.number,
           partnerName: row.partner_name,
           quantity: row.quantity,
-          expectedAt: row.expected_at,
           late: row.late,
         })),
         stillNeeded: needed.rows.map((row): StillNeeded => ({
@@ -538,9 +526,7 @@ export class ReorderPointsReadsService {
           number: row.number,
           partnerName: row.partner_name,
           quantity: row.quantity,
-          expectedAt: row.expected_at,
         })),
-        drafts: drafts.get(variantId) ?? [],
       };
     });
   }

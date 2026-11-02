@@ -77,15 +77,11 @@ export class ReorderPointCounts {
   out!: number;
 }
 
-/** Usable stock at one location marked available, and what was left out. */
+/** Usable stock at one location marked available. */
 export class UsableStock {
   locationId!: string;
   locationName!: string;
   usable!: string;
-  /** In lots expired by the organization's today. */
-  expired!: string;
-  /** Issued to released runs there and not yet consumed. */
-  issued!: string;
 }
 
 /** A confirmed purchase or a released run still bringing the item. */
@@ -99,8 +95,6 @@ export class ComingSupply {
   partnerName!: string | null;
   /** Still to receive, or still to come out of the run. */
   quantity!: string;
-  /** A purchase's expected day; a run has none. */
-  expectedAt!: string | null;
   /** Expected before the organization's today. */
   late!: boolean;
 }
@@ -113,7 +107,6 @@ export class StillNeeded {
   partnerName!: string;
   /** Still to ship. */
   quantity!: string;
-  expectedAt!: string | null;
 }
 
 /** A point's own values, as the dialog's Edit opens with them. */
@@ -151,7 +144,10 @@ export class ReorderPointPreview {
   afterStatus!: ReorderStatus;
 }
 
-/** GET /stock/reorder-points/:variantId: an opened row's lines. */
+/**
+ * GET /stock/reorder-points/:variantId: an opened row's lines. What is in
+ * draft is not here: it is the row's own, which the list sends.
+ */
 export class ReorderPointDetail {
   /** The point itself, so Edit opens with what is kept. */
   point!: ReorderPointValues;
@@ -163,5 +159,4 @@ export class ReorderPointDetail {
   issued!: string;
   coming!: ComingSupply[];
   stillNeeded!: StillNeeded[];
-  drafts!: ReorderPointDraft[];
 }

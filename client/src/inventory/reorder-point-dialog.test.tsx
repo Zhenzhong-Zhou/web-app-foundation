@@ -42,7 +42,6 @@ const DETAIL: ReorderPointDetail = {
   issued: '0.0000',
   coming: [],
   stillNeeded: [],
-  drafts: [],
 };
 
 /** Each preview asked, its query as sent. */
