@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 
+import { reportFault } from '../../common/faults/tracker';
 import {
   DEFAULT_LOCALE,
   type Locale,
@@ -60,7 +61,9 @@ export class LowStockNoticesService {
   /**
    * Tells what fell low since the last check; returns how many items were
    * told about. Each organization's position is read on its own today
-   * (ADR-072), since a lot expired by it is not usable.
+   * (ADR-072), since a lot expired by it is not usable. Each organization
+   * on its own, too: one that fails is logged and reported without
+   * holding up the rest, as deletions are (organization-deletion).
    */
   async check(now: Date = new Date()): Promise<number> {
     const { rows: holding } = await this.db.execute<{
@@ -76,14 +79,22 @@ export class LowStockNoticesService {
 
     let told = 0;
     for (const organization of holding) {
-      const claimed = await this.claim(
-        organization.id,
-        todayIn(organization.time_zone, now),
-      );
-      if (claimed.length === 0) continue;
+      try {
+        const claimed = await this.claim(
+          organization.id,
+          todayIn(organization.time_zone, now),
+        );
+        if (claimed.length === 0) continue;
 
-      await this.tell(organization.id, claimed);
-      told += claimed.length;
+        await this.tell(organization.id, claimed);
+        told += claimed.length;
+      } catch (error) {
+        this.logger.error(
+          `Could not tell organization ${organization.id} of its low stock`,
+          error instanceof Error ? error.stack : String(error),
+        );
+        reportFault(error, { failed: "an organization's low stock check" });
+      }
     }
 
     if (told > 0) this.logger.log(`Low stock: ${told} items told`);

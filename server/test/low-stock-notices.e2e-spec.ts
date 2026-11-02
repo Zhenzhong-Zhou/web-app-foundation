@@ -259,9 +259,32 @@ describe('Low stock notices (e2e)', () => {
       new Error('The bell is down'),
     );
 
-    await expect(notices.check(now)).rejects.toThrow('The bell is down');
+    expect(await notices.check(now)).toBe(0);
     expect(await notices.check(now)).toBe(0);
     expect(await bell(alpha.agent)).toEqual([]);
+  });
+
+  // One organization's failure is its own: the rest are still told.
+  it('tells the other organizations when telling one fails', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const beta = await registerOrganization(app, 'beta');
+    for (const org of [alpha, beta]) {
+      await stocked(org.agent, await site(org.agent, 'SHELF'), 'D3-1000', '50');
+    }
+    const service = app.get(NotificationsService);
+    const emit = vi.spyOn(service, 'emit').mockImplementation(async (rows) => {
+      if (rows.some((row) => row.organizationId === alpha.organizationId))
+        throw new Error('The bell is down');
+      await NotificationsService.prototype.emit.call(service, rows);
+    });
+
+    try {
+      expect(await notices.check(now)).toBe(1);
+    } finally {
+      emit.mockRestore();
+    }
+    expect(await bell(alpha.agent)).toEqual([]);
+    expect(await bell(beta.agent)).toHaveLength(1);
   });
 
   /**
