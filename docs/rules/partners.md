@@ -62,12 +62,13 @@ kept is in the [README](README.md).
   MC-1547
 - **A retired partner takes no new order.** Raising one, duplicating one,
   or a replacement from an RMA is refused, naming them. New order's
-  Partner and a sample's Given to do not offer them; Plan run's Contract
-  manufacturer still does (#304).
+  Partner, a sample's Given to and Plan run's Contract manufacturer do not
+  offer them.
   [ADR-026](../adr/0026-customers-and-suppliers-are-one-table.md#decision--one-partners-table-and-direction-lives-on-the-order) ·
   [test](../../server/test/orders.e2e-spec.ts) "refuses a retired partner" ·
   [test](../../server/test/orders.e2e-spec.ts) "refuses to duplicate onto a retired partner" ·
   [test](../../client/src/components/partner-picker.test.tsx) "asks once typing stops, and lists the answer in its order, within what it was given" ·
+  [test](../../client/src/production/create-run-dialog.test.tsx) "does not offer a retired partner as contract manufacturer" ·
   partly tested ·
   [Help](../../client/src/help/guides/en/partners.md#retire-a-partner-retire) ·
   MC-3904

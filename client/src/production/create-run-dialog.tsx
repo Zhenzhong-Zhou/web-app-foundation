@@ -91,6 +91,10 @@ export function CreateRunDialog({
   const { partners, answered: partnersAnswered } = usePartners(
     open && canSeePartners,
   );
+  // Retired partners are left out, as on New order and a sample's Given
+  // to: a new run with a partner you no longer deal with is a mistake
+  // worth not offering (#304).
+  const manufacturers = partners.filter((partner) => partner.isActive);
   const [boms, setBoms] = useState<Bom[]>([]);
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -442,7 +446,7 @@ export function CreateRunDialog({
                 id: 'production.contract',
                 defaultMessage: 'Contract manufacturer',
               })}
-              options={partners}
+              options={manufacturers}
               loading={canSeePartners && !partnersAnswered}
               none={intl.formatMessage({
                 id: 'production.create.ourselves',
