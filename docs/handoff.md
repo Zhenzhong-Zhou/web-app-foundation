@@ -15,10 +15,11 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 2 November 2026:
 
-- **ADR-089, a brief's steps in a row** ([#348]): its branch is being
-  built, [ADR-089](adr/0089-a-briefs-steps-in-a-row.md) first, by the
-  order in its Consequences. Its dependency step waits for Dependabot's
-  open pull requests (Dates).
+- **ADR-089, a brief's steps in a row** ([#348]): built in [#403], its
+  as-built in [ADR-089](adr/0089-a-briefs-steps-in-a-row.md). Claude
+  Code's steps of a brief now run in a row, each in a `brief-step`
+  subagent, and the check before an ADR is `scripts/adr-check.mjs`. Its
+  merge needs the planning skill uploaded again (Still to do, by hand).
 - **ADR-085, low stock** ([#288]): [#361], merged on 2 November, its
   as-built in [ADR-085](adr/0085-low-stock.md). All its required checks
   passed, with Claude Code Review's expected failure (it skips a pull
@@ -40,7 +41,8 @@ On 2 November 2026:
   October, after [#329]. It differs from `main`'s copy only in the
   quotes claude.ai's upload puts around its description, which
   [#361] added to `main`'s, and since its merge the two match, with no
-  upload (checked on 2 November).
+  upload (checked on 2 November). [#403] changes it, so it is packed
+  from `main` and uploaded again after that merge.
 - **The triage** is done (28 October;
   [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
   every open issue has its group and area labels, the `fix-now` ones are
@@ -51,7 +53,9 @@ On 2 November 2026:
   November. Since 1 November, timings on GitHub's runners are judged by
   the median of three runs, as they vary by about 30% run to run
   ([#342]).
-- **The last merges:** [#366] (Dependabot's 7-day cooldown, 2
+- **The last merges:** [#399], [#400] and [#401] ([#359], and [#245]'s
+  first two parts, from cloud sessions, 2 November); [#367] to [#370]
+  (Dependabot, 2 November); [#366] (Dependabot's 7-day cooldown, 2
   November); [#361] (ADR-085, low stock, 2 November); [#344] (a time
   zone's city after a dash, for British Columbia's new Pacific Time,
   closing [#343], 1 November);
@@ -100,24 +104,28 @@ On 2 November 2026:
   in 中文, 品牌, product photos, 同事, and 编号 (MC-2710).
 - **Dependabot, from 2 November:** with its 7-day cooldown ([#366]), it
   opens a pull request only for releases already 7 days old, so each
-  merges once green, one at a time; [#367] to [#370] replaced the four
-  opened before it. Claude Code Review fails on them, since a run
-  Dependabot starts gets none of the repository's secrets, until
-  ADR-089's branch makes it skip them.
-- **3 to 8 November:** what Dependabot has not opened comes of age; the
-  next dependency step takes what is 7 days old that day. In Vancouver
-  time: the Nest packages at 12.3.2 on 3 November, 05:03, when the multer
-  override goes (ADR-019), in ADR-089's dependency step once [#367] to
-  [#370] have merged; react-intl and react-router-dom by 3 November,
-  14:14; `@types/node` and dotenv-cli by 4 November, 13:26; nodemailer on
-  5 November; eslint and `@aws-sdk/client-s3` on 6 November; the formatjs
-  packages on 7 November; globals on 8 November.
-- **By 4 November:** the API credits end about 5 November, so the
-  translation review (the French and Chinese catalogues against the
-  glossary) runs before then: a script run once on the maintainer's Mac,
-  kept in the ignored tmp/ folder, its findings filed as issues by area,
-  labelled `needs-triage`. The cloud credit ends in early November
-  too: cloud sessions take small issues in files no open branch
+  merges once green, one at a time. [#403] makes Claude Code Review skip
+  them, since a run Dependabot starts is refused by the action and gets
+  none of the repository's secrets.
+- **3 to 9 November:** what Dependabot has not opened comes of age; the
+  next branch's dependency step takes what is 7 days old that day. In
+  Vancouver time: `@nestjs/cli` on 3 November, 01:14; the Nest packages
+  at 12.3.2 on 3 November, 05:03, when the multer override goes
+  (ADR-019, moved from ADR-089's branch); react-intl and
+  react-router-dom by 3 November, 14:14; `@nestjs/schematics`, the
+  Sentry packages at 11.10.0, `@types/node` and dotenv-cli by 4
+  November, 13:26; nodemailer on 5 November; eslint and
+  `@aws-sdk/client-s3` on 6 November; the formatjs packages on 7
+  November; globals on 8 November; `@nestjs/swagger`, vitest and
+  `@vitejs/plugin-react` on 9 November.
+- **The translation review:** done on 2 November with the API credits,
+  against the glossary: the catalogues' findings in [#371] to [#397],
+  one area each, and the Help guides' in [#398]. All are `fix-now`, one
+  batch of the Fix-ups milestone with the corrections of the reviewer
+  who reads only Chinese, before 30 November; their data stays in the
+  ignored tmp/ folder on the maintainer's Mac. The API credits last until
+  9 November, for Claude Code later that week. The cloud credit ends in
+  early November: cloud sessions take small issues in files no open branch
   changes, and their pull requests are squashed and merged, so each lands
   on `main` as one commit GitHub signs.
 - **30 November:** the known misses for the typo lookup ([#225]) and Home
@@ -125,8 +133,9 @@ On 2 November 2026:
 - **Cloud sessions:** what they taught is in the working agreements,
   "Cloud sessions" under
   [How code is delivered](engineering.md#how-code-is-delivered). On 2
-  November: Dependabot's cooldown ([#366]), [#359], and [#245]'s first
-  part, its other places listed on the issue.
+  November: Dependabot's cooldown ([#366]); [#359]; [#245]'s first two
+  parts, what is left listed on the issue; then [#303], widened to every
+  item picker, [#339], and [#310]'s Receive part.
 - **About 19 November:** replace Render's free database before it expires
   on 21 November, by
   [`render.md`, "Replacing the database"](runbooks/render.md#replacing-the-database),
@@ -148,8 +157,11 @@ On 2 November 2026:
   - `scripts/prune-branches.sh --yes`, then `scripts/clean-local.sh`, a
     dry run, then `--yes`, which removes `tmp/adr-085/` and
     `tmp/adr-085-low-stock/`.
-- **After [#329]:** `evals.md` walked in a new chat, against the skill
-  uploaded on 30 October.
+- **After [#403]'s merge:** on `main`, `node scripts/pack-chat-skill.mjs`,
+  and the skill replaced in claude.ai's Settings; then `evals.md` walked
+  in a new chat, prompts 2, 3 and 5 changed by ADR-089; then
+  `scripts/prune-branches.sh --yes` and `scripts/clean-local.sh`, which
+  removes ADR-089's folders in tmp/.
 - **Owed since 31 October:** the web service's memory on Render's
   Metrics, a day with the tracker on; the review measured about 326 MiB at rest, of the
   free plan's 512 MB.
@@ -202,19 +214,18 @@ request or a set of them:
    checked the same day.
 5. **ADR-085, low stock** ([#288]): [#361], with its riders, as its
    as-built in [ADR-085](adr/0085-low-stock.md) says.
-6. **ADR-089 first** ([#348]): `/build-from-brief` runs a brief's steps
-   in a row, each in a fresh subagent, stopping only when a person is
-   needed, and the check before an ADR becomes a script. Its dependency
-   step, with the multer override's removal, comes after Dependabot's
-   open pull requests (Dates).
+6. **ADR-089** ([#348]): [#403], as its as-built says; the multer
+   override goes with the next branch's dependency step (Dates).
 7. **The fix-ups,** the Fix-ups milestone, each batch writing its areas'
-   rules files, in five batches first:
+   rules files, in six batches first:
    1. CI that can be trusted: the flaky tests, [#183], [#232], [#233],
       [#248] and [#290], with [#342] and [#334];
    2. before their known misses end on 30 November: [#225] and [#276];
-   3. expired lots: [#333] with [#331];
-   4. the audit log: [#339] with [#133] and [#168];
-   5. then TypeScript 7 ([#336]); the newcomer test; the design language
+   3. the translations, before 30 November: [#371] to [#398], with the
+      corrections of the reviewer who reads only Chinese;
+   4. expired lots: [#333] with [#331];
+   5. the audit log: [#339] with [#133] and [#168];
+   6. then TypeScript 7 ([#336]); the newcomer test; the design language
       ([#338], ADR-090); and Home for a newcomer ([#335], ADR-091),
       renumbered by ADR-089.
 
@@ -318,6 +329,8 @@ Not repeated here; each list has one home:
 [#294]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/294
 [#298]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/298
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
+[#303]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/303
+[#310]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/310
 [#316]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/316
 [#317]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/317
 [#318]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/318
@@ -350,3 +363,10 @@ Not repeated here; each list has one home:
 [#366]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/366
 [#367]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/367
 [#370]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/370
+[#371]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/371
+[#397]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/397
+[#398]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/398
+[#399]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/399
+[#400]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/400
+[#401]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/401
+[#403]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/403

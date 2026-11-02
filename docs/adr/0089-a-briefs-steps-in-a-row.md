@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-11-02
-areas: [docs]
+areas: [docs, ops]
 amends: [ADR-083, ADR-088]
 ---
 
@@ -219,3 +219,56 @@ it is written in, and these two wait for the fix-ups.
   8. the reviews' findings, in the main session;
   9. the fixes chosen, the full verify, the push and the pull request;
   10. the as-built, by the chat.
+
+## Amendment (November 2026) — as built (#403)
+
+Built in #403 by its brief, the trial in step 3 committing nothing.
+Where building differed from the decisions above, or found other than
+the Context assumed:
+
+- **Claude Code, as seen on 2 November (2.1.316).** A subagent starts in
+  the background, fork mode being on by default, and its result comes
+  back as a notification; the loop reads the next step only once that
+  result is back, and the trial's run went from step to step with
+  nothing typed. A step hands its summary back through a hand-back tool
+  call, not as plain text at the end. `brief-step` was found by the
+  session that made it, without the restart the documentation asks for,
+  and the `/agents` list is gone, so a session is asked which subagents
+  it can start. A user-only skill cannot be preloaded, as the Context
+  has it.
+- **The trial:** three runs, each proving one stop: a question handed
+  back at step 3, its step 2 knowing nothing of step 1's work; the
+  `STOP` file, after step 4; and the maintainer's step 6.
+- **The stop file** is checked after each step and removed at every
+  stop, not only when it is the reason (the reviews' finding 3), so one
+  made during a step that ends BLOCKED, or during the last, never stops
+  the next run early.
+- **A step named alone takes the maintainer's choices** after its
+  number, `<brief> <N> [choices]`, which the loop refused at first
+  (finding 24); the fixes step runs that way.
+- **The dependency step** made no commit: nothing in range was 7 days
+  old on 2 November. The multer override stays until the next branch's
+  dependency step, once the Nest packages at 12.3.2 are old enough, so
+  ADR-019's amendment, fired above, is taken there. `brief-step`'s rule
+  now says that a package not yet old enough never stops a step, its
+  date listed, and that `npm ci` comes first after a pull or a rebase
+  that changed a lock file.
+- **Claude Code Review skips Dependabot's pull requests** by who opened
+  them (`user.login`), so a run the maintainer starts on one is skipped
+  too, as reviewing no version bump intends. Such a run fails for two
+  reasons, not the one the Context gives: the action refuses a run a
+  bot starts, and Dependabot's runs get no secrets.
+- **The check script** keeps the areas in the order given, takes digits
+  alone for `--issues`, and says so when GitHub cannot be reached; a
+  real run matched the block it replaced line for line.
+- **The reviews' step** took about 75 minutes, waiting for its helpers
+  and for the maintainer, past the 30-minute stop rule; the brief's
+  shape now gives the reviews none.
+- **Areas:** `ops` added, for the review workflow and ADR-019's
+  override (the reviews' finding 20).
+- **Deferred, added, each with what brings it in:**
+  - *The loop writing each summary once,* the step appending its own: a
+    run long enough for the loop's context to matter.
+  - *The loop's bookkeeping as a script* (the steps table, the stop
+    file, the summaries' headings), the model only starting each step:
+    a run that misreads the table or changes a summary as it copies it.

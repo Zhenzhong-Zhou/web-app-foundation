@@ -263,7 +263,7 @@ same names. An area no ADR names has no line.
 - `docs`: [ADR-086], [ADR-087], [ADR-088], [ADR-089]
 - `help`: [ADR-079]
 - `i18n`: [ADR-054], [ADR-056], [ADR-072], [ADR-076]
-- `ops`: [ADR-005], [ADR-008], [ADR-019], [ADR-051], [ADR-053], [ADR-059], [ADR-067], [ADR-070], [ADR-081], [ADR-084], [ADR-088]
+- `ops`: [ADR-005], [ADR-008], [ADR-019], [ADR-051], [ADR-053], [ADR-059], [ADR-067], [ADR-070], [ADR-081], [ADR-084], [ADR-088], [ADR-089]
 - `ui`: [ADR-007], [ADR-020], [ADR-021], [ADR-055], [ADR-056], [ADR-057], [ADR-060], [ADR-075], [ADR-082], [ADR-084]
 
 <!-- adr-areas:end -->
