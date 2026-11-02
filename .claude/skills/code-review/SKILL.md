@@ -135,9 +135,10 @@ bring them.
 
 Write each as `path:line`, what is wrong, the rule it breaks (the ADR,
 the convention or the principle), and the fix. Then one line on what
-the change does well; the last line is `DONE` or `BLOCKED`, as
-`CLAUDE.md`'s "Report for a quick read" says. If nothing is wrong, say
-so plainly rather than inventing findings.
+the change does well; the last line is `DONE: <why>` or
+`BLOCKED: <what is needed>`, as `CLAUDE.md`'s "Report for a quick
+read" says. If nothing is wrong, say so plainly rather than inventing
+findings.
 
 ## 5. Post, when asked
 
