@@ -192,12 +192,13 @@ export function CreateOrderPage() {
   }, [canSeeLocations]);
 
   /**
-   * Retired partners are filtered out here and nowhere else.
+   * Retired partners are filtered out here, as they are from a sample's
+   * Given to and Plan run's Contract manufacturer.
    *
    * The directory lists them, because a name that vanished is harder to
-   * explain than one shown as inactive (ADR-026). This is the one place where
-   * choosing one would be a mistake — the server refuses it with a 409, and
-   * an option that always fails is worse than an option that is absent.
+   * explain than one shown as inactive (ADR-026). Here choosing one is
+   * refused — the server answers with a 409, and an option that always
+   * fails is worse than an option that is absent.
    */
   const selectablePartners = partners.filter((row) => row.isActive);
 

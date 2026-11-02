@@ -3171,6 +3171,15 @@ first.
   Recent activity shows that address under its event, wrapped, with no
   From column, and When shows the time, with nothing scrolling sideways.
   The same in English, Français and 中文.
+- **MC-R73** *(Enter in Receive stock with no location focusing a hidden
+  input, #310)* As the demo Owner, on Inventory with no location chosen,
+  open Receive stock, choose an item, type 5 in Quantity and press Enter:
+  Into says Choose a location. under it, in red, and focus is on Into's
+  own box, where Space opens its list; nothing is received, and Chrome's
+  console shows no "Blocked aria-hidden". Press Receive with every field
+  empty: Item, Into and Quantity each say what they need, focus in Item.
+  A lot-tracked item with no lot number says Type the lot number. there,
+  with focus on it. In 中文, Into reads 请选择库位。
 
 - **MC-R72** *(codes changed by a browser's translation, m2 read as 平方米,
   #245)* As the demo Owner in English, in Chrome, give a location the code
@@ -4428,3 +4437,5 @@ first.
   browser's translation: MC-R72 extended.
 - 2026-11-02: #323, on an iPhone SE, Recent activity with a full IPv6
   address shows the time, with nothing scrolling sideways: MC-R74 added.
+- 2026-11-02: #310, in Receive stock, Enter with no location names the
+  field and focuses it, as every empty field there does: MC-R73.

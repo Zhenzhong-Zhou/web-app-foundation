@@ -122,6 +122,64 @@ describe('CreateRunDialog', () => {
   });
 
   /**
+   * Retired partners are left out, as on New order and a sample's Given
+   * to (#304).
+   */
+  it('does not offer a retired partner as contract manufacturer', async () => {
+    const user = userEvent.setup();
+    const partner = {
+      taxId: null,
+      salePriceListId: null,
+      purchasePriceListId: null,
+      documentLanguage: null,
+      documentSecondLanguage: null,
+      notes: null,
+    };
+    server.use(
+      http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
+      http.get('/api/v1/locations', () => HttpResponse.json([])),
+      http.get('/api/v1/partners', () =>
+        HttpResponse.json([
+          {
+            ...partner,
+            id: 'partner-acme',
+            name: 'Acme Labs',
+            code: 'ACME',
+            isActive: true,
+          },
+          {
+            ...partner,
+            id: 'partner-old',
+            name: 'Old Labs',
+            code: 'OLD',
+            isActive: false,
+          },
+        ]),
+      ),
+    );
+
+    renderWithAuth(
+      <CreateRunDialog
+        open
+        canSeePartners
+        onClose={() => undefined}
+        onCreated={() => undefined}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole('combobox', { name: 'Contract manufacturer' }),
+    );
+
+    expect(
+      await screen.findByRole('option', { name: 'Acme Labs (ACME)' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('option', { name: /Old Labs/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  /**
    * A catalogue that failed to load says so, as Receive does, above the
    * picker and in its list, never as "No matching items" (#303).
    */
