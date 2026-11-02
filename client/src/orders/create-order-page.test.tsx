@@ -267,6 +267,21 @@ describe('CreateOrderPage filled from Reorder points', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('goes back to Reorder points on Cancel, not to Orders', async () => {
+    serve();
+    renderPage(
+      fillState({
+        lines: [{ variantId: 'variant-plain', quantity: '2000.0000' }],
+      }),
+      '/inventory?tab=reorder-points',
+    );
+
+    await screen.findByText(/Filled from Reorder points/);
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(await screen.findByText('Reorder points')).toBeInTheDocument();
+  });
+
   it('opens empty, with no note, from a link that fills nothing', async () => {
     serve();
     renderPage();

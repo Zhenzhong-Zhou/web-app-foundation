@@ -626,10 +626,11 @@ export function CreateOrderPage() {
           <Button
             variant="text"
             disabled={submitting}
-            // Cancel means discard; it does not ask again.
+            // Cancel means discard; it does not ask again. Filled from
+            // Reorder points, back there, with what was chosen (ADR-085).
             onClick={() => {
               release();
-              void navigate('/orders');
+              void (fill ? navigate(-1) : navigate('/orders'));
             }}
           >
             {intl.formatMessage({
