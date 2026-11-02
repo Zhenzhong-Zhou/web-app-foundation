@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
+import { NotificationsService } from '../src/core/notifications/notifications.service';
 import type { Database } from '../src/database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../src/database/database.tokens';
 import { organizations } from '../src/database/schema';
@@ -11,6 +12,7 @@ import {
   createE2eApp,
   registerOrganization,
 } from './utils/fixtures';
+import { RecordingTracker } from './utils/recording-tracker';
 import { resetDatabase } from './utils/reset-db';
 import { KIRITIMATI, PAGO_PAGO } from './utils/time-zones';
 
@@ -154,6 +156,44 @@ describe('Licence reminders (e2e)', () => {
 
     expect(await reminders.remind(now)).toBe(2);
     expect((await bell(broken.agent))[0].title).toContain('expires today');
+  });
+
+  /**
+   * One organization's failure is its own: it is logged and reported, and
+   * the rest are still reminded (#359).
+   */
+  describe('a reminder that cannot be sent', () => {
+    const faults = new RecordingTracker();
+    afterEach(() => faults.stop());
+
+    it('reminds the other organizations, and reports it', async () => {
+      faults.start();
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      await licence(alpha.agent, day(now, 7));
+      await licence(beta.agent, day(now, 7));
+      const service = app.get(NotificationsService);
+      const emit = vi
+        .spyOn(service, 'emit')
+        .mockImplementation(async (rows) => {
+          if (rows.some((row) => row.organizationId === alpha.organizationId))
+            throw new Error('The bell is down');
+          await NotificationsService.prototype.emit.call(service, rows);
+        });
+
+      try {
+        expect(await reminders.remind(now)).toBe(1);
+      } finally {
+        emit.mockRestore();
+      }
+      expect(await bell(alpha.agent)).toEqual([]);
+      expect(await bell(beta.agent)).toHaveLength(1);
+      const sent = await faults.sent();
+      expect(sent).toHaveLength(1);
+      expect(sent[0].tags).toMatchObject({
+        failed: "an organization's licence reminder",
+      });
+    });
   });
 
   it('sends the latest owed after downtime, not every one missed', async () => {

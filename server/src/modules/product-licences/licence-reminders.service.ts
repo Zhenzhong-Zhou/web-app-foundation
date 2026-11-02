@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, between, eq, isNotNull, sql } from 'drizzle-orm';
 
+import { reportFault } from '../../common/faults/tracker';
 import { todayIn } from '../../common/today';
 import { TOLD } from '../../core/authorization/permissions';
 import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
@@ -58,7 +59,9 @@ export class LicenceRemindersService {
    * expiring tomorrow in Vancouver is told "expires today" at midnight
    * there, not at 4 pm the day before. Every zone's today is within a day
    * of UTC's, so the window is read a day wider each side, and each
-   * licence is then measured against its own organization's day.
+   * licence is then measured against its own organization's day. Each
+   * licence on its own, too: one that fails is logged and reported without
+   * holding up the rest, as the low stock notices are.
    */
   async remind(now: Date = new Date()): Promise<number> {
     const utc = todayIn('UTC', now);
@@ -92,35 +95,43 @@ export class LicenceRemindersService {
 
     let told = 0;
     for (const licence of candidates) {
-      const expiresAt = licence.expiresAt!;
-      const daysLeft = daysUntil(expiresAt, todayIn(licence.timeZone, now));
-      const due = noticeDue(daysLeft);
-      if (due === null) continue;
+      try {
+        const expiresAt = licence.expiresAt!;
+        const daysLeft = daysUntil(expiresAt, todayIn(licence.timeZone, now));
+        const due = noticeDue(daysLeft);
+        if (due === null) continue;
 
-      // Already sent this notice, or a nearer one, for this date.
-      const sent =
-        licence.noticeFor === expiresAt && licence.noticeDays !== null
-          ? licence.noticeDays
-          : null;
-      if (sent !== null && sent <= due) continue;
+        // Already sent this notice, or a nearer one, for this date.
+        const sent =
+          licence.noticeFor === expiresAt && licence.noticeDays !== null
+            ? licence.noticeDays
+            : null;
+        if (sent !== null && sent <= due) continue;
 
-      // Claimed only if nobody moved the row since it was read.
-      const [claimed] = await this.db
-        .update(productLicences)
-        .set({ expiryNoticeFor: expiresAt, expiryNoticeDays: due })
-        .where(
-          and(
-            eq(productLicences.id, licence.id),
-            eq(productLicences.expiresAt, expiresAt),
-            sql`${productLicences.expiryNoticeFor} is not distinct from ${licence.noticeFor}`,
-            sql`${productLicences.expiryNoticeDays} is not distinct from ${licence.noticeDays}`,
-          ),
-        )
-        .returning({ id: productLicences.id });
-      if (!claimed) continue;
+        // Claimed only if nobody moved the row since it was read.
+        const [claimed] = await this.db
+          .update(productLicences)
+          .set({ expiryNoticeFor: expiresAt, expiryNoticeDays: due })
+          .where(
+            and(
+              eq(productLicences.id, licence.id),
+              eq(productLicences.expiresAt, expiresAt),
+              sql`${productLicences.expiryNoticeFor} is not distinct from ${licence.noticeFor}`,
+              sql`${productLicences.expiryNoticeDays} is not distinct from ${licence.noticeDays}`,
+            ),
+          )
+          .returning({ id: productLicences.id });
+        if (!claimed) continue;
 
-      await this.tell(licence, expiresAt, daysLeft);
-      told++;
+        await this.tell(licence, expiresAt, daysLeft);
+        told++;
+      } catch (error) {
+        this.logger.error(
+          `Could not remind organization ${licence.organizationId} of a licence's expiry`,
+          error instanceof Error ? error.stack : String(error),
+        );
+        reportFault(error, { failed: "an organization's licence reminder" });
+      }
     }
 
     if (told > 0) this.logger.log(`Licence reminders: ${told} sent`);
