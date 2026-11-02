@@ -27,6 +27,7 @@ import type {
   ReorderPointRow,
   ReorderPointValues,
 } from '../api/types.gen';
+import { chosenCardSx } from '../components/chosen-card';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
@@ -614,16 +615,13 @@ export function ReorderPointDialog({
                   >
                     <Stack spacing={1}>
                       {RULES.map((rule) => (
+                        // Chosen as Invite's roles and Start from are
+                        // (ADR-055): the accent's border, two pixels,
+                        // and its tint.
                         <Paper
                           key={rule}
                           variant="outlined"
-                          sx={{
-                            px: 1.5,
-                            py: 1,
-                            ...(form.rule === rule && {
-                              borderColor: 'primary.main',
-                            }),
-                          }}
+                          sx={chosenCardSx(form.rule === rule)}
                         >
                           <FormControlLabel
                             value={rule}

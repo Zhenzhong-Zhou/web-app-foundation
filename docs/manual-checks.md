@@ -3019,7 +3019,9 @@ site, after a deploy that changes the setting, the route or the relay.
   chosen; choose FOCUS-60CT and Made is, since it has an active recipe.
   The point's unit sits inside its field at the right. How much to order has three cards,
   Just enough, A fixed quantity and Up to a maximum, each with its line;
-  choosing the fixed or the maximum card shows its field inside it. Once
+  the chosen one drawn as Invite's roles are, a thicker accent border and
+  a light tint, in both modes; choosing the fixed or the maximum card
+  shows its field inside it. Once
   the typing pauses, Today shows two bars, Position now and Position
   after the suggested order, with their numbers, and one sentence, such as "Below 500 now, so
   it would suggest 600, 3 of 200.". Typing on changes it once more, never
@@ -4381,3 +4383,5 @@ first.
   views, the position's line and Export: MC-4211 extended.
 - 2026-11-01: ADR-085's review, the 409 at the item said once, with Edit
   it: MC-4208 reworded.
+- 2026-11-01: ADR-085's review, the chosen rule card drawn as every
+  chosen card is: MC-4207 extended.

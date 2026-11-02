@@ -123,6 +123,17 @@ describe('ReorderPointDialog', () => {
     }
   });
 
+  // Chosen as every card choice is (ADR-055): two pixels of the accent.
+  it('draws the chosen rule as a chosen card', async () => {
+    previews(() => HttpResponse.json(LOW));
+    open({ kind: 'edit', item: D3, point: DETAIL.point });
+
+    const card = (name: RegExp) =>
+      screen.getByRole('radio', { name }).closest('.MuiPaper-root');
+    expect(card(/^A fixed quantity/)).toHaveStyle({ borderWidth: '2px' });
+    expect(card(/^Just enough/)).toHaveStyle({ borderWidth: '1px' });
+  });
+
   it('drops an answer that comes after a newer one', async () => {
     previews(async (query) => {
       if (query.get('reorderPoint') === '200') {
