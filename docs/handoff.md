@@ -15,11 +15,21 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 2 November 2026:
 
-- **ADR-089, a brief's steps in a row** ([#348]): built in [#403], its
-  as-built in [ADR-089](adr/0089-a-briefs-steps-in-a-row.md). Claude
-  Code's steps of a brief now run in a row, each in a `brief-step`
-  subagent, and the check before an ADR is `scripts/adr-check.mjs`. Its
-  merge needs the planning skill uploaded again (Still to do, by hand).
+- **The Fix-ups' first batch, CI that can be trusted:** planned on 2
+  November, built on `fix-ups-ci` from its brief, its decisions in
+  [ADR-008](adr/0008-testing-scaffolding-lands-in-v1.md)'s and
+  [ADR-051](adr/0051-performance.md)'s amendments, with [#340] and [#271]
+  riding along. A throwaway pull request (#408) showed [#334] holds: a
+  label's run passed "CI — all jobs" over a failure, and the pull
+  request read mergeable. `main`'s ruleset requires "CI — all jobs"
+  alone since 2 November, with "Commits — no placeholder identity", so
+  "Against main" is required too.
+- **ADR-089, a brief's steps in a row** ([#348]): [#403], merged on 2
+  November, its as-built in
+  [ADR-089](adr/0089-a-briefs-steps-in-a-row.md). Claude Code's steps of
+  a brief now run in a row, each in a `brief-step` subagent, and the
+  check before an ADR is `scripts/adr-check.mjs`. The planning skill was
+  packed from `main` and uploaded again after it.
 - **ADR-085, low stock** ([#288]): [#361], merged on 2 November, its
   as-built in [ADR-085](adr/0085-low-stock.md). All its required checks
   passed, with Claude Code Review's expected failure (it skips a pull
@@ -41,8 +51,10 @@ On 2 November 2026:
   October, after [#329]. It differs from `main`'s copy only in the
   quotes claude.ai's upload puts around its description, which
   [#361] added to `main`'s, and since its merge the two match, with no
-  upload (checked on 2 November). [#403] changes it, so it is packed
-  from `main` and uploaded again after that merge.
+  upload (checked on 2 November). [#403] changed it, so it was packed
+  from `main` and uploaded again on 2 November; that session walked
+  `evals.md`'s prompt 2, which passed, and walks 3 and 5 as the batch
+  reaches them.
 - **The triage** is done (28 October;
   [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
   every open issue has its group and area labels, the `fix-now` ones are
@@ -53,7 +65,10 @@ On 2 November 2026:
   November. Since 1 November, timings on GitHub's runners are judged by
   the median of three runs, as they vary by about 30% run to run
   ([#342]).
-- **The last merges:** [#399], [#400] and [#401] ([#359], and [#245]'s
+- **The last merges:** [#405], [#406] and [#407] ([#310]'s Receive
+  part, [#304] and [#323], from cloud sessions, 2 November; [#313] closed
+  as fixed by [#361]); [#404] ([#303], 2 November); [#403] (ADR-089, 2 November);
+  [#399], [#400] and [#401] ([#359], and [#245]'s
   first two parts, from cloud sessions, 2 November); [#367] to [#370]
   (Dependabot, 2 November); [#366] (Dependabot's 7-day cooldown, 2
   November); [#361] (ADR-085, low stock, 2 November); [#344] (a time
@@ -135,7 +150,8 @@ On 2 November 2026:
   [How code is delivered](engineering.md#how-code-is-delivered). On 2
   November: Dependabot's cooldown ([#366]); [#359]; [#245]'s first two
   parts, what is left listed on the issue; then [#303], widened to every
-  item picker, [#339], and [#310]'s Receive part.
+  item picker, [#339], [#310]'s Receive part, [#304] and [#323], each
+  merged; [#310]'s other dialogs are listed on the issue.
 - **About 19 November:** replace Render's free database before it expires
   on 21 November, by
   [`render.md`, "Replacing the database"](runbooks/render.md#replacing-the-database),
@@ -149,19 +165,12 @@ On 2 November 2026:
 - **After [#361]'s merge,** in this order:
   - MC-3424's third tab, where one was left on Home across the deploy:
     it shows one banner, and one Reload brings Home back;
-  - `main`'s ruleset requires "CI — all jobs" alone, in place of the five
-    jobs it names now; the next docs-only pull request then merges
-    without the bypass;
   - MC-4201 on the live site with a test item: one notice in the bell
-    within the hour while the service is awake; then remove the point;
-  - `scripts/prune-branches.sh --yes`, then `scripts/clean-local.sh`, a
-    dry run, then `--yes`, which removes `tmp/adr-085/` and
-    `tmp/adr-085-low-stock/`.
-- **After [#403]'s merge:** on `main`, `node scripts/pack-chat-skill.mjs`,
-  and the skill replaced in claude.ai's Settings; then `evals.md` walked
-  in a new chat, prompts 2, 3 and 5 changed by ADR-089; then
-  `scripts/prune-branches.sh --yes` and `scripts/clean-local.sh`, which
-  removes ADR-089's folders in tmp/.
+    within the hour while the service is awake; then remove the point.
+- **After [#403]'s merge:** `evals.md`'s prompts 3 and 5, walked as
+  `fix-ups-ci`'s planning reaches them (prompt 2 passed on 2 November;
+  the skill was uploaded, and the branches pruned and cleaned, the same
+  day).
 - **Owed since 31 October:** the web service's memory on Render's
   Metrics, a day with the tracker on; the review measured about 326 MiB at rest, of the
   free plan's 512 MB.
@@ -214,12 +223,15 @@ request or a set of them:
    checked the same day.
 5. **ADR-085, low stock** ([#288]): [#361], with its riders, as its
    as-built in [ADR-085](adr/0085-low-stock.md) says.
-6. **ADR-089** ([#348]): [#403], as its as-built says; the multer
-   override goes with the next branch's dependency step (Dates).
+6. **ADR-089** ([#348]): [#403], merged 2 November, as its as-built
+   says; the multer override goes with `fix-ups-ci`'s dependency step
+   (Dates).
 7. **The fix-ups,** the Fix-ups milestone, each batch writing its areas'
    rules files, in six batches first:
    1. CI that can be trusted: the flaky tests, [#183], [#232], [#233],
-      [#248] and [#290], with [#342] and [#334];
+      [#248] and [#290], with [#342] and [#334]; planned on 2 November,
+      on `fix-ups-ci`, with [#340] and [#271], its decisions in ADR-008's
+      and ADR-051's amendments;
    2. before their known misses end on 30 November: [#225] and [#276];
    3. the translations, before 30 November: [#371] to [#398], with the
       corrections of the reviewer who reads only Chinese;
@@ -320,6 +332,7 @@ Not repeated here; each list has one home:
 [#266]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/266
 [#268]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/268
 [#269]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/269
+[#271]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/271
 [#276]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/276
 [#287]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/287
 [#288]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/288
@@ -330,13 +343,16 @@ Not repeated here; each list has one home:
 [#298]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/298
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
 [#303]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/303
+[#304]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/304
 [#310]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/310
+[#313]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/313
 [#316]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/316
 [#317]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/317
 [#318]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/318
 [#319]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/319
 [#320]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/320
 [#321]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/321
+[#323]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/323
 [#324]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/324
 [#325]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/325
 [#326]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/326
@@ -349,6 +365,7 @@ Not repeated here; each list has one home:
 [#336]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/336
 [#338]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/338
 [#339]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/339
+[#340]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/340
 [#342]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/342
 [#343]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/343
 [#344]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/344
@@ -370,3 +387,7 @@ Not repeated here; each list has one home:
 [#400]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/400
 [#401]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/401
 [#403]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/403
+[#404]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/404
+[#405]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/405
+[#406]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/406
+[#407]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/407

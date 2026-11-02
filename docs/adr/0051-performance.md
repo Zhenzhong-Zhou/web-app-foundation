@@ -219,3 +219,49 @@ seed's own code, and migrates it forward, as production data is. The
 budgets run by hand on a branch; the full run, stress included, weekly on
 `main` and on each release candidate tag, so before every release. Timed
 runs always seed fresh, so their numbers stay comparable.
+
+## Amendment (November 2026) — budgets judged by the median of three rounds (#342)
+
+On 1 November 2026, two budget runs on GitHub's machines with no change
+to the code between them read the low list at 95 and 137 ms at the 95th
+percentile, and Home at 249 and 329 ms: shared runners vary by about 30%
+from run to run. One run cannot tell a 10% change from the machine, and
+a slow machine can turn the weekly run red with nothing wrong. Since
+that day, timings on GitHub's runners have been judged by the median of
+three runs made by hand. This amendment makes the workflow do it (the
+maintainer, 2 November 2026, as recommended). Its check before drafting
+is ADR-008's amendment of the same day, the Fix-ups' first batch.
+
+### Decision — three rounds on three runners, judged by their median
+
+- **Every timed run is three jobs,** budgets and full alike, weekly, on
+  a release candidate's tag and by hand: each round seeds fresh on its
+  own runner, as timed runs do, and runs the budgets and the
+  concurrency check at 10 connections. The stress pass, which reports
+  and never fails, runs in the first round only.
+- **A fourth job judges the median:** for each endpoint the median of
+  the three rounds' 95th percentiles, against its budget and its known
+  miss's ceiling, so the known-miss rule applies to the median. Its
+  summary shows the median, each round's figure, and each probe's plan
+  time from the plan check, which load does not change.
+- **The plan check runs once,** in the first round; the plans mode on a
+  pull request is unchanged.
+- **The run fails only when a median misses.** One slow runner no longer
+  turns a weekly run red; two do, which is a finding.
+
+### Considered and not done
+
+- **Three rounds in one job:** the variance is between machines, and a
+  slow machine slows all three of its rounds alike.
+- **One run, with the ceilings 30% higher:** a real slowdown of 20%
+  would pass unseen.
+
+### Consequences
+
+- `perf.yml` gains the rounds and the job that judges them; the perf
+  report gains the median, with a spec; `server/perf/README.md` says how
+  a run is read.
+- The Watch's "Home after ADR-085" is read off every timed run, its
+  trigger being the median of three over budget.
+- Three runners per timed run, free while the repository is public
+  (Open decisions, "A public or a private repository").
