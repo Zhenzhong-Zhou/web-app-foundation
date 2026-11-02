@@ -630,6 +630,7 @@
   "inventory.reorder.edit": "Edit reorder point",
   "inventory.reorder.editIt": "Edit it",
   "inventory.reorder.exists": "{refusal} {editIt}",
+  "inventory.reorder.filter.all": "All",
   "inventory.reorder.filter.low": "Low",
   "inventory.reorder.filter.out": "Out",
   "inventory.reorder.fixedQuantity": "Quantity",

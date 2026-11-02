@@ -640,8 +640,9 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
           quick={[
             {
               id: 'all',
+              // Its own, not Invoices': Toutes is for factures.
               label: intl.formatMessage({
-                id: 'invoices.filter.all',
+                id: 'inventory.reorder.filter.all',
                 defaultMessage: 'All',
               }),
               count: counts?.all,

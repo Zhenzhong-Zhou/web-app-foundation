@@ -630,6 +630,7 @@
   "inventory.reorder.edit": "编辑再订货点",
   "inventory.reorder.editIt": "去编辑",
   "inventory.reorder.exists": "{refusal}{editIt}",
+  "inventory.reorder.filter.all": "全部",
   "inventory.reorder.filter.low": "不足",
   "inventory.reorder.filter.out": "缺货",
   "inventory.reorder.fixedQuantity": "数量",

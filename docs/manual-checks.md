@@ -2989,7 +2989,7 @@ site, after a deploy that changes the setting, the route or the relay.
   ELDER: the counts follow the search, All 1 · Low 1 · Out 0. With Low
   on and the search cleared, Export saves a CSV of the six. Open
   `/inventory?tab=reorder-points&status=low` in a new tab: it opens on
-  Low.
+  Low. In French the three read Tous, Bas and Épuisé.
 - **MC-4204** *(ADR-085)* An opened row. ELDER-250's chevron opens four
   boxes: Usable by location; + Coming, PO-DEMO-12 with its supplier and
   Late; − Still needed, SO-DEMO-9 and SO-DEMO-10 with their customers;
@@ -4354,3 +4354,5 @@ first.
   extended.
 - 2026-11-01: ADR-085's review, the Inventory guide's Add steps ending
   with Add reorder point, as its button reads: MC-4217 extended.
+- 2026-11-01: ADR-085's review, Reorder points' All in French, Tous, not
+  Invoices' Toutes: MC-4203 extended.

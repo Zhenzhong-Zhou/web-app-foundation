@@ -290,6 +290,20 @@ describe('Reorder points', () => {
     expect(asked.at(-1)?.searchParams.has('status')).toBe(false);
   });
 
+  // Points de commande are masculine: Tous, not Invoices' Toutes.
+  it('says All in French as its own word', async () => {
+    localStorage.setItem('language', 'fr-CA');
+    try {
+      open(['stock.view']);
+
+      expect(
+        await screen.findByRole('button', { name: /^Tous\s*4$/ }),
+      ).toBeInTheDocument();
+    } finally {
+      localStorage.removeItem('language');
+    }
+  });
+
   it('opens on Low from the address, with the counts beside each view', async () => {
     const asked = open(
       ['stock.view'],

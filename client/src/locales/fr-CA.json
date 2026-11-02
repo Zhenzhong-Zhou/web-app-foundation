@@ -630,6 +630,7 @@
   "inventory.reorder.edit": "Modifier le point de commande",
   "inventory.reorder.editIt": "Le modifier",
   "inventory.reorder.exists": "{refusal} {editIt}",
+  "inventory.reorder.filter.all": "Tous",
   "inventory.reorder.filter.low": "Bas",
   "inventory.reorder.filter.out": "Épuisé",
   "inventory.reorder.fixedQuantity": "Quantité",
