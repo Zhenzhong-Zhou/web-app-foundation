@@ -7,7 +7,7 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { type SubmitEvent, useState } from 'react';
+import { type SubmitEvent, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { Location } from '../api/types.gen';
@@ -28,6 +28,10 @@ const EMPTY = {
   lotCode: '',
   expiresAt: '',
 };
+
+/** The fields the form checks itself, in the order they are on screen (#310). */
+const CHECKED = ['variantId', 'locationId', 'quantity', 'lotCode'] as const;
+type Checked = (typeof CHECKED)[number];
 
 /**
  * Receiving, and only receiving. Shipping, transfers, and adjustments go
@@ -50,8 +54,21 @@ export function ReceiveStockDialog({
 }) {
   const intl = useIntl();
   const [form, setForm] = useState({ ...EMPTY, locationId: defaultLocationId });
-  // Set when the quantity is typed with a thousands separator (ADR-054).
-  const [quantityError, setQuantityError] = useState<string | null>(null);
+  /**
+   * What the form says under a field it refused: one left empty (#310), or
+   * a quantity typed with a thousands separator (ADR-054).
+   */
+  const [errors, setErrors] = useState<Partial<Record<Checked, string>>>({});
+  /**
+   * Where focus goes for a field that is missing: its visible control. The
+   * Into select's ref is MUI's handle, whose focus() is its box, never its
+   * hidden input (#310).
+   */
+  const controls = {
+    locationId: useRef<{ focus: () => void }>(null),
+    quantity: useRef<HTMLInputElement>(null),
+    lotCode: useRef<HTMLInputElement>(null),
+  };
   const { variants, answered, failed: variantsError } = useVariants(open);
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -71,7 +88,7 @@ export function ReceiveStockDialog({
 
   function close() {
     setForm({ ...EMPTY, locationId: defaultLocationId });
-    setQuantityError(null);
+    setErrors({});
     reset();
     onClose();
   }
@@ -81,17 +98,71 @@ export function ReceiveStockDialog({
       setForm((current) => ({ ...current, [field]: event.target.value }));
   }
 
+  // A field's message goes once it changes.
+  function clearError(field: Checked) {
+    setErrors((current) => ({ ...current, [field]: undefined }));
+  }
+
+  function focusField(field: Checked) {
+    if (field === 'variantId') {
+      // The item picker takes no ref; its input carries the picker's id.
+      document.getElementById('receive-variant')?.focus();
+      return;
+    }
+    controls[field].current?.focus();
+  }
+
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     // The language's decimal comma becomes the point the API takes; a
     // thousands separator is refused here rather than guessed at (ADR-054).
     const quantity = toApiDecimal(form.quantity);
-    if (quantity === null) {
-      setQuantityError(groupedNumberMessage());
+
+    /**
+     * The form checks itself (noValidate): the browser's own check focused
+     * the Into select's hidden input and said nothing a screen reader could
+     * place (#310). Each empty field says what it needs, in the app's
+     * language, and focus goes to the first one's visible control.
+     */
+    const found: Partial<Record<Checked, string>> = {
+      variantId: form.variantId
+        ? undefined
+        : intl.formatMessage({
+            id: 'inventory.receive.itemMissing',
+            defaultMessage: 'Choose an item.',
+          }),
+      locationId: form.locationId
+        ? undefined
+        : intl.formatMessage({
+            id: 'inventory.receive.locationMissing',
+            defaultMessage: 'Choose a location.',
+          }),
+      quantity: !form.quantity.trim()
+        ? intl.formatMessage({
+            id: 'inventory.receive.quantityMissing',
+            defaultMessage: 'Type a quantity.',
+          })
+        : quantity === null
+          ? groupedNumberMessage()
+          : undefined,
+      lotCode:
+        variant?.tracksLots && !form.lotCode.trim()
+          ? intl.formatMessage({
+              id: 'inventory.receive.lotNumberMissing',
+              defaultMessage: 'Type the lot number.',
+            })
+          : undefined,
+    };
+    setErrors(found);
+
+    const first = CHECKED.find((field) => found[field]);
+    if (first) {
+      focusField(first);
       return;
     }
-    setQuantityError(null);
+    // Never null here: its message would have been found first.
+    if (quantity === null) return;
 
     void submit(() =>
       api('/stock/movements', {
@@ -125,7 +196,7 @@ export function ReceiveStockDialog({
       fullWidth
       maxWidth="sm"
     >
-      <form onSubmit={handleSubmit}>
+      <form noValidate onSubmit={handleSubmit}>
         <DialogTitle>
           {intl.formatMessage({
             id: 'inventory.receive',
@@ -171,9 +242,12 @@ export function ReceiveStockDialog({
               loading={!answered}
               failed={variantsError}
               value={form.variantId}
-              onChange={(variantId) =>
-                setForm((current) => ({ ...current, variantId }))
-              }
+              onChange={(variantId) => {
+                clearError('variantId');
+                setForm((current) => ({ ...current, variantId }));
+              }}
+              error={!!errors.variantId}
+              helperText={errors.variantId}
             />
 
             <TextField
@@ -186,7 +260,13 @@ export function ReceiveStockDialog({
               required
               fullWidth
               value={form.locationId}
-              onChange={update('locationId')}
+              onChange={(event) => {
+                clearError('locationId');
+                update('locationId')(event);
+              }}
+              inputRef={controls.locationId}
+              error={!!errors.locationId}
+              helperText={errors.locationId}
             >
               {locations.map((location) => (
                 <MenuItem key={location.id} value={location.id}>
@@ -203,9 +283,10 @@ export function ReceiveStockDialog({
               })}
               required
               fullWidth
+              inputRef={controls.quantity}
               value={form.quantity}
               onChange={(event) => {
-                setQuantityError(null);
+                clearError('quantity');
                 update('quantity')(event);
               }}
               /**
@@ -215,9 +296,9 @@ export function ReceiveStockDialog({
                * inputMode gets the numeric keypad on a phone without any of it.
                */
               slotProps={{ htmlInput: { inputMode: 'decimal' } }}
-              error={!!quantityError}
+              error={!!errors.quantity}
               helperText={
-                quantityError ??
+                errors.quantity ??
                 (variant
                   ? intl.formatMessage(
                       {
@@ -242,13 +323,16 @@ export function ReceiveStockDialog({
                 idPrefix="receive"
                 variantId={variant.id}
                 value={{ code: form.lotCode, expiresAt: form.expiresAt }}
-                onChange={(lot) =>
+                onChange={(lot) => {
+                  if (lot.code !== form.lotCode) clearError('lotCode');
                   setForm((current) => ({
                     ...current,
                     lotCode: lot.code,
                     expiresAt: lot.expiresAt,
-                  }))
-                }
+                  }));
+                }}
+                codeRef={controls.lotCode}
+                codeError={errors.lotCode}
               />
             )}
           </Stack>

@@ -1,5 +1,5 @@
 import { Autocomplete, Stack, TextField, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { type Ref, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { Lot } from '../api/types.gen';
@@ -28,6 +28,8 @@ export function LotFields({
   value,
   onChange,
   knowsLots = true,
+  codeRef,
+  codeError,
 }: {
   /** Keeps the two dialogs' field ids apart. */
   idPrefix: string;
@@ -36,6 +38,10 @@ export function LotFields({
   knowsLots?: boolean;
   value: LotInput;
   onChange: (next: LotInput) => void;
+  /** The lot number's input, for a form that focuses it when empty (#310). */
+  codeRef?: Ref<HTMLInputElement>;
+  /** Said under the lot number in place of its help, when it is refused (#310). */
+  codeError?: string;
 }) {
   const intl = useIntl();
   const [knownLots, setKnownLots] = useState<Lot[]>([]);
@@ -129,11 +135,16 @@ export function LotFields({
               defaultMessage: 'Lot number',
             })}
             required
-            helperText={intl.formatMessage({
-              id: 'inventory.lot.number.help',
-              defaultMessage:
-                'As printed on the box. Receiving the same lot again adds to it.',
-            })}
+            inputRef={codeRef}
+            error={!!codeError}
+            helperText={
+              codeError ??
+              intl.formatMessage({
+                id: 'inventory.lot.number.help',
+                defaultMessage:
+                  'As printed on the box. Receiving the same lot again adds to it.',
+              })
+            }
           />
         )}
       />
