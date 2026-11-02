@@ -35,11 +35,9 @@ saying so.
 
 ## 3. Before each step, in this order
 
-1. **A `STOP` file beside the brief,** from the run's second step on,
-   stops the run: remove it as it stops, and say so.
-2. **A step whose Who is neither `Claude Code` nor `Claude Code, main
+1. **A step whose Who is neither `Claude Code` nor `Claude Code, main
    session`** stops the run, naming who: the chat, or Bob.
-3. **In a row, a step that would push, open a pull request, merge or
+2. **In a row, a step that would push, open a pull request, merge or
    change `main`,** as its text in the brief says, stops the run, naming
    which.
 
@@ -63,11 +61,16 @@ saying so.
   missing, under `## Step N — <its What> (<YYYY-MM-DD HH:MM>, Vancouver)`,
   the time from `TZ=America/Vancouver date '+%Y-%m-%d %H:%M'`.
 - **Its last line:** `BLOCKED` stops the run; `DONE` goes on to the next
-  step, in a row; anything else stops it, as BLOCKED does.
+  step, in a row, unless a `STOP` file is beside the brief, which stops
+  it; anything else stops it, as BLOCKED does.
 
 ## 6. At a stop, or the brief's end
 
-1. One line saying why the run stopped, or that the brief has ended.
+First, a `STOP` file beside the brief is removed, whatever stopped the
+run, so it cannot stop the next run early. Then:
+
+1. One line saying why the run stopped, or that the brief has ended,
+   naming the `STOP` file when one was removed.
 2. The last step's summary, for the chat, as appended; or that no step
    ran.
 3. `/clear`: safe once that summary is pasted into the chat.
