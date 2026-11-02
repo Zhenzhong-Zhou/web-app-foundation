@@ -12,6 +12,7 @@ import { useCan } from '../auth/permissions';
 import { ListError } from '../components/list-error';
 import { StatusChip } from '../components/status-chip';
 import { displayQuantity } from '../lib/format';
+import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { displayWithUnit } from '../products/units';
 import { atOrBelowZero } from './reorder-points';
@@ -150,9 +151,11 @@ export function ReorderPointDetail({ row }: { row: ReorderPointRow }) {
   const { data, error, loading, reload } = useResource<Detail>(
     `/stock/reorder-points/${row.variantId}`,
   );
+  // Only for a read that takes a while (conventions, Loading states).
+  const showSkeleton = useDelayedFlag(loading || !data);
 
   if (error) return <ListError error={error} onRetry={() => void reload()} />;
-  if (loading || !data) return <Skeleton height={120} />;
+  if (loading || !data) return showSkeleton ? <Skeleton height={120} /> : null;
 
   const leftOut = [
     !atOrBelowZero(data.expired) &&

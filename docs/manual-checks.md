@@ -2997,7 +2997,9 @@ site, after a deploy that changes the setting, the route or the relay.
   = Position, 58 against its point of 96, "Up to 192 · suggested order"
   and its quantity. Each number opens its order. VITC-100's Usable says
   how much was left out as expired; BOTTLE-90's, how much was left out as
-  issued to a run. The chevron again closes it.
+  issued to a run. The chevron again closes it. On a fast connection no
+  grey placeholder flashes before the boxes, nor before Edit's fields;
+  with the network throttled to Slow 4G, one shows while it reads.
 - **MC-4205** *(ADR-085)* Choosing. As the Owner, only bought low rows
   with something to suggest have a box: VITC-100, ELDER-250 and
   D3-1000-120 among them, none on MAGCAP-SAMPLE or SLEEP-60CT, which are
@@ -4392,3 +4394,5 @@ first.
   audit log by its filter's words: MC-4203 extended.
 - 2026-11-01: ADR-085's review, the dark bar's focus ring in its own text
   colour: MC-4205 extended.
+- 2026-11-01: ADR-085's review, an opened row's and Edit's placeholders
+  only for a read that takes a while: MC-4204 extended.

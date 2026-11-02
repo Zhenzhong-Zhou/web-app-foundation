@@ -39,6 +39,7 @@ import {
   itemName,
   toApiDecimal,
 } from '../lib/format';
+import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
 import { displayWithUnit, unitLabel } from '../products/units';
@@ -222,6 +223,9 @@ export function ReorderPointDialog({
   const { variants, answered } = useVariants(opening.kind === 'add');
 
   const editing = !!kept;
+  // The read's skeleton only once it takes a while (conventions, Loading
+  // states).
+  const showSkeleton = useDelayedFlag(kept === undefined && !readFailure);
   const { submitting, error, errorCode, reset, submit } = useSubmit(onSaved, {
     success: editing
       ? intl.formatMessage({
@@ -542,7 +546,7 @@ export function ReorderPointDialog({
 
             {kept === undefined ? (
               // Read first; a failed read says so above, and nothing here.
-              !readFailure && (
+              showSkeleton && (
                 <Stack spacing={1}>
                   <Skeleton height={48} />
                   <Skeleton height={48} />

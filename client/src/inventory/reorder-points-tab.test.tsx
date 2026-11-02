@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { type ReactNode, useRef } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
@@ -218,6 +218,26 @@ describe('Reorder points', () => {
         '1 chosen',
       ),
     ).toBeInTheDocument();
+  });
+
+  // A quick read shows no skeleton (conventions, Loading states).
+  it('opens a row with no skeleton until the read takes a while', async () => {
+    open(['stock.view']);
+    server.use(
+      http.get('/api/v1/stock/reorder-points/:variantId', async () => {
+        await delay(400);
+        return HttpResponse.json(DETAIL);
+      }),
+    );
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Where D3-1000 stands' }),
+    );
+
+    expect(document.querySelector('.MuiSkeleton-root')).toBeNull();
+    await waitFor(() =>
+      expect(document.querySelector('.MuiSkeleton-root')).not.toBeNull(),
+    );
   });
 
   it('gives a Viewer the same list with no boxes, and still opens a row', async () => {
