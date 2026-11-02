@@ -101,11 +101,15 @@ use; the reasons are in the sections named.
   answering then and is deleted about 5 December. Until the database is
   paid for, this comes back every 30 days.
 - **The web service sleeps after 15 minutes without a request,** and the
-  next request waits about a minute while it starts. The hourly jobs run
-  inside it, so while it sleeps they do not: licence reminders (ADR-064)
-  arrive late or on the next visit, account deletions that have come due
-  complete on the next visit (ADR-069), and released files are purged
-  late (ADR-059). Nothing is lost; it is only late.
+  next request waits about a minute while it starts. The six hourly jobs
+  run inside it (`server/src/main.ts`), so while it sleeps they do not:
+  licence reminders (ADR-064) and low stock notices (ADR-085) arrive late
+  or on the next visit; organization deletions (ADR-070) and account
+  deletions (ADR-069) that have come due complete on the next visit, and
+  their reminders go late; released files are purged late (ADR-059), and
+  invitations ended 30 days ago are swept late (ADR-077, ADR-078).
+  Nothing is lost; it is only late. Home and Reorder points are always
+  current: they read when asked.
 - Render may restart either at any time, and only one free database can be
   active per workspace.
 
