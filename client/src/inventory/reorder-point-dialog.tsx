@@ -827,7 +827,7 @@ function Today({
       id: 'now',
       label: intl.formatMessage({
         id: 'inventory.reorder.today.now',
-        defaultMessage: 'Now',
+        defaultMessage: 'Position now',
       }),
       position: result.position,
       status: result.status,
@@ -837,7 +837,8 @@ function Today({
       label: intl.formatMessage(
         {
           id: 'inventory.reorder.today.after',
-          defaultMessage: '{source, select, other {After the suggested order}}',
+          defaultMessage:
+            '{source, select, other {Position after the suggested order}}',
         },
         { source },
       ),

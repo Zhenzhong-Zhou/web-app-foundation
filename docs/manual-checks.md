@@ -3019,8 +3019,8 @@ site, after a deploy that changes the setting, the route or the relay.
   The point's unit sits inside its field at the right. How much to order has three cards,
   Just enough, A fixed quantity and Up to a maximum, each with its line;
   choosing the fixed or the maximum card shows its field inside it. Once
-  the typing pauses, Today shows two bars, Now and After the suggested
-  order, with their numbers, and one sentence, such as "Below 500 now, so
+  the typing pauses, Today shows two bars, Position now and Position
+  after the suggested order, with their numbers, and one sentence, such as "Below 500 now, so
   it would suggest 600, 3 of 200.". Typing on changes it once more, never
   one answer per key. Add: the item shows in the list at once, and All
   counts one more.
@@ -3074,9 +3074,9 @@ site, after a deploy that changes the setting, the route or the relay.
   has a reorder point.", and Show all, which shows All with the row.
 - **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
   the button reads 添加再订货点, the switch 采购 and 自制, the cards
-  补足到再订货点, 固定订货量 and 补到最高库存, Today's bars 现在 and
-  按建议订货后, and its sentence reads naturally, such as "目前低于 500，因此建议订
-  600，即 3 个 200。". Edit FOCUS-60CT, made: the bar reads 按建议生产后,
+  补足到再订货点, 固定订货量 and 补到最高库存, Today's bars 现在的预计可用
+  and 按建议订货后的预计可用, and its sentence reads naturally, such as "目前低于 500，因此建议订
+  600，即 3 个 200。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
   and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的再订货点？
 - **MC-4213** *(ADR-085)* Home's Low stock. On a fresh demo, as the Owner:
   the tile after To receive reads Low stock, 6 and "1 out", in red. Its
@@ -4361,3 +4361,5 @@ first.
   decimal places refused in words of its own: MC-4208 reworded.
 - 2026-11-01: ADR-085's review, Home's Low stock rows in 中文 naming the
   point, "12（再订货点 36）": MC-4213 reworded.
+- 2026-11-01: ADR-085's review, Today's bars named as the position,
+  Position now and 现在的预计可用: MC-4207 and MC-4212 reworded.

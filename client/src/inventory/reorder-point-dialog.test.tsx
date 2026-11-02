@@ -115,7 +115,9 @@ describe('ReorderPointDialog', () => {
           '目前低于 2,000，因此建议生产 2,000，即 2 个 1,000。',
         ),
       ).toBeInTheDocument();
-      expect(screen.getByText('按建议生产后')).toBeInTheDocument();
+      // The bars say they show the position, not stock on hand.
+      expect(screen.getByText('现在的预计可用')).toBeInTheDocument();
+      expect(screen.getByText('按建议生产后的预计可用')).toBeInTheDocument();
     } finally {
       localStorage.removeItem('language');
     }
