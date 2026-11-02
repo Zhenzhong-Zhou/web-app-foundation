@@ -395,8 +395,11 @@ export function ReorderPointDialog({
       ? null
       : (error ?? readFailure);
 
+  // A refusal from Save was about the values sent: a change clears it, as
+  // a new item does, so a fixed field stops saying it is wrong.
   function change(next: Partial<Form>) {
     setForm((current) => ({ ...current, ...next }));
+    reset();
   }
 
   function handleSubmit(event: SubmitEvent) {

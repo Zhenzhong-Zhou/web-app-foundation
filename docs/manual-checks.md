@@ -3038,7 +3038,8 @@ site, after a deploy that changes the setting, the route or the relay.
   as 1.23456, says "Type a number with up to 4 decimal places." instead.
   "1,000" in English gets the message about separators between thousands.
   Up to a maximum of 150 on a point of 200 says, while typing, "The maximum
-  must be above the reorder point, 200." under the maximum. Add a point
+  must be above the reorder point, 200." under the maximum, and it goes
+  as soon as the maximum is typed above 200, even after a Save. Add a point
   for D3-1000-120, which has one: under the item, "D3-1000-120 already has
   a reorder point. Edit it", the last two words a link, in 中文 "去编辑",
   never "请改为修改它" before it, with focus
@@ -4396,3 +4397,5 @@ first.
   colour: MC-4205 extended.
 - 2026-11-01: ADR-085's review, an opened row's and Edit's placeholders
   only for a read that takes a while: MC-4204 extended.
+- 2026-11-01: ADR-085's review, a refusal from Save cleared once its
+  field changes: MC-4208 extended.

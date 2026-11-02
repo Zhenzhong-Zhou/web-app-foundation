@@ -219,6 +219,39 @@ describe('ReorderPointDialog', () => {
     expect(maximum).toBeInvalid();
   });
 
+  it('clears a refusal from Save once the field changes', async () => {
+    previews(() => HttpResponse.json(LOW));
+    server.use(
+      http.put('/api/v1/stock/reorder-points/:variantId', () =>
+        apiError(
+          400,
+          'The maximum must be above the reorder point, 2000.',
+          'reorder_maximum_not_above_point',
+        ),
+      ),
+    );
+    open({ kind: 'edit', item: D3, point: DETAIL.point });
+    await userEvent.click(
+      screen.getByRole('radio', { name: /Up to a maximum/ }),
+    );
+    const maximum = screen.getByRole('textbox', { name: /Maximum/ });
+    await userEvent.type(maximum, '1500');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() =>
+      expect(maximum).toHaveAccessibleDescription(
+        'The maximum must be above the reorder point, 2000.',
+      ),
+    );
+
+    await userEvent.clear(maximum);
+    await userEvent.type(maximum, '2500');
+
+    await waitFor(() => expect(maximum).not.toBeInvalid());
+    expect(
+      screen.queryByText('The maximum must be above the reorder point, 2000.'),
+    ).not.toBeInTheDocument();
+  });
+
   it('opens from the Stock row as Edit when the item has a point', async () => {
     previews(() => HttpResponse.json(LOW));
     server.use(
