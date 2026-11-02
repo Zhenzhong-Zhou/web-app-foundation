@@ -163,9 +163,10 @@ How this file is kept is in the [README](README.md).
   and the variant's name in the screen's language where it has one, else
   the base name.** The server works it out from the language the screen
   asks in, on every read that names an item: Products and the product's
-  page, the item pickers, Inventory, a lot's trace, an order's lines,
-  shipments and returns, a price list's items, Recently opened, Home and
-  the top bar's lookup. The screen never chooses among the names. A
+  page, the item pickers, Inventory and its Movements, a lot's trace, an
+  order's lines, shipments and returns, a price list's items, Plan a
+  run's Uses, Recently opened, Home and the top bar's lookup. The screen
+  never chooses among the names. A
   screen already open reads again when the language changes, keeping what
   it shows until the answer comes. A read added later that names an item
   fails a test until it does the same, or is listed as keeping the base
