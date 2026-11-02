@@ -771,6 +771,24 @@ product, a run, an RMA, a recipe) asks before it is thrown away (issue #54):
   on Cancel: a state change arrives a tick too late. A dialog that saves
   and closes needs none of this; its own Cancel already asks nothing.
 
+## Back from a link inside the app
+
+A detail page always offers Back (`PageHeader`); a top-level page,
+reached from the menu, offers none, unless a link inside the app brought
+the person there (#341). Such a link passes `OFFER_BACK`
+(`client/src/lib/offer-back.ts`) as its router state, `state={OFFER_BACK}`
+on a link or `navigate(to, { state: OFFER_BACK })` in code, so the page
+knows from the link, not from a guess.
+
+- **Passes none:** the menu, the trail above a record, an "up" link, and
+  a move after an action, such as a delete. A new tab and a bookmark
+  carry no state, so no Back, as before.
+- **Kept while the page writes its own address:** a list's search, a tab
+  and a filter replace the address with the location's state, as
+  `useListSearch` and `useTab` do, so Back stays after the first letter
+  typed or the first tab chosen.
+- MC-R69 checks each such link by hand.
+
 ## Status pages
 
 When a page cannot show what was asked for, it says so in one shape, not a
