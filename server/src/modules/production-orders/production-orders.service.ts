@@ -304,7 +304,9 @@ export class ProductionOrdersService {
           bl.supply_type,
           ${scaledQuantity(run.quantityPlanned, bom.outputQuantity)}::text as quantity
         from bom_lines bl
-        join product_variants pv on pv.id = bl.component_variant_id
+        join product_variants pv
+          on pv.id = bl.component_variant_id
+          and pv.organization_id = ${organizationId}::uuid
         where bl.bom_id = ${bom.id}::uuid
           and bl.organization_id = ${organizationId}::uuid
         order by pv.sku

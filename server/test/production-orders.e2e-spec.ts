@@ -6,6 +6,7 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import {
+  bomLines,
   lots,
   notifications,
   productionOrderLines,
@@ -1571,6 +1572,67 @@ describe('Production orders (e2e)', () => {
         .where(eq(productionOrderLines.productionOrderId, run.id));
       expect(lines).toHaveLength(0);
       expect(await onHand(s.blend, s.shelf)).toBe('10000.0000');
+    });
+
+    /**
+     * A recipe's line naming another organization's item, which only a bug
+     * or a hand-written row could make, since a recipe's lines are checked
+     * as its own when saved. The reads and release join the line to its
+     * item by the organization too (#226), so none of them shows the item
+     * or issues it.
+     */
+    it('never reads or issues another organization’s item through a recipe’s line', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const s = await scenario(alpha);
+      const theirs = await makeVariant(beta, 'THEIRS');
+      await db.insert(bomLines).values({
+        organizationId: alpha.organizationId,
+        bomId: s.bomId,
+        componentVariantId: theirs,
+        quantity: '5',
+      });
+      const ours = [s.blend, s.bottle].sort();
+      const idsOf = (lines: { componentVariantId: string }[]) =>
+        lines.map((line) => line.componentVariantId).sort();
+
+      const preview = body<{ lines: { componentVariantId: string }[] }>(
+        await alpha.agent
+          .get('/v1/production-orders/preview')
+          .query({ bomId: s.bomId, quantityPlanned: '500' })
+          .expect(200),
+      );
+      expect(idsOf(preview.lines)).toEqual(ours);
+
+      const run = await createRun(alpha, {
+        outputVariantId: s.output,
+        bomId: s.bomId,
+        locationId: s.wip,
+        quantityPlanned: '500',
+      });
+      const plan = body<{ lines: { componentVariantId: string }[] }>(
+        await alpha.agent
+          .get(
+            `/v1/production-orders/${run.id}/issue-plan?sourceLocationId=${s.shelf}`,
+          )
+          .expect(200),
+      );
+      expect(idsOf(plan.lines)).toEqual(ours);
+
+      await alpha.agent
+        .post(`/v1/production-orders/${run.id}/release`)
+        .send({ sourceLocationId: s.shelf })
+        .expect(200);
+      const detail = body<RunDetailResponse>(
+        await alpha.agent.get(`/v1/production-orders/${run.id}`).expect(200),
+      );
+      expect(idsOf(detail.lines)).toEqual(ours);
+      expect(
+        await db
+          .select()
+          .from(stockMovements)
+          .where(eq(stockMovements.variantId, theirs)),
+      ).toHaveLength(0);
     });
 
     it('requires a session', async () => {
