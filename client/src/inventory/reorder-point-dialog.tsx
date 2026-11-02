@@ -665,6 +665,7 @@ export function ReorderPointDialog({
                     previewed={previewed}
                     current={previewed.path === previewPath}
                     unit={item?.unitOfMeasure ?? ''}
+                    source={source}
                   />
                 )}
               </>
@@ -713,17 +714,20 @@ export function ReorderPointDialog({
  * Today (ADR-085): where the item stands now and once the suggested order
  * arrives, the server's figures, and one sentence saying why. The last
  * answer stays while the next is asked; a refusal not about a field says
- * itself here.
+ * itself here. Its words follow bought or made, as the glossary's do:
+ * 建议生产 for a made item, not 建议订货.
  */
 function Today({
   previewed,
   current,
   unit,
+  source,
 }: {
   previewed: Previewed;
   /** Whether it answers the values as they are now. */
   current: boolean;
   unit: string;
+  source: ReorderSource;
 }) {
   const intl = useIntl();
   const { result, failure, point } = previewed;
@@ -752,28 +756,29 @@ function Today({
             {
               id: 'inventory.reorder.today.enough',
               defaultMessage:
-                'At or above {point} now, so it would suggest nothing.',
+                'At or above {point} now, so it would {source, select, other {suggest}} nothing.',
             },
-            { point: shown },
+            { point: shown, source },
           )
         : result.drafted
           ? intl.formatMessage(
               {
                 id: 'inventory.reorder.today.drafted',
                 defaultMessage:
-                  'Below {point} now, and what is in draft covers it, so it would suggest nothing more.',
+                  'Below {point} now, and what is in draft covers it, so it would {source, select, other {suggest}} nothing more.',
               },
-              { point: shown },
+              { point: shown, source },
             )
           : result.suggestedMultiples
             ? intl.formatMessage(
                 {
                   id: 'inventory.reorder.today.fixed',
                   defaultMessage:
-                    'Below {point} now, so it would suggest {suggestion}, {count} of {quantity}.',
+                    'Below {point} now, so it would {source, select, other {suggest}} {suggestion}, {count} of {quantity}.',
                 },
                 {
                   point: shown,
+                  source,
                   suggestion: displayQuantity(result.suggestion),
                   count: displayQuantity(result.suggestedMultiples),
                   quantity: displayQuantity(previewed.fixedQuantity),
@@ -783,10 +788,11 @@ function Today({
                 {
                   id: 'inventory.reorder.today.low',
                   defaultMessage:
-                    'Below {point} now, so it would suggest {suggestion}.',
+                    'Below {point} now, so it would {source, select, other {suggest}} {suggestion}.',
                 },
                 {
                   point: shown,
+                  source,
                   suggestion: displayQuantity(result.suggestion),
                 },
               );
@@ -803,10 +809,13 @@ function Today({
     },
     {
       id: 'after',
-      label: intl.formatMessage({
-        id: 'inventory.reorder.today.after',
-        defaultMessage: 'After the suggested order',
-      }),
+      label: intl.formatMessage(
+        {
+          id: 'inventory.reorder.today.after',
+          defaultMessage: '{source, select, other {After the suggested order}}',
+        },
+        { source },
+      ),
       position: result.after,
       status: result.afterStatus,
     },

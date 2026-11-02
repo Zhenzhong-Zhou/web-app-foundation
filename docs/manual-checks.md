@@ -3061,7 +3061,8 @@ site, after a deploy that changes the setting, the route or the relay.
   the button reads 添加再订货点, the switch 采购 and 自制, the cards
   补足到再订货点, 固定订货量 and 补到最高库存, Today's bars 现在 and
   按建议订货后, and its sentence reads naturally, such as "目前低于 500，因此建议订
-  600，即 3 个 200。". Remove asks 删除 D3-1000-120 的再订货点？
+  600，即 3 个 200。". Edit FOCUS-60CT, made: the bar reads 按建议生产后,
+  and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的再订货点？
 - **MC-4213** *(ADR-085)* Home's Low stock. On a fresh demo, as the Owner:
   the tile after To receive reads Low stock, 6 and "1 out", in red. Its
   card lists five rows, each its SKU in bold and its name: VITC-100 with
@@ -4316,3 +4317,5 @@ first.
 - 2026-11-01: ADR-085's review, Home's Low stock with no reorder point
   saying so, not "Nothing is low.", with the way to set one: MC-4213
   extended.
+- 2026-11-01: ADR-085's review, Today's words for a made item in 中文,
+  建议生产, not 建议订: MC-4212 extended.

@@ -97,6 +97,28 @@ describe('ReorderPointDialog', () => {
     expect(asked[0].has('maximumQuantity')).toBe(false);
   });
 
+  // The glossary's words for a made item (ADR-085): 建议生产, not 建议订货.
+  it('says Today in a made item’s words', async () => {
+    previews(() => HttpResponse.json(LOW));
+    localStorage.setItem('language', 'zh-Hans');
+    try {
+      open({
+        kind: 'edit',
+        item: D3,
+        point: { ...DETAIL.point, source: 'made' },
+      });
+
+      expect(
+        await screen.findByText(
+          '目前低于 2,000，因此建议生产 2,000，即 2 个 1,000。',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByText('按建议生产后')).toBeInTheDocument();
+    } finally {
+      localStorage.removeItem('language');
+    }
+  });
+
   it('drops an answer that comes after a newer one', async () => {
     previews(async (query) => {
       if (query.get('reorderPoint') === '200') {
