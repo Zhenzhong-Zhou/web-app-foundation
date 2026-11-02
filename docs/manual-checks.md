@@ -3164,6 +3164,14 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R74** *(a full IPv6 address pushing Recent activity's time off
+  screen on a phone, #323)* On an iPhone SE, signed in on the deployed
+  app over the phone's mobile data, which often gives a full IPv6 address
+  such as 2607:fea8:1b2c:3d00:a1b2:c3d4:e5f6:7890: Account, Your devices,
+  Recent activity shows that address under its event, wrapped, with no
+  From column, and When shows the time, with nothing scrolling sideways.
+  The same in English, Français and 中文.
+
 - **MC-R72** *(codes changed by a browser's translation, m2 read as 平方米,
   #245)* As the demo Owner in English, in Chrome, give a location the code
   m2 on Locations, then translate the page into Chinese (right-click,
@@ -4418,3 +4426,5 @@ first.
   MC-R72 added.
 - 2026-11-02: #245, a person's and a partner's name kept as typed under a
   browser's translation: MC-R72 extended.
+- 2026-11-02: #323, on an iPhone SE, Recent activity with a full IPv6
+  address shows the time, with nothing scrolling sideways: MC-R74 added.
