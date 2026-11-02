@@ -217,10 +217,13 @@ describe('The audit log in words (e2e)', () => {
       'en',
       '?action=price_list.item_removed',
     );
-    expect(removed.details[0]).toMatchObject({
-      field: 'Item',
-      value: { text: 'FOCUS-60CT' },
-    });
+    // What went: the price it removed, as kept, and the item (#339).
+    expect(removed.details.map((detail) => detail.field)).toEqual([
+      'Unit price',
+      'Item',
+    ]);
+    expect(removed.details[0].value).toEqual({ text: '26.4900' });
+    expect(removed.details[1].value).toMatchObject({ text: 'FOCUS-60CT' });
   });
 
   // Written outside @Audited: a pro forma and the organization's export
