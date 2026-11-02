@@ -3,6 +3,7 @@ status: accepted
 date: 2026-10-26
 areas: [invitations, mail]
 amends: [ADR-077, ADR-082]
+amended-by: [ADR-089]
 ---
 
 # ADR-083 — The emails: one layout for every email (amends ADR-077 and ADR-082)
@@ -490,3 +491,18 @@ What building settled:
   emails say 24 hours and one hour, while `VERIFICATION_TOKEN_TTL_MS` and
   `PASSWORD_RESET_TOKEN_TTL_MS` are settings; set to anything else, the
   emails would name the wrong time.
+
+## Amendment (November 2026) — a brief's steps in a row (ADR-089)
+
+[ADR-089](0089-a-briefs-steps-in-a-row.md) changes how `/build-from-brief`
+runs, not what a step does:
+
+- **`from <N>` runs the steps in a row,** each in a fresh subagent,
+  `brief-step`, until a step needs a person; `<N>` alone still runs one
+  step, through the same subagent.
+- **A step's rules move to `.claude/agents/brief-step.md`,** and the
+  skill keeps the loop, the stops and the summaries file. It stays
+  user-only: it runs only when a prompt names it, as decided above.
+- **Each summary goes to `summaries.md` beside the brief,** and the chat
+  reads only the stops; `/clear` is safe after a stop, once its summary
+  is pasted, and never inside a run.

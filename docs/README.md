@@ -159,6 +159,9 @@ And outside `docs/`:
   one `<area>.md` per area, as [stock.md](../.claude/rules/stock.md).
 - [`.claude/skills/`](../.claude/skills/) (a folder): the project's
   skills, as [`/code-review`](../.claude/skills/code-review/SKILL.md).
+- [`.claude/agents/`](../.claude/agents/) (a folder): the project's one
+  subagent, [`brief-step`](../.claude/agents/brief-step.md), which runs a
+  brief's step ([ADR-089](adr/0089-a-briefs-steps-in-a-row.md)).
 - [`client/src/help/guides/`](../client/src/help/guides/) (a folder): the
   Help guides, in English, French and Chinese.
 - [`server/openapi.json`](../server/openapi.json): the API, as OpenAPI

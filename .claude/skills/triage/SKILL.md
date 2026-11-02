@@ -120,4 +120,4 @@ The last line: `DONE: <why>`, or `BLOCKED: <what is needed>`.
 [home]: ../../../docs/engineering.md#triaging-the-open-issues
 [labels]: ../../../docs/engineering.md#issues-and-labels
 [report]: ../../../CLAUDE.md#how-to-work
-[summary]: ../build-from-brief/SKILL.md#4-the-summary-for-the-chat
+[summary]: ../../agents/brief-step.md#4-the-summary-for-the-chat

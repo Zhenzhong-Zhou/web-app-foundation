@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-29
 areas: [docs, ops]
-amended-by: [ADR-084]
+amended-by: [ADR-084, ADR-089]
 ---
 
 # ADR-088 — Planning in the chat, as a skill: kept here, compared with main, tested by prompts
@@ -303,3 +303,15 @@ for an upload and then followed `main`'s older copy. So:
   saying to merge first; its `--check` still runs anywhere.
 - **A change to the skill is uploaded after its pull request merges,**
   packed from `main`, then `evals.md` is walked.
+
+## Amendment (November 2026) — the check as a script, and the steps in a row (ADR-089)
+
+[ADR-089](0089-a-briefs-steps-in-a-row.md) changes two things in the
+planning skill:
+
+- **The check before an ADR runs as `scripts/adr-check.mjs`,** which the
+  skill's section 1 names in place of the block of shell it held.
+- **A brief's steps table names who runs each step,** and Claude Code's
+  steps run in a row until one needs a person, so the chat reads the
+  stops and, at the end, the summaries file beside the brief, rather than
+  every summary.

@@ -21,8 +21,8 @@ upload.
 
 ## 2. The check before an ADR
 
-*Bob attaches `tmp/adr-NNN/check.txt`, written by the skill's block
-for the areas asked for.*
+*Bob attaches `tmp/adr-NNN/check.txt`, written by
+`scripts/adr-check.mjs` for the areas asked for.*
 
 - Fired, not fired and found while checking, each item naming its issue
   or ADR.
@@ -43,7 +43,8 @@ for the areas asked for.*
 - Next gives the branch, `unzip` then `rm`, `git apply --check` then
   `--index`, `node scripts/adr-index.mjs`, `scripts/verify.sh --docs`,
   and one `git commit -m` saying why.
-- The brief says who runs each step, and where `/clear` is safe.
+- The brief's table says who runs each step, its Claude Code steps run
+  `from N` in a row, and it says where `/clear` is safe.
 
 ## 4. A refused patch
 
@@ -56,11 +57,11 @@ for the areas asked for.*
 
 ## 5. A step's summary pasted
 
-*Bob pastes a `/build-from-brief` summary with one finding for the
-as-built and one question for him.*
+*Bob pastes a run's stop: a `/build-from-brief` step's summary with one
+finding for the as-built and one question for him.*
 
 - Five parts; the finding kept in the chat for the as-built; the brief
   not sent again.
 - The question answered with its options and a recommendation.
-- Next is the following step's prompt, with `/clear` safe once the
+- Next is the run's next prompt, `from N`, with `/clear` safe once the
   summary is pasted.
