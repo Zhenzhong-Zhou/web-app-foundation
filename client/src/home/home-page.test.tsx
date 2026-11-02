@@ -207,6 +207,42 @@ describe('HomePage', () => {
     expect(within(low).getAllByText('drafted')).toHaveLength(1);
   });
 
+  // In 中文, the point is named, so 36 does not read as a column of its own.
+  it('names the point beside the position, in 中文', async () => {
+    serve({
+      gettingStarted: COMPLETE,
+      cards: [
+        {
+          kind: 'lowStock',
+          count: 1,
+          late: 0,
+          rows: [
+            {
+              id: 'v2',
+              title: 'D3-1000-120',
+              detail: 'Vitamin D3 (120ct)',
+              due: null,
+              late: false,
+              reorder: {
+                position: '800.0000',
+                reorderPoint: '2000.0000',
+                drafted: false,
+              },
+            },
+          ],
+        },
+      ],
+    });
+    localStorage.setItem('language', 'zh-Hans');
+    try {
+      renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
+
+      expect(await screen.findByText('800（再订货点 2,000）')).toBeTruthy();
+    } finally {
+      localStorage.removeItem('language');
+    }
+  });
+
   it('says when nothing is low, with no See all', async () => {
     serve({
       gettingStarted: COMPLETE,

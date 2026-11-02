@@ -3087,7 +3087,7 @@ site, after a deploy that changes the setting, the route or the relay.
   opens Reorder points on Low, with Back to Home. Receive 100 of
   VITC-100 and Refresh: Low stock reads 5, as the plain tiles do, and
   the card starts at MAGCAP-SAMPLE. In 中文: 库存不足, "1 项缺货",
-  "12 / 36", 已下草稿 and 缺货; in French: Stock bas, "1 épuisé", "12 sur
+  "12（再订货点 36）", 已下草稿 and 缺货; in French: Stock bas, "1 épuisé", "12 sur
   36" and "brouillon fait". In a new organization, with no reorder
   point, the card reads "No reorder point is set yet, so nothing can
   show as low.", not in green, and Set one in Reorder points opens
@@ -4359,3 +4359,5 @@ first.
   Invoices' Toutes: MC-4203 extended.
 - 2026-11-01: ADR-085's review, a reorder point's quantity past four
   decimal places refused in words of its own: MC-4208 reworded.
+- 2026-11-01: ADR-085's review, Home's Low stock rows in 中文 naming the
+  point, "12（再订货点 36）": MC-4213 reworded.

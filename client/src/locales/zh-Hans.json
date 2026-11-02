@@ -394,7 +394,7 @@
   "home.chip.due": "{date}到期",
   "home.chip.expired": "已过期",
   "home.chip.late": "逾期 {days} 天",
-  "home.chip.ofPoint": "{position} / {point}",
+  "home.chip.ofPoint": "{position}（再订货点 {point}）",
   "home.chip.out": "缺货",
   "home.count.expired": "{count} 项已过期",
   "home.count.late": "{count} 项逾期",
