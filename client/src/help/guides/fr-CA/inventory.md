@@ -1,6 +1,6 @@
 # Inventaire
 
-L’inventaire montre ce que vous avez et où : chaque article, à chaque emplacement, par lot. D’ici, vous recevez le stock arrivé sans commande, vous le déplacez et vous corrigez un compte.
+L’inventaire montre ce que vous avez et où : chaque article, à chaque emplacement, par lot. D’ici, vous recevez le stock arrivé sans commande, vous le déplacez et vous corrigez un compte. Son second onglet, **Points de commande**, dit quels articles viennent à manquer.
 
 ## Recevoir du stock {#receive}
 
@@ -28,6 +28,42 @@ Les actions de chaque ligne proposent :
 
 Dès qu’une vente confirmée réserve du stock ou en attend, ce tableau montre, pour chaque article, le stock en main là d’où il peut partir, ce qui est réservé, ce qui est libre et ce qui est en rupture. Le stock réservé va d’abord à la vente confirmée la plus ancienne.
 
+## Points de commande {#reorder-points}
+
+Un point de commande est le niveau sous lequel un article vient à manquer : en dessous, l’article est indiqué comme bas ici, sur l’accueil et dans la cloche, avec ce qu’il faut commander. Un article sans point n’est jamais bas.
+
+1. Dans **Points de commande**, appuyez sur **Ajouter un point de commande**, ou choisissez **Point de commande…** dans les actions d’une ligne de **Stock**.
+2. Choisissez l’article, et s’il est **Acheté** ou **Fabriqué**. Fabriqué est choisi pour vous quand l’article a une recette active.
+3. Saisissez le **Point de commande**, dans l’unité de l’article, et choisissez combien commander.
+4. **Aujourd’hui** montre où en est l’article maintenant et après la commande suggérée. Appuyez sur **Enregistrer**.
+
+Les actions de chaque ligne proposent **Modifier le point de commande**, **Stock de l’article** et **Retirer le point de commande**, ce qui ne change ni son stock ni ses commandes. Un article abandonné garde son point et n’est jamais bas.
+
+> Toute personne qui peut voir le stock voit la liste. Seule une personne qui peut définir les points de commande voit **Ajouter un point de commande**, **Point de commande…** et les actions de chaque ligne : au départ, le propriétaire seul, jusqu’à ce qu’un rôle le permette.
+
+## Où en est un article {#position}
+
+La **Position** d’un article = utilisable + à venir − encore requis : le stock aux emplacements marqués disponibles, moins les lots périmés et ce qui a été remis aux ordres de fabrication; plus les achats confirmés et les ordres de fabrication lancés encore à venir; moins les ventes confirmées encore à expédier. Ainsi, un bon de commande déjà créé n’en fait pas créer un autre.
+
+Un article est **Bas** sous son point, **Épuisé** à zéro ou moins, et **Suffisant** autrement. Les plus loin sous leur point viennent en premier, et **Bas** montre aussi les épuisés. Ouvrez une ligne pour voir ce qui fait sa position, les commandes en retard indiquées.
+
+## Combien commander {#how-much}
+
+- **Juste assez** : le manque, pour revenir au point.
+- **Quantité fixe** : par multiples entiers, comme un fournisseur vend par caisses. S’il manque 1 500, à 1 000 à la fois, elle suggère 2 × 1 000.
+- **Jusqu’à un maximum** : remplit jusqu’à un niveau au-dessus du point.
+
+Les bons de commande et les ordres de fabrication en brouillon s’affichent **En brouillon**. Ils ne comptent pas comme à venir, puisqu’un brouillon peut ne jamais partir, mais ils sont retirés de la **Commande suggérée**. Un article bas que ses brouillons couvrent indique **Brouillon fait**, pour que personne ne le commande deux fois.
+
+## Commander ou fabriquer ce qui est bas {#order}
+
+- **Acheté** : choisissez les lignes, puis appuyez sur **Créer un bon de commande** dans la barre qui apparaît. Un nouvel achat s’ouvre avec une ligne pour chacun à sa commande suggérée. Choisissez le fournisseur, vérifiez les quantités et les prix, et appuyez sur **Créer en brouillon**.
+- **Fabriqué** : **Planifier un ordre** sur sa ligne ouvre un ordre de fabrication avec sa recette active, la commande suggérée et ce qu’il utilise.
+
+Rien n’est enregistré tant que vous ne le créez pas, et ce que vous créez s’affiche aussitôt sur la ligne. Quand un article passe sous son point, la vérification horaire suivante le signale dans la cloche à qui peut agir, une fois jusqu’à ce qu’il remonte : ceux qui peuvent créer des commandes pour un article acheté, ceux qui peuvent planifier la production pour un article fabriqué.
+
+> Seule une personne qui peut créer des commandes peut choisir des lignes, et seule une personne qui peut planifier la production voit **Planifier un ordre**.
+
 ## Les mots que vous verrez {#words}
 
 - **Réservé** : gardé pour une vente confirmée.
@@ -41,5 +77,7 @@ Dès qu’une vente confirmée réserve du stock ou en attend, ce tableau montre
 - Rien ne part d’un emplacement marqué non disponible. Déplacez d’abord le stock vers un emplacement disponible.
 - Le stock réservé pour une vente confirmée ne peut pas servir à autre chose. Expédiez-le sur cette vente, ou prenez seulement ce qui est libre.
 - Un code de lot imprimé sur les boîtes ne peut pas être renommé. Déplacez plutôt le stock vers le bon lot.
+- Un article a un seul point de commande. Modifiez celui qu’il a : le refus y mène.
+- Un point de commande et ses quantités sont supérieurs à zéro, et un maximum est supérieur au point.
 
-Voir aussi [Mouvements](/movements) et [Lots](/lots#trace).
+Voir aussi [Mouvements](/movements), [Lots](/lots#trace), [Commandes](/orders#raise) et [Production](/production#plan).

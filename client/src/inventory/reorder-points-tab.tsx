@@ -41,6 +41,7 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { LearnMore } from '../help/learn-more';
 import { fromAddress } from '../lib/address-filter';
 import { api } from '../lib/api';
 import type { ReorderStatus } from '../lib/api-names';
@@ -641,10 +642,14 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
           ]}
         />
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {intl.formatMessage({
-            id: 'inventory.reorder.positionLine',
-            defaultMessage: 'Position = usable + coming − still needed',
-          })}
+          <LearnMore
+            target={{ guide: 'inventory', section: 'position' }}
+            variant="inline"
+            after={intl.formatMessage({
+              id: 'inventory.reorder.positionLine',
+              defaultMessage: 'Position = usable + coming − still needed',
+            })}
+          />
         </Typography>
       </Stack>
 
@@ -885,7 +890,10 @@ function Nothing({
 
   if (filter === '' || all === 0) {
     return (
-      <EmptyState action={add}>
+      <EmptyState
+        action={add}
+        learnMore={{ guide: 'inventory', section: 'reorder-points' }}
+      >
         <Box component="span" sx={{ display: 'flex', gap: 1.5 }}>
           <Inventory2Outlined aria-hidden sx={{ color: 'text.secondary' }} />
           <span>

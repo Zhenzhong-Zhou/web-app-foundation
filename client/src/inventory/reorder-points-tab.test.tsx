@@ -1,10 +1,13 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+import { type ReactNode, useRef } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { ReorderPointDetail, ReorderPointRow } from '../api/types.gen';
+import { HelpFrame } from '../help/help-panel';
+import { HelpProvider } from '../help/help-provider';
 import { orderFillOf } from '../orders/order-fill';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -103,10 +106,21 @@ function NewOrder() {
   return <p>New order: {JSON.stringify(orderFillOf(state))}</p>;
 }
 
+/** Inventory inside Help's frame, so a Learn more opens the guide. */
+function WithHelp({ children }: { children: ReactNode }) {
+  const bar = useRef<HTMLElement>(null);
+  return (
+    <HelpProvider>
+      <header ref={bar} />
+      <HelpFrame bar={bar}>{children}</HelpFrame>
+    </HelpProvider>
+  );
+}
+
 function open(
   permissions: string[],
   address = '/inventory?tab=reorder-points',
-  { rows = ROWS, counts = { all: 4, low: 3, out: 0 } } = {},
+  { rows = ROWS, counts = { all: 4, low: 3, out: 0 }, help = false } = {},
 ) {
   const asked: URL[] = [];
   server.use(
@@ -124,7 +138,18 @@ function open(
   renderWithAuth(
     <MemoryRouter initialEntries={[address]}>
       <Routes>
-        <Route path="/inventory" element={<InventoryPage />} />
+        <Route
+          path="/inventory"
+          element={
+            help ? (
+              <WithHelp>
+                <InventoryPage />
+              </WithHelp>
+            ) : (
+              <InventoryPage />
+            )
+          }
+        />
         <Route path="/orders/new" element={<NewOrder />} />
       </Routes>
     </MemoryRouter>,
@@ -356,6 +381,49 @@ describe('Reorder points', () => {
 
     // In draft at once: the list, and its counts, read again.
     await expect.poll(() => asked.length).toBe(2);
+  });
+
+  it('opens Help at where an item stands, from the line that says it', async () => {
+    open(['stock.view'], undefined, { help: true });
+
+    const line = await screen.findByText(
+      /^Position = usable \+ coming − still needed/,
+    );
+    await userEvent.click(
+      within(line).getByRole('button', { name: 'Learn more' }),
+    );
+
+    const help = screen.getByRole('complementary', { name: 'Help' });
+    expect(
+      await within(help).findByRole('heading', {
+        level: 3,
+        name: 'Where an item stands',
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('opens Help at reorder points from the list with none, a Viewer’s too', async () => {
+    open(['stock.view'], undefined, {
+      rows: [],
+      counts: { all: 0, low: 0, out: 0 },
+      help: true,
+    });
+
+    const empty = (await screen.findByText('No reorder points yet.')).closest(
+      'div',
+    );
+    expect(empty).not.toBeNull();
+    await userEvent.click(
+      within(empty!).getByRole('button', { name: 'Learn more' }),
+    );
+
+    const help = screen.getByRole('complementary', { name: 'Help' });
+    expect(
+      await within(help).findByRole('heading', {
+        level: 3,
+        name: 'Reorder points',
+      }),
+    ).toBeInTheDocument();
   });
 
   it('offers no Plan a run to whoever may not plan one', async () => {

@@ -3053,7 +3053,8 @@ site, after a deploy that changes the setting, the route or the relay.
   points, while the chevron still opens a row.
 - **MC-4211** *(ADR-085)* The empty states. Register a new organization:
   Reorder points shows an icon, "No reorder points yet.", a sentence on
-  what a point does, and Add reorder point. Receive 50 of an item, give
+  what a point does, Add reorder point, and Learn more, which opens Help
+  at Reorder points. Receive 50 of an item, give
   it a point of 10, and press Low: a tick in green, "Nothing is low. 1 item
   has a reorder point.", and Show all, which shows All with the row.
 - **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
@@ -3109,6 +3110,16 @@ site, after a deploy that changes the setting, the route or the relay.
   item with a recipe and a quantity are in. Fatima Haddad (Sales) and
   Chloé Tremblay (Viewer), who plan no runs, see no Plan a run. In 中文:
   计划生产, the note 已按再订货点填写, and 用料.
+- **MC-4217** *(ADR-085)* Help's Inventory and Home guides. As the demo
+  Owner, Inventory → Reorder points: "Position = usable + coming − still
+  needed" ends with Learn more, which opens Help at Where an item stands.
+  The Inventory guide has Reorder points, Where an item stands, How much
+  to order and Order or make what is low after Promised to customers,
+  and two more refusals; every button it names reads the same on the
+  screen. Home's guide has Low stock after What needs attention, and Out
+  among its words. In 中文: 了解更多 follows 待发 with no space and opens
+  物品的库存情况, and Home's guide has 库存不足; in French, En savoir plus
+  opens Où en est un article.
 
 ## Regressions
 
@@ -4291,3 +4302,6 @@ first.
   item beside its SKU, its change without padding zeros, and who by name
   with their email beneath: MC-R70. #296, Inventory's Promised to
   customers naming each item beside its SKU: MC-R71.
+- 2026-11-01: ADR-085, Help's Inventory and Home guides: Reorder points'
+  four sections, Home's Low stock, and Learn more beside the position's
+  line and on the list with no point yet: MC-4217; MC-4211 extended.
