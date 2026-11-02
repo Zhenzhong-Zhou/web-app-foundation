@@ -3005,7 +3005,8 @@ site, after a deploy that changes the setting, the route or the relay.
   floats at the foot of the list, "2 chosen", each SKU with its
   suggestion; Clear empties it. The header's box chooses every row with
   a box, and unticked, none. Choose one, search for another item and
-  choose it too: the bar holds both.
+  choose it too: the bar holds both. With VoiceOver on, ticking a box
+  says "1 chosen", then "2 chosen", as the bar appears and grows.
 - **MC-4206** *(ADR-085)* Read only, and in 中文. As Chloé Tremblay
   (Viewer): the same list, with no boxes, no header box and no bar; the
   chevron still opens a row. In 中文: the tab reads 再订货点, the
@@ -4372,3 +4373,5 @@ first.
   to Reorder points, not to Orders: MC-4215 reworded.
 - 2026-11-01: ADR-085's review, the filled order's note and the Inventory
   guide naming Partner, where the supplier is chosen: MC-4215 reworded.
+- 2026-11-01: ADR-085's review, how many are chosen said to a screen
+  reader: MC-4205 extended.

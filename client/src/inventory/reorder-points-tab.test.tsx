@@ -192,6 +192,8 @@ describe('Reorder points', () => {
     const bar = screen.getByRole('region', { name: 'Chosen to order' });
     expect(within(bar).getByText('1 chosen')).toBeInTheDocument();
     expect(within(bar).getByText('D3-1000 · 96')).toBeInTheDocument();
+    // Said to a screen reader too, from a status there before the bar.
+    expect(screen.getByRole('status')).toHaveTextContent('1 chosen');
 
     await userEvent.click(within(bar).getByRole('button', { name: 'Clear' }));
     expect(
@@ -204,7 +206,11 @@ describe('Reorder points', () => {
     expect(
       screen.getByRole('checkbox', { name: 'Choose D3-1000' }),
     ).toBeChecked();
-    expect(screen.getByText('1 chosen')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('region', { name: 'Chosen to order' })).getByText(
+        '1 chosen',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('gives a Viewer the same list with no boxes, and still opens a row', async () => {

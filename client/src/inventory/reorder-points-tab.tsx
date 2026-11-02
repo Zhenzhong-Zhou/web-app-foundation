@@ -47,6 +47,7 @@ import { fromAddress } from '../lib/address-filter';
 import { api } from '../lib/api';
 import type { ReorderStatus } from '../lib/api-names';
 import { displayQuantity, itemName, NO_VALUE } from '../lib/format';
+import { HIDDEN } from '../lib/hidden';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
@@ -816,6 +817,20 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
         onLoadMore={loadMore}
       />
 
+      {/* How many are chosen, said as it changes (WCAG 4.1.3): here, there
+          while choosing is, since the bar comes and goes with what is. */}
+      {choosing && (
+        <Box role="status" sx={HIDDEN}>
+          {chosen.size > 0 &&
+            intl.formatMessage(
+              {
+                id: 'inventory.reorder.chosen',
+                defaultMessage: '{count, plural, other {# chosen}}',
+              },
+              { count: chosen.size },
+            )}
+        </Box>
+      )}
       {choosing && chosen.size > 0 && (
         <ChosenBar
           chosen={[...chosen.values()]}
