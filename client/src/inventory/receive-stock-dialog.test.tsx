@@ -34,12 +34,12 @@ const LOCATIONS: Location[] = [
   },
 ];
 
-function open(onReceived = vi.fn()) {
+function open(onReceived = vi.fn(), defaultLocationId = 'location-a') {
   render(
     <ReceiveStockDialog
       open
       locations={LOCATIONS}
-      defaultLocationId="location-a"
+      defaultLocationId={defaultLocationId}
       onClose={vi.fn()}
       onReceived={onReceived}
     />,
@@ -72,6 +72,61 @@ describe('ReceiveStockDialog', () => {
     open();
 
     expect(screen.getByRole('combobox', { name: 'Item' })).toHaveFocus();
+  });
+
+  /**
+   * The form checks itself (#310). The browser's own check focused the Into
+   * select's hidden input, and a screen reader heard nothing it could place.
+   */
+  it('says Into is missing on Enter, with focus on its visible box', async () => {
+    const user = userEvent.setup();
+    let sent = false;
+    server.use(
+      http.post('/api/v1/stock/movements', () => {
+        sent = true;
+        return HttpResponse.json({ movement: { id: 'm' } }, { status: 201 });
+      }),
+    );
+
+    open(vi.fn(), '');
+
+    await choose('Item', /PLAIN-1/);
+    await user.type(quantityField(), '5{Enter}');
+
+    const into = screen.getByRole('combobox', { name: 'Into' });
+    expect(into).toHaveFocus();
+    expect(into).toHaveAccessibleDescription('Choose a location.');
+    expect(sent).toBe(false);
+  });
+
+  it('says what each empty field needs, focusing the first', async () => {
+    const user = userEvent.setup();
+
+    open(vi.fn(), '');
+
+    await user.click(screen.getByRole('button', { name: 'Receive' }));
+
+    const item = screen.getByRole('combobox', { name: 'Item' });
+    expect(item).toHaveFocus();
+    expect(item).toHaveAccessibleDescription('Choose an item.');
+    expect(
+      screen.getByRole('combobox', { name: 'Into' }),
+    ).toHaveAccessibleDescription('Choose a location.');
+    expect(quantityField()).toHaveAccessibleDescription('Type a quantity.');
+  });
+
+  it('says the lot number is missing for a lot-tracked item', async () => {
+    const user = userEvent.setup();
+
+    open();
+
+    await choose('Item', /LOTTED-1/);
+    await user.type(quantityField(), '5');
+    await user.click(screen.getByRole('button', { name: 'Receive' }));
+
+    const lot = screen.getByRole('combobox', { name: 'Lot number' });
+    expect(lot).toHaveFocus();
+    expect(lot).toHaveAccessibleDescription('Type the lot number.');
   });
 
   it('hides the lot fields for an item that does not track lots', async () => {
