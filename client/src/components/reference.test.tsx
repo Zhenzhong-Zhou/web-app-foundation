@@ -21,14 +21,29 @@ describe('Reference (ADR-081)', () => {
   });
 
   it('leaves a code longer than a phone’s line to break rather than run off it', () => {
-    render(
+    const { container } = render(
       <p>
         Receive <Reference>{'BATCH-2026-10-22-NORTH'}</Reference>
       </p>,
     );
 
-    expect(screen.queryByText('BATCH-2026-10-22-NORTH')).toBeNull();
-    expect(screen.getByText('Receive BATCH-2026-10-22-NORTH')).toBeVisible();
+    expect(keptWhole('BATCH-2026-10-22-NORTH')).toBe(false);
+    expect(container.textContent).toBe('Receive BATCH-2026-10-22-NORTH');
+  });
+
+  it('marks a code, short or long, so a browser translating the page leaves it as typed (#245)', () => {
+    render(
+      <p>
+        <Reference>m2</Reference>{' '}
+        <Reference>{'BATCH-2026-10-22-NORTH'}</Reference>
+      </p>,
+    );
+
+    expect(screen.getByText('m2')).toHaveAttribute('translate', 'no');
+    expect(screen.getByText('BATCH-2026-10-22-NORTH')).toHaveAttribute(
+      'translate',
+      'no',
+    );
   });
 });
 

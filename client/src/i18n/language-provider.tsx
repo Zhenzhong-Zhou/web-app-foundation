@@ -35,6 +35,21 @@ function storedLocale(): Locale | null {
   }
 }
 
+/** This device's last choice, else the first of the browser's we speak. */
+function startingLocale(): Locale {
+  return storedLocale() ?? browserLocale(navigator.languages);
+}
+
+// <html lang> said as the app's code first runs, not when the language's
+// catalogue arrives: Chrome reads it as the page finishes loading, before
+// that chunk, and React's first render, have come, and reading
+// index.html's "en" it offers a Chinese reader to translate (#245). apply()
+// says it again once the language loads, and "en" if it never does.
+document.documentElement.lang = formattingLocale(
+  startingLocale(),
+  navigator.languages,
+);
+
 function remember(locale: Locale): void {
   try {
     localStorage.setItem(STORAGE_KEY, locale);
@@ -97,9 +112,7 @@ interface Request {
  * inside the theme, and so inside this.
  */
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [initial] = useState<Locale>(
-    () => storedLocale() ?? browserLocale(navigator.languages),
-  );
+  const [initial] = useState<Locale>(startingLocale);
 
   // English is in the bundle, so it is ready at once; anything else waits
   // for its chunk, below.
