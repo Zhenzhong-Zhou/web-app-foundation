@@ -80,6 +80,8 @@ describe('ReorderPointDialog', () => {
   it('asks Today once typing pauses, and says what the server works out', async () => {
     const asked = previews(() => HttpResponse.json(LOW));
     open({ kind: 'edit', item: D3, point: DETAIL.point });
+    // Edit starts in the point (WCAG 2.4.3).
+    await waitFor(() => expect(pointField()).toHaveFocus());
 
     await userEvent.clear(pointField());
     await userEvent.type(pointField(), '2000');
@@ -249,8 +251,11 @@ describe('ReorderPointDialog', () => {
       ),
     );
     const { onSaved } = open({ kind: 'add' });
+    const picker = screen.getByRole('combobox', { name: /Item/ });
+    // Add starts in its first field (WCAG 2.4.3).
+    await waitFor(() => expect(picker).toHaveFocus());
 
-    await userEvent.click(screen.getByRole('combobox', { name: /Item/ }));
+    await userEvent.click(picker);
     await userEvent.click(
       await screen.findByRole('option', { name: /PLAIN-1/ }),
     );
@@ -262,12 +267,19 @@ describe('ReorderPointDialog', () => {
     expect(
       await screen.findByText(/PLAIN-1 already has a reorder point/),
     ).toBeInTheDocument();
+    // Said at the picker, read with it, and focus taken there.
+    expect(picker).toHaveAttribute('aria-invalid', 'true');
+    expect(picker).toHaveAccessibleDescription(
+      /PLAIN-1 already has a reorder point/,
+    );
+    await waitFor(() => expect(picker).toHaveFocus());
     await userEvent.click(screen.getByRole('button', { name: 'Edit it' }));
 
     expect(
       await screen.findByRole('heading', { name: 'Edit reorder point' }),
     ).toBeInTheDocument();
     expect(pointField()).toHaveValue('2000');
+    await waitFor(() => expect(pointField()).toHaveFocus());
     expect(onSaved).not.toHaveBeenCalled();
   });
 

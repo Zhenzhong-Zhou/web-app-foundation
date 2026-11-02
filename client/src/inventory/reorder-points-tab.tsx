@@ -26,6 +26,7 @@ import {
   type ReactNode,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useIntl } from 'react-intl';
@@ -119,13 +120,36 @@ function useKindLine(): (row: ReorderPointRow) => string {
         );
 }
 
-/** The suggested order, or Drafted with what is in draft, linked. */
-function Suggestion({ row }: { row: ReorderPointRow }) {
+/**
+ * The suggested order, or Drafted with what is in draft, linked. With
+ * `focused`, its first link takes focus once drafted, or Drafted itself
+ * for a reader who cannot open the run: a run just planned from the row,
+ * whose Plan a run is gone, so focus does not fall to the page's start
+ * (WCAG 2.4.3).
+ */
+function Suggestion({
+  row,
+  focused = false,
+}: {
+  row: ReorderPointRow;
+  focused?: boolean;
+}) {
   const intl = useIntl();
+  const draftsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!focused || !row.drafted) return;
+    const drafts = draftsRef.current;
+    (drafts?.querySelector('a') ?? drafts)?.focus();
+  }, [focused, row.drafted]);
 
   if (row.drafted) {
     return (
-      <Stack spacing={0.25} sx={{ alignItems: 'flex-end' }}>
+      <Stack
+        ref={draftsRef}
+        tabIndex={focused ? -1 : undefined}
+        spacing={0.25}
+        sx={{ alignItems: 'flex-end' }}
+      >
         <Typography variant="body2" component="span">
           {intl.formatMessage({
             id: 'inventory.reorder.drafted',
@@ -172,6 +196,7 @@ function PointRow({
   chosen,
   onChoose,
   onPlan,
+  planned,
   actions,
 }: {
   row: ReorderPointRow;
@@ -182,6 +207,8 @@ function PointRow({
   onChoose: (row: ReorderPointRow, on: boolean) => void;
   /** Plan a run of a made low item, for whoever may (production.create). */
   onPlan: ((row: ReorderPointRow) => void) | null;
+  /** Its run was just planned here: its draft's link takes focus. */
+  planned: boolean;
   /** The row's menu, for whoever may set a point (stock.reorder). */
   actions: ReactNode;
 }) {
@@ -297,7 +324,7 @@ function PointRow({
         </TableCell>
         <TableCell align="right">{displayQuantity(row.reorderPoint)}</TableCell>
         <TableCell align="right">
-          <Suggestion row={row} />
+          <Suggestion row={row} focused={planned} />
         </TableCell>
         <TableCell padding="checkbox">
           {/* Apart, so each is a target of its own (WCAG 2.5.8). */}
@@ -479,6 +506,8 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const [opening, setOpening] = useState<ReorderOpening | null>(null);
   const [removing, setRemoving] = useState<ReorderPointRow | null>(null);
   const [planning, setPlanning] = useState<ReorderPointRow | null>(null);
+  /** The item whose run was just planned from its row. */
+  const [planned, setPlanned] = useState<string | null>(null);
   /** Bumped by each save and removal, so the counts read again too. */
   const [changes, setChanges] = useState(0);
 
@@ -741,6 +770,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                       chosen={chosen.has(row.variantId)}
                       onChoose={choose}
                       onPlan={planner ? setPlanning : null}
+                      planned={planned === row.variantId}
                       actions={
                         setting && (
                           <ReorderPointActions
@@ -829,8 +859,12 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
             ),
           }}
           onClose={() => setPlanning(null)}
-          // A draft run is in draft at once: the list and its counts again.
-          onCreated={() => saved()}
+          // A draft run is in draft at once: the list and its counts again,
+          // and focus on the row's draft once it shows.
+          onCreated={() => {
+            setPlanned(planning.variantId);
+            saved();
+          }}
         />
       )}
 

@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { type ReactNode, useRef } from 'react';
@@ -375,12 +375,46 @@ describe('Reorder points', () => {
     await userEvent.click(
       await screen.findByRole('option', { name: /Main Site/ }),
     );
+    // Read again once planned: SLEEP-60CT in draft.
+    server.use(
+      http.get('/api/v1/stock/reorder-points', ({ request }) => {
+        asked.push(new URL(request.url));
+        return HttpResponse.json({
+          entries: ROWS.map((row) =>
+            row.sku === 'SLEEP-60CT'
+              ? {
+                  ...row,
+                  suggestion: '0.0000',
+                  drafted: true,
+                  inDraft: '230.0000',
+                  drafts: [
+                    {
+                      kind: 'run',
+                      id: 'run-1',
+                      number: 'MO-000001',
+                      quantity: '230.0000',
+                    },
+                  ],
+                }
+              : row,
+          ),
+          nextCursor: null,
+        });
+      }),
+    );
     await userEvent.click(
       within(dialog).getByRole('button', { name: 'Plan run' }),
     );
 
     // In draft at once: the list, and its counts, read again.
     await expect.poll(() => asked.length).toBe(2);
+    // Its Plan a run gone, focus goes to its draft, not the page's start.
+    await waitFor(() =>
+      expect(document.activeElement).toHaveTextContent(/^Drafted/),
+    );
+    expect(screen.getByRole('row', { name: /SLEEP-60CT/ })).toContainElement(
+      document.activeElement as HTMLElement,
+    );
   });
 
   it('opens Help at where an item stands, from the line that says it', async () => {

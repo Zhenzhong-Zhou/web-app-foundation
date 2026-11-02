@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
-  FormHelperText,
   InputAdornment,
   Link,
   Paper,
@@ -365,6 +364,11 @@ export function ReorderPointDialog({
       ? error
       : null;
   const exists = hasCode(errorCode, 'reorder_point_exists');
+  // Said at the picker, not at the top, so focus goes to it once refused,
+  // and a screen reader hears the refusal with it (WCAG 4.1.3).
+  useEffect(() => {
+    if (exists) document.getElementById('reorder-item')?.focus();
+  }, [exists]);
   // Shown at its field, or not at all, rather than at the top too.
   const formError =
     exists || hasCode(errorCode, 'reorder_maximum_not_above_point')
@@ -446,6 +450,7 @@ export function ReorderPointDialog({
                     defaultMessage: 'Item',
                   })}
                   required
+                  autoFocus
                   options={variants}
                   loading={!answered}
                   value={item?.variantId ?? ''}
@@ -465,10 +470,12 @@ export function ReorderPointDialog({
                     change({ source: null });
                     reset();
                   }}
-                />
-                {exists && item && (
-                  <FormHelperText error>
-                    {intl.formatMessage(
+                  // The 409, at the picker and read with it (WCAG 3.3.1).
+                  error={exists}
+                  helperText={
+                    exists &&
+                    item &&
+                    intl.formatMessage(
                       {
                         id: 'inventory.reorder.exists',
                         defaultMessage: '{refusal} {editIt}',
@@ -489,9 +496,9 @@ export function ReorderPointDialog({
                           </Link>
                         ),
                       },
-                    )}
-                  </FormHelperText>
-                )}
+                    )
+                  }
+                />
               </Stack>
             ) : (
               item && (
@@ -557,6 +564,9 @@ export function ReorderPointDialog({
                     defaultMessage: 'Reorder point',
                   })}
                   required
+                  // The first field once the item is known: Edit's, the
+                  // 409's Edit it, a Stock row's (the picker is Add's).
+                  autoFocus={opening.kind !== 'add' || editing}
                   value={form.reorderPoint}
                   onChange={(event) =>
                     change({ reorderPoint: event.target.value })

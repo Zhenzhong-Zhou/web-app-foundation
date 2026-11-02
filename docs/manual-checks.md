@@ -3014,9 +3014,9 @@ site, after a deploy that changes the setting, the route or the relay.
   and each item shows its Chinese name.
 - **MC-4207** *(ADR-085)* Add reorder point. As the demo Owner, on
   Reorder points, Add reorder point sits beside Export. It opens a dialog
-  with the item picker: choose GLOVES-100 and Bought is chosen; choose
-  FOCUS-60CT and Made is, since it has an active recipe. The point's unit
-  sits inside its field at the right. How much to order has three cards,
+  with the item picker, focus in it: choose GLOVES-100 and Bought is
+  chosen; choose FOCUS-60CT and Made is, since it has an active recipe.
+  The point's unit sits inside its field at the right. How much to order has three cards,
   Just enough, A fixed quantity and Up to a maximum, each with its line;
   choosing the fixed or the maximum card shows its field inside it. Once
   the typing pauses, Today shows two bars, Now and After the suggested
@@ -3031,8 +3031,10 @@ site, after a deploy that changes the setting, the route or the relay.
   Up to a maximum of 150 on a point of 200 says, while typing, "The maximum
   must be above the reorder point, 200." under the maximum. Add a point
   for D3-1000-120, which has one: under the item, "D3-1000-120 already has
-  a reorder point. Change it instead." and Edit it, linked; Edit it opens
-  Edit with what is kept, 240, A fixed quantity of 48.
+  a reorder point. Change it instead." and Edit it, linked, with focus
+  back in the item, where a screen reader reads the refusal with it; Edit
+  it opens Edit with what is kept, 240, A fixed quantity of 48, focus in
+  the reorder point, as Edit from a row's ⋯ opens.
 - **MC-4209** *(ADR-085)* A row's menu, Edit and Remove. Each row's ⋯
   holds Edit reorder point, Stock of the item and Remove reorder point, in
   red. ZINC-60's row has the ⋯ and no chevron. Edit on ELDER-250 opens
@@ -3112,7 +3114,8 @@ site, after a deploy that changes the setting, the route or the relay.
   "2 each · MAGCAP-60 …"; type 120 and, once typing pauses, it reads 10.
   Cancel saves nothing. Plan it again at 24, Made at Office, Plan run:
   "Run planned", and the row reads Drafted with the run, without
-  reloading the page. Production's own Plan a run shows Uses too, once an
+  reloading the page, and focus is on the run's link, not the page's
+  start. Production's own Plan a run shows Uses too, once an
   item with a recipe and a quantity are in. Fatima Haddad (Sales) and
   Chloé Tremblay (Viewer), who plan no runs, see no Plan a run. In 中文:
   计划生产, the note 已按再订货点填写, and 用料.
@@ -4319,3 +4322,6 @@ first.
   extended.
 - 2026-11-01: ADR-085's review, Today's words for a made item in 中文,
   建议生产, not 建议订: MC-4212 extended.
+- 2026-11-01: ADR-085's review, focus in the reorder point dialog's
+  first field, the 409 at the item read with it, and focus on a planned
+  run's link: MC-4207, MC-4208 and MC-4216 extended.
