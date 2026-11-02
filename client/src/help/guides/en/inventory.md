@@ -35,7 +35,7 @@ A reorder point is the level below which an item is running short: below it, the
 1. On **Reorder points**, press **Add reorder point**, or choose **Reorder point…** in a row’s actions on **Stock**.
 2. Choose the item, and whether it is **Bought** or **Made**. Made is chosen for you when the item has an active recipe.
 3. Type the **Reorder point**, in the item’s unit, and choose how much to order.
-4. **Today** shows where the item stands now and after the suggested order. Press **Save**.
+4. **Today** shows where the item stands now and after the suggested order. Press **Add reorder point**, or **Save** when editing.
 
 Each row’s actions offer **Edit reorder point**, **Stock of the item** and **Remove reorder point**, which changes neither its stock nor its orders. A discontinued item keeps its point and is never low.
 

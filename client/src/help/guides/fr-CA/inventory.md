@@ -35,7 +35,7 @@ Un point de commande est le niveau sous lequel un article vient à manquer : en
 1. Dans **Points de commande**, appuyez sur **Ajouter un point de commande**, ou choisissez **Point de commande…** dans les actions d’une ligne de **Stock**.
 2. Choisissez l’article, et s’il est **Acheté** ou **Fabriqué**. Fabriqué est choisi pour vous quand l’article a une recette active.
 3. Saisissez le **Point de commande**, dans l’unité de l’article, et choisissez combien commander.
-4. **Aujourd’hui** montre où en est l’article maintenant et après la commande suggérée. Appuyez sur **Enregistrer**.
+4. **Aujourd’hui** montre où en est l’article maintenant et après la commande suggérée. Appuyez sur **Ajouter un point de commande**, ou sur **Enregistrer** pour une modification.
 
 Les actions de chaque ligne proposent **Modifier le point de commande**, **Stock de l’article** et **Retirer le point de commande**, ce qui ne change ni son stock ni ses commandes. Un article abandonné garde son point et n’est jamais bas.
 

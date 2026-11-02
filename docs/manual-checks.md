@@ -3137,7 +3137,8 @@ site, after a deploy that changes the setting, the route or the relay.
   The Inventory guide has Reorder points, Where an item stands, How much
   to order and Order or make what is low after Promised to customers,
   and two more refusals; every button it names reads the same on the
-  screen. Home's guide has Low stock after What needs attention, and Out
+  screen, Add reorder point ending Add's steps, with Save when editing.
+  Home's guide has Low stock after What needs attention, and Out
   among its words. In 中文: 了解更多 follows 待发 with no space and opens
   物品的库存情况, and Home's guide has 库存不足; in French, En savoir plus
   opens Où en est un article.
@@ -4351,3 +4352,5 @@ first.
 - 2026-11-01: ADR-085's review, the reorder point permission's box in
   Make a role, what ticks with it, and its Your access phrase: MC-4210
   extended.
+- 2026-11-01: ADR-085's review, the Inventory guide's Add steps ending
+  with Add reorder point, as its button reads: MC-4217 extended.
