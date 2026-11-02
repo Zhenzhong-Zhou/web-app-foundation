@@ -1,7 +1,7 @@
 ---
 name: build-from-brief
 description: Run a build brief kept in tmp/ (tmp/adr-NNN/brief.md), one step or from step N in a row, each Claude Code step in a new brief-step subagent, stopping where a person is needed, and end with the summary Bob pastes into the chat. Runs only when a prompt names it, as /build-from-brief <brief> <N> or /build-from-brief <brief> from <N>.
-argument-hint: <brief> <N> | <brief> from <N>
+argument-hint: <brief> <N> [choices] | <brief> from <N>
 disable-model-invocation: true
 ---
 
