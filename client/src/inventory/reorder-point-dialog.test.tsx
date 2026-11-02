@@ -285,6 +285,8 @@ describe('ReorderPointDialog', () => {
     expect(
       await screen.findByText(/PLAIN-1 already has a reorder point/),
     ).toBeInTheDocument();
+    // Said once, with Edit it: not the server's "Change it instead" too.
+    expect(screen.queryByText(/Change it instead/)).not.toBeInTheDocument();
     // Said at the picker, read with it, and focus taken there.
     expect(picker).toHaveAttribute('aria-invalid', 'true');
     expect(picker).toHaveAccessibleDescription(

@@ -3033,7 +3033,8 @@ site, after a deploy that changes the setting, the route or the relay.
   Up to a maximum of 150 on a point of 200 says, while typing, "The maximum
   must be above the reorder point, 200." under the maximum. Add a point
   for D3-1000-120, which has one: under the item, "D3-1000-120 already has
-  a reorder point. Change it instead." and Edit it, linked, with focus
+  a reorder point. Edit it", the last two words a link, in 中文 "去编辑",
+  never "请改为修改它" before it, with focus
   back in the item, where a screen reader reads the refusal with it; Edit
   it opens Edit with what is kept, 240, A fixed quantity of 48, focus in
   the reorder point, as Edit from a row's ⋯ opens.
@@ -4378,3 +4379,5 @@ first.
   reader: MC-4205 extended.
 - 2026-11-01: ADR-085's review, Reorder points with no point hiding its
   views, the position's line and Export: MC-4211 extended.
+- 2026-11-01: ADR-085's review, the 409 at the item said once, with Edit
+  it: MC-4208 reworded.

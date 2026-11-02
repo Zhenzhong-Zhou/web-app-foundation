@@ -629,7 +629,7 @@
   "inventory.reorder.drafted": "Brouillon fait",
   "inventory.reorder.edit": "Modifier le point de commande",
   "inventory.reorder.editIt": "Le modifier",
-  "inventory.reorder.exists": "{refusal} {editIt}",
+  "inventory.reorder.exists": "{sku} a déjà un point de commande. {editIt}",
   "inventory.reorder.filter.all": "Tous",
   "inventory.reorder.filter.low": "Bas",
   "inventory.reorder.filter.out": "Épuisé",

@@ -491,12 +491,15 @@ export function ReorderPointDialog({
                     exists &&
                     item &&
                     intl.formatMessage(
+                      // The dialog's own words, not the server's, which
+                      // say "Change it instead" where Edit it is a link.
                       {
                         id: 'inventory.reorder.exists',
-                        defaultMessage: '{refusal} {editIt}',
+                        defaultMessage:
+                          '{sku} already has a reorder point. {editIt}',
                       },
                       {
-                        refusal: error,
+                        sku: item.sku,
                         editIt: (
                           <Link
                             component="button"

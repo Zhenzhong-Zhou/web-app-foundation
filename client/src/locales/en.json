@@ -629,7 +629,7 @@
   "inventory.reorder.drafted": "Drafted",
   "inventory.reorder.edit": "Edit reorder point",
   "inventory.reorder.editIt": "Edit it",
-  "inventory.reorder.exists": "{refusal} {editIt}",
+  "inventory.reorder.exists": "{sku} already has a reorder point. {editIt}",
   "inventory.reorder.filter.all": "All",
   "inventory.reorder.filter.low": "Low",
   "inventory.reorder.filter.out": "Out",
