@@ -169,6 +169,7 @@ export function ReceiveStockDialog({
               required
               options={variants}
               loading={!answered}
+              failed={variantsError}
               value={form.variantId}
               onChange={(variantId) =>
                 setForm((current) => ({ ...current, variantId }))

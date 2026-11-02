@@ -538,6 +538,7 @@ export function CreateOrderPage() {
                         option.id === line.variant?.id,
                     )}
                     loading={!catalogueAnswered}
+                    failed={catalogueFailed}
                     value={line.variant?.id ?? ''}
                     onChange={(variantId) =>
                       updateLine(line.key, {

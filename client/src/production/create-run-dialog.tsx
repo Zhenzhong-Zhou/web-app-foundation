@@ -86,7 +86,7 @@ export function CreateRunDialog({
   );
   // Set when the quantity is typed with a thousands separator (ADR-054).
   const [quantityError, setQuantityError] = useState<string | null>(null);
-  const { variants, answered } = useVariants(open);
+  const { variants, answered, failed } = useVariants(open);
   const [locations, setLocations] = useState<Location[]>([]);
   const { partners, answered: partnersAnswered } = usePartners(
     open && canSeePartners,
@@ -250,6 +250,17 @@ export function CreateRunDialog({
 
             {error && <FormError message={error} />}
 
+            {/* As Receive says it: the picker is empty because the read
+                failed, not the catalogue (#303). */}
+            {failed && (
+              <FormError
+                message={intl.formatMessage({
+                  id: 'inventory.catalogueFailed',
+                  defaultMessage: 'Could not load the catalogue.',
+                })}
+              />
+            )}
+
             <VariantPicker
               id="run-output"
               label={intl.formatMessage({
@@ -259,6 +270,7 @@ export function CreateRunDialog({
               required
               options={variants}
               loading={!answered}
+              failed={failed}
               value={form.outputVariantId}
               onChange={(outputVariantId) =>
                 setForm((current) => ({
