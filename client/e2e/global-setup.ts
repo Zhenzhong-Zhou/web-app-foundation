@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 
 import { registerOrganization } from './support/api';
 import { verifyEmail } from './support/mail';
+import { writeMissingPermissionKeys } from './support/permission-keys';
 
 export const OWNER_STATE_PATH = './e2e/.auth/owner.json';
 export const OWNER_CREDENTIALS_PATH = './e2e/.auth/owner-credentials.json';
@@ -24,6 +25,10 @@ export const OWNER_CREDENTIALS_PATH = './e2e/.auth/owner-credentials.json';
  * host-only, and cookie matching ignores the port.
  */
 async function globalSetup(): Promise<void> {
+  // The keys every registration needs, which a direct run's database may
+  // lack (#345). The config stops the run when DATABASE_URL_E2E is missing.
+  await writeMissingPermissionKeys(process.env.DATABASE_URL_E2E as string);
+
   const organization = await registerOrganization('owner');
   // Verified, as inviting needs (ADR-077), through the link it was sent.
   await verifyEmail(organization.api, organization.email);
