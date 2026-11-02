@@ -212,6 +212,17 @@ export class ReorderPointsReadsService {
   }
 
   /**
+   * Whether the organization has given any item a reorder point, so Home
+   * tells nothing low apart from nothing watched (ADR-085).
+   */
+  async anySet(): Promise<boolean> {
+    const [point] = await this.tenantDb.select(reorderPoints, undefined, {
+      limit: 1,
+    });
+    return point !== undefined;
+  }
+
+  /**
    * A page of the list, as list() reads it; with `counted`, also every
    * row its filter and search match and the out among them, by window
    * counts over the statement's own rows. Never counted with a cursor,

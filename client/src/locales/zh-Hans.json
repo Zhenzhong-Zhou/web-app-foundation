@@ -404,6 +404,7 @@
   "home.empty.invoicesToIssue": "没有待开具的草稿发票。",
   "home.empty.licences": "60 天内没有到期的许可证。",
   "home.empty.lowStock": "没有库存不足的物品。",
+  "home.empty.lowStockUnset": "尚未设置再订货点，因此不会显示任何库存不足。<link>去再订货点设置</link>",
   "home.empty.production": "没有进行中的生产。",
   "home.empty.returnsOpen": "没有未结退货。",
   "home.empty.toReceive": "没有待收货的订单。",

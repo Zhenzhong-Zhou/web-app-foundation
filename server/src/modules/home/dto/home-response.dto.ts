@@ -37,6 +37,11 @@ export class HomeCard {
   count!: number;
   late!: number;
   rows!: HomeRow[];
+  /**
+   * Low stock's: whether any item has a reorder point, so nothing low is
+   * told apart from nothing watched (ADR-085); null on every other card.
+   */
+  anyPoint!: boolean | null;
 }
 
 /** Which getting-started steps the organization has done. */

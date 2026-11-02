@@ -49,6 +49,7 @@ interface HomeResponse {
         drafted: boolean;
       } | null;
     }[];
+    anyPoint: boolean | null;
   }[];
 }
 
@@ -506,6 +507,30 @@ describe('Home (e2e)', () => {
     expect(
       texts.filter((text) => /from reorder_points rp\b/.test(text)),
     ).toHaveLength(1);
+  });
+
+  // Nothing low is not nothing watched (ADR-085): Low stock says whether
+  // any item has a point; every other card, null.
+  it('says whether any item has a reorder point', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const before = await home(alpha);
+    expect(card(before, 'lowStock')).toMatchObject({
+      count: 0,
+      rows: [],
+      anyPoint: false,
+    });
+    expect(card(before, 'toShip')?.anyPoint).toBeNull();
+
+    const shelf = await site(alpha.agent, 'SHELF');
+    const plenty = await item(alpha.agent, 'PLENTY');
+    await receive(alpha.agent, plenty, shelf, '50');
+    await point(alpha.agent, plenty, '10');
+
+    expect(card(await home(alpha), 'lowStock')).toMatchObject({
+      count: 0,
+      rows: [],
+      anyPoint: true,
+    });
   });
 
   // To ship and To receive are counted from one read of the orders, by

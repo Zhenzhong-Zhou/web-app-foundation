@@ -70,6 +70,8 @@ export interface HomeCard {
   /** How many of them are overdue or expired. */
   late: number;
   rows: HomeRow[];
+  /** Low stock's: whether any item has a reorder point; else null. */
+  anyPoint: boolean | null;
 }
 
 /** Getting started's steps, in the order they depend on each other. */
@@ -200,6 +202,7 @@ export class HomeService {
               kind,
               ...totals.get(kind)!,
               rows: await this.rows(kind, today, expiringWithin),
+              anyPoint: null,
             },
       );
     }
@@ -367,7 +370,8 @@ export class HomeService {
    * Low stock (ADR-085): the reorder points list's first five on Low, and
    * beside them the rows Low shows and the out among them, late, from one
    * read of the list, so See all opens what the card counted. Each item
-   * named in the reader's language (ADR-056).
+   * named in the reader's language (ADR-056). With nothing low, whether
+   * any point is set, asked then alone: something low has one.
    */
   private async lowStock(locale: Locale): Promise<Omit<HomeCard, 'kind'>> {
     const { entries, low, out } = await this.reorder.firstLow(
@@ -377,6 +381,7 @@ export class HomeService {
     return {
       count: low,
       late: out,
+      anyPoint: low > 0 || (await this.reorder.anySet()),
       rows: entries.map((row) => ({
         // The item, which Reorder points and Stock both open by its id.
         id: row.variantId,

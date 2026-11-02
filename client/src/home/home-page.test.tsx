@@ -6,7 +6,7 @@ import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { HomeResponse } from '../api/types.gen';
+import type { HomeCard, HomeResponse } from '../api/types.gen';
 import { PageHeader } from '../components/page-header';
 import type { HomeKind } from '../lib/api-names';
 import { browserTimeZone, setOrganizationTimeZone } from '../lib/time-zone';
@@ -39,9 +39,25 @@ const routed = (element: ReactElement) => (
   <MemoryRouter>{element}</MemoryRouter>
 );
 
+/**
+ * A card as a test writes it: whether any reorder point is set, Low
+ * stock's alone (ADR-085), true there unless the test says otherwise.
+ */
+type TestCard = Omit<HomeCard, 'anyPoint'> &
+  Partial<Pick<HomeCard, 'anyPoint'>>;
+
 /** Home for a member past their first two weeks: no welcome (ADR-079). */
-function serve(home: Omit<HomeResponse, 'welcome'>) {
-  const response: HomeResponse = { ...home, welcome: null };
+function serve(
+  home: Omit<HomeResponse, 'welcome' | 'cards'> & { cards: TestCard[] },
+) {
+  const response: HomeResponse = {
+    ...home,
+    welcome: null,
+    cards: home.cards.map((card) => ({
+      anyPoint: card.kind === 'lowStock' ? true : null,
+      ...card,
+    })),
+  };
   server.use(http.get('/api/v1/home', () => HttpResponse.json(response)));
 }
 
@@ -201,6 +217,25 @@ describe('HomePage', () => {
     const low = await screen.findByRole('region', { name: 'Low stock' });
     expect(within(low).getByText('Nothing is low.')).toBeTruthy();
     expect(within(low).queryByRole('link')).toBeNull();
+  });
+
+  // Nothing low is not nothing watched (ADR-085): with no point set, the
+  // card says so, and links to where one is set.
+  it('says when no reorder point is set yet, with the way to set one', async () => {
+    serve({
+      gettingStarted: COMPLETE,
+      cards: [
+        { kind: 'lowStock', count: 0, late: 0, rows: [], anyPoint: false },
+      ],
+    });
+    renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
+
+    const low = await screen.findByRole('region', { name: 'Low stock' });
+    expect(within(low).getByText(/No reorder point is set yet/)).toBeTruthy();
+    expect(within(low).queryByText('Nothing is low.')).toBeNull();
+    expect(
+      within(low).getByRole('link', { name: 'Set one in Reorder points' }),
+    ).toHaveAttribute('href', '/inventory?tab=reorder-points');
   });
 
   // A server deployed after the tab opened may send a kind this build has

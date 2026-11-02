@@ -574,7 +574,31 @@ function CardPanel({ card, today }: { card: KnownCard; today: string }) {
           </Link>
         )}
       </Stack>
-      {card.rows.length === 0 ? (
+      {card.rows.length === 0 && card.anyPoint === false ? (
+        // Low stock with no point set (ADR-085): nothing is watched, so
+        // not "Nothing is low" in the positive tone, and where to set one.
+        <Typography sx={{ py: 1, borderTop: 1, borderColor: 'divider' }}>
+          {intl.formatMessage(
+            {
+              id: 'home.empty.lowStockUnset',
+              defaultMessage:
+                'No reorder point is set yet, so nothing can show as low. <link>Set one in Reorder points</link>',
+            },
+            {
+              link: (chunks) => (
+                <Link
+                  component={RouterLink}
+                  to="/inventory?tab=reorder-points"
+                  state={OFFER_BACK}
+                  underline="always"
+                >
+                  {chunks}
+                </Link>
+              ),
+            },
+          )}
+        </Typography>
+      ) : card.rows.length === 0 ? (
         // The positive tone's text, which reads on a card in both modes
         // (ADR-081). In sx: Typography's color prop takes a palette name,
         // not a path such as this.

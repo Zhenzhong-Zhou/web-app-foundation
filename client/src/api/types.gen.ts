@@ -2071,6 +2071,7 @@ export type HomeCard = {
   count: number;
   late: number;
   rows: Array<HomeRow>;
+  anyPoint: boolean | null;
 };
 
 export type HomeResponse = {

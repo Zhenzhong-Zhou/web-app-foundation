@@ -15949,13 +15949,20 @@
             "items": {
               "$ref": "#/components/schemas/HomeRow"
             }
+          },
+          "anyPoint": {
+            "type": [
+              "boolean",
+              "null"
+            ]
           }
         },
         "required": [
           "kind",
           "count",
           "late",
-          "rows"
+          "rows",
+          "anyPoint"
         ]
       },
       "HomeResponse": {

@@ -404,6 +404,7 @@
   "home.empty.invoicesToIssue": "No drafts to issue.",
   "home.empty.licences": "No licence expires within 60 days.",
   "home.empty.lowStock": "Nothing is low.",
+  "home.empty.lowStockUnset": "No reorder point is set yet, so nothing can show as low. <link>Set one in Reorder points</link>",
   "home.empty.production": "No runs in progress.",
   "home.empty.returnsOpen": "No returns open.",
   "home.empty.toReceive": "Nothing to receive.",

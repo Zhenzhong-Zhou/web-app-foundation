@@ -404,6 +404,7 @@
   "home.empty.invoicesToIssue": "Aucun brouillon à émettre.",
   "home.empty.licences": "Aucune licence n’expire d’ici 60 jours.",
   "home.empty.lowStock": "Rien n’est bas.",
+  "home.empty.lowStockUnset": "Aucun point de commande n’est encore défini, donc rien ne peut apparaître comme bas. <link>En définir un dans Points de commande</link>",
   "home.empty.production": "Aucune production en cours.",
   "home.empty.returnsOpen": "Aucun retour ouvert.",
   "home.empty.toReceive": "Rien à recevoir.",

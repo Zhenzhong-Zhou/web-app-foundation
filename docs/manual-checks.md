@@ -3072,7 +3072,11 @@ site, after a deploy that changes the setting, the route or the relay.
   VITC-100 and Refresh: Low stock reads 5, as the plain tiles do, and
   the card starts at MAGCAP-SAMPLE. In 中文: 库存不足, "1 项缺货",
   "12 / 36", 已下草稿 and 缺货; in French: Stock bas, "1 épuisé", "12 sur
-  36" and "brouillon fait".
+  36" and "brouillon fait". In a new organization, with no reorder
+  point, the card reads "No reorder point is set yet, so nothing can
+  show as low.", not in green, and Set one in Reorder points opens
+  Reorder points, with Back to Home; once one item has a point and
+  enough stock, the card reads "Nothing is low.", in green.
 - **MC-4214** *(ADR-085)* The bell's notice, opened, and its words by
   the items. On a fresh demo, as the Owner, the bell's "6 items fell
   below their reorder point" opens Inventory's Reorder points on Low,
@@ -4309,3 +4313,6 @@ first.
 - 2026-11-01: ADR-085's review, Back after raising a filled purchase
   order returning to Reorder points, not to the lines filled in again:
   MC-4215 extended.
+- 2026-11-01: ADR-085's review, Home's Low stock with no reorder point
+  saying so, not "Nothing is low.", with the way to set one: MC-4213
+  extended.
