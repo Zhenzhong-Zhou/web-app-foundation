@@ -155,10 +155,6 @@ where a step must act on it.
   names, stop and report what is done and what is left, the last line
   `BLOCKED:` and what is left. A chore found on the way goes in the
   summary, not in a commit.
-- **Where `/clear` is safe:** after a run stops, once its summary has
-  been pasted into the chat; never inside a step, nor while a run goes
-  on. A step's follow-ups (an amend, an issue to file) stay in the
-  session until they are done.
 
 ## 4. The summary for the chat
 
@@ -177,7 +173,7 @@ written as [CLAUDE.md's "Report for a quick read"][how-to-work] says:
    any line the brief asks every summary for.
 4. **Decisions for Bob:** each question with its options and the one
    recommended; or "none".
-5. **Next:** `/clear` safe now or not yet, and the next step's prompt.
+5. **Next:** the next step's prompt.
 
 The last line: `DONE: <why>`, or `BLOCKED: <what is needed>`.
 
