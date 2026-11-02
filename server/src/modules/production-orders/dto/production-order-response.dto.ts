@@ -129,6 +129,26 @@ export class IssuePlan {
   licenceCheck!: LicenceCheck;
 }
 
+/**
+ * One recipe line at the quantity to make, before the run is planned
+ * (ADR-085): scaled as release will issue it, named in the reader's
+ * language (ADR-056).
+ */
+export class RunPreviewLine {
+  componentVariantId!: string;
+  sku!: string;
+  productName!: string;
+  variantName!: string | null;
+  unitOfMeasure!: string;
+  supplyType!: 'stocked' | 'external';
+  quantity!: string;
+}
+
+/** GET /production-orders/preview: what a run of the recipe would use. */
+export class RunPreview {
+  lines!: RunPreviewLine[];
+}
+
 /** POST /production-orders/:id/release: the lines as released. */
 export class ReleasedRun {
   lines!: RunLine[];

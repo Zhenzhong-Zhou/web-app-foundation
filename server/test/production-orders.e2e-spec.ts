@@ -14,6 +14,7 @@ import {
   stockMovements,
 } from '../src/database/schema';
 import {
+  addViewer,
   body,
   createE2eApp,
   createLocation,
@@ -242,6 +243,89 @@ describe('Production orders (e2e)', () => {
       });
 
       expect(run.reference).toBe('RUN-0042');
+    });
+  });
+
+  /**
+   * What a run would use, shown before it is planned (ADR-085): scaled by
+   * the expression release issues by, so the two never differ.
+   */
+  describe('preview', () => {
+    const previewOf = (org: Org, bomId: string, quantityPlanned: string) =>
+      org.agent
+        .get('/v1/production-orders/preview')
+        .query({ bomId, quantityPlanned });
+
+    it('shows what release then issues, to the fourth place', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const s = await scenario(alpha);
+      // A third of a batch, so both round: 2400 × 0.3333333 is 799.99992.
+      const quantityPlanned = '333.3333';
+
+      const { lines } = body<{
+        lines: {
+          componentVariantId: string;
+          sku: string;
+          supplyType: string;
+          quantity: string;
+        }[];
+      }>(await previewOf(alpha, s.bomId, quantityPlanned).expect(200));
+
+      expect(
+        lines.map((line) => [line.sku, line.supplyType, line.quantity]),
+      ).toEqual([
+        ['BLEND-D3', 'stocked', '799.9999'],
+        ['BOTTLE', 'external', '333.3333'],
+      ]);
+
+      const run = await createRun(alpha, {
+        outputVariantId: s.output,
+        bomId: s.bomId,
+        locationId: s.wip,
+        quantityPlanned,
+      });
+      await alpha.agent
+        .post(`/v1/production-orders/${run.id}/release`)
+        .send({ sourceLocationId: s.shelf })
+        .expect(200);
+      const detail = body<RunDetailResponse>(
+        await alpha.agent.get(`/v1/production-orders/${run.id}`).expect(200),
+      );
+
+      expect(
+        Object.fromEntries(
+          detail.lines.map((line) => [
+            line.componentVariantId,
+            line.quantityPlanned,
+          ]),
+        ),
+      ).toEqual(
+        Object.fromEntries(
+          lines.map((line) => [line.componentVariantId, line.quantity]),
+        ),
+      );
+    });
+
+    it('refuses what planning refuses, and another organization’s recipe', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const s = await scenario(alpha);
+      const theirs = await scenario(beta);
+
+      await previewOf(alpha, s.bomId, '0').expect(400);
+      await previewOf(alpha, s.bomId, '1,000').expect(400);
+      await previewOf(alpha, theirs.bomId, '500').expect(404);
+    });
+
+    it('is planning’s to ask', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const s = await scenario(alpha);
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
+
+      await viewer
+        .get('/v1/production-orders/preview')
+        .query({ bomId: s.bomId, quantityPlanned: '500' })
+        .expect(403);
     });
   });
 

@@ -1439,6 +1439,20 @@ export type RunPage = {
   nextCursor: string | null;
 };
 
+export type RunPreviewLine = {
+  componentVariantId: string;
+  sku: string;
+  productName: string;
+  variantName: string | null;
+  unitOfMeasure: string;
+  supplyType: 'stocked' | 'external';
+  quantity: string;
+};
+
+export type RunPreview = {
+  lines: Array<RunPreviewLine>;
+};
+
 export type RunLine = {
   id: string;
   componentVariantId: string;
@@ -5361,6 +5375,26 @@ export type ProductionOrdersControllerCreateV1Responses = {
 
 export type ProductionOrdersControllerCreateV1Response =
   ProductionOrdersControllerCreateV1Responses[keyof ProductionOrdersControllerCreateV1Responses];
+
+export type ProductionOrdersControllerPreviewV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query: {
+    bomId: string;
+    quantityPlanned: string;
+  };
+  url: '/v1/production-orders/preview';
+};
+
+export type ProductionOrdersControllerPreviewV1Responses = {
+  200: RunPreview;
+};
+
+export type ProductionOrdersControllerPreviewV1Response =
+  ProductionOrdersControllerPreviewV1Responses[keyof ProductionOrdersControllerPreviewV1Responses];
 
 export type ProductionOrdersControllerFindV1Data = {
   body?: never;

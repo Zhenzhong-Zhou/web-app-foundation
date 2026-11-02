@@ -48,6 +48,19 @@ export class CreateProductionOrderDto {
 }
 
 /**
+ * What a run of a recipe would use (ADR-085): the recipe, and the quantity
+ * to make as planning takes it, so the preview refuses what planning would.
+ */
+export class RunPreviewQueryDto {
+  @IsUUID()
+  bomId!: string;
+
+  @IsString()
+  @IsPositiveDecimal()
+  quantityPlanned!: string;
+}
+
+/**
  * Drafts only — the service enforces that.
  *
  * No status field. Release, output, close, and cancel are transitions with

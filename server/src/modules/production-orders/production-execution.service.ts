@@ -26,6 +26,7 @@ type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 import { t } from '../../i18n/translate';
 import { checkLicence, settleLicence } from './licence-check';
 import type { ProductionOrderLine } from './production-orders.service';
+import { scaledQuantity } from './recipe-scaling';
 import { assertStatus, loadForIssue, loadWithin } from './run-guards';
 
 /**
@@ -144,10 +145,7 @@ export class ProductionExecutionService {
           bl.component_variant_id,
           pv.sku,
           pv.unit_of_measure,
-          round(
-            bl.quantity * (${run.quantityPlanned}::numeric / ${bom.outputQuantity}::numeric),
-            4
-          ),
+          ${scaledQuantity(run.quantityPlanned, bom.outputQuantity)},
           bl.supply_type,
           case when bl.supply_type = 'stocked' then ${input.sourceLocationId}::uuid end
         from bom_lines bl

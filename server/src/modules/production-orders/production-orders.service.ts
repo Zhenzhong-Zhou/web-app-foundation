@@ -9,6 +9,7 @@ import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
 
 import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
+import type { Locale } from '../../common/locales';
 import { codeMatches, searchTerms } from '../../common/search';
 import { assertOwnIds } from '../../database/own-ids';
 import {
@@ -23,18 +24,25 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { namesIn } from '../stock/item-name';
 import { type LotCandidate, lotCandidates } from '../stock/lot-allocation';
 import type {
   CreateProductionOrderDto,
   ListProductionOrdersDto,
+  RunPreviewQueryDto,
   UpdateProductionOrderDto,
 } from './dto/production-order.dto';
-import type { RunDetail, RunPage } from './dto/production-order-response.dto';
+import type {
+  RunDetail,
+  RunPage,
+  RunPreview,
+} from './dto/production-order-response.dto';
 import type {
   CancelProductionOrderDto,
   IssuePlanQueryDto,
 } from './dto/transitions.dto';
 import { checkLicence } from './licence-check';
+import { scaledQuantity } from './recipe-scaling';
 import { assertStatus, loadForIssue, loadWithin } from './run-guards';
 import { runLineOf, runOf } from './run-views';
 
@@ -276,7 +284,7 @@ export class ProductionOrdersService {
    * The release dialog shows this so the earliest-expiry pick is visible
    * before it happens and can be changed. Read-only and unlocked: stock can
    * move between the preview and the release, and release recomputes rather
-   * than trusting what the dialog saw. Scaling is the same SQL expression
+   * than trusting what the dialog saw. Scaling is scaledQuantity, which
    * release uses, so the numbers agree.
    *
    * With it, what release would do with the recipe's licence (ADR-050), from
@@ -294,10 +302,7 @@ export class ProductionOrdersService {
           pv.unit_of_measure,
           pv.tracks_lots,
           bl.supply_type,
-          round(
-            bl.quantity * (${run.quantityPlanned}::numeric / ${bom.outputQuantity}::numeric),
-            4
-          )::text as quantity
+          ${scaledQuantity(run.quantityPlanned, bom.outputQuantity)}::text as quantity
         from bom_lines bl
         join product_variants pv on pv.id = bl.component_variant_id
         where bl.bom_id = ${bom.id}::uuid
@@ -342,6 +347,82 @@ export class ProductionOrdersService {
       );
 
       return { lines, licenceCheck };
+    });
+  }
+
+  /**
+   * What a run of a recipe would use, before it is planned (ADR-085): each
+   * line at `quantityPlanned`, scaled by scaledQuantity as release will
+   * issue it, named in the reader's language (ADR-056). The run dialog
+   * shows it while the quantity is typed, or filled from Reorder points.
+   * Nothing is saved or locked; a recipe not this organization's is not
+   * found, as reading it is.
+   */
+  async preview(
+    query: RunPreviewQueryDto,
+    locale: Locale,
+  ): Promise<RunPreview> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const [bom] = await tx
+        .select({ id: boms.id, outputQuantity: boms.outputQuantity })
+        .from(boms)
+        .where(
+          and(
+            eq(boms.organizationId, organizationId),
+            eq(boms.id, query.bomId),
+          ),
+        );
+
+      if (!bom)
+        throw new NotFoundException(
+          t({ id: 'boms.suchBom', defaultMessage: 'No such BOM' }),
+        );
+
+      const shown = namesIn(locale, organizationId, {
+        product: 'pr',
+        variant: 'pv',
+      });
+      const rows = (
+        await tx.execute(sql`
+          select
+            bl.component_variant_id,
+            pv.sku,
+            ${shown.productName} as product_name,
+            ${shown.variantName} as variant_name,
+            pv.unit_of_measure,
+            bl.supply_type,
+            ${scaledQuantity(query.quantityPlanned, bom.outputQuantity)}::text as quantity
+          from bom_lines bl
+          join product_variants pv
+            on pv.id = bl.component_variant_id
+            and pv.organization_id = ${organizationId}::uuid
+          join products pr
+            on pr.id = pv.product_id and pr.organization_id = ${organizationId}::uuid
+          where bl.bom_id = ${bom.id}::uuid
+            and bl.organization_id = ${organizationId}::uuid
+          order by pv.sku
+        `)
+      ).rows as {
+        component_variant_id: string;
+        sku: string;
+        product_name: string;
+        variant_name: string | null;
+        unit_of_measure: string;
+        supply_type: 'stocked' | 'external';
+        quantity: string;
+      }[];
+
+      return {
+        lines: rows.map((row) => ({
+          componentVariantId: row.component_variant_id,
+          sku: row.sku,
+          productName: row.product_name,
+          variantName: row.variant_name,
+          unitOfMeasure: row.unit_of_measure,
+          supplyType: row.supply_type,
+          quantity: row.quantity,
+        })),
+      };
     });
   }
 

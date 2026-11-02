@@ -35,6 +35,8 @@ interface World {
   shelf: string;
   lotId: string;
   priceListId: string;
+  /** A recipe of the scoop that uses the item. */
+  bomId: string;
 }
 
 /** Each read's item, as an item (product and variant) or a product alone. */
@@ -165,6 +167,18 @@ const NAMED_READS: NamedRead[] = [
         (entry) => entry.variantId === world.variantId,
       )!;
       return itemName(row.productName, row.variantName);
+    },
+  },
+  {
+    operation: 'GET /v1/production-orders/preview',
+    of: 'item',
+    ask: async (world, language) => {
+      const { lines } = await read<{ lines: Named[] }>(
+        world,
+        language,
+        `/v1/production-orders/preview?bomId=${world.bomId}&quantityPlanned=1`,
+      );
+      return itemName(lines[0].productName, lines[0].variantName);
     },
   },
   {
@@ -568,6 +582,18 @@ describe('Names in the reader’s language (e2e)', () => {
       .send({ source: 'bought', reorderPoint: '10', rule: 'just_enough' })
       .expect(204);
 
+    // A recipe that uses it, so a run's preview names it (ADR-085).
+    const bomId = body<{ bom: { id: string } }>(
+      await agent
+        .post('/v1/boms')
+        .send({
+          outputVariantId: scoopId,
+          outputQuantity: '1',
+          lines: [{ componentVariantId: variantId, quantity: '2' }],
+        })
+        .expect(201),
+    ).bom.id;
+
     // Opened, so Recently opened and the welcome name it.
     await agent
       .post('/v1/recent')
@@ -584,6 +610,7 @@ describe('Names in the reader’s language (e2e)', () => {
       shelf,
       lotId,
       priceListId,
+      bomId,
     };
   });
 

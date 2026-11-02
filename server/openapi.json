@@ -3458,6 +3458,53 @@
         ]
       }
     },
+    "/v1/production-orders/preview": {
+      "get": {
+        "operationId": "ProductionOrdersController_preview_v1",
+        "parameters": [
+          {
+            "name": "bomId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "quantityPlanned",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunPreview"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProductionOrders"
+        ]
+      }
+    },
     "/v1/production-orders/{id}": {
       "get": {
         "operationId": "ProductionOrdersController_find_v1",
@@ -13342,6 +13389,62 @@
         "required": [
           "entries",
           "nextCursor"
+        ]
+      },
+      "RunPreviewLine": {
+        "type": "object",
+        "properties": {
+          "componentVariantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "supplyType": {
+            "type": "string",
+            "enum": [
+              "stocked",
+              "external"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "componentVariantId",
+          "sku",
+          "productName",
+          "variantName",
+          "unitOfMeasure",
+          "supplyType",
+          "quantity"
+        ]
+      },
+      "RunPreview": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunPreviewLine"
+            }
+          }
+        },
+        "required": [
+          "lines"
         ]
       },
       "RunLine": {
