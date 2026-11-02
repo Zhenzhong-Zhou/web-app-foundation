@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 27 October 2026
+# web-app-foundation — handoff, 2 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,8 +13,13 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 30 October 2026:
+On 2 November 2026:
 
+- **ADR-085, low stock** ([#288]): built in [#361], its as-built in
+  [ADR-085](adr/0085-low-stock.md). All its required checks passed on 2
+  November, with Claude Code Review's expected failure (it skips a pull
+  request that changes its own workflow, [#247]). Its merge raises the
+  API revision to 2 and needs the steps under Still to do, by hand.
 - **ADR-084, an error tracker** ([#287]): [#329] merged and deployed on
   30 October, its as-built in [ADR-084](adr/0084-an-error-tracker.md).
   Sentry was set up the same day, as
@@ -30,8 +35,8 @@ On 30 October 2026:
   the fixed skill was packed from `main` and uploaded again on 30
   October, after [#329]. It differs from `main`'s copy only in the
   quotes claude.ai's upload puts around its description, which
-  ADR-085's first commit adds to `main`'s, so the two match from its
-  merge with no upload.
+  [#361] adds to `main`'s, so the two match from its merge with no
+  upload.
 - **The triage** is done (28 October;
   [engineering.md, Triaging the open issues](engineering.md#triaging-the-open-issues)):
   every open issue has its group and area labels, the `fix-now` ones are
@@ -39,8 +44,13 @@ On 30 October 2026:
   and [#178]'s hooks are [#293] of their own. [#225] was closed after
   [#186], then reopened on 29 October, when slower runners put the typo
   lookup at 333 to 363 ms; it and [#276] carry known misses until 30
-  November.
-- **The last merges:** [#329] (ADR-084, the error tracker, 30
+  November. Since 1 November, timings on GitHub's runners are judged by
+  the median of three runs, as they vary by about 30% run to run
+  ([#342]).
+- **The last merges:** [#344] (a time zone's city after a dash, for
+  British Columbia's new Pacific Time, closing [#343], 1 November);
+  [#349], [#350] and [#351] ([#294], [#345] and [#346], from cloud
+  sessions, 1 November); [#329] (ADR-084, the error tracker, 30
   October), [#327] ([#318], the chat-side planning skill,
   ADR-088, 29 October, deployed; on 30 October its branches pruned and
   `scripts/clean-local.sh` run for the first time), [#325] ([#316], one
@@ -53,8 +63,8 @@ On 30 October 2026:
   amended, 26 October) and [#247] (the brand, ADR-082, 25 October).
 - **The release:** v0.7.0, tagged on 16 October 2026; both packages'
   versions are 0.7.0.
-- **Migrations** through 0075 (the square logo's), 76 files in
-  `server/src/database/migrations/`.
+- **Migrations** through 0076 (the reorder points', in [#361]), 77 files
+  in `server/src/database/migrations/`.
 - **Render:** a free database (`foundation-db`, created 22 October 2026)
   and a free web service, with the static site. Deploy runs from the
   `production` environment, which allows `main` alone and holds both
@@ -65,49 +75,70 @@ On 30 October 2026:
   Cloudflare saw, at 100 a minute
   ([`render.md`, "Rate limits and the client's address"](runbooks/render.md#rate-limits-and-the-clients-address-adr-011-amended-316)).
 - **Claude Code Review** still rarely runs the plugin's full review
-  ([#253]).
+  ([#253]); [#361] lets it read a large diff a path at a time, first
+  seen on the next code pull request.
 
 ## Dates
 
-- **29 October:** ask whether Bob's mother's Chinese corrections are
-  back. She has the export made at `b933b912` (22 October 2026); once it
-  is imported, her next round is only what changed, `node
-  scripts/i18n-review.mjs export --since b933b912`, and her corrections go
-  into a fix-up. Her first note: 头像 for the profile picture everywhere,
-  since Your account says 照片 while Home says 头像. With them, ADR-083's
-  two questions: whether Panivo in a Chinese email reads out of place
-  beside 品桥 in the app (ADR-082's trigger for the name by language in
-  emails), and the invitation email's 有效期到2026年11月3日结束, with no
-  space where the page writes 到 2026年. And, on a phone, to someone who
-  reads only Chinese: the close dialog (MC-2406), Roles and the role
-  editor in 中文, 品牌, product photos, 同事, and 编号 (MC-2710).
-- **2 to 6 November:** the updates ADR-084 left come of age, for
-  ADR-085's start (UTC): `typescript-eslint` 8.72.1 on 2 November, 17:10;
-  the Nest packages at 12.3.x on 3 November, 12:04, so the multer
-  override goes; the eight #260 left by 4 November, 20:27; the four
-  `@sentry` packages to 11.10.0 on 4 November, 16:21; `nodemailer`
-  10.3.1 and `@aws-sdk/client-s3` 3.1160.0 on 5 November, by 18:47; and
-  `eslint` 10.14.0 on 6 November, 14:13.
+- **Since 29 October:** ask whether the corrections of the reviewer who
+  reads only Chinese are back. The export was made at `b933b912` (22
+  October 2026); once it is imported, the next round is only what
+  changed, `node scripts/i18n-review.mjs export --since b933b912`, and the
+  corrections go into a fix-up. The first note: 头像 for the profile
+  picture everywhere, since Your account says 照片 while Home says 头像.
+  With them, ADR-083's two questions: whether Panivo in a Chinese email
+  reads out of place beside 品桥 in the app (ADR-082's trigger for the
+  name by language in emails), and the invitation email's
+  有效期到2026年11月3日结束, with no space where the page writes 到 2026年.
+  And, on a phone: the close dialog (MC-2406), Roles and the role editor
+  in 中文, 品牌, product photos, 同事, and 编号 (MC-2710).
+- **2 to 8 November:** the updates ADR-084 left come of age; the next
+  branch's first step takes what is 7 days old that day. In Vancouver
+  time: `typescript-eslint` on 2 November, 10:09; the Nest packages at
+  12.3.2 on 3 November, 05:03, when the multer override goes (ADR-019);
+  react-intl and react-router-dom by 3 November, 14:14; Sentry,
+  `@types/node` and dotenv-cli by 4 November, 13:26; nodemailer on 5
+  November; eslint and `@aws-sdk/client-s3` on 6 November; the formatjs
+  packages on 7 November; globals on 8 November.
+- **By 4 November:** the API credits end about 5 November, so the
+  translation review (the French and Chinese catalogues against the
+  glossary) runs before then. The cloud credit ends in early November
+  too: cloud sessions take small issues in files no open branch
+  changes, and their pull requests are squashed and merged, so each lands
+  on `main` as one commit GitHub signs.
 - **30 November:** the known misses for the typo lookup ([#225]) and Home
   ([#276]) end; fixed by then, or decided again.
-- **Early November:** Bob's cloud credit ends; [#245] suits a cloud session
-  before then. What the cloud sessions taught is in the working
-  agreements, "Cloud sessions" under
-  [How code is delivered](engineering.md#how-code-is-delivered).
+- **Cloud sessions:** what they taught is in the working agreements,
+  "Cloud sessions" under
+  [How code is delivered](engineering.md#how-code-is-delivered); [#245]
+  suits one.
 - **About 19 November:** replace Render's free database before it expires
   on 21 November, by
   [`render.md`, "Replacing the database"](runbooks/render.md#replacing-the-database),
-  warning anyone besides Bob who uses the app; Render deletes it about 5
+  warning anyone besides the maintainer who uses the app; Render deletes it about 5
   December. Record the new dates here. A free Render database lasts 30
   days, so until a paid one this comes back monthly; Neon and Supabase
   are free candidates for the replacement.
 
 ## Still to do, by hand
 
+- **After [#361]'s merge,** in this order:
+  - merge at a quiet hour, since it is the first live raise of the API
+    revision, then walk MC-3424's third tab: a tab left on Home across
+    the deploy shows one banner, and one Reload brings Home back;
+  - `main`'s ruleset requires "CI — all jobs" alone, in place of the five
+    jobs it names now; the next docs-only pull request then merges
+    without the bypass;
+  - MC-4201 on the live site with a test item: one notice in the bell
+    within the hour while the service is awake; then remove the point;
+  - the planning skill compared with `main`'s copy: they should match;
+  - `scripts/prune-branches.sh --yes`, then `scripts/clean-local.sh`, a
+    dry run, then `--yes`, which removes `tmp/adr-085/` and
+    `tmp/adr-085-low-stock/`.
 - **After [#329]:** `evals.md` walked in a new chat, against the skill
   uploaded on 30 October.
-- **On 31 October:** the web service's memory on Render's Metrics, a day
-  with the tracker on; the review measured about 326 MiB at rest, of the
+- **Owed since 31 October:** the web service's memory on Render's
+  Metrics, a day with the tracker on; the review measured about 326 MiB at rest, of the
   free plan's 512 MB.
 - **MC-4001 across two networks,** owed from [#325]'s deploy: on 29
   October an office network without IPv6 reached Cloudflare as one
@@ -129,8 +160,8 @@ On 30 October 2026:
   migrate:all` does not reach it, so after each new migration run `npm run
   migrate` against it, as [`server/perf/README.md`](../server/perf/README.md)
   makes it.
-- **Bob's general preferences** into claude.ai's Settings: what is his
-  in any project, since this repository's routine is the planning
+- **The maintainer's general preferences** into claude.ai's Settings:
+  what holds in any project, since this repository's routine is the planning
   skill's (ADR-088).
 - **Project knowledge** slimmed to `docs/`, `README.md`, `CLAUDE.md` and
   `.claude/`, and re-synced after each docs PR.
@@ -142,8 +173,8 @@ On 30 October 2026:
 
 ## Still to do, in code
 
-The order (Bob, 27 October 2026), each item a pull request or a set of
-them:
+The order (27 October 2026, revised 1 November), each item a pull
+request or a set of them:
 
 1. **`docs-start-here`,** [#291]: merged 28 October.
 2. **Triage:** done 28 October (above).
@@ -151,37 +182,32 @@ them:
    merged 29 October. Then [#316], the rate limit keyed on the person,
    with `/triage` riding along: [#325], merged 29 October. Then the
    chat-side planning skill ([#318], ADR-088), a docs PR, its source
-   kept in this repository (Bob, 29 October 2026): [#327], merged 29
+   kept in this repository (29 October 2026): [#327], merged 29
    October; the skill uploaded on 30 October (above).
 4. **ADR-084, an error tracker** ([#287]): [#329], merged 30 October,
    closing [#244], [#266], [#268] and [#269] beside [#287]; live and
    checked the same day.
-5. **ADR-085, low stock** ([#288]), planned on 30 October: a reorder
-   point per item, bought or made, in Inventory's Reorder points,
-   against usable stock and what is on its way; Raise a purchase order
-   and Plan a run filled in; a Home card; and a bell once each time an
-   item falls below ([ADR-085](adr/0085-low-stock.md)). With [#222] and
-   [#256]; [#301], [#265], [#313], [#309] and [#296]'s availability
-   part; and [#276] first, since the card adds to `GET /home`. Starting
-   with the updates ADR-084 left (Dates) and the multer override's
-   removal (ADR-019).
-   Riding along in its first commit (Bob, 30 October 2026): Claude Code
-   Review skips docs-only pull requests, by the paths rule
-   `.github/workflows/ci.yml`'s push uses; CI's first job, `changes`,
-   with the other jobs skipped by their condition when only docs
-   changed, and a last job as the one required check, so docs pull
-   requests merge without the bypass; [#253]'s review read a path at a
-   time; and the planning skill's description quoted. After its merge,
-   by hand: `main`'s ruleset requires that last job alone.
-6. **The fix-ups:** the Fix-ups milestone in batches by area, each
-   writing its areas' rules files. First the flaky tests, [#183], [#232],
-   [#233], [#248] and [#290], so CI can be trusted for the rest; [#225]
-   and [#276] before their known misses end on 30 November; then
-   [#261] with [#154] and [#150]; then [#263]'s rest with [#198]; [#264];
-   and [#255] with [#258], [#324] and [#326], since all four change the
-   security emails' lines and their text parts
+5. **ADR-085, low stock** ([#288]): [#361], with its riders, as its
+   as-built in [ADR-085](adr/0085-low-stock.md) says.
+6. **[#348] first:** `/build-from-brief` runs a brief's steps in a row,
+   each in a fresh subagent, stopping only when a person is needed. Its
+   first step takes the dependency updates (Dates) and the multer
+   override's removal.
+7. **The fix-ups,** the Fix-ups milestone, each batch writing its areas'
+   rules files, in five batches first:
+   1. CI that can be trusted: the flaky tests, [#183], [#232], [#233],
+      [#248] and [#290], with [#342] and [#334];
+   2. before their known misses end on 30 November: [#225] and [#276];
+   3. expired lots: [#333] with [#331];
+   4. the audit log: [#339] with [#133] and [#168];
+   5. then TypeScript 7 ([#336]); the newcomer test; the design language
+      ([#338], ADR-089); and Home for a newcomer ([#335], ADR-090).
+
+   Then [#261] with [#154] and [#150]; [#263]'s rest with [#198];
+   [#264]; and [#255] with [#258], [#324] and [#326], since all four
+   change the security emails' lines and their text parts
    (`npm run mail:text -- --update`).
-7. **One docs PR for the remaining rules files,** then **the review of
+8. **One docs PR for the remaining rules files,** then **the review of
    the whole app**, once, after the fix-ups, so it judges the app with the
    known issues fixed and finds what nobody has filed:
    `/production-readiness` with its device pass (deploys, backups and a
@@ -194,7 +220,7 @@ them:
    - the walks owed: ADR-073's, MC-2701 to MC-2713; before v0.7.0's,
      sections 23 and 24 (MC-2301 to MC-2303, MC-2401 to MC-2405), the
      French and Chinese wording read by someone fluent (MC-1405), and
-     `docs/principles.md` edited until it reads as Bob's; ADR-082's on
+     `docs/principles.md` edited until it reads as the maintainer's; ADR-082's on
      the live site, MC-3501 on an iPhone and an Android home screen,
      MC-3504 and MC-3505;
    - the manual checks due: MC-2601 to MC-2610, MC-R13 and MC-R14
@@ -203,7 +229,7 @@ them:
      MC-2201, MC-1558 and MC-1559.
 
    Then one round for its findings.
-8. **New features,** in this order unless a trigger brings one forward:
+9. **New features,** in this order unless a trigger brings one forward:
    one person in two organizations, then a practice organization
    (ADR-077, *Deferred*); a public demo, plans and billing, and the
    operator's console and support access, each with its entry in Open
@@ -236,13 +262,14 @@ Not repeated here; each list has one home:
   [`render.md`, "Before real customers' data"](runbooks/render.md#before-real-customers-data),
   and [Open decisions, "A security review before real customers"](adr/open-decisions.md#a-security-review-before-real-customers).
 
+[#133]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/133
 [#150]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/150
 [#154]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/154
+[#168]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/168
 [#178]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/178
 [#183]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/183
 [#186]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/186
 [#198]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/198
-[#222]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/222
 [#225]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/225
 [#226]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/226
 [#232]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/232
@@ -256,7 +283,6 @@ Not repeated here; each list has one home:
 [#253]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/253
 [#254]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/254
 [#255]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/255
-[#256]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/256
 [#257]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/257
 [#258]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/258
 [#259]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/259
@@ -265,7 +291,6 @@ Not repeated here; each list has one home:
 [#262]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/262
 [#263]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/263
 [#264]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/264
-[#265]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/265
 [#266]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/266
 [#268]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/268
 [#269]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/269
@@ -275,12 +300,9 @@ Not repeated here; each list has one home:
 [#290]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/290
 [#291]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/291
 [#293]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/293
-[#296]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/296
+[#294]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/294
 [#298]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/298
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
-[#301]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/301
-[#309]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/309
-[#313]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/313
 [#316]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/316
 [#317]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/317
 [#318]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/318
@@ -292,3 +314,20 @@ Not repeated here; each list has one home:
 [#326]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/326
 [#327]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/327
 [#329]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/329
+[#331]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/331
+[#333]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/333
+[#334]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/334
+[#335]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/335
+[#336]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/336
+[#338]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/338
+[#339]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/339
+[#342]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/342
+[#343]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/343
+[#344]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/344
+[#345]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/345
+[#346]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/346
+[#348]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/348
+[#349]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/349
+[#350]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/350
+[#351]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/351
+[#361]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/361

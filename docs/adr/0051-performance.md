@@ -170,6 +170,17 @@ so the timing is the evidence for the name lookup.
   every organization's translations through the trigram index (29
   October 2026, #317). Trigger: a large organization's search past 100
   ms. Then ADR-056's index per organization.
+- **The low list** (ADR-085) works out every point's position on each
+  page: 6.3× from small to large, 22 to 138 ms at p95 (1 November 2026,
+  #361). Trigger: p95 over budget at small scale. Then the open lines
+  read once, with three filtered sums, and drafts read only for the
+  items asked (#276's comment of 1 November).
+- **Home after ADR-085:** the median of three runs at small is 278 ms,
+  a newcomer's 217 ms, and one run of three missed 300 ms. What is left
+  is the database planning its statements (about 11 of the owner's 26
+  ms), its 14 transactions, and Low stock's read. Trigger: the median of
+  three over budget (#342). Then prepared statements, or one transaction
+  per request, which would need an ADR.
 - **Valuation** reads every pool by definition. Trigger: an organization
   whose valuation no longer fits a screen. Then an export.
 - **Migrations on large live tables.** 0036 builds its index inside the

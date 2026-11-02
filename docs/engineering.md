@@ -163,14 +163,18 @@ steps; this section stays the rule.
   session (`gh issue list --json number,title,body`): of eight picked
   from one-line lists on 24 and 25 October, three stopped, needing a
   decision or more files. The prompt names the issue, the branch, the author Zhenzhong
-  Zhou with the session as committer (the commit then shows Verified), the
+  Zhou with the session as committer, the
   regression check's number when several run at once, and the files to
   leave alone; asks for `scripts/verify.sh --quick`, a pull request with
   "Closes #N" and a last line saying DONE or BLOCKED; and ends with the stop
   rule: change only what the issue names, and past about 20 minutes or
   more files than that, stop and report. A proof runs only the changed
   tests; a sweep, a load proof or anything needing the large seed stays on
-  the Mac. PRs merge one at a time, each when green; a branch behind
+  the Mac. A session signs with a key of its own, so under the
+  maintainer's vigilant mode its commits show Unverified: its pull
+  requests are squashed and merged, so each lands on `main` as one commit
+  GitHub signs (1 November 2026). PRs merge one at a time, each when
+  green; a branch behind
   `main` with no conflict merges as it is, and a conflict in
   `docs/manual-checks.md` is settled on GitHub with "Accept both changes",
   an empty line between Regressions entries, the dated list kept oldest

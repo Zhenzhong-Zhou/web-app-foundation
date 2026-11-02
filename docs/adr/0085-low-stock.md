@@ -13,7 +13,7 @@ Nothing warns when stock runs short. Open decisions, "Low stock", left
 it to decide: a reorder point per item and perhaps a quantity to order;
 what the point is compared with; where a shortage shows and who is told;
 who may set it; per location or not; and the seeds. It is #288, the
-order's item 5 (Bob, 27 October 2026), with #222 and #256 riding along.
+order's item 5 (27 October 2026), with #222 and #256 riding along.
 
 What the code offers today:
 
@@ -72,7 +72,7 @@ each `when-touched` one on a screen or file this branch opens:
   purchase order opens New order, which none of them names. #293, the
   permission lookups, names Inventory and New order among its five
   pages, but it reverses a working agreement and spans six dialogs: a
-  pull request of its own (Bob, 30 October 2026). In database, #226 (a
+  pull request of its own (30 October 2026). In database, #226 (a
   plan-check rule) and #314 (a test listing writes that take an id from
   their body): the new write has its own e2e case. In notifications,
   #169 (`fix-now`) and #285: the notice prints no quantity, so French's
@@ -325,3 +325,48 @@ each organization's items.
   screens; the guides; dependencies again; the reviews; the as-built,
   by the chat. Built from `tmp/adr-085/brief.md`, a step per prompt, by
   `/build-from-brief`.
+
+## Amendment (November 2026) — as built (#361)
+
+Built from 30 October to 2 November 2026 in #361. Where building
+differed from the decisions above, or settled what they left open:
+
+- **The list** is Inventory's second tab, kept in the address, its
+  search shared with Stock (#301). All, Low and Out, each with its count
+  from a route of its own; Low includes Out. An item's row opens on its
+  detail: usable by location, with what was left out as expired or
+  issued to a run, each purchase or run coming, each sale still needing
+  it, each draft.
+- **Usable** leaves out what released runs were issued, read from the
+  runs' lines, where it sits at a location marked available.
+- **The dialog** asks the server for a preview of the values typed, after
+  a 300 ms pause, with saving's checks; its second bar counts what is in
+  draft. It checks a number's form itself: "Type a number above zero.",
+  and up to 4 decimal places. Bought or made defaults to made when the
+  item has an active recipe, read where the person may see recipes
+  (#356). A Stock row's menu has one entry, Reorder point…, which opens
+  Add or Edit by the item's id.
+- **The writes** answer 204; a change replaces the whole point; History
+  records what was saved, never the request's body.
+- **Plan a run** shows what the run will use, from a server preview that
+  shares release's own scaling, so the two cannot differ. Release and its
+  issue plan now name the organization in their joins to a recipe's
+  items (#226).
+- **Home:** Low stock's count and out count come with its five rows from
+  one read of the list, not from Home's statement of counts; To ship and
+  To receive are counted from one read of the orders. With no point at
+  all, the card says none is set. The new card kind raised the API
+  revision to 2, and Home skips any kind it does not know, so the next
+  card needs no raise. On GitHub's runners at small, the median of three
+  runs: Home 278 ms, a newcomer's Home 217 ms, the low list 114 ms. One
+  run of three missed 300 ms, so Home's known miss stays until 30
+  November (#276, #342).
+- **The bell's** grouped words follow the items: all bought, "Order
+  them"; all made, "Plan them"; both, "Order or plan them". One
+  organization's failure no longer stops the check for the rest.
+- **Back** shows on every top-level page reached by a link inside the
+  app (#341); its rule is in the conventions.
+- **Also in #361:** #309, #296's availability names, #256, #265, #313
+  and #222. The time zone's label went to `main` on its own (#344).
+- **Filed for later:** #331 and #333 (expired lots), #339, #340, #342,
+  #345 to #348, and #352 to #360.
