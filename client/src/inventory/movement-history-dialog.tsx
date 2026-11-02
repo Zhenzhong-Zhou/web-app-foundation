@@ -22,9 +22,15 @@ import type { Movement, StockRow } from '../api/types.gen';
 import { FormError } from '../components/form-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { Reference } from '../components/reference';
-import { formatMoment, formatQuantity, relativeTime } from '../lib/format';
+import { NameAndEmail } from '../components/who-and-when';
+import {
+  displayQuantity,
+  formatMoment,
+  itemName,
+  relativeTime,
+} from '../lib/format';
 import { useKeysetList } from '../lib/use-keyset-list';
-import { describeMovement } from './describe-movement';
+import { describeMovement, movementActor } from './describe-movement';
 import {
   MOVEMENT_HEADINGS,
   reasonDetailLabel,
@@ -77,24 +83,30 @@ export function MovementHistoryDialog({
 
   return (
     <Dialog open={!!row} onClose={onClose} fullWidth maxWidth="md">
+      {/* The item's name beside its SKU, in the reader's language (#256):
+          every row below is the same item, so the title names it once. */}
       <DialogTitle>
         {row?.lotCode
           ? intl.formatMessage(
               {
-                id: 'inventory.history.titleWithLot',
-                defaultMessage: 'History for {sku} · lot {lot}',
+                id: 'inventory.history.titleItemWithLot',
+                defaultMessage: 'History for {sku} {name} · lot {lot}',
               },
               {
                 sku: <Reference>{row.sku}</Reference>,
+                name: itemName(row.productName, row.variantName),
                 lot: <Reference>{row.lotCode}</Reference>,
               },
             )
           : intl.formatMessage(
               {
-                id: 'inventory.history.title',
-                defaultMessage: 'History for {sku}',
+                id: 'inventory.history.titleItem',
+                defaultMessage: 'History for {sku} {name}',
               },
-              { sku: <Reference>{row?.sku}</Reference> },
+              {
+                sku: <Reference>{row?.sku}</Reference>,
+                name: row && itemName(row.productName, row.variantName),
+              },
             )}
       </DialogTitle>
 
@@ -179,12 +191,13 @@ export function MovementHistoryDialog({
                           </span>
                         </TableCell>
 
-                        {/* Rendered as it arrived. Formatting means parsing, and
-                          a numeric through a JS double is the precision loss
-                          ADR-025 exists to avoid. */}
+                        {/* Read without padding zeros, grouped the language's
+                          way (displayQuantity, #256), but never parsed: a
+                          numeric through a JS double is the loss ADR-025
+                          exists to avoid. */}
                         <TableCell align="right">
                           {sign}
-                          {formatQuantity(movement.quantity)}
+                          {displayQuantity(movement.quantity)}
                         </TableCell>
 
                         <TableCell>{where}</TableCell>
@@ -215,12 +228,16 @@ export function MovementHistoryDialog({
                           )}
                         </TableCell>
 
-                        {/* Null when the actor was anonymised (ADR-012). The row
-                          survives its author, which is what RESTRICT on
-                          actor_id is for. */}
+                        {/* Who by name, their email beneath (#256); Deleted
+                          user once anonymised (ADR-012). The row survives its
+                          author, which is what RESTRICT on actor_id is for. */}
                         <TableCell>
-                          {movement.actorEmail ??
-                            intl.formatMessage(MOVEMENT_HEADINGS.deletedUser)}
+                          <NameAndEmail
+                            {...movementActor(
+                              movement,
+                              intl.formatMessage(MOVEMENT_HEADINGS.deletedUser),
+                            )}
+                          />
                         </TableCell>
                       </TableRow>
                     );

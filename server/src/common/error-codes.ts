@@ -130,6 +130,17 @@ export const ERROR_CODES = {
    * not deployed yet, or rolled back. Sent with Retry-After.
    */
   apiUpdating: 'api_updating',
+  /**
+   * The item already has a reorder point (ADR-085), one at most: the
+   * dialog offers to change it.
+   */
+  reorderPointExists: 'reorder_point_exists',
+  /**
+   * A maximum rule's maximum is not above the reorder point (ADR-085): the
+   * dialog marks the Maximum field, since the client compares no
+   * quantities (ADR-025).
+   */
+  reorderMaximumNotAbovePoint: 'reorder_maximum_not_above_point',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

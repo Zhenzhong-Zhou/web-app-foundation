@@ -192,6 +192,37 @@ const SCREENS: Screen[] = [
   },
   { name: 'inventory', path: () => '/inventory', ready: heading },
   {
+    // A low row opened and chosen: its four boxes and the floating bar
+    // (ADR-085).
+    name: 'reorder points, a row opened and chosen',
+    path: () => '/inventory?tab=reorder-points',
+    open: async (page) => {
+      await page.getByRole('button', { name: /^Where .* stands$/ }).click();
+      await page
+        .getByRole('checkbox', { name: /^Choose / })
+        .first()
+        .check();
+      await expect(
+        page.getByRole('region', { name: 'Chosen to order' }),
+      ).toBeVisible();
+    },
+    ready: (page) => page.getByText('+ Coming', { exact: true }),
+  },
+  {
+    // Edit from a row's menu: the rule's cards and Today (ADR-085).
+    name: 'reorder points, the Edit dialog',
+    path: () => '/inventory?tab=reorder-points',
+    open: async (page) => {
+      await page
+        .getByRole('button', { name: /^Actions for .* reorder point$/ })
+        .first()
+        .click();
+      await page.getByRole('menuitem', { name: 'Edit reorder point' }).click();
+    },
+    ready: (page) =>
+      page.getByRole('dialog').getByText(/^Below .* now, so it would suggest/),
+  },
+  {
     name: 'the lookup, the keyboard on a result',
     path: () => '/inventory',
     open: async (page) => {
@@ -471,6 +502,20 @@ async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
     data: { status: 'confirmed' },
   });
   expect(confirmed.ok(), await confirmed.text()).toBeTruthy();
+
+  // Low: 24 on the shelf and 40 coming, under a point of 100 (ADR-085).
+  const pointed = await api.post(
+    `/v1/stock/reorder-points/${product.variantId}`,
+    {
+      data: {
+        source: 'bought',
+        reorderPoint: '100',
+        rule: 'fixed',
+        fixedQuantity: '48',
+      },
+    },
+  );
+  expect(pointed.ok(), await pointed.text()).toBeTruthy();
 
   const catalogue = (await (await api.get('/v1/roles/catalogue')).json()) as {
     templates: { key: string; permissions: string[] }[];

@@ -34,6 +34,16 @@ Une nouvelle organisation reçoit sept étapes plutôt qu’une page de zéros. 
 
 L’accueil est lu quand vous l’ouvrez. Appuyez sur **Actualiser** pour le relire.
 
+## Stock bas {#low-stock}
+
+Stock bas compte les articles sous leur point de commande, qui se définit dans [Inventaire](/inventory#reorder-points). Quand l’un d’eux est épuisé, il dit aussi combien, et l’accueil les compte avec ceux en retard.
+
+- Sa carte liste les cinq les plus loin sous leur point, chacun avec ce qu’il a sur son point, comme 800 sur 2 000, ou **épuisé**.
+- **brouillon fait** dit qu’un bon de commande ou un ordre de fabrication en brouillon le couvre déjà, sans qu’il en faille un autre.
+- **Tout voir** ouvre Points de commande sur Bas, où vous les commandez ou les planifiez.
+
+> Seule une personne qui peut voir le stock voit Stock bas.
+
 ## Sans organisation {#no-organization}
 
 Demandez à quelqu’un d’une organisation d’inviter votre adresse, puis ouvrez son lien en étant connecté : vous vous joignez avec ce compte. Un lien pour créer votre propre organisation s’ouvre de la même façon. Là où l’accueil offre **Créer une organisation**, vous pouvez aussi en créer une, dont vous serez propriétaire.
@@ -42,3 +52,4 @@ Demandez à quelqu’un d’une organisation d’inviter votre adresse, puis ouv
 
 - **En retard** : passé le jour où c’était attendu ou dû.
 - **Expire bientôt** : des lots qui périment dans le nombre de jours fixé par l’organisation.
+- **Épuisé** : un article avec un point de commande dont il ne reste rien : ce que les ventes requièrent encore prend tout ce qui est utilisable et à venir, ou plus.

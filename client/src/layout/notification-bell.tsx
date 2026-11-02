@@ -22,6 +22,7 @@ import { ReferencesWhole } from '../components/reference';
 import { Reload } from '../errors/status-actions';
 import { api, isRevisionRefusal } from '../lib/api';
 import { relativeTime } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { useFailureWords } from '../lib/use-failure-words';
 import { useWhileVisible } from '../lib/use-while-visible';
 import { rem } from '../theme/rem';
@@ -36,6 +37,10 @@ const POLL_MS = 60_000;
  * closest thing rather than the subject.
  */
 function linkFor(entry: Notification): string | null {
+  // Low stock names the list, not a row: Reorder points on Low (ADR-085).
+  if (entry.resourceType === 'reorder_points') {
+    return '/inventory?tab=reorder-points&status=low';
+  }
   if (!entry.resourceId) return null;
 
   switch (entry.resourceType) {
@@ -138,7 +143,8 @@ export function NotificationBell() {
     }
 
     const to = linkFor(entry);
-    if (to) navigate(to);
+    // Back returns to where the bell was opened (#341).
+    if (to) void navigate(to, { state: OFFER_BACK });
   }
 
   async function readAll() {

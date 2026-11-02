@@ -417,5 +417,33 @@ describe('Returns (e2e)', () => {
         })
         .expect(404);
     });
+
+    it('refuses a location from another organization, saying to choose one from the list, and receives nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const s = await shipped(alpha);
+      const theirs = await location(beta, 'Theirs');
+
+      // From the body, so unknown, a 400, not a 404 (engineering.md, Server).
+      const refused = await alpha.agent
+        .post(`/v1/orders/${s.order.id}/returns`)
+        .send({
+          toLocationId: theirs,
+          lines: [
+            {
+              lineId: s.focusLine,
+              lots: [{ lotId: await s.lotId('LATE'), quantity: '1' }],
+            },
+            { lineId: s.scoopLine, quantity: '1' },
+          ],
+        })
+        .expect(400);
+
+      expect(body<{ message: string }>(refused).message).toBe(
+        'That location is not in this organization. Choose one from the list.',
+      );
+      expect((await line(s.focusLine)).quantityReturned).toBe('0.0000');
+      expect((await line(s.scoopLine)).quantityReturned).toBe('0.0000');
+    });
   });
 });

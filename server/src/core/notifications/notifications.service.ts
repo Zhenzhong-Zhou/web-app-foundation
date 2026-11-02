@@ -107,13 +107,7 @@ export class NotificationsService {
 
     try {
       // Each row in its recipient's language, read once for all of them.
-      const people = await this.db
-        .select({ id: users.id, locale: users.locale })
-        .from(users)
-        .where(inArray(users.id, [...new Set(rows.map((row) => row.userId))]));
-      const localeOf = new Map(
-        people.map((person) => [person.id, recipientLocale(person.locale)]),
-      );
+      const localeOf = await this.localesOf(rows.map((row) => row.userId));
       const written = (
         text: string | Translatable | undefined,
         userId: string,
@@ -205,6 +199,23 @@ export class NotificationsService {
   ): Promise<string[]> {
     const holders = await this.permissions.holdersOf(organizationId, told);
     return holders.map((holder) => holder.id);
+  }
+
+  /**
+   * Each person's language, as emit writes their notifications in it
+   * (ADR-054): for a sender that words a part of its own for each reader,
+   * as an item's name in theirs (ADR-085).
+   */
+  async localesOf(userIds: readonly string[]): Promise<Map<string, Locale>> {
+    if (userIds.length === 0) return new Map();
+
+    const people = await this.db
+      .select({ id: users.id, locale: users.locale })
+      .from(users)
+      .where(inArray(users.id, [...new Set(userIds)]));
+    return new Map(
+      people.map((person) => [person.id, recipientLocale(person.locale)]),
+    );
   }
 
   /**

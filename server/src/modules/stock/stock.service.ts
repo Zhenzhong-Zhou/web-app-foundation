@@ -3,7 +3,6 @@ import {
   ConflictException,
   Injectable,
   Logger,
-  NotFoundException,
 } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
@@ -188,9 +187,16 @@ export class StockService {
         ),
       );
 
+    // The variant and the locations come from a body, or from the caller's
+    // own rows, never from a path: another organization's, or one that does
+    // not exist, is unknown, a 400 (engineering.md, Server).
     if (!variant)
-      throw new NotFoundException(
-        t({ id: 'stock.suchVariant', defaultMessage: 'No such variant' }),
+      throw new BadRequestException(
+        t({
+          id: 'stock.unknownVariant',
+          defaultMessage:
+            'That item is not in this organization. Choose one from the list.',
+        }),
       );
 
     const lotId = await this.resolveLot(tx, organizationId, variant, input);
@@ -499,8 +505,12 @@ export class StockService {
       );
 
     if (!location)
-      throw new NotFoundException(
-        t({ id: 'stock.suchLocation', defaultMessage: 'No such location' }),
+      throw new BadRequestException(
+        t({
+          id: 'stock.unknownLocation',
+          defaultMessage:
+            'That location is not in this organization. Choose one from the list.',
+        }),
       );
 
     if (!location.isActive) {

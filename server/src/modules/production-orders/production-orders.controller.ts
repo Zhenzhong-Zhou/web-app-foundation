@@ -18,10 +18,13 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
+import { localeOf } from '../../i18n/translate';
 import { movementOf } from '../stock/movement-view';
 import {
   CreateProductionOrderDto,
   ListProductionOrdersDto,
+  RunPreviewQueryDto,
   UpdateProductionOrderDto,
 } from './dto/production-order.dto';
 import type {
@@ -33,6 +36,7 @@ import type {
   ReleasedRun,
   RunDetail,
   RunPage,
+  RunPreview,
 } from './dto/production-order-response.dto';
 import {
   CancelProductionOrderDto,
@@ -59,6 +63,21 @@ export class ProductionOrdersController {
   @RequirePermissions(PERMISSIONS.PRODUCTION_VIEW)
   list(@Query() query: ListProductionOrdersDto): Promise<RunPage> {
     return this.runs.list(query);
+  }
+
+  /**
+   * What a run of a recipe would use at the quantity typed, before it is
+   * planned (ADR-085), scaled as release will issue it. The run dialog's
+   * own read, so it takes planning's permission. Before `:id`, which would
+   * read `preview` as a run's id.
+   */
+  @Get('preview')
+  @RequirePermissions(PERMISSIONS.PRODUCTION_CREATE)
+  preview(
+    @Query() query: RunPreviewQueryDto,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<RunPreview> {
+    return this.runs.preview(query, localeOf(acceptLanguage));
   }
 
   /** The run, its lines with planned against consumed, and its output lots. */

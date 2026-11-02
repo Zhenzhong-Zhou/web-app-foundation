@@ -14,7 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { HomeCard, HomeResponse, HomeRow } from '../api/types.gen';
+import type { HomeResponse, HomeRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { ReferencesWhole } from '../components/reference';
@@ -24,7 +24,8 @@ import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { useCoverUnverifiedBanner } from '../layout/use-cover-unverified-banner';
 import { api, isRevisionRefusal } from '../lib/api';
 import { daysUntil } from '../lib/expiry';
-import { formatDay } from '../lib/format';
+import { displayQuantity, formatDay } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import {
   differsFromBrowser,
   organizationTimeZone,
@@ -34,11 +35,12 @@ import { zoneLabel } from '../lib/time-zone-label';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useFailureWords } from '../lib/use-failure-words';
 import { rem } from '../theme/rem';
+import { STATUS_TONES } from '../theme/status';
 import { TYPE } from '../theme/tokens';
 import { evenRowsSx } from './even-rows';
 import { GettingStarted } from './getting-started';
 import { greeting } from './greeting';
-import { CARDS } from './home-cards';
+import { CARDS, isKnownCard, type KnownCard } from './home-cards';
 import { NoOrganization } from './no-organization';
 import { RecentCard } from './recent-card';
 import { WelcomeCard } from './welcome-card';
@@ -143,7 +145,9 @@ function OrganizationHome() {
         : !error),
   );
 
-  const cards = home?.cards ?? [];
+  // Only the cards this build knows: a newer server's kind is skipped,
+  // never a crash, and the sentence counts only what shows.
+  const cards = (home?.cards ?? []).filter(isKnownCard);
   const count = cards.reduce((sum, card) => sum + card.count, 0);
   const late = cards.reduce((sum, card) => sum + card.late, 0);
   const started = home?.gettingStarted;
@@ -314,6 +318,7 @@ function OrganizationHome() {
             <Link
               component={RouterLink}
               to="/settings/organization?tab=profile"
+              state={OFFER_BACK}
               underline="always"
             >
               {intl.formatMessage({
@@ -386,6 +391,7 @@ function OrganizationHome() {
                   key={item.to + item.label}
                   component={RouterLink}
                   to={item.to}
+                  state={OFFER_BACK}
                   // While Getting started shows, its first open step is the
                   // page's one primary action (ADR-058).
                   variant={index === 0 && !showStart ? 'contained' : 'outlined'}
@@ -441,7 +447,7 @@ function OrganizationHome() {
 }
 
 /** A count at a glance, tinted only when something in it is late. */
-function CountTile({ card }: { card: HomeCard }) {
+function CountTile({ card }: { card: KnownCard }) {
   const intl = useIntl();
   const meta = CARDS[card.kind];
   const tone = card.late > 0 ? 'critical' : null;
@@ -480,7 +486,7 @@ function CountTile({ card }: { card: HomeCard }) {
       </Typography>
       {card.late > 0 && (
         <Typography variant="body2" sx={{ color: 'inherit' }}>
-          {meta.lateIsExpired
+          {meta.late === 'expired'
             ? intl.formatMessage(
                 {
                   id: 'home.count.expired',
@@ -488,13 +494,21 @@ function CountTile({ card }: { card: HomeCard }) {
                 },
                 { count: card.late },
               )
-            : intl.formatMessage(
-                {
-                  id: 'home.count.late',
-                  defaultMessage: '{count, plural, other {# overdue}}',
-                },
-                { count: card.late },
-              )}
+            : meta.late === 'out'
+              ? intl.formatMessage(
+                  {
+                    id: 'home.count.out',
+                    defaultMessage: '{count, plural, other {# out}}',
+                  },
+                  { count: card.late },
+                )
+              : intl.formatMessage(
+                  {
+                    id: 'home.count.late',
+                    defaultMessage: '{count, plural, other {# overdue}}',
+                  },
+                  { count: card.late },
+                )}
         </Typography>
       )}
     </Paper>
@@ -502,7 +516,7 @@ function CountTile({ card }: { card: HomeCard }) {
 }
 
 /** One card: its title, "See all", and its five most urgent rows. */
-function CardPanel({ card, today }: { card: HomeCard; today: string }) {
+function CardPanel({ card, today }: { card: KnownCard; today: string }) {
   const intl = useIntl();
   const can = useCan();
   // The organization's days (ADR-060), for "Nothing expires within".
@@ -529,7 +543,12 @@ function CardPanel({ card, today }: { card: HomeCard; today: string }) {
           </Typography>
         </Stack>
         {card.count > 0 && (
-          <Link component={RouterLink} to={meta.list} underline="always">
+          <Link
+            component={RouterLink}
+            to={meta.list}
+            state={OFFER_BACK}
+            underline="always"
+          >
             {intl.formatMessage(
               { id: 'home.seeAll', defaultMessage: 'See all {count}' },
               { count: card.count },
@@ -543,6 +562,7 @@ function CardPanel({ card, today }: { card: HomeCard; today: string }) {
           <Link
             component={RouterLink}
             to="/settings/organization?tab=stock"
+            state={OFFER_BACK}
             underline="always"
             variant="body2"
             sx={{ color: 'text.secondary' }}
@@ -554,7 +574,31 @@ function CardPanel({ card, today }: { card: HomeCard; today: string }) {
           </Link>
         )}
       </Stack>
-      {card.rows.length === 0 ? (
+      {card.rows.length === 0 && card.anyPoint === false ? (
+        // Low stock with no point set (ADR-085): nothing is watched, so
+        // not "Nothing is low" in the positive tone, and where to set one.
+        <Typography sx={{ py: 1, borderTop: 1, borderColor: 'divider' }}>
+          {intl.formatMessage(
+            {
+              id: 'home.empty.lowStockUnset',
+              defaultMessage:
+                'No reorder point is set yet, so nothing can show as low. <link>Set one in Reorder points</link>',
+            },
+            {
+              link: (chunks) => (
+                <Link
+                  component={RouterLink}
+                  to="/inventory?tab=reorder-points"
+                  state={OFFER_BACK}
+                  underline="always"
+                >
+                  {chunks}
+                </Link>
+              ),
+            },
+          )}
+        </Typography>
+      ) : card.rows.length === 0 ? (
         // The positive tone's text, which reads on a card in both modes
         // (ADR-081). In sx: Typography's color prop takes a palette name,
         // not a path such as this.
@@ -574,7 +618,7 @@ function CardPanel({ card, today }: { card: HomeCard; today: string }) {
             key={row.id}
             row={row}
             path={meta.rowPath(row.id)}
-            expired={meta.lateIsExpired}
+            expired={meta.late === 'expired'}
             today={today}
           />
         ))
@@ -599,7 +643,30 @@ function RowLine({
 
   let chip: { tone: 'critical' | 'warning'; label: string } | null = null;
   let note: string | null = null;
-  if (days !== null && row.due) {
+  // Low stock (ADR-085): out, red, as overdue is; otherwise where it
+  // stands against its point. The server's figures, never added up here.
+  if (row.reorder) {
+    if (row.late) {
+      chip = {
+        tone: 'critical',
+        label: intl.formatMessage({
+          id: 'home.chip.out',
+          defaultMessage: 'out',
+        }),
+      };
+    } else {
+      note = intl.formatMessage(
+        {
+          id: 'home.chip.ofPoint',
+          defaultMessage: '{position} of {point}',
+        },
+        {
+          position: displayQuantity(row.reorder.position),
+          point: displayQuantity(row.reorder.reorderPoint),
+        },
+      );
+    }
+  } else if (days !== null && row.due) {
     if (expired) {
       if (days < 0) {
         chip = {
@@ -642,6 +709,22 @@ function RowLine({
     }
   }
 
+  const figure = chip ? (
+    <StatusChip tone={chip.tone} label={chip.label} />
+  ) : note ? (
+    <Typography
+      variant="body2"
+      sx={{
+        color: 'text.secondary',
+        whiteSpace: 'nowrap',
+        // Low stock's figures line up down the card.
+        ...(row.reorder && { fontVariantNumeric: 'tabular-nums' }),
+      }}
+    >
+      {note}
+    </Typography>
+  ) : null;
+
   return (
     <Stack
       direction="row"
@@ -656,7 +739,12 @@ function RowLine({
     >
       <Box sx={{ minWidth: 0 }}>
         {path ? (
-          <Link component={RouterLink} to={path} sx={{ fontWeight: 600 }}>
+          <Link
+            component={RouterLink}
+            to={path}
+            state={OFFER_BACK}
+            sx={{ fontWeight: 600 }}
+          >
             {row.title}
           </Link>
         ) : (
@@ -677,16 +765,21 @@ function RowLine({
           </>
         )}
       </Box>
-      {chip ? (
-        <StatusChip tone={chip.tone} label={chip.label} />
-      ) : note ? (
-        <Typography
-          variant="body2"
-          sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}
-        >
-          {note}
-        </Typography>
-      ) : null}
+      {row.reorder?.drafted ? (
+        // What is in draft already covers it, so nobody orders it twice.
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          {figure}
+          <StatusChip
+            tone={STATUS_TONES.order.draft}
+            label={intl.formatMessage({
+              id: 'home.chip.drafted',
+              defaultMessage: 'drafted',
+            })}
+          />
+        </Stack>
+      ) : (
+        figure
+      )}
     </Stack>
   );
 }

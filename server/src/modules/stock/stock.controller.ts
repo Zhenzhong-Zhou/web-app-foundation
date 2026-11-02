@@ -132,8 +132,11 @@ export class StockController {
 
   @Get('movements')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  listMovements(@Query() query: ListMovementsDto): Promise<MovementPage> {
-    return this.reads.listMovements(query);
+  listMovements(
+    @Query() query: ListMovementsDto,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<MovementPage> {
+    return this.reads.listMovements(query, localeOf(acceptLanguage));
   }
 
   /** Every movement the filters match, as CSV (ADR-057): the list's own query, every page. */
@@ -145,8 +148,9 @@ export class StockController {
     @Res({ passthrough: true }) res: Response,
     @AcceptLanguage() acceptLanguage?: string,
   ) {
+    // The base names, as every CSV keeps them (ADR-056).
     const rows = await everyRow((before, limit) =>
-      this.reads.listMovements({ ...query, before, limit }),
+      this.reads.listMovements({ ...query, before, limit }, null),
     );
     recordContext({
       list: 'movements',

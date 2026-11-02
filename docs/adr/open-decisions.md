@@ -201,23 +201,12 @@ it. Trigger: the first paying customer.
 
 ## Low stock
 
-It comes as ADR-085 (Bob, 22 October 2026; ADR-083 until the
-emails' design took that number on 26 October), after ADR-082, the
-brand, which went first on 24 October, then the square logo (ADR-060,
-amended), the emails' design (ADR-083) and the error tracker (ADR-084)
-(Bob, 25 October
-2026), and before the whole-app `/production-readiness` review.
-Nothing warns when stock runs short; the only mention was a placeholder
-dashboard's "low stock" in the Resolved table, and ADR-058 built Home
-without it. To
-decide: a reorder point per SKU, and perhaps a reorder quantity, set on
-the product page; what it is compared with (on hand, available to
-promise as ADR-045 computes it at available locations, or that plus what
-open purchase orders bring); where it shows (a tile and card on Home
-with Raise a purchase order, a filter on the inventory list, perhaps a
-daily bell); who may set it and who is told (ADR-080's permissions);
-per location later; and the seeds (demo products below their point, the
-Home query timed on `seed:volume`).
+It was decided in ADR-085: a reorder point per item, bought or made,
+with a rule for how much to order, set in Inventory's Reorder points;
+low when usable stock, plus what is coming, less what confirmed sales
+still need, falls below it; drafts shown so nothing is ordered twice; a
+Home card; and a bell once each time an item falls below, grouped, for
+those who can buy or make it.
 
 ## Feature flags and staged rollouts
 

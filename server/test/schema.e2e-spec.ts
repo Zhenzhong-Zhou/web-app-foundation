@@ -20,6 +20,8 @@ import {
   ORDER_STATUSES,
   ORGANIZATION_RAILS,
   PRICE_LIST_DIRECTIONS,
+  REORDER_RULES,
+  REORDER_SOURCES,
   RETURN_AUTHORIZATION_STATUSES,
   RETURN_RESOLUTIONS,
   VALUATION_KINDS,
@@ -109,6 +111,8 @@ describe('schema invariants', () => {
     ['files_kind_check', FILE_KINDS],
     ['organizations_rail_check', ORGANIZATION_RAILS],
     ['organizations_idle_sign_out_scope_check', IDLE_SIGN_OUT_SCOPES],
+    ['reorder_points_source_check', REORDER_SOURCES],
+    ['reorder_points_rule_check', REORDER_RULES],
   ])('%s', (constraintName, values) => {
     it('accepts every value the code can write', async () => {
       const result = await db.execute(sql`

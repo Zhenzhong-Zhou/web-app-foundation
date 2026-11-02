@@ -4,10 +4,7 @@ import { BomsService } from '../modules/boms/boms.service';
 import { InvoiceDraftsService } from '../modules/invoices/invoice-drafts.service';
 import { InvoiceIssuingService } from '../modules/invoices/invoice-issuing.service';
 import { LocationsService } from '../modules/locations/locations.service';
-import { OrderLifecycleService } from '../modules/orders/order-lifecycle.service';
-import { OrderLinesService } from '../modules/orders/order-lines.service';
-import { OrderReceiptsService } from '../modules/orders/order-receipts.service';
-import { ShippingService } from '../modules/orders/shipping.service';
+import type { OrderLifecycleService } from '../modules/orders/order-lifecycle.service';
 import { PartnersService } from '../modules/partners/partners.service';
 import { ProductLicencesService } from '../modules/product-licences/product-licences.service';
 import { ProductionExecutionService } from '../modules/production-orders/production-execution.service';
@@ -15,6 +12,8 @@ import { ProductionOrdersService } from '../modules/production-orders/production
 import { ProductsService } from '../modules/products/products.service';
 import { ReturnAuthorizationsService } from '../modules/return-authorizations/return-authorizations.service';
 import type { ProductType } from './schema';
+import type { Audited } from './seed-demo-audit';
+import { orderSteps } from './seed-demo-orders';
 
 /**
  * What seed-demo.ts has already made that this builds on: where stock goes,
@@ -68,28 +67,27 @@ export function daysFromNow(days: number): string {
  * ones the manual checks name, stay what they were.
  *
  * Through the services, like the rest of the demo, so it is a smoke test of
- * the same paths as well as data.
+ * the same paths as well as data; each step on an order written to its
+ * History as it happens (seed-demo-orders.ts).
  */
 export async function addVariety(
   app: INestApplicationContext,
+  audited: Audited,
   anchors: DemoAnchors,
 ): Promise<string> {
   const products = app.get(ProductsService);
   const locations = app.get(LocationsService);
   const licences = app.get(ProductLicencesService);
   const partners = app.get(PartnersService);
-  const orders = app.get(OrderLifecycleService);
-  const receipts = app.get(OrderReceiptsService);
-  const shipping = app.get(ShippingService);
   const boms = app.get(BomsService);
   const runs = app.get(ProductionOrdersService);
   const execution = app.get(ProductionExecutionService);
   const invoiceDrafts = app.get(InvoiceDraftsService);
   const issuing = app.get(InvoiceIssuingService);
-  const orderLines = app.get(OrderLinesService);
   const rmas = app.get(ReturnAuthorizationsService);
 
   const actor = anchors.actorId;
+  const ordering = orderSteps(app, audited, actor);
 
   type Order = Awaited<ReturnType<OrderLifecycleService['create']>>;
 
@@ -132,12 +130,11 @@ export async function addVariety(
       expiresAt: daysFromNow(lot.expiresInDays),
     };
 
-    await receipts.receive(
-      order.id,
-      lineOf(order, variantId),
-      { toLocationId, quantity, lot: expiring },
-      actor,
-    );
+    await ordering.receive(order.id, lineOf(order, variantId), {
+      toLocationId,
+      quantity,
+      lot: expiring,
+    });
   }
 
   // Probiotics are kept cold, so the location tree has a third bin in use.
@@ -214,7 +211,9 @@ export async function addVariety(
   await products.update(zinc.productId, { isActive: false });
 
   // Names in the other languages, so the Chinese and French screens show
-  // translated names beside the untranslated rest (ADR-054).
+  // translated names beside the untranslated rest (ADR-054). Every item
+  // given a reorder point (seed-demo-team-work.ts) has all three, so Low
+  // stock reads whole in each.
   await products.setTranslations(calm.productId, {
     translations: [
       { locale: 'fr-CA', name: 'Calme, 90 capsules' },
@@ -225,6 +224,36 @@ export async function addVariety(
     translations: [
       { locale: 'fr-CA', name: 'Vitamine D3 1000 UI, 120 capsules molles' },
       { locale: 'zh-Hans', name: '维生素 D3 1000 IU，120 粒软胶囊' },
+    ],
+  });
+  await products.setTranslations(omega.productId, {
+    translations: [
+      { locale: 'fr-CA', name: 'Huile de poisson oméga-3, 90 capsules molles' },
+      { locale: 'zh-Hans', name: 'Omega-3 鱼油，90 粒软胶囊' },
+    ],
+  });
+  await products.setTranslations(elderberry.productId, {
+    translations: [
+      { locale: 'fr-CA', name: 'Sirop de sureau, 250 ml' },
+      { locale: 'zh-Hans', name: '接骨木莓糖浆，250 毫升' },
+    ],
+  });
+  await products.setTranslations(bottle.productId, {
+    translations: [
+      { locale: 'fr-CA', name: 'Flacon pour 90 capsules' },
+      { locale: 'zh-Hans', name: '90 粒装空瓶' },
+    ],
+  });
+  await products.setTranslations(carton.productId, {
+    translations: [
+      { locale: 'fr-CA', name: 'Carton d’expédition, 24 flacons' },
+      { locale: 'zh-Hans', name: '运输纸箱，24 瓶装' },
+    ],
+  });
+  await products.setTranslations(zinc.productId, {
+    translations: [
+      { locale: 'fr-CA', name: 'Pastilles de zinc, 60 unités' },
+      { locale: 'zh-Hans', name: '锌含片，60 片' },
     ],
   });
 
@@ -255,22 +284,19 @@ export async function addVariety(
    * elderberry lot expires in 20 days, the probiotic in 60, so expiry has
    * something near to show.
    */
-  const stocking = await orders.create(
-    {
-      partnerId: wholesaler.id,
-      direction: 'purchase',
-      reference: 'PO-DEMO-3',
-      lines: [
-        cad(vitaminD.variantId, '240', '6.4000'),
-        cad(omega.variantId, '180', '8.7500'),
-        cad(elderberry.variantId, '96', '7.2000'),
-        cad(probiotic.variantId, '120', '11.5000'),
-        cad(gloves.variantId, '20', '14.0000'),
-      ],
-    },
-    actor,
-  );
-  await orders.update(stocking.id, { status: 'confirmed' });
+  const stocking = await ordering.create({
+    partnerId: wholesaler.id,
+    direction: 'purchase',
+    reference: 'PO-DEMO-3',
+    lines: [
+      cad(vitaminD.variantId, '240', '6.4000'),
+      cad(omega.variantId, '180', '8.7500'),
+      cad(elderberry.variantId, '96', '7.2000'),
+      cad(probiotic.variantId, '120', '11.5000'),
+      cad(gloves.variantId, '20', '14.0000'),
+    ],
+  });
+  await ordering.setStatus(stocking.id, 'confirmed');
 
   await receive(stocking, vitaminD.variantId, '120', anchors.shelfId, {
     code: 'D3-A11',
@@ -298,29 +324,26 @@ export async function addVariety(
   });
   await receive(stocking, gloves.variantId, '20', anchors.shelfId);
 
-  await orders.update(stocking.id, { status: 'fulfilled' });
+  await ordering.setStatus(stocking.id, 'fulfilled');
 
   /**
    * The second recipe's materials, from the first supplier. The cartons
    * arrive short — 60 of 100 — so the order stays open with something
    * outstanding, the shape most purchases have most of the time.
    */
-  const materials = await orders.create(
-    {
-      partnerId: anchors.supplierId,
-      direction: 'purchase',
-      reference: 'PO-DEMO-4',
-      lines: [
-        cad(ashwagandha.variantId, '25', '92.0000'),
-        cad(theanine.variantId, '10', '145.0000'),
-        cad(magnesium.variantId, '40', '31.5000'),
-        cad(bottle.variantId, '2000', '0.4200'),
-        cad(carton.variantId, '100', '1.8500'),
-      ],
-    },
-    actor,
-  );
-  await orders.update(materials.id, { status: 'confirmed' });
+  const materials = await ordering.create({
+    partnerId: anchors.supplierId,
+    direction: 'purchase',
+    reference: 'PO-DEMO-4',
+    lines: [
+      cad(ashwagandha.variantId, '25', '92.0000'),
+      cad(theanine.variantId, '10', '145.0000'),
+      cad(magnesium.variantId, '40', '31.5000'),
+      cad(bottle.variantId, '2000', '0.4200'),
+      cad(carton.variantId, '100', '1.8500'),
+    ],
+  });
+  await ordering.setStatus(materials.id, 'confirmed');
 
   await receive(materials, ashwagandha.variantId, '25', anchors.shelfId, {
     code: 'ASH-0601',
@@ -344,17 +367,14 @@ export async function addVariety(
    * other theanine lot, so the run below takes that one and leaves this
    * whole.
    */
-  const priceToFollow = await orders.create(
-    {
-      partnerId: anchors.usSupplierId,
-      direction: 'purchase',
-      reference: 'PO-DEMO-5',
-      note: 'Price to follow from the supplier',
-      lines: [{ variantId: theanine.variantId, quantityOrdered: '5' }],
-    },
-    actor,
-  );
-  await orders.update(priceToFollow.id, { status: 'confirmed' });
+  const priceToFollow = await ordering.create({
+    partnerId: anchors.usSupplierId,
+    direction: 'purchase',
+    reference: 'PO-DEMO-5',
+    note: 'Price to follow from the supplier',
+    lines: [{ variantId: theanine.variantId, quantityOrdered: '5' }],
+  });
+  await ordering.setStatus(priceToFollow.id, 'confirmed');
 
   await receive(priceToFollow, theanine.variantId, '5', anchors.shelfId, {
     code: 'THE-0915',
@@ -408,30 +428,24 @@ export async function addVariety(
   });
 
   // A sale still being put together: a draft, holding nothing.
-  await orders.create(
-    {
-      partnerId: cooperative.id,
-      direction: 'sale',
-      reference: 'SO-DEMO-3',
-      lines: [
-        cad(vitaminD.variantId, '48', '14.9900'),
-        cad(elderberry.variantId, '24', '12.4900'),
-      ],
-    },
-    actor,
-  );
+  await ordering.create({
+    partnerId: cooperative.id,
+    direction: 'sale',
+    reference: 'SO-DEMO-3',
+    lines: [
+      cad(vitaminD.variantId, '48', '14.9900'),
+      cad(elderberry.variantId, '24', '12.4900'),
+    ],
+  });
 
   // One the customer called off before it was confirmed.
-  const calledOff = await orders.create(
-    {
-      partnerId: anchors.customerId,
-      direction: 'sale',
-      reference: 'SO-DEMO-4',
-      lines: [cad(vitaminD.variantId, '24', '14.9900')],
-    },
-    actor,
-  );
-  await orders.update(calledOff.id, { status: 'cancelled' });
+  const calledOff = await ordering.create({
+    partnerId: anchors.customerId,
+    direction: 'sale',
+    reference: 'SO-DEMO-4',
+    lines: [cad(vitaminD.variantId, '24', '14.9900')],
+  });
+  await ordering.setStatus(calledOff.id, 'cancelled');
 
   /**
    * Shipped in full and closed, with its invoice drafted and not yet issued:
@@ -439,34 +453,27 @@ export async function addVariety(
    * on is untouched. The elderberry comes from the lot that expires first,
    * which leaves half of it on the shelf with 20 days to go.
    */
-  const shipped = await orders.create(
-    {
-      partnerId: anchors.secondCustomerId,
-      direction: 'sale',
-      reference: 'SO-DEMO-5',
-      lines: [
-        cad(vitaminD.variantId, '60', '14.9900'),
-        cad(omega.variantId, '36', '18.9900'),
-        cad(elderberry.variantId, '24', '12.4900'),
-      ],
-    },
-    actor,
-  );
-  await orders.update(shipped.id, { status: 'confirmed' });
+  const shipped = await ordering.create({
+    partnerId: anchors.secondCustomerId,
+    direction: 'sale',
+    reference: 'SO-DEMO-5',
+    lines: [
+      cad(vitaminD.variantId, '60', '14.9900'),
+      cad(omega.variantId, '36', '18.9900'),
+      cad(elderberry.variantId, '24', '12.4900'),
+    ],
+  });
+  await ordering.setStatus(shipped.id, 'confirmed');
 
-  const shipment = await shipping.ship(
-    shipped.id,
-    {
-      fromLocationId: anchors.shelfId,
-      carrier: 'Purolator',
-      lines: [
-        { lineId: lineOf(shipped, vitaminD.variantId), quantity: '60' },
-        { lineId: lineOf(shipped, omega.variantId), quantity: '36' },
-        { lineId: lineOf(shipped, elderberry.variantId), quantity: '24' },
-      ],
-    },
-    actor,
-  );
+  const shipment = await ordering.ship(shipped.id, {
+    fromLocationId: anchors.shelfId,
+    carrier: 'Purolator',
+    lines: [
+      { lineId: lineOf(shipped, vitaminD.variantId), quantity: '60' },
+      { lineId: lineOf(shipped, omega.variantId), quantity: '36' },
+      { lineId: lineOf(shipped, elderberry.variantId), quantity: '24' },
+    ],
+  });
 
   const draft = await invoiceDrafts.createDraft(
     { shipmentId: shipment.id, taxCodeId: anchors.gstId },
@@ -474,7 +481,7 @@ export async function addVariety(
   );
   await invoiceDrafts.update(draft.id, { dueDate: daysFromNow(30) });
 
-  await orders.update(shipped.id, { status: 'fulfilled' });
+  await ordering.setStatus(shipped.id, 'fulfilled');
 
   /**
    * A dented carton SO-DEMO-5's customer kept: authorized with nothing to
@@ -505,26 +512,19 @@ export async function addVariety(
    * demo's first customer: issuing needs a billing address, which the
    * cooperative, made here for its long name, does not have.
    */
-  const rebilled = await orders.create(
-    {
-      partnerId: anchors.customerId,
-      direction: 'sale',
-      reference: 'SO-DEMO-6',
-      lines: [cad(omega.variantId, '12', '18.9900')],
-    },
-    actor,
-  );
-  await orders.update(rebilled.id, { status: 'confirmed' });
+  const rebilled = await ordering.create({
+    partnerId: anchors.customerId,
+    direction: 'sale',
+    reference: 'SO-DEMO-6',
+    lines: [cad(omega.variantId, '12', '18.9900')],
+  });
+  await ordering.setStatus(rebilled.id, 'confirmed');
 
-  const rebilledShipment = await shipping.ship(
-    rebilled.id,
-    {
-      fromLocationId: anchors.shelfId,
-      carrier: 'Canada Post',
-      lines: [{ lineId: lineOf(rebilled, omega.variantId), quantity: '12' }],
-    },
-    actor,
-  );
+  const rebilledShipment = await ordering.ship(rebilled.id, {
+    fromLocationId: anchors.shelfId,
+    carrier: 'Canada Post',
+    lines: [{ lineId: lineOf(rebilled, omega.variantId), quantity: '12' }],
+  });
   const wrongPrice = await invoiceDrafts.createDraft(
     { shipmentId: rebilledShipment.id, taxCodeId: anchors.gstId },
     actor,
@@ -545,18 +545,15 @@ export async function addVariety(
    * the line closed short, so it offers Reopen in its menu and the order
    * no longer waits for the rest.
    */
-  const shortGloves = await orders.create(
-    {
-      partnerId: anchors.supplierId,
-      direction: 'purchase',
-      reference: 'PO-DEMO-6',
-      lines: [cad(gloves.variantId, '40', '11.5000')],
-    },
-    actor,
-  );
-  await orders.update(shortGloves.id, { status: 'confirmed' });
+  const shortGloves = await ordering.create({
+    partnerId: anchors.supplierId,
+    direction: 'purchase',
+    reference: 'PO-DEMO-6',
+    lines: [cad(gloves.variantId, '40', '11.5000')],
+  });
+  await ordering.setStatus(shortGloves.id, 'confirmed');
   await receive(shortGloves, gloves.variantId, '30', anchors.shelfId);
-  await orderLines.closeLineShort(
+  await ordering.closeLineShort(
     shortGloves.id,
     lineOf(shortGloves, gloves.variantId),
     { reason: 'Supplier discontinued this box size' },

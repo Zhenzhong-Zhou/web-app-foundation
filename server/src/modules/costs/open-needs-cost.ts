@@ -9,6 +9,11 @@ import { type SQL, sql } from 'drizzle-orm';
  * through this, so there is one definition of "still waiting": the stock
  * list's "Needs a cost" quick filter (ADR-055) included, which has to mean
  * exactly what Stock value lists as waiting.
+ *
+ * Each subquery names the organization itself, not the outer row's: read
+ * as a set, Postgres hashes the run_close lookup once, and through the
+ * outer row's column it read every organization's run closes to do so
+ * (#276).
  */
 export function openNeedsCost(organizationId: string): SQL {
   return sql`
@@ -20,7 +25,7 @@ export function openNeedsCost(organizationId: string): SQL {
       and not exists (
         select 1
         from stock_valuations c
-        where c.organization_id = v.organization_id
+        where c.organization_id = ${organizationId}::uuid
           and c.kind = 'correction'
           and c.reference_type = 'stock_valuation'
           and c.reference_id = v.id
@@ -30,7 +35,7 @@ export function openNeedsCost(organizationId: string): SQL {
         or not exists (
           select 1
           from stock_valuations r
-          where r.organization_id = v.organization_id
+          where r.organization_id = ${organizationId}::uuid
             and r.kind = 'run_close'
             and r.reference_type = 'production_order'
             and r.reference_id = m.reference_id

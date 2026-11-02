@@ -16,6 +16,7 @@ import { PersonAvatar } from '../components/person-avatar';
 import { ReferencesWhole } from '../components/reference';
 import { LoadFailure } from '../errors/load-failure';
 import { relativeTime, SEPARATOR } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { useResource } from '../lib/use-resource';
 import { RoleChips } from '../roles/role-chips';
 import { rem } from '../theme/rem';
@@ -243,6 +244,7 @@ export function PersonPage() {
           <Link
             component={RouterLink}
             to={`/audit?actorId=${person.id}`}
+            state={OFFER_BACK}
             sx={{ fontWeight: 600 }}
           >
             {intl.formatMessage(

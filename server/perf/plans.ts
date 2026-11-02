@@ -30,6 +30,7 @@ import {
 import { LookupService } from '../src/modules/search/lookup.service';
 import { AvailabilityService } from '../src/modules/stock/availability.service';
 import { LotTraceService } from '../src/modules/stock/lot-trace.service';
+import { ReorderPointsReadsService } from '../src/modules/stock/reorder-points-reads.service';
 import { StockReadsService } from '../src/modules/stock/stock-reads.service';
 import { type Captured, QueryCapture } from './capture';
 import { readManifest } from './manifest';
@@ -207,6 +208,7 @@ async function buildProbes(
   const products = app.get(ProductsService);
   const priceLists = app.get(PriceListsService);
   const partners = app.get(PartnersService);
+  const reorder = app.get(ReorderPointsReadsService);
 
   const firstOrders = await orders.list({ status: 'all' });
   const deepOrders = await cursorAfter(
@@ -214,7 +216,7 @@ async function buildProbes(
     20,
   );
   const deepMovements = await cursorAfter(
-    (before) => stock.listMovements({ before }),
+    (before) => stock.listMovements({ before }, 'en'),
     20,
   );
 
@@ -271,27 +273,27 @@ async function buildProbes(
       name: 'inventory: one product',
       run: () => stock.list({ variantId: shelf.variantId }, 'en'),
     },
-    { name: 'availability', run: () => availability.list() },
+    { name: 'availability', run: () => availability.list('en') },
     {
       name: 'availability: promised',
-      run: () => availability.list(true),
+      run: () => availability.list('en', true),
     },
-    { name: 'movements', run: () => stock.listMovements({}) },
+    { name: 'movements', run: () => stock.listMovements({}, 'en') },
     {
       name: 'movements: page 21',
-      run: () => stock.listMovements({ before: deepMovements }),
+      run: () => stock.listMovements({ before: deepMovements }, 'en'),
     },
     {
       name: 'movements: one product',
-      run: () => stock.listMovements({ variantId: shelf.variantId }),
+      run: () => stock.listMovements({ variantId: shelf.variantId }, 'en'),
     },
     {
       name: 'movements: one lot',
-      run: () => stock.listMovements({ lotId: shelf.lotId! }),
+      run: () => stock.listMovements({ lotId: shelf.lotId! }, 'en'),
     },
     {
       name: 'movements: one shelf',
-      run: () => stock.listMovements({ locationId: shelf.locationId }),
+      run: () => stock.listMovements({ locationId: shelf.locationId }, 'en'),
     },
     { name: 'invoices', run: () => invoices.list({}) },
     {
@@ -381,7 +383,13 @@ async function buildProbes(
     },
     {
       name: 'movements: a month',
-      run: () => stock.listMovements({ ...MONTH_INSTANTS }),
+      run: () => stock.listMovements({ ...MONTH_INSTANTS }, 'en'),
+    },
+    // Reorder points (ADR-085): the low list, every point's position
+    // worked out, read only from the items that have one.
+    {
+      name: 'reorder points: low',
+      run: () => reorder.list({ status: 'low' }, 'en'),
     },
     { name: 'valuation', run: () => costs.stockValuation() },
     // The catalogue's reads that join products (#226), each with the

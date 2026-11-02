@@ -15,11 +15,6 @@ import { CreditNotesService } from '../modules/invoices/credit-notes.service';
 import { InvoiceDraftsService } from '../modules/invoices/invoice-drafts.service';
 import { InvoiceIssuingService } from '../modules/invoices/invoice-issuing.service';
 import { LocationsService } from '../modules/locations/locations.service';
-import { OrderLifecycleService } from '../modules/orders/order-lifecycle.service';
-import { OrderReceiptsService } from '../modules/orders/order-receipts.service';
-import { ReturnsService } from '../modules/orders/returns.service';
-import { ShipmentVoidsService } from '../modules/orders/shipment-voids.service';
-import { ShippingService } from '../modules/orders/shipping.service';
 import { PartnerAddressesService } from '../modules/partners/partner-addresses.service';
 import { PartnersService } from '../modules/partners/partners.service';
 import { PriceListsService } from '../modules/price-lists/price-lists.service';
@@ -40,6 +35,7 @@ import {
   users,
 } from './schema';
 import { auditor, recordOpeningHistory } from './seed-demo-audit';
+import { orderSteps } from './seed-demo-orders';
 import {
   addTeam,
   daysAgo,
@@ -55,7 +51,8 @@ import { runInTenantContext } from './tenant-context';
  * One product, made once, through the same services the API calls, a range
  * of others around it for the screens (seed-demo-variety.ts), and a team of
  * nine doing the rest of the app's work, with the history each step leaves
- * (seed-demo-team.ts, seed-demo-team-work.ts, seed-demo-audit.ts).
+ * (seed-demo-team.ts, seed-demo-team-work.ts, seed-demo-audit.ts,
+ * seed-demo-orders.ts).
  *
  * Not part of `seed`, deliberately. That one runs on every deploy, production
  * included, and its job is the permission vocabulary — demo products written
@@ -177,14 +174,10 @@ async function seedDemo(): Promise<void> {
     const locations = app.get(LocationsService);
     const licences = app.get(ProductLicencesService);
     const partners = app.get(PartnersService);
-    const orders = app.get(OrderLifecycleService);
-    const receipts = app.get(OrderReceiptsService);
     const boms = app.get(BomsService);
     const runs = app.get(ProductionOrdersService);
     const execution = app.get(ProductionExecutionService);
     const closing = app.get(ProductionCloseService);
-    const shipping = app.get(ShippingService);
-    const returns = app.get(ReturnsService);
     const stock = app.get(StockService);
     const organization = app.get(OrganizationsService);
     const files = app.get(FilesService);
@@ -195,7 +188,6 @@ async function seedDemo(): Promise<void> {
     const priceLists = app.get(PriceListsService);
     const rmas = app.get(ReturnAuthorizationsService);
     const creditNotes = app.get(CreditNotesService);
-    const voids = app.get(ShipmentVoidsService);
     const exchangeRates = app.get(ExchangeRatesService);
 
     // Every service below resolves its tenant from here, the same way a
@@ -204,6 +196,12 @@ async function seedDemo(): Promise<void> {
       { userId: account.userId, organizationId: account.organizationId },
       async () => {
         const actor = account.userId;
+
+        // Each step on an order written to its History as it happens, as
+        // its route would (#222); the rest of what the Owner makes gets its
+        // created entry at the end (seed-demo-audit.ts).
+        const audited = auditor(app);
+        const ordering = orderSteps(app, audited, actor);
 
         // Stock is valued in the base currency from the first receipt
         // (ADR-048). Set only if empty, like the tax number below: an
@@ -317,35 +315,27 @@ async function seedDemo(): Promise<void> {
         });
 
         // Bought, confirmed, received into a lot: the state a run starts from.
-        const order = await orders.create(
-          {
-            partnerId: supplier.id,
-            direction: 'purchase',
-            reference: 'PO-DEMO-1',
-            lines: [
-              {
-                variantId: blend.variants[0].id,
-                quantityOrdered: '50',
-                unitPrice: '38.0000',
-                currency: 'CAD',
-              },
-            ],
-          },
-          actor,
-        );
+        const order = await ordering.create({
+          partnerId: supplier.id,
+          direction: 'purchase',
+          reference: 'PO-DEMO-1',
+          lines: [
+            {
+              variantId: blend.variants[0].id,
+              quantityOrdered: '50',
+              unitPrice: '38.0000',
+              currency: 'CAD',
+            },
+          ],
+        });
 
-        await orders.update(order.id, { status: 'confirmed' });
+        await ordering.setStatus(order.id, 'confirmed');
 
-        await receipts.receive(
-          order.id,
-          order.lines[0].id,
-          {
-            toLocationId: shelf.id,
-            quantity: '50',
-            lot: { code: 'BF-2609', expiresAt: daysFromNow(365) },
-          },
-          actor,
-        );
+        await ordering.receive(order.id, order.lines[0].id, {
+          toLocationId: shelf.id,
+          quantity: '50',
+          lot: { code: 'BF-2609', expiresAt: daysFromNow(365) },
+        });
 
         const recipe = await boms.create({
           outputVariantId: finished.variants[0].id,
@@ -406,39 +396,32 @@ async function seedDemo(): Promise<void> {
           code: 'NORTH',
         });
 
-        const sale = await orders.create(
-          {
-            partnerId: customer.id,
-            direction: 'sale',
-            reference: 'SO-DEMO-1',
-            // Due two days ago, so Home's To ship card shows a late chip.
-            expectedAt: daysFromNow(-2),
-            lines: [
-              {
-                variantId: finished.variants[0].id,
-                quantityOrdered: '600',
-                unitPrice: '24.9900',
-                currency: 'CAD',
-              },
-            ],
-          },
-          actor,
-        );
+        const sale = await ordering.create({
+          partnerId: customer.id,
+          direction: 'sale',
+          reference: 'SO-DEMO-1',
+          // Due two days ago, so Home's To ship card shows a late chip.
+          expectedAt: daysFromNow(-2),
+          lines: [
+            {
+              variantId: finished.variants[0].id,
+              quantityOrdered: '600',
+              unitPrice: '24.9900',
+              currency: 'CAD',
+            },
+          ],
+        });
 
-        await orders.update(sale.id, { status: 'confirmed' });
+        await ordering.setStatus(sale.id, 'confirmed');
 
         // Part of it, on purpose: 400 of 600 leaves the rest outstanding, so
         // the order page shows a partial shipment and the Ship button stays.
-        const shipment = await shipping.ship(
-          sale.id,
-          {
-            fromLocationId: blending.id,
-            carrier: 'Canada Post',
-            trackingNumber: 'DEMO123456789CA',
-            lines: [{ lineId: sale.lines[0].id, quantity: '400' }],
-          },
-          actor,
-        );
+        const shipment = await ordering.ship(sale.id, {
+          fromLocationId: blending.id,
+          carrier: 'Canada Post',
+          trackingNumber: 'DEMO123456789CA',
+          lines: [{ lineId: sale.lines[0].id, quantity: '400' }],
+        });
 
         /**
          * That shipment, invoiced and issued (ADR-046): 400 × 24.99 is
@@ -558,21 +541,17 @@ async function seedDemo(): Promise<void> {
 
         // Some of the first shipment comes back, into the bin that checks it
         // before anything goes out again (ADR-043).
-        await returns.receive(
-          sale.id,
-          {
-            toLocationId: returnsBin.id,
-            reason: 'damaged',
-            note: 'Crushed in transit, carton of 5',
-            lines: [
-              {
-                lineId: sale.lines[0].id,
-                lots: [{ lotId: batch.id, quantity: '5' }],
-              },
-            ],
-          },
-          actor,
-        );
+        await ordering.receiveReturn(sale.id, {
+          toLocationId: returnsBin.id,
+          reason: 'damaged',
+          note: 'Crushed in transit, carton of 5',
+          lines: [
+            {
+              lineId: sale.lines[0].id,
+              lots: [{ lotId: batch.id, quantity: '5' }],
+            },
+          ],
+        });
 
         /**
          * Two more bottles turned up cracked, and this time the customer
@@ -591,21 +570,17 @@ async function seedDemo(): Promise<void> {
           actor,
         );
 
-        await returns.receive(
-          sale.id,
-          {
-            toLocationId: returnsBin.id,
-            returnAuthorizationId: rma.id,
-            reason: 'damaged',
-            lines: [
-              {
-                lineId: sale.lines[0].id,
-                lots: [{ lotId: batch.id, quantity: '2' }],
-              },
-            ],
-          },
-          actor,
-        );
+        await ordering.receiveReturn(sale.id, {
+          toLocationId: returnsBin.id,
+          returnAuthorizationId: rma.id,
+          reason: 'damaged',
+          lines: [
+            {
+              lineId: sale.lines[0].id,
+              lots: [{ lotId: batch.id, quantity: '2' }],
+            },
+          ],
+        });
 
         const creditNote = await creditNotes.issue(
           invoice.id,
@@ -625,21 +600,14 @@ async function seedDemo(): Promise<void> {
 
         // Picked against the wrong order and voided before the van left
         // (ADR-041): it stays on the record as voided, and the stock is back.
-        const mistaken = await shipping.ship(
-          sale.id,
-          {
-            fromLocationId: blending.id,
-            lines: [{ lineId: sale.lines[0].id, quantity: '100' }],
-          },
-          actor,
-        );
+        const mistaken = await ordering.ship(sale.id, {
+          fromLocationId: blending.id,
+          lines: [{ lineId: sale.lines[0].id, quantity: '100' }],
+        });
 
-        await voids.void(
-          sale.id,
-          mistaken.id,
-          { reason: 'Picked against the wrong order' },
-          actor,
-        );
+        await ordering.voidShipment(sale.id, mistaken.id, {
+          reason: 'Picked against the wrong order',
+        });
 
         /**
          * A second supplier who prices in US dollars. The purchase keeps the
@@ -680,33 +648,26 @@ async function seedDemo(): Promise<void> {
           quantity: string,
           taxCodeId: string,
         ) {
-          const order = await orders.create(
-            {
-              partnerId: customerId,
-              direction: 'sale',
-              reference,
-              lines: [
-                {
-                  variantId: finished.variants[0].id,
-                  quantityOrdered: quantity,
-                  unitPrice: '24.9900',
-                  currency: 'CAD',
-                },
-              ],
-            },
-            actor,
-          );
-          await orders.update(order.id, { status: 'confirmed' });
+          const order = await ordering.create({
+            partnerId: customerId,
+            direction: 'sale',
+            reference,
+            lines: [
+              {
+                variantId: finished.variants[0].id,
+                quantityOrdered: quantity,
+                unitPrice: '24.9900',
+                currency: 'CAD',
+              },
+            ],
+          });
+          await ordering.setStatus(order.id, 'confirmed');
 
-          const shipped = await shipping.ship(
-            order.id,
-            {
-              fromLocationId: blending.id,
-              carrier: 'Canada Post',
-              lines: [{ lineId: order.lines[0].id, quantity }],
-            },
-            actor,
-          );
+          const shipped = await ordering.ship(order.id, {
+            fromLocationId: blending.id,
+            carrier: 'Canada Post',
+            lines: [{ lineId: order.lines[0].id, quantity }],
+          });
 
           const bill = await invoiceDrafts.createDraft(
             { shipmentId: shipped.id, taxCodeId },
@@ -770,35 +731,27 @@ async function seedDemo(): Promise<void> {
           code: 'PACX',
         });
 
-        const usPurchase = await orders.create(
-          {
-            partnerId: usSupplier.id,
-            direction: 'purchase',
-            reference: 'PO-DEMO-2',
-            lines: [
-              {
-                variantId: blend.variants[0].id,
-                quantityOrdered: '20',
-                unitPrice: '27.5000',
-                currency: 'USD',
-              },
-            ],
-          },
-          actor,
-        );
+        const usPurchase = await ordering.create({
+          partnerId: usSupplier.id,
+          direction: 'purchase',
+          reference: 'PO-DEMO-2',
+          lines: [
+            {
+              variantId: blend.variants[0].id,
+              quantityOrdered: '20',
+              unitPrice: '27.5000',
+              currency: 'USD',
+            },
+          ],
+        });
 
-        await orders.update(usPurchase.id, { status: 'confirmed' });
+        await ordering.setStatus(usPurchase.id, 'confirmed');
 
-        await receipts.receive(
-          usPurchase.id,
-          usPurchase.lines[0].id,
-          {
-            toLocationId: shelf.id,
-            quantity: '20',
-            lot: { code: 'BF-2610', expiresAt: daysFromNow(400) },
-          },
-          actor,
-        );
+        await ordering.receive(usPurchase.id, usPurchase.lines[0].id, {
+          toLocationId: shelf.id,
+          quantity: '20',
+          lot: { code: 'BF-2610', expiresAt: daysFromNow(400) },
+        });
 
         /**
          * A wholesale list, as the organization's default for customers with
@@ -829,24 +782,21 @@ async function seedDemo(): Promise<void> {
           code: 'HARBOUR',
         });
 
-        const second = await orders.create(
-          {
-            partnerId: secondCustomer.id,
-            direction: 'sale',
-            reference: 'SO-DEMO-2',
-            // Due next week: a due date beside the late one on Home.
-            expectedAt: daysFromNow(5),
-            lines: [
-              {
-                variantId: finished.variants[0].id,
-                quantityOrdered: '500',
-              },
-            ],
-          },
-          actor,
-        );
+        const second = await ordering.create({
+          partnerId: secondCustomer.id,
+          direction: 'sale',
+          reference: 'SO-DEMO-2',
+          // Due next week: a due date beside the late one on Home.
+          expectedAt: daysFromNow(5),
+          lines: [
+            {
+              variantId: finished.variants[0].id,
+              quantityOrdered: '500',
+            },
+          ],
+        });
 
-        await orders.update(second.id, { status: 'confirmed' });
+        await ordering.setStatus(second.id, 'confirmed');
 
         /**
          * Breadth for the screens: a fuller catalogue, a run in progress, an
@@ -854,7 +804,7 @@ async function seedDemo(): Promise<void> {
          * of its own, so every figure above stays what the manual checks
          * say.
          */
-        const variety = await addVariety(app, {
+        const variety = await addVariety(app, audited, {
           actorId: actor,
           siteId: site.id,
           shelfId: shelf.id,
@@ -872,11 +822,11 @@ async function seedDemo(): Promise<void> {
         logger.log(variety);
 
         /**
-         * History: a creation entry for what the Owner made above, then the
+         * History: a creation entry for what the Owner made above with none
+         * yet, its orders having written theirs as they went, then the
          * team, then their work, each step written to the audit log as its
          * route would. Last, like the variety, and on items of their own.
          */
-        const audited = auditor(app);
         const opened = await recordOpeningHistory(
           db,
           audited,

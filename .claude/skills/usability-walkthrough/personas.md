@@ -17,6 +17,20 @@ customer arrives.
 - **Gives up when:** a refusal does not say what to do, or a term is
   untranslated.
 
+## The first-week buyer (Mei)
+
+- **Who:** buys the materials and packaging of a small supplement maker,
+  in the first week with this application; opens Home first each
+  morning.
+- **Reads:** only Simplified Chinese; the account is set to `zh-Hans`.
+- **Knows:** suppliers, purchase orders, cases and minimum orders.
+- **Does not know:** reorder points, never having set one; what an
+  item's position counts; that a supplier is chosen under Partner.
+- **Typical tasks:** see on Home what is low; raise a purchase order for
+  what is low; plan a run of a made item; set a reorder point.
+- **Gives up when:** a number does not say what it is, or a word on the
+  screen differs from the guide's.
+
 ## The warehouse worker
 
 - **Who:** receives and ships goods all day, on a tablet at the dock.

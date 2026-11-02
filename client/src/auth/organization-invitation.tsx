@@ -6,6 +6,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import type { OrganizationInvitationPreview } from '../api/types.gen';
 import { api } from '../lib/api';
 import { formatDayLong } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { organizationInitialsOf } from '../lib/person-initials';
 import { browserTimeZone } from '../lib/time-zone';
 import {
@@ -323,7 +324,12 @@ function AlreadyInOrganization({
         )}
       </Typography>
       <Box>
-        <Button variant="outlined" component={RouterLink} to="/account">
+        <Button
+          variant="outlined"
+          component={RouterLink}
+          to="/account"
+          state={OFFER_BACK}
+        >
           {intl.formatMessage({
             id: 'invitation.otherOrganization.account',
             defaultMessage: 'Go to your account',

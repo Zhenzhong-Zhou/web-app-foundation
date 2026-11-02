@@ -31,6 +31,7 @@ import {
   formatUnitCost,
   NO_VALUE,
 } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 
@@ -137,7 +138,12 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
             defaultMessage="Part of this lot is still waiting for a cost. Set it on the <link>Stock value</link> page."
             values={{
               link: (chunks: ReactNode[]) => (
-                <Link underline="always" component={RouterLink} to="/costs">
+                <Link
+                  underline="always"
+                  component={RouterLink}
+                  to="/costs"
+                  state={OFFER_BACK}
+                >
                   {chunks}
                 </Link>
               ),

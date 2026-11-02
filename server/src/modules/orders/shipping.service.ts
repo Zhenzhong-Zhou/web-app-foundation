@@ -9,7 +9,8 @@ import { eq, sql } from 'drizzle-orm';
 import { recordContext } from '../../core/audit/audit-context';
 import { documentLanguages } from '../../core/organizations/document-languages';
 import { isCheckViolation } from '../../database/errors';
-import { orderLines, shipments } from '../../database/schema';
+import { assertOwnIds } from '../../database/own-ids';
+import { locations, orderLines, shipments } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { assertTakeable, inVariantOrder } from '../stock/availability';
@@ -136,6 +137,20 @@ export class ShippingService {
   async ship(orderId: string, input: ShipOrderDto, actorId: string) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const order = await this.loadShippable(tx, organizationId, orderId);
+
+      // Lots are allocated at the source before any movement checks it, so
+      // another tenant's is refused here, not answered as short (ADR-003).
+      await assertOwnIds(
+        tx,
+        locations,
+        organizationId,
+        [input.fromLocationId],
+        t({
+          id: 'orders.unknownLocation',
+          defaultMessage:
+            'That location is not in this organization. Choose one from the list.',
+        }),
+      );
 
       const ids = input.lines.map((line) => line.lineId);
 

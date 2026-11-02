@@ -646,6 +646,36 @@ describe('Shipments (e2e)', () => {
         })
         .expect(404);
     });
+
+    it('refuses a source from another organization, saying to choose one from the list, and moves nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const s = await scenario(alpha);
+      const theirs = await createLocation(beta.agent, {
+        type: 'site',
+        name: 'Theirs',
+      });
+
+      // From the body, so unknown, a 400. The tracked line's lots are
+      // picked at the source before any movement checks it, where it read
+      // as short, a 409.
+      const refused = await alpha.agent
+        .post(`/v1/orders/${s.order.id}/shipments`)
+        .send({
+          fromLocationId: theirs,
+          lines: [
+            { lineId: s.focusLine, quantity: '5' },
+            { lineId: s.bottleLine, quantity: '5' },
+          ],
+        })
+        .expect(400);
+
+      expect(body<{ message: string }>(refused).message).toBe(
+        'That location is not in this organization. Choose one from the list.',
+      );
+      expect(await shipmentMovements()).toHaveLength(0);
+      expect(await db.select().from(shipments)).toHaveLength(0);
+    });
   });
 
   describe('preview', () => {

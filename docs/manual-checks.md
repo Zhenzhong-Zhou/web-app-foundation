@@ -77,6 +77,19 @@ replace two bottles; **SO-DEMO-8** invoiced in US dollars; and **Retail CAD
 2025** retired. Exchange rates, price lists and issuing invoices are the
 Owner's, as the roles allow.
 
+Last, nine reorder points, set by the Owner, which Reorder points counts
+**All 9 · Low 6 · Out 1** (ADR-085): **VITC-100** out, lot **VC-0402**
+past its date too and left on the shelf; **MAGCAP-SAMPLE**, sample bags
+made twelve from a bottle by **MCS-RUN-01** at the **Office**, 12 of 36;
+**ELDER-250**, 58 of 96 up to 192, with **PO-DEMO-12** five days late and
+**SO-DEMO-9** and **SO-DEMO-10** needing it; **OMEGA3-90** drafted by
+**PO-DEMO-13**; **D3-1000-120**, bought 48 at a time, suggesting 2 × 48;
+**SLEEP-60CT**, made, 970 of 1,200; **CARTON-24** under its point on the
+shelf, kept above it by what is on its way; **BOTTLE-90** enough, half of
+it issued to CALM-RUN-01 and left out; and **ZINC-60** discontinued.
+Each of the nine is named in English, French and Chinese, so the list
+reads whole in every language.
+
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.
 
@@ -617,7 +630,11 @@ Paper is checked first because it must not change at all.
   nor the link.
 - **MC-1524** History is a tab, listing the order's changes with Load more and
   Open in audit log; a member without audit.view has no History tab. The
-  History button no longer appears on the order.
+  History button no longer appears on the order. On SO-DEMO-1 it reads,
+  newest first: Shipment voided, Order shipped, Return received twice
+  (the newer with Return: RMA-000001), Order shipped (Items: FOCUS-60CT
+  400), Order updated (Status: Confirmed), and Order created last, each by
+  the demo's Owner. Every demo order starts so, from Order created.
 - **MC-1525** On Orders, Open, Fulfilled, Cancelled and All are a row of
   buttons above the list, Open pressed. Pressing Cancelled shows SO-DEMO-4
   alone and presses only Cancelled; pressing it again keeps it.
@@ -1841,8 +1858,10 @@ The pages, in a private window unless a check says otherwise.
   areas says so; untick See purchase and sales orders and everything that
   needs it unticks, said the same way. See prices on orders says what
   leaving it out does; Edit, confirm or cancel an order says it is also told
-  when a line closes short. Tick Read the audit log under People and the
-  organization: See prices on orders and See purchase and sales orders tick
+  when a line closes short, and Raise an order when a bought item falls
+  below its reorder point, if the role can see stock too. Tick Read the
+  audit log under People and the organization: See prices on orders and
+  See purchase and sales orders tick
   with it, since the log keeps what orders were priced at. People and the
   organization shows its first three ticked and greyed, with why, and no
   Make a role or Close the organization. Tick all and Clear on Stock and
@@ -2314,7 +2333,11 @@ as [`docs/runbooks/render.md`, "Deploys"](runbooks/render.md#deploys-adr-081), h
   check and sends no revision, which the API serves as today. From the
   next deploy on, coming back to the Orders tab shows New version beside
   Help (MC-3401), Inventory from the rail loads in full, and Help's foot
-  names the commit `/api/health` names (MC-3405).
+  names the commit `/api/health` names (MC-3405). A deploy that raises the
+  API revision, as ADR-085's does from 1 to 2: leave a third tab on Home
+  before the push. Back in it once the static site is out, the amber
+  banner asks it to reload (MC-3404); Reload, once: Home, with its cards
+  and no banner, and switching away and back asks nothing more.
 - **MC-3425** *(ADR-081)* Deploy by hand. Once merged, since GitHub offers
   Run workflow only for a workflow on the default branch: Actions → Deploy
   → Run workflow, on `main`. Its first step names the commit already live
@@ -2788,8 +2811,8 @@ The list narrows a moment after typing stops.
   专注胶囊 60 粒 in 中文, and Focus 60ct in English; so does `ＦＯＣＵＳ`,
   typed full width with a Chinese input method. `bisglycinate de magnesium`, without
   its accent, finds Magnesium bisglycinate capsules by its French name.
-  镁 alone lists the magnesium capsules and nothing else. Discontinued
-  counts only what the search found. From the top bar, `zzjn`, then Show
+  镁 alone lists the magnesium capsules and their sample bag, nothing
+  else. Discontinued counts only what the search found. From the top bar, `zzjn`, then Show
   all in Items: Products opens with zzjn in its box, listing the same.
   Do it again on Products showing `calm`: the box and the list change to
   zzjn, Back brings calm back, and Forward zzjn. What is typed is in the
@@ -2927,10 +2950,269 @@ site, after a deploy that changes the setting, the route or the relay.
   15` prints `<!doctype html>`, the `/*` rewrite's page, never a map's
   `{"version":3`.
 
+## 42. Low stock (ADR-085)
+
+- **MC-4201** *(ADR-085)* The bell, once each time an item falls below
+  its reorder point. On a fresh demo, the server's first start tells the
+  six low items in one notice: "6 items fell below their reorder point",
+  then "VITC-100, MAGCAP-SAMPLE and 4 more. Order or plan them from
+  Reorder points.". As the demo Owner, on Reorder points, give a bought
+  item with stock a point above what it has, and restart the server (it
+  checks at start, then hourly): the bell gets one notice, "… fell below
+  its reorder point" with the item's SKU, then its name and "Raise a
+  purchase order from Reorder points.", with no quantity anywhere.
+  Restart again: no second notice. Give two more items points above what
+  they have, one of them made, and restart: one notice, "2 items fell
+  below their reorder point", naming both SKUs, then "Order or plan them
+  from Reorder points.". Daniel Okafor (Admin) has the same; Tom Becker
+  (Warehouse) and Chloé Tremblay (Viewer), neither. Receive enough of the
+  first item to pass its point and restart: nothing. Confirm a sale that
+  needs it back below, and restart: told again. With the Owner's account
+  in 中文, a notice reads naturally, the item under its Chinese name
+  where it has one.
+- **MC-4202** *(ADR-085)* The list. As the demo Owner, Inventory → Reorder
+  points: the address gains `?tab=reorder-points`, the switch reads All 9
+  · Low 6 · Out 1, and "Position = usable + coming − still needed" sits
+  above the list. VITC-100 comes first, every low row before every other,
+  and the rest by SKU. Each row has its SKU in bold, its name beside it
+  and a small line under it: "Bought · 48 at a time" for D3-1000-120,
+  "Made · just enough" for SLEEP-60CT, "Bought · up to 192" for
+  ELDER-250. Out is red, Low amber, Enough green, each with an icon.
+  VITC-100's position is bold and red, its bar empty and outlined red;
+  a low bar is filled amber short of its mark in the middle, an enough
+  one green. D3-1000-120 suggests 96 with "2 × 48" under it; OMEGA3-90
+  says Drafted, with PO-DEMO-13 and its quantity, linked. ZINC-60 is
+  grey, "Discontinued · never low, its point kept", with no chevron.
+  The digits line up down each column.
+- **MC-4203** *(ADR-085)* Low, Out, the search and Export. Low shows the
+  six, VITC-100 among them; Out, VITC-100 alone; All, the nine. Type
+  ELDER: the counts follow the search, All 1 · Low 1 · Out 0. With Low
+  on and the search cleared, Export saves a CSV of the six, and the audit
+  log's line for it reads its filter as Status Low, in 中文 不足. Open
+  `/inventory?tab=reorder-points&status=low` in a new tab: it opens on
+  Low. In French the three read Tous, Bas and Épuisé.
+- **MC-4204** *(ADR-085)* An opened row. ELDER-250's chevron opens four
+  boxes: Usable by location; + Coming, PO-DEMO-12 with its supplier and
+  Late; − Still needed, SO-DEMO-9 and SO-DEMO-10 with their customers;
+  = Position, 58 against its point of 96, "Up to 192 · suggested order"
+  and its quantity. Each number opens its order. VITC-100's Usable says
+  how much was left out as expired; BOTTLE-90's, how much was left out as
+  issued to a run. The chevron again closes it. On a fast connection no
+  grey placeholder flashes before the boxes, nor before Edit's fields;
+  with the network throttled to Slow 4G, one shows while it reads.
+- **MC-4205** *(ADR-085)* Choosing. As the Owner, only bought low rows
+  with something to suggest have a box: VITC-100, ELDER-250 and
+  D3-1000-120 among them, none on MAGCAP-SAMPLE or SLEEP-60CT, which are
+  made, or on the rows with enough. OMEGA3-90's box is greyed, and
+  hovering it says it is in a draft already. Choose two: a dark bar
+  floats at the foot of the list, "2 chosen", each SKU with its
+  suggestion; Clear empties it. The header's box chooses every row with
+  a box, and unticked, none. Choose one, search for another item and
+  choose it too: the bar holds both. With VoiceOver on, ticking a box
+  says "1 chosen", then "2 chosen", as the bar appears and grows. Tab to
+  Clear and Raise a purchase order: each one's focus ring is drawn in
+  the bar's own text colour, plain on the dark bar, in both modes.
+- **MC-4206** *(ADR-085)* Read only, and in 中文. As Chloé Tremblay
+  (Viewer): the same list, with no boxes, no header box and no bar; the
+  chevron still opens a row. In 中文: the tab reads 再订货点, the
+  statuses 缺货, 不足 and 充足, the line 预计可用 = 现有可用 + 在途 −
+  待发; SLEEP-60CT's opened row says 建议生产, D3-1000-120's 建议订货,
+  and each item shows its Chinese name.
+- **MC-4207** *(ADR-085)* Add reorder point. As the demo Owner, on
+  Reorder points, Add reorder point sits beside Export. It opens a dialog
+  with the item picker, focus in it: choose GLOVES-100 and Bought is
+  chosen; choose FOCUS-60CT and Made is, since it has an active recipe.
+  The point's unit sits inside its field at the right. How much to order has three cards,
+  Just enough, A fixed quantity and Up to a maximum, each with its line;
+  the chosen one drawn as Invite's roles are, a thicker accent border and
+  a light tint, in both modes; choosing the fixed or the maximum card
+  shows its field inside it. Once
+  the typing pauses, Today shows two bars, Position now and Position
+  after the suggested order, with their numbers, and one sentence, such as "Below 500 now, so
+  it would suggest 600, 3 of 200.". Typing on changes it once more, never
+  one answer per key. Add: the item shows in the list at once, and All
+  counts one more.
+- **MC-4208** *(ADR-085)* The dialog's refusals, each at its field. A point
+  of 0 says "Type a number above zero." under it, and Today goes until it
+  is fixed; so does a quantity of 0. One with five decimal places, such
+  as 1.23456, says "Type a number with up to 4 decimal places." instead.
+  "1,000" in English gets the message about separators between thousands.
+  Up to a maximum of 150 on a point of 200 says, while typing, "The maximum
+  must be above the reorder point, 200." under the maximum, and it goes
+  as soon as the maximum is typed above 200, even after a Save. Add a point
+  for D3-1000-120, which has one: under the item, "D3-1000-120 already has
+  a reorder point. Edit it", the last two words a link, in 中文 "去编辑",
+  never "请改为修改它" before it, with focus
+  back in the item, where a screen reader reads the refusal with it; Edit
+  it opens Edit with what is kept, 240, A fixed quantity of 48, focus in
+  the reorder point, as Edit from a row's ⋯ opens.
+- **MC-4209** *(ADR-085)* A row's menu, Edit and Remove. Each row's ⋯
+  holds Edit reorder point, Stock of the item and Remove reorder point, in
+  red; VoiceOver reads the ⋯ as a menu button, collapsed, then expanded
+  once open. ZINC-60's row has the ⋯ and no chevron. Edit on ELDER-250 opens
+  with Bought, 96 and Up to a maximum of 192; make it 150 and Save: the
+  row's line and suggestion change, and the dialog closes. Edit's foot has
+  Remove reorder point at the left, in red, which asks first: "Remove
+  ELDER-250’s reorder point? It will no longer show as low, on Home or in
+  the bell. Its stock and its orders do not change." Keep it changes
+  nothing; Remove reorder point takes the row off the list and the counts
+  down by one. The menu's Remove asks the same. Stock of the item opens
+  Stock, searched for the SKU. Edit ELDER-250 again, choose A fixed
+  quantity of 48 and Save: the audit log's newest line, Reorder point
+  changed, reads How much to order from Up to a maximum to A fixed
+  quantity, Maximum from 150 to none and Fixed quantity from none to 48,
+  and names nothing that did not move.
+- **MC-4210** *(ADR-085)* From a Stock row, and who sees what. On
+  Inventory's Stock tab, a row's ⋯ ends with Reorder point…: on a
+  D3-1000-120 row it opens Edit with its point; on a GLOVES-100 row, Add
+  with GLOVES-100 named and no picker. Daniel Okafor (Admin), Tom Becker
+  (Warehouse) and Chloé Tremblay (Viewer) hold no `stock.reorder`: no
+  Reorder point… on Stock, and no Add reorder point and no ⋯ on Reorder
+  points, while the chevron still opens a row. Make a role, Nothing
+  ticked: under Stock and locations, tick Set, change or remove an item’s
+  reorder point, and See what is on hand and where and See the product
+  catalogue tick with it, the line above the areas saying so; the summary
+  beside the boxes says the role can set reorder points. Save it as
+  Reorder clerk and give it to Tom Becker: his Your access says he can
+  set reorder points, in 中文 设置再订货点, in Français définir les points
+  de commande, and Reorder points now shows him Add reorder point and
+  each row's ⋯.
+- **MC-4211** *(ADR-085)* The empty states. Register a new organization:
+  Reorder points shows an icon, "No reorder points yet.", a sentence on
+  what a point does, Add reorder point, and Learn more, which opens Help
+  at Reorder points; no All, Low and Out, no position line and no
+  Export, so Learn more is the only one. Receive 50 of an item, give
+  it a point of 10, and press Low: a tick in green, "Nothing is low. 1 item
+  has a reorder point.", and Show all, which shows All with the row.
+- **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
+  the button reads 添加再订货点, the switch 采购 and 自制, the cards
+  补足到再订货点, 固定订货量 and 补到最高库存, Today's bars 现在的预计可用
+  and 按建议订货后的预计可用, and its sentence reads naturally, such as "目前低于 500，因此建议订
+  600，即 3 个 200。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
+  and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的再订货点？
+- **MC-4213** *(ADR-085)* Home's Low stock. On a fresh demo, as the Owner:
+  the tile after To receive reads Low stock, 6 and "1 out", in red. Its
+  card lists five rows, each its SKU in bold and its name: VITC-100 with
+  "out" in red; MAGCAP-SAMPLE, "12 of 36"; ELDER-250, "58 of 96";
+  OMEGA3-90, "130 of 180" and "drafted"; D3-1000-120, "180 of 240".
+  SLEEP-60CT, the sixth, is left off. The rows open nothing; See all 6
+  opens Reorder points on Low, with Back to Home. Receive 100 of
+  VITC-100 and Refresh: Low stock reads 5, as the plain tiles do, and
+  the card starts at MAGCAP-SAMPLE. In 中文: 库存不足, "1 项缺货",
+  "12（再订货点 36）", 已下草稿 and 缺货; in French: Stock bas, "1 épuisé", "12 sur
+  36" and "brouillon fait". In a new organization, with no reorder
+  point, the card reads "No reorder point is set yet, so nothing can
+  show as low.", not in green, and Set one in Reorder points opens
+  Reorder points, with Back to Home; once one item has a point and
+  enough stock, the card reads "Nothing is low.", in green.
+- **MC-4214** *(ADR-085)* The bell's notice, opened, and its words by
+  the items. On a fresh demo, as the Owner, the bell's "6 items fell
+  below their reorder point" opens Inventory's Reorder points on Low,
+  with Back to where the bell was. Sign in as Fatima Haddad (Sales), who
+  raises orders but plans no runs: her notice names only the four bought
+  items, "VITC-100, ELDER-250 and 2 more. Order them from Reorder
+  points.". As the Owner, give two bought items with stock points above
+  what they have, and restart the server: one notice, both SKUs, then
+  "Order them from Reorder points.", though the Owner may plan runs too.
+  Two made items: "Plan them from Reorder points."; one of each: "Order
+  or plan them from Reorder points.".
+- **MC-4215** *(ADR-085)* Raise a purchase order, filled in from the list.
+  On a fresh demo, as the Owner, Reorder points on Low: choose
+  D3-1000-120 and ELDER-250, and press Raise a purchase order in the
+  dark bar. New order opens as Buying from them, Partner empty, with a
+  note: "Filled from Reorder points: 2 lines at their suggested
+  quantities. Choose the supplier under Partner, check the quantities
+  and prices, then raise it as a draft.", in 中文 请在合作伙伴中选择供应商,
+  and two lines, D3-1000-120 at 96 and ELDER-250
+  at 134. Nothing is saved yet: Cancel goes back to Reorder points, on
+  Low, as it was. Raise it again, choose Prairie and Raise as
+  draft: the order opens as a draft, and Back returns to Reorder points,
+  not to New order filled in again; there, both rows read Drafted with
+  the order's number, and neither has a box to choose. Edit D3-1000-120:
+  Today says what is in draft covers it, and Position after the
+  suggested order reads 276, above its point of 240, the draft counted.
+  Fatima Haddad (Sales) has the boxes and the bar; Chloé Tremblay
+  (Viewer), neither.
+- **MC-4216** *(ADR-085)* Plan a run, filled in from the list. On a fresh
+  demo, as the Owner, Reorder points on Low: MAGCAP-SAMPLE's row has Plan
+  a run, and no bought row has one. It opens Plan a run with Making
+  MAGCAP-SAMPLE, the recipe "v1 (current) — makes 12", Quantity to make
+  24, Made at empty, and a note: "Filled from Reorder points: 24 brings
+  it back to its reorder point, 36.". Under the quantity, Uses reads
+  "2 each · MAGCAP-60 …"; type 120 and, once typing pauses, it reads 10.
+  Cancel saves nothing. Plan it again at 24, Made at Office, Plan run:
+  "Run planned", and the row reads Drafted with the run, without
+  reloading the page, and focus is on the run's link, not the page's
+  start. Production's own Plan a run shows Uses too, once an
+  item with a recipe and a quantity are in. Fatima Haddad (Sales) and
+  Chloé Tremblay (Viewer), who plan no runs, see no Plan a run. In 中文:
+  计划生产, the note 已按再订货点填写, and 用料.
+- **MC-4217** *(ADR-085)* Help's Inventory and Home guides. As the demo
+  Owner, Inventory → Reorder points: "Position = usable + coming − still
+  needed" ends with Learn more, which opens Help at Where an item stands.
+  The Inventory guide has Reorder points, Where an item stands, How much
+  to order and Order or make what is low after Promised to customers,
+  and two more refusals; every button it names reads the same on the
+  screen, Add reorder point ending Add's steps, with Save when editing.
+  Home's guide has Low stock after What needs attention, and Out
+  among its words. In 中文: 了解更多 follows 待发 with no space and opens
+  物品的库存情况, and Home's guide has 库存不足; in French, En savoir plus
+  opens Où en est un article.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R71** *(the promised table naming an item by its SKU alone, #296)*
+  As the demo Owner in 中文, on Inventory, 已承诺给客户 has 物品 beside
+  SKU: ELDER-250, which SO-DEMO-9 and SO-DEMO-10 wait for, reads
+  接骨木莓糖浆…, as Stock above it names it. In English the same row
+  reads its base name.
+
+- **MC-R70** *(Movements naming an item by its SKU alone, with padding
+  zeros, and who by email alone, #256)* As the demo Owner in 中文, on
+  库存变动: D3-1000-120's move of 40 to Richmond reads D3-1000-120 in
+  bold, then 维生素 D3 1000 IU，120 粒软胶囊, then its lot; its change
+  reads 40, not 40.0000; 操作人 reads 王建国 with their email beneath,
+  whole on hover. Open D3-1000-120's History on an Inventory row: its
+  title names the item beside the SKU (and the lot, for a lot's row),
+  and its rows read their changes and who the same way. A member who has
+  since deleted their account shows as 已删除的用户, with no email. In
+  English the names are the base names.
+
+- **MC-R69** *(a top-level page opened by a link with no way back, such
+  as Trace a lot, #341)* As the demo Owner, on Inventory press Trace a
+  lot: Back shows beside its title and returns to Inventory. From Home's
+  quick action Trace a lot, Back returns to Home. Type `2609` and press
+  Enter: Back is still there, and steps back to before the search, then
+  to where you came from, as the browser's Back does. A lot opened from
+  the list keeps its trail and its Back. Then the other links inside the
+  app to a top-level page, each showing Back to where you were: Home's
+  Receive stock and Plan a run; a card's See all; Change the days; a
+  step of Getting started; Look up in a newcomer's first week (a Viewer
+  just invited, as MC-3207 sets up); the top bar's Show all in Orders; a licence's notice in the
+  bell; Licences from Products, now under the header every list has;
+  Stock of the item from a Reorder points row; a page linked from a Help
+  guide, and Your account at Help's foot. Any of these pages opened from the menu, from the trail above a
+  record, or by its address in a new tab, shows no Back. Opened by a
+  link, a list keeps its Back through a search typed, a tab or a filter
+  chosen: Reorder points from Low stock's See all, after a letter in its
+  search and a move to Stock; Orders from To ship's See all, after a
+  search; the audit log from a record's History, Open in audit log, after
+  an action chosen; Members from Getting started, after Invite is closed.
+
+- **MC-R68** *(Receive leaving focus on the dialog, not its first field,
+  #313)* On Inventory, press Receive stock with the keyboard: the cursor
+  is in Item, and typing a SKU there needs no Tab first.
+
+- **MC-R67** *(Inventory's search not following the address, #301)* As
+  the demo Owner, on Inventory's Stock tab, type `2609` in the top bar and
+  choose Show all in Lots: the search box reads 2609 and the list narrows
+  to BF-2609 and FOC-2609-01, with no reload. Type `D3` in the search
+  instead and open Reorder points: the same search is in its box and its
+  list is narrowed by it. Change it there to `ELDER` and go back to Stock:
+  Stock is searched for ELDER. Reload: the tab and the search stay.
 
 - **MC-R66** *(a zone's city in brackets after a name with brackets of its
   own, #343)* Between November and March, with the organization in
@@ -4017,11 +4299,106 @@ first.
   give the reference, the person who invited you: MC-R65 extended.
 - 2026-10-30: ADR-084's setup, a page crashed with no code changed by
   blocking its script, and where Sentry's search is: MC-4102 reworded.
+- 2026-10-31: ADR-085, the bell once each time an item falls below its
+  reorder point: section 42, MC-4201; the role editor's line under Raise
+  an order: MC-3309 extended.
+- 2026-10-31: ADR-085, Home's ninth card raising the API revision to 2:
+  MC-3424 extended, a tab left on Home across the deploy asked to reload
+  once, then Home.
+- 2026-10-31: ADR-085, the demo's nine reorder points: the demo's list
+  gains them; MC-4201 opens with the notice the seeded points give.
+- 2026-10-31: ADR-085, the nine named in all three languages: the
+  demo's list says so; MC-3901's 镁 finds the sample bag too.
+- 2026-10-31: #222, each step on the demo's own orders in their History:
+  MC-1524 extended.
 - 2026-11-01: #343, a zone's city after a dash, never in brackets, on the
   server: section 26's note on zone names added, MC-2602 reworded, MC-R66
   added.
 - 2026-11-01: #343 on the client, the picker and Home's note: MC-2601,
   MC-2602, MC-2606, MC-2607, MC-2609 and MC-2905 reworded, MC-R66
   extended.
+- 2026-11-01: ADR-085, Reorder points in the client, the list: its tab
+  in Inventory, All, Low and Out, an opened row, choosing and a Viewer's
+  read-only list: MC-4202 to MC-4206.
+- 2026-11-01: ADR-085, Reorder points in the client, the dialog: Add
+  and Edit with Today, the refusals at their fields, Remove, a row's menu,
+  the Stock row's Reorder point… and the empty states: MC-4207 to MC-4212.
+- 2026-11-01: #301, Inventory's search in the address: Show all in Lots
+  narrows Stock while it is open, and Stock and Reorder points share one
+  search: MC-R67.
+- 2026-11-01: #313, Receive opening in its first field, Item: MC-R68.
+- 2026-11-01: #341, Back on Trace a lot opened from Inventory's button or
+  Home's quick action, none from the menu or a new tab: MC-R69.
+- 2026-11-01: #341 finished, Back from every link inside the app to a
+  top-level page, and Licences under the shared header: MC-R69 extended.
 - 2026-11-01: #294, Help on a phone giving focus back to Help once the
   page is no longer hidden from a screen reader: MC-3204 extended.
+- 2026-11-01: ADR-085, Home's Low stock card and the bell's link: its
+  tile, red with its out count, and its five rows against their points:
+  MC-4213; the notice opening Reorder points on Low, its several items'
+  words following them, Order, Plan, or both: MC-4214.
+- 2026-11-01: ADR-085, a purchase order and a run filled in from Reorder
+  points: Raise a purchase order opening New order with the chosen lines
+  and a note, MC-4215; Plan a run on a made low row, with the run
+  dialog's Uses scaled by the server, MC-4216.
+- 2026-11-01: #256, Movements and an inventory row's history naming the
+  item beside its SKU, its change without padding zeros, and who by name
+  with their email beneath: MC-R70. #296, Inventory's Promised to
+  customers naming each item beside its SKU: MC-R71.
+- 2026-11-01: ADR-085, Help's Inventory and Home guides: Reorder points'
+  four sections, Home's Low stock, and Learn more beside the position's
+  line and on the list with no point yet: MC-4217; MC-4211 extended.
+- 2026-11-01: ADR-085's review, Back after raising a filled purchase
+  order returning to Reorder points, not to the lines filled in again:
+  MC-4215 extended.
+- 2026-11-01: ADR-085's review, Home's Low stock with no reorder point
+  saying so, not "Nothing is low.", with the way to set one: MC-4213
+  extended.
+- 2026-11-01: ADR-085's review, Today's words for a made item in 中文,
+  建议生产, not 建议订: MC-4212 extended.
+- 2026-11-01: ADR-085's review, focus in the reorder point dialog's
+  first field, the 409 at the item read with it, and focus on a planned
+  run's link: MC-4207, MC-4208 and MC-4216 extended.
+- 2026-11-01: ADR-085's review, Back kept through a list's search, a tab,
+  History's filters and Members' Invite closed: MC-R69 extended.
+- 2026-11-01: ADR-085's review, Back from Your account at Help's foot:
+  MC-R69 extended.
+- 2026-11-01: ADR-085's review, a changed reorder point logged from what
+  was saved, a change of rule naming both quantities: MC-4209 extended.
+- 2026-11-01: ADR-085's review, the reorder point permission's box in
+  Make a role, what ticks with it, and its Your access phrase: MC-4210
+  extended.
+- 2026-11-01: ADR-085's review, the Inventory guide's Add steps ending
+  with Add reorder point, as its button reads: MC-4217 extended.
+- 2026-11-01: ADR-085's review, Reorder points' All in French, Tous, not
+  Invoices' Toutes: MC-4203 extended.
+- 2026-11-01: ADR-085's review, a reorder point's quantity past four
+  decimal places refused in words of its own: MC-4208 reworded.
+- 2026-11-01: ADR-085's review, Home's Low stock rows in 中文 naming the
+  point, "12（再订货点 36）": MC-4213 reworded.
+- 2026-11-01: ADR-085's review, Today's bars named as the position,
+  Position now and 现在的预计可用: MC-4207 and MC-4212 reworded.
+- 2026-11-01: ADR-085's review, Today's second bar counting what is in
+  draft: MC-4215 extended.
+- 2026-11-01: ADR-085's review, Cancel on a filled New order going back
+  to Reorder points, not to Orders: MC-4215 reworded.
+- 2026-11-01: ADR-085's review, the filled order's note and the Inventory
+  guide naming Partner, where the supplier is chosen: MC-4215 reworded.
+- 2026-11-01: ADR-085's review, how many are chosen said to a screen
+  reader: MC-4205 extended.
+- 2026-11-01: ADR-085's review, Reorder points with no point hiding its
+  views, the position's line and Export: MC-4211 extended.
+- 2026-11-01: ADR-085's review, the 409 at the item said once, with Edit
+  it: MC-4208 reworded.
+- 2026-11-01: ADR-085's review, the chosen rule card drawn as every
+  chosen card is: MC-4207 extended.
+- 2026-11-01: ADR-085's review, an export of Reorder points read in the
+  audit log by its filter's words: MC-4203 extended.
+- 2026-11-01: ADR-085's review, the dark bar's focus ring in its own text
+  colour: MC-4205 extended.
+- 2026-11-01: ADR-085's review, an opened row's and Edit's placeholders
+  only for a read that takes a while: MC-4204 extended.
+- 2026-11-01: ADR-085's review, a refusal from Save cleared once its
+  field changes: MC-4208 extended.
+- 2026-11-01: ADR-085's review, a Reorder points row's ⋯ said as a menu
+  button: MC-4209 extended.

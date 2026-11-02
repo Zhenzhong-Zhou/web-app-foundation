@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 
 /**
  * The open tab, kept in the address as `?tab=` (ADR-055), so a refresh, a
@@ -20,6 +20,9 @@ export function useTab<T extends string>(
   tabs: readonly T[],
 ): [T, (tab: T) => void] {
   const [params, setParams] = useSearchParams();
+  // Kept by each write, so a page a link inside the app opened still
+  // offers Back after a tab is chosen (#341).
+  const { state } = useLocation();
   const asked = params.get('tab');
   const current = tabs.find((tab) => tab === asked) ?? tabs[0];
 
@@ -31,10 +34,10 @@ export function useTab<T extends string>(
           next.delete('tab');
           return next;
         },
-        { replace: true },
+        { replace: true, state },
       );
     }
-  }, [asked, current, setParams]);
+  }, [asked, current, setParams, state]);
 
   const choose = (tab: T) =>
     setParams(
@@ -44,7 +47,7 @@ export function useTab<T extends string>(
         else next.set('tab', tab);
         return next;
       },
-      { replace: true },
+      { replace: true, state },
     );
 
   return [current, choose];

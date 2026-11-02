@@ -2,10 +2,11 @@ import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useState } from 'react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Notification } from '../api/types.gen';
+import { PageHeader } from '../components/page-header';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -111,6 +112,87 @@ describe('NotificationBell', () => {
     );
     expect(
       await screen.findByRole('heading', { name: 'Their page' }),
+    ).toBeVisible();
+  });
+
+  // Licences is a top-level page: Back returns to where the bell was (#341).
+  it('opens a licence’s notice on Licences, with Back', async () => {
+    serveOneEntry({
+      type: 'licence.expiring',
+      title: 'NPN 80012345 expires soon',
+      resourceType: 'product_licence',
+      resourceId: 'licence-1',
+    });
+    server.use(
+      http.post(
+        '/api/v1/notifications/n-1/read',
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+        <Routes>
+          <Route path="/" element={<p>Where the bell was</p>} />
+          <Route
+            path="/licences"
+            element={<PageHeader crumbs={[]} title="Licences" />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Notifications, 1 unread' }),
+    );
+    await user.click(
+      await screen.findByRole('menuitem', { name: /NPN 80012345/ }),
+    );
+    await user.click(await screen.findByRole('button', { name: 'Back' }));
+
+    expect(await screen.findByText('Where the bell was')).toBeVisible();
+  });
+
+  // The notice names the list, not a row: it has no id (ADR-085).
+  it('opens a low stock notice on Reorder points, filtered to Low', async () => {
+    serveOneEntry({
+      type: 'stock.low',
+      title: '5 items fell below their reorder point',
+      body: 'CALM-90, CAP-38MM and 3 more. Order them from Reorder points.',
+      resourceType: 'reorder_points',
+      resourceId: null,
+    });
+    server.use(
+      http.post(
+        '/api/v1/notifications/n-1/read',
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+    function Address() {
+      const { pathname, search } = useLocation();
+      return <p>{`At ${pathname}${search}`}</p>;
+    }
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+        <Routes>
+          <Route path="/" element={null} />
+          <Route path="/inventory" element={<Address />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Notifications, 1 unread' }),
+    );
+    await user.click(
+      await screen.findByRole('menuitem', { name: /5 items fell below/ }),
+    );
+
+    expect(
+      await screen.findByText('At /inventory?tab=reorder-points&status=low'),
     ).toBeVisible();
   });
 

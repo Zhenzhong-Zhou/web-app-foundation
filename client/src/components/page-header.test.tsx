@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useLanguage } from '../i18n/use-language';
+import { OFFER_BACK } from '../lib/offer-back';
 import { useTabPrefix } from '../lib/tab-title';
 import { stubNames } from '../test/app-names';
 import { PageHeader } from './page-header';
@@ -220,6 +221,50 @@ describe('PageHeader', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Back' }));
 
       expect(screen.getByText('at /lots')).toBeInTheDocument();
+    });
+
+    /** Trace a lot, a top-level page, at the end of these entries. */
+    function renderTopLevelAt(
+      entries: (string | { pathname: string; state: unknown })[],
+    ) {
+      return render(
+        <MemoryRouter
+          initialEntries={entries}
+          initialIndex={entries.length - 1}
+        >
+          <Routes>
+            <Route
+              path="/lots"
+              element={<PageHeader crumbs={[]} title="Trace a lot" />}
+            />
+            <Route path="*" element={<Where />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+    }
+
+    /**
+     * Opened by a link inside the app that says so, as Inventory's Trace a
+     * lot: Back returns to where the person was (#341).
+     */
+    it('is offered on a top-level page a link opened with OFFER_BACK, and returns there', async () => {
+      renderTopLevelAt([
+        '/inventory',
+        { pathname: '/lots', state: OFFER_BACK },
+      ]);
+
+      await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+      expect(screen.getByText('at /inventory')).toBeInTheDocument();
+    });
+
+    // The menu, a new tab and a bookmark say nothing.
+    it('is not offered on a top-level page opened from the menu', () => {
+      renderTopLevelAt(['/inventory', '/lots']);
+
+      expect(
+        screen.queryByRole('button', { name: 'Back' }),
+      ).not.toBeInTheDocument();
     });
 
     // A top-level page is reached from the navigation.

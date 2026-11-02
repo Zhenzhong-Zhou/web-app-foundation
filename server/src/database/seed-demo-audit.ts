@@ -136,6 +136,10 @@ const OPENINGS: { table: string; type: string; action: AuditAction }[] = [
  * real person made. Creation only, not every step after it, and without
  * the values a route records, which the row no longer holds as they were
  * sent; the team's work (seed-demo-team-work.ts) is recorded in full.
+ *
+ * Only for a record with no History yet: the demo's own orders write
+ * theirs as they go (seed-demo-orders.ts, #222), and a "created" written
+ * now would read after their steps.
  */
 export async function recordOpeningHistory(
   db: Database,
@@ -147,11 +151,18 @@ export async function recordOpeningHistory(
   const union = sql.join(
     OPENINGS.map(
       (opening) => sql`
-        select id, ${opening.type}::text as type,
+        select made.id, ${opening.type}::text as type,
           ${opening.action}::text as action
-        from ${sql.identifier(opening.table)}
-        where organization_id = ${organizationId}::uuid
-          and created_at >= ${since}::timestamptz
+        from ${sql.identifier(opening.table)} made
+        where made.organization_id = ${organizationId}::uuid
+          and made.created_at >= ${since}::timestamptz
+          and not exists (
+            select 1 from audit_log a
+            where a.resource_type = ${opening.type}
+              and a.resource_id = made.id
+              and a.organization_id = ${organizationId}::uuid
+            limit 1
+          )
       `,
     ),
     sql` union all `,

@@ -16,6 +16,18 @@ erDiagram
     timestamptz created_at
     timestamptz updated_at
   }
+  reorder_points {
+    uuid id PK
+    uuid variant_id FK
+    text source
+    numeric(18,4) reorder_point
+    text rule
+    numeric(18,4) fixed_quantity
+    numeric(18,4) maximum_quantity
+    timestamptz low_notified_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
   stock_levels {
     uuid id PK
     uuid variant_id FK
@@ -69,6 +81,7 @@ erDiagram
     timestamptz updated_at
   }
   lots }o--|| product_variants : "variant_id"
+  reorder_points }o--|| product_variants : "variant_id"
   stock_levels }o--|| product_variants : "variant_id"
   stock_levels }o--|| locations : "location_id"
   stock_levels }o--o| lots : "lot_id"

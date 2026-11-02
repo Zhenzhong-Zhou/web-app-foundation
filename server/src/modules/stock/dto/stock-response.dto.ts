@@ -45,6 +45,9 @@ export class Movement {
   id!: string;
   /** Snapshotted at the time (ADR-023), not joined from the variant. */
   sku!: string;
+  /** From the catalogue, in the reader's language (ADR-056). */
+  productName!: string;
+  variantName!: string | null;
   quantity!: string;
   reason!: string;
   reasonDetail!: string | null;
@@ -52,6 +55,8 @@ export class Movement {
   fromLocationName!: string | null;
   toLocationName!: string | null;
   lotCode!: string | null;
+  /** Who, by name (ADR-063): Deleted User once anonymised (ADR-012). */
+  actorName!: string | null;
   /** Null when the actor was anonymised (ADR-012). */
   actorEmail!: string | null;
   createdAt!: Date;

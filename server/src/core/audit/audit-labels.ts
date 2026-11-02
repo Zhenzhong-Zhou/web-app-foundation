@@ -203,6 +203,12 @@ const RESOLVERS: Record<string, Resolver> = {
     return row?.name;
   },
 
+  // Keyed by its item, as its routes are, so a removed one keeps a name.
+  reorder_point: async (db, id) => {
+    const [row] = await db.select(productVariants, eq(productVariants.id, id));
+    return row?.sku;
+  },
+
   /*
    * Kinds named only as references inside a payload (ADR-076), never as
    * the record a row is about.

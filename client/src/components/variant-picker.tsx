@@ -1,4 +1,5 @@
 import { Autocomplete, TextField } from '@mui/material';
+import type { ReactNode } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { VariantOption } from '../api/types.gen';
@@ -42,6 +43,8 @@ export function VariantPicker({
   required = false,
   disabled = false,
   helperText,
+  error = false,
+  autoFocus = false,
 }: {
   id: string;
   label: string;
@@ -52,7 +55,12 @@ export function VariantPicker({
   onChange: (variantId: string) => void;
   required?: boolean;
   disabled?: boolean;
-  helperText?: string;
+  /** Said under it, and read with it (`aria-describedby`). */
+  helperText?: ReactNode;
+  /** A refusal of what was picked, said in `helperText` (WCAG 3.3.1). */
+  error?: boolean;
+  /** The dialog's first field, where typing starts once it opens (#313). */
+  autoFocus?: boolean;
 }) {
   const intl = useIntl();
   const selected = options.find((option) => option.id === value) ?? null;
@@ -89,6 +97,8 @@ export function VariantPicker({
           label={label}
           required={required}
           helperText={helperText}
+          error={error}
+          autoFocus={autoFocus}
         />
       )}
     />

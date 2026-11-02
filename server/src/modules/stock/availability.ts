@@ -1,7 +1,9 @@
 import { ConflictException } from '@nestjs/common';
 import { type SQL, sql } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import { t } from '../../i18n/translate';
+import { namesIn } from './item-name';
 import type { Tx } from './stock.service';
 
 /** One open sale line's hold on a product (ADR-045). */
@@ -147,15 +149,21 @@ export async function holdsFor(
  * only those with open demand: what the Inventory page's "Promised to
  * customers" table shows. That list grows with open orders, not with the
  * catalogue, where the full one was 5,000 rows at ADR-051's large scale.
+ * Each item named in the reader's language (ADR-056).
  */
 export async function availability(
   tx: Tx,
   organizationId: string,
+  locale: Locale,
   promisedOnly = false,
 ) {
   const listed = promisedOnly
     ? sql`h.variant_id is not null`
     : sql`(s.variant_id is not null or h.variant_id is not null)`;
+  const shown = namesIn(locale, organizationId, {
+    product: 'pr',
+    variant: 'pv',
+  });
 
   const rows = (
     await tx.execute(sql`
@@ -178,12 +186,16 @@ export async function availability(
       select
         pv.id as variant_id,
         pv.sku,
+        ${shown.productName} as product_name,
+        ${shown.variantName} as variant_name,
         pv.unit_of_measure,
         coalesce(s.quantity, 0)::numeric(18, 4)::text as on_hand,
         coalesce(h.held, 0)::numeric(18, 4)::text as held,
         (coalesce(s.quantity, 0) - coalesce(h.held, 0))::numeric(18, 4)::text as free,
         (coalesce(h.demand, 0) - coalesce(h.held, 0))::numeric(18, 4)::text as backordered
       from product_variants pv
+      join products pr
+        on pr.id = pv.product_id and pr.organization_id = ${organizationId}::uuid
       left join supply s on s.variant_id = pv.id
       left join holds h on h.variant_id = pv.id
       where pv.organization_id = ${organizationId}::uuid
@@ -193,6 +205,8 @@ export async function availability(
   ).rows as {
     variant_id: string;
     sku: string;
+    product_name: string;
+    variant_name: string | null;
     unit_of_measure: string;
     on_hand: string;
     held: string;
@@ -203,6 +217,8 @@ export async function availability(
   return rows.map((row) => ({
     variantId: row.variant_id,
     sku: row.sku,
+    productName: row.product_name,
+    variantName: row.variant_name,
     unitOfMeasure: row.unit_of_measure,
     onHand: row.on_hand,
     held: row.held,

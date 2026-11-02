@@ -125,7 +125,8 @@ where a step must act on it.
 - **The reviews, in two prompts** ([engineering.md, "How code is
   delivered"][delivered]):
   1. **The findings.** `/usability-walkthrough` as the persona the brief
-     names, for any change a person sees; `/simplify`; `/code-review`;
+     names from `personas.md`, added there first when it is new, for
+     any change a person sees; `/simplify`; `/code-review`;
      `/production-readiness` on the sections the change touches;
      `/doctor prompt-audit`, which needs Claude Code v2.1.283 or later
      and which Bob types in the session, since a session cannot run it:

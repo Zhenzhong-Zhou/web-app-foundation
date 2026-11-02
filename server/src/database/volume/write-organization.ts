@@ -3,6 +3,7 @@ import type { LoggerService } from '@nestjs/common';
 import type { Random } from './random';
 import { inWeek, type Volume, WEEKS } from './scale';
 import type { Services } from './services';
+import { writeReorderPoints } from './write-reorder-points';
 
 /** The handles perf and the plan check need, recorded in the manifest. */
 export interface Anchors {
@@ -178,6 +179,19 @@ export class OrganizationWriter {
         `${this.skippedSales} sales skipped for want of free stock`,
       );
     }
+
+    // At year end, from what is free then (ADR-085).
+    const made = new Set(this.recipes.map((recipe) => recipe.output.variantId));
+    const points = await writeReorderPoints(
+      this.services.reorderPoints,
+      this.items.map((item) => ({
+        variantId: item.variantId,
+        made: made.has(item.variantId),
+        free: free(item),
+      })),
+    );
+    this.calls += points;
+    this.logger.log(`Reorder points on ${points} items`);
 
     return {
       customerId: this.customers[0],

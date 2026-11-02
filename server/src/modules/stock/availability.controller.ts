@@ -2,6 +2,8 @@ import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { AcceptLanguage } from '../../i18n/accept-language.decorator';
+import { localeOf } from '../../i18n/translate';
 import { AvailabilityService } from './availability.service';
 import type { Availability, LineHold } from './dto/availability-response.dto';
 import { ListAvailabilityDto } from './dto/list-availability.dto';
@@ -16,8 +18,14 @@ export class AvailabilityController {
 
   @Get('stock/availability')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  list(@Query() query: ListAvailabilityDto): Promise<Availability[]> {
-    return this.availability.list(query.promised === 'true');
+  list(
+    @Query() query: ListAvailabilityDto,
+    @AcceptLanguage() acceptLanguage?: string,
+  ): Promise<Availability[]> {
+    return this.availability.list(
+      localeOf(acceptLanguage),
+      query.promised === 'true',
+    );
   }
 
   @Get('orders/:id/holds')

@@ -13,6 +13,7 @@ import type {
   PriceList,
   ProductionRun,
   RegistrationSetting,
+  ReorderPointRow,
   ReturnAuthorizationLine,
   ReturnAuthorizationSummary,
   RunDetail,
@@ -91,6 +92,18 @@ export type OrderStatus = OrderSummary['status'];
 
 /** Which side of a sale a list prices (ADR-049). */
 export type PriceListDirection = PriceList['direction'];
+
+/**
+ * Where an item stands against its reorder point (ADR-085): out at zero
+ * or less, low below the point, enough, or discontinued and never low.
+ */
+export type ReorderStatus = ReorderPointRow['status'];
+
+/** Whether a reorder point's item is bought or made (ADR-085). */
+export type ReorderSource = ReorderPointRow['source'];
+
+/** How much a reorder point suggests ordering (ADR-085). */
+export type ReorderRule = ReorderPointRow['rule'];
 
 export type ReturnAuthorizationStatus = ReturnAuthorizationSummary['status'];
 

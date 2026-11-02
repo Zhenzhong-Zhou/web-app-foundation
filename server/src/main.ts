@@ -11,6 +11,7 @@ import { OrganizationDeletionTimer } from './core/auth/organization-deletion.tim
 import { FilesPurgeTimer } from './core/files/files-purge.timer';
 import { InvitationsSweepTimer } from './core/invitations/invitations-sweep.timer';
 import { LicenceRemindersTimer } from './modules/product-licences/licence-reminders.timer';
+import { LowStockNoticesTimer } from './modules/stock/low-stock-notices.timer';
 import { MailBrand } from './shared/mail/mail-brand';
 
 async function bootstrap() {
@@ -42,6 +43,7 @@ async function bootstrap() {
   for (const timer of [
     FilesPurgeTimer,
     LicenceRemindersTimer,
+    LowStockNoticesTimer,
     OrganizationDeletionTimer,
     AccountDeletionTimer,
     InvitationsSweepTimer,

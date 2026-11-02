@@ -1,22 +1,31 @@
 import {
   Alert,
+  Box,
   Button,
   Chip,
   MenuItem,
   Paper,
   Skeleton,
   Stack,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useIntl } from 'react-intl';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import type { Availability, Location, StockRow } from '../api/types.gen';
@@ -39,17 +48,22 @@ import {
   nameAndCode,
   NO_VALUE,
 } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { useListSearch } from '../lib/use-list-search';
 import { useListSort } from '../lib/use-list-sort';
+import { useTab } from '../lib/use-tab';
 import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { MovementHistoryDialog } from './movement-history-dialog';
 import { ReceiveStockDialog } from './receive-stock-dialog';
+import { ReorderPointDialog } from './reorder-point-dialog';
+import { ReorderPointsTab } from './reorder-points-tab';
 import { StockActions } from './stock-actions';
 
 /** A page of the stock list (ADR-051). */
@@ -74,6 +88,55 @@ function leavesOf(locations: Location[]): Location[] {
   );
 }
 
+/** Inventory's two views (ADR-085): what is where, and what runs short. */
+const INVENTORY_TABS = ['stock', 'reorder-points'] as const;
+type InventoryTab = (typeof INVENTORY_TABS)[number];
+
+const TAB_LABEL = defineMessages<InventoryTab>({
+  stock: { id: 'inventory.tab.stock', defaultMessage: 'Stock' },
+  'reorder-points': {
+    id: 'inventory.tab.reorderPoints',
+    defaultMessage: 'Reorder points',
+  },
+});
+
+/**
+ * Inventory: Stock, and Reorder points beside it (ADR-085), the open one
+ * in the address as `?tab=` (useTab). Each tab draws the page's header
+ * with its own actions, then the tabs, then its list; only the open one
+ * is drawn, so the tabs name no panel.
+ */
+export function InventoryPage() {
+  const intl = useIntl();
+  const [tab, setTab] = useTab<InventoryTab>(INVENTORY_TABS);
+
+  const tabs = (
+    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Tabs
+        value={tab}
+        onChange={(_, next: InventoryTab) => setTab(next)}
+        aria-label={intl.formatMessage({
+          id: 'layout.nav.inventory',
+          defaultMessage: 'Inventory',
+        })}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+      >
+        {INVENTORY_TABS.map((id) => (
+          <Tab key={id} value={id} label={intl.formatMessage(TAB_LABEL[id])} />
+        ))}
+      </Tabs>
+    </Box>
+  );
+
+  return tab === 'stock' ? (
+    <StockTab tabs={tabs} />
+  ) : (
+    <ReorderPointsTab tabs={tabs} />
+  );
+}
+
 /**
  * One screen for receiving stock and seeing what is where.
  *
@@ -82,7 +145,7 @@ function leavesOf(locations: Location[]): Location[] {
  * and the movements ledger against each other, which is the only way to find
  * out whether the three actually fit together.
  */
-export function InventoryPage() {
+function StockTab({ tabs }: { tabs: ReactNode }) {
   const intl = useIntl();
   const can = useCan();
   // The organization's own days (ADR-060): what Expiring soon means here.
@@ -90,11 +153,11 @@ export function InventoryPage() {
 
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [locationId, setLocationId] = useState('');
-  // From the address too: the lookup's "Show all" opens it narrowed.
   const [params] = useSearchParams();
-  const [searchText, setSearchText] = useState(params.get('search') ?? '');
+  // In the address, as every list's (#301): the lookup's "Show all" narrows
+  // it while open, and Reorder points shares it, the same ?search=.
+  const { text: searchText, setText: setSearchText, search } = useListSearch();
   const { sort, toggle } = useListSort<'expiry'>();
-  const [search, setSearch] = useState((params.get('search') ?? '').trim());
   const [setupError, setSetupError] = useState<string | null>(null);
   const [receiving, setReceiving] = useState(false);
   const [moving, setMoving] = useState<{
@@ -117,6 +180,8 @@ export function InventoryPage() {
   /** Bumped by Refresh and by every dialog that moves stock. */
   const [changes, setChanges] = useState(0);
   const [editingLot, setEditingLot] = useState<StockRow | null>(null);
+  // The item's reorder point, from its row's menu (ADR-085).
+  const [reordering, setReordering] = useState<StockRow | null>(null);
 
   /**
    * Per product across available locations: what is held for confirmed sales,
@@ -128,12 +193,6 @@ export function InventoryPage() {
    * catalogue, 5,000 rows at ADR-051's large scale.
    */
   const [availability, setAvailability] = useState<Availability[] | null>(null);
-
-  // Applied a moment after typing stops, so each keystroke is not a request.
-  useEffect(() => {
-    const timer = setTimeout(() => setSearch(searchText.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [searchText]);
 
   /**
    * A page at a time since ADR-051: the whole list was 520 ms at the large
@@ -275,8 +334,14 @@ export function InventoryPage() {
                 .replace('/stock?', '/stock/export?')
                 .replace(/(^|[?&])limit=\d+&?/, '$1')}
             />
-            {/* A recall starts from a code off a label (ADR-044). */}
-            <Button variant="text" component={RouterLink} to="/lots">
+            {/* A recall starts from a code off a label (ADR-044). Back
+                returns here (#341). */}
+            <Button
+              variant="text"
+              component={RouterLink}
+              to="/lots"
+              state={OFFER_BACK}
+            >
               {intl.formatMessage({
                 id: 'inventory.trace.title',
                 defaultMessage: 'Trace a lot',
@@ -310,6 +375,8 @@ export function InventoryPage() {
           </>
         }
       />
+
+      {tabs}
 
       <ListError error={error} onRetry={failed ? reload : undefined} />
 
@@ -512,6 +579,8 @@ export function InventoryPage() {
                           }
                           onHistory={setViewing}
                           onEditLot={setEditingLot}
+                          canReorder={can('stock.reorder')}
+                          onReorder={setReordering}
                         />
                       </TableCell>
                     </TableRow>
@@ -588,6 +657,12 @@ export function InventoryPage() {
                         defaultMessage: 'SKU',
                       })}
                     </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.item',
+                        defaultMessage: 'Item',
+                      })}
+                    </TableCell>
                     <TableCell align="right">
                       {intl.formatMessage({
                         id: 'inventory.promised.onHand',
@@ -623,6 +698,11 @@ export function InventoryPage() {
                     .map((row) => (
                       <TableRow key={row.variantId}>
                         <TableCell>{row.sku}</TableCell>
+                        {/* In the reader's language, as Stock above names
+                          it (#296). */}
+                        <TableCell>
+                          {itemName(row.productName, row.variantName)}
+                        </TableCell>
                         <TableCell align="right">
                           {displayWithUnit(row.onHand, row.unitOfMeasure, intl)}
                         </TableCell>
@@ -680,6 +760,15 @@ export function InventoryPage() {
         onClose={() => setEditingLot(null)}
         onSaved={refresh}
       />
+
+      {/* A point moves no stock, so nothing here reads again after it. */}
+      {reordering && (
+        <ReorderPointDialog
+          opening={{ kind: 'find', item: reordering }}
+          onClose={() => setReordering(null)}
+          onSaved={() => setReordering(null)}
+        />
+      )}
     </Stack>
   );
 }

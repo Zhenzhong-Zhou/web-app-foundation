@@ -102,7 +102,7 @@ export const GUIDES = {
   inventory: {
     routes: ['/inventory'],
     label: NAV_LABELS.inventory,
-    sections: ['receive'],
+    sections: ['receive', 'reorder-points', 'position'],
   },
   movements: {
     routes: ['/movements'],

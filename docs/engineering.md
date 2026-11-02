@@ -163,14 +163,18 @@ steps; this section stays the rule.
   session (`gh issue list --json number,title,body`): of eight picked
   from one-line lists on 24 and 25 October, three stopped, needing a
   decision or more files. The prompt names the issue, the branch, the author Zhenzhong
-  Zhou with the session as committer (the commit then shows Verified), the
+  Zhou with the session as committer, the
   regression check's number when several run at once, and the files to
   leave alone; asks for `scripts/verify.sh --quick`, a pull request with
   "Closes #N" and a last line saying DONE or BLOCKED; and ends with the stop
   rule: change only what the issue names, and past about 20 minutes or
   more files than that, stop and report. A proof runs only the changed
   tests; a sweep, a load proof or anything needing the large seed stays on
-  the Mac. PRs merge one at a time, each when green; a branch behind
+  the Mac. A session signs with a key of its own, so under the
+  maintainer's vigilant mode its commits show Unverified: its pull
+  requests are squashed and merged, so each lands on `main` as one commit
+  GitHub signs (1 November 2026). PRs merge one at a time, each when
+  green; a branch behind
   `main` with no conflict merges as it is, and a conflict in
   `docs/manual-checks.md` is settled on GitHub with "Accept both changes",
   an empty line between Regressions entries, the dated list kept oldest
@@ -329,6 +333,15 @@ reports success.
 - An alert is named "code scanning alert 9" or "Dependabot alert 4",
   never "#9", in commits, PRs and comments (27 October 2026): GitHub
   links "#9" to issue or PR 9.
+- **Public text names no one** (30 October 2026): commit messages,
+  issues, comments and PR descriptions say "the maintainer", "a reviewer
+  who reads only Chinese" or "a first-time user", never a person's name
+  or a family relation, since the repository is public. The git identity
+  above is the one exception.
+- **Dates and times are Vancouver's** (30 October 2026), America/Vancouver
+  at UTC−7 all year since British Columbia's 2026 change, never in UTC: in
+  commits, issues, comments and PRs, and in what Claude reports in the
+  chat or in a summary.
 - To reorder unpushed commits: `git reset --soft <base>`, restage per commit,
   and `git commit -C <old-hash>` to reuse each message.
 - Before pushing, run what CI runs: `scripts/verify.sh` from the repo

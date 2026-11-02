@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { inArray } from 'drizzle-orm';
+import { Client } from 'pg';
 
 import {
   type Database,
@@ -15,6 +16,14 @@ import {
   createVariant,
   registerOrganization,
 } from './utils/fixtures';
+import {
+  item,
+  order,
+  partner,
+  point,
+  receive,
+  site,
+} from './utils/reorder-world';
 import { resetDatabase } from './utils/reset-db';
 
 interface HomeResponse {
@@ -34,7 +43,13 @@ interface HomeResponse {
       detail: string | null;
       due: string | null;
       late: boolean;
+      reorder: {
+        position: string;
+        reorderPoint: string;
+        drafted: boolean;
+      } | null;
     }[];
+    anyPoint: boolean | null;
   }[];
 }
 
@@ -85,6 +100,7 @@ describe('Home (e2e)', () => {
     expect(cards.map((entry) => entry.kind)).toEqual([
       'toShip',
       'toReceive',
+      'lowStock',
       'expiring',
       'costsWaiting',
       'invoicesToIssue',
@@ -335,6 +351,231 @@ describe('Home (e2e)', () => {
     });
   });
 
+  /**
+   * Low stock (ADR-085): the items below their reorder point, counted and
+   * read as the reorder points list on Low has them, the out among them
+   * late; each row with its figures, its name in the reader's language.
+   */
+  it('counts the items below their reorder point as the list on Low does, the out late', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const shelf = await site(alpha.agent, 'SHELF');
+    const supplier = await partner(alpha.agent, 'Nordic Supply');
+
+    // Six low, one of them out, and one with enough; each position is its
+    // stock on the shelf.
+    const ids = new Map<string, string>();
+    for (const [sku, onHand, reorderPoint] of [
+      ['A-OUT', '0', '10'],
+      ['B-TENTH', '10', '100'],
+      ['C-FIFTH', '20', '100'],
+      ['D-THIRD', '30', '90'],
+      ['E-HALF', '50', '100'],
+      ['F-NEAR', '95', '100'],
+      ['G-ENOUGH', '300', '100'],
+    ]) {
+      const id = await item(alpha.agent, sku);
+      if (onHand !== '0') await receive(alpha.agent, id, shelf, onHand);
+      await point(alpha.agent, id, reorderPoint);
+      ids.set(sku, id);
+    }
+    // A draft purchase for all E-HALF needs: drafted, still low.
+    await order(alpha.agent, 'purchase', supplier, ids.get('E-HALF')!, '50', {
+      draft: true,
+    });
+    // An item with its names in Chinese, for a reader in 中文.
+    const { product } = body<{
+      product: { id: string; variants: { id: string }[] };
+    }>(
+      await alpha.agent
+        .post('/v1/products')
+        .send({
+          type: 'good',
+          name: 'Focus',
+          variant: { sku: 'FOCUS-60CT', name: '60ct' },
+        })
+        .expect(201),
+    );
+    await alpha.agent
+      .put(`/v1/products/${product.id}/translations`)
+      .send({ translations: [{ locale: 'zh-Hans', name: '专注胶囊' }] })
+      .expect(204);
+    const focus = product.variants[0].id;
+    await alpha.agent
+      .put(`/v1/products/${product.id}/variants/${focus}/translations`)
+      .send({ translations: [{ locale: 'zh-Hans', name: '60粒' }] })
+      .expect(204);
+
+    const lowStock = card(await home(alpha), 'lowStock');
+
+    // The furthest below its point as a share of it first; five of six.
+    expect(lowStock).toMatchObject({ count: 6, late: 1 });
+    expect(
+      lowStock?.rows.map((row) => [row.title, row.detail, row.late]),
+    ).toEqual([
+      ['A-OUT', 'A-OUT', true],
+      ['B-TENTH', 'B-TENTH', false],
+      ['C-FIFTH', 'C-FIFTH', false],
+      ['D-THIRD', 'D-THIRD', false],
+      ['E-HALF', 'E-HALF', false],
+    ]);
+    expect(lowStock?.rows[0]).toMatchObject({
+      id: ids.get('A-OUT'),
+      due: null,
+      reorder: {
+        position: '0.0000',
+        reorderPoint: '10.0000',
+        drafted: false,
+      },
+    });
+    expect(lowStock?.rows[4].reorder).toEqual({
+      position: '50.0000',
+      reorderPoint: '100.0000',
+      drafted: true,
+    });
+    // Every other card's rows carry no figures: here Costs waiting's, the
+    // receipts above having no cost.
+    const anyOther = (await home(alpha)).flatMap((entry) =>
+      entry.kind === 'lowStock' ? [] : entry.rows,
+    );
+    expect(anyOther.length).toBeGreaterThan(0);
+    expect(anyOther.every((row) => row.reorder === null)).toBe(true);
+
+    // "See all 6" opens six: the list on Low, the same five first.
+    const list = body<{ entries: { variantId: string }[] }>(
+      await alpha.agent.get('/v1/stock/reorder-points?status=low').expect(200),
+    ).entries;
+    expect(list).toHaveLength(6);
+    expect(list.slice(0, 5).map((row) => row.variantId)).toEqual(
+      lowStock?.rows.map((row) => row.id),
+    );
+    expect(
+      body(
+        await alpha.agent.get('/v1/stock/reorder-points/counts').expect(200),
+      ),
+    ).toMatchObject({ low: 6, out: 1 });
+
+    // Named in the reader's language (ADR-056): FOCUS-60CT, given a point
+    // with nothing on hand, is out, second only to A-OUT by its SKU.
+    await point(alpha.agent, focus, '5');
+    const read = card(
+      body<HomeResponse>(
+        await alpha.agent
+          .get('/v1/home')
+          .set('Accept-Language', 'zh-Hans')
+          .expect(200),
+      ).cards,
+      'lowStock',
+    );
+    expect(read).toMatchObject({ count: 7, late: 2 });
+    expect(read?.rows[1]).toMatchObject({
+      title: 'FOCUS-60CT',
+      detail: '专注胶囊 (60粒)',
+      late: true,
+    });
+  });
+
+  // Every point's position is worked out once a Home request (ADR-085):
+  // the card's counts come with its rows, from one read of the list.
+  it('works out the positions once a request', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const shelf = await site(alpha.agent, 'SHELF');
+    await point(alpha.agent, await item(alpha.agent, 'A-OUT'), '10');
+    const half = await item(alpha.agent, 'B-HALF');
+    await receive(alpha.agent, half, shelf, '50');
+    await point(alpha.agent, half, '100');
+
+    // Every statement the app sends goes through pg's Client#query, as the
+    // plan check records them (perf/capture.ts); read before the spy is
+    // restored, which forgets them.
+    const sent = vi.spyOn(Client.prototype, 'query');
+    let cards: HomeResponse['cards'];
+    let texts: string[];
+    try {
+      cards = await home(alpha);
+      texts = sent.mock.calls.map(([config]) =>
+        typeof config === 'string'
+          ? config
+          : ((config as { text?: string } | null)?.text ?? ''),
+      );
+    } finally {
+      sent.mockRestore();
+    }
+
+    const lowStock = card(cards, 'lowStock');
+    expect(lowStock).toMatchObject({ count: 2, late: 1 });
+    expect(lowStock?.rows.map((row) => row.title)).toEqual(['A-OUT', 'B-HALF']);
+    expect(
+      texts.filter((text) => /from reorder_points rp\b/.test(text)),
+    ).toHaveLength(1);
+  });
+
+  // Nothing low is not nothing watched (ADR-085): Low stock says whether
+  // any item has a point; every other card, null.
+  it('says whether any item has a reorder point', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const before = await home(alpha);
+    expect(card(before, 'lowStock')).toMatchObject({
+      count: 0,
+      rows: [],
+      anyPoint: false,
+    });
+    expect(card(before, 'toShip')?.anyPoint).toBeNull();
+
+    const shelf = await site(alpha.agent, 'SHELF');
+    const plenty = await item(alpha.agent, 'PLENTY');
+    await receive(alpha.agent, plenty, shelf, '50');
+    await point(alpha.agent, plenty, '10');
+
+    expect(card(await home(alpha), 'lowStock')).toMatchObject({
+      count: 0,
+      rows: [],
+      anyPoint: true,
+    });
+  });
+
+  // To ship and To receive are counted from one read of the orders, by
+  // direction, each as its list filters it, the overdue late.
+  it('counts To ship and To receive from one read of the orders', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const goods = await item(alpha.agent, 'FOCUS-60');
+    const customer = await partner(alpha.agent, 'Customer');
+    const supplier = await partner(alpha.agent, 'Supplier');
+    for (const expectedAt of [day(-3), day(4)]) {
+      await order(alpha.agent, 'sale', customer, goods, '5', { expectedAt });
+    }
+    await order(alpha.agent, 'purchase', supplier, goods, '5', {
+      expectedAt: day(4),
+    });
+    // A draft has nothing to ship yet, overdue or not.
+    await order(alpha.agent, 'sale', customer, goods, '5', {
+      draft: true,
+      expectedAt: day(-3),
+    });
+
+    const sent = vi.spyOn(Client.prototype, 'query');
+    let cards: HomeResponse['cards'];
+    let texts: string[];
+    try {
+      cards = await home(alpha);
+      texts = sent.mock.calls.map(([config]) =>
+        typeof config === 'string'
+          ? config
+          : ((config as { text?: string } | null)?.text ?? ''),
+      );
+    } finally {
+      sent.mockRestore();
+    }
+
+    expect(card(cards, 'toShip')).toMatchObject({ count: 2, late: 1 });
+    expect(card(cards, 'toReceive')).toMatchObject({ count: 1, late: 0 });
+    // The statement of counts reads the orders once, not once a card.
+    const counts = texts.filter((text) =>
+      /as kind,\s*count\(\*\)::int as count/.test(text),
+    );
+    expect(counts).toHaveLength(1);
+    expect(counts[0].match(/from "orders"/g)).toHaveLength(1);
+  });
+
   it('shows only the cards the member may view', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const [role] = await db
@@ -360,7 +601,7 @@ describe('Home (e2e)', () => {
     );
 
     const kinds = (await home({ agent: member })).map((entry) => entry.kind);
-    expect(kinds).toEqual(['toShip', 'toReceive', 'expiring']);
+    expect(kinds).toEqual(['toShip', 'toReceive', 'lowStock', 'expiring']);
   });
 
   describe('Getting started', () => {

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import { orderLines } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { loadOrder } from '../orders/load-order';
@@ -12,9 +13,9 @@ export class AvailabilityService {
   constructor(private readonly tenantDb: TenantDb) {}
 
   /** Per product: on hand where promisable, held, free, backordered. */
-  async list(promisedOnly = false) {
+  async list(locale: Locale, promisedOnly = false) {
     return this.tenantDb.transaction((tx, organizationId) =>
-      availability(tx, organizationId, promisedOnly),
+      availability(tx, organizationId, locale, promisedOnly),
     );
   }
 

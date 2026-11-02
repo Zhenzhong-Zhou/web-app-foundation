@@ -41,6 +41,7 @@ import {
   addMember,
   body,
   createE2eApp,
+  createVariant,
   customRole,
   insertMember,
   longDay,
@@ -126,6 +127,16 @@ describe('Organization deletion (e2e)', () => {
     const org = await registerOrganization(app, slug);
     const { shipmentId } = await shippedSale(org.agent);
     await org.agent.post('/v1/invoices').send({ shipmentId }).expect(201);
+    // A reorder point, in stock's own table (ADR-085).
+    const vitamin = await createVariant(org.agent, {
+      type: 'good',
+      name: 'Vitamin D3',
+      variant: { sku: 'D3-1000' },
+    });
+    await org.agent
+      .post(`/v1/stock/reorder-points/${vitamin}`)
+      .send({ source: 'bought', reorderPoint: '2000', rule: 'just_enough' })
+      .expect(204);
     await org.agent
       .post('/v1/files/logo')
       .attach('file', SVG, 'logo.svg')
@@ -182,6 +193,12 @@ describe('Organization deletion (e2e)', () => {
       }
       expect(readCsv(zip.get('invoices.csv')!)).toHaveLength(1);
       expect(readCsv(zip.get('invoice_lines.csv')!)).toHaveLength(2);
+      expect(readCsv(zip.get('reorder_points.csv')!)).toEqual([
+        expect.objectContaining({
+          reorder_point: '2000.0000',
+          rule: 'just_enough',
+        }),
+      ]);
 
       const [member] = readCsv(zip.get('members.csv')!);
       expect(member).toMatchObject({
@@ -780,6 +797,9 @@ describe('Organization deletion (e2e)', () => {
         'full',
       );
       await access(stored);
+      expect((await rowsOf(alpha.organizationId)).get('reorder_points')).toBe(
+        1,
+      );
 
       await setDay(alpha.organizationId, LONG_AGO);
       expect(await service().completeDue()).toEqual({

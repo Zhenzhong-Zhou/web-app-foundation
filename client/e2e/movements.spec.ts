@@ -244,7 +244,10 @@ test('narrows the ledger by reason', async ({ page, freshOrg }) => {
    * is the only movement with both, and the arrow is how the page says so.
    */
   await expect(rows.nth(1)).toContainText('E2E Dock → E2E Shelf');
-  await expect(rows.nth(1)).toContainText('15.0000');
+  // Read without padding zeros (displayQuantity, #256), as its whole cell.
+  await expect(
+    rows.nth(1).getByRole('cell', { name: '15', exact: true }),
+  ).toBeVisible();
 });
 
 test('finds a transfer from either end', async ({ page, freshOrg }) => {

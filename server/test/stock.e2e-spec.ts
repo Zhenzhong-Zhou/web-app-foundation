@@ -12,6 +12,7 @@ import {
   roles,
   stockLevels,
   stockMovements,
+  users,
 } from '../src/database/schema';
 import {
   addMember,
@@ -503,16 +504,46 @@ describe('Stock (e2e)', () => {
       expect(rows).toHaveLength(0);
     });
 
-    it('refuses a variant from another organization', async () => {
+    it('refuses a variant or a location from another organization, saying to choose one from the list, and moves nothing', async () => {
       const alpha = await setup('alpha');
       const beta = await setup('beta');
 
-      // Scoped, so beta's variant is simply not found rather than forbidden —
-      // a 403 would confirm the id exists somewhere.
       await alpha.agent
         .post('/v1/stock/movements')
-        .send(receipt(beta.variant.id, alpha.locationId, '40'))
-        .expect(404);
+        .send(receipt(alpha.variant.id, alpha.locationId, '40'))
+        .expect(201);
+
+      const item =
+        'That item is not in this organization. Choose one from the list.';
+      const location =
+        'That location is not in this organization. Choose one from the list.';
+
+      // Ids from a body, so unknown, a 400, as one that does not exist is:
+      // neither a 403 nor a 404 says beta's exists (engineering.md, Server).
+      for (const [movement, message] of [
+        [receipt(beta.variant.id, alpha.locationId, '40'), item],
+        [receipt(alpha.variant.id, beta.locationId, '40'), location],
+        [
+          {
+            variantId: alpha.variant.id,
+            fromLocationId: alpha.locationId,
+            toLocationId: beta.locationId,
+            quantity: '10',
+            reason: 'transfer',
+          },
+          location,
+        ],
+      ] as const) {
+        const refused = await alpha.agent
+          .post('/v1/stock/movements')
+          .send(movement)
+          .expect(400);
+        expect(body<{ message: string }>(refused).message).toBe(message);
+      }
+
+      const levels = await db.select().from(stockLevels);
+      expect(levels.map((level) => level.quantity)).toEqual(['40.0000']);
+      expect(await db.select().from(stockMovements)).toHaveLength(1);
     });
 
     it('is readable by a Viewer, which holds stock.view', async () => {
@@ -782,6 +813,64 @@ describe('Stock (e2e)', () => {
     });
 
     /**
+     * A lot's stock waits on that lot's cost alone: costing one lot leaves
+     * its row, and the other lot of the same item stays, as does stock with
+     * no lot (#276 matches the pool by its lot, or the nil uuid for none).
+     */
+    it('narrows by the lot whose cost is waiting, not the item', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      // A cost is set in the base currency, which a new organization lacks.
+      await org.agent
+        .patch('/v1/organization')
+        .send({ baseCurrency: 'CAD' })
+        .expect(204);
+      const shelf = await createLocation(org.agent);
+      const scoop = await createVariant(org.agent, { sku: 'SCOOP' });
+      const calm = await createVariant(org.agent, {
+        sku: 'CALM-30',
+        tracksLots: true,
+      });
+
+      await org.agent
+        .post('/v1/stock/movements')
+        .send(receipt(scoop.id, shelf, '10'))
+        .expect(201);
+      for (const code of ['C-1', 'C-2']) {
+        await org.agent
+          .post('/v1/stock/movements')
+          .send({ ...receipt(calm.id, shelf, '10'), lot: { code } })
+          .expect(201);
+      }
+
+      const waiting = async () =>
+        (await stockRows(org.agent, '?needsCost=true'))
+          .map((row) => `${row.sku} ${row.lotCode ?? '-'}`)
+          .sort();
+      expect(await waiting()).toEqual([
+        'CALM-30 C-1',
+        'CALM-30 C-2',
+        'SCOOP -',
+      ]);
+
+      const toCost = body<{
+        entries: { id: string; lotCode: string | null }[];
+      }>(await org.agent.get('/v1/costs/needs-cost').expect(200)).entries.find(
+        (entry) => entry.lotCode === 'C-1',
+      );
+      await org.agent
+        .put(`/v1/costs/valuations/${toCost!.id}`)
+        .send({ unitPrice: '2', currency: 'CAD' })
+        .expect(200);
+
+      expect(await waiting()).toEqual(['CALM-30 C-2', 'SCOOP -']);
+      expect(
+        body<{ needsCost: number }>(
+          await org.agent.get('/v1/stock/counts').expect(200),
+        ),
+      ).toMatchObject({ needsCost: 2 });
+    });
+
+    /**
      * The search matches as every search does (ADR-056): a name without its
      * accents, a Chinese name by its pinyin and initials, by characters, and
      * % as itself, not a wildcard.
@@ -888,6 +977,97 @@ describe('Stock (e2e)', () => {
 
       const res = await alpha.agent.get('/v1/stock/movements').expect(200);
       expect(body<{ entries: unknown[] }>(res).entries).toHaveLength(0);
+    });
+
+    it('names the item beside its SKU and who by name, with no address once their account is anonymised, and so does its CSV', async () => {
+      const ctx = await setup('alpha');
+      const member = await addMember(
+        app,
+        ctx,
+        'admin@alpha.example.com',
+        'Admin',
+      );
+
+      await ctx.agent
+        .post('/v1/stock/movements')
+        .send(receipt(ctx.variant.id, ctx.locationId, '5'))
+        .expect(201);
+      await member
+        .post('/v1/stock/movements')
+        .send(receipt(ctx.variant.id, ctx.locationId, '3'))
+        .expect(201);
+
+      // As account deletion leaves the row (ADR-012): a tombstone, its name
+      // Deleted User and its address a placeholder.
+      const [admin] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, 'admin@alpha.example.com'));
+      await db
+        .update(users)
+        .set({
+          name: 'Deleted User',
+          email: `deleted-${admin.id}@invalid`,
+          deletedAt: new Date(),
+        })
+        .where(eq(users.id, admin.id));
+
+      const page = body<{
+        entries: {
+          sku: string;
+          productName: string;
+          variantName: string | null;
+          actorName: string | null;
+          actorEmail: string | null;
+        }[];
+      }>(await ctx.agent.get('/v1/stock/movements').expect(200));
+
+      // Newest first: the member's, then the Owner's.
+      expect(page.entries).toEqual([
+        expect.objectContaining({
+          sku: 'WIDGET-1',
+          productName: 'Product WIDGET',
+          variantName: null,
+          actorName: 'Deleted User',
+          actorEmail: null,
+        }),
+        expect.objectContaining({
+          sku: 'WIDGET-1',
+          productName: 'Product WIDGET',
+          variantName: null,
+          actorName: 'Owner',
+          actorEmail: 'owner@alpha.example.com',
+        }),
+      ]);
+
+      const csv = (
+        await ctx.agent.get('/v1/stock/movements/export').expect(200)
+      ).text;
+      const [header, ...rows] = csv
+        .replace(/^\uFEFF/, '')
+        .trimEnd()
+        .split('\r\n')
+        .map((line) => line.split(','));
+      const column = (name: string) =>
+        rows.map((row) => row[header.indexOf(name)]);
+
+      expect(header).toEqual([
+        'When',
+        'Reason',
+        'SKU',
+        'Item',
+        'Variant',
+        'Lot',
+        'Quantity',
+        'From',
+        'To',
+        'By',
+        'Email',
+        'Note',
+      ]);
+      expect(column('Item')).toEqual(['Product WIDGET', 'Product WIDGET']);
+      expect(column('By')).toEqual(['Deleted User', 'Owner']);
+      expect(column('Email')).toEqual(['', 'owner@alpha.example.com']);
     });
   });
 

@@ -7,6 +7,7 @@ import type {
   LicenceStatusAtRelease,
 } from '../lib/api-names';
 import { nameAndCode, NO_VALUE } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 
 /**
  * What a batch was made under, as the run page and the lot trace both say
@@ -46,7 +47,7 @@ export function LicenceAtRelease({
   // Data, the same in every language: "80012345 (Health Canada)".
   const name = nameAndCode(run.licenceNumber, run.licenceAuthority ?? '');
   const licence = linkToLicences ? (
-    <Link component={RouterLink} to="/licences">
+    <Link component={RouterLink} to="/licences" state={OFFER_BACK}>
       {name}
     </Link>
   ) : (

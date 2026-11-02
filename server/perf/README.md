@@ -71,6 +71,9 @@ Each organization also gets a team (ADR-081): 15 members at small and 150
 at large, the Owner and the newcomer among them, holding one to three roles
 of the 4 or 12 its Owner made, and a few invitations pending. The manifest
 names one member holding three made roles, for the access query's plan.
+At the year's end, a fifth of each organization's items get a reorder
+point, about a third of them set above what is free, so low unless enough
+is on its way (ADR-085).
 
 For large, give it a database of its own and skip the commit flush while
 seeding. It is safe for a throwaway database and several times faster, but
@@ -155,16 +158,16 @@ UTC, the same day in Vancouver. The summary lists each known miss under the
 budgets, with its issue, its date and its ceiling, whether this run met it
 or not.
 
-Three today, each until 30 November 2026 with a ceiling of 400 ms:
+Two today, each until 30 November 2026 with a ceiling of 400 ms:
 
 - **The typo lookup's, #225.** It went once weekly run 114 measured 207
   ms on 26 October 2026, too soon: on 29 October, on runners about 1.45×
   slower than the day before, `main` measured 340 ms and #260's branch
   333, 358 and 363.
-- **Home's, #276.** Its watch fired the same day: `main` measured 301 ms
-  and #260's branch 325.
-- **A newcomer's Home, #276 too.** It measured 288 ms the same day, 12 ms
-  under its budget, on the page that missed.
+- **Home's, #276.** Back over its budget on 1 November 2026: 249 ms the
+  night before, then 329, 321 and 308 in three runs on ADR-085's
+  branch, on runners about 1.35× slower on every other budget too, with
+  the same plans.
 
 To add one, give the scenario in `perf/scenarios.ts` a `knownMiss`:
 

@@ -158,8 +158,10 @@ export function ReceiveStockDialog({
               </Alert>
             )}
 
+            {/* Where typing starts, not the dialog itself (#313). */}
             <VariantPicker
               id="receive-variant"
+              autoFocus
               label={intl.formatMessage({
                 id: 'inventory.item',
                 defaultMessage: 'Item',

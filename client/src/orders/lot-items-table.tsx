@@ -13,6 +13,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import type { Shipment } from '../api/types.gen';
 import { ExpiryChip } from '../components/expiry-chip';
 import { NO_VALUE } from '../lib/format';
+import { OFFER_BACK } from '../lib/offer-back';
 import { displayWithUnit } from '../products/units';
 
 /**
@@ -73,6 +74,7 @@ export function LotItemsTable({ items }: { items: Shipment['items'] }) {
                   <Link
                     component={RouterLink}
                     to={`/lots?${new URLSearchParams({ code: item.lotCode }).toString()}`}
+                    state={OFFER_BACK}
                   >
                     {item.lotCode}
                   </Link>

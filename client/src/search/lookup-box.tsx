@@ -21,6 +21,7 @@ import { ProductCover } from '../components/product-cover';
 import { OPEN_LOOKUP } from '../errors/open-lookup';
 import { api } from '../lib/api';
 import type { LookupKind } from '../lib/api-names';
+import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { RECENT_PATHS, type RecentEntry } from '../lib/recent';
 import { RECENT_KIND_LABELS, recentTitle } from '../lib/recent-labels';
@@ -193,6 +194,8 @@ function LookupField({
         : option.type === 'all'
           ? option.to
           : pathOf(option.kind, option.result),
+      // Back returns to where the search was typed (#341).
+      { state: OFFER_BACK },
     );
     latest.current += 1;
     setText('');

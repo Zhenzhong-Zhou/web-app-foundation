@@ -19,6 +19,8 @@ import { InvoicesService } from '../invoices/invoices.service';
 import { OrdersService, outstandingOrder } from '../orders/orders.service';
 import { ProductionOrdersService } from '../production-orders/production-orders.service';
 import { ReturnAuthorizationsService } from '../return-authorizations/return-authorizations.service';
+import { itemName } from '../stock/item-name';
+import { ReorderPointsReadsService } from '../stock/reorder-points-reads.service';
 import { StockReadsService, stockRowsOf } from '../stock/stock-reads.service';
 import { WelcomeService } from './welcome.service';
 
@@ -30,12 +32,24 @@ export const LICENCE_WARNING_DAYS = 60;
 export type HomeKind =
   | 'toShip'
   | 'toReceive'
+  | 'lowStock'
   | 'expiring'
   | 'costsWaiting'
   | 'invoicesToIssue'
   | 'returnsOpen'
   | 'production'
   | 'licences';
+
+/**
+ * A low item's figures, "800 of 2,000" (ADR-085): quantities as the list
+ * gives them, in the item's unit, for the screen to format.
+ */
+export interface HomeRowReorder {
+  position: string;
+  reorderPoint: string;
+  /** Its drafts leave nothing to suggest, so nobody orders it twice. */
+  drafted: boolean;
+}
 
 /** One row: what to open, its name, a second line, and why it is here. */
 export interface HomeRow {
@@ -45,6 +59,8 @@ export interface HomeRow {
   /** The day it is due or expires, for its chip. */
   due: string | null;
   late: boolean;
+  /** Low stock's figures; null on every other card. */
+  reorder: HomeRowReorder | null;
 }
 
 export interface HomeCard {
@@ -54,6 +70,8 @@ export interface HomeCard {
   /** How many of them are overdue or expired. */
   late: number;
   rows: HomeRow[];
+  /** Low stock's: whether any item has a reorder point; else null. */
+  anyPoint: boolean | null;
 }
 
 /** Getting started's steps, in the order they depend on each other. */
@@ -76,10 +94,18 @@ export interface GettingStarted {
   complete: boolean;
 }
 
+/**
+ * The cards counted in totals()' one statement: all but Low stock, whose
+ * counts come with its rows from one read of its list (lowStock()), so a
+ * Home request works each point's position out once (ADR-085).
+ */
+type TotalledKind = Exclude<HomeKind, 'lowStock'>;
+
 /** The cards in the order of a working day, and who may see each. */
 const CARDS: { kind: HomeKind; permission: Permission }[] = [
   { kind: 'toShip', permission: 'orders.view' },
   { kind: 'toReceive', permission: 'orders.view' },
+  { kind: 'lowStock', permission: 'stock.view' },
   { kind: 'expiring', permission: 'stock.view' },
   { kind: 'costsWaiting', permission: 'costs.view' },
   { kind: 'invoicesToIssue', permission: 'invoices.view' },
@@ -97,8 +123,15 @@ function addDays(day: string, days: number): string {
 /** A card's count, and how many of those are overdue or expired. */
 type Totals = Pick<HomeCard, 'count' | 'late'>;
 
+/** The two cards of outstanding orders, a direction each. */
+type OrderKind = 'toShip' | 'toReceive';
+
+function isOrderKind(kind: TotalledKind): kind is OrderKind {
+  return kind === 'toShip' || kind === 'toReceive';
+}
+
 /** To ship is the sales, to receive the purchases. */
-function directionOf(kind: 'toShip' | 'toReceive') {
+function directionOf(kind: OrderKind) {
   return kind === 'toShip' ? 'sale' : 'purchase';
 }
 
@@ -118,8 +151,9 @@ function licencesDue(organizationId: string, today: string) {
  * the card's "See all" link sets, so the five shown are that list's first
  * five; each count uses the same conditions, so "See all 12" opens twelve.
  * The counts are one statement for every card (totals()), the rows a read
- * per card. A card the member may not view is never queried. The
- * member's own welcome comes with them (ADR-079).
+ * per card; Low stock's counts come with its rows instead. A card the
+ * member may not view is never queried. The member's own welcome comes
+ * with them (ADR-079).
  */
 @Injectable()
 export class HomeService {
@@ -127,6 +161,7 @@ export class HomeService {
     private readonly tenantDb: TenantDb,
     private readonly orders: OrdersService,
     private readonly stock: StockReadsService,
+    private readonly reorder: ReorderPointsReadsService,
     private readonly invoices: InvoicesService,
     private readonly returns: ReturnAuthorizationsService,
     private readonly runs: ProductionOrdersService,
@@ -152,15 +187,24 @@ export class HomeService {
     // and its today.
     const { days: expiringWithin, timeZone } = await this.organization();
     const today = todayIn(timeZone);
-    const totals = await this.totals(kinds, today, expiringWithin);
+    const totals = await this.totals(
+      kinds.filter((kind): kind is TotalledKind => kind !== 'lowStock'),
+      today,
+      expiringWithin,
+    );
 
     const cards: HomeCard[] = [];
     for (const kind of kinds) {
-      cards.push({
-        kind,
-        ...totals.get(kind)!,
-        rows: await this.rows(kind, today, expiringWithin),
-      });
+      cards.push(
+        kind === 'lowStock'
+          ? { kind, ...(await this.lowStock(locale)) }
+          : {
+              kind,
+              ...totals.get(kind)!,
+              rows: await this.rows(kind, today, expiringWithin),
+              anyPoint: null,
+            },
+      );
     }
     const gettingStarted = await this.gettingStarted();
     const welcome = await this.welcome.of(context, held, {
@@ -267,27 +311,41 @@ export class HomeService {
    * stock cards between them read the organization's stock seven times.
    * Now a `union all` with a branch per card the member may see: Postgres
    * plans each branch on its own, as it planned each query before, and the
-   * page pays for one round trip instead of eight.
+   * page pays for one round trip instead of eight. To ship and To receive
+   * share one branch, outstandingTotals(), which reads the orders once for
+   * both.
    */
   private totals(
-    kinds: HomeKind[],
+    kinds: TotalledKind[],
     today: string,
     expiringWithin: number,
-  ): Promise<Map<HomeKind, Totals>> {
+  ): Promise<Map<TotalledKind, Totals>> {
     if (kinds.length === 0) {
-      return Promise.resolve(new Map<HomeKind, Totals>());
+      return Promise.resolve(new Map<TotalledKind, Totals>());
     }
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const branches = kinds.map(
-        (kind) =>
-          sql`(${totalOf(kind, organizationId, today, expiringWithin)})`,
-      );
+      const ordered = kinds.filter(isOrderKind);
+      const branches = [
+        ...(ordered.length > 0
+          ? [outstandingTotals(organizationId, today)]
+          : []),
+        ...kinds.flatMap((kind) =>
+          isOrderKind(kind)
+            ? []
+            : [totalOf(kind, organizationId, today, expiringWithin)],
+        ),
+      ].map((branch) => sql`(${branch})`);
       const result = await tx.execute(sql.join(branches, sql` union all `));
-      const rows = result.rows as ({ kind: HomeKind } & Totals)[];
-      return new Map<HomeKind, Totals>(
+      const rows = result.rows as ({ kind: TotalledKind } & Totals)[];
+      const totals = new Map<TotalledKind, Totals>(
         rows.map(({ kind, count, late }) => [kind, { count, late }]),
       );
+      // A direction with nothing outstanding has no group, so no row.
+      for (const kind of ordered) {
+        if (!totals.has(kind)) totals.set(kind, { count: 0, late: 0 });
+      }
+      return totals;
     });
   }
 
@@ -308,9 +366,42 @@ export class HomeService {
     });
   }
 
+  /**
+   * Low stock (ADR-085): the reorder points list's first five on Low, and
+   * beside them the rows Low shows and the out among them, late, from one
+   * read of the list, so See all opens what the card counted. Each item
+   * named in the reader's language (ADR-056). With nothing low, whether
+   * any point is set, asked then alone: something low has one.
+   */
+  private async lowStock(locale: Locale): Promise<Omit<HomeCard, 'kind'>> {
+    const { entries, low, out } = await this.reorder.firstLow(
+      HOME_ROWS,
+      locale,
+    );
+    return {
+      count: low,
+      late: out,
+      anyPoint: low > 0 || (await this.reorder.anySet()),
+      rows: entries.map((row) => ({
+        // The item, which Reorder points and Stock both open by its id.
+        id: row.variantId,
+        title: row.sku,
+        detail: itemName(row.productName, row.variantName),
+        due: null,
+        // Out, nothing usable and nothing coming: red, as overdue is.
+        late: row.status === 'out',
+        reorder: {
+          position: row.position,
+          reorderPoint: row.reorderPoint,
+          drafted: row.drafted,
+        },
+      })),
+    };
+  }
+
   /** A card's five most urgent rows, from its list's own read. */
   private async rows(
-    kind: HomeKind,
+    kind: TotalledKind,
     today: string,
     expiringWithin: number,
   ): Promise<HomeRow[]> {
@@ -332,6 +423,7 @@ export class HomeService {
           detail: [row.partnerName, row.reference].filter(Boolean).join(' · '),
           due: row.expectedAt,
           late: row.expectedAt !== null && row.expectedAt < today,
+          reorder: null,
         }));
       }
 
@@ -353,6 +445,7 @@ export class HomeService {
           detail: `${row.sku} · ${row.locationName}`,
           due: row.lotExpiresAt,
           late: row.lotExpiresAt !== null && row.lotExpiresAt < today,
+          reorder: null,
         }));
       }
 
@@ -367,6 +460,7 @@ export class HomeService {
           detail: row.lotCode ?? row.locationName,
           due: null,
           late: false,
+          reorder: null,
         }));
       }
 
@@ -381,6 +475,7 @@ export class HomeService {
           detail: row.orderNumber,
           due: null,
           late: false,
+          reorder: null,
         }));
       }
 
@@ -395,6 +490,7 @@ export class HomeService {
           detail: row.partnerName,
           due: null,
           late: false,
+          reorder: null,
         }));
       }
 
@@ -409,6 +505,7 @@ export class HomeService {
           detail: null,
           due: null,
           late: false,
+          reorder: null,
         }));
       }
 
@@ -431,6 +528,7 @@ export class HomeService {
             detail: row.authority,
             due: row.expiresAt,
             late: row.expiresAt !== null && row.expiresAt < today,
+            reorder: null,
           }));
         });
     }
@@ -438,11 +536,40 @@ export class HomeService {
 }
 
 /**
+ * To ship's and To receive's branch of totals(): the outstanding orders,
+ * as their list filters them (outstandingOrder()), counted by direction,
+ * the overdue among them late. A direction with none has no row.
+ *
+ * One read for both cards. As a branch each, they read the organization's
+ * orders and open lines twice, and the planner, pricing the two, ran the
+ * whole statement on parallel workers, which took longer to start than
+ * the counts took to read.
+ */
+function outstandingTotals(organizationId: string, today: string): SQL {
+  const where = and(
+    eq(orders.organizationId, organizationId),
+    outstandingOrder(),
+  );
+  return sql`
+    select
+      case ${orders.direction}
+        when ${directionOf('toShip')} then 'toShip'
+        when ${directionOf('toReceive')} then 'toReceive'
+      end as kind,
+      count(*)::int as count,
+      count(*) filter (where ${lt(orders.expectedAt, today)})::int as late
+    from ${orders}
+    where ${where}
+    group by ${orders.direction}
+  `;
+}
+
+/**
  * One card's branch of totals(): its count, and its late count where
  * lateness applies, under the same conditions as its list's filter.
  */
 function totalOf(
-  kind: HomeKind,
+  kind: Exclude<TotalledKind, OrderKind>,
   organizationId: string,
   today: string,
   expiringWithin: number,
@@ -456,19 +583,6 @@ function totalOf(
   };
 
   switch (kind) {
-    case 'toShip':
-    case 'toReceive': {
-      const where = and(
-        eq(orders.organizationId, organizationId),
-        eq(orders.direction, directionOf(kind)),
-        outstandingOrder(),
-      );
-      return counted(
-        sql`${orders} where ${where}`,
-        lt(orders.expectedAt, today),
-      );
-    }
-
     // The stock list's own rows (stockRowsOf), so the counts are the
     // list's. The expired are counted among the expiring.
     case 'expiring':

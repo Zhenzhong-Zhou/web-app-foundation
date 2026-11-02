@@ -95,7 +95,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-055] | The look: tokens, a side rail, tabs and a summary beside the work | accepted | 2026-10-07 | [ADR-021] | [ADR-071], [ADR-075], [ADR-081], [ADR-082] |
 | [ADR-056] | Search: one lookup in the top bar, and a search on every list | accepted | 2026-10-07 | | [ADR-073] |
 | [ADR-057] | Lists by date range, sorted where it helps, exported as CSV | accepted | 2026-10-08 | | [ADR-072], [ADR-076] |
-| [ADR-058] | Home: what needs attention, first | accepted | 2026-10-08 | | [ADR-072], [ADR-079] |
+| [ADR-058] | Home: what needs attention, first | accepted | 2026-10-08 | | [ADR-072], [ADR-079], [ADR-085] |
 | [ADR-059] | Files: one store for every file, on R2, served through the app | accepted | 2026-10-08 | | [ADR-070] |
 | [ADR-060] | Branding: each organization's logo, colour and expiry days | accepted | 2026-10-09 | | [ADR-082] |
 | [ADR-061] | The Organization page in tabs, and a name that can change | accepted | 2026-10-09 | | |
@@ -122,6 +122,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-082] | The product's brand: Panivo before sign-in, the organization's after | accepted | 2026-10-24 | [ADR-019], [ADR-051], [ADR-055], [ADR-060], [ADR-067], [ADR-081] | [ADR-083] |
 | [ADR-083] | The emails: one layout for every email | accepted | 2026-10-26 | [ADR-077], [ADR-082] | |
 | [ADR-084] | An error tracker: real faults reported, through the app's own API, scrubbed of personal details | accepted | 2026-10-30 | [ADR-081], [ADR-088] | |
+| [ADR-085] | Low stock: a reorder point per item, against usable stock and what is on its way | accepted | 2026-10-30 | [ADR-058] | |
 | [ADR-086] | Docs as code: one file per decision, and links that are checked | accepted | 2026-10-27 | | |
 | [ADR-087] | The rules written down: `docs/rules/` for people, `.claude/rules/` for Claude | accepted | 2026-10-27 | | |
 | [ADR-088] | Planning in the chat, as a skill: kept here, compared with main, tested by prompts | accepted | 2026-10-29 | | [ADR-084] |
@@ -210,6 +211,7 @@ decided is in [Open decisions](open-decisions.md).
 [ADR-082]: 0082-the-products-brand.md
 [ADR-083]: 0083-the-emails.md
 [ADR-084]: 0084-an-error-tracker.md
+[ADR-085]: 0085-low-stock.md
 [ADR-086]: 0086-docs-as-code.md
 [ADR-087]: 0087-the-rules-written-down.md
 [ADR-088]: 0088-planning-in-the-chat-as-a-skill.md
@@ -228,7 +230,7 @@ same names. An area no ADR names has no line.
 
 - `boms`: [ADR-029], [ADR-030], [ADR-040]
 - `costs`: [ADR-048]
-- `home`: [ADR-058], [ADR-079]
+- `home`: [ADR-058], [ADR-079], [ADR-085]
 - `invoices`: [ADR-046], [ADR-047], [ADR-071], [ADR-073]
 - `locations`: [ADR-024], [ADR-028], [ADR-030], [ADR-042]
 - `numbering`: [ADR-073], [ADR-074]
@@ -241,7 +243,7 @@ same names. An area no ADR names has no line.
 - `recent`: [ADR-058]
 - `return-authorizations`: [ADR-047]
 - `search`: [ADR-056], [ADR-066]
-- `stock`: [ADR-023], [ADR-024], [ADR-025], [ADR-032], [ADR-039], [ADR-041], [ADR-042], [ADR-043], [ADR-044], [ADR-045], [ADR-048]
+- `stock`: [ADR-023], [ADR-024], [ADR-025], [ADR-032], [ADR-039], [ADR-041], [ADR-042], [ADR-043], [ADR-044], [ADR-045], [ADR-048], [ADR-085]
 - `tax-codes`: [ADR-046]
 - `audit`: [ADR-012], [ADR-018], [ADR-022], [ADR-038], [ADR-076]
 - `auth`: [ADR-006], [ADR-011], [ADR-014], [ADR-015], [ADR-017], [ADR-020], [ADR-022], [ADR-037], [ADR-065], [ADR-078]
@@ -249,7 +251,7 @@ same names. An area no ADR names has no line.
 - `documents`: [ADR-054], [ADR-071]
 - `files`: [ADR-059], [ADR-062], [ADR-063]
 - `invitations`: [ADR-077], [ADR-078], [ADR-079], [ADR-083]
-- `notifications`: [ADR-036], [ADR-037], [ADR-064]
+- `notifications`: [ADR-036], [ADR-037], [ADR-064], [ADR-085]
 - `organizations`: [ADR-003], [ADR-004], [ADR-006], [ADR-060], [ADR-061], [ADR-065], [ADR-069], [ADR-070], [ADR-072], [ADR-080]
 - `people`: [ADR-063]
 - `users`: [ADR-012], [ADR-069]

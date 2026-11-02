@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { LookupResponse } from '../api/types.gen';
+import { PageHeader } from '../components/page-header';
 import { server } from '../test/setup';
 import { TestProviders } from '../test/test-providers';
 import { LookupBox } from './lookup-box';
@@ -119,6 +120,32 @@ describe('LookupBox', () => {
     await user.type(await openLookup(user), '鱼');
     expect(await screen.findByText('Lots')).toBeTruthy();
     expect(asked).toEqual(['鱼']);
+  });
+
+  // A top-level page, which offers Back to where it was typed (#341).
+  it('opens Show all’s list with Back', async () => {
+    server.use(http.get('/api/v1/lookup', () => HttpResponse.json(ANSWER)));
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/orders/order-1']}>
+        <LookupBox />
+        <Routes>
+          <Route path="/orders/:id" element={<p>The order</p>} />
+          <Route
+            path="*"
+            element={<PageHeader crumbs={[]} title="A top-level page" />}
+          />
+        </Routes>
+      </MemoryRouter>,
+      { wrapper: TestProviders },
+    );
+
+    await user.type(await openLookup(user), 'bf');
+    await user.click(await screen.findByText('Show all in Items'));
+    // Once the lookup's dialog has closed, unhiding the page.
+    await user.click(await screen.findByRole('button', { name: 'Back' }));
+
+    expect(screen.getByText('The order')).toBeVisible();
   });
 
   it('opens a result, and "Show all" opens its list already narrowed', async () => {

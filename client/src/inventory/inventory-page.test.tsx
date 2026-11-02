@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { MemoryRouter } from 'react-router-dom';
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { StockRow } from '../api/types.gen';
@@ -9,6 +9,7 @@ import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { InventoryPage } from './inventory-page';
+import { LotSearchPage } from './lot-trace-page';
 
 const ROW: StockRow = {
   id: 'stock-1',
@@ -118,5 +119,162 @@ describe('InventoryPage', () => {
     );
     expect(await screen.findByText('Nothing here yet.')).toBeVisible();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  // Named in the reader's language beside the SKU, as Stock names it (#296).
+  it('names each item promised to customers beside its SKU', async () => {
+    server.use(
+      http.get('/api/v1/stock', () =>
+        HttpResponse.json({ entries: [ROW], nextCursor: null }),
+      ),
+      http.get('/api/v1/stock/counts', () =>
+        HttpResponse.json({ expiring: 0, needsCost: 0 }),
+      ),
+      http.get('/api/v1/stock/availability', () =>
+        HttpResponse.json([
+          {
+            variantId: 'variant-1',
+            sku: 'VITD-60',
+            productName: '维生素 D',
+            variantName: '60 粒',
+            unitOfMeasure: 'each',
+            onHand: '120.0000',
+            held: '24.0000',
+            free: '96.0000',
+            backordered: '0.0000',
+          },
+        ]),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter>
+        <InventoryPage />
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+
+    const promised = (
+      await screen.findByRole('heading', { name: 'Promised to customers' })
+    ).parentElement as HTMLElement;
+    const row = within(promised).getAllByRole('row')[1];
+    expect(within(row).getByRole('cell', { name: 'VITD-60' })).toBeVisible();
+    expect(
+      within(row).getByRole('cell', { name: '维生素 D (60 粒)' }),
+    ).toBeVisible();
+    expect(
+      within(promised).getByRole('columnheader', { name: 'Item' }),
+    ).toBeVisible();
+  });
+
+  // Trace a lot is a top-level page: Back returns here (#341).
+  it('opens Trace a lot with Back to Inventory', async () => {
+    server.use(
+      http.get('/api/v1/stock', () =>
+        HttpResponse.json({ entries: [ROW], nextCursor: null }),
+      ),
+      http.get('/api/v1/stock/counts', () =>
+        HttpResponse.json({ expiring: 0, needsCost: 0 }),
+      ),
+      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/inventory']}>
+        <Routes>
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/lots" element={<LotSearchPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+    await screen.findByText('VITD-60');
+
+    await userEvent.click(screen.getByRole('link', { name: 'Trace a lot' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(await screen.findByText('VITD-60')).toBeVisible();
+  });
+
+  /**
+   * The search lives in the address, as every list's (#301): the lookup's
+   * Show all narrows Stock while it is open, and Reorder points shares the
+   * one search, either way.
+   */
+  describe('the search', () => {
+    function answer() {
+      const asked: Record<'stock' | 'points', (string | null)[]> = {
+        stock: [],
+        points: [],
+      };
+      server.use(
+        http.get('/api/v1/stock', ({ request }) => {
+          asked.stock.push(new URL(request.url).searchParams.get('search'));
+          return HttpResponse.json({ entries: [ROW], nextCursor: null });
+        }),
+        http.get('/api/v1/stock/counts', () =>
+          HttpResponse.json({ expiring: 0, needsCost: 0 }),
+        ),
+        http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
+        http.get('/api/v1/stock/reorder-points', ({ request }) => {
+          asked.points.push(new URL(request.url).searchParams.get('search'));
+          return HttpResponse.json({ entries: [], nextCursor: null });
+        }),
+        http.get('/api/v1/stock/reorder-points/counts', () =>
+          HttpResponse.json({ all: 0, low: 0, out: 0 }),
+        ),
+      );
+      return asked;
+    }
+
+    it('follows the address while open, as Show all in the lookup changes it', async () => {
+      const asked = answer();
+      renderWithAuth(
+        <MemoryRouter initialEntries={['/inventory']}>
+          <Link to="/inventory?search=NN-2410">Show all</Link>
+          <InventoryPage />
+        </MemoryRouter>,
+        { permissions: ['stock.view'] },
+      );
+      await screen.findByText('VITD-60');
+
+      await userEvent.click(screen.getByRole('link', { name: 'Show all' }));
+
+      expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveValue(
+        'NN-2410',
+      );
+      await expect.poll(() => asked.stock.at(-1)).toBe('NN-2410');
+    });
+
+    it('is one search on Stock and Reorder points, either way', async () => {
+      const user = userEvent.setup();
+      const asked = answer();
+      renderWithAuth(
+        <MemoryRouter initialEntries={['/inventory']}>
+          <InventoryPage />
+        </MemoryRouter>,
+        { permissions: ['stock.view'] },
+      );
+      await screen.findByText('VITD-60');
+
+      await user.type(
+        screen.getByRole('searchbox', { name: 'Search' }),
+        'vitd',
+      );
+      await expect.poll(() => asked.stock.at(-1)).toBe('vitd');
+      await user.click(screen.getByRole('tab', { name: 'Reorder points' }));
+
+      const box = screen.getByRole('searchbox', { name: 'Search' });
+      expect(box).toHaveValue('vitd');
+      await expect.poll(() => asked.points).toEqual(['vitd']);
+
+      await user.clear(box);
+      await user.type(box, 'd3');
+      await expect.poll(() => asked.points.at(-1)).toBe('d3');
+      await user.click(screen.getByRole('tab', { name: 'Stock' }));
+
+      expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveValue(
+        'd3',
+      );
+      await expect.poll(() => asked.stock.at(-1)).toBe('d3');
+    });
   });
 });

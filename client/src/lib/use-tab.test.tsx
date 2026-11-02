@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation, useNavigationType } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
+import { OFFER_BACK } from './offer-back';
 import { useTab } from './use-tab';
 
 const TABS = ['items', 'shipments', 'returns'] as const;
@@ -17,13 +18,17 @@ function Probe({ tabs = TABS }: { tabs?: readonly (typeof TABS)[number][] }) {
       <p>tab {tab}</p>
       <p>search {location.search || 'none'}</p>
       <p>navigation {navigation}</p>
+      <p>state {JSON.stringify(location.state)}</p>
       <button onClick={() => choose('shipments')}>shipments</button>
       <button onClick={() => choose('items')}>items</button>
     </>
   );
 }
 
-function renderAt(entry: string, tabs?: readonly (typeof TABS)[number][]) {
+function renderAt(
+  entry: string | { pathname: string; search?: string; state: unknown },
+  tabs?: readonly (typeof TABS)[number][],
+) {
   render(
     <MemoryRouter initialEntries={[entry]}>
       <Probe tabs={tabs} />
@@ -32,6 +37,18 @@ function renderAt(entry: string, tabs?: readonly (typeof TABS)[number][]) {
 }
 
 describe('useTab', () => {
+  // Opened by a link that offered Back, choosing a tab keeps it (#341).
+  it('keeps the state the page was opened with', async () => {
+    renderAt({ pathname: '/orders/1', state: OFFER_BACK });
+
+    await userEvent.click(screen.getByRole('button', { name: 'shipments' }));
+
+    expect(screen.getByText('tab shipments')).toBeInTheDocument();
+    expect(
+      screen.getByText(`state ${JSON.stringify(OFFER_BACK)}`),
+    ).toBeInTheDocument();
+  });
+
   it('opens the tab the address names', () => {
     renderAt('/orders/1?tab=shipments');
 

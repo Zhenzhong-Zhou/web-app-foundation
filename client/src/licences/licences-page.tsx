@@ -19,6 +19,7 @@ import { useIntl } from 'react-intl';
 import type { ProductLicence } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
+import { PageHeader } from '../components/page-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { formatDay, NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -62,23 +63,25 @@ export function LicencesPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          {intl.formatMessage({
-            id: 'products.licences',
-            defaultMessage: 'Licences',
-          })}
-        </Typography>
-
-        {canCreate && (
-          <Button onClick={openDialog(() => setCreating(true))}>
-            {intl.formatMessage({
-              id: 'licences.add',
-              defaultMessage: 'Add licence',
-            })}
-          </Button>
-        )}
-      </Stack>
+      {/* Not in the menu, so reached by a link inside the app, which
+          offers Back (#341). */}
+      <PageHeader
+        crumbs={[]}
+        title={intl.formatMessage({
+          id: 'products.licences',
+          defaultMessage: 'Licences',
+        })}
+        actions={
+          canCreate && (
+            <Button onClick={openDialog(() => setCreating(true))}>
+              {intl.formatMessage({
+                id: 'licences.add',
+                defaultMessage: 'Add licence',
+              })}
+            </Button>
+          )
+        }
+      />
 
       <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {intl.formatMessage({

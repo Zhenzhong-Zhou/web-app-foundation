@@ -11,6 +11,7 @@ import {
 import { describe, expect, it, vi } from 'vitest';
 
 import { reportFault } from '../errors/report-fault';
+import { offersBack } from '../lib/offer-back';
 import { stubNames } from '../test/app-names';
 import { renderWithAuth } from '../test/render-with-auth';
 import { ChunkLoadError } from '../version/load-chunk';
@@ -43,7 +44,11 @@ vi.mock('../errors/report-fault', async (original) => ({
 
 function Where() {
   const location = useLocation();
-  return <p data-testid="where">{location.pathname + location.hash}</p>;
+  return (
+    <p data-testid="where" data-back={offersBack(location.state)}>
+      {location.pathname + location.hash}
+    </p>
+  );
 }
 
 /** The frame's three parts, as AppLayout puts them, around two pages. */
@@ -408,6 +413,23 @@ describe('Help', () => {
       localStorage.clear();
       vi.unstubAllGlobals();
     }
+  });
+
+  // The foot's Your account offers Back, as a guide's own links do (#341).
+  it("offers Back from the foot's Your account", async () => {
+    renderFrame('/orders');
+    await userEvent.click(screen.getByRole('button', { name: 'Help' }));
+    await within(help()).findByRole('heading', { level: 2, name: 'Orders' });
+
+    const links = within(help()).getAllByRole('link', {
+      name: 'Your account',
+    });
+    await userEvent.click(links[links.length - 1]);
+
+    expect(screen.getByTestId('where')).toHaveTextContent(
+      '/account#your-access',
+    );
+    expect(screen.getByTestId('where')).toHaveAttribute('data-back', 'true');
   });
 
   it("follows a guide's link to its page, and that page's guide at the section", async () => {

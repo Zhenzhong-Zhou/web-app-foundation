@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 
 /** How long a list or a picker waits after typing stops before it asks. */
 export const SEARCH_WAIT_MS = 300;
@@ -18,6 +18,8 @@ export const SEARCH_WAIT_MS = 300;
  *   the list already shown or from Back and Forward, replaces what is
  *   typed. The box's own write arrives as what is typed, so it changes
  *   nothing and starts nothing again.
+ * - The write keeps the link's state, so a page a link inside the app
+ *   opened still offers Back after a search (#341).
  */
 export function useListSearch(): {
   text: string;
@@ -25,6 +27,7 @@ export function useListSearch(): {
   search: string;
 } {
   const [params, setParams] = useSearchParams();
+  const { state } = useLocation();
   const address = params.get('search') ?? '';
   const search = address.trim();
   const [text, setText] = useState(address);
@@ -49,12 +52,12 @@ export function useListSearch(): {
             else next.delete('search');
             return next;
           },
-          { replace: true },
+          { replace: true, state },
         ),
       SEARCH_WAIT_MS,
     );
     return () => clearTimeout(timer);
-  }, [text, search, setParams]);
+  }, [text, search, setParams, state]);
 
   return { text, setText, search };
 }

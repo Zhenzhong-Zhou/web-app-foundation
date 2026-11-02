@@ -2,6 +2,7 @@ import type { SvgIconComponent } from '@mui/icons-material';
 import AssignmentReturnOutlined from '@mui/icons-material/AssignmentReturnOutlined';
 import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
 import HourglassBottomOutlined from '@mui/icons-material/HourglassBottomOutlined';
+import Inventory2Outlined from '@mui/icons-material/Inventory2Outlined';
 import LocalShippingOutlined from '@mui/icons-material/LocalShippingOutlined';
 import MoveToInboxOutlined from '@mui/icons-material/MoveToInboxOutlined';
 import PaidOutlined from '@mui/icons-material/PaidOutlined';
@@ -9,6 +10,7 @@ import PrecisionManufacturingOutlined from '@mui/icons-material/PrecisionManufac
 import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
 import { defineMessages, type MessageDescriptor } from 'react-intl';
 
+import type { HomeCard } from '../api/types.gen';
 import type { HomeKind } from '../lib/api-names';
 
 /**
@@ -24,8 +26,11 @@ interface CardMeta {
   list: string;
   /** A row's page, or null when its list is where it is dealt with. */
   rowPath: (id: string) => string | null;
-  /** Whether "late" means expired (stock, licences) or overdue. */
-  lateIsExpired: boolean;
+  /**
+   * What "late" means: overdue (orders, runs), expired (stock, licences),
+   * or out (low stock: nothing usable and nothing coming, ADR-085).
+   */
+  late: 'overdue' | 'expired' | 'out';
 }
 
 const TITLES = defineMessages<HomeKind>({
@@ -43,6 +48,7 @@ const TITLES = defineMessages<HomeKind>({
   returnsOpen: { id: 'home.card.returnsOpen', defaultMessage: 'Returns open' },
   production: { id: 'home.card.production', defaultMessage: 'In production' },
   licences: { id: 'home.card.licences', defaultMessage: 'Licences' },
+  lowStock: { id: 'home.card.lowStock', defaultMessage: 'Low stock' },
 });
 
 const EMPTY = defineMessages<HomeKind>({
@@ -75,6 +81,10 @@ const EMPTY = defineMessages<HomeKind>({
     id: 'home.empty.licences',
     defaultMessage: 'No licence expires within 60 days.',
   },
+  lowStock: {
+    id: 'home.empty.lowStock',
+    defaultMessage: 'Nothing is low.',
+  },
 });
 
 export const CARDS: Record<HomeKind, CardMeta> = {
@@ -84,7 +94,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     icon: LocalShippingOutlined,
     list: '/orders?direction=sale&status=confirmed&outstanding=1',
     rowPath: (id) => `/orders/${id}`,
-    lateIsExpired: false,
+    late: 'overdue',
   },
   toReceive: {
     title: TITLES.toReceive,
@@ -92,7 +102,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     icon: MoveToInboxOutlined,
     list: '/orders?direction=purchase&status=confirmed&outstanding=1',
     rowPath: (id) => `/orders/${id}`,
-    lateIsExpired: false,
+    late: 'overdue',
   },
   expiring: {
     title: TITLES.expiring,
@@ -100,7 +110,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     icon: HourglassBottomOutlined,
     list: '/inventory?expiring=1',
     rowPath: (id) => `/lots/${id}`,
-    lateIsExpired: true,
+    late: 'expired',
   },
   costsWaiting: {
     title: TITLES.costsWaiting,
@@ -108,7 +118,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     icon: PaidOutlined,
     list: '/inventory?needsCost=1',
     rowPath: () => null,
-    lateIsExpired: false,
+    late: 'overdue',
   },
   invoicesToIssue: {
     title: TITLES.invoicesToIssue,
@@ -116,7 +126,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     icon: DescriptionOutlined,
     list: '/invoices?status=draft',
     rowPath: (id) => `/invoices/${id}`,
-    lateIsExpired: false,
+    late: 'overdue',
   },
   returnsOpen: {
     title: TITLES.returnsOpen,
@@ -124,7 +134,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     icon: AssignmentReturnOutlined,
     list: '/return-authorizations?status=open',
     rowPath: (id) => `/return-authorizations/${id}`,
-    lateIsExpired: false,
+    late: 'overdue',
   },
   production: {
     title: TITLES.production,
@@ -132,7 +142,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     icon: PrecisionManufacturingOutlined,
     list: '/production?status=released',
     rowPath: (id) => `/production/${id}`,
-    lateIsExpired: false,
+    late: 'overdue',
   },
   licences: {
     title: TITLES.licences,
@@ -140,6 +150,31 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     icon: VerifiedOutlined,
     list: '/licences',
     rowPath: () => '/licences',
-    lateIsExpired: true,
+    late: 'expired',
+  },
+  // After To receive on the page, as the server orders it (ADR-085).
+  lowStock: {
+    title: TITLES.lowStock,
+    empty: EMPTY.lowStock,
+    icon: Inventory2Outlined,
+    list: '/inventory?tab=reorder-points&status=low',
+    // Reorder points is where a low item is dealt with, ordered or planned.
+    rowPath: () => null,
+    late: 'out',
   },
 };
+
+/** A card this build knows how to show. */
+export type KnownCard = HomeCard & { kind: HomeKind };
+
+/**
+ * Whether this build has a card for it. A server deployed after the tab
+ * opened may send a kind the tab has never heard of: Home skips it rather
+ * than crash, so a new card reaches an open tab as nothing until it
+ * reloads, with no API revision raised for it (ADR-081). oasdiff still
+ * reports the new value, which goes in server/openapi-breaking-accepted.txt
+ * with this as its reason.
+ */
+export function isKnownCard(card: HomeCard): card is KnownCard {
+  return Object.hasOwn(CARDS, card.kind);
+}

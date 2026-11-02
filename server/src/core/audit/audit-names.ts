@@ -284,6 +284,18 @@ export const ACTION_NAMES: Record<AuditAction, Translatable> = {
     id: 'audit.action.productionOrderUpdated',
     defaultMessage: 'Production run updated',
   }),
+  'reorder_point.created': t({
+    id: 'audit.action.reorderPointCreated',
+    defaultMessage: 'Reorder point added',
+  }),
+  'reorder_point.removed': t({
+    id: 'audit.action.reorderPointRemoved',
+    defaultMessage: 'Reorder point removed',
+  }),
+  'reorder_point.updated': t({
+    id: 'audit.action.reorderPointUpdated',
+    defaultMessage: 'Reorder point changed',
+  }),
   'return_authorization.cancelled': t({
     id: 'audit.action.returnAuthorizationCancelled',
     defaultMessage: 'Return authorization cancelled',
@@ -400,6 +412,10 @@ export const RESOURCE_TYPE_NAMES: Record<string, Translatable> = {
     defaultMessage: 'Exchange rate',
   }),
   price_list: t({ id: 'audit.type.priceList', defaultMessage: 'Price list' }),
+  reorder_point: t({
+    id: 'audit.type.reorderPoint',
+    defaultMessage: 'Reorder point',
+  }),
   role: t({ id: 'audit.type.role', defaultMessage: 'Role' }),
   user: t({ id: 'audit.type.user', defaultMessage: 'Member' }),
   invitation: t({ id: 'audit.type.invitation', defaultMessage: 'Invitation' }),
@@ -414,6 +430,10 @@ export const RESOURCE_TYPE_NAMES: Record<string, Translatable> = {
   partners: t({ id: 'audit.type.partners', defaultMessage: 'Partners' }),
   movements: t({ id: 'audit.type.movements', defaultMessage: 'Movements' }),
   inventory: t({ id: 'audit.type.inventory', defaultMessage: 'Inventory' }),
+  reorder_points: t({
+    id: 'audit.type.reorderPoints',
+    defaultMessage: 'Reorder points',
+  }),
   stock_value: t({
     id: 'audit.type.stockValue',
     defaultMessage: 'Stock value',

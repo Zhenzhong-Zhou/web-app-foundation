@@ -974,6 +974,9 @@
                 "price_list.updated",
                 "price_list.item_set",
                 "price_list.item_removed",
+                "reorder_point.created",
+                "reorder_point.updated",
+                "reorder_point.removed",
                 "list.exported"
               ]
             }
@@ -1155,6 +1158,9 @@
                 "price_list.updated",
                 "price_list.item_set",
                 "price_list.item_removed",
+                "reorder_point.created",
+                "reorder_point.updated",
+                "reorder_point.removed",
                 "list.exported"
               ]
             }
@@ -1724,6 +1730,9 @@
                 "price_list.updated",
                 "price_list.item_set",
                 "price_list.item_removed",
+                "reorder_point.created",
+                "reorder_point.updated",
+                "reorder_point.removed",
                 "list.exported"
               ]
             }
@@ -1905,6 +1914,9 @@
                 "price_list.updated",
                 "price_list.item_set",
                 "price_list.item_removed",
+                "reorder_point.created",
+                "reorder_point.updated",
+                "reorder_point.removed",
                 "list.exported"
               ]
             }
@@ -3446,6 +3458,53 @@
         ]
       }
     },
+    "/v1/production-orders/preview": {
+      "get": {
+        "operationId": "ProductionOrdersController_preview_v1",
+        "parameters": [
+          {
+            "name": "bomId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "quantityPlanned",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunPreview"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProductionOrders"
+        ]
+      }
+    },
     "/v1/production-orders/{id}": {
       "get": {
         "operationId": "ProductionOrdersController_find_v1",
@@ -4068,6 +4127,14 @@
               "maximum": 100,
               "type": "number"
             }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4464,6 +4531,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4516,6 +4591,406 @@
         },
         "tags": [
           "Availability"
+        ]
+      }
+    },
+    "/v1/stock/reorder-points": {
+      "get": {
+        "operationId": "ReorderPointsController_list_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "low",
+                "out"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderPointPage"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReorderPoints"
+        ]
+      }
+    },
+    "/v1/stock/reorder-points/counts": {
+      "get": {
+        "operationId": "ReorderPointsController_counts_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "low",
+                "out"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderPointCounts"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReorderPoints"
+        ]
+      }
+    },
+    "/v1/stock/reorder-points/export": {
+      "get": {
+        "operationId": "ReorderPointsController_exportReorderPoints_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "low",
+                "out"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReorderPoints"
+        ]
+      }
+    },
+    "/v1/stock/reorder-points/{variantId}": {
+      "get": {
+        "operationId": "ReorderPointsController_detail_v1",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderPointDetail"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReorderPoints"
+        ]
+      },
+      "post": {
+        "operationId": "ReorderPointsController_create_v1",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetReorderPointDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReorderPoints"
+        ]
+      },
+      "put": {
+        "operationId": "ReorderPointsController_update_v1",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetReorderPointDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReorderPoints"
+        ]
+      },
+      "delete": {
+        "operationId": "ReorderPointsController_remove_v1",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReorderPoints"
+        ]
+      }
+    },
+    "/v1/stock/reorder-points/{variantId}/preview": {
+      "get": {
+        "operationId": "ReorderPointsController_preview_v1",
+        "parameters": [
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "bought",
+                "made"
+              ]
+            }
+          },
+          {
+            "name": "reorderPoint",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rule",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "just_enough",
+                "fixed",
+                "maximum"
+              ]
+            }
+          },
+          {
+            "name": "fixedQuantity",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "maximumQuantity",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderPointPreview"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReorderPoints"
         ]
       }
     },
@@ -8329,7 +8804,7 @@
   "info": {
     "title": "web-app-foundation API",
     "description": "",
-    "version": "1.1",
+    "version": "1.2",
     "contact": {}
   },
   "tags": [],
@@ -8557,6 +9032,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -9369,6 +9845,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -9453,6 +9930,7 @@
               "stock.view",
               "stock.move",
               "stock.adjust",
+              "stock.reorder",
               "costs.view",
               "costs.update",
               "price_lists.view",
@@ -9527,6 +10005,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -9625,6 +10104,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -9789,6 +10269,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -9900,6 +10381,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -9988,6 +10470,7 @@
                 "stock.view",
                 "stock.move",
                 "stock.adjust",
+                "stock.reorder",
                 "costs.view",
                 "costs.update",
                 "price_lists.view",
@@ -12908,6 +13391,62 @@
           "nextCursor"
         ]
       },
+      "RunPreviewLine": {
+        "type": "object",
+        "properties": {
+          "componentVariantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "supplyType": {
+            "type": "string",
+            "enum": [
+              "stocked",
+              "external"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "componentVariantId",
+          "sku",
+          "productName",
+          "variantName",
+          "unitOfMeasure",
+          "supplyType",
+          "quantity"
+        ]
+      },
+      "RunPreview": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunPreviewLine"
+            }
+          }
+        },
+        "required": [
+          "lines"
+        ]
+      },
       "RunLine": {
         "type": "object",
         "properties": {
@@ -13992,6 +14531,15 @@
           "sku": {
             "type": "string"
           },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "quantity": {
             "type": "string"
           },
@@ -14028,6 +14576,12 @@
               "null"
             ]
           },
+          "actorName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "actorEmail": {
             "type": [
               "string",
@@ -14042,6 +14596,8 @@
         "required": [
           "id",
           "sku",
+          "productName",
+          "variantName",
           "quantity",
           "reason",
           "reasonDetail",
@@ -14049,6 +14605,7 @@
           "fromLocationName",
           "toLocationName",
           "lotCode",
+          "actorName",
           "actorEmail",
           "createdAt"
         ]
@@ -14470,6 +15027,15 @@
           "sku": {
             "type": "string"
           },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "unitOfMeasure": {
             "type": "string"
           },
@@ -14489,6 +15055,8 @@
         "required": [
           "variantId",
           "sku",
+          "productName",
+          "variantName",
           "unitOfMeasure",
           "onHand",
           "held",
@@ -14517,6 +15085,452 @@
           "outstanding",
           "held",
           "short"
+        ]
+      },
+      "ReorderPointDraft": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "purchase",
+              "run"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "number",
+          "quantity"
+        ]
+      },
+      "ReorderPointRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "bought",
+              "made"
+            ]
+          },
+          "reorderPoint": {
+            "type": "string"
+          },
+          "rule": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "just_enough",
+              "maximum"
+            ]
+          },
+          "fixedQuantity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maximumQuantity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "usable": {
+            "type": "string"
+          },
+          "coming": {
+            "type": "string"
+          },
+          "stillNeeded": {
+            "type": "string"
+          },
+          "inDraft": {
+            "type": "string"
+          },
+          "position": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "out",
+              "low",
+              "enough",
+              "discontinued"
+            ]
+          },
+          "suggestion": {
+            "type": "string"
+          },
+          "suggestedMultiples": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "drafted": {
+            "type": "boolean"
+          },
+          "drafts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReorderPointDraft"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "sku",
+          "productName",
+          "variantName",
+          "unitOfMeasure",
+          "source",
+          "reorderPoint",
+          "rule",
+          "fixedQuantity",
+          "maximumQuantity",
+          "usable",
+          "coming",
+          "stillNeeded",
+          "inDraft",
+          "position",
+          "status",
+          "suggestion",
+          "suggestedMultiples",
+          "drafted",
+          "drafts"
+        ]
+      },
+      "ReorderPointPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReorderPointRow"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "ReorderPointCounts": {
+        "type": "object",
+        "properties": {
+          "all": {
+            "type": "number"
+          },
+          "low": {
+            "type": "number"
+          },
+          "out": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "all",
+          "low",
+          "out"
+        ]
+      },
+      "ReorderPointValues": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "bought",
+              "made"
+            ]
+          },
+          "reorderPoint": {
+            "type": "string"
+          },
+          "rule": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "just_enough",
+              "maximum"
+            ]
+          },
+          "fixedQuantity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maximumQuantity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "reorderPoint",
+          "rule",
+          "fixedQuantity",
+          "maximumQuantity"
+        ]
+      },
+      "UsableStock": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "usable": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId",
+          "locationName",
+          "usable"
+        ]
+      },
+      "ComingSupply": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "purchase",
+              "run"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "partnerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "late": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "number",
+          "partnerName",
+          "quantity",
+          "late"
+        ]
+      },
+      "StillNeeded": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "orderId",
+          "number",
+          "partnerName",
+          "quantity"
+        ]
+      },
+      "ReorderPointDetail": {
+        "type": "object",
+        "properties": {
+          "point": {
+            "$ref": "#/components/schemas/ReorderPointValues"
+          },
+          "usable": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsableStock"
+            }
+          },
+          "expired": {
+            "type": "string"
+          },
+          "issued": {
+            "type": "string"
+          },
+          "coming": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComingSupply"
+            }
+          },
+          "stillNeeded": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StillNeeded"
+            }
+          }
+        },
+        "required": [
+          "point",
+          "usable",
+          "expired",
+          "issued",
+          "coming",
+          "stillNeeded"
+        ]
+      },
+      "ReorderPointPreview": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "out",
+              "low",
+              "enough",
+              "discontinued"
+            ]
+          },
+          "suggestion": {
+            "type": "string"
+          },
+          "suggestedMultiples": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "drafted": {
+            "type": "boolean"
+          },
+          "after": {
+            "type": "string"
+          },
+          "afterStatus": {
+            "type": "string",
+            "enum": [
+              "out",
+              "low",
+              "enough",
+              "discontinued"
+            ]
+          }
+        },
+        "required": [
+          "position",
+          "status",
+          "suggestion",
+          "suggestedMultiples",
+          "drafted",
+          "after",
+          "afterStatus"
+        ]
+      },
+      "SetReorderPointDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "enum": [
+              "bought",
+              "made"
+            ],
+            "type": "string"
+          },
+          "reorderPoint": {
+            "type": "string"
+          },
+          "rule": {
+            "enum": [
+              "just_enough",
+              "fixed",
+              "maximum"
+            ],
+            "type": "string"
+          },
+          "fixedQuantity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maximumQuantity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "reorderPoint",
+          "rule"
         ]
       },
       "LookupResult": {
@@ -14815,6 +15829,25 @@
           "items"
         ]
       },
+      "HomeRowReorder": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "string"
+          },
+          "reorderPoint": {
+            "type": "string"
+          },
+          "drafted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "position",
+          "reorderPoint",
+          "drafted"
+        ]
+      },
       "HomeRow": {
         "type": "object",
         "properties": {
@@ -14838,6 +15871,16 @@
           },
           "late": {
             "type": "boolean"
+          },
+          "reorder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HomeRowReorder"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -14845,7 +15888,8 @@
           "title",
           "detail",
           "due",
-          "late"
+          "late",
+          "reorder"
         ]
       },
       "HomeCard": {
@@ -14858,6 +15902,7 @@
               "expiring",
               "toShip",
               "toReceive",
+              "lowStock",
               "costsWaiting",
               "invoicesToIssue",
               "returnsOpen",
@@ -14875,13 +15920,20 @@
             "items": {
               "$ref": "#/components/schemas/HomeRow"
             }
+          },
+          "anyPoint": {
+            "type": [
+              "boolean",
+              "null"
+            ]
           }
         },
         "required": [
           "kind",
           "count",
           "late",
-          "rows"
+          "rows",
+          "anyPoint"
         ]
       },
       "HomeResponse": {
@@ -20077,6 +21129,7 @@
           "stock.view",
           "stock.move",
           "stock.adjust",
+          "stock.reorder",
           "costs.view",
           "costs.update",
           "price_lists.view",
@@ -20197,6 +21250,9 @@
           "price_list.updated",
           "price_list.item_set",
           "price_list.item_removed",
+          "reorder_point.created",
+          "reorder_point.updated",
+          "reorder_point.removed",
           "list.exported"
         ]
       },
@@ -20226,7 +21282,9 @@
           "permission_requires",
           "role_name_unavailable",
           "client_outdated",
-          "api_updating"
+          "api_updating",
+          "reorder_point_exists",
+          "reorder_maximum_not_above_point"
         ]
       },
       "ApiVocabulary": {

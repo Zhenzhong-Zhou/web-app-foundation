@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import type { Location, Partner, VariantOption } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -25,6 +25,7 @@ import { PartnerPicker } from '../components/partner-picker';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
 import { VariantPicker } from '../components/variant-picker';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { fieldQuantity } from '../inventory/reorder-points';
 import { api, isRevisionRefusal } from '../lib/api';
 import type { OrderDirection } from '../lib/api-names';
 import { BLANK_LINE, groupedNumberMessage, toApiDecimal } from '../lib/format';
@@ -35,6 +36,7 @@ import { useVariants } from '../lib/use-variants';
 import { SiteSelect } from '../locations/site-select';
 import { unitLabel } from '../products/units';
 import { rem } from '../theme/rem';
+import { orderFillOf } from './order-fill';
 
 interface LineDraft {
   /** Local only — React needs a stable key before the row has a variant. */
@@ -93,6 +95,32 @@ export function CreateOrderPage() {
   const [expectedAt, setExpectedAt] = useState('');
   const [note, setNote] = useState('');
   const [lines, setLines] = useState<LineDraft[]>([emptyLine()]);
+
+  /**
+   * Lines filled in from Reorder points (ADR-085), each item at its
+   * suggestion, once the catalogue has answered and the items can be
+   * shown; the supplier is left to choose. Read from the link once, so
+   * what the person changes afterwards stays theirs.
+   */
+  const { state } = useLocation();
+  const [fill] = useState(() => orderFillOf(state));
+  const [filling, setFilling] = useState(fill !== null);
+  if (filling && fill && catalogueAnswered) {
+    setFilling(false);
+    const filled = fill.lines.flatMap((line) => {
+      const variant = variants.find((option) => option.id === line.variantId);
+      return variant
+        ? [
+            {
+              ...emptyLine(),
+              variant,
+              quantityOrdered: fieldQuantity(line.quantity),
+            },
+          ]
+        : [];
+    });
+    if (filled.length) setLines(filled);
+  }
 
   /**
    * Where a purchase is delivered (ADR-071, amended). Null until someone
@@ -257,9 +285,11 @@ export function CreateOrderPage() {
         }),
       });
 
-      // Saved: on to the order, without asking.
+      // Saved: on to the order, without asking. Filled from Reorder points,
+      // the order takes New order's place in the history, so Back returns
+      // to the list, not to the same lines filled in again (ADR-085).
       release();
-      navigate(`/orders/${created.order.id}`);
+      navigate(`/orders/${created.order.id}`, { replace: fill !== null });
     });
   }
 
@@ -291,6 +321,19 @@ export function CreateOrderPage() {
             defaultMessage: 'Raise an order',
           })}
         </Typography>
+
+        {fill && (
+          <Alert severity="info">
+            {intl.formatMessage(
+              {
+                id: 'orders.create.filled',
+                defaultMessage:
+                  'Filled from Reorder points: {count, plural, one {# line at its suggested quantity} other {# lines at their suggested quantities}}. Choose the supplier under Partner, check the quantities and prices, then raise it as a draft.',
+              },
+              { count: fill.lines.length },
+            )}
+          </Alert>
+        )}
 
         {(loadFailure !== null || catalogueFailed) && (
           <Alert severity="error">
@@ -583,10 +626,11 @@ export function CreateOrderPage() {
           <Button
             variant="text"
             disabled={submitting}
-            // Cancel means discard; it does not ask again.
+            // Cancel means discard; it does not ask again. Filled from
+            // Reorder points, back there, with what was chosen (ADR-085).
             onClick={() => {
               release();
-              void navigate('/orders');
+              void (fill ? navigate(-1) : navigate('/orders'));
             }}
           >
             {intl.formatMessage({

@@ -178,6 +178,10 @@ const ACTS = defineMessages({
     id: 'account.access.act.stockAdjust',
     defaultMessage: 'correct a count',
   },
+  stockReorder: {
+    id: 'account.access.act.stockReorder',
+    defaultMessage: 'set reorder points',
+  },
   ordersReceive: {
     id: 'account.access.act.ordersReceive',
     defaultMessage: 'receive what was ordered',
@@ -302,6 +306,7 @@ const GRANTS: Record<Permission, Grant> = {
   'locations.view': see('stock', 'locations'),
   'stock.move': act('stock', ACTS.stockMove),
   'stock.adjust': act('stock', ACTS.stockAdjust),
+  'stock.reorder': act('stock', ACTS.stockReorder),
   'locations.create': add('stock', 'locations'),
   'locations.update': change('stock', 'locations'),
 

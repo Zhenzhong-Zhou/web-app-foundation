@@ -34,6 +34,16 @@ A new organization gets seven steps instead of a page of zeros. Each is ticked b
 
 Home is read when you open it. Press **Refresh** to read it again.
 
+## Low stock {#low-stock}
+
+Low stock counts the items below their reorder point, which is set on [Inventory](/inventory#reorder-points). When any of them is out, it also says how many, and Home counts those with the overdue.
+
+- Its card lists the five furthest below their point, each as how much it has of its point, such as 800 of 2,000, or **out**.
+- **drafted** says a draft purchase order or run already covers it, so it needs no other.
+- **See all** opens Reorder points on Low, where you order or plan them.
+
+> Only someone who may see stock sees Low stock.
+
 ## With no organization {#no-organization}
 
 Ask someone in an organization to invite your address, then open their link while signed in: you join with this account. A link to set up an organization of your own opens the same way. Where Home offers **Start an organization**, you can also set one up there, as its Owner.
@@ -42,3 +52,4 @@ Ask someone in an organization to invite your address, then open their link whil
 
 - **Overdue**: past the day it was expected or due.
 - **Expiring soon**: lots that expire within the days the organization has set.
+- **Out**: an item with a reorder point and nothing to spare: what sales still need takes all that is usable and coming, or more.

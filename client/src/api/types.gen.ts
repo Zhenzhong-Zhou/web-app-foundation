@@ -79,6 +79,7 @@ export type CurrentSession = {
     | 'stock.view'
     | 'stock.move'
     | 'stock.adjust'
+    | 'stock.reorder'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -326,6 +327,7 @@ export type Role = {
     | 'stock.view'
     | 'stock.move'
     | 'stock.adjust'
+    | 'stock.reorder'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -391,6 +393,7 @@ export type CataloguePermission = {
     | 'stock.view'
     | 'stock.move'
     | 'stock.adjust'
+    | 'stock.reorder'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -452,6 +455,7 @@ export type CataloguePermission = {
     | 'stock.view'
     | 'stock.move'
     | 'stock.adjust'
+    | 'stock.reorder'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -519,6 +523,7 @@ export type RoleTemplate = {
     | 'stock.view'
     | 'stock.move'
     | 'stock.adjust'
+    | 'stock.reorder'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -605,6 +610,7 @@ export type RoleDetail = {
     | 'stock.view'
     | 'stock.move'
     | 'stock.adjust'
+    | 'stock.reorder'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -674,6 +680,7 @@ export type CreateRoleDto = {
     | 'stock.view'
     | 'stock.move'
     | 'stock.adjust'
+    | 'stock.reorder'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -739,6 +746,7 @@ export type UpdateRoleDto = {
     | 'stock.view'
     | 'stock.move'
     | 'stock.adjust'
+    | 'stock.reorder'
     | 'costs.view'
     | 'costs.update'
     | 'price_lists.view'
@@ -1431,6 +1439,20 @@ export type RunPage = {
   nextCursor: string | null;
 };
 
+export type RunPreviewLine = {
+  componentVariantId: string;
+  sku: string;
+  productName: string;
+  variantName: string | null;
+  unitOfMeasure: string;
+  supplyType: 'stocked' | 'external';
+  quantity: string;
+};
+
+export type RunPreview = {
+  lines: Array<RunPreviewLine>;
+};
+
 export type RunLine = {
   id: string;
   componentVariantId: string;
@@ -1701,6 +1723,8 @@ export type StockCounts = {
 export type Movement = {
   id: string;
   sku: string;
+  productName: string;
+  variantName: string | null;
   quantity: string;
   reason: string;
   reasonDetail: string | null;
@@ -1708,6 +1732,7 @@ export type Movement = {
   fromLocationName: string | null;
   toLocationName: string | null;
   lotCode: string | null;
+  actorName: string | null;
   actorEmail: string | null;
   createdAt: string;
 };
@@ -1807,6 +1832,8 @@ export type LotTrace = {
 export type Availability = {
   variantId: string;
   sku: string;
+  productName: string;
+  variantName: string | null;
   unitOfMeasure: string;
   onHand: string;
   held: string;
@@ -1819,6 +1846,105 @@ export type LineHold = {
   outstanding: string;
   held: string;
   short: string;
+};
+
+export type ReorderPointDraft = {
+  kind: 'purchase' | 'run';
+  id: string;
+  number: string | null;
+  quantity: string;
+};
+
+export type ReorderPointRow = {
+  id: string;
+  variantId: string;
+  sku: string;
+  productName: string;
+  variantName: string | null;
+  unitOfMeasure: string;
+  source: 'bought' | 'made';
+  reorderPoint: string;
+  rule: 'fixed' | 'just_enough' | 'maximum';
+  fixedQuantity: string | null;
+  maximumQuantity: string | null;
+  usable: string;
+  coming: string;
+  stillNeeded: string;
+  inDraft: string;
+  position: string;
+  status: 'out' | 'low' | 'enough' | 'discontinued';
+  suggestion: string;
+  suggestedMultiples: string | null;
+  drafted: boolean;
+  drafts: Array<ReorderPointDraft>;
+};
+
+export type ReorderPointPage = {
+  entries: Array<ReorderPointRow>;
+  nextCursor: string | null;
+};
+
+export type ReorderPointCounts = {
+  all: number;
+  low: number;
+  out: number;
+};
+
+export type ReorderPointValues = {
+  source: 'bought' | 'made';
+  reorderPoint: string;
+  rule: 'fixed' | 'just_enough' | 'maximum';
+  fixedQuantity: string | null;
+  maximumQuantity: string | null;
+};
+
+export type UsableStock = {
+  locationId: string;
+  locationName: string;
+  usable: string;
+};
+
+export type ComingSupply = {
+  kind: 'purchase' | 'run';
+  id: string;
+  number: string | null;
+  partnerName: string | null;
+  quantity: string;
+  late: boolean;
+};
+
+export type StillNeeded = {
+  orderId: string;
+  number: string;
+  partnerName: string;
+  quantity: string;
+};
+
+export type ReorderPointDetail = {
+  point: ReorderPointValues;
+  usable: Array<UsableStock>;
+  expired: string;
+  issued: string;
+  coming: Array<ComingSupply>;
+  stillNeeded: Array<StillNeeded>;
+};
+
+export type ReorderPointPreview = {
+  position: string;
+  status: 'out' | 'low' | 'enough' | 'discontinued';
+  suggestion: string;
+  suggestedMultiples: string | null;
+  drafted: boolean;
+  after: string;
+  afterStatus: 'out' | 'low' | 'enough' | 'discontinued';
+};
+
+export type SetReorderPointDto = {
+  source: 'bought' | 'made';
+  reorderPoint: string;
+  rule: 'just_enough' | 'fixed' | 'maximum';
+  fixedQuantity?: string | null;
+  maximumQuantity?: string | null;
 };
 
 export type LookupResult = {
@@ -1911,12 +2037,19 @@ export type Welcome = {
   items: Array<WelcomeItem>;
 };
 
+export type HomeRowReorder = {
+  position: string;
+  reorderPoint: string;
+  drafted: boolean;
+};
+
 export type HomeRow = {
   id: string;
   title: string;
   detail: string | null;
   due: string | null;
   late: boolean;
+  reorder: HomeRowReorder | null;
 };
 
 export type HomeCard = {
@@ -1925,6 +2058,7 @@ export type HomeCard = {
     | 'expiring'
     | 'toShip'
     | 'toReceive'
+    | 'lowStock'
     | 'costsWaiting'
     | 'invoicesToIssue'
     | 'returnsOpen'
@@ -1932,6 +2066,7 @@ export type HomeCard = {
   count: number;
   late: number;
   rows: Array<HomeRow>;
+  anyPoint: boolean | null;
 };
 
 export type HomeResponse = {
@@ -3189,6 +3324,7 @@ export const Permission = {
   STOCK_VIEW: 'stock.view',
   STOCK_MOVE: 'stock.move',
   STOCK_ADJUST: 'stock.adjust',
+  STOCK_REORDER: 'stock.reorder',
   COSTS_VIEW: 'costs.view',
   COSTS_UPDATE: 'costs.update',
   PRICE_LISTS_VIEW: 'price_lists.view',
@@ -3310,6 +3446,9 @@ export const AuditAction = {
   PRICE_LIST_UPDATED: 'price_list.updated',
   PRICE_LIST_ITEM_SET: 'price_list.item_set',
   PRICE_LIST_ITEM_REMOVED: 'price_list.item_removed',
+  REORDER_POINT_CREATED: 'reorder_point.created',
+  REORDER_POINT_UPDATED: 'reorder_point.updated',
+  REORDER_POINT_REMOVED: 'reorder_point.removed',
   LIST_EXPORTED: 'list.exported',
 } as const;
 
@@ -3340,6 +3479,8 @@ export const ErrorCode = {
   ROLE_NAME_UNAVAILABLE: 'role_name_unavailable',
   CLIENT_OUTDATED: 'client_outdated',
   API_UPDATING: 'api_updating',
+  REORDER_POINT_EXISTS: 'reorder_point_exists',
+  REORDER_MAXIMUM_NOT_ABOVE_POINT: 'reorder_maximum_not_above_point',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -3960,6 +4101,9 @@ export type AuditControllerListV1Data = {
       | 'price_list.updated'
       | 'price_list.item_set'
       | 'price_list.item_removed'
+      | 'reorder_point.created'
+      | 'reorder_point.updated'
+      | 'reorder_point.removed'
       | 'list.exported';
     resourceId?: string;
     from?: string;
@@ -4071,6 +4215,9 @@ export type AuditControllerExportAuditV1Data = {
       | 'price_list.updated'
       | 'price_list.item_set'
       | 'price_list.item_removed'
+      | 'reorder_point.created'
+      | 'reorder_point.updated'
+      | 'reorder_point.removed'
       | 'list.exported';
     resourceId?: string;
     from?: string;
@@ -4397,6 +4544,9 @@ export type WorkControllerActivityV1Data = {
       | 'price_list.updated'
       | 'price_list.item_set'
       | 'price_list.item_removed'
+      | 'reorder_point.created'
+      | 'reorder_point.updated'
+      | 'reorder_point.removed'
       | 'list.exported';
     resourceId?: string;
     from?: string;
@@ -4508,6 +4658,9 @@ export type WorkControllerExportActivityV1Data = {
       | 'price_list.updated'
       | 'price_list.item_set'
       | 'price_list.item_removed'
+      | 'reorder_point.created'
+      | 'reorder_point.updated'
+      | 'reorder_point.removed'
       | 'list.exported';
     resourceId?: string;
     from?: string;
@@ -5219,6 +5372,26 @@ export type ProductionOrdersControllerCreateV1Responses = {
 export type ProductionOrdersControllerCreateV1Response =
   ProductionOrdersControllerCreateV1Responses[keyof ProductionOrdersControllerCreateV1Responses];
 
+export type ProductionOrdersControllerPreviewV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query: {
+    bomId: string;
+    quantityPlanned: string;
+  };
+  url: '/v1/production-orders/preview';
+};
+
+export type ProductionOrdersControllerPreviewV1Responses = {
+  200: RunPreview;
+};
+
+export type ProductionOrdersControllerPreviewV1Response =
+  ProductionOrdersControllerPreviewV1Responses[keyof ProductionOrdersControllerPreviewV1Responses];
+
 export type ProductionOrdersControllerFindV1Data = {
   body?: never;
   path: {
@@ -5391,6 +5564,9 @@ export type StockControllerExportInventoryV1Response =
 
 export type StockControllerListMovementsV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
   query?: {
     variantId?: string;
@@ -5562,6 +5738,9 @@ export type LotTraceControllerTraceV1Response =
 
 export type AvailabilityControllerListV1Data = {
   body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
   path?: never;
   query?: {
     promised?: string;
@@ -5591,6 +5770,155 @@ export type AvailabilityControllerForOrderV1Responses = {
 
 export type AvailabilityControllerForOrderV1Response =
   AvailabilityControllerForOrderV1Responses[keyof AvailabilityControllerForOrderV1Responses];
+
+export type ReorderPointsControllerListV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query?: {
+    status?: 'low' | 'out';
+    search?: string;
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/stock/reorder-points';
+};
+
+export type ReorderPointsControllerListV1Responses = {
+  200: ReorderPointPage;
+};
+
+export type ReorderPointsControllerListV1Response =
+  ReorderPointsControllerListV1Responses[keyof ReorderPointsControllerListV1Responses];
+
+export type ReorderPointsControllerCountsV1Data = {
+  body?: never;
+  path?: never;
+  query?: {
+    status?: 'low' | 'out';
+    search?: string;
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/stock/reorder-points/counts';
+};
+
+export type ReorderPointsControllerCountsV1Responses = {
+  200: ReorderPointCounts;
+};
+
+export type ReorderPointsControllerCountsV1Response =
+  ReorderPointsControllerCountsV1Responses[keyof ReorderPointsControllerCountsV1Responses];
+
+export type ReorderPointsControllerExportReorderPointsV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query?: {
+    status?: 'low' | 'out';
+    search?: string;
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/stock/reorder-points/export';
+};
+
+export type ReorderPointsControllerExportReorderPointsV1Responses = {
+  200: string;
+};
+
+export type ReorderPointsControllerExportReorderPointsV1Response =
+  ReorderPointsControllerExportReorderPointsV1Responses[keyof ReorderPointsControllerExportReorderPointsV1Responses];
+
+export type ReorderPointsControllerRemoveV1Data = {
+  body?: never;
+  path: {
+    variantId: string;
+  };
+  query?: never;
+  url: '/v1/stock/reorder-points/{variantId}';
+};
+
+export type ReorderPointsControllerRemoveV1Responses = {
+  204: void;
+};
+
+export type ReorderPointsControllerRemoveV1Response =
+  ReorderPointsControllerRemoveV1Responses[keyof ReorderPointsControllerRemoveV1Responses];
+
+export type ReorderPointsControllerDetailV1Data = {
+  body?: never;
+  path: {
+    variantId: string;
+  };
+  query?: never;
+  url: '/v1/stock/reorder-points/{variantId}';
+};
+
+export type ReorderPointsControllerDetailV1Responses = {
+  200: ReorderPointDetail;
+};
+
+export type ReorderPointsControllerDetailV1Response =
+  ReorderPointsControllerDetailV1Responses[keyof ReorderPointsControllerDetailV1Responses];
+
+export type ReorderPointsControllerCreateV1Data = {
+  body: SetReorderPointDto;
+  path: {
+    variantId: string;
+  };
+  query?: never;
+  url: '/v1/stock/reorder-points/{variantId}';
+};
+
+export type ReorderPointsControllerCreateV1Responses = {
+  204: void;
+};
+
+export type ReorderPointsControllerCreateV1Response =
+  ReorderPointsControllerCreateV1Responses[keyof ReorderPointsControllerCreateV1Responses];
+
+export type ReorderPointsControllerUpdateV1Data = {
+  body: SetReorderPointDto;
+  path: {
+    variantId: string;
+  };
+  query?: never;
+  url: '/v1/stock/reorder-points/{variantId}';
+};
+
+export type ReorderPointsControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type ReorderPointsControllerUpdateV1Response =
+  ReorderPointsControllerUpdateV1Responses[keyof ReorderPointsControllerUpdateV1Responses];
+
+export type ReorderPointsControllerPreviewV1Data = {
+  body?: never;
+  path: {
+    variantId: string;
+  };
+  query: {
+    source: 'bought' | 'made';
+    reorderPoint: string;
+    rule: 'just_enough' | 'fixed' | 'maximum';
+    fixedQuantity?: string | null;
+    maximumQuantity?: string | null;
+  };
+  url: '/v1/stock/reorder-points/{variantId}/preview';
+};
+
+export type ReorderPointsControllerPreviewV1Responses = {
+  200: ReorderPointPreview;
+};
+
+export type ReorderPointsControllerPreviewV1Response =
+  ReorderPointsControllerPreviewV1Responses[keyof ReorderPointsControllerPreviewV1Responses];
 
 export type LookupControllerLookupV1Data = {
   body?: never;

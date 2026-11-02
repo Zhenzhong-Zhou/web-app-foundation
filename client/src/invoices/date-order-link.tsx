@@ -4,6 +4,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { hasCode } from '../lib/api';
+import { OFFER_BACK } from '../lib/offer-back';
 
 /**
  * The way out of an invoice or credit note refused for its date order
@@ -26,6 +27,7 @@ export function DateOrderLink({ errorCode }: { errorCode: string | null }) {
     <Link
       component={RouterLink}
       to="/settings/organization?tab=documents"
+      state={OFFER_BACK}
       color="inherit"
       underline="always"
     >

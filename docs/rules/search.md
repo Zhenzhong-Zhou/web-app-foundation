@@ -273,18 +273,21 @@ leave how it matches to this file. How this file is kept is in the
   a search, not ranked by it, so Load more carries on where it was.
   [ADR-056, amended](../adr/0056-search.md#decision--the-lookups-ranking-and-one-minimum-everywhere) ·
   no test
-- **Orders, Invoices, Credit notes, Returns, Production, Products and
-  Partners keep their search in the page's address.** Show all from the
-  top bar opens the list narrowed. What is typed is written there a moment
-  after typing stops, in place of the page in the history, so Back leaves
-  the list; Show all on the list already open, Back and Forward change the
-  box and the list together; a reload, or Back from a record, keeps it.
-  Inventory reads the address only when it opens.
+- **Orders, Invoices, Credit notes, Returns, Production, Products,
+  Partners and Inventory keep their search in the page's address.** Show
+  all from the top bar opens the list narrowed. What is typed is written
+  there a moment after typing stops, in place of the page in the history,
+  so Back leaves the list; Show all on the list already open, Back and
+  Forward change the box and the list together; a reload, or Back from a
+  record, keeps it. Inventory's two tabs, Stock and Reorder points, share
+  the one search.
   [ADR-056, amended](../adr/0056-search.md#decision--products-partners-and-the-item-pickers-searched-on-the-server) ·
   [test](../../client/src/products/products-page.test.tsx) "follows the address while open, and writes what is typed there without adding to the history" ·
   [test](../../client/src/partners/partners-page.test.tsx) "asks with the address’s search, and lists the answer in its order" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "follows the address while open, as Show all in the lookup changes it" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "is one search on Stock and Reorder points, either way" ·
   partly tested ·
-  MC-3901 · MC-3902
+  MC-3901 · MC-3902 · MC-R67
 - **A list asks a moment after typing stops, waits for the answer
   without showing the last search's rows, and drops an answer that comes
   after a newer one.**

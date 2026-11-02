@@ -711,8 +711,9 @@ add says so in its PR.
   *Moving code*](engineering.md#moving-code)). Each seeded step writes the
   audit row its route would, built with the interceptor's own
   `auditPayload`, but names the route's action, resource type and fields
-  by hand, copied from its `@Audited` (`seed-demo-audit.ts`): change a
-  route's `@Audited`, change the seed.
+  by hand, copied from its `@Audited` (`seed-demo-audit.ts`; the Owner's
+  order steps in `seed-demo-orders.ts`): change a route's `@Audited`,
+  change the seed.
 - **`npm run seed:volume`** fills a database of its own with a year at
   realistic scale (`server/perf/README.md`). A new table gets rows in the
   proportions a customer would have, and a new hot query, one run on every
@@ -732,7 +733,7 @@ A dialog's key goes on the component the page renders, as Ship's does
 (`<ShipOrderDialog key={…}>`), never on MUI's `Dialog` inside it. The
 fields are that component's state, and a key on the `Dialog` it returns
 rebuilds only what is below it: the fields would open with what was typed
-the last time.
+the last time. Lint refuses a key on `Dialog` (`client/eslint.config.js`).
 
 ## Loading states
 
@@ -769,6 +770,24 @@ product, a run, an RMA, a recipe) asks before it is thrown away (issue #54):
 - Call `release()` just before navigating away on purpose, after a save or
   on Cancel: a state change arrives a tick too late. A dialog that saves
   and closes needs none of this; its own Cancel already asks nothing.
+
+## Back from a link inside the app
+
+A detail page always offers Back (`PageHeader`); a top-level page,
+reached from the menu, offers none, unless a link inside the app brought
+the person there (#341). Such a link passes `OFFER_BACK`
+(`client/src/lib/offer-back.ts`) as its router state, `state={OFFER_BACK}`
+on a link or `navigate(to, { state: OFFER_BACK })` in code, so the page
+knows from the link, not from a guess.
+
+- **Passes none:** the menu, the trail above a record, an "up" link, and
+  a move after an action, such as a delete. A new tab and a bookmark
+  carry no state, so no Back, as before.
+- **Kept while the page writes its own address:** a list's search, a tab
+  and a filter replace the address with the location's state, as
+  `useListSearch` and `useTab` do, so Back stays after the first letter
+  typed or the first tab chosen.
+- MC-R69 checks each such link by hand.
 
 ## Status pages
 
