@@ -29,6 +29,15 @@ const DEFAULT_ORG = { name: 'Default Organization', slug: 'default' };
 const GRANT_CHUNK = 500;
 
 /**
+ * `npm run seed -- --keys-only`: step 1 alone, the permission keys. The
+ * browser suite's global setup runs it when the e2e database lacks a key
+ * (#345): a registration needs only the keys, and step 3 crosses every
+ * organization the suites have left there, 40 s of the full seed's 46 on
+ * 1 November 2026.
+ */
+const KEYS_ONLY = process.argv.includes('--keys-only');
+
+/**
  * Seeds the permission vocabulary and the default organization (ADR-003).
  *
  * **Idempotent by design.** You will run this repeatedly while building steps
@@ -71,6 +80,8 @@ async function seed(): Promise<void> {
       .onConflictDoNothing({ target: permissions.key });
 
     logger.log(`Permissions: ${ALL_PERMISSIONS.length} keys ensured`);
+
+    if (KEYS_ONLY) return;
 
     // 2. Default organization, with its three system roles and grants.
     await db.transaction(async (tx) => {
