@@ -1,10 +1,11 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { ReorderPointDetail, ReorderPointRow } from '../api/types.gen';
+import { orderFillOf } from '../orders/order-fill';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { InventoryPage } from './inventory-page';
@@ -96,6 +97,12 @@ const DETAIL: ReorderPointDetail = {
   drafts: [],
 };
 
+/** Where Raise a purchase order goes: what it fills New order with. */
+function NewOrder() {
+  const { state } = useLocation();
+  return <p>New order: {JSON.stringify(orderFillOf(state))}</p>;
+}
+
 function open(
   permissions: string[],
   address = '/inventory?tab=reorder-points',
@@ -116,7 +123,10 @@ function open(
   );
   renderWithAuth(
     <MemoryRouter initialEntries={[address]}>
-      <InventoryPage />
+      <Routes>
+        <Route path="/inventory" element={<InventoryPage />} />
+        <Route path="/orders/new" element={<NewOrder />} />
+      </Routes>
     </MemoryRouter>,
     { permissions },
   );
@@ -268,5 +278,92 @@ describe('Reorder points', () => {
       screen.getByRole('button', { name: /^All\s*4$/ }),
     ).toBeInTheDocument();
     expect(asked[0].searchParams.get('status')).toBe('low');
+  });
+
+  it('raises a purchase order of what is chosen, each at its suggestion', async () => {
+    open(['stock.view', 'orders.create']);
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: 'Choose D3-1000' }),
+    );
+    await userEvent.click(
+      within(screen.getByRole('region', { name: 'Chosen to order' })).getByRole(
+        'button',
+        { name: 'Raise a purchase order' },
+      ),
+    );
+
+    expect(
+      await screen.findByText(
+        `New order: ${JSON.stringify({
+          lines: [{ variantId: 'variant-D3-1000', quantity: '96.0000' }],
+        })}`,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('offers Plan a run on a made low row to whoever may plan one, filled in, and reads the list again once planned', async () => {
+    const asked = open(['stock.view', 'production.create']);
+    server.use(
+      http.get('/api/v1/products/variants', () =>
+        HttpResponse.json([
+          {
+            id: 'variant-SLEEP-60CT',
+            sku: 'SLEEP-60CT',
+            variantName: null,
+            productName: 'Vitamin D3',
+            type: 'good',
+            unitOfMeasure: 'each',
+            tracksLots: false,
+          },
+        ]),
+      ),
+      http.post('/api/v1/production-orders', () =>
+        HttpResponse.json(
+          { productionOrder: { id: 'run-1' } },
+          { status: 201 },
+        ),
+      ),
+    );
+
+    // Bought, or drafted: none.
+    await screen.findByRole('row', { name: /SLEEP-60CT/ });
+    expect(
+      screen.getAllByRole('button', { name: /^Plan a run of/ }),
+    ).toHaveLength(1);
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Plan a run of SLEEP-60CT' }),
+    );
+    const dialog = await screen.findByRole('dialog', { name: 'Plan a run' });
+    expect(
+      within(dialog).getByText(
+        'Filled from Reorder points: 230 brings it back to its reorder point, 96.',
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByLabelText(/Quantity to make/)).toHaveValue(
+      '230',
+    );
+    expect(asked).toHaveLength(1);
+
+    await userEvent.click(within(dialog).getByLabelText(/Made at/));
+    await userEvent.click(
+      await screen.findByRole('option', { name: /Main Site/ }),
+    );
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Plan run' }),
+    );
+
+    // In draft at once: the list, and its counts, read again.
+    await expect.poll(() => asked.length).toBe(2);
+  });
+
+  it('offers no Plan a run to whoever may not plan one', async () => {
+    open(['stock.view', 'orders.create']);
+
+    await screen.findByRole('row', { name: /SLEEP-60CT/ });
+    expect(
+      screen.queryByRole('button', { name: /^Plan a run of/ }),
+    ).not.toBeInTheDocument();
   });
 });

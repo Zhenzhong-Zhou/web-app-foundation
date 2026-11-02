@@ -9,6 +9,7 @@ import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { deploy, outdatedRefusal } from '../test/version';
 import { CreateOrderPage } from './create-order-page';
+import { fillState } from './order-fill';
 
 /**
  * Deliver to on a new purchase (ADR-071, amended). With one site it starts
@@ -43,13 +44,13 @@ function serve() {
 }
 
 /** A data router, which the page's unsaved-changes guard needs. */
-function renderPage() {
+function renderPage(state?: unknown) {
   const router = createMemoryRouter(
     [
       { path: '/orders/new', element: <CreateOrderPage /> },
       { path: '/orders/:id', element: <p>The order</p> },
     ],
-    { initialEntries: ['/orders/new'] },
+    { initialEntries: [{ pathname: '/orders/new', state }] },
   );
   renderWithAuth(<RouterProvider router={router} />, {
     // Deliver to reads the sites, which only locations.view may (ADR-080).
@@ -178,5 +179,69 @@ describe('CreateOrderPage Partner', () => {
 
     expect(asked).toEqual(['cooperative']);
     expect(box).toHaveValue(COOP.name);
+  });
+});
+
+/**
+ * Raise a purchase order on Reorder points (ADR-085): New order opens as a
+ * purchase with a line per chosen item at its suggestion, a note saying
+ * so, and the supplier left to choose; nothing is saved until it is raised.
+ */
+describe('CreateOrderPage filled from Reorder points', () => {
+  it('opens with a line per item at its suggestion, and raises them as typed', async () => {
+    const sent = serve();
+    renderPage(
+      fillState({
+        lines: [
+          { variantId: 'variant-plain', quantity: '2000.0000' },
+          { variantId: 'variant-lotted', quantity: '12.5000' },
+        ],
+      }),
+    );
+    const user = userEvent.setup();
+
+    expect(
+      await screen.findByText(
+        'Filled from Reorder points: 2 lines at their suggested quantities. Choose the supplier, check the quantities and prices, then raise it as a draft.',
+      ),
+    ).toBeInTheDocument();
+    await expect
+      .poll(() =>
+        screen
+          .getAllByRole('textbox', { name: 'Quantity' })
+          .map((box) => (box as HTMLInputElement).value),
+      )
+      .toEqual(['2000', '12.5']);
+    expect(
+      screen.getByRole('combobox', { name: 'Direction' }),
+    ).toHaveTextContent('Buying from them');
+    expect(screen.getByRole('combobox', { name: 'Partner' })).toHaveValue('');
+    expect(sent.body).toBeUndefined();
+
+    await user.click(screen.getByRole('combobox', { name: 'Partner' }));
+    await user.click(await screen.findByRole('option', { name: /Acme/ }));
+    await user.click(screen.getByRole('button', { name: 'Raise as draft' }));
+    await screen.findByText('The order');
+
+    expect(sent.body).toMatchObject({
+      partnerId: PARTNER.id,
+      direction: 'purchase',
+      lines: [
+        { variantId: 'variant-plain', quantityOrdered: '2000' },
+        { variantId: 'variant-lotted', quantityOrdered: '12.5' },
+      ],
+    });
+  });
+
+  it('opens empty, with no note, from a link that fills nothing', async () => {
+    serve();
+    renderPage();
+
+    expect(
+      await screen.findByRole('textbox', { name: 'Quantity' }),
+    ).toHaveValue('');
+    expect(
+      screen.queryByText(/Filled from Reorder points/),
+    ).not.toBeInTheDocument();
   });
 });

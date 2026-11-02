@@ -46,6 +46,22 @@ export function choiceOf(
 }
 
 /**
+ * Whether a row offers Plan a run (ADR-085): a made item, low or out, with
+ * something to suggest. A drafted one says Drafted with its run instead,
+ * so nobody plans it twice.
+ */
+export function plansRun(
+  row: Pick<ReorderPointRow, 'source' | 'status' | 'drafted' | 'suggestion'>,
+): boolean {
+  return (
+    row.source === 'made' &&
+    (row.status === 'low' || row.status === 'out') &&
+    !row.drafted &&
+    !atOrBelowZero(row.suggestion)
+  );
+}
+
+/**
  * Whether what a reorder point's field sends is a number above zero with
  * at most four places (ADR-085), as the server's own check refuses
  * otherwise. Read on the text, never parsed (ADR-025), so the dialog says

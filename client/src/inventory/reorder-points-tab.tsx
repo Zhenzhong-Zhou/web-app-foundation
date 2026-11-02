@@ -29,7 +29,7 @@ import {
   useState,
 } from 'react';
 import { useIntl } from 'react-intl';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import type { ReorderPointCounts, ReorderPointRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -49,6 +49,8 @@ import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch } from '../lib/use-list-search';
+import { fillState } from '../orders/order-fill';
+import { CreateRunDialog } from '../production/create-run-dialog';
 import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
@@ -60,7 +62,12 @@ import {
   type ReorderOpening,
   ReorderPointDialog,
 } from './reorder-point-dialog';
-import { atOrBelowZero, choiceOf } from './reorder-points';
+import {
+  atOrBelowZero,
+  choiceOf,
+  fieldQuantity,
+  plansRun,
+} from './reorder-points';
 
 /** A page of the list (ADR-051), as the server's own default. */
 const PAGE_SIZE = 50;
@@ -163,6 +170,7 @@ function PointRow({
   choosing,
   chosen,
   onChoose,
+  onPlan,
   actions,
 }: {
   row: ReorderPointRow;
@@ -171,6 +179,8 @@ function PointRow({
   choosing: boolean;
   chosen: boolean;
   onChoose: (row: ReorderPointRow, on: boolean) => void;
+  /** Plan a run of a made low item, for whoever may (production.create). */
+  onPlan: ((row: ReorderPointRow) => void) | null;
   /** The row's menu, for whoever may set a point (stock.reorder). */
   actions: ReactNode;
 }) {
@@ -293,8 +303,28 @@ function PointRow({
           <Stack
             direction="row"
             spacing={1}
-            sx={{ justifyContent: 'flex-end' }}
+            sx={{ justifyContent: 'flex-end', alignItems: 'center' }}
           >
+            {onPlan && plansRun(row) && (
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{ whiteSpace: 'nowrap' }}
+                aria-label={intl.formatMessage(
+                  {
+                    id: 'inventory.reorder.planRun',
+                    defaultMessage: 'Plan a run of {sku}',
+                  },
+                  { sku: row.sku },
+                )}
+                onClick={openDialog(() => onPlan(row))}
+              >
+                {intl.formatMessage({
+                  id: 'production.plan',
+                  defaultMessage: 'Plan a run',
+                })}
+              </Button>
+            )}
             {!grey && (
               <IconButton
                 size="small"
@@ -329,15 +359,17 @@ function PointRow({
 
 /**
  * The chosen rows, floating at the foot of the list while any is chosen
- * (ADR-085): how many, each with its suggestion, and Clear. What they are
- * chosen for, a purchase order, comes with New order filled in.
+ * (ADR-085): how many, each with its suggestion, Clear, and Raise a
+ * purchase order, which opens New order filled in with them.
  */
 function ChosenBar({
   chosen,
   onClear,
+  onRaise,
 }: {
   chosen: ReorderPointRow[];
   onClear: () => void;
+  onRaise: () => void;
 }) {
   const intl = useIntl();
 
@@ -403,6 +435,12 @@ function ChosenBar({
             defaultMessage: 'Clear',
           })}
         </Button>
+        <Button onClick={onRaise}>
+          {intl.formatMessage({
+            id: 'inventory.reorder.raise',
+            defaultMessage: 'Raise a purchase order',
+          })}
+        </Button>
       </Stack>
     </Paper>
   );
@@ -425,6 +463,7 @@ function ChosenBar({
 export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const intl = useIntl();
   const can = useCan();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const [filter, setFilter] = useState<Filter>(() =>
     fromAddress<Filter>(params, 'status', FILTERS, ''),
@@ -438,11 +477,13 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   );
   const [opening, setOpening] = useState<ReorderOpening | null>(null);
   const [removing, setRemoving] = useState<ReorderPointRow | null>(null);
+  const [planning, setPlanning] = useState<ReorderPointRow | null>(null);
   /** Bumped by each save and removal, so the counts read again too. */
   const [changes, setChanges] = useState(0);
 
   const choosing = can('orders.create');
   const setting = can('stock.reorder');
+  const planner = can('production.create');
   const query = { status: filter, search };
   const listPath = pathOf('/stock/reorder-points', {
     ...query,
@@ -511,6 +552,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   function saved(variantId?: string) {
     setOpening(null);
     setRemoving(null);
+    setPlanning(null);
     reload();
     setChanges((count) => count + 1);
     if (variantId)
@@ -693,6 +735,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                       choosing={choosing}
                       chosen={chosen.has(row.variantId)}
                       onChoose={choose}
+                      onPlan={planner ? setPlanning : null}
                       actions={
                         setting && (
                           <ReorderPointActions
@@ -741,6 +784,48 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
         <ChosenBar
           chosen={[...chosen.values()]}
           onClear={() => setChosen(new Map())}
+          // New order, a line per chosen item at its suggestion; nothing is
+          // saved until it is raised there, as a draft (ADR-085).
+          onRaise={() =>
+            void navigate('/orders/new', {
+              state: fillState({
+                lines: [...chosen.values()].map((row) => ({
+                  variantId: row.variantId,
+                  quantity: row.suggestion,
+                })),
+              }),
+            })
+          }
+        />
+      )}
+
+      {planning && (
+        <CreateRunDialog
+          open
+          canSeePartners={can('partners.view')}
+          filled={{
+            outputVariantId: planning.variantId,
+            quantityPlanned: fieldQuantity(planning.suggestion),
+            note: intl.formatMessage(
+              {
+                id: 'inventory.reorder.runFilled',
+                defaultMessage:
+                  'Filled from Reorder points: {quantity} brings it {rule, select, maximum {up to its maximum, {target}} other {back to its reorder point, {target}}}.',
+              },
+              {
+                quantity: displayQuantity(planning.suggestion),
+                rule: planning.rule,
+                target: displayQuantity(
+                  planning.rule === 'maximum' && planning.maximumQuantity
+                    ? planning.maximumQuantity
+                    : planning.reorderPoint,
+                ),
+              },
+            ),
+          }}
+          onClose={() => setPlanning(null)}
+          // A draft run is in draft at once: the list and its counts again.
+          onCreated={() => saved()}
         />
       )}
 

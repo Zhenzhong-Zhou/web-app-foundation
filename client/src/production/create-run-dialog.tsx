@@ -1,5 +1,6 @@
 import {
   Alert,
+  Box,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -11,20 +12,28 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-import type { Bom, Location, ProductionRun } from '../api/types.gen';
+import type {
+  Bom,
+  Location,
+  ProductionRun,
+  RunPreview,
+  RunPreviewLine,
+} from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { PartnerPicker } from '../components/partner-picker';
 import { VariantPicker } from '../components/variant-picker';
-import { api } from '../lib/api';
+import { api, withQuery } from '../lib/api';
 import {
   formatQuantity,
   groupedNumberMessage,
+  itemName,
   toApiDecimal,
 } from '../lib/format';
 import { usePartners } from '../lib/use-partners';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
+import { displayWithUnit } from '../products/units';
 
 const EMPTY = {
   outputVariantId: '',
@@ -49,17 +58,32 @@ const EMPTY = {
 export function CreateRunDialog({
   open,
   canSeePartners,
+  filled,
   onClose,
   onCreated,
 }: {
   open: boolean;
   /** partners.view, from the page. */
   canSeePartners: boolean;
+  /**
+   * Filled in from Reorder points (ADR-085): the item, the quantity to
+   * make as a field shows it, and a note saying where they came from. The
+   * recipe follows the item; the place is left to choose.
+   */
+  filled?: { outputVariantId: string; quantityPlanned: string; note: string };
   onClose: () => void;
   onCreated: () => void;
 }) {
   const intl = useIntl();
-  const [form, setForm] = useState(EMPTY);
+  const [form, setForm] = useState(() =>
+    filled
+      ? {
+          ...EMPTY,
+          outputVariantId: filled.outputVariantId,
+          quantityPlanned: filled.quantityPlanned,
+        }
+      : EMPTY,
+  );
   // Set when the quantity is typed with a thousands separator (ADR-054).
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const { variants, answered } = useVariants(open);
@@ -166,6 +190,45 @@ export function CreateRunDialog({
 
   const active = boms.find((row) => row.status === 'active');
 
+  /**
+   * What the run would use at the quantity typed (ADR-085), scaled by the
+   * server as release will issue it; the client adds nothing up (ADR-025).
+   * Asked once typing pauses; an answer to an older question is dropped
+   * by the effect's own cleanup. The last answer stays, dimmed, while the
+   * next is asked; a quantity the server refuses shows none.
+   */
+  const recipe = form.bomId || active?.id || '';
+  const planned = toApiDecimal(form.quantityPlanned);
+  const usesPath =
+    recipe && planned
+      ? withQuery('/production-orders/preview', {
+          bomId: recipe,
+          quantityPlanned: planned,
+        })
+      : null;
+  const [uses, setUses] = useState<{
+    path: string;
+    lines: RunPreviewLine[] | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!usesPath) return;
+    let ignore = false;
+    const timer = setTimeout(() => {
+      void api<RunPreview>(usesPath)
+        .then((result) => {
+          if (!ignore) setUses({ path: usesPath, lines: result.lines });
+        })
+        .catch(() => {
+          if (!ignore) setUses({ path: usesPath, lines: null });
+        });
+    }, 300);
+    return () => {
+      ignore = true;
+      clearTimeout(timer);
+    };
+  }, [usesPath]);
+
   return (
     <Dialog
       open={open}
@@ -183,6 +246,8 @@ export function CreateRunDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
+            {filled && <Alert severity="info">{filled.note}</Alert>}
+
             {error && <FormError message={error} />}
 
             <VariantPicker
@@ -324,6 +389,10 @@ export function CreateRunDialog({
               slotProps={{ htmlInput: { inputMode: 'decimal', maxLength: 19 } }}
             />
 
+            {usesPath && uses?.lines?.length ? (
+              <Uses lines={uses.lines} current={uses.path === usesPath} />
+            ) : null}
+
             <TextField
               id="run-location"
               label={intl.formatMessage({
@@ -410,5 +479,63 @@ export function CreateRunDialog({
         />
       </form>
     </Dialog>
+  );
+}
+
+/**
+ * What the run would use, a line per component at the quantity typed, as
+ * the server scaled it (ADR-085). Dimmed while a newer quantity is asked.
+ */
+function Uses({
+  lines,
+  current,
+}: {
+  lines: RunPreviewLine[];
+  /** Whether it answers the quantity as it is now. */
+  current: boolean;
+}) {
+  const intl = useIntl();
+
+  return (
+    <Box
+      component="section"
+      aria-labelledby="run-uses"
+      aria-busy={!current}
+      sx={{ opacity: current ? 1 : 0.6 }}
+    >
+      <Typography id="run-uses" variant="body2" sx={{ fontWeight: 600 }}>
+        {intl.formatMessage({
+          id: 'production.create.uses',
+          defaultMessage: 'Uses',
+        })}
+      </Typography>
+      <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+        {lines.map((line) => (
+          <Typography
+            key={line.componentVariantId}
+            component="li"
+            variant="body2"
+          >
+            {intl.formatMessage(
+              {
+                id: 'production.create.usesLine',
+                defaultMessage:
+                  '{quantity} · {sku} {name}{external, select, true { · the maker supplies it} other {}}',
+              },
+              {
+                quantity: displayWithUnit(
+                  line.quantity,
+                  line.unitOfMeasure,
+                  intl,
+                ),
+                sku: line.sku,
+                name: itemName(line.productName, line.variantName),
+                external: String(line.supplyType === 'external'),
+              },
+            )}
+          </Typography>
+        ))}
+      </Box>
+    </Box>
   );
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { atOrBelowZero, barFill, choiceOf } from './reorder-points';
+import { atOrBelowZero, barFill, choiceOf, plansRun } from './reorder-points';
 
 describe('atOrBelowZero', () => {
   it('reads zero and below on the text', () => {
@@ -53,5 +53,31 @@ describe('choiceOf', () => {
     expect(choiceOf({ ...low, source: 'made' })).toBe('none');
     expect(choiceOf({ ...low, status: 'enough' })).toBe('none');
     expect(choiceOf({ ...low, status: 'discontinued' })).toBe('none');
+  });
+});
+
+describe('plansRun', () => {
+  const low = {
+    source: 'made' as const,
+    status: 'low' as const,
+    drafted: false,
+    suggestion: '60.0000',
+  };
+
+  it('offers a run for a made item low or out with something to suggest', () => {
+    expect(plansRun(low)).toBe(true);
+    expect(plansRun({ ...low, status: 'out' })).toBe(true);
+  });
+
+  it('offers none once drafted, so nobody plans it twice', () => {
+    expect(plansRun({ ...low, drafted: true, suggestion: '0.0000' })).toBe(
+      false,
+    );
+  });
+
+  it('offers none for a bought item, one with enough, or a discontinued one', () => {
+    expect(plansRun({ ...low, source: 'bought' })).toBe(false);
+    expect(plansRun({ ...low, status: 'enough' })).toBe(false);
+    expect(plansRun({ ...low, status: 'discontinued' })).toBe(false);
   });
 });

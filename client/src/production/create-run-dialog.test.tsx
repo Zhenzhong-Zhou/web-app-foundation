@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { renderWithAuth } from '../test/render-with-auth';
@@ -118,5 +118,94 @@ describe('CreateRunDialog', () => {
       await screen.findByRole('option', { name: 'WIP' }),
     ).toBeInTheDocument();
     expect(askedForPartners).toBe(false);
+  });
+
+  /**
+   * Plan a run on Reorder points (ADR-085): the item and the quantity
+   * filled in with a note, the recipe following the item, and what the run
+   * would use as the server scales it, asked once typing pauses, an answer
+   * to an older quantity dropped.
+   */
+  it('opens filled in, and shows what the run would use for the quantity as it is', async () => {
+    const user = userEvent.setup();
+    const asked: string[] = [];
+
+    server.use(
+      http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
+      http.get('/api/v1/locations', () => HttpResponse.json([])),
+      http.get('/api/v1/partners', () => HttpResponse.json([])),
+      http.get('/api/v1/boms', () =>
+        HttpResponse.json([
+          {
+            id: 'bom-active',
+            outputVariantId: VARIANT.id,
+            version: 2,
+            status: 'active',
+            outputQuantity: '12.0000',
+          },
+        ]),
+      ),
+      http.get('/api/v1/production-orders/preview', async ({ request }) => {
+        const query = new URL(request.url).searchParams;
+        const quantity = query.get('quantityPlanned')!;
+        asked.push(`${query.get('bomId')} ${quantity}`);
+        // The first answer arrives after the second is asked.
+        if (quantity === '60') await delay(400);
+        return HttpResponse.json({
+          lines: [
+            {
+              componentVariantId: 'variant-bottle',
+              sku: 'MAGCAP-60',
+              productName: 'Magnesium',
+              variantName: '60ct',
+              unitOfMeasure: 'each',
+              supplyType: 'stocked',
+              quantity: quantity === '60' ? '5.0000' : '10.0000',
+            },
+          ],
+        });
+      }),
+    );
+
+    renderWithAuth(
+      <CreateRunDialog
+        open
+        canSeePartners
+        filled={{
+          outputVariantId: VARIANT.id,
+          quantityPlanned: '60',
+          note: 'Filled from Reorder points: 60 brings it back to its reorder point, 100.',
+        }}
+        onClose={() => undefined}
+        onCreated={() => undefined}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        'Filled from Reorder points: 60 brings it back to its reorder point, 100.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/Quantity to make/)).toHaveValue('60');
+    expect(
+      await screen.findByRole('combobox', { name: 'Recipe' }),
+    ).toHaveTextContent('v2 (current) — makes 12');
+    await expect.poll(() => asked).toEqual(['bom-active 60']);
+
+    // Typed again before the first answer comes: one question, once paused.
+    const quantity = screen.getByLabelText(/Quantity to make/);
+    await user.clear(quantity);
+    await user.type(quantity, '120');
+
+    const uses = await screen.findByRole('region', { name: 'Uses' });
+    await expect
+      .poll(() => uses.textContent)
+      .toContain('10 each · MAGCAP-60 Magnesium (60ct)');
+    expect(asked).toEqual(['bom-active 60', 'bom-active 120']);
+
+    // The first answer, arriving late, does not replace it.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    expect(uses.textContent).toContain('10 each');
+    expect(uses.textContent).not.toContain('5 each');
   });
 });

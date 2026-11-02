@@ -3083,6 +3083,32 @@ site, after a deploy that changes the setting, the route or the relay.
   "Order them from Reorder points.", though the Owner may plan runs too.
   Two made items: "Plan them from Reorder points."; one of each: "Order
   or plan them from Reorder points.".
+- **MC-4215** *(ADR-085)* Raise a purchase order, filled in from the list.
+  On a fresh demo, as the Owner, Reorder points on Low: choose
+  D3-1000-120 and ELDER-250, and press Raise a purchase order in the
+  dark bar. New order opens as Buying from them, Partner empty, with a
+  note: "Filled from Reorder points: 2 lines at their suggested
+  quantities. Choose the supplier, check the quantities and prices, then
+  raise it as a draft.", and two lines, D3-1000-120 at 96 and ELDER-250
+  at 134. Nothing is saved yet: Cancel goes back to Orders and Reorder
+  points is as it was. Raise it again, choose Prairie and Raise as
+  draft: the order opens as a draft; back on Reorder points, both rows
+  read Drafted with the order's number, and neither has a box to choose.
+  Fatima Haddad (Sales) has the boxes and the bar; Chloé Tremblay
+  (Viewer), neither.
+- **MC-4216** *(ADR-085)* Plan a run, filled in from the list. On a fresh
+  demo, as the Owner, Reorder points on Low: MAGCAP-SAMPLE's row has Plan
+  a run, and no bought row has one. It opens Plan a run with Making
+  MAGCAP-SAMPLE, the recipe "v1 (current) — makes 12", Quantity to make
+  24, Made at empty, and a note: "Filled from Reorder points: 24 brings
+  it back to its reorder point, 36.". Under the quantity, Uses reads
+  "2 each · MAGCAP-60 …"; type 120 and, once typing pauses, it reads 10.
+  Cancel saves nothing. Plan it again at 24, Made at Office, Plan run:
+  "Run planned", and the row reads Drafted with the run, without
+  reloading the page. Production's own Plan a run shows Uses too, once an
+  item with a recipe and a quantity are in. Fatima Haddad (Sales) and
+  Chloé Tremblay (Viewer), who plan no runs, see no Plan a run. In 中文:
+  计划生产, the note 已按再订货点填写, and 用料.
 
 ## Regressions
 
@@ -4240,3 +4266,7 @@ first.
   tile, red with its out count, and its five rows against their points:
   MC-4213; the notice opening Reorder points on Low, its several items'
   words following them, Order, Plan, or both: MC-4214.
+- 2026-11-01: ADR-085, a purchase order and a run filled in from Reorder
+  points: Raise a purchase order opening New order with the chosen lines
+  and a note, MC-4215; Plan a run on a made low row, with the run
+  dialog's Uses scaled by the server, MC-4216.
