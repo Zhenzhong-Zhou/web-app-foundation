@@ -234,6 +234,7 @@ work under updates it.
 | A deploy that changes the tracker      | `npm run error-tracker:test -- <site>` in `server/` ([render.md](docs/runbooks/render.md#the-error-tracker-adr-084))                            |
 | A change to the mark, in `docs/brand/` | `node scripts/brand-assets.mjs`; commit what it writes in `client/public/`                                                                      |
 | The planning skill changed             | After its merge, on `main`: `node scripts/pack-chat-skill.mjs`; replace it in claude.ai's Settings → Skills; walk `evals.md`                    |
+| Building from a brief                  | `/build-from-brief <brief> from <N>`; paste only the stops into the chat                                                                        |
 | Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                                          |
 | Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                                                              |
 | After a merge                          | `scripts/prune-branches.sh --yes`                                                                                                               |
