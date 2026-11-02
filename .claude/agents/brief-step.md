@@ -30,8 +30,9 @@ Where one contradicts a rule here or in CLAUDE.md, or the step reads two
 ways that would build different things, stop and ask rather than choose
 ([CLAUDE.md, "How to work"][how-to-work]).
 
-**A question ends the step there,** since a subagent cannot ask while it
-runs: nothing committed for the part it decides, the question under
+**A question ends the step there,** in the main session too, since
+decisions are Bob's, made in the chat, and a subagent cannot ask while
+it runs: nothing committed for the part it decides, the question under
 "Decisions for Bob" in the summary, and the last line `BLOCKED: a
 decision`. Each "stop and say so" below ends it the same way, its last
 line `BLOCKED:` and what is needed.
