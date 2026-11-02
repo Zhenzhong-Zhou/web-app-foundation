@@ -129,10 +129,9 @@ Andrej Karpathy's observations on LLM coding pitfalls
   real users, report only.
 - `/build-from-brief`: runs a build brief in `tmp/`, one step as
   `/build-from-brief tmp/adr-NNN/brief.md <N>` or from N in a row as
-  `/build-from-brief tmp/adr-NNN/brief.md from <N>`, each step in a
-  `brief-step` subagent, whose `.claude/agents/brief-step.md` holds the
-  rules every brief shares, stopping where a person is needed; only when
-  a prompt names it.
+  `/build-from-brief tmp/adr-NNN/brief.md from <N>`, each Claude Code
+  step in a `brief-step` subagent and the reviews in the session,
+  stopping where a person is needed; only when a prompt names it.
 - `/rules-file`: writes an area's rules files from its code and tests.
 - `/triage`: proposes a group, areas or a close for each open issue in
   `tmp/triage.md`, then, with Bob's choices, writes the `gh` commands
