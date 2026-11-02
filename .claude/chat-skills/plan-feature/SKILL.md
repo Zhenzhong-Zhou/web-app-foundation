@@ -5,9 +5,9 @@ description: "The planning routine for Bob's web-app-foundation repository (Pani
 
 # Plan a feature for web-app-foundation
 
-Bob plans each feature in this chat and builds it in Claude Code, one
-step of a build brief per prompt (`docs/engineering.md`, "How code is
-delivered"). This skill is the chat's half: how a session starts, how a
+Bob plans each feature in this chat and builds it in Claude Code, the
+steps of a build brief run in a row until one needs him
+(`docs/engineering.md`, "How code is delivered"). This skill is the chat's half: how a session starts, how a
 feature is planned, and how what was built is recorded. The working
 agreements keep their one home in `docs/engineering.md`; `reference/`
 copies only what every reply acts on.
@@ -118,6 +118,8 @@ gets:
   stop, once its summary is pasted; never while a run goes on.
 - A question a step hands back: the options, one recommended, and the
   exact text to type.
+- The reviews' choices, by number, after the step's number:
+  `/build-from-brief tmp/adr-NNN/brief.md N` followed by them.
 - A chat step (the docs, a design, a fix the chat writes): its files as
   [the delivery rules](reference/delivery.md) say, from a clone of the
   branch Bob has pushed, at the commit he names.

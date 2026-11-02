@@ -17,7 +17,8 @@ repeat; a brief holds only its decisions and its steps.
    (what to add, or why nothing), the manual checks (which, in the same
    commit as what they check), the persona for `/usability-walkthrough`
    or why none, the stop rule when not 30 minutes, and anything every
-   summary must say.
+   summary must say. The reviews have none: they wait for their
+   helpers and for Bob.
 4. **The steps:** a table (#, Who, What), then a section per step: what
    it builds, its files, the test that proves it, one commit unless it
    says otherwise. Who is `Claude Code`; `Claude Code, main session` for
@@ -29,7 +30,8 @@ repeat; a brief holds only its decisions and its steps.
    - The seeds where a feature adds a table or a screen.
    - The reviews in two prompts: the findings, numbered, to
      `tmp/adr-NNN/review.md` with nothing fixed; then the fixes Bob
-     chose, the full verify, the push and the pull request.
+     chose, given after the step's number, the full verify, the push and
+     the pull request.
    - The as-built last, by the chat; then what is done by hand after
      the merge.
 5. **Where `/clear` is safe:** after a run stops, once its summary is
