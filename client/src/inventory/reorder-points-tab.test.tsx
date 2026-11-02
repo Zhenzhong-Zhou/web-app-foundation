@@ -276,6 +276,10 @@ describe('Reorder points', () => {
     expect(
       screen.getAllByRole('button', { name: 'Add reorder point' }),
     ).toHaveLength(2);
+    // Nothing to filter, work out or export yet.
+    expect(screen.queryByRole('button', { name: /^All/ })).toBeNull();
+    expect(screen.queryByText(/^Position = usable/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Export' })).toBeNull();
   });
 
   it('says nothing is low, with how many have a point, and shows all', async () => {
@@ -467,6 +471,10 @@ describe('Reorder points', () => {
       'div',
     );
     expect(empty).not.toBeNull();
+    // One Learn more, the empty state's: the position's line is not shown.
+    expect(screen.getAllByRole('button', { name: 'Learn more' })).toHaveLength(
+      1,
+    );
     await userEvent.click(
       within(empty!).getByRole('button', { name: 'Learn more' }),
     );

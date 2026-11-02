@@ -3070,7 +3070,8 @@ site, after a deploy that changes the setting, the route or the relay.
 - **MC-4211** *(ADR-085)* The empty states. Register a new organization:
   Reorder points shows an icon, "No reorder points yet.", a sentence on
   what a point does, Add reorder point, and Learn more, which opens Help
-  at Reorder points. Receive 50 of an item, give
+  at Reorder points; no All, Low and Out, no position line and no
+  Export, so Learn more is the only one. Receive 50 of an item, give
   it a point of 10, and press Low: a tick in green, "Nothing is low. 1 item
   has a reorder point.", and Show all, which shows All with the row.
 - **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
@@ -4375,3 +4376,5 @@ first.
   guide naming Partner, where the supplier is chosen: MC-4215 reworded.
 - 2026-11-01: ADR-085's review, how many are chosen said to a screen
   reader: MC-4205 extended.
+- 2026-11-01: ADR-085's review, Reorder points with no point hiding its
+  views, the position's line and Export: MC-4211 extended.

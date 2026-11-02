@@ -607,6 +607,11 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
     return <RevisionRefusalPage failure={refused} onRetry={reload} />;
   }
 
+  // No point at all, counted with no search: the views, the position's
+  // line and Export have nothing to show, and the empty state says what a
+  // point does, with its own Learn more.
+  const none = counts?.all === 0 && !search;
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -618,9 +623,11 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
         actions={
           <>
             {/* Every row the filter and search match, not the page (ADR-057). */}
-            <ExportButton
-              path={pathOf('/stock/reorder-points/export', query)}
-            />
+            {!none && (
+              <ExportButton
+                path={pathOf('/stock/reorder-points/export', query)}
+              />
+            )}
             {add}
           </>
         }
@@ -638,50 +645,56 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
             value: text,
             onChange: setText,
           }}
-          quick={[
-            {
-              id: 'all',
-              // Its own, not Invoices': Toutes is for factures.
-              label: intl.formatMessage({
-                id: 'inventory.reorder.filter.all',
-                defaultMessage: 'All',
-              }),
-              count: counts?.all,
-              pressed: filter === '',
-              onToggle: () => setFilter(''),
-            },
-            {
-              id: 'low',
-              label: intl.formatMessage({
-                id: 'inventory.reorder.filter.low',
-                defaultMessage: 'Low',
-              }),
-              count: counts?.low,
-              pressed: filter === 'low',
-              onToggle: () => setFilter('low'),
-            },
-            {
-              id: 'out',
-              label: intl.formatMessage({
-                id: 'inventory.reorder.filter.out',
-                defaultMessage: 'Out',
-              }),
-              count: counts?.out,
-              pressed: filter === 'out',
-              onToggle: () => setFilter('out'),
-            },
-          ]}
+          quick={
+            none
+              ? []
+              : [
+                  {
+                    id: 'all',
+                    // Its own, not Invoices': Toutes is for factures.
+                    label: intl.formatMessage({
+                      id: 'inventory.reorder.filter.all',
+                      defaultMessage: 'All',
+                    }),
+                    count: counts?.all,
+                    pressed: filter === '',
+                    onToggle: () => setFilter(''),
+                  },
+                  {
+                    id: 'low',
+                    label: intl.formatMessage({
+                      id: 'inventory.reorder.filter.low',
+                      defaultMessage: 'Low',
+                    }),
+                    count: counts?.low,
+                    pressed: filter === 'low',
+                    onToggle: () => setFilter('low'),
+                  },
+                  {
+                    id: 'out',
+                    label: intl.formatMessage({
+                      id: 'inventory.reorder.filter.out',
+                      defaultMessage: 'Out',
+                    }),
+                    count: counts?.out,
+                    pressed: filter === 'out',
+                    onToggle: () => setFilter('out'),
+                  },
+                ]
+          }
         />
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          <LearnMore
-            target={{ guide: 'inventory', section: 'position' }}
-            variant="inline"
-            after={intl.formatMessage({
-              id: 'inventory.reorder.positionLine',
-              defaultMessage: 'Position = usable + coming − still needed',
-            })}
-          />
-        </Typography>
+        {!none && (
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            <LearnMore
+              target={{ guide: 'inventory', section: 'position' }}
+              variant="inline"
+              after={intl.formatMessage({
+                id: 'inventory.reorder.positionLine',
+                defaultMessage: 'Position = usable + coming − still needed',
+              })}
+            />
+          </Typography>
+        )}
       </Stack>
 
       <ListError error={error} onRetry={failed ? reload : undefined} />
