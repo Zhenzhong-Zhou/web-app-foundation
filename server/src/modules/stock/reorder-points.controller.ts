@@ -146,13 +146,8 @@ export class ReorderPointsController {
     action: AUDIT_ACTIONS.REORDER_POINT_UPDATED,
     resourceType: 'reorder_point',
     resourceId: (_response, request) => request.params.variantId,
-    fields: [
-      'source',
-      'reorderPoint',
-      'rule',
-      'fixedQuantity',
-      'maximumQuantity',
-    ],
+    // No fields from the body: the service records what was kept, before
+    // and after, as adding does (ADR-018).
   })
   async update(
     @Param('variantId', ParseUUIDPipe) variantId: string,

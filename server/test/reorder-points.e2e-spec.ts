@@ -385,13 +385,13 @@ describe('Reorder points (e2e)', () => {
       const d3 = await variant(alpha, 'D3-1000');
 
       await alpha.agent.post(path(d3)).send(FIXED).expect(204);
+      // As the dialog sends it: no quantity its rule does not use.
       await alpha.agent
         .put(path(d3))
         .send({
           source: 'bought',
           reorderPoint: '2000',
           rule: 'maximum',
-          fixedQuantity: null,
           maximumQuantity: '5000',
         })
         .expect(204);
@@ -437,6 +437,32 @@ describe('Reorder points (e2e)', () => {
           },
         },
       ]);
+    });
+
+    // The body's quantity its rule does not use is never kept, and so
+    // never logged, whatever it holds (ADR-018).
+    it('logs what was kept, never what the body sent beside it', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const d3 = await variant(alpha, 'D3-1000');
+      await alpha.agent.post(path(d3)).send(FIXED).expect(204);
+
+      await alpha.agent
+        .put(path(d3))
+        .send({
+          ...FIXED,
+          reorderPoint: '2400.0000',
+          maximumQuantity: 'any text',
+        })
+        .expect(204);
+
+      const [, updated] = await entries(d3);
+      expect(updated.payload).toEqual({
+        source: { from: 'bought', to: 'bought' },
+        reorderPoint: { from: '2000', to: '2400' },
+        rule: { from: 'fixed', to: 'fixed' },
+        fixedQuantity: { from: '1000', to: '1000' },
+        maximumQuantity: { from: null, to: null },
+      });
     });
 
     it('writes nothing for a change that changes nothing', async () => {

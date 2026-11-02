@@ -3045,7 +3045,11 @@ site, after a deploy that changes the setting, the route or the relay.
   the bell. Its stock and its orders do not change." Keep it changes
   nothing; Remove reorder point takes the row off the list and the counts
   down by one. The menu's Remove asks the same. Stock of the item opens
-  Stock, searched for the SKU.
+  Stock, searched for the SKU. Edit ELDER-250 again, choose A fixed
+  quantity of 48 and Save: the audit log's newest line, Reorder point
+  changed, reads How much to order from Up to a maximum to A fixed
+  quantity, Maximum from 150 to none and Fixed quantity from none to 48,
+  and names nothing that did not move.
 - **MC-4210** *(ADR-085)* From a Stock row, and who sees what. On
   Inventory's Stock tab, a row's ⋯ ends with Reorder point…: on a
   D3-1000-120 row it opens Edit with its point; on a GLOVES-100 row, Add
@@ -4334,3 +4338,5 @@ first.
   History's filters and Members' Invite closed: MC-R69 extended.
 - 2026-11-01: ADR-085's review, Back from Your account at Help's foot:
   MC-R69 extended.
+- 2026-11-01: ADR-085's review, a changed reorder point logged from what
+  was saved, a change of rule naming both quantities: MC-4209 extended.

@@ -12,7 +12,6 @@ import { readableQuantity } from '../../common/readable-quantity';
 import {
   type FieldValues,
   recordContext,
-  recordPrevious,
 } from '../../core/audit/audit-context';
 import { productVariants, reorderPoints } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -123,23 +122,21 @@ export class ReorderPointsService {
 
       await refuseMaximumAtOrBelowPoint(tx, input);
 
-      // The quantity a rule does not use, as null, so a change of rule
-      // reads as one quantity going and the other coming.
-      recordPrevious({
-        fixedQuantity: null,
-        maximumQuantity: null,
-        ...loggedOf(existing),
-      });
-
+      const kept = keptOf(input);
       await tx
         .update(reorderPoints)
-        .set(keptOf(input))
+        .set(kept)
         .where(
           and(
             eq(reorderPoints.organizationId, organizationId),
             eq(reorderPoints.variantId, variantId),
           ),
         );
+
+      // What was kept before and what is now, never the body: the quantity
+      // its rule does not use may hold anything, or be left out, as the
+      // dialog leaves it (ADR-018).
+      recordContext(changeOf(existing, kept));
     });
 
     this.logger.log(`Reorder point changed for ${variantId}`);
@@ -189,6 +186,33 @@ function loggedOf(point: PointValues): FieldValues {
     ...(point.maximumQuantity && {
       maximumQuantity: readableQuantity(point.maximumQuantity),
     }),
+  };
+}
+
+/**
+ * A change as the audit log reads it: each of the point's values, from
+ * what was kept to what is, the quantity a rule does not use as null, so
+ * a change of rule reads as one quantity going and the other coming. The
+ * log leaves out a value that did not move, and writes nothing when none
+ * did.
+ */
+function changeOf(before: PointValues, after: PointValues): FieldValues {
+  const was = {
+    fixedQuantity: null,
+    maximumQuantity: null,
+    ...loggedOf(before),
+  };
+  const now = {
+    fixedQuantity: null,
+    maximumQuantity: null,
+    ...loggedOf(after),
+  };
+  return {
+    source: { from: was.source, to: now.source },
+    reorderPoint: { from: was.reorderPoint, to: now.reorderPoint },
+    rule: { from: was.rule, to: now.rule },
+    fixedQuantity: { from: was.fixedQuantity, to: now.fixedQuantity },
+    maximumQuantity: { from: was.maximumQuantity, to: now.maximumQuantity },
   };
 }
 
