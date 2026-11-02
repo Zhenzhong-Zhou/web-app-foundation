@@ -3048,7 +3048,8 @@ site, after a deploy that changes the setting, the route or the relay.
   the reorder point, as Edit from a row's ⋯ opens.
 - **MC-4209** *(ADR-085)* A row's menu, Edit and Remove. Each row's ⋯
   holds Edit reorder point, Stock of the item and Remove reorder point, in
-  red. ZINC-60's row has the ⋯ and no chevron. Edit on ELDER-250 opens
+  red; VoiceOver reads the ⋯ as a menu button, collapsed, then expanded
+  once open. ZINC-60's row has the ⋯ and no chevron. Edit on ELDER-250 opens
   with Bought, 96 and Up to a maximum of 192; make it 150 and Save: the
   row's line and suggestion change, and the dialog closes. Edit's foot has
   Remove reorder point at the left, in red, which asks first: "Remove
@@ -4399,3 +4400,5 @@ first.
   only for a read that takes a while: MC-4204 extended.
 - 2026-11-01: ADR-085's review, a refusal from Save cleared once its
   field changes: MC-4208 extended.
+- 2026-11-01: ADR-085's review, a Reorder points row's ⋯ said as a menu
+  button: MC-4209 extended.

@@ -257,12 +257,15 @@ describe('Reorder points', () => {
     expect(
       await screen.findByRole('button', { name: 'Add reorder point' }),
     ).toBeInTheDocument();
-    await userEvent.click(
-      await screen.findByRole('button', {
-        name: 'Actions for D3-1000’s reorder point',
-      }),
-    );
+    const actions = await screen.findByRole('button', {
+      name: 'Actions for D3-1000’s reorder point',
+    });
+    // Says it opens a menu, and whether it is open.
+    expect(actions).toHaveAttribute('aria-haspopup', 'menu');
+    expect(actions).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(actions);
     const menu = await screen.findByRole('menu');
+    expect(actions).toHaveAttribute('aria-expanded', 'true');
     expect(
       within(menu)
         .getAllByRole('menuitem')

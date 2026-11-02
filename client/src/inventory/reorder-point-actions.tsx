@@ -1,6 +1,6 @@
 import MoreVert from '@mui/icons-material/MoreVert';
 import { IconButton, Menu, MenuItem } from '@mui/material';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
@@ -43,6 +43,8 @@ export function ReorderPointActions({
     setPending(null);
   }
 
+  const menuId = useId();
+
   function choose(choice: Choice) {
     setPending(choice);
     setAnchor(null);
@@ -50,6 +52,7 @@ export function ReorderPointActions({
 
   return (
     <>
+      {/* Says it opens a menu, and whether it is open, as Members' does. */}
       <IconButton
         size="small"
         aria-label={intl.formatMessage(
@@ -59,12 +62,16 @@ export function ReorderPointActions({
           },
           { sku: row.sku },
         )}
+        aria-haspopup="menu"
+        aria-expanded={!!anchor}
+        aria-controls={anchor ? menuId : undefined}
         onClick={(event) => setAnchor(event.currentTarget)}
       >
         <MoreVert fontSize="small" />
       </IconButton>
 
       <Menu
+        id={menuId}
         anchorEl={anchor}
         open={!!anchor}
         onClose={() => setAnchor(null)}
