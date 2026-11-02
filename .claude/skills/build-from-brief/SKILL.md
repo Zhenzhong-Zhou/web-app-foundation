@@ -19,6 +19,8 @@ not here; the loop does no step's work itself.
 `$ARGUMENTS`, one of:
 
 - **`<brief> <N>`:** step N alone.
+- **`<brief> <N>` followed by more words:** step N alone, with Bob's
+  choices: those words, handed to the step as they stand.
 - **`<brief> from <N>`:** step N, then each step after it in the brief's
   order, until a stop below.
 
@@ -47,7 +49,8 @@ saying so.
   in this session, by the rules in `.claude/agents/brief-step.md`, read
   from the file. In a row, the run stops before it, naming it.
 - **`Claude Code`:** a new `brief-step` subagent, given the brief's path
-  and the step's number and nothing else. Wait for its last message, its
+  and the step's number, with Bob's choices when he gave any, and
+  nothing else. Wait for its last message, its
   summary, doing nothing meanwhile. **One step at a time:** a subagent
   starts in the background here, so the next step is read only once
   this one's result has come back, and two never run at once. No
