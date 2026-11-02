@@ -10,6 +10,8 @@ import {
   TableHead,
   TableRow,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
@@ -130,9 +132,15 @@ function browserOf(userAgent: string | null): string | null {
  * Read-only and unpaged: ninety days of one person's account activity is a
  * short list (ADR-022), and a Load more button on a panel nobody scrolls is
  * furniture.
+ *
+ * On a phone the address goes under the event, free to break anywhere, and
+ * the From column goes: a full IPv6 address in a column of its own made the
+ * table 518 px wide in a 286 px card and pushed When off screen (#323).
  */
 export function RecentActivity() {
   const intl = useIntl();
+  const theme = useTheme();
+  const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
   const [events, setEvents] = useState<AccountEvent[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -212,12 +220,14 @@ export function RecentActivity() {
                       defaultMessage: 'Browser',
                     })}
                   </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'account.activity.from',
-                      defaultMessage: 'From',
-                    })}
-                  </TableCell>
+                  {!phone && (
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'account.activity.from',
+                        defaultMessage: 'From',
+                      })}
+                    </TableCell>
+                  )}
                   <TableCell>
                     {intl.formatMessage({
                       id: 'account.activity.when',
@@ -234,6 +244,17 @@ export function RecentActivity() {
                       {isKnownAction(event.action)
                         ? intl.formatMessage(ACTION_LABELS[event.action])
                         : event.action}
+                      {phone && (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: 'text.secondary',
+                            overflowWrap: 'anywhere',
+                          }}
+                        >
+                          {event.ip ?? NO_VALUE}
+                        </Typography>
+                      )}
                     </TableCell>
                     <TableCell>
                       {browserOf(event.userAgent) ??
@@ -242,7 +263,7 @@ export function RecentActivity() {
                           defaultMessage: 'Other',
                         })}
                     </TableCell>
-                    <TableCell>{event.ip ?? NO_VALUE}</TableCell>
+                    {!phone && <TableCell>{event.ip ?? NO_VALUE}</TableCell>}
                     <TableCell>{relativeTime(event.createdAt)}</TableCell>
                   </TableRow>
                 ))}
