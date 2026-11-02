@@ -50,6 +50,9 @@ Their home is `docs/engineering.md`, "How code is delivered" and
 - One `git commit -m "…"`: a subject, a blank line, then wrapped
   paragraphs saying why. No backticks and no `!` inside the quotes,
   which zsh would read.
+- A commit command whose message spans lines is never indented in the
+  reply: a code block inside a list carries the list's indent, and git
+  keeps it in the message (ADR-089's first commit).
 - `scripts/verify.sh --docs` before a commit of only Markdown and
   `scripts/`; `--quick` otherwise; in full before a push.
 - An alert is "Dependabot alert 4" or "code scanning alert 9", never

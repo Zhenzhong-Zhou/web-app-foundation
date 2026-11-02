@@ -53,31 +53,13 @@ For each area the change touches, by its name in `AREAS`
 - `docs/adr/open-decisions.md`;
 - the area's open issues, and the text and comments of each
   `when-touched` one, which rides along with the next branch that
-  touches its area. Bob runs this from the repository's root, the
-  areas and the issues the feature names filled in, and attaches
-  `tmp/adr-NNN/check.txt`. It asks for JSON because `gh issue view
-  --comments`, saved to a file, prints the comments without the
-  issue's text (ADR-084's check).
+  touches its area. Bob runs `scripts/adr-check.mjs` (ADR-089) from the
+  repository's root, the areas and the issues the feature names filled
+  in, and attaches `tmp/adr-NNN/check.txt`, which it writes. It refuses
+  an area not in `AREAS`, so a typo fails rather than printing nothing.
 
   ```bash
-  areas=(api ops ui) named=(287)
-  mkdir -p tmp/adr-NNN
-  {
-    for a in "${areas[@]}"; do
-      echo "== area:$a"
-      gh issue list --state open --label "area:$a" --limit 100
-    done
-    {
-      printf '%s\n' "${named[@]}"
-      for a in "${areas[@]}"; do
-        gh issue list --state open --label "area:$a" --label when-touched \
-          --limit 100 --json number --jq '.[].number'
-      done
-    } | sort -un | while read -r n; do
-      gh issue view "$n" --json number,title,body,comments --jq \
-        '"== #\(.number) \(.title)\n\(.body)", (.comments[] | "-- \(.author.login):\n\(.body)")'
-    done
-  } > tmp/adr-NNN/check.txt 2>&1
+  node scripts/adr-check.mjs NNN --areas api,ops,ui --issues 287
   ```
 
   GitHub's API without a token shares its limit with every container
@@ -117,30 +99,34 @@ checking**. Each item names its issue or ADR.
 ## 4. The brief
 
 `tmp/adr-NNN/brief.md`, in [the brief's shape](reference/brief.md): a
-step per commit, each Claude Code step run as `/build-from-brief
-tmp/adr-NNN/brief.md N`. Sent once, whole. Changed only when an answer
-changes a step not yet run; what building settles stays in the chat for
-the as-built.
+step per commit, its table saying who runs each. Claude Code's steps run
+in a row, `/build-from-brief tmp/adr-NNN/brief.md from N`, each in a
+fresh `brief-step` subagent, until one needs a person (ADR-089). Sent
+once, whole. Changed only when an answer changes a step not yet run;
+what building settles stays in the chat for the as-built.
 
 ## 5. While building
 
-For each summary Bob pastes:
+Bob pastes only a run's stops: a step that ends BLOCKED or with a
+decision, a step for the chat or for him, and the reviews. Each stop
+gets:
 
 - What the step did and found, and where each finding is kept: an
   issue's number, "kept in the chat, then the as-built", or "not kept"
   and why.
-- The next prompt, and that `/clear` is safe once the summary is pasted.
-- A question Claude Code asks mid-step: the options, one recommended,
-  and the exact text to type.
+- The next prompt, usually `from N`, and that `/clear` is safe after a
+  stop, once its summary is pasted; never while a run goes on.
+- A question a step hands back: the options, one recommended, and the
+  exact text to type.
 - A chat step (the docs, a design, a fix the chat writes): its files as
   [the delivery rules](reference/delivery.md) say, from a clone of the
   branch Bob has pushed, at the commit he names.
 
 ## 6. The as-built and the pull request
 
-- From the notes kept in the chat: the ADR's amendment, "## Amendment
-  (Month YYYY) — as built (#PR)", where building differed from the
-  decisions; the handoff; any manual check or runbook line still owed.
+- From the notes kept in the chat and `tmp/adr-NNN/summaries.md`, which
+  Bob attaches: the ADR's amendment, "## Amendment (Month YYYY) — as
+  built (#PR)", where building differed from the decisions; the handoff; any manual check or runbook line still owed.
   As patches.
 - When work ends in a pull request: its title, and its description as
   plain Markdown, unasked.
