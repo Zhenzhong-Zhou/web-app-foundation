@@ -20,6 +20,9 @@ import { addressLine } from './address-line';
  * (ADR-080), whose page never asks for them: the field keeps what is
  * chosen, cannot be changed, and says why, with what the empty choice
  * means when it is the one standing.
+ *
+ * A site's name is translate="no", in the menu and as the field's value, so
+ * a browser translating the page leaves it as typed (#245).
  */
 export function SiteSelect({
   id,
@@ -106,7 +109,7 @@ export function SiteSelect({
       <MenuItem value="">{emptyLabel}</MenuItem>
       {offered.map((site) => (
         <MenuItem key={site.id} value={site.id}>
-          {site.name}
+          <span translate="no">{site.name}</span>
         </MenuItem>
       ))}
     </TextField>

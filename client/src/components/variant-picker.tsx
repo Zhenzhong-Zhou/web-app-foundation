@@ -32,6 +32,10 @@ function labelFor(option: VariantOption): string {
  *
  * `required` reaches the native input, so the browser refuses an empty submit
  * exactly as it did for the select.
+ *
+ * Each option is translate="no", so a browser translating the page leaves
+ * the SKU and names as typed (#245); the chosen one is the input's value,
+ * which no browser translates.
  */
 export function VariantPicker({
   id,
@@ -88,6 +92,11 @@ export function VariantPicker({
       value={selected}
       onChange={(_event, option) => onChange(option?.id ?? '')}
       getOptionLabel={labelFor}
+      renderOption={({ key, ...props }, option) => (
+        <li key={key} {...props} translate="no">
+          {labelFor(option)}
+        </li>
+      )}
       isOptionEqualToValue={(option, current) => option.id === current.id}
       disabled={disabled}
       fullWidth

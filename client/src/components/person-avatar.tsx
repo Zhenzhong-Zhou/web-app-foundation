@@ -8,6 +8,8 @@ import { colourOf, initialsLang, initialsOf } from '../lib/person-initials';
  * address; small circles load the 128 px size, large ones the 512.
  * Two Chinese characters are set smaller than two Latin letters, being
  * about twice as wide, and marked Chinese for a screen reader's voice.
+ * The initials are translate="no", so a browser translating the page leaves
+ * them as the name has them (#245).
  */
 export function PersonAvatar({
   userId,
@@ -44,7 +46,9 @@ export function PersonAvatar({
         color: '#FFFFFF',
       }}
     >
-      <span lang={lang}>{initials}</span>
+      <span lang={lang} translate="no">
+        {initials}
+      </span>
     </Avatar>
   );
 }
