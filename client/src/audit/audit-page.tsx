@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 
 import type { AuditActionName } from '../api/types.gen';
 import type { AuditRecord } from '../api/types.gen';
@@ -65,6 +65,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
    * `/audit?resourceId=…` needs no second mechanism to be read.
    */
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
 
   const action = params.get('action') ?? '';
   const from = params.get('from') ?? '';
@@ -124,7 +125,8 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
       }
     }
 
-    setParams(next, { replace: true });
+    // The link's state kept, so Back stays after a filter (#341).
+    setParams(next, { replace: true, state: location.state });
   }
 
   /**

@@ -3166,7 +3166,12 @@ first.
   bell; Licences from Products, now under the header every list has;
   Stock of the item from a Reorder points row; a page linked from a Help
   guide. Any of these pages opened from the menu, from the trail above a
-  record, or by its address in a new tab, shows no Back.
+  record, or by its address in a new tab, shows no Back. Opened by a
+  link, a list keeps its Back through a search typed, a tab or a filter
+  chosen: Reorder points from Low stock's See all, after a letter in its
+  search and a move to Stock; Orders from To ship's See all, after a
+  search; the audit log from a record's History, Open in audit log, after
+  an action chosen; Members from Getting started, after Invite is closed.
 
 - **MC-R68** *(Receive leaving focus on the dialog, not its first field,
   #313)* On Inventory, press Receive stock with the keyboard: the cursor
@@ -4325,3 +4330,5 @@ first.
 - 2026-11-01: ADR-085's review, focus in the reorder point dialog's
   first field, the 409 at the item read with it, and focus on a planned
   run's link: MC-4207, MC-4208 and MC-4216 extended.
+- 2026-11-01: ADR-085's review, Back kept through a list's search, a tab,
+  History's filters and Members' Invite closed: MC-R69 extended.

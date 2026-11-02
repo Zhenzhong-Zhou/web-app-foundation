@@ -8,7 +8,11 @@ import {
   useState,
 } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+import {
+  Link as RouterLink,
+  useLocation,
+  useSearchParams,
+} from 'react-router-dom';
 
 import type {
   CopiedInvitationLink,
@@ -61,6 +65,7 @@ export function MembersPage() {
   // Getting started opens Invite through the address, ?invite. Closing
   // takes it off, so Back or a reload does not open it again.
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
   const asked = inviting && params.has('invite');
   const [rowBusy, setRowBusy] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -265,7 +270,8 @@ export function MembersPage() {
                   next.delete('invite');
                   return next;
                 },
-                { replace: true },
+                // The link's state kept, so Back stays (#341).
+                { replace: true, state: location.state },
               );
             }
           }}
