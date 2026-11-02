@@ -33,6 +33,10 @@ type Choice = Partner | typeof NONE;
  * list.
  *
  * Takes and reports an id, '' for none, as VariantPicker does.
+ *
+ * A partner's option is translate="no", so a browser translating the page
+ * leaves its name and code as typed (#245); `none`, the app's words, stays
+ * translatable.
  */
 export function PartnerPicker({
   id,
@@ -93,6 +97,17 @@ export function PartnerPicker({
       onChange={(_event, choice) => onChange(choice?.id ?? '')}
       getOptionLabel={(choice) =>
         'none' in choice ? (none ?? '') : nameAndCode(choice.name, choice.code)
+      }
+      renderOption={({ key, ...props }, choice) =>
+        'none' in choice ? (
+          <li key={key} {...props}>
+            {none}
+          </li>
+        ) : (
+          <li key={key} {...props} translate="no">
+            {nameAndCode(choice.name, choice.code)}
+          </li>
+        )
       }
       isOptionEqualToValue={(choice, current) => choice.id === current.id}
       disabled={disabled}

@@ -157,6 +157,21 @@ describe('PartnerPicker', () => {
     expect(onChange).toHaveBeenCalledWith('');
   });
 
+  it('marks a partner’s option, so a browser translating the page leaves it as typed, and not the empty choice’s words (#245)', async () => {
+    const user = userEvent.setup();
+    serve(async () => []);
+    renderPicker({ none: 'We make it ourselves' });
+
+    await user.click(box());
+
+    expect(
+      screen.getByRole('option', { name: 'Acme Supplies (ACME)' }),
+    ).toHaveAttribute('translate', 'no');
+    expect(
+      screen.getByRole('option', { name: 'We make it ourselves' }),
+    ).not.toHaveAttribute('translate');
+  });
+
   it('shows the empty choice as the field’s value, never a blank', () => {
     renderPicker({ none: 'We make it ourselves' });
 

@@ -3169,8 +3169,12 @@ first.
   m2 on Locations, then translate the page into Chinese (right-click,
   Translate to 中文): the location's line still reads m2, its name and the
   page's words translated. On Home, translated the same way, To ship's
-  SO-DEMO-1 stays as typed. Switch the app to 简体中文 and reload: Chrome
-  offers no translation, the page saying it is Chinese from the start.
+  SO-DEMO-1 stays as typed. On New order, translated the same way,
+  Partner lists Lakeshore Packaging (LAKESHORE) as typed, its label
+  translated. Signed in as Sarah Chen, translated
+  the same way, the account menu reads Sarah Chen, her email and SC as
+  typed. Switch the app to 简体中文 and reload: Chrome offers no
+  translation, the page saying it is Chinese from the start.
 
 - **MC-R71** *(the promised table naming an item by its SKU alone, #296)*
   As the demo Owner in 中文, on Inventory, 已承诺给客户 has 物品 beside
@@ -4412,3 +4416,5 @@ first.
   button: MC-4209 extended.
 - 2026-11-02: #245, codes kept as typed under a browser's translation:
   MC-R72 added.
+- 2026-11-02: #245, a person's and a partner's name kept as typed under a
+  browser's translation: MC-R72 extended.
