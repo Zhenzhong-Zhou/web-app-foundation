@@ -1094,7 +1094,7 @@
   "orders.create.addItem": "再添加一项",
   "orders.create.currency.help": "用于下方所有价格",
   "orders.create.currencyFirst": "请先设置币种",
-  "orders.create.filled": "已按再订货点填写：{count, plural, other {# 行，按建议数量}}。请选择供应商，核对数量和价格，然后保存为草稿。",
+  "orders.create.filled": "已按再订货点填写：{count, plural, other {# 行，按建议数量}}。请在合作伙伴中选择供应商，核对数量和价格，然后保存为草稿。",
   "orders.create.isSample": "这是样品——如免费请将价格设为零",
   "orders.create.loadFailed": "无法加载合作伙伴和产品。",
   "orders.create.raiseAsDraft": "保存为草稿",

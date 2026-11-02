@@ -1094,7 +1094,7 @@
   "orders.create.addItem": "Add another item",
   "orders.create.currency.help": "For any prices below",
   "orders.create.currencyFirst": "Set a currency first",
-  "orders.create.filled": "Filled from Reorder points: {count, plural, one {# line at its suggested quantity} other {# lines at their suggested quantities}}. Choose the supplier, check the quantities and prices, then raise it as a draft.",
+  "orders.create.filled": "Filled from Reorder points: {count, plural, one {# line at its suggested quantity} other {# lines at their suggested quantities}}. Choose the supplier under Partner, check the quantities and prices, then raise it as a draft.",
   "orders.create.isSample": "This is a sample — price it at zero if it is free",
   "orders.create.loadFailed": "Could not load partners and products.",
   "orders.create.raiseAsDraft": "Raise as draft",

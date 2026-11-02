@@ -57,7 +57,7 @@ Les bons de commande et les ordres de fabrication en brouillon s’affichent **E
 
 ## Commander ou fabriquer ce qui est bas {#order}
 
-- **Acheté** : choisissez les lignes, puis appuyez sur **Créer un bon de commande** dans la barre qui apparaît. Un nouvel achat s’ouvre avec une ligne pour chacun à sa commande suggérée. Choisissez le fournisseur, vérifiez les quantités et les prix, et appuyez sur **Créer en brouillon**.
+- **Acheté** : choisissez les lignes, puis appuyez sur **Créer un bon de commande** dans la barre qui apparaît. Un nouvel achat s’ouvre avec une ligne pour chacun à sa commande suggérée. Choisissez le fournisseur sous **Partenaire**, vérifiez les quantités et les prix, et appuyez sur **Créer en brouillon**.
 - **Fabriqué** : **Planifier un ordre** sur sa ligne ouvre un ordre de fabrication avec sa recette active, la commande suggérée et ce qu’il utilise.
 
 Rien n’est enregistré tant que vous ne le créez pas, et ce que vous créez s’affiche aussitôt sur la ligne. Quand un article passe sous son point, la vérification horaire suivante le signale dans la cloche à qui peut agir, une fois jusqu’à ce qu’il remonte : ceux qui peuvent créer des commandes pour un article acheté, ceux qui peuvent planifier la production pour un article fabriqué.

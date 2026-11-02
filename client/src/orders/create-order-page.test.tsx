@@ -212,7 +212,7 @@ describe('CreateOrderPage filled from Reorder points', () => {
 
     expect(
       await screen.findByText(
-        'Filled from Reorder points: 2 lines at their suggested quantities. Choose the supplier, check the quantities and prices, then raise it as a draft.',
+        'Filled from Reorder points: 2 lines at their suggested quantities. Choose the supplier under Partner, check the quantities and prices, then raise it as a draft.',
       ),
     ).toBeInTheDocument();
     await expect

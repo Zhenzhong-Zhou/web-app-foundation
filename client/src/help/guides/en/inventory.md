@@ -57,7 +57,7 @@ Draft purchase orders and runs show as **In draft**. They are not counted as com
 
 ## Order or make what is low {#order}
 
-- **Bought**: choose the rows, then press **Raise a purchase order** in the bar that appears. A new purchase opens with a line for each at its suggested order. Choose the supplier, check the quantities and prices, and press **Raise as draft**.
+- **Bought**: choose the rows, then press **Raise a purchase order** in the bar that appears. A new purchase opens with a line for each at its suggested order. Choose the supplier under **Partner**, check the quantities and prices, and press **Raise as draft**.
 - **Made**: **Plan a run** on its row opens a run with its active recipe, the suggested order and what it uses.
 
 Nothing is saved until you create it, and what you create shows on the row at once. When an item falls below its point, the next hourly check tells whoever can act on it in the bell, once until it recovers: those who may raise orders for a bought item, those who may plan runs for a made one.

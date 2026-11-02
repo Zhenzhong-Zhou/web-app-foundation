@@ -3109,8 +3109,9 @@ site, after a deploy that changes the setting, the route or the relay.
   D3-1000-120 and ELDER-250, and press Raise a purchase order in the
   dark bar. New order opens as Buying from them, Partner empty, with a
   note: "Filled from Reorder points: 2 lines at their suggested
-  quantities. Choose the supplier, check the quantities and prices, then
-  raise it as a draft.", and two lines, D3-1000-120 at 96 and ELDER-250
+  quantities. Choose the supplier under Partner, check the quantities
+  and prices, then raise it as a draft.", in 中文 请在合作伙伴中选择供应商,
+  and two lines, D3-1000-120 at 96 and ELDER-250
   at 134. Nothing is saved yet: Cancel goes back to Reorder points, on
   Low, as it was. Raise it again, choose Prairie and Raise as
   draft: the order opens as a draft, and Back returns to Reorder points,
@@ -4369,3 +4370,5 @@ first.
   draft: MC-4215 extended.
 - 2026-11-01: ADR-085's review, Cancel on a filled New order going back
   to Reorder points, not to Orders: MC-4215 reworded.
+- 2026-11-01: ADR-085's review, the filled order's note and the Inventory
+  guide naming Partner, where the supplier is chosen: MC-4215 reworded.

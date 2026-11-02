@@ -1094,7 +1094,7 @@
   "orders.create.addItem": "Ajouter un autre article",
   "orders.create.currency.help": "Pour les prix ci-dessous",
   "orders.create.currencyFirst": "Choisissez d’abord une devise",
-  "orders.create.filled": "Rempli depuis Points de commande : {count, plural, one {# ligne à sa quantité suggérée} other {# lignes à leurs quantités suggérées}}. Choisissez le fournisseur, vérifiez les quantités et les prix, puis créez-la en brouillon.",
+  "orders.create.filled": "Rempli depuis Points de commande : {count, plural, one {# ligne à sa quantité suggérée} other {# lignes à leurs quantités suggérées}}. Choisissez le fournisseur sous Partenaire, vérifiez les quantités et les prix, puis créez-la en brouillon.",
   "orders.create.isSample": "Ceci est un échantillon — mettez un prix nul s’il est gratuit",
   "orders.create.loadFailed": "Impossible de charger les partenaires et les produits.",
   "orders.create.raiseAsDraft": "Créer en brouillon",
