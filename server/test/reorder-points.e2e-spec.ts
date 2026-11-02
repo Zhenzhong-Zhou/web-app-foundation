@@ -966,6 +966,32 @@ describe('Reorder points (e2e)', () => {
       expect(await pointOf(d3)).toBeUndefined();
     });
 
+    // The suggestion leaves out what is in draft, so where the item stands
+    // once both arrive counts the draft too.
+    it('counts what is in draft in where the item would stand', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const d3 = await item(alpha.agent, 'D3-1000');
+      const shelf = await site(alpha.agent, 'SHELF');
+      await receive(alpha.agent, d3, shelf, '800');
+      const supplier = await partner(alpha.agent, 'Supplier');
+      await order(alpha.agent, 'purchase', supplier, d3, '500', {
+        draft: true,
+      });
+
+      const res = await preview(alpha, d3, {
+        source: 'bought',
+        reorderPoint: '1500',
+        rule: 'just_enough',
+      }).expect(200);
+      expect(res.body as Preview).toMatchObject({
+        position: '800.0000',
+        status: 'low',
+        suggestion: '200.0000',
+        after: '1500.0000',
+        afterStatus: 'enough',
+      });
+    });
+
     it('follows the values typed, not the point kept', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const d3 = await item(alpha.agent, 'D3-1000');

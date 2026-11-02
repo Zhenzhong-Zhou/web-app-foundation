@@ -3115,7 +3115,9 @@ site, after a deploy that changes the setting, the route or the relay.
   points is as it was. Raise it again, choose Prairie and Raise as
   draft: the order opens as a draft, and Back returns to Reorder points,
   not to New order filled in again; there, both rows read Drafted with
-  the order's number, and neither has a box to choose.
+  the order's number, and neither has a box to choose. Edit D3-1000-120:
+  Today says what is in draft covers it, and Position after the
+  suggested order reads 276, above its point of 240, the draft counted.
   Fatima Haddad (Sales) has the boxes and the bar; Chloé Tremblay
   (Viewer), neither.
 - **MC-4216** *(ADR-085)* Plan a run, filled in from the list. On a fresh
@@ -4363,3 +4365,5 @@ first.
   point, "12（再订货点 36）": MC-4213 reworded.
 - 2026-11-01: ADR-085's review, Today's bars named as the position,
   Position now and 现在的预计可用: MC-4207 and MC-4212 reworded.
+- 2026-11-01: ADR-085's review, Today's second bar counting what is in
+  draft: MC-4215 extended.

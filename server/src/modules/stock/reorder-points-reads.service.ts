@@ -548,7 +548,9 @@ export class ReorderPointsReadsService {
   /**
    * What the dialog's values would make of an item today (ADR-085), before
    * anything is saved: its position, where it would stand, the suggestion
-   * the values' rule gives and the position once that arrives. Worked out
+   * the values' rule gives, and the position once what is in draft and
+   * the suggestion arrive, since the suggestion leaves out what is in
+   * draft. Worked out
    * by positionsOf against the values, so it says what the list will say
    * once they are saved; for an item with a point or without one. Refused
    * as saving refuses: an item not this organization's is not found, and a
@@ -563,7 +565,7 @@ export class ReorderPointsReadsService {
 
       const today = await todayOf(tx, organizationId);
       const typed = keptOf(input);
-      const after = sql`p.position + p.suggestion`;
+      const after = sql`p.position + p.in_draft + p.suggestion`;
       const afterStatus = statusOf({
         position: after,
         reorderPoint: sql`p.reorder_point`,

@@ -142,7 +142,10 @@ export class ReorderPointPreview {
   suggestedMultiples!: string | null;
   /** Low, with its drafts leaving nothing to suggest. */
   drafted!: boolean;
-  /** The position once the suggestion arrives: the position and the suggestion. */
+  /**
+   * The position once what is in draft and the suggestion arrive: the
+   * position, what is in draft, and the suggestion, which leaves it out.
+   */
   after!: string;
   /** Where the item would stand then. */
   afterStatus!: ReorderStatus;
