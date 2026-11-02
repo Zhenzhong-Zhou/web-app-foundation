@@ -263,10 +263,14 @@ steps; this section stays the rule.
 - **At the start of every ADR,** before drafting it: check the ADRs'
   Deferred lines, the watch lists and the open issues for
   anything in the same area, and say which triggers have fired. The
-  check lists the open issues of each area the change touches with
-  `gh issue list --label area:<area>`
-  ([Issues and labels](#issues-and-labels)). That is when a deferred
-  item is cheapest to pick up.
+  open issues are gathered with a script (ADR-089), the areas the
+  change touches and the issues it names given:
+  `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n,m>`. It
+  writes `tmp/adr-NNN/check.txt`, which the chat reads: each area's
+  open issues ([Issues and labels](#issues-and-labels)), then the text
+  and comments of each issue named and each `when-touched` one. It
+  refuses an area not in `scripts/adr-index.mjs`, writing nothing. That
+  is when a deferred item is cheapest to pick up.
 - **A new ADR,** after the check above: copy
   [the template](adr/template.md) to `NNNN-<slug>.md` in `docs/adr/`,
   its number in four digits and its slug from its title as
