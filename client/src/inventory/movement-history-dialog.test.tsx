@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
+import { render, screen, waitFor } from '@testing-library/react';
+import { delay, http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import type { Movement, StockRow } from '../api/types.gen';
@@ -80,5 +80,21 @@ describe('MovementHistoryDialog', () => {
     expect(row).toHaveTextContent('−24');
     expect(row).not.toHaveTextContent('24.0000');
     expect(row).toHaveTextContent('wang@example.com');
+  });
+
+  // A quick read shows no skeleton (conventions, Loading states; #358).
+  it('draws no skeleton until the read takes a while', async () => {
+    server.use(
+      http.get('/api/v1/stock/movements', async () => {
+        await delay(400);
+        return HttpResponse.json({ entries: [MOVEMENT], nextCursor: null });
+      }),
+    );
+    render(<MovementHistoryDialog row={ROW} onClose={() => undefined} />);
+
+    expect(document.querySelector('.MuiSkeleton-root')).toBeNull();
+    await waitFor(() =>
+      expect(document.querySelector('.MuiSkeleton-root')).not.toBeNull(),
+    );
   });
 });

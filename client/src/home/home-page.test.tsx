@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@mui/material/styles';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -480,6 +480,26 @@ describe('HomePage', () => {
         await screen.findByRole('link', { name: 'Open settings' }),
       ).toBeVisible();
     });
+  });
+
+  // A quick read shows no skeleton (conventions, Loading states; #358).
+  it('draws no skeleton until the read takes a while', async () => {
+    server.use(
+      http.get('/api/v1/home', async () => {
+        await delay(400);
+        return HttpResponse.json({
+          gettingStarted: COMPLETE,
+          welcome: null,
+          cards: [],
+        } satisfies HomeResponse);
+      }),
+    );
+    renderWithAuth(routed(<HomePage />));
+
+    expect(document.querySelector('.MuiSkeleton-root')).toBeNull();
+    await waitFor(() =>
+      expect(document.querySelector('.MuiSkeleton-root')).not.toBeNull(),
+    );
   });
 
   it('says a dropped connection in words, not the browser’s', async () => {

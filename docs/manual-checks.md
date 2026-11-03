@@ -3164,6 +3164,14 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R78** *(Grey placeholders flashing before a quick read, and a ⋯
+  heard as a plain button, #358)* As the demo Owner on a fast connection:
+  Home, Your access on Account, and History from a Stock row's ⋯ show no
+  grey placeholder before their content; with the network throttled to
+  Slow 4G (DevTools → Network), each shows one while it reads. With
+  VoiceOver on, a Stock row's ⋯ and the ⋯ on PO-DEMO-12's line read as a
+  menu button, collapsed, then expanded once open.
+
 - **MC-R77** *(Show all after a close match alone opening an empty list,
   #311)* As the demo Owner, in the top bar's lookup, type a word that only
   nearly matches a partner, for example focus: the Partners group shows
@@ -4475,3 +4483,6 @@ first.
   loaded, and the guide that comes after moving no focus: MC-R76 added.
 - 2026-11-02: #311, the lookup offering Show all only for a group with a
   match that is not a close one: MC-R77 added.
+- 2026-11-02: #358, Home, Your access and a Stock row's History drawing
+  their placeholder only for a slow read, and the ⋯ on a Stock row and an
+  order's line read as a menu button: MC-R78 added.

@@ -17,7 +17,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { LineHold, OrderDetail, OrderLine } from '../api/types.gen';
@@ -505,6 +505,7 @@ function LineActions({
   const intl = useIntl();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [pending, setPending] = useState<LineAction | null>(null);
+  const menuId = useId();
 
   const open = !line.isClosedShort && !line.isComplete;
   const path = `/orders/${order.id}/lines/${line.id}`;
@@ -600,6 +601,7 @@ function LineActions({
 
       {actions.length > 0 && (
         <>
+          {/* Says it opens a menu, and whether it is open, as Members' does. */}
           <IconButton
             size="small"
             disabled={working}
@@ -610,12 +612,16 @@ function LineActions({
               },
               { sku: line.sku },
             )}
+            aria-haspopup="menu"
+            aria-expanded={!!anchor}
+            aria-controls={anchor ? menuId : undefined}
             onClick={(event) => setAnchor(event.currentTarget)}
           >
             <MoreVert fontSize="small" />
           </IconButton>
 
           <Menu
+            id={menuId}
             anchorEl={anchor}
             open={!!anchor}
             onClose={() => setAnchor(null)}

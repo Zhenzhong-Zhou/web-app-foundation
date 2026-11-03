@@ -1,6 +1,6 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
@@ -110,6 +110,40 @@ describe('AccountPage', () => {
     expect(
       within(block).getByRole('link', { name: 'Mei Lin' }),
     ).toHaveAttribute('href', '/people/user-mei');
+  });
+
+  // A quick read shows no skeleton (conventions, Loading states; #358).
+  it('shows your access with no skeleton until the read takes a while', async () => {
+    server.use(
+      http.get('/api/v1/account/activity', () =>
+        HttpResponse.json({ entries: [] }),
+      ),
+      http.get('/api/v1/account/details', () => HttpResponse.json({})),
+      http.get('/api/v1/account/membership', async () => {
+        await delay(400);
+        return HttpResponse.json({
+          roles: [{ name: 'Viewer', description: null }],
+          holdsEverything: false,
+          whomToAsk: [],
+        } satisfies MemberAccess);
+      }),
+    );
+
+    renderWithAuth(
+      <MemoryRouter>
+        <AccountPage />
+      </MemoryRouter>,
+      { permissions: ['users.view'] },
+    );
+
+    const heading = await screen.findByRole('heading', {
+      name: 'Your access at Alpha Co',
+    });
+    const block = heading.parentElement as HTMLElement;
+    expect(block.querySelector('.MuiSkeleton-root')).toBeNull();
+    await waitFor(() =>
+      expect(block.querySelector('.MuiSkeleton-root')).not.toBeNull(),
+    );
   });
 
   it('names whom to ask without a link for a role that may not open People', async () => {
