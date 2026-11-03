@@ -999,8 +999,10 @@ Internet Explorer, and any browser's IE mode, is not supported.
   shares the owner's organization runs in Chromium only. Firefox runs in CI
   and with E2E_FIREFOX=1; Playwright's build of it cannot start on some
   macOS versions. In CI a pull request runs Chromium only, in three shards;
-  every browser runs on main, nightly, and on a pull request labelled
-  full-e2e (layout, mobile, sign-in).
+  every browser runs on main, nightly, and in a run by hand,
+  `gh workflow run ci.yml --ref <branch>` (Actions → CI → Run workflow),
+  for a branch that changes layout, mobile or sign-in. A label starts no
+  run (#334).
 - **Firefox on such a Mac,** and Linux WebKit as CI has it, run from
   Playwright's Linux image as a remote browser, the tests still on the
   Mac and no file changed (#231, #232). The image's version and the
