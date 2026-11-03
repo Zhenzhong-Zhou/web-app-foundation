@@ -69,9 +69,15 @@ describe('CreateRunDialog', () => {
     await user.type(screen.getByLabelText(/Quantity to make/), '1000');
     await user.click(screen.getByLabelText(/Made at/));
     await user.click(await screen.findByRole('option', { name: /WIP/ }));
+    // The yield is read as a list shows it, not as a field would hold it.
     expect(
       await screen.findByRole('combobox', { name: 'Recipe' }),
-    ).toHaveTextContent('v1 (current)');
+    ).toHaveTextContent('v1 (current) — makes 1,000');
+    expect(
+      screen.getByText(
+        'The recipe makes 1,000 per batch — components scale to whatever you enter.',
+      ),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Plan run' }));
 

@@ -26,7 +26,7 @@ import { PartnerPicker } from '../components/partner-picker';
 import { VariantPicker } from '../components/variant-picker';
 import { api, withQuery } from '../lib/api';
 import {
-  formatQuantity,
+  displayQuantity,
   groupedNumberMessage,
   itemName,
   toApiDecimal,
@@ -379,7 +379,7 @@ export function CreateRunDialog({
                           },
                           {
                             version: row.version,
-                            quantity: formatQuantity(row.outputQuantity),
+                            quantity: displayQuantity(row.outputQuantity),
                           },
                         )
                       : intl.formatMessage(
@@ -390,7 +390,7 @@ export function CreateRunDialog({
                           },
                           {
                             version: row.version,
-                            quantity: formatQuantity(row.outputQuantity),
+                            quantity: displayQuantity(row.outputQuantity),
                           },
                         )}
                   </MenuItem>
@@ -445,7 +445,7 @@ export function CreateRunDialog({
                         defaultMessage:
                           'The recipe makes {quantity} per batch — components scale to whatever you enter.',
                       },
-                      { quantity: formatQuantity(active.outputQuantity) },
+                      { quantity: displayQuantity(active.outputQuantity) },
                     )
                   : intl.formatMessage({
                       id: 'production.create.quantity.help',

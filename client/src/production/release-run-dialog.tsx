@@ -31,6 +31,7 @@ import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { fromScaled, sumDecimals, toScaled } from '../lib/decimal';
 import {
+  displayQuantity,
   formatDay,
   formatQuantity,
   groupedNumberMessage,
@@ -395,7 +396,7 @@ export function ReleaseRunDialog({
                           },
                           {
                             version: row.version,
-                            quantity: formatQuantity(row.outputQuantity),
+                            quantity: displayQuantity(row.outputQuantity),
                           },
                         )
                       : intl.formatMessage(
@@ -406,7 +407,7 @@ export function ReleaseRunDialog({
                           },
                           {
                             version: row.version,
-                            quantity: formatQuantity(row.outputQuantity),
+                            quantity: displayQuantity(row.outputQuantity),
                           },
                         )}
                   </MenuItem>

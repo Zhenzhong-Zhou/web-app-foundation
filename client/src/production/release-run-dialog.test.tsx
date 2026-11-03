@@ -208,4 +208,40 @@ describe('ReleaseRunDialog without a recipe', () => {
     expect(screen.getByRole('button', { name: 'Release' })).toBeDisabled();
     expect(recipes).toEqual([]);
   });
+
+  /**
+   * A run planned without a recipe is given one here, by whoever may plan
+   * runs. Each version's yield is read as a list shows it.
+   */
+  it('offers the item’s recipes for a run planned without one, each yield as a list reads it', async () => {
+    serve({ licence: null, status: 'none', outcome: 'allow' });
+    server.use(
+      http.get('/api/v1/boms', () =>
+        HttpResponse.json([
+          {
+            id: 'bom-active',
+            outputVariantId: RUN.outputVariantId,
+            version: 2,
+            status: 'active',
+            outputQuantity: '1000.0000',
+          },
+        ]),
+      ),
+    );
+
+    renderWithAuth(
+      <ReleaseRunDialog
+        open
+        run={{ ...RUN, bomId: null }}
+        canOverrideLicence={false}
+        canAttachRecipe
+        onClose={() => undefined}
+        onReleased={() => undefined}
+      />,
+    );
+
+    expect(
+      await screen.findByRole('combobox', { name: 'Recipe' }),
+    ).toHaveTextContent('v2 — active, makes 1,000 per batch');
+  });
 });

@@ -3164,6 +3164,12 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R84** *(Plan a run reading a recipe's yield with its padding
+  zeros, found by the fix-ups' walkthrough)* As the demo Owner on
+  Production, Plan a run and choose CALM-90CT in Making: Recipe reads
+  "v1 (current) — makes 1,000", not 1000.0000, and under Quantity to make
+  "The recipe makes 1,000 per batch — …". In Français both read 1 000.
+
 - **MC-R83** *(Plan run offering a retired partner as contract
   manufacturer, #304)* As the demo Owner, Partners with Retired pressed
   shows Old Mill Herbs. On Production, Plan a run and open Contract
@@ -4542,3 +4548,5 @@ first.
 - 2026-11-03: #304, Plan run's Contract manufacturer leaving a retired
   partner out, as New order's Partner and a sample's Given to do: MC-R83
   added.
+- 2026-11-03: Plan a run reading a recipe's yield as 1000.0000 beside a
+  list reading 1,000, found by the fix-ups' walkthrough: MC-R84 added.
