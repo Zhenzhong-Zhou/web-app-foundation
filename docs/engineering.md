@@ -366,6 +366,13 @@ reports success.
   it goes first.
 - Messages explain the why, as one `-m` with a subject, a blank line and
   wrapped paragraphs.
+- **No closing word before an issue's number** (3 November 2026): a
+  commit's message never puts close, fix or resolve, in any form, right
+  before `#N` unless that commit fixes it, since GitHub closes the issue
+  when the commit reaches `main`. A handoff note's "closed #225" closed
+  #225 again on 29 October, after its reopen; "#225 was closed" names the
+  event and closes nothing. A pull request's "Closes #N" is still how a
+  fix closes its issue ([Issues and labels](#issues-and-labels)).
 - An alert is named "code scanning alert 9" or "Dependabot alert 4",
   never "#9", in commits, PRs and comments (27 October 2026): GitHub
   links "#9" to issue or PR 9.

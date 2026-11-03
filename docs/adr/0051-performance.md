@@ -162,9 +162,10 @@ so the timing is the evidence for the name lookup.
   other organizations' matching lots are read and filtered out: 79% of
   the candidates for `LV-0001` at large. Trigger: ADR-056's for an index
   per organization, one organization's rows dominating a table or a
-  budget missed. Not met: the typo lookup's missed budget (#225) went once
-  #186 put the organization on the lookup's joins, without the index (28
-  October 2026).
+  budget missed. Not met: the typo lookup's miss (#225) went once #186 put
+  the organization on the lookup's joins (28 October 2026), and came back
+  on slower runners the next day; one query per pass comes first, the
+  index only if that falls short (the amendment for #225 and #276, below).
 - **One Chinese character on a large catalogue.** `GET /products?search=专`
   in `zh-Hans`, at large, in its largest organization: 63.5 ms, reading
   every organization's translations through the trigram index (29
@@ -174,13 +175,16 @@ so the timing is the evidence for the name lookup.
   page: 6.3× from small to large, 22 to 138 ms at p95 (1 November 2026,
   #361). Trigger: p95 over budget at small scale. Then the open lines
   read once, with three filtered sums, and drafts read only for the
-  items asked (#276's comment of 1 November).
+  items asked (#276's comment of 1 November, carried to #352).
 - **Home after ADR-085:** the median of three runs at small is 278 ms,
   a newcomer's 217 ms, and one run of three missed 300 ms. What is left
   is the database planning its statements (about 11 of the owner's 26
   ms), its 14 transactions, and Low stock's read. Trigger: the median of
   three over budget (#342). Then prepared statements, or one transaction
-  per request, which would need an ADR.
+  per request, which would need an ADR. Since 3 November 2026 they are
+  ADR-091's, Home's redesign, which must meet the budget by 31 January
+  2027, the end of Home's known miss (the amendment for #225 and #276,
+  below).
 - **Valuation** reads every pool by definition. Trigger: an organization
   whose valuation no longer fits a screen. Then an export.
 - **Migrations on large live tables.** 0036 builds its index inside the
@@ -285,3 +289,103 @@ is ADR-008's amendment of the same day, the Fix-ups' first batch.
   3 alone had Home and the lookup over their budgets, within their known
   misses' ceilings: the median doing what it is for. The Watch's "Home
   after ADR-085" did not fire.
+
+## Amendment (November 2026) — the typo lookup in one query per pass, Home's miss given to its redesign (#225, #276)
+
+Both known misses were to end on 30 November 2026 (ADR-082). The first
+timed run judged by its median (#435, 3 November 2026) passed both: Home
+at 237 ms, from rounds of 204, 237 and 318, and the typo lookup at 248,
+from 203, 248 and 357. One round in three missed each budget, and the
+runners vary by about 30% from one day to the next, so one passing
+median says the misses could end, not that they should: #225 was closed
+once on one run, on 28 October, and reopened the next day. This amendment
+decides each (the maintainer, 3 November 2026, as recommended).
+
+Checked before drafting, as the working agreements ask, for the areas
+home, search, database, docs, help and i18n, beside the translations'
+batch planned the same day:
+
+- **Fired, and taken here.** The step the handoff gave the typo lookup
+  in October, "one query per pass if it ever fails": it has failed since
+  29 October.
+- **Not fired, and left.** ADR-056's index per organization, whose
+  trigger is a missed budget: the median is under budget, so the index
+  waits for one query per pass to fall short (Deferred, below). The
+  Watch's "Home after ADR-085", whose trigger is the median over budget:
+  237 ms. The low list, whose trigger is its own budget missed at small.
+  The `when-touched` issues of these areas, none in the code this
+  changes: #226 and #314 (database), #154, #261, #299, #308 and #312
+  (search), #292 (docs) and #170 (help). The translations' riders are
+  ADR-054's.
+- **Found while checking.** Commit 54a0aea's message said "closed #225",
+  and GitHub closed the issue again when that commit reached `main` on 29
+  October, after its reopen; it was reopened on 3 November, and the
+  working agreements' Commits gain a line against a closing word before
+  an issue's number. #276's two findings from ADR-085's review are in the
+  reorder points' code, not Home's, so they move to #352. #165, fixed by
+  #436 without a closing word, is closed.
+
+### Decision — the typo lookup in one query per pass
+
+The lookup sends each kind's exact matches as a statement of its own,
+then, when the whole lookup found fewer than five, each kind's close
+matches the same way, one after another in one transaction: up to 18
+statements for an owner who sees all eight kinds. Each pass becomes one
+statement, its kinds joined by `union all`, each kind with its own order
+and limit as now. The lookup then sends the threshold setting, the exact
+pass, the close pass when the exact one found fewer than five, and the
+organization's prefixes when two kinds or more were found: four at most.
+What it finds, in which order, and for whom, does not change; the
+lookup's tests prove it, with one that counts the statements.
+
+### Decision — fixed means with headroom
+
+The typo lookup counts as fixed at a median of 240 ms or less, 80% of
+its 300 ms budget, on one timed run on GitHub's runners, with the Mac's
+figures before and after in the commit. A median just under 300 turns red
+again on a runner 30% slower. #225's known miss goes in the commit that
+fixes it, as `server/perf/README.md` asks.
+
+### Decision — Home's known miss given to its redesign
+
+Home's statements take about 26 ms at small; its time over budget comes
+from ten connections at once on a shared runner, which no one reading
+Home meets. Home is to be redesigned (#335, ADR-091) after the fix-ups
+before it, so a change to today's reads would be rewritten soon after.
+Home's known miss moves from 30 November 2026 to 31 January 2027, with
+its 400 ms ceiling, and ADR-091 must bring `GET /home` within its
+budget, with the same headroom, and remove the miss. A known miss with an
+owner and a date stays a debt; a raised budget would forget it
+(ADR-082).
+
+### Considered and not done
+
+- **Ending both misses now,** on one passing median: one round in three
+  missed each budget, and the next slow day would turn the weekly run red
+  with nothing changed.
+- **Home's reads in one transaction now,** where it opens 14 one after
+  another, or prepared statements: the redesign decides what Home reads,
+  so ADR-091 weighs both.
+- **ADR-056's index per organization first:** a migration and the
+  `btree_gin` extension, for a lookup whose statements run one after
+  another. Fewer statements first, the index if they are not enough.
+
+### Deferred — each with what brings it in
+
+- **ADR-056's index per organization,** for the close matches. Trigger:
+  the typo lookup's median over 240 ms after one query per pass.
+- **Home's reads in one transaction, or prepared statements.** Trigger:
+  ADR-091, or 31 January 2027, whichever comes first.
+
+### Consequences
+
+- `server/src/modules/search/lookup.service.ts` sends each pass as one
+  statement. `server/perf/scenarios.ts` drops #225's known miss and dates
+  Home's 31 January 2027, and `server/perf/README.md`'s "Known misses"
+  says so.
+- The Watch's lot search and "Home after ADR-085" say where each stands.
+- The build, in this order: the dependencies; the Mac's figures before;
+  one query per pass, with its test, and #225's known miss gone; Home's
+  new date; one timed run by hand on the branch, judged against 240 ms;
+  the dependencies again and the reviews; the pull request, which closes
+  #225 and refers to #276.

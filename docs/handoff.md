@@ -15,13 +15,23 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 3 November 2026:
 
-- **The Fix-ups' first batch, CI that can be trusted:** built on
-  `fix-ups-ci` in [#435], closing [#183], [#232], [#248], [#290], [#271],
-  [#334], [#340] and [#342]; its decisions and as-builts in
+- **The Fix-ups' first batch, CI that can be trusted:** [#435], merged
+  on 3 November as 066f05a1 and deployed the same day (Deploy run
+  41714355019), closing [#183], [#232], [#248], [#290], [#271], [#334],
+  [#340] and [#342]; its decisions and as-builts in
   [ADR-008](adr/0008-testing-scaffolding-lands-in-v1.md)'s and
   [ADR-051](adr/0051-performance.md)'s amendments. On #435: a run of
   every browser by hand passed with `failOnFlakyTests` on, a label started
   no run, and the first timed run's medians passed (Home 237 ms of 300).
+  After the merge, the flake hunt by hand on `main` passed: the client's
+  unit tests 5 runs of 5, the server's end-to-end suite 3 of 3 (1,229
+  tests).
+- **The Fix-ups' next two batches,** planned on 3 November: the typo
+  lookup in one query per pass on `fix-225-typo-lookup`, with Home's known
+  miss given to its redesign, as
+  [ADR-051](adr/0051-performance.md)'s amendment for #225 and #276 decides;
+  then the translations on `fix-ups-i18n`, whose first commit amends
+  ADR-054 with that day's decisions.
   [#233] stays open as a watch. `main`'s ruleset requires "CI — all jobs"
   alone since 2 November, with "Commits — no placeholder identity", so
   "Against main" is required too.
@@ -63,10 +73,12 @@ On 3 November 2026:
   in the [Fix-ups milestone](https://github.com/Zhenzhong-Zhou/web-app-foundation/milestone/1),
   and [#178]'s hooks are [#293] of their own. [#225] was closed after
   [#186], then reopened on 29 October, when slower runners put the typo
-  lookup at 333 to 363 ms; it and [#276] carry known misses until 30
-  November. Since #435 a timed run is three rounds judged by their
-  median ([#342]); on 3 November the typo lookup's was 248 ms and Home's
-  237, each under its 300 ms budget.
+  lookup at 333 to 363 ms. A commit whose message named it after a
+  closing word closed it again when that commit reached `main` the same
+  day, and it was reopened on 3 November. Since #435 a timed run is three
+  rounds judged by their median ([#342]); on 3 November the typo lookup's
+  was 248 ms and Home's 237, each under its 300 ms budget, with one round
+  in three over it.
 - **The last merges:** from cloud sessions, 2 and 3 November: [#411]
   ([#212]), [#412] ([#357]), [#413] ([#286]), [#414] ([#311]), [#415]
   ([#279]), [#416] ([#356]'s first part), [#418] ([#358]), [#424]
@@ -153,10 +165,17 @@ On 3 November 2026:
   conventions; the reviewer who reads only Chinese checks only the first
   screens a newcomer sees. Their data stays in the ignored
   `tmp/i18n-review/` on the maintainer's Mac. The API credits last until
-  9 November; the cloud credit ends on 4 November.
-- **30 November:** the known misses for the typo lookup ([#225]) and Home
-  ([#276]) end; fixed by then, or decided again. Their medians on 3
-  November were under budget, 248 and 237 ms.
+  9 November; the cloud credit ends on 4 November. Decided on 3
+  November: every suggestion applied, the natural pass's where both
+  passes have one, with a workbook of the Chinese changes for the
+  maintainer to clear any rejected; a natural-wording pass on the guides
+  with the API credits; [#148], [#149] and [#249] riding along. The rest
+  is in ADR-054's amendment, `fix-ups-i18n`'s first commit.
+- **30 November:** the typo lookup's known miss ([#225]) ends, fixed by
+  then by one query per pass, to a median of 240 ms or less.
+- **31 January 2027:** Home's known miss ([#276]) ends, moved from 30
+  November for its redesign: ADR-091 ([#335]) must bring Home within its
+  budget, with the same headroom, and remove it.
 - **Cloud sessions:** what they taught is in the working agreements,
   "Cloud sessions" under
   [How code is delivered](engineering.md#how-code-is-delivered). On 2
@@ -180,13 +199,14 @@ On 3 November 2026:
     it shows one banner, and one Reload brings Home back;
   - MC-4201 on the live site with a test item: one notice in the bell
     within the hour while the service is awake; then remove the point.
-- **After [#435]'s merge:** the `full-e2e` label deleted
-  (`gh label delete full-e2e --yes`); the flake hunt by hand on `main`,
-  where alone it runs (`gh workflow run flake-hunt.yml`); then
-  `scripts/prune-branches.sh --yes` and `scripts/clean-local.sh`, a dry
-  run, then `--yes`; and the project's knowledge re-synced.
-- **The planning skill's `evals.md`:** prompts 3, 5 and 6, walked in a new
-  chat for the skill uploaded after [#417].
+- **After [#435]'s merge:** the `full-e2e` label deleted and the flake
+  hunt passed (3 November); left, `scripts/prune-branches.sh --yes` and
+  `scripts/clean-local.sh`, a dry run, then `--yes`; and the project's
+  knowledge re-synced.
+- **The planning skill's `evals.md`:** prompts 3, 5 and 6, for the skill
+  uploaded after [#417], walked in the Fix-ups' next batches' planning:
+  6 on 3 November, 3 with `fix-225-typo-lookup`'s first commit, 5 at its
+  first stop.
 - **[#245] in Safari and Edge, once deployed:** the page asked to translate
   into Chinese stays as written, a typed field included; WebKit and
   Firefox have known gaps with fields. What changes is filed.
@@ -249,16 +269,20 @@ request or a set of them:
    rules files, in six batches first:
    1. CI that can be trusted: [#435], as ADR-008's and ADR-051's
       as-builts say;
-   2. before their known misses end on 30 November: [#225] and [#276];
+   2. the typo lookup, before its known miss ends on 30 November:
+      [#225], in one query per pass; Home's miss ([#276]) moved to 31
+      January 2027, for ADR-091;
    3. the translations, before 30 November: [#371] to [#398] and [#419]
       to [#423], each with the natural-wording pass's comment, the style
-      rules into the glossary, and the corrections of the reviewer who
-      reads only Chinese;
+      rules into the glossary, the corrections of the reviewer who reads
+      only Chinese, and [#148], [#149] and [#249];
    4. expired lots: [#333] with [#331];
-   5. the audit log: [#339] with [#133] and [#168];
+   5. the audit log: [#133] with [#168] ([#339] was fixed on 2
+      November);
    6. then TypeScript 7 ([#336]); the newcomer test; the design language
       ([#338], ADR-090); and Home for a newcomer ([#335], ADR-091),
-      renumbered by ADR-089.
+      renumbered by ADR-089, which also meets Home's budget and ends its
+      known miss by 31 January 2027.
 
    Then [#261] with [#154] and [#150]; [#263]'s rest with [#198];
    [#264]; [#426], production orders' rules file's findings; and [#255]
@@ -323,6 +347,8 @@ Not repeated here; each list has one home:
 
 [#125]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/125
 [#133]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/133
+[#148]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/148
+[#149]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/149
 [#150]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/150
 [#154]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/154
 [#165]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/165
@@ -343,6 +369,7 @@ Not repeated here; each list has one home:
 [#245]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/245
 [#247]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/247
 [#248]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/248
+[#249]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/249
 [#251]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/251
 [#252]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/252
 [#253]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/253
