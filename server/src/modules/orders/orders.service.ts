@@ -1,5 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, desc, eq, inArray, or, type SQL, sql } from 'drizzle-orm';
+import {
+  and,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  or,
+  type SQL,
+  sql,
+} from 'drizzle-orm';
 
 import { calendarRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
@@ -25,8 +34,10 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { minorUnits } from '../invoices/invoice-amounts';
 import { partnerMatches } from '../partners/partner-search';
 import { itemName, namesIn } from '../stock/item-name';
+import type { Tx } from '../stock/stock.service';
 import { ListOrdersDto } from './dto/list-orders.dto';
 import type {
   OrderDetail,
@@ -74,6 +85,35 @@ export function outstandingOrder(): SQL {
       and not ${orderLines.isClosedShort}
       and ${orderLines.quantityOrdered} > ${orderLines.quantityFulfilled}
   ))`;
+}
+
+/**
+ * A line's currency's minor units (`minorUnits`, ADR-046), for the
+ * currencies an order's lines are priced in: what the order page rounds
+ * each line to before summing, as the purchase order and an invoice do,
+ * so the page and its documents agree (ADR-035's amendment, #125). Null
+ * on an unpriced line, whose amount is null anyway.
+ */
+async function linePlaces(
+  tx: Tx,
+  organizationId: string,
+  orderId: string,
+): Promise<SQL> {
+  const priced = await tx
+    .selectDistinct({ currency: orderLines.currency })
+    .from(orderLines)
+    .where(
+      and(
+        eq(orderLines.orderId, orderId),
+        eq(orderLines.organizationId, organizationId),
+        isNotNull(orderLines.currency),
+      ),
+    );
+  const places = priced.flatMap(({ currency }) =>
+    currency ? [sql`when ${currency} then ${minorUnits(currency)}::int`] : [],
+  );
+  if (places.length === 0) return sql`null::int`;
+  return sql`(case ${orderLines.currency} ${sql.join(places, sql` `)} end)`;
 }
 
 /**
@@ -227,6 +267,7 @@ export class OrdersService {
     locale: Locale,
   ): Promise<OrderDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
+      const places = await linePlaces(tx, organizationId, orderId);
       const [order] = await tx
         .select({
           id: orders.id,
@@ -264,6 +305,9 @@ export class OrdersService {
            *
            * An order in one currency yields one row, which is the common case
            * and reads as a total. A mixed one yields two, which is the truth.
+           *
+           * Each line rounded to its currency's minor units, then summed, as
+           * the purchase order and an invoice do (ADR-035's amendment, #125).
            */
           totals: sql<{ currency: string; amount: string }[]>`coalesce((
           select json_agg(
@@ -272,7 +316,10 @@ export class OrdersService {
           )
           from (
             select ${orderLines.currency} as currency,
-                   sum(${orderLines.unitPrice} * ${orderLines.quantityOrdered}) as amount
+                   sum(round(
+                     ${orderLines.unitPrice} * ${orderLines.quantityOrdered},
+                     ${places}
+                   )) as amount
             from ${orderLines}
             where ${orderLines.orderId} = ${orders.id}
               and ${orderLines.unitPrice} is not null
@@ -335,11 +382,12 @@ export class OrdersService {
            * a line closed short (ADR-034). A credit note does not add to
            * it: those goods were billed, and the credit is their own figure.
            *
-           * Unrounded, as `totals` are: rounding belongs to the currency,
-           * which the client formats with.
+           * Each line rounded to its currency's minor units, then summed,
+           * as `totals` are, so a sale nothing has invoiced has its total
+           * still to invoice.
            */
           notInvoiced: sql<string>`coalesce((
-            select sum(${orderLines.unitPrice} * greatest(
+            select sum(round(${orderLines.unitPrice} * greatest(
               case when ${orderLines.isClosedShort}
                 then ${orderLines.quantityFulfilled}
                 else ${orderLines.quantityOrdered}
@@ -351,7 +399,7 @@ export class OrdersService {
                   and ${invoices.status} = 'issued'
               ), 0),
               0
-            ))
+            ), ${places}))
             from ${orderLines}
             where ${orderLines.orderId} = ${orders.id}
               and ${orderLines.unitPrice} is not null
@@ -459,12 +507,12 @@ export class OrdersService {
           priceListName: priceLists.name,
 
           /**
-           * Unrounded. Rounding to two places is currency-specific — JPY has
-           * no minor unit — so the query would be baking one convention into
-           * every order. Formatting knows the currency; this does not.
+           * Rounded to its currency's minor units — none for JPY — as the
+           * purchase order and an invoice round a line, so the lines add up
+           * to the order's totals (ADR-035's amendment, #125).
            */
-          lineTotal: sql<string | null>`(
-            ${orderLines.unitPrice} * ${orderLines.quantityOrdered}
+          lineTotal: sql<string | null>`round(
+            ${orderLines.unitPrice} * ${orderLines.quantityOrdered}, ${places}
           )::text`,
 
           /**
