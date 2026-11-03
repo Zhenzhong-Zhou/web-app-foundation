@@ -1,3 +1,4 @@
+import type { Explained } from './plans';
 import {
   type KnownMiss,
   ms,
@@ -44,8 +45,6 @@ export interface Judgement {
   scale: Scale;
   organizations: number;
   budgetsEnforced: boolean;
-  /** The run's day in UTC, its first round's: a known miss's end date. */
-  day: string;
   /** Each round's start and its concurrency check, the first round's first. */
   rounds: { startedAt: string; concurrencyPassed: boolean }[];
   results: MedianResult[];
@@ -92,6 +91,7 @@ export function judgeRounds(reports: Report[]): Judgement | string {
   }
 
   const [first] = rounds;
+  // The run's day in UTC, its first round's: a known miss's end date.
   const day = first.startedAt.slice(0, 10);
 
   const results = budgets[0].map((result, index): MedianResult => {
@@ -119,7 +119,6 @@ export function judgeRounds(reports: Report[]): Judgement | string {
     scale: first.scale,
     organizations: first.organizations,
     budgetsEnforced: first.budgetsEnforced,
-    day,
     rounds: rounds.map((report) => ({
       startedAt: report.startedAt,
       concurrencyPassed: report.concurrency.passed,
@@ -131,9 +130,13 @@ export function judgeRounds(reports: Report[]): Judgement | string {
   };
 }
 
-/** What the median job reads of a plan check's report (perf/plans.ts). */
+/**
+ * What the median job reads of a plan check's report, declared by the
+ * check itself (perf/plans.ts), so a field renamed there fails the build
+ * here rather than a table of NaN ms.
+ */
 export interface PlansReport {
-  explained: { probe: string; planningMs: number; executionMs: number }[];
+  explained: Pick<Explained, 'probe' | 'planningMs' | 'executionMs'>[];
 }
 
 /**
@@ -174,8 +177,8 @@ export function judgementMarkdown(
   const numbers = judgement.rounds.map((_, index) => index + 1);
   const enforced = judgement.budgetsEnforced;
   const known = judgement.results.filter((result) => result.knownMiss);
-  const failedConcurrency = numbers.filter(
-    (round) => !judgement.rounds[round - 1].concurrencyPassed,
+  const failedConcurrency = judgement.rounds.flatMap((round, index) =>
+    round.concurrencyPassed ? [] : [index + 1],
   );
 
   const lines = [

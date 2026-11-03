@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { judgementMarkdown, judgeRounds, type PlansReport } from './median';
-import type { Report } from './report';
+import { PLANS_SUFFIX, type Report } from './report';
 
 /**
  * A timed run's rounds judged by their median (ADR-051, amended November
@@ -35,12 +35,12 @@ function main(): number {
     JSON.parse(readFileSync(join(folder, name), 'utf8'));
 
   const reports = files
-    .filter((name) => !name.endsWith('-plans.json'))
+    .filter((name) => !name.endsWith(PLANS_SUFFIX))
     .map((name) => read(name) as Report);
   // The plan check runs in the first round only.
   const plans =
     files
-      .filter((name) => name.endsWith('-plans.json'))
+      .filter((name) => name.endsWith(PLANS_SUFFIX))
       .map((name) => read(name) as PlansReport)
       .at(-1) ?? null;
 

@@ -13,6 +13,9 @@ import type { Stats } from './load';
 /** Gitignored; CI uploads it as an artifact. */
 export const REPORTS = join(__dirname, 'reports');
 
+/** How a plan check's report is named in REPORTS (perf/plans.ts). */
+export const PLANS_SUFFIX = '-plans.json';
+
 /**
  * Growth above this from small to large means an endpoint reads in
  * proportion to the data rather than to a page: fine today, a problem by

@@ -35,7 +35,7 @@ import { StockReadsService } from '../src/modules/stock/stock-reads.service';
 import { type Captured, QueryCapture } from './capture';
 import { readManifest } from './manifest';
 import { toUnits } from './quantity';
-import { REPORTS } from './report';
+import { PLANS_SUFFIX, REPORTS } from './report';
 
 /**
  * Query plans for the main list and ledger queries (ADR-051).
@@ -97,7 +97,7 @@ interface PlanNode {
   Plans?: PlanNode[];
 }
 
-interface Explained {
+export interface Explained {
   probe: string;
   sql: string;
   planningMs: number;
@@ -168,7 +168,7 @@ async function main(): Promise<number> {
 
     mkdirSync(REPORTS, { recursive: true });
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const path = join(REPORTS, `${stamp}-${manifest.scale}-plans.json`);
+    const path = join(REPORTS, `${stamp}-${manifest.scale}${PLANS_SUFFIX}`);
     writeFileSync(
       path,
       `${JSON.stringify({ scale: manifest.scale, minRows, explained }, null, 2)}\n`,
