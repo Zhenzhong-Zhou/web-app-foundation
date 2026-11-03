@@ -1,6 +1,6 @@
 import type { APIRequestContext } from '@playwright/test';
 
-import { onDatabase } from './permission-keys';
+import { onDatabase } from './database';
 
 /**
  * The mail the server sent, read back from Mailpit, the inbox the dev stack

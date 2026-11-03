@@ -2,11 +2,10 @@ import { execFileSync } from 'node:child_process';
 
 import { expect, test } from '@playwright/test';
 
+import { onDatabase, SERVER } from './support/database';
 import {
   missingPermissionKeys,
-  onDatabase,
   permissionKeys,
-  SERVER,
   writeMissingPermissionKeys,
 } from './support/permission-keys';
 
