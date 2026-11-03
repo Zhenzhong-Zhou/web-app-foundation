@@ -3164,6 +3164,11 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R77** *(Show all after a close match alone opening an empty list,
+  #311)* As the demo Owner, in the top bar's lookup, type a word that only
+  nearly matches a partner, for example focus: the Partners group shows
+  the close match, with no Show all.
+
 - **MC-R75** *(New order from Reorder points left unfilled after a failed
   catalogue read, yet its note counting the lines, #357)* On a fresh demo,
   as the Owner, Reorder points on Low: choose D3-1000-120 and ELDER-250.
@@ -4465,3 +4470,5 @@ first.
   filled: MC-R75 added.
 - 2026-11-02: #212, Esc closing Help from its button before the guide has
   loaded, and the guide that comes after moving no focus: MC-R76 added.
+- 2026-11-02: #311, the lookup offering Show all only for a group with a
+  match that is not a close one: MC-R77 added.
