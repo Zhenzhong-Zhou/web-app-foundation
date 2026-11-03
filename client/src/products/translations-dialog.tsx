@@ -206,10 +206,13 @@ export function TranslationsDialog({
                 </Typography>
 
                 <TextField
-                  label={intl.formatMessage({
-                    id: 'common.name',
-                    defaultMessage: 'Name',
-                  })}
+                  label={intl.formatMessage(
+                    {
+                      id: 'products.translations.name',
+                      defaultMessage: 'Name in {language}',
+                    },
+                    { language: LANGUAGE_NAMES[locale] },
+                  )}
                   value={form[locale].name}
                   onChange={(event) =>
                     set(locale, { name: event.target.value })
@@ -219,10 +222,13 @@ export function TranslationsDialog({
                 />
 
                 <TextField
-                  label={intl.formatMessage({
-                    id: 'products.description',
-                    defaultMessage: 'Description',
-                  })}
+                  label={intl.formatMessage(
+                    {
+                      id: 'products.translations.description',
+                      defaultMessage: 'Description in {language}',
+                    },
+                    { language: LANGUAGE_NAMES[locale] },
+                  )}
                   value={form[locale].description}
                   onChange={(event) =>
                     set(locale, { description: event.target.value })
@@ -239,9 +245,13 @@ export function TranslationsDialog({
                     label={intl.formatMessage(
                       {
                         id: 'products.translations.variantName',
-                        defaultMessage: '{sku}: {name}',
+                        defaultMessage: '{sku}: {name}, in {language}',
                       },
-                      { sku: variant.sku, name: variant.name },
+                      {
+                        sku: variant.sku,
+                        name: variant.name,
+                        language: LANGUAGE_NAMES[locale],
+                      },
                     )}
                     value={form[locale].variants[variant.id] ?? ''}
                     onChange={(event) =>

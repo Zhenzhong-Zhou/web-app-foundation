@@ -3164,6 +3164,15 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R79** *(Edit names labelling every language's fields only 名称 or
+  描述, #315)* As the demo Owner in 中文, on 专注胶囊 60 粒, 添加规格
+  FOCUS-120CT named 120ct, then 编辑名称. With VoiceOver on (⌘ F5), Tab
+  through the dialog: each field is read with its language, 名称（English）,
+  描述（English） and FOCUS-120CT：120ct（English）, then the same for
+  Français (Canada) and 简体中文, no two alike. In English they read Name
+  in English, Description in English and FOCUS-120CT: 120ct, in English;
+  in Français, Nom en English.
+
 - **MC-R77** *(Show all after a close match alone opening an empty list,
   #311)* As the demo Owner, in the top bar's lookup, type a word that only
   nearly matches a partner, for example focus: the Partners group shows
@@ -4475,3 +4484,5 @@ first.
   loaded, and the guide that comes after moving no focus: MC-R76 added.
 - 2026-11-02: #311, the lookup offering Show all only for a group with a
   match that is not a close one: MC-R77 added.
+- 2026-11-02: #315, Edit names labelling each field with its language,
+  each variant's name too: MC-R79 added.
