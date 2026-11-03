@@ -1508,6 +1508,7 @@
   "production.produced": "Produced",
   "production.producedSoFar": "Produced so far",
   "production.recipe": "Recipe",
+  "production.recipesFailed": "Could not load the item’s recipes.",
   "production.release.action": "Release",
   "production.release.amountsInvalid": "Enter each amount as a number, up to four decimal places.",
   "production.release.chosen": "Chosen {chosen} of {needed}",

@@ -22,6 +22,9 @@ import { ReferencesWhole } from './reference';
  * with aria-describedby (#120): the alert's own label, "Error", would be
  * read as the description instead of the words.
  *
+ * `action`, when given, sits beside the words, as ListError's Try again
+ * does: a read that failed and can be asked again from here.
+ *
  * Reload joins the way out once the API has refused this tab as outdated
  * and the new version is out (ADR-081): every save it tries is refused
  * from then on, so reloading is the way on, whatever the line says. What
@@ -32,10 +35,12 @@ export function FormError({
   message,
   children,
   id,
+  action,
 }: {
   message: string;
   children?: ReactNode;
   id?: string;
+  action?: ReactNode;
 }) {
   const intl = useIntl();
   const { outdated, newer } = useNewVersion();
@@ -48,6 +53,7 @@ export function FormError({
         id: 'components.formError.label',
         defaultMessage: 'Error',
       })}
+      action={action}
     >
       {/* Usually the server's words, a refusal naming SO-DEMO-1 or a SKU:
           their references kept whole by their hyphens (ADR-081). */}

@@ -12,7 +12,12 @@ import {
   signInAs,
   uniqueEmail,
 } from './support/api';
-import { latestEmailTo, tokenIn, verifyEmail } from './support/mail';
+import {
+  confirmEmailInDatabase,
+  latestEmailTo,
+  tokenIn,
+  verifyEmail,
+} from './support/mail';
 
 /**
  * The invitation page (ADR-077), as the invited person meets it: from the
@@ -20,10 +25,13 @@ import { latestEmailTo, tokenIn, verifyEmail } from './support/mail';
  * are invitations.e2e-spec.ts's; this is what the page makes of them.
  */
 
-/** An organization whose Owner is verified, as inviting needs. */
+/**
+ * An organization whose Owner is confirmed, as inviting needs: in the
+ * database, so setup waits for no email (#248).
+ */
 async function inviter(): Promise<SeededOrganization> {
   const organization = await registerOrganization('inviter');
-  await verifyEmail(organization.api, organization.email);
+  await confirmEmailInDatabase(organization.email);
   return organization;
 }
 
@@ -58,7 +66,9 @@ const open = (page: Page, token: string) =>
 test('a new person joins from the emailed link, in the language it was written in', async ({
   browser,
 }) => {
-  const org = await inviter();
+  // Its subject is the mail, so the Owner confirms through theirs too.
+  const org = await registerOrganization('inviter');
+  await verifyEmail(org.api, org.email);
   const email = uniqueEmail('newcomer');
   await created(
     await org.api.post('/v1/invitations', {
@@ -101,12 +111,17 @@ test('a new person joins from the emailed link, in the language it was written i
 
   await page.waitForURL('/');
   const me = (await (await page.request.get('/api/v1/auth/me')).json()) as {
-    user: { name: string; locale: string };
+    user: { name: string; locale: string; emailVerified: boolean };
     organization: { name: string } | null;
   };
   expect(me.organization?.name).toBe(org.organizationName);
-  // The account takes the language the page was in.
-  expect(me.user).toMatchObject({ name: '王芳', locale: 'zh-Hans' });
+  // The account takes the language the page was in, and the emailed link
+  // confirmed its address, since only its inbox could have opened it.
+  expect(me.user).toMatchObject({
+    name: '王芳',
+    locale: 'zh-Hans',
+    emailVerified: true,
+  });
 });
 
 test('an account in no organization signs in through sign-in, then joins', async ({

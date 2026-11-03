@@ -241,7 +241,7 @@ anyone can read the code; nothing secret is in it, the secrets being in
 GitHub's settings and Render's. Private would hide the code, but on
 GitHub's Free plan a private repository loses three things this one
 leans on: Actions' minutes become a monthly allowance, where CI runs
-every browser on each push to `main`, nightly and on `full-e2e`, beside
+every browser on each push to `main`, nightly and by hand, beside
 the weekly flake hunt and Performance; rulesets stop being enforced, so
 `main`'s required checks, "Commits — no placeholder identity" among
 them, would stop without a warning; and CodeQL's code scanning (#113)

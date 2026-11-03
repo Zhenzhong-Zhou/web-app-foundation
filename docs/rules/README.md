@@ -82,6 +82,11 @@ rule, so the review judges each notice.
 - [Partners](partners.md): customers and suppliers, with their addresses,
   contacts, price lists, document languages, search and export, written
   from the code and the tests on 28 October 2026.
+- [Production orders](production-orders.md): production runs, from
+  planning one with its recipe to releasing, recording output, closing
+  and cancelling it, with the licence checked at release, the lots and
+  stock it takes, its variance and cost, and who may do each step,
+  written from the code and the tests on 2 November 2026.
 - [Products](products.md): products and their variants, names in other
   languages and the name each reader sees, the Products search and the
   item pickers, images, the catalogue export, and who may change them,

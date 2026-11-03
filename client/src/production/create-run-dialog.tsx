@@ -13,7 +13,6 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type {
-  Bom,
   Location,
   ProductionRun,
   RunPreview,
@@ -25,7 +24,7 @@ import { PartnerPicker } from '../components/partner-picker';
 import { VariantPicker } from '../components/variant-picker';
 import { api, withQuery } from '../lib/api';
 import {
-  formatQuantity,
+  displayQuantity,
   groupedNumberMessage,
   itemName,
   toApiDecimal,
@@ -34,6 +33,8 @@ import { usePartners } from '../lib/use-partners';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
 import { displayWithUnit } from '../products/units';
+import { RecipesFailed } from './recipes-failed';
+import { useRecipes } from './use-recipes';
 
 const EMPTY = {
   outputVariantId: '',
@@ -95,7 +96,17 @@ export function CreateRunDialog({
   // to: a new run with a partner you no longer deal with is a mistake
   // worth not offering (#304).
   const manufacturers = partners.filter((partner) => partner.isActive);
-  const [boms, setBoms] = useState<Bom[]>([]);
+  // Recipes for whatever is being made, read again per item, because a
+  // BOM outputs one variant and offering another product's would be
+  // nonsense.
+  const {
+    recipes: boms,
+    answered: recipesAnswered,
+    failed: recipesFailed,
+    retry: readRecipesAgain,
+    reset: forgetRecipes,
+  } = useRecipes(form.outputVariantId);
+  const recipesWaiting = !!form.outputVariantId && !recipesAnswered;
 
   const { submitting, error, reset, submit } = useSubmit(
     () => {
@@ -129,30 +140,9 @@ export function CreateRunDialog({
     };
   }, [open]);
 
-  // Recipes for whatever is being made. Refetched per variant, because a BOM
-  // outputs one variant and offering another product's would be nonsense.
-  useEffect(() => {
-    if (!form.outputVariantId) return;
-
-    let ignore = false;
-
-    void api<Bom[]>(`/boms?outputVariantId=${form.outputVariantId}`)
-      .then((rows) => {
-        if (ignore) return;
-
-        const usable = rows.filter((row) => row.status !== 'draft');
-        setBoms(usable);
-      })
-      .catch(() => undefined);
-
-    return () => {
-      ignore = true;
-    };
-  }, [form.outputVariantId]);
-
   function close() {
     setForm(EMPTY);
-    setBoms([]);
+    forgetRecipes();
     setQuantityError(null);
     reset();
     onClose();
@@ -285,7 +275,16 @@ export function CreateRunDialog({
               }
             />
 
-            {form.outputVariantId && boms.length === 0 && (
+            {/* Said in words, and Plan run stays off: never a run planned
+                without the recipe it would have had, silently (#290). */}
+            {recipesFailed && (
+              <RecipesFailed
+                id="run-recipes-failed"
+                onRetry={readRecipesAgain}
+              />
+            )}
+
+            {recipesAnswered && !recipesFailed && boms.length === 0 && (
               <Alert severity="warning">
                 {intl.formatMessage({
                   id: 'production.create.noRecipe',
@@ -328,7 +327,7 @@ export function CreateRunDialog({
                           },
                           {
                             version: row.version,
-                            quantity: formatQuantity(row.outputQuantity),
+                            quantity: displayQuantity(row.outputQuantity),
                           },
                         )
                       : intl.formatMessage(
@@ -339,7 +338,7 @@ export function CreateRunDialog({
                           },
                           {
                             version: row.version,
-                            quantity: formatQuantity(row.outputQuantity),
+                            quantity: displayQuantity(row.outputQuantity),
                           },
                         )}
                   </MenuItem>
@@ -394,7 +393,7 @@ export function CreateRunDialog({
                         defaultMessage:
                           'The recipe makes {quantity} per batch — components scale to whatever you enter.',
                       },
-                      { quantity: formatQuantity(active.outputQuantity) },
+                      { quantity: displayQuantity(active.outputQuantity) },
                     )
                   : intl.formatMessage({
                       id: 'production.create.quantity.help',
@@ -481,9 +480,14 @@ export function CreateRunDialog({
           </Stack>
         </DialogContent>
 
+        {/* Off until the item's recipes have answered, so the run is
+            planned with the recipe the select shows: pressed before, it
+            went without one (#290). */}
         <DialogFooter
           submitting={submitting}
           onCancel={close}
+          disabled={recipesWaiting || recipesFailed}
+          describedBy={recipesFailed ? 'run-recipes-failed' : undefined}
           label={intl.formatMessage({
             id: 'production.create.action',
             defaultMessage: 'Plan run',

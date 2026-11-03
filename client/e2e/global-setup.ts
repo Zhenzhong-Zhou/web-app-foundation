@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { registerOrganization } from './support/api';
-import { verifyEmail } from './support/mail';
+import { confirmEmailInDatabase } from './support/mail';
 import { writeMissingPermissionKeys } from './support/permission-keys';
 
 export const OWNER_STATE_PATH = './e2e/.auth/owner.json';
@@ -30,8 +30,8 @@ async function globalSetup(): Promise<void> {
   await writeMissingPermissionKeys(process.env.DATABASE_URL_E2E as string);
 
   const organization = await registerOrganization('owner');
-  // Verified, as inviting needs (ADR-077), through the link it was sent.
-  await verifyEmail(organization.api, organization.email);
+  // Confirmed, as inviting needs (ADR-077), with no email waited for (#248).
+  await confirmEmailInDatabase(organization.email);
 
   const state = await organization.api.storageState();
 

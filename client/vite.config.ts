@@ -518,6 +518,11 @@ export default defineConfig(({ command, mode }) => {
       // verification and reset link (ADR-017), and a silently moved port turns
       // those into dead links with nothing in the logs.
       strictPort: true,
+      // Off for the browser suite's and the screenshots' own servers, which
+      // their Playwright configs start with VITE_HMR=off (#183): a file
+      // saved during a run reloaded a page in the middle of a form.
+      // `npm run dev` keeps hot reload.
+      hmr: process.env.VITE_HMR !== 'off',
       proxy: {
         '/api': {
           // Playwright sets this so the e2e stack runs on its own ports and

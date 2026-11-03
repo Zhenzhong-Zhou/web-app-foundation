@@ -1508,6 +1508,7 @@
   "production.produced": "Produit",
   "production.producedSoFar": "Produit jusqu’ici",
   "production.recipe": "Recette",
+  "production.recipesFailed": "Impossible de charger les recettes de l’article.",
   "production.release.action": "Lancer",
   "production.release.amountsInvalid": "Saisissez chaque quantité en nombre, avec au plus quatre décimales.",
   "production.release.chosen": "Choisi {chosen} sur {needed}",

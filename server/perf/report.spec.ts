@@ -1,4 +1,11 @@
-import { type KnownMiss, verdictLabel, verdictOf } from './report';
+import {
+  type ConcurrencyResult,
+  failsItsRun,
+  type KnownMiss,
+  type Result,
+  verdictLabel,
+  verdictOf,
+} from './report';
 import { readScenarios } from './scenarios';
 
 // The typo lookup's (ADR-082).
@@ -63,5 +70,32 @@ describe('verdictLabel', () => {
     expect(verdictLabel('pass', null)).toBe('pass');
     expect(verdictLabel('known', typoMiss)).toBe('over budget, known: #225');
     expect(verdictLabel('fail', typoMiss)).toBe('over budget');
+  });
+});
+
+describe('failsItsRun', () => {
+  // Only what it reads: a budget missed, and the concurrency check.
+  const missed = [{ verdict: 'fail' }] as Result[];
+  const concurrency = (passed: boolean) => ({ passed }) as ConcurrencyResult;
+
+  const run = (round: number | null, passed = true, budgetsEnforced = true) =>
+    failsItsRun({
+      budgetsEnforced,
+      round,
+      results: missed,
+      concurrency: concurrency(passed),
+    });
+
+  it('fails a run judged on its own on a missed budget, as before', () => {
+    expect(run(null)).toBe(true);
+  });
+
+  it('fails a round only on its concurrency check: the median judges its budgets', () => {
+    expect(run(2)).toBe(false);
+    expect(run(2, false)).toBe(true);
+  });
+
+  it('fails nothing on a budget at large scale, as before', () => {
+    expect(run(null, true, false)).toBe(false);
   });
 });

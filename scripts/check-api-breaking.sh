@@ -19,7 +19,8 @@
 # A change reviewed and found harmless to an open tab, such as a limit the
 # API always held now written into the document, goes in
 # server/openapi-breaking-accepted.txt with why; oasdiff then lets it
-# through.
+# through. A new permission needs no line there: this script lets it
+# through itself (#340), as said below.
 #
 # Exits 0 when nothing breaks an open tab, or the revision was raised for
 # it; 1 when something does and the revision is where it was; 3 when the
@@ -67,6 +68,35 @@ version() {
 }
 base_version="$(version "$work/base.json")"
 revision_version="$(version "$work/revision.json")"
+
+# A new permission reaches every response that lists permissions (the
+# session's, each role's, the catalogue's), and oasdiff counts it breaking
+# in each, since a client that switches on an enum can meet a value it
+# does not know. An open tab cannot be harmed by one: it asks useCan only
+# of the permissions it knows, says only those under Your access, shows a
+# box only for those, and saves a role from the catalogue the server
+# sends, so a role it saves keeps the new one (#340, ADR-008's amendment
+# of November 2026). So a response-property-enum-value-added whose value
+# is one of the Permission schema's is let through, each written to the
+# accepted list in oasdiff's own words; a value added to any other enum,
+# an order's status among them, still fails. oasdiff gives the value only
+# in those words, so an image that words it otherwise lets none through:
+# a false red, never a false green.
+docker run --rm --network none -v "$work:/specs:ro" "$image" \
+  breaking /specs/base.json /specs/revision.json --format json > "$work/changes.json"
+# Single quotes on purpose: the JavaScript's ${} and backticks are node's.
+# shellcheck disable=SC2016
+node -e '
+  const read = (file) => JSON.parse(require("fs").readFileSync(file, "utf8"));
+  const [changes, revision] = process.argv.slice(1).map(read);
+  const permissions = new Set(revision.components?.schemas?.Permission?.enum ?? []);
+  for (const change of changes ?? []) {
+    const value = /^added the new `([^`]+)` enum value /.exec(change.text)?.[1];
+    if (change.id === "response-property-enum-value-added" && permissions.has(value)) {
+      console.log(`${change.operation} ${change.path} ${change.text} -- a new permission`);
+    }
+  }
+' "$work/changes.json" "$work/revision.json" >> "$work/accepted.txt"
 
 # No network: both documents are local, and nothing else is wanted.
 status=0

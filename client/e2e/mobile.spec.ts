@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import { inviteByLink, signInAs, uniqueEmail } from './support/api';
-import { verifyEmail } from './support/mail';
+import { confirmEmailInDatabase } from './support/mail';
 
 /**
  * The app on a phone's screen and engine (ADR-055): an iPhone's Safari,
@@ -81,7 +81,7 @@ test('lists Invited as cards on a phone, and invites full screen, in Chinese', a
   freshOrg,
 }) => {
   // Its own organization: this one writes.
-  await verifyEmail(freshOrg.api, freshOrg.email);
+  await confirmEmailInDatabase(freshOrg.email);
   const email = uniqueEmail('phone');
   await inviteByLink(freshOrg.api, email);
   await signInAs(page, freshOrg.api);

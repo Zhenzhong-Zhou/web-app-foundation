@@ -117,7 +117,13 @@ export default defineConfig({
       url: CLIENT_URL,
       reuseExistingServer: true,
       timeout: 120_000,
-      env: { VITE_API_TARGET: API_URL },
+      env: {
+        VITE_API_TARGET: API_URL,
+        // No hot reload, as the browser suite's server has it (#183): a
+        // file saved during a run would reload a page in the middle of a
+        // picture.
+        VITE_HMR: 'off',
+      },
     },
   ],
 });

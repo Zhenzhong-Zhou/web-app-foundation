@@ -5,19 +5,6 @@
 # --err-ignore, which lets through a change whose method, path and words
 # one line holds. Lines that start with # are notes for the reader.
 #
+# A new permission needs no line: the script lets it through itself (#340).
+#
 # Once main has a change, oasdiff no longer reports it: its line can go.
-
-PUT /v1/products/{id}/images the `fileIds` request property's maxItems was set to `8` -- the limit held already, @ArrayMaxSize refusing a ninth; @nestjs/swagger 12.0.3 now writes it into the document.
-PUT /v1/products/{id}/translations the `translations` request property's maxItems was set to `3` -- the limit held already, @ArrayMaxSize refusing a fourth language; @nestjs/swagger 12.0.3 now writes it into the document.
-PUT /v1/products/{id}/variants/{variantId}/translations the `translations` request property's maxItems was set to `3` -- the limit held already, @ArrayMaxSize refusing a fourth language; @nestjs/swagger 12.0.3 now writes it into the document.
-POST /v1/files/logo added the new `square_logo` enum value to the `file/kind` response property for the response status `201` -- each upload route returns only its own kind, so this one still returns only `logo`; `square_logo` comes only from the new POST /v1/files/square-logo, which no open tab calls (ADR-060, amended).
-POST /v1/files/product-image added the new `square_logo` enum value to the `file/kind` response property for the response status `201` -- as above: this route still returns only `product_image`, and no open tab calls the square logo's (ADR-060, amended).
-GET /v1/auth/me added the new `stock.reorder` enum value to the `permissions/items/` response property for the response status `200` -- an open tab asks useCan only of the permissions it knows and says only those under Your access, so a new one hides nothing and opens nothing (ADR-085's stock.reorder).
-GET /v1/roles added the new `stock.reorder` enum value to the `items/permissions/items/` response property for the response status `200` -- the role editor in an open tab shows a box only for the permissions it knows, and saves a role from the catalogue the server sends, so a made role keeps stock.reorder (ADR-085).
-POST /v1/roles added the new `stock.reorder` enum value to the `permissions/items/` response property for the response status `201` -- as above.
-GET /v1/roles/catalogue added the new `stock.reorder` enum value to the `permissions/items/key` response property for the response status `200` -- as above.
-GET /v1/roles/catalogue added the new `stock.reorder` enum value to the `permissions/items/needs/items/` response property for the response status `200` -- as above; and no permission needs it.
-GET /v1/roles/catalogue added the new `stock.reorder` enum value to the `templates/items/permissions/items/` response property for the response status `200` -- as above; and no template holds it.
-GET /v1/roles/{id} added the new `stock.reorder` enum value to the `permissions/items/` response property for the response status `200` -- as above.
-PATCH /v1/roles/{id} added the new `stock.reorder` enum value to the `permissions/items/` response property for the response status `200` -- as above.
-POST /v1/roles/{id}/move added the new `stock.reorder` enum value to the `permissions/items/` response property for the response status `200` -- as above.

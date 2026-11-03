@@ -36,10 +36,13 @@ With no arguments.
    - **A budget or a watch:** against the last Performance run on `main`
      that timed it, scheduled or by hand, not a pull request's plan
      check: `gh run list --workflow perf.yml --branch main --limit 10
-     --json databaseId,event,conclusion,createdAt,displayTitle`. Its
-     report is in the artifact, `gh run download <id> --dir
-     tmp/perf-<id>`, as `perf/reports/<time>-<scale>.json`, for 30 days;
-     its summary in `gh run view <id> --log`.
+     --json databaseId,event,conclusion,createdAt,displayTitle`. A timed
+     run is three rounds and a median job, read as
+     [`server/perf/README.md`, "Reading a timed run on CI"][perf-ci]
+     says: the median job's summary judges each budget. Each round's
+     reports are its artifact, for 30 days: `gh run download <id> --dir
+     tmp/perf-<id>`, then `npm run perf:judge -- ../tmp/perf-<id>` from
+     `server/` judges them again.
    - **A flaky test:** against the failed runs of CI and the flake hunt
      on `main` since the issue was filed, `gh run list --workflow ci.yml
      --branch main --status failure --created ">=<date>"`, and the same
@@ -121,3 +124,4 @@ The last line: `DONE: <why>`, or `BLOCKED: <what is needed>`.
 [labels]: ../../../docs/engineering.md#issues-and-labels
 [report]: ../../../CLAUDE.md#how-to-work
 [summary]: ../../agents/brief-step.md#4-the-summary-for-the-chat
+[perf-ci]: ../../../server/perf/README.md#reading-a-timed-run-on-ci

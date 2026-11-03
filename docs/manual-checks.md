@@ -3164,6 +3164,21 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R87** *(Release saying an item has no recipe when the read of its
+  recipes failed, found by the fix-ups' review)* As the demo Owner, Plan
+  a run of BLEND-FOCUS, which has no recipe: 10, Made at Office, Plan run.
+  Open the run and, with `*boms*` blocked (DevTools → Network request
+  blocking), press Release: Could not load the item’s recipes. with Try
+  again beside it, no "There is no recipe for this item yet", and Release
+  greyed. Unblock `*boms*` and press Try again: There is no recipe for
+  this item yet. In 中文 无法加载此物品的配方。, with 重试 beside it.
+
+- **MC-R86** *(Plan a run reading a recipe's yield with its padding
+  zeros, found by the fix-ups' walkthrough)* As the demo Owner on
+  Production, Plan a run and choose CALM-90CT in Making: Recipe reads
+  "v1 (current) — makes 1,000", not 1000.0000, and under Quantity to make
+  "The recipe makes 1,000 per batch — …". In Français both read 1 000.
+
 - **MC-R85** *(The time-zone picker finding nothing for Montréal, #165)*
   As the demo Owner in Français on a phone, Paramètres → Organisation →
   Profil → Fuseau horaire: type « Montréal », then « montreal »: each
@@ -3177,6 +3192,26 @@ first.
   order's total 7.40, never 7.41; Print shows the same three amounts. A
   sale with the same two lines reads 7.40 as its total and as Not yet
   invoiced, before tax.
+
+- **MC-R83** *(Plan run offering a retired partner as contract
+  manufacturer, #304)* As the demo Owner, Partners with Retired pressed
+  shows Old Mill Herbs. On Production, Plan a run and open Contract
+  manufacturer: We make it ourselves, then the partners in use, with no
+  Old Mill Herbs. Type `mill`: We make it ourselves alone, and still no
+  Old Mill Herbs.
+
+- **MC-R82** *(Plan run planning a run without its recipe when the item's
+  recipes came late, #290)* As the demo Owner on Production, in Chrome,
+  DevTools → Network: Disable cache and Slow 4G. Plan a run and choose
+  MAGCAP-SAMPLE in Making: Plan run stays off until Recipe shows "v1
+  (current) — makes 12". Then Quantity to make 24, Made at Office, Plan
+  run: the run's Release asks where to pick components from, and for no
+  recipe. With `*boms*` blocked (DevTools → Network request blocking),
+  Plan a run again and choose MAGCAP-SAMPLE: Could not load the item’s
+  recipes. under Making, no "No promoted recipe", and Plan run stays off
+  with every field filled. In 中文 无法加载此物品的配方。, with 重试 beside it.
+  Unblock `*boms*` and press Try again beside the words: they go, Recipe
+  shows "v1 (current) — makes 12", and Plan run plans the run.
 
 - **MC-R81** *(Move everyone saying nothing of what its holders gain and
   lose, #179)* As the demo Owner, on Viewer's page in Settings → Roles,
@@ -3202,6 +3237,7 @@ first.
   Français (Canada) and 简体中文, no two alike. In English they read Name
   in English, Description in English and FOCUS-120CT: 120ct, in English;
   in Français, Nom en English.
+
 - **MC-R78** *(Grey placeholders flashing before a quick read, and a ⋯
   heard as a plain button, #358)* As the demo Owner on a fast connection:
   Home, Your access on Account, and History from a Stock row's ⋯ show no
@@ -4528,6 +4564,11 @@ first.
   close side by side: MC-R80 added.
 - 2026-11-03: #179, Move everyone saying, once a role is chosen, what its
   holders gain and lose: MC-R81 added.
+- 2026-11-03: #290, Plan run waits for the item's recipes, and a failed
+  read of them says so, with Try again beside the words: MC-R82 added.
+- 2026-11-03: #304, Plan run's Contract manufacturer leaving a retired
+  partner out, as New order's Partner and a sample's Given to do: MC-R83
+  added.
 - 2026-11-03: #125, the order page rounding each line to its currency's
   minor units, then summing, as its purchase order does: MC-R84 added.
 - 2026-11-03: #165, the time-zone picker finding a zone with accents and
@@ -4536,3 +4577,8 @@ first.
 - 2026-11-03: #245, the whole app asking a browser not to translate it:
   MC-R72 rewritten, the page staying as written when Chrome is asked to
   translate it.
+- 2026-11-03: Plan a run reading a recipe's yield as 1000.0000 beside a
+  list reading 1,000, found by the fix-ups' walkthrough: MC-R86 added.
+- 2026-11-03: Release saying an item has no recipe when the read of its
+  recipes failed, #290's sibling, found by the fix-ups' review: MC-R87
+  added.

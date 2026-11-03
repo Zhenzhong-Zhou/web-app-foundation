@@ -1508,6 +1508,7 @@
   "production.produced": "已产出",
   "production.producedSoFar": "目前产出",
   "production.recipe": "配方",
+  "production.recipesFailed": "无法加载此物品的配方。",
   "production.release.action": "下达",
   "production.release.amountsInvalid": "请将每个数量输入为数字，最多 4 位小数。",
   "production.release.chosen": "已选 {chosen}，共需 {needed}",

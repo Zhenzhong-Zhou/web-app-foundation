@@ -19,9 +19,11 @@ on:
     branches: [main]
     paths: ['**', '!docs/**', '!**/*.md', 'client/src/help/guides/**', 'docs/tables/**']
   pull_request:
-    # labeled, so adding full-e2e to a pull request runs every browser on it
-    # without another push.
-    types: [opened, synchronize, reopened, labeled]
+    # Not labeled: a run started by a label skipped every job and passed
+    # "CI — all jobs" over the commit's failed run, so any label made a red
+    # pull request mergeable (#334, ADR-008's amendment). Every browser on
+    # a branch is a run by hand instead (workflow_dispatch, below).
+    types: [opened, synchronize, reopened]
   # Every browser nightly, so a WebKit, Firefox or iPhone regression from a
   # day of merges shows the next morning rather than at the next release.
   schedule:
@@ -37,18 +39,16 @@ on:
 # succession the middle ones get no run of their own, and only the newest
 # is checked and deployed (deploy.yml). Before tagging a release, its
 # commit's run must be there and green.
-# Adding any other label gets a group of its own, so it cannot cancel a run
-# in progress; its jobs are then skipped (the changes job's `if`, which
-# every other job needs).
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'full-e2e' && format('-{0}', github.run_id) || '' }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Every browser on main, nightly, by hand, and on a pull request labelled
-# full-e2e (layout, mobile, sign-in: anything an engine could render or
-# handle differently). Other pull requests run Chromium only.
+# Every browser on main, nightly, and in a run by hand: Actions → CI → Run
+# workflow, or `gh workflow run ci.yml --ref <branch>`, for a branch that
+# changes layout, mobile or sign-in, anything an engine could render or
+# handle differently. A pull request's own runs are Chromium only.
 env:
-  FULL_E2E: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-e2e') }}
+  FULL_E2E: ${{ github.event_name != 'pull_request' }}
 
 # Reads the repository and uploads artifacts, which needs nothing more
 # (CodeQL: a workflow without permissions gets the token's defaults).
@@ -64,7 +64,6 @@ jobs:
   # passed the paths already, and the nightly and a run by hand test all.
   changes:
     name: Changes — code or docs only
-    if: github.event.action != 'labeled' || github.event.label.name == 'full-e2e'
     runs-on: ubuntu-24.04
     outputs:
       code: ${{ steps.files.outputs.code }}
@@ -586,8 +585,15 @@ jobs:
   # matrix job skipped by its condition never expands its name, so the
   # shards would report as one check named with the expression itself,
   # and a required "Client — Playwright 1/3" would wait for ever.
+  #
+  # In a run by hand it takes another name. That run skips "Against main",
+  # which only a pull request runs, and reports on the branch's last
+  # commit, the one the pull request's checks are on: named alike, it
+  # could pass the required check over a pull request whose own run failed
+  # "Against main" (#334's hole, through the button that replaced the
+  # label). deploy.yml reads a push run, not this name.
   all-jobs:
-    name: CI — all jobs
+    name: ${{ github.event_name == 'workflow_dispatch' && 'CI — every browser, by hand' || 'CI — all jobs' }}
     needs: [changes, client, server, against-main, browser]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04

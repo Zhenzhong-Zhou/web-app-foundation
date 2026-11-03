@@ -1,8 +1,11 @@
 import { RateLimited, signIn } from './client';
 import { runLoad } from './load';
 import { readManifest } from './manifest';
+import { ROUNDS } from './median';
 import {
+  failsItsRun,
   growthFor,
+  type Report,
   type Result,
   verdictLabel,
   verdictOf,
@@ -28,6 +31,8 @@ import {
  * Budgets at 10 connections fail the run at small scale and are shown at
  * large, a known miss excepted until its date (ADR-082); the concurrency
  * check fails it at either; the stress run at 100 connections only reports.
+ * With `--round <n>`, as each of a timed run's rounds on CI, a budget fails
+ * nothing here: the median of the rounds judges it (perf/median.ts).
  * See perf/README.md for how to start the server.
  */
 
@@ -61,6 +66,16 @@ async function main(): Promise<number> {
   ).replace(/\/$/, '');
   const skipStress = args.includes('--skip-stress');
 
+  const roundGiven = valueOf(args, '--round');
+  const round = roundGiven === undefined ? null : Number(roundGiven);
+  if (
+    round !== null &&
+    !(Number.isInteger(round) && round >= 1 && round <= ROUNDS)
+  ) {
+    console.error(`--round must be a round's number, 1 to ${ROUNDS}.`);
+    return 1;
+  }
+
   const manifest = readManifest(valueOf(args, '--scale'));
   if (typeof manifest === 'string') {
     console.error(manifest);
@@ -79,7 +94,7 @@ async function main(): Promise<number> {
   const budgetsEnforced = manifest.scale === 'small';
 
   console.log(
-    `Perf against ${baseUrl}: ${manifest.scale} scale, ${manifest.organizations.length} organizations. Budgets ${budgetsEnforced ? 'enforced' : 'informational'}.`,
+    `Perf against ${baseUrl}: ${manifest.scale} scale, ${manifest.organizations.length} organizations. Budgets ${!budgetsEnforced ? 'informational' : round === null ? 'enforced' : `judged on the median of the rounds; this is round ${round}`}.`,
   );
 
   const orgs: Org[] = [];
@@ -115,7 +130,7 @@ async function main(): Promise<number> {
 
   const { against, growth } = growthFor(manifest.scale, results);
 
-  const { path, markdown } = writeReport({
+  const report: Report = {
     startedAt,
     finishedAt: new Date().toISOString(),
     baseUrl,
@@ -125,16 +140,17 @@ async function main(): Promise<number> {
     organizations: manifest.organizations.length,
     counts: manifest.organizations[0].counts,
     budgetsEnforced,
+    round,
     results,
     concurrency,
     growthAgainst: against,
     growth,
-  });
+  };
+  const { path, markdown } = writeReport(report);
 
   console.log(`\n${markdown}\n\nReport: ${path}`);
 
-  const budgetFailed = results.some((result) => result.verdict === 'fail');
-  return (budgetsEnforced && budgetFailed) || !concurrency.passed ? 1 : 0;
+  return failsItsRun(report) ? 1 : 0;
 }
 
 /**

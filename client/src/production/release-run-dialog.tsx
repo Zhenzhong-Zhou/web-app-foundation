@@ -19,7 +19,6 @@ import { Fragment, type SubmitEvent, useEffect, useState } from 'react';
 import { type IntlShape, useIntl } from 'react-intl';
 
 import type {
-  Bom,
   IssuePlan,
   IssuePlanLine,
   LicenceCheck,
@@ -31,6 +30,7 @@ import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import { fromScaled, sumDecimals, toScaled } from '../lib/decimal';
 import {
+  displayQuantity,
   formatDay,
   formatQuantity,
   groupedNumberMessage,
@@ -41,6 +41,8 @@ import {
 import { useSubmit } from '../lib/use-submit';
 import { withUnit } from '../products/units';
 import { rem } from '../theme/rem';
+import { RecipesFailed } from './recipes-failed';
+import { useRecipes } from './use-recipes';
 
 /**
  * The lots chosen for one component, added up exactly (ADR-025), each read
@@ -111,7 +113,15 @@ export function ReleaseRunDialog({
    */
   const needsRecipe = run.bomId === null;
   const choosesRecipe = needsRecipe && canAttachRecipe;
-  const [recipes, setRecipes] = useState<Bom[]>([]);
+  // Read as Plan a run reads them: while they come, the dialog says
+  // nothing of there being none, and a failed read says so (#290).
+  const {
+    recipes,
+    answered: recipesAnswered,
+    failed: recipesFailed,
+    retry: readRecipesAgain,
+    reset: forgetRecipes,
+  } = useRecipes(open && choosesRecipe ? run.outputVariantId : '');
   const [bomId, setBomId] = useState('');
   const chosenBom =
     bomId || recipes.find((row) => row.status === 'active')?.id || '';
@@ -222,23 +232,6 @@ export function ReleaseRunDialog({
     }));
   }
 
-  useEffect(() => {
-    if (!open || !choosesRecipe) return;
-
-    let ignore = false;
-
-    void api<Bom[]>(`/boms?outputVariantId=${run.outputVariantId}`)
-      .then((rows) => {
-        // Drafts are unfinished; the create dialog offers the same set.
-        if (!ignore) setRecipes(rows.filter((row) => row.status !== 'draft'));
-      })
-      .catch(() => undefined);
-
-    return () => {
-      ignore = true;
-    };
-  }, [open, choosesRecipe, run.outputVariantId]);
-
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
       close();
@@ -272,6 +265,7 @@ export function ReleaseRunDialog({
   function close() {
     setSource('');
     setBomId('');
+    forgetRecipes();
     setPlan(null);
     setPlanError(null);
     setPicks({});
@@ -356,7 +350,14 @@ export function ReleaseRunDialog({
               </Alert>
             )}
 
-            {choosesRecipe && recipes.length === 0 && (
+            {recipesFailed && (
+              <RecipesFailed
+                id="release-recipes-failed"
+                onRetry={readRecipesAgain}
+              />
+            )}
+
+            {recipesAnswered && !recipesFailed && recipes.length === 0 && (
               <Alert severity="warning">
                 {intl.formatMessage({
                   id: 'production.release.noRecipe',
@@ -395,7 +396,7 @@ export function ReleaseRunDialog({
                           },
                           {
                             version: row.version,
-                            quantity: formatQuantity(row.outputQuantity),
+                            quantity: displayQuantity(row.outputQuantity),
                           },
                         )
                       : intl.formatMessage(
@@ -406,7 +407,7 @@ export function ReleaseRunDialog({
                           },
                           {
                             version: row.version,
-                            quantity: formatQuantity(row.outputQuantity),
+                            quantity: displayQuantity(row.outputQuantity),
                           },
                         )}
                   </MenuItem>
@@ -753,6 +754,7 @@ export function ReleaseRunDialog({
             defaultMessage: 'Releasing…',
           })}
           disabled={(needsRecipe && !chosenBom) || !picksMatch || licenceStops}
+          describedBy={recipesFailed ? 'release-recipes-failed' : undefined}
         />
       </form>
     </Dialog>

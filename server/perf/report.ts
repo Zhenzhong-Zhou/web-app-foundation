@@ -13,6 +13,9 @@ import type { Stats } from './load';
 /** Gitignored; CI uploads it as an artifact. */
 export const REPORTS = join(__dirname, 'reports');
 
+/** How a plan check's report is named in REPORTS (perf/plans.ts). */
+export const PLANS_SUFFIX = '-plans.json';
+
 /**
  * Growth above this from small to large means an endpoint reads in
  * proportion to the data rather than to a page: fine today, a problem by
@@ -116,6 +119,12 @@ export interface Report {
   /** Rows in the first organization: what this ran against. */
   counts: Record<string, number>;
   budgetsEnforced: boolean;
+  /**
+   * Which round of a timed run on CI this is (`--round`), whose budgets the
+   * median of the rounds judges (perf/median.ts); null for a run judged on
+   * its own.
+   */
+  round: number | null;
   results: Result[];
   concurrency: ConcurrencyResult;
   /** The report the growth column compares with, if there is one. */
@@ -176,6 +185,27 @@ export function growthFor(
   return { against: latest, growth };
 }
 
+/**
+ * Whether a report fails its run: a budget missed where budgets are
+ * enforced, but not in a round of a timed run on CI, whose budgets the
+ * median of the rounds judges (perf/median.ts); and the concurrency check,
+ * which is no timing, in any run.
+ */
+export function failsItsRun(
+  report: Pick<Report, 'budgetsEnforced' | 'round' | 'results' | 'concurrency'>,
+): boolean {
+  const budgetFailed = report.results.some(
+    (result) => result.verdict === 'fail',
+  );
+
+  return (judgedAlone(report) && budgetFailed) || !report.concurrency.passed;
+}
+
+/** Budgets enforced, and judged in this run rather than on a median. */
+function judgedAlone(report: Pick<Report, 'budgetsEnforced' | 'round'>) {
+  return report.budgetsEnforced && report.round === null;
+}
+
 /** Writes the JSON, and the markdown to the CI step summary if there is one. */
 export function writeReport(report: Report): {
   path: string;
@@ -205,13 +235,17 @@ function toMarkdown(report: Report): string {
     result.knownMiss ? [{ result, miss: result.knownMiss }] : [],
   );
 
+  const enforced = judgedAlone(report);
+
   const lines = [
-    `## Perf: ${report.scale} scale, ${report.organizations} organizations, seed ${report.seed}`,
+    `## Perf: ${report.scale} scale, ${report.organizations} organizations, seed ${report.seed}${report.round === null ? '' : `, round ${report.round}`}`,
     '',
     `Run ${report.startedAt} against ${report.baseUrl}, data seeded ${report.seededAt}.`,
-    report.budgetsEnforced
-      ? 'Budgets enforced: a miss or an error fails the run.'
-      : 'Budgets informational: they are set against the small scale (ADR-051).',
+    !report.budgetsEnforced
+      ? 'Budgets informational: they are set against the small scale (ADR-051).'
+      : enforced
+        ? 'Budgets enforced: a miss or an error fails the run.'
+        : 'Budgets judged on the median of the rounds, in the median job: a miss in this round alone fails nothing.',
     '',
     '### 10 connections, against the budgets',
     '',
@@ -228,7 +262,7 @@ function toMarkdown(report: Report): string {
           : `${row.ratio.toFixed(1)}×`
         : '—';
 
-      return `| ${cells(result)} | ${result.budgetMs} | ${verdict(result, report.budgetsEnforced)} | ${theirs} | ${ratio} |`;
+      return `| ${cells(result)} | ${result.budgetMs} | ${verdict(result, enforced)} | ${theirs} | ${ratio} |`;
     }),
     '',
     report.growthAgainst
@@ -243,7 +277,7 @@ function toMarkdown(report: Report): string {
           '',
           ...known.map(
             ({ result, miss }) =>
-              `- ${result.name}: ${miss.issue}, until ${miss.until}, ceiling ${miss.ceilingMs} ms. This run: ${verdict(result, report.budgetsEnforced)}.`,
+              `- ${result.name}: ${miss.issue}, until ${miss.until}, ceiling ${miss.ceilingMs} ms. This run: ${verdict(result, enforced)}.`,
           ),
         ]
       : []),
@@ -296,13 +330,16 @@ function cells(result: Result): string {
 }
 
 /** The summary's verdict: a miss is a failure where budgets are enforced. */
-function verdict(result: Result, enforced: boolean): string {
+export function verdict(
+  result: Pick<Result, 'verdict' | 'knownMiss'>,
+  enforced: boolean,
+): string {
   const verdict = result.verdict ?? 'fail';
   return verdict === 'fail' && enforced
     ? '**FAIL**'
     : verdictLabel(verdict, result.knownMiss);
 }
 
-function ms(value: number): string {
+export function ms(value: number): string {
   return `${Math.round(value)} ms`;
 }

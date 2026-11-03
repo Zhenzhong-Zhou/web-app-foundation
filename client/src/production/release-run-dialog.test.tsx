@@ -1,9 +1,10 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import type { LicenceCheck, ProductionRun } from '../api/types.gen';
+import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { ReleaseRunDialog } from './release-run-dialog';
@@ -207,5 +208,132 @@ describe('ReleaseRunDialog without a recipe', () => {
     expect(screen.queryByLabelText(/Recipe/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Release' })).toBeDisabled();
     expect(recipes).toEqual([]);
+  });
+
+  /**
+   * A run planned without a recipe is given one here, by whoever may plan
+   * runs. Each version's yield is read as a list shows it.
+   */
+  it('offers the item’s recipes for a run planned without one, each yield as a list reads it', async () => {
+    serve({ licence: null, status: 'none', outcome: 'allow' });
+    server.use(
+      http.get('/api/v1/boms', () =>
+        HttpResponse.json([
+          {
+            id: 'bom-active',
+            outputVariantId: RUN.outputVariantId,
+            version: 2,
+            status: 'active',
+            outputQuantity: '1000.0000',
+          },
+        ]),
+      ),
+    );
+
+    renderWithAuth(
+      <ReleaseRunDialog
+        open
+        run={{ ...RUN, bomId: null }}
+        canOverrideLicence={false}
+        canAttachRecipe
+        onClose={() => undefined}
+        onReleased={() => undefined}
+      />,
+    );
+
+    expect(
+      await screen.findByRole('combobox', { name: 'Recipe' }),
+    ).toHaveTextContent('v2 — active, makes 1,000 per batch');
+  });
+
+  /**
+   * The recipes are read as Plan a run reads them (#290): while they come,
+   * nothing says there is none, and a read that fails says so, with Try
+   * again beside the words, never that the item has no recipe.
+   */
+  it('says nothing of there being no recipe while the item’s recipes come', async () => {
+    serve({ licence: null, status: 'none', outcome: 'allow' });
+    let asked = false;
+    server.use(
+      http.get('/api/v1/boms', async () => {
+        asked = true;
+        await delay('infinite');
+        return HttpResponse.json([]);
+      }),
+    );
+
+    renderWithAuth(
+      <ReleaseRunDialog
+        open
+        run={{ ...RUN, bomId: null }}
+        canOverrideLicence={false}
+        canAttachRecipe
+        onClose={() => undefined}
+        onReleased={() => undefined}
+      />,
+    );
+
+    await expect.poll(() => asked).toBe(true);
+    expect(
+      screen.queryByText(/no recipe for this item/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Release' })).toBeDisabled();
+  });
+
+  it('says the item’s recipes could not be loaded, and offers them again on Try again', async () => {
+    serve({ licence: null, status: 'none', outcome: 'allow' });
+    let reads = 0;
+    server.use(
+      http.get('/api/v1/boms', () => {
+        reads += 1;
+        return reads === 1
+          ? apiError(500, 'Something went wrong')
+          : HttpResponse.json([
+              {
+                id: 'bom-active',
+                outputVariantId: RUN.outputVariantId,
+                version: 1,
+                status: 'active',
+                outputQuantity: '1000.0000',
+              },
+            ]);
+      }),
+    );
+    const user = userEvent.setup();
+
+    renderWithAuth(
+      <ReleaseRunDialog
+        open
+        run={{ ...RUN, bomId: null }}
+        canOverrideLicence={false}
+        canAttachRecipe
+        onClose={() => undefined}
+        onReleased={() => undefined}
+      />,
+    );
+
+    const failure = await screen.findByRole('alert', { name: 'Error' });
+    expect(failure).toHaveTextContent('Could not load the item’s recipes.');
+    // The read failed; that is not the item having no recipe.
+    expect(
+      screen.queryByText(/no recipe for this item/),
+    ).not.toBeInTheDocument();
+    const release = screen.getByRole('button', { name: 'Release' });
+    expect(release).toBeDisabled();
+    expect(release).toHaveAccessibleDescription(
+      'Could not load the item’s recipes.',
+    );
+
+    await user.click(
+      within(failure).getByRole('button', { name: 'Try again' }),
+    );
+
+    expect(
+      await screen.findByRole('combobox', { name: 'Recipe' }),
+    ).toHaveTextContent('v1 — active, makes 1,000 per batch');
+    expect(
+      screen.queryByText('Could not load the item’s recipes.'),
+    ).not.toBeInTheDocument();
+    expect(reads).toBe(2);
   });
 });

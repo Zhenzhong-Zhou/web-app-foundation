@@ -39,6 +39,7 @@
     "backfill:pinyin": "ts-node src/database/backfill-pinyin.ts",
     "perf": "ts-node perf/run.ts",
     "perf:plans": "ts-node perf/plans.ts",
+    "perf:judge": "ts-node perf/judge.ts",
     "smoke:auth": "bash scripts/smoke-auth.sh",
     "test": "vitest run --project unit",
     "test:watch": "vitest --project unit",
@@ -138,9 +139,6 @@
   "overrides": {
     "@esbuild-kit/core-utils": {
       "esbuild": "0.28.2"
-    },
-    "@nestjs/platform-express": {
-      "multer": "2.5.0"
     }
   }
 }

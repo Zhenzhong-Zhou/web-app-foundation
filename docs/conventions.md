@@ -625,6 +625,13 @@ The error tracker hears of real faults only (ADR-084).
   `sid` from storageState, and a second cookie of the same name for the
   same host leaves it unspecified which one the browser sends, a coin flip
   that shows up as an unrelated test failing now and then.
+- **The browser suite's own client server runs without hot reload**
+  (#183), and so does the screenshots suite's: `client/playwright.config.ts`
+  and `client/playwright.screenshots.config.ts` start theirs with
+  `VITE_HMR=off`, so a file saved during a run cannot reload a page in the
+  middle of a form. A client server already running on port 5273, or 5373
+  for the screenshots, is reused as it is, with hot reload, so stop it
+  before a run.
 - **A limit the browser suite reaches is `limit(n)` in `@Throttle`**
   (`server/src/core/auth/throttle-limits.ts`), multiplied by
   `THROTTLE_FACTOR`. A decorator's arguments are evaluated when its class
@@ -665,7 +672,11 @@ The error tracker hears of real faults only (ADR-084).
 - **A CI failure in code the PR did not touch** is re-run once. If it
   passes, it is filed as a "Flaky:" issue the same day, naming the test,
   the run and the line; it is never retried automatically, skipped or
-  bypassed to get a pull request green.
+  bypassed to get a pull request green. On CI the browser suite retries a
+  failed test twice, so its report tells a test that fails every time from
+  one that passes on a retry; a test that passes only on a retry still
+  fails the run, named flaky (`failOnFlakyTests`, ADR-008's amendment), and
+  is filed as above. Locally nothing is retried.
 - **The flake hunt** (`.github/workflows/flake-hunt.yml`) looks for those
   failures before a pull request meets them. On main, Sundays at 09:00
   UTC and by hand (Actions → Flake hunt → Run workflow), it runs the
@@ -999,8 +1010,10 @@ Internet Explorer, and any browser's IE mode, is not supported.
   shares the owner's organization runs in Chromium only. Firefox runs in CI
   and with E2E_FIREFOX=1; Playwright's build of it cannot start on some
   macOS versions. In CI a pull request runs Chromium only, in three shards;
-  every browser runs on main, nightly, and on a pull request labelled
-  full-e2e (layout, mobile, sign-in).
+  every browser runs on main, nightly, and in a run by hand,
+  `gh workflow run ci.yml --ref <branch>` (Actions → CI → Run workflow),
+  for a branch that changes layout, mobile or sign-in. A label starts no
+  run (#334).
 - **Firefox on such a Mac,** and Linux WebKit as CI has it, run from
   Playwright's Linux image as a remote browser, the tests still on the
   Mac and no file changed (#231, #232). The image's version and the
@@ -1056,8 +1069,8 @@ names.
   start, and again before the reviews (`npm outdated`, then `npm update`, in
   `server/` and `client/`). No overrides, except a patched release of the
   same major under a package that pins the vulnerable one exactly, as
-  js-yaml's and multer's are (ADR-019, amended); a major version is a
-  change of its own.
+  js-yaml's is (ADR-019, amended); a major version is a change of its
+  own.
 - **Only versions at least 7 days old** (ADR-081): a freshly published
   version is where a hijacked package hides, and most are caught within
   days. Package by package: for each one `npm outdated` lists in range,
@@ -1066,7 +1079,9 @@ names.
   least 7 × 24 hours ago, and say on which day each of the rest comes of
   age. Never move back a version already locked: the rule keeps new
   releases out, it does not undo what is installed (#196's steps 1 and
-  8). Not `npm update --before`: it resolves every package to its
+  8). A package an update pulls in under another, under 7 days old, stays
+  at its locked version when every range asking for it still accepts that
+  one (`fix-ups-ci`'s step 15, 3 November 2026). Not `npm update --before`: it resolves every package to its
   cutoff, so it moves back whatever is newer, or fails where nothing in a
   range is that old, and a date alone cuts off at midnight UTC, about 8
   days (the square logo's step 2, 25 October 2026). A security fix is

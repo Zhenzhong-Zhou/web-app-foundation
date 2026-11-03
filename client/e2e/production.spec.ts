@@ -116,6 +116,12 @@ test('plans, releases by lot, records output and closes a run', async ({
   await page.getByRole('option', { name: /E2E Blending/ }).click();
   await plan.getByLabel('Reference').fill('E2E-RUN-1');
 
+  // The recipe comes after the item, and Plan run waits for it: pressed
+  // before it came, the run was planned without one (#290).
+  await expect(plan.getByRole('combobox', { name: 'Recipe' })).toContainText(
+    'v1 (current)',
+  );
+
   /**
    * Read the response rather than trusting the list to show it. Two things
    * can make the row fail to appear, and they need different fixes: the

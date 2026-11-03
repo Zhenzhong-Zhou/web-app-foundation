@@ -14,7 +14,7 @@ import {
   signInAs,
   uniqueEmail,
 } from './support/api';
-import { verifyEmail } from './support/mail';
+import { confirmEmailInDatabase } from './support/mail';
 import { deploy } from './support/version';
 
 /**
@@ -451,8 +451,9 @@ const SCREENS: Screen[] = [
  * receive is tinted late.
  */
 async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
-  // Someone on Members' Invited (ADR-077), which needs a verified inviter.
-  await verifyEmail(api, ownerEmail);
+  // Someone on Members' Invited (ADR-077), which needs a confirmed inviter,
+  // confirmed in the database: no email waited for in setup (#248).
+  await confirmEmailInDatabase(ownerEmail);
   await inviteByLink(api, uniqueEmail('a11y'));
   // Someone who has joined, so the bell has an entry, with its time.
   const { token } = await inviteByLink(api, uniqueEmail('a11y-joined'));
@@ -542,6 +543,16 @@ async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
 
 /** Every violation, one line each, so a failure reads as a list to fix. */
 async function violations(page: Page): Promise<string[]> {
+  // Two frames first (#232). Less motion shortens a transition to 0.01ms
+  // but still starts it, and Linux WebKit reports its first colours until
+  // a frame has run: axe, which reads the styles at once, measured a
+  // button just enabled after its list loaded in its disabled grey.
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
   const results = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   return results.violations.map(
     (violation) =>
@@ -681,7 +692,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     }) => {
       // A Viewer with a note and colleagues to ask (ADR-079), the card's
       // fullest state; the founder's is the Home row above.
-      await verifyEmail(freshOrg.api, freshOrg.email);
+      await confirmEmailInDatabase(freshOrg.email);
       const { token } = await inviteByLink(
         freshOrg.api,
         uniqueEmail('a11y-welcome'),
@@ -704,7 +715,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       browser,
       freshOrg,
     }) => {
-      await verifyEmail(freshOrg.api, freshOrg.email);
+      await confirmEmailInDatabase(freshOrg.email);
       const { token } = await inviteByLink(
         freshOrg.api,
         uniqueEmail('a11y-page'),

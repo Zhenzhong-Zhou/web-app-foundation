@@ -4,7 +4,9 @@ Three commands, run against a database of their own:
 
 - `npm run seed:volume` writes a year of data for several organizations;
 - `npm run perf` measures a running server against the budgets;
-- `npm run perf:plans` runs `EXPLAIN` on the main list and ledger queries.
+- `npm run perf:plans` runs `EXPLAIN` on the main list and ledger queries;
+- `npm run perf:judge` judges the three rounds of a run on CI by their
+  median.
 
 None of them is part of `npm test`. The **Performance** workflow
 (`.github/workflows/perf.yml`) runs them in one of three modes and keeps the
@@ -20,6 +22,19 @@ reports as an artifact for 30 days:
 - **full**, budgets plus the 100-connection stress pass: weekly on `main`,
   on each release candidate tag (`v*-rc.*`), and by hand. Timed runs always
   seed fresh.
+
+A timed run, budgets or full, is three rounds and a fourth job that judges
+them (ADR-051, amended November 2026; #342). Shared runners vary by about
+30% from run to run, so one run cannot tell a 10% change from the machine:
+
+- **Each round is a job of its own,** "Performance, full, round 1 of 3" and
+  so on, one after another, each seeding fresh on its own runner. Each
+  times the budgets and the concurrency check at 10 connections. The first
+  round alone adds the stress pass, in a full run, and the plan check.
+- **"Performance, full, the median of 3 rounds"** takes, for each endpoint,
+  the median of the three rounds' 95th percentiles, and judges it against
+  the budget and the known miss's ceiling, below. One slow round no longer
+  fails the run; two slow rounds do, and that is a finding.
 
 ## Running it locally
 
@@ -105,7 +120,9 @@ it. A sleep pauses the seed, which carries on when the Mac wakes.
 
 `npm run perf` takes `--scale small|large` (default small), `--url`
 (default `PERF_URL`, then `http://localhost:3000`) and `--skip-stress` for a
-quicker run.
+quicker run. `--round <n>` marks the run as one of CI's rounds: its budgets
+then fail nothing, since the median judges them, and its report says which
+round it was.
 
 ## What a run measures
 
@@ -135,11 +152,14 @@ answers:
 A budget passes only within its time and with no errors. Budgets fail the
 run at small scale; at large they are shown but do not fail, since they
 were set for the small scale. A known miss, below, is the one exception.
+On CI, the time is the median of the three rounds' 95th percentiles, and an
+error in any round fails the budget.
 
 The **concurrency check** ships one product 200 times from 10 connections
 across four orders, then checks that no request failed (a deadlock is a
 500), that stock went down by exactly what shipped, and that each order
-shipped what its shipments say. It fails the run at either scale.
+shipped what its shipments say. It fails the run at either scale; on CI,
+it fails its own round's job, since it is no timing.
 
 The **stress run** repeats everything at 100 connections. It never fails:
 it shows where response time starts to climb. The server's database pool
@@ -153,10 +173,10 @@ A budget missed for a reason already filed may carry a known miss
 95th percentile over the budget, at or under the ceiling and with no errors,
 reads "over budget, known: #225" and does not fail the run. Past the
 ceiling, with an error, or from the day after the end date, it fails as any
-miss does. The date is the run's, in UTC; the weekly run starts at 11:00
-UTC, the same day in Vancouver. The summary lists each known miss under the
-budgets, with its issue, its date and its ceiling, whether this run met it
-or not.
+miss does. The date is the run's, in UTC, on CI its first round's; the
+weekly run starts at 11:00 UTC, the same day in Vancouver. The summary lists
+each known miss under the budgets, with its issue, its date and its ceiling,
+whether this run met it or not. On CI, the median is what meets it or not.
 
 Two today, each until 30 November 2026 with a ceiling of 400 ms:
 
@@ -212,3 +232,46 @@ fine today and a problem by the time a customer reaches that size.
 A CI run starts with an empty reports folder, so its summary has no growth
 column. Compare scales locally, or download both artifacts into
 `perf/reports/` and rerun `npm run perf` at either scale.
+
+## Reading a timed run on CI
+
+The run's summary page shows each job's summary in turn, the three rounds'
+and then the median's:
+
+1. **Read the median job's summary first.** For each endpoint it gives the
+   median 95th percentile, each round's figure beside it, the errors of
+   all three, the budget and the result; then each known miss judged on the
+   median, each round's concurrency check, and each probe's plan time from
+   the first round's plan check: its statements' planning and execution,
+   explained once with no load beside them.
+2. **A median over its budget is the finding.** One round far from the
+   other two is its machine, which the median leaves out. When a median
+   misses, compare the probe's plan time with the last run's: slower, and
+   the query is where to look; as before, and it is the runners or what
+   only load shows, which a run by hand on the same commit tells apart.
+3. **Each round's own summary** has its full table (p50, p95, p99, requests
+   a second), and in the first round the stress pass and the plan check's
+   own table. A round's budget marked "over budget" there fails nothing.
+
+What fails a run:
+
+- **A median over its budget**, or past its known miss's ceiling or date,
+  or an error in any round: the median job.
+- **A round with no report**, most often because its job failed before
+  writing one: the median job refuses to judge two rounds, so its message
+  names the round to open.
+- **A concurrency check that failed:** that round's job.
+- **The plan check:** the first round's job, as in the plans mode.
+
+A round that failed on its runner can be run again alone, "Re-run failed
+jobs", then the median job after it: the round's artifact is overwritten,
+so the run is judged without timing all three again.
+
+Each round keeps its reports and the server's log as an artifact,
+`perf-<mode>-<scale>-<run>-round-<n>`, for 30 days. To judge a run again
+locally, from `server/`:
+
+```bash
+gh run download <run id> --dir ../tmp/perf-<run id>
+npm run perf:judge -- ../tmp/perf-<run id>
+```
