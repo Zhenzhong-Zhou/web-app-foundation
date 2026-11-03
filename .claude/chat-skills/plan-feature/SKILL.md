@@ -131,7 +131,10 @@ gets:
   built (#PR)", where building differed from the decisions; the handoff; any manual check or runbook line still owed.
   As patches.
 - When work ends in a pull request: its title, and its description as
-  plain Markdown, unasked.
+  plain Markdown, unasked, with `Closes #N` for each issue the branch
+  fixes, riders included, and `Part of #N` for one fixed in part. The
+  issues its commits name are the list to check:
+  `git log --format=%s origin/main..HEAD | grep -oE '#[0-9]+' | sort -u`.
 - After the merge: `scripts/prune-branches.sh --yes`, then
   `scripts/clean-local.sh` (a dry run, then `--yes`), the checks the
   runbook names for the deploy, and Project knowledge re-synced. When
