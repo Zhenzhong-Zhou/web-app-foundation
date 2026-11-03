@@ -1,10 +1,11 @@
-import { screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { Partner } from '../api/types.gen';
+import { VARIANTS } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { deploy, outdatedRefusal } from '../test/version';
@@ -241,6 +242,51 @@ describe('CreateOrderPage filled from Reorder points', () => {
         { variantId: 'variant-lotted', quantityOrdered: '12.5' },
       ],
     });
+  });
+
+  it('fills its lines once the catalogue answers on Retry, the note counting those filled (#357)', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    serve();
+    // Refused while a new version is installed (ADR-081), then answered.
+    let installed = false;
+    server.use(
+      http.get('/api/v1/partners', () =>
+        installed ? HttpResponse.json([PARTNER]) : outdatedRefusal(),
+      ),
+      http.get('/api/v1/products/variants', () =>
+        installed ? HttpResponse.json(VARIANTS) : outdatedRefusal(),
+      ),
+    );
+    renderPage(
+      fillState({
+        lines: [
+          { variantId: 'variant-plain', quantity: '2000.0000' },
+          { variantId: 'variant-lotted', quantity: '12.5000' },
+          // No longer in the catalogue, so not filled.
+          { variantId: 'variant-gone', quantity: '5.0000' },
+        ],
+      }),
+    );
+
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'A new version is being installed',
+    });
+    installed = true;
+    act(() => vi.advanceTimersByTime(60_000));
+
+    expect(
+      await screen.findByText(
+        'Filled from Reorder points: 2 lines at their suggested quantities. Choose the supplier under Partner, check the quantities and prices, then raise it as a draft.',
+      ),
+    ).toBeInTheDocument();
+    await expect
+      .poll(() =>
+        screen
+          .getAllByRole('textbox', { name: 'Quantity' })
+          .map((box) => (box as HTMLInputElement).value),
+      )
+      .toEqual(['2000', '12.5']);
   });
 
   it('leaves Back to Reorder points once raised, not the lines filled again', async () => {

@@ -3164,6 +3164,17 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R75** *(New order from Reorder points left unfilled after a failed
+  catalogue read, yet its note counting the lines, #357)* On a fresh demo,
+  as the Owner, Reorder points on Low: choose D3-1000-120 and ELDER-250.
+  Raise the revision as section 34 says, then press Raise a purchase
+  order: A new version is being installed, in the form's place. Put the
+  revision back and restart the server: within a minute New order reads
+  again by itself and has two lines, D3-1000-120 at 96 and ELDER-250 at
+  134, under the note "Filled from Reorder points: 2 lines at their
+  suggested quantities. …". With `*products/variants*` blocked
+  (DevTools → Network request blocking), raise it again: Could not load
+  partners and products., one empty line, and no note.
 - **MC-R74** *(a full IPv6 address pushing Recent activity's time off
   screen on a phone, #323)* On an iPhone SE, signed in on the deployed
   app over the phone's mobile data, which often gives a full IPv6 address
@@ -4439,3 +4450,6 @@ first.
   address shows the time, with nothing scrolling sideways: MC-R74 added.
 - 2026-11-02: #310, in Receive stock, Enter with no location names the
   field and focuses it, as every empty field there does: MC-R73.
+- 2026-11-02: #357, New order from Reorder points filled once the
+  catalogue answers, after a Retry too, its note counting the lines
+  filled: MC-R75 added.
