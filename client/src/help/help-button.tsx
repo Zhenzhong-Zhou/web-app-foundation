@@ -1,5 +1,6 @@
 import HelpOutlineOutlined from '@mui/icons-material/HelpOutlineOutlined';
 import { Button, IconButton, useMediaQuery, useTheme } from '@mui/material';
+import type { KeyboardEvent } from 'react';
 import { useIntl } from 'react-intl';
 
 import { HELP_PANEL_ID } from './help-ids';
@@ -26,6 +27,14 @@ export function HelpButton() {
   const props = {
     ref: help.buttonRef,
     onClick: help.toggle,
+    // Esc closes Help from here too, where focus still is until the guide
+    // has loaded and taken it (#212); focus stays on the button.
+    onKeyDown: (event: KeyboardEvent) => {
+      if (help.open && event.key === 'Escape') {
+        event.stopPropagation();
+        help.toggle();
+      }
+    },
     'aria-expanded': help.open,
     // On a phone Help is a dialog of its own, not a panel this controls.
     'aria-controls': help.open && !phone ? HELP_PANEL_ID : undefined,
