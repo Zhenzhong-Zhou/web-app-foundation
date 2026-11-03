@@ -37,25 +37,7 @@ container may start on an older one (one had 22, where twenty client
 tests fail for reasons of their own). Then `npm ci` in `server/` and
 `client/`.
 
-## 3. Already fixed?
-
-1. All of `main`'s history: `git fetch origin main`, with
-   `--unshallow` when `git rev-parse --is-shallow-repository` says
-   `true`.
-2. `git log --oneline -E --grep '#<N>([^0-9]|$)' origin/main`.
-3. A commit there that fixes what the issue expects, read against the
-   issue and `main`'s code, not one that only names it (a docs commit, a
-   handoff): **stop,** `DONE: already fixed by <commit> in #<PR>`, the
-   pull request from `gh pr list --state merged --search <commit>`, with
-   the command that closes it, for the maintainer:
-
-   ```bash
-   gh issue close <N> --reason completed --comment "Fixed in #<PR>: <commit> <what it did>."
-   ```
-
-4. Fixed in part: go on with the rest alone, and say which part is done.
-
-## 4. The issue, whole
+## 3. The issue, whole
 
 `gh issue view <N> --comments`, its text and every comment. **Stop** when
 it:
@@ -67,6 +49,24 @@ it:
 - needs a sweep, a load proof, the large seed or Docker, which stay on
   the Mac's own runs (in a cloud session);
 - needs more than a small fix: `BLOCKED`, saying what it would take.
+
+## 4. Already fixed?
+
+1. All of `main`'s history: `git fetch origin main`, with
+   `--unshallow` when `git rev-parse --is-shallow-repository` says
+   `true`.
+2. `git log --oneline -E --grep '#<N>([^0-9]|$)' origin/main`.
+3. A commit there that fixes what the issue expects, read against what
+   step 3 read and `main`'s code, not one that only names it (a docs commit, a
+   handoff): **stop,** `DONE: already fixed by <commit> in #<PR>`, the
+   pull request from `gh pr list --state merged --search <commit>`, with
+   the command that closes it, for the maintainer:
+
+   ```bash
+   gh issue close <N> --reason completed --comment "Fixed in #<PR>: <commit> <what it did>."
+   ```
+
+4. Fixed in part: go on with the rest alone, and say which part is done.
 
 ## 5. The files to leave alone
 
