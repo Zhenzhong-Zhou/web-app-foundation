@@ -32,7 +32,8 @@ const ROW: StockRow = {
 const CHANGES = ['Move', 'Ship out', 'Send sample', 'Edit lot details'];
 
 describe('InventoryPage', () => {
-  async function openActions(permissions: string[]) {
+  /** The page with one row, and that row's ⋯. */
+  async function rowActions(permissions: string[]) {
     server.use(
       http.get('/api/v1/stock', () =>
         HttpResponse.json({ entries: [ROW], nextCursor: null }),
@@ -48,12 +49,30 @@ describe('InventoryPage', () => {
       </MemoryRouter>,
       { permissions },
     );
-    await userEvent.click(
-      await screen.findByRole('button', {
-        name: 'Actions for VITD-60 at Shelf A',
-      }),
-    );
+    return screen.findByRole('button', {
+      name: 'Actions for VITD-60 at Shelf A',
+    });
   }
+
+  async function openActions(permissions: string[]) {
+    await userEvent.click(await rowActions(permissions));
+  }
+
+  // A screen reader hears a menu button, not a plain one (#358).
+  it('says a row’s ⋯ opens a menu, and whether it is open', async () => {
+    const actions = await rowActions(['stock.view']);
+    expect(actions).toHaveAttribute('aria-haspopup', 'menu');
+    expect(actions).toHaveAttribute('aria-expanded', 'false');
+    expect(actions).not.toHaveAttribute('aria-controls');
+
+    await userEvent.click(actions);
+    const menu = await screen.findByRole('menu');
+    expect(actions).toHaveAttribute('aria-expanded', 'true');
+    const controls = actions.getAttribute('aria-controls');
+    expect(controls && document.getElementById(controls)).toContainElement(
+      menu,
+    );
+  });
 
   // A Viewer's first week asks them to look a lot up (ADR-079).
   it('gives someone who may only see stock the actions that read', async () => {

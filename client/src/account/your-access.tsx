@@ -3,6 +3,7 @@ import { useIntl } from 'react-intl';
 
 import type { MemberAccess } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
+import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { roleDescription, roleLabel } from '../members/role-names';
 import { WhatYouCanDo } from './what-you-can-do';
@@ -18,6 +19,8 @@ export function YourAccess() {
   const { data: access, error } = useResource<MemberAccess>(
     '/account/membership',
   );
+  // Only for a read that takes a while (conventions, Loading states).
+  const showSkeleton = useDelayedFlag(!access && !error);
 
   if (!session?.organization) return null;
 
@@ -36,7 +39,7 @@ export function YourAccess() {
       {error && <Alert severity="error">{error}</Alert>}
 
       {!access ? (
-        !error && <Skeleton variant="rounded" height={96} />
+        showSkeleton && <Skeleton variant="rounded" height={96} />
       ) : (
         <>
           {access.roles.map((role) => {

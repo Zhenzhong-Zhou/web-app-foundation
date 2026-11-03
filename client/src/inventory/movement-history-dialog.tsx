@@ -29,6 +29,7 @@ import {
   itemName,
   relativeTime,
 } from '../lib/format';
+import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { describeMovement, movementActor } from './describe-movement';
 import {
@@ -80,6 +81,8 @@ export function MovementHistoryDialog({
   // starts fresh and closing needs nothing reset.
   const { entries, error, failed, hasMore, loadingMore, loadMore, reload } =
     useKeysetList<Movement>(row ? `/stock/movements?${queryFor(row)}` : null);
+  // Only for a read that takes a while (conventions, Loading states).
+  const showSkeleton = useDelayedFlag(entries === null && !failed);
 
   return (
     <Dialog open={!!row} onClose={onClose} fullWidth maxWidth="md">
@@ -151,11 +154,13 @@ export function MovementHistoryDialog({
           </Typography>
 
           {failed ? null : entries === null ? (
-            <Stack spacing={1}>
-              <Skeleton height={40} />
-              <Skeleton height={40} />
-              <Skeleton height={40} />
-            </Stack>
+            showSkeleton && (
+              <Stack spacing={1}>
+                <Skeleton height={40} />
+                <Skeleton height={40} />
+                <Skeleton height={40} />
+              </Stack>
+            )
           ) : entries?.length ? (
             <TableContainer>
               <Table size="small">

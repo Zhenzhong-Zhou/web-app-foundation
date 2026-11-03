@@ -32,6 +32,7 @@ import {
   organizationToday,
 } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
+import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useFailureWords } from '../lib/use-failure-words';
 import { rem } from '../theme/rem';
@@ -73,6 +74,8 @@ function OrganizationHome() {
   // the page's own words.
   const [error, setError] = useState<unknown>(null);
   const errorWords = useFailureWords(error);
+  // Only for a read that takes a while (conventions, Loading states).
+  const showSkeleton = useDelayedFlag(!home);
   // The welcome just dismissed, a moment to undo it (ADR-079).
   const [undoing, setUndoing] = useState(false);
   const dismissing = useRef<Promise<unknown> | null>(null);
@@ -333,7 +336,7 @@ function OrganizationHome() {
       {errorWords && <Alert severity="error">{errorWords}</Alert>}
 
       {!home ? (
-        <Skeleton variant="rounded" height={120} />
+        showSkeleton && <Skeleton variant="rounded" height={120} />
       ) : (
         <>
           <Typography
