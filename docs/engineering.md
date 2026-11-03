@@ -215,8 +215,10 @@ steps; this section stays the rule.
 - **Every browser on a pull request's branch** is a run by hand,
   `gh workflow run ci.yml --ref <branch>` (Actions → CI → Run workflow),
   on the branch's last commit; the pull request's own runs are Chromium
-  only. A label starts no run: a label's run once passed "CI — all jobs"
-  over a failure (#334, ADR-008's amendment).
+  only. Its last check is "CI — every browser, by hand", never the
+  required "CI — all jobs", since it skips "Against main". A label starts
+  no run: a label's run once passed "CI — all jobs" over a failure (#334,
+  ADR-008's amendment).
 - **Every pull request** that changes what a person sees takes pictures
   before and after and compares them (`npm run screenshots:compare`), and
   its Claude Code Review comment is read before merging. The README's

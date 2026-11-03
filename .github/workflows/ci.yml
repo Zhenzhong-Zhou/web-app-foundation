@@ -585,8 +585,15 @@ jobs:
   # matrix job skipped by its condition never expands its name, so the
   # shards would report as one check named with the expression itself,
   # and a required "Client — Playwright 1/3" would wait for ever.
+  #
+  # In a run by hand it takes another name. That run skips "Against main",
+  # which only a pull request runs, and reports on the branch's last
+  # commit, the one the pull request's checks are on: named alike, it
+  # could pass the required check over a pull request whose own run failed
+  # "Against main" (#334's hole, through the button that replaced the
+  # label). deploy.yml reads a push run, not this name.
   all-jobs:
-    name: CI — all jobs
+    name: ${{ github.event_name == 'workflow_dispatch' && 'CI — every browser, by hand' || 'CI — all jobs' }}
     needs: [changes, client, server, against-main, browser]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
