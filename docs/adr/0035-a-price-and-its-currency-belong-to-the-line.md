@@ -118,3 +118,14 @@ A line's price,
 an order's totals and its tax reach only whoever holds `orders.view_prices`;
 the server sends them to nobody else. An order's invoice money follows
 `invoices.view`.
+
+## Amendment (November 2026) — each line rounded, then summed (#125)
+
+The order page rounds each line to its currency's minor units, then sums,
+as the purchase order (ADR-071) and an invoice (ADR-046) do, so the page
+and its documents always agree: summed unrounded, lines priced in
+fractions of a cent could put them a cent apart. A line's total, each
+currency's total and what a sale has still to invoice are rounded so.
+The minor units come from `minorUnits`, the Intl source the client
+formats with (ADR-046), so the query bakes no one currency's convention
+into every order, the reason this ADR returned them unrounded.
