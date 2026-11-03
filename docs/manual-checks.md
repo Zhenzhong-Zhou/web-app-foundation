@@ -3164,6 +3164,13 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R84** *(An order's total a cent from its purchase order's, #125)*
+  As the demo Owner, raise a purchase from Lakeshore Packaging with two
+  lines, each 3 at 1.2345 CAD: each line's Total reads 3.70 and the
+  order's total 7.40, never 7.41; Print shows the same three amounts. A
+  sale with the same two lines reads 7.40 as its total and as Not yet
+  invoiced, before tax.
+
 - **MC-R81** *(Move everyone saying nothing of what its holders gain and
   lose, #179)* As the demo Owner, on Viewer's page in Settings → Roles,
   Move everyone to…, then Warehouse under Move them to. Beneath it, With
@@ -4516,3 +4523,5 @@ first.
   close side by side: MC-R80 added.
 - 2026-11-03: #179, Move everyone saying, once a role is chosen, what its
   holders gain and lose: MC-R81 added.
+- 2026-11-03: #125, the order page rounding each line to its currency's
+  minor units, then summing, as its purchase order does: MC-R84 added.

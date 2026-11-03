@@ -643,9 +643,9 @@ describe('Credit notes (e2e)', () => {
         netInvoiced: '118.1300',
       });
 
-      // The 4 capsules not yet shipped, at 12.50, before tax. Unrounded
-      // like the order's totals, so its scale is Postgres's; the value is
-      // what is claimed.
+      // The 4 capsules not yet shipped, at 12.50, before tax. Each line
+      // rounded to the currency's minor units, as the order's totals are
+      // (#125); the value is what is claimed.
       expect(Number(order.money!.notInvoiced)).toBe(50);
 
       expect(line(order, 'FOCUS-60CT').quantityCredited).toBe('2.0000');
