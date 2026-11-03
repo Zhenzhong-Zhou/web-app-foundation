@@ -670,7 +670,11 @@ The error tracker hears of real faults only (ADR-084).
 - **A CI failure in code the PR did not touch** is re-run once. If it
   passes, it is filed as a "Flaky:" issue the same day, naming the test,
   the run and the line; it is never retried automatically, skipped or
-  bypassed to get a pull request green.
+  bypassed to get a pull request green. On CI the browser suite retries a
+  failed test twice, so its report tells a test that fails every time from
+  one that passes on a retry; a test that passes only on a retry still
+  fails the run, named flaky (`failOnFlakyTests`, ADR-008's amendment), and
+  is filed as above. Locally nothing is retried.
 - **The flake hunt** (`.github/workflows/flake-hunt.yml`) looks for those
   failures before a pull request meets them. On main, Sundays at 09:00
   UTC and by hand (Actions → Flake hunt → Run workflow), it runs the

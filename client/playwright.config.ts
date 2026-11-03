@@ -65,9 +65,16 @@ export default defineConfig({
   // still reports green. Fail the run instead.
   forbidOnly: !!process.env.CI,
 
-  // Retries locally hide flakiness; in CI they distinguish a genuine failure
-  // from a slow container. `trace: 'on-first-retry'` below captures the retry.
+  // Retries locally hide flakiness; in CI they tell a test that fails every
+  // time from one that passes on a retry. `trace: 'on-first-retry'` below
+  // captures the retry.
   retries: process.env.CI ? 2 : 0,
+  // A test that passes only on a retry fails the run on CI, named flaky in
+  // the report (ADR-008's November 2026 amendment): green means every test
+  // passed the first time, and the flaky one is filed as docs/conventions.md,
+  // Tests, says. Before it, a retry's pass left the run green, seen only by
+  // someone who read the report's flaky rows, as #232 and #248 were.
+  failOnFlakyTests: !!process.env.CI,
   workers: process.env.CI ? 2 : undefined,
 
   reporter: process.env.CI
