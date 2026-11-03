@@ -107,12 +107,17 @@ file is kept is in the [README](README.md).
 - **Release needs a recipe with at least one line.** A run planned
   without one is given one in the release dialog, by whoever may plan
   runs; anyone else is told who can. A recipe with no lines is refused.
+  The dialog reads the item's recipes as Plan a run does: nothing says
+  there is none while they come, and a failed read says so, with Try
+  again beside the words.
   [ADR-029](../adr/0029-a-bill-of-materials-is-a-header-plus-lines-and-nesting-is-data.md#decision--a-header-table-and-versioning-by-snapshot-at-consumption) ·
   [test](../../server/test/production-orders.e2e-spec.ts) "refuses to release a run with no BOM" ·
   [test](../../client/src/production/release-run-dialog.test.tsx) "tells someone who may not plan runs who attaches one, and asks for no recipes" ·
+  [test](../../client/src/production/release-run-dialog.test.tsx) "says nothing of there being no recipe while the item’s recipes come" ·
+  [test](../../client/src/production/release-run-dialog.test.tsx) "says the item’s recipes could not be loaded, and offers them again on Try again" ·
   partly tested ·
   [Help](../../client/src/help/guides/en/production.md#if-something-is-refused-refused) ·
-  MC-3319
+  MC-3319 · MC-R85
 - **Components come from one place for the whole run, and any line can
   name its own.** A place marked not for use, such as retention or
   quarantine, is refused, and the dialog does not offer one.

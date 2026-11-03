@@ -1,7 +1,6 @@
 import {
   Alert,
   Box,
-  Button,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -14,7 +13,6 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type {
-  Bom,
   Location,
   ProductionRun,
   RunPreview,
@@ -35,6 +33,8 @@ import { usePartners } from '../lib/use-partners';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
 import { displayWithUnit } from '../products/units';
+import { RecipesFailed } from './recipes-failed';
+import { useRecipes } from './use-recipes';
 
 const EMPTY = {
   outputVariantId: '',
@@ -96,26 +96,17 @@ export function CreateRunDialog({
   // to: a new run with a partner you no longer deal with is a mistake
   // worth not offering (#304).
   const manufacturers = partners.filter((partner) => partner.isActive);
-  // The item's recipes as their read answered: the rows, or null when it
-  // failed. Kept with the item they answer, so until this item's come, no
-  // other item's are taken for them (#290).
-  const [recipes, setRecipes] = useState<{
-    variantId: string;
-    rows: Bom[] | null;
-  } | null>(null);
-  // A count that reads the item's recipes again: Try again, beside the
-  // words of a failed read, as New order reads its catalogue again.
-  // Choosing the same item again changes nothing, so it was the only way
-  // out but clearing the item.
-  const [recipeReads, setRecipeReads] = useState(0);
-  // Waiting, answered or failed, as useVariants says it for the catalogue.
-  const recipesRead =
-    form.outputVariantId && recipes?.variantId === form.outputVariantId
-      ? recipes
-      : null;
-  const recipesWaiting = !!form.outputVariantId && !recipesRead;
-  const recipesFailed = recipesRead?.rows === null;
-  const boms = recipesRead?.rows ?? [];
+  // Recipes for whatever is being made, read again per item, because a
+  // BOM outputs one variant and offering another product's would be
+  // nonsense.
+  const {
+    recipes: boms,
+    answered: recipesAnswered,
+    failed: recipesFailed,
+    retry: readRecipesAgain,
+    reset: forgetRecipes,
+  } = useRecipes(form.outputVariantId);
+  const recipesWaiting = !!form.outputVariantId && !recipesAnswered;
 
   const { submitting, error, reset, submit } = useSubmit(
     () => {
@@ -149,33 +140,9 @@ export function CreateRunDialog({
     };
   }, [open]);
 
-  // Recipes for whatever is being made. Refetched per variant, because a BOM
-  // outputs one variant and offering another product's would be nonsense.
-  useEffect(() => {
-    const variantId = form.outputVariantId;
-    if (!variantId) return;
-
-    let ignore = false;
-
-    void api<Bom[]>(`/boms?outputVariantId=${variantId}`)
-      .then((rows) => {
-        if (ignore) return;
-
-        const usable = rows.filter((row) => row.status !== 'draft');
-        setRecipes({ variantId, rows: usable });
-      })
-      .catch(() => {
-        if (!ignore) setRecipes({ variantId, rows: null });
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [form.outputVariantId, recipeReads]);
-
   function close() {
     setForm(EMPTY);
-    setRecipes(null);
+    forgetRecipes();
     setQuantityError(null);
     reset();
     onClose();
@@ -311,32 +278,13 @@ export function CreateRunDialog({
             {/* Said in words, and Plan run stays off: never a run planned
                 without the recipe it would have had, silently (#290). */}
             {recipesFailed && (
-              <FormError
+              <RecipesFailed
                 id="run-recipes-failed"
-                message={intl.formatMessage({
-                  id: 'production.create.recipesFailed',
-                  defaultMessage: 'Could not load the item’s recipes.',
-                })}
-                action={
-                  <Button
-                    variant="text"
-                    color="inherit"
-                    onClick={() => {
-                      // Waiting again, so the words go while it is asked.
-                      setRecipes(null);
-                      setRecipeReads((count) => count + 1);
-                    }}
-                  >
-                    {intl.formatMessage({
-                      id: 'common.tryAgain',
-                      defaultMessage: 'Try again',
-                    })}
-                  </Button>
-                }
+                onRetry={readRecipesAgain}
               />
             )}
 
-            {recipesRead?.rows?.length === 0 && (
+            {recipesAnswered && !recipesFailed && boms.length === 0 && (
               <Alert severity="warning">
                 {intl.formatMessage({
                   id: 'production.create.noRecipe',

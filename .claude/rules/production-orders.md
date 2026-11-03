@@ -43,4 +43,6 @@ for people; a commit that changes one of those rules updates it (ADR-087).
 - **The variance notice is sent after the transaction,** to `TOLD.variance`
   (ADR-036).
 - **Plan run sends the recipe the select shows,** and waits until the
-  item's recipes have answered (ADR-008, amended).
+  item's recipes have answered (ADR-008, amended). Plan a run and Release
+  read them through `useRecipes`, a failed read through `RecipesFailed`,
+  never taken for an item with no recipe.

@@ -3164,6 +3164,15 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R85** *(Release saying an item has no recipe when the read of its
+  recipes failed, found by the fix-ups' review)* As the demo Owner, Plan
+  a run of BLEND-FOCUS, which has no recipe: 10, Made at Office, Plan run.
+  Open the run and, with `*boms*` blocked (DevTools → Network request
+  blocking), press Release: Could not load the item’s recipes. with Try
+  again beside it, no "There is no recipe for this item yet", and Release
+  greyed. Unblock `*boms*` and press Try again: There is no recipe for
+  this item yet. In 中文 无法加载此物品的配方。, with 重试 beside it.
+
 - **MC-R84** *(Plan a run reading a recipe's yield with its padding
   zeros, found by the fix-ups' walkthrough)* As the demo Owner on
   Production, Plan a run and choose CALM-90CT in Making: Recipe reads
@@ -4550,3 +4559,6 @@ first.
   added.
 - 2026-11-03: Plan a run reading a recipe's yield as 1000.0000 beside a
   list reading 1,000, found by the fix-ups' walkthrough: MC-R84 added.
+- 2026-11-03: Release saying an item has no recipe when the read of its
+  recipes failed, #290's sibling, found by the fix-ups' review: MC-R85
+  added.
