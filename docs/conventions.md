@@ -1062,8 +1062,8 @@ names.
   start, and again before the reviews (`npm outdated`, then `npm update`, in
   `server/` and `client/`). No overrides, except a patched release of the
   same major under a package that pins the vulnerable one exactly, as
-  js-yaml's and multer's are (ADR-019, amended); a major version is a
-  change of its own.
+  js-yaml's is (ADR-019, amended); a major version is a change of its
+  own.
 - **Only versions at least 7 days old** (ADR-081): a freshly published
   version is where a hijacked package hides, and most are caught within
   days. Package by package: for each one `npm outdated` lists in range,
