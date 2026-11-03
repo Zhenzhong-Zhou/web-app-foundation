@@ -199,6 +199,81 @@ describe('RecipePanel', () => {
   });
 
   /**
+   * The reload after an action answers for the variant it was asked about.
+   * When the person has switched variant before it answers, the answer is
+   * dropped, so the previous variant's recipe never replaces the one on
+   * screen (#286).
+   */
+  it('drops a reload that answers after a variant switch', async () => {
+    const other = {
+      ...ACTIVE,
+      id: 'bom-other',
+      outputVariantId: 'variant-other',
+      outputQuantity: '500.0000',
+    };
+
+    let release = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let promoted = false;
+
+    server.use(
+      http.get('/api/v1/boms', async ({ request }) => {
+        const variantId = new URL(request.url).searchParams.get(
+          'outputVariantId',
+        );
+        if (variantId === other.outputVariantId) {
+          return HttpResponse.json([other]);
+        }
+
+        // The reload after Promote waits until the test lets it answer.
+        if (promoted) await held;
+        return HttpResponse.json([DRAFT]);
+      }),
+      http.get('/api/v1/boms/:id', ({ params }) =>
+        HttpResponse.json(
+          params.id === other.id
+            ? { ...other, lines: [] }
+            : { ...DRAFT, lines: [BLEND_LINE] },
+        ),
+      ),
+      http.post('/api/v1/boms/:id/promote', () => {
+        promoted = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const variants = [
+      ...VARIANTS,
+      { ...VARIANTS[0], id: 'variant-other', sku: 'D3-120CT', name: '120ct' },
+    ];
+
+    renderWithAuth(<RecipePanel variants={variants} />, {
+      permissions: ALL,
+    });
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Promote' }),
+    );
+
+    await userEvent.click(screen.getByRole('combobox', { name: /^For/ }));
+    await userEvent.click(
+      screen.getByRole('option', { name: 'D3-120CT — 120ct' }),
+    );
+    expect(await screen.findByText('Makes 500 per batch')).toBeInTheDocument();
+
+    release();
+
+    // The action ends once the reload has answered, which frees the buttons.
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'New recipe' })).toBeEnabled(),
+    );
+    expect(screen.getByText('Makes 500 per batch')).toBeInTheDocument();
+    expect(screen.queryByText('Makes 1,000 per batch')).not.toBeInTheDocument();
+  });
+
+  /**
    * The panel renders nothing at all without boms.view, rather than an empty
    * section: a heading over a permanently blank table reads as broken.
    */
