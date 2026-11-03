@@ -133,26 +133,28 @@ for (const [where, viewport] of [
   ['never scroll sideways on a desktop', null],
   ['reflow at 320px wide (WCAG 1.4.10)', { width: 320, height: 640 }],
 ] as const) {
-  test(`at Larger, the main screens ${where}`, async ({ page, api }) => {
-    test.setTimeout(90_000);
-    // Members with someone on Invited, its widest row (ADR-077).
-    await inviteByLink(api, uniqueEmail('larger'));
-    if (viewport) await page.setViewportSize(viewport);
-    // Larger from the first paint, as a device that chose it before opens.
-    await page.addInitScript(() => localStorage.setItem('textSize', 'larger'));
-
-    const wide: Record<string, string[]> = {};
+  // Each screen its own test, as in accessibility.spec (#231, #271), so a
+  // slow screen times out only itself and a retry reruns one screen; the
+  // report still lists every screen to fix in one run, and what on it.
+  test.describe(`at Larger, the main screens ${where}`, () => {
     for (const path of SCREENS) {
-      await page.goto(path);
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-      await expect(page.locator('html')).toHaveCSS('font-size', '20px');
-      await page.waitForLoadState('networkidle');
-      const culprits = await overflowing(page);
-      if (culprits.length > 0) wide[path] = culprits;
-    }
+      test(path, async ({ page, api }) => {
+        // Members with someone on Invited, its widest row (ADR-077).
+        if (path === '/members') await inviteByLink(api, uniqueEmail('larger'));
+        if (viewport) await page.setViewportSize(viewport);
+        // Larger from the first paint, as a device that chose it before
+        // opens.
+        await page.addInitScript(() =>
+          localStorage.setItem('textSize', 'larger'),
+        );
 
-    // All at once, so one run lists every screen to fix, and what on it.
-    expect(wide).toEqual({});
+        await page.goto(path);
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+        await expect(page.locator('html')).toHaveCSS('font-size', '20px');
+        await page.waitForLoadState('networkidle');
+        expect(await overflowing(page)).toEqual([]);
+      });
+    }
   });
 }
 
