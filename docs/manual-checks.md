@@ -616,7 +616,7 @@ Paper is checked first because it must not change at all.
   Duplicate side by side. On an order with nothing left to ship, Close order
   is the filled one.
 - **MC-1521** The summary's Quantities read 600 each ordered, 400 shipped, 200
-  still to ship in bold, and 7 returned with "does not add to still to ship"
+  still to ship in bold, and 7 returned with "does not add to still to ship"  
   under it. Void a shipment on another order: "not counting 1 voided shipment"
   appears under its shipped figure. An order mixing units (a blend in kg with
   bottles) shows "Complete 0 of 2" instead.
@@ -3172,6 +3172,13 @@ first.
   Français (Canada) and 简体中文, no two alike. In English they read Name
   in English, Description in English and FOCUS-120CT: 120ct, in English;
   in Français, Nom en English.
+- **MC-R78** *(Grey placeholders flashing before a quick read, and a ⋯
+  heard as a plain button, #358)* As the demo Owner on a fast connection:
+  Home, Your access on Account, and History from a Stock row's ⋯ show no
+  grey placeholder before their content; with the network throttled to
+  Slow 4G (DevTools → Network), each shows one while it reads. With
+  VoiceOver on, a Stock row's ⋯ and the ⋯ on PO-DEMO-12's line read as a
+  menu button, collapsed, then expanded once open.
 
 - **MC-R77** *(Show all after a close match alone opening an empty list,
   #311)* As the demo Owner, in the top bar's lookup, type a word that only
@@ -4484,5 +4491,8 @@ first.
   loaded, and the guide that comes after moving no focus: MC-R76 added.
 - 2026-11-02: #311, the lookup offering Show all only for a group with a
   match that is not a close one: MC-R77 added.
+- 2026-11-02: #358, Home, Your access and a Stock row's History drawing
+  their placeholder only for a slow read, and the ⋯ on a Stock row and an
+  order's line read as a menu button: MC-R78 added.
 - 2026-11-02: #315, Edit names labelling each field with its language,
   each variant's name too: MC-R79 added.

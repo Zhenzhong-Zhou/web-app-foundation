@@ -754,6 +754,26 @@ describe('OrderDetailPage prices', () => {
     ).toBeInTheDocument();
   });
 
+  // A screen reader hears a menu button, not a plain one (#358).
+  it('says a line’s ⋯ opens a menu, and whether it is open', async () => {
+    serve(order({ direction: 'sale' }));
+    renderPage();
+
+    const row = within(await rowFor('WIDGET-1'));
+    const actions = row.getByRole('button', { name: 'Actions for WIDGET-1' });
+    expect(actions).toHaveAttribute('aria-haspopup', 'menu');
+    expect(actions).toHaveAttribute('aria-expanded', 'false');
+    expect(actions).not.toHaveAttribute('aria-controls');
+
+    await userEvent.click(actions);
+    const menu = await screen.findByRole('menu');
+    expect(actions).toHaveAttribute('aria-expanded', 'true');
+    const controls = actions.getAttribute('aria-controls');
+    expect(controls && document.getElementById(controls)).toContainElement(
+      menu,
+    );
+  });
+
   it('never offers the list price on a sample', async () => {
     serve(order({ direction: 'sale', isSample: true }));
     renderPage();
