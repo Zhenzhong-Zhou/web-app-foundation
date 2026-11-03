@@ -5,6 +5,8 @@ import {
   browserTimeZone,
   cityOf,
   currentName,
+  LINKED_CITIES,
+  linkedCities,
   offsetLabel,
   organizationDayOf,
   organizationToday,
@@ -101,5 +103,20 @@ describe('time zones', () => {
     expect(sameZone('Asia/Kolkata', 'Asia/Calcutta')).toBe(true);
     expect(sameZone('Europe/Kyiv', 'Europe/Kiev')).toBe(true);
     expect(sameZone('Asia/Kolkata', 'Asia/Kathmandu')).toBe(false);
+  });
+
+  // The picker finds Toronto's zone by Montreal (#165): each link is the
+  // zone it points to for this browser, and that zone is one it lists.
+  it('links each renamed city to a zone the picker lists', () => {
+    const zones = allTimeZones(moment);
+    for (const [link, zone] of Object.entries(LINKED_CITIES)) {
+      expect(zones).toContain(zone);
+      expect(sameZone(link, zone), link).toBe(true);
+    }
+    expect(linkedCities('America/Toronto')).toEqual([
+      'Montreal',
+      'Thunder Bay',
+    ]);
+    expect(linkedCities('America/Vancouver')).toEqual([]);
   });
 });

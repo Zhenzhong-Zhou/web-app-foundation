@@ -3164,6 +3164,13 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R85** *(The time-zone picker finding nothing for Montréal, #165)*
+  As the demo Owner in Français on a phone, Paramètres → Organisation →
+  Profil → Fuseau horaire: type « Montréal », then « montreal »: each
+  offers heure de l’Est — Toronto. Type « Calcutta »: heure de l’Inde —
+  Kolkata. Type « Atlantis »: the list says « Aucun résultat. », as the
+  lookup does, never « Pas de résultats ». Leave without saving.
+
 - **MC-R84** *(An order's total a cent from its purchase order's, #125)*
   As the demo Owner, raise a purchase from Lakeshore Packaging with two
   lines, each 3 at 1.2345 CAD: each line's Total reads 3.70 and the
@@ -4525,3 +4532,6 @@ first.
   holders gain and lose: MC-R81 added.
 - 2026-11-03: #125, the order page rounding each line to its currency's
   minor units, then summing, as its purchase order does: MC-R84 added.
+- 2026-11-03: #165, the time-zone picker finding a zone with accents and
+  capitals aside and by a city the time-zone database links to it, and
+  saying « Aucun résultat. » when nothing matches: MC-R85 added.

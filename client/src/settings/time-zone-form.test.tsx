@@ -171,6 +171,61 @@ describe('TimeZoneForm', () => {
     expect(screen.queryByRole('option', { name: /Calcutta/ })).toBeNull();
   });
 
+  // The owner in Québec types the city as they write it (#165): the
+  // time-zone database keeps Montreal as a link to Toronto's zone.
+  it('finds a zone by a city linked to it, accents and capitals aside', async () => {
+    const user = userEvent.setup();
+    render(
+      <TimeZoneForm
+        value="America/Vancouver"
+        readOnly={false}
+        onSaved={saved}
+      />,
+    );
+
+    const box = screen.getByRole('combobox', { name: 'Time zone' });
+    await user.click(box);
+    await user.keyboard('Montréal');
+    expect(
+      screen.getByRole('option', {
+        name: `${zoneLabel('America/Toronto')} UTC\u22124 · America/Toronto`,
+      }),
+    ).toBeInTheDocument();
+
+    await user.clear(box);
+    await user.keyboard('CALCUTTA');
+    expect(
+      screen.getByRole('option', {
+        name: `${zoneLabel('Asia/Kolkata')} UTC+5:30 · Asia/Kolkata`,
+      }),
+    ).toBeInTheDocument();
+
+    await user.clear(box);
+    await user.keyboard('Zürich');
+    expect(
+      screen.getByRole('option', {
+        name: `${zoneLabel('Europe/Zurich')} UTC+2 · Europe/Zurich`,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('says nothing was found in the words the lookup uses', async () => {
+    const user = userEvent.setup();
+    render(
+      <TimeZoneForm
+        value="America/Vancouver"
+        readOnly={false}
+        onSaved={saved}
+      />,
+    );
+
+    await user.click(screen.getByRole('combobox', { name: 'Time zone' }));
+    await user.keyboard('Atlantis');
+
+    expect(screen.getByText('Nothing found.')).toBeInTheDocument();
+    expect(screen.queryByRole('option')).toBeNull();
+  });
+
   it('is read only for someone who cannot change it', () => {
     render(<TimeZoneForm value="UTC" readOnly onSaved={saved} />);
 

@@ -19,6 +19,7 @@ import {
   allTimeZones,
   browserTimeZone,
   isPlaceOrUtc,
+  linkedCities,
   offsetLabel,
   sameZone,
   todayIn,
@@ -33,6 +34,14 @@ const TICK_MS = 30_000;
 /** "Friday, October 16": the day as the form names it, in a zone. */
 const LONG_DAY = { weekday: 'long', day: 'numeric', month: 'long' } as const;
 
+/**
+ * Text as a search compares it, accents and capitals aside: Montréal as
+ * montreal, as the lookup finds a name.
+ */
+function folded(text: string): string {
+  return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+}
+
 /** A zone in the list: the computer's first, then every zone by offset. */
 interface ZoneOption {
   zone: string;
@@ -40,7 +49,10 @@ interface ZoneOption {
   label: string;
   /** "UTC−7 · America/Vancouver", under the label. */
   detail: string;
-  /** What a search matches: the label, the standard name, the offset. */
+  /**
+   * What a search matches, folded: the label, the standard name, the
+   * offset, and the cities the time-zone database links to the zone.
+   */
   haystack: string;
 }
 
@@ -82,7 +94,7 @@ export function TimeZoneForm({
         group,
         label,
         detail,
-        haystack: `${label} ${detail}`.toLowerCase(),
+        haystack: folded(`${label} ${detail} ${linkedCities(each).join(' ')}`),
       };
     };
     return [
@@ -208,11 +220,16 @@ export function TimeZoneForm({
         }
         getOptionKey={(option) => `${option.group}-${option.zone}`}
         filterOptions={(all, { inputValue }) => {
-          const query = inputValue.trim().toLowerCase();
+          const query = folded(inputValue.trim());
           return query
             ? all.filter((option) => option.haystack.includes(query))
             : all;
         }}
+        // The lookup's own words, not MUI's: Aucun résultat. in French.
+        noOptionsText={intl.formatMessage({
+          id: 'search.nothing',
+          defaultMessage: 'Nothing found.',
+        })}
         // Cleared, the zone stays as it was: an organization always has one.
         onChange={(_event, next) => {
           if (next) choose(next.zone);
