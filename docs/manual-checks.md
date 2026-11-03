@@ -3164,6 +3164,13 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R76** *(Plan run offering a retired partner as contract
+  manufacturer, #304)* As the demo Owner, Partners with Retired pressed
+  shows Old Mill Herbs. On Production, Plan a run and open Contract
+  manufacturer: We make it ourselves, then the partners in use, with no
+  Old Mill Herbs. Type `mill`: We make it ourselves alone, and still no
+  Old Mill Herbs.
+
 - **MC-R75** *(Plan run planning a run without its recipe when the item's
   recipes came late, #290)* As the demo Owner on Production, in Chrome,
   DevTools → Network: Disable cache and Slow 4G. Plan a run and choose
@@ -4452,3 +4459,6 @@ first.
   field and focuses it, as every empty field there does: MC-R73.
 - 2026-11-02: #290, Plan run waits for the item's recipes, and a failed
   read of them says so: MC-R75 added.
+- 2026-11-02: #304, Plan run's Contract manufacturer leaving a retired
+  partner out, as New order's Partner and a sample's Given to do: MC-R76
+  added.
