@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -215,6 +215,83 @@ describe('CreateRunDialog', () => {
     await user.type(quantity, '{Enter}');
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(sent).toHaveLength(0);
+  });
+
+  /**
+   * Try again, beside the words, reads the item's recipes again: choosing
+   * the same item again changes nothing, so it is the way on from a failed
+   * read, and the run is then planned with the active recipe.
+   */
+  it('reads the item’s recipes again on Try again, then plans with the active one', async () => {
+    const user = userEvent.setup();
+    const sent: Record<string, unknown>[] = [];
+    let reads = 0;
+
+    server.use(
+      http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
+      http.get('/api/v1/locations', () =>
+        HttpResponse.json([
+          { id: 'loc-wip', name: 'WIP', type: 'bin', parentId: null },
+        ]),
+      ),
+      http.get('/api/v1/partners', () => HttpResponse.json([])),
+      http.get('/api/v1/boms', () => {
+        reads += 1;
+        return reads === 1
+          ? apiError(500, 'Something went wrong')
+          : HttpResponse.json([
+              {
+                id: 'bom-active',
+                outputVariantId: VARIANT.id,
+                version: 1,
+                status: 'active',
+                outputQuantity: '1000.0000',
+              },
+            ]);
+      }),
+      http.post('/api/v1/production-orders', async ({ request }) => {
+        sent.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json(
+          { productionOrder: { id: 'run-1' } },
+          { status: 201 },
+        );
+      }),
+    );
+
+    renderWithAuth(
+      <CreateRunDialog
+        open
+        canSeePartners
+        onClose={() => undefined}
+        onCreated={() => undefined}
+      />,
+    );
+
+    await user.type(await screen.findByLabelText(/Making/), 'FOCUS');
+    await user.click(await screen.findByRole('option', { name: /FOCUS-60CT/ }));
+    await user.type(screen.getByLabelText(/Quantity to make/), '1000');
+    await user.click(screen.getByLabelText(/Made at/));
+    await user.click(await screen.findByRole('option', { name: /WIP/ }));
+
+    const failure = await screen.findByRole('alert', { name: 'Error' });
+    expect(failure).toHaveTextContent('Could not load the item’s recipes.');
+
+    await user.click(
+      within(failure).getByRole('button', { name: 'Try again' }),
+    );
+
+    expect(
+      await screen.findByRole('combobox', { name: 'Recipe' }),
+    ).toHaveTextContent('v1 (current)');
+    expect(
+      screen.queryByText('Could not load the item’s recipes.'),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Plan run' }));
+
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0].bomId).toBe('bom-active');
+    expect(reads).toBe(2);
   });
 
   /**

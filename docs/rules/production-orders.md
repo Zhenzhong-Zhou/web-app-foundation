@@ -39,11 +39,13 @@ file is kept is in the [README](README.md).
   [Help](../../client/src/help/guides/en/production.md#plan-a-run-plan)
 - **Plan run waits for the item's recipes: it stays off until they have
   answered.** If they cannot be read, the dialog says "Could not load the
-  item's recipes." and Plan run stays off, so a run is never planned
-  without the recipe it would have had.
+  item's recipes." with Try again beside it, which reads them again, and
+  Plan run stays off, so a run is never planned without the recipe it
+  would have had.
   [ADR-008, amended](../adr/0008-testing-scaffolding-lands-in-v1.md#decision--the-batchs-rules-files-production-orders-alone) ·
   [test](../../client/src/production/create-run-dialog.test.tsx) "waits for the item’s recipes before Plan run, then plans with the active one" ·
   [test](../../client/src/production/create-run-dialog.test.tsx) "says the item’s recipes could not be loaded, and plans nothing" ·
+  [test](../../client/src/production/create-run-dialog.test.tsx) "reads the item’s recipes again on Try again, then plans with the active one" ·
   [test](../../client/e2e/production.spec.ts) "plans, releases by lot, records output and closes a run" ·
   MC-R82
 - **Uses shows what the run will take of each component at the quantity

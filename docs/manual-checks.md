@@ -3180,7 +3180,9 @@ first.
   recipe. With `*boms*` blocked (DevTools → Network request blocking),
   Plan a run again and choose MAGCAP-SAMPLE: Could not load the item’s
   recipes. under Making, no "No promoted recipe", and Plan run stays off
-  with every field filled. In 中文 无法加载此物品的配方。
+  with every field filled. In 中文 无法加载此物品的配方。, with 重试 beside it.
+  Unblock `*boms*` and press Try again beside the words: they go, Recipe
+  shows "v1 (current) — makes 12", and Plan run plans the run.
 
 - **MC-R81** *(Move everyone saying nothing of what its holders gain and
   lose, #179)* As the demo Owner, on Viewer's page in Settings → Roles,
@@ -4536,7 +4538,7 @@ first.
 - 2026-11-03: #179, Move everyone saying, once a role is chosen, what its
   holders gain and lose: MC-R81 added.
 - 2026-11-03: #290, Plan run waits for the item's recipes, and a failed
-  read of them says so: MC-R82 added.
+  read of them says so, with Try again beside the words: MC-R82 added.
 - 2026-11-03: #304, Plan run's Contract manufacturer leaving a retired
   partner out, as New order's Partner and a sample's Given to do: MC-R83
   added.

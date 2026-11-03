@@ -1,6 +1,7 @@
 import {
   Alert,
   Box,
+  Button,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -102,6 +103,11 @@ export function CreateRunDialog({
     variantId: string;
     rows: Bom[] | null;
   } | null>(null);
+  // A count that reads the item's recipes again: Try again, beside the
+  // words of a failed read, as New order reads its catalogue again.
+  // Choosing the same item again changes nothing, so it was the only way
+  // out but clearing the item.
+  const [recipeReads, setRecipeReads] = useState(0);
   // Waiting, answered or failed, as useVariants says it for the catalogue.
   const recipesRead =
     form.outputVariantId && recipes?.variantId === form.outputVariantId
@@ -165,7 +171,7 @@ export function CreateRunDialog({
     return () => {
       ignore = true;
     };
-  }, [form.outputVariantId]);
+  }, [form.outputVariantId, recipeReads]);
 
   function close() {
     setForm(EMPTY);
@@ -311,6 +317,22 @@ export function CreateRunDialog({
                   id: 'production.create.recipesFailed',
                   defaultMessage: 'Could not load the item’s recipes.',
                 })}
+                action={
+                  <Button
+                    variant="text"
+                    color="inherit"
+                    onClick={() => {
+                      // Waiting again, so the words go while it is asked.
+                      setRecipes(null);
+                      setRecipeReads((count) => count + 1);
+                    }}
+                  >
+                    {intl.formatMessage({
+                      id: 'common.tryAgain',
+                      defaultMessage: 'Try again',
+                    })}
+                  </Button>
+                }
               />
             )}
 
