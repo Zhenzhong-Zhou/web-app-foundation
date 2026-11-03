@@ -173,6 +173,13 @@ steps; this section stays the rule.
   findings with the rest. It changes nothing itself.
 - **`caffeinate -dims` in a second terminal** during a long Claude Code
   step, such as the full verify (October 2026): a Mac asleep cut one off.
+- **A second working folder,** for a branch built while another runs in
+  the first: `git worktree add ../<folder> -b <branch> origin/main`, then
+  `npm ci` in its `server/` and `client/` before any verify. Even
+  `scripts/verify.sh --docs` needs both: its scripts' check formats with
+  the server's prettier, and their tests read the client's FormatJS
+  (2 November 2026). Removed after the merge with `git worktree remove
+  ../<folder>`.
 - **Cloud sessions** (Claude Code on the web, from October 2026): one new
   session per task, from `main`, each cloning the repository fresh, so
   nothing is pulled first; a long session pays for its whole history at
