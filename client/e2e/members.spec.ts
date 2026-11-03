@@ -10,7 +10,11 @@ import {
   signInAs,
   uniqueEmail,
 } from './support/api';
-import { latestEmailTo, verifyEmail } from './support/mail';
+import {
+  confirmEmailInDatabase,
+  latestEmailTo,
+  verifyEmail,
+} from './support/mail';
 
 /**
  * Invite (ADR-077), as an Owner and an Admin meet it. The server's rules
@@ -18,9 +22,12 @@ import { latestEmailTo, verifyEmail } from './support/mail';
  * state of the dialog, each refusal where it applies, and Invited.
  */
 test.describe('invitations', () => {
-  /** A fresh organization whose Owner is verified, as inviting needs. */
+  /**
+   * A fresh organization whose Owner is confirmed, as inviting needs: in
+   * the database, so setup waits for no email (#248).
+   */
   async function verified(freshOrg: SeededOrganization) {
-    await verifyEmail(freshOrg.api, freshOrg.email);
+    await confirmEmailInDatabase(freshOrg.email);
     return freshOrg;
   }
 
@@ -34,13 +41,14 @@ test.describe('invitations', () => {
     page,
     freshOrg,
   }) => {
-    const org = await verified(freshOrg);
+    // Its subject is the mail, so the Owner confirms through theirs too.
+    await verifyEmail(freshOrg.api, freshOrg.email);
     const email = uniqueEmail('invitee');
-    await signInAs(page, org.api);
+    await signInAs(page, freshOrg.api);
     await page.goto('/members');
 
     await page.getByRole('button', { name: 'Invite', exact: true }).click();
-    const dialog = inviteDialog(page, org.organizationName);
+    const dialog = inviteDialog(page, freshOrg.organizationName);
     // The least access to start with, raised on purpose, while the
     // organization has made no role of its own.
     const viewer = dialog.getByRole('checkbox', {
@@ -65,7 +73,7 @@ test.describe('invitations', () => {
 
     const mail = await latestEmailTo(email);
     expect(mail.subject).toBe(
-      `E2E Owner invited you to join ${org.organizationName}`,
+      `E2E Owner invited you to join ${freshOrg.organizationName}`,
     );
     expect(mail.text).toContain('Bring boots');
   });
@@ -298,7 +306,7 @@ test.describe('members’ roles', () => {
     page,
     freshOrg,
   }) => {
-    await verifyEmail(freshOrg.api, freshOrg.email);
+    await confirmEmailInDatabase(freshOrg.email);
     await madeRole(freshOrg.api, 'Warehouse lead', 'warehouse');
     await joinByLink(
       (await inviteByLink(freshOrg.api, uniqueEmail('dock'))).token,
@@ -346,7 +354,7 @@ test.describe('members’ roles', () => {
     page,
     freshOrg,
   }) => {
-    await verifyEmail(freshOrg.api, freshOrg.email);
+    await confirmEmailInDatabase(freshOrg.email);
     await joinByLink(
       (await inviteByLink(freshOrg.api, uniqueEmail('leaving'))).token,
       'Sam Lee',

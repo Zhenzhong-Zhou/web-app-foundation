@@ -7,7 +7,7 @@ import {
   signInAs,
   uniqueEmail,
 } from './support/api';
-import { latestEmailTo, tokenIn, verifyEmail } from './support/mail';
+import { confirmEmailInDatabase, latestEmailTo, tokenIn } from './support/mail';
 
 /**
  * A newcomer's first sign-in (ADR-079), as they and their inviter meet it:
@@ -19,7 +19,7 @@ test('a newcomer accepts with a note, meets their welcome, and the inviter hears
   page,
 }) => {
   const org = await registerOrganization('welcome');
-  await verifyEmail(org.api, org.email);
+  await confirmEmailInDatabase(org.email);
   // Out of the way, so the first week is the Viewer's own work rather
   // than the organization's steps.
   const dismissed = await org.api.post('/v1/home/getting-started/dismiss');

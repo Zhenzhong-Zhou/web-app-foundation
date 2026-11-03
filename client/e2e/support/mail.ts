@@ -1,5 +1,7 @@
 import type { APIRequestContext } from '@playwright/test';
 
+import { onDatabase } from './permission-keys';
+
 /**
  * The mail the server sent, read back from Mailpit, the inbox the dev stack
  * and CI both run (docker-compose.yml, ci.yml): its HTTP API beside the
@@ -91,5 +93,29 @@ export async function verifyEmail(
   });
   if (!response.ok()) {
     throw new Error(`Verification failed: ${await response.text()}`);
+  }
+}
+
+/**
+ * Confirms an account's address in the e2e database, with no email read:
+ * for a test that needs a confirmed Owner, as inviting does (ADR-077), and
+ * whose subject is not the email. Waiting on Mailpit in setup failed a test
+ * under CI's load that never reached what it checks (#248); a test whose
+ * subject is an email still reads it, with `verifyEmail`. As the server's
+ * own fixture does it (addMember, server/test/utils/fixtures.ts).
+ */
+export async function confirmEmailInDatabase(address: string): Promise<void> {
+  // The config stops the run when DATABASE_URL_E2E is missing.
+  const { rows } = await onDatabase(
+    process.env.DATABASE_URL_E2E as string,
+    (connection) =>
+      connection.query(
+        `update users set email_verified_at = now()
+         where lower(email) = lower($1) returning id`,
+        [address],
+      ),
+  );
+  if (rows.length !== 1) {
+    throw new Error(`No account for ${address} to confirm`);
   }
 }

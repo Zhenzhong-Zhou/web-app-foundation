@@ -13,7 +13,7 @@ import {
   signInAs,
   uniqueEmail,
 } from './support/api';
-import { verifyEmail } from './support/mail';
+import { confirmEmailInDatabase } from './support/mail';
 
 /**
  * Job roles on screen (ADR-080): an Owner makes one from a template and
@@ -66,7 +66,7 @@ test('an Owner makes a role from a template, gives it, and its holder meets it o
   page,
 }) => {
   const org = await registerOrganization('roles');
-  await verifyEmail(org.api, org.email);
+  await confirmEmailInDatabase(org.email);
   // Out of the way, so the holder's first week is their own work.
   const dismissed = await org.api.post('/v1/home/getting-started/dismiss');
   expect(dismissed.ok(), await dismissed.text()).toBeTruthy();
@@ -219,7 +219,7 @@ for (const key of TEMPLATES) {
     // Twenty pages, each read to the end.
     test.setTimeout(180_000);
     const org = await registerOrganization('menu');
-    await verifyEmail(org.api, org.email);
+    await confirmEmailInDatabase(org.email);
     const { orderId } = await seed(org.api);
     const template = (await templates(org.api)).find(
       (each) => each.key === key,

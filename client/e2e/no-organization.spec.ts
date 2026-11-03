@@ -6,7 +6,7 @@ import {
   signInAs,
   uniqueEmail,
 } from './support/api';
-import { verifyEmail } from './support/mail';
+import { confirmEmailInDatabase } from './support/mail';
 
 /**
  * Home for an account with no organization (ADR-078): what it can do,
@@ -17,7 +17,7 @@ import { verifyEmail } from './support/mail';
 /** An account that left the organization it joined, so belongs to none. */
 async function inNoOrganization(email: string) {
   const first = await registerOrganization('inviter');
-  await verifyEmail(first.api, first.email);
+  await confirmEmailInDatabase(first.email);
   const member = await joinByLink((await inviteByLink(first.api, email)).token);
   const left = await member.delete('/v1/account/membership');
   expect(left.ok(), await left.text()).toBeTruthy();
