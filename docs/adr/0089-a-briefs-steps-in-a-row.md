@@ -321,6 +321,13 @@ checked the same day for ADR-008's amendment:
   test that fails before and a regression check when a person sees the
   change; `scripts/verify.sh --quick`; one commit as the maintainer; the
   push; a pull request that closes the issue.
+- **Two rules bend for it, said where they do:** it takes no dependency
+  commit, against `docs/conventions.md`'s Dependencies, since a fix this
+  small stays one commit and the next branch's dependency step takes
+  what is due; and without Docker, as in a cloud session, it pushes after
+  `scripts/verify.sh --quick`, leaving ShellCheck and the check against
+  `main` to CI. Where Docker answers, as on the Mac, the verify runs in
+  full before the push, as CLAUDE.md asks.
 - **It changes nothing on GitHub but its branch and pull request:**
   merging, labels, closes and comments stay the maintainer's, as
   `/triage`'s do.

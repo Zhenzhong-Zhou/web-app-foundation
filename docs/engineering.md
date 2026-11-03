@@ -187,9 +187,11 @@ steps; this section stays the rule.
   only what the skill would not stop on: an issue read whole (of eight
   picked from one-line lists on 24 and 25 October, three stopped, needing
   a decision or more files), no choice left open, and no commit on `main`
-  already fixing it (two of four on 2 November). A proof runs only the
-  changed tests; a sweep, a load proof or anything needing the large seed
-  stays on the Mac. A session signs with a key of its own, so under the
+  already fixing it (two of four on 2 November). Two rules bend for it,
+  each said in the skill: it takes no dependency commit, and without
+  Docker it pushes after `scripts/verify.sh --quick`, the rest left to
+  CI. A proof runs only the changed tests; a sweep, a load proof or
+  anything needing the large seed stays on the Mac. A session signs with a key of its own, so under the
   maintainer's vigilant mode its commits show Unverified: its pull
   requests are squashed and merged, so each lands on `main` as one commit
   GitHub signs (1 November 2026). PRs merge one at a time, each when

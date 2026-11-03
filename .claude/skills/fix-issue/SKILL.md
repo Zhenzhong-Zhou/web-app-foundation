@@ -115,9 +115,14 @@ request that changes it.
   the end of "Changes to this list", the date
   `TZ=America/Vancouver date +%F`. Nothing a person sees: no check, and
   the pull request says why.
-- **`scripts/verify.sh --quick`;** a proof runs only the changed tests.
-  Without Docker, as in a cloud session, ShellCheck and the check against
-  `main` are skipped: the report says so.
+- **The verify:** `scripts/verify.sh` in full when `docker info`
+  answers, as on the Mac, as CLAUDE.md asks before a push; without
+  Docker, as in a cloud session, `scripts/verify.sh --quick`, its
+  ShellCheck and check against `main` skipped, which CI runs: the report
+  says so. A proof runs only the changed tests.
+- **No dependency commit,** against `docs/conventions.md`'s Dependencies
+  on purpose: a fix this small stays one commit, and the next branch's
+  dependency step takes what is 7 days old.
 
 ## 7. The commit, the push and the pull request
 
