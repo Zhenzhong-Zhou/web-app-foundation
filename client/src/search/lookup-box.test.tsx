@@ -141,7 +141,7 @@ describe('LookupBox', () => {
     );
 
     await user.type(await openLookup(user), 'bf');
-    await user.click(await screen.findByText('Show all in Items'));
+    await user.click(await screen.findByText('Show all in Lots'));
     // Once the lookup's dialog has closed, unhiding the page.
     await user.click(await screen.findByRole('button', { name: 'Back' }));
 
@@ -160,8 +160,23 @@ describe('LookupBox', () => {
 
     box = await openLookup(user);
     await user.type(box, 'bf');
-    await user.click(await screen.findByText('Show all in Items'));
-    expect(screen.getByTestId('where').textContent).toBe('/products?search=bf');
+    await user.click(await screen.findByText('Show all in Lots'));
+    expect(screen.getByTestId('where').textContent).toBe(
+      '/inventory?search=bf',
+    );
+  });
+
+  // Close matches are the lookup's alone (ADR-056): their list finds none.
+  it('offers Show all only for a group with a match that is not a close one', async () => {
+    server.use(http.get('/api/v1/lookup', () => HttpResponse.json(ANSWER)));
+    const user = userEvent.setup();
+    renderBox();
+
+    await user.type(await openLookup(user), 'bf');
+    expect(await screen.findByText('Show all in Lots')).toBeTruthy();
+    // Items' one result is a close match: shown, with no Show all (#311).
+    expect(screen.getByText('Focus 60ct')).toBeTruthy();
+    expect(screen.queryByText('Show all in Items')).toBeNull();
   });
 
   it('opens on ⌘K, and ignores a key event with no key', async () => {
