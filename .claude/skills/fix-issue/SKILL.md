@@ -93,10 +93,15 @@ request that changes it.
 - **The change the issue expects,** by `CLAUDE.md` and the rules files
   that load with what it touches. New words in `en`, `fr-CA` and
   `zh-Hans`, by `docs/glossary.md`.
-- **A test that fails before:** run against the code without the fix
-  (`git stash` the change, run, `git stash pop`), then with it; for an
-  issue that asks only for tests, the code each test covers taken out
-  for one run. The summary says each run and its result.
+- **A test that fails before:** the fix's own files set aside, never
+  its tests: `git diff -- <fix files> > "${TMPDIR:-/tmp}/fix.patch" &&
+  git restore -- <fix files>`; the test run, failing; then `git apply
+  "${TMPDIR:-/tmp}/fix.patch"` and the test run again, passing. Never
+  `git stash`, which would set the new test aside too, so the run before
+  proves nothing, and which every working folder of the repository
+  shares. For an issue that asks only for tests, the code each test
+  covers set aside the same way for one run. The summary says each run
+  and its result.
 - **A change a person sees:** in `docs/manual-checks.md`, in the same
   commit, a regression check at the top of Regressions, newest first,
   an empty line between entries, numbered one past the highest `MC-R`
