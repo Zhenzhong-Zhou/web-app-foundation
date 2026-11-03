@@ -203,3 +203,75 @@ rules files, after the fix-ups.
   `failOnFlakyTests`; dependencies again; the reviews; the pull request;
   then, by hand, a run of every browser, Performance and the flake hunt
   on the branch; and the as-built.
+
+### As built (#435, 3 November 2026)
+
+Built step by step from a brief, then reviewed; where it differs from the
+decisions above, this holds.
+
+- **#183 was neither cause it guessed: a page reload.** With no reload
+  the test never failed (0 in 960 runs, under every load tried); with a
+  file under `client/src` saved every 2 s, 18 of 120 failed, the fill
+  landing before Vite's hot reload and the click after it. The browser
+  suite's own client server now runs without hot reload (`VITE_HMR: 'off'`
+  in `client/playwright.config.ts`, read by `client/vite.config.ts`), and
+  the screenshots suite's too: 0 of 120 with the same saves, and a cold
+  start's full suite passing.
+- **#232's two frames are proved on CI, not locally:** 0 failures in 240
+  Linux WebKit runs before and after. On CI, WebKit's dark Inventory row
+  had failed its first try on each of `main`'s last 10 pushes; the run of
+  every browser by hand on #435 (41694728934) passed with
+  `failOnFlakyTests` on, so no test passed only on a retry.
+- **#233: nothing in `addMember` is slow** (36 ms alone, 42 to 47 ms under
+  the full suite, its slowest 128 ms), so nothing changed. The likeliest
+  cause is a new database connection waiting out the pool's 5-second
+  connect limit, the test's own limit; it was not reproduced in 56,031
+  connections. #233 stays open as a watch, `later`, with its trigger, and
+  #435 refers to it rather than closing it.
+- **#248:** with a stand-in Mailpit that lists no test's email, 189 of
+  215 failed before and 0 after. `welcome.spec.ts`'s setup now invites by
+  link too, the last setup that read an email. A link invitation does
+  not confirm an address, so that newcomer's first week reads 0 of 4,
+  against 0 of 3 after an emailed link, and its test says so.
+- **#290, and Release's read beside it:** with the recipes 1.5 s late, 20
+  of 20 runs planned without a recipe before, 0 after. The walkthrough
+  found the failure's words gave no next step, so they carry Try again;
+  and Release's read of the same recipes had the same fault. Both
+  dialogs now read through one `useRecipes`, sharing
+  `production.recipesFailed`, and a recipe's yield reads as a list does,
+  1,000 rather than 1000.0000. Production orders' rules files say so
+  (MC-R82, MC-R86, MC-R87); writing them found 25 findings, filed as #426.
+- **#271:** one test per screen; the longest walk test fell from 15.3 s to
+  2.4 s. On CI's two workers the spec takes about 4 s longer, since each
+  test opens its own page: the split buys room under the timeout, not
+  speed.
+- **#340:** the check reads oasdiff's changes as JSON and lets through an
+  added value of the `Permission` schema: 9 errors before, 0 after, and an
+  order status added still fails. The value is read from oasdiff's
+  wording, so a new image's wording would fail the check, never pass it;
+  a sturdier way is #432. The five other accepted lines `main` already
+  had went too.
+- **#334, and the run by hand's name.** The review found a run by hand
+  skips "Against main", whose job only a pull request runs, yet passed
+  "CI — all jobs". So a run by hand's last job is named "CI — every
+  browser, by hand": it shows every browser, and only the pull request's
+  own run answers the required check. On #435 the run by hand passed and
+  never appeared among the pull request's checks, and a label added
+  started no run.
+- **`failOnFlakyTests`:** a throwaway test failing once then passing
+  exited 0 before and 1 after, on CI only. The server's suites retry
+  nothing, so the setting is the browser suite's alone.
+- **The dependencies:** both early runs fell before 3 November, 05:03, so
+  took nothing; step 15 again that morning took Nest 12.3.2, the Nest CLI
+  and react-intl, and the multer override went (ADR-019). Three packages
+  Nest's update pulled in under 7 days old stayed at their locked
+  versions, which every range accepted.
+- **The flake hunt runs on `main` alone,** by its own rule, so it runs by
+  hand after the merge, not on the branch.
+- **Left from the reviews, filed:** #430 (Plan a run's wait gives no
+  sign), #431 (a screen's code loading gives none), #432 (the API
+  check's sturdier way) and #433 (less motion still starts transitions).
+- **Built in a row from step 2, with these stops:** decisions for #183
+  and #233; step 8 cut off by the editor closing and run again; `main`
+  merged in three times, the branch's regression checks renumbered each
+  time.

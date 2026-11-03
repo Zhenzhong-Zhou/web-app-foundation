@@ -1079,7 +1079,9 @@ names.
   least 7 × 24 hours ago, and say on which day each of the rest comes of
   age. Never move back a version already locked: the rule keeps new
   releases out, it does not undo what is installed (#196's steps 1 and
-  8). Not `npm update --before`: it resolves every package to its
+  8). A package an update pulls in under another, under 7 days old, stays
+  at its locked version when every range asking for it still accepts that
+  one (`fix-ups-ci`'s step 15, 3 November 2026). Not `npm update --before`: it resolves every package to its
   cutoff, so it moves back whatever is newer, or fails where nothing in a
   range is that old, and a date alone cuts off at midnight UTC, about 8
   days (the square logo's step 2, 25 October 2026). A security fix is

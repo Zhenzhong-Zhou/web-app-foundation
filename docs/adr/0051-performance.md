@@ -265,3 +265,23 @@ is ADR-008's amendment of the same day, the Fix-ups' first batch.
   trigger being the median of three over budget.
 - Three runners per timed run, free while the repository is public
   (Open decisions, "A public or a private repository").
+
+### As built (#435, 3 November 2026)
+
+- **The rounds run one after another** (`max-parallel: 1`), keeping "one
+  timed run at a time, so two runs never measure each other": about 60
+  minutes for a full run at small scale, against about 23 side by side.
+  Only round 1 runs the stress pass, the plan check and the volume dump on
+  `main`.
+- **What fails what:** in a round, a missed budget fails nothing, and the
+  median job judges; the concurrency check fails its own round's job, since
+  it is not a timing; an error in any round fails that budget, since an
+  error is never noise.
+- **A round can be re-run alone:** its artifact's upload overwrites the
+  one its first attempt left. Not yet tried on GitHub.
+- **The first timed run, on #435's branch** (budgets, 41695025704), passed.
+  Home's median was 237 ms of its 300 (rounds of 204, 237 and 318 ms), the
+  typo lookup's 248 (203, 248 and 357) and Home for a newcomer's 191. Round
+  3 alone had Home and the lookup over their budgets, within their known
+  misses' ceilings: the median doing what it is for. The Watch's "Home
+  after ADR-085" did not fire.
