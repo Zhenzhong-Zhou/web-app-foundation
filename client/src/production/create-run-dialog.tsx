@@ -29,6 +29,7 @@ import {
   itemName,
   toApiDecimal,
 } from '../lib/format';
+import { useDebouncedRead } from '../lib/use-debounced-read';
 import { usePartners } from '../lib/use-partners';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
@@ -188,7 +189,7 @@ export function CreateRunDialog({
    * What the run would use at the quantity typed (ADR-085), scaled by the
    * server as release will issue it; the client adds nothing up (ADR-025).
    * Asked once typing pauses; an answer to an older question is dropped
-   * by the effect's own cleanup. The last answer stays, dimmed, while the
+   * (useDebouncedRead). The last answer stays, dimmed, while the
    * next is asked; a quantity the server refuses shows none.
    */
   const recipe = form.bomId || active?.id || '';
@@ -200,28 +201,9 @@ export function CreateRunDialog({
           quantityPlanned: planned,
         })
       : null;
-  const [uses, setUses] = useState<{
-    path: string;
-    lines: RunPreviewLine[] | null;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!usesPath) return;
-    let ignore = false;
-    const timer = setTimeout(() => {
-      void api<RunPreview>(usesPath)
-        .then((result) => {
-          if (!ignore) setUses({ path: usesPath, lines: result.lines });
-        })
-        .catch(() => {
-          if (!ignore) setUses({ path: usesPath, lines: null });
-        });
-    }, 300);
-    return () => {
-      ignore = true;
-      clearTimeout(timer);
-    };
-  }, [usesPath]);
+  const uses = useDebouncedRead<RunPreview>(
+    usesPath ? { path: usesPath } : null,
+  );
 
   return (
     <Dialog
@@ -404,8 +386,11 @@ export function CreateRunDialog({
               slotProps={{ htmlInput: { inputMode: 'decimal', maxLength: 19 } }}
             />
 
-            {usesPath && uses?.lines?.length ? (
-              <Uses lines={uses.lines} current={uses.path === usesPath} />
+            {usesPath && uses?.value?.lines.length ? (
+              <Uses
+                lines={uses.value.lines}
+                current={uses.question.path === usesPath}
+              />
             ) : null}
 
             <TextField
