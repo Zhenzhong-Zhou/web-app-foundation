@@ -18,7 +18,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
@@ -121,18 +121,13 @@ export function RmaDetailPage() {
     };
   }, [orderId, namedInvoiceId, canCredit]);
 
-  // The replacement opens as soon as it exists; useSubmit's callback takes
-  // no result, so its id is kept here.
-  const replacementId = useRef<string | null>(null);
-  const replacement = useSubmit(
-    () => navigate(`/orders/${replacementId.current}`),
-    {
-      success: intl.formatMessage({
-        id: 'rmas.replacement.raised',
-        defaultMessage: 'Replacement order raised',
-      }),
-    },
-  );
+  // The replacement opens as soon as it exists.
+  const replacement = useSubmit<string>((id) => navigate(`/orders/${id}`), {
+    success: intl.formatMessage({
+      id: 'rmas.replacement.raised',
+      defaultMessage: 'Replacement order raised',
+    }),
+  });
 
   if (!rma) {
     if (error) {
@@ -176,7 +171,7 @@ export function RmaDetailPage() {
         `/return-authorizations/${rma!.id}/replacement`,
         { method: 'POST' },
       );
-      replacementId.current = order.id;
+      return order.id;
     });
   }
 
