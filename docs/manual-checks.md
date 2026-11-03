@@ -616,7 +616,7 @@ Paper is checked first because it must not change at all.
   Duplicate side by side. On an order with nothing left to ship, Close order
   is the filled one.
 - **MC-1521** The summary's Quantities read 600 each ordered, 400 shipped, 200
-  still to ship in bold, and 7 returned with "does not add to still to ship"
+  still to ship in bold, and 7 returned with "does not add to still to ship"  
   under it. Void a shipment on another order: "not counting 1 voided shipment"
   appears under its shipped figure. An order mixing units (a blend in kg with
   bottles) shows "Complete 0 of 2" instead.
@@ -3164,6 +3164,14 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R79** *(Edit names labelling every language's fields only 名称 or
+  描述, #315)* As the demo Owner in 中文, on 专注胶囊 60 粒, 添加规格
+  FOCUS-120CT named 120ct, then 编辑名称. With VoiceOver on (⌘ F5), Tab
+  through the dialog: each field is read with its language, 名称（English）,
+  描述（English） and FOCUS-120CT：120ct（English）, then the same for
+  Français (Canada) and 简体中文, no two alike. In English they read Name
+  in English, Description in English and FOCUS-120CT: 120ct, in English;
+  in Français, Nom en English.
 - **MC-R78** *(Grey placeholders flashing before a quick read, and a ⋯
   heard as a plain button, #358)* As the demo Owner on a fast connection:
   Home, Your access on Account, and History from a Stock row's ⋯ show no
@@ -4486,3 +4494,5 @@ first.
 - 2026-11-02: #358, Home, Your access and a Stock row's History drawing
   their placeholder only for a slow read, and the ⋯ on a Stock row and an
   order's line read as a menu button: MC-R78 added.
+- 2026-11-02: #315, Edit names labelling each field with its language,
+  each variant's name too: MC-R79 added.
