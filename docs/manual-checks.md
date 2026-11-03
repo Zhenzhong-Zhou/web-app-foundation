@@ -3164,6 +3164,16 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R81** *(Move everyone saying nothing of what its holders gain and
+  lose, #179)* As the demo Owner, on Viewer's page in Settings → Roles,
+  Move everyone to…, then Warehouse under Move them to. Beneath it, With
+  Warehouse, they can also lists Stock and locations, Receive, ship and
+  move stock., and Orders, Receive what was ordered; ship what was sold.
+  They can no longer lists six areas, among them Orders, See their
+  prices., and Invoices and returns, See invoices, credit notes, and
+  return authorizations. Choose Sales instead: both lists change with it.
+  Cancel.
+
 - **MC-R80** *(A short toast stacking its tick, words and close into a
   square, #242)* As the demo Owner on a computer, in dark mode, Receive
   on PO-DEMO-11's MELATONIN line with a lot number: the Received toast at
@@ -4504,3 +4514,5 @@ first.
   each variant's name too: MC-R79 added.
 - 2026-11-02: #242, a short toast keeping one row, its tick, words and
   close side by side: MC-R80 added.
+- 2026-11-03: #179, Move everyone saying, once a role is chosen, what its
+  holders gain and lose: MC-R81 added.
