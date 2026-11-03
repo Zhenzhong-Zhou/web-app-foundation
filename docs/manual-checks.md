@@ -3164,6 +3164,17 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R75** *(Plan run planning a run without its recipe when the item's
+  recipes came late, #290)* As the demo Owner on Production, in Chrome,
+  DevTools → Network: Disable cache and Slow 4G. Plan a run and choose
+  MAGCAP-SAMPLE in Making: Plan run stays off until Recipe shows "v1
+  (current) — makes 12". Then Quantity to make 24, Made at Office, Plan
+  run: the run's Release asks where to pick components from, and for no
+  recipe. With `*boms*` blocked (DevTools → Network request blocking),
+  Plan a run again and choose MAGCAP-SAMPLE: Could not load the item’s
+  recipes. under Making, no "No promoted recipe", and Plan run stays off
+  with every field filled. In 中文 无法加载此物品的配方。
+
 - **MC-R74** *(a full IPv6 address pushing Recent activity's time off
   screen on a phone, #323)* On an iPhone SE, signed in on the deployed
   app over the phone's mobile data, which often gives a full IPv6 address
@@ -4439,3 +4450,5 @@ first.
   address shows the time, with nothing scrolling sideways: MC-R74 added.
 - 2026-11-02: #310, in Receive stock, Enter with no location names the
   field and focuses it, as every empty field there does: MC-R73.
+- 2026-11-02: #290, Plan run waits for the item's recipes, and a failed
+  read of them says so: MC-R75 added.

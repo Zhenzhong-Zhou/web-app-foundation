@@ -69,11 +69,152 @@ describe('CreateRunDialog', () => {
     await user.type(screen.getByLabelText(/Quantity to make/), '1000');
     await user.click(screen.getByLabelText(/Made at/));
     await user.click(await screen.findByRole('option', { name: /WIP/ }));
+    expect(
+      await screen.findByRole('combobox', { name: 'Recipe' }),
+    ).toHaveTextContent('v1 (current)');
 
     await user.click(screen.getByRole('button', { name: 'Plan run' }));
 
     await expect.poll(() => sent.length).toBe(1);
     expect(sent[0].bomId).toBe('bom-active');
+  });
+
+  /**
+   * The recipes come after the item is chosen. Plan run waits for them:
+   * pressed before they came, the run went without its recipe (#290).
+   */
+  it('waits for the item’s recipes before Plan run, then plans with the active one', async () => {
+    const user = userEvent.setup();
+    const sent: Record<string, unknown>[] = [];
+    let answerRecipes: () => void = () => undefined;
+    const recipesAnswered = new Promise<void>((resolve) => {
+      answerRecipes = resolve;
+    });
+
+    server.use(
+      http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
+      http.get('/api/v1/locations', () =>
+        HttpResponse.json([
+          { id: 'loc-wip', name: 'WIP', type: 'bin', parentId: null },
+        ]),
+      ),
+      http.get('/api/v1/partners', () => HttpResponse.json([])),
+      http.get('/api/v1/boms', async () => {
+        await recipesAnswered;
+        return HttpResponse.json([
+          {
+            id: 'bom-active',
+            outputVariantId: VARIANT.id,
+            version: 1,
+            status: 'active',
+            outputQuantity: '1000.0000',
+          },
+        ]);
+      }),
+      http.post('/api/v1/production-orders', async ({ request }) => {
+        sent.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json(
+          { productionOrder: { id: 'run-1' } },
+          { status: 201 },
+        );
+      }),
+    );
+
+    renderWithAuth(
+      <CreateRunDialog
+        open
+        canSeePartners
+        onClose={() => undefined}
+        onCreated={() => undefined}
+      />,
+    );
+
+    await user.type(await screen.findByLabelText(/Making/), 'FOCUS');
+    await user.click(await screen.findByRole('option', { name: /FOCUS-60CT/ }));
+    await user.type(screen.getByLabelText(/Quantity to make/), '1000');
+    await user.click(screen.getByLabelText(/Made at/));
+    await user.click(await screen.findByRole('option', { name: /WIP/ }));
+
+    // Not yet: no recipe shown, and none said to be missing.
+    const planRun = screen.getByRole('button', { name: 'Plan run' });
+    expect(planRun).toBeDisabled();
+    expect(
+      screen.queryByRole('combobox', { name: 'Recipe' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/No promoted recipe/)).not.toBeInTheDocument();
+
+    answerRecipes();
+
+    expect(
+      await screen.findByRole('combobox', { name: 'Recipe' }),
+    ).toHaveTextContent('v1 (current)');
+    expect(planRun).toBeEnabled();
+
+    await user.click(planRun);
+
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0].bomId).toBe('bom-active');
+  });
+
+  /**
+   * A read of the recipes that fails says so, and Plan run stays off:
+   * never a run planned without its recipe, silently (#290).
+   */
+  it('says the item’s recipes could not be loaded, and plans nothing', async () => {
+    const user = userEvent.setup();
+    const sent: Record<string, unknown>[] = [];
+
+    server.use(
+      http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
+      http.get('/api/v1/locations', () =>
+        HttpResponse.json([
+          { id: 'loc-wip', name: 'WIP', type: 'bin', parentId: null },
+        ]),
+      ),
+      http.get('/api/v1/partners', () => HttpResponse.json([])),
+      http.get('/api/v1/boms', () => apiError(500, 'Something went wrong')),
+      http.post('/api/v1/production-orders', async ({ request }) => {
+        sent.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json(
+          { productionOrder: { id: 'run-1' } },
+          { status: 201 },
+        );
+      }),
+    );
+
+    renderWithAuth(
+      <CreateRunDialog
+        open
+        canSeePartners
+        onClose={() => undefined}
+        onCreated={() => undefined}
+      />,
+    );
+
+    await user.type(await screen.findByLabelText(/Making/), 'FOCUS');
+    await user.click(await screen.findByRole('option', { name: /FOCUS-60CT/ }));
+
+    expect(
+      await screen.findByRole('alert', { name: 'Error' }),
+    ).toHaveTextContent('Could not load the item’s recipes.');
+    // The read failed; that is not the item having no recipe.
+    expect(screen.queryByText(/No promoted recipe/)).not.toBeInTheDocument();
+
+    const quantity = screen.getByLabelText(/Quantity to make/);
+    await user.type(quantity, '1000');
+    await user.click(screen.getByLabelText(/Made at/));
+    await user.click(await screen.findByRole('option', { name: /WIP/ }));
+
+    const planRun = screen.getByRole('button', { name: 'Plan run' });
+    expect(planRun).toBeDisabled();
+    expect(planRun).toHaveAccessibleDescription(
+      'Could not load the item’s recipes.',
+    );
+
+    // Enter in a field submits through Plan run, which is off.
+    await user.type(quantity, '{Enter}');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(sent).toHaveLength(0);
   });
 
   /**

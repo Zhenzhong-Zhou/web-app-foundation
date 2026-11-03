@@ -1457,6 +1457,7 @@
   "production.create.recipe.help": "提供已归档的版本，用于重复旧批次。",
   "production.create.recipeArchived": "v{version}（已归档）—— 产出 {quantity}",
   "production.create.recipeCurrent": "v{version}（当前）—— 产出 {quantity}",
+  "production.create.recipesFailed": "无法加载此物品的配方。",
   "production.create.reference.help": "批号或代工厂的工单号。可选。",
   "production.create.uses": "用料",
   "production.create.usesLine": "{quantity} · {sku} {name}{external, select, true { · 由代工厂提供} other {}}",

@@ -1457,6 +1457,7 @@
   "production.create.recipe.help": "Une version archivée est proposée pour refaire un ancien lot.",
   "production.create.recipeArchived": "v{version} (archivée) — produit {quantity}",
   "production.create.recipeCurrent": "v{version} (actuelle) — produit {quantity}",
+  "production.create.recipesFailed": "Impossible de charger les recettes de l’article.",
   "production.create.reference.help": "Un numéro de lot ou le bon de travail du fabricant. Facultatif.",
   "production.create.uses": "Utilise",
   "production.create.usesLine": "{quantity} · {sku} {name}{external, select, true { · fourni par le fabricant} other {}}",

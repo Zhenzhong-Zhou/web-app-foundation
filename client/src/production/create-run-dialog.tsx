@@ -95,7 +95,21 @@ export function CreateRunDialog({
   // to: a new run with a partner you no longer deal with is a mistake
   // worth not offering (#304).
   const manufacturers = partners.filter((partner) => partner.isActive);
-  const [boms, setBoms] = useState<Bom[]>([]);
+  // The item's recipes as their read answered: the rows, or null when it
+  // failed. Kept with the item they answer, so until this item's come, no
+  // other item's are taken for them (#290).
+  const [recipes, setRecipes] = useState<{
+    variantId: string;
+    rows: Bom[] | null;
+  } | null>(null);
+  // Waiting, answered or failed, as useVariants says it for the catalogue.
+  const recipesRead =
+    form.outputVariantId && recipes?.variantId === form.outputVariantId
+      ? recipes
+      : null;
+  const recipesWaiting = !!form.outputVariantId && !recipesRead;
+  const recipesFailed = recipesRead?.rows === null;
+  const boms = recipesRead?.rows ?? [];
 
   const { submitting, error, reset, submit } = useSubmit(
     () => {
@@ -132,18 +146,21 @@ export function CreateRunDialog({
   // Recipes for whatever is being made. Refetched per variant, because a BOM
   // outputs one variant and offering another product's would be nonsense.
   useEffect(() => {
-    if (!form.outputVariantId) return;
+    const variantId = form.outputVariantId;
+    if (!variantId) return;
 
     let ignore = false;
 
-    void api<Bom[]>(`/boms?outputVariantId=${form.outputVariantId}`)
+    void api<Bom[]>(`/boms?outputVariantId=${variantId}`)
       .then((rows) => {
         if (ignore) return;
 
         const usable = rows.filter((row) => row.status !== 'draft');
-        setBoms(usable);
+        setRecipes({ variantId, rows: usable });
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (!ignore) setRecipes({ variantId, rows: null });
+      });
 
     return () => {
       ignore = true;
@@ -152,7 +169,7 @@ export function CreateRunDialog({
 
   function close() {
     setForm(EMPTY);
-    setBoms([]);
+    setRecipes(null);
     setQuantityError(null);
     reset();
     onClose();
@@ -285,7 +302,19 @@ export function CreateRunDialog({
               }
             />
 
-            {form.outputVariantId && boms.length === 0 && (
+            {/* Said in words, and Plan run stays off: never a run planned
+                without the recipe it would have had, silently (#290). */}
+            {recipesFailed && (
+              <FormError
+                id="run-recipes-failed"
+                message={intl.formatMessage({
+                  id: 'production.create.recipesFailed',
+                  defaultMessage: 'Could not load the item’s recipes.',
+                })}
+              />
+            )}
+
+            {recipesRead?.rows?.length === 0 && (
               <Alert severity="warning">
                 {intl.formatMessage({
                   id: 'production.create.noRecipe',
@@ -481,9 +510,14 @@ export function CreateRunDialog({
           </Stack>
         </DialogContent>
 
+        {/* Off until the item's recipes have answered, so the run is
+            planned with the recipe the select shows: pressed before, it
+            went without one (#290). */}
         <DialogFooter
           submitting={submitting}
           onCancel={close}
+          disabled={recipesWaiting || recipesFailed}
+          describedBy={recipesFailed ? 'run-recipes-failed' : undefined}
           label={intl.formatMessage({
             id: 'production.create.action',
             defaultMessage: 'Plan run',
