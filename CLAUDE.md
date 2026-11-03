@@ -136,6 +136,10 @@ Andrej Karpathy's observations on LLM coding pitfalls
 - `/triage`: proposes a group, areas or a close for each open issue in
   `tmp/triage.md`, then, with Bob's choices, writes the `gh` commands
   for him to run; only when typed.
+- `/fix-issue`: fixes one small issue end to end, in a cloud session or
+  on the Mac: checks `main` for a commit that already fixes it, works out
+  the files open branches change, and opens a pull request that closes
+  it; only when a prompt names it, as `/fix-issue <N>`.
 - `.claude/chat-skills/`: the chat's skill, `plan-feature`, uploaded to
   claude.ai (ADR-088). Its uploaded copy also shows in Claude Code's
   skill list, as `anthropic-skills:plan-feature`; it is the chat's alone,
