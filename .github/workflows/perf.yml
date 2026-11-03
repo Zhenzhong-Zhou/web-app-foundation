@@ -1,6 +1,7 @@
 name: Performance
 
-# ADR-051, amended (CI speed-up). Three modes:
+# ADR-051, amended (CI speed-up; budgets by the median, November 2026).
+# Three modes:
 #
 # - plans: seed, then the plan check (EXPLAIN on the main reads). It is
 #   deterministic, so it can gate a pull request, and it caught both real
@@ -9,6 +10,12 @@ name: Performance
 #   at 10 connections. By hand, on a branch whose speed is in question.
 # - full: budgets, plus the 100-connection stress pass. Weekly on main, on
 #   each release candidate tag (so before every release), and by hand.
+#
+# A timed run, budgets or full, is three rounds, each a job seeding fresh
+# on a runner of its own, then a fourth job judging each budget by the
+# median of the rounds' 95th percentiles (#342): shared runners vary by
+# about 30% from run to run, so one slow runner no longer fails the run, and
+# two do. The stress pass and the plan check run in the first round only.
 #
 # Timings on shared runners are too noisy to gate a merge, so only by hand
 # do budgets run on a branch: Actions → Performance → Run workflow.
@@ -54,18 +61,30 @@ permissions:
 
 jobs:
   perf:
-    name: Performance, ${{ inputs.mode || (github.event_name == 'pull_request' && 'plans') || 'full' }}
+    name: Performance, ${{ inputs.mode || (github.event_name == 'pull_request' && 'plans') || 'full' }}${{ (github.event_name != 'pull_request' && inputs.mode != 'plans') && format(', round {0} of 3', matrix.round) || '' }}
     # Pinned, unlike ci.yml: these numbers are compared across runs, and a
     # runner image changing underneath (ubuntu-latest moves to 26 on
     # 19 October 2026) would make two runs incomparable.
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.scale == 'large' && 350 || 90 }}
 
+    # A timed run's three rounds (perf/median.ts, ROUNDS), the plans mode's
+    # one job. One after another, never two at once: like two runs, two
+    # rounds at a time on one account's runners would measure each other.
+    # A round that fails cancels none of the others, so the median job
+    # still names what each measured.
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        round: ${{ fromJSON((github.event_name == 'pull_request' || inputs.mode == 'plans') && '[1]' || '[1, 2, 3]') }}
+
     # One place for what this run does. Inputs only exist when run by hand.
     env:
       MODE: ${{ inputs.mode || (github.event_name == 'pull_request' && 'plans') || 'full' }}
       SCALE: ${{ inputs.scale || 'small' }}
       ORGANIZATIONS: ${{ inputs.organizations || 5 }}
+      ROUND: ${{ matrix.round }}
 
     services:
       postgres:
@@ -183,15 +202,16 @@ jobs:
         run: npm run seed:volume -- --scale "$SCALE" --organizations "$ORGANIZATIONS"
 
       # A fresh small volume on main is kept for the pull requests after it,
-      # dumped before anything below writes to it. The weekly run renews it.
+      # dumped before anything below writes to it. The weekly run's first
+      # round renews it.
       - name: Dump the volume
-        if: steps.volume.outputs.cache-matched-key == '' && github.ref == 'refs/heads/main' && env.SCALE == 'small'
+        if: steps.volume.outputs.cache-matched-key == '' && github.ref == 'refs/heads/main' && env.SCALE == 'small' && matrix.round == 1
         env:
           PG: ${{ job.services.postgres.id }}
         run: docker exec "$PG" pg_dump -U app -d foundation -Fc --no-owner --no-privileges > perf/volume.dump
 
       - name: Keep the volume
-        if: steps.volume.outputs.cache-matched-key == '' && github.ref == 'refs/heads/main' && env.SCALE == 'small'
+        if: steps.volume.outputs.cache-matched-key == '' && github.ref == 'refs/heads/main' && env.SCALE == 'small' && matrix.round == 1
         uses: actions/cache/save@v6
         with:
           path: |
@@ -211,29 +231,74 @@ jobs:
           cat server.log
           exit 1
 
-      # The stress pass sends three times the budget pass's requests, at 100
+      # A round's budgets fail nothing here: the median job judges them. Its
+      # concurrency check, which is no timing, fails the round. The stress
+      # pass sends three times the budget pass's requests, at 100
       # connections, and never fails: most of this step's ten minutes, so it
-      # is the full run's alone.
-      - name: Budgets, concurrency, stress
+      # is the full run's first round's alone.
+      - name: Budgets and concurrency${{ (env.MODE == 'full' && matrix.round == 1) && ', stress' || '' }}
         id: perf
         if: env.MODE != 'plans'
         run: |
-          if [ "$MODE" = budgets ]; then
-            npm run perf -- --scale "$SCALE" --skip-stress
+          if [ "$MODE" = full ] && [ "$ROUND" = 1 ]; then
+            npm run perf -- --scale "$SCALE" --round "$ROUND"
           else
-            npm run perf -- --scale "$SCALE"
+            npm run perf -- --scale "$SCALE" --round "$ROUND" --skip-stress
           fi
 
-      # Runs even when a budget failed: the plans are often why.
+      # The first round's alone: plans do not depend on load, so once is
+      # enough. Runs even when the step above failed: the plans are often
+      # why.
       - name: Query plans
-        if: success() || steps.perf.outcome == 'failure'
+        if: matrix.round == 1 && (success() || steps.perf.outcome == 'failure')
         run: npm run perf:plans -- --scale "$SCALE"
 
+      # A round's name ends in its number, which the median job downloads
+      # by; the plans mode's is as it was.
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: perf-${{ env.MODE }}-${{ env.SCALE }}-${{ github.run_number }}
+          name: perf-${{ env.MODE }}-${{ env.SCALE }}-${{ github.run_number }}${{ env.MODE != 'plans' && format('-round-{0}', matrix.round) || '' }}
           path: |
             server/perf/reports/
             server/server.log
           retention-days: 30
+
+  # A timed run's fourth job: each budget judged by the median of the three
+  # rounds' 95th percentiles, against its budget and its known miss's
+  # ceiling. Its summary gives the median, each round's figure and each
+  # probe's plan time from the first round's plan check. It fails only when
+  # a median misses, and refuses a round that left no report: two rounds
+  # are no median.
+  median:
+    name: Performance, ${{ inputs.mode || 'full' }}, the median of 3 rounds
+    needs: perf
+    # Even when a round failed, so its budgets are still judged.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && inputs.mode != 'plans' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          check-latest: true
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - run: npm ci
+
+      # This run's rounds, each in a folder of its own.
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: perf-*-round-*
+          path: ${{ runner.temp }}/rounds
+
+      - name: The medians against the budgets
+        run: npm run perf:judge -- "$RUNNER_TEMP/rounds"
