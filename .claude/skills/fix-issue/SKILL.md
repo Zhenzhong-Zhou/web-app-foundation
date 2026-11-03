@@ -27,17 +27,10 @@ same in a cloud session and in Claude Code on the Mac.
 ## 1. The arguments
 
 `$ARGUMENTS`: the issue's number, then, if given, `leave` and the paths
-to leave alone besides those worked out in step 5. Anything else: stop,
+to leave alone besides those worked out in step 4. Anything else: stop,
 saying so.
 
-## 2. The Node
-
-The Node in `server/.node-version`, installed and used first: a
-container may start on an older one (one had 22, where twenty client
-tests fail for reasons of their own). Then `npm ci` in `server/` and
-`client/`.
-
-## 3. The issue, whole
+## 2. The issue, whole
 
 `gh issue view <N> --comments`, its text and every comment. **Stop** when
 it:
@@ -50,15 +43,15 @@ it:
   the Mac's own runs (in a cloud session);
 - needs more than a small fix: `BLOCKED`, saying what it would take.
 
-## 4. Already fixed?
+## 3. Already fixed?
 
 1. All of `main`'s history: `git fetch origin main`, with
    `--unshallow` when `git rev-parse --is-shallow-repository` says
    `true`.
 2. `git log --oneline -E --grep '#<N>([^0-9]|$)' origin/main`.
 3. A commit there that fixes what the issue expects, read against what
-   step 3 read and `main`'s code, not one that only names it (a docs commit, a
-   handoff): **stop,** `DONE: already fixed by <commit> in #<PR>`, the
+   step 2 read and `main`'s code, not one that only names it (a docs
+   commit, a handoff): **stop,** `DONE: already fixed by <commit> in #<PR>`, the
    pull request from `gh pr list --state merged --search <commit>`, with
    the command that closes it, for the maintainer:
 
@@ -68,7 +61,7 @@ it:
 
 4. Fixed in part: go on with the rest alone, and say which part is done.
 
-## 5. The files to leave alone
+## 4. The files to leave alone
 
 Worked out, never guessed:
 
@@ -90,6 +83,14 @@ the home says when a conflict comes. When the fix needs any other file
 on the list, **stop:** `BLOCKED`, naming the file and the branch or pull
 request that changes it.
 
+## 5. The Node and the packages
+
+Only now, since steps 2 to 4 need only `git` and `gh`, so a run that
+stops there stops in seconds: the Node in `server/.node-version`,
+installed and used, since a container may start on an older one (one
+had 22, where twenty client tests fail for reasons of their own); then
+`npm ci` in `server/` and `client/`.
+
 ## 6. The fix
 
 - **A branch from `origin/main`:** `fix-<N>-<a few words>`, or
@@ -109,7 +110,7 @@ request that changes it.
 - **A change a person sees:** in `docs/manual-checks.md`, in the same
   commit, a regression check at the top of Regressions, newest first,
   an empty line between entries, numbered one past the highest `MC-R`
-  on `main` and in the files of step 5's branches. Two sessions started
+  on `main` and in the files of step 4's branches. Two sessions started
   together can still take one number; `scripts/check-docs.mjs` then fails
   the second on its pull request, which renumbers. And a dated line at
   the end of "Changes to this list", the date
