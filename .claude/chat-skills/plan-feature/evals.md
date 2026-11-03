@@ -65,3 +65,19 @@ finding for the as-built and one question for him.*
 - The question answered with its options and a recommendation.
 - Next is the run's next prompt, `from N`, with `/clear` safe once the
   summary is pasted.
+
+## 6. A small issue for a cloud session
+
+> Anything else I can run in a cloud session?
+
+- Each issue offered was read whole, its comments included, and checked
+  against `main`'s whole history,
+  `git log --oneline -E --grep '#<N>([^0-9]|$)' origin/main`; one already
+  fixed is offered for closing, naming its commit, never given to a
+  session.
+- None offered leaves a choice open or is labelled `later` or
+  `decision`, unless its decision is asked first; none needs a sweep or
+  the large seed.
+- Each prompt is one line, `/fix-issue <N>`, not indented, with
+  `leave <path>` only for a branch not pushed.
+- Five parts, Decisions needed present.
