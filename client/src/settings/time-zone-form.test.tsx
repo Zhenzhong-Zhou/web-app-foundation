@@ -7,10 +7,12 @@ import { zoneLabel } from '../lib/time-zone-label';
 import { server } from '../test/setup';
 import { TimeZoneForm } from './time-zone-form';
 
-// This computer is in Vancouver, whatever machine runs the test.
+// This computer is in Vancouver, whatever machine runs the test, unless a
+// test puts it elsewhere.
+const computer = vi.hoisted(() => ({ zone: 'America/Vancouver' }));
 vi.mock('../lib/time-zone', async (original) => ({
   ...(await original<typeof import('../lib/time-zone')>()),
-  browserTimeZone: () => 'America/Vancouver',
+  browserTimeZone: () => computer.zone,
 }));
 
 /**
@@ -28,6 +30,7 @@ describe('TimeZoneForm', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    computer.zone = 'America/Vancouver';
   });
 
   const saved = () => Promise.resolve();
@@ -89,6 +92,31 @@ describe('TimeZoneForm', () => {
     expect(sent).toEqual({ timeZone: 'Asia/Shanghai' });
   });
 
+  it('tells a screen reader what time it is in the zone chosen', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <TimeZoneForm
+        value="America/Vancouver"
+        readOnly={false}
+        onSaved={saved}
+      />,
+    );
+    const announcement = container.querySelector('[aria-live="polite"]')!;
+    expect(announcement).toBeEmptyDOMElement();
+
+    await user.click(screen.getByRole('combobox', { name: 'Time zone' }));
+    await user.keyboard('shanghai');
+    await user.click(
+      screen.getByRole('option', {
+        name: `${zoneLabel('Asia/Shanghai')} UTC+8 · Asia/Shanghai`,
+      }),
+    );
+
+    expect(announcement).toHaveTextContent(
+      /^It is 7:28\sAM on Saturday, October 17 there\.$/,
+    );
+  });
+
   it("offers this computer's zone to an organization still on UTC", async () => {
     const user = userEvent.setup();
     render(<TimeZoneForm value="UTC" readOnly={false} onSaved={saved} />);
@@ -107,6 +135,16 @@ describe('TimeZoneForm', () => {
     expect(
       screen.getByRole('button', { name: 'Save time zone' }),
     ).toBeEnabled();
+  });
+
+  it('leaves the Still on UTC note out on a computer that is itself in UTC', () => {
+    computer.zone = 'UTC';
+    render(<TimeZoneForm value="UTC" readOnly={false} onSaved={saved} />);
+
+    expect(screen.queryByText(/^Still on UTC/)).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /Use this device/ }),
+    ).toBeNull();
   });
 
   // This browser, as Chrome does, lists the zone under its old name,
