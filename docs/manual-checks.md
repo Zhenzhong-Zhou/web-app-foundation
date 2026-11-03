@@ -3164,6 +3164,16 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R87** *(a retired price list's name and a site's address changed
+  by a browser's translation, #245)* As the demo Owner in English, in
+  Chrome, on Price lists, open Co-op members CAD, Edit, clear In use and
+  save. On Partners, Kits Wellness Co-op, translate the page into Chinese
+  (right-click, Translate to 中文): Sales to them reads Co-op members CAD
+  (CAD) as typed, the word retired after it translated. On New order,
+  buying from them, choose Richmond warehouse as Deliver to, translated
+  the same way: 13511 Crestwood Pl, Unit 4, Richmond beneath it stays as
+  typed. Put Co-op members CAD back in use.
+
 - **MC-R85** *(The time-zone picker finding nothing for Montréal, #165)*
   As the demo Owner in Français on a phone, Paramètres → Organisation →
   Profil → Fuseau horaire: type « Montréal », then « montreal »: each
@@ -4535,3 +4545,6 @@ first.
 - 2026-11-03: #165, the time-zone picker finding a zone with accents and
   capitals aside and by a city the time-zone database links to it, and
   saying « Aucun résultat. » when nothing matches: MC-R85 added.
+- 2026-11-03: #245, a retired price list's name, a site's address, the
+  logos' and a photo's names kept as typed under a browser's translation,
+  and Movements' Deleted user translated: MC-R87 added.

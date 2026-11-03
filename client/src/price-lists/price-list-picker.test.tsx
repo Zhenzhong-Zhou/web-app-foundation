@@ -104,6 +104,33 @@ describe('PriceListPicker', () => {
     ).toHaveAttribute('aria-disabled', 'true');
   });
 
+  // A browser translating the page leaves the list's name as typed, and
+  // translates the app's own words beside it (#245).
+  it('keeps a retired list’s name as typed under translation, not its words', async () => {
+    serve();
+
+    render(
+      <PriceListPicker
+        id="picker"
+        label="Sales"
+        direction="sale"
+        value="old"
+        onChange={vi.fn()}
+      />,
+    );
+
+    const { listbox } = await open();
+    const retired = within(listbox).getByRole('option', {
+      name: 'Old retail (CAD) — retired',
+    });
+
+    expect(within(retired).getByText('Old retail (CAD)')).toHaveAttribute(
+      'translate',
+      'no',
+    );
+    expect(retired).not.toHaveAttribute('translate');
+  });
+
   it('reports None as null', async () => {
     serve();
     const onChange = vi.fn();

@@ -52,11 +52,14 @@ describe('movementActor', () => {
   });
 
   // The server keeps an anonymised account's stored name, which is English,
-  // and nulls its email (ADR-012): the reader's own words say it instead.
+  // and nulls its email (ADR-012): the reader's own words say it instead,
+  // marked removed so a browser translating the page may translate them
+  // (#245).
   it('says a removed account in the reader’s words, not its stored name', () => {
     expect(movementActor(by('Deleted User', null), 'Deleted user')).toEqual({
       name: 'Deleted user',
       email: null,
+      removed: true,
     });
   });
 });

@@ -87,6 +87,16 @@ describe('SiteSelect (ADR-071)', () => {
     ).toBeInTheDocument();
   });
 
+  // A browser translating the page leaves the address as typed (#245).
+  it('keeps the chosen site’s address as typed under translation', () => {
+    render(picker('burnaby', null));
+
+    expect(screen.getByText('42 Production Way, Burnaby')).toHaveAttribute(
+      'translate',
+      'no',
+    );
+  });
+
   it('says nothing of an address before the sites have loaded', () => {
     render(
       <SiteSelect

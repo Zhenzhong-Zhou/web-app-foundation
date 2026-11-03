@@ -126,6 +126,19 @@ describe('OrganizationMark', () => {
     },
   );
 
+  // Each logo's alt is the organization's name, which a browser translating
+  // the page leaves as typed (#245).
+  it.each([
+    ['the main logo', { logoFileId: 'wordmark' }],
+    ['the square logo', { squareLogoFileId: 'mark', initials: true }],
+  ])('keeps %s’s name as typed under translation', (_, mark) => {
+    renderMark(mark);
+
+    expect(
+      screen.getByRole('img', { name: 'WIDE Naturals Inc.' }),
+    ).toHaveAttribute('translate', 'no');
+  });
+
   it('keeps the main logo, then the initials, on the tight bar without a square logo', () => {
     const { unmount } = renderMark({ logoFileId: 'wordmark', initials: true });
     expect(
