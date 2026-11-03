@@ -27,6 +27,7 @@ import type {
   ReorderPointRow,
   ReorderPointValues,
 } from '../api/types.gen';
+import { useCan } from '../auth/permissions';
 import { chosenCardSx } from '../components/chosen-card';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -200,6 +201,7 @@ export function ReorderPointDialog({
   onSaved: () => void;
 }) {
   const intl = useIntl();
+  const can = useCan();
   const [item, setItem] = useState<ReorderItem | null>(
     opening.kind === 'add' ? null : opening.item,
   );
@@ -274,10 +276,11 @@ export function ReorderPointDialog({
 
   // Made by default when the item has an active recipe (ADR-085), for a
   // point not yet kept; bought when it has none, or the recipes are not
-  // this reader's to see.
+  // this reader's to see, and then they are not asked for (#356).
+  const canSeeRecipes = can('boms.view');
   const adding = kept === null && item ? item.variantId : null;
   useEffect(() => {
-    if (!adding) return;
+    if (!adding || !canSeeRecipes) return;
     let ignore = false;
     void api<Bom[]>(withQuery('/boms', { outputVariantId: adding }))
       .then((boms) => {
@@ -293,7 +296,7 @@ export function ReorderPointDialog({
     return () => {
       ignore = true;
     };
-  }, [adding]);
+  }, [adding, canSeeRecipes]);
 
   const source: ReorderSource =
     form.source ??
