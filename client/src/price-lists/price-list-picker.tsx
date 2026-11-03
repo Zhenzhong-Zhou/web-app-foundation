@@ -15,9 +15,9 @@ import { nameAndCode } from '../lib/format';
  * is offered only when it is the current choice, disabled, so the field still
  * says what is set without inviting anyone to set it again.
  *
- * An active list's name and currency are translate="no", in the menu and as
- * the field's value, so a browser translating the page leaves them as typed
- * (#245).
+ * A list's name and currency are translate="no", in the menu and as the
+ * field's value, so a browser translating the page leaves them as typed; a
+ * retired list's "— retired" stays translatable (#245).
  */
 export function PriceListPicker({
   id,
@@ -96,7 +96,13 @@ export function PriceListPicker({
                 id: 'priceLists.picker.retired',
                 defaultMessage: '{list} — retired',
               },
-              { list: nameAndCode(list.name, list.currency) },
+              {
+                list: (
+                  <span translate="no">
+                    {nameAndCode(list.name, list.currency)}
+                  </span>
+                ),
+              },
             )
           )}
         </MenuItem>

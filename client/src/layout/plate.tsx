@@ -50,6 +50,8 @@ export function Plate(
           component="img"
           src={src}
           alt={alt}
+          // Its alt is the organization's name, kept as typed (#245).
+          translate="no"
           // In rem, so it grows with the name beside it.
           sx={{ display: 'block', maxWidth: rem(32), maxHeight: rem(32) }}
         />

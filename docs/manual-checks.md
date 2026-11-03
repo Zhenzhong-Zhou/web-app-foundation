@@ -3164,7 +3164,7 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
-- **MC-R86** *(Release saying an item has no recipe when the read of its
+- **MC-R87** *(Release saying an item has no recipe when the read of its
   recipes failed, found by the fix-ups' review)* As the demo Owner, Plan
   a run of BLEND-FOCUS, which has no recipe: 10, Made at Office, Plan run.
   Open the run and, with `*boms*` blocked (DevTools → Network request
@@ -3173,11 +3173,18 @@ first.
   greyed. Unblock `*boms*` and press Try again: There is no recipe for
   this item yet. In 中文 无法加载此物品的配方。, with 重试 beside it.
 
-- **MC-R85** *(Plan a run reading a recipe's yield with its padding
+- **MC-R86** *(Plan a run reading a recipe's yield with its padding
   zeros, found by the fix-ups' walkthrough)* As the demo Owner on
   Production, Plan a run and choose CALM-90CT in Making: Recipe reads
   "v1 (current) — makes 1,000", not 1000.0000, and under Quantity to make
   "The recipe makes 1,000 per batch — …". In Français both read 1 000.
+
+- **MC-R85** *(The time-zone picker finding nothing for Montréal, #165)*
+  As the demo Owner in Français on a phone, Paramètres → Organisation →
+  Profil → Fuseau horaire: type « Montréal », then « montreal »: each
+  offers heure de l’Est — Toronto. Type « Calcutta »: heure de l’Inde —
+  Kolkata. Type « Atlantis »: the list says « Aucun résultat. », as the
+  lookup does, never « Pas de résultats ». Leave without saving.
 
 - **MC-R84** *(An order's total a cent from its purchase order's, #125)*
   As the demo Owner, raise a purchase from Lakeshore Packaging with two
@@ -3287,15 +3294,13 @@ first.
 
 - **MC-R72** *(codes changed by a browser's translation, m2 read as 平方米,
   #245)* As the demo Owner in English, in Chrome, give a location the code
-  m2 on Locations, then translate the page into Chinese (right-click,
-  Translate to 中文): the location's line still reads m2, its name and the
-  page's words translated. On Home, translated the same way, To ship's
-  SO-DEMO-1 stays as typed. On New order, translated the same way,
-  Partner lists Lakeshore Packaging (LAKESHORE) as typed, its label
-  translated. Signed in as Sarah Chen, translated
-  the same way, the account menu reads Sarah Chen, her email and SC as
-  typed. Switch the app to 简体中文 and reload: Chrome offers no
-  translation, the page saying it is Chinese from the start.
+  m2 on Locations and reload: the address bar offers no translation. Ask
+  Chrome to translate the page anyway (right-click, Translate to 中文, if
+  it is offered): the page stays as written, the location's line reading
+  m2 and every word in English. On Home, To ship's SO-DEMO-1 and the
+  page's words stay as written the same way. Switch the app to 简体中文
+  and reload: Chrome offers no translation, and asked to translate into
+  English, the page stays in Chinese.
 
 - **MC-R71** *(the promised table naming an item by its SKU alone, #296)*
   As the demo Owner in 中文, on Inventory, 已承诺给客户 has 物品 beside
@@ -4566,8 +4571,14 @@ first.
   added.
 - 2026-11-03: #125, the order page rounding each line to its currency's
   minor units, then summing, as its purchase order does: MC-R84 added.
+- 2026-11-03: #165, the time-zone picker finding a zone with accents and
+  capitals aside and by a city the time-zone database links to it, and
+  saying « Aucun résultat. » when nothing matches: MC-R85 added.
+- 2026-11-03: #245, the whole app asking a browser not to translate it:
+  MC-R72 rewritten, the page staying as written when Chrome is asked to
+  translate it.
 - 2026-11-03: Plan a run reading a recipe's yield as 1000.0000 beside a
-  list reading 1,000, found by the fix-ups' walkthrough: MC-R85 added.
+  list reading 1,000, found by the fix-ups' walkthrough: MC-R86 added.
 - 2026-11-03: Release saying an item has no recipe when the read of its
-  recipes failed, #290's sibling, found by the fix-ups' review: MC-R86
+  recipes failed, #290's sibling, found by the fix-ups' review: MC-R87
   added.

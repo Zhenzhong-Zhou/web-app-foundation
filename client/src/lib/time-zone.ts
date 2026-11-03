@@ -54,6 +54,45 @@ export function currentName(zone: string): string {
   return CURRENT_NAMES[zone] ?? zone;
 }
 
+/**
+ * Links in the time-zone database that rename a city, each to the zone it
+ * points to (#165): an older spelling, Calcutta for Kolkata, or a city
+ * kept under another's zone, Montreal under Toronto. The picker names each
+ * zone by its own city alone, so it finds a zone by these too. A short
+ * list of the cities people type, not the database's whole list of links.
+ */
+export const LINKED_CITIES: Readonly<Record<string, string>> = {
+  'Africa/Asmera': 'Africa/Asmara',
+  'America/Ensenada': 'America/Tijuana',
+  'America/Godthab': 'America/Nuuk',
+  'America/Montreal': 'America/Toronto',
+  'America/Thunder_Bay': 'America/Toronto',
+  'America/Yellowknife': 'America/Edmonton',
+  'Asia/Ashkhabad': 'Asia/Ashgabat',
+  'Asia/Calcutta': 'Asia/Kolkata',
+  'Asia/Chongqing': 'Asia/Shanghai',
+  'Asia/Dacca': 'Asia/Dhaka',
+  'Asia/Harbin': 'Asia/Shanghai',
+  'Asia/Katmandu': 'Asia/Kathmandu',
+  'Asia/Macao': 'Asia/Macau',
+  'Asia/Rangoon': 'Asia/Yangon',
+  'Asia/Saigon': 'Asia/Ho_Chi_Minh',
+  'Asia/Tel_Aviv': 'Asia/Jerusalem',
+  'Asia/Thimbu': 'Asia/Thimphu',
+  'Asia/Ulan_Bator': 'Asia/Ulaanbaatar',
+  'Atlantic/Faeroe': 'Atlantic/Faroe',
+  'Australia/Canberra': 'Australia/Sydney',
+  'Europe/Belfast': 'Europe/London',
+  'Europe/Kiev': 'Europe/Kyiv',
+};
+
+/** The cities linked to a zone: Montreal and Thunder Bay to Toronto's. */
+export function linkedCities(zone: string): string[] {
+  return Object.entries(LINKED_CITIES)
+    .filter(([, linked]) => linked === zone)
+    .map(([link]) => cityOf(link));
+}
+
 /** This device's own zone, as the browser reports it, by its current name. */
 export function browserTimeZone(): string {
   return currentName(Intl.DateTimeFormat().resolvedOptions().timeZone);

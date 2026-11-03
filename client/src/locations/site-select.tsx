@@ -21,8 +21,9 @@ import { addressLine } from './address-line';
  * chosen, cannot be changed, and says why, with what the empty choice
  * means when it is the one standing.
  *
- * A site's name is translate="no", in the menu and as the field's value, so
- * a browser translating the page leaves it as typed (#245).
+ * A site's name is translate="no", in the menu and as the field's value,
+ * and so is its address beneath it, so a browser translating the page leaves
+ * them as typed (#245).
  */
 export function SiteSelect({
   id,
@@ -83,7 +84,9 @@ export function SiteSelect({
     // Not among the sites yet: still loading, or they could not be read.
     // Saying it has no address would be a guess.
     if (!chosen) return undefined;
-    if (chosen.address) return addressLine(chosen.address);
+    if (chosen.address) {
+      return <span translate="no">{addressLine(chosen.address)}</span>;
+    }
     return intl.formatMessage({
       id: 'locations.site.noAddress',
       defaultMessage:

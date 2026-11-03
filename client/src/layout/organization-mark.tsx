@@ -18,8 +18,9 @@ import { Plate } from './plate';
  * link is named for the organization and still by what it shows (WCAG
  * 2.5.3); a logo alone is named for it.
  *
- * The name and its initials are translate="no", so a browser translating
- * the page leaves them as typed (#245).
+ * The name and its initials are translate="no", and so are the logos,
+ * whose alt is the name, so a browser translating the page leaves them as
+ * typed (#245).
  */
 export function OrganizationMark({
   name,
@@ -92,6 +93,7 @@ export function OrganizationMark({
         component="img"
         src={logoSrc(branding.logoFileId)}
         alt={name}
+        translate="no"
         sx={{ display: 'block', maxHeight: 32, maxWidth: '100%' }}
       />
     </Box>
