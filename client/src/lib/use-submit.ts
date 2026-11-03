@@ -14,6 +14,8 @@ import { useFailureWords } from './use-failure-words';
  *
  * `onDone` runs only on success and outside the try, so a failing refetch does
  * not surface as an error about the thing that was just created successfully.
+ * It takes what the action returned, such as the id of the record just
+ * created to open, so no dialog keeps it in a ref on the way (#273).
  *
  * `success` is the confirmation toast. Here rather than in each dialog, for
  * the reason this hook exists: said once, it cannot be forgotten on the next
@@ -32,7 +34,7 @@ import { useFailureWords } from './use-failure-words';
  * three come from the one failure kept.
  */
 export function useSubmit<T = unknown>(
-  onDone: () => void | Promise<void>,
+  onDone: (result: T) => void | Promise<void>,
   options: { success?: string | ((result: T) => string) } = {},
 ) {
   const [submitting, setSubmitting] = useState(false);
@@ -64,7 +66,7 @@ export function useSubmit<T = unknown>(
     const { success } = options;
     if (success) toast(typeof success === 'string' ? success : success(result));
 
-    await onDone();
+    await onDone(result);
   }
 
   return {

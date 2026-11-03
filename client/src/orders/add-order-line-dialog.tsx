@@ -5,7 +5,7 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { type SubmitEvent, useRef, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { OrderDetail } from '../api/types.gen';
@@ -65,12 +65,8 @@ export function AddOrderLineDialog({
     order.lines.find((row) => row.currency)?.currency ?? '',
   );
 
-  // useSubmit's callback takes no result, so the notice waits here.
-  const priceNotice = useRef<string | null>(null);
-
-  const { submitting, error, reset, submit } = useSubmit(
-    async () => {
-      const notice = priceNotice.current;
+  const { submitting, error, reset, submit } = useSubmit<string | null>(
+    async (notice) => {
       close();
       await onAdded(notice);
     },
@@ -93,8 +89,6 @@ export function AddOrderLineDialog({
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
-
-    priceNotice.current = null;
 
     // The language's decimal comma made a point; a thousands separator is
     // refused rather than guessed (ADR-054).
@@ -124,7 +118,7 @@ export function AddOrderLineDialog({
         },
       );
 
-      priceNotice.current = response.line.priceNotice ?? null;
+      return response.line.priceNotice ?? null;
     });
   }
 
