@@ -13,4 +13,14 @@ describe('PersonAvatar', () => {
     render(<PersonAvatar userId="user-1" name="Mei Lin" />);
     expect(screen.getByText('ML')).not.toHaveAttribute('lang');
   });
+
+  // Its alt is the name, which a browser translating the page leaves as
+  // typed (#245).
+  it('keeps the photo’s name as typed under translation', () => {
+    render(<PersonAvatar userId="user-1" name="Mei Lin" photoFileId="p1" />);
+    expect(screen.getByRole('img', { name: 'Mei Lin' })).toHaveAttribute(
+      'translate',
+      'no',
+    );
+  });
 });

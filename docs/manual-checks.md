@@ -3258,15 +3258,13 @@ first.
 
 - **MC-R72** *(codes changed by a browser's translation, m2 read as 平方米,
   #245)* As the demo Owner in English, in Chrome, give a location the code
-  m2 on Locations, then translate the page into Chinese (right-click,
-  Translate to 中文): the location's line still reads m2, its name and the
-  page's words translated. On Home, translated the same way, To ship's
-  SO-DEMO-1 stays as typed. On New order, translated the same way,
-  Partner lists Lakeshore Packaging (LAKESHORE) as typed, its label
-  translated. Signed in as Sarah Chen, translated
-  the same way, the account menu reads Sarah Chen, her email and SC as
-  typed. Switch the app to 简体中文 and reload: Chrome offers no
-  translation, the page saying it is Chinese from the start.
+  m2 on Locations and reload: the address bar offers no translation. Ask
+  Chrome to translate the page anyway (right-click, Translate to 中文, if
+  it is offered): the page stays as written, the location's line reading
+  m2 and every word in English. On Home, To ship's SO-DEMO-1 and the
+  page's words stay as written the same way. Switch the app to 简体中文
+  and reload: Chrome offers no translation, and asked to translate into
+  English, the page stays in Chinese.
 
 - **MC-R71** *(the promised table naming an item by its SKU alone, #296)*
   As the demo Owner in 中文, on Inventory, 已承诺给客户 has 物品 beside
@@ -4535,3 +4533,6 @@ first.
 - 2026-11-03: #165, the time-zone picker finding a zone with accents and
   capitals aside and by a city the time-zone database links to it, and
   saying « Aucun résultat. » when nothing matches: MC-R85 added.
+- 2026-11-03: #245, the whole app asking a browser not to translate it:
+  MC-R72 rewritten, the page staying as written when Chrome is asked to
+  translate it.

@@ -29,13 +29,16 @@ export function describeMovement(movement: Movement): {
  * Who made it, by name with their email beneath (ADR-063), or the email
  * alone for an account with no name. The server nulls an anonymised
  * account's email and keeps its stored name, Deleted User, which is
- * English (ADR-012); `removed` says it in the reader's words instead.
+ * English (ADR-012); `removed` says it in the reader's words instead, and
+ * `removed: true` keeps those words translatable in NameAndEmail (#245).
  */
 export function movementActor(
   movement: Movement,
   removed: string,
-): { name: string; email: string | null } {
-  if (movement.actorEmail === null) return { name: removed, email: null };
+): { name: string; email: string | null; removed?: true } {
+  if (movement.actorEmail === null) {
+    return { name: removed, email: null, removed: true };
+  }
 
   return movement.actorName
     ? { name: movement.actorName, email: movement.actorEmail }
