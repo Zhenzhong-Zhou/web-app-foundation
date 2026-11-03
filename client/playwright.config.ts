@@ -184,6 +184,13 @@ export default defineConfig({
       timeout: 120_000,
       env: {
         VITE_API_TARGET: 'http://localhost:3100',
+        // No hot reload, which vite.config.ts reads (#183). A file under
+        // src/ saved during a run reloaded every open page, and a test in
+        // the middle of a form filled a field on one page and pressed its
+        // button on the next. A person's own `npm run dev` keeps it; a
+        // server already on 5273 is reused as it is, hot reload and all,
+        // so stop that one first.
+        VITE_HMR: 'off',
         // A © line, so the screens before sign-in are checked with their
         // footer, as on Render (ADR-082); ../.env's own, where it sets one.
         VITE_COPYRIGHT_HOLDER:

@@ -625,6 +625,11 @@ The error tracker hears of real faults only (ADR-084).
   `sid` from storageState, and a second cookie of the same name for the
   same host leaves it unspecified which one the browser sends, a coin flip
   that shows up as an unrelated test failing now and then.
+- **The browser suite's own client server runs without hot reload**
+  (#183): `client/playwright.config.ts` starts it with `VITE_HMR=off`, so
+  a file saved during a run cannot reload a page in the middle of a form.
+  A client server already running on port 5273 is reused as it is, with
+  hot reload, so stop it before a run.
 - **A limit the browser suite reaches is `limit(n)` in `@Throttle`**
   (`server/src/core/auth/throttle-limits.ts`), multiplied by
   `THROTTLE_FACTOR`. A decorator's arguments are evaluated when its class
