@@ -3164,6 +3164,16 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R76** *(Esc before the guide had loaded closing nothing, then
+  focus moving into Help, #212)* As the demo Owner on Orders, in Chrome on
+  a computer, with the page loaded: DevTools → Network, Disable cache and
+  a custom throttling profile of 5000 ms latency, so a guide takes seconds
+  to come. Tab to Help in the bar, press Enter, then Esc at once, before
+  the guide shows: Help closes, its button no longer pressed, and focus
+  stays on it. Once the guide's file has arrived (Network), focus is
+  still on Help and Help stays closed. Open Help again and wait: the
+  guide's title takes focus, and Esc there closes Help, focus back on
+  Help.
 - **MC-R74** *(a full IPv6 address pushing Recent activity's time off
   screen on a phone, #323)* On an iPhone SE, signed in on the deployed
   app over the phone's mobile data, which often gives a full IPv6 address
@@ -4439,3 +4449,5 @@ first.
   address shows the time, with nothing scrolling sideways: MC-R74 added.
 - 2026-11-02: #310, in Receive stock, Enter with no location names the
   field and focuses it, as every empty field there does: MC-R73.
+- 2026-11-02: #212, Esc closing Help from its button before the guide has
+  loaded, and the guide that comes after moving no focus: MC-R76 added.
