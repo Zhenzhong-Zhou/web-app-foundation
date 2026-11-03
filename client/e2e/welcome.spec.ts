@@ -1,13 +1,12 @@
 import { expect, test } from './fixtures';
 import {
-  created,
   E2E_PASSWORD,
+  inviteByLink,
   registerOrganization,
-  roleIdNamed,
   signInAs,
   uniqueEmail,
 } from './support/api';
-import { confirmEmailInDatabase, latestEmailTo, tokenIn } from './support/mail';
+import { confirmEmailInDatabase } from './support/mail';
 
 /**
  * A newcomer's first sign-in (ADR-079), as they and their inviter meet it:
@@ -25,17 +24,12 @@ test('a newcomer accepts with a note, meets their welcome, and the inviter hears
   const dismissed = await org.api.post('/v1/home/getting-started/dismiss');
   expect(dismissed.ok(), await dismissed.text()).toBeTruthy();
 
+  // A copied link rather than the email, so setup waits on no mail
+  // (#248); the emailed link's own test is invitation.spec.ts's.
   const email = uniqueEmail('wang');
-  await created(
-    await org.api.post('/v1/invitations', {
-      data: {
-        email,
-        roleIds: [await roleIdNamed(org.api, 'Viewer')],
-        note: 'On Monday you’ll shadow Li Na.\nLook up each lot as it comes in.',
-      },
-    }),
-  );
-  const token = tokenIn(await latestEmailTo(email), '/invitation');
+  const { token } = await inviteByLink(org.api, email, 'Viewer', {
+    note: 'On Monday you’ll shadow Li Na.\nLook up each lot as it comes in.',
+  });
 
   // The newcomer's own browser, with no session.
   const context = await browser.newContext({
@@ -64,10 +58,13 @@ test('a newcomer accepts with a note, meets their welcome, and the inviter hears
   await expect(
     card.getByRole('heading', { name: 'What you can do here', exact: true }),
   ).toBeVisible();
-  // The emailed link confirmed the address, so the week starts with Say
-  // who you are, and the banner is nowhere.
-  await expect(card.getByText('0 of 3 done')).toBeVisible();
-  await expect(card.getByText('Confirm your email address')).toHaveCount(0);
+  // A copied link confirms nothing, so the week starts with confirming
+  // the address. An emailed link's newcomer, confirmed as they join,
+  // starts at Say who you are (welcome.e2e-spec.ts).
+  await expect(card.getByText('0 of 4 done')).toBeVisible();
+  await expect(
+    card.getByText('Confirm your email address', { exact: true }),
+  ).toBeVisible();
 
   await card
     .getByRole('button', { name: 'Dismiss the welcome card', exact: true })

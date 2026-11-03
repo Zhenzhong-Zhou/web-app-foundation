@@ -111,12 +111,17 @@ test('a new person joins from the emailed link, in the language it was written i
 
   await page.waitForURL('/');
   const me = (await (await page.request.get('/api/v1/auth/me')).json()) as {
-    user: { name: string; locale: string };
+    user: { name: string; locale: string; emailVerified: boolean };
     organization: { name: string } | null;
   };
   expect(me.organization?.name).toBe(org.organizationName);
-  // The account takes the language the page was in.
-  expect(me.user).toMatchObject({ name: '王芳', locale: 'zh-Hans' });
+  // The account takes the language the page was in, and the emailed link
+  // confirmed its address, since only its inbox could have opened it.
+  expect(me.user).toMatchObject({
+    name: '王芳',
+    locale: 'zh-Hans',
+    emailVerified: true,
+  });
 });
 
 test('an account in no organization signs in through sign-in, then joins', async ({
