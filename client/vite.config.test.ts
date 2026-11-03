@@ -130,6 +130,23 @@ describe('withTokens', () => {
 });
 
 /**
+ * The whole app asks a browser not to translate it (#245): it speaks
+ * English, French and Chinese itself, and a browser's translation rewrites
+ * the page React draws, data with the words.
+ */
+describe('index.html', () => {
+  const html = readFileSync(
+    path.join(import.meta.dirname, 'index.html'),
+    'utf8',
+  );
+
+  it('asks a browser not to translate the app', () => {
+    expect(html).toMatch(/<html [^>]*\btranslate="no"/);
+    expect(html).toContain('<meta name="google" content="notranslate" />');
+  });
+});
+
+/**
  * ADR-084's readable browser traces: hidden source maps uploaded to the
  * tracker under the release the reporter names, then deleted, only where
  * the upload's settings are, as on Render's static site.

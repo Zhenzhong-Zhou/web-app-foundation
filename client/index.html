@@ -1,7 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      No browser's translation (issue 245): the app speaks English, French
+      and Chinese itself, and a translation rewrites the page React draws,
+      data with the words, m2 read as 平方米. translate="no" for every
+      browser; "notranslate" for Chrome, which then offers none.
+    -->
+    <meta name="google" content="notranslate" />
     <!--
       The tab's icon, the mark on its navy plate, which never switches
       (ADR-082): the SVG wherever a browser draws one; the ICO (16, 32 and

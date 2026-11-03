@@ -945,9 +945,14 @@ Use these rather than writing the thing again on a page:
   timer waits while focus or the pointer is on it, and runs again only once
   both have left (WCAG 2.2.1). MUI's `Snackbar` runs again when either does.
 
-What is data (codes, numbers, names, addresses, typed values) carries
-`translate="no"`, as `Reference` does, so a browser translating the page leaves
-it as typed (#245); the app's own words stay translatable.
+The whole app asks a browser not to translate it: `translate="no"` on the
+html element and Google's `notranslate` meta tag in client/index.html (#245).
+The app speaks English, French and Chinese itself, and a browser's translation
+also rewrites the page React draws, data with the words, so a code typed as m2
+reads 平方米 (ADR-054 rejects it). Data (codes, numbers, names, addresses,
+typed values) still carries `translate="no"` of its own, as `Reference` does,
+for the day this is revisited: a customer whose staff read a language the app
+does not offer.
 
 A new screen gets a line in SCREENS in client/e2e/accessibility.spec.ts, which
 runs axe for WCAG 2.2 AA in light and dark mode (ADR-055). A violation is
