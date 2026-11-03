@@ -3169,6 +3169,17 @@ first.
   nearly matches a partner, for example focus: the Partners group shows
   the close match, with no Show all.
 
+- **MC-R76** *(Esc before the guide had loaded closing nothing, then
+  focus moving into Help, #212)* As the demo Owner on Orders, in Chrome on
+  a computer, with the page loaded: DevTools → Network, Disable cache and
+  a custom throttling profile of 5000 ms latency, so a guide takes seconds
+  to come. Tab to Help in the bar, press Enter, then Esc at once, before
+  the guide shows: Help closes, its button no longer pressed, and focus
+  stays on it. Once the guide's file has arrived (Network), focus is
+  still on Help and Help stays closed. Open Help again and wait: the
+  guide's title takes focus, and Esc there closes Help, focus back on
+  Help.
+
 - **MC-R75** *(New order from Reorder points left unfilled after a failed
   catalogue read, yet its note counting the lines, #357)* On a fresh demo,
   as the Owner, Reorder points on Low: choose D3-1000-120 and ELDER-250.
@@ -3180,16 +3191,7 @@ first.
   suggested quantities. …". With `*products/variants*` blocked
   (DevTools → Network request blocking), raise it again: Could not load
   partners and products., one empty line, and no note.
-- **MC-R76** *(Esc before the guide had loaded closing nothing, then
-  focus moving into Help, #212)* As the demo Owner on Orders, in Chrome on
-  a computer, with the page loaded: DevTools → Network, Disable cache and
-  a custom throttling profile of 5000 ms latency, so a guide takes seconds
-  to come. Tab to Help in the bar, press Enter, then Esc at once, before
-  the guide shows: Help closes, its button no longer pressed, and focus
-  stays on it. Once the guide's file has arrived (Network), focus is
-  still on Help and Help stays closed. Open Help again and wait: the
-  guide's title takes focus, and Esc there closes Help, focus back on
-  Help.
+
 - **MC-R74** *(a full IPv6 address pushing Recent activity's time off
   screen on a phone, #323)* On an iPhone SE, signed in on the deployed
   app over the phone's mobile data, which often gives a full IPv6 address
@@ -3197,6 +3199,7 @@ first.
   Recent activity shows that address under its event, wrapped, with no
   From column, and When shows the time, with nothing scrolling sideways.
   The same in English, Français and 中文.
+
 - **MC-R73** *(Enter in Receive stock with no location focusing a hidden
   input, #310)* As the demo Owner, on Inventory with no location chosen,
   open Receive stock, choose an item, type 5 in Quantity and press Enter:
