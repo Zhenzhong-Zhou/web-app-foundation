@@ -1,10 +1,11 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ReorderPointDetail, ReorderPointPreview } from '../api/types.gen';
 import { apiError } from '../test/handlers';
+import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import {
   type ReorderOpening,
@@ -62,13 +63,19 @@ function previews(
   return asked;
 }
 
-function open(opening: ReorderOpening, onSaved = vi.fn()) {
-  render(
+/** Opened by a reader who sets points and, unless a spec says not, sees recipes. */
+function open(
+  opening: ReorderOpening,
+  permissions = ['stock.reorder', 'boms.view'],
+) {
+  const onSaved = vi.fn();
+  renderWithAuth(
     <ReorderPointDialog
       opening={opening}
       onClose={vi.fn()}
       onSaved={onSaved}
     />,
+    { permissions },
   );
   return { onSaved };
 }
@@ -295,6 +302,34 @@ describe('ReorderPointDialog', () => {
     expect(
       screen.queryByRole('button', { name: 'Remove reorder point' }),
     ).not.toBeInTheDocument();
+  });
+
+  // Recipes are not every setter's to see (#356): without boms.view the
+  // dialog asks nothing of them, and starts on Bought.
+  it('starts on Bought, asking no recipes, for a reader who cannot see them', async () => {
+    const asked = previews(() => HttpResponse.json(LOW));
+    const recipes = vi.fn();
+    server.use(
+      http.get('/api/v1/boms', () => {
+        recipes();
+        return HttpResponse.json([{ id: 'bom-1', status: 'active' }]);
+      }),
+    );
+    open({ kind: 'add' }, ['stock.reorder']);
+
+    await userEvent.click(screen.getByRole('combobox', { name: /Item/ }));
+    await userEvent.click(
+      await screen.findByRole('option', { name: /PLAIN-1/ }),
+    );
+    await userEvent.type(pointField(), '50');
+
+    // Today is asked once typing pauses, long after a recipes read would be.
+    await waitFor(() => expect(asked).toHaveLength(1));
+    expect(asked[0].get('source')).toBe('bought');
+    expect(
+      screen.getByRole('button', { name: 'Bought', pressed: true }),
+    ).toBeInTheDocument();
+    expect(recipes).not.toHaveBeenCalled();
   });
 
   it('offers to edit the point an item already has, from the server’s 409', async () => {
