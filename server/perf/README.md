@@ -263,6 +263,10 @@ What fails a run:
 - **A concurrency check that failed:** that round's job.
 - **The plan check:** the first round's job, as in the plans mode.
 
+A round that failed on its runner can be run again alone, "Re-run failed
+jobs", then the median job after it: the round's artifact is overwritten,
+so the run is judged without timing all three again.
+
 Each round keeps its reports and the server's log as an artifact,
 `perf-<mode>-<scale>-<run>-round-<n>`, for 30 days. To judge a run again
 locally, from `server/`:

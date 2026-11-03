@@ -254,7 +254,10 @@ jobs:
         run: npm run perf:plans -- --scale "$SCALE"
 
       # A round's name ends in its number, which the median job downloads
-      # by; the plans mode's is as it was.
+      # by; the plans mode's is as it was. Overwritten on "Re-run failed
+      # jobs": the failed attempt uploaded the same name, which
+      # upload-artifact refuses within a run, so a round re-run could never
+      # pass without it.
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -263,6 +266,7 @@ jobs:
             server/perf/reports/
             server/server.log
           retention-days: 30
+          overwrite: true
 
   # A timed run's fourth job: each budget judged by the median of the three
   # rounds' 95th percentiles, against its budget and its known miss's
