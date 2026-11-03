@@ -16,9 +16,13 @@ export function slugify(input: string): string {
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    // The collapse above leaves no run of hyphens, so one hyphen at each end
+    // is all there is to trim, here and after the cut. A repeated hyphen in
+    // these patterns would read to CodeQL as polynomial on a name of many
+    // hyphens (js/polynomial-redos).
+    .replace(/^-|-$/g, '')
     .slice(0, 48)
-    .replace(/-+$/g, '');
+    .replace(/-$/, '');
 
   // "株式会社" and "!!!" both reduce to an empty string, which would violate
   // the constraint. Fall back rather than reject an otherwise valid org name.

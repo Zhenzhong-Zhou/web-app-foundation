@@ -1036,11 +1036,10 @@ describe('Orders (e2e)', () => {
     /**
      * Amounts are asserted as numbers, not strings.
      *
-     * numeric(18,4) times numeric(18,4) is scale 8, and sum() keeps it — so a
-     * line total comes back as 50.00000000 while the unit price is 1.2500.
-     * Both are exact; only the scale differs, and pinning the query to four
-     * places would throw away digits on a line like 1,000,000 × 0.000125.
-     * Formatting rounds at display, where it knows the currency (ADR-035).
+     * A line total is rounded to its currency's minor units, so it comes
+     * back as 50.00 while the unit price is 1.2500. Both are exact; only
+     * the scale differs, and the scale is the currency's (ADR-035's
+     * amendment, #125).
      */
     it('records a price and its currency, and totals by currency', async () => {
       const ctx = await setup('alpha');
@@ -1130,6 +1129,83 @@ describe('Orders (e2e)', () => {
       expect(detail.totals.map((total) => Number(total.amount))).toEqual([
         20, 30,
       ]);
+    });
+
+    /**
+     * Each line rounded to its currency's minor units, then summed, as its
+     * purchase order and an invoice round them, so the page and its
+     * documents agree (ADR-035's amendment, #125). 3 × 1.2345 is 3.7035:
+     * 3.70 a line and 7.40 the two, where summing first made 7.407, shown
+     * as 7.41. The yen has no minor unit, so 3 × 10.5 is 32.
+     */
+    it('rounds each line to its currency, then sums, as its documents do', async () => {
+      const ctx = await setup('alpha');
+
+      const variant = async (sku: string) =>
+        body<{ product: { variants: { id: string }[] } }>(
+          await ctx.agent
+            .post('/v1/products')
+            .send({ type: 'good', name: sku, variant: { sku } })
+            .expect(201),
+        ).product.variants[0].id;
+      const second = await variant('WIDGET-2');
+      const third = await variant('WIDGET-3');
+
+      const cad = [
+        {
+          variantId: ctx.variant.id,
+          quantityOrdered: '3',
+          unitPrice: '1.2345',
+          currency: 'CAD',
+        },
+        {
+          variantId: second,
+          quantityOrdered: '3',
+          unitPrice: '1.2345',
+          currency: 'CAD',
+        },
+      ];
+      const raise = async (direction: 'purchase' | 'sale', lines: object[]) =>
+        body<{ order: OrderResponse }>(
+          await ctx.agent
+            .post('/v1/orders')
+            .send({ partnerId: ctx.partnerId, direction, lines })
+            .expect(201),
+        ).order.id;
+
+      interface Detail {
+        totals: { currency: string; amount: string }[];
+        lines: { sku: string; lineTotal: string }[];
+        money: { notInvoiced: string } | null;
+      }
+      const read = async (id: string) =>
+        body<Detail>(await ctx.agent.get(`/v1/orders/${id}`).expect(200));
+
+      const purchase = await read(
+        await raise('purchase', [
+          ...cad,
+          {
+            variantId: third,
+            quantityOrdered: '3',
+            unitPrice: '10.5',
+            currency: 'JPY',
+          },
+        ]),
+      );
+      expect(
+        Object.fromEntries(
+          purchase.lines.map((line) => [line.sku, line.lineTotal]),
+        ),
+      ).toEqual({ 'WIDGET-1': '3.70', 'WIDGET-2': '3.70', 'WIDGET-3': '32' });
+      expect(purchase.totals).toEqual([
+        { currency: 'CAD', amount: '7.40' },
+        { currency: 'JPY', amount: '32' },
+      ]);
+
+      // A sale nothing has invoiced has its whole total still to invoice.
+      const sale = await read(await raise('sale', cad));
+      expect(sale.totals).toEqual([{ currency: 'CAD', amount: '7.40' }]);
+      expect(sale.money?.notInvoiced).toBe('7.40');
     });
 
     it('withholds totals when any line is unpriced', async () => {

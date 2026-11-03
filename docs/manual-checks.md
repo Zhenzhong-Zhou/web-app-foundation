@@ -3179,6 +3179,13 @@ first.
   "v1 (current) — makes 1,000", not 1000.0000, and under Quantity to make
   "The recipe makes 1,000 per batch — …". In Français both read 1 000.
 
+- **MC-R84** *(An order's total a cent from its purchase order's, #125)*
+  As the demo Owner, raise a purchase from Lakeshore Packaging with two
+  lines, each 3 at 1.2345 CAD: each line's Total reads 3.70 and the
+  order's total 7.40, never 7.41; Print shows the same three amounts. A
+  sale with the same two lines reads 7.40 as its total and as Not yet
+  invoiced, before tax.
+
 - **MC-R83** *(Plan run offering a retired partner as contract
   manufacturer, #304)* As the demo Owner, Partners with Retired pressed
   shows Old Mill Herbs. On Production, Plan a run and open Contract
@@ -4557,6 +4564,8 @@ first.
 - 2026-11-03: #304, Plan run's Contract manufacturer leaving a retired
   partner out, as New order's Partner and a sample's Given to do: MC-R83
   added.
+- 2026-11-03: #125, the order page rounding each line to its currency's
+  minor units, then summing, as its purchase order does: MC-R84 added.
 - 2026-11-03: Plan a run reading a recipe's yield as 1000.0000 beside a
   list reading 1,000, found by the fix-ups' walkthrough: MC-R85 added.
 - 2026-11-03: Release saying an item has no recipe when the read of its
