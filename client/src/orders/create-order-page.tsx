@@ -98,14 +98,17 @@ export function CreateOrderPage() {
 
   /**
    * Lines filled in from Reorder points (ADR-085), each item at its
-   * suggestion, once the catalogue has answered and the items can be
-   * shown; the supplier is left to choose. Read from the link once, so
-   * what the person changes afterwards stays theirs.
+   * suggestion, once the catalogue has answered with its items, after a
+   * failed read's Retry too (#357); the supplier is left to choose. Read
+   * from the link once, so what the person changes afterwards stays
+   * theirs. The note counts the lines filled, an item no longer in the
+   * catalogue left out.
    */
   const { state } = useLocation();
   const [fill] = useState(() => orderFillOf(state));
   const [filling, setFilling] = useState(fill !== null);
-  if (filling && fill && catalogueAnswered) {
+  const [filledCount, setFilledCount] = useState(0);
+  if (filling && fill && catalogueAnswered && !catalogueFailed) {
     setFilling(false);
     const filled = fill.lines.flatMap((line) => {
       const variant = variants.find((option) => option.id === line.variantId);
@@ -119,6 +122,7 @@ export function CreateOrderPage() {
           ]
         : [];
     });
+    setFilledCount(filled.length);
     if (filled.length) setLines(filled);
   }
 
@@ -323,7 +327,7 @@ export function CreateOrderPage() {
           })}
         </Typography>
 
-        {fill && (
+        {filledCount > 0 && (
           <Alert severity="info">
             {intl.formatMessage(
               {
@@ -331,7 +335,7 @@ export function CreateOrderPage() {
                 defaultMessage:
                   'Filled from Reorder points: {count, plural, one {# line at its suggested quantity} other {# lines at their suggested quantities}}. Choose the supplier under Partner, check the quantities and prices, then raise it as a draft.',
               },
-              { count: fill.lines.length },
+              { count: filledCount },
             )}
           </Alert>
         )}
