@@ -15,7 +15,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Fragment, type SubmitEvent, useEffect, useState } from 'react';
+import { Fragment, type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type {
@@ -35,6 +35,7 @@ import {
   SEPARATOR,
   toApiDecimal,
 } from '../lib/format';
+import { type Question, useDebouncedRead } from '../lib/use-debounced-read';
 import { useSubmit } from '../lib/use-submit';
 import { rem } from '../theme/rem';
 
@@ -96,9 +97,6 @@ export function ShipOrderDialog({
     ),
   );
 
-  const [plan, setPlan] = useState<ShipmentPlanLine[] | null>(null);
-  const [planError, setPlanError] = useState<string | null>(null);
-
   /** Hand-picked quantities per line, keyed by lot id. */
   const [picks, setPicks] = useState<Record<string, Record<string, string>>>(
     {},
@@ -121,66 +119,41 @@ export function ShipOrderDialog({
     (line) => !isNothing(quantities[line.id] ?? ''),
   );
 
-  /**
-   * What the preview is asked about, as one string, so the effect reruns
-   * when a quantity changes and not on every render.
-   */
-  // What the preview asks about, in the API's form. Empty while a quantity
-  // holds a thousands separator: there is nothing sound to preview.
-  const asSent = sending.map(
-    (line) => [line.id, toApiDecimal(quantities[line.id])] as const,
-  );
-  const request = asSent.some(([, quantity]) => quantity === null)
-    ? ''
-    : JSON.stringify(asSent);
+  // What the preview asks about, in the API's form. Nothing while a
+  // quantity holds a thousands separator: there is nothing sound to preview.
+  const asSent = sending.map((line) => ({
+    lineId: line.id,
+    quantity: toApiDecimal(quantities[line.id]),
+  }));
+  const sound = asSent.every((line) => line.quantity !== null);
 
   // Previewed after a short pause, so typing "120" asks once, not three
-  // times. State is only ever set in the callback, never in the effect body.
-  useEffect(() => {
-    if (!open || !fromLocationId || sending.length === 0 || !request) return;
-
-    let ignore = false;
-
-    const timer = setTimeout(() => {
-      void api<{ lines: ShipmentPlanLine[] }>(
-        `/orders/${order.id}/shipments/preview`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            fromLocationId,
-            lines: (JSON.parse(request) as [string, string][]).map(
-              ([lineId, quantity]) => ({ lineId, quantity }),
-            ),
-          }),
-        },
-      )
-        .then((result) => {
-          if (!ignore) {
-            setPlan(result.lines);
-            setPlanError(null);
-          }
-        })
-        .catch((caught: unknown) => {
-          if (!ignore) {
-            setPlanError(
-              caught instanceof ApiError
-                ? caught.message
-                : intl.formatMessage({
-                    id: 'orders.ship.checkFailed',
-                    defaultMessage: 'Could not check stock.',
-                  }),
-            );
-          }
-        });
-    }, 300);
-
-    return () => {
-      ignore = true;
-      clearTimeout(timer);
-    };
-    // `sending.length` is read for the guard; `request` carries its content.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, fromLocationId, request, order.id]);
+  // times. The last answer stays while the next is asked, for its shelf
+  // only: a different shelf is a different plan.
+  const checked = useDebouncedRead<
+    { lines: ShipmentPlanLine[] },
+    Question & { fromLocationId: string }
+  >(
+    open && fromLocationId && asSent.length > 0 && sound
+      ? {
+          path: `/orders/${order.id}/shipments/preview`,
+          body: JSON.stringify({ fromLocationId, lines: asSent }),
+          fromLocationId,
+        }
+      : null,
+  );
+  const shelf =
+    checked?.question.fromLocationId === fromLocationId ? checked : null;
+  const plan = shelf?.value?.lines ?? null;
+  const planError =
+    shelf && !shelf.value
+      ? shelf.failure instanceof ApiError
+        ? shelf.failure.message
+        : intl.formatMessage({
+            id: 'orders.ship.checkFailed',
+            defaultMessage: 'Could not check stock.',
+          })
+      : null;
 
   function close() {
     setNumberError(null);
@@ -309,8 +282,6 @@ export function ShipOrderDialog({
               value={fromLocationId}
               onChange={(event) => {
                 // A different shelf is a different plan.
-                setPlan(null);
-                setPlanError(null);
                 setPicks({});
                 setFrom(event.target.value);
               }}
