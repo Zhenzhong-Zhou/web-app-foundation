@@ -3175,6 +3175,16 @@ first.
   suggested quantities. …". With `*products/variants*` blocked
   (DevTools → Network request blocking), raise it again: Could not load
   partners and products., one empty line, and no note.
+- **MC-R76** *(Esc before the guide had loaded closing nothing, then
+  focus moving into Help, #212)* As the demo Owner on Orders, in Chrome on
+  a computer, with the page loaded: DevTools → Network, Disable cache and
+  a custom throttling profile of 5000 ms latency, so a guide takes seconds
+  to come. Tab to Help in the bar, press Enter, then Esc at once, before
+  the guide shows: Help closes, its button no longer pressed, and focus
+  stays on it. Once the guide's file has arrived (Network), focus is
+  still on Help and Help stays closed. Open Help again and wait: the
+  guide's title takes focus, and Esc there closes Help, focus back on
+  Help.
 - **MC-R74** *(a full IPv6 address pushing Recent activity's time off
   screen on a phone, #323)* On an iPhone SE, signed in on the deployed
   app over the phone's mobile data, which often gives a full IPv6 address
@@ -4453,3 +4463,5 @@ first.
 - 2026-11-02: #357, New order from Reorder points filled once the
   catalogue answers, after a Retry too, its note counting the lines
   filled: MC-R75 added.
+- 2026-11-02: #212, Esc closing Help from its button before the guide has
+  loaded, and the guide that comes after moving no focus: MC-R76 added.
