@@ -1,6 +1,7 @@
 import { Alert, Snackbar, Stack } from '@mui/material';
 import { type ReactNode, useCallback, useState } from 'react';
 
+import { rem } from '../theme/rem';
 import { ReferencesWhole } from './reference';
 import { type ShowToast, ToastContext } from './toast-context';
 
@@ -61,13 +62,19 @@ export function ToastProvider({
           sx={{ position: 'static' }}
         >
           {/* role=status, so a screen reader announces it without taking
-              focus from whatever the person is doing next. */}
+              focus from whatever the person is doing next.
+
+              From sm up the box is as wide as its words, so a short one
+              ("Received") left the message no room for its floor beside
+              the tick (the theme's MuiAlert) and the tick, words and close
+              stacked (#242). MUI's own snackbar keeps 288 there; below sm
+              the box spans the screen already. */}
           <Alert
             severity="success"
             variant="filled"
             role="status"
             onClose={() => setOpen(false)}
-            sx={{ width: '100%' }}
+            sx={{ width: '100%', minWidth: { sm: rem(288) } }}
           >
             {/* Finished words: their references kept whole (ADR-081). */}
             {message && <ReferencesWhole text={message} />}

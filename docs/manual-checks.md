@@ -3164,6 +3164,12 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R80** *(A short toast stacking its tick, words and close into a
+  square, #242)* As the demo Owner on a computer, in dark mode, Receive
+  on PO-DEMO-11's MELATONIN line with a lot number: the Received toast at
+  the bottom left is one row, its tick, Received and its close side by
+  side. On a phone it spans the screen, one row, as before.
+
 - **MC-R79** *(Edit names labelling every language's fields only 名称 or
   描述, #315)* As the demo Owner in 中文, on 专注胶囊 60 粒, 添加规格
   FOCUS-120CT named 120ct, then 编辑名称. With VoiceOver on (⌘ F5), Tab
@@ -4496,3 +4502,5 @@ first.
   order's line read as a menu button: MC-R78 added.
 - 2026-11-02: #315, Edit names labelling each field with its language,
   each variant's name too: MC-R79 added.
+- 2026-11-02: #242, a short toast keeping one row, its tick, words and
+  close side by side: MC-R80 added.
