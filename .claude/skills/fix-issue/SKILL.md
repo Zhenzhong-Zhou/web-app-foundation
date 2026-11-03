@@ -74,11 +74,15 @@ Worked out, never guessed:
 
 - **Every open pull request's files:** `gh pr list --state open --limit
   100 --json number,headRefName,files`.
-- **Every pushed branch not merged into `main`:** `git fetch origin
-  '+refs/heads/*:refs/remotes/origin/*'`; for each branch but `main` that
-  `git merge-base --is-ancestor origin/<branch> origin/main` says is not
-  merged, `git diff --name-only origin/main...origin/<branch>`. A branch
-  built on the Mac is pushed at each stop of its run, so it shows here.
+- **Every pushed branch still in work:** `git fetch --prune origin
+  '+refs/heads/*:refs/remotes/origin/*'`, so a branch deleted on GitHub
+  is gone here too. For each branch but `main`, skipped when `gh pr list
+  --state all --head <branch> --json state` shows its pull request
+  merged or closed (a branch squashed into `main` is never its
+  ancestor), or `git merge-base --is-ancestor origin/<branch>
+  origin/main` says `main` holds it; otherwise `git diff --name-only
+  origin/main...origin/<branch>`. A branch built on the Mac is pushed at
+  each stop of its run, so it shows here.
 - **The paths after `leave`** in the arguments.
 
 `docs/manual-checks.md` is not on the list: entries in it are settled as

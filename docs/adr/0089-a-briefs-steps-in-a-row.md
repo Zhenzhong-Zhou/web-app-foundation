@@ -327,9 +327,12 @@ checked the same day for ADR-008's amendment:
 
 ### Decision — the files to leave alone, worked out
 
-- **From every open pull request's files and every pushed branch not
-  merged into `main`,** with any paths after `leave`; never typed by the
-  chat.
+- **From every open pull request's files and every pushed branch still
+  in work,** with any paths after `leave`; never typed by the chat. A
+  branch whose pull request is merged or closed is skipped, since one
+  squashed into `main` is never its ancestor; GitHub deletes a merged
+  pull request's branch ("Automatically delete head branches", on since
+  2 November), and the fetch prunes what it deleted.
 - **A branch built on the Mac is pushed at each stop of its run,** so
   its files show. A push to a branch starts no workflow: CI and the docs
   check run on a push to `main` alone, and on pull requests.
