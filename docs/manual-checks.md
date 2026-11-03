@@ -3206,6 +3206,7 @@ first.
   Français (Canada) and 简体中文, no two alike. In English they read Name
   in English, Description in English and FOCUS-120CT: 120ct, in English;
   in Français, Nom en English.
+
 - **MC-R78** *(Grey placeholders flashing before a quick read, and a ⋯
   heard as a plain button, #358)* As the demo Owner on a fast connection:
   Home, Your access on Account, and History from a Stock row's ⋯ show no
@@ -4534,8 +4535,8 @@ first.
   close side by side: MC-R80 added.
 - 2026-11-03: #179, Move everyone saying, once a role is chosen, what its
   holders gain and lose: MC-R81 added.
-- 2026-11-02: #290, Plan run waits for the item's recipes, and a failed
+- 2026-11-03: #290, Plan run waits for the item's recipes, and a failed
   read of them says so: MC-R82 added.
-- 2026-11-02: #304, Plan run's Contract manufacturer leaving a retired
+- 2026-11-03: #304, Plan run's Contract manufacturer leaving a retired
   partner out, as New order's Partner and a sample's Given to do: MC-R83
   added.
