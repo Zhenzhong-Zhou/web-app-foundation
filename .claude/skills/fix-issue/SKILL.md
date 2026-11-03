@@ -19,11 +19,12 @@ same in a cloud session and in Claude Code on the Mac.
   merge, label, close or comment: those are the maintainer's, each given
   to him as a command in the report.
 - **One issue, the smallest change that fixes it.** Past about 20
-  minutes, or more files than the issue names with their tests and
-  `docs/manual-checks.md`, stop: what is done is committed and pushed on
-  its branch, with no pull request, since a cloud session's files are
-  gone when it ends; the report says what is left, and the maintainer
-  says whether the pull request opens.
+  minutes on the fix itself, counted from step 6, since the setup before
+  it can take as long in a cloud session; or more files than the issue
+  names with their tests and `docs/manual-checks.md`: stop. What is done
+  is committed and pushed on its branch, with no pull request, since a
+  cloud session's files are gone when it ends; the report says what is
+  left, and the maintainer says whether the pull request opens.
 - **Each stop in steps 1 to 4 ends the run with nothing committed,** its
   reason in the last line.
 
