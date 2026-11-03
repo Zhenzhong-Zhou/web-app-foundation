@@ -395,3 +395,17 @@ commits name are the list checked before it opens.
 - Built on `fix-issue-skill`, from a second working folder while
   `fix-ups-ci` ran in the first: this amendment, then the skill and the
   docs, a commit each.
+
+### As built, after a day of use (#435, 3 November 2026)
+
+- **The catalogues join `docs/manual-checks.md` off the list of files to
+  leave alone.** Two sessions (#315's, #179's) stopped because
+  `fix-ups-ci` added one line to each catalogue, far from theirs; each
+  went on when told, and merged cleanly.
+- **A choice reaches a session only through its issue.** #245's session
+  found no comment recording the maintainer's choice, so it followed the
+  issue as first written, and was told again. The chat records each
+  choice on its issue before the session starts.
+- Eight issues went through `/fix-issue` in its first day, 2 and 3
+  November: #358, #315, #242, #179, #428, #125, #165 and #245, each
+  merged.

@@ -82,8 +82,10 @@ Worked out, never guessed:
   each stop of its run, so it shows here.
 - **The paths after `leave`** in the arguments.
 
-`docs/manual-checks.md` is not on the list: entries in it are settled as
-the home says when a conflict comes. When the fix needs any other file
+`docs/manual-checks.md` and the catalogues (`client/src/locales/*.json`,
+`server/src/i18n/*.json`) are not on the list: branches add their entries
+in different places, which merge cleanly, and a rare conflict is settled
+as the home says. When the fix needs any other file
 on the list, **stop:** `BLOCKED`, naming the file and the branch or pull
 request that changes it.
 
