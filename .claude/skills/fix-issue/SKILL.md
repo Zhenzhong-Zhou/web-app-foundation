@@ -109,7 +109,9 @@ request that changes it.
 - **A change a person sees:** in `docs/manual-checks.md`, in the same
   commit, a regression check at the top of Regressions, newest first,
   an empty line between entries, numbered one past the highest `MC-R`
-  on `main` and in the files of step 5's branches; and a dated line at
+  on `main` and in the files of step 5's branches. Two sessions started
+  together can still take one number; `scripts/check-docs.mjs` then fails
+  the second on its pull request, which renumbers. And a dated line at
   the end of "Changes to this list", the date
   `TZ=America/Vancouver date +%F`. Nothing a person sees: no check, and
   the pull request says why.

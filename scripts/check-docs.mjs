@@ -40,7 +40,11 @@
  *   test it cites as that test's file has it, and each manual check by
  *   an id docs/manual-checks.md has (rulesFiles);
  * - each file of Claude Code's rules in .claude/rules/ has a paths list,
- *   and each pattern matches a file (claudeRules).
+ *   and each pattern matches a file (claudeRules);
+ * - each manual check's id is given once in docs/manual-checks.md, a
+ *   regression check's MC-R ids included, so two branches that took one
+ *   number fail rather than both stand (manualChecks, ADR-089's
+ *   amendment).
  *
  * Then the notice, which never fails a run: each rules file this branch
  * left alone, against origin/main, though it changed the file's tests or
@@ -557,6 +561,40 @@ function rulesFiles({ files }) {
   };
 }
 
+/** A manual check's id where docs/manual-checks.md gives it, MC-R ids included. */
+const GIVEN_CHECK = /^[ \t]*- \*\*(MC-R?\d+)\*\*/gm;
+
+/**
+ * Each manual check's id given once in docs/manual-checks.md (ADR-089's
+ * amendment): two branches started together can each take the next free
+ * MC-R number, and once both are merged, two checks would answer to one
+ * id. The second is reported, with the line of the first.
+ */
+function manualChecks({ files }) {
+  if (!files.has(MANUAL_CHECKS)) {
+    return { failures: [], summary: `Manual checks: no ${MANUAL_CHECKS}.` };
+  }
+  const text = readFileSync(path.join(ROOT, MANUAL_CHECKS), "utf8");
+  const lineOf = lineCounter(text);
+  const first = new Map();
+  const failures = [];
+  for (const match of text.matchAll(GIVEN_CHECK)) {
+    const id = match[1];
+    const line = lineOf(match.index);
+    if (first.has(id)) {
+      failures.push(
+        `${MANUAL_CHECKS}:${line}: ${id} — given again, first at line ${first.get(id)}: take the next free number`,
+      );
+    } else {
+      first.set(id, line);
+    }
+  }
+  return {
+    failures,
+    summary: `Manual checks in ${MANUAL_CHECKS}: ${first.size}, each id given once.`,
+  };
+}
+
 /** A file of Claude Code's rules, which it loads from any folder under .claude/rules/. */
 const CLAUDE_RULE = /^\.claude\/rules\/.+\.md$/;
 
@@ -733,6 +771,7 @@ if (import.meta.main) {
     links(repository),
     pathsAsCode(repository),
     rulesFiles(repository),
+    manualChecks(repository),
     claudeRules(repository),
     checkAdrs(),
   ];

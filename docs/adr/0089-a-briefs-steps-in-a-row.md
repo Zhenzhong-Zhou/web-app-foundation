@@ -337,6 +337,15 @@ checked the same day for ADR-008's amendment:
   its files show. A push to a branch starts no workflow: CI and the docs
   check run on a push to `main` alone, and on pull requests.
 
+### Decision — each manual check's id given once, checked
+
+Two sessions started together can each take the next free `MC-R`
+number, since neither sees the other's branch until it is pushed.
+`scripts/check-docs.mjs` fails a manual check's id given twice in
+`docs/manual-checks.md`, naming the first, so CI stops the second pull
+request, which renumbers, whatever the cause; the chat no longer hands
+out numbers.
+
 ### Decision — a pull request closes every issue it fixes
 
 engineering.md's "Closes #N for each issue it fixes" holds for every
@@ -351,6 +360,9 @@ commits name are the list checked before it opens.
 - **A saved prompt to paste:** the checks would stay by hand.
 - **The files to leave alone named by the chat:** it misses a branch
   nobody named.
+- **The chat handing each session its regression check's number,**
+  `/fix-issue <N> mc <n>`: it holds only when the chat remembers, where a
+  check in CI holds whatever the cause.
 
 ### Deferred — each with what brings it in
 
@@ -363,8 +375,10 @@ commits name are the list checked before it opens.
 
 ### Consequences
 
-- `.claude/skills/fix-issue/SKILL.md`. engineering.md's "Cloud sessions"
-  says what the skill does not: choosing, merging and conflicts.
+- `.claude/skills/fix-issue/SKILL.md`, and `scripts/check-docs.mjs`
+  with its tests for each manual check's id. engineering.md's "Cloud
+  sessions" says what the skill does not: choosing, merging and
+  conflicts.
   "Issues and labels" says every pull request closes what it fixes.
   `CLAUDE.md`'s skills and the README's "Which tool, when" and its list
   of skills name `/fix-issue`.
