@@ -372,7 +372,11 @@ function LookupField({
   );
 }
 
-/** The answer as rows: each group's records, then its "Show all". */
+/**
+ * The answer as rows: each group's records, then its "Show all" when one of
+ * them is not a close match. Close matches are the lookup's alone
+ * (ADR-056), so a list opened for them alone would find nothing (#311).
+ */
 function optionsOf(response: LookupResponse, query: string): Option[] {
   return response.groups.flatMap(({ kind, results }) => {
     const rows: Option[] = results.map((result) => ({
@@ -381,7 +385,8 @@ function optionsOf(response: LookupResponse, query: string): Option[] {
       result,
     }));
     const to = listOf(kind, query);
-    return to ? [...rows, { type: 'all', kind, to }] : rows;
+    const listed = results.some((result) => !result.close);
+    return to && listed ? [...rows, { type: 'all', kind, to }] : rows;
   });
 }
 
