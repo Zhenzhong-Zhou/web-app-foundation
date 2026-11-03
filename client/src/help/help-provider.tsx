@@ -61,6 +61,13 @@ export function HelpProvider({ children }: { children: ReactNode }) {
       active instanceof HTMLElement && active !== document.body ? active : null;
   };
 
+  // A guide still loading as Help goes, drawn as it slides away, takes no
+  // focus when it comes (#212).
+  const shut = () => {
+    takeFocusRef.current = false;
+    setOpen(false);
+  };
+
   const choose = (guide: GuideName, section: string | null) => {
     marks.current += 1;
     takeFocusRef.current = true;
@@ -76,7 +83,7 @@ export function HelpProvider({ children }: { children: ReactNode }) {
     request: chosen ? `chosen-${chosen.mark}` : location.key,
     toggle: () => {
       if (open) {
-        setOpen(false);
+        shut();
         return;
       }
       remember();
@@ -87,7 +94,7 @@ export function HelpProvider({ children }: { children: ReactNode }) {
     },
     close: () => {
       restore.current = true;
-      setOpen(false);
+      shut();
     },
     learnMore: ({ guide, section }) => {
       if (!open) remember();

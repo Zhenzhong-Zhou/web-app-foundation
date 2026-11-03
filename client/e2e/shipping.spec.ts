@@ -137,6 +137,18 @@ test('ships a sale in two parts, by lot, and closes the order', async ({
   await expect(ship).toBeHidden();
   await expect(page.getByRole('status')).toContainText('Shipped');
 
+  // A short toast keeps one row, its tick, words and close side by side,
+  // not each part on a line of its own in a box as narrow as "Shipped"
+  // (#242).
+  const toast = page.getByRole('status');
+  const [tick, words, close] = await Promise.all([
+    toast.locator('.MuiAlert-icon').boundingBox(),
+    toast.locator('.MuiAlert-message').boundingBox(),
+    toast.getByRole('button', { name: 'Close' }).boundingBox(),
+  ]);
+  expect(words!.y).toBeLessThan(tick!.y + tick!.height);
+  expect(close!.y).toBeLessThan(words!.y + words!.height);
+
   // The shipment is listed with its lots, on the Shipments tab (ADR-055):
   // the packing-slip view.
   await page.getByRole('tab', { name: /Shipments/ }).click();

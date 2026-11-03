@@ -45,7 +45,7 @@ file is kept is in the [README](README.md).
   [test](../../client/src/production/create-run-dialog.test.tsx) "waits for the item’s recipes before Plan run, then plans with the active one" ·
   [test](../../client/src/production/create-run-dialog.test.tsx) "says the item’s recipes could not be loaded, and plans nothing" ·
   [test](../../client/e2e/production.spec.ts) "plans, releases by lot, records output and closes a run" ·
-  MC-R75
+  MC-R82
 - **Uses shows what the run will take of each component at the quantity
   typed, worked out as release will issue it,** to four decimal places. A
   component the maker supplies says so.

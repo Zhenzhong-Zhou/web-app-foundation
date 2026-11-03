@@ -1,4 +1,10 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useRef } from 'react';
 import {
@@ -26,14 +32,26 @@ import { LearnMore } from './learn-more';
  * unless a test says otherwise.
  */
 const failing = vi.hoisted(() => ({ loads: 0, error: null as unknown }));
+/**
+ * A load held until the test lets it go, as on a slow connection, and the
+ * load once let go (#212).
+ */
+const held = vi.hoisted(() => ({
+  until: null as Promise<void> | null,
+  load: null as Promise<string> | null,
+}));
 vi.mock('./guides', async (original) => {
   const actual = await original<typeof import('./guides')>();
   return {
     ...actual,
-    loadGuide: (...args: Parameters<typeof actual.loadGuide>) =>
-      failing.loads-- > 0
-        ? Promise.reject(failing.error ?? new Error('Failed to fetch'))
-        : actual.loadGuide(...args),
+    loadGuide: (...args: Parameters<typeof actual.loadGuide>) => {
+      if (failing.loads-- > 0) {
+        return Promise.reject(failing.error ?? new Error('Failed to fetch'));
+      }
+      if (!held.until) return actual.loadGuide(...args);
+      held.load = held.until.then(() => actual.loadGuide(...args));
+      return held.load;
+    },
   };
 });
 
@@ -211,6 +229,40 @@ describe('Help', () => {
 
     await waitFor(() => expect(button).toHaveFocus());
     expect(button).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  /**
+   * Esc pressed before the guide has loaded, as on a slow connection: focus
+   * is still on the button, and Help closes from there; the guide that comes
+   * after moves no focus (#212).
+   */
+  it('closes on Esc before the guide has loaded, and the guide then moves no focus', async () => {
+    let release = () => {};
+    held.until = new Promise((resolve) => {
+      release = resolve;
+    });
+    try {
+      renderFrame('/orders');
+      const button = screen.getByRole('button', { name: 'Help' });
+
+      await userEvent.click(button);
+      expect(help()).toBeInTheDocument();
+      expect(button).toHaveFocus();
+      await userEvent.keyboard('{Escape}');
+
+      expect(button).toHaveAttribute('aria-expanded', 'false');
+      expect(button).toHaveFocus();
+
+      // The guide comes while Help slides away, and is drawn there.
+      await act(async () => {
+        release();
+        await held.load;
+      });
+      expect(button).toHaveFocus();
+    } finally {
+      held.until = null;
+      held.load = null;
+    }
   });
 
   /**

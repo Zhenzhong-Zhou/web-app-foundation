@@ -236,6 +236,7 @@ work under updates it.
 | The planning skill changed             | After its merge, on `main`: `node scripts/pack-chat-skill.mjs`; replace it in claude.ai's Settings → Skills; walk `evals.md`                    |
 | Before drafting an ADR                 | `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n>`, then attach `tmp/adr-NNN/check.txt` to the chat                                  |
 | Building from a brief                  | `/build-from-brief <brief> from <N>`; paste only the stops into the chat                                                                        |
+| A small issue, in a cloud session      | `/fix-issue <N>`; merge its pull request with Squash and merge                                                                                  |
 | Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                                          |
 | Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                                                              |
 | After a merge                          | `scripts/prune-branches.sh --yes`                                                                                                               |
@@ -408,12 +409,13 @@ licences.
 - [`docs/principles.md`](docs/principles.md) — what the product aims for, and
   the ADRs that hold to each aim
 - [`docs/handoff.md`](docs/handoff.md) — where the work stands and what is next
-- [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with six project
+- [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with seven project
   skills in `.claude/skills/`: `/code-review`, `/usability-walkthrough`,
-  `/production-readiness`, `/build-from-brief`, `/rules-file` and `/triage`;
-  one subagent, `brief-step`, in `.claude/agents/`, which runs a brief's
-  step (ADR-089); and the chat's planning skill, `plan-feature`, in
-  `.claude/chat-skills/`, uploaded to claude.ai (ADR-088)
+  `/production-readiness`, `/build-from-brief`, `/rules-file`, `/triage`
+  and `/fix-issue`; one subagent, `brief-step`, in `.claude/agents/`, which
+  runs a brief's step (ADR-089); and the chat's planning skill,
+  `plan-feature`, in `.claude/chat-skills/`, uploaded to claude.ai
+  (ADR-088)
 - [`docs/releases/`](docs/releases) — the notes each tagged release was made with
 
 The ADRs and `docs/conventions.md` are both worth reading before a change that

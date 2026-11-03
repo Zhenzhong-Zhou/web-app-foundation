@@ -50,9 +50,9 @@ With no arguments.
      failed.
    - **A small bug,** and anything else that names code, a setting or a
      document: read on `origin/main` (`git show origin/main:<path>`),
-     with `git log origin/main --oneline --grep "#<N>"` for a commit
-     naming it. Fixed: proposed for closing as `completed`, naming the
-     commit or pull request.
+     with `git log --oneline -E --grep '#<N>([^0-9]|$)' origin/main` for
+     a commit naming it, not a longer number. Fixed: proposed for closing
+     as `completed`, naming the commit or pull request.
    - **A check that cannot be made,** as a run past its artifact's 30
      days or no run since, is said in its row, never guessed.
 3. **The proposal, `tmp/triage.md`,** the home's step 3, as a table with a

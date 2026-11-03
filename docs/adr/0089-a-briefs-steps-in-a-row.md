@@ -272,3 +272,126 @@ the Context assumed:
   - *The loop's bookkeeping as a script* (the steps table, the stop
     file, the summaries' headings), the model only starting each step:
     a run that misreads the table or changes a summary as it copies it.
+
+## Amendment (November 2026) — a small issue fixed by `/fix-issue <N>`, in a cloud session or on the Mac
+
+Since 24 October, small issues have gone to cloud sessions (Claude Code
+on the web), each prompt some twenty lines the chat wrote again every
+time from the same rules in engineering.md's "Cloud sessions": the
+issue, the branch, the author, the regression check's number, the files
+to leave alone, the verify, the pull request and the stop rule. On 2
+November, two of the four sessions started that evening found their
+issue already fixed on `main`: pull request #361 had fixed seven issues
+and closed none, its description without a "Closes" line for its riders,
+and the check that would have caught it was one the chat did by hand and
+skipped. The maintainer chose each decision below as recommended, 2
+November 2026; it is decided here because this ADR holds the skills that
+run work the chat plans.
+
+Checked before drafting, for the areas docs and ops, ops having been
+checked the same day for ADR-008's amendment:
+
+- **Fired, and taken here:** none.
+- **Not fired, and left:**
+  - #319 (`later`), a `/file-issue` skill: filing an issue, not fixing
+    one.
+  - #321 (`later`), the general skills as a plugin: `/fix-issue` reads
+    this repository's own rules, so it stays here; it joins the
+    candidates for the plugin, under this ADR's Deferred.
+  - #292 (`when-touched`): its last parts each wait for their own batch,
+    as its comment of 2 November says.
+  - This ADR's Deferred, steps in parallel in worktrees: not fired; the
+    second working folder this branch was built in was by hand.
+  - Open decisions: nothing on skills or sessions.
+- **Found while checking:** besides the six issues #361 fixed and left
+  open, closed by hand on 2 November (#222, #256, #265, #301, #309,
+  #341; #313 earlier), every open issue that a commit on `main` names
+  was checked: each is fixed only in part, or only mentioned.
+
+### Decision — `/fix-issue <N>`: one small issue, end to end
+
+- **A skill, `.claude/skills/fix-issue/`, run only when a prompt names
+  it,** in a cloud session or in Claude Code on the Mac. A cloud
+  session's prompt is that one line, `leave <path> …` after it when a
+  branch is not pushed.
+- **Its order:** the Node; whether a commit on `main` already fixes the
+  issue, stopping with the command that closes it; the issue whole,
+  stopping on a choice left open, a `later` or a `decision` label, a
+  sweep or the large seed; the files to leave alone; the fix, with a
+  test that fails before and a regression check when a person sees the
+  change; `scripts/verify.sh --quick`; one commit as the maintainer; the
+  push; a pull request that closes the issue.
+- **Two rules bend for it, said where they do:** it takes no dependency
+  commit, against `docs/conventions.md`'s Dependencies, since a fix this
+  small stays one commit and the next branch's dependency step takes
+  what is due; and without Docker, as in a cloud session, it pushes after
+  `scripts/verify.sh --quick`, leaving ShellCheck and the check against
+  `main` to CI. Where Docker answers, as on the Mac, the verify runs in
+  full before the push, as CLAUDE.md asks.
+- **It changes nothing on GitHub but its branch and pull request:**
+  merging, labels, closes and comments stay the maintainer's, as
+  `/triage`'s do.
+
+### Decision — the files to leave alone, worked out
+
+- **From every open pull request's files and every pushed branch still
+  in work,** with any paths after `leave`; never typed by the chat. A
+  branch whose pull request is merged or closed is skipped, since one
+  squashed into `main` is never its ancestor; GitHub deletes a merged
+  pull request's branch ("Automatically delete head branches", on since
+  2 November), and the fetch prunes what it deleted.
+- **A branch built on the Mac is pushed at each stop of its run,** so
+  its files show. A push to a branch starts no workflow: CI and the docs
+  check run on a push to `main` alone, and on pull requests.
+
+### Decision — each manual check's id given once, checked
+
+Two sessions started together can each take the next free `MC-R`
+number, since neither sees the other's branch until it is pushed.
+`scripts/check-docs.mjs` fails a manual check's id given twice in
+`docs/manual-checks.md`, naming the first, so CI stops the second pull
+request, which renumbers, whatever the cause; the chat no longer hands
+out numbers.
+
+### Decision — a pull request closes every issue it fixes
+
+engineering.md's "Closes #N for each issue it fixes" holds for every
+pull request, a rider included, not only the fix-ups'. The issues its
+commits name are the list checked before it opens.
+
+### Considered and not done
+
+- **The `@claude` workflow on an issue's comment,** given the right to
+  push: it runs on the maintainer's plan, not the cloud credit, and opens
+  a path for writing from a comment. `claude.yml` stays read-only.
+- **A saved prompt to paste:** the checks would stay by hand.
+- **The files to leave alone named by the chat:** it misses a branch
+  nobody named.
+- **The chat handing each session its regression check's number,**
+  `/fix-issue <N> mc <n>`: it holds only when the chat remembers, where a
+  check in CI holds whatever the cause.
+
+### Deferred — each with what brings it in
+
+- **Several small issues of one area in one session and one pull
+  request.** Trigger: a run of issues in one area, each too small for a
+  session of its own.
+- **The chat's choosing as a script** (open, small, no choice left, not
+  fixed on `main`). Trigger: an issue given to a session that a script
+  would have ruled out.
+
+### Consequences
+
+- `.claude/skills/fix-issue/SKILL.md`, and `scripts/check-docs.mjs`
+  with its tests for each manual check's id. engineering.md's "Cloud
+  sessions" says what the skill does not: choosing, merging and
+  conflicts.
+  "Issues and labels" says every pull request closes what it fixes.
+  `CLAUDE.md`'s skills and the README's "Which tool, when" and its list
+  of skills name `/fix-issue`.
+- The planning skill says a cloud session's prompt is `/fix-issue <N>`,
+  and is uploaded again after the merge (ADR-088's amendment).
+- No API change, no migration and nothing a person sees in the app.
+- Built on `fix-issue-skill`, from a second working folder while
+  `fix-ups-ci` ran in the first: this amendment, then the skill and the
+  docs, a commit each.

@@ -39,6 +39,10 @@ allows, refuses and works out there.
   first commit; chores are commits of their own. Fixes go on the branch,
   never in a follow-up pull request.
 - Commits authored `Zhenzhong Zhou <bob0823.zhou@gmail.com>`.
+- Each issue the branch's commits name and fix has `Closes #N` in the
+  pull request's description, a rider's included, or `Part of #N` when
+  fixed in part (ADR-089's amendment): a fix that closes nothing leaves
+  its issue open for a later session to fix again.
 - `docs/handoff.md` updated when the state of the work changed, and
   `docs/conventions.md` when a pattern did.
 - A commit that changes what a person sees, or a rule they work under,

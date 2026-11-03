@@ -123,6 +123,66 @@ describe('a role’s page', () => {
     ).toEqual(['Viewer']);
   });
 
+  it('says what its holders gain and lose once a role is chosen', async () => {
+    const user = userEvent.setup();
+    const locked = ['users.view', 'roles.view', 'organizations.view'] as const;
+    renderAs(
+      ['roles.view', 'roles.assign'],
+      dock({
+        holderCount: 1,
+        holders: [PAT],
+        permissions: [...locked, 'invoices.view'],
+      }),
+      [
+        builtInRole('Viewer', { permissions: [...locked, 'stock.view'] }),
+        {
+          id: 'role-packers',
+          name: 'Packers',
+          description: null,
+          builtIn: false,
+          permissions: [...locked, 'invoices.view'],
+          holderCount: 0,
+          mayGive: true,
+        },
+      ],
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Move everyone to…' }),
+    );
+    const dialog = screen.getByRole('dialog', {
+      name: 'Move everyone from Dock crew',
+    });
+    await user.click(within(dialog).getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: 'Viewer' }));
+
+    const gains = within(dialog).getByRole('region', {
+      name: 'With Viewer, they can also',
+    });
+    expect(within(gains).getByText('Stock and locations')).toBeVisible();
+    expect(
+      within(gains).getByText('See what is on hand and each lot’s history.'),
+    ).toBeVisible();
+    const loses = within(dialog).getByRole('region', {
+      name: 'They can no longer',
+    });
+    expect(within(loses).getByText('Invoices and returns')).toBeVisible();
+    expect(
+      within(loses).getByText('See invoices and credit notes.'),
+    ).toBeVisible();
+    expect(within(loses).queryByText('Stock and locations')).toBeNull();
+
+    // A role that can do the same: nothing to gain or lose.
+    await user.click(within(dialog).getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: 'Packers' }));
+    expect(
+      within(dialog).getByText(
+        'With Packers, what they can do stays the same.',
+      ),
+    ).toBeVisible();
+    expect(within(dialog).queryByRole('region')).toBeNull();
+  });
+
   it('keeps a built-in role as it is: no Edit or Delete, and a copy for whoever may make one', async () => {
     const viewer = dock({
       id: 'role-viewer',

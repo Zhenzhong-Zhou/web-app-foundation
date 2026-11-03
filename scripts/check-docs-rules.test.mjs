@@ -312,3 +312,49 @@ test("the notice names a rules file left alone while its tests or area changed, 
   write(root, "docs/rules/invoices.md", "# Invoices\n\nRewritten.\n");
   assert.match(check(root).stdout, /nothing to notice/);
 });
+
+test("each manual check's id is given once, a regression check's included", (t) => {
+  const root = fixture(t, {
+    "docs/manual-checks.md": `# Manual checks
+
+- **MC-101** Issue an invoice.
+- **MC-102** Credit it. As MC-101 does, named again in prose.
+
+## Regressions
+
+- **MC-R2** *(the newer)* Check it.
+
+- **MC-R1** *(the older)* Check it.
+`,
+  });
+
+  const run = check(root);
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(
+    run.stdout,
+    /^Manual checks in docs\/manual-checks.md: 4, each id given once\.$/m,
+  );
+});
+
+test("a manual check's id given twice fails at the second, naming the first", (t) => {
+  const root = fixture(t, {
+    "docs/manual-checks.md": `# Manual checks
+
+- **MC-101** Issue an invoice.
+
+## Regressions
+
+- **MC-R2** *(one branch's)* Check it.
+
+- **MC-R2** *(another branch's, started together)* Check it.
+
+- **MC-R1** *(the older)* Check it.
+  - **MC-101** Indented, still given.
+`,
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    "docs/manual-checks.md:9: MC-R2 — given again, first at line 7: take the next free number",
+    "docs/manual-checks.md:12: MC-101 — given again, first at line 3: take the next free number",
+  ]);
+});

@@ -616,7 +616,7 @@ Paper is checked first because it must not change at all.
   Duplicate side by side. On an order with nothing left to ship, Close order
   is the filled one.
 - **MC-1521** The summary's Quantities read 600 each ordered, 400 shipped, 200
-  still to ship in bold, and 7 returned with "does not add to still to ship"
+  still to ship in bold, and 7 returned with "does not add to still to ship"  
   under it. Void a shipment on another order: "not counting 1 voided shipment"
   appears under its shipped figure. An order mixing units (a blend in kg with
   bottles) shows "Complete 0 of 2" instead.
@@ -3164,14 +3164,14 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
-- **MC-R76** *(Plan run offering a retired partner as contract
+- **MC-R83** *(Plan run offering a retired partner as contract
   manufacturer, #304)* As the demo Owner, Partners with Retired pressed
   shows Old Mill Herbs. On Production, Plan a run and open Contract
   manufacturer: We make it ourselves, then the partners in use, with no
   Old Mill Herbs. Type `mill`: We make it ourselves alone, and still no
   Old Mill Herbs.
 
-- **MC-R75** *(Plan run planning a run without its recipe when the item's
+- **MC-R82** *(Plan run planning a run without its recipe when the item's
   recipes came late, #290)* As the demo Owner on Production, in Chrome,
   DevTools → Network: Disable cache and Slow 4G. Plan a run and choose
   MAGCAP-SAMPLE in Making: Plan run stays off until Recipe shows "v1
@@ -3182,6 +3182,66 @@ first.
   recipes. under Making, no "No promoted recipe", and Plan run stays off
   with every field filled. In 中文 无法加载此物品的配方。
 
+- **MC-R81** *(Move everyone saying nothing of what its holders gain and
+  lose, #179)* As the demo Owner, on Viewer's page in Settings → Roles,
+  Move everyone to…, then Warehouse under Move them to. Beneath it, With
+  Warehouse, they can also lists Stock and locations, Receive, ship and
+  move stock., and Orders, Receive what was ordered; ship what was sold.
+  They can no longer lists six areas, among them Orders, See their
+  prices., and Invoices and returns, See invoices, credit notes, and
+  return authorizations. Choose Sales instead: both lists change with it.
+  Cancel.
+
+- **MC-R80** *(A short toast stacking its tick, words and close into a
+  square, #242)* As the demo Owner on a computer, in dark mode, Receive
+  on PO-DEMO-11's MELATONIN line with a lot number: the Received toast at
+  the bottom left is one row, its tick, Received and its close side by
+  side. On a phone it spans the screen, one row, as before.
+
+- **MC-R79** *(Edit names labelling every language's fields only 名称 or
+  描述, #315)* As the demo Owner in 中文, on 专注胶囊 60 粒, 添加规格
+  FOCUS-120CT named 120ct, then 编辑名称. With VoiceOver on (⌘ F5), Tab
+  through the dialog: each field is read with its language, 名称（English）,
+  描述（English） and FOCUS-120CT：120ct（English）, then the same for
+  Français (Canada) and 简体中文, no two alike. In English they read Name
+  in English, Description in English and FOCUS-120CT: 120ct, in English;
+  in Français, Nom en English.
+- **MC-R78** *(Grey placeholders flashing before a quick read, and a ⋯
+  heard as a plain button, #358)* As the demo Owner on a fast connection:
+  Home, Your access on Account, and History from a Stock row's ⋯ show no
+  grey placeholder before their content; with the network throttled to
+  Slow 4G (DevTools → Network), each shows one while it reads. With
+  VoiceOver on, a Stock row's ⋯ and the ⋯ on PO-DEMO-12's line read as a
+  menu button, collapsed, then expanded once open.
+
+- **MC-R77** *(Show all after a close match alone opening an empty list,
+  #311)* As the demo Owner, in the top bar's lookup, type a word that only
+  nearly matches a partner, for example focus: the Partners group shows
+  the close match, with no Show all.
+
+- **MC-R76** *(Esc before the guide had loaded closing nothing, then
+  focus moving into Help, #212)* As the demo Owner on Orders, in Chrome on
+  a computer, with the page loaded: DevTools → Network, Disable cache and
+  a custom throttling profile of 5000 ms latency, so a guide takes seconds
+  to come. Tab to Help in the bar, press Enter, then Esc at once, before
+  the guide shows: Help closes, its button no longer pressed, and focus
+  stays on it. Once the guide's file has arrived (Network), focus is
+  still on Help and Help stays closed. Open Help again and wait: the
+  guide's title takes focus, and Esc there closes Help, focus back on
+  Help.
+
+- **MC-R75** *(New order from Reorder points left unfilled after a failed
+  catalogue read, yet its note counting the lines, #357)* On a fresh demo,
+  as the Owner, Reorder points on Low: choose D3-1000-120 and ELDER-250.
+  Raise the revision as section 34 says, then press Raise a purchase
+  order: A new version is being installed, in the form's place. Put the
+  revision back and restart the server: within a minute New order reads
+  again by itself and has two lines, D3-1000-120 at 96 and ELDER-250 at
+  134, under the note "Filled from Reorder points: 2 lines at their
+  suggested quantities. …". With `*products/variants*` blocked
+  (DevTools → Network request blocking), raise it again: Could not load
+  partners and products., one empty line, and no note.
+
 - **MC-R74** *(a full IPv6 address pushing Recent activity's time off
   screen on a phone, #323)* On an iPhone SE, signed in on the deployed
   app over the phone's mobile data, which often gives a full IPv6 address
@@ -3189,6 +3249,7 @@ first.
   Recent activity shows that address under its event, wrapped, with no
   From column, and When shows the time, with nothing scrolling sideways.
   The same in English, Français and 中文.
+
 - **MC-R73** *(Enter in Receive stock with no location focusing a hidden
   input, #310)* As the demo Owner, on Inventory with no location chosen,
   open Receive stock, choose an item, type 5 in Quantity and press Enter:
@@ -4457,8 +4518,24 @@ first.
   address shows the time, with nothing scrolling sideways: MC-R74 added.
 - 2026-11-02: #310, in Receive stock, Enter with no location names the
   field and focuses it, as every empty field there does: MC-R73.
+- 2026-11-02: #357, New order from Reorder points filled once the
+  catalogue answers, after a Retry too, its note counting the lines
+  filled: MC-R75 added.
+- 2026-11-02: #212, Esc closing Help from its button before the guide has
+  loaded, and the guide that comes after moving no focus: MC-R76 added.
+- 2026-11-02: #311, the lookup offering Show all only for a group with a
+  match that is not a close one: MC-R77 added.
+- 2026-11-02: #358, Home, Your access and a Stock row's History drawing
+  their placeholder only for a slow read, and the ⋯ on a Stock row and an
+  order's line read as a menu button: MC-R78 added.
+- 2026-11-02: #315, Edit names labelling each field with its language,
+  each variant's name too: MC-R79 added.
+- 2026-11-02: #242, a short toast keeping one row, its tick, words and
+  close side by side: MC-R80 added.
+- 2026-11-03: #179, Move everyone saying, once a role is chosen, what its
+  holders gain and lose: MC-R81 added.
 - 2026-11-02: #290, Plan run waits for the item's recipes, and a failed
-  read of them says so: MC-R75 added.
+  read of them says so: MC-R82 added.
 - 2026-11-02: #304, Plan run's Contract manufacturer leaving a retired
-  partner out, as New order's Partner and a sample's Given to do: MC-R76
+  partner out, as New order's Partner and a sample's Given to do: MC-R83
   added.
