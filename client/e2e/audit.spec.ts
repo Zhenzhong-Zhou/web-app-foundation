@@ -73,12 +73,6 @@ test('tells a Viewer they cannot read it, without pretending otherwise', async (
   page,
   viewerApi,
 }) => {
-  /**
-   * Cleared first: the page arrives with the shared owner's sid from
-   * storageState, and adding a second cookie of the same name for the same
-   * host leaves it unspecified which one the browser sends.
-   */
-  await page.context().clearCookies();
   await signInAs(page, viewerApi);
 
   await page.goto('/audit');
