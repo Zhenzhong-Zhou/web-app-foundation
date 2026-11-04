@@ -7,7 +7,7 @@ An order is what you buy from a supplier or sell to a customer. A purchase bring
 ## Raise an order {#raise}
 
 1. Press **Raise an order**.
-2. Choose the partner, and whether you are **Buying from them** or **Selling to them**.
+2. Choose **Selling** or **Buying**, then the partner. From Reorder points, it is **Buying** already.
 3. Add each item and its quantity. A price can wait: left blank, the partner’s price list supplies it when there is one.
 4. Press **Raise as draft**. Nothing moves yet, and you can still change anything.
 5. Once the partner agrees, press **Confirm**.

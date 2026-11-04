@@ -79,12 +79,52 @@ async function raise(user: ReturnType<typeof userEvent.setup>) {
   await screen.findByText('The order');
 }
 
+/**
+ * Selling or Buying, asked first with neither chosen (#454): a partner may
+ * be a customer or a supplier, so the form cannot tell, and saving without
+ * an answer says so at the field.
+ */
+describe('CreateOrderPage Direction', () => {
+  it('raises nothing until Selling or Buying is chosen, said at the field', async () => {
+    const sent = serve();
+    renderPage();
+    const user = userEvent.setup();
+
+    const selling = await screen.findByRole('radio', { name: /^Selling/ });
+    expect(selling).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: /^Buying/ })).not.toBeChecked();
+
+    await user.click(await screen.findByRole('combobox', { name: 'Partner' }));
+    await user.click(await screen.findByRole('option', { name: /Acme/ }));
+    await user.click(screen.getByRole('combobox', { name: 'Item' }));
+    await user.click(await screen.findByRole('option', { name: /PLAIN-1/ }));
+    await user.type(screen.getByRole('textbox', { name: 'Quantity' }), '5');
+    await user.click(screen.getByRole('button', { name: 'Raise as draft' }));
+
+    expect(
+      screen.getByRole('group', { name: 'Direction' }),
+    ).toHaveAccessibleDescription('Choose Selling or Buying.');
+    expect(selling).toHaveFocus();
+    expect(sent.body).toBeUndefined();
+
+    await user.click(selling);
+    expect(
+      screen.queryByText('Choose Selling or Buying.'),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Raise as draft' }));
+    await screen.findByText('The order');
+
+    expect(sent.body).toMatchObject({ direction: 'sale' });
+  });
+});
+
 describe('CreateOrderPage Deliver to', () => {
   it('starts at the one site there is, and sends it', async () => {
     const sent = serve();
     renderPage();
     const user = userEvent.setup();
 
+    await user.click(await screen.findByRole('radio', { name: /^Buying/ }));
     expect(
       await screen.findByRole('combobox', { name: 'Deliver to' }),
     ).toHaveTextContent('Main Site');
@@ -98,6 +138,7 @@ describe('CreateOrderPage Deliver to', () => {
     renderPage();
     const user = userEvent.setup();
 
+    await user.click(await screen.findByRole('radio', { name: /^Buying/ }));
     await user.click(
       await screen.findByRole('combobox', { name: 'Deliver to' }),
     );
@@ -195,11 +236,12 @@ describe('CreateOrderPage Partner', () => {
 
 /**
  * Raise a purchase order on Reorder points (ADR-085): New order opens as a
- * purchase with a line per chosen item at its suggestion, a note saying
- * so, and the supplier left to choose; nothing is saved until it is raised.
+ * purchase, not asking (#454), with a line per chosen item at its
+ * suggestion, a note saying so, and the supplier left to choose; nothing
+ * is saved until it is raised.
  */
 describe('CreateOrderPage filled from Reorder points', () => {
-  it('opens with a line per item at its suggestion, and raises them as typed', async () => {
+  it('opens as a purchase with a line per item at its suggestion, and raises them as typed', async () => {
     const sent = serve();
     renderPage(
       fillState({
@@ -223,9 +265,7 @@ describe('CreateOrderPage filled from Reorder points', () => {
           .map((box) => (box as HTMLInputElement).value),
       )
       .toEqual(['2000', '12.5']);
-    expect(
-      screen.getByRole('combobox', { name: 'Direction' }),
-    ).toHaveTextContent('Buying from them');
+    expect(screen.getByRole('radio', { name: /^Buying/ })).toBeChecked();
     expect(screen.getByRole('combobox', { name: 'Partner' })).toHaveValue('');
     expect(sent.body).toBeUndefined();
 
