@@ -1,6 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
 import { inArray } from 'drizzle-orm';
-import { Client } from 'pg';
 import sharp from 'sharp';
 
 import {
@@ -18,6 +17,7 @@ import {
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import { captureStatements, type SentStatement } from './utils/statements';
 
 interface LookupResponse {
   groups: {
@@ -226,18 +226,10 @@ describe('Lookup (e2e)', () => {
     const alpha = await stocked('alpha');
     await createPartner(alpha.agent, { name: 'Focus Health' });
 
-    // Every statement goes through pg's Client#query, as the plan check
-    // records them (perf/capture.ts); read before the spy is restored,
-    // which forgets them.
-    const sent = vi.spyOn(Client.prototype, 'query');
-    let groups: LookupResponse['groups'];
-    let statements: string[];
-    try {
-      groups = await lookup(alpha, 'fokus');
-      statements = lookupStatements(sent.mock.calls, sent.mock.contexts);
-    } finally {
-      sent.mockRestore();
-    }
+    const { result: groups, statements: sent } = await captureStatements(() =>
+      lookup(alpha, 'fokus'),
+    );
+    const statements = lookupStatements(sent);
 
     // Close matches in two kinds, so the prefixes are read too.
     expect(groups.map((group) => group.kind)).toEqual(['item', 'partner']);
@@ -447,27 +439,22 @@ describe('Lookup (e2e)', () => {
 });
 
 /**
- * The statements one lookup sent, from what a spy on pg's Client#query
- * recorded: on the connection whose transaction set the close-match
- * threshold, from that setting up to its commit. Begin and commit are the
- * transaction's own, not the lookup's statements.
+ * The statements one lookup sent, of all a request sent: on the connection
+ * whose transaction set the close-match threshold, from that setting up to
+ * its commit. Begin and commit are the transaction's own, not the lookup's
+ * statements.
  */
-function lookupStatements(calls: unknown[][], clients: unknown[]): string[] {
-  const texts = calls.map(([config]) =>
-    typeof config === 'string'
-      ? config
-      : ((config as { text?: string } | null)?.text ?? ''),
-  );
-  const start = texts.findIndex((text) =>
+function lookupStatements(sent: SentStatement[]): string[] {
+  const start = sent.findIndex(({ text }) =>
     text.includes('pg_trgm.word_similarity_threshold'),
   );
   if (start < 0) return [];
 
   const statements: string[] = [];
-  for (let index = start; index < texts.length; index++) {
-    if (clients[index] !== clients[start]) continue;
-    if (/^\s*commit\b/i.test(texts[index])) break;
-    statements.push(texts[index]);
+  for (const { text, client } of sent.slice(start)) {
+    if (client !== sent[start].client) continue;
+    if (/^\s*commit\b/i.test(text)) break;
+    statements.push(text);
   }
   return statements;
 }

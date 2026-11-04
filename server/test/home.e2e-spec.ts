@@ -1,6 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
 import { inArray } from 'drizzle-orm';
-import { Client } from 'pg';
 
 import {
   type Database,
@@ -25,6 +24,7 @@ import {
   site,
 } from './utils/reorder-world';
 import { resetDatabase } from './utils/reset-db';
+import { captureStatements } from './utils/statements';
 
 interface HomeResponse {
   gettingStarted: {
@@ -484,28 +484,15 @@ describe('Home (e2e)', () => {
     await receive(alpha.agent, half, shelf, '50');
     await point(alpha.agent, half, '100');
 
-    // Every statement the app sends goes through pg's Client#query, as the
-    // plan check records them (perf/capture.ts); read before the spy is
-    // restored, which forgets them.
-    const sent = vi.spyOn(Client.prototype, 'query');
-    let cards: HomeResponse['cards'];
-    let texts: string[];
-    try {
-      cards = await home(alpha);
-      texts = sent.mock.calls.map(([config]) =>
-        typeof config === 'string'
-          ? config
-          : ((config as { text?: string } | null)?.text ?? ''),
-      );
-    } finally {
-      sent.mockRestore();
-    }
+    const { result: cards, statements } = await captureStatements(() =>
+      home(alpha),
+    );
 
     const lowStock = card(cards, 'lowStock');
     expect(lowStock).toMatchObject({ count: 2, late: 1 });
     expect(lowStock?.rows.map((row) => row.title)).toEqual(['A-OUT', 'B-HALF']);
     expect(
-      texts.filter((text) => /from reorder_points rp\b/.test(text)),
+      statements.filter(({ text }) => /from reorder_points rp\b/.test(text)),
     ).toHaveLength(1);
   });
 
@@ -552,28 +539,18 @@ describe('Home (e2e)', () => {
       expectedAt: day(-3),
     });
 
-    const sent = vi.spyOn(Client.prototype, 'query');
-    let cards: HomeResponse['cards'];
-    let texts: string[];
-    try {
-      cards = await home(alpha);
-      texts = sent.mock.calls.map(([config]) =>
-        typeof config === 'string'
-          ? config
-          : ((config as { text?: string } | null)?.text ?? ''),
-      );
-    } finally {
-      sent.mockRestore();
-    }
+    const { result: cards, statements } = await captureStatements(() =>
+      home(alpha),
+    );
 
     expect(card(cards, 'toShip')).toMatchObject({ count: 2, late: 1 });
     expect(card(cards, 'toReceive')).toMatchObject({ count: 1, late: 0 });
     // The statement of counts reads the orders once, not once a card.
-    const counts = texts.filter((text) =>
+    const counts = statements.filter(({ text }) =>
       /as kind,\s*count\(\*\)::int as count/.test(text),
     );
     expect(counts).toHaveLength(1);
-    expect(counts[0].match(/from "orders"/g)).toHaveLength(1);
+    expect(counts[0].text.match(/from "orders"/g)).toHaveLength(1);
   });
 
   it('shows only the cards the member may view', async () => {
