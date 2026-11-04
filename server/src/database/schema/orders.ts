@@ -14,7 +14,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { addresses } from './addresses';
-import { primaryKey, timestamps } from './columns';
+import { primaryKey, timestamps, trigramIndex } from './columns';
 import { locations } from './locations';
 import { organizations } from './organizations';
 import { partners } from './partners';
@@ -204,20 +204,9 @@ export const orders = pgTable(
     ...timestamps,
   },
   (t) => [
-    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through search_text, codes as stored.
-    // Each leads with the organization, through btree_gin, so a search
-    // rechecks its own organization's rows only (ADR-051, amended for #225).
-    index('orders_reference_trgm_idx').using(
-      'gin',
-      t.organizationId,
-      sql`${t.reference} gin_trgm_ops`,
-    ),
-    index('orders_number_trgm_idx').using(
-      'gin',
-      t.organizationId,
-      sql`${t.number} gin_trgm_ops`,
-    ),
+    // Search (ADR-056): trigram indexes, as trigramIndex builds them.
+    trigramIndex('orders_reference_trgm_idx', t.organizationId, t.reference),
+    trigramIndex('orders_number_trgm_idx', t.organizationId, t.number),
     uniqueIndex('orders_org_number_key').on(t.organizationId, t.number),
     check(
       'orders_direction_check',

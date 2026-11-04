@@ -9,7 +9,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { boms } from './boms';
-import { primaryKey, timestamps } from './columns';
+import { primaryKey, timestamps, trigramIndex } from './columns';
 import { locations } from './locations';
 import { organizations } from './organizations';
 import { partners } from './partners';
@@ -200,14 +200,11 @@ export const productionOrders = pgTable(
     ...timestamps,
   },
   (t) => [
-    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through search_text, codes as stored.
-    // Each leads with the organization, through btree_gin, so a search
-    // rechecks its own organization's rows only (ADR-051, amended for #225).
-    index('production_orders_reference_trgm_idx').using(
-      'gin',
+    // Search (ADR-056): trigram indexes, as trigramIndex builds them.
+    trigramIndex(
+      'production_orders_reference_trgm_idx',
       t.organizationId,
-      sql`${t.reference} gin_trgm_ops`,
+      t.reference,
     ),
     index('production_orders_org_status_idx').on(t.organizationId, t.status),
 

@@ -11,7 +11,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { primaryKey, timestamps } from './columns';
+import { primaryKey, timestamps, trigramIndex } from './columns';
 import { organizations } from './organizations';
 import { productVariants } from './product-variants';
 
@@ -84,15 +84,8 @@ export const lots = pgTable(
     ...timestamps,
   },
   (t) => [
-    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through search_text, codes as stored.
-    // Each leads with the organization, through btree_gin, so a search
-    // rechecks its own organization's rows only (ADR-051, amended for #225).
-    index('lots_code_trgm_idx').using(
-      'gin',
-      t.organizationId,
-      sql`${t.code} gin_trgm_ops`,
-    ),
+    // Search (ADR-056): trigram indexes, as trigramIndex builds them.
+    trigramIndex('lots_code_trgm_idx', t.organizationId, t.code),
     // Per variant, not per organization: two different products may legitimately
     // carry the same supplier lot code, and they are not the same lot.
     uniqueIndex('lots_org_variant_code_key').on(

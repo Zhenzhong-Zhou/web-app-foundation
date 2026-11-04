@@ -18,6 +18,7 @@ import {
   languagesDiffer,
   primaryKey,
   secondLanguageNeedsFirst,
+  trigramIndex,
 } from './columns';
 import { invoices } from './invoices';
 import { organizations } from './organizations';
@@ -106,15 +107,8 @@ export const creditNotes = pgTable(
       .defaultNow(),
   },
   (t) => [
-    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through search_text, codes as stored.
-    // Each leads with the organization, through btree_gin, so a search
-    // rechecks its own organization's rows only (ADR-051, amended for #225).
-    index('credit_notes_number_trgm_idx').using(
-      'gin',
-      t.organizationId,
-      sql`${t.number} gin_trgm_ops`,
-    ),
+    // Search (ADR-056): trigram indexes, as trigramIndex builds them.
+    trigramIndex('credit_notes_number_trgm_idx', t.organizationId, t.number),
     check(
       'credit_notes_currency_format_check',
       sql`${isCurrencyCode(t.currency)}`,

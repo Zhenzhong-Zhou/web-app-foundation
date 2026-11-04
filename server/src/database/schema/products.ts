@@ -8,7 +8,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { primaryKey, timestamps } from './columns';
+import { primaryKey, timestamps, trigramIndex } from './columns';
 import { organizations } from './organizations';
 
 /**
@@ -73,19 +73,16 @@ export const products = pgTable(
     namePinyin: text('name_pinyin'),
   },
   (t) => [
-    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through search_text, codes as stored.
-    // Each leads with the organization, through btree_gin, so a search
-    // rechecks its own organization's rows only (ADR-051, amended for #225).
-    index('products_name_trgm_idx').using(
-      'gin',
+    // Search (ADR-056): trigram indexes, as trigramIndex builds them.
+    trigramIndex(
+      'products_name_trgm_idx',
       t.organizationId,
-      sql`search_text(${t.name}) gin_trgm_ops`,
+      sql`search_text(${t.name})`,
     ),
-    index('products_name_pinyin_trgm_idx').using(
-      'gin',
+    trigramIndex(
+      'products_name_pinyin_trgm_idx',
       t.organizationId,
-      sql`${t.namePinyin} gin_trgm_ops`,
+      t.namePinyin,
     ),
     check(
       'products_type_check',

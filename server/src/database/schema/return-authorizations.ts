@@ -11,7 +11,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { primaryKey, timestamps } from './columns';
+import { primaryKey, timestamps, trigramIndex } from './columns';
 import { invoices } from './invoices';
 import { locations } from './locations';
 import { orders } from './orders';
@@ -128,14 +128,11 @@ export const returnAuthorizations = pgTable(
     ...timestamps,
   },
   (t) => [
-    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through search_text, codes as stored.
-    // Each leads with the organization, through btree_gin, so a search
-    // rechecks its own organization's rows only (ADR-051, amended for #225).
-    index('return_authorizations_number_trgm_idx').using(
-      'gin',
+    // Search (ADR-056): trigram indexes, as trigramIndex builds them.
+    trigramIndex(
+      'return_authorizations_number_trgm_idx',
       t.organizationId,
-      sql`${t.number} gin_trgm_ops`,
+      t.number,
     ),
     check(
       'return_authorizations_status_check',
