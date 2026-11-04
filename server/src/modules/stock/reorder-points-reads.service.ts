@@ -358,10 +358,15 @@ export class ReorderPointsReadsService {
    * How many rows each of the list's filters shows, All, Low and Out,
    * with its search and the filter left off, so each number is the rows
    * pressing that one shows (ADR-055). The low count holds the out.
+   *
+   * The items are joined for a search alone: positionsOf already holds
+   * each point to its item, so without one the join only adds work over
+   * every position (#353).
    */
   counts(query: ListReorderPointsDto = {}): Promise<ReorderPointCounts> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const today = await todayOf(tx, organizationId);
+      const search = searched(query, organizationId);
 
       const { rows } = await tx.execute<{
         all: number;
@@ -373,8 +378,8 @@ export class ReorderPointsReadsService {
           count(*)::int as "all",
           (count(*) filter (where ${IS_LOW}))::int as "low",
           (count(*) filter (where ${IS_OUT}))::int as "out"
-        from ${namedPositions(organizationId)}
-        ${whereOf(searched(query, organizationId))}
+        from ${search.length > 0 ? namedPositions(organizationId) : sql`p`}
+        ${whereOf(search)}
       `);
 
       return rows[0];

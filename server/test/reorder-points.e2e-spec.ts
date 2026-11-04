@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
+import { Client } from 'pg';
 
 import {
   type Database,
@@ -580,6 +581,38 @@ describe('Reorder points (e2e)', () => {
             .expect(200),
         ),
       ).toEqual({ all: 1, low: 1, out: 1 });
+    });
+
+    // The items are joined for a search alone (#353): positionsOf already
+    // holds each point to its item, so without one the counts read the
+    // positions as they are, and count the same.
+    it('counts without joining the items when nothing is searched', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await sixItems(alpha);
+
+      // Every statement the app sends goes through pg's Client#query, as
+      // the plan check records them (perf/capture.ts); read before the spy
+      // is restored, which forgets them.
+      const sent = vi.spyOn(Client.prototype, 'query');
+      let counts: unknown;
+      let texts: string[];
+      try {
+        counts = body(
+          await alpha.agent.get('/v1/stock/reorder-points/counts').expect(200),
+        );
+        texts = sent.mock.calls.map(([config]) =>
+          typeof config === 'string'
+            ? config
+            : ((config as { text?: string } | null)?.text ?? ''),
+        );
+      } finally {
+        sent.mockRestore();
+      }
+
+      expect(counts).toEqual({ all: 6, low: 4, out: 1 });
+      const counted = texts.filter((text) => text.includes('as "out"'));
+      expect(counted).toHaveLength(1);
+      expect(counted[0]).not.toContain('join "product_variants"');
     });
 
     it('pages in its order, each page after the last, and refuses a cursor not in it', async () => {
