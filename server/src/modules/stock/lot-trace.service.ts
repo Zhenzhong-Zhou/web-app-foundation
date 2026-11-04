@@ -85,7 +85,9 @@ export class LotTraceService {
    * the obvious match on top. % and _ are escaped so they match themselves.
    *
    * Anywhere-in cannot use an ordinary index; lots_code_trgm_idx, a trigram
-   * index (ADR-056, migration 0042), serves it. That index hands back the
+   * index (ADR-056, migration 0042), serves it, led by the organization
+   * since migration 0077 (ADR-051, the amendment for #225 and #276), so it
+   * reads only this organization's matching lots. That index hands back the
    * matches unordered, so every one is joined before the sort, and the join
    * carries the organization: without it, Postgres read every
    * organization's variants to join this one's lots (ADR-051's plan check,

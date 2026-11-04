@@ -1,15 +1,8 @@
 import { sql } from 'drizzle-orm';
-import {
-  check,
-  index,
-  pgTable,
-  text,
-  uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { check, pgTable, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 import type { Locale } from '../../common/locales';
-import { primaryKey, timestamps } from './columns';
+import { primaryKey, timestamps, trigramIndex } from './columns';
 import { organizations } from './organizations';
 import { productVariants } from './product-variants';
 
@@ -48,15 +41,16 @@ export const variantTranslations = pgTable(
     namePinyin: text('name_pinyin'),
   },
   (t) => [
-    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through search_text, codes as stored.
-    index('variant_translations_name_trgm_idx').using(
-      'gin',
-      sql`search_text(${t.name}) gin_trgm_ops`,
+    // Search (ADR-056): trigram indexes, as trigramIndex builds them.
+    trigramIndex(
+      'variant_translations_name_trgm_idx',
+      t.organizationId,
+      sql`search_text(${t.name})`,
     ),
-    index('variant_translations_name_pinyin_trgm_idx').using(
-      'gin',
-      sql`${t.namePinyin} gin_trgm_ops`,
+    trigramIndex(
+      'variant_translations_name_pinyin_trgm_idx',
+      t.organizationId,
+      t.namePinyin,
     ),
     uniqueIndex('variant_translations_variant_locale_key').on(
       t.variantId,

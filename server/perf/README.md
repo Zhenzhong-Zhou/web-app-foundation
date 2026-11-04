@@ -178,16 +178,26 @@ weekly run starts at 11:00 UTC, the same day in Vancouver. The summary lists
 each known miss under the budgets, with its issue, its date and its ceiling,
 whether this run met it or not. On CI, the median is what meets it or not.
 
-Two today, each until 30 November 2026 with a ceiling of 400 ms:
+One today, until 31 January 2027 with a ceiling of 400 ms:
 
-- **The typo lookup's, #225.** It went once weekly run 114 measured 207
-  ms on 26 October 2026, too soon: on 29 October, on runners about 1.45×
-  slower than the day before, `main` measured 340 ms and #260's branch
-  333, 358 and 363.
-- **Home's, #276.** Back over its budget on 1 November 2026: 249 ms the
-  night before, then 329, 321 and 308 in three runs on ADR-085's
-  branch, on runners about 1.35× slower on every other budget too, with
-  the same plans.
+- **Home's, #276, owned by Home's redesign, ADR-091.** Back over its
+  budget on 1 November 2026: 249 ms the night before, then 329, 321 and
+  308 in three runs on ADR-085's branch, on runners about 1.35× slower on
+  every other budget too, with the same plans. It was to end on 30
+  November 2026; ADR-091 must bring `GET /home` within its budget and
+  remove it (ADR-051's amendment for #225 and #276).
+
+The typo lookup's, #225, the first, ended with the three changes that
+brought its budget back, each an amendment of ADR-051: the lookup sends
+each pass as one statement, where it sent one statement a kind; every
+trigram index leads with the organization (migration 0077); and an
+order's partner is matched through an array of the matching partners'
+ids, which the orders' indexes join. It counts as fixed at a median of
+240 ms or less on GitHub's runners, and measured 231 ms on the branch's
+second timed run. It had gone once before, when
+weekly run 114 measured 207 ms on 26 October 2026, too soon: on 29
+October, on runners about 1.45× slower than the day before, `main`
+measured 340 ms and #260's branch 333, 358 and 363.
 
 To add one, give the scenario in `perf/scenarios.ts` a `knownMiss`:
 

@@ -10,7 +10,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { primaryKey, timestamps } from './columns';
+import { primaryKey, timestamps, trigramIndex } from './columns';
 import { organizations } from './organizations';
 import { products } from './products';
 
@@ -101,19 +101,17 @@ export const productVariants = pgTable(
     namePinyin: text('name_pinyin'),
   },
   (t) => [
-    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through search_text, codes as stored.
-    index('product_variants_sku_trgm_idx').using(
-      'gin',
-      sql`${t.sku} gin_trgm_ops`,
+    // Search (ADR-056): trigram indexes, as trigramIndex builds them.
+    trigramIndex('product_variants_sku_trgm_idx', t.organizationId, t.sku),
+    trigramIndex(
+      'product_variants_name_trgm_idx',
+      t.organizationId,
+      sql`search_text(${t.name})`,
     ),
-    index('product_variants_name_trgm_idx').using(
-      'gin',
-      sql`search_text(${t.name}) gin_trgm_ops`,
-    ),
-    index('product_variants_name_pinyin_trgm_idx').using(
-      'gin',
-      sql`${t.namePinyin} gin_trgm_ops`,
+    trigramIndex(
+      'product_variants_name_pinyin_trgm_idx',
+      t.organizationId,
+      t.namePinyin,
     ),
     uniqueIndex('product_variants_org_sku_key').on(t.organizationId, t.sku),
     index('product_variants_product_id_idx').on(t.productId),

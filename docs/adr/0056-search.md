@@ -221,7 +221,9 @@ used for queries of 3 characters or more.
 
 - **An index per organization** (`btree_gin`, the organization id with the
   trigram) or partial indexes. Trigger: one organization's rows dominating a
-  table, or the budget missed.
+  table, or the budget missed. Taken in November 2026, for #225, once one query
+  per pass left the typo lookup over its bar: ADR-051's amendment for #225
+  and #276.
 - **A search engine.** Trigger: typo tolerance or ranking that trigrams
   cannot give (a misspelling with no letters in common), or volume past
   what the budget allows.

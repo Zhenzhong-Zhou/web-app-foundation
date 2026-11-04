@@ -143,7 +143,8 @@ where a step must act on it.
      `/production-readiness` on the sections the change touches;
      `/doctor prompt-audit`, which needs Claude Code v2.1.283 or later
      and which Bob types in the session, since a session cannot run it:
-     ask for it, and number its findings with the rest.
+     ask for it and wait, since it is a step of the reviews, not a
+     decision; then number its findings with the rest.
      Every finding numbered and written to the file the brief names,
      usually `tmp/adr-NNN/review.md`, and nothing fixed, `/simplify`'s
      included.

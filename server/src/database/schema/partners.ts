@@ -15,6 +15,7 @@ import {
   primaryKey,
   secondLanguageNeedsFirst,
   timestamps,
+  trigramIndex,
 } from './columns';
 import { organizations } from './organizations';
 import { priceLists } from './price-lists';
@@ -102,20 +103,18 @@ export const partners = pgTable(
     namePinyin: text('name_pinyin'),
   },
   (t) => [
-    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through search_text, codes as stored.
-    index('partners_name_trgm_idx').using(
-      'gin',
-      sql`search_text(${t.name}) gin_trgm_ops`,
+    // Search (ADR-056): trigram indexes, as trigramIndex builds them.
+    trigramIndex(
+      'partners_name_trgm_idx',
+      t.organizationId,
+      sql`search_text(${t.name})`,
     ),
-    index('partners_code_trgm_idx').using('gin', sql`${t.code} gin_trgm_ops`),
-    index('partners_tax_id_trgm_idx').using(
-      'gin',
-      sql`${t.taxId} gin_trgm_ops`,
-    ),
-    index('partners_name_pinyin_trgm_idx').using(
-      'gin',
-      sql`${t.namePinyin} gin_trgm_ops`,
+    trigramIndex('partners_code_trgm_idx', t.organizationId, t.code),
+    trigramIndex('partners_tax_id_trgm_idx', t.organizationId, t.taxId),
+    trigramIndex(
+      'partners_name_pinyin_trgm_idx',
+      t.organizationId,
+      t.namePinyin,
     ),
     // Per organization, never globally: two customers using the same supplier
     // number is normal, and rejecting it would reveal the other tenant exists.

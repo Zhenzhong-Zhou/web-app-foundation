@@ -20,6 +20,13 @@ What to keep true when changing the schema, a migration, a seed or a query.
   ADR-009; [conventions.md, Module boundaries](../../docs/conventions.md#module-boundaries)).
 - **The organization goes in every join's ON clause;** an `exists` is
   ordered as an index is and takes one row (ADR-058; the same section).
+- **A trigram index is `trigramIndex`** in `schema/columns.ts`: it leads
+  with the organization, through `btree_gin`, so a search rechecks only
+  its own organization's rows (ADR-051, amended for #225; ADR-056).
+- **An `in (select …)` inside an OR is written `= any(array(select …))`,**
+  as `partnerMatches` does: an `in` there is a hashed subplan, which no
+  index serves, while the array is found once and joins the other arms'
+  indexes in one bitmap OR (ADR-051, amended for #225).
 - **A migration:** `npm run migrate:new -- --name <name>`, hand-written
   parts after `--> statement-breakpoint`, then `npm run migrate:all`;
   the SQL keeps `NULLS NOT DISTINCT`, and the journal's new `when` is

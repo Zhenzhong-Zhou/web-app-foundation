@@ -47,11 +47,7 @@ Against:
 
 - `docs/principles.md`, especially: does every refusal say what to do
   next, and does a newcomer finish without help?
-- Nielsen's ten heuristics: visibility of system status; match with the
-  real world; user control and freedom; consistency and standards;
-  error prevention; recognition rather than recall; flexibility and
-  efficiency; aesthetic and minimalist design; helping users recover
-  from errors; help and documentation.
+- Nielsen's ten usability heuristics.
 - WCAG 2.2 AA basics: every control labelled, the whole task possible
   from the keyboard, colour never the only signal.
 - Language: text left untranslated, awkward or inconsistent in the

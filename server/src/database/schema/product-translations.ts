@@ -1,15 +1,8 @@
 import { sql } from 'drizzle-orm';
-import {
-  check,
-  index,
-  pgTable,
-  text,
-  uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { check, pgTable, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 import type { Locale } from '../../common/locales';
-import { primaryKey, timestamps } from './columns';
+import { primaryKey, timestamps, trigramIndex } from './columns';
 import { organizations } from './organizations';
 import { products } from './products';
 
@@ -56,15 +49,16 @@ export const productTranslations = pgTable(
     namePinyin: text('name_pinyin'),
   },
   (t) => [
-    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through search_text, codes as stored.
-    index('product_translations_name_trgm_idx').using(
-      'gin',
-      sql`search_text(${t.name}) gin_trgm_ops`,
+    // Search (ADR-056): trigram indexes, as trigramIndex builds them.
+    trigramIndex(
+      'product_translations_name_trgm_idx',
+      t.organizationId,
+      sql`search_text(${t.name})`,
     ),
-    index('product_translations_name_pinyin_trgm_idx').using(
-      'gin',
-      sql`${t.namePinyin} gin_trgm_ops`,
+    trigramIndex(
+      'product_translations_name_pinyin_trgm_idx',
+      t.organizationId,
+      t.namePinyin,
     ),
     // One name per language. Also serves "these products in this language".
     uniqueIndex('product_translations_product_locale_key').on(

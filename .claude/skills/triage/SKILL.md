@@ -103,8 +103,8 @@ not have: stop and say so.
 
 ## 3. The summary
 
-In `/build-from-brief`'s five parts ([its summary][summary]), for Bob to
-paste into the chat:
+In the five parts of a brief step's summary ([`brief-step.md`,
+§4][summary]), for Bob to paste into the chat:
 
 1. **Done:** the first run, the counts by group and the closes proposed;
    the second, what the script changed. No commit in either.

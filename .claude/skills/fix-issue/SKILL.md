@@ -93,9 +93,8 @@ request that changes it.
 
 Only now, since steps 2 to 4 need only `git` and `gh`, so a run that
 stops there stops in seconds: the Node in `server/.node-version`,
-installed and used, since a container may start on an older one (one
-had 22, where twenty client tests fail for reasons of their own); then
-`npm ci` in `server/` and `client/`.
+installed and used, since a container may start on an older one, where
+the client's tests fail; then `npm ci` in `server/` and `client/`.
 
 ## 6. The fix
 

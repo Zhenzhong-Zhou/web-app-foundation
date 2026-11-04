@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { inArray } from 'drizzle-orm';
+import { Client } from 'pg';
 import sharp from 'sharp';
 
 import {
@@ -182,6 +183,114 @@ describe('Lookup (e2e)', () => {
     });
   });
 
+  // ADR-051's amendment for #225 and #276: an order's partner arm is an
+  // array of the matching partners' ids. None matches a number, and the
+  // empty array must not hide the order its number finds, in either pass.
+  it('finds an order by its number when no partner matches, exactly or by a typo', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const partnerId = await createPartner(alpha.agent, {
+      name: 'Acme Supplies',
+    });
+    const variantId = await createVariant(alpha.agent, {
+      type: 'good',
+      name: 'Widget',
+      variant: { sku: 'WIDGET-1', tracksLots: false },
+    });
+    await alpha.agent
+      .post('/v1/orders')
+      .send({
+        partnerId,
+        direction: 'purchase',
+        lines: [{ variantId, quantityOrdered: '10' }],
+      })
+      .expect(201);
+
+    const orderFound = async (q: string) =>
+      (await lookup(alpha, q)).find((group) => group.kind === 'order')?.results;
+
+    expect(await orderFound('PO-000001')).toEqual([
+      expect.objectContaining({ title: 'PO-000001', close: false }),
+    ]);
+    // A zero short, so nothing exact: the close pass finds it.
+    expect(await orderFound('PO-00001')).toEqual([
+      expect.objectContaining({ title: 'PO-000001', close: true }),
+    ]);
+  });
+
+  // ADR-051's amendment for #225: each pass is one statement, its kinds
+  // joined by union all. A typo that finds nothing exact, for the Owner, who
+  // sees all eight kinds, sent up to eighteen: the threshold setting, then
+  // each kind's exact and close matches one after another. Now the setting,
+  // the exact pass, the close pass and the prefixes, four at most.
+  it('sends a typo in four statements at most, one a pass', async () => {
+    const alpha = await stocked('alpha');
+    await createPartner(alpha.agent, { name: 'Focus Health' });
+
+    // Every statement goes through pg's Client#query, as the plan check
+    // records them (perf/capture.ts); read before the spy is restored,
+    // which forgets them.
+    const sent = vi.spyOn(Client.prototype, 'query');
+    let groups: LookupResponse['groups'];
+    let statements: string[];
+    try {
+      groups = await lookup(alpha, 'fokus');
+      statements = lookupStatements(sent.mock.calls, sent.mock.contexts);
+    } finally {
+      sent.mockRestore();
+    }
+
+    // Close matches in two kinds, so the prefixes are read too.
+    expect(groups.map((group) => group.kind)).toEqual(['item', 'partner']);
+    expect(groups.flatMap((group) => group.results).every((r) => r.close)).toBe(
+      true,
+    );
+    expect(statements[0]).toContain('pg_trgm.word_similarity_threshold');
+    expect(statements.length).toBeLessThanOrEqual(4);
+  });
+
+  // Each kind's branch of the one statement keeps its own order and limit.
+  it("brings five of each kind that matches more, in each kind's order", async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    // Made one after another, so the newest come first among equals.
+    for (const n of [1, 2, 3, 4, 5, 6]) {
+      await createVariant(alpha.agent, {
+        type: 'good',
+        name: `Tea ${n}`,
+        variant: { sku: `HARBOUR-${n}`, tracksLots: false },
+      });
+    }
+    for (const name of [
+      'Harbour',
+      'Harbour North',
+      'Harbour South',
+      'Harbour East',
+      'Harbour West',
+      'Old Harbour',
+    ]) {
+      await createPartner(alpha.agent, { name });
+    }
+
+    const groups = await lookup(alpha, 'harbour');
+    expect(groups.map((group) => group.kind)).toEqual(['item', 'partner']);
+    // Each SKU starts with the search, so the newest five.
+    expect(titles(groups, 'item')).toEqual([
+      'Tea 6',
+      'Tea 5',
+      'Tea 4',
+      'Tea 3',
+      'Tea 2',
+    ]);
+    // The exact name, then those that start with it, newest first; Old
+    // Harbour, the newest of all but a match anywhere, is the sixth.
+    expect(titles(groups, 'partner')).toEqual([
+      'Harbour',
+      'Harbour West',
+      'Harbour East',
+      'Harbour South',
+      'Harbour North',
+    ]);
+  });
+
   it("never finds another organization's records", async () => {
     await stocked('alpha');
     const beta = await registerOrganization(app, 'beta');
@@ -336,3 +445,29 @@ describe('Lookup (e2e)', () => {
     }
   });
 });
+
+/**
+ * The statements one lookup sent, from what a spy on pg's Client#query
+ * recorded: on the connection whose transaction set the close-match
+ * threshold, from that setting up to its commit. Begin and commit are the
+ * transaction's own, not the lookup's statements.
+ */
+function lookupStatements(calls: unknown[][], clients: unknown[]): string[] {
+  const texts = calls.map(([config]) =>
+    typeof config === 'string'
+      ? config
+      : ((config as { text?: string } | null)?.text ?? ''),
+  );
+  const start = texts.findIndex((text) =>
+    text.includes('pg_trgm.word_similarity_threshold'),
+  );
+  if (start < 0) return [];
+
+  const statements: string[] = [];
+  for (let index = start; index < texts.length; index++) {
+    if (clients[index] !== clients[start]) continue;
+    if (/^\s*commit\b/i.test(texts[index])) break;
+    statements.push(texts[index]);
+  }
+  return statements;
+}

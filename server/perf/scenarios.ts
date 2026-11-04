@@ -245,13 +245,7 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // narrowed by its search.
     read('GET /lookup?q=code', () => '/lookup?q=LV-00001'),
     read('GET /lookup?q=name', () => '/lookup?q=focus'),
-    // Over its budget again on 29 October 2026, main and #260's branch
-    // alike (#225): known until 30 November, and failing past 400 ms
-    // (ADR-082).
-    {
-      ...read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
-      knownMiss: { issue: '#225', until: '2026-11-30', ceilingMs: 400 },
-    },
+    read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
     read('GET /orders?search', () => '/orders?status=all&search=SO-10'),
     // Products, Partners and the item pickers searched on the server
     // (ADR-056, amended): a Chinese reader's one character, which no
@@ -274,11 +268,12 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // Home (ADR-058): the page everyone opens first, every card an owner
     // sees and Getting started, in one request. Over its budget again from
     // 1 November 2026, on runners about 1.35× slower on every budget, with
-    // the same plans (#276): known until 30 November, and failing past
-    // 400 ms (ADR-082).
+    // the same plans (#276): known until 31 January 2027, and failing past
+    // 400 ms (ADR-082). Home's redesign, ADR-091, must bring it within its
+    // budget and remove this miss (ADR-051's amendment for #225 and #276).
     {
       ...read('GET /home', () => '/home'),
-      knownMiss: { issue: '#276', until: '2026-11-30', ceilingMs: 400 },
+      knownMiss: { issue: '#276', until: '2027-01-31', ceilingMs: 400 },
     },
     // Recently opened (ADR-058), read with Home and on each search's focus.
     read('GET /recent', () => '/recent?limit=6'),
