@@ -1,5 +1,10 @@
 import AxeBuilder from '@axe-core/playwright';
-import type { APIRequestContext, Locator, Page } from '@playwright/test';
+import type {
+  APIRequestContext,
+  Locator,
+  Page,
+  Request,
+} from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import {
@@ -541,9 +546,52 @@ async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
   };
 }
 
+/** A page's requests in flight, and when the last one began or ended. */
+interface Traffic {
+  open: Set<Request>;
+  last: number;
+}
+
+const traffic = new WeakMap<Page, Traffic>();
+
+/** As Playwright's networkidle: no request open for half a second. */
+const QUIET_MS = 500;
+
+/** Counts a page's requests; called before the page first navigates. */
+function watch(page: Page): void {
+  const seen: Traffic = { open: new Set(), last: Date.now() };
+  const ended = (request: Request) => {
+    seen.open.delete(request);
+    seen.last = Date.now();
+  };
+  page.on('request', (request) => {
+    seen.open.add(request);
+    seen.last = Date.now();
+  });
+  page.on('requestfinished', ended);
+  page.on('requestfailed', ended);
+  traffic.set(page, seen);
+}
+
+// Every test's own page; a page a test opens itself is watched there.
+test.beforeEach(({ page }) => watch(page));
+
 /** Every violation, one line each, so a failure reads as a list to fix. */
 async function violations(page: Page): Promise<string[]> {
-  // Two frames first (#232). Less motion shortens a transition to 0.01ms
+  // The screen loaded first, so axe sees what a person does (#445).
+  // networkidle fires once per page, at its first quiet half-second: on a
+  // slow runner that came while React drew the shell, before the screen
+  // asked for its lists, so waiting for it returned at once, and axe
+  // measured Inventory's Refresh and Receive stock as the lists arrived
+  // and enabled them. Quiet is counted here instead, from now.
+  const seen = traffic.get(page);
+  if (!seen) throw new Error('watch(page) before it navigates (#445)');
+  await expect
+    .poll(() => !seen.open.size && Date.now() - seen.last >= QUIET_MS, {
+      message: 'no request open for half a second before axe',
+    })
+    .toBe(true);
+  // Then two frames (#232). Less motion shortens a transition to 0.01ms
   // but still starts it, and Linux WebKit reports its first colours until
   // a frame has run: axe, which reads the styles at once, measured a
   // button just enabled after its list loaded in its disabled grey.
@@ -601,9 +649,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
             await screen.open(page);
           }
           await expect(screen.ready(page).first()).toBeVisible();
-          // Lists fill after their request; axe should see what a person
-          // does.
-          await page.waitForLoadState('networkidle');
 
           const list = await violations(page);
           if (screen.version) await page.unroute('**/version.json?*');
@@ -679,7 +724,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
           ).toBeVisible();
           // The © line the e2e server is built with (playwright.config.ts).
           await expect(page.getByRole('contentinfo')).toBeVisible();
-          await page.waitForLoadState('networkidle');
 
           expect(await violations(page)).toEqual([]);
         });
@@ -705,7 +749,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await expect(
         page.getByRole('region', { name: /^Welcome to / }),
       ).toBeVisible();
-      await page.waitForLoadState('networkidle');
 
       expect(await violations(page)).toEqual([]);
       await newcomer.dispose();
@@ -728,9 +771,9 @@ for (const colorScheme of ['light', 'dark'] as const) {
         storageState: { cookies: [], origins: [] },
       });
       const page = await context.newPage();
+      watch(page);
       await page.goto(`/invitation?token=${token}`);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-      await page.waitForLoadState('networkidle');
 
       expect(await violations(page)).toEqual([]);
       await context.close();
