@@ -164,8 +164,9 @@ so the timing is the evidence for the name lookup.
   per organization, one organization's rows dominating a table or a
   budget missed. Not met: the typo lookup's miss (#225) went once #186 put
   the organization on the lookup's joins (28 October 2026), and came back
-  on slower runners the next day; one query per pass comes first, the
-  index only if that falls short (the amendment for #225 and #276, below).
+  on slower runners the next day. One query per pass came first, and the
+  index per organization followed when that fell short (the amendment for
+  #225 and #276, below).
 - **One Chinese character on a large catalogue.** `GET /products?search=专`
   in `zh-Hans`, at large, in its largest organization: 63.5 ms, reading
   every organization's translations through the trigram index (29
@@ -346,6 +347,37 @@ figures before and after in the commit. A median just under 300 turns red
 again on a runner 30% slower. #225's known miss goes in the commit that
 fixes it, as `server/perf/README.md` asks.
 
+### Decision — the index per organization, once one query per pass fell short
+
+The timed run on the branch with one query per pass (run 41764305996, 3
+November 2026, at 4bb4e0a) passed every budget but not the bar above. Its
+medians: the typo lookup 259 ms, from rounds of 259, 265 and 246; the
+code lookup 107 and the name lookup 100; Home 241, beside 237 on 3
+November, so the runners were as fast as then. On the Mac the typo
+lookup went from 60 to 49 ms, its statements from 17 to 3: the round
+trips went, but on a busy runner the time is the close matches' own work.
+Each trigram index holds every organization's rows, so a close match
+reads and rechecks the others' before keeping its own: 1,469 of lot
+search's 1,852 matches at large (above).
+
+So ADR-056's index per organization, as its Deferred and this
+amendment's gave it (the maintainer, 4 November 2026, as recommended):
+
+- **Every trigram index on a table with `organization_id`** becomes one
+  over the organization and the trigram, `(organization_id, … gin_trgm_ops)`,
+  in one migration that replaces the old: the release still serving
+  names the organization in every read these indexes serve, so the new
+  ones serve it too.
+- **`btree_gin`,** which lets a GIN index hold the organization's id,
+  created first in the same migration, as 0042 created `pg_trgm`. Render
+  offers it on PostgreSQL 13 and later.
+- **The proof:** the plans first, the close pass reading only the
+  organization's rows; then the Mac's three runs; then one more timed run
+  on the branch, against the same 240 ms. #225 closes only then.
+- **Unchanged:** what each search finds and in which order, and #226's
+  plan-check rule, which stays for its own batch: the index changes no
+  join and no rule in `server/perf/plans.ts`.
+
 ### Decision — Home's known miss given to its redesign
 
 Home's statements take about 26 ms at small; its time over budget comes
@@ -367,13 +399,17 @@ owner and a date stays a debt; a raised budget would forget it
   another, or prepared statements: the redesign decides what Home reads,
   so ADR-091 weighs both.
 - **ADR-056's index per organization first:** a migration and the
-  `btree_gin` extension, for a lookup whose statements run one after
-  another. Fewer statements first, the index if they are not enough.
+  `btree_gin` extension, for a lookup whose statements ran one after
+  another. Fewer statements came first; the index came second, when they
+  were not enough (above).
+- **Counting 259 ms as fixed:** within the budget, but a runner 30%
+  slower puts it near 340, and the bar above exists for that day.
 
 ### Deferred — each with what brings it in
 
-- **ADR-056's index per organization,** for the close matches. Trigger:
-  the typo lookup's median over 240 ms after one query per pass.
+- **Past the index,** if the typo lookup's median still misses 240 ms:
+  decided again from that run's plans. Trigger: the second timed run on
+  the branch.
 - **Home's reads in one transaction, or prepared statements.** Trigger:
   ADR-091, or 31 January 2027, whichever comes first.
 
@@ -383,9 +419,13 @@ owner and a date stays a debt; a raised budget would forget it
   statement. `server/perf/scenarios.ts` drops #225's known miss and dates
   Home's 31 January 2027, and `server/perf/README.md`'s "Known misses"
   says so.
+- A migration creates `btree_gin` and replaces each trigram index on a
+  table with `organization_id` by one that leads with it; the schema's
+  index definitions say the same.
 - The Watch's lot search and "Home after ADR-085" say where each stands.
 - The build, in this order: the dependencies; the Mac's figures before;
   one query per pass, with its test, and #225's known miss gone; Home's
   new date; one timed run by hand on the branch, judged against 240 ms;
-  the dependencies again and the reviews; the pull request, which closes
-  #225 and refers to #276.
+  then the index per organization, with the Mac's plans and figures, and
+  a second timed run against the same 240 ms; the dependencies again and
+  the reviews; the pull request, which closes #225 and refers to #276.
