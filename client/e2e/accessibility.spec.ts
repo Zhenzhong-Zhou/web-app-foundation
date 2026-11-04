@@ -754,6 +754,73 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await newcomer.dispose();
     });
 
+    test('an order with a voided shipment meets WCAG 2.2 AA', async ({
+      page,
+      freshOrg,
+    }) => {
+      // What it carried stays listed, struck through, for the slip someone
+      // may hold (ADR-041); faded, its text fell below 4.5 : 1 (#214).
+      const { api } = freshOrg;
+      const product = await createProduct(api, { tracksLots: true });
+      const location = await createLocation(api);
+      const partner = await createPartner(api);
+      await created(
+        await api.post('/v1/stock/movements', {
+          data: {
+            variantId: product.variantId,
+            toLocationId: location.id,
+            quantity: '24',
+            reason: 'receipt',
+            lot: { code: 'A11Y-VOID-1', expiresAt: daysFromNow(200) },
+          },
+        }),
+      );
+      const { order } = await created<{
+        order: { id: string; lines: { id: string }[] };
+      }>(
+        await api.post('/v1/orders', {
+          data: {
+            partnerId: partner.id,
+            direction: 'sale',
+            lines: [
+              {
+                variantId: product.variantId,
+                quantityOrdered: '10',
+                unitPrice: '12.50',
+                currency: 'CAD',
+              },
+            ],
+          },
+        }),
+      );
+      const confirmed = await api.patch(`/v1/orders/${order.id}`, {
+        data: { status: 'confirmed' },
+      });
+      expect(confirmed.ok(), await confirmed.text()).toBeTruthy();
+      const { shipment } = await created<{ shipment: { id: string } }>(
+        await api.post(`/v1/orders/${order.id}/shipments`, {
+          data: {
+            fromLocationId: location.id,
+            lines: [{ lineId: order.lines[0].id, quantity: '6' }],
+          },
+        }),
+      );
+      const voided = await api.post(
+        `/v1/orders/${order.id}/shipments/${shipment.id}/void`,
+        { data: { reason: 'Packed the wrong box' } },
+      );
+      expect(voided.ok(), await voided.text()).toBeTruthy();
+
+      await signInAs(page, api);
+      await page.goto(`/orders/${order.id}?tab=shipments`);
+      await expect(page.getByText(/Packed the wrong box/)).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: 'A11Y-VOID-1' }),
+      ).toBeVisible();
+
+      expect(await violations(page)).toEqual([]);
+    });
+
     test('the invitation page meets WCAG 2.2 AA, signed out', async ({
       browser,
       freshOrg,
