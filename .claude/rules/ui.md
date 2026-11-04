@@ -12,6 +12,9 @@ It loads when Claude reads, writes or edits a file its `paths` match.
 What to keep true when a component styles itself (ADR-055;
 [conventions.md, The look](../../docs/conventions.md#the-look-adr-055)).
 
+- **A screen follows the design language,** `docs/design-language.md`
+  (ADR-090): its principles and patterns at each width class. A pattern a
+  screen needs and it lacks is added there first, in the same commit.
 - **Colours, sizes and corners come from `client/src/theme/tokens.ts`**
   through the theme, asked by name; never a hex value, a font size or a
   radius the tokens name. A value they lack becomes a token first, and a

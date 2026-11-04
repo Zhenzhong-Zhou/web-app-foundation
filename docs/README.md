@@ -95,6 +95,7 @@ project's front page, its sections of more than one kind.
 | How is code named and organised, and what is the API contract? | [conventions.md](conventions.md) |
 | Which tables does an area keep, and how do they join? | [docs/tables/](tables/README.md), one diagram per area, written from the schema by `npm run diagrams` in `server/` |
 | What does an endpoint take and return? | [`server/openapi.json`](../server/openapi.json), written by `npm run api` from the server's code ([ADR-068](adr/0068-openapi-from-the-server-the-clients-types-generated.md)) |
+| How should a screen look and behave, at every size? What does a tile open, and what shows while it loads? | [design-language.md](design-language.md), its principles and patterns ([ADR-090](adr/0090-the-design-language.md)) |
 | Which word does the app use for a thing, in each language? | [glossary.md](glossary.md) |
 | Which outside services does the app use, with which settings? | [runbooks/services.md](runbooks/services.md) |
 | What must Claude keep true in this repository? | [CLAUDE.md](../CLAUDE.md), loaded in every session |
@@ -143,6 +144,8 @@ project's front page, its sections of more than one kind.
     keys, as diagrams written from the schema.
   - [conventions.md](conventions.md): naming, code organisation, the API
     contract.
+  - [design-language.md](design-language.md): how every screen looks and
+    behaves, at every size.
   - [decisions.md](decisions.md): where the ADRs were until October
     2026, now pointing to them.
   - [engineering.md](engineering.md): the working agreements.
