@@ -76,27 +76,32 @@ revision_version="$(version "$work/revision.json")"
 # of the permissions it knows, says only those under Your access, shows a
 # box only for those, and saves a role from the catalogue the server
 # sends, so a role it saves keeps the new one (#340, ADR-008's amendment
-# of November 2026). So a response-property-enum-value-added whose value
-# is one of the Permission schema's is let through, each written to the
-# accepted list in oasdiff's own words; a value added to any other enum,
-# an order's status among them, still fails. oasdiff gives the value only
-# in those words, so an image that words it otherwise lets none through:
-# a false red, never a false green.
-docker run --rm --network none -v "$work:/specs:ro" "$image" \
-  breaking /specs/base.json /specs/revision.json --format json > "$work/changes.json"
-# Single quotes on purpose: the JavaScript's ${} and backticks are node's.
-# shellcheck disable=SC2016
+# of November 2026). So each enum in the base equal to the base's
+# Permission schema's is first widened to the base's values plus the
+# revision's, and oasdiff never meets a new permission, with none of its
+# wording read (#432); one taken away is still there to be missed. A
+# value added to any other enum, an order's status among them, still
+# fails, even one named as a permission is.
 node -e '
-  const read = (file) => JSON.parse(require("fs").readFileSync(file, "utf8"));
-  const [changes, revision] = process.argv.slice(1).map(read);
-  const permissions = new Set(revision.components?.schemas?.Permission?.enum ?? []);
-  for (const change of changes ?? []) {
-    const value = /^added the new `([^`]+)` enum value /.exec(change.text)?.[1];
-    if (change.id === "response-property-enum-value-added" && permissions.has(value)) {
-      console.log(`${change.operation} ${change.path} ${change.text} -- a new permission`);
+  const fs = require("fs");
+  const [base, revision] = process.argv
+    .slice(1)
+    .map((file) => JSON.parse(fs.readFileSync(file, "utf8")));
+  const permissions = base.components?.schemas?.Permission?.enum;
+  if (!permissions) process.exit(0);
+  const listed = JSON.stringify(permissions);
+  const revised = revision.components?.schemas?.Permission?.enum ?? [];
+  const widened = [...new Set([...permissions, ...revised])];
+  const widen = (node) => {
+    if (node === null || typeof node !== "object") return;
+    for (const [key, value] of Object.entries(node)) {
+      if (key === "enum" && JSON.stringify(value) === listed) node[key] = widened;
+      else widen(value);
     }
-  }
-' "$work/changes.json" "$work/revision.json" >> "$work/accepted.txt"
+  };
+  widen(base);
+  fs.writeFileSync(process.argv[1], JSON.stringify(base));
+' "$work/base.json" "$work/revision.json"
 
 # No network: both documents are local, and nothing else is wanted.
 status=0
