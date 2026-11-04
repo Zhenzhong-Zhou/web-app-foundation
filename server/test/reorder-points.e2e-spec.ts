@@ -1,6 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
 import { and, asc, eq, sql } from 'drizzle-orm';
-import { Client } from 'pg';
 
 import {
   type Database,
@@ -29,6 +28,7 @@ import {
   site,
 } from './utils/reorder-world';
 import { resetDatabase } from './utils/reset-db';
+import { captureStatements } from './utils/statements';
 
 type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
@@ -590,29 +590,18 @@ describe('Reorder points (e2e)', () => {
       const alpha = await registerOrganization(app, 'alpha');
       await sixItems(alpha);
 
-      // Every statement the app sends goes through pg's Client#query, as
-      // the plan check records them (perf/capture.ts); read before the spy
-      // is restored, which forgets them.
-      const sent = vi.spyOn(Client.prototype, 'query');
-      let counts: unknown;
-      let texts: string[];
-      try {
-        counts = body(
+      const { result: counts, statements } = await captureStatements(async () =>
+        body(
           await alpha.agent.get('/v1/stock/reorder-points/counts').expect(200),
-        );
-        texts = sent.mock.calls.map(([config]) =>
-          typeof config === 'string'
-            ? config
-            : ((config as { text?: string } | null)?.text ?? ''),
-        );
-      } finally {
-        sent.mockRestore();
-      }
+        ),
+      );
 
       expect(counts).toEqual({ all: 6, low: 4, out: 1 });
-      const counted = texts.filter((text) => text.includes('as "out"'));
+      const counted = statements.filter(({ text }) =>
+        text.includes('as "out"'),
+      );
       expect(counted).toHaveLength(1);
-      expect(counted[0]).not.toContain('join "product_variants"');
+      expect(counted[0].text).not.toContain('join "product_variants"');
     });
 
     it('pages in its order, each page after the last, and refuses a cursor not in it', async () => {
@@ -1137,27 +1126,17 @@ describe('Reorder points (e2e)', () => {
         from variants
       `);
 
-      // Every statement the app sends goes through pg's Client#query, as
-      // the counts' test reads them.
-      const sent = vi.spyOn(Client.prototype, 'query');
-      let csv: string;
-      let texts: string[];
-      try {
-        csv = (
-          await alpha.agent.get('/v1/stock/reorder-points/export').expect(200)
-        ).text;
-        texts = sent.mock.calls.map(([config]) =>
-          typeof config === 'string'
-            ? config
-            : ((config as { text?: string } | null)?.text ?? ''),
-        );
-      } finally {
-        sent.mockRestore();
-      }
+      const { result: csv, statements } = await captureStatements(
+        async () =>
+          (await alpha.agent.get('/v1/stock/reorder-points/export').expect(200))
+            .text,
+      );
 
       expect(csv.trim().split('\r\n')).toHaveLength(1 + 1001);
       expect(
-        texts.filter((text) => text.includes('with p as materialized')),
+        statements.filter(({ text }) =>
+          text.includes('with p as materialized'),
+        ),
       ).toHaveLength(1);
     });
   });
