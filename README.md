@@ -237,7 +237,7 @@ work under updates it.
 | Before drafting an ADR                 | `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n>`, then attach `tmp/adr-NNN/check.txt` to the chat                                  |
 | Building from a brief                  | `/build-from-brief <brief> from <N>`; paste only the stops into the chat                                                                        |
 | A small issue, in a cloud session      | `/fix-issue <N>`; merge its pull request with Squash and merge                                                                                  |
-| Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                                          |
+| Every pull request's review            | `/usability-walkthrough panel <journey>`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                          |
 | Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                                                              |
 | After a merge                          | `scripts/prune-branches.sh --yes`                                                                                                               |
 | After a merge, now and then            | `scripts/clean-local.sh`, then `--yes`; `--docker` for Docker's space                                                                           |

@@ -9,17 +9,19 @@
   feature PR rather than getting one of their own.
 - **The reviews, before the PR is opened** (21 October 2026; from
   ADR-081 four, and from ADR-086 five): every feature branch runs, for
-  any PR that changes what a person sees, `/usability-walkthrough` as one
-  of its personas
-  (`.claude/skills/usability-walkthrough/personas.md`), then `/simplify`,
+  any PR that changes what a person sees, the walkthrough panel on each
+  journey its change touches, `/usability-walkthrough panel <journey>`,
+  the journey's personas at once (ADR-090;
+  `.claude/skills/usability-walkthrough/journeys.md`, a journey added
+  there first when its task is new), then `/simplify`,
   then `/code-review`, then
   `/production-readiness` on the sections the change touches
   ([conventions.md, "Production readiness"](conventions.md#production-readiness)),
   then `/doctor prompt-audit` on Claude's instruction files
   ([How code is delivered](#how-code-is-delivered)). Their findings are
   numbered together and nothing is fixed until Bob chooses; each fix
-  chosen is its own commit. The PR description names the journey
-  walked and the persona who walked it. `/usability-walkthrough` was
+  chosen is its own commit. The PR description names the journeys
+  walked and their personas. `/usability-walkthrough` was
   missed on several recent PRs, so ADR-079's branch walked
   two journeys, to make up for ADR-077 and ADR-078.
 - **Claude Code Review on Sonnet** (October 2026): the reviews in each

@@ -137,9 +137,11 @@ where a step must act on it.
   finding for the batch.
 - **The reviews, in two prompts** ([engineering.md, "How code is
   delivered"][delivered]):
-  1. **The findings.** `/usability-walkthrough` as the persona the brief
-     names from `personas.md`, added there first when it is new, for
-     any change a person sees; `/simplify`; `/code-review`;
+  1. **The findings.** The walkthrough panel,
+     `/usability-walkthrough panel <journey>`, on each journey the brief
+     names from `journeys.md`, a journey or a persona added there first
+     when it is new, for any change a person sees; `/simplify`;
+     `/code-review`;
      `/production-readiness` on the sections the change touches;
      `/doctor prompt-audit`, which needs Claude Code v2.1.283 or later
      and which Bob types in the session, since a session cannot run it:
