@@ -151,8 +151,11 @@ export const invoices = pgTable(
   (t) => [
     // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
     // matches; names through search_text, codes as stored.
+    // Each leads with the organization, through btree_gin, so a search
+    // rechecks its own organization's rows only (ADR-051, amended for #225).
     index('invoices_number_trgm_idx').using(
       'gin',
+      t.organizationId,
       sql`${t.number} gin_trgm_ops`,
     ),
     check(

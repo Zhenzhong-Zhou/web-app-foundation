@@ -202,8 +202,11 @@ export const productionOrders = pgTable(
   (t) => [
     // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
     // matches; names through search_text, codes as stored.
+    // Each leads with the organization, through btree_gin, so a search
+    // rechecks its own organization's rows only (ADR-051, amended for #225).
     index('production_orders_reference_trgm_idx').using(
       'gin',
+      t.organizationId,
       sql`${t.reference} gin_trgm_ops`,
     ),
     index('production_orders_org_status_idx').on(t.organizationId, t.status),

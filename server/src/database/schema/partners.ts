@@ -104,17 +104,26 @@ export const partners = pgTable(
   (t) => [
     // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
     // matches; names through search_text, codes as stored.
+    // Each leads with the organization, through btree_gin, so a search
+    // rechecks its own organization's rows only (ADR-051, amended for #225).
     index('partners_name_trgm_idx').using(
       'gin',
+      t.organizationId,
       sql`search_text(${t.name}) gin_trgm_ops`,
     ),
-    index('partners_code_trgm_idx').using('gin', sql`${t.code} gin_trgm_ops`),
+    index('partners_code_trgm_idx').using(
+      'gin',
+      t.organizationId,
+      sql`${t.code} gin_trgm_ops`,
+    ),
     index('partners_tax_id_trgm_idx').using(
       'gin',
+      t.organizationId,
       sql`${t.taxId} gin_trgm_ops`,
     ),
     index('partners_name_pinyin_trgm_idx').using(
       'gin',
+      t.organizationId,
       sql`${t.namePinyin} gin_trgm_ops`,
     ),
     // Per organization, never globally: two customers using the same supplier
