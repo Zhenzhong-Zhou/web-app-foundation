@@ -3164,6 +3164,13 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R91** *(A voided shipment's items faded below contrast, #214)* As
+  the demo Owner on SO-DEMO-1's Shipments tab, in light and then dark
+  mode: the voided shipment carries Voided beside its heading, and its
+  items are struck through in the same grey as the "Voided …: Picked
+  against the wrong order." line above them, no paler; its column
+  headings read in the normal text colour.
+
 - **MC-R90** *(On a phone, the lookup's list hiding its last Show all,
   #312)* As the demo Owner in Français at 390 × 844 (DevTools' iPhone 14),
   press the top bar's search button and type `pharm`: the list goes on
@@ -4613,3 +4620,5 @@ first.
   item's recipes load: MC-R89 added, Recipe reading Loading… in its place.
 - 2026-11-04: #312, on a phone the lookup's list hiding its last Show all:
   MC-R90 added, the list filling the full-screen search.
+- 2026-11-04: #214, a voided shipment's items faded below contrast: MC-R91
+  added, the items muted instead, and axe on an order with one.
