@@ -67,6 +67,22 @@ describe('useSubmit', () => {
     expect(onDone).not.toHaveBeenCalled();
   });
 
+  /**
+   * What a create returned, such as the id of the record to open, reaches
+   * onDone directly. Before, five dialogs kept it in a ref between the
+   * action and onDone (#273).
+   */
+  it('passes the action’s result to onDone', async () => {
+    const onDone = vi.fn();
+    const { result } = renderHook(() => useSubmit<string>(onDone));
+
+    await act(async () => {
+      await result.current.submit(() => Promise.resolve('rma-1'));
+    });
+
+    expect(onDone).toHaveBeenCalledWith('rma-1');
+  });
+
   it('does not surface a failing onDone as a submit error', async () => {
     const { result } = renderHook(() =>
       useSubmit(() => Promise.reject(new ApiError('Refetch died', 500))),

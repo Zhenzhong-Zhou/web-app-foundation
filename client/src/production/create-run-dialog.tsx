@@ -29,6 +29,8 @@ import {
   itemName,
   toApiDecimal,
 } from '../lib/format';
+import { useDebouncedRead } from '../lib/use-debounced-read';
+import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { usePartners } from '../lib/use-partners';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
@@ -188,7 +190,7 @@ export function CreateRunDialog({
    * What the run would use at the quantity typed (ADR-085), scaled by the
    * server as release will issue it; the client adds nothing up (ADR-025).
    * Asked once typing pauses; an answer to an older question is dropped
-   * by the effect's own cleanup. The last answer stays, dimmed, while the
+   * (useDebouncedRead). The last answer stays, dimmed, while the
    * next is asked; a quantity the server refuses shows none.
    */
   const recipe = form.bomId || active?.id || '';
@@ -200,28 +202,9 @@ export function CreateRunDialog({
           quantityPlanned: planned,
         })
       : null;
-  const [uses, setUses] = useState<{
-    path: string;
-    lines: RunPreviewLine[] | null;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!usesPath) return;
-    let ignore = false;
-    const timer = setTimeout(() => {
-      void api<RunPreview>(usesPath)
-        .then((result) => {
-          if (!ignore) setUses({ path: usesPath, lines: result.lines });
-        })
-        .catch(() => {
-          if (!ignore) setUses({ path: usesPath, lines: null });
-        });
-    }, 300);
-    return () => {
-      ignore = true;
-      clearTimeout(timer);
-    };
-  }, [usesPath]);
+  const uses = useDebouncedRead<RunPreview>(
+    usesPath ? { path: usesPath } : null,
+  );
 
   return (
     <Dialog
@@ -274,6 +257,9 @@ export function CreateRunDialog({
                 }))
               }
             />
+
+            {/* Keyed by the item, so each item's read waits the delay. */}
+            {recipesWaiting && <RecipeLoading key={form.outputVariantId} />}
 
             {/* Said in words, and Plan run stays off: never a run planned
                 without the recipe it would have had, silently (#290). */}
@@ -404,8 +390,11 @@ export function CreateRunDialog({
               slotProps={{ htmlInput: { inputMode: 'decimal', maxLength: 19 } }}
             />
 
-            {usesPath && uses?.lines?.length ? (
-              <Uses lines={uses.lines} current={uses.path === usesPath} />
+            {usesPath && uses?.value?.lines.length ? (
+              <Uses
+                lines={uses.value.lines}
+                current={uses.question.path === usesPath}
+              />
             ) : null}
 
             <TextField
@@ -499,6 +488,40 @@ export function CreateRunDialog({
         />
       </form>
     </Dialog>
+  );
+}
+
+/**
+ * The Recipe field while the item's recipes are read, once the read has
+ * taken INDICATOR_DELAY_MS (#430). Plan run is off meanwhile, and this says
+ * why. It holds the select's place, its helper included, so the fields
+ * below stay where they are when the recipes come.
+ */
+function RecipeLoading() {
+  const intl = useIntl();
+  const show = useDelayedFlag(true);
+
+  if (!show) return null;
+
+  return (
+    <TextField
+      id="run-bom-loading"
+      label={intl.formatMessage({
+        id: 'production.recipe',
+        defaultMessage: 'Recipe',
+      })}
+      fullWidth
+      disabled
+      value={intl.formatMessage({
+        id: 'common.loading',
+        defaultMessage: 'Loading…',
+      })}
+      helperText={intl.formatMessage({
+        id: 'production.create.recipe.help',
+        defaultMessage:
+          'An archived version is offered for repeating an old batch.',
+      })}
+    />
   );
 }
 

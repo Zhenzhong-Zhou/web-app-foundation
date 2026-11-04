@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { and, eq, type SQL, sql } from 'drizzle-orm';
 
+import { EXPORT_LIMIT } from '../../common/export';
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
 import { searchTerms } from '../../common/search';
@@ -196,6 +197,21 @@ export class ReorderPointsReadsService {
   }
 
   /**
+   * The list as its CSV reads it (ADR-057): every row its filter and
+   * search match, in its order, by their base names (ADR-056). One read,
+   * so each point's position is worked out once, not again for every
+   * page (#354). At most EXPORT_LIMIT + 1 rows, for withinLimit to judge.
+   */
+  async exportRows(query: ListReorderPointsDto): Promise<ReorderPointRow[]> {
+    const { entries } = await this.page(
+      { ...query, before: undefined, limit: EXPORT_LIMIT + 1 },
+      null,
+      false,
+    );
+    return entries;
+  }
+
+  /**
    * Home's card (ADR-085; ADR-058, as amended): the list's first rows on
    * Low, and beside them how many rows Low shows and the out among them,
    * counted over the same positions in the same statement. So each
@@ -358,10 +374,15 @@ export class ReorderPointsReadsService {
    * How many rows each of the list's filters shows, All, Low and Out,
    * with its search and the filter left off, so each number is the rows
    * pressing that one shows (ADR-055). The low count holds the out.
+   *
+   * The items are joined for a search alone: positionsOf already holds
+   * each point to its item, so without one the join only adds work over
+   * every position (#353).
    */
   counts(query: ListReorderPointsDto = {}): Promise<ReorderPointCounts> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const today = await todayOf(tx, organizationId);
+      const search = searched(query, organizationId);
 
       const { rows } = await tx.execute<{
         all: number;
@@ -373,8 +394,8 @@ export class ReorderPointsReadsService {
           count(*)::int as "all",
           (count(*) filter (where ${IS_LOW}))::int as "low",
           (count(*) filter (where ${IS_OUT}))::int as "out"
-        from ${namedPositions(organizationId)}
-        ${whereOf(searched(query, organizationId))}
+        from ${search.length > 0 ? namedPositions(organizationId) : sql`p`}
+        ${whereOf(search)}
       `);
 
       return rows[0];
@@ -604,7 +625,9 @@ export class ReorderPointsReadsService {
 
 /**
  * The drafts adding to each item, newest first: draft purchases' lines
- * and draft runs, as positionsOf counts them in draft.
+ * and draft runs, as positionsOf counts them in draft. The items are one
+ * array parameter, so an export's EXPORT_LIMIT of them stays within
+ * Postgres's 65,535 parameters a statement.
  */
 async function draftsOf(
   tx: Tx,
@@ -615,10 +638,7 @@ async function draftsOf(
   if (variantIds.length === 0) return found;
 
   const org = sql`${organizationId}::uuid`;
-  const items = sql.join(
-    variantIds.map((id) => sql`${id}::uuid`),
-    sql`, `,
-  );
+  const items = sql`${sql.param(variantIds)}::uuid[]`;
 
   const { rows } = await tx.execute<DraftRow>(sql`
     select * from (
@@ -635,7 +655,7 @@ async function draftsOf(
       where o.organization_id = ${org}
         and o.direction = 'purchase'
         and o.status = 'draft'
-        and ol.variant_id in (${items})
+        and ol.variant_id = any(${items})
       union all
       select
         po.output_variant_id,
@@ -646,7 +666,7 @@ async function draftsOf(
       from production_orders po
       where po.organization_id = ${org}
         and po.status = 'draft'
-        and po.output_variant_id in (${items})
+        and po.output_variant_id = any(${items})
     ) d
     order by d.id desc
   `);

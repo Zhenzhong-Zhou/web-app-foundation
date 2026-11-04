@@ -3164,6 +3164,24 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R89** *(Plan run greyed with nothing saying why while the item's
+  recipes load, then the fields jumping, #430)* As the demo Owner on
+  Production, with DevTools' Network on Slow 4G, Plan a run and choose
+  CALM-90CT in Making: Recipe reads Loading…, greyed, while Plan run is
+  greyed; then, in the same place, "v1 (current) — makes 1,000", with
+  Reference and the fields below it not moving. With No throttling,
+  choose another item: no Loading… flashes. In 中文 正在加载….
+
+- **MC-R88** *(The previews that ask once typing pauses, one read for the
+  four, #355)* As the demo Owner on SO-DEMO-1, press Ship and choose where
+  it ships from: each line's lots show a moment after. With `*preview*`
+  blocked (DevTools → Network request blocking), change a quantity: Could
+  not check stock., with no lots or Choose lots left from before. Unblock
+  it and change the quantity again: its lots show, and the error goes.
+  Type 120 in Plan a run's Quantity to make, a reorder point's Reorder
+  point, or a quantity in Credit: each asks once typing pauses, and shows
+  what the server works out.
+
 - **MC-R87** *(Release saying an item has no recipe when the read of its
   recipes failed, found by the fix-ups' review)* As the demo Owner, Plan
   a run of BLEND-FOCUS, which has no recipe: 10, Made at Office, Plan run.
@@ -4582,3 +4600,8 @@ first.
 - 2026-11-03: Release saying an item has no recipe when the read of its
   recipes failed, #290's sibling, found by the fix-ups' review: MC-R87
   added.
+- 2026-11-03: #355, the four previews that ask once typing pauses made one
+  read: MC-R88 added, a failed stock check in Ship leaving no lots from
+  before.
+- 2026-11-03: #430, Plan run greyed with nothing saying why while the
+  item's recipes load: MC-R89 added, Recipe reading Loading… in its place.

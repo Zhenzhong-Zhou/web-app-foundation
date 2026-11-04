@@ -14,7 +14,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type {
@@ -33,6 +33,7 @@ import {
   toApiDecimal,
 } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
+import { useDebouncedRead } from '../lib/use-debounced-read';
 import { useSubmit } from '../lib/use-submit';
 import { formatRate } from '../settings/tax-rate';
 import { rem } from '../theme/rem';
@@ -105,16 +106,6 @@ export function CreditInvoiceDialog({
   );
 
   const [creditDate, setCreditDate] = useState(organizationToday());
-  /**
-   * The last answer, with the request it answered. Shown only while it
-   * answers what is entered now, so figures for an earlier entry are never
-   * the ones confirmed.
-   */
-  const [answer, setAnswer] = useState<{
-    request: string;
-    preview: CreditPreview | null;
-    refusal: string | null;
-  } | null>(null);
 
   // Nothing credited yet: the only time "everything" is simply every line
   // at its full quantity and price, with no remainder to work out.
@@ -151,41 +142,19 @@ export function CreditInvoiceDialog({
   /**
    * The server's figures for what is entered, a moment after typing stops.
    * Keyed on the request text, so the same entry is not asked for twice.
+   * The last answer is shown only while it answers what is entered now, so
+   * figures for an earlier entry are never the ones confirmed.
    */
-  useEffect(() => {
-    if (!open || !hasLines) return;
+  const answer = useDebouncedRead<{ credit: CreditPreview }>(
+    open && hasLines
+      ? { path: `/invoices/${invoice.id}/credit-notes/preview`, body: request }
+      : null,
+  );
 
-    let ignore = false;
-    const timer = setTimeout(() => {
-      void api<{ credit: CreditPreview }>(
-        `/invoices/${invoice.id}/credit-notes/preview`,
-        { method: 'POST', body: request },
-      )
-        .then((response) => {
-          if (!ignore) {
-            setAnswer({ request, preview: response.credit, refusal: null });
-          }
-        })
-        .catch((caught: unknown) => {
-          if (!ignore) {
-            setAnswer({
-              request,
-              preview: null,
-              refusal: messageFor(caught),
-            });
-          }
-        });
-    }, 400);
-
-    return () => {
-      ignore = true;
-      clearTimeout(timer);
-    };
-  }, [open, invoice.id, request, hasLines]);
-
-  const current = hasLines && answer?.request === request ? answer : null;
-  const preview = current?.preview ?? null;
-  const refusal = current?.refusal ?? null;
+  const current = hasLines && answer?.question.body === request ? answer : null;
+  const preview = current?.value?.credit ?? null;
+  const refusal =
+    current && !current.value ? messageFor(current.failure) : null;
 
   const { submitting, error, errorCode, reset, submit } = useSubmit(
     async () => {

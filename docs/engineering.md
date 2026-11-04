@@ -457,8 +457,8 @@ reports success.
 - Dialogs take permission flags from their page rather than reading the
   session.
 - `useSubmit`'s `success`, its confirmation toast, can be written from
-  the action's result (ADR-073); `onDone` takes no result, so keep an id
-  it needs in a `useRef`.
+  the action's result (ADR-073), and `onDone` takes that result too, such
+  as the id of the record to open, so no dialog keeps it in a `useRef`.
 - Hooks never inside hooks or after an early return.
 - Playwright:
   - prefer `getByRole(…, { name, exact: true })`, and label tables
