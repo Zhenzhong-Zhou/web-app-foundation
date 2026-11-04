@@ -158,15 +158,12 @@ so the timing is the evidence for the name lookup.
   Then indexes on the source and destination location with the id.
 - **Lot search** reads through `lots_code_trgm_idx`, the pg_trgm this
   line waited for, since migration 0042 (ADR-056), and joins only the
-  organization's variants (#187). The index knows no organization, so
-  other organizations' matching lots are read and filtered out: 79% of
-  the candidates for `LV-0001` at large. Trigger: ADR-056's for an index
-  per organization, one organization's rows dominating a table or a
-  budget missed. Not met: the typo lookup's miss (#225) went once #186 put
-  the organization on the lookup's joins (28 October 2026), and came back
-  on slower runners the next day. One query per pass came first, and the
-  index per organization followed when that fell short (the amendment for
-  #225 and #276, below).
+  organization's variants (#187). Until migration 0077 the index knew no
+  organization, so other organizations' matching lots were read and
+  filtered out: 79% of the candidates for `LV-0001` at large. Since then
+  it leads with the organization (the amendment for #225 and #276,
+  below): at small, lot search finds 341 candidates in its own
+  organization, and its plan went from 6.0 to 0.7 ms on the Mac.
 - **One Chinese character on a large catalogue.** `GET /products?search=专`
   in `zh-Hans`, at large, in its largest organization: 63.5 ms, reading
   every organization's translations through the trigram index (29
@@ -378,6 +375,28 @@ amendment's gave it (the maintainer, 4 November 2026, as recommended):
   plan-check rule, which stays for its own batch: the index changes no
   join and no rule in `server/perf/plans.ts`.
 
+### Decision — the orders' partner arm as an array, past the index
+
+The index per organization (migration 0077, step 9 of the build, 3
+November 2026) sped up lot search, from 6.0 to 0.7 ms, and the code
+lookup, from 10.8 to 5.7, but left the typo lookup on the Mac at 51 ms
+against 49. Its close pass takes 14.7 ms, 11.7 of them in the orders
+branch: an order is found by its partner's name through `partner_id in
+(select …)` inside an OR, which no index serves. So Postgres reads every
+one of the organization's 5,344 orders and measures each one's
+similarity. Written as `partner_id = any(array(select …))`, the partners'
+ids are found first, once, and the orders' partner index joins the
+number's and the reference's trigram indexes in one bitmap OR: in psql
+the branch went from 18.0 to 0.6 ms, with the same rows.
+
+So `partnerMatches`, in `server/src/modules/partners/partner-search.ts`,
+sends its subquery as an array (the maintainer, 3 November 2026, as
+recommended): for the lookup's two passes, and for the order, invoice,
+credit note and return lists, which find a document by its partner the
+same way. Each table it serves keeps an index on its partner, which the
+build checks, and what each search finds does not change. The plans
+prove it before the second timed run.
+
 ### Decision — Home's known miss given to its redesign
 
 Home's statements take about 26 ms at small; its time over budget comes
@@ -407,9 +426,9 @@ owner and a date stays a debt; a raised budget would forget it
 
 ### Deferred — each with what brings it in
 
-- **Past the index,** if the typo lookup's median still misses 240 ms:
-  decided again from that run's plans. Trigger: the second timed run on
-  the branch.
+- **Past the partner arm,** if the typo lookup's median still misses 240
+  ms: decided again from that run's plans. Trigger: the second timed run
+  on the branch.
 - **Home's reads in one transaction, or prepared statements.** Trigger:
   ADR-091, or 31 January 2027, whichever comes first.
 
@@ -422,10 +441,14 @@ owner and a date stays a debt; a raised budget would forget it
 - A migration creates `btree_gin` and replaces each trigram index on a
   table with `organization_id` by one that leads with it; the schema's
   index definitions say the same.
+- `partnerMatches` sends its subquery as an array, so a document found by
+  its partner's name is read through indexes, in the lookup and in four
+  lists.
 - The Watch's lot search and "Home after ADR-085" say where each stands.
 - The build, in this order: the dependencies; the Mac's figures before;
   one query per pass, with its test, and #225's known miss gone; Home's
   new date; one timed run by hand on the branch, judged against 240 ms;
-  then the index per organization, with the Mac's plans and figures, and
-  a second timed run against the same 240 ms; the dependencies again and
-  the reviews; the pull request, which closes #225 and refers to #276.
+  then the index per organization, with the Mac's plans and figures;
+  then the partner arm as an array, with its plans; a second timed run
+  against the same 240 ms; the dependencies again and the reviews; the
+  pull request, which closes #225 and refers to #276.
