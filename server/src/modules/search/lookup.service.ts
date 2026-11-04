@@ -5,6 +5,7 @@ import {
   eq,
   notInArray,
   or,
+  type SQL,
   sql,
   type SQLWrapper,
 } from 'drizzle-orm';
@@ -112,11 +113,16 @@ type Row = Omit<LookupResult, 'close'>;
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 
 /**
- * A row of either pass, tagged by its kind. An item's title is its
- * product's name and variantName its variant's, joined by itemName once
- * read; every other kind's variantName is null.
+ * A row of either pass, tagged by its kind and its place in that kind's
+ * order. An item's title is its product's name and variantName its
+ * variant's, joined by itemName once read; every other kind's variantName
+ * is null.
  */
-type Tagged = Row & { kind: LookupKind; variantName: string | null };
+type Tagged = Row & {
+  kind: LookupKind;
+  position: number;
+  variantName: string | null;
+};
 
 /** One kind's query in a pass, not yet sent: a branch of its union all. */
 type Branch = PgSetOperatorWithResult<Tagged[]> &
@@ -137,6 +143,19 @@ const NONE = {
   productId: sql<string | null>`null::uuid`,
   coverFileId: sql<string | null>`null::uuid`,
 };
+
+/**
+ * A row's place in its kind's order, ranked as the branch ranks. SQL
+ * promises no order for a union all's rows, so each row carries its place:
+ * the branch's limit keeps the first by it, and together sorts on it.
+ */
+const positionBy = (...order: SQL[]) =>
+  sql<number>`row_number() over (order by ${sql.join(order, sql`, `)})`
+    .mapWith(Number)
+    .as('position');
+
+/** A branch's rows by their place, so its limit keeps the best. */
+const byPosition = sql`"position"`;
 
 /**
  * The top bar's lookup (ADR-056): every kind of record a member may see,
@@ -241,6 +260,14 @@ export class LookupService {
           tx
             .select({
               kind: tag(kind),
+              position: positionBy(
+                close
+                  ? desc(
+                      sql`greatest(${closeness(orders.number, terms)}, ${closeness(orders.reference, terms)}, ${closeness(partners.name, terms, 'name')})`,
+                    )
+                  : sql`least(${matchRank(orders.number, terms)}, ${matchRank(orders.reference, terms)}, ${matchRank(partners.name, terms, 'name')})`,
+                desc(orders.id),
+              ),
               id: orders.id,
               // Ours, which every order has (ADR-071).
               title: orders.number,
@@ -283,18 +310,7 @@ export class LookupService {
                     ),
               ),
             )
-            .orderBy(
-              ...(close
-                ? [
-                    desc(
-                      sql`greatest(${closeness(orders.number, terms)}, ${closeness(orders.reference, terms)}, ${closeness(partners.name, terms, 'name')})`,
-                    ),
-                  ]
-                : [
-                    sql`least(${matchRank(orders.number, terms)}, ${matchRank(orders.reference, terms)}, ${matchRank(partners.name, terms, 'name')})`,
-                  ]),
-              desc(orders.id),
-            )
+            .orderBy(byPosition)
             .limit(limit);
 
       case 'invoice':
@@ -302,6 +318,12 @@ export class LookupService {
           tx
             .select({
               kind: tag(kind),
+              position: positionBy(
+                close
+                  ? desc(closeness(invoices.number, terms))
+                  : matchRank(invoices.number, terms),
+                desc(invoices.id),
+              ),
               id: invoices.id,
               title: sql<string>`${invoices.number}`,
               variantName: NONE.variantName,
@@ -329,12 +351,7 @@ export class LookupService {
                   : codeMatches(invoices.number, terms),
               ),
             )
-            .orderBy(
-              close
-                ? desc(closeness(invoices.number, terms))
-                : matchRank(invoices.number, terms),
-              desc(invoices.id),
-            )
+            .orderBy(byPosition)
             .limit(limit);
 
       case 'creditNote':
@@ -342,6 +359,12 @@ export class LookupService {
           tx
             .select({
               kind: tag(kind),
+              position: positionBy(
+                close
+                  ? desc(closeness(creditNotes.number, terms))
+                  : matchRank(creditNotes.number, terms),
+                desc(creditNotes.id),
+              ),
               id: creditNotes.id,
               title: creditNotes.number,
               variantName: NONE.variantName,
@@ -368,12 +391,7 @@ export class LookupService {
                   : codeMatches(creditNotes.number, terms),
               ),
             )
-            .orderBy(
-              close
-                ? desc(closeness(creditNotes.number, terms))
-                : matchRank(creditNotes.number, terms),
-              desc(creditNotes.id),
-            )
+            .orderBy(byPosition)
             .limit(limit);
 
       case 'lot':
@@ -381,6 +399,12 @@ export class LookupService {
           tx
             .select({
               kind: tag(kind),
+              position: positionBy(
+                close
+                  ? desc(closeness(lots.code, terms))
+                  : matchRank(lots.code, terms),
+                desc(lots.id),
+              ),
               id: lots.id,
               title: lots.code,
               variantName: NONE.variantName,
@@ -407,12 +431,7 @@ export class LookupService {
                   : codeMatches(lots.code, terms),
               ),
             )
-            .orderBy(
-              close
-                ? desc(closeness(lots.code, terms))
-                : matchRank(lots.code, terms),
-              desc(lots.id),
-            )
+            .orderBy(byPosition)
             .limit(limit);
 
       case 'item': {
@@ -421,6 +440,14 @@ export class LookupService {
           tx
             .select({
               kind: tag(kind),
+              position: positionBy(
+                close
+                  ? desc(
+                      sql`greatest(${closeness(productVariants.sku, terms)}, ${closeness(products.name, terms, 'name')})`,
+                    )
+                  : itemRank(terms, locale, organizationId),
+                desc(productVariants.id),
+              ),
               id: productVariants.id,
               // In the reader's language, as every screen names it
               // (ADR-056), joined by itemName once read.
@@ -453,14 +480,7 @@ export class LookupService {
                   : itemMatches(terms, organizationId),
               ),
             )
-            .orderBy(
-              close
-                ? desc(
-                    sql`greatest(${closeness(productVariants.sku, terms)}, ${closeness(products.name, terms, 'name')})`,
-                  )
-                : itemRank(terms, locale, organizationId),
-              desc(productVariants.id),
-            )
+            .orderBy(byPosition)
             .limit(limit);
       }
 
@@ -469,6 +489,12 @@ export class LookupService {
           tx
             .select({
               kind: tag(kind),
+              position: positionBy(
+                close
+                  ? desc(closeness(partners.name, terms, 'name'))
+                  : partnerRank(terms),
+                desc(partners.id),
+              ),
               id: partners.id,
               title: partners.name,
               variantName: NONE.variantName,
@@ -488,12 +514,7 @@ export class LookupService {
                   : partnerRecordMatches(terms),
               ),
             )
-            .orderBy(
-              close
-                ? desc(closeness(partners.name, terms, 'name'))
-                : partnerRank(terms),
-              desc(partners.id),
-            )
+            .orderBy(byPosition)
             .limit(limit);
 
       case 'productionRun':
@@ -501,6 +522,12 @@ export class LookupService {
           tx
             .select({
               kind: tag(kind),
+              position: positionBy(
+                close
+                  ? desc(closeness(productionOrders.reference, terms))
+                  : matchRank(productionOrders.reference, terms),
+                desc(productionOrders.id),
+              ),
               id: productionOrders.id,
               title: sql<string>`${productionOrders.reference}`,
               variantName: NONE.variantName,
@@ -527,12 +554,7 @@ export class LookupService {
                   : codeMatches(productionOrders.reference, terms),
               ),
             )
-            .orderBy(
-              close
-                ? desc(closeness(productionOrders.reference, terms))
-                : matchRank(productionOrders.reference, terms),
-              desc(productionOrders.id),
-            )
+            .orderBy(byPosition)
             .limit(limit);
 
       case 'returnAuthorization':
@@ -540,6 +562,12 @@ export class LookupService {
           tx
             .select({
               kind: tag(kind),
+              position: positionBy(
+                close
+                  ? desc(closeness(returnAuthorizations.number, terms))
+                  : matchRank(returnAuthorizations.number, terms),
+                desc(returnAuthorizations.id),
+              ),
               id: returnAuthorizations.id,
               title: returnAuthorizations.number,
               variantName: NONE.variantName,
@@ -566,12 +594,7 @@ export class LookupService {
                   : codeMatches(returnAuthorizations.number, terms),
               ),
             )
-            .orderBy(
-              close
-                ? desc(closeness(returnAuthorizations.number, terms))
-                : matchRank(returnAuthorizations.number, terms),
-              desc(returnAuthorizations.id),
-            )
+            .orderBy(byPosition)
             .limit(limit);
     }
   }
@@ -591,27 +614,34 @@ type KindQuery = (exclude: string[], close: boolean, limit: number) => Branch;
 /**
  * A pass's branches sent as one statement, joined by union all, and its
  * rows sorted back by their kind. Every branch selects the same columns in
- * the same order, which Drizzle checks. Each kind's rows keep their
- * branch's order, by which Postgres appends them; grouped by their tag,
- * they would keep it even were the branches' rows interleaved.
+ * the same order, which Drizzle checks.
  */
 async function together(branches: Branch[]): Promise<Map<LookupKind, Row[]>> {
-  const byKind = new Map<LookupKind, Row[]>();
-  if (branches.length === 0) return byKind;
+  if (branches.length === 0) return new Map();
 
   // Drizzle's unionAll takes two selects or more.
   const [first, second, ...rest] = branches;
   const rows =
     branches.length > 1 ? await unionAll(first, second, ...rest) : await first;
+  return byKind(rows);
+}
 
-  for (const { kind, variantName, ...row } of rows) {
+/**
+ * A pass's rows by their kind, each kind's in its branch's order by the
+ * place each row carries, in whatever order the union all returned them;
+ * an item's title joined by itemName.
+ */
+export function byKind(rows: Tagged[]): Map<LookupKind, Row[]> {
+  const grouped = new Map<LookupKind, Row[]>();
+  const inPlace = [...rows].sort((a, b) => a.position - b.position);
+  for (const { kind, position: _position, variantName, ...row } of inPlace) {
     const title =
       kind === 'item' ? itemName(row.title, variantName) : row.title;
-    const kindRows = byKind.get(kind) ?? [];
+    const kindRows = grouped.get(kind) ?? [];
     kindRows.push({ ...row, title });
-    byKind.set(kind, kindRows);
+    grouped.set(kind, kindRows);
   }
-  return byKind;
+  return grouped;
 }
 
 /**
