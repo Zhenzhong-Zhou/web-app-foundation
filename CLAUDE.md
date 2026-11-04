@@ -124,7 +124,10 @@ Andrej Karpathy's observations on LLM coding pitfalls
 - `/code-review`: reviews a branch or pull request against these rules,
   `docs/conventions.md` and `docs/principles.md`.
 - `/usability-walkthrough`: walks a task through the running app as a
-  persona and reports what gets in the way.
+  persona and reports what gets in the way; `panel <journey>` walks a
+  journey from its `journeys.md` as several personas at once, each in a
+  `walkthrough` subagent (`.claude/agents/walkthrough.md`), and merges
+  what they found.
 - `/production-readiness`: reviews whether the deployed app is ready for
   real users, report only.
 - `/build-from-brief`: runs a build brief in `tmp/`, one step as
