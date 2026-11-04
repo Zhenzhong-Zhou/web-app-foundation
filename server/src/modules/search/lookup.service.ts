@@ -596,19 +596,20 @@ type KindQuery = (exclude: string[], close: boolean, limit: number) => Branch;
  * they would keep it even were the branches' rows interleaved.
  */
 async function together(branches: Branch[]): Promise<Map<LookupKind, Row[]>> {
+  const byKind = new Map<LookupKind, Row[]>();
+  if (branches.length === 0) return byKind;
+
+  // Drizzle's unionAll takes two selects or more.
   const [first, second, ...rest] = branches;
   const rows =
-    branches.length === 0
-      ? []
-      : branches.length === 1
-        ? await first
-        : await unionAll(first, second, ...rest);
+    branches.length > 1 ? await unionAll(first, second, ...rest) : await first;
 
-  const byKind = new Map<LookupKind, Row[]>();
   for (const { kind, variantName, ...row } of rows) {
     const title =
       kind === 'item' ? itemName(row.title, variantName) : row.title;
-    byKind.set(kind, [...(byKind.get(kind) ?? []), { ...row, title }]);
+    const kindRows = byKind.get(kind) ?? [];
+    kindRows.push({ ...row, title });
+    byKind.set(kind, kindRows);
   }
   return byKind;
 }
