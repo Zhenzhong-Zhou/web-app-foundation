@@ -106,6 +106,7 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/orders.e2e-spec.ts) "numbers each order as it is created, a series per direction (ADR-071)" ·
   [test](../../server/test/list-search.e2e-spec.ts) "finds orders by part of their reference or their partner, in any script" ·
   [test](../../server/test/lookup.e2e-spec.ts) "finds its own records through each join, none of a twin organization's" ·
+  [test](../../server/test/lookup.e2e-spec.ts) "finds an order by its number when no partner matches, exactly or by a typo" ·
   MC-1557 · MC-2503
 - **An invoice, a credit note or a return: its number in the top bar; on
   its own list, its number or its partner's name.** A draft invoice has no
@@ -141,6 +142,7 @@ leave how it matches to this file. How this file is kept is in the
   most five of each, under each kind's name.
   [ADR-056](../adr/0056-search.md#decision--order-of-results) ·
   [test](../../server/test/lookup.e2e-spec.ts) "groups what it finds by kind, the exact match first" ·
+  [test](../../server/test/lookup.e2e-spec.ts) "brings five of each kind that matches more, in each kind's order" ·
   [test](../../client/src/search/lookup-box.test.tsx) "asks after two characters, and shows results by kind" ·
   MC-1556
 - **It asks for at least two characters, or one Chinese character,**
