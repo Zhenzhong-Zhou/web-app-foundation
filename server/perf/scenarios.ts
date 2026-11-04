@@ -245,13 +245,7 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // narrowed by its search.
     read('GET /lookup?q=code', () => '/lookup?q=LV-00001'),
     read('GET /lookup?q=name', () => '/lookup?q=focus'),
-    // Over its budget again on 29 October 2026, main and #260's branch
-    // alike (#225): known until 30 November, and failing past 400 ms
-    // (ADR-082).
-    {
-      ...read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
-      knownMiss: { issue: '#225', until: '2026-11-30', ceilingMs: 400 },
-    },
+    read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
     read('GET /orders?search', () => '/orders?status=all&search=SO-10'),
     // Products, Partners and the item pickers searched on the server
     // (ADR-056, amended): a Chinese reader's one character, which no

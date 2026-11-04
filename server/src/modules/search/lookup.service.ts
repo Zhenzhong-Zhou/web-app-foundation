@@ -1,5 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { and, desc, eq, notInArray, or, sql } from 'drizzle-orm';
+import {
+  and,
+  desc,
+  eq,
+  notInArray,
+  or,
+  sql,
+  type SQLWrapper,
+} from 'drizzle-orm';
+import { type PgSetOperatorWithResult, unionAll } from 'drizzle-orm/pg-core';
 
 import type { Locale } from '../../common/locales';
 import {
@@ -102,11 +111,31 @@ type Shaped = { start: string; kind: LookupKind };
 type Row = Omit<LookupResult, 'close'>;
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 
+/**
+ * A row of either pass, tagged by its kind. An item's title is its
+ * product's name and variantName its variant's, joined by itemName once
+ * read; every other kind's variantName is null.
+ */
+type Tagged = Row & { kind: LookupKind; variantName: string | null };
+
+/** One kind's query in a pass, not yet sent: a branch of its union all. */
+type Branch = PgSetOperatorWithResult<Tagged[]> &
+  SQLWrapper &
+  PromiseLike<Tagged[]>;
+
+/** Which kind a branch's rows are. */
+const tag = (kind: LookupKind) => sql<LookupKind>`${kind}::text`;
+
+/**
+ * What a kind has none of, typed: a union all resolves an untyped null as
+ * text, which a later branch's uuid then cannot match.
+ */
 const NONE = {
-  status: sql<string | null>`null`,
-  expiresAt: sql<string | null>`null`,
-  productId: sql<string | null>`null`,
-  coverFileId: sql<string | null>`null`,
+  variantName: sql<string | null>`null::text`,
+  status: sql<string | null>`null::text`,
+  expiresAt: sql<string | null>`null::text`,
+  productId: sql<string | null>`null::uuid`,
+  coverFileId: sql<string | null>`null::uuid`,
 };
 
 /**
@@ -120,8 +149,12 @@ const NONE = {
  * typo is a search that finds (almost) nothing, and a lot code that finds
  * five lots is not one. Skipping the close pass then is what keeps a code's
  * lookup inside its budget (ADR-051): word similarity across every kind's
- * numbers is the costliest query here, and was all noise. A kind the member may not view is never queried, so nothing says
- * a record exists that its list would hide. Every query is scoped to the
+ * numbers is the costliest query here, and was all noise. Each pass is one
+ * statement, every kind a branch of its union all with its own order and
+ * limit, so an owner's typo sends four statements at most where it sent
+ * eighteen one after another (ADR-051's amendment for #225). A kind the
+ * member may not view is never queried, so nothing says a record exists
+ * that its list would hide. Every query is scoped to the
  * organization in context, and so is every table it joins: without that,
  * Postgres joins this organization's orders and items to every
  * organization's partners and products, a cost that grows with the whole
@@ -143,31 +176,27 @@ export class LookupService {
         query: this.find(tx, kind, terms, organizationId, locale),
       }));
 
-      // Exact matches first, every kind.
-      const exact = new Map<LookupKind, Row[]>();
-      for (const { kind, query } of queries) {
-        exact.set(kind, await query([], false, LOOKUP_LIMIT));
-      }
+      // Exact matches first, every kind, in one statement.
+      const exact = await together(
+        queries.map(({ query }) => query([], false, LOOKUP_LIMIT)),
+      );
 
-      // Close matches only when the lookup as a whole found next to nothing.
+      // Close matches only when the lookup as a whole found next to nothing,
+      // in one statement too: each kind short of the limit, by what it lacks.
       const found = [...exact.values()].reduce(
         (sum, rows) => sum + rows.length,
         0,
       );
-      const near = new Map<LookupKind, Row[]>();
+      let near = new Map<LookupKind, Row[]>();
       if (found < LOOKUP_LIMIT) {
-        for (const { kind, query } of queries) {
-          const rows = exact.get(kind) ?? [];
-          if (rows.length >= LOOKUP_LIMIT) continue;
-          near.set(
-            kind,
-            await query(
-              rows.map((row) => row.id),
-              true,
-              LOOKUP_LIMIT - rows.length,
-            ),
-          );
-        }
+        near = await together(
+          queries
+            .filter(({ kind }) => (exact.get(kind)?.length ?? 0) < LOOKUP_LIMIT)
+            .map(({ kind, query }) => {
+              const ids = (exact.get(kind) ?? []).map((row) => row.id);
+              return query(ids, true, LOOKUP_LIMIT - ids.length);
+            }),
+        );
       }
 
       const groups: LookupGroup[] = [];
@@ -209,12 +238,14 @@ export class LookupService {
   ): KindQuery {
     switch (kind) {
       case 'order':
-        return pass((exclude, close, limit) =>
+        return (exclude, close, limit) =>
           tx
             .select({
+              kind: tag(kind),
               id: orders.id,
               // Ours, which every order has (ADR-071).
               title: orders.number,
+              variantName: NONE.variantName,
               detail: partners.name,
               status: orders.status,
               expiresAt: NONE.expiresAt,
@@ -265,15 +296,16 @@ export class LookupService {
                   ]),
               desc(orders.id),
             )
-            .limit(limit),
-        );
+            .limit(limit);
 
       case 'invoice':
-        return pass((exclude, close, limit) =>
+        return (exclude, close, limit) =>
           tx
             .select({
+              kind: tag(kind),
               id: invoices.id,
               title: sql<string>`${invoices.number}`,
+              variantName: NONE.variantName,
               detail: partners.name,
               status: invoices.status,
               expiresAt: NONE.expiresAt,
@@ -304,15 +336,16 @@ export class LookupService {
                 : matchRank(invoices.number, terms),
               desc(invoices.id),
             )
-            .limit(limit),
-        );
+            .limit(limit);
 
       case 'creditNote':
-        return pass((exclude, close, limit) =>
+        return (exclude, close, limit) =>
           tx
             .select({
+              kind: tag(kind),
               id: creditNotes.id,
               title: creditNotes.number,
+              variantName: NONE.variantName,
               detail: partners.name,
               status: NONE.status,
               expiresAt: NONE.expiresAt,
@@ -342,15 +375,16 @@ export class LookupService {
                 : matchRank(creditNotes.number, terms),
               desc(creditNotes.id),
             )
-            .limit(limit),
-        );
+            .limit(limit);
 
       case 'lot':
-        return pass((exclude, close, limit) =>
+        return (exclude, close, limit) =>
           tx
             .select({
+              kind: tag(kind),
               id: lots.id,
               title: lots.code,
+              variantName: NONE.variantName,
               detail: productVariants.sku,
               status: NONE.status,
               expiresAt: sql<string | null>`${lots.expiresAt}::text`,
@@ -380,17 +414,18 @@ export class LookupService {
                 : matchRank(lots.code, terms),
               desc(lots.id),
             )
-            .limit(limit),
-        );
+            .limit(limit);
 
       case 'item': {
         const shown = namesIn(locale, organizationId);
-        return pass((exclude, close, limit) =>
+        return (exclude, close, limit) =>
           tx
             .select({
+              kind: tag(kind),
               id: productVariants.id,
-              // In the reader's language, as every screen names it (ADR-056).
-              productName: shown.productName,
+              // In the reader's language, as every screen names it
+              // (ADR-056), joined by itemName once read.
+              title: shown.productName,
               variantName: shown.variantName,
               detail: productVariants.sku,
               status: NONE.status,
@@ -427,22 +462,17 @@ export class LookupService {
                 : itemRank(terms, locale, organizationId),
               desc(productVariants.id),
             )
-            .limit(limit)
-            .then((rows) =>
-              rows.map(({ productName, variantName, ...row }) => ({
-                ...row,
-                title: itemName(productName, variantName),
-              })),
-            ),
-        );
+            .limit(limit);
       }
 
       case 'partner':
-        return pass((exclude, close, limit) =>
+        return (exclude, close, limit) =>
           tx
             .select({
+              kind: tag(kind),
               id: partners.id,
               title: partners.name,
+              variantName: NONE.variantName,
               detail: partners.code,
               status: NONE.status,
               expiresAt: NONE.expiresAt,
@@ -465,15 +495,16 @@ export class LookupService {
                 : partnerRank(terms),
               desc(partners.id),
             )
-            .limit(limit),
-        );
+            .limit(limit);
 
       case 'productionRun':
-        return pass((exclude, close, limit) =>
+        return (exclude, close, limit) =>
           tx
             .select({
+              kind: tag(kind),
               id: productionOrders.id,
               title: sql<string>`${productionOrders.reference}`,
+              variantName: NONE.variantName,
               detail: productVariants.sku,
               status: productionOrders.status,
               expiresAt: NONE.expiresAt,
@@ -503,15 +534,16 @@ export class LookupService {
                 : matchRank(productionOrders.reference, terms),
               desc(productionOrders.id),
             )
-            .limit(limit),
-        );
+            .limit(limit);
 
       case 'returnAuthorization':
-        return pass((exclude, close, limit) =>
+        return (exclude, close, limit) =>
           tx
             .select({
+              kind: tag(kind),
               id: returnAuthorizations.id,
               title: returnAuthorizations.number,
+              variantName: NONE.variantName,
               detail: partners.name,
               status: returnAuthorizations.status,
               expiresAt: NONE.expiresAt,
@@ -541,8 +573,7 @@ export class LookupService {
                 : matchRank(returnAuthorizations.number, terms),
               desc(returnAuthorizations.id),
             )
-            .limit(limit),
-        );
+            .limit(limit);
     }
   }
 }
@@ -553,24 +584,34 @@ function excluding(column: Parameters<typeof notInArray>[0], ids: string[]) {
 }
 
 /**
- * One kind's query, run exact (close false) or for close matches, leaving
- * out the ids already found, so a typo's results never repeat a real match.
+ * One kind's query, exact (close false) or for close matches, leaving out
+ * the ids already found, so a typo's results never repeat a real match.
  */
-type KindQuery = (
-  exclude: string[],
-  close: boolean,
-  limit: number,
-) => Promise<Row[]>;
+type KindQuery = (exclude: string[], close: boolean, limit: number) => Branch;
 
-/** A kind's query builder, typed as a KindQuery. */
-function pass(
-  query: (
-    exclude: string[],
-    close: boolean,
-    limit: number,
-  ) => PromiseLike<Row[]>,
-): KindQuery {
-  return async (exclude, close, limit) => query(exclude, close, limit);
+/**
+ * A pass's branches sent as one statement, joined by union all, and its
+ * rows sorted back by their kind. Every branch selects the same columns in
+ * the same order, which Drizzle checks. Each kind's rows keep their
+ * branch's order, by which Postgres appends them; grouped by their tag,
+ * they would keep it even were the branches' rows interleaved.
+ */
+async function together(branches: Branch[]): Promise<Map<LookupKind, Row[]>> {
+  const [first, second, ...rest] = branches;
+  const rows =
+    branches.length === 0
+      ? []
+      : branches.length === 1
+        ? await first
+        : await unionAll(first, second, ...rest);
+
+  const byKind = new Map<LookupKind, Row[]>();
+  for (const { kind, variantName, ...row } of rows) {
+    const title =
+      kind === 'item' ? itemName(row.title, variantName) : row.title;
+    byKind.set(kind, [...(byKind.get(kind) ?? []), { ...row, title }]);
+  }
+  return byKind;
 }
 
 /**
