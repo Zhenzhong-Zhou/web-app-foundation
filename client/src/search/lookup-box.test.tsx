@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { LookupResponse } from '../api/types.gen';
 import { PageHeader } from '../components/page-header';
@@ -177,6 +177,22 @@ describe('LookupBox', () => {
     // Items' one result is a close match: shown, with no Show all (#311).
     expect(screen.getByText('Focus 60ct')).toBeTruthy();
     expect(screen.queryByText('Show all in Items')).toBeNull();
+  });
+
+  it('fills the full-screen search with its list, under the field (#312)', async () => {
+    server.use(http.get('/api/v1/lookup', () => HttpResponse.json(ANSWER)));
+    // jsdom lays nothing out: the field and its gutter end 72 px down.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 390, 72),
+    );
+    const user = userEvent.setup();
+    renderBox();
+
+    await user.type(await openLookup(user), 'bf');
+    // Not MUI's 40% of the screen, which hid the last group's Show all.
+    expect(await screen.findByRole('listbox')).toHaveStyle({
+      maxHeight: 'calc(100dvh - 72px)',
+    });
   });
 
   it('opens on ⌘K, and ignores a key event with no key', async () => {
