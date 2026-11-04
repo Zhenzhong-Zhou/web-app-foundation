@@ -182,22 +182,21 @@ export class LookupService {
       );
 
       // Close matches only when the lookup as a whole found next to nothing,
-      // in one statement too: each kind short of the limit, by what it lacks.
+      // in one statement too. Every kind is then short of the limit, so
+      // each is a branch, limited to what it lacks.
       const found = [...exact.values()].reduce(
         (sum, rows) => sum + rows.length,
         0,
       );
-      let near = new Map<LookupKind, Row[]>();
-      if (found < LOOKUP_LIMIT) {
-        near = await together(
-          queries
-            .filter(({ kind }) => (exact.get(kind)?.length ?? 0) < LOOKUP_LIMIT)
-            .map(({ kind, query }) => {
-              const ids = (exact.get(kind) ?? []).map((row) => row.id);
-              return query(ids, true, LOOKUP_LIMIT - ids.length);
-            }),
-        );
-      }
+      const near =
+        found < LOOKUP_LIMIT
+          ? await together(
+              queries.map(({ kind, query }) => {
+                const ids = (exact.get(kind) ?? []).map((row) => row.id);
+                return query(ids, true, LOOKUP_LIMIT - ids.length);
+              }),
+            )
+          : new Map<LookupKind, Row[]>();
 
       const groups: LookupGroup[] = [];
       for (const { kind } of queries) {
