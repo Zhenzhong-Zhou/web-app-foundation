@@ -301,11 +301,17 @@ export function ShipmentsList({
             )}
 
             {/* Struck through rather than hidden: what it carried is what
-                the voided slip says, and someone may be holding that slip. */}
+                the voided slip says, and someone may be holding that slip.
+                Muted rather than faded, which fell below 4.5 : 1 (#214). */}
             <Box
               sx={
                 voided
-                  ? { opacity: 0.6, '& td': { textDecoration: 'line-through' } }
+                  ? {
+                      '& td': {
+                        color: 'text.secondary',
+                        textDecoration: 'line-through',
+                      },
+                    }
                   : undefined
               }
             >

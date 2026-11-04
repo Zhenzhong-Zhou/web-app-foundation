@@ -3171,6 +3171,13 @@ first.
   saved, "Choose Selling or Buying." shows under Direction, and focus is
   on Selling. Choose Selling and raise it: the order opens as a sale.
   Reorder points' Raise a purchase order opens it with Buying chosen.
+  
+- **MC-R91** *(A voided shipment's items faded below contrast, #214)* As
+  the demo Owner on SO-DEMO-1's Shipments tab, in light and then dark
+  mode: the voided shipment carries Voided beside its heading, and its
+  items are struck through in the same grey as the "Voided …: Picked
+  against the wrong order." line above them, no paler; its column
+  headings read in the normal text colour.
 
 - **MC-R90** *(On a phone, the lookup's list hiding its last Show all,
   #312)* As the demo Owner in Français at 390 × 844 (DevTools' iPhone 14),
@@ -4621,6 +4628,8 @@ first.
   item's recipes load: MC-R89 added, Recipe reading Loading… in its place.
 - 2026-11-04: #312, on a phone the lookup's list hiding its last Show all:
   MC-R90 added, the list filling the full-screen search.
+- 2026-11-04: #214, a voided shipment's items faded below contrast: MC-R91
+  added, the items muted instead, and axe on an order with one.
 - 2026-11-04: #454, a sale raised from Home saved as a purchase: MC-R92
   added, Selling or Buying asked first with neither chosen, and MC-4215's
   New order opening with Buying chosen.
