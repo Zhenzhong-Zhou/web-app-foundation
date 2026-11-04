@@ -165,10 +165,11 @@ so the timing is the evidence for the name lookup.
   below): at small, lot search finds 341 candidates in its own
   organization, and its plan went from 6.0 to 0.7 ms on the Mac.
 - **One Chinese character on a large catalogue.** `GET /products?search=专`
-  in `zh-Hans`, at large, in its largest organization: 63.5 ms, reading
-  every organization's translations through the trigram index (29
-  October 2026, #317). Trigger: a large organization's search past 100
-  ms. Then ADR-056's index per organization.
+  in `zh-Hans`, at large, in its largest organization: 40 ms (4 November
+  2026, #449), after 63.5 (29 October, #317) and 77.0 (1 November). Since
+  migration 0077 its plan rechecks only the organization's 3,750
+  translations, where it rechecked every organization's 18,750. Trigger:
+  a large organization's search past 100 ms. Then its plans first.
 - **The low list** (ADR-085) works out every point's position on each
   page: 6.3× from small to large, 22 to 138 ms at p95 (1 November 2026,
   #361). Trigger: p95 over budget at small scale. Then the open lines
@@ -426,9 +427,9 @@ owner and a date stays a debt; a raised budget would forget it
 
 ### Deferred — each with what brings it in
 
-- **Past the partner arm,** if the typo lookup's median still misses 240
-  ms: decided again from that run's plans. Trigger: the second timed run
-  on the branch.
+- **Past the partner arm,** if the typo lookup's median misses 240 ms
+  again: decided from that run's plans. Trigger: the typo lookup's median
+  over 240 ms in a weekly run on `main`.
 - **Home's reads in one transaction, or prepared statements.** Trigger:
   ADR-091, or 31 January 2027, whichever comes first.
 
@@ -452,3 +453,58 @@ owner and a date stays a debt; a raised budget would forget it
   then the partner arm as an array, with its plans; a second timed run
   against the same 240 ms; the dependencies again and the reviews; the
   pull request, which closes #225 and refers to #276.
+
+### As built (#449, 4 November 2026)
+
+- **Three changes, each proved before the next:**
+  - **One statement per pass** (a9cc918): the typo lookup's statements
+    went from 17 to 3, 18 to 4 with the prefixes, and the code and name
+    lookups' from 9 to 2. On the Mac the typo lookup went from 60 to 49
+    ms; on GitHub's runners it did not move, a median of 259 ms (run
+    41764305996).
+  - **The index per organization** (6a8c3587, migration 0077): all 20
+    trigram indexes, on 11 tables, under their old names, with
+    `btree_gin` 1.3 created first. Lot search went from 6.0 to 0.7 ms and
+    the code lookup from 10.8 to 5.7; the typo lookup stayed at 51 ms on
+    the Mac.
+  - **The partner arm as an array** (507f22af): the close pass went from
+    14.7 to 3.8 ms, its orders branch from 11.7 to 0.3, and the typo
+    lookup to 34 ms on the Mac. The second timed run (41781367000): the
+    typo lookup 231 ms, from rounds of 149, 231 and 372; the code lookup
+    105, the name lookup 108, and Home 314, within its known miss.
+- **At large,** one run after the fixes against 1 November's: the typo
+  lookup 313.5 to 66 ms, the code lookup 87.4 to 35, the name lookup
+  102.5 to 42. Home took 290 ms there, not measured before: a baseline
+  for ADR-091.
+- **A union's nulls are typed:** a kind with nothing in a column sends
+  `null::text` or `null::uuid`, since Postgres types an untyped null in a
+  union as text and refuses to match it with a uuid.
+- **From the reviews:** each branch numbers its rows by its own order,
+  and the lookup sorts each kind by that number, so the order no longer
+  rests on how Postgres appends a union's branches. The number costs a
+  sort of each branch's matches, not only its first five, within the
+  noise at small and in the run at large. A `trigramIndex`
+  helper in `server/src/database/schema/columns.ts` builds all 20
+  indexes, and `.claude/rules/database.md` holds both patterns: a
+  trigram index through it, and an `in (select …)` inside an OR written
+  `= any(array(…))`. Those rules load for the schema, the migrations and
+  `server/perf/`, not for the modules' queries; #448, an order's lot
+  balances, is the one place left with that shape.
+- **0077's lock:** each index is dropped before it is rebuilt, in the
+  migrations' one transaction, so reads on the 11 tables wait for the
+  build: 1.6 s on `foundation_perf_large`, and production holds no
+  customer's data yet, which the Watch on large live tables accepts. A
+  later swap of this kind creates the new indexes under new names first,
+  and drops the old ones in the next release (ADR-081).
+- **The perf database drifts:** each `npm run perf` adds lots through its
+  write scenarios, so the plan check that passed after one query per pass
+  failed before 0077, on 19,846 lots. A reused perf database's plans can
+  differ from a fresh seed's.
+- **Little room at 231 ms:** one round in three missed 300 (372 ms), so a
+  slower week shows first in the weekly run's median (the Deferred
+  above).
+- **Left, each with its issue:** one statement-capture helper for five
+  specs (#447); the lot balances' in-subquery (#448); the orders list's
+  search walking the orders by id, 23,106 rows read for 26 kept (#226,
+  comment of 4 November); and Dependabot's alerts 8, 9 and 10, held back
+  by eslint, the Nest CLI and Sentry (#446).

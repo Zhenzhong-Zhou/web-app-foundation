@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 3 November 2026
+# web-app-foundation — handoff, 4 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,7 +13,7 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 3 November 2026:
+On 4 November 2026:
 
 - **The Fix-ups' first batch, CI that can be trusted:** [#435], merged
   on 3 November as 066f05a1 and deployed the same day (Deploy run
@@ -25,16 +25,19 @@ On 3 November 2026:
   no run, and the first timed run's medians passed (Home 237 ms of 300).
   After the merge, the flake hunt by hand on `main` passed: the client's
   unit tests 5 runs of 5, the server's end-to-end suite 3 of 3 (1,229
-  tests).
-- **The Fix-ups' next two batches,** planned on 3 November: the typo
-  lookup in one query per pass on `fix-225-typo-lookup`, with Home's known
-  miss given to its redesign, as
-  [ADR-051](adr/0051-performance.md)'s amendment for #225 and #276 decides;
-  then the translations on `fix-ups-i18n`, whose first commit amends
-  ADR-054 with that day's decisions.
-  [#233] stays open as a watch. `main`'s ruleset requires "CI — all jobs"
-  alone since 2 November, with "Commits — no placeholder identity", so
-  "Against main" is required too.
+  tests). [#233] stays open as a watch. `main`'s ruleset requires "CI —
+  all jobs" alone since 2 November, with "Commits — no placeholder
+  identity", so "Against main" is required too.
+- **The Fix-ups' second batch, the typo lookup** ([#225]): built on
+  `fix-225-typo-lookup` in [#449], as
+  [ADR-051](adr/0051-performance.md)'s amendment for #225 and #276 and its
+  as-built say. Three changes: each pass one statement, the trigram
+  indexes led by the organization (migration 0077, `btree_gin`), and the
+  orders' partner arm as an array. The second timed run's median was 231
+  ms against the 240 ms bar, so #225's known miss is gone; Home's ([#276])
+  holds until 31 January 2027, for its redesign. Next, the translations
+  on `fix-ups-i18n`, whose first commit amends ADR-054 with 3 November's
+  decisions.
 - **ADR-089, a brief's steps in a row** ([#348]): [#403], merged on 2
   November, its as-built in
   [ADR-089](adr/0089-a-briefs-steps-in-a-row.md). Claude Code's steps of
@@ -79,7 +82,9 @@ On 3 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** from cloud sessions, 2 and 3 November: [#411]
+- **The last merges:** from cloud sessions, 3 November, through
+  `/fix-issue`: [#438] ([#355]), [#439] ([#273]), [#440] ([#353]), [#443]
+  ([#430]) and [#444] ([#354]); from cloud sessions, 2 and 3 November: [#411]
   ([#212]), [#412] ([#357]), [#413] ([#286]), [#414] ([#311]), [#415]
   ([#279]), [#416] ([#356]'s first part), [#418] ([#358]), [#424]
   ([#315]), [#425] ([#242]), [#427] ([#179]), [#429] ([#428]), [#434]
@@ -109,8 +114,8 @@ On 3 November 2026:
   amended, 26 October) and [#247] (the brand, ADR-082, 25 October).
 - **The release:** v0.7.0, tagged on 16 October 2026; both packages'
   versions are 0.7.0.
-- **Migrations** through 0076 (the reorder points', in [#361]), 77 files
-  in `server/src/database/migrations/`.
+- **Migrations** through 0077 (the trigram indexes led by the
+  organization, in [#449]), 78 files in `server/src/database/migrations/`.
 - **Render:** a free database (`foundation-db`, created 22 October 2026)
   and a free web service, with the static site. Deploy runs from the
   `production` environment, which allows `main` alone and holds both
@@ -143,17 +148,19 @@ On 3 November 2026:
   merges once green, one at a time. [#403] makes Claude Code Review skip
   them, since a run Dependabot starts is refused by the action and gets
   none of the repository's secrets.
-- **3 to 9 November:** what Dependabot has not opened comes of age; the
+- **4 to 11 November:** what Dependabot has not opened comes of age; the
   next branch's dependency step takes what is 7 days old that day.
   `fix-ups-ci` took `@nestjs/cli`, the Nest packages at 12.3.2 and
-  react-intl on 3 November, and the multer override went (ADR-019). Still
-  to come, in Vancouver time: react-router-dom on 3 November, 14:14;
-  `@nestjs/schematics`, the
-  Sentry packages at 11.10.0, `@types/node` and dotenv-cli by 4
-  November, 13:26; nodemailer on 5 November; eslint and
+  react-intl on 3 November, and the multer override went (ADR-019);
+  `fix-225-typo-lookup` took react-router-dom on 3 November and
+  `@nestjs/schematics` on 4 November. Of age and waiting, in Vancouver
+  time: the Sentry packages at 11.10.0, `@types/node` and dotenv-cli (4
+  November); then nodemailer on 5 November; eslint and
   `@aws-sdk/client-s3` on 6 November; the formatjs packages on 7
-  November; globals on 8 November; `@nestjs/swagger`, vitest and
-  `@vitejs/plugin-react` on 9 November.
+  November; globals on 8 November; `@nestjs/swagger`, vitest,
+  `@vitejs/plugin-react` and argon2 on 9 November; rimraf on 10 November;
+  the Nest packages at 12.3.3 and `@nestjs/config` 12.1.0 on 11 November.
+  Dependabot's alerts 8, 9 and 10 wait for their upstreams ([#446]).
 - **The translation review:** done on 2 November with the API credits,
   against the glossary: the catalogues' findings in [#371] to [#397],
   one area each, and the Help guides' in [#398]. A second pass, for how
@@ -164,15 +171,14 @@ On 3 November 2026:
   rules the second pass used going into the glossary's Writing
   conventions; the reviewer who reads only Chinese checks only the first
   screens a newcomer sees. Their data stays in the ignored
-  `tmp/i18n-review/` on the maintainer's Mac. The API credits last until
-  9 November; the cloud credit ends on 4 November. Decided on 3
-  November: every suggestion applied, the natural pass's where both
-  passes have one, with a workbook of the Chinese changes for the
-  maintainer to clear any rejected; a natural-wording pass on the guides
-  with the API credits; [#148], [#149] and [#249] riding along. The rest
-  is in ADR-054's amendment, `fix-ups-i18n`'s first commit.
-- **30 November:** the typo lookup's known miss ([#225]) ends, fixed by
-  then by one query per pass, to a median of 240 ms or less.
+  `tmp/i18n-review/` on the maintainer's Mac. The cloud credit ended on 4
+  November; the API credits, about US$80 left, last until 9 November.
+  Decided on 3 November: every suggestion applied, the natural pass's
+  where both passes have one, with a workbook of the Chinese changes for
+  the maintainer to clear any rejected; [#148], [#149] and [#249] riding
+  along. The guides' natural-wording pass ran the same evening, for
+  US$4.77: 436 findings, in two comments on [#398]. The rest goes into
+  ADR-054's amendment, `fix-ups-i18n`'s first commit.
 - **31 January 2027:** Home's known miss ([#276]) ends, moved from 30
   November for its redesign: ADR-091 ([#335]) must bring Home within its
   budget, with the same headroom, and remove it.
@@ -182,8 +188,9 @@ On 3 November 2026:
   November: Dependabot's cooldown ([#366]); [#359]; [#245]'s first two
   parts; then [#303], widened to every item picker, [#339], [#310]'s
   Receive part, [#304] and [#323], each merged; [#310]'s other dialogs
-  are listed on the issue. On 2 and 3 November, fourteen more, the last
-  eight through `/fix-issue` (The last merges, above).
+  are listed on the issue. On 2 and 3 November, nineteen more, the last
+  thirteen through `/fix-issue` (The last merges, above). The cloud
+  credit ended on 4 November.
 - **About 19 November:** replace Render's free database before it expires
   on 21 November, by
   [`render.md`, "Replacing the database"](runbooks/render.md#replacing-the-database),
@@ -203,10 +210,16 @@ On 3 November 2026:
   hunt passed (3 November); left, `scripts/prune-branches.sh --yes` and
   `scripts/clean-local.sh`, a dry run, then `--yes`; and the project's
   knowledge re-synced.
+- **After [#449]'s merge:** the Deploy run's log shows 0077 applied, with
+  `btree_gin` created, and `/api/health` names the merge commit; then one
+  restore drill (`gh workflow run restore-drill.yml`), the first on a
+  dump holding `btree_gin`; the perf database the branch measured on
+  dropped (`docker exec foundation-postgres dropdb -U app
+  foundation_perf_fix225`); and the comments on [#276] and [#335] the
+  chat gave with the as-built.
 - **The planning skill's `evals.md`:** prompts 3, 5 and 6, for the skill
-  uploaded after [#417], walked in the Fix-ups' next batches' planning:
-  6 on 3 November, 3 with `fix-225-typo-lookup`'s first commit, 5 at its
-  first stop.
+  uploaded after [#417], walked on 3 and 4 November, in the Fix-ups'
+  second batch's planning; 4 waits for a patch that is refused.
 - **[#245] in Safari and Edge, once deployed:** the page asked to translate
   into Chinese stays as written, a typed field included; WebKit and
   Firefox have known gaps with fields. What changes is filed.
@@ -269,20 +282,23 @@ request or a set of them:
    rules files, in six batches first:
    1. CI that can be trusted: [#435], as ADR-008's and ADR-051's
       as-builts say;
-   2. the typo lookup, before its known miss ends on 30 November:
-      [#225], in one query per pass; Home's miss ([#276]) moved to 31
-      January 2027, for ADR-091;
+   2. the typo lookup: [#449], as ADR-051's as-built says; Home's miss
+      ([#276]) moved to 31 January 2027, for ADR-091;
    3. the translations, before 30 November: [#371] to [#398] and [#419]
       to [#423], each with the natural-wording pass's comment, the style
       rules into the glossary, the corrections of the reviewer who reads
       only Chinese, and [#148], [#149] and [#249];
-   4. expired lots: [#333] with [#331];
+   4. expired lots: [#333] with [#331] and [#442], a new lot's expiry
+      and its batch code; lot labels ([#441], `later`) after it;
    5. the audit log: [#133] with [#168] ([#339] was fixed on 2
       November);
    6. then TypeScript 7 ([#336]); the newcomer test; the design language
       ([#338], ADR-090); and Home for a newcomer ([#335], ADR-091),
       renumbered by ADR-089, which also meets Home's budget and ends its
       known miss by 31 January 2027.
+
+   Not yet in a batch: [#445], the inventory screen's flaky axe check
+   (`fix-now`).
 
    Then [#261] with [#154] and [#150]; [#263]'s rest with [#198];
    [#264]; [#426], production orders' rules file's findings; and [#255]
@@ -389,6 +405,7 @@ Not repeated here; each list has one home:
 [#268]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/268
 [#269]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/269
 [#271]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/271
+[#273]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/273
 [#276]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/276
 [#279]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/279
 [#286]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/286
@@ -438,6 +455,9 @@ Not repeated here; each list has one home:
 [#349]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/349
 [#350]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/350
 [#351]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/351
+[#353]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/353
+[#354]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/354
+[#355]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/355
 [#356]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/356
 [#357]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/357
 [#358]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/358
@@ -474,7 +494,18 @@ Not repeated here; each list has one home:
 [#427]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/427
 [#428]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/428
 [#429]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/429
+[#430]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/430
 [#434]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/434
 [#435]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/435
 [#436]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/436
 [#437]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/437
+[#438]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/438
+[#439]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/439
+[#440]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/440
+[#441]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/441
+[#442]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/442
+[#443]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/443
+[#444]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/444
+[#445]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/445
+[#446]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/446
+[#449]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/449
