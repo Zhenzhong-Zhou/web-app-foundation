@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-07
 areas: [ui]
 amends: [ADR-021]
-amended-by: [ADR-071, ADR-075, ADR-081, ADR-082]
+amended-by: [ADR-071, ADR-075, ADR-081, ADR-082, ADR-090]
 ---
 
 # ADR-055 — The look: tokens, a side rail, tabs and a summary beside the work (amends ADR-021)
@@ -409,3 +409,23 @@ batch" and Members' Last active. A later sweep leaves them so.
 *Deferred:* a selected menu entry holding a muted line gets no rule yet,
 since no menu has one; the first that does extends the theme's rule to
 `.Mui-selected`.
+
+## Amendment (November 2026) — the design language (ADR-090)
+
+How a screen behaves now has a home of its own, `docs/design-language.md`
+([ADR-090](0090-the-design-language.md)); this ADR keeps the tokens, the
+type, the colours and the shared pieces it builds with. Three of its
+rules change:
+
+- **Type:** text a person reads to decide (a tile's label, a status, a
+  name, a field's label) is 16 px at the Standard text size, and
+  secondary detail 14 px, where the scale above had body 14.5 px and small
+  13 px; a caption is for footnotes only. ADR-091, Home's redesign,
+  settles the rest of the scale as its first step, so the section size
+  stays a step above the body.
+- **Lists:** every table still scrolls inside its own container, but
+  below 600 px a list's rows become cards, list by list as each is next
+  changed.
+- **Density by pointer** stands, 44 px targets on touch, and so does the
+  menu: a rail from `lg`, the drawer with its words below it, on a tablet
+  and a foldable too.

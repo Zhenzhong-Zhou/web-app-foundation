@@ -92,7 +92,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-052] | Calendar days are `date`, sent as YYYY-MM-DD | accepted | 2026-10-02 | [ADR-040] | [ADR-072], [ADR-081] |
 | [ADR-053] | Backups: an encrypted nightly dump we own, at another provider, restored monthly | accepted | 2026-10-02 | | |
 | [ADR-054] | Languages: the person's language for the app, the customer's for documents | accepted | 2026-10-03 | | [ADR-071], [ADR-076], [ADR-081] |
-| [ADR-055] | The look: tokens, a side rail, tabs and a summary beside the work | accepted | 2026-10-07 | [ADR-021] | [ADR-071], [ADR-075], [ADR-081], [ADR-082] |
+| [ADR-055] | The look: tokens, a side rail, tabs and a summary beside the work | accepted | 2026-10-07 | [ADR-021] | [ADR-071], [ADR-075], [ADR-081], [ADR-082], [ADR-090] |
 | [ADR-056] | Search: one lookup in the top bar, and a search on every list | accepted | 2026-10-07 | | [ADR-073] |
 | [ADR-057] | Lists by date range, sorted where it helps, exported as CSV | accepted | 2026-10-08 | | [ADR-072], [ADR-076] |
 | [ADR-058] | Home: what needs attention, first | accepted | 2026-10-08 | | [ADR-072], [ADR-079], [ADR-085] |
@@ -126,7 +126,8 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-086] | Docs as code: one file per decision, and links that are checked | accepted | 2026-10-27 | | |
 | [ADR-087] | The rules written down: `docs/rules/` for people, `.claude/rules/` for Claude | accepted | 2026-10-27 | | |
 | [ADR-088] | Planning in the chat, as a skill: kept here, compared with main, tested by prompts | accepted | 2026-10-29 | | [ADR-084], [ADR-089] |
-| [ADR-089] | A brief's steps in a row: each in a fresh subagent, stopping only for a person | accepted | 2026-11-02 | [ADR-083], [ADR-088] | |
+| [ADR-089] | A brief's steps in a row: each in a fresh subagent, stopping only for a person | accepted | 2026-11-02 | [ADR-083], [ADR-088] | [ADR-090] |
+| [ADR-090] | The design language: eight principles and their patterns, at every screen size | accepted | 2026-11-04 | [ADR-055], [ADR-089] | |
 
 [ADR-001]: 0001-nestjs-as-the-server-framework.md
 [ADR-002]: 0002-postgresql-as-the-database.md
@@ -217,6 +218,7 @@ decided is in [Open decisions](open-decisions.md).
 [ADR-087]: 0087-the-rules-written-down.md
 [ADR-088]: 0088-planning-in-the-chat-as-a-skill.md
 [ADR-089]: 0089-a-briefs-steps-in-a-row.md
+[ADR-090]: 0090-the-design-language.md
 
 <!-- adr-index:end -->
 
@@ -260,10 +262,10 @@ same names. An area no ADR names has no line.
 - `mail`: [ADR-005], [ADR-017], [ADR-037], [ADR-054], [ADR-069], [ADR-070], [ADR-077], [ADR-078], [ADR-082], [ADR-083]
 - `api`: [ADR-001], [ADR-013], [ADR-014], [ADR-052], [ADR-057], [ADR-068], [ADR-081], [ADR-084]
 - `database`: [ADR-002], [ADR-003], [ADR-009], [ADR-010], [ADR-012], [ADR-025], [ADR-028], [ADR-051], [ADR-052], [ADR-056], [ADR-081]
-- `docs`: [ADR-086], [ADR-087], [ADR-088], [ADR-089]
+- `docs`: [ADR-086], [ADR-087], [ADR-088], [ADR-089], [ADR-090]
 - `help`: [ADR-079]
-- `i18n`: [ADR-054], [ADR-056], [ADR-072], [ADR-076]
+- `i18n`: [ADR-054], [ADR-056], [ADR-072], [ADR-076], [ADR-090]
 - `ops`: [ADR-005], [ADR-008], [ADR-019], [ADR-051], [ADR-053], [ADR-059], [ADR-067], [ADR-070], [ADR-081], [ADR-084], [ADR-088], [ADR-089]
-- `ui`: [ADR-007], [ADR-020], [ADR-021], [ADR-055], [ADR-056], [ADR-057], [ADR-060], [ADR-075], [ADR-082], [ADR-084]
+- `ui`: [ADR-007], [ADR-020], [ADR-021], [ADR-055], [ADR-056], [ADR-057], [ADR-060], [ADR-075], [ADR-082], [ADR-084], [ADR-090]
 
 <!-- adr-areas:end -->
