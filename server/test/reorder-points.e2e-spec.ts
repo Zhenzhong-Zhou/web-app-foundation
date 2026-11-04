@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { Client } from 'pg';
 
 import {
@@ -1113,6 +1113,52 @@ describe('Reorder points (e2e)', () => {
           rows: 1,
         },
       });
+    });
+
+    // One read up to EXPORT_LIMIT (#354): read a page of 1,000 at a time,
+    // each page worked every position out again.
+    it('works every position out once, past a page of 1,000 rows', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const org = sql`${alpha.organizationId}::uuid`;
+      await db.execute(sql`
+        with made as (
+          insert into products (organization_id, type, name)
+          select ${org}, 'good', 'BULK-' || lpad(n::text, 4, '0')
+          from generate_series(1, 1001) n
+          returning id, name
+        ), variants as (
+          insert into product_variants (organization_id, product_id, sku)
+          select ${org}, made.id, made.name from made
+          returning id
+        )
+        insert into reorder_points
+          (organization_id, variant_id, source, reorder_point, rule)
+        select ${org}, variants.id, 'bought', 10, 'just_enough'
+        from variants
+      `);
+
+      // Every statement the app sends goes through pg's Client#query, as
+      // the counts' test reads them.
+      const sent = vi.spyOn(Client.prototype, 'query');
+      let csv: string;
+      let texts: string[];
+      try {
+        csv = (
+          await alpha.agent.get('/v1/stock/reorder-points/export').expect(200)
+        ).text;
+        texts = sent.mock.calls.map(([config]) =>
+          typeof config === 'string'
+            ? config
+            : ((config as { text?: string } | null)?.text ?? ''),
+        );
+      } finally {
+        sent.mockRestore();
+      }
+
+      expect(csv.trim().split('\r\n')).toHaveLength(1 + 1001);
+      expect(
+        texts.filter((text) => text.includes('with p as materialized')),
+      ).toHaveLength(1);
     });
   });
 });

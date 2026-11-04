@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { csvFile, everyRow, exportFilters } from '../../common/export';
+import { csvFile, exportFilters, withinLimit } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
@@ -71,7 +71,7 @@ export class ReorderPointsController {
     return this.reads.counts(query);
   }
 
-  /** The list as its filter and search narrow it, as CSV (ADR-057): its own query, every page. */
+  /** The list as its filter and search narrow it, as CSV (ADR-057): its own query, in one read. */
   @Get('export')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
   @Audited({
@@ -83,10 +83,7 @@ export class ReorderPointsController {
     @Res({ passthrough: true }) res: Response,
     @AcceptLanguage() acceptLanguage?: string,
   ) {
-    // The base names, as every CSV keeps them (ADR-056).
-    const rows = await everyRow((before, limit) =>
-      this.reads.list({ ...query, before, limit }, null),
-    );
+    const rows = withinLimit(await this.reads.exportRows(query));
     recordContext({
       list: 'reorder_points',
       filters: exportFilters(query),
