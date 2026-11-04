@@ -6,19 +6,23 @@ import {
   Checkbox,
   Divider,
   FormControlLabel,
+  FormHelperText,
+  FormLabel,
   IconButton,
-  MenuItem,
   Paper,
+  Radio,
+  RadioGroup,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useState } from 'react';
-import { useIntl } from 'react-intl';
+import { type SubmitEvent, useEffect, useId, useRef, useState } from 'react';
+import { defineMessages, useIntl } from 'react-intl';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import type { Location, Partner, VariantOption } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
+import { chosenCardSx } from '../components/chosen-card';
 import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
 import { PartnerPicker } from '../components/partner-picker';
@@ -36,7 +40,7 @@ import { useVariants } from '../lib/use-variants';
 import { SiteSelect } from '../locations/site-select';
 import { unitLabel } from '../products/units';
 import { rem } from '../theme/rem';
-import { orderFillOf } from './order-fill';
+import { directionOf, orderFillOf } from './order-fill';
 
 interface LineDraft {
   /** Local only — React needs a stable key before the row has a variant. */
@@ -45,6 +49,25 @@ interface LineDraft {
   quantityOrdered: string;
   unitPrice: string;
 }
+
+/** Sell or Buy, in the order the question asks it (#454). */
+const DIRECTIONS: readonly OrderDirection[] = ['sale', 'purchase'];
+
+const DIRECTION_NAMES = defineMessages<OrderDirection>({
+  sale: { id: 'orders.direction.selling', defaultMessage: 'Selling' },
+  purchase: { id: 'orders.direction.buying', defaultMessage: 'Buying' },
+});
+
+const DIRECTION_LINES = defineMessages<OrderDirection>({
+  sale: {
+    id: 'orders.direction.sale.help',
+    defaultMessage: 'Stock leaves. Receiving does not apply to a sale.',
+  },
+  purchase: {
+    id: 'orders.direction.purchase.help',
+    defaultMessage: 'Stock arrives, and is received against this order.',
+  },
+});
 
 function emptyLine(): LineDraft {
   return {
@@ -69,6 +92,7 @@ function emptyLine(): LineDraft {
  */
 export function CreateOrderPage() {
   const navigate = useNavigate();
+  const { state } = useLocation();
   const can = useCan();
   const canSeeLocations = can('locations.view');
 
@@ -89,7 +113,17 @@ export function CreateOrderPage() {
   const [numberError, setNumberError] = useState<string | null>(null);
 
   const [partner, setPartner] = useState<Partner | null>(null);
-  const [direction, setDirection] = useState<OrderDirection>('purchase');
+  /**
+   * Asked, neither chosen, unless the link that opened the form knows
+   * (#454): a partner may be a customer, a supplier or both, so nothing
+   * else here can tell which way the goods go.
+   */
+  const [direction, setDirection] = useState<OrderDirection | null>(() =>
+    directionOf(state),
+  );
+  const [directionMissing, setDirectionMissing] = useState(false);
+  const directionId = useId();
+  const firstDirection = useRef<HTMLInputElement>(null);
   const [isSample, setIsSample] = useState(false);
   const [reference, setReference] = useState('');
   const [expectedAt, setExpectedAt] = useState('');
@@ -104,7 +138,6 @@ export function CreateOrderPage() {
    * theirs. The note counts the lines filled, an item no longer in the
    * catalogue left out.
    */
-  const { state } = useLocation();
   const [fill] = useState(() => orderFillOf(state));
   const [filling, setFilling] = useState(fill !== null);
   const [filledCount, setFilledCount] = useState(0);
@@ -236,6 +269,12 @@ export function CreateOrderPage() {
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!partner) return;
+    // Said at the field, and focus taken there, as every refusal is.
+    if (!direction) {
+      setDirectionMissing(true);
+      firstDirection.current?.focus();
+      return;
+    }
 
     // Each number as the API takes it: the language's decimal comma made a
     // point, a thousands separator refused rather than guessed (ADR-054).
@@ -354,6 +393,94 @@ export function CreateOrderPage() {
 
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Stack spacing={2}>
+            {/* Which way the goods go, asked first (#454). A column and not
+                a table (ADR-027): two values the service branches on,
+                carrying no attributes. */}
+            <Box
+              component="fieldset"
+              aria-describedby={
+                directionMissing ? `${directionId}-problem` : undefined
+              }
+              sx={{ border: 0, m: 0, p: 0, minWidth: 0 }}
+            >
+              <FormLabel
+                component="legend"
+                id={`${directionId}-legend`}
+                required
+                error={directionMissing}
+                sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}
+              >
+                {intl.formatMessage({
+                  id: 'orders.direction',
+                  defaultMessage: 'Direction',
+                })}
+              </FormLabel>
+              {directionMissing && (
+                <FormHelperText
+                  error
+                  id={`${directionId}-problem`}
+                  sx={{ mx: 0, mt: -0.5, mb: 1 }}
+                >
+                  {intl.formatMessage({
+                    id: 'orders.create.directionMissing',
+                    defaultMessage: 'Choose Selling or Buying.',
+                  })}
+                </FormHelperText>
+              )}
+              <RadioGroup
+                aria-labelledby={`${directionId}-legend`}
+                aria-required
+                value={direction ?? ''}
+                onChange={(event) => {
+                  const next = event.target.value as OrderDirection;
+                  setDirection(next);
+                  setDirectionMissing(false);
+                  // A purchase cannot be a sample, so switching away clears
+                  // it rather than sending a flag the server would refuse.
+                  if (next === 'purchase') setIsSample(false);
+                }}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(auto-fill, minmax(${rem(200)}, 1fr))`,
+                  gap: 1,
+                }}
+              >
+                {DIRECTIONS.map((choice) => (
+                  <FormControlLabel
+                    key={choice}
+                    value={choice}
+                    control={
+                      <Radio
+                        slotProps={{
+                          input: {
+                            ref:
+                              choice === DIRECTIONS[0]
+                                ? firstDirection
+                                : undefined,
+                          },
+                        }}
+                      />
+                    }
+                    label={
+                      <Box component="span" sx={{ display: 'block', py: 0.5 }}>
+                        <Box component="span" sx={{ fontWeight: 600 }}>
+                          {intl.formatMessage(DIRECTION_NAMES[choice])}
+                        </Box>
+                        <Typography
+                          component="span"
+                          variant="body2"
+                          sx={{ color: 'text.secondary', display: 'block' }}
+                        >
+                          {intl.formatMessage(DIRECTION_LINES[choice])}
+                        </Typography>
+                      </Box>
+                    }
+                    sx={chosenCardSx(direction === choice)}
+                  />
+                ))}
+              </RadioGroup>
+            </Box>
+
             <PartnerPicker
               id="order-partner"
               label={intl.formatMessage({
@@ -371,50 +498,6 @@ export function CreateOrderPage() {
                 )
               }
             />
-
-            <TextField
-              select
-              label={intl.formatMessage({
-                id: 'orders.direction',
-                defaultMessage: 'Direction',
-              })}
-              value={direction}
-              onChange={(event) => {
-                const next = event.target.value as OrderDirection;
-                setDirection(next);
-                // A purchase cannot be a sample, so switching away clears it
-                // rather than sending a flag the server would refuse.
-                if (next === 'purchase') setIsSample(false);
-              }}
-              // Which way the goods go. A column and not a table (ADR-027):
-              // two values the service branches on, carrying no attributes.
-              helperText={
-                direction === 'purchase'
-                  ? intl.formatMessage({
-                      id: 'orders.direction.purchase.help',
-                      defaultMessage:
-                        'Stock arrives, and is received against this order.',
-                    })
-                  : intl.formatMessage({
-                      id: 'orders.direction.sale.help',
-                      defaultMessage:
-                        'Stock leaves. Receiving does not apply to a sale.',
-                    })
-              }
-            >
-              <MenuItem value="purchase">
-                {intl.formatMessage({
-                  id: 'orders.direction.purchase',
-                  defaultMessage: 'Buying from them',
-                })}
-              </MenuItem>
-              <MenuItem value="sale">
-                {intl.formatMessage({
-                  id: 'orders.direction.sale',
-                  defaultMessage: 'Selling to them',
-                })}
-              </MenuItem>
-            </TextField>
 
             {direction === 'purchase' && activeSites.length > 0 && (
               <SiteSelect

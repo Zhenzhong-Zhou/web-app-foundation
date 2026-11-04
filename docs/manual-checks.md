@@ -3119,7 +3119,7 @@ site, after a deploy that changes the setting, the route or the relay.
 - **MC-4215** *(ADR-085)* Raise a purchase order, filled in from the list.
   On a fresh demo, as the Owner, Reorder points on Low: choose
   D3-1000-120 and ELDER-250, and press Raise a purchase order in the
-  dark bar. New order opens as Buying from them, Partner empty, with a
+  dark bar. New order opens with Buying chosen, Partner empty, with a
   note: "Filled from Reorder points: 2 lines at their suggested
   quantities. Choose the supplier under Partner, check the quantities
   and prices, then raise it as a draft.", in 中文 请在合作伙伴中选择供应商,
@@ -3163,6 +3163,14 @@ site, after a deploy that changes the setting, the route or the relay.
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R92** *(A sale raised from Home saved as a purchase, #454)* As the
+  demo Owner, press Raise an order on Home: Direction comes first, Selling
+  and Buying as two cards, neither chosen. Choose Northside Pharmacy under
+  Partner, an item and a quantity, and press Raise as draft: nothing is
+  saved, "Choose Selling or Buying." shows under Direction, and focus is
+  on Selling. Choose Selling and raise it: the order opens as a sale.
+  Reorder points' Raise a purchase order opens it with Buying chosen.
 
 - **MC-R90** *(On a phone, the lookup's list hiding its last Show all,
   #312)* As the demo Owner in Français at 390 × 844 (DevTools' iPhone 14),
@@ -4613,3 +4621,6 @@ first.
   item's recipes load: MC-R89 added, Recipe reading Loading… in its place.
 - 2026-11-04: #312, on a phone the lookup's list hiding its last Show all:
   MC-R90 added, the list filling the full-screen search.
+- 2026-11-04: #454, a sale raised from Home saved as a purchase: MC-R92
+  added, Selling or Buying asked first with neither chosen, and MC-4215's
+  New order opening with Buying chosen.

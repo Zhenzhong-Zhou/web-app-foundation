@@ -29,6 +29,8 @@ test('raises an order, receives against it, and moves the stock', async ({
 
   await page.getByRole('link', { name: 'Raise an order' }).click();
 
+  // Asked first, neither chosen (#454): received against below, a purchase.
+  await page.getByRole('radio', { name: /^Buying/ }).check();
   await page.getByLabel('Partner').fill('E2E Mill');
   await page.getByRole('option', { name: /E2E Mill Co/ }).click();
 

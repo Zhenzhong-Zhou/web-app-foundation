@@ -7,7 +7,7 @@ Une commande, c’est ce que vous achetez à un fournisseur ou vendez à un clie
 ## Créer une commande {#raise}
 
 1. Appuyez sur **Créer une commande**.
-2. Choisissez le partenaire, et si **Nous leur achetons** ou **Nous leur vendons**.
+2. Choisissez **Vente** ou **Achat**, puis le partenaire. Depuis Points de commande, c’est déjà **Achat**.
 3. Ajoutez chaque article et sa quantité. Le prix peut attendre : laissé vide, la liste de prix du partenaire le fournit s’il en a une.
 4. Appuyez sur **Créer en brouillon**. Rien ne bouge encore, et tout reste modifiable.
 5. Une fois que le partenaire est d’accord, appuyez sur **Confirmer**.
