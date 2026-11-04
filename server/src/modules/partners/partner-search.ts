@@ -41,17 +41,21 @@ export function partnerRank(terms: SearchTerms): SQL {
 }
 
 /**
- * A document found by its partner's name (ADR-056), as a subquery on the
- * document's own partner column rather than an OR across a join.
+ * A document found by its partner's name (ADR-056), as an array of the
+ * matching partners' ids on the document's own partner column rather than
+ * an OR across a join.
  *
  * `orders.reference ILIKE … OR partners.name ILIKE …` spans two tables, so
  * neither trigram index can serve it and the orders are read in full.
- * `orders.reference ILIKE … OR orders.partner_id IN (partners matching)`
- * keeps both halves on orders: the trigram index for the reference, the
- * partner index for the ids, combined by a bitmap OR. The partners are
- * found through their own trigram indexes, in the organization only:
- * without it, the subquery reads every organization's partners that match
- * (#226).
+ * Keeping both halves on orders is not enough as `partner_id IN (select
+ * …)`: inside an OR that is a hashed subplan, which no index serves, so
+ * every one of the organization's orders is still read and compared.
+ * `partner_id = any(array(select …))` finds the partners' ids first, once,
+ * and the document's partner index then joins the trigram indexes of its
+ * number and reference in one bitmap OR (ADR-051, the amendment for #225
+ * and #276). The partners are found through their own trigram indexes, in
+ * the organization only: without it, the subquery reads every
+ * organization's partners that match (#226).
  */
 export function partnerMatches(
   partnerId: SQLWrapper,
@@ -67,5 +71,5 @@ export function partnerMatches(
           pinyinMatches(partners.namePinyin, terms),
         );
   const own = and(eq(partners.organizationId, organizationId), match);
-  return sql`${partnerId} in (select ${partners.id} from ${partners} where ${own})`;
+  return sql`${partnerId} = any(array(select ${partners.id} from ${partners} where ${own}))`;
 }

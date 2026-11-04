@@ -183,6 +183,40 @@ describe('Lookup (e2e)', () => {
     });
   });
 
+  // ADR-051's amendment for #225 and #276: an order's partner arm is an
+  // array of the matching partners' ids. None matches a number, and the
+  // empty array must not hide the order its number finds, in either pass.
+  it('finds an order by its number when no partner matches, exactly or by a typo', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const partnerId = await createPartner(alpha.agent, {
+      name: 'Acme Supplies',
+    });
+    const variantId = await createVariant(alpha.agent, {
+      type: 'good',
+      name: 'Widget',
+      variant: { sku: 'WIDGET-1', tracksLots: false },
+    });
+    await alpha.agent
+      .post('/v1/orders')
+      .send({
+        partnerId,
+        direction: 'purchase',
+        lines: [{ variantId, quantityOrdered: '10' }],
+      })
+      .expect(201);
+
+    const orderFound = async (q: string) =>
+      (await lookup(alpha, q)).find((group) => group.kind === 'order')?.results;
+
+    expect(await orderFound('PO-000001')).toEqual([
+      expect.objectContaining({ title: 'PO-000001', close: false }),
+    ]);
+    // A zero short, so nothing exact: the close pass finds it.
+    expect(await orderFound('PO-00001')).toEqual([
+      expect.objectContaining({ title: 'PO-000001', close: true }),
+    ]);
+  });
+
   // ADR-051's amendment for #225: each pass is one statement, its kinds
   // joined by union all. A typo that finds nothing exact, for the Owner, who
   // sees all eight kinds, sent up to eighteen: the threshold setting, then
