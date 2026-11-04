@@ -163,6 +163,63 @@ describe('CreateRunDialog', () => {
   });
 
   /**
+   * A read of the recipes slower than the indicator's delay says so in the
+   * Recipe field's place, so Plan run being off has a reason, and the
+   * select then takes that place (#430).
+   */
+  it('says the item’s recipes are loading while Plan run waits for them', async () => {
+    const user = userEvent.setup();
+    let answerRecipes: () => void = () => undefined;
+    const recipesAnswered = new Promise<void>((resolve) => {
+      answerRecipes = resolve;
+    });
+
+    server.use(
+      http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
+      http.get('/api/v1/locations', () => HttpResponse.json([])),
+      http.get('/api/v1/partners', () => HttpResponse.json([])),
+      http.get('/api/v1/boms', async () => {
+        await recipesAnswered;
+        return HttpResponse.json([
+          {
+            id: 'bom-active',
+            outputVariantId: VARIANT.id,
+            version: 1,
+            status: 'active',
+            outputQuantity: '1000.0000',
+          },
+        ]);
+      }),
+    );
+
+    renderWithAuth(
+      <CreateRunDialog
+        open
+        canSeePartners
+        onClose={() => undefined}
+        onCreated={() => undefined}
+      />,
+    );
+
+    await user.type(await screen.findByLabelText(/Making/), 'FOCUS');
+    await user.click(await screen.findByRole('option', { name: /FOCUS-60CT/ }));
+
+    const loading = await screen.findByRole('textbox', { name: 'Recipe' });
+    expect(loading).toHaveValue('Loading…');
+    expect(loading).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Plan run' })).toBeDisabled();
+
+    answerRecipes();
+
+    expect(
+      await screen.findByRole('combobox', { name: 'Recipe' }),
+    ).toHaveTextContent('v1 (current)');
+    expect(
+      screen.queryByRole('textbox', { name: 'Recipe' }),
+    ).not.toBeInTheDocument();
+  });
+
+  /**
    * A read of the recipes that fails says so, and Plan run stays off:
    * never a run planned without its recipe, silently (#290).
    */

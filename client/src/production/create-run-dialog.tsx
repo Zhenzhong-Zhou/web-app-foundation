@@ -30,6 +30,7 @@ import {
   toApiDecimal,
 } from '../lib/format';
 import { useDebouncedRead } from '../lib/use-debounced-read';
+import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { usePartners } from '../lib/use-partners';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
@@ -256,6 +257,9 @@ export function CreateRunDialog({
                 }))
               }
             />
+
+            {/* Keyed by the item, so each item's read waits the delay. */}
+            {recipesWaiting && <RecipeLoading key={form.outputVariantId} />}
 
             {/* Said in words, and Plan run stays off: never a run planned
                 without the recipe it would have had, silently (#290). */}
@@ -484,6 +488,40 @@ export function CreateRunDialog({
         />
       </form>
     </Dialog>
+  );
+}
+
+/**
+ * The Recipe field while the item's recipes are read, once the read has
+ * taken INDICATOR_DELAY_MS (#430). Plan run is off meanwhile, and this says
+ * why. It holds the select's place, its helper included, so the fields
+ * below stay where they are when the recipes come.
+ */
+function RecipeLoading() {
+  const intl = useIntl();
+  const show = useDelayedFlag(true);
+
+  if (!show) return null;
+
+  return (
+    <TextField
+      id="run-bom-loading"
+      label={intl.formatMessage({
+        id: 'production.recipe',
+        defaultMessage: 'Recipe',
+      })}
+      fullWidth
+      disabled
+      value={intl.formatMessage({
+        id: 'common.loading',
+        defaultMessage: 'Loading…',
+      })}
+      helperText={intl.formatMessage({
+        id: 'production.create.recipe.help',
+        defaultMessage:
+          'An archived version is offered for repeating an old batch.',
+      })}
+    />
   );
 }
 
