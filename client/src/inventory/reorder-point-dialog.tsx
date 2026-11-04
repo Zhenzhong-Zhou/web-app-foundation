@@ -40,6 +40,11 @@ import {
   itemName,
   toApiDecimal,
 } from '../lib/format';
+import {
+  type Answer,
+  type Question,
+  useDebouncedRead,
+} from '../lib/use-debounced-read';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
@@ -156,15 +161,15 @@ function readField(
   return { decimal, problem: null };
 }
 
-/** The last preview answered, and the point and quantity it was asked with. */
-interface Previewed {
-  path: string;
+/** A preview's path, with the point and quantity it asks about. */
+interface TodayQuestion extends Question {
   point: string;
   /** A fixed rule's quantity, for "2 of 1,000"; '' for the other rules. */
   fixedQuantity: string;
-  result: ReorderPointPreview | null;
-  failure: unknown;
 }
+
+/** The last preview answered, and the point and quantity it was asked with. */
+type Previewed = Answer<TodayQuestion, ReorderPointPreview>;
 
 /** The item's point by its id: null when it has none, so Add. */
 async function pointOf(variantId: string): Promise<ReorderPointValues | null> {
@@ -220,7 +225,6 @@ export function ReorderPointDialog({
   const [made, setMade] = useState<{ variantId: string; made: boolean } | null>(
     null,
   );
-  const [previewed, setPreviewed] = useState<Previewed | null>(null);
   const [removing, setRemoving] = useState(false);
   const { variants, answered } = useVariants(opening.kind === 'add');
 
@@ -343,42 +347,18 @@ export function ReorderPointDialog({
   const previewFixed = values?.fixedQuantity ?? '';
 
   // Asked once typing pauses; an answer to an older question is dropped
-  // when a newer one is asked, by the effect's own cleanup.
-  useEffect(() => {
-    if (!previewPath) return;
-    let ignore = false;
-    const timer = setTimeout(() => {
-      void api<ReorderPointPreview>(previewPath)
-        .then((result) => {
-          if (!ignore)
-            setPreviewed({
-              path: previewPath,
-              point: previewPoint,
-              fixedQuantity: previewFixed,
-              result,
-              failure: null,
-            });
-        })
-        .catch((caught: unknown) => {
-          if (!ignore)
-            setPreviewed({
-              path: previewPath,
-              point: previewPoint,
-              fixedQuantity: previewFixed,
-              result: null,
-              failure: caught,
-            });
-        });
-    }, 300);
-    return () => {
-      ignore = true;
-      clearTimeout(timer);
-    };
-  }, [previewPath, previewPoint, previewFixed]);
+  // when a newer one is asked.
+  const previewed = useDebouncedRead<ReorderPointPreview, TodayQuestion>(
+    previewPath
+      ? { path: previewPath, point: previewPoint, fixedQuantity: previewFixed }
+      : null,
+  );
 
   // A refusal is about the values it was asked with, so only those.
   const previewFailure =
-    previewed && previewed.path === previewPath ? previewed.failure : null;
+    previewed && previewed.question.path === previewPath
+      ? previewed.failure
+      : null;
   const previewCode =
     previewFailure instanceof ApiError ? (previewFailure.code ?? null) : null;
   const maximumRefusal = hasCode(previewCode, 'reorder_maximum_not_above_point')
@@ -699,7 +679,7 @@ export function ReorderPointDialog({
                 {values && previewed && (
                   <Today
                     previewed={previewed}
-                    current={previewed.path === previewPath}
+                    current={previewed.question.path === previewPath}
                     unit={item?.unitOfMeasure ?? ''}
                     source={source}
                   />
@@ -766,7 +746,11 @@ function Today({
   source: ReorderSource;
 }) {
   const intl = useIntl();
-  const { result, failure, point } = previewed;
+  const {
+    value: result,
+    failure,
+    question: { point, fixedQuantity },
+  } = previewed;
 
   if (!result) {
     const fielded =
@@ -817,7 +801,7 @@ function Today({
                   source,
                   suggestion: displayQuantity(result.suggestion),
                   count: displayQuantity(result.suggestedMultiples),
-                  quantity: displayQuantity(previewed.fixedQuantity),
+                  quantity: displayQuantity(fixedQuantity),
                 },
               )
             : intl.formatMessage(

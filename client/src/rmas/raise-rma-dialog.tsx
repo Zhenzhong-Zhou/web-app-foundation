@@ -16,7 +16,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useRef, useState } from 'react';
+import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
@@ -100,13 +100,10 @@ export function RaiseRmaDialog({
 
   const defaultResolution: ReturnResolution = isSample ? 'replace' : 'credit';
 
-  // useSubmit's callback takes no result, so the new id is kept here.
-  const createdId = useRef<string | null>(null);
-
-  const { submitting, error, reset, submit } = useSubmit(
-    () => {
+  const { submitting, error, reset, submit } = useSubmit<string>(
+    (id) => {
       close();
-      navigate(`/return-authorizations/${createdId.current}`);
+      navigate(`/return-authorizations/${id}`);
     },
     {
       success: intl.formatMessage({
@@ -181,7 +178,7 @@ export function RaiseRmaDialog({
           lines: sending,
         }),
       });
-      createdId.current = returnAuthorization.id;
+      return returnAuthorization.id;
     });
   }
 

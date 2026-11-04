@@ -6,7 +6,7 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { type SubmitEvent, useRef, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import { CurrencyField } from '../components/currency-field';
@@ -35,14 +35,10 @@ export function CreatePriceListDialog({
   const [direction, setDirection] = useState<PriceListDirection>('sale');
   const [currency, setCurrency] = useState('');
 
-  // useSubmit's callback takes no result, so the new id waits here.
-  const createdId = useRef<string | null>(null);
-
-  const { submitting, error, reset, submit } = useSubmit(
-    () => {
-      const id = createdId.current;
+  const { submitting, error, reset, submit } = useSubmit<string>(
+    (id) => {
       close();
-      if (id) onCreated(id);
+      onCreated(id);
     },
     {
       success: intl.formatMessage({
@@ -75,7 +71,7 @@ export function CreatePriceListDialog({
           }),
         },
       );
-      createdId.current = response.priceList.id;
+      return response.priceList.id;
     });
   }
 

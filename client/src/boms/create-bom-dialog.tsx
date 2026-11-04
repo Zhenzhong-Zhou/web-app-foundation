@@ -7,7 +7,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useRef, useState } from 'react';
+import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { Bom, ProductLicence } from '../api/types.gen';
@@ -74,19 +74,10 @@ export function CreateBomDialog({
     };
   }, [open]);
 
-  /**
-   * A ref, not state. `useSubmit` captures its callback at render time, so a
-   * value written by `setState` during submit is not visible to the `onDone`
-   * that runs immediately afterwards — it would read the previous render's
-   * null and skip the reload entirely. A ref is the same object across both.
-   */
-  const createdId = useRef<string | null>(null);
-
-  const { submitting, error, reset, submit } = useSubmit(
-    async () => {
-      const bomId = createdId.current;
+  const { submitting, error, reset, submit } = useSubmit<string>(
+    async (bomId) => {
       close();
-      if (bomId) await onCreated(bomId);
+      await onCreated(bomId);
     },
     {
       success: intl.formatMessage({
@@ -98,7 +89,6 @@ export function CreateBomDialog({
 
   function close() {
     setForm(EMPTY);
-    createdId.current = null;
     setQuantityError(null);
     reset();
     onClose();
@@ -125,7 +115,7 @@ export function CreateBomDialog({
         }),
       });
 
-      createdId.current = bom.id;
+      return bom.id;
     });
   }
 
