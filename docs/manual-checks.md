@@ -3164,6 +3164,12 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R90** *(On a phone, the lookup's list hiding its last Show all,
+  #312)* As the demo Owner in Français at 390 × 844 (DevTools' iPhone 14),
+  press the top bar's search button and type `pharm`: the list goes on
+  past the middle of the screen, down to Tout afficher dans Partenaires in
+  full, its last row, with nothing cut under the list's edge.
+
 - **MC-R89** *(Plan run greyed with nothing saying why while the item's
   recipes load, then the fields jumping, #430)* As the demo Owner on
   Production, with DevTools' Network on Slow 4G, Plan a run and choose
@@ -4605,3 +4611,5 @@ first.
   before.
 - 2026-11-03: #430, Plan run greyed with nothing saying why while the
   item's recipes load: MC-R89 added, Recipe reading Loading… in its place.
+- 2026-11-04: #312, on a phone the lookup's list hiding its last Show all:
+  MC-R90 added, the list filling the full-screen search.
