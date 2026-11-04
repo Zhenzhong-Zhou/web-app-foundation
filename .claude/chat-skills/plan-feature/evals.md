@@ -70,6 +70,8 @@ finding for the as-built and one question for him.*
 
 > Anything else I can run in a cloud session?
 
+- The issues come from `tmp/cloud-picks.json`, which it asks Bob to
+  write and attach, not from GitHub's pages.
 - Each issue offered was read whole, its comments included, and checked
   against `main`'s whole history,
   `git log --oneline -E --grep '#<N>([^0-9]|$)' origin/main`; one already
@@ -77,7 +79,7 @@ finding for the as-built and one question for him.*
   session.
 - None offered leaves a choice open or is labelled `later` or
   `decision`, unless its decision is asked first; none needs a sweep or
-  the large seed.
+  the large seed, or names more than about five files.
 - Each prompt is one line, `/fix-issue <N>`, not indented, with
   `leave <path>` only for a branch not pushed.
 - Five parts, Decisions needed present.

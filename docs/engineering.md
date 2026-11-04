@@ -193,10 +193,14 @@ steps; this section stays the rule.
   proves and verifies, and opens a pull request that closes it. A branch
   built on the Mac is pushed at each stop of its run, so its files show;
   `leave <path>` after the number names one that is not. The chat picks
-  only what the skill would not stop on: an issue read whole (of eight
-  picked from one-line lists on 24 and 25 October, three stopped, needing
-  a decision or more files), no choice left open, and no commit on `main`
-  already fixing it (two of four on 2 November). Two rules bend for it,
+  from an export the maintainer attaches, `tmp/cloud-picks.json`, of the
+  open `fix-now` and `when-touched` issues with their text and comments
+  (ADR-090), and only what the skill would not stop on: an issue read
+  whole (of eight picked from one-line lists on 24 and 25 October, three
+  stopped, needing a decision or more files), no choice left open, small
+  enough (one that names more than about five files goes to the Mac:
+  #310 stopped for thirteen dialogs on 4 November), and no commit on
+  `main` already fixing it (two of four on 2 November). Two rules bend for it,
   each said in the skill: it takes no dependency commit, and without
   Docker it pushes after `scripts/verify.sh --quick`, the rest left to
   CI. A proof runs only the changed tests; a sweep, a load proof or
