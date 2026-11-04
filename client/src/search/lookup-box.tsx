@@ -11,7 +11,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
@@ -51,7 +51,7 @@ const RECENT_IN_SEARCH = 5;
  * Asks after a pause in typing, and drops an answer that arrives after a
  * newer question, so the list never shows results for old text. From the
  * `md` width the box sits in the bar; below it, a search button opens it
- * full width.
+ * full screen, its list filling the screen under the field.
  */
 export function LookupBox() {
   const theme = useTheme();
@@ -61,6 +61,13 @@ export function LookupBox() {
   const intl = useIntl();
   const [open, setOpen] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  // Where the full-screen search's field ends, its gutter below included:
+  // the list fills the screen from there, rather than MUI's 40% of it,
+  // which left a group's Show all under its edge (#312).
+  const [fieldEnd, setFieldEnd] = useState(0);
+  const measure = useCallback((node: HTMLElement | null) => {
+    if (node) setFieldEnd(node.getBoundingClientRect().bottom);
+  }, []);
 
   // `/` and ⌘K / Ctrl+K, unless the person is typing somewhere.
   useEffect(() => {
@@ -118,8 +125,12 @@ export function LookupBox() {
         // The lookup, not a dialog to the person: no amber line (ADR-081).
         slotProps={{ paper: { component: 'div' } }}
       >
-        <Box sx={{ p: 2 }}>
-          <LookupField autoFocus onDone={() => setOpen(false)} />
+        <Box ref={measure} sx={{ p: 2 }}>
+          <LookupField
+            autoFocus
+            onDone={() => setOpen(false)}
+            listHeight={`calc(100dvh - ${fieldEnd}px)`}
+          />
         </Box>
       </Dialog>
     </>
@@ -130,10 +141,13 @@ function LookupField({
   inputRef,
   autoFocus,
   onDone,
+  listHeight,
 }: {
   inputRef?: React.Ref<HTMLInputElement>;
   autoFocus?: boolean;
   onDone?: () => void;
+  /** The list's greatest height, when not MUI's 40% of the screen. */
+  listHeight?: string;
 }) {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -245,6 +259,7 @@ function LookupField({
         if (option) go(option);
       }}
       loading={loading}
+      slotProps={{ listbox: { sx: { maxHeight: listHeight } } }}
       autoHighlight
       // Opens on focus only to offer what was recently opened.
       openOnFocus={recent.length > 0}
