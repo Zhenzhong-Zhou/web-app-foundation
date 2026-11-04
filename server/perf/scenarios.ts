@@ -268,11 +268,12 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // Home (ADR-058): the page everyone opens first, every card an owner
     // sees and Getting started, in one request. Over its budget again from
     // 1 November 2026, on runners about 1.35× slower on every budget, with
-    // the same plans (#276): known until 30 November, and failing past
-    // 400 ms (ADR-082).
+    // the same plans (#276): known until 31 January 2027, and failing past
+    // 400 ms (ADR-082). Home's redesign, ADR-091, must bring it within its
+    // budget and remove this miss (ADR-051's amendment for #225 and #276).
     {
       ...read('GET /home', () => '/home'),
-      knownMiss: { issue: '#276', until: '2026-11-30', ceilingMs: 400 },
+      knownMiss: { issue: '#276', until: '2027-01-31', ceilingMs: 400 },
     },
     // Recently opened (ADR-058), read with Home and on each search's focus.
     read('GET /recent', () => '/recent?limit=6'),
