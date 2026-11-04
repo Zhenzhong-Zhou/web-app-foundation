@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { and, eq, type SQL, sql } from 'drizzle-orm';
 
+import { EXPORT_LIMIT } from '../../common/export';
 import { pageOf } from '../../common/keyset';
 import type { Locale } from '../../common/locales';
 import { searchTerms } from '../../common/search';
@@ -193,6 +194,21 @@ export class ReorderPointsReadsService {
   ): Promise<ReorderPointPage> {
     const { entries, nextCursor } = await this.page(query, locale, false);
     return { entries, nextCursor };
+  }
+
+  /**
+   * The list as its CSV reads it (ADR-057): every row its filter and
+   * search match, in its order, by their base names (ADR-056). One read,
+   * so each point's position is worked out once, not again for every
+   * page (#354). At most EXPORT_LIMIT + 1 rows, for withinLimit to judge.
+   */
+  async exportRows(query: ListReorderPointsDto): Promise<ReorderPointRow[]> {
+    const { entries } = await this.page(
+      { ...query, before: undefined, limit: EXPORT_LIMIT + 1 },
+      null,
+      false,
+    );
+    return entries;
   }
 
   /**
@@ -609,7 +625,9 @@ export class ReorderPointsReadsService {
 
 /**
  * The drafts adding to each item, newest first: draft purchases' lines
- * and draft runs, as positionsOf counts them in draft.
+ * and draft runs, as positionsOf counts them in draft. The items are one
+ * array parameter, so an export's EXPORT_LIMIT of them stays within
+ * Postgres's 65,535 parameters a statement.
  */
 async function draftsOf(
   tx: Tx,
@@ -620,10 +638,7 @@ async function draftsOf(
   if (variantIds.length === 0) return found;
 
   const org = sql`${organizationId}::uuid`;
-  const items = sql.join(
-    variantIds.map((id) => sql`${id}::uuid`),
-    sql`, `,
-  );
+  const items = sql`${sql.param(variantIds)}::uuid[]`;
 
   const { rows } = await tx.execute<DraftRow>(sql`
     select * from (
@@ -640,7 +655,7 @@ async function draftsOf(
       where o.organization_id = ${org}
         and o.direction = 'purchase'
         and o.status = 'draft'
-        and ol.variant_id in (${items})
+        and ol.variant_id = any(${items})
       union all
       select
         po.output_variant_id,
@@ -651,7 +666,7 @@ async function draftsOf(
       from production_orders po
       where po.organization_id = ${org}
         and po.status = 'draft'
-        and po.output_variant_id in (${items})
+        and po.output_variant_id = any(${items})
     ) d
     order by d.id desc
   `);
