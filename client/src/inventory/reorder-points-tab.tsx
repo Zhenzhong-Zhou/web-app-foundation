@@ -671,7 +671,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                     id: 'low',
                     label: intl.formatMessage({
                       id: 'inventory.reorder.filter.low',
-                      defaultMessage: 'Low',
+                      defaultMessage: 'Low stock',
                     }),
                     count: counts?.low,
                     pressed: filter === 'low',

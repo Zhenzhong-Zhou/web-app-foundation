@@ -9,7 +9,7 @@ import type {
 import { COLOR_OF_TONE, STATUS_TONES } from '../theme/status';
 
 const STATUS = defineMessages({
-  open: { id: 'orders.filter.open', defaultMessage: 'Open' },
+  open: { id: 'rmas.status.open', defaultMessage: 'Open' },
   closed: { id: 'rmas.status.closed', defaultMessage: 'Closed' },
   cancelled: { id: 'orders.status.cancelled', defaultMessage: 'Cancelled' },
 });

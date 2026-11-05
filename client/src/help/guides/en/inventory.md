@@ -45,7 +45,7 @@ Each row’s actions offer **Edit reorder point**, **Stock of the item** and **R
 
 An item’s **Position** = usable + coming − still needed: stock at locations marked available, less expired lots and what was issued to runs; plus confirmed purchase orders and released runs still to come; less confirmed sales still to ship. So a purchase order already raised does not raise another.
 
-An item is **Low** below its point, **Out** at zero or less, and **Enough** otherwise. The furthest below their point come first, and **Low** shows the out ones too. Open a row to see what makes up its position, late orders marked.
+An item is **Low** below its point, **Out** at zero or less, and **Enough** otherwise. The furthest below their point come first, and **Low stock** shows the out ones too. Open a row to see what makes up its position, late orders marked.
 
 ## How much to order {#how-much}
 

@@ -41,12 +41,12 @@ function renderAt(address: string) {
 }
 
 /**
- * Licences' filters (ADR-091, #460): Home's tile opens Expiring soon, its
+ * Licences' filters (ADR-091, #460): Home's tile opens Licences expiring, its
  * late button Expired too, both in the address, which the server decides
  * by the organization's today.
  */
 describe('LicencesPage', () => {
-  it('opens on Expiring soon and Expired as Home asks, each cleared alone', async () => {
+  it('opens on Licences expiring and Expired as Home asks, each cleared alone', async () => {
     const user = userEvent.setup();
     const asked = answer();
     renderAt('/licences?expiring=1&expired=1');
@@ -56,7 +56,7 @@ describe('LicencesPage', () => {
       expiring: 'true',
       expired: 'true',
     });
-    const expiring = screen.getByRole('button', { name: 'Expiring soon' });
+    const expiring = screen.getByRole('button', { name: 'Licences expiring' });
     expect(expiring).toHaveAttribute('aria-pressed', 'true');
 
     // Expired cleared: every licence expiring soon.
@@ -70,7 +70,7 @@ describe('LicencesPage', () => {
       .poll(() => Object.fromEntries(asked.at(-1)!))
       .toEqual({ expiring: 'true' });
 
-    // Expiring soon off: every licence.
+    // Licences expiring off: every licence.
     await user.click(expiring);
     await expect.poll(() => asked.at(-1)?.toString()).toBe('');
     expect(expiring).toHaveAttribute('aria-pressed', 'false');
@@ -91,7 +91,7 @@ describe('LicencesPage', () => {
     expect(await screen.findByText('300456')).toBeVisible();
     expect(asked[0].toString()).toBe('');
     expect(
-      screen.getByRole('button', { name: 'Expiring soon' }),
+      screen.getByRole('button', { name: 'Licences expiring' }),
     ).toHaveAttribute('aria-pressed', 'false');
   });
 });

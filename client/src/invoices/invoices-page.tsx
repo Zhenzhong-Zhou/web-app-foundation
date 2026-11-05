@@ -40,7 +40,8 @@ type Filter = InvoiceStatus | 'all';
 
 const LABELS = defineMessages({
   all: { id: 'invoices.filter.all', defaultMessage: 'All' },
-  draft: { id: 'invoices.filter.drafts', defaultMessage: 'Drafts' },
+  // Home's tile's name, what a draft waits for (ADR-091).
+  draft: { id: 'invoices.filter.toIssue', defaultMessage: 'To issue' },
   issued: { id: 'invoices.status.issued', defaultMessage: 'Issued' },
   voided: { id: 'orders.shipments.voided', defaultMessage: 'Voided' },
 });

@@ -78,7 +78,7 @@ replace two bottles; **SO-DEMO-8** invoiced in US dollars; and **Retail CAD
 Owner's, as the roles allow.
 
 Last, nine reorder points, set by the Owner, which Reorder points counts
-**All 9 · Low 6 · Out 1** (ADR-085): **VITC-100** out, lot **VC-0402**
+**All 9 · Low stock 6 · Out 1** (ADR-085): **VITC-100** out, lot **VC-0402**
 past its date too and left on the shelf; **MAGCAP-SAMPLE**, sample bags
 made twelve from a bottle by **MCS-RUN-01** at the **Office**, 12 of 36;
 **ELDER-250**, 58 of 96 up to 192, with **PO-DEMO-12** five days late and
@@ -208,9 +208,9 @@ a second organization.
   focus ring is still on Expected. Open an order and press Back: All
   pressed, the day and the sort as they were. Press Orders in the menu:
   the plain list, Open pressed, the address `/orders`. Do the same on
-  Invoices (Drafts, a day, Total), Returns (Closed, a day), Production (a
+  Invoices (To issue, a day, Total), Returns (Closed, a day), Production (a
   status, a day), Inventory (Expiring soon, Needs a cost, Show emptied, a
-  Location, Expires) and Reorder points (Low): each choice is in the
+  Location, Expires) and Reorder points (Low stock): each choice is in the
   address, and Back from a page opened from there keeps it. Type
   `?status=nonsense` after `/orders`: Open is pressed, as with none.
 
@@ -254,14 +254,15 @@ a second organization.
 - **MC-512** *(ADR-091, #460)* Licences in the menu, and its filters. As
   the demo Owner, Licences is under Records, before Products, in the rail
   and in the drawer; for a role that may not view licences it is not
-  there. Open it from the menu: Expiring soon is not pressed, and every
+  there. Open it from the menu: Licences expiring is not pressed, and every
   licence is listed. Press it: the address gains `expiring=1`, and the
   list holds the licences within 60 days of their day or past it, 300456
   first, then EXP-2026-0619; 80091234, which never expires, is gone. Open
   `/licences?expiring=1&expired=1`: a chip reads Expired, and only 300456
-  is listed. Remove it: the expiring ones again. Home's Licences card
-  opens Licences with Expiring soon pressed. In Français they read Expire
-  bientôt and Expirées; in 中文, 即将过期 and 已过期.
+  is listed. Remove it: the expiring ones again. Home's Licences expiring
+  tile opens Licences with Licences expiring pressed, one name for both.
+  In Français they read Licences qui expirent and Expirées; in 中文,
+  即将到期的许可证 and 已过期.
 
 ## 6. Selling
 
@@ -708,8 +709,9 @@ Paper is checked first because it must not change at all.
   With Expiring soon pressed and none due, the list says no lot here expires
   within 90 days.
 - **MC-1531** Invoices has a page title with its one-line explanation under
-  it, then All, Drafts, Issued and Voided as a row of buttons where the tabs
-  were, All pressed. Draft reads grey, Issued quiet blue, Voided red, on the
+  it, then All, To issue, Issued and Voided as a row of buttons where the
+  tabs were, All pressed; To issue, Home's tile's name, lists the drafts,
+  in Français À émettre, in 中文 待开具. Draft reads grey, Issued quiet blue, Voided red, on the
   list and on each invoice's header.
 - **MC-1532** On INV-000001 the quantity reads 400, and Credit notes is a
   table: CN-000001 linked, its date, its reason wrapping when long, and
@@ -722,7 +724,9 @@ Paper is checked first because it must not change at all.
 - **MC-1534** Returns has a page title with its explanation under it, then its
   statuses as a row of buttons where the tabs were, Open pressed. Open reads
   quiet blue, Closed and Cancelled grey, on the list and on RMA-000001's
-  header.
+  header. In Français the button and the status read En cours, in 中文 未结,
+  as Home's Retours en cours and 未结退货 do; Orders' Open stays Ouvertes
+  and 未完成.
 - **MC-1535** On RMA-000001, Authorized, Received and Credited read 2, not
   2.0000. With a filter that matches nothing, the list says "Nothing here." in
   the shared empty state.
@@ -3120,7 +3124,7 @@ site, after a deploy that changes the setting, the route or the relay.
   where it has one.
 - **MC-4202** *(ADR-085)* The list. As the demo Owner, Inventory → Reorder
   points: the address gains `?tab=reorder-points`, the switch reads All 9
-  · Low 6 · Out 1, and "Position = usable + coming − still needed" sits
+  · Low stock 6 · Out 1, and "Position = usable + coming − still needed" sits
   above the list. VITC-100 comes first, every low row before every other,
   and the rest by SKU. Each row has its SKU in bold, its name beside it
   and a small line under it: "Bought · 48 at a time" for D3-1000-120,
@@ -3132,13 +3136,14 @@ site, after a deploy that changes the setting, the route or the relay.
   says Drafted, with PO-DEMO-13 and its quantity, linked. ZINC-60 is
   grey, "Discontinued · never low, its point kept", with no chevron.
   The digits line up down each column.
-- **MC-4203** *(ADR-085)* Low, Out, the search and Export. Low shows the
-  six, VITC-100 among them; Out, VITC-100 alone; All, the nine. Type
-  ELDER: the counts follow the search, All 1 · Low 1 · Out 0. With Low
-  on and the search cleared, Export saves a CSV of the six, and the audit
+- **MC-4203** *(ADR-085)* Low stock, Out, the search and Export. Low stock
+  shows the six, VITC-100 among them; Out, VITC-100 alone; All, the nine.
+  Type ELDER: the counts follow the search, All 1 · Low stock 1 · Out 0.
+  With Low stock on and the search cleared, Export saves a CSV of the six, and the audit
   log's line for it reads its filter as Status Low, in 中文 不足. Open
   `/inventory?tab=reorder-points&status=low` in a new tab: it opens on
-  Low. In French the three read Tous, Bas and Épuisé.
+  Low stock. In French the three read Tous, Stock bas and Épuisé; in 中文
+  全部, 库存不足 and 缺货.
 - **MC-4204** *(ADR-085)* An opened row. ELDER-250's chevron opens four
   boxes: Usable by location; + Coming, PO-DEMO-12 with its supplier and
   Late; − Still needed, SO-DEMO-9 and SO-DEMO-10 with their customers;
@@ -3228,9 +3233,9 @@ site, after a deploy that changes the setting, the route or the relay.
 - **MC-4211** *(ADR-085)* The empty states. Register a new organization:
   Reorder points shows an icon, "No reorder points yet.", a sentence on
   what a point does, Add reorder point, and Learn more, which opens Help
-  at Reorder points; no All, Low and Out, no position line and no
+  at Reorder points; no All, Low stock and Out, no position line and no
   Export, so Learn more is the only one. Receive 50 of an item, give
-  it a point of 10, and press Low: a tick in green, "Nothing is low. 1 item
+  it a point of 10, and press Low stock: a tick in green, "Nothing is low. 1 item
   has a reorder point.", and Show all, which shows All with the row.
 - **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
   the button reads 添加库存下限, the switch 采购 and 自制, the cards
@@ -3240,7 +3245,8 @@ site, after a deploy that changes the setting, the route or the relay.
   and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的库存下限？
 - **MC-4213** *(ADR-085; ADR-091)* Home's Low stock. On a fresh demo, as
   the Owner: the tile after To receive reads 6, Low stock and "1 out",
-  its icon red. The tile opens Reorder points on Low, six rows, VITC-100
+  its icon red. The tile opens Reorder points on Low stock, its own name,
+  six rows, VITC-100
   first, with Back to Home; What is late's "1 item out of stock" opens it
   on Out, that one row. Receive 100 of VITC-100 and Refresh: Low stock
   reads 5, with no pill, and its button is gone from what is late. In
@@ -3250,7 +3256,7 @@ site, after a deploy that changes the setting, the route or the relay.
   opening Reorder points.
 - **MC-4214** *(ADR-085)* The bell's notice, opened, and its words by
   the items. On a fresh demo, as the Owner, the bell's "6 items fell
-  below their reorder point" opens Inventory's Reorder points on Low,
+  below their reorder point" opens Inventory's Reorder points on Low stock,
   with Back to where the bell was. Sign in as Fatima Haddad (Sales), who
   raises orders but plans no runs: her notice names only the four bought
   items, "VITC-100, ELDER-250 and 2 more. Order them from Reorder
@@ -3260,7 +3266,7 @@ site, after a deploy that changes the setting, the route or the relay.
   Two made items: "Plan them from Reorder points."; one of each: "Order
   or plan them from Reorder points.".
 - **MC-4215** *(ADR-085)* Raise a purchase order, filled in from the list.
-  On a fresh demo, as the Owner, Reorder points on Low: choose
+  On a fresh demo, as the Owner, Reorder points on Low stock: choose
   D3-1000-120 and ELDER-250, and press Raise a purchase order in the
   dark bar. New order opens with Buying chosen, Partner empty, with a
   note: "Filled from Reorder points: 2 lines at their suggested
@@ -3268,7 +3274,7 @@ site, after a deploy that changes the setting, the route or the relay.
   and prices, then raise it as a draft.", in 中文 请在合作伙伴中选择供应商,
   and two lines, D3-1000-120 at 96 and ELDER-250
   at 134. Nothing is saved yet: Cancel goes back to Reorder points, on
-  Low, as it was. Raise it again, choose Prairie and Raise as
+  Low stock, as it was. Raise it again, choose Prairie and Raise as
   draft: the order opens as a draft, and Back returns to Reorder points,
   not to New order filled in again; there, both rows read Drafted with
   the order's number, and neither has a box to choose. Edit D3-1000-120:
@@ -3277,7 +3283,7 @@ site, after a deploy that changes the setting, the route or the relay.
   Fatima Haddad (Sales) has the boxes and the bar; Chloé Tremblay
   (Viewer), neither.
 - **MC-4216** *(ADR-085)* Plan a run, filled in from the list. On a fresh
-  demo, as the Owner, Reorder points on Low: MAGCAP-SAMPLE's row has Plan
+  demo, as the Owner, Reorder points on Low stock: MAGCAP-SAMPLE's row has Plan
   a run, and no bought row has one. It opens Plan a run with Making
   MAGCAP-SAMPLE, the recipe "v1 (current) — makes 12", Quantity to make
   24, Made at empty, and a note: "Filled from Reorder points: 24 brings
@@ -4885,3 +4891,8 @@ first.
 - 2026-11-05: ADR-091, the rail's links 32 px tall under a mouse, so every
   link stays above its foot at 1440 × 900 with Licences in the menu:
   MC-3511 extended.
+- 2026-11-05: ADR-091, each tile and the filter it opens one name: Low
+  stock, To issue, In progress and Licences expiring, and Returns' Open
+  « En cours » and 未结: the demo's reorder points, MC-406, MC-512,
+  MC-4202, MC-4203, MC-4211, MC-4213, MC-4214, MC-4215 and MC-4216
+  reworded, MC-1531 and MC-1534 extended.

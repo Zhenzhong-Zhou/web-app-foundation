@@ -25,9 +25,9 @@ Une tuile ouvre sa liste avec seulement ce qu’elle compte, le plus urgent d’
 - **Stock bas** : Points de commande, dans [Inventaire](/inventory#reorder-points), les plus loin sous leur point d’abord.
 - **Expire bientôt** : Inventaire, les lots qui périment dans le nombre de jours fixé par l’organisation, le plus proche d’abord.
 - **En attente d’un coût** : Valeur du stock, où vous fixez le coût du stock arrivé sans coût.
-- **Factures à émettre** : Factures, les brouillons.
+- **À émettre** : Factures, les brouillons.
 - **Retours en cours** : Retours, ceux qui sont en cours.
-- **En production** : Production, les ordres de fabrication en cours.
+- **En cours** : Production, les ordres de fabrication lancés et pas encore clos.
 - **Licences qui expirent** : Licences, celles qui expirent d’ici 60 jours ou ont expiré, la plus proche d’abord.
 
 La liste garde ce choix pendant que vous y travaillez : en revenant d’une fiche, vous la retrouvez telle quelle.
@@ -76,5 +76,6 @@ Demandez à quelqu’un d’une organisation d’inviter votre adresse, puis ouv
 ## Les mots que vous verrez {#words}
 
 - **En retard** : une commande qui reste à expédier ou à recevoir, passé le jour où elle était attendue, selon la date de l’organisation.
-- **Expire bientôt** : un lot qui périme dans le nombre de jours fixé par l’organisation, ou une licence d’ici 60 jours.
+- **Expire bientôt** : un lot qui périme dans le nombre de jours fixé par l’organisation.
+- **Licences qui expirent** : une licence à moins de 60 jours de son dernier jour, ou au-delà.
 - **Épuisé** : un article avec un point de commande dont il ne reste rien : ce que les ventes requièrent encore prend tout ce qui est utilisable et à venir, ou plus.

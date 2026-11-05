@@ -74,7 +74,7 @@ as the catalogues word it.
 | --- | --- | --- | --- |
 | Home | Accueil | 首页 | |
 | Getting started | Premiers pas | 入门指引 | A new organization's first steps, on Home (ADR-058). |
-| Tile | Tuile | 卡片 | One kind of work on Home, under What needs you today: its count, opening its list (ADR-091). Home's guide names it; the screen does not. |
+| Tile | Tuile | 卡片 | One kind of work on Home, under What needs you today: its count, opening its list (ADR-091). Home's guide names it; the screen does not. A tile and the filter it opens share one name, the plainer of the two, each held in its row below: Low stock, Expiring soon, Waiting for a cost, To issue, Open returns, In progress, Licences expiring. |
 | People | Personnes | 同事 | Everyone in the organization, and how to reach them (ADR-063). |
 | Audit log | Journal d’audit | 审计日志 | |
 
@@ -120,8 +120,8 @@ as the catalogues word it.
 | English | Français (Canada) | 简体中文 | Notes |
 | --- | --- | --- | --- |
 | Reorder point | Point de commande | 库存下限 | An item's level below which it is low (ADR-085). Inventory's tab of the same name lists them. Chinese says the word inventory software uses, a pair with 最高库存, not 再订货点, the English word for word (ADR-091). |
-| Low stock | Stock bas | 库存不足 | Home's card and the bell's notice. |
-| Low / Out / Enough | Bas / Épuisé / Suffisant | 不足 / 缺货 / 充足 | Where an item stands: below its point, at zero or less, or at or above it. Low's filter holds the out too. |
+| Low stock | Stock bas | 库存不足 | Home's tile, Reorder points' filter it opens, which holds the out too, and the bell's notice (ADR-091). |
+| Low / Out / Enough | Bas / Épuisé / Suffisant | 不足 / 缺货 / 充足 | Where an item stands: below its point, at zero or less, or at or above it. The filter for the low is Low stock. |
 | Position | Position | 预计可用 | Usable + coming − still needed: what the point is compared with. |
 | Usable | Utilisable | 现有可用 | Stock at locations marked available, less expired lots and what runs were issued. |
 | Coming | À venir | 在途 | Confirmed purchases still to receive, and released runs' output still to come. |
@@ -138,7 +138,7 @@ as the catalogues word it.
 | Lot number | Numéro de lot | 批号 | As printed on the box, typed when receiving. |
 | Lot code | Code de lot | 批次编码 | What a trace searches by. |
 | Expires | Date de péremption | 有效期至 | Blank for a lot that does not expire. |
-| Expiring soon | Expire bientôt | 即将过期 | Within the days the organization sets (ADR-060). |
+| Expiring soon | Expire bientôt | 即将过期 | Within the days the organization sets (ADR-060): Inventory's filter and Home's tile. |
 | Expired | Périmé | 已过期 | A lot past its expiry: Inventory's filter, Périmés, and Home's « 1 lot périmé ». A licence is *expirée*. |
 | Recall | Rappel | 召回 | |
 
@@ -149,6 +149,7 @@ as the catalogues word it.
 | Current | En vigueur | 有效 | |
 | Not yet in force | Pas encore en vigueur | 尚未生效 | |
 | Expired | Expirée | 已过期 | |
+| Licences expiring | Licences qui expirent | 即将到期的许可证 | Within 60 days of its Valid until day, or past it: Licences' filter and Home's tile, which keeps the kind's name, since the lots' tile is Expiring soon (ADR-091). |
 | Withdrawn | Retirée | 已撤销 | |
 | Override | Dérogation | 例外批准 | Releasing a run despite the licence policy, with a reason (ADR-050). |
 
@@ -158,7 +159,7 @@ as the catalogues word it.
 | --- | --- | --- | --- |
 | Active / Archived | Active / Archivée | 已启用 / 已归档 | A recipe in use, and one it replaced. |
 | Planned | Planifié | 已计划 | A run before it is released. |
-| In progress | En cours | 进行中 | A released run. |
+| In progress | En cours | 进行中 | A released run: its status, Production's filter and Home's tile (ADR-091). |
 | Finished | Terminé | 已完成 | A closed run. |
 
 ### Invoices and returns
@@ -166,11 +167,13 @@ as the catalogues word it.
 | English | Français (Canada) | 简体中文 | Notes |
 | --- | --- | --- | --- |
 | Issue / Issued | Émettre / Émise | 开具 / 已开具 | An invoice numbered and sent; it never changes. |
+| To issue | À émettre | 待开具 | Invoices' filter for the drafts, and Home's tile; each row still says Draft (ADR-091). |
 | Void / Voided | Annuler / Annulée | 作废 / 已作废 | An invoice reversed in full by a credit note, or a shipment that never left. |
 | Credit | Créditer | 开具贷项 | Give back part of an invoice, by a credit note. |
 | Uncollectable | Irrécouvrable | 无法收回 | |
 | Replace | Remplacement | 换货 | An RMA's resolution: a new sale at zero. |
 | Close RMA / Closed | Clore l’autorisation / Close | 关闭退货授权 / 已关闭 | |
+| Open (a return) | En cours | 未结 | Returns' filter and an RMA's status; Home's tile adds the kind: Open returns / Retours en cours / 未结退货 (ADR-091). Orders' Open stays Ouvertes / 未完成. |
 
 ### Money and settings
 

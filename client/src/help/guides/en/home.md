@@ -25,9 +25,9 @@ A tile opens its list with just what it counts, the most urgent first:
 - **Low stock**: Reorder points, on [Inventory](/inventory#reorder-points), the furthest below their point first.
 - **Expiring soon**: Inventory, the lots expiring within the days the organization has set, the soonest first.
 - **Waiting for a cost**: Stock value, where you set the cost of stock that arrived without one.
-- **Invoices to issue**: Invoices, the drafts.
+- **To issue**: Invoices, the drafts.
 - **Open returns**: Returns, the open ones.
-- **In production**: Production, the runs in progress.
+- **In progress**: Production, the runs released and not yet closed.
 - **Licences expiring**: Licences, those within 60 days of expiring or past it, the soonest first.
 
 The list keeps that choice while you work there: Back from a record returns to it.
@@ -76,5 +76,6 @@ Ask someone in an organization to invite your address, then open their link whil
 ## Words you’ll meet {#words}
 
 - **Late**: an order still to ship or receive, past the day it was expected, by the organization’s date.
-- **Expiring soon**: a lot that expires within the days the organization has set, or a licence within 60 days.
+- **Expiring soon**: a lot that expires within the days the organization has set.
+- **Licences expiring**: a licence within 60 days of its last day, or past it.
 - **Out**: an item with a reorder point and nothing to spare: what sales still need takes all that is usable and coming, or more.

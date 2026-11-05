@@ -36,7 +36,7 @@ import { rmaStatus } from './rma-labels';
 type Filter = ReturnAuthorizationStatus | 'all';
 
 const LABELS = defineMessages({
-  open: { id: 'orders.filter.open', defaultMessage: 'Open' },
+  open: { id: 'rmas.status.open', defaultMessage: 'Open' },
   closed: { id: 'rmas.status.closed', defaultMessage: 'Closed' },
   cancelled: { id: 'orders.status.cancelled', defaultMessage: 'Cancelled' },
   all: { id: 'invoices.filter.all', defaultMessage: 'All' },

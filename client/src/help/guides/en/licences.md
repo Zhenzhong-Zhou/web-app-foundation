@@ -29,7 +29,7 @@ Whoever may change licences or release production runs is told in the bell 60, 3
 - **Current**: in force today.
 - **In force from**: issued from a later day, and usable from then.
 - **Expires in**: within 60 days of its **Valid until** day.
-- **Expiring soon**: the filter for those within 60 days of their **Valid until** day or past it, the soonest first, as Home opens the list.
+- **Licences expiring**: the filter for those within 60 days of their **Valid until** day or past it, the soonest first, as Home opens the list.
 - **Expired**: past its **Valid until** day. As a filter, the list shows only these until you remove it.
 - **Withdrawn**: no longer used, kept for what was made under it.
 

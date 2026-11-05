@@ -111,15 +111,15 @@ export function LicencesPage() {
         })}
       </Typography>
 
-      {/* The one filter row (ADR-055): Expiring soon, as Home's tile
-          opens it. */}
+      {/* The one filter row (ADR-055): Licences expiring, Home's tile's
+          name, as the tile opens it (ADR-091). */}
       <FilterRow
         quick={[
           {
             id: 'expiring',
             label: intl.formatMessage({
               id: 'licences.filter.expiring',
-              defaultMessage: 'Expiring soon',
+              defaultMessage: 'Licences expiring',
             }),
             pressed: expiring,
             onToggle: () => setFilters({ expiring: !expiring }),

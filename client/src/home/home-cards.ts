@@ -39,23 +39,34 @@ interface CardMeta {
   late?: Late;
 }
 
-/** A tile's name, the plainer one its list shares (ADR-091). */
+/**
+ * A tile's name, the one the filter it opens shares, the plainer of the
+ * two (ADR-091): the list's own message, so the two cannot drift, since
+ * extracting one id with two texts fails. Returns adds its kind to the
+ * filter's Open, as ADR-091 has it; To ship and To receive name no filter.
+ */
 const TITLES = defineMessages<HomeKind>({
   toShip: { id: 'home.card.toShip', defaultMessage: 'To ship' },
   toReceive: { id: 'home.card.toReceive', defaultMessage: 'To receive' },
-  expiring: { id: 'home.card.expiring', defaultMessage: 'Expiring soon' },
-  costsWaiting: {
-    id: 'home.card.costsWaiting',
-    defaultMessage: 'Waiting for a cost',
-  },
+  expiring: { id: 'inventory.quick.expiring', defaultMessage: 'Expiring soon' },
+  costsWaiting: { id: 'costs.waiting', defaultMessage: 'Waiting for a cost' },
   invoicesToIssue: {
-    id: 'home.card.invoicesToIssue',
-    defaultMessage: 'Invoices to issue',
+    id: 'invoices.filter.toIssue',
+    defaultMessage: 'To issue',
   },
   returnsOpen: { id: 'home.card.returnsOpen', defaultMessage: 'Open returns' },
-  production: { id: 'home.card.production', defaultMessage: 'In production' },
-  licences: { id: 'home.card.licences', defaultMessage: 'Licences expiring' },
-  lowStock: { id: 'home.card.lowStock', defaultMessage: 'Low stock' },
+  production: {
+    id: 'production.status.released',
+    defaultMessage: 'In progress',
+  },
+  licences: {
+    id: 'licences.filter.expiring',
+    defaultMessage: 'Licences expiring',
+  },
+  lowStock: {
+    id: 'inventory.reorder.filter.low',
+    defaultMessage: 'Low stock',
+  },
 });
 
 /** A quiet tile's words, under its name: a label, so no full stop. */
@@ -83,7 +94,7 @@ const EMPTY = defineMessages<HomeKind>({
   },
   production: {
     id: 'home.empty.production',
-    defaultMessage: 'No runs in production',
+    defaultMessage: 'No runs in progress',
   },
   licences: {
     id: 'home.empty.licences',

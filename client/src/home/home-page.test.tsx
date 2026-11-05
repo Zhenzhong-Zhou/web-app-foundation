@@ -107,6 +107,52 @@ describe('HomePage', () => {
     expect(within(today).getAllByRole('link')).toHaveLength(2);
   });
 
+  // A tile and the filter it opens share one name, the plainer of the two
+  // (ADR-091): each of these is its list's own message.
+  it('names each tile as the filter it opens does', async () => {
+    server.use(
+      http.get('/api/v1/home', () =>
+        HttpResponse.json({
+          whatWeDo: null,
+          gettingStarted: COMPLETE,
+          welcome: null,
+          cards: [
+            { kind: 'lowStock', count: 3, late: 0 },
+            { kind: 'invoicesToIssue', count: 4, late: 0 },
+            { kind: 'returnsOpen', count: 1, late: 0 },
+            { kind: 'production', count: 2, late: 0 },
+            { kind: 'licences', count: 5, late: 0 },
+          ],
+        } satisfies HomeResponse),
+      ),
+    );
+    renderWithAuth(routed(<HomePage />), {
+      permissions: [
+        'stock.view',
+        'invoices.view',
+        'return_authorizations.view',
+        'production_orders.view',
+        'product_licences.view',
+      ],
+    });
+
+    const today = await screen.findByRole('region', {
+      name: 'What needs you today',
+    });
+    for (const [name, href] of [
+      ['Low stock, 3', '/inventory?tab=reorder-points&status=low'],
+      ['To issue, 4', '/invoices?status=draft'],
+      ['Open returns, 1', '/return-authorizations?status=open'],
+      ['In progress, 2', '/production?status=released'],
+      ['Licences expiring, 5', '/licences?expiring=1'],
+    ]) {
+      expect(within(today).getByRole('link', { name })).toHaveAttribute(
+        'href',
+        href,
+      );
+    }
+  });
+
   // The ninth tile (ADR-085): red with its out count, opening Reorder
   // points on Low, and its late button on Out.
   it('shows Low stock with its out count, opening Reorder points on Low, and Out from what is late', async () => {

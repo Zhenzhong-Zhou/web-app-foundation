@@ -45,7 +45,7 @@ Les actions de chaque ligne proposent **Modifier le point de commande**, **Stock
 
 La **Position** d’un article = utilisable + à venir − encore requis : le stock aux emplacements marqués disponibles, moins les lots périmés et ce qui a été remis aux ordres de fabrication; plus les achats confirmés et les ordres de fabrication lancés encore à venir; moins les ventes confirmées encore à expédier. Ainsi, un bon de commande déjà créé n’en fait pas créer un autre.
 
-Un article est **Bas** sous son point, **Épuisé** à zéro ou moins, et **Suffisant** autrement. Les plus loin sous leur point viennent en premier, et **Bas** montre aussi les épuisés. Ouvrez une ligne pour voir ce qui fait sa position, les commandes en retard indiquées.
+Un article est **Bas** sous son point, **Épuisé** à zéro ou moins, et **Suffisant** autrement. Les plus loin sous leur point viennent en premier, et **Stock bas** montre aussi les épuisés. Ouvrez une ligne pour voir ce qui fait sa position, les commandes en retard indiquées.
 
 ## Combien commander {#how-much}
 
