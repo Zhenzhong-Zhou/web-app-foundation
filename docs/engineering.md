@@ -208,7 +208,11 @@ steps; this section stays the rule.
   anything needing the large seed stays on the Mac. A session signs with a key of its own, so under the
   maintainer's vigilant mode its commits show Unverified: its pull
   requests are squashed and merged, so each lands on `main` as one commit
-  GitHub signs (1 November 2026). PRs merge one at a time, each when
+  GitHub signs (1 November 2026). Squash and merge is chosen from the
+  merge button's menu, since the button offers the method used last:
+  from 2 November every cloud pull request went in as a merge commit. A
+  feature branch's pull request keeps Create a merge commit, so its
+  commits stay apart (4 November 2026). PRs merge one at a time, each when
   green; a branch behind
   `main` with no conflict merges as it is, and a conflict in
   `docs/manual-checks.md` is settled on GitHub with "Accept both changes",
@@ -244,7 +248,11 @@ steps; this section stays the rule.
   packs itself, laid out as the repository is and named for its step
   (`adr-088-step-07.zip`, ending `-v2` when corrected), unpacked from
   the repository's root with `unzip ~/Downloads/<zip> && rm
-  ~/Downloads/<zip>`; `unzip` asks before overwriting a file.
+  ~/Downloads/<zip>`; `unzip` asks before overwriting a file. Text for
+  GitHub, an issue's or a comment's, comes as a file too, passed with
+  `--body-file` (4 November 2026): a script that held an issue's text
+  inside `$( )` filed it cut short, since macOS's bash 3.2 closed the
+  `$( )` at a parenthesis in the text and ran the rest as commands.
 - **A file already in the repository changes by a patch, never sent
   whole** (29 October 2026; from 26 October, only a file of 600 lines or
   more). The chat makes it from a shallow, read-only clone of the

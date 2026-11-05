@@ -50,6 +50,12 @@ Their home is `docs/engineering.md`, "How code is delivered" and
 - One `git commit -m "…"`: a subject, a blank line, then wrapped
   paragraphs saying why. No backticks and no `!` inside the quotes,
   which zsh would read.
+- Text for GitHub, an issue's or a comment's, comes as a file Bob passes
+  with `--body-file`, never inside a script's `$( )`, which macOS's bash
+  3.2 reads wrongly (ADR-090's as-built).
+- Merging: a cloud session's pull request by Squash and merge, chosen
+  from the merge button's menu; a feature branch's by Create a merge
+  commit.
 - A commit command, a Claude Code prompt or a slash command is never
   indented in the reply: a code block inside a list carries the list's
   indent, which git keeps in a commit's message and which makes Claude
