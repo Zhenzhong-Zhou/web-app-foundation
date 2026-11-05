@@ -43,7 +43,7 @@ describe('NumberingSection', () => {
     expect(rows.getByText('PO-000001')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Save numbering' }),
-    ).toBeDisabled();
+    ).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('says what a reset needs, and adds the date in one tap', async () => {
@@ -64,7 +64,7 @@ describe('NumberingSection', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Save numbering' }),
-    ).toBeDisabled();
+    ).toHaveAttribute('aria-disabled', 'true');
 
     await user.click(screen.getByRole('button', { name: 'Add the date' }));
     expect(
@@ -97,7 +97,7 @@ describe('NumberingSection', () => {
     ).toHaveAccessibleDescription(notice);
     expect(
       screen.getByRole('button', { name: 'Save numbering' }),
-    ).toBeDisabled();
+    ).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('shows the change before saving it, sending a next number only when typed', async () => {
@@ -258,7 +258,7 @@ describe('NumberingSection', () => {
     );
     expect(
       screen.getByRole('button', { name: 'Save numbering' }),
-    ).toBeDisabled();
+    ).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('is read only, with who can change it, for everyone else', async () => {

@@ -52,7 +52,7 @@ describe('TimeZoneForm', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Save time zone' }),
-    ).toBeDisabled();
+    ).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('says when saving moves the organization to another day, and saves the zone', async () => {
@@ -134,7 +134,7 @@ describe('TimeZoneForm', () => {
     expect(screen.queryByText(/today becomes/)).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Save time zone' }),
-    ).toBeEnabled();
+    ).not.toHaveAttribute('aria-disabled');
   });
 
   it('leaves the Still on UTC note out on a computer that is itself in UTC', () => {
@@ -159,7 +159,7 @@ describe('TimeZoneForm', () => {
     expect(box).toHaveValue(zoneLabel('Asia/Kolkata'));
     expect(
       screen.getByRole('button', { name: 'Save time zone' }),
-    ).toBeDisabled();
+    ).toHaveAttribute('aria-disabled', 'true');
 
     await user.clear(box);
     await user.keyboard('kolkata');

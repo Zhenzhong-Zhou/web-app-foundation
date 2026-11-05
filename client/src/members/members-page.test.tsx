@@ -1,13 +1,15 @@
+import { ThemeProvider } from '@mui/material/styles';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import type { Member, Role } from '../api/types.gen';
+import type { Invitation, Member, Role } from '../api/types.gen';
 import { builtInRole, roleRef } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
+import { themeFor } from '../theme';
 import { MembersPage } from './members-page';
 
 /** Made here: sees stock. */
@@ -279,5 +281,66 @@ describe('MembersPage', () => {
       ).toHaveFocus(),
     );
     expect(screen.queryByRole('row', { name: /^Sam/ })).not.toBeInTheDocument();
+  });
+
+  /**
+   * Its dialog opens once the link is made, the button held back meanwhile,
+   * so nothing was left to give focus back to (#155, WCAG 2.4.3). In the
+   * app's theme, which gives focus back as every dialog closes.
+   */
+  it('gives focus back to Copy link once its dialog closes', async () => {
+    const user = userEvent.setup();
+    const invited: Invitation = {
+      id: 'invitation-1',
+      email: 'kai@example.com',
+      roles: [roleRef('Viewer')],
+      invitedBy: { id: 'user-1', name: 'Ana' },
+      invitedAt: '2026-10-19T09:00:00.000Z',
+      link: { status: 'emailed', lastDay: '2026-10-26' },
+    };
+    server.use(
+      http.get('/api/v1/users', () => HttpResponse.json([SELF, SAM])),
+      http.get('/api/v1/roles', () => HttpResponse.json(ROLES)),
+      http.get('/api/v1/invitations', () => HttpResponse.json([invited])),
+      http.post('/api/v1/invitations/invitation-1/link', () =>
+        HttpResponse.json({
+          invitation: {
+            ...invited,
+            link: { ...invited.link, status: 'copied' },
+          },
+          link: 'https://app.example.com/invite/abc',
+        }),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter>
+        <ThemeProvider theme={themeFor('en')}>
+          <MembersPage />
+        </ThemeProvider>
+      </MemoryRouter>,
+      { permissions: ['users.view', 'roles.view', 'users.create'] },
+    );
+
+    const copy = await screen.findByRole('button', {
+      name: 'Copy link for kai@example.com',
+    });
+    // As Chrome does and jsdom does not: a focused button that turns
+    // disabled, as the row's do while the link is made, drops its focus.
+    // jsdom blurs no disabled element, so it is blurred enabled for a moment.
+    const fixup = new MutationObserver(() => {
+      if (copy === document.activeElement && copy.hasAttribute('disabled')) {
+        copy.removeAttribute('disabled');
+        copy.blur();
+        copy.setAttribute('disabled', '');
+      }
+    });
+    fixup.observe(copy, { attributeFilter: ['disabled'] });
+    copy.focus();
+    await user.keyboard('{Enter}');
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Done' }));
+
+    await waitFor(() => expect(copy).toHaveFocus());
+    fixup.disconnect();
   });
 });

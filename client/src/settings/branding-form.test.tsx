@@ -147,7 +147,7 @@ describe('BrandingForm, the two logos', () => {
     expect(
       within(square).getByRole('button', { name: 'Upload a square logo' }),
     ).toHaveAttribute('aria-disabled', 'true');
-    expect(save).toBeDisabled();
+    expect(save).toHaveAttribute('aria-disabled', 'true');
     // The other row is not uploading.
     expect(within(row('Logo')).getByRole('status')).toBeEmptyDOMElement();
 
@@ -157,7 +157,7 @@ describe('BrandingForm, the two logos', () => {
         /^Uploaded\. Press Save branding to use it\.$/,
       ),
     );
-    expect(save).toBeEnabled();
+    expect(save).not.toHaveAttribute('aria-disabled');
     // Its thumbnail from the small file, as the preview's.
     expect(square.querySelector('img')).toHaveAttribute(
       'src',
@@ -184,7 +184,7 @@ describe('BrandingForm, the two logos', () => {
     );
     expect(
       screen.getByRole('button', { name: 'Save branding' }),
-    ).toBeDisabled();
+    ).toHaveAttribute('aria-disabled', 'true');
 
     await waitFor(() =>
       expect(row('Logo').querySelector('img')).toHaveAttribute(
