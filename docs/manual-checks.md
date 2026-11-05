@@ -3164,6 +3164,13 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R95** *(focus falling to the page as an invoice was issued, #462)*
+  With the keyboard alone at 1440 px, as the demo Owner. Open SO-DEMO-5's
+  draft invoice, press Enter on Issue, then on the dialog's Issue: once the
+  notice shows, focus is on the page's heading, which reads the number
+  issuing gave it, and Tab goes on from there to History. A screen reader
+  reads the number as focus lands.
+
 - **MC-R94** *(focus falling to the page as Resend worked, #466)* With the
   keyboard alone at 1440 px, as the demo Owner on Members. Invite an
   address and send it, so it shows under Invited, then press Enter on its
@@ -4659,3 +4666,5 @@ first.
 - 2026-11-04: #466, focus falling to the page as Resend worked: MC-R94
   added, a greyed Resend keeping focus and its not-sent dialog giving it
   back.
+- 2026-11-04: #462, focus falling to the page as an invoice was issued:
+  MC-R95 added, focus going to the heading with its new number.

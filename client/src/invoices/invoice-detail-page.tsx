@@ -13,7 +13,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import {
   Link as RouterLink,
@@ -90,6 +90,17 @@ export function InvoiceDetailPage() {
   const [creditRma, setCreditRma] = useState<ReturnAuthorizationDetail | null>(
     null,
   );
+  const heading = useRef<HTMLHeadingElement>(null);
+  // Issue shows only on a draft, so issuing takes away the button its
+  // dialog would give focus back to: once the invoice read again is on
+  // screen, its heading naming the number issuing gave it, the page
+  // begins there, as the members page's does after a removal (#462).
+  const refocus = useRef(false);
+  useEffect(() => {
+    if (!refocus.current) return;
+    refocus.current = false;
+    heading.current?.focus();
+  }, [invoice]);
 
   const can = useCan();
 
@@ -241,6 +252,7 @@ export function InvoiceDetailPage() {
           </>
         }
         status={status}
+        headingRef={heading}
         actions={
           <>
             <HistoryButton resourceId={invoice.id} />
@@ -600,7 +612,10 @@ export function InvoiceDetailPage() {
         invoice={invoice}
         open={issuing}
         onClose={() => setIssuing(false)}
-        onIssued={reload}
+        onIssued={() => {
+          refocus.current = true;
+          return reload();
+        }}
       />
 
       <VoidInvoiceDialog
