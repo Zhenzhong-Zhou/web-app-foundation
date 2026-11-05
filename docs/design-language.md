@@ -269,7 +269,10 @@ measured on the device.
   (`/usability-walkthrough panel <journey>`), and what two personas or
   more hit is settled here.
 - **The canvas:** a design is drawn there, at the classes it changes,
-  before its code.
+  before its code. A changed design is a new row, titled with its
+  version, never drawn over the old one: every earlier row stays as the
+  design's history, and the version the build follows is named in its
+  ADR.
 
 ## Not yet
 

@@ -123,7 +123,9 @@ steps; this section stays the rule.
   Deferred lines, the watch lists, Open decisions and the open issues),
   the decisions for Bob to confirm, the ADR as the branch's first commit
   (it tidies the handoff too), the canvas designs (on the Claude Design
-  canvas, <https://claude.ai/artifact/RqG3iKw4V41is3w1go53EJ>), and a
+  canvas, <https://claude.ai/artifact/RqG3iKw4V41is3w1go53EJ>, where a
+  changed design is drawn as a new row and every earlier one stays as its
+  history, from 4 November 2026), and a
   build brief, whose steps Claude Code runs in a row (below). Claude Code
   writes the code from each step, runs
   `scripts/verify.sh`, `/simplify` and `/code-review`, and opens the PR.

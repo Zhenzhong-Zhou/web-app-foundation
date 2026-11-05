@@ -395,3 +395,6 @@ found the design language did not say:
 - **The panel at every width class:** the panel gives the five classes to
   a journey's personas in turn, the Duo's two sizes among them; a
   journey's own Sizes line overrides it (#467's finding 15).
+- **The canvas keeps every version:** a changed design is a new row,
+  titled with its version, never drawn over the old one, and the version
+  the build follows is named in its ADR.

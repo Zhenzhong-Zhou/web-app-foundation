@@ -94,7 +94,9 @@ checking**. Each item names its issue or ADR.
   tracked folder must exist (`scripts/check-docs.mjs`); a file still to
   be written is named in plain words.
 - Designs go on the Claude Design canvas `docs/engineering.md` names,
-  never as mockups in the chat.
+  never as mockups in the chat. A changed design is a new row of boards,
+  titled with its version, never drawn over the old one: every earlier
+  version stays as the design's history.
 
 ## 4. The brief
 
