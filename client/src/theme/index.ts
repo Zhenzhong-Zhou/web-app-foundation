@@ -176,10 +176,10 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
       styleOverrides: {
         // Every digit the same width, so figures line up down a column.
         body: { fontVariantNumeric: 'tabular-nums' },
-        // Chinese reads better with more room between lines.
-        ':lang(zh) .MuiTypography-body1, :lang(zh) .MuiTypography-body2': {
-          lineHeight: 1.65,
-        },
+        // Chinese reads better with more room between lines, for its
+        // strokes: 16 on 28 and 14 on 24, on the same 4 px grid.
+        ':lang(zh) .MuiTypography-body1': { lineHeight: 28 / TYPE.body },
+        ':lang(zh) .MuiTypography-body2': { lineHeight: 24 / TYPE.small },
         /**
          * Less motion for those who ask (ADR-075): transitions end at once
          * and scrolling jumps, so the drawer, menus, dialogs and the

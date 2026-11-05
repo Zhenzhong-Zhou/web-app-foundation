@@ -200,7 +200,8 @@ Each with what holds it in the code today, or the issue that will.
   px; a caption only for footnotes.
 - The scale steps by 1.25: a section heading at 20 px and a page's title
   at 25 px, so a heading is told apart by size, not weight alone. Line
-  heights sit on a 4 px grid: 16 on 24, 14 on 20, 20 on 28, 25 on 32.
+  heights sit on a 4 px grid: 16 on 24, 14 on 20, 20 on 28, 25 on 32; in
+  Chinese, with more room for its strokes, 16 on 28 and 14 on 24.
 - The text size is named in words where a person looks for it, not only
   behind their initials.
 - On touch every target is at least 44 × 44 px (#170); with a mouse,

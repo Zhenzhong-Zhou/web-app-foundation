@@ -817,7 +817,8 @@ Paper is checked first because it must not change at all.
   phone: buttons, fields, menus and the text under a heading read at 16
   px, a table's rows and heads at 14; a section's heading, 20 px, stands
   above its text by its size, not only its weight, and the page's title
-  is 25 px. Panels have 12 px corners, buttons and fields 10 and a dialog
+  is 25 px. In 中文 the lines of a paragraph are 28 px apart, a small
+  text's 24, more open than in English. Panels have 12 px corners, buttons and fields 10 and a dialog
   (Receive stock) 16. On Members a made role's chip stays square beside a
   built-in one's pill (MC-3312). The icons beside Register's ways in (with
   REGISTRATION=invitation) and on Home for an account in no organization,
@@ -4709,4 +4710,6 @@ first.
   computer: MC-R96 added, MC-1555 rewritten.
 - 2026-11-05: ADR-091, the icons on Register, on Home in no organization
   and on an organization invitation kept rounded squares: MC-1560
+  rewritten.
+- 2026-11-05: ADR-091, Chinese text on lines of 28 and 24 px: MC-1560
   rewritten.

@@ -103,4 +103,16 @@ describe('the type scale', () => {
     expect(px(fontSize)).toBe(size);
     expect(px(fontSize) * Number(lineHeight)).toBeCloseTo(line);
   });
+
+  // More room for Chinese strokes, still on the grid (ADR-091).
+  it.each([
+    ['body1', 28],
+    ['body2', 24],
+  ] as const)('sets Chinese %s on %s', (variant, line) => {
+    const overrides = themeFor('zh-Hans').components?.MuiCssBaseline
+      ?.styleOverrides as Record<string, { lineHeight: number }>;
+    const { lineHeight } = overrides[`:lang(zh) .MuiTypography-${variant}`];
+
+    expect(px(typography[variant].fontSize) * lineHeight).toBeCloseTo(line);
+  });
 });
