@@ -93,9 +93,9 @@ given, which git ignores.
    persona, its account, the journey's tasks as written for it, and its
    report's path: `<folder>/<journey>-<persona>.md`, the persona being
    its heading without "The", in lowercase words joined by hyphens, as in
-   `home-senior-who-reads-only-chinese.md`. A journey's **Sizes:** line,
-   where it has one, sets each persona's screen in place of its own Set
-   up's.
+   `home-senior-who-reads-only-chinese.md`. Where the journey has a
+   **Sizes:** line, each is given its screen sizes from it too, which
+   replace its own Set up's.
 3. **Wait for all of them.** One that ends BLOCKED is named in the
    merge, and the others still count.
 4. **Merge** into `<folder>/<journey>.md`: each finding once, the

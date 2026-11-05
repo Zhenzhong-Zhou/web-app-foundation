@@ -26,11 +26,11 @@ What needs doing today, from Home and one step past it.
 - **For the operations lead:** from each of Home's tiles, reach the
   detail behind it; sort, filter and export that list; follow a lot to
   its trace.
-- **Sizes,** from Home built to the design language (ADR-091), each
-  persona at a width class of its own: the senior on a phone, 390 × 844;
-  the outsider on the iPhone Duo, closed, about 466 × 678, then open,
-  about 890 × 626; the owner on a tablet, upright, 820 × 1180, then held
-  sideways, 1180 × 820; the operations lead on a desktop, 1920 × 1080.
+- **Sizes:** each persona at a width class of its own: the senior on a
+  phone, 390 × 844; the outsider on the iPhone Duo, closed, about 466 ×
+  678, then open, about 890 × 626; the owner on a tablet, upright, 820 ×
+  1180, then held sideways, 1180 × 820; the operations lead on a desktop,
+  1920 × 1080.
 
 ## join
 
