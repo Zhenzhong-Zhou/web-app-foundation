@@ -8,12 +8,12 @@ Home is the first page you see: what needs you today, and the actions you take m
 
 ## Every day {#today}
 
-- At the top: the greeting, the organization’s date and time, and its What we do, one line in its own words.
+- At the top: the greeting with **Refresh** beside it, the organization’s date and time, and its What we do, one line in its own words.
+- Beside them, or under them on a narrow screen, your main action: the first your role allows of **Raise an order**, **Receive stock**, **Plan a run** and **Trace a lot**. **More** beside it opens the others your role allows. Where it allows none, a line says whom to ask.
 - Under **What needs you today**, a tile for each kind of work: its count, its name, and how many are late, expired or out, such as **2 late**. A tile with nothing to do stays in its place and says so.
-- The actions you take most, such as **Raise an order**, those your role allows. Where it allows none, a line says whom to ask.
 - **Recently opened** takes you back to what you opened last.
 
-Home reads its counts again when you come back to it after a minute away. **Refresh** reads them now.
+Home reads its counts again when you come back to it after a minute away. **Refresh**, the round arrow beside the greeting, reads them now.
 
 > You see a tile only for the work your role may see.
 

@@ -139,8 +139,8 @@ test('the account menu’s preferences open from the keyboard, and come back to 
       .filter({ has: page.getByRole('combobox', { name, exact: true }) });
   const listbox = page.getByRole('listbox');
 
-  // Your account, Your devices, then the colour mode.
-  await page.keyboard.press('ArrowDown');
+  // Your account, then the colour mode (ADR-091: Your devices is on Your
+  // account).
   await page.keyboard.press('ArrowDown');
   await expect(rowOf('Colour mode')).toBeFocused();
 

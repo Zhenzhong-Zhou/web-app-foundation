@@ -305,17 +305,52 @@ describe('HomePage', () => {
     }
   });
 
-  it('offers only the quick actions the role may take, the first the main one', async () => {
+  /**
+   * The main action (ADR-091): the first the role may take of Raise an
+   * order, Receive stock, Plan a run and Trace a lot, in the accent, in the
+   * greeting's row; the others under More, a menu; with none other, no
+   * More. Refresh is an icon beside the greeting.
+   */
+  it('leads with the first action the role may take, the others under More', async () => {
     serve({ gettingStarted: COMPLETE, cards: [] });
+    const user = userEvent.setup();
     renderWithAuth(routed(<HomePage />), {
-      permissions: ['stock.view', 'orders.create'],
+      permissions: ['stock.view', 'stock.move', 'production.create'],
     });
 
-    const raise = await screen.findByRole('link', { name: 'Raise an order' });
-    expect(raise).toHaveClass('MuiButton-contained');
-    const trace = screen.getByRole('link', { name: 'Trace a lot' });
-    expect(trace).not.toHaveClass('MuiButton-contained');
-    expect(screen.queryByRole('link', { name: 'Plan a run' })).toBeNull();
+    const receive = await screen.findByRole('link', { name: 'Receive stock' });
+    expect(receive).toHaveClass('MuiButton-contained');
+    expect(screen.queryByRole('link', { name: 'Raise an order' })).toBeNull();
+    // Above what is late, beside the greeting.
+    const follows = (first: Element, then: Element) =>
+      !!(
+        first.compareDocumentPosition(then) & Node.DOCUMENT_POSITION_FOLLOWING
+      );
+    expect(
+      follows(receive, await screen.findByText('Nothing needs you today.')),
+    ).toBe(true);
+    expect(screen.getByRole('button', { name: 'Refresh' })).toBeVisible();
+
+    const more = screen.getByRole('button', { name: 'More' });
+    expect(more).toHaveAttribute('aria-haspopup', 'menu');
+    await user.click(more);
+    const menu = screen.getByRole('menu');
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent),
+    ).toEqual(['Plan a run', 'Trace a lot']);
+    expect(more).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('shows no More where the role may take one action alone', async () => {
+    serve({ gettingStarted: COMPLETE, cards: [] });
+    renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
+
+    expect(
+      await screen.findByRole('link', { name: 'Trace a lot' }),
+    ).toHaveClass('MuiButton-contained');
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
   });
 
   /**
@@ -360,17 +395,24 @@ describe('HomePage', () => {
       );
     }
 
-    it('from each quick action', async () => {
+    it('from the main action and each of More', async () => {
       serve({ gettingStarted: COMPLETE, cards: [] });
       atHome(['stock.view', 'stock.move', 'production.create']);
 
-      for (const name of ['Receive stock', 'Trace a lot', 'Plan a run']) {
-        await userEvent.click(await screen.findByRole('link', { name }));
+      await userEvent.click(
+        await screen.findByRole('link', { name: 'Receive stock' }),
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+      for (const name of ['Plan a run', 'Trace a lot']) {
+        await userEvent.click(
+          await screen.findByRole('button', { name: 'More' }),
+        );
+        await userEvent.click(screen.getByRole('menuitem', { name }));
         await userEvent.click(screen.getByRole('button', { name: 'Back' }));
       }
 
       expect(
-        await screen.findByRole('link', { name: 'Plan a run' }),
+        await screen.findByRole('link', { name: 'Receive stock' }),
       ).toBeVisible();
     });
 
@@ -560,7 +602,7 @@ describe('HomePage', () => {
     expect(quick[0]).not.toHaveClass('MuiButton-contained');
   });
 
-  it('puts Getting started straight after the welcome, the quick actions after both, while it shows', async () => {
+  it('puts Getting started straight after the welcome, the main action above both and quiet while it shows', async () => {
     const respond = (start: HomeResponse['gettingStarted']) =>
       server.use(
         http.get('/api/v1/home', () =>
@@ -590,11 +632,14 @@ describe('HomePage', () => {
       .getAllByRole('link', { name: 'Raise an order' })
       .find((link) => !start.contains(link))!;
     expect(follows(card, start)).toBe(true);
-    expect(follows(start, raise)).toBe(true);
+    // In the greeting's row (ADR-091), tonal: Getting started's next step
+    // is the page's one main action.
+    expect(follows(raise, card)).toBe(true);
+    expect(raise).not.toHaveClass('MuiButton-contained');
     unmount();
 
-    // Without Getting started, Home is as it was: the welcome, then the
-    // quick actions.
+    // Without Getting started, the main action in the accent, above the
+    // welcome.
     respond(GETTING_STARTED_DONE);
     renderWithAuth(routed(<HomePage />), {
       permissions: ['organizations.update', 'orders.create'],
@@ -603,9 +648,9 @@ describe('HomePage', () => {
     expect(
       screen.queryByRole('region', { name: 'Getting started' }),
     ).toBeNull();
-    expect(
-      follows(alone, screen.getByRole('link', { name: 'Raise an order' })),
-    ).toBe(true);
+    const main = screen.getByRole('link', { name: 'Raise an order' });
+    expect(follows(main, alone)).toBe(true);
+    expect(main).toHaveClass('MuiButton-contained');
   });
 
   it('puts focus on the page’s heading once Getting started is dismissed', async () => {

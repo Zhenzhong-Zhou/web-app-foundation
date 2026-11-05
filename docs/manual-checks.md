@@ -625,8 +625,9 @@ Paper is checked first because it must not change at all.
   1200px with the drawer open: it closes and the rail appears.
 - **MC-1510** As a Viewer, groups with nothing the role may see are left out
   entirely, heading and all; nothing in the rail leads to a refusal.
-- **MC-1511** The account menu holds the email, Account, Devices, Colour
-  mode, Language and Text size, each named in words above its select
+- **MC-1511** The account menu holds the email, Your account, Colour
+  mode, Language and Text size, and no Your devices, which Your account
+  and the sign-in emails still open (ADR-091), each named in words above its select
   (ADR-091), and Sign out, and no settings. In Français and 简体中文 the
   rail's headings and Collapse/Expand read in that language.
 - **MC-1512** Open SO-DEMO-1: its title is SO-DEMO-1, Confirmed beside it in a
@@ -855,8 +856,18 @@ Paper is checked first because it must not change at all.
   to do stays in its place, grey, its words in place of the count (No
   returns open), still a link. Under a mouse a tile's edge turns the
   accent and it lifts a little; Tab shows the accent ring; a phone or a
-  tablet shows no hover. Raise an order is the one filled button, Receive
-  stock, Trace a lot and Plan a run grey beside it. Recently opened lists
+  tablet shows no hover. Refresh is an icon beside the greeting, named in
+  a tooltip. At the right of the greeting's row, Raise an order, the one
+  filled button, and More beside it, grey: its menu holds Receive stock,
+  Plan a run and Trace a lot, each opening its page with Back to Home;
+  from the keyboard, Enter opens it on its first item, the arrows move,
+  Escape closes it with focus back on More. Below 900 px (a phone, the
+  Duo open) the two run the page's width under the date and What we do;
+  nothing is below the tiles but Recently opened. As Tom Becker
+  (Warehouse) the button reads Receive stock, More holding Trace a lot;
+  in a role made from the Production template, Plan a run, the same; as
+  Sarah Chen (Viewer), Trace a lot alone, with no More. In 中文 More
+  reads 更多, in Français Plus. Recently opened lists
   each record by its name, its code and kind under it, and when, the
   whole row a link. Leave Home's tab for another for a minute or more and
   come back: Home reads again (DevTools → Network, `home`); back after a
@@ -867,7 +878,7 @@ Paper is checked first because it must not change at all.
   welcome, at 0 of 7 done over a bar in the accent, with Seven steps get
   your organization ready to work… inside the card. The next step is
   shaded, its ring in the accent, its button the only filled one on Home
-  with Learn more beside it, and the quick actions after the card, grey.
+  with Learn more beside it, and Raise an order and More at the top, grey.
   Every other step is one link, its whole row, at least 44 px tall (on a
   phone too), opening its page with Back; a done one is ticked, grey, and
   reads … · Done. Nothing needs you today. in one line and the tiles quiet
@@ -1847,7 +1858,7 @@ The pages, in a private window unless a check says otherwise.
   started this organization today, then in one line You may do everything
   here, including settings and closing the organization, and Setting up
   the organization is in Getting started, below. Getting started comes
-  straight after the card, before the quick actions, and the card's first
+  straight after the card, Raise an order grey at the top, and the card's first
   week has only Confirm your email address
   and Say who you are, Your first week · 0 of 2 done in its head, and
   Getting started's bar is empty on a grey track at 0 of 7.
@@ -3555,7 +3566,7 @@ first.
 - **MC-R69** *(a top-level page opened by a link with no way back, such
   as Trace a lot, #341)* As the demo Owner, on Inventory press Trace a
   lot: Back shows beside its title and returns to Inventory. From Home's
-  quick action Trace a lot, Back returns to Home. Type `2609` and press
+  More → Trace a lot, Back returns to Home. Type `2609` and press
   Enter: Back is still there, and steps back to before the search, then
   to where you came from, as the browser's Back does. A lot opened from
   the list keeps its trail and its Back. Then the other links inside the
@@ -4896,3 +4907,7 @@ first.
   « En cours » and 未结: the demo's reorder points, MC-406, MC-512,
   MC-4202, MC-4203, MC-4211, MC-4213, MC-4214, MC-4215 and MC-4216
   reworded, MC-1531 and MC-1534 extended.
+- 2026-11-05: ADR-091, Home's main action at the right of the greeting's
+  row, by role, the others under More, Refresh an icon beside the
+  greeting; Your devices out of the account menu: MC-1559 and MC-1511
+  extended, MC-3209 and MC-R69 reworded.

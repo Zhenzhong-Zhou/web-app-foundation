@@ -75,6 +75,7 @@ as the catalogues word it.
 | Home | Accueil | 首页 | |
 | Getting started | Premiers pas | 入门指引 | A new organization's first steps, on Home (ADR-058). |
 | Tile | Tuile | 卡片 | One kind of work on Home, under What needs you today: its count, opening its list (ADR-091). Home's guide names it; the screen does not. A tile and the filter it opens share one name, the plainer of the two, each held in its row below: Low stock, Expiring soon, Waiting for a cost, To issue, Open returns, In progress, Licences expiring. |
+| More | Plus | 更多 | Beside Home's main action, a menu of the other actions the member may take (ADR-091). |
 | People | Personnes | 同事 | Everyone in the organization, and how to reach them (ADR-063). |
 | Audit log | Journal d’audit | 审计日志 | |
 

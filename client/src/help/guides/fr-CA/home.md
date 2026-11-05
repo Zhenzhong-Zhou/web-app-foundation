@@ -8,12 +8,12 @@ L’accueil est la première page que vous voyez : ce qui vous attend aujourd�
 
 ## Chaque jour {#today}
 
-- En haut : la salutation, la date et l’heure de l’organisation, et sa ligne Ce que nous faisons, dans ses propres mots.
+- En haut : la salutation avec **Actualiser** à côté, la date et l’heure de l’organisation, et sa ligne Ce que nous faisons, dans ses propres mots.
+- À côté, ou dessous sur un écran étroit, votre action principale : la première que votre rôle permet parmi **Créer une commande**, **Recevoir du stock**, **Planifier un ordre** et **Tracer un lot**. **Plus**, à côté, ouvre les autres que votre rôle permet. S’il n’en permet aucune, une ligne dit à qui vous adresser.
 - Sous **Ce qui vous attend aujourd’hui**, une tuile par sorte de travail : son nombre, son nom, et combien sont en retard, périmés ou épuisés, comme **2 en retard**. Une tuile sans rien à faire reste à sa place et le dit.
-- Les actions que vous faites le plus souvent, comme **Créer une commande**, celles que votre rôle permet. S’il n’en permet aucune, une ligne dit à qui vous adresser.
 - **Ouverts récemment** vous ramène à ce que vous avez ouvert en dernier.
 
-L’accueil relit ses nombres quand vous y revenez après une minute d’absence. **Actualiser** les relit tout de suite.
+L’accueil relit ses nombres quand vous y revenez après une minute d’absence. **Actualiser**, la flèche en rond à côté de la salutation, les relit tout de suite.
 
 > Vous ne voyez une tuile que pour le travail que votre rôle peut voir.
 

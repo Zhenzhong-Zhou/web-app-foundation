@@ -156,6 +156,22 @@ describe('the account menu’s preferences', () => {
   });
   afterEach(() => localStorage.clear());
 
+  // Your devices is reached from Your account and the sign-in emails, not
+  // from here (ADR-091).
+  it('leads to Your account alone, without Your devices', async () => {
+    const user = userEvent.setup();
+    renderFrame();
+    await user.click(screen.getByRole('button', { name: /signed in as/ }));
+    const menu = screen.getByRole('menu');
+
+    expect(
+      within(menu).getByRole('menuitem', { name: 'Your account' }),
+    ).toHaveAttribute('href', '/account');
+    expect(
+      within(menu).queryByRole('menuitem', { name: 'Your devices' }),
+    ).toBeNull();
+  });
+
   it('opens a preference from its row, and Escape comes back to the row', async () => {
     const user = userEvent.setup();
     renderFrame();

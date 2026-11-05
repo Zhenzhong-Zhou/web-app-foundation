@@ -13,14 +13,15 @@ import {
   Box,
   Button,
   ButtonBase,
+  IconButton,
   Link,
   Paper,
   Skeleton,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import {
-  type ReactElement,
   type ReactNode,
   useCallback,
   useEffect,
@@ -51,9 +52,9 @@ import { evenRowsSx } from './even-rows';
 import { GettingStarted } from './getting-started';
 import { greeting } from './greeting';
 import { CARDS, isKnownCard, type KnownCard } from './home-cards';
+import { MainAction, type QuickAction } from './main-action';
 import { NoOrganization } from './no-organization';
 import { RecentCard } from './recent-card';
-import { TONAL } from './tonal';
 import { useMinute } from './use-minute';
 import { useReadOnReturn } from './use-read-on-return';
 import { WelcomeCard } from './welcome-card';
@@ -69,11 +70,12 @@ const TILE_HEIGHT = 148;
 
 /**
  * Home (ADR-058; ADR-091): a few large tiles, each opening its list. From
- * the top: the greeting, the date and the time with Refresh, and the
- * organization's What we do; what is late, a button per kind opening just
- * the late ones; a newcomer's welcome (ADR-079), and Getting started while
- * it shows; the tiles under "What needs you today"; the one main action,
- * or a line saying whom to ask; and Recently opened.
+ * the top: the greeting with Refresh, the date and the time, and the
+ * organization's What we do, the main action at the right of them from
+ * `md` and under them below it, or a line saying whom to ask; what is
+ * late, a button per kind opening just the late ones; a newcomer's welcome
+ * (ADR-079), and Getting started while it shows; the tiles under "What
+ * needs you today"; and Recently opened.
  *
  * Read when the page opens, with Refresh, and again when its tab comes
  * back into view after a minute away; not live.
@@ -83,13 +85,6 @@ export function HomePage() {
   // An account in no organization, having left one or seen it closed:
   // what it can do, not the cards' refusal (ADR-078).
   return session?.organization ? <OrganizationHome /> : <NoOrganization />;
-}
-
-/** A link to a top-level page, the action it is, and its icon. */
-interface QuickAction {
-  to: string;
-  label: string;
-  icon: ReactElement;
 }
 
 /** Home for a member of the session's organization. */
@@ -181,6 +176,8 @@ function OrganizationHome() {
   const started = home?.gettingStarted;
   const showStart = started && !started.complete && !started.dismissed;
 
+  // The main action is the first of these the member may do, the rest
+  // under More (ADR-091).
   const quick = [
     can('orders.create') && {
       to: '/orders/new',
@@ -198,14 +195,6 @@ function OrganizationHome() {
       }),
       icon: <MoveToInboxOutlined />,
     },
-    can('stock.view') && {
-      to: '/lots',
-      label: intl.formatMessage({
-        id: 'inventory.trace.title',
-        defaultMessage: 'Trace a lot',
-      }),
-      icon: <AccountTreeOutlined />,
-    },
     can('production.create') && {
       to: '/production',
       label: intl.formatMessage({
@@ -214,7 +203,19 @@ function OrganizationHome() {
       }),
       icon: <PrecisionManufacturingOutlined />,
     },
+    can('stock.view') && {
+      to: '/lots',
+      label: intl.formatMessage({
+        id: 'inventory.trace.title',
+        defaultMessage: 'Trace a lot',
+      }),
+      icon: <AccountTreeOutlined />,
+    },
   ].filter((item): item is QuickAction => Boolean(item));
+  const refresh = intl.formatMessage({
+    id: 'common.refresh',
+    defaultMessage: 'Refresh',
+  });
 
   if (!home && isRevisionRefusal(error)) {
     return <RevisionRefusalPage failure={error} onRetry={load} />;
@@ -222,44 +223,56 @@ function OrganizationHome() {
 
   return (
     <Stack spacing={3} sx={{ maxWidth: 1140 }}>
+      {/* The main action at the right of the greeting's row from `md`, as
+          each list page has its own; below it, under What we do, full
+          width (ADR-091). */}
       <Stack
-        direction="row"
+        direction={{ xs: 'column', md: 'row' }}
         sx={{
           justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          flexWrap: 'wrap',
+          alignItems: { xs: 'stretch', md: 'flex-start' },
           gap: 1.5,
         }}
       >
         <Stack spacing={0.75} sx={{ minWidth: 0 }}>
-          <Typography ref={heading} variant="h5" component="h1" tabIndex={-1}>
-            {greeting(intl, session?.user.name ?? '')}
-          </Typography>
-          {/* Next after the heading, where Dismiss puts focus, so the next
-              Tab reaches Undo; shown at the foot of the screen all the
-              same, and held there while focus or the pointer is on it. */}
-          <UndoSnackbar
-            open={undoing}
-            autoHideDuration={8000}
-            onClose={(_event, reason) => {
-              // A click elsewhere is somebody carrying on, not dismissing.
-              if (reason !== 'clickaway') setUndoing(false);
-            }}
-            message={intl.formatMessage({
-              id: 'home.welcome.dismissed',
-              defaultMessage:
-                'Welcome card hidden. What you can do here stays on Your account.',
-            })}
-            action={
-              <Button color="inherit" onClick={() => void undoWelcome()}>
-                {intl.formatMessage({
-                  id: 'home.welcome.undo',
-                  defaultMessage: 'Undo',
-                })}
-              </Button>
-            }
-            slotProps={{ content: { role: 'status' } }}
-          />
+          <Stack direction="row" sx={{ alignItems: 'center', gap: 0.5 }}>
+            <Typography ref={heading} variant="h5" component="h1" tabIndex={-1}>
+              {greeting(intl, session?.user.name ?? '')}
+            </Typography>
+            {/* Next after the heading, where Dismiss puts focus, so the
+                next Tab reaches Undo; shown at the foot of the screen all
+                the same, and held there while focus or the pointer is on
+                it. */}
+            <UndoSnackbar
+              open={undoing}
+              autoHideDuration={8000}
+              onClose={(_event, reason) => {
+                // A click elsewhere is somebody carrying on, not dismissing.
+                if (reason !== 'clickaway') setUndoing(false);
+              }}
+              message={intl.formatMessage({
+                id: 'home.welcome.dismissed',
+                defaultMessage:
+                  'Welcome card hidden. What you can do here stays on Your account.',
+              })}
+              action={
+                <Button color="inherit" onClick={() => void undoWelcome()}>
+                  {intl.formatMessage({
+                    id: 'home.welcome.undo',
+                    defaultMessage: 'Undo',
+                  })}
+                </Button>
+              }
+              slotProps={{ content: { role: 'status' } }}
+            />
+            {/* Beside the greeting, an icon with its name in a tooltip
+                (ADR-091). */}
+            <Tooltip title={refresh}>
+              <IconButton aria-label={refresh} onClick={load}>
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+          </Stack>
           {/* The organization's day and time, which the tiles count from
               (ADR-072), moving on each minute by itself: not a live
               region, which would read it out every minute. */}
@@ -333,18 +346,20 @@ function OrganizationHome() {
             <Typography sx={{ pt: 0.75 }}>{home.whatWeDo}</Typography>
           )}
         </Stack>
-        <Button
-          variant="outlined"
-          color="inherit"
-          startIcon={<RefreshIcon />}
-          onClick={load}
-          sx={{ borderColor: 'divider' }}
-        >
-          {intl.formatMessage({
-            id: 'common.refresh',
-            defaultMessage: 'Refresh',
-          })}
-        </Button>
+        {quick.length > 0 ? (
+          <MainAction actions={quick} quiet={!!showStart} />
+        ) : (
+          // Where the button would be, once Home has said whom to ask.
+          home && (
+            <Box sx={{ maxWidth: { md: rem(400) } }}>
+              {welcome ? (
+                <NoActions access={welcome.access} />
+              ) : (
+                <NoActionsRead />
+              )}
+            </Box>
+          )
+        )}
       </Stack>
 
       {errorWords && <Alert severity="error">{errorWords}</Alert>}
@@ -412,34 +427,6 @@ function OrganizationHome() {
                 </Box>
               </Box>
             </Stack>
-          )}
-
-          {quick.length > 0 ? (
-            <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }}>
-              {quick.map((item, index) => {
-                // One main action, in the accent; while Getting started
-                // shows, its next step is the page's one (ADR-058).
-                const main = index === 0 && !showStart;
-                return (
-                  <Button
-                    key={item.to + item.label}
-                    component={RouterLink}
-                    to={item.to}
-                    state={OFFER_BACK}
-                    startIcon={item.icon}
-                    variant={main ? 'contained' : 'text'}
-                    color={main ? 'primary' : 'inherit'}
-                    sx={main ? undefined : TONAL}
-                  >
-                    {item.label}
-                  </Button>
-                );
-              })}
-            </Stack>
-          ) : welcome ? (
-            <NoActions access={welcome.access} />
-          ) : (
-            <NoActionsRead />
           )}
 
           {/* What this person opened last; hidden while empty (ADR-058). */}

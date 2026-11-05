@@ -7,8 +7,12 @@ import {
   createPartner,
   createProduct,
   daysFromNow,
+  inviteByLink,
+  joinByLink,
   signInAs,
+  uniqueEmail,
 } from './support/api';
+import { confirmEmailInDatabase } from './support/mail';
 
 /**
  * Home (ADR-058; ADR-091): signing in lands on it, Home leads the rail, a
@@ -97,6 +101,137 @@ for (const size of [
       const box = await start.getByRole('link', { name }).boundingBox();
       expect(box?.height).toBeGreaterThanOrEqual(44);
       expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(size.width);
+    }
+  });
+}
+
+/**
+ * A member of the Owner's organization, signed in on its own: in a
+ * built-in role, or in one made from a template of the same key.
+ */
+async function memberIn(
+  owner: APIRequestContext,
+  role: string,
+  template?: string,
+): Promise<APIRequestContext> {
+  if (template) {
+    const catalogue = (await (
+      await owner.get('/v1/roles/catalogue')
+    ).json()) as { templates: { key: string; permissions: string[] }[] };
+    await created(
+      await owner.post('/v1/roles', {
+        data: {
+          name: role,
+          permissions: catalogue.templates.find((each) => each.key === template)
+            ?.permissions,
+        },
+      }),
+    );
+  }
+  const { token } = await inviteByLink(
+    owner,
+    uniqueEmail(role.toLowerCase()),
+    role,
+  );
+  return joinByLink(token, `E2E ${role}`);
+}
+
+/**
+ * Home's main action by role (ADR-091): the first the member may do of
+ * Raise an order, Receive stock, Plan a run and Trace a lot, in the accent,
+ * the others under More, a menu worked from the keyboard; a Viewer traces
+ * a lot, with no More. At a phone's width it runs the page's width under
+ * the greeting; on a laptop it sits at the right of the greeting's row.
+ */
+for (const size of [
+  { width: 390, height: 844 },
+  { width: 1366, height: 768 },
+]) {
+  test(`the main action by role at ${size.width} px, More's menu by the keyboard`, async ({
+    page,
+    freshOrg,
+  }) => {
+    test.slow();
+    const owner = freshOrg.api;
+    // An Owner invites once their own address is confirmed (ADR-077), and
+    // Getting started's next step would be the page's main action.
+    await confirmEmailInDatabase(freshOrg.email);
+    await owner.post('/v1/home/getting-started/dismiss');
+    const people = [
+      {
+        api: owner,
+        main: 'Raise an order',
+        more: ['Receive stock', 'Plan a run', 'Trace a lot'],
+      },
+      {
+        api: await memberIn(owner, 'Warehouse', 'warehouse'),
+        main: 'Receive stock',
+        more: ['Trace a lot'],
+      },
+      {
+        api: await memberIn(owner, 'Production', 'production'),
+        main: 'Plan a run',
+        more: ['Trace a lot'],
+      },
+      { api: await memberIn(owner, 'Viewer'), main: 'Trace a lot', more: [] },
+    ];
+    await page.setViewportSize(size);
+
+    for (const person of people) {
+      await signInAs(page, person.api);
+      await page.goto('/');
+      const heading = page.getByRole('heading', { level: 1 });
+      await expect(heading).toBeVisible();
+      // The header's, before any of the welcome's links of the same name.
+      const main = page
+        .getByRole('main')
+        .getByRole('link', { name: person.main, exact: true })
+        .first();
+      await expect(main).toHaveClass(/MuiButton-contained/);
+
+      const greeting = (await heading.boundingBox())!;
+      const button = (await main.boundingBox())!;
+      if (size.width < 900) {
+        expect(button.y).toBeGreaterThanOrEqual(greeting.y + greeting.height);
+        expect(Math.abs(button.x - greeting.x)).toBeLessThanOrEqual(1);
+      } else {
+        expect(button.y).toBeLessThan(greeting.y + greeting.height);
+        expect(button.x).toBeGreaterThan(greeting.x + greeting.width);
+      }
+
+      const more = page.getByRole('button', { name: 'More', exact: true });
+      if (!person.more.length) {
+        await expect(more).toHaveCount(0);
+        if (size.width < 900) {
+          expect(button.x + button.width).toBeGreaterThanOrEqual(
+            size.width - 24,
+          );
+        }
+        continue;
+      }
+      if (size.width < 900) {
+        const last = (await more.boundingBox())!;
+        expect(last.x + last.width).toBeGreaterThanOrEqual(size.width - 24);
+      }
+
+      // From the keyboard: Enter opens it on its first item, the arrows
+      // move, Escape closes it and gives focus back to More.
+      await more.focus();
+      await page.keyboard.press('Enter');
+      const menu = page.getByRole('menu');
+      await expect(menu.getByRole('menuitem')).toHaveText(person.more);
+      await expect(
+        menu.getByRole('menuitem', { name: person.more[0] }),
+      ).toBeFocused();
+      if (person.more.length > 1) {
+        await page.keyboard.press('ArrowDown');
+        await expect(
+          menu.getByRole('menuitem', { name: person.more[1] }),
+        ).toBeFocused();
+      }
+      await page.keyboard.press('Escape');
+      await expect(menu).toBeHidden();
+      await expect(more).toBeFocused();
     }
   });
 }
@@ -239,7 +374,12 @@ test('moves its time on at the minute, by itself', async ({
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
   // The line under the greeting: the day and the time, no seconds.
-  const now = page.locator('h1 + p');
+  // The date and the time, under the greeting's row.
+  const now = page
+    .getByRole('main')
+    .locator('p')
+    .filter({ hasText: /\d:\d\d/ })
+    .first();
   await page.clock.pauseAt(new Date('2026-11-05T15:41:40Z'));
   const before = await now.textContent();
   expect(before).not.toMatch(/\d:\d\d:\d\d/);

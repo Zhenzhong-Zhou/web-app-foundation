@@ -75,7 +75,6 @@ const labels = defineMessages({
   },
   priceLists: { id: 'layout.menu.priceLists', defaultMessage: 'Price lists' },
   account: { id: 'layout.menu.account', defaultMessage: 'Your account' },
-  devices: { id: 'layout.menu.devices', defaultMessage: 'Your devices' },
 });
 
 /** The pages' names, which Help's list of guides uses too (ADR-079). */
@@ -242,11 +241,11 @@ export const NAV_GROUPS: NavGroup[] = [
 
 /**
  * The person's own things, behind the account button at every width: not
- * places in the organization's work, so not in the rail.
+ * places in the organization's work, so not in the rail. Your devices is
+ * reached from Your account, and from the sign-in emails (ADR-091).
  */
 export const ACCOUNT_ITEMS: Pick<NavItem, 'label' | 'to'>[] = [
   { label: labels.account, to: '/account' },
-  { label: labels.devices, to: '/account/sessions' },
 ];
 
 /**
