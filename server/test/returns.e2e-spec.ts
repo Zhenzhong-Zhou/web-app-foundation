@@ -263,6 +263,40 @@ describe('Returns (e2e)', () => {
       ]);
     });
 
+    // The lots' read takes the order's shipments and its returns each as an
+    // array of ids (#448): what came back counts beside what shipped.
+    it('shows what has come back of each lot after a return', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const s = await shipped(alpha);
+
+      await alpha.agent
+        .post(`/v1/orders/${s.order.id}/returns`)
+        .send({
+          toLocationId: s.bin,
+          lines: [
+            {
+              lineId: s.focusLine,
+              lots: [{ lotId: await s.lotId('EARLY'), quantity: '2' }],
+            },
+          ],
+        })
+        .expect(201);
+
+      const lines = body<ReturnableResponse[]>(
+        await alpha.agent
+          .get(`/v1/orders/${s.order.id}/returns/returnable`)
+          .expect(200),
+      );
+
+      const focus = lines.find((row) => row.sku === 'FOCUS-60CT')!;
+      expect(
+        focus.lots.map((lot) => [lot.code, lot.shipped, lot.returned]),
+      ).toEqual([
+        ['EARLY', '10.0000', '2.0000'],
+        ['LATE', '15.0000', '0'],
+      ]);
+    });
+
     // A return most often arrives after the order is done.
     it('accepts a return against a fulfilled order', async () => {
       const alpha = await registerOrganization(app, 'alpha');

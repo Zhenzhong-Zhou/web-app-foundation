@@ -479,6 +479,13 @@ export class ReturnsService {
    * Shipped and returned per lot, for one item or all of them on an order.
    * Read from the ledger through the order's shipments and returns, so it is
    * the movements that decide, not a counter that could drift from them.
+   *
+   * Each arm's documents as `reference_id = any(array(select …))`, not
+   * `in (select …)`: inside the OR, an `in` is a hashed subplan, which no
+   * index serves, so every lot-carrying movement of the organization was
+   * read and compared. The arrays are found first, once, and the
+   * movements' reference index serves both arms in one bitmap OR (ADR-051,
+   * the amendment for #225; #448).
    */
   private balancesSql(
     organizationId: string,
@@ -500,20 +507,20 @@ export class ReturnsService {
         and sm.lot_id is not null
         ${variant}
         and (
-          (sm.reference_type = 'shipment' and sm.reference_id in (
+          (sm.reference_type = 'shipment' and sm.reference_id = any(array(
             select id from shipments
             where organization_id = ${organizationId}::uuid
               and order_id = ${orderId}::uuid
               -- A voided shipment never left (ADR-041), so nothing on it
               -- can come back.
               and voided_at is null
-          ))
+          )))
           or
-          (sm.reference_type = 'order_return' and sm.reference_id in (
+          (sm.reference_type = 'order_return' and sm.reference_id = any(array(
             select id from order_returns
             where organization_id = ${organizationId}::uuid
               and order_id = ${orderId}::uuid
-          ))
+          )))
         )
       group by sm.variant_id, sm.lot_id
       having sum(sm.quantity) filter (where sm.reason = 'shipment') > 0
@@ -531,7 +538,7 @@ export class ReturnsService {
           b.shipped::text as shipped,
           coalesce(b.returned, 0)::text as returned
         from (${this.balancesSql(organizationId, orderId)}) b
-        join lots l on l.id = b.lot_id
+        join lots l on l.id = b.lot_id and l.organization_id = ${organizationId}::uuid
         order by l.expires_at asc nulls last, l.code
       `)
     ).rows as {

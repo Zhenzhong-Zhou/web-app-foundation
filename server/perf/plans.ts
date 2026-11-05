@@ -19,6 +19,7 @@ import { CostsService } from '../src/modules/costs/costs.service';
 import { HomeService } from '../src/modules/home/home.service';
 import { InvoicesService } from '../src/modules/invoices/invoices.service';
 import { OrdersService, sightOf } from '../src/modules/orders/orders.service';
+import { ReturnsService } from '../src/modules/orders/returns.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
 import { PartnersService } from '../src/modules/partners/partners.service';
 import { PriceListsService } from '../src/modules/price-lists/price-lists.service';
@@ -27,6 +28,7 @@ import {
   kindsVisibleWith,
   RecentService,
 } from '../src/modules/recent/recent.service';
+import { ReturnAuthorizationsService } from '../src/modules/return-authorizations/return-authorizations.service';
 import { LookupService } from '../src/modules/search/lookup.service';
 import { AvailabilityService } from '../src/modules/stock/availability.service';
 import { LotTraceService } from '../src/modules/stock/lot-trace.service';
@@ -209,6 +211,8 @@ async function buildProbes(
   const priceLists = app.get(PriceListsService);
   const partners = app.get(PartnersService);
   const reorder = app.get(ReorderPointsReadsService);
+  const returns = app.get(ReturnsService);
+  const rmas = app.get(ReturnAuthorizationsService);
 
   const firstOrders = await orders.list({ status: 'all' });
   const deepOrders = await cursorAfter(
@@ -239,6 +243,11 @@ async function buildProbes(
 
   // An open sale to preview: what earliest expiry first reads before a ship.
   const sale = await firstSale(orders, stock);
+
+  // An order a return came back on, so its lot balances read both the
+  // shipments and the returns: the volume seed receives each against an RMA.
+  const [rma] = (await rmas.list({})).entries;
+  if (!rma) throw new Error('No return authorization: was this volume-seeded?');
 
   const probes: Probe[] = [
     { name: 'orders: open', run: () => orders.list({}) },
@@ -422,6 +431,13 @@ async function buildProbes(
       run: () => products.listActiveVariants('zh-Hans', 'zhuanzhu'),
     },
     { name: 'partners: search', run: () => partners.list('harbour') },
+    // Returns (ADR-043): what can still come back, each lot's shipped and
+    // returned read from the ledger through the order's shipments and
+    // returns, by the movements' reference index (#448).
+    {
+      name: 'returnable: by lot',
+      run: () => returns.returnable(rma.orderId),
+    },
   ];
 
   if (org.traceLotId) {
