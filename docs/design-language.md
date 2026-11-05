@@ -19,8 +19,8 @@ how a panel walks a journey in
 
 A screen is built to it when it is new or next changed, the most-used
 first: Home, Inventory, Orders, and the Receive and Ship dialogs. A
-pattern a screen needs and this lacks is added here first, in the same
-commit, as an amendment of ADR-090.
+pattern a screen needs and this lacks is added here first, with an
+amendment of ADR-090, as the pull request's first commit.
 
 ## Simple first, detail one step away
 
