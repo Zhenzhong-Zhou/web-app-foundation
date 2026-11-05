@@ -332,3 +332,45 @@ dependency step.
 - The panels' findings for single screens become issues: the order
   screens; Reorder points; Licences; and, `later`, a sales rep's answers
   on a phone.
+
+## Amendment (November 2026) — as built (#465)
+
+Built in #465 by its brief: the chat's commits first, then the reviews and
+the fixes chosen, in Claude Code. Where building differed from the
+decisions above, or found other than the Context assumed:
+
+- **The reviews:** 27 findings from `/simplify`, `/code-review` and
+  `/doctor prompt-audit`, none about what a person sees. Thirteen were
+  fixed, one commit each (1 to 10, 24, 26 and 27); the rest, repeated
+  text and cheaper panel runs, are #467, its finding on width classes
+  marked for ADR-091's check.
+- **Three fixes changed this ADR's own text before its merge,** with no
+  amendment: a walker sets its own effort, high, in its file rather than
+  the session; the cloud picks are exported without comments, then the
+  shortlist with them; and #310 stopped for nine dialogs, not thirteen.
+- **The panel:** a journey's Sizes reach each walker and replace the
+  persona's own; the session, never a walker, serves the production
+  build a slowed network needs; and a panel files one issue per screen,
+  as decided above, where the skill had still said one per finding.
+- **The export without comments is still large:** 96 open issues, 291 KB
+  on 4 November, the bodies alone 225 KB. The shortlist's export, with
+  its comments, is what the chat reads whole.
+- **The type, on the canvas:** a row of its own, drawn after the reviews:
+  the sizes at Standard, Large and Larger, one order at each on a laptop,
+  the Chinese spacing and lists, and a phone at each size beside one at
+  today's 14.5 px. Each board opens with how to read it, in Chinese and
+  English, since a reviewer who reads only Chinese judged them too. On a
+  phone 16 px read well to both; on a computer screen the maintainer
+  leaned to 15 px, and 16 px stays everywhere, as decided (4 November
+  2026).
+- **Found on the way, filed:** #462, focus after issuing an invoice,
+  which the list of what #155 still had open had dropped; and #466,
+  Resend on an invitation's row dropping focus, found by the session
+  that fixed #155's other parts.
+- **Delivery:** text for GitHub now comes as a file passed with
+  `--body-file`. A script that held an issue's text inside `$( )` filed
+  #462 cut short, since macOS's bash 3.2 ended the `$( )` at a
+  parenthesis in the text and ran the rest as commands, writing nothing.
+  And a cloud session's pull request is squashed from the merge button's
+  menu: the button offers the method used last, so from 2 November each
+  went in as a merge commit, its Unverified commit kept on `main`.
