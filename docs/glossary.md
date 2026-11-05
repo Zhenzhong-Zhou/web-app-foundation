@@ -117,7 +117,7 @@ as the catalogues word it.
 
 | English | Français (Canada) | 简体中文 | Notes |
 | --- | --- | --- | --- |
-| Reorder point | Point de commande | 再订货点 | An item's level below which it is low (ADR-085). Inventory's tab of the same name lists them. |
+| Reorder point | Point de commande | 库存下限 | An item's level below which it is low (ADR-085). Inventory's tab of the same name lists them. Chinese says the word inventory software uses, a pair with 最高库存, not 再订货点, the English word for word (ADR-091). |
 | Low stock | Stock bas | 库存不足 | Home's card and the bell's notice. |
 | Low / Out / Enough | Bas / Épuisé / Suffisant | 不足 / 缺货 / 充足 | Where an item stands: below its point, at zero or less, or at or above it. Low's filter holds the out too. |
 | Position | Position | 预计可用 | Usable + coming − still needed: what the point is compared with. |
@@ -127,7 +127,7 @@ as the catalogues word it.
 | In draft / Drafted | En brouillon / Brouillon fait | 草稿中 / 已下草稿 | Draft purchases and runs: shown, never counted as coming. Drafted: what is in draft leaves nothing to suggest. |
 | Suggested order | Commande suggérée | 建议订货 | For a made item, 建议生产. |
 | Bought / Made | Acheté / Fabriqué | 采购 / 自制 | How an item with a point is replenished. |
-| Just enough / A fixed quantity / Up to a maximum | Juste assez / Quantité fixe / Jusqu’à un maximum | 补足到再订货点 / 固定订货量 / 补到最高库存 | The three rules for how much to order. |
+| Just enough / A fixed quantity / Up to a maximum | Juste assez / Quantité fixe / Jusqu’à un maximum | 补足到库存下限 / 固定订货量 / 补到最高库存 | The three rules for how much to order. |
 
 ### Lots
 

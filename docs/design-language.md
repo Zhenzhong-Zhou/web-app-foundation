@@ -253,7 +253,7 @@ measured on the device.
 ## Chinese beside Latin letters
 
 - A space between Chinese and Latin letters or digits: "D3-1000-120
-  已有再订货点", "另外 4 个".
+  已有库存下限", "另外 4 个".
 - A list joins with 、 and its last item with 和, the joiner adding the
   space beside Latin text, once on each side (`joinList` on the server,
   its copy in the client).

@@ -1075,7 +1075,7 @@ describe('Reorder points (e2e)', () => {
         .split('\r\n');
 
       expect(lines).toEqual([
-        'SKU,物品,规格,状态,采购或自制,现有可用,在途,待发,预计可用,再订货点,订货量,固定订货量,最高库存,草稿中,建议订货,单位',
+        'SKU,物品,规格,状态,采购或自制,现有可用,在途,待发,预计可用,库存下限,订货量,固定订货量,最高库存,草稿中,建议订货,单位',
         'C-OUT,C-OUT,,out,bought,0.0000,0.0000,0.0000,0.0000,10.0000,just_enough,,,0.0000,10.0000,each',
       ]);
       expect(res.headers['content-disposition']).toMatch(

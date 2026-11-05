@@ -236,8 +236,8 @@ describe('Low stock notices (e2e)', () => {
     expect(await notices.check(now)).toBe(1);
     expect(await bell(alpha.agent, 'zh-Hans')).toEqual([
       expect.objectContaining({
-        title: 'FOCUS-60CT 已低于再订货点',
-        body: '专注胶囊 (60粒)。请在“再订货点”中计划生产订单。',
+        title: 'FOCUS-60CT 已低于库存下限',
+        body: '专注胶囊 (60粒)。请在“库存下限”中计划生产订单。',
       }),
     ]);
   });

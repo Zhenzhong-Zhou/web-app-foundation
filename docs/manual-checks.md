@@ -3142,7 +3142,7 @@ site, after a deploy that changes the setting, the route or the relay.
   the bar's own text colour, plain on the dark bar, in both modes.
 - **MC-4206** *(ADR-085)* Read only, and in 中文. As Chloé Tremblay
   (Viewer): the same list, with no boxes, no header box and no bar; the
-  chevron still opens a row. In 中文: the tab reads 再订货点, the
+  chevron still opens a row. In 中文: the tab reads 库存下限, the
   statuses 缺货, 不足 and 充足, the line 预计可用 = 现有可用 + 在途 −
   待发; SLEEP-60CT's opened row says 建议生产, D3-1000-120's 建议订货,
   and each item shows its Chinese name.
@@ -3202,7 +3202,7 @@ site, after a deploy that changes the setting, the route or the relay.
   catalogue tick with it, the line above the areas saying so; the summary
   beside the boxes says the role can set reorder points. Save it as
   Reorder clerk and give it to Tom Becker: his Your access says he can
-  set reorder points, in 中文 设置再订货点, in Français définir les points
+  set reorder points, in 中文 设置库存下限, in Français définir les points
   de commande, and Reorder points now shows him Add reorder point and
   each row's ⋯.
 - **MC-4211** *(ADR-085)* The empty states. Register a new organization:
@@ -3213,11 +3213,11 @@ site, after a deploy that changes the setting, the route or the relay.
   it a point of 10, and press Low: a tick in green, "Nothing is low. 1 item
   has a reorder point.", and Show all, which shows All with the row.
 - **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
-  the button reads 添加再订货点, the switch 采购 and 自制, the cards
-  补足到再订货点, 固定订货量 and 补到最高库存, Today's bars 现在的预计可用
+  the button reads 添加库存下限, the switch 采购 and 自制, the cards
+  补足到库存下限, 固定订货量 and 补到最高库存, Today's bars 现在的预计可用
   and 按建议订货后的预计可用, and its sentence reads naturally, such as "目前低于 500，因此建议订
   600，即 3 个 200。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
-  and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的再订货点？
+  and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的库存下限？
 - **MC-4213** *(ADR-085; ADR-091)* Home's Low stock. On a fresh demo, as
   the Owner: the tile after To receive reads 6, Low stock and "1 out",
   its icon red. The tile opens Reorder points on Low, six rows, VITC-100
@@ -3269,7 +3269,7 @@ site, after a deploy that changes the setting, the route or the relay.
   start. Production's own Plan a run shows Uses too, once an
   item with a recipe and a quantity are in. Fatima Haddad (Sales) and
   Chloé Tremblay (Viewer), who plan no runs, see no Plan a run. In 中文:
-  计划生产, the note 已按再订货点填写, and 用料.
+  计划生产, the note 已按库存下限填写, and 用料.
 - **MC-4217** *(ADR-085)* Help's Inventory and Home guides. As the demo
   Owner, Inventory → Reorder points: "Position = usable + coming − still
   needed" ends with Learn more, which opens Help at Where an item stands.
@@ -4851,3 +4851,6 @@ first.
 - 2026-11-05: ADR-091 and #272, Help a modal side sheet where the window
   leaves the page less than 720 px beside it: MC-R98 added, MC-3203
   rewritten.
+- 2026-11-05: ADR-091, 库存下限 for a reorder point in 中文, on
+  Inventory's tab, its dialog and rules, the bell's notices, History, the
+  export and the guides: MC-4206, MC-4210, MC-4212 and MC-4216 reworded.
