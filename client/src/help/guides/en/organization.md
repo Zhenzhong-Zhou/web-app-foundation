@@ -9,7 +9,8 @@ How the organization works here: its profile, money, documents, stock, branding 
 On **Profile**, every invoice prints the name, tax number and address as the seller, as they stood on the day it was issued.
 
 1. Fill in the **Organization name**, the **Tax registration number** and the **Registered address**, saving each.
-2. Choose the **Time zone** where the business is, and press **Save time zone**. It decides the organization’s day, such as when a licence expires.
+2. Under **What we do**, write one line about what the organization does, in your own words, and press **Save what we do**. Home shows it to every member, under the date.
+3. Choose the **Time zone** where the business is, and press **Save time zone**. It decides the organization’s day, such as when a licence expires.
 
 Downloading everything and closing the organization are at its end.
 

@@ -75,6 +75,14 @@ export const organizations = pgTable(
     taxRegistrationNumber: text('tax_registration_number'),
 
     /**
+     * What we do (ADR-091): one line in the organization's own words, which
+     * Home shows every member under the date, and a newcomer's welcome
+     * too. Null until written; at most 200 characters, never blank. Free
+     * text, so its change is audited without it (ADR-018).
+     */
+    whatWeDo: text('what_we_do'),
+
+    /**
      * ISO 4217: what this organization's stock is valued in (ADR-048).
      * Nullable and never defaulted — a default would assert a currency
      * nobody chose (ADR-035). Fixed once any valuation carries a value or a
@@ -256,6 +264,10 @@ export const organizations = pgTable(
     check(
       'organizations_tax_registration_number_not_blank_check',
       sql`${t.taxRegistrationNumber} is null or length(btrim(${t.taxRegistrationNumber})) > 0`,
+    ),
+    check(
+      'organizations_what_we_do_check',
+      sql`${t.whatWeDo} is null or (length(btrim(${t.whatWeDo})) > 0 and char_length(${t.whatWeDo}) <= 200)`,
     ),
     check(
       'organizations_base_currency_format_check',

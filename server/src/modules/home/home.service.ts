@@ -125,13 +125,14 @@ export class HomeService {
     const kinds = CARDS.flatMap(({ kind, permission }) =>
       held.has(permission) ? [kind] : [],
     );
-    const { timeZone, totals, gettingStarted, membership } =
+    const { timeZone, whatWeDo, totals, gettingStarted, membership } =
       await this.tenantDb.transaction(async (tx, organizationId) => {
         // The organization's own warning days (ADR-060), for Expiring
-        // soon, and its today.
+        // soon, its today, and its What we do (ADR-091).
         const organization = await organizationOf(tx, organizationId);
         return {
           timeZone: organization.timeZone,
+          whatWeDo: organization.whatWeDo,
           totals: await totalsOf(
             tx,
             organizationId,
@@ -158,7 +159,7 @@ export class HomeService {
       startShows: !gettingStarted.complete && !gettingStarted.dismissed,
       locale,
     });
-    return { gettingStarted, welcome, cards };
+    return { whatWeDo, gettingStarted, welcome, cards };
   }
 
   /** Dismiss the card for everyone, or bring it back (`at` null). */
@@ -183,17 +184,18 @@ export class HomeService {
 }
 
 /**
- * When a lot counts as expiring here (ADR-060), 90 days by default, and
- * the organization's time zone (ADR-072).
+ * When a lot counts as expiring here (ADR-060), 90 days by default, the
+ * organization's time zone (ADR-072), and its What we do (ADR-091).
  */
 async function organizationOf(
   tx: Transaction,
   organizationId: string,
-): Promise<{ days: number; timeZone: string }> {
+): Promise<{ days: number; timeZone: string; whatWeDo: string | null }> {
   const [organization] = await tx
     .select({
       days: organizations.expiryWarningDays,
       timeZone: organizations.timeZone,
+      whatWeDo: organizations.whatWeDo,
     })
     .from(organizations)
     .where(eq(organizations.id, organizationId));

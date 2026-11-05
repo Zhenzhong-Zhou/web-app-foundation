@@ -880,6 +880,15 @@ await fetch(`${api}/v1/files/product-image`, {
   前往“组织 → 概况”设置. The customer's billing address does the same
   (MC-702).
 
+- **MC-1704** *(ADR-091)* What we do. As the demo Owner, Settings →
+  Organization → Profile: What we do, under Name, reads "We import and
+  distribute natural health products.", and its Save is greyed until the
+  words change. Change them and Save, then clear them and Save: the
+  History button lists What we do as Changed, then Cleared, and never the
+  words. The field takes no more than 200 characters. As a Viewer, the
+  words show greyed, with no Save. In Français the section reads Ce que
+  nous faisons; in 中文, 业务简介.
+
 ## 18. Product images (ADR-062)
 
 - **MC-1801** On a product with no images, the drop area invites one. Add
@@ -4669,3 +4678,5 @@ first.
 - 2026-11-05: ADR-091, Orders' Late, and Expiring soon and what is still
   to ship or receive listed soonest first: MC-405 added, MC-1528
   rewritten.
+- 2026-11-05: ADR-091, What we do on the organization's Profile, its
+  change logged without its words: MC-1704 added.

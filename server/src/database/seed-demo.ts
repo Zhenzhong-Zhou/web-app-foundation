@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { and, eq, sql } from 'drizzle-orm';
 
 import { AppModule } from '../app.module';
+import type { Locale } from '../common/locales';
 import { AuthService } from '../core/auth/auth.service';
 import { rolesOfMember } from '../core/authorization/member-roles';
 import { holdsOwner } from '../core/authorization/owner';
@@ -99,6 +100,17 @@ const SQUARE_LOGO = Buffer.from(
     '<path d="M22 42L38 26" stroke="#5546B8" stroke-width="2" stroke-linecap="round"/>' +
     '</svg>',
 );
+
+/**
+ * The demo's What we do (ADR-091), in the organization's own words, so in
+ * its document language: what Home shows under the date, and a newcomer's
+ * welcome too.
+ */
+const WHAT_WE_DO: Record<Locale, string> = {
+  en: 'We import and distribute natural health products.',
+  'fr-CA': 'Nous importons et distribuons des produits de santé naturels.',
+  'zh-Hans': '我们进口并经销天然保健品。',
+};
 
 async function seedDemo(): Promise<void> {
   const logger = new Logger('SeedDemo');
@@ -206,8 +218,12 @@ async function seedDemo(): Promise<void> {
         // Stock is valued in the base currency from the first receipt
         // (ADR-048). Set only if empty, like the tax number below: an
         // existing organization's choice must survive.
-        const { baseCurrency, squareLogoFileId } = await organization.get();
+        const { baseCurrency, squareLogoFileId, whatWeDo, documentLanguage } =
+          await organization.get();
         if (!baseCurrency) await organization.update({ baseCurrency: 'CAD' });
+        if (!whatWeDo) {
+          await organization.update({ whatWeDo: WHAT_WE_DO[documentLanguage] });
+        }
 
         // A square logo and no main logo, so the rail's top shows it beside
         // the name and the folded plate shows it alone. Uploaded and saved

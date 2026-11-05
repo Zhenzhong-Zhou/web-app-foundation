@@ -12513,6 +12513,12 @@
               "null"
             ]
           },
+          "whatWeDo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "address": {
             "anyOf": [
               {
@@ -12662,6 +12668,7 @@
           "name",
           "slug",
           "taxRegistrationNumber",
+          "whatWeDo",
           "address",
           "baseCurrency",
           "defaultSalePriceListId",
@@ -12710,6 +12717,13 @@
               "null"
             ],
             "maxLength": 50
+          },
+          "whatWeDo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
           },
           "baseCurrency": {
             "type": "string"
@@ -15887,6 +15901,12 @@
       "HomeResponse": {
         "type": "object",
         "properties": {
+          "whatWeDo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "gettingStarted": {
             "$ref": "#/components/schemas/GettingStarted"
           },
@@ -15908,6 +15928,7 @@
           }
         },
         "required": [
+          "whatWeDo",
           "gettingStarted",
           "welcome",
           "cards"

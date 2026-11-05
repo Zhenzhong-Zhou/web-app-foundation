@@ -39,9 +39,12 @@ const routed = (element: ReactElement) => (
   <MemoryRouter>{element}</MemoryRouter>
 );
 
-/** Home for a member past their first two weeks: no welcome (ADR-079). */
-function serve(home: Omit<HomeResponse, 'welcome'>) {
-  const response: HomeResponse = { ...home, welcome: null };
+/**
+ * Home for a member past their first two weeks: no welcome (ADR-079), and
+ * no What we do written yet (ADR-091).
+ */
+function serve(home: Omit<HomeResponse, 'welcome' | 'whatWeDo'>) {
+  const response: HomeResponse = { ...home, welcome: null, whatWeDo: null };
   server.use(http.get('/api/v1/home', () => HttpResponse.json(response)));
 }
 
@@ -286,6 +289,7 @@ describe('HomePage', () => {
       http.get('/api/v1/home', async () => {
         await delay(400);
         return HttpResponse.json({
+          whatWeDo: null,
           gettingStarted: COMPLETE,
           welcome: null,
           cards: [],

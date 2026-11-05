@@ -1251,6 +1251,7 @@ export type OrganizationProfile = {
   name: string;
   slug: string;
   taxRegistrationNumber: string | null;
+  whatWeDo: string | null;
   address: OrganizationAddress | null;
   baseCurrency: string | null;
   defaultSalePriceListId: string | null;
@@ -1281,6 +1282,7 @@ export type OrganizationEnvelope = {
 export type UpdateOrganizationDto = {
   name?: string;
   taxRegistrationNumber?: string | null;
+  whatWeDo?: string | null;
   baseCurrency?: string;
   defaultSalePriceListId?: string | null;
   licenceNotInForcePolicy?: 'block' | 'override' | 'allow';
@@ -2053,6 +2055,7 @@ export type HomeCard = {
 };
 
 export type HomeResponse = {
+  whatWeDo: string | null;
   gettingStarted: GettingStarted;
   welcome: Welcome | null;
   cards: Array<HomeCard>;

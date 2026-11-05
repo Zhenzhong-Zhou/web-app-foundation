@@ -92,6 +92,11 @@ export class Welcome {
 
 /** GET /home. */
 export class HomeResponse {
+  /**
+   * The organization's What we do (ADR-091), in its own words, for every
+   * member; null until written.
+   */
+  whatWeDo!: string | null;
   gettingStarted!: GettingStarted;
   /** The reader's welcome, or null when it does not show. */
   welcome!: Welcome | null;

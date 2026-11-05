@@ -63,6 +63,17 @@ export class UpdateOrganizationDto {
   taxRegistrationNumber?: string | null;
 
   /**
+   * What we do (ADR-091): one line in the organization's own words, up to
+   * 200 characters once trimmed, which Home shows every member. Null or an
+   * empty string clears it.
+   */
+  @IsOptional()
+  @trim()
+  @IsString()
+  @MaxLength(200)
+  whatWeDo?: string | null;
+
+  /**
    * ISO 4217, what stock is valued in (ADR-048). Cannot be cleared, and
    * cannot change once stock is valued in it — the service refuses that.
    */

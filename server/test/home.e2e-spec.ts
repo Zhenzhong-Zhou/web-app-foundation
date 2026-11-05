@@ -637,10 +637,10 @@ describe('Home (e2e)', () => {
 
   /**
    * The reads every Home makes, in one transaction (ADR-091): the
-   * organization's days and zone, the counts in one statement and Low
-   * stock's beside it, Getting started, and the reader's membership with
-   * its roles. The welcome's own reads, while it shows, come after its
-   * commit.
+   * organization's days, zone and What we do, the counts in one statement
+   * and Low stock's beside it, Getting started, and the reader's
+   * membership with its roles. The welcome's own reads, while it shows,
+   * come after its commit.
    */
   it("reads Home's figures in one transaction of six statements", async () => {
     const alpha = await registerOrganization(app, 'alpha');
@@ -649,7 +649,9 @@ describe('Home (e2e)', () => {
     async function transaction() {
       const { statements } = await captureStatements(() => home(alpha));
       const first = statements.findIndex(({ text }) =>
-        /"expiry_warning_days", "time_zone" from "organizations"/.test(text),
+        /"expiry_warning_days", "time_zone", "what_we_do" from "organizations"/.test(
+          text,
+        ),
       );
       expect(first).toBeGreaterThan(0);
       const { client } = statements[first];
@@ -684,7 +686,7 @@ describe('Home (e2e)', () => {
     // membership and its roles.
     expect(inside.map((text) => text.replace(/\s+/g, ' ').trim())).toEqual([
       expect.stringMatching(
-        /^select "expiry_warning_days", "time_zone" from "organizations"/,
+        /^select "expiry_warning_days", "time_zone", "what_we_do" from "organizations"/,
       ),
       expect.stringMatching(
         /^\( select case "orders"\."direction" .* union all /,
