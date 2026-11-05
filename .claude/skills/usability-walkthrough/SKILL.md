@@ -115,6 +115,4 @@ given, which git ignores.
 The walks can run at once because each only reads the app, through an
 account of its own, and writes only its own files; what would spoil
 another walk, a restart, a reseed or a shared account, is the panel's
-alone and done before they start. Subagents take the session's effort
-unless their file sets one, so a panel's session sets it first,
-`/effort high`: judging a screen is the work.
+alone and done before they start.

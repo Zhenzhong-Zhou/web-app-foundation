@@ -243,11 +243,12 @@ edit of the document, in one commit.
 personas at once, each in a `walkthrough` subagent
 (`.claude/agents/walkthrough.md`), then merges what they found: each
 finding once, the personas who hit it, its worst severity, whether it is
-the design language's or the journey's screens'. It runs at the session's
-effort, `/effort high` first. Every pull request that changes what a
-person sees walks the journeys its change touches, a journey added first
-when its task is new. Each walk only reads the app, through an account of
-its own, so the walks can run together.
+the design language's or the journey's screens'. Each walker runs at
+high effort, set in its own file, since judging a screen is the work.
+Every pull request that changes what a person sees walks the journeys
+its change touches, a journey added first when its task is new. Each
+walk only reads the app, through an account of its own, so the walks
+can run together.
 
 Home's journey is walked again on ADR-091's redesigned Home at every
 width class, the outsider on the Duo's two sizes; the walks are not run
