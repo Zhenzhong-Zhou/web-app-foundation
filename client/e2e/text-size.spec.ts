@@ -241,11 +241,11 @@ test('at Larger on a phone, a dialog wraps its buttons inside it', async ({
   expect(spill).toBeLessThanOrEqual(0);
 });
 
-test('at Larger on a phone, Home with its cards fits', async ({
+test('at Larger on a phone, Home with its tiles fits', async ({
   page,
   freshOrg,
 }) => {
-  // Work of its own, so Home shows its cards whatever else the suite is
+  // Work of its own, so Home shows a tile with work whatever else the suite is
   // doing; the shared organization's walk above only meets them by chance.
   const product = await createProduct(freshOrg.api, { tracksLots: true });
   const location = await createLocation(freshOrg.api);
@@ -266,7 +266,7 @@ test('at Larger on a phone, Home with its cards fits', async ({
   await page.goto('/');
 
   await expect(
-    page.getByRole('region', { name: 'Expiring soon' }),
+    page.getByRole('link', { name: 'Expiring soon, 1' }),
   ).toBeVisible();
   await page.waitForLoadState('networkidle');
   expect(await overflowing(page)).toEqual([]);

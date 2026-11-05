@@ -28,23 +28,26 @@ describe('even rows', () => {
     expect(evenColumns(8, 0)).toBe(1);
   });
 
-  it('changes the columns where one more tile and its gap fit', () => {
-    expect(evenRowsSx(8)).toEqual({
+  it('changes the columns where one more tile fits, three at most and from 600 px', () => {
+    expect(evenRowsSx(9)).toEqual({
       display: 'grid',
       gridTemplateColumns: 'minmax(0, 1fr)',
       gap: '12px',
-      // Two fit at 2 × 150 + 12 px; five to seven change nothing.
+      // Two fit at 2 × 150 + 12 px; three from 600 px too, and no more.
       '@container (min-width: calc(18.75rem + 12px))': {
         gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
       },
-      '@container (min-width: calc(28.125rem + 24px))': {
+      '@container (min-width: calc(28.125rem + 24px)) and (min-width: 600px)': {
         gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
       },
-      '@container (min-width: calc(37.5rem + 36px))': {
-        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-      },
-      '@container (min-width: calc(75rem + 84px))': {
-        gridTemplateColumns: 'repeat(8, minmax(0, 1fr))',
+    });
+    // Four are two rows of two wherever three would fit.
+    expect(evenRowsSx(4)).toEqual({
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr)',
+      gap: '12px',
+      '@container (min-width: calc(18.75rem + 12px))': {
+        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
       },
     });
     // A single tile has the row to itself at every width.

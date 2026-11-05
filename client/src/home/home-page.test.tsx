@@ -9,7 +9,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { HomeResponse } from '../api/types.gen';
 import { PageHeader } from '../components/page-header';
 import type { HomeKind } from '../lib/api-names';
-import { browserTimeZone, setOrganizationTimeZone } from '../lib/time-zone';
+import {
+  browserTimeZone,
+  organizationTimeZone,
+  setOrganizationTimeZone,
+} from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
 import { drawnIn } from '../test/drawn-colour';
 import { GETTING_STARTED_DONE, welcome } from '../test/factories';
@@ -49,88 +53,160 @@ function serve(home: Omit<HomeResponse, 'welcome' | 'whatWeDo'>) {
 }
 
 describe('HomePage', () => {
-  it('greets, sums up, and shows each card with its See all, and no rows', async () => {
-    serve({
-      gettingStarted: COMPLETE,
-      cards: [
-        { kind: 'toShip', count: 3, late: 1 },
-        { kind: 'costsWaiting', count: 0, late: 0 },
-      ],
-    });
+  it('greets, with the date and the time, What we do, and a tile per kind, each one link', async () => {
+    server.use(
+      http.get('/api/v1/home', () =>
+        HttpResponse.json({
+          whatWeDo: 'We import and distribute natural health products.',
+          gettingStarted: COMPLETE,
+          welcome: null,
+          cards: [
+            { kind: 'toShip', count: 12, late: 2 },
+            { kind: 'costsWaiting', count: 2, late: 0 },
+          ],
+        } satisfies HomeResponse),
+      ),
+    );
     renderWithAuth(routed(<HomePage />), {
       permissions: ['orders.view', 'costs.view'],
     });
 
     expect(
-      await screen.findByText('3 things need attention, 1 of them overdue.'),
-    ).toBeTruthy();
+      await screen.findByText(
+        'We import and distribute natural health products.',
+      ),
+    ).toBeVisible();
     expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(
       /^Good (morning|afternoon|evening), Owner$/,
     );
-    // The day, then the organization, a space either side of the dot.
-    expect(screen.getByText(/ · Alpha Co$/)).toBeVisible();
+    // The organization's day and time to the minute, never its name again.
+    const now = new Date();
+    const zone = organizationTimeZone();
+    const day = new Intl.DateTimeFormat('en', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      timeZone: zone,
+    }).format(now);
+    expect(screen.getByText(new RegExp(`^${day}, \\d`))).toBeVisible();
+    expect(screen.queryByText(/Alpha Co/)).toBeNull();
 
-    const ship = screen.getByRole('region', { name: 'To ship' });
+    // The whole tile is one link, its count and status in its name.
+    const today = screen.getByRole('region', { name: 'What needs you today' });
+    const ship = within(today).getByRole('link', {
+      name: 'To ship, 12, 2 late',
+    });
+    expect(ship).toHaveAttribute(
+      'href',
+      '/orders?direction=sale&outstanding=1',
+    );
+    expect(within(ship).getByText('2 late')).toBeVisible();
     expect(
-      within(ship)
-        .getByRole('link', { name: 'See all 3' })
-        .getAttribute('href'),
-    ).toBe('/orders?direction=sale&status=confirmed&outstanding=1');
-    // Its rows are the list's (ADR-091): See all is the card's one link.
-    expect(within(ship).getAllByRole('link')).toHaveLength(1);
-
-    // A card with nothing to do says so, quietly, rather than disappearing.
-    const costs = screen.getByRole('region', { name: 'Costs waiting' });
-    expect(
-      within(costs).getByText('Nothing waiting. Every receipt has a cost.'),
-    ).toBeTruthy();
+      within(today).getByRole('link', { name: 'Waiting for a cost, 2' }),
+    ).toHaveAttribute('href', '/costs');
+    expect(within(today).getAllByRole('link')).toHaveLength(2);
   });
 
-  // The ninth card (ADR-085): red with its out count, See all opening
-  // Reorder points on Low.
-  it('shows Low stock, red with its out count, opening Reorder points on Low', async () => {
+  // The ninth tile (ADR-085): red with its out count, opening Reorder
+  // points on Low, and its late button on Out.
+  it('shows Low stock with its out count, opening Reorder points on Low, and Out from what is late', async () => {
     serve({
       gettingStarted: COMPLETE,
       cards: [{ kind: 'lowStock', count: 3, late: 1 }],
     });
     renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
 
-    expect(await screen.findByText('1 out')).toBeTruthy();
-    const low = screen.getByRole('region', { name: 'Low stock' });
     expect(
-      within(low).getByRole('link', { name: 'See all 3' }).getAttribute('href'),
-    ).toBe('/inventory?tab=reorder-points&status=low');
+      await screen.findByRole('link', { name: 'Low stock, 3, 1 out' }),
+    ).toHaveAttribute('href', '/inventory?tab=reorder-points&status=low');
+    expect(
+      screen.getByRole('link', { name: '1 item out of stock' }),
+    ).toHaveAttribute('href', '/inventory?tab=reorder-points&status=out');
   });
 
-  // Waiting for a cost (ADR-091): Stock value's list, whose rows the
-  // server counts, and where a cost is set.
-  it('opens Stock value from Costs waiting', async () => {
+  /**
+   * What is late (ADR-091): its heading how many, one button per kind
+   * opening just the late ones, the expired for lots and licences; a kind
+   * with nothing late has none.
+   */
+  it('names what is late, a button per kind opening just the late ones', async () => {
     serve({
       gettingStarted: COMPLETE,
-      cards: [{ kind: 'costsWaiting', count: 2, late: 0 }],
+      cards: [
+        { kind: 'toShip', count: 12, late: 2 },
+        { kind: 'toReceive', count: 5, late: 0 },
+        { kind: 'expiring', count: 4, late: 1 },
+        { kind: 'licences', count: 1, late: 1 },
+      ],
     });
-    renderWithAuth(routed(<HomePage />), { permissions: ['costs.view'] });
+    renderWithAuth(routed(<HomePage />), {
+      permissions: ['orders.view', 'stock.view', 'product_licences.view'],
+    });
 
-    const costs = await screen.findByRole('region', { name: 'Costs waiting' });
+    const late = await screen.findByRole('region', {
+      name: '4 things are late',
+    });
+    const buttons = within(late).getAllByRole('link');
     expect(
-      within(costs).getByRole('link', { name: 'See all 2' }),
-    ).toHaveAttribute('href', '/costs');
+      buttons.map((button) => [
+        button.textContent,
+        button.getAttribute('href'),
+      ]),
+    ).toEqual([
+      ['2 orders to ship', '/orders?direction=sale&outstanding=1&late=1'],
+      ['1 expired lot', '/inventory?expiring=1&expired=1'],
+      ['1 expired licence', '/licences?expiring=1&expired=1'],
+    ]);
+    // The number in bold, the words after.
+    expect(within(buttons[0]).getByText('2').tagName).toBe('STRONG');
+    // The tile opens all of its kind, the late first; the button just those.
+    expect(
+      screen.getByRole('link', { name: 'Expiring soon, 4, 1 expired' }),
+    ).toHaveAttribute('href', '/inventory?expiring=1');
   });
 
-  it('says when nothing is low, with no See all', async () => {
+  it('says nothing is late in one calm line, and nothing needs you when all is done', async () => {
+    serve({
+      gettingStarted: COMPLETE,
+      cards: [{ kind: 'toShip', count: 3, late: 0 }],
+    });
+    const { unmount } = renderWithAuth(routed(<HomePage />), {
+      permissions: ['orders.view'],
+    });
+    expect(await screen.findByText('Nothing is late today.')).toBeVisible();
+    expect(screen.queryByRole('region', { name: /late/ })).toBeNull();
+    unmount();
+
+    serve({
+      gettingStarted: COMPLETE,
+      cards: [{ kind: 'toShip', count: 0, late: 0 }],
+    });
+    renderWithAuth(routed(<HomePage />), { permissions: ['orders.view'] });
+    expect(await screen.findByText('Nothing needs you today.')).toBeVisible();
+  });
+
+  // A tile with nothing to do stays in its place, quiet, still a link
+  // (ADR-091): its words in place of the count.
+  it('keeps a tile with nothing to do, quiet and still a link', async () => {
     serve({
       gettingStarted: COMPLETE,
       cards: [{ kind: 'lowStock', count: 0, late: 0 }],
     });
     renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
 
-    const low = await screen.findByRole('region', { name: 'Low stock' });
-    expect(within(low).getByText('Nothing is low.')).toBeTruthy();
-    expect(within(low).queryByRole('link')).toBeNull();
+    const low = await screen.findByRole('link', {
+      name: 'Low stock, Nothing low',
+    });
+    expect(low).toHaveAttribute(
+      'href',
+      '/inventory?tab=reorder-points&status=low',
+    );
+    expect(within(low).getByText('Nothing low')).toBeVisible();
+    expect(within(low).queryByText('0')).toBeNull();
   });
 
   // A server deployed after the tab opened may send a kind this build has
-  // never heard of (ADR-081): Home shows the rest, and its sentence leaves
+  // never heard of (ADR-081): Home shows the rest, and what is late leaves
   // the newcomer out, rather than crash.
   it('skips a card kind it does not know', async () => {
     serve({
@@ -146,18 +222,21 @@ describe('HomePage', () => {
     });
     renderWithAuth(routed(<HomePage />), { permissions: ['orders.view'] });
 
-    expect(await screen.findByText('1 thing needs attention.')).toBeTruthy();
-    expect(screen.getByRole('region', { name: 'To ship' })).toBeTruthy();
-    expect(document.getElementById('fromANewerServer')).toBeNull();
+    expect(await screen.findByText('Nothing is late today.')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'To ship, 1' })).toBeTruthy();
+    expect(
+      within(
+        screen.getByRole('region', { name: 'What needs you today' }),
+      ).getAllByRole('link'),
+    ).toHaveLength(1);
   });
 
-  // The positive tone's text (ADR-081). It asked for MUI's success.dark,
-  // 4.33 : 1 on a dark card, through Typography's color prop, which takes
-  // a palette name rather than a path and so drew the plain text instead.
-  it('draws an empty card’s line in the positive tone, at 4.5 : 1 in both modes', async () => {
+  // The critical tone's text on its tint, which holds AA in both modes
+  // (tokens.ts): asked by a path in sx, never Typography's color prop.
+  it('draws what is late in the critical tone, at 4.5 : 1 in both modes', async () => {
     serve({
       gettingStarted: COMPLETE,
-      cards: [{ kind: 'production', count: 0, late: 0 }],
+      cards: [{ kind: 'toShip', count: 2, late: 1 }],
     });
     renderWithAuth(
       routed(
@@ -165,53 +244,58 @@ describe('HomePage', () => {
           <HomePage />
         </ThemeProvider>,
       ),
-      { permissions: ['production.view'] },
+      { permissions: ['orders.view'] },
     );
 
-    const card = await screen.findByRole('region', { name: 'In production' });
-    const { color } = getComputedStyle(
-      within(card).getByText('No runs in progress.'),
-    );
-    expect(color).toBe('var(--mui-palette-tone-positive-fg)');
+    const late = await screen.findByRole('region', {
+      name: '1 thing is late',
+    });
+    const { color, backgroundColor } = getComputedStyle(late);
+    expect(color).toBe('var(--mui-palette-tone-critical-fg)');
     for (const mode of ['light', 'dark'] as const) {
       expect(
-        contrast(
-          drawnIn(mode, color),
-          drawnIn(mode, getComputedStyle(card).backgroundColor),
-        ),
+        contrast(drawnIn(mode, color), drawnIn(mode, backgroundColor)),
       ).toBeGreaterThanOrEqual(4.5);
     }
   });
 
-  // Grey, as the words around it are, so underlined to say it is a link
-  // (conventions.md, The look).
-  it('underlines Change the days, for whoever may change them', async () => {
-    serve({
-      gettingStarted: COMPLETE,
-      cards: [{ kind: 'expiring', count: 0, late: 0 }],
-    });
+  it('offers only the quick actions the role may take, the first the main one', async () => {
+    serve({ gettingStarted: COMPLETE, cards: [] });
     renderWithAuth(routed(<HomePage />), {
-      permissions: ['organizations.update'],
+      permissions: ['stock.view', 'orders.create'],
     });
 
-    const link = await screen.findByRole('link', { name: 'Change the days' });
-    expect(link).toHaveAttribute('href', '/settings/organization?tab=stock');
-    expect(getComputedStyle(link).textDecoration).toMatch(/underline/);
+    const raise = await screen.findByRole('link', { name: 'Raise an order' });
+    expect(raise).toHaveClass('MuiButton-contained');
+    const trace = screen.getByRole('link', { name: 'Trace a lot' });
+    expect(trace).not.toHaveClass('MuiButton-contained');
+    expect(screen.queryByRole('link', { name: 'Plan a run' })).toBeNull();
   });
 
-  it('offers only the quick actions the role may take', async () => {
+  /**
+   * A role that may use none of Home's actions (ADR-091): one quiet line
+   * in their place, and whom to ask, from Your access past the welcome.
+   */
+  it('says whom to ask where the role may use none of the actions', async () => {
     serve({ gettingStarted: COMPLETE, cards: [] });
-    renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
+    server.use(
+      http.get('/api/v1/account/membership', () =>
+        HttpResponse.json(welcome().access),
+      ),
+    );
+    renderWithAuth(routed(<HomePage />), { permissions: ['orders.view'] });
 
     expect(
-      await screen.findByRole('link', { name: 'Trace a lot' }),
-    ).toBeTruthy();
+      await screen.findByText(
+        'Your role does not include raising orders, receiving stock or planning runs. To do more, ask Mei Lin or David Park.',
+      ),
+    ).toBeVisible();
     expect(screen.queryByRole('link', { name: 'Raise an order' })).toBeNull();
   });
 
   /**
    * A link from Home to a top-level page offers Back to Home (#341): each
-   * quick action, a card's See all, and a step of Getting started.
+   * quick action, a tile, a late button, and a step of Getting started.
    */
   describe('Back to Home', () => {
     /** Home, and a top-level page for each link to land on. */
@@ -244,20 +328,20 @@ describe('HomePage', () => {
       ).toBeVisible();
     });
 
-    it('from a card’s See all', async () => {
+    it('from a tile and from a late button', async () => {
       serve({
         gettingStarted: COMPLETE,
-        cards: [{ kind: 'toShip', count: 3, late: 0 }],
+        cards: [{ kind: 'toShip', count: 3, late: 1 }],
       });
       atHome(['orders.view']);
 
-      await userEvent.click(
-        await screen.findByRole('link', { name: 'See all 3' }),
-      );
-      await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+      for (const name of ['To ship, 3, 1 late', '1 order to ship']) {
+        await userEvent.click(await screen.findByRole('link', { name }));
+        await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+      }
 
       expect(
-        await screen.findByRole('link', { name: 'See all 3' }),
+        await screen.findByRole('link', { name: 'To ship, 3, 1 late' }),
       ).toBeVisible();
     });
 
@@ -299,8 +383,9 @@ describe('HomePage', () => {
     renderWithAuth(routed(<HomePage />));
 
     expect(document.querySelector('.MuiSkeleton-root')).toBeNull();
+    // Then placeholders the tiles' size, where the tiles will be.
     await waitFor(() =>
-      expect(document.querySelector('.MuiSkeleton-root')).not.toBeNull(),
+      expect(document.querySelectorAll('.MuiSkeleton-root')).toHaveLength(6),
     );
   });
 
@@ -350,8 +435,11 @@ describe('HomePage', () => {
       1,
     );
     expect(within(start).getByRole('button', { name: 'Dismiss' })).toBeTruthy();
-    // Nothing to do yet, so the empty cards stay out of the way.
-    expect(screen.queryByRole('region', { name: 'To ship' })).toBeNull();
+    // Nothing to do yet: the tiles stay in their places, quiet (ADR-091).
+    expect(
+      screen.getByRole('link', { name: 'To ship, No orders to ship' }),
+    ).toBeVisible();
+    expect(screen.getByText('Nothing needs you today.')).toBeVisible();
 
     await user.click(within(start).getByRole('button', { name: 'Skip' }));
     await vi.waitFor(() => expect(skipped).toBe(true));
@@ -380,7 +468,7 @@ describe('HomePage', () => {
       .getAllByRole('link', { name: 'Raise an order' })
       .filter((link) => !start.contains(link));
     expect(quick).toHaveLength(1);
-    expect(quick[0]).toHaveClass('MuiButton-outlined');
+    expect(quick[0]).not.toHaveClass('MuiButton-contained');
   });
 
   it('puts Getting started straight after the welcome, the quick actions after both, while it shows', async () => {

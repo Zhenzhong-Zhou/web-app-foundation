@@ -1,24 +1,87 @@
-import { Box, Button, Link, Paper, Stack, Typography } from '@mui/material';
+import type { SvgIconComponent } from '@mui/icons-material';
+import AccountTreeOutlined from '@mui/icons-material/AccountTreeOutlined';
+import AssignmentReturnOutlined from '@mui/icons-material/AssignmentReturnOutlined';
+import CategoryOutlined from '@mui/icons-material/CategoryOutlined';
+import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
+import HandshakeOutlined from '@mui/icons-material/HandshakeOutlined';
+import PrecisionManufacturingOutlined from '@mui/icons-material/PrecisionManufacturingOutlined';
+import ReceiptLongOutlined from '@mui/icons-material/ReceiptLongOutlined';
+import SellOutlined from '@mui/icons-material/SellOutlined';
+import {
+  Box,
+  Button,
+  ButtonBase,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { useEffect, useState } from 'react';
-import { useIntl } from 'react-intl';
+import { type IntlShape, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { api } from '../lib/api';
-import { RECENT_PATHS, type RecentEntry } from '../lib/recent';
+import { RECENT_PATHS, type RecentEntry, type RecentKind } from '../lib/recent';
 import {
   RECENT_KIND_LABELS,
   recentTitle,
   recentWhen,
 } from '../lib/recent-labels';
-import { rem } from '../theme/rem';
 
 /** How many Home shows (ADR-058). */
 const ON_HOME = 6;
 
+/** Each kind's icon, the menu's for its page (navigation.ts). */
+const ICONS: Record<RecentKind, SvgIconComponent> = {
+  order: ReceiptLongOutlined,
+  invoice: DescriptionOutlined,
+  lot: AccountTreeOutlined,
+  product: CategoryOutlined,
+  partner: HandshakeOutlined,
+  run: PrecisionManufacturingOutlined,
+  return: AssignmentReturnOutlined,
+  priceList: SellOutlined,
+};
+
+/** The kinds whose title is their number and whose detail is a partner. */
+const NUMBERED: ReadonlySet<RecentKind> = new Set([
+  'order',
+  'invoice',
+  'return',
+]);
+
 /**
- * Recently opened, on Home (ADR-058): the last six records this person
- * opened, as tiles, with Clear. Not a to-do, so not counted with the cards;
- * and left out while empty, the one card that hides, since an empty history
+ * A row's two lines, the name before the code (the design language's
+ * principle 1): an order, an invoice or a return by its partner, its
+ * number after; anything else by its own title, its detail after. The
+ * kind ends the second line.
+ */
+function linesOf(
+  intl: IntlShape,
+  entry: RecentEntry,
+): { name: string; detail: string } {
+  const kind = intl.formatMessage(RECENT_KIND_LABELS[entry.kind]);
+  const withKind = (code: string | null) =>
+    code
+      ? intl.formatMessage(
+          { id: 'recent.codeKind', defaultMessage: '{code} · {kind}' },
+          { code, kind },
+        )
+      : kind;
+  if (NUMBERED.has(entry.kind) && entry.detail) {
+    // A draft invoice has no number yet: what it is, in its place.
+    return {
+      name: entry.detail,
+      detail: entry.title ? withKind(entry.title) : recentTitle(intl, entry),
+    };
+  }
+  return { name: recentTitle(intl, entry), detail: withKind(entry.detail) };
+}
+
+/**
+ * Recently opened, on Home (ADR-058; ADR-091): the last six records this
+ * person opened, a row each, the whole row its link, with its kind's icon,
+ * its name, its code and kind, and when; with Clear. Not a to-do, so not
+ * counted with the tiles; and left out while empty, since an empty history
  * is not work done.
  */
 export function RecentCard() {
@@ -49,14 +112,16 @@ export function RecentCard() {
       variant="outlined"
       component="section"
       aria-labelledby="recent-title"
-      sx={{ p: 2.5 }}
+      sx={{ overflow: 'hidden' }}
     >
       <Stack
         direction="row"
         sx={{
           justifyContent: 'space-between',
-          alignItems: 'baseline',
-          mb: 1.25,
+          alignItems: 'center',
+          px: 2,
+          pt: 1.5,
+          pb: 1,
         }}
       >
         <Typography variant="h6" component="h2" id="recent-title">
@@ -69,60 +134,70 @@ export function RecentCard() {
           {intl.formatMessage({ id: 'recent.clear', defaultMessage: 'Clear' })}
         </Button>
       </Stack>
-      <Box
-        component="ul"
-        sx={{
-          listStyle: 'none',
-          m: 0,
-          p: 0,
-          display: 'grid',
-          gridTemplateColumns: `repeat(auto-fit, minmax(min(${rem(220)}, 100%), 1fr))`,
-          gap: 1.25,
-        }}
-      >
-        {entries.map((entry) => (
-          <Box
-            component="li"
-            key={`${entry.kind}:${entry.id}`}
-            sx={{
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 2,
-              px: 1.5,
-              py: 1.25,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 0.25,
-              minWidth: 0,
-            }}
-          >
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              {intl.formatMessage(RECENT_KIND_LABELS[entry.kind])}
-            </Typography>
-            <Link
-              component={RouterLink}
-              to={RECENT_PATHS[entry.kind](entry.id)}
-              sx={{ fontWeight: 600 }}
-              noWrap
+      <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+        {entries.map((entry) => {
+          const Icon = ICONS[entry.kind];
+          const { name, detail } = linesOf(intl, entry);
+          return (
+            <Box
+              component="li"
+              key={`${entry.kind}:${entry.id}`}
+              sx={{ borderTop: 1, borderColor: 'surface.line' }}
             >
-              {recentTitle(intl, entry)}
-            </Link>
-            <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
-              {entry.detail
-                ? intl.formatMessage(
-                    {
-                      id: 'recent.detailWhen',
-                      defaultMessage: '{detail} · {when}',
-                    },
-                    {
-                      detail: entry.detail,
-                      when: recentWhen(intl, entry.openedAt),
-                    },
-                  )
-                : recentWhen(intl, entry.openedAt)}
-            </Typography>
-          </Box>
-        ))}
+              <ButtonBase
+                component={RouterLink}
+                to={RECENT_PATHS[entry.kind](entry.id)}
+                sx={{
+                  width: '100%',
+                  minHeight: 60,
+                  px: 2,
+                  py: 1,
+                  gap: 1.5,
+                  justifyContent: 'flex-start',
+                  textAlign: 'start',
+                  '@media (hover: hover)': {
+                    '&:hover': { bgcolor: 'action.hover' },
+                  },
+                }}
+              >
+                <Box
+                  aria-hidden
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    flex: 'none',
+                    borderRadius: '50%',
+                    bgcolor: 'tone.neutral.bg',
+                    color: 'tone.neutral.fg',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon fontSize="small" />
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography noWrap sx={{ fontWeight: 600 }}>
+                    {name}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    noWrap
+                    sx={{ color: 'text.secondary' }}
+                  >
+                    {detail}
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="body2"
+                  sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}
+                >
+                  {recentWhen(intl, entry.openedAt)}
+                </Typography>
+              </ButtonBase>
+            </Box>
+          );
+        })}
       </Box>
     </Paper>
   );

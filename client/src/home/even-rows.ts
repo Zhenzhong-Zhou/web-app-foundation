@@ -17,21 +17,31 @@ export function evenColumns(count: number, fit: number): number {
   return Math.ceil(count / rows);
 }
 
+/** At most three across, and three only from 600 px (ADR-091). */
+const MOST = 3;
+const THREE_FROM = 600;
+
 /**
- * Home's tiles in even rows: one column until two fit, then a container
- * query at each width where one more tile fits and the columns change.
- * The grid's parent sets `containerType: 'inline-size'`. The widths are
- * rem, as the tile is, so the rows stay even at every text size (ADR-075).
+ * Home's tiles in even rows: one column until two fit, then two, then
+ * three from 600 px wide, never more, so a tile stays large enough to
+ * read across a room (ADR-091). A container query at each width where one
+ * more tile fits and the columns change. The grid's parent sets
+ * `containerType: 'inline-size'`, so Help beside the page counts. The
+ * widths are rem, as the tile is, so the rows stay even at every text
+ * size (ADR-075).
  */
 export function evenRowsSx(count: number): SxProps<Theme> {
   const queries: [string, { gridTemplateColumns: string }][] = [];
   let columns = 1;
-  for (let fit = 2; fit <= count; fit += 1) {
+  for (let fit = 2; fit <= Math.min(count, MOST); fit += 1) {
     const next = evenColumns(count, fit);
     if (next === columns) continue;
     columns = next;
+    const fits = `(min-width: calc(${rem(fit * TILE)} + ${(fit - 1) * GAP}px))`;
     queries.push([
-      `@container (min-width: calc(${rem(fit * TILE)} + ${(fit - 1) * GAP}px))`,
+      fit === MOST
+        ? `@container ${fits} and (min-width: ${THREE_FROM}px)`
+        : `@container ${fits}`,
       { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` },
     ]);
   }

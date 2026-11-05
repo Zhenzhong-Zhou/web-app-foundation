@@ -14,74 +14,129 @@ import type { HomeCard } from '../api/types.gen';
 import type { HomeKind } from '../lib/api-names';
 
 /**
- * What each Home card is (ADR-058): its name, icon, the list its "See all"
- * opens (filtered as the server counted it), and what it says when there
- * is nothing to do.
+ * What is late in a kind (ADR-091): its tile's pill ("2 late"), its button
+ * in the panel of what is late ("2 orders to ship"), and the list that
+ * button opens, just the late ones, by the filter the server counts them
+ * with.
+ */
+interface Late {
+  pill: MessageDescriptor;
+  button: MessageDescriptor;
+  list: string;
+}
+
+/**
+ * What each Home tile is (ADR-058; ADR-091): its name, icon, the list it
+ * opens (filtered and sorted as the server counted it, in the address),
+ * what it says when there is nothing to do, and what is late in it.
  */
 interface CardMeta {
   title: MessageDescriptor;
   empty: MessageDescriptor;
   icon: SvgIconComponent;
-  /** "See all": the list, filtered to exactly what the card counted. */
+  /** The tile's list: exactly what the tile counted, the late first. */
   list: string;
-  /**
-   * What "late" means: overdue (orders, runs), expired (stock, licences),
-   * or out (low stock: nothing usable and nothing coming, ADR-085).
-   */
-  late: 'overdue' | 'expired' | 'out';
+  late?: Late;
 }
 
+/** A tile's name, the plainer one its list shares (ADR-091). */
 const TITLES = defineMessages<HomeKind>({
   toShip: { id: 'home.card.toShip', defaultMessage: 'To ship' },
   toReceive: { id: 'home.card.toReceive', defaultMessage: 'To receive' },
   expiring: { id: 'home.card.expiring', defaultMessage: 'Expiring soon' },
   costsWaiting: {
     id: 'home.card.costsWaiting',
-    defaultMessage: 'Costs waiting',
+    defaultMessage: 'Waiting for a cost',
   },
   invoicesToIssue: {
     id: 'home.card.invoicesToIssue',
     defaultMessage: 'Invoices to issue',
   },
-  returnsOpen: { id: 'home.card.returnsOpen', defaultMessage: 'Returns open' },
+  returnsOpen: { id: 'home.card.returnsOpen', defaultMessage: 'Open returns' },
   production: { id: 'home.card.production', defaultMessage: 'In production' },
-  licences: { id: 'home.card.licences', defaultMessage: 'Licences' },
+  licences: { id: 'home.card.licences', defaultMessage: 'Licences expiring' },
   lowStock: { id: 'home.card.lowStock', defaultMessage: 'Low stock' },
 });
 
+/** A quiet tile's words, under its name: a label, so no full stop. */
 const EMPTY = defineMessages<HomeKind>({
-  toShip: { id: 'home.empty.toShip', defaultMessage: 'Nothing to ship.' },
+  toShip: { id: 'home.empty.toShip', defaultMessage: 'No orders to ship' },
   toReceive: {
     id: 'home.empty.toReceive',
-    defaultMessage: 'Nothing to receive.',
+    defaultMessage: 'No orders to receive',
   },
   expiring: {
     id: 'home.empty.expiring',
-    defaultMessage: 'Nothing expires within {days} days.',
+    defaultMessage: 'No lots expiring in {days} days',
   },
   costsWaiting: {
     id: 'home.empty.costsWaiting',
-    defaultMessage: 'Nothing waiting. Every receipt has a cost.',
+    defaultMessage: 'Every receipt has a cost',
   },
   invoicesToIssue: {
     id: 'home.empty.invoicesToIssue',
-    defaultMessage: 'No drafts to issue.',
+    defaultMessage: 'No invoices to issue',
   },
   returnsOpen: {
     id: 'home.empty.returnsOpen',
-    defaultMessage: 'No returns open.',
+    defaultMessage: 'No returns open',
   },
   production: {
     id: 'home.empty.production',
-    defaultMessage: 'No runs in progress.',
+    defaultMessage: 'No runs in production',
   },
   licences: {
     id: 'home.empty.licences',
-    defaultMessage: 'No licence expires within 60 days.',
+    defaultMessage: 'None expiring in 60 days',
+  },
+  lowStock: { id: 'home.empty.lowStock', defaultMessage: 'Nothing low' },
+});
+
+const PILLS = defineMessages({
+  late: {
+    id: 'home.count.late',
+    defaultMessage: '{count, plural, other {# late}}',
+  },
+  expiredLots: {
+    id: 'home.count.expired',
+    defaultMessage: '{count, plural, other {# expired}}',
+  },
+  expiredLicences: {
+    id: 'home.count.expiredLicences',
+    defaultMessage: '{count, plural, other {# expired}}',
+  },
+  out: {
+    id: 'home.count.out',
+    defaultMessage: '{count, plural, other {# out}}',
+  },
+});
+
+/** The number in bold, as the panel draws it: `<b>2</b> orders to ship`. */
+const BUTTONS = defineMessages({
+  toShip: {
+    id: 'home.late.toShip',
+    defaultMessage:
+      '{count, plural, one {<b>#</b> order to ship} other {<b>#</b> orders to ship}}',
+  },
+  toReceive: {
+    id: 'home.late.toReceive',
+    defaultMessage:
+      '{count, plural, one {<b>#</b> order to receive} other {<b>#</b> orders to receive}}',
   },
   lowStock: {
-    id: 'home.empty.lowStock',
-    defaultMessage: 'Nothing is low.',
+    id: 'home.late.lowStock',
+    defaultMessage:
+      '{count, plural, one {<b>#</b> item out of stock} other {<b>#</b> items out of stock}}',
+  },
+  expiring: {
+    id: 'home.late.expiring',
+    defaultMessage:
+      '{count, plural, one {<b>#</b> expired lot} other {<b>#</b> expired lots}}',
+  },
+  licences: {
+    id: 'home.late.licences',
+    defaultMessage:
+      '{count, plural, one {<b>#</b> expired licence} other {<b>#</b> expired licences}}',
   },
 });
 
@@ -90,22 +145,50 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     title: TITLES.toShip,
     empty: EMPTY.toShip,
     icon: LocalShippingOutlined,
-    list: '/orders?direction=sale&status=confirmed&outstanding=1',
-    late: 'overdue',
+    // Still to ship, which only a confirmed order can be; Orders runs it
+    // soonest first, the late leading (ADR-091).
+    list: '/orders?direction=sale&outstanding=1',
+    late: {
+      pill: PILLS.late,
+      button: BUTTONS.toShip,
+      list: '/orders?direction=sale&outstanding=1&late=1',
+    },
   },
   toReceive: {
     title: TITLES.toReceive,
     empty: EMPTY.toReceive,
     icon: MoveToInboxOutlined,
-    list: '/orders?direction=purchase&status=confirmed&outstanding=1',
-    late: 'overdue',
+    list: '/orders?direction=purchase&outstanding=1',
+    late: {
+      pill: PILLS.late,
+      button: BUTTONS.toReceive,
+      list: '/orders?direction=purchase&outstanding=1&late=1',
+    },
+  },
+  // After To receive on the page, as the server orders it (ADR-085).
+  lowStock: {
+    title: TITLES.lowStock,
+    empty: EMPTY.lowStock,
+    icon: Inventory2Outlined,
+    list: '/inventory?tab=reorder-points&status=low',
+    // Out: nothing usable and nothing coming (ADR-085).
+    late: {
+      pill: PILLS.out,
+      button: BUTTONS.lowStock,
+      list: '/inventory?tab=reorder-points&status=out',
+    },
   },
   expiring: {
     title: TITLES.expiring,
     empty: EMPTY.expiring,
     icon: HourglassBottomOutlined,
+    // By expiry, the soonest first, whenever the filter is on (ADR-091).
     list: '/inventory?expiring=1',
-    late: 'expired',
+    late: {
+      pill: PILLS.expiredLots,
+      button: BUTTONS.expiring,
+      list: '/inventory?expiring=1&expired=1',
+    },
   },
   costsWaiting: {
     title: TITLES.costsWaiting,
@@ -114,28 +197,24 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     // Stock value's Waiting for a cost, the rows the server counts, where
     // a cost is set (ADR-091).
     list: '/costs',
-    late: 'overdue',
   },
   invoicesToIssue: {
     title: TITLES.invoicesToIssue,
     empty: EMPTY.invoicesToIssue,
     icon: DescriptionOutlined,
     list: '/invoices?status=draft',
-    late: 'overdue',
   },
   returnsOpen: {
     title: TITLES.returnsOpen,
     empty: EMPTY.returnsOpen,
     icon: AssignmentReturnOutlined,
     list: '/return-authorizations?status=open',
-    late: 'overdue',
   },
   production: {
     title: TITLES.production,
     empty: EMPTY.production,
     icon: PrecisionManufacturingOutlined,
     list: '/production?status=released',
-    late: 'overdue',
   },
   licences: {
     title: TITLES.licences,
@@ -143,15 +222,11 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     icon: VerifiedOutlined,
     // Expiring soon, the expired among them, soonest first (ADR-091, #460).
     list: '/licences?expiring=1',
-    late: 'expired',
-  },
-  // After To receive on the page, as the server orders it (ADR-085).
-  lowStock: {
-    title: TITLES.lowStock,
-    empty: EMPTY.lowStock,
-    icon: Inventory2Outlined,
-    list: '/inventory?tab=reorder-points&status=low',
-    late: 'out',
+    late: {
+      pill: PILLS.expiredLicences,
+      button: BUTTONS.licences,
+      list: '/licences?expiring=1&expired=1',
+    },
   },
 };
 

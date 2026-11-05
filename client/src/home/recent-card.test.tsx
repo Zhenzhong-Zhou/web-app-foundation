@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
@@ -38,29 +38,33 @@ function renderCard() {
 }
 
 describe('RecentCard', () => {
-  it('shows what was opened as tiles, each a link to its page', async () => {
+  it('shows what was opened as rows, the name first, each a link to its page', async () => {
     server.use(
       http.get('/api/v1/recent', () => HttpResponse.json({ recent: ENTRIES })),
     );
     renderCard();
 
-    const order = await screen.findByRole('link', { name: 'SO-DEMO-1' });
+    // The partner's name, then the number and the kind (ADR-091): the
+    // whole row is the link.
+    const order = await screen.findByRole('link', {
+      name: /^Northside Pharmacy/,
+    });
     expect(order.getAttribute('href')).toBe('/orders/o1');
-    expect(
-      screen.getByText('Northside Pharmacy · 10 minutes ago'),
-    ).toBeTruthy();
+    expect(within(order).getByText('SO-DEMO-1 · Order')).toBeTruthy();
+    expect(within(order).getByText('10 minutes ago')).toBeTruthy();
     // A draft invoice has no number yet, so it is named for what it is.
-    expect(screen.getByRole('link', { name: 'Invoice (draft)' })).toBeTruthy();
+    const invoice = screen.getByRole('link', { name: /^明德药房/ });
+    expect(within(invoice).getByText('Invoice (draft)')).toBeTruthy();
   });
 
-  /** A kind is a caption, in sentence case as every caption is (#223). */
+  /** A kind is in sentence case, as every caption is (#223). */
   it('writes each kind in sentence case, not capitals', async () => {
     server.use(
       http.get('/api/v1/recent', () => HttpResponse.json({ recent: ENTRIES })),
     );
     renderCard();
 
-    expect(await screen.findByText('Order')).not.toHaveStyle({
+    expect(await screen.findByText('SO-DEMO-1 · Order')).not.toHaveStyle({
       textTransform: 'uppercase',
     });
   });
