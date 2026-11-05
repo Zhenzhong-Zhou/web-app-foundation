@@ -34,7 +34,8 @@ import { mayGiveAll, roleList } from './role-names';
 
 /** What a row's buttons do; the page holds the dialog they open. */
 export interface InvitedActions {
-  resend: (invitation: Invitation) => void;
+  /** With the button, which a dialog opened after gives focus back to. */
+  resend: (invitation: Invitation, button: HTMLElement) => void;
   copy: (invitation: Invitation) => void;
 }
 
@@ -73,9 +74,9 @@ export function InvitedSection({
     !mayGiveAll(roles, invitation.roles) ? null : (
       <RowButtons
         invitation={invitation}
-        disabled={busy !== null}
+        held={busy !== null}
         stretch={phone}
-        onResend={() => actions.resend(invitation)}
+        onResend={(button) => actions.resend(invitation, button)}
         onCopy={() => actions.copy(invitation)}
         onRevoke={() => setRevoking(invitation)}
       />
@@ -241,25 +242,33 @@ export function InvitedSection({
   );
 }
 
-/** Resend, Copy link and Revoke, each named for its person. */
+/**
+ * Resend, Copy link and Revoke, each named for its person. Held back while
+ * one of them works: drawn as MUI draws a disabled button and
+ * aria-disabled, a press ignored, but not `disabled`, which would drop the
+ * focus to the page, so the one pressed keeps it (#466).
+ */
 function RowButtons({
   invitation,
-  disabled,
+  held,
   stretch,
   onResend,
   onCopy,
   onRevoke,
 }: {
   invitation: Invitation;
-  disabled: boolean;
+  held: boolean;
   stretch: boolean;
-  onResend: () => void;
+  onResend: (button: HTMLElement) => void;
   onCopy: () => void;
   onRevoke: () => void;
 }) {
   const intl = useIntl();
   const { email } = invitation;
   const each = stretch ? { flex: '1 1 auto' } : undefined;
+  const hold = held
+    ? { 'aria-disabled': true, className: 'Mui-disabled' }
+    : undefined;
 
   return (
     <Stack
@@ -273,8 +282,8 @@ function RowButtons({
     >
       <Button
         variant="outlined"
-        disabled={disabled}
-        onClick={onResend}
+        {...hold}
+        onClick={held ? undefined : (event) => onResend(event.currentTarget)}
         aria-label={intl.formatMessage(
           {
             id: 'members.invited.resendTo',
@@ -291,10 +300,10 @@ function RowButtons({
       </Button>
       <Button
         variant="outlined"
-        disabled={disabled}
+        {...hold}
         // Its dialog opens once the link is made, and gives focus back here
         // as it closes (#155).
-        onClick={openDialog(onCopy)}
+        onClick={held ? undefined : openDialog(onCopy)}
         aria-label={intl.formatMessage(
           {
             // Its visible words first, so a voice command finds it (WCAG
@@ -314,8 +323,8 @@ function RowButtons({
       <Button
         variant="outlined"
         color="error"
-        disabled={disabled}
-        onClick={openDialog(onRevoke)}
+        {...hold}
+        onClick={held ? undefined : openDialog(onRevoke)}
         aria-label={intl.formatMessage(
           {
             id: 'members.invited.revokeFor',

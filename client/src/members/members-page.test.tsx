@@ -3,7 +3,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 
 import type { Invitation, Member, Role } from '../api/types.gen';
 import { builtInRole, roleRef } from '../test/factories';
@@ -342,5 +342,104 @@ describe('MembersPage', () => {
 
     await waitFor(() => expect(copy).toHaveFocus());
     fixup.disconnect();
+  });
+
+  /**
+   * The row's buttons turned disabled while Resend worked, which drops
+   * focus in Chrome, and the not-sent dialog then opened with nothing to
+   * give focus back to (#466, WCAG 2.4.3). In the app's theme, as above.
+   */
+  describe('Resend on an invitation’s row', () => {
+    const invited: Invitation = {
+      id: 'invitation-1',
+      email: 'kai@example.com',
+      roles: [roleRef('Viewer')],
+      invitedBy: { id: 'user-1', name: 'Ana' },
+      invitedAt: '2026-10-19T09:00:00.000Z',
+      link: { status: 'emailed', lastDay: '2026-10-26' },
+    };
+
+    /**
+     * The page with one invitation and its Resend focused, whose press is
+     * answered with `link` once `answer` is called, with each press
+     * counted, and Chrome's drop of focus played out as above.
+     */
+    async function focusResend(link: Invitation['link']) {
+      let answer = () => {};
+      const answered = new Promise<void>((resolve) => {
+        answer = resolve;
+      });
+      const pressed = { count: 0 };
+      server.use(
+        http.get('/api/v1/users', () => HttpResponse.json([SELF, SAM])),
+        http.get('/api/v1/roles', () => HttpResponse.json(ROLES)),
+        http.get('/api/v1/invitations', () => HttpResponse.json([invited])),
+        http.post('/api/v1/invitations/invitation-1/resend', async () => {
+          pressed.count += 1;
+          await answered;
+          return HttpResponse.json({ invitation: { ...invited, link } });
+        }),
+      );
+      renderWithAuth(
+        <MemoryRouter>
+          <ThemeProvider theme={themeFor('en')}>
+            <MembersPage />
+          </ThemeProvider>
+        </MemoryRouter>,
+        { permissions: ['users.view', 'roles.view', 'users.create'] },
+      );
+
+      const resend = await screen.findByRole('button', {
+        name: 'Resend to kai@example.com',
+      });
+      const fixup = new MutationObserver(() => {
+        if (
+          resend === document.activeElement &&
+          resend.hasAttribute('disabled')
+        ) {
+          resend.removeAttribute('disabled');
+          resend.blur();
+          resend.setAttribute('disabled', '');
+        }
+      });
+      fixup.observe(resend, { attributeFilter: ['disabled'] });
+      onTestFinished(() => fixup.disconnect());
+      resend.focus();
+      return { resend, answer, pressed };
+    }
+
+    it('keeps focus on Resend while it works, a second press ignored', async () => {
+      const user = userEvent.setup();
+      const { resend, answer, pressed } = await focusResend(invited.link);
+
+      await user.keyboard('{Enter}');
+      await waitFor(() =>
+        expect(resend).toHaveAttribute('aria-disabled', 'true'),
+      );
+      expect(resend).toHaveFocus();
+      await user.keyboard('{Enter}');
+      answer();
+
+      await waitFor(() => expect(resend).not.toHaveAttribute('aria-disabled'));
+      expect(resend).toHaveFocus();
+      expect(pressed.count).toBe(1);
+    });
+
+    it('gives focus back to Resend once the not-sent dialog closes', async () => {
+      const user = userEvent.setup();
+      const { resend, answer } = await focusResend({
+        status: 'notSent',
+        lastDay: null,
+      });
+
+      await user.keyboard('{Enter}');
+      answer();
+      const dialog = await screen.findByRole('dialog', {
+        name: 'Couldn’t send the email',
+      });
+      await user.click(within(dialog).getByRole('button', { name: 'Close' }));
+
+      await waitFor(() => expect(resend).toHaveFocus());
+    });
   });
 });
