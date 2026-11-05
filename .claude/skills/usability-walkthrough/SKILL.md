@@ -98,24 +98,44 @@ given, which git ignores.
 1. **Set up once,** in this session: the app as section 2 says, its
    production build when any persona's Set up slows the network, kept
    running; then `npm run seed:demo` in `server/` once per persona, one
-   after another, keeping each account's email.
-2. **Start the subagents together,** one per persona, each given its
-   persona, its account, the journey's tasks as written for it, and its
-   report's path: `<folder>/<journey>-<persona>.md`, the persona being
-   its heading without "The", in lowercase words joined by hyphens, as in
-   `home-senior-who-reads-only-chinese.md`. Where the journey has a
-   **Sizes:** line, each is given its screen sizes from it too, which
-   replace its own Set up's.
-3. **Wait for all of them.** One that ends BLOCKED is named in the
+   after another, keeping each account's email. A journey that starts on
+   a new organization takes no seed: one account per persona instead,
+   made through `POST /v1/auth/register` as the sign-up form makes one,
+   with an address new to this run, the demo's password and a company
+   name of its own.
+2. **Give out the sizes,** so every journey is walked at each of the
+   design language's five
+   [width classes](../../../docs/design-language.md#screen-sizes), the
+   iPhone Duo's two sizes counted among them. These five, in this order,
+   go to the journey's personas in turn, in the order the journey lists
+   them, until each has a walker; a persona given more than one walks
+   them one after another, and a sixth persona starts again at the first:
+   1. a phone, 390 × 844 (`xs`);
+   2. the iPhone Duo, closed, about 466 × 678 (`xs`), then open, about
+      890 × 626 (`sm`);
+   3. a tablet held sideways, 1180 × 820 (`md`);
+   4. a laptop, 1366 × 768, where the rail first shows (`lg`);
+   5. a desktop, 1920 × 1080 (`xl`).
+
+   With `join`'s two personas, the outsider walks the first, third and
+   fifth, the senior the second and fourth. A journey's own **Sizes:**
+   line overrides them (ADR-091). Either way they replace the sizes in
+   the persona's Set up, and the rest of it stays.
+3. **Start the subagents together,** one per persona, each given its
+   persona, its account, the journey's tasks as written for it, its
+   screen sizes, and its report's path: `<folder>/<journey>-<persona>.md`,
+   the persona being its heading without "The", in lowercase words joined
+   by hyphens, as in `home-senior-who-reads-only-chinese.md`.
+4. **Wait for all of them.** One that ends BLOCKED is named in the
    merge, and the others still count.
-4. **Merge** into `<folder>/<journey>.md`: each finding once, the
+5. **Merge** into `<folder>/<journey>.md`: each finding once, the
    personas who hit it, its worst severity, "every screen" or "this
    journey", and the principle of the design language it breaks
    (`docs/design-language.md`), or none; sorted by severity, then by how
    many personas hit it. A finding that two personas or more hit, or that
    is marked every screen, is the design language's to settle; the rest
    belong to the journey's screens.
-5. **Stop the app if the panel started it;** one already running before
+6. **Stop the app if the panel started it;** one already running before
    it is left as it was. End as section 5 does, with the merge's path.
 
 The walks can run at once because each only reads the app, through an

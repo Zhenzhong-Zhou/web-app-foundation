@@ -4,8 +4,9 @@ What a panel walks (`/usability-walkthrough panel <journey>`, the
 skill's section 6): each journey is a task a person takes through the
 application from start to end, in their own words, with the personas
 from [personas.md](personas.md) who take it. A panel walks a journey as
-all its personas at once. Add a journey when a feature brings a task
-people do often.
+all its personas at once, at the sizes the skill gives them, unless the
+journey's **Sizes:** line names its own. Add a journey when a feature
+brings a task people do often.
 
 ## home
 
@@ -46,7 +47,10 @@ A person's first day, from the invitation to their first task.
 
 An owner making the application their company's.
 
-- **Starts on:** Home, as the Owner.
+- **Starts on:** Home, as the Owner of a new organization made for the
+  walk (the skill's section 6), so Getting started leads Home; its mail,
+  the address's confirmation among it, in Mailpit
+  (<http://localhost:8025>).
 - **Personas:** the owner who learns fast.
 - **Tasks:** put the company's name and logo on its documents; set its
   time zone; invite a colleague.
