@@ -86,6 +86,7 @@ as the catalogues word it.
 | Received / Shipped | Reçue / Expédiée | 已收货 / 已发货 | Closed: the one status, in its direction's word (ADR-041). |
 | Cancelled | Annulée | 已取消 | |
 | Open / Fulfilled | Ouvertes / Exécutées | 未完成 / 已完成 | The list's filters. |
+| Late | En retard | 逾期 | An outstanding order past its expected day, in the organization's day: Orders' filter, and its chip "2 days late" / « 2 jours de retard » / 逾期 2 天. Home's panel of what is late counts these with the items out and the lots and licences expired (ADR-091). Never "overdue". |
 
 ### Shipping
 
@@ -137,6 +138,7 @@ as the catalogues word it.
 | Lot code | Code de lot | 批次编码 | What a trace searches by. |
 | Expires | Date de péremption | 有效期至 | Blank for a lot that does not expire. |
 | Expiring soon | Expire bientôt | 即将过期 | Within the days the organization sets (ADR-060). |
+| Expired | Périmé | 已过期 | A lot past its expiry: Inventory's filter, Périmés, and Home's « 1 lot périmé ». A licence is *expirée*. |
 | Recall | Rappel | 召回 | |
 
 ### Licences
@@ -179,6 +181,7 @@ as the catalogues word it.
 | Provisional | Provisoire | 暂估 | A value that still counts stock waiting for a cost. |
 | Waiting for a cost | En attente d’un coût | 等待成本 | |
 | Registered address | Adresse du siège | 注册地址 | The seller's address on every invoice. |
+| What we do | Ce que nous faisons | 业务简介 | One line on the organization's Profile, at most 200 characters, shown on Home under the date (ADR-091). |
 | Billing address | Adresse de facturation | 账单地址 | A partner's address marked Invoices go here / Les factures sont envoyées ici / 发票寄往此处. |
 | Time zone | Fuseau horaire | 时区 | |
 | Prefix | Préfixe | 前缀 | A document number's start (ADR-073). |

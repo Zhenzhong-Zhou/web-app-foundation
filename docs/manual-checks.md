@@ -1290,7 +1290,8 @@ Time — Vancouver while Los Angeles is on UTC−7 too (#343).
 - **MC-2601** *(ADR-072)* Register a new organization with the computer
   in Shanghai. Settings → Organization → Profile → Time zone shows China
   Standard Time — Shanghai, UTC+8 now · Asia/Shanghai, and what time it is
-  there.
+  there. Its help says the zone decides what Home counts as late, never
+  overdue.
 - **MC-2602** *(ADR-072)* An organization from before ADR-072 is on UTC:
   Time zone shows an amber note, Still on UTC. In Français it ends « le
   soir, dans les Amériques, il est déjà demain en UTC. » With the computer in
@@ -4854,3 +4855,5 @@ first.
 - 2026-11-05: ADR-091, 库存下限 for a reorder point in 中文, on
   Inventory's tab, its dialog and rules, the bell's notices, History, the
   export and the guides: MC-4206, MC-4210, MC-4212 and MC-4216 reworded.
+- 2026-11-05: ADR-091, late in place of overdue in the time zone's help:
+  MC-2601 extended.

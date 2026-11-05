@@ -2033,7 +2033,7 @@
   "settings.org.tax.title": "Tax registration",
   "settings.org.timeZone.group.all": "All time zones",
   "settings.org.timeZone.group.computer": "This device",
-  "settings.org.timeZone.help": "Where the business is. It decides the organization’s day: when a licence has expired, the date on packing slips, purchase orders and returns, what Home counts as overdue, and the date each export is named by.",
+  "settings.org.timeZone.help": "Where the business is. It decides the organization’s day: when a licence has expired, the date on packing slips, purchase orders and returns, what Home counts as late, and the date each export is named by.",
   "settings.org.timeZone.newToday": "The organization’s today becomes {date}. Licences, Home and new documents follow it from the moment you save.",
   "settings.org.timeZone.now": "It is {time} on {date} there.",
   "settings.org.timeZone.offsetNow": "{offset} now · {zone}",

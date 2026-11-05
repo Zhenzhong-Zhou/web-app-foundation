@@ -169,7 +169,7 @@ export function TimeZoneForm({
         {intl.formatMessage({
           id: 'settings.org.timeZone.help',
           defaultMessage:
-            'Where the business is. It decides the organization’s day: when a licence has expired, the date on packing slips, purchase orders and returns, what Home counts as overdue, and the date each export is named by.',
+            'Where the business is. It decides the organization’s day: when a licence has expired, the date on packing slips, purchase orders and returns, what Home counts as late, and the date each export is named by.',
         })}
       </Typography>
 
