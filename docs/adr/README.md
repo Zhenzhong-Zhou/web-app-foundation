@@ -88,14 +88,14 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-048] | Cost: value is a ledger, like quantity | accepted | 2026-09-28 | | |
 | [ADR-049] | Price lists: a default that becomes the line's price | accepted | 2026-09-28 | | |
 | [ADR-050] | Licence status at release | accepted | 2026-09-30 | [ADR-040] | |
-| [ADR-051] | Performance: a volume seed, response-time budgets, plan checks | accepted | 2026-10-01 | | [ADR-081], [ADR-082] |
+| [ADR-051] | Performance: a volume seed, response-time budgets, plan checks | accepted | 2026-10-01 | | [ADR-081], [ADR-082], [ADR-091] |
 | [ADR-052] | Calendar days are `date`, sent as YYYY-MM-DD | accepted | 2026-10-02 | [ADR-040] | [ADR-072], [ADR-081] |
 | [ADR-053] | Backups: an encrypted nightly dump we own, at another provider, restored monthly | accepted | 2026-10-02 | | |
 | [ADR-054] | Languages: the person's language for the app, the customer's for documents | accepted | 2026-10-03 | | [ADR-071], [ADR-076], [ADR-081] |
 | [ADR-055] | The look: tokens, a side rail, tabs and a summary beside the work | accepted | 2026-10-07 | [ADR-021] | [ADR-071], [ADR-075], [ADR-081], [ADR-082], [ADR-090] |
 | [ADR-056] | Search: one lookup in the top bar, and a search on every list | accepted | 2026-10-07 | | [ADR-073] |
 | [ADR-057] | Lists by date range, sorted where it helps, exported as CSV | accepted | 2026-10-08 | | [ADR-072], [ADR-076] |
-| [ADR-058] | Home: what needs attention, first | accepted | 2026-10-08 | | [ADR-072], [ADR-079], [ADR-085] |
+| [ADR-058] | Home: what needs attention, first | accepted | 2026-10-08 | | [ADR-072], [ADR-079], [ADR-085], [ADR-091] |
 | [ADR-059] | Files: one store for every file, on R2, served through the app | accepted | 2026-10-08 | | [ADR-070] |
 | [ADR-060] | Branding: each organization's logo, colour and expiry days | accepted | 2026-10-09 | | [ADR-082] |
 | [ADR-061] | The Organization page in tabs, and a name that can change | accepted | 2026-10-09 | | |
@@ -116,7 +116,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-076] | The audit log in words: no ids, references named, every field translated | accepted | 2026-10-19 | [ADR-018], [ADR-038], [ADR-054], [ADR-057] | |
 | [ADR-077] | Invitations: how a person joins an organization | accepted | 2026-10-19 | [ADR-006], [ADR-069] | [ADR-078], [ADR-079], [ADR-080], [ADR-083] |
 | [ADR-078] | Registration: open, or by invitation | accepted | 2026-10-20 | [ADR-006], [ADR-070], [ADR-077] | [ADR-079] |
-| [ADR-079] | A newcomer's first sign-in: a welcome on Home, and help on every page | accepted | 2026-10-20 | [ADR-016], [ADR-058], [ADR-063], [ADR-069], [ADR-077], [ADR-078] | [ADR-080] |
+| [ADR-079] | A newcomer's first sign-in: a welcome on Home, and help on every page | accepted | 2026-10-20 | [ADR-016], [ADR-058], [ADR-063], [ADR-069], [ADR-077], [ADR-078] | [ADR-080], [ADR-091] |
 | [ADR-080] | Job roles: roles an organization makes, several to a member | accepted | 2026-10-21 | [ADR-004], [ADR-016], [ADR-035], [ADR-070], [ADR-071], [ADR-077], [ADR-079] | |
 | [ADR-081] | Old tabs after a deploy: a newer build noticed, an outdated client told | accepted | 2026-10-22 | [ADR-013], [ADR-051], [ADR-052], [ADR-054], [ADR-055], [ADR-068] | [ADR-082], [ADR-084] |
 | [ADR-082] | The product's brand: Panivo before sign-in, the organization's after | accepted | 2026-10-24 | [ADR-019], [ADR-051], [ADR-055], [ADR-060], [ADR-067], [ADR-081] | [ADR-083] |
@@ -127,7 +127,8 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-087] | The rules written down: `docs/rules/` for people, `.claude/rules/` for Claude | accepted | 2026-10-27 | | |
 | [ADR-088] | Planning in the chat, as a skill: kept here, compared with main, tested by prompts | accepted | 2026-10-29 | | [ADR-084], [ADR-089] |
 | [ADR-089] | A brief's steps in a row: each in a fresh subagent, stopping only for a person | accepted | 2026-11-02 | [ADR-083], [ADR-088] | [ADR-090] |
-| [ADR-090] | The design language: eight principles and their patterns, at every screen size | accepted | 2026-11-04 | [ADR-055], [ADR-089] | |
+| [ADR-090] | The design language: eight principles and their patterns, at every screen size | accepted | 2026-11-04 | [ADR-055], [ADR-089] | [ADR-091] |
+| [ADR-091] | Home, redesigned: a few large tiles that open their lists | accepted | 2026-11-04 | [ADR-051], [ADR-058], [ADR-079], [ADR-090] | |
 
 [ADR-001]: 0001-nestjs-as-the-server-framework.md
 [ADR-002]: 0002-postgresql-as-the-database.md
@@ -219,6 +220,7 @@ decided is in [Open decisions](open-decisions.md).
 [ADR-088]: 0088-planning-in-the-chat-as-a-skill.md
 [ADR-089]: 0089-a-briefs-steps-in-a-row.md
 [ADR-090]: 0090-the-design-language.md
+[ADR-091]: 0091-home-redesigned.md
 
 <!-- adr-index:end -->
 
@@ -234,7 +236,7 @@ same names. An area no ADR names has no line.
 
 - `boms`: [ADR-029], [ADR-030], [ADR-040]
 - `costs`: [ADR-048]
-- `home`: [ADR-058], [ADR-079], [ADR-085]
+- `home`: [ADR-058], [ADR-079], [ADR-085], [ADR-091]
 - `invoices`: [ADR-046], [ADR-047], [ADR-071], [ADR-073]
 - `locations`: [ADR-024], [ADR-028], [ADR-030], [ADR-042]
 - `numbering`: [ADR-073], [ADR-074]
@@ -256,7 +258,7 @@ same names. An area no ADR names has no line.
 - `files`: [ADR-059], [ADR-062], [ADR-063]
 - `invitations`: [ADR-077], [ADR-078], [ADR-079], [ADR-083]
 - `notifications`: [ADR-036], [ADR-037], [ADR-064], [ADR-085]
-- `organizations`: [ADR-003], [ADR-004], [ADR-006], [ADR-060], [ADR-061], [ADR-065], [ADR-069], [ADR-070], [ADR-072], [ADR-080]
+- `organizations`: [ADR-003], [ADR-004], [ADR-006], [ADR-060], [ADR-061], [ADR-065], [ADR-069], [ADR-070], [ADR-072], [ADR-080], [ADR-091]
 - `people`: [ADR-063]
 - `users`: [ADR-012], [ADR-069]
 - `mail`: [ADR-005], [ADR-017], [ADR-037], [ADR-054], [ADR-069], [ADR-070], [ADR-077], [ADR-078], [ADR-082], [ADR-083]
@@ -266,6 +268,6 @@ same names. An area no ADR names has no line.
 - `help`: [ADR-079]
 - `i18n`: [ADR-054], [ADR-056], [ADR-072], [ADR-076], [ADR-090]
 - `ops`: [ADR-005], [ADR-008], [ADR-019], [ADR-051], [ADR-053], [ADR-059], [ADR-067], [ADR-070], [ADR-081], [ADR-084], [ADR-088], [ADR-089]
-- `ui`: [ADR-007], [ADR-020], [ADR-021], [ADR-055], [ADR-056], [ADR-057], [ADR-060], [ADR-075], [ADR-082], [ADR-084], [ADR-090]
+- `ui`: [ADR-007], [ADR-020], [ADR-021], [ADR-055], [ADR-056], [ADR-057], [ADR-060], [ADR-075], [ADR-082], [ADR-084], [ADR-090], [ADR-091]
 
 <!-- adr-areas:end -->

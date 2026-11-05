@@ -137,7 +137,10 @@ gets:
   `git log --format=%s origin/main..HEAD | grep -oE '#[0-9]+' | sort -u`.
 - After the merge: `scripts/prune-branches.sh --yes`, then
   `scripts/clean-local.sh` (a dry run, then `--yes`), the checks the
-  runbook names for the deploy, and Project knowledge re-synced. When
+  runbook names for the deploy, and Project knowledge re-synced. Before
+  `--yes`, whatever a later ADR still reads in the merged branch's `tmp/`
+  folder, a panel's reports among them, is moved into that ADR's own:
+  `--yes` removes the folder whole (ADR-091). When
   the merge changed this skill: `node scripts/pack-chat-skill.mjs` on
   `main`, the upload, and `evals.md` walked.
 

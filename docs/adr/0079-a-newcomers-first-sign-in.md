@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-20
 areas: [home, invitations, help]
 amends: [ADR-016, ADR-058, ADR-063, ADR-069, ADR-077, ADR-078]
-amended-by: [ADR-080]
+amended-by: [ADR-080, ADR-091]
 ---
 
 # ADR-079 — A newcomer's first sign-in: a welcome on Home, and help on every page (amends ADR-016, ADR-058, ADR-063, ADR-069, ADR-077 and ADR-078)
@@ -494,3 +494,16 @@ an order, opening the confirmed purchases for someone who may not move
 stock. Whom to ask, on Home and Your access, names up to three members who
 could give what is missing, as every refusal now does (ADR-080, as built).
 Permission lines are translated on the server.
+
+## Amendment (November 2026) — the welcome folded on a small screen, Help as a modal sheet (ADR-091)
+
+- **The welcome card,** below `md`, is folded to one line above Home's
+  tiles and opens in place; from `md` it is open, as before. Each area
+  under "What you can do here" is a link to its page, and the
+  organization's What we do line shows in it.
+- **Help, where the window leaves the page less than 720 px beside it,**
+  is a modal side sheet: the page dimmed, focus kept inside Help, closed
+  by Escape or Close. It no longer slides over a page that still takes
+  focus, where a control could be focused under it (WCAG 2.4.11, #272).
+  Beside the page above that width, and full screen on a phone, as
+  before.

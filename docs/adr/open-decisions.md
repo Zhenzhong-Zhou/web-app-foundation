@@ -570,11 +570,10 @@ both wait for the module that forces them.
 
 ## A dashboard at `/`
 
-The placeholder Home screen was removed and `/` now
-redirects to `/products`, because a page whose only content was "you are
-signed in" was not earning a route. What belongs there — low stock, recent
-movements, pending receipts — is all downstream of the stock layer, so the
-redirect stands until there is something worth showing.
+It was decided in ADR-058: `/` is Home, what needs
+attention first. ADR-091 redesigned it, simple enough for a newcomer, as a few large
+tiles, each a count that opens its list; figures and charts stay out
+until someone asks for them, with the currency rule decided.
 
 ## Search and the lookup in the top bar
 
@@ -811,3 +810,14 @@ period, or work routed to a role instead of a person. Staff leave as a
 record (holiday balances) is an HR system's job, not this one's.
 A cover for a period would be a member's role with an end date
 (ADR-080). Trigger: the first approval that waits on someone on holiday.
+
+## Knowing which screens are used
+
+The design language builds the most-used
+screens first, chosen by the personas' daily tasks until there is usage
+data (ADR-090), and Customise Home's default order comes from
+permissions (ADR-091). Nothing counts which screens people open or which
+tiles they press. Counting it, without who did it, needs its own
+decision: what is counted, where it is kept, for how long, and what the
+privacy policy says. Trigger: the first customer, with the terms and
+privacy policy (ADR-082).

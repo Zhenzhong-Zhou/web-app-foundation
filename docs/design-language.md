@@ -75,6 +75,10 @@ Each with what holds it in the code today, or the issue that will.
   "Expiring soon" opens Inventory's expiring lots, the soonest first.
 - The filter and the sort are in the address, so Back and a bookmark
   keep them (#302).
+- A tile and the filter it opens share one name, the plainer of the two,
+  in each language: "Late", never "overdue".
+- A tile with nothing to do stays in its place, quiet: muted, "Nothing to
+  ship", still a link.
 
 ### Rows
 
@@ -194,6 +198,9 @@ Each with what holds it in the code today, or the issue that will.
 - Text a person reads to decide (a tile's label, a status, a name, a
   field's label) is 16 px at the Standard text size; secondary detail 14
   px; a caption only for footnotes.
+- The scale steps by 1.25: a section heading at 20 px and a page's title
+  at 25 px, so a heading is told apart by size, not weight alone. Line
+  heights sit on a 4 px grid: 16 on 24, 14 on 20, 20 on 28, 25 on 32.
 - The text size is named in words where a person looks for it, not only
   behind their initials.
 - On touch every target is at least 44 × 44 px (#170); with a mouse,
@@ -227,12 +234,17 @@ breakpoints:
   screens.
 - **The menu** is a rail from `lg`, and below it ADR-055's drawer, with
   its words, not a rail of icons.
-- **Help** sits beside the page where there is room, and must not cover
-  a focused control where there is not (#272).
+- **The top bar** below `lg` has a short word under each icon, as a
+  phone's tab bar has; where they do not all fit at 360 px, the lookup
+  alone gets its word, "Search".
+- **Help** sits beside the page where there is room; where there is not,
+  it is a modal side sheet that keeps focus inside it, so nothing focused
+  sits under it (#272).
 - **Checked** by the before-and-after screenshots at each class, the
-  Duo's two sizes among them; by the walkthrough panel at each class; and
-  by `/production-readiness`'s device pass on real devices before real
-  users.
+  Duo's two sizes among them; by the walkthrough panel, which gives the
+  classes to a journey's personas in turn unless the journey names its
+  own sizes; and by `/production-readiness`'s device pass on real devices
+  before real users.
 
 The Duo's sizes are estimates, at the 3× scale iPhones use, until
 measured on the device.

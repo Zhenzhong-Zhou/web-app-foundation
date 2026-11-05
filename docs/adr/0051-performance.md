@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-01
 areas: [database, ops]
-amended-by: [ADR-081, ADR-082]
+amended-by: [ADR-081, ADR-082, ADR-091]
 ---
 
 # ADR-051 — Performance: a volume seed, response-time budgets, plan checks
@@ -508,3 +508,16 @@ owner and a date stays a debt; a raised budget would forget it
   search walking the orders by id, 23,106 rows read for 26 kept (#226,
   comment of 4 November); and Dependabot's alerts 8, 9 and 10, held back
   by eslint, the Nest CLI and Sentry (#446).
+
+## Amendment (November 2026) — Home's reads, by its redesign (ADR-091)
+
+The Deferred "Home's reads in one transaction, or prepared statements",
+above, whose trigger was ADR-091, is taken in part. Home's redesign reads
+counts only, no rows, and its own reads in one transaction, held by a test
+that counts its statements; that drops eight of its fourteen reads. It is
+met as the typo lookup was: the plans and the Mac's figures before and
+after, then one timed run with a median of 240 ms or less, and Home's
+known miss removed in the commit that meets it. Prepared statements stay
+deferred, now until Home's median is over 240 ms in a weekly run on
+`main`. The Watch's "Home after ADR-085" is closed by ADR-091's as-built,
+with its figures.

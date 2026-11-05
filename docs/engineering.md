@@ -208,11 +208,12 @@ steps; this section stays the rule.
   anything needing the large seed stays on the Mac. A session signs with a key of its own, so under the
   maintainer's vigilant mode its commits show Unverified: its pull
   requests are squashed and merged, so each lands on `main` as one commit
-  GitHub signs (1 November 2026). Squash and merge is chosen from the
-  merge button's menu, since the button offers the method used last:
-  from 2 November every cloud pull request went in as a merge commit. A
-  feature branch's pull request keeps Create a merge commit, so its
-  commits stay apart (4 November 2026). PRs merge one at a time, each when
+  GitHub signs (1 November 2026). It is merged from the terminal, `gh pr
+  merge <N> --squash --delete-branch`, never from the button, which
+  offers the method used last: from 2 November every cloud pull request
+  went in as a merge commit, #469 too. A feature branch's pull request
+  keeps a merge commit, `gh pr merge <N> --merge`, so its commits stay
+  apart (4 November 2026). PRs merge one at a time, each when
   green; a branch behind
   `main` with no conflict merges as it is, and a conflict in
   `docs/manual-checks.md` is settled on GitHub with "Accept both changes",
