@@ -92,7 +92,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-052] | Calendar days are `date`, sent as YYYY-MM-DD | accepted | 2026-10-02 | [ADR-040] | [ADR-072], [ADR-081] |
 | [ADR-053] | Backups: an encrypted nightly dump we own, at another provider, restored monthly | accepted | 2026-10-02 | | |
 | [ADR-054] | Languages: the person's language for the app, the customer's for documents | accepted | 2026-10-03 | | [ADR-071], [ADR-076], [ADR-081] |
-| [ADR-055] | The look: tokens, a side rail, tabs and a summary beside the work | accepted | 2026-10-07 | [ADR-021] | [ADR-071], [ADR-075], [ADR-081], [ADR-082], [ADR-090] |
+| [ADR-055] | The look: tokens, a side rail, tabs and a summary beside the work | accepted | 2026-10-07 | [ADR-021] | [ADR-071], [ADR-075], [ADR-081], [ADR-082], [ADR-090], [ADR-091] |
 | [ADR-056] | Search: one lookup in the top bar, and a search on every list | accepted | 2026-10-07 | | [ADR-073] |
 | [ADR-057] | Lists by date range, sorted where it helps, exported as CSV | accepted | 2026-10-08 | | [ADR-072], [ADR-076] |
 | [ADR-058] | Home: what needs attention, first | accepted | 2026-10-08 | | [ADR-072], [ADR-079], [ADR-085], [ADR-091] |
@@ -128,7 +128,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-088] | Planning in the chat, as a skill: kept here, compared with main, tested by prompts | accepted | 2026-10-29 | | [ADR-084], [ADR-089] |
 | [ADR-089] | A brief's steps in a row: each in a fresh subagent, stopping only for a person | accepted | 2026-11-02 | [ADR-083], [ADR-088] | [ADR-090] |
 | [ADR-090] | The design language: eight principles and their patterns, at every screen size | accepted | 2026-11-04 | [ADR-055], [ADR-089] | [ADR-091] |
-| [ADR-091] | Home, redesigned: a few large tiles that open their lists | accepted | 2026-11-04 | [ADR-051], [ADR-058], [ADR-079], [ADR-090] | |
+| [ADR-091] | Home, redesigned: a few large tiles that open their lists | accepted | 2026-11-04 | [ADR-051], [ADR-055], [ADR-058], [ADR-079], [ADR-090] | |
 
 [ADR-001]: 0001-nestjs-as-the-server-framework.md
 [ADR-002]: 0002-postgresql-as-the-database.md

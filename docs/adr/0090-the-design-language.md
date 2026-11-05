@@ -386,8 +386,8 @@ found the design language did not say:
   by size, not weight alone; line heights on a 4 px grid, 16 on 24, 14 on
   20, 20 on 28 and 25 on 32. The caption stays 12.5 px.
 - **The top bar below `lg`:** a short word under each icon, as a phone's
-  tab bar has, each target 44 px; where they do not all fit at 360 px, the
-  lookup alone gets its word, "Search".
+  tab bar has, each target 44 px, the app's own names; on a narrow phone
+  the organization's name shortens first.
 - **Tiles:** a tile and the filter it opens share one name, the plainer;
   a tile with nothing to do stays in its place, quiet, still a link.
 - **Help where there is no room beside the page** is a modal side sheet

@@ -2,10 +2,10 @@
 status: accepted
 date: 2026-11-04
 areas: [home, organizations, ui]
-amends: [ADR-051, ADR-058, ADR-079, ADR-090]
+amends: [ADR-051, ADR-055, ADR-058, ADR-079, ADR-090]
 ---
 
-# ADR-091 — Home, redesigned: a few large tiles that open their lists (amends ADR-051, ADR-058, ADR-079 and ADR-090)
+# ADR-091 — Home, redesigned: a few large tiles that open their lists (amends ADR-051, ADR-055, ADR-058, ADR-079 and ADR-090)
 
 ## Context
 
@@ -185,21 +185,29 @@ so its Owner meets Getting started.
 What the first viewer asked for, and the design language's surface layer:
 "a few large tiles, in plain words". From the top:
 
-1. The greeting and the date, as ADR-058 has them, and under them the
-   organization's What we do line (below).
-2. The summary sentence (below).
+1. The greeting, the date and the time, and Refresh beside them; under
+   them the organization's What we do line (below), with room above and
+   below.
+2. What is late (below).
 3. The newcomer's welcome, and Getting started while it shows.
-4. The tiles.
+4. The tiles, under a heading, "What needs you today".
 5. The one main action, and the line in its place for a role that cannot
    use it.
-6. Recently opened.
+6. Recently opened, each row with its kind's icon and when.
 
-- **A tile** is its name, its count in large figures, and its status in
-  words and colour together ("2 late", "1 expired", "3 out"). The whole
-  tile is one link, at least 44 × 44 px on touch, with a hover and a
-  focus state, opening its list filtered to what it counts and sorted by
-  what makes it urgent, both in the address. No rows: the list holds them,
-  one step away.
+The canvas holds four looks of it, each a row; the build follows the
+fourth, which takes the third look's header and the second look's panel
+of what is late, and adds hover and focus.
+
+- **A tile** is its kind's icon, its count in large figures, its name, and
+  its status in words and colour together ("2 late", "1 expired", "3
+  out"), its icon red while anything in it is late. The whole tile is one
+  link, at least 44 × 44 px on touch, opening its list filtered to what
+  it counts and sorted by what makes it urgent, both in the address. No
+  rows: the list holds them, one step away.
+- **Hover and focus:** under a mouse a tile's edge turns the accent and it
+  lifts a little; the keyboard's focus is a ring in the accent; the main
+  button darkens under a mouse. A touch screen shows no hover.
 - **A tile and the filter it opens share one name,** in each language,
   the plainer of the two, held in the glossary in all three languages.
   "Late" replaces "overdue" everywhere. Costs waiting becomes Waiting for
@@ -249,8 +257,10 @@ test that opens each tile proves.
 
 - **What we do:** an optional line on the organization's profile, written
   by a member who may change it (`organizations.update`), up to 200
-  characters, in the organization's own words. Home shows it under the
-  greeting to every member, and the welcome shows it too. A column on
+  characters, in the organization's own words. Home shows it to every
+  member under the date, at 16 px, regular, with room above and below,
+  without a card, a logo or the organization's name again; the welcome
+  shows it too. A column on
   organizations (a migration), in the organization's export, its change
   audited as the profile's are, its text kept out of the payload
   (ADR-018); `seed:demo` fills it in.
@@ -258,11 +268,17 @@ test that opens each tile proves.
   above the tiles ("Welcome, Fatima · your first week, 2 of 5"), opening
   in place; from `md` it is open, as now. Each area under "What you can do
   here" is a link to its page.
-- **The summary sentence** names what is late by kind, each part a link
-  to that tile's list with its late filter: "3 things are late: 2 orders
-  to ship, 1 licence." Counted only from the tiles the reader can see, as
-  ADR-058 has it; "Nothing is late" when nothing is, and "Nothing needs
-  attention today" when every tile is empty.
+- **The date and the time:** "Thursday 5 November, 07:42", in the
+  organization's time zone (ADR-072), changing each minute by itself; no
+  seconds.
+- **What is late** is a pale red panel: its heading says how many ("6
+  things are late"), and one button per kind ("2 orders to ship"), each
+  opening that tile's list with Late chosen too, so just the late ones,
+  where the tile opens all of its kind, the late first. Counted from the
+  kinds the reader may see, as ADR-058 has it, a tile they hid included
+  (Customise Home). When nothing is late, the panel is one grey line with
+  a tick, in the same place: "Nothing is late today"; with nothing at all
+  to do, "Nothing needs you today".
 - **A main action the role cannot use:** where the member may use none of
   Home's actions, one quiet line takes their place, saying the role cannot
   and whom to ask, from `whomToAsk` (ADR-079's amendment of October 2026).
@@ -288,13 +304,17 @@ test that opens each tile proves.
   back into view after a minute or more away, beside Refresh, as most data
   libraries do on a window's focus; counts alone make it cheap.
 
-## Decision — the type scale, on every screen at once
+## Decision — the type scale and the corners, on every screen at once
 
 ADR-090 set the text to decide by at 16 px and the detail at 14 px. The
 rest of the scale is a step of 1.25: a section heading at 20 px and a
 page's title at 25 px, so a heading is told apart by size, not weight
 alone. The line heights sit on a 4 px grid: 16 on 24, 14 on 20, 20 on 28
 and 25 on 32. The caption stays 12.5 px, for footnotes only.
+
+The corners grow with them: 12 px on panels and tiles, 10 on controls,
+16 on dialogs, where ADR-055 has 8, 6 and 10; an organization's own
+radius can still replace them later (ADR-055's brand tokens).
 
 They are the theme's tokens, so every screen changes with them, in a
 commit of its own before any other client commit, so it can be reverted
@@ -310,10 +330,11 @@ answer, by its own trigger, not a smaller body.
   have landed, from the router's navigation state. A production build is
   timed on the same slow network before and after.
 - **The top bar's icons get words below `lg`,** a short word under each,
-  as a phone's tab bar has, each target 44 px: drawn on the canvas at 360
-  px first. Where they do not all fit, the lookup alone gets its word,
-  "Search". An amendment of ADR-090, since the design language did not
-  say.
+  as a phone's tab bar has, each target 44 px: Menu, Search, Help,
+  Notifications and Account, the app's own names. On a narrow phone the
+  organization's name shortens first. An amendment of ADR-090, since the
+  design language did not say. From `lg` the rail and the top bar stay
+  as they are, the search in the middle.
 - **The account menu's three selects get visible labels,** Colour mode,
   Language and Text size, so the text size is named in words where a
   person looks for it (the senior's finding, and ADR-090's rule).
@@ -346,6 +367,12 @@ Movements' (below), so Home's tiles have stable kinds from the start:
   its default place; a kind that is gone, or unknown to the build, is
   skipped.
 - **Places kept** until the person moves them, empty tiles included.
+- **What a person can change:** the tiles, and Recently opened, which can
+  be switched off. The greeting with What we do, what is late, and the
+  main action stay where they are, so a newcomer always finds them and
+  Help can describe them.
+- **A hidden tile buries nothing:** its late items still show in the
+  panel of what is late.
 
 ## Decision — the panel spreads the width classes
 
@@ -396,6 +423,18 @@ translations, before 30 November, then Orders.
 
 ## Considered and not done
 
+- **The first, second and third looks,** kept on the canvas as its
+  history: the first plain, a sentence of links; the second with an
+  organization card; the third with what is late as one plain line.
+- **What is late as one plain line, the tiles its only links:** simpler,
+  but the late buttons open just the late ones, which no tile does.
+- **Where a tile leads, three more ways,** drawn beside the chosen one:
+  Home jumping down to its card, today's, which surprised the first
+  viewer; a sheet over Home with the first few, whose address does not
+  change; and the most urgent record alone, which hides the rest.
+- **Seconds on the clock, and an introduction at 18 or 20 px, or bold:**
+  seconds draw the eye with nothing to act on; 18 px is off the scale,
+  20 px reads as a heading, and bold pulls the eye before the greeting.
 - **Rows on Home,** today's cards restyled below the tiles, or each tile
   with its one most urgent row: what the first viewer called too much,
   and eight of Home's fourteen reads.
@@ -443,7 +482,8 @@ translations, before 30 November, then Orders.
 
 ## Consequences
 
-- **Amended:** ADR-051 (Home's reads, and its Deferred taken), ADR-058
+- **Amended:** ADR-051 (Home's reads, and its Deferred taken), ADR-055
+  (the corners), ADR-058
   (Home's shape, the lists' address, Customise Home taken), ADR-079 (the
   welcome folded, Help as a modal sheet) and ADR-090 (the type scale's
   steps, the top bar's words, the panel's width classes);
@@ -460,7 +500,7 @@ translations, before 30 November, then Orders.
   organizations, the profile's read and write, the export and the audit;
   `seed:demo` filling it in. `seed:volume` adds nothing: no new table and
   no new hot query.
-- **Client:** the type tokens, alone first, with #221 checked; the address
+- **Client:** the type and corner tokens, alone first, with #221 checked; the address
   hook for the tiles' lists; Licences in the menu; Home's tiles, sentence,
   Getting started, welcome, What we do, main action and its line, and the
   read on return; Orders' line and late chip; the

@@ -235,8 +235,8 @@ breakpoints:
 - **The menu** is a rail from `lg`, and below it ADR-055's drawer, with
   its words, not a rail of icons.
 - **The top bar** below `lg` has a short word under each icon, as a
-  phone's tab bar has; where they do not all fit at 360 px, the lookup
-  alone gets its word, "Search".
+  phone's tab bar has, the app's own names (Notifications under the
+  bell); on a narrow phone the organization's name shortens first.
 - **Help** sits beside the page where there is room; where there is not,
   it is a modal side sheet that keeps focus inside it, so nothing focused
   sits under it (#272).
