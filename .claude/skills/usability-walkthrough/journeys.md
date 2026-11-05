@@ -29,8 +29,8 @@ What needs doing today, from Home and one step past it.
 - **Sizes:** each persona at a width class of its own: the senior on a
   phone, 390 × 844; the outsider on the iPhone Duo, closed, about 466 ×
   678, then open, about 890 × 626; the owner on a tablet, upright, 820 ×
-  1180, then held sideways, 1180 × 820; the operations lead on a desktop,
-  1920 × 1080.
+  1180, then held sideways, 1180 × 820; the operations lead on a laptop,
+  1366 × 768, where the rail first shows, then on a desktop, 1920 × 1080.
 
 ## join
 
