@@ -2661,7 +2661,8 @@ private window.
 - **MC-3511** The rail's foot. At the bottom of the rail, pinned: a
   line, then Powered by, the P and Panivo, small, Panivo brighter than the
   words. At 1440 × 900, a MacBook's window, every link is above the line,
-  Price lists the last, with nothing fading into it; so too under the
+  Licences in Records among them, Price lists the last, with nothing
+  fading into it; so too under the
   build's own name, web-app-foundation, where VITE_APP_NAME is not set,
   which takes the foot to two lines. At 1280 × 800 the
   foot is in view without scrolling, open and folded, and the links run on
@@ -4881,3 +4882,6 @@ first.
   languages: its three moments, where each tile leads, what is late, the
   welcome folded, Getting started and the top bar's words: MC-3213 added,
   MC-4217 reworded.
+- 2026-11-05: ADR-091, the rail's links 32 px tall under a mouse, so every
+  link stays above its foot at 1440 × 900 with Licences in the menu:
+  MC-3511 extended.
