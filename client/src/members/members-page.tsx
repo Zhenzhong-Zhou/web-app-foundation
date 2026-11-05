@@ -148,7 +148,7 @@ export function MembersPage() {
     );
   }
 
-  async function resend(invitation: Invitation) {
+  async function resend(invitation: Invitation, button: HTMLElement) {
     setRowBusy(invitation.id);
     setError(null);
     try {
@@ -158,7 +158,10 @@ export function MembersPage() {
       );
       await load();
       if (next.link.status === 'notSent') {
-        openInvite({ kind: 'notSent', invitation: next });
+        // Through openDialog, so focus is back on Resend as it closes (#466).
+        openDialog(() => openInvite({ kind: 'notSent', invitation: next }))({
+          currentTarget: button,
+        });
       } else {
         toast(
           intl.formatMessage(
@@ -308,7 +311,7 @@ export function MembersPage() {
           selfId={session?.user.id}
           busy={rowBusy}
           actions={{
-            resend: (invitation) => void resend(invitation),
+            resend: (invitation, button) => void resend(invitation, button),
             copy: (invitation) => void copy(invitation),
           }}
           onRevoked={load}

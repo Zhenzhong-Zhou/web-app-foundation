@@ -3164,6 +3164,15 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R94** *(focus falling to the page as Resend worked, #466)* With the
+  keyboard alone at 1440 px, as the demo Owner on Members. Invite an
+  address and send it, so it shows under Invited, then press Enter on its
+  row's Resend: the row's three buttons grey while it sends, focus and its
+  ring staying on Resend, and once the notice shows, Tab goes on from it
+  to Copy link. With Mailpit stopped, Enter on Resend again: Couldn’t send
+  the email opens; Close it, and focus is back on Resend. A screen reader
+  names a greyed button as dimmed.
+
 - **MC-R93** *(focus falling to the page as a section saved, the rail
   folded or Copy link's dialog closed, #155)* With the keyboard alone at
   1440 px, as the demo Owner. On Organization, choose another time zone and
@@ -4647,3 +4656,6 @@ first.
 - 2026-11-04: #155, focus falling to the page as a section saved, the rail
   folded or Copy link's dialog closed: MC-R93 added, a greyed Save keeping
   focus.
+- 2026-11-04: #466, focus falling to the page as Resend worked: MC-R94
+  added, a greyed Resend keeping focus and its not-sent dialog giving it
+  back.
