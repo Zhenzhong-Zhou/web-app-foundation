@@ -2,10 +2,11 @@
 
 Who the usability walkthrough plays. Each is a kind of person the
 application is for, not a real individual. Add one when a new kind of
-customer arrives. The last five, from November 2026, differ by age,
-eyesight and skill as well as by job, for the design language (#338):
-the plainest screen has to work for the first two, and the detail
-behind it for the fourth.
+customer arrives. The senior, the outsider, the owner who learns fast,
+the operations lead and the sales rep differ by age, eyesight and skill
+as well as by job (ADR-090): the plainest screen has to work for the
+senior and the outsider, and the detail behind it for the operations
+lead.
 
 ## The novice bookkeeper
 
@@ -127,8 +128,6 @@ behind it for the fourth.
 - **Set up:** a laptop, 1280 × 800, then a phone, 390 × 844. Each task
   walked twice, the second as if the next morning: what was quicker,
   what had to be found again, and what they wish they had been shown.
-  These are learnability and memorability, two of Nielsen's five
-  qualities of usability.
 
 ## The operations lead
 
