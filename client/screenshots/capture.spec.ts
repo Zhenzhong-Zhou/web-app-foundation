@@ -17,7 +17,18 @@ const LANGUAGES = [
 
 const MODES = ['light', 'dark'] as const;
 
-const DEFAULT_WIDTHS: Width[] = ['desktop', 'phone'];
+/**
+ * A size from each width class (ADR-090). The laptop's 1200 is the top
+ * bar's alone: the desktop's 1440 is the same class.
+ */
+const DEFAULT_WIDTHS: Width[] = [
+  'wide',
+  'desktop',
+  'tablet',
+  'duo-open',
+  'duo-closed',
+  'phone',
+];
 
 function catalogue(language: string): Record<string, string> {
   const file = readFileSync(`src/locales/${language}.json`, 'utf8');

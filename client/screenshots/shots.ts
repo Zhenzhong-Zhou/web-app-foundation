@@ -2,7 +2,14 @@ import type { Page } from '@playwright/test';
 
 import type { Targets } from './targets';
 
-export type Width = 'desktop' | 'laptop' | 'phone';
+export type Width =
+  | 'wide'
+  | 'desktop'
+  | 'laptop'
+  | 'tablet'
+  | 'duo-open'
+  | 'duo-closed'
+  | 'phone';
 
 /** A message in the language being pictured, by its catalogue id. */
 export type Words = (id: string) => string;
@@ -12,7 +19,7 @@ export interface Shot {
   name: string;
   /** Where the page is, or null when this demo has no such record. */
   path: (targets: Targets) => string | null;
-  /** Desktop and phone unless listed. */
+  /** Every width class's size but the laptop's, unless listed. */
   widths?: Width[];
   /** Before the picture: open a dialog, choose a filter. */
   prepare?: (page: Page, words: Words) => Promise<void>;
