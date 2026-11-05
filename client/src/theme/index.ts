@@ -134,14 +134,27 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
     },
   },
   shape: { borderRadius: RADIUS.control },
+  /**
+   * Each size on its line, 25 on 32, 20 on 28, 16 on 24 and 14 on 20, a
+   * 4 px grid at the Standard text size (ADR-091). Written as a share of
+   * the size, so the line grows with the person's text size (ADR-075).
+   */
   typography: {
     fontFamily: FONT_STACK,
     fontWeightMedium: 600,
-    h5: { fontSize: rem(TYPE.title), fontWeight: 700, lineHeight: 1.3 },
-    h6: { fontSize: rem(TYPE.section), fontWeight: 700, lineHeight: 1.4 },
+    h5: {
+      fontSize: rem(TYPE.title),
+      fontWeight: 700,
+      lineHeight: 32 / TYPE.title,
+    },
+    h6: {
+      fontSize: rem(TYPE.section),
+      fontWeight: 700,
+      lineHeight: 28 / TYPE.section,
+    },
     subtitle1: { fontSize: rem(TYPE.body), fontWeight: 600 },
-    body1: { fontSize: rem(TYPE.body), lineHeight: 1.45 },
-    body2: { fontSize: rem(TYPE.small), lineHeight: 1.45 },
+    body1: { fontSize: rem(TYPE.body), lineHeight: 24 / TYPE.body },
+    body2: { fontSize: rem(TYPE.small), lineHeight: 20 / TYPE.small },
     caption: { fontSize: rem(TYPE.caption), lineHeight: 1.4 },
     // Not capitals: a label in capitals is harder to read, and Chinese
     // has none to give it.

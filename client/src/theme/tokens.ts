@@ -114,18 +114,19 @@ export const MARK_SHAPE = {
 } as const;
 
 /**
- * Controls, then panels, then dialogs. Chips are round, but for a made
- * role's, square enough beside a round one to be told from it by its
- * shape (ADR-080), whatever the others become.
+ * Controls, then panels and tiles, then dialogs, grown with the type scale
+ * (ADR-091). Chips are round, but for a made role's, square enough beside
+ * a round one to be told from it by its shape (ADR-080), whatever the
+ * others become.
  *
  * The emails keep a copy of control and panel, the button's corners and
  * the note's, in server/src/shared/mail/mail-layout.ts: a change to either
  * is made there too.
  */
 export const RADIUS = {
-  control: 6,
-  panel: 8,
-  dialog: 10,
+  control: 10,
+  panel: 12,
+  dialog: 16,
   squareChip: 6,
 } as const;
 
@@ -279,13 +280,18 @@ export const DARK: Scheme = {
 
 /**
  * Five sizes and no others, in px: page title, section, body, small,
- * caption. The theme gives them to h5, h6, body1, body2 and caption.
+ * caption. The theme gives them to h5, h6, body1, body2 and caption, each
+ * on a line of its own (theme/index.ts).
+ *
+ * A step of 1.25 from the body's 16 px, the text to decide by (ADR-091),
+ * so a section's heading is told from its text by size, not weight alone.
+ * The small size is for detail; the caption, off the scale, for footnotes.
  */
 export const TYPE = {
   title: 25,
-  section: 17,
-  body: 14.5,
-  small: 13,
+  section: 20,
+  body: 16,
+  small: 14,
   caption: 12.5,
 } as const;
 

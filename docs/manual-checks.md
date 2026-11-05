@@ -812,6 +812,17 @@ Paper is checked first because it must not change at all.
   Skip the team step; Dismiss the card (focus moves to the greeting at the
   top of Home) and bring it back with Show Getting started. Sign in as a viewer: no Skip or Dismiss, the team step with no
   button, and only the cards that role may see.
+- **MC-1560** *(ADR-091)* The type scale and the corners. On Inventory,
+  SO-DEMO-1 and INV-000001, in light and in dark, at 1440 px and on a
+  phone: buttons, fields, menus and the text under a heading read at 16
+  px, a table's rows and heads at 14; a section's heading, 20 px, stands
+  above its text by its size, not only its weight, and the page's title
+  is 25 px. Panels have 12 px corners, buttons and fields 10 and a dialog
+  (Receive stock) 16. On Members a made role's chip stays square beside a
+  built-in one's pill (MC-3312). The confirmation email's button in
+  Mailpit has the buttons' corners, and the invitation's note the panels'.
+  At Larger text (account menu → Text size) the 16 px text is 20, and
+  nothing scrolls sideways (MC-2803).
 
 ## 16. Files (ADR-059)
 
@@ -4680,3 +4691,5 @@ first.
   rewritten.
 - 2026-11-05: ADR-091, What we do on the organization's Profile, its
   change logged without its words: MC-1704 added.
+- 2026-11-05: ADR-091, the type scale of 16 px text and the corners grown
+  to 10, 12 and 16 px on every screen: MC-1560 added.
