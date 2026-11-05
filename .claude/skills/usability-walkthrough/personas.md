@@ -166,7 +166,9 @@ behind it for the fourth.
   find where a customer's order is; raise an order from the phone.
 - **Gives up when:** a screen stays blank while it loads, or what was
   typed is lost when the phone locks or the page reloads.
-- **Set up:** a phone, 390 × 844, the network slowed through
+- **Set up:** the account is the seed's Sales member, whose email
+  `seed:demo` prints, in the demo Owner's organization, since a sales rep
+  signs in as Sales. A phone, 390 × 844, the network slowed through
   Playwright's CDP session to about 150 ms of round trip and 1.6 Mbit/s
   down, as Lighthouse's mobile run assumes, and one reload half way
   through a task.
