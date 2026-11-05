@@ -14,29 +14,20 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { HomeResponse, HomeRow } from '../api/types.gen';
+import type { HomeResponse } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
-import { ReferencesWhole } from '../components/reference';
-import { StatusChip } from '../components/status-chip';
 import { UndoSnackbar } from '../components/undo-snackbar';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { useCoverUnverifiedBanner } from '../layout/use-cover-unverified-banner';
 import { api, isRevisionRefusal } from '../lib/api';
-import { daysUntil } from '../lib/expiry';
-import { displayQuantity, formatDay } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
-import {
-  differsFromBrowser,
-  organizationTimeZone,
-  organizationToday,
-} from '../lib/time-zone';
+import { differsFromBrowser, organizationTimeZone } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useFailureWords } from '../lib/use-failure-words';
 import { rem } from '../theme/rem';
-import { STATUS_TONES } from '../theme/status';
 import { TYPE } from '../theme/tokens';
 import { evenRowsSx } from './even-rows';
 import { GettingStarted } from './getting-started';
@@ -50,7 +41,8 @@ import { WelcomeCard } from './welcome-card';
  * Home (ADR-058): what needs attention, first. A greeting by the reader's
  * clock, one sentence saying how much needs doing, a row of counts (tinted
  * only when something is late or near expiry), the quick actions, then a
- * card per kind of work the reader's role sees. A new organization gets
+ * card per kind of work the reader's role sees, its count and See all, no
+ * rows (ADR-091, until its tiles replace them). A new organization gets
  * Getting started instead of a page of zeros. A newcomer's own welcome
  * leads it for their first two weeks (ADR-079), with Getting started, while
  * it shows, straight after it and before the counts and quick actions.
@@ -86,9 +78,6 @@ function OrganizationHome() {
   // A dismissed card takes its Dismiss with it: focus goes to the page's
   // heading, where the page begins, rather than to nowhere.
   const heading = useRef<HTMLHeadingElement>(null);
-  // The organization's today (ADR-072), so "overdue" is the same for
-  // everyone in it, wherever they read it from.
-  const today = organizationToday();
   const zone = organizationTimeZone();
 
   // The server counts the cards from the same day itself.
@@ -420,7 +409,7 @@ function OrganizationHome() {
               }}
             >
               {cards.map((card) => (
-                <CardPanel key={card.kind} card={card} today={today} />
+                <CardPanel key={card.kind} card={card} />
               ))}
             </Box>
           )}
@@ -518,8 +507,11 @@ function CountTile({ card }: { card: KnownCard }) {
   );
 }
 
-/** One card: its title, "See all", and its five most urgent rows. */
-function CardPanel({ card, today }: { card: KnownCard; today: string }) {
+/**
+ * One card: its title and "See all", which opens its list; with nothing in
+ * it, a line saying so. Its rows are the list's (ADR-091).
+ */
+function CardPanel({ card }: { card: KnownCard }) {
   const intl = useIntl();
   const can = useCan();
   // The organization's days (ADR-060), for "Nothing expires within".
@@ -577,31 +569,7 @@ function CardPanel({ card, today }: { card: KnownCard; today: string }) {
           </Link>
         )}
       </Stack>
-      {card.rows.length === 0 && card.anyPoint === false ? (
-        // Low stock with no point set (ADR-085): nothing is watched, so
-        // not "Nothing is low" in the positive tone, and where to set one.
-        <Typography sx={{ py: 1, borderTop: 1, borderColor: 'divider' }}>
-          {intl.formatMessage(
-            {
-              id: 'home.empty.lowStockUnset',
-              defaultMessage:
-                'No reorder point is set yet, so nothing can show as low. <link>Set one in Reorder points</link>',
-            },
-            {
-              link: (chunks) => (
-                <Link
-                  component={RouterLink}
-                  to="/inventory?tab=reorder-points"
-                  state={OFFER_BACK}
-                  underline="always"
-                >
-                  {chunks}
-                </Link>
-              ),
-            },
-          )}
-        </Typography>
-      ) : card.rows.length === 0 ? (
+      {card.count === 0 && (
         // The positive tone's text, which reads on a card in both modes
         // (ADR-081). In sx: Typography's color prop takes a palette name,
         // not a path such as this.
@@ -615,174 +583,7 @@ function CardPanel({ card, today }: { card: KnownCard; today: string }) {
         >
           {intl.formatMessage(meta.empty, { days: expiringWithin })}
         </Typography>
-      ) : (
-        card.rows.map((row) => (
-          <RowLine
-            key={row.id}
-            row={row}
-            path={meta.rowPath(row.id)}
-            expired={meta.late === 'expired'}
-            today={today}
-          />
-        ))
       )}
     </Paper>
-  );
-}
-
-function RowLine({
-  row,
-  path,
-  expired,
-  today,
-}: {
-  row: HomeRow;
-  path: string | null;
-  expired: boolean;
-  today: string;
-}) {
-  const intl = useIntl();
-  const days = row.due ? daysUntil(row.due, today) : null;
-
-  let chip: { tone: 'critical' | 'warning'; label: string } | null = null;
-  let note: string | null = null;
-  // Low stock (ADR-085): out, red, as overdue is; otherwise where it
-  // stands against its point. The server's figures, never added up here.
-  if (row.reorder) {
-    if (row.late) {
-      chip = {
-        tone: 'critical',
-        label: intl.formatMessage({
-          id: 'home.chip.out',
-          defaultMessage: 'out',
-        }),
-      };
-    } else {
-      note = intl.formatMessage(
-        {
-          id: 'home.chip.ofPoint',
-          defaultMessage: '{position} of {point}',
-        },
-        {
-          position: displayQuantity(row.reorder.position),
-          point: displayQuantity(row.reorder.reorderPoint),
-        },
-      );
-    }
-  } else if (days !== null && row.due) {
-    if (expired) {
-      if (days < 0) {
-        chip = {
-          tone: 'critical',
-          label: intl.formatMessage({
-            id: 'home.chip.expired',
-            defaultMessage: 'expired',
-          }),
-        };
-      } else {
-        chip = {
-          tone: days <= 30 ? 'critical' : 'warning',
-          label: intl.formatMessage(
-            {
-              id: 'home.chip.daysLeft',
-              defaultMessage:
-                '{days, plural, one {# day left} other {# days left}}',
-            },
-            { days },
-          ),
-        };
-      }
-    } else if (days < 0) {
-      chip = {
-        tone: 'critical',
-        label: intl.formatMessage(
-          {
-            id: 'home.chip.late',
-            defaultMessage:
-              '{days, plural, one {# day late} other {# days late}}',
-          },
-          { days: -days },
-        ),
-      };
-    } else {
-      note = intl.formatMessage(
-        { id: 'home.chip.due', defaultMessage: 'due {date}' },
-        { date: formatDay(row.due) },
-      );
-    }
-  }
-
-  const figure = chip ? (
-    <StatusChip tone={chip.tone} label={chip.label} />
-  ) : note ? (
-    <Typography
-      variant="body2"
-      sx={{
-        color: 'text.secondary',
-        whiteSpace: 'nowrap',
-        // Low stock's figures line up down the card.
-        ...(row.reorder && { fontVariantNumeric: 'tabular-nums' }),
-      }}
-    >
-      {note}
-    </Typography>
-  ) : null;
-
-  return (
-    <Stack
-      direction="row"
-      sx={{
-        justifyContent: 'space-between',
-        gap: 1.5,
-        py: 1,
-        borderTop: 1,
-        borderColor: 'divider',
-        alignItems: 'center',
-      }}
-    >
-      <Box sx={{ minWidth: 0 }}>
-        {path ? (
-          <Link
-            component={RouterLink}
-            to={path}
-            state={OFFER_BACK}
-            sx={{ fontWeight: 600 }}
-          >
-            {row.title}
-          </Link>
-        ) : (
-          <Typography component="span" sx={{ fontWeight: 600 }}>
-            {row.title}
-          </Typography>
-        )}
-        {/* A space rather than a margin, so the line may break between the
-            title and the detail; the detail's references, the customer's
-            SO-DEMO-1, found by their hyphens in the server's words and kept
-            whole (ADR-081). */}
-        {row.detail && (
-          <>
-            {' '}
-            <Typography component="span" sx={{ color: 'text.secondary' }}>
-              <ReferencesWhole text={row.detail} />
-            </Typography>
-          </>
-        )}
-      </Box>
-      {row.reorder?.drafted ? (
-        // What is in draft already covers it, so nobody orders it twice.
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-          {figure}
-          <StatusChip
-            tone={STATUS_TONES.order.draft}
-            label={intl.formatMessage({
-              id: 'home.chip.drafted',
-              defaultMessage: 'drafted',
-            })}
-          />
-        </Stack>
-      ) : (
-        figure
-      )}
-    </Stack>
   );
 }

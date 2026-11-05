@@ -1105,8 +1105,9 @@ describe('Reorder points (e2e)', () => {
     });
 
     // One read up to EXPORT_LIMIT (#354): read a page of 1,000 at a time,
-    // each page worked every position out again.
-    it('works every position out once, past a page of 1,000 rows', async () => {
+    // each page worked every position out again. And no drafts, which the
+    // CSV never shows (#352).
+    it('works every position out once, past a page of 1,000 rows, and reads no drafts', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const org = sql`${alpha.organizationId}::uuid`;
       await db.execute(sql`
@@ -1138,6 +1139,11 @@ describe('Reorder points (e2e)', () => {
           text.includes('with p as materialized'),
         ),
       ).toHaveLength(1);
+      expect(
+        statements.filter(({ text }) =>
+          /po\.output_variant_id = any\(/.test(text),
+        ),
+      ).toHaveLength(0);
     });
   });
 });

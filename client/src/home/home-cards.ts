@@ -15,17 +15,15 @@ import type { HomeKind } from '../lib/api-names';
 
 /**
  * What each Home card is (ADR-058): its name, icon, the list its "See all"
- * opens (filtered as the server counted it), where a row opens, and what
- * it says when there is nothing to do.
+ * opens (filtered as the server counted it), and what it says when there
+ * is nothing to do.
  */
 interface CardMeta {
   title: MessageDescriptor;
   empty: MessageDescriptor;
   icon: SvgIconComponent;
-  /** "See all": the list, filtered to exactly the card's rows. */
+  /** "See all": the list, filtered to exactly what the card counted. */
   list: string;
-  /** A row's page, or null when its list is where it is dealt with. */
-  rowPath: (id: string) => string | null;
   /**
    * What "late" means: overdue (orders, runs), expired (stock, licences),
    * or out (low stock: nothing usable and nothing coming, ADR-085).
@@ -93,7 +91,6 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.toShip,
     icon: LocalShippingOutlined,
     list: '/orders?direction=sale&status=confirmed&outstanding=1',
-    rowPath: (id) => `/orders/${id}`,
     late: 'overdue',
   },
   toReceive: {
@@ -101,7 +98,6 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.toReceive,
     icon: MoveToInboxOutlined,
     list: '/orders?direction=purchase&status=confirmed&outstanding=1',
-    rowPath: (id) => `/orders/${id}`,
     late: 'overdue',
   },
   expiring: {
@@ -109,15 +105,15 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.expiring,
     icon: HourglassBottomOutlined,
     list: '/inventory?expiring=1',
-    rowPath: (id) => `/lots/${id}`,
     late: 'expired',
   },
   costsWaiting: {
     title: TITLES.costsWaiting,
     empty: EMPTY.costsWaiting,
     icon: PaidOutlined,
-    list: '/inventory?needsCost=1',
-    rowPath: () => null,
+    // Stock value's Waiting for a cost, the rows the server counts, where
+    // a cost is set (ADR-091).
+    list: '/costs',
     late: 'overdue',
   },
   invoicesToIssue: {
@@ -125,7 +121,6 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.invoicesToIssue,
     icon: DescriptionOutlined,
     list: '/invoices?status=draft',
-    rowPath: (id) => `/invoices/${id}`,
     late: 'overdue',
   },
   returnsOpen: {
@@ -133,7 +128,6 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.returnsOpen,
     icon: AssignmentReturnOutlined,
     list: '/return-authorizations?status=open',
-    rowPath: (id) => `/return-authorizations/${id}`,
     late: 'overdue',
   },
   production: {
@@ -141,7 +135,6 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.production,
     icon: PrecisionManufacturingOutlined,
     list: '/production?status=released',
-    rowPath: (id) => `/production/${id}`,
     late: 'overdue',
   },
   licences: {
@@ -149,7 +142,6 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.licences,
     icon: VerifiedOutlined,
     list: '/licences',
-    rowPath: () => '/licences',
     late: 'expired',
   },
   // After To receive on the page, as the server orders it (ADR-085).
@@ -158,8 +150,6 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.lowStock,
     icon: Inventory2Outlined,
     list: '/inventory?tab=reorder-points&status=low',
-    // Reorder points is where a low item is dealt with, ordered or planned.
-    rowPath: () => null,
     late: 'out',
   },
 };

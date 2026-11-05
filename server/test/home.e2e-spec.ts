@@ -33,30 +33,18 @@ interface HomeResponse {
     dismissed: boolean;
     complete: boolean;
   };
+  welcome: unknown;
   cards: {
     kind: string;
     count: number;
     late: number;
-    rows: {
-      id: string;
-      title: string;
-      detail: string | null;
-      due: string | null;
-      late: boolean;
-      reorder: {
-        position: string;
-        reorderPoint: string;
-        drafted: boolean;
-      } | null;
-    }[];
-    anyPoint: boolean | null;
   }[];
 }
 
 /**
- * Home (ADR-058, step 2): a card per kind the member may see, each with its
- * count, how many are late, and its five most urgent rows, counted as its
- * list filters them.
+ * Home (ADR-058; ADR-091): a tile per kind the member may see, each with
+ * its count and how many are late, counted as its list filters them, and
+ * no rows; the reads every Home makes in one transaction.
  */
 describe('Home (e2e)', () => {
   let app: INestApplication;
@@ -108,12 +96,14 @@ describe('Home (e2e)', () => {
       'production',
       'licences',
     ]);
-    expect(
-      cards.every((entry) => entry.count === 0 && entry.rows.length === 0),
-    ).toBe(true);
+    expect(cards.every((entry) => entry.count === 0 && entry.late === 0)).toBe(
+      true,
+    );
+    // Counts, and no rows (ADR-091).
+    expect(Object.keys(cards[0]).sort()).toEqual(['count', 'kind', 'late']);
   });
 
-  it('counts confirmed purchases to receive as their list does, overdue first', async () => {
+  it('counts confirmed purchases to receive as their list does, the overdue late', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const partner = await createPartner(alpha.agent, { name: 'Supplier' });
     const variant = await createVariant(alpha.agent, {
@@ -145,18 +135,11 @@ describe('Home (e2e)', () => {
 
     const toReceive = card(await home(alpha), 'toReceive');
     expect(toReceive).toMatchObject({ count: 2, late: 1 });
-    // Titled by our number (ADR-071), their reference beside the partner.
-    expect(
-      toReceive?.rows.map((row) => [row.title, row.detail, row.late]),
-    ).toEqual([
-      ['PO-000001', expect.stringContaining('PO-LATE'), true],
-      ['PO-000002', expect.stringContaining('PO-SOON'), false],
-    ]);
 
-    // "See all 2" opens two: the list, filtered as the card's link sets it.
+    // The tile's 2 opens two: the list, filtered as the tile opens it.
     const list = body<{ entries: unknown[] }>(
       await alpha.agent
-        .get('/v1/orders?status=confirmed&direction=purchase')
+        .get('/v1/orders?status=confirmed&direction=purchase&outstanding=true')
         .expect(200),
     ).entries;
     expect(list).toHaveLength(2);
@@ -270,12 +253,9 @@ describe('Home (e2e)', () => {
       ]);
 
       const kind = direction === 'sale' ? 'toShip' : 'toReceive';
-      const shown = card(await home(alpha), kind);
-      expect(shown?.count).toBe(1);
-      expect(shown?.rows).toHaveLength(shown?.count ?? -1);
-      expect(shown?.rows.map((row) => row.id)).toEqual([part]);
+      expect(card(await home(alpha), kind)?.count).toBe(1);
 
-      // The page the card opens, with its link's filter, lists the same.
+      // The list the tile opens, with its filter, lists the one.
       const list = body<{ entries: { id: string }[] }>(
         await alpha.agent
           .get(
@@ -314,13 +294,17 @@ describe('Home (e2e)', () => {
         .expect(201);
     }
 
-    // Today: one lot within 90 days, none expired.
-    const expiring = card(await home(alpha), 'expiring');
-    expect(expiring).toMatchObject({ count: 1, late: 0 });
-    expect(expiring?.rows[0]).toMatchObject({
-      title: 'LOT-SOON',
-      due: day(13),
+    // Today: one lot within 90 days, none expired, as the list shows.
+    expect(card(await home(alpha), 'expiring')).toMatchObject({
+      count: 1,
+      late: 0,
     });
+    const [soon] = body<{
+      entries: { lotId: string; lotCode: string }[];
+    }>(
+      await alpha.agent.get('/v1/stock?expiringWithin=90').expect(200),
+    ).entries;
+    expect(soon.lotCode).toBe('LOT-SOON');
 
     // A screen that still sends a day is not believed: the server counts
     // from the organization's today itself (ADR-072).
@@ -342,7 +326,7 @@ describe('Home (e2e)', () => {
 
     // Its last day yesterday: LOT-SOON has expired, and counts as late.
     await alpha.agent
-      .patch(`/v1/stock/lots/${expiring?.rows[0].id}`)
+      .patch(`/v1/stock/lots/${soon.lotId}`)
       .send({ expiresAt: day(-1) })
       .expect(204);
     expect(card(await home(alpha), 'expiring')).toMatchObject({
@@ -352,9 +336,9 @@ describe('Home (e2e)', () => {
   });
 
   /**
-   * Low stock (ADR-085): the items below their reorder point, counted and
-   * read as the reorder points list on Low has them, the out among them
-   * late; each row with its figures, its name in the reader's language.
+   * Low stock (ADR-085): the items below their reorder point, counted as
+   * the reorder points list on Low has them, the out among them late; its
+   * drafts not read (#352).
    */
   it('counts the items below their reorder point as the list on Low does, the out late', async () => {
     const alpha = await registerOrganization(app, 'alpha');
@@ -382,142 +366,55 @@ describe('Home (e2e)', () => {
     await order(alpha.agent, 'purchase', supplier, ids.get('E-HALF')!, '50', {
       draft: true,
     });
-    // An item with its names in Chinese, for a reader in 中文.
-    const { product } = body<{
-      product: { id: string; variants: { id: string }[] };
-    }>(
-      await alpha.agent
-        .post('/v1/products')
-        .send({
-          type: 'good',
-          name: 'Focus',
-          variant: { sku: 'FOCUS-60CT', name: '60ct' },
-        })
-        .expect(201),
-    );
-    await alpha.agent
-      .put(`/v1/products/${product.id}/translations`)
-      .send({ translations: [{ locale: 'zh-Hans', name: '专注胶囊' }] })
-      .expect(204);
-    const focus = product.variants[0].id;
-    await alpha.agent
-      .put(`/v1/products/${product.id}/variants/${focus}/translations`)
-      .send({ translations: [{ locale: 'zh-Hans', name: '60粒' }] })
-      .expect(204);
-
-    const lowStock = card(await home(alpha), 'lowStock');
-
-    // The furthest below its point as a share of it first; five of six.
-    expect(lowStock).toMatchObject({ count: 6, late: 1 });
-    expect(
-      lowStock?.rows.map((row) => [row.title, row.detail, row.late]),
-    ).toEqual([
-      ['A-OUT', 'A-OUT', true],
-      ['B-TENTH', 'B-TENTH', false],
-      ['C-FIFTH', 'C-FIFTH', false],
-      ['D-THIRD', 'D-THIRD', false],
-      ['E-HALF', 'E-HALF', false],
-    ]);
-    expect(lowStock?.rows[0]).toMatchObject({
-      id: ids.get('A-OUT'),
-      due: null,
-      reorder: {
-        position: '0.0000',
-        reorderPoint: '10.0000',
-        drafted: false,
-      },
-    });
-    expect(lowStock?.rows[4].reorder).toEqual({
-      position: '50.0000',
-      reorderPoint: '100.0000',
-      drafted: true,
-    });
-    // Every other card's rows carry no figures: here Costs waiting's, the
-    // receipts above having no cost.
-    const anyOther = (await home(alpha)).flatMap((entry) =>
-      entry.kind === 'lowStock' ? [] : entry.rows,
-    );
-    expect(anyOther.length).toBeGreaterThan(0);
-    expect(anyOther.every((row) => row.reorder === null)).toBe(true);
-
-    // "See all 6" opens six: the list on Low, the same five first.
-    const list = body<{ entries: { variantId: string }[] }>(
-      await alpha.agent.get('/v1/stock/reorder-points?status=low').expect(200),
-    ).entries;
-    expect(list).toHaveLength(6);
-    expect(list.slice(0, 5).map((row) => row.variantId)).toEqual(
-      lowStock?.rows.map((row) => row.id),
-    );
-    expect(
-      body(
-        await alpha.agent.get('/v1/stock/reorder-points/counts').expect(200),
-      ),
-    ).toMatchObject({ low: 6, out: 1 });
-
-    // Named in the reader's language (ADR-056): FOCUS-60CT, given a point
-    // with nothing on hand, is out, second only to A-OUT by its SKU.
-    await point(alpha.agent, focus, '5');
-    const read = card(
-      body<HomeResponse>(
-        await alpha.agent
-          .get('/v1/home')
-          .set('Accept-Language', 'zh-Hans')
-          .expect(200),
-      ).cards,
-      'lowStock',
-    );
-    expect(read).toMatchObject({ count: 7, late: 2 });
-    expect(read?.rows[1]).toMatchObject({
-      title: 'FOCUS-60CT',
-      detail: '专注胶囊 (60粒)',
-      late: true,
-    });
-  });
-
-  // Every point's position is worked out once a Home request (ADR-085):
-  // the card's counts come with its rows, from one read of the list.
-  it('works out the positions once a request', async () => {
-    const alpha = await registerOrganization(app, 'alpha');
-    const shelf = await site(alpha.agent, 'SHELF');
-    await point(alpha.agent, await item(alpha.agent, 'A-OUT'), '10');
-    const half = await item(alpha.agent, 'B-HALF');
-    await receive(alpha.agent, half, shelf, '50');
-    await point(alpha.agent, half, '100');
 
     const { result: cards, statements } = await captureStatements(() =>
       home(alpha),
     );
 
-    const lowStock = card(cards, 'lowStock');
-    expect(lowStock).toMatchObject({ count: 2, late: 1 });
-    expect(lowStock?.rows.map((row) => row.title)).toEqual(['A-OUT', 'B-HALF']);
+    expect(card(cards, 'lowStock')).toMatchObject({ count: 6, late: 1 });
+    // Every point's position worked out once, and no read of the drafts,
+    // which Home never shows.
     expect(
       statements.filter(({ text }) => /from reorder_points rp\b/.test(text)),
     ).toHaveLength(1);
+    expect(
+      statements.filter(({ text }) =>
+        /po\.output_variant_id = any\(/.test(text),
+      ),
+    ).toHaveLength(0);
+
+    // The tile's 6 opens six: the list on Low, and its counts the same.
+    const list = body<{ entries: unknown[] }>(
+      await alpha.agent.get('/v1/stock/reorder-points?status=low').expect(200),
+    ).entries;
+    expect(list).toHaveLength(6);
+    expect(
+      body(
+        await alpha.agent.get('/v1/stock/reorder-points/counts').expect(200),
+      ),
+    ).toMatchObject({ low: 6, out: 1 });
   });
 
-  // Nothing low is not nothing watched (ADR-085): Low stock says whether
-  // any item has a point; every other card, null.
-  it('says whether any item has a reorder point', async () => {
+  /**
+   * Waiting for a cost (ADR-091): Stock value's list, a row for each
+   * receipt still waiting, not Inventory's stock rows, which hold two
+   * receipts of one item at one place as one.
+   */
+  it('counts the receipts waiting for a cost as Stock value lists them', async () => {
     const alpha = await registerOrganization(app, 'alpha');
-    const before = await home(alpha);
-    expect(card(before, 'lowStock')).toMatchObject({
-      count: 0,
-      rows: [],
-      anyPoint: false,
-    });
-    expect(card(before, 'toShip')?.anyPoint).toBeNull();
-
     const shelf = await site(alpha.agent, 'SHELF');
-    const plenty = await item(alpha.agent, 'PLENTY');
-    await receive(alpha.agent, plenty, shelf, '50');
-    await point(alpha.agent, plenty, '10');
+    const goods = await item(alpha.agent, 'FOCUS-60');
+    await receive(alpha.agent, goods, shelf, '5');
+    await receive(alpha.agent, goods, shelf, '7');
 
-    expect(card(await home(alpha), 'lowStock')).toMatchObject({
-      count: 0,
-      rows: [],
-      anyPoint: true,
+    expect(card(await home(alpha), 'costsWaiting')).toMatchObject({
+      count: 2,
+      late: 0,
     });
+    const list = body<{ entries: unknown[] }>(
+      await alpha.agent.get('/v1/costs/needs-cost').expect(200),
+    ).entries;
+    expect(list).toHaveLength(2);
   });
 
   // To ship and To receive are counted from one read of the orders, by
@@ -551,6 +448,71 @@ describe('Home (e2e)', () => {
     );
     expect(counts).toHaveLength(1);
     expect(counts[0].text.match(/from "orders"/g)).toHaveLength(1);
+  });
+
+  /**
+   * The reads every Home makes, in one transaction (ADR-091): the
+   * organization's days and zone, the counts in one statement and Low
+   * stock's beside it, Getting started, and the reader's membership with
+   * its roles. The welcome's own reads, while it shows, come after its
+   * commit.
+   */
+  it("reads Home's figures in one transaction of six statements", async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+
+    /** Home's transaction: its statements, and what was sent after it. */
+    async function transaction() {
+      const { statements } = await captureStatements(() => home(alpha));
+      const first = statements.findIndex(({ text }) =>
+        /"expiry_warning_days", "time_zone" from "organizations"/.test(text),
+      );
+      expect(first).toBeGreaterThan(0);
+      const { client } = statements[first];
+      expect(statements[first - 1]).toMatchObject({ client });
+      expect(statements[first - 1].text).toMatch(/^\s*begin\b/i);
+
+      const inside: string[] = [];
+      let index = first;
+      for (; index < statements.length; index++) {
+        const { text, client: on } = statements[index];
+        if (on !== client) continue;
+        if (/^\s*commit\b/i.test(text)) break;
+        inside.push(text);
+      }
+      // Nothing else of Home's on another connection meanwhile.
+      const beside = statements
+        .slice(first, index)
+        .filter(({ client: on }) => on !== client);
+      return { inside, beside, after: statements.slice(index + 1) };
+    }
+
+    // The founder's welcome shows: its reads come after the commit.
+    const welcomed = await transaction();
+    expect(welcomed.inside).toHaveLength(6);
+    expect(welcomed.beside).toEqual([]);
+    expect(welcomed.after.length).toBeGreaterThan(0);
+
+    // Dismissed, Home is the transaction and nothing after it.
+    await alpha.agent.post('/v1/home/welcome/dismiss').expect(204);
+    const { inside, beside, after } = await transaction();
+    // The organization, the counts, Low stock's, Getting started, then the
+    // membership and its roles.
+    expect(inside.map((text) => text.replace(/\s+/g, ' ').trim())).toEqual([
+      expect.stringMatching(
+        /^select "expiry_warning_days", "time_zone" from "organizations"/,
+      ),
+      expect.stringMatching(
+        /^\( select case "orders"\."direction" .* union all /,
+      ),
+      expect.stringMatching(/^with p as materialized .* 'lowStock'::text/),
+      expect.stringMatching(/^select \(o\.tax_registration_number/),
+      expect.stringMatching(
+        /^select "memberships"\."id", .* from "memberships"/,
+      ),
+      expect.stringMatching(/^select "membership_roles"\."membership_id"/),
+    ]);
+    expect(beside).toEqual([]);
+    expect(after).toEqual([]);
   });
 
   it('shows only the cards the member may view', async () => {

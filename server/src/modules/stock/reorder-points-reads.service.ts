@@ -72,10 +72,6 @@ type PositionRow = {
   suggestion: string;
   suggested_multiples: string | null;
   drafted: boolean;
-  /** With counted, every row the statement's conditions match. */
-  matched?: number;
-  /** With counted, the out among them. */
-  matched_out?: number;
 };
 
 type DraftRow = {
@@ -140,24 +136,26 @@ function whereOf(conditions: SQL[]): SQL {
 
 /**
  * The list's Low filter, the out among the low, and its Out (ADR-085),
- * on the positions as `p`: the list, its counts and Home's card count by
- * them alike, so See all opens what the card counted.
+ * on the positions as `p`: the list, its counts and Home's tile count by
+ * them alike, so the tile opens what it counted.
  */
 const IS_LOW = sql`p.status in ('low', 'out')`;
 const IS_OUT = sql`p.status = 'out'`;
 
-/** Every row a page's filter and search match, and the out among them. */
-interface Matched {
-  all: number;
-  out: number;
-}
-
-/** Home's Low stock (ADR-085): the list's first rows on Low, and its counts. */
-export interface FirstLow {
-  entries: ReorderPointRow[];
-  /** Every row Low shows, the out among them. */
-  low: number;
-  out: number;
+/**
+ * Home's Low stock (ADR-085; ADR-091), read in Home's transaction: the
+ * rows the list on Low shows, the out among them late, counted as counts()
+ * counts them, over the same positions, and no row read.
+ */
+export function lowStockTotals(organizationId: string, today: string): SQL {
+  return sql`
+    with p as materialized (${positionsOf(organizationId, today)})
+    select
+      'lowStock'::text as kind,
+      (count(*) filter (where ${IS_LOW}))::int as count,
+      (count(*) filter (where ${IS_OUT}))::int as late
+    from p
+  `;
 }
 
 /** Quantities as the API sends them: four places, as the columns hold them. */
@@ -168,7 +166,7 @@ function quantity(column: SQL): SQL {
 /**
  * Reading reorder points (ADR-085): the list of every item with a point
  * and where it stands, its counts, and an opened row's lines. Each reads
- * positionsOf, so the list, its counts and Home's card agree; nothing
+ * positionsOf, so the list, its counts and Home's tile agree; nothing
  * here writes.
  */
 @Injectable()
@@ -192,8 +190,7 @@ export class ReorderPointsReadsService {
     query: ListReorderPointsDto,
     locale: Locale | null,
   ): Promise<ReorderPointPage> {
-    const { entries, nextCursor } = await this.page(query, locale, false);
-    return { entries, nextCursor };
+    return this.page(query, locale, true);
   }
 
   /**
@@ -212,43 +209,15 @@ export class ReorderPointsReadsService {
   }
 
   /**
-   * Home's card (ADR-085; ADR-058, as amended): the list's first rows on
-   * Low, and beside them how many rows Low shows and the out among them,
-   * counted over the same positions in the same statement. So each
-   * point's position is worked out once a Home request, and See all opens
-   * what the card counted.
-   */
-  async firstLow(limit: number, locale: Locale): Promise<FirstLow> {
-    const { entries, matched } = await this.page(
-      { status: 'low', limit },
-      locale,
-      true,
-    );
-    return { entries, low: matched?.all ?? 0, out: matched?.out ?? 0 };
-  }
-
-  /**
-   * Whether the organization has given any item a reorder point, so Home
-   * tells nothing low apart from nothing watched (ADR-085).
-   */
-  async anySet(): Promise<boolean> {
-    const [point] = await this.tenantDb.select(reorderPoints, undefined, {
-      limit: 1,
-    });
-    return point !== undefined;
-  }
-
-  /**
-   * A page of the list, as list() reads it; with `counted`, also every
-   * row its filter and search match and the out among them, by window
-   * counts over the statement's own rows. Never counted with a cursor,
-   * which would count only the rows after it.
+   * A page of the list, as list() reads it; with `drafts`, each row's
+   * drafts too, which the list shows and the CSV does not, so the export
+   * reads none and its rows say none (#352).
    */
   private page(
     query: ListReorderPointsDto,
     locale: Locale | null,
-    counted: boolean,
-  ): Promise<ReorderPointPage & { matched: Matched | null }> {
+    drafts: boolean,
+  ): Promise<ReorderPointPage> {
     const limit = query.limit ?? PAGE_SIZE;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -317,13 +286,6 @@ export class ReorderPointsReadsService {
           ${quantity(sql`p.suggestion`)} as suggestion,
           p.suggested_multiples::text as suggested_multiples,
           p.drafted
-          ${
-            counted
-              ? sql`,
-                (count(*) over ())::int as matched,
-                (count(*) filter (where ${IS_OUT}) over ())::int as matched_out`
-              : sql``
-          }
         from ${namedPositions(organizationId)}
         ${whereOf(conditions)}
         order by p.low_first, p.share, ${productVariants.sku}, p.id
@@ -331,11 +293,13 @@ export class ReorderPointsReadsService {
       `);
 
       const page = pageOf(rows, limit);
-      const drafts = await draftsOf(
-        tx,
-        organizationId,
-        page.entries.map((row) => row.variant_id),
-      );
+      const drafted = drafts
+        ? await draftsOf(
+            tx,
+            organizationId,
+            page.entries.map((row) => row.variant_id),
+          )
+        : new Map<string, ReorderPointDraft[]>();
 
       return {
         entries: page.entries.map((row) => ({
@@ -359,13 +323,9 @@ export class ReorderPointsReadsService {
           suggestion: row.suggestion,
           suggestedMultiples: row.suggested_multiples,
           drafted: row.drafted,
-          drafts: drafts.get(row.variant_id) ?? [],
+          drafts: drafted.get(row.variant_id) ?? [],
         })),
         nextCursor: page.nextCursor,
-        // On every row alike; none when nothing matches.
-        matched: counted
-          ? { all: rows[0]?.matched ?? 0, out: rows[0]?.matched_out ?? 0 }
-          : null,
       };
     });
   }

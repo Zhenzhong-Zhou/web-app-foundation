@@ -6,7 +6,7 @@ import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { HomeCard, HomeResponse } from '../api/types.gen';
+import type { HomeResponse } from '../api/types.gen';
 import { PageHeader } from '../components/page-header';
 import type { HomeKind } from '../lib/api-names';
 import { browserTimeZone, setOrganizationTimeZone } from '../lib/time-zone';
@@ -39,65 +39,19 @@ const routed = (element: ReactElement) => (
   <MemoryRouter>{element}</MemoryRouter>
 );
 
-/**
- * A card as a test writes it: whether any reorder point is set, Low
- * stock's alone (ADR-085), true there unless the test says otherwise.
- */
-type TestCard = Omit<HomeCard, 'anyPoint'> &
-  Partial<Pick<HomeCard, 'anyPoint'>>;
-
 /** Home for a member past their first two weeks: no welcome (ADR-079). */
-function serve(
-  home: Omit<HomeResponse, 'welcome' | 'cards'> & { cards: TestCard[] },
-) {
-  const response: HomeResponse = {
-    ...home,
-    welcome: null,
-    cards: home.cards.map((card) => ({
-      anyPoint: card.kind === 'lowStock' ? true : null,
-      ...card,
-    })),
-  };
+function serve(home: Omit<HomeResponse, 'welcome'>) {
+  const response: HomeResponse = { ...home, welcome: null };
   server.use(http.get('/api/v1/home', () => HttpResponse.json(response)));
 }
 
-const day = (offset: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() + offset);
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const dayOfMonth = String(date.getDate()).padStart(2, '0');
-  return `${date.getFullYear()}-${month}-${dayOfMonth}`;
-};
-
 describe('HomePage', () => {
-  it('greets, sums up, and shows each card with its rows and See all', async () => {
+  it('greets, sums up, and shows each card with its See all, and no rows', async () => {
     serve({
       gettingStarted: COMPLETE,
       cards: [
-        {
-          kind: 'toShip',
-          count: 3,
-          late: 1,
-          rows: [
-            {
-              id: 'o1',
-              title: 'SO-1',
-              detail: 'Northside',
-              due: day(-2),
-              late: true,
-              reorder: null,
-            },
-            {
-              id: 'o2',
-              title: 'SO-2',
-              detail: '明德药房',
-              due: day(3),
-              late: false,
-              reorder: null,
-            },
-          ],
-        },
-        { kind: 'costsWaiting', count: 0, late: 0, rows: [] },
+        { kind: 'toShip', count: 3, late: 1 },
+        { kind: 'costsWaiting', count: 0, late: 0 },
       ],
     });
     renderWithAuth(routed(<HomePage />), {
@@ -119,10 +73,8 @@ describe('HomePage', () => {
         .getByRole('link', { name: 'See all 3' })
         .getAttribute('href'),
     ).toBe('/orders?direction=sale&status=confirmed&outstanding=1');
-    expect(within(ship).getByText('2 days late')).toBeTruthy();
-    expect(
-      within(ship).getByRole('link', { name: 'SO-1' }).getAttribute('href'),
-    ).toBe('/orders/o1');
+    // Its rows are the list's (ADR-091): See all is the card's one link.
+    expect(within(ship).getAllByRole('link')).toHaveLength(1);
 
     // A card with nothing to do says so, quietly, rather than disappearing.
     const costs = screen.getByRole('region', { name: 'Costs waiting' });
@@ -131,147 +83,47 @@ describe('HomePage', () => {
     ).toBeTruthy();
   });
 
-  // The ninth card (ADR-085): the list's first five on Low, each against
-  // its point, out in red, and drafted where a draft already covers it.
-  it('shows Low stock, red with its out count, its rows against their points', async () => {
-    const reorder = (position: string, drafted = false) => ({
-      position,
-      reorderPoint: '2000.0000',
-      drafted,
-    });
+  // The ninth card (ADR-085): red with its out count, See all opening
+  // Reorder points on Low.
+  it('shows Low stock, red with its out count, opening Reorder points on Low', async () => {
     serve({
       gettingStarted: COMPLETE,
-      cards: [
-        {
-          kind: 'lowStock',
-          count: 3,
-          late: 1,
-          rows: [
-            {
-              id: 'v1',
-              title: 'VITC-100',
-              detail: 'Vitamin C (100ct)',
-              due: null,
-              late: true,
-              reorder: reorder('-12.0000'),
-            },
-            {
-              id: 'v2',
-              title: 'D3-1000-120',
-              detail: 'Vitamin D3 (120ct)',
-              due: null,
-              late: false,
-              reorder: reorder('800.0000'),
-            },
-            {
-              id: 'v3',
-              title: 'OMEGA3-90',
-              detail: 'Omega-3 (90ct)',
-              due: null,
-              late: false,
-              reorder: reorder('1500.5000', true),
-            },
-          ],
-        },
-      ],
+      cards: [{ kind: 'lowStock', count: 3, late: 1 }],
     });
-    renderWithAuth(
-      routed(
-        <ThemeProvider theme={themeFor('en')}>
-          <HomePage />
-        </ThemeProvider>,
-      ),
-      { permissions: ['stock.view'] },
-    );
+    renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
 
-    expect(
-      await screen.findByText('3 things need attention, 1 of them overdue.'),
-    ).toBeTruthy();
-    const tile = document.querySelector<HTMLElement>('a[href="#lowStock"]')!;
-    expect(tile).toHaveTextContent('Low stock31 out');
-    expect(getComputedStyle(tile).color).toBe(
-      'var(--mui-palette-tone-critical-fg)',
-    );
-
+    expect(await screen.findByText('1 out')).toBeTruthy();
     const low = screen.getByRole('region', { name: 'Low stock' });
     expect(
       within(low).getByRole('link', { name: 'See all 3' }).getAttribute('href'),
     ).toBe('/inventory?tab=reorder-points&status=low');
-    // Reorder points is where each is dealt with: the rows open nothing.
-    expect(within(low).getAllByRole('link')).toHaveLength(1);
-    expect(within(low).getByText('VITC-100')).toBeTruthy();
-    expect(within(low).getByText('Vitamin C (100ct)')).toBeTruthy();
-    expect(within(low).getByText('out')).toBeTruthy();
-    expect(within(low).getByText('800 of 2,000')).toBeTruthy();
-    expect(within(low).getByText('1,500.5 of 2,000')).toBeTruthy();
-    expect(within(low).getAllByText('drafted')).toHaveLength(1);
   });
 
-  // In 中文, the point is named, so 36 does not read as a column of its own.
-  it('names the point beside the position, in 中文', async () => {
+  // Waiting for a cost (ADR-091): Stock value's list, whose rows the
+  // server counts, and where a cost is set.
+  it('opens Stock value from Costs waiting', async () => {
     serve({
       gettingStarted: COMPLETE,
-      cards: [
-        {
-          kind: 'lowStock',
-          count: 1,
-          late: 0,
-          rows: [
-            {
-              id: 'v2',
-              title: 'D3-1000-120',
-              detail: 'Vitamin D3 (120ct)',
-              due: null,
-              late: false,
-              reorder: {
-                position: '800.0000',
-                reorderPoint: '2000.0000',
-                drafted: false,
-              },
-            },
-          ],
-        },
-      ],
+      cards: [{ kind: 'costsWaiting', count: 2, late: 0 }],
     });
-    localStorage.setItem('language', 'zh-Hans');
-    try {
-      renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
+    renderWithAuth(routed(<HomePage />), { permissions: ['costs.view'] });
 
-      expect(await screen.findByText('800（再订货点 2,000）')).toBeTruthy();
-    } finally {
-      localStorage.removeItem('language');
-    }
+    const costs = await screen.findByRole('region', { name: 'Costs waiting' });
+    expect(
+      within(costs).getByRole('link', { name: 'See all 2' }),
+    ).toHaveAttribute('href', '/costs');
   });
 
   it('says when nothing is low, with no See all', async () => {
     serve({
       gettingStarted: COMPLETE,
-      cards: [{ kind: 'lowStock', count: 0, late: 0, rows: [] }],
+      cards: [{ kind: 'lowStock', count: 0, late: 0 }],
     });
     renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
 
     const low = await screen.findByRole('region', { name: 'Low stock' });
     expect(within(low).getByText('Nothing is low.')).toBeTruthy();
     expect(within(low).queryByRole('link')).toBeNull();
-  });
-
-  // Nothing low is not nothing watched (ADR-085): with no point set, the
-  // card says so, and links to where one is set.
-  it('says when no reorder point is set yet, with the way to set one', async () => {
-    serve({
-      gettingStarted: COMPLETE,
-      cards: [
-        { kind: 'lowStock', count: 0, late: 0, rows: [], anyPoint: false },
-      ],
-    });
-    renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
-
-    const low = await screen.findByRole('region', { name: 'Low stock' });
-    expect(within(low).getByText(/No reorder point is set yet/)).toBeTruthy();
-    expect(within(low).queryByText('Nothing is low.')).toBeNull();
-    expect(
-      within(low).getByRole('link', { name: 'Set one in Reorder points' }),
-    ).toHaveAttribute('href', '/inventory?tab=reorder-points');
   });
 
   // A server deployed after the tab opened may send a kind this build has
@@ -281,26 +133,11 @@ describe('HomePage', () => {
     serve({
       gettingStarted: COMPLETE,
       cards: [
-        {
-          kind: 'toShip',
-          count: 1,
-          late: 0,
-          rows: [
-            {
-              id: 'o1',
-              title: 'SO-1',
-              detail: 'Northside',
-              due: null,
-              late: false,
-              reorder: null,
-            },
-          ],
-        },
+        { kind: 'toShip', count: 1, late: 0 },
         {
           kind: 'fromANewerServer' as string as HomeKind,
           count: 4,
           late: 2,
-          rows: [],
         },
       ],
     });
@@ -311,52 +148,13 @@ describe('HomePage', () => {
     expect(document.getElementById('fromANewerServer')).toBeNull();
   });
 
-  // The board's Northside row (ADR-081): the customer's SO-DEMO-1 broke at
-  // its hyphen at 390 px, and the detail sat a margin from the number, with
-  // nowhere for the line to break between them.
-  it('keeps a reference in a row’s detail whole, a space before the detail', async () => {
-    serve({
-      gettingStarted: COMPLETE,
-      cards: [
-        {
-          kind: 'toShip',
-          count: 1,
-          late: 0,
-          rows: [
-            {
-              id: 'o1',
-              title: 'SO-000001',
-              detail: 'Northside Pharmacy · SO-DEMO-1',
-              due: null,
-              late: false,
-              reorder: null,
-            },
-          ],
-        },
-      ],
-    });
-    renderWithAuth(routed(<HomePage />), { permissions: ['orders.view'] });
-
-    const ship = await screen.findByRole('region', { name: 'To ship' });
-    const number = within(ship).getByRole('link', { name: 'SO-000001' });
-    expect(number.parentElement?.textContent).toBe(
-      'SO-000001 Northside Pharmacy · SO-DEMO-1',
-    );
-    expect(
-      getComputedStyle(within(ship).getByText('SO-DEMO-1')).whiteSpace,
-    ).toBe('nowrap');
-    expect(within(ship).getByText(/Northside Pharmacy/)).toHaveTextContent(
-      'Northside Pharmacy · SO-DEMO-1',
-    );
-  });
-
   // The positive tone's text (ADR-081). It asked for MUI's success.dark,
   // 4.33 : 1 on a dark card, through Typography's color prop, which takes
   // a palette name rather than a path and so drew the plain text instead.
   it('draws an empty card’s line in the positive tone, at 4.5 : 1 in both modes', async () => {
     serve({
       gettingStarted: COMPLETE,
-      cards: [{ kind: 'production', count: 0, late: 0, rows: [] }],
+      cards: [{ kind: 'production', count: 0, late: 0 }],
     });
     renderWithAuth(
       routed(
@@ -387,7 +185,7 @@ describe('HomePage', () => {
   it('underlines Change the days, for whoever may change them', async () => {
     serve({
       gettingStarted: COMPLETE,
-      cards: [{ kind: 'expiring', count: 0, late: 0, rows: [] }],
+      cards: [{ kind: 'expiring', count: 0, late: 0 }],
     });
     renderWithAuth(routed(<HomePage />), {
       permissions: ['organizations.update'],
@@ -446,7 +244,7 @@ describe('HomePage', () => {
     it('from a card’s See all', async () => {
       serve({
         gettingStarted: COMPLETE,
-        cards: [{ kind: 'toShip', count: 3, late: 0, rows: [] }],
+        cards: [{ kind: 'toShip', count: 3, late: 0 }],
       });
       atHome(['orders.view']);
 
@@ -526,7 +324,7 @@ describe('HomePage', () => {
         },
         complete: false,
       },
-      cards: [{ kind: 'toShip', count: 0, late: 0, rows: [] }],
+      cards: [{ kind: 'toShip', count: 0, late: 0 }],
     });
     let skipped = false;
     server.use(

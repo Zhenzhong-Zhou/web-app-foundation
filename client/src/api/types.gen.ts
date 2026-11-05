@@ -2037,21 +2037,6 @@ export type Welcome = {
   items: Array<WelcomeItem>;
 };
 
-export type HomeRowReorder = {
-  position: string;
-  reorderPoint: string;
-  drafted: boolean;
-};
-
-export type HomeRow = {
-  id: string;
-  title: string;
-  detail: string | null;
-  due: string | null;
-  late: boolean;
-  reorder: HomeRowReorder | null;
-};
-
 export type HomeCard = {
   kind:
     | 'production'
@@ -2065,14 +2050,469 @@ export type HomeCard = {
     | 'licences';
   count: number;
   late: number;
-  rows: Array<HomeRow>;
-  anyPoint: boolean | null;
 };
 
 export type HomeResponse = {
   gettingStarted: GettingStarted;
   welcome: Welcome | null;
   cards: Array<HomeCard>;
+};
+
+export type RecentEntry = {
+  kind:
+    | 'invoice'
+    | 'order'
+    | 'lot'
+    | 'product'
+    | 'partner'
+    | 'run'
+    | 'return'
+    | 'priceList';
+  id: string;
+  title: string | null;
+  detail: string | null;
+  openedAt: string;
+};
+
+export type RecentList = {
+  recent: Array<RecentEntry>;
+};
+
+export type RecordOpenedDto = {
+  kind:
+    | 'order'
+    | 'invoice'
+    | 'lot'
+    | 'product'
+    | 'partner'
+    | 'run'
+    | 'return'
+    | 'priceList';
+  id: string;
+};
+
+export type SiteAddress = {
+  line1: string;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string;
+};
+
+export type Location = {
+  id: string;
+  type: string;
+  name: string;
+  code: string | null;
+  parentId: string | null;
+  isAvailable: boolean;
+  isActive: boolean;
+  address: SiteAddress | null;
+};
+
+export type CreateLocationDto = {
+  type: 'site' | 'zone' | 'aisle' | 'shelf' | 'bin';
+  name: string;
+  code?: string;
+  parentId?: string;
+};
+
+export type CreatedLocation = {
+  location: Location;
+};
+
+export type UpdateLocationDto = {
+  name?: string;
+  code?: string;
+  parentId?: string | null;
+  isAvailable?: boolean;
+  isActive?: boolean;
+};
+
+export type SiteAddressDto = {
+  line1: string;
+  line2?: string | null;
+  city?: string | null;
+  region?: string | null;
+  postalCode?: string | null;
+  country: string;
+};
+
+export type NumberingNext = {
+  never: number;
+  yearly: number;
+  monthly: number;
+  daily: number;
+};
+
+export type NumberingSeries = {
+  prefix: string;
+  digits: number;
+  reset: 'never' | 'yearly' | 'monthly' | 'daily';
+  next: NumberingNext;
+  last: string | null;
+};
+
+export type Numbering = {
+  invoice: NumberingSeries;
+  creditNote: NumberingSeries;
+  returnAuthorization: NumberingSeries;
+  saleOrder: NumberingSeries;
+  purchaseOrder: NumberingSeries;
+  documentsInDateOrder: boolean;
+  today: string;
+};
+
+export type NumberingEnvelope = {
+  numbering: Numbering;
+};
+
+export type NumberingSeriesDto = {
+  prefix: string;
+  digits: number;
+  reset: 'never' | 'yearly' | 'monthly' | 'daily';
+  next?: number;
+};
+
+export type UpdateNumberingDto = {
+  invoice: NumberingSeriesDto;
+  creditNote: NumberingSeriesDto;
+  returnAuthorization: NumberingSeriesDto;
+  saleOrder: NumberingSeriesDto;
+  purchaseOrder: NumberingSeriesDto;
+  documentsInDateOrder: boolean;
+};
+
+export type ValuationPool = {
+  variantId: string;
+  sku: string;
+  lotId: string | null;
+  lotCode: string | null;
+  quantity: string;
+  value: string;
+  unitCost: string;
+  provisional: boolean;
+};
+
+export type StockValuation = {
+  currency: string | null;
+  total: string;
+  provisional: boolean;
+  pools: Array<ValuationPool>;
+};
+
+export type StockValuationEnvelope = {
+  valuation: StockValuation;
+};
+
+export type LotCostEntry = {
+  id: string;
+  kind: 'issued' | 'movement' | 'run_close' | 'correction' | 'opening';
+  reason: string | null;
+  quantity: string;
+  value: string;
+  unitPrice: string | null;
+  currency: string | null;
+  exchangeRate: string | null;
+  needsCost: boolean;
+  referenceType: string | null;
+  referenceId: string | null;
+  createdAt: string;
+};
+
+export type LotCost = {
+  currency: string | null;
+  lotId: string;
+  lotCode: string;
+  sku: string;
+  quantity: string;
+  value: string;
+  unitCost: string | null;
+  provisional: boolean;
+  entries: Array<LotCostEntry>;
+};
+
+export type LotCostEnvelope = {
+  lotCost: LotCost;
+};
+
+export type RunCostConsumed = {
+  sku: string;
+  lotCode: string | null;
+  quantity: string;
+  value: string;
+};
+
+export type RunCostOutput = {
+  lotCode: string | null;
+  quantity: string;
+  value: string;
+};
+
+export type RunCost = {
+  currency: string | null;
+  runId: string;
+  reference: string | null;
+  sku: string;
+  status: 'draft' | 'cancelled' | 'released' | 'completed';
+  closed: boolean;
+  quantityProduced: string;
+  materialCost: string | null;
+  unitCost: string | null;
+  provisional: boolean;
+  consumed: Array<RunCostConsumed>;
+  outputs: Array<RunCostOutput>;
+};
+
+export type RunCostEnvelope = {
+  runCost: RunCost;
+};
+
+export type NeedsCostEntry = {
+  id: string;
+  kind: 'issued' | 'movement' | 'run_close' | 'correction' | 'opening';
+  reason: string | null;
+  sku: string;
+  variantId: string;
+  lotId: string | null;
+  lotCode: string | null;
+  quantity: string;
+  unitPrice: string | null;
+  currency: string | null;
+  referenceType: string | null;
+  referenceId: string | null;
+  createdAt: string;
+};
+
+export type NeedsCostPage = {
+  entries: Array<NeedsCostEntry>;
+  nextCursor: string | null;
+};
+
+export type SetCostDto = {
+  unitPrice: string;
+  currency: string;
+  exchangeRate?: string;
+};
+
+export type CorrectedCost = {
+  valuationId: string;
+  value: string;
+  held: string;
+  issued: string;
+};
+
+export type CorrectedCostEnvelope = {
+  cost: CorrectedCost;
+};
+
+export type ExchangeRate = {
+  id: string;
+  currency: string;
+  rateDate: string;
+  rate: string;
+};
+
+export type ExchangeRateList = {
+  rates: Array<ExchangeRate>;
+};
+
+export type SetExchangeRateDto = {
+  currency: string;
+  rateDate: string;
+  rate: string;
+};
+
+export type ExchangeRateEnvelope = {
+  rate: ExchangeRate;
+};
+
+export type PriceList = {
+  id: string;
+  name: string;
+  direction: 'sale' | 'purchase';
+  currency: string;
+  isActive: boolean;
+  itemCount: number;
+};
+
+export type PriceListList = {
+  priceLists: Array<PriceList>;
+};
+
+export type PriceListItem = {
+  variantId: string;
+  sku: string;
+  description: string;
+  unitOfMeasure: string;
+  unitPrice: string;
+  updatedAt: string;
+};
+
+export type PriceListDetail = {
+  id: string;
+  name: string;
+  direction: 'sale' | 'purchase';
+  currency: string;
+  isActive: boolean;
+  items: Array<PriceListItem>;
+};
+
+export type PriceListEnvelope = {
+  priceList: PriceListDetail;
+};
+
+export type CreatePriceListDto = {
+  name: string;
+  direction: 'sale' | 'purchase';
+  currency: string;
+};
+
+export type UpdatePriceListDto = {
+  name?: string;
+  isActive?: boolean;
+};
+
+export type SetPriceListItemDto = {
+  unitPrice: string;
+};
+
+export type PriceListItemEnvelope = {
+  item: PriceListItem;
+};
+
+export type Partner = {
+  id: string;
+  name: string;
+  code: string | null;
+  taxId: string | null;
+  salePriceListId: string | null;
+  purchasePriceListId: string | null;
+  documentLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  documentSecondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  notes: string | null;
+  isActive: boolean;
+};
+
+export type Address = {
+  id: string;
+  label: string | null;
+  line1: string;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string;
+  isBilling: boolean;
+  isShipping: boolean;
+  isDefault: boolean;
+  isActive: boolean;
+};
+
+export type Contact = {
+  id: string;
+  name: string;
+  role: string | null;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  isPrimary: boolean;
+  isActive: boolean;
+};
+
+export type PartnerDetail = {
+  id: string;
+  name: string;
+  code: string | null;
+  taxId: string | null;
+  salePriceListId: string | null;
+  purchasePriceListId: string | null;
+  documentLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  documentSecondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  notes: string | null;
+  isActive: boolean;
+  addresses: Array<Address>;
+  contacts: Array<Contact>;
+};
+
+export type CreatePartnerDto = {
+  name: string;
+  code?: string;
+  taxId?: string;
+  notes?: string;
+  documentLanguage?: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  documentSecondLanguage?: 'en' | 'fr-CA' | 'zh-Hans' | null;
+};
+
+export type PartnerEnvelope = {
+  partner: PartnerDetail;
+};
+
+export type UpdatePartnerDto = {
+  name?: string;
+  code?: string;
+  taxId?: string;
+  salePriceListId?: string | null;
+  purchasePriceListId?: string | null;
+  notes?: string;
+  isActive?: boolean;
+  documentLanguage?: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  documentSecondLanguage?: 'en' | 'fr-CA' | 'zh-Hans' | null;
+};
+
+export type CreateAddressDto = {
+  label?: string;
+  line1: string;
+  line2?: string;
+  city?: string;
+  region?: string;
+  postalCode?: string;
+  country: string;
+  isBilling?: boolean;
+  isShipping?: boolean;
+  isDefault?: boolean;
+};
+
+export type AddressEnvelope = {
+  address: Address;
+};
+
+export type UpdateAddressDto = {
+  label?: string;
+  line1?: string;
+  line2?: string;
+  city?: string;
+  region?: string;
+  postalCode?: string;
+  country?: string;
+  isBilling?: boolean;
+  isShipping?: boolean;
+  isDefault?: boolean;
+};
+
+export type CreateContactDto = {
+  name: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  isPrimary?: boolean;
+  isActive?: boolean;
+};
+
+export type ContactEnvelope = {
+  contact: Contact;
+};
+
+export type UpdateContactDto = {
+  name?: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  isPrimary?: boolean;
+  isActive?: boolean;
 };
 
 export type OrderSummary = {
@@ -2467,139 +2907,6 @@ export type OrderReturnEnvelope = {
   orderReturn: OrderReturn;
 };
 
-export type Partner = {
-  id: string;
-  name: string;
-  code: string | null;
-  taxId: string | null;
-  salePriceListId: string | null;
-  purchasePriceListId: string | null;
-  documentLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
-  documentSecondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
-  notes: string | null;
-  isActive: boolean;
-};
-
-export type Address = {
-  id: string;
-  label: string | null;
-  line1: string;
-  line2: string | null;
-  city: string | null;
-  region: string | null;
-  postalCode: string | null;
-  country: string;
-  isBilling: boolean;
-  isShipping: boolean;
-  isDefault: boolean;
-  isActive: boolean;
-};
-
-export type Contact = {
-  id: string;
-  name: string;
-  role: string | null;
-  email: string | null;
-  phone: string | null;
-  notes: string | null;
-  isPrimary: boolean;
-  isActive: boolean;
-};
-
-export type PartnerDetail = {
-  id: string;
-  name: string;
-  code: string | null;
-  taxId: string | null;
-  salePriceListId: string | null;
-  purchasePriceListId: string | null;
-  documentLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
-  documentSecondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
-  notes: string | null;
-  isActive: boolean;
-  addresses: Array<Address>;
-  contacts: Array<Contact>;
-};
-
-export type CreatePartnerDto = {
-  name: string;
-  code?: string;
-  taxId?: string;
-  notes?: string;
-  documentLanguage?: 'en' | 'fr-CA' | 'zh-Hans' | null;
-  documentSecondLanguage?: 'en' | 'fr-CA' | 'zh-Hans' | null;
-};
-
-export type PartnerEnvelope = {
-  partner: PartnerDetail;
-};
-
-export type UpdatePartnerDto = {
-  name?: string;
-  code?: string;
-  taxId?: string;
-  salePriceListId?: string | null;
-  purchasePriceListId?: string | null;
-  notes?: string;
-  isActive?: boolean;
-  documentLanguage?: 'en' | 'fr-CA' | 'zh-Hans' | null;
-  documentSecondLanguage?: 'en' | 'fr-CA' | 'zh-Hans' | null;
-};
-
-export type CreateAddressDto = {
-  label?: string;
-  line1: string;
-  line2?: string;
-  city?: string;
-  region?: string;
-  postalCode?: string;
-  country: string;
-  isBilling?: boolean;
-  isShipping?: boolean;
-  isDefault?: boolean;
-};
-
-export type AddressEnvelope = {
-  address: Address;
-};
-
-export type UpdateAddressDto = {
-  label?: string;
-  line1?: string;
-  line2?: string;
-  city?: string;
-  region?: string;
-  postalCode?: string;
-  country?: string;
-  isBilling?: boolean;
-  isShipping?: boolean;
-  isDefault?: boolean;
-};
-
-export type CreateContactDto = {
-  name: string;
-  role?: string;
-  email?: string;
-  phone?: string;
-  notes?: string;
-  isPrimary?: boolean;
-  isActive?: boolean;
-};
-
-export type ContactEnvelope = {
-  contact: Contact;
-};
-
-export type UpdateContactDto = {
-  name?: string;
-  role?: string;
-  email?: string;
-  phone?: string;
-  notes?: string;
-  isPrimary?: boolean;
-  isActive?: boolean;
-};
-
 export type ReturnAuthorizationSummary = {
   id: string;
   number: string;
@@ -2947,330 +3254,6 @@ export type CreditNoteSummary = {
 export type CreditNotePage = {
   entries: Array<CreditNoteSummary>;
   nextCursor: string | null;
-};
-
-export type RecentEntry = {
-  kind:
-    | 'invoice'
-    | 'order'
-    | 'lot'
-    | 'product'
-    | 'partner'
-    | 'run'
-    | 'return'
-    | 'priceList';
-  id: string;
-  title: string | null;
-  detail: string | null;
-  openedAt: string;
-};
-
-export type RecentList = {
-  recent: Array<RecentEntry>;
-};
-
-export type RecordOpenedDto = {
-  kind:
-    | 'order'
-    | 'invoice'
-    | 'lot'
-    | 'product'
-    | 'partner'
-    | 'run'
-    | 'return'
-    | 'priceList';
-  id: string;
-};
-
-export type SiteAddress = {
-  line1: string;
-  line2: string | null;
-  city: string | null;
-  region: string | null;
-  postalCode: string | null;
-  country: string;
-};
-
-export type Location = {
-  id: string;
-  type: string;
-  name: string;
-  code: string | null;
-  parentId: string | null;
-  isAvailable: boolean;
-  isActive: boolean;
-  address: SiteAddress | null;
-};
-
-export type CreateLocationDto = {
-  type: 'site' | 'zone' | 'aisle' | 'shelf' | 'bin';
-  name: string;
-  code?: string;
-  parentId?: string;
-};
-
-export type CreatedLocation = {
-  location: Location;
-};
-
-export type UpdateLocationDto = {
-  name?: string;
-  code?: string;
-  parentId?: string | null;
-  isAvailable?: boolean;
-  isActive?: boolean;
-};
-
-export type SiteAddressDto = {
-  line1: string;
-  line2?: string | null;
-  city?: string | null;
-  region?: string | null;
-  postalCode?: string | null;
-  country: string;
-};
-
-export type NumberingNext = {
-  never: number;
-  yearly: number;
-  monthly: number;
-  daily: number;
-};
-
-export type NumberingSeries = {
-  prefix: string;
-  digits: number;
-  reset: 'never' | 'yearly' | 'monthly' | 'daily';
-  next: NumberingNext;
-  last: string | null;
-};
-
-export type Numbering = {
-  invoice: NumberingSeries;
-  creditNote: NumberingSeries;
-  returnAuthorization: NumberingSeries;
-  saleOrder: NumberingSeries;
-  purchaseOrder: NumberingSeries;
-  documentsInDateOrder: boolean;
-  today: string;
-};
-
-export type NumberingEnvelope = {
-  numbering: Numbering;
-};
-
-export type NumberingSeriesDto = {
-  prefix: string;
-  digits: number;
-  reset: 'never' | 'yearly' | 'monthly' | 'daily';
-  next?: number;
-};
-
-export type UpdateNumberingDto = {
-  invoice: NumberingSeriesDto;
-  creditNote: NumberingSeriesDto;
-  returnAuthorization: NumberingSeriesDto;
-  saleOrder: NumberingSeriesDto;
-  purchaseOrder: NumberingSeriesDto;
-  documentsInDateOrder: boolean;
-};
-
-export type ValuationPool = {
-  variantId: string;
-  sku: string;
-  lotId: string | null;
-  lotCode: string | null;
-  quantity: string;
-  value: string;
-  unitCost: string;
-  provisional: boolean;
-};
-
-export type StockValuation = {
-  currency: string | null;
-  total: string;
-  provisional: boolean;
-  pools: Array<ValuationPool>;
-};
-
-export type StockValuationEnvelope = {
-  valuation: StockValuation;
-};
-
-export type LotCostEntry = {
-  id: string;
-  kind: 'issued' | 'movement' | 'run_close' | 'correction' | 'opening';
-  reason: string | null;
-  quantity: string;
-  value: string;
-  unitPrice: string | null;
-  currency: string | null;
-  exchangeRate: string | null;
-  needsCost: boolean;
-  referenceType: string | null;
-  referenceId: string | null;
-  createdAt: string;
-};
-
-export type LotCost = {
-  currency: string | null;
-  lotId: string;
-  lotCode: string;
-  sku: string;
-  quantity: string;
-  value: string;
-  unitCost: string | null;
-  provisional: boolean;
-  entries: Array<LotCostEntry>;
-};
-
-export type LotCostEnvelope = {
-  lotCost: LotCost;
-};
-
-export type RunCostConsumed = {
-  sku: string;
-  lotCode: string | null;
-  quantity: string;
-  value: string;
-};
-
-export type RunCostOutput = {
-  lotCode: string | null;
-  quantity: string;
-  value: string;
-};
-
-export type RunCost = {
-  currency: string | null;
-  runId: string;
-  reference: string | null;
-  sku: string;
-  status: 'draft' | 'cancelled' | 'released' | 'completed';
-  closed: boolean;
-  quantityProduced: string;
-  materialCost: string | null;
-  unitCost: string | null;
-  provisional: boolean;
-  consumed: Array<RunCostConsumed>;
-  outputs: Array<RunCostOutput>;
-};
-
-export type RunCostEnvelope = {
-  runCost: RunCost;
-};
-
-export type NeedsCostEntry = {
-  id: string;
-  kind: 'issued' | 'movement' | 'run_close' | 'correction' | 'opening';
-  reason: string | null;
-  sku: string;
-  variantId: string;
-  lotId: string | null;
-  lotCode: string | null;
-  quantity: string;
-  unitPrice: string | null;
-  currency: string | null;
-  referenceType: string | null;
-  referenceId: string | null;
-  createdAt: string;
-};
-
-export type NeedsCostPage = {
-  entries: Array<NeedsCostEntry>;
-  nextCursor: string | null;
-};
-
-export type SetCostDto = {
-  unitPrice: string;
-  currency: string;
-  exchangeRate?: string;
-};
-
-export type CorrectedCost = {
-  valuationId: string;
-  value: string;
-  held: string;
-  issued: string;
-};
-
-export type CorrectedCostEnvelope = {
-  cost: CorrectedCost;
-};
-
-export type ExchangeRate = {
-  id: string;
-  currency: string;
-  rateDate: string;
-  rate: string;
-};
-
-export type ExchangeRateList = {
-  rates: Array<ExchangeRate>;
-};
-
-export type SetExchangeRateDto = {
-  currency: string;
-  rateDate: string;
-  rate: string;
-};
-
-export type ExchangeRateEnvelope = {
-  rate: ExchangeRate;
-};
-
-export type PriceList = {
-  id: string;
-  name: string;
-  direction: 'sale' | 'purchase';
-  currency: string;
-  isActive: boolean;
-  itemCount: number;
-};
-
-export type PriceListList = {
-  priceLists: Array<PriceList>;
-};
-
-export type PriceListItem = {
-  variantId: string;
-  sku: string;
-  description: string;
-  unitOfMeasure: string;
-  unitPrice: string;
-  updatedAt: string;
-};
-
-export type PriceListDetail = {
-  id: string;
-  name: string;
-  direction: 'sale' | 'purchase';
-  currency: string;
-  isActive: boolean;
-  items: Array<PriceListItem>;
-};
-
-export type PriceListEnvelope = {
-  priceList: PriceListDetail;
-};
-
-export type CreatePriceListDto = {
-  name: string;
-  direction: 'sale' | 'purchase';
-  currency: string;
-};
-
-export type UpdatePriceListDto = {
-  name?: string;
-  isActive?: boolean;
-};
-
-export type SetPriceListItemDto = {
-  unitPrice: string;
-};
-
-export type PriceListItemEnvelope = {
-  item: PriceListItem;
 };
 
 export type Health = {
@@ -6026,6 +6009,621 @@ export type HomeControllerSkipTeamV1Responses = {
 export type HomeControllerSkipTeamV1Response =
   HomeControllerSkipTeamV1Responses[keyof HomeControllerSkipTeamV1Responses];
 
+export type RecentControllerClearV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/recent';
+};
+
+export type RecentControllerClearV1Responses = {
+  204: void;
+};
+
+export type RecentControllerClearV1Response =
+  RecentControllerClearV1Responses[keyof RecentControllerClearV1Responses];
+
+export type RecentControllerListV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query?: {
+    limit?: number;
+  };
+  url: '/v1/recent';
+};
+
+export type RecentControllerListV1Responses = {
+  200: RecentList;
+};
+
+export type RecentControllerListV1Response =
+  RecentControllerListV1Responses[keyof RecentControllerListV1Responses];
+
+export type RecentControllerRecordV1Data = {
+  body: RecordOpenedDto;
+  path?: never;
+  query?: never;
+  url: '/v1/recent';
+};
+
+export type RecentControllerRecordV1Responses = {
+  204: void;
+};
+
+export type RecentControllerRecordV1Response =
+  RecentControllerRecordV1Responses[keyof RecentControllerRecordV1Responses];
+
+export type LocationsControllerListV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/locations';
+};
+
+export type LocationsControllerListV1Responses = {
+  200: Array<Location>;
+};
+
+export type LocationsControllerListV1Response =
+  LocationsControllerListV1Responses[keyof LocationsControllerListV1Responses];
+
+export type LocationsControllerCreateV1Data = {
+  body: CreateLocationDto;
+  path?: never;
+  query?: never;
+  url: '/v1/locations';
+};
+
+export type LocationsControllerCreateV1Responses = {
+  201: CreatedLocation;
+};
+
+export type LocationsControllerCreateV1Response =
+  LocationsControllerCreateV1Responses[keyof LocationsControllerCreateV1Responses];
+
+export type LocationsControllerUpdateV1Data = {
+  body: UpdateLocationDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/locations/{id}';
+};
+
+export type LocationsControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type LocationsControllerUpdateV1Response =
+  LocationsControllerUpdateV1Responses[keyof LocationsControllerUpdateV1Responses];
+
+export type LocationsControllerRemoveAddressV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/locations/{id}/address';
+};
+
+export type LocationsControllerRemoveAddressV1Responses = {
+  204: void;
+};
+
+export type LocationsControllerRemoveAddressV1Response =
+  LocationsControllerRemoveAddressV1Responses[keyof LocationsControllerRemoveAddressV1Responses];
+
+export type LocationsControllerSetAddressV1Data = {
+  body: SiteAddressDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/locations/{id}/address';
+};
+
+export type LocationsControllerSetAddressV1Responses = {
+  204: void;
+};
+
+export type LocationsControllerSetAddressV1Response =
+  LocationsControllerSetAddressV1Responses[keyof LocationsControllerSetAddressV1Responses];
+
+export type NumberingControllerGetV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/organization/numbering';
+};
+
+export type NumberingControllerGetV1Responses = {
+  200: NumberingEnvelope;
+};
+
+export type NumberingControllerGetV1Response =
+  NumberingControllerGetV1Responses[keyof NumberingControllerGetV1Responses];
+
+export type NumberingControllerUpdateV1Data = {
+  body: UpdateNumberingDto;
+  path?: never;
+  query?: never;
+  url: '/v1/organization/numbering';
+};
+
+export type NumberingControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type NumberingControllerUpdateV1Response =
+  NumberingControllerUpdateV1Responses[keyof NumberingControllerUpdateV1Responses];
+
+export type CostsControllerStockValuationV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/costs/valuation';
+};
+
+export type CostsControllerStockValuationV1Responses = {
+  200: StockValuationEnvelope;
+};
+
+export type CostsControllerStockValuationV1Response =
+  CostsControllerStockValuationV1Responses[keyof CostsControllerStockValuationV1Responses];
+
+export type CostsControllerExportValuationV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/v1/costs/valuation/export';
+};
+
+export type CostsControllerExportValuationV1Responses = {
+  200: string;
+};
+
+export type CostsControllerExportValuationV1Response =
+  CostsControllerExportValuationV1Responses[keyof CostsControllerExportValuationV1Responses];
+
+export type CostsControllerLotCostV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/costs/lots/{id}';
+};
+
+export type CostsControllerLotCostV1Responses = {
+  200: LotCostEnvelope;
+};
+
+export type CostsControllerLotCostV1Response =
+  CostsControllerLotCostV1Responses[keyof CostsControllerLotCostV1Responses];
+
+export type CostsControllerRunCostV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/costs/runs/{id}';
+};
+
+export type CostsControllerRunCostV1Responses = {
+  200: RunCostEnvelope;
+};
+
+export type CostsControllerRunCostV1Response =
+  CostsControllerRunCostV1Responses[keyof CostsControllerRunCostV1Responses];
+
+export type CostsControllerNeedsCostV1Data = {
+  body?: never;
+  path?: never;
+  query?: {
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/costs/needs-cost';
+};
+
+export type CostsControllerNeedsCostV1Responses = {
+  200: NeedsCostPage;
+};
+
+export type CostsControllerNeedsCostV1Response =
+  CostsControllerNeedsCostV1Responses[keyof CostsControllerNeedsCostV1Responses];
+
+export type CostsControllerSetCostV1Data = {
+  body: SetCostDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/costs/valuations/{id}';
+};
+
+export type CostsControllerSetCostV1Responses = {
+  200: CorrectedCostEnvelope;
+};
+
+export type CostsControllerSetCostV1Response =
+  CostsControllerSetCostV1Responses[keyof CostsControllerSetCostV1Responses];
+
+export type CostsControllerListRatesV1Data = {
+  body?: never;
+  path?: never;
+  query?: {
+    currency?: string;
+  };
+  url: '/v1/costs/exchange-rates';
+};
+
+export type CostsControllerListRatesV1Responses = {
+  200: ExchangeRateList;
+};
+
+export type CostsControllerListRatesV1Response =
+  CostsControllerListRatesV1Responses[keyof CostsControllerListRatesV1Responses];
+
+export type CostsControllerSetRateV1Data = {
+  body: SetExchangeRateDto;
+  path?: never;
+  query?: never;
+  url: '/v1/costs/exchange-rates';
+};
+
+export type CostsControllerSetRateV1Responses = {
+  200: ExchangeRateEnvelope;
+};
+
+export type CostsControllerSetRateV1Response =
+  CostsControllerSetRateV1Responses[keyof CostsControllerSetRateV1Responses];
+
+export type PriceListsControllerListV1Data = {
+  body?: never;
+  path?: never;
+  query?: {
+    direction?: 'sale' | 'purchase';
+  };
+  url: '/v1/price-lists';
+};
+
+export type PriceListsControllerListV1Responses = {
+  200: PriceListList;
+};
+
+export type PriceListsControllerListV1Response =
+  PriceListsControllerListV1Responses[keyof PriceListsControllerListV1Responses];
+
+export type PriceListsControllerCreateV1Data = {
+  body: CreatePriceListDto;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/v1/price-lists';
+};
+
+export type PriceListsControllerCreateV1Responses = {
+  201: PriceListEnvelope;
+};
+
+export type PriceListsControllerCreateV1Response =
+  PriceListsControllerCreateV1Responses[keyof PriceListsControllerCreateV1Responses];
+
+export type PriceListsControllerExportPriceListV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/price-lists/{id}/export';
+};
+
+export type PriceListsControllerExportPriceListV1Responses = {
+  200: string;
+};
+
+export type PriceListsControllerExportPriceListV1Response =
+  PriceListsControllerExportPriceListV1Responses[keyof PriceListsControllerExportPriceListV1Responses];
+
+export type PriceListsControllerFindOneV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/price-lists/{id}';
+};
+
+export type PriceListsControllerFindOneV1Responses = {
+  200: PriceListEnvelope;
+};
+
+export type PriceListsControllerFindOneV1Response =
+  PriceListsControllerFindOneV1Responses[keyof PriceListsControllerFindOneV1Responses];
+
+export type PriceListsControllerUpdateV1Data = {
+  body: UpdatePriceListDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/price-lists/{id}';
+};
+
+export type PriceListsControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type PriceListsControllerUpdateV1Response =
+  PriceListsControllerUpdateV1Responses[keyof PriceListsControllerUpdateV1Responses];
+
+export type PriceListsControllerRemoveItemV1Data = {
+  body?: never;
+  path: {
+    id: string;
+    variantId: string;
+  };
+  query?: never;
+  url: '/v1/price-lists/{id}/items/{variantId}';
+};
+
+export type PriceListsControllerRemoveItemV1Responses = {
+  204: void;
+};
+
+export type PriceListsControllerRemoveItemV1Response =
+  PriceListsControllerRemoveItemV1Responses[keyof PriceListsControllerRemoveItemV1Responses];
+
+export type PriceListsControllerSetItemV1Data = {
+  body: SetPriceListItemDto;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path: {
+    id: string;
+    variantId: string;
+  };
+  query?: never;
+  url: '/v1/price-lists/{id}/items/{variantId}';
+};
+
+export type PriceListsControllerSetItemV1Responses = {
+  200: PriceListItemEnvelope;
+};
+
+export type PriceListsControllerSetItemV1Response =
+  PriceListsControllerSetItemV1Responses[keyof PriceListsControllerSetItemV1Responses];
+
+export type PartnersControllerListV1Data = {
+  body?: never;
+  path?: never;
+  query?: {
+    search?: string;
+  };
+  url: '/v1/partners';
+};
+
+export type PartnersControllerListV1Responses = {
+  200: Array<Partner>;
+};
+
+export type PartnersControllerListV1Response =
+  PartnersControllerListV1Responses[keyof PartnersControllerListV1Responses];
+
+export type PartnersControllerCreateV1Data = {
+  body: CreatePartnerDto;
+  path?: never;
+  query?: never;
+  url: '/v1/partners';
+};
+
+export type PartnersControllerCreateV1Responses = {
+  201: PartnerEnvelope;
+};
+
+export type PartnersControllerCreateV1Response =
+  PartnersControllerCreateV1Responses[keyof PartnersControllerCreateV1Responses];
+
+export type PartnersControllerExportPartnersV1Data = {
+  body?: never;
+  headers?: {
+    'accept-language'?: string;
+  };
+  path?: never;
+  query?: {
+    search?: string;
+    retired?: string;
+  };
+  url: '/v1/partners/export';
+};
+
+export type PartnersControllerExportPartnersV1Responses = {
+  200: string;
+};
+
+export type PartnersControllerExportPartnersV1Response =
+  PartnersControllerExportPartnersV1Responses[keyof PartnersControllerExportPartnersV1Responses];
+
+export type PartnersControllerFindV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/partners/{id}';
+};
+
+export type PartnersControllerFindV1Responses = {
+  200: PartnerDetail;
+};
+
+export type PartnersControllerFindV1Response =
+  PartnersControllerFindV1Responses[keyof PartnersControllerFindV1Responses];
+
+export type PartnersControllerUpdateV1Data = {
+  body: UpdatePartnerDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/partners/{id}';
+};
+
+export type PartnersControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type PartnersControllerUpdateV1Response =
+  PartnersControllerUpdateV1Responses[keyof PartnersControllerUpdateV1Responses];
+
+export type PartnerAddressesControllerListV1Data = {
+  body?: never;
+  path: {
+    partnerId: string;
+  };
+  query?: never;
+  url: '/v1/partners/{partnerId}/addresses';
+};
+
+export type PartnerAddressesControllerListV1Responses = {
+  200: Array<Address>;
+};
+
+export type PartnerAddressesControllerListV1Response =
+  PartnerAddressesControllerListV1Responses[keyof PartnerAddressesControllerListV1Responses];
+
+export type PartnerAddressesControllerCreateV1Data = {
+  body: CreateAddressDto;
+  path: {
+    partnerId: string;
+  };
+  query?: never;
+  url: '/v1/partners/{partnerId}/addresses';
+};
+
+export type PartnerAddressesControllerCreateV1Responses = {
+  201: AddressEnvelope;
+};
+
+export type PartnerAddressesControllerCreateV1Response =
+  PartnerAddressesControllerCreateV1Responses[keyof PartnerAddressesControllerCreateV1Responses];
+
+export type PartnerAddressesControllerRetireV1Data = {
+  body?: never;
+  path: {
+    partnerId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/v1/partners/{partnerId}/addresses/{id}';
+};
+
+export type PartnerAddressesControllerRetireV1Responses = {
+  204: void;
+};
+
+export type PartnerAddressesControllerRetireV1Response =
+  PartnerAddressesControllerRetireV1Responses[keyof PartnerAddressesControllerRetireV1Responses];
+
+export type PartnerAddressesControllerUpdateV1Data = {
+  body: UpdateAddressDto;
+  path: {
+    partnerId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/v1/partners/{partnerId}/addresses/{id}';
+};
+
+export type PartnerAddressesControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type PartnerAddressesControllerUpdateV1Response =
+  PartnerAddressesControllerUpdateV1Responses[keyof PartnerAddressesControllerUpdateV1Responses];
+
+export type PartnerContactsControllerListV1Data = {
+  body?: never;
+  path: {
+    partnerId: string;
+  };
+  query?: never;
+  url: '/v1/partners/{partnerId}/contacts';
+};
+
+export type PartnerContactsControllerListV1Responses = {
+  200: Array<Contact>;
+};
+
+export type PartnerContactsControllerListV1Response =
+  PartnerContactsControllerListV1Responses[keyof PartnerContactsControllerListV1Responses];
+
+export type PartnerContactsControllerCreateV1Data = {
+  body: CreateContactDto;
+  path: {
+    partnerId: string;
+  };
+  query?: never;
+  url: '/v1/partners/{partnerId}/contacts';
+};
+
+export type PartnerContactsControllerCreateV1Responses = {
+  201: ContactEnvelope;
+};
+
+export type PartnerContactsControllerCreateV1Response =
+  PartnerContactsControllerCreateV1Responses[keyof PartnerContactsControllerCreateV1Responses];
+
+export type PartnerContactsControllerRetireV1Data = {
+  body?: never;
+  path: {
+    partnerId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/v1/partners/{partnerId}/contacts/{id}';
+};
+
+export type PartnerContactsControllerRetireV1Responses = {
+  204: void;
+};
+
+export type PartnerContactsControllerRetireV1Response =
+  PartnerContactsControllerRetireV1Responses[keyof PartnerContactsControllerRetireV1Responses];
+
+export type PartnerContactsControllerUpdateV1Data = {
+  body: UpdateContactDto;
+  path: {
+    partnerId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/v1/partners/{partnerId}/contacts/{id}';
+};
+
+export type PartnerContactsControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type PartnerContactsControllerUpdateV1Response =
+  PartnerContactsControllerUpdateV1Responses[keyof PartnerContactsControllerUpdateV1Responses];
+
 export type OrdersControllerListV1Data = {
   body?: never;
   path?: never;
@@ -6448,220 +7046,6 @@ export type OrderDocumentsControllerPdfV1Responses = {
 
 export type OrderDocumentsControllerPdfV1Response =
   OrderDocumentsControllerPdfV1Responses[keyof OrderDocumentsControllerPdfV1Responses];
-
-export type PartnersControllerListV1Data = {
-  body?: never;
-  path?: never;
-  query?: {
-    search?: string;
-  };
-  url: '/v1/partners';
-};
-
-export type PartnersControllerListV1Responses = {
-  200: Array<Partner>;
-};
-
-export type PartnersControllerListV1Response =
-  PartnersControllerListV1Responses[keyof PartnersControllerListV1Responses];
-
-export type PartnersControllerCreateV1Data = {
-  body: CreatePartnerDto;
-  path?: never;
-  query?: never;
-  url: '/v1/partners';
-};
-
-export type PartnersControllerCreateV1Responses = {
-  201: PartnerEnvelope;
-};
-
-export type PartnersControllerCreateV1Response =
-  PartnersControllerCreateV1Responses[keyof PartnersControllerCreateV1Responses];
-
-export type PartnersControllerExportPartnersV1Data = {
-  body?: never;
-  headers?: {
-    'accept-language'?: string;
-  };
-  path?: never;
-  query?: {
-    search?: string;
-    retired?: string;
-  };
-  url: '/v1/partners/export';
-};
-
-export type PartnersControllerExportPartnersV1Responses = {
-  200: string;
-};
-
-export type PartnersControllerExportPartnersV1Response =
-  PartnersControllerExportPartnersV1Responses[keyof PartnersControllerExportPartnersV1Responses];
-
-export type PartnersControllerFindV1Data = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/v1/partners/{id}';
-};
-
-export type PartnersControllerFindV1Responses = {
-  200: PartnerDetail;
-};
-
-export type PartnersControllerFindV1Response =
-  PartnersControllerFindV1Responses[keyof PartnersControllerFindV1Responses];
-
-export type PartnersControllerUpdateV1Data = {
-  body: UpdatePartnerDto;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/v1/partners/{id}';
-};
-
-export type PartnersControllerUpdateV1Responses = {
-  204: void;
-};
-
-export type PartnersControllerUpdateV1Response =
-  PartnersControllerUpdateV1Responses[keyof PartnersControllerUpdateV1Responses];
-
-export type PartnerAddressesControllerListV1Data = {
-  body?: never;
-  path: {
-    partnerId: string;
-  };
-  query?: never;
-  url: '/v1/partners/{partnerId}/addresses';
-};
-
-export type PartnerAddressesControllerListV1Responses = {
-  200: Array<Address>;
-};
-
-export type PartnerAddressesControllerListV1Response =
-  PartnerAddressesControllerListV1Responses[keyof PartnerAddressesControllerListV1Responses];
-
-export type PartnerAddressesControllerCreateV1Data = {
-  body: CreateAddressDto;
-  path: {
-    partnerId: string;
-  };
-  query?: never;
-  url: '/v1/partners/{partnerId}/addresses';
-};
-
-export type PartnerAddressesControllerCreateV1Responses = {
-  201: AddressEnvelope;
-};
-
-export type PartnerAddressesControllerCreateV1Response =
-  PartnerAddressesControllerCreateV1Responses[keyof PartnerAddressesControllerCreateV1Responses];
-
-export type PartnerAddressesControllerRetireV1Data = {
-  body?: never;
-  path: {
-    partnerId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/v1/partners/{partnerId}/addresses/{id}';
-};
-
-export type PartnerAddressesControllerRetireV1Responses = {
-  204: void;
-};
-
-export type PartnerAddressesControllerRetireV1Response =
-  PartnerAddressesControllerRetireV1Responses[keyof PartnerAddressesControllerRetireV1Responses];
-
-export type PartnerAddressesControllerUpdateV1Data = {
-  body: UpdateAddressDto;
-  path: {
-    partnerId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/v1/partners/{partnerId}/addresses/{id}';
-};
-
-export type PartnerAddressesControllerUpdateV1Responses = {
-  204: void;
-};
-
-export type PartnerAddressesControllerUpdateV1Response =
-  PartnerAddressesControllerUpdateV1Responses[keyof PartnerAddressesControllerUpdateV1Responses];
-
-export type PartnerContactsControllerListV1Data = {
-  body?: never;
-  path: {
-    partnerId: string;
-  };
-  query?: never;
-  url: '/v1/partners/{partnerId}/contacts';
-};
-
-export type PartnerContactsControllerListV1Responses = {
-  200: Array<Contact>;
-};
-
-export type PartnerContactsControllerListV1Response =
-  PartnerContactsControllerListV1Responses[keyof PartnerContactsControllerListV1Responses];
-
-export type PartnerContactsControllerCreateV1Data = {
-  body: CreateContactDto;
-  path: {
-    partnerId: string;
-  };
-  query?: never;
-  url: '/v1/partners/{partnerId}/contacts';
-};
-
-export type PartnerContactsControllerCreateV1Responses = {
-  201: ContactEnvelope;
-};
-
-export type PartnerContactsControllerCreateV1Response =
-  PartnerContactsControllerCreateV1Responses[keyof PartnerContactsControllerCreateV1Responses];
-
-export type PartnerContactsControllerRetireV1Data = {
-  body?: never;
-  path: {
-    partnerId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/v1/partners/{partnerId}/contacts/{id}';
-};
-
-export type PartnerContactsControllerRetireV1Responses = {
-  204: void;
-};
-
-export type PartnerContactsControllerRetireV1Response =
-  PartnerContactsControllerRetireV1Responses[keyof PartnerContactsControllerRetireV1Responses];
-
-export type PartnerContactsControllerUpdateV1Data = {
-  body: UpdateContactDto;
-  path: {
-    partnerId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/v1/partners/{partnerId}/contacts/{id}';
-};
-
-export type PartnerContactsControllerUpdateV1Responses = {
-  204: void;
-};
-
-export type PartnerContactsControllerUpdateV1Response =
-  PartnerContactsControllerUpdateV1Responses[keyof PartnerContactsControllerUpdateV1Responses];
 
 export type ReturnAuthorizationsControllerListV1Data = {
   body?: never;
@@ -7130,407 +7514,6 @@ export type ProFormaControllerPdfV1Responses = {
 
 export type ProFormaControllerPdfV1Response =
   ProFormaControllerPdfV1Responses[keyof ProFormaControllerPdfV1Responses];
-
-export type RecentControllerClearV1Data = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/v1/recent';
-};
-
-export type RecentControllerClearV1Responses = {
-  204: void;
-};
-
-export type RecentControllerClearV1Response =
-  RecentControllerClearV1Responses[keyof RecentControllerClearV1Responses];
-
-export type RecentControllerListV1Data = {
-  body?: never;
-  headers?: {
-    'accept-language'?: string;
-  };
-  path?: never;
-  query?: {
-    limit?: number;
-  };
-  url: '/v1/recent';
-};
-
-export type RecentControllerListV1Responses = {
-  200: RecentList;
-};
-
-export type RecentControllerListV1Response =
-  RecentControllerListV1Responses[keyof RecentControllerListV1Responses];
-
-export type RecentControllerRecordV1Data = {
-  body: RecordOpenedDto;
-  path?: never;
-  query?: never;
-  url: '/v1/recent';
-};
-
-export type RecentControllerRecordV1Responses = {
-  204: void;
-};
-
-export type RecentControllerRecordV1Response =
-  RecentControllerRecordV1Responses[keyof RecentControllerRecordV1Responses];
-
-export type LocationsControllerListV1Data = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/v1/locations';
-};
-
-export type LocationsControllerListV1Responses = {
-  200: Array<Location>;
-};
-
-export type LocationsControllerListV1Response =
-  LocationsControllerListV1Responses[keyof LocationsControllerListV1Responses];
-
-export type LocationsControllerCreateV1Data = {
-  body: CreateLocationDto;
-  path?: never;
-  query?: never;
-  url: '/v1/locations';
-};
-
-export type LocationsControllerCreateV1Responses = {
-  201: CreatedLocation;
-};
-
-export type LocationsControllerCreateV1Response =
-  LocationsControllerCreateV1Responses[keyof LocationsControllerCreateV1Responses];
-
-export type LocationsControllerUpdateV1Data = {
-  body: UpdateLocationDto;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/v1/locations/{id}';
-};
-
-export type LocationsControllerUpdateV1Responses = {
-  204: void;
-};
-
-export type LocationsControllerUpdateV1Response =
-  LocationsControllerUpdateV1Responses[keyof LocationsControllerUpdateV1Responses];
-
-export type LocationsControllerRemoveAddressV1Data = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/v1/locations/{id}/address';
-};
-
-export type LocationsControllerRemoveAddressV1Responses = {
-  204: void;
-};
-
-export type LocationsControllerRemoveAddressV1Response =
-  LocationsControllerRemoveAddressV1Responses[keyof LocationsControllerRemoveAddressV1Responses];
-
-export type LocationsControllerSetAddressV1Data = {
-  body: SiteAddressDto;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/v1/locations/{id}/address';
-};
-
-export type LocationsControllerSetAddressV1Responses = {
-  204: void;
-};
-
-export type LocationsControllerSetAddressV1Response =
-  LocationsControllerSetAddressV1Responses[keyof LocationsControllerSetAddressV1Responses];
-
-export type NumberingControllerGetV1Data = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/v1/organization/numbering';
-};
-
-export type NumberingControllerGetV1Responses = {
-  200: NumberingEnvelope;
-};
-
-export type NumberingControllerGetV1Response =
-  NumberingControllerGetV1Responses[keyof NumberingControllerGetV1Responses];
-
-export type NumberingControllerUpdateV1Data = {
-  body: UpdateNumberingDto;
-  path?: never;
-  query?: never;
-  url: '/v1/organization/numbering';
-};
-
-export type NumberingControllerUpdateV1Responses = {
-  204: void;
-};
-
-export type NumberingControllerUpdateV1Response =
-  NumberingControllerUpdateV1Responses[keyof NumberingControllerUpdateV1Responses];
-
-export type CostsControllerStockValuationV1Data = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/v1/costs/valuation';
-};
-
-export type CostsControllerStockValuationV1Responses = {
-  200: StockValuationEnvelope;
-};
-
-export type CostsControllerStockValuationV1Response =
-  CostsControllerStockValuationV1Responses[keyof CostsControllerStockValuationV1Responses];
-
-export type CostsControllerExportValuationV1Data = {
-  body?: never;
-  headers?: {
-    'accept-language'?: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/v1/costs/valuation/export';
-};
-
-export type CostsControllerExportValuationV1Responses = {
-  200: string;
-};
-
-export type CostsControllerExportValuationV1Response =
-  CostsControllerExportValuationV1Responses[keyof CostsControllerExportValuationV1Responses];
-
-export type CostsControllerLotCostV1Data = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/v1/costs/lots/{id}';
-};
-
-export type CostsControllerLotCostV1Responses = {
-  200: LotCostEnvelope;
-};
-
-export type CostsControllerLotCostV1Response =
-  CostsControllerLotCostV1Responses[keyof CostsControllerLotCostV1Responses];
-
-export type CostsControllerRunCostV1Data = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/v1/costs/runs/{id}';
-};
-
-export type CostsControllerRunCostV1Responses = {
-  200: RunCostEnvelope;
-};
-
-export type CostsControllerRunCostV1Response =
-  CostsControllerRunCostV1Responses[keyof CostsControllerRunCostV1Responses];
-
-export type CostsControllerNeedsCostV1Data = {
-  body?: never;
-  path?: never;
-  query?: {
-    before?: string;
-    limit?: number;
-  };
-  url: '/v1/costs/needs-cost';
-};
-
-export type CostsControllerNeedsCostV1Responses = {
-  200: NeedsCostPage;
-};
-
-export type CostsControllerNeedsCostV1Response =
-  CostsControllerNeedsCostV1Responses[keyof CostsControllerNeedsCostV1Responses];
-
-export type CostsControllerSetCostV1Data = {
-  body: SetCostDto;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/v1/costs/valuations/{id}';
-};
-
-export type CostsControllerSetCostV1Responses = {
-  200: CorrectedCostEnvelope;
-};
-
-export type CostsControllerSetCostV1Response =
-  CostsControllerSetCostV1Responses[keyof CostsControllerSetCostV1Responses];
-
-export type CostsControllerListRatesV1Data = {
-  body?: never;
-  path?: never;
-  query?: {
-    currency?: string;
-  };
-  url: '/v1/costs/exchange-rates';
-};
-
-export type CostsControllerListRatesV1Responses = {
-  200: ExchangeRateList;
-};
-
-export type CostsControllerListRatesV1Response =
-  CostsControllerListRatesV1Responses[keyof CostsControllerListRatesV1Responses];
-
-export type CostsControllerSetRateV1Data = {
-  body: SetExchangeRateDto;
-  path?: never;
-  query?: never;
-  url: '/v1/costs/exchange-rates';
-};
-
-export type CostsControllerSetRateV1Responses = {
-  200: ExchangeRateEnvelope;
-};
-
-export type CostsControllerSetRateV1Response =
-  CostsControllerSetRateV1Responses[keyof CostsControllerSetRateV1Responses];
-
-export type PriceListsControllerListV1Data = {
-  body?: never;
-  path?: never;
-  query?: {
-    direction?: 'sale' | 'purchase';
-  };
-  url: '/v1/price-lists';
-};
-
-export type PriceListsControllerListV1Responses = {
-  200: PriceListList;
-};
-
-export type PriceListsControllerListV1Response =
-  PriceListsControllerListV1Responses[keyof PriceListsControllerListV1Responses];
-
-export type PriceListsControllerCreateV1Data = {
-  body: CreatePriceListDto;
-  headers?: {
-    'accept-language'?: string;
-  };
-  path?: never;
-  query?: never;
-  url: '/v1/price-lists';
-};
-
-export type PriceListsControllerCreateV1Responses = {
-  201: PriceListEnvelope;
-};
-
-export type PriceListsControllerCreateV1Response =
-  PriceListsControllerCreateV1Responses[keyof PriceListsControllerCreateV1Responses];
-
-export type PriceListsControllerExportPriceListV1Data = {
-  body?: never;
-  headers?: {
-    'accept-language'?: string;
-  };
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/v1/price-lists/{id}/export';
-};
-
-export type PriceListsControllerExportPriceListV1Responses = {
-  200: string;
-};
-
-export type PriceListsControllerExportPriceListV1Response =
-  PriceListsControllerExportPriceListV1Responses[keyof PriceListsControllerExportPriceListV1Responses];
-
-export type PriceListsControllerFindOneV1Data = {
-  body?: never;
-  headers?: {
-    'accept-language'?: string;
-  };
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/v1/price-lists/{id}';
-};
-
-export type PriceListsControllerFindOneV1Responses = {
-  200: PriceListEnvelope;
-};
-
-export type PriceListsControllerFindOneV1Response =
-  PriceListsControllerFindOneV1Responses[keyof PriceListsControllerFindOneV1Responses];
-
-export type PriceListsControllerUpdateV1Data = {
-  body: UpdatePriceListDto;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: '/v1/price-lists/{id}';
-};
-
-export type PriceListsControllerUpdateV1Responses = {
-  204: void;
-};
-
-export type PriceListsControllerUpdateV1Response =
-  PriceListsControllerUpdateV1Responses[keyof PriceListsControllerUpdateV1Responses];
-
-export type PriceListsControllerRemoveItemV1Data = {
-  body?: never;
-  path: {
-    id: string;
-    variantId: string;
-  };
-  query?: never;
-  url: '/v1/price-lists/{id}/items/{variantId}';
-};
-
-export type PriceListsControllerRemoveItemV1Responses = {
-  204: void;
-};
-
-export type PriceListsControllerRemoveItemV1Response =
-  PriceListsControllerRemoveItemV1Responses[keyof PriceListsControllerRemoveItemV1Responses];
-
-export type PriceListsControllerSetItemV1Data = {
-  body: SetPriceListItemDto;
-  headers?: {
-    'accept-language'?: string;
-  };
-  path: {
-    id: string;
-    variantId: string;
-  };
-  query?: never;
-  url: '/v1/price-lists/{id}/items/{variantId}';
-};
-
-export type PriceListsControllerSetItemV1Responses = {
-  200: PriceListItemEnvelope;
-};
-
-export type PriceListsControllerSetItemV1Response =
-  PriceListsControllerSetItemV1Responses[keyof PriceListsControllerSetItemV1Responses];
 
 export type HealthControllerCheckData = {
   body?: never;

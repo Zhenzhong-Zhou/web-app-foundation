@@ -1,6 +1,6 @@
 # Accueil
 
-L’accueil est la première page que vous voyez. Il dit combien de choses demandent votre attention aujourd’hui, offre les actions que vous faites le plus souvent et liste le travail en attente, par sorte. Ce qu’il montre suit ce que vous pouvez faire ici.
+L’accueil est la première page que vous voyez. Il dit combien de choses demandent votre attention aujourd’hui, offre les actions que vous faites le plus souvent et compte le travail en attente, par sorte. Ce qu’il montre suit ce que vous pouvez faire ici.
 
 ## Vos deux premières semaines {#welcome}
 
@@ -29,7 +29,7 @@ Une nouvelle organisation reçoit sept étapes plutôt qu’une page de zéros. 
 ## Ce qui demande votre attention {#attention}
 
 - Les nombres disent combien de choses vous attendent, et combien sont en retard ou expirées.
-- Chaque carte liste les plus urgentes, comme **À expédier**, **À recevoir** ou **Expire bientôt**. **Tout voir** ouvre la liste complète.
+- Chaque carte compte une sorte de travail, comme **À expédier**, **À recevoir** ou **Expire bientôt**. **Tout voir** ouvre sa liste, où chacun se trouve.
 - **Ouverts récemment** vous ramène à ce que vous avez ouvert en dernier.
 
 L’accueil est lu quand vous l’ouvrez. Appuyez sur **Actualiser** pour le relire.
@@ -38,8 +38,6 @@ L’accueil est lu quand vous l’ouvrez. Appuyez sur **Actualiser** pour le rel
 
 Stock bas compte les articles sous leur point de commande, qui se définit dans [Inventaire](/inventory#reorder-points). Quand l’un d’eux est épuisé, il dit aussi combien, et l’accueil les compte avec ceux en retard.
 
-- Sa carte liste les cinq les plus loin sous leur point, chacun avec ce qu’il a sur son point, comme 800 sur 2 000, ou **épuisé**.
-- **brouillon fait** dit qu’un bon de commande ou un ordre de fabrication en brouillon le couvre déjà, sans qu’il en faille un autre.
 - **Tout voir** ouvre Points de commande sur Bas, où vous les commandez ou les planifiez.
 
 > Seule une personne qui peut voir le stock voit Stock bas.

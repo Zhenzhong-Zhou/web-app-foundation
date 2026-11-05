@@ -17,4 +17,4 @@
  * `npm run api` writes it into the document's info.version, as
  * 1.<revision>, and from there into client/src/api/.
  */
-export const API_REVISION = 2;
+export const API_REVISION = 3;

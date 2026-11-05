@@ -2290,15 +2290,11 @@ A reference (a document's number, a SKU, a lot code) is kept whole where
 words sit beside it; one alone, or first in its line, needs nothing.
 
 - **MC-3422** *(ADR-081)* References kept whole. At 390 px, then at 320
-  px with Larger text, in English and in 中文: Home's To receive reads
-  PO-000009 Lakeshore Packaging · PO-DEMO-9, a space between the number
-  and the partner, and wraps only between words, never inside PO-DEMO-9
-  (no PO- at a line's end with DEMO-9 below); To ship the same for
-  SO-DEMO-1. On SO-DEMO-1's order, the line under its number moves their
-  reference's SO-DEMO-1 to the next line whole when it must. Copy
-  SO-DEMO-1 from Home and paste it into the lookup: it finds the order.
-  With VoiceOver, a Home row reads as one line, SO-DEMO-1 among its words,
-  never split off on its own (MC-R38). A refusal the same: edit Harbour
+  px with Larger text, in English and in 中文: on SO-DEMO-1's order, the
+  line under its number moves their reference's SO-DEMO-1 to the next
+  line whole when it must, never inside it (no SO- at a line's end with
+  DEMO-1 below). Copy SO-DEMO-1 from the order and paste it into the
+  lookup: it finds the order. A refusal the same: edit Harbour
   Health, give it the code COOP-BSL and Save: Code COOP-BSL is already
   used by another partner, wrapping between words, never inside COOP-BSL;
   Cancel, and its code is still HARBOUR. Inventory → a row's Ship out, for
@@ -2334,7 +2330,7 @@ as [`docs/runbooks/render.md`, "Deploys"](runbooks/render.md#deploys-adr-081), h
   next deploy on, coming back to the Orders tab shows New version beside
   Help (MC-3401), Inventory from the rail loads in full, and Help's foot
   names the commit `/api/health` names (MC-3405). A deploy that raises the
-  API revision, as ADR-085's does from 1 to 2: leave a third tab on Home
+  API revision, as ADR-091's does from 2 to 3: leave a third tab on Home
   before the push. Back in it once the static site is out, the amber
   banner asks it to reload (MC-3404); Reload, once: Home, with its cards
   and no banner, and switching away and back asks nothing more.
@@ -3090,21 +3086,14 @@ site, after a deploy that changes the setting, the route or the relay.
   and 按建议订货后的预计可用, and its sentence reads naturally, such as "目前低于 500，因此建议订
   600，即 3 个 200。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
   and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的再订货点？
-- **MC-4213** *(ADR-085)* Home's Low stock. On a fresh demo, as the Owner:
-  the tile after To receive reads Low stock, 6 and "1 out", in red. Its
-  card lists five rows, each its SKU in bold and its name: VITC-100 with
-  "out" in red; MAGCAP-SAMPLE, "12 of 36"; ELDER-250, "58 of 96";
-  OMEGA3-90, "130 of 180" and "drafted"; D3-1000-120, "180 of 240".
-  SLEEP-60CT, the sixth, is left off. The rows open nothing; See all 6
-  opens Reorder points on Low, with Back to Home. Receive 100 of
-  VITC-100 and Refresh: Low stock reads 5, as the plain tiles do, and
-  the card starts at MAGCAP-SAMPLE. In 中文: 库存不足, "1 项缺货",
-  "12（再订货点 36）", 已下草稿 and 缺货; in French: Stock bas, "1 épuisé", "12 sur
-  36" and "brouillon fait". In a new organization, with no reorder
-  point, the card reads "No reorder point is set yet, so nothing can
-  show as low.", not in green, and Set one in Reorder points opens
-  Reorder points, with Back to Home; once one item has a point and
-  enough stock, the card reads "Nothing is low.", in green.
+- **MC-4213** *(ADR-085; ADR-091)* Home's Low stock. On a fresh demo, as
+  the Owner: the tile after To receive reads Low stock, 6 and "1 out", in
+  red, and its card lists no rows (ADR-091). See all 6 opens Reorder
+  points on Low, six rows, VITC-100 first, with Back to Home. Receive 100
+  of VITC-100 and Refresh: Low stock reads 5, as the plain tiles do. In
+  中文: 库存不足 and "1 项缺货"; in French: Stock bas and "1 épuisé". In a
+  new organization, with no reorder point, the card reads "Nothing is
+  low.", in green, with no See all.
 - **MC-4214** *(ADR-085)* The bell's notice, opened, and its words by
   the items. On a fresh demo, as the Owner, the bell's "6 items fell
   below their reorder point" opens Inventory's Reorder points on Low,
@@ -3667,10 +3656,6 @@ first.
 
 - **MC-R39** *(Home's tiles)* On a computer, the Owner's eight tiles on
   Home read as two rows of four, never seven and one alone (MC-3423).
-
-- **MC-R38** *(Home's rows, read aloud)* With VoiceOver, a row on Home
-  reads its number and its partner as two words, PO-000009 Lakeshore
-  Packaging, never run together as PO-000009Lakeshore (MC-3422).
 
 - **MC-R37** *(the status tones, #172's review)* In dark mode and in
   light, Something went wrong's warning sign stands out from its disc,
@@ -4668,3 +4653,6 @@ first.
   back.
 - 2026-11-04: #462, focus falling to the page as an invoice was issued:
   MC-R95 added, focus going to the heading with its new number.
+- 2026-11-05: ADR-091, Home's cards counted with no rows, Costs waiting's
+  See all opening Stock value, and the API revision raised to 3: MC-4213
+  and MC-3422 rewritten, MC-R38 removed, MC-3424's raise now 2 to 3.

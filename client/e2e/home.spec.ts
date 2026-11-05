@@ -9,8 +9,8 @@ import {
 
 /**
  * Home (ADR-058): signing in lands on it, Home leads the rail, a new
- * organization is led by Getting started, and a card with work shows,
- * its See all opening its list with the same rows.
+ * organization is led by Getting started, and a card with work shows its
+ * count, its See all opening its list with that many rows (ADR-091).
  */
 test('a new organization lands on Home, led by Getting started', async ({
   page,
@@ -64,11 +64,11 @@ test('a card with work shows, and See all opens its list the same', async ({
   await page.goto('/');
 
   const expiring = page.getByRole('region', { name: 'Expiring soon' });
-  await expect(expiring.getByRole('link', { name: 'E2E-SOON' })).toBeVisible();
   await expiring.getByRole('link', { name: 'See all 1' }).click();
 
   await expect(page).toHaveURL(/\/inventory\?expiring=1$/);
   await expect(
     page.getByRole('button', { name: /^Expiring soon/ }),
   ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('E2E-SOON').first()).toBeVisible();
 });
