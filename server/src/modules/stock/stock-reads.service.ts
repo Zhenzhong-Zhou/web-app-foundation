@@ -51,6 +51,15 @@ const STOCK_PAGE_SIZE = 50;
  * the stock controller calls these two reads.
  */
 /**
+ * Expired (ADR-091): a lot whose expiry is before the organization's
+ * today. The list's `expired` and Home's late count on Expiring soon, so
+ * the late button's count and the rows it opens cannot drift.
+ */
+export function expiredLot(today: string): SQL {
+  return lt(lots.expiresAt, today);
+}
+
+/**
  * The stock list's filters as conditions (ADR-051), shared by the list and
  * by its counts, so "Expiring soon 2" counts exactly the rows pressing it
  * shows.
@@ -107,6 +116,10 @@ function filtersOf(
       // current_date, which depends on how the database is configured.
       sql`${lots.expiresAt} <= ${today}::date + ${query.expiringWithin}::int`,
     );
+  }
+
+  if (query.expired === 'true') {
+    scope.push(expiredLot(today));
   }
 
   /**
@@ -323,7 +336,7 @@ export class StockReadsService {
   counts(query: ListStockDto = {}) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const { expiringWithin, ...rest } = query;
-      const unfiltered = { ...rest, needsCost: undefined };
+      const unfiltered = { ...rest, needsCost: undefined, expired: undefined };
       const today = await todayOf(tx, organizationId);
 
       const count = async (filters: ListStockDto) => {

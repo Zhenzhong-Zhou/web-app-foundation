@@ -100,7 +100,7 @@ export function ProductsPage() {
               )}
             />
             {/* Reference data for recipes, so it hangs off the catalogue
-                rather than the navigation. */}
+                as well as the menu's records (ADR-091). */}
             {can('product_licences.view') && (
               <Button
                 variant="text"

@@ -5047,6 +5047,7 @@ export type ProductLicencesControllerListV1Data = {
   path?: never;
   query?: {
     expiring?: string;
+    expired?: string;
   };
   url: '/v1/product-licences';
 };
@@ -5506,6 +5507,7 @@ export type StockControllerListV1Data = {
     includeEmpty?: string;
     search?: string;
     expiringWithin?: number;
+    expired?: string;
     needsCost?: string;
     sort?: 'expiry';
     order?: 'asc' | 'desc';
@@ -5534,6 +5536,7 @@ export type StockControllerExportInventoryV1Data = {
     includeEmpty?: string;
     search?: string;
     expiringWithin?: number;
+    expired?: string;
     needsCost?: string;
     sort?: 'expiry';
     order?: 'asc' | 'desc';
@@ -5607,6 +5610,7 @@ export type StockControllerCountsV1Data = {
     includeEmpty?: string;
     search?: string;
     expiringWithin?: number;
+    expired?: string;
     needsCost?: string;
     sort?: 'expiry';
     order?: 'asc' | 'desc';

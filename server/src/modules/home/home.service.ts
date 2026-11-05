@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, eq, lt, type SQL, sql } from 'drizzle-orm';
+import { and, eq, type SQL, sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
 import { todayIn } from '../../common/today';
@@ -8,7 +8,6 @@ import type { Permission } from '../../core/authorization/permissions';
 import type { Transaction } from '../../database/database.module';
 import {
   invoices,
-  lots,
   orders,
   organizations,
   productionOrders,
@@ -18,9 +17,12 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { openNeedsCost } from '../costs/open-needs-cost';
 import { lateOrder, outstandingOrder } from '../orders/orders.service';
-import { expiringLicence } from '../product-licences/product-licences.service';
+import {
+  expiredLicence,
+  expiringLicence,
+} from '../product-licences/product-licences.service';
 import { lowStockTotals } from '../stock/reorder-points-reads.service';
-import { stockRowsOf } from '../stock/stock-reads.service';
+import { expiredLot, stockRowsOf } from '../stock/stock-reads.service';
 import { WelcomeService } from './welcome.service';
 
 export type HomeKind =
@@ -372,11 +374,12 @@ function totalOf(
 
   switch (kind) {
     // The stock list's own rows (stockRowsOf), so the counts are the
-    // list's. The expired are counted among the expiring.
+    // list's. The expired are counted among the expiring, as its Expired
+    // lists them (ADR-091).
     case 'expiring':
       return counted(
         stockRowsOf({ expiringWithin }, organizationId, today),
-        lt(lots.expiresAt, today),
+        expiredLot(today),
       );
 
     // Stock value's Waiting for a cost (ADR-048; ADR-091): a row for each
@@ -408,7 +411,8 @@ function totalOf(
       return counted(sql`${productionOrders} where ${where}`);
     }
 
-    // The licences list's Expiring (ADR-091), the expired late.
+    // The licences list's Expiring (ADR-091), the expired late, as its
+    // Expired lists them.
     case 'licences': {
       const where = and(
         eq(productLicences.organizationId, organizationId),
@@ -416,7 +420,7 @@ function totalOf(
       );
       return counted(
         sql`${productLicences} where ${where}`,
-        lt(productLicences.expiresAt, today),
+        expiredLicence(today),
       );
     }
   }

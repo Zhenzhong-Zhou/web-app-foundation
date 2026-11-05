@@ -456,8 +456,9 @@ describe('Home (e2e)', () => {
   /**
    * Each tile opens its list (ADR-091): the count is the rows the list
    * returns at the address the tile opens, and the late count the rows
-   * that are late, which Orders' Late and Reorder points' Out list alone.
-   * Licences open on Expiring, soonest first, the expired leading.
+   * its late button opens: Orders' Late, Reorder points' Out, and the
+   * lots' and Licences' Expired. Licences open on Expiring, soonest first,
+   * the expired leading.
    */
   it('opens, from each tile, as many rows as it counts, the late among them', async () => {
     const alpha = await registerOrganization(app, 'alpha');
@@ -524,13 +525,14 @@ describe('Home (e2e)', () => {
       shelf,
     );
 
-    // Licences: expired, within 60 days, past it, with none, withdrawn.
+    // Licences: expired, within 60 days, past it, with none, and one
+    // withdrawn whose day has passed too.
     for (const [number, expiresAt, isActive] of [
       ['L-SOON', day(30), true],
       ['L-GONE', day(-2), true],
       ['L-LATER', day(200), true],
       ['L-NEVER', undefined, true],
-      ['L-WITHDRAWN', day(10), false],
+      ['L-WITHDRAWN', day(-5), false],
     ] as const) {
       const { licence } = body<{ licence: { id: string } }>(
         await agent
@@ -559,7 +561,6 @@ describe('Home (e2e)', () => {
     // Each tile's address, as the list's page asks its endpoint: To ship's
     // /orders?direction=sale&outstanding=1, the page's status Open beside
     // it, and Expiring soon's /inventory?expiring=1, by expiry (ADR-091).
-    const today = day(0);
     const opened: Record<string, string> = {
       toShip: '/v1/orders?status=open&direction=sale&outstanding=true',
       toReceive: '/v1/orders?status=open&direction=purchase&outstanding=true',
@@ -571,36 +572,27 @@ describe('Home (e2e)', () => {
       production: '/v1/production-orders?status=released',
       licences: '/v1/product-licences?expiring=true',
     };
-    // Its late button's, where the list has a filter for it.
+    // Its late button's, where lateness applies: the tile's list with Late,
+    // or Expired, chosen too (ADR-091).
     const lateOpened: Record<string, string> = {
       toShip: `${opened.toShip}&late=true`,
       toReceive: `${opened.toReceive}&late=true`,
       lowStock: '/v1/stock/reorder-points?status=out',
+      expiring: `${opened.expiring}&expired=true`,
+      licences: `${opened.licences}&expired=true`,
     };
 
     const cards = await home(alpha);
     expect(cards).toHaveLength(Object.keys(opened).length);
     for (const { kind, count, late } of cards) {
-      const listed = await rows<{
-        lotExpiresAt?: string | null;
-        expiresAt?: string | null;
-      }>(opened[kind]);
+      const listed = await rows(opened[kind]);
       expect({ kind, count: listed.length }).toEqual({ kind, count });
       expect(count).toBeGreaterThan(0);
 
-      // Its late button's rows; or, where the list has no filter for them
-      // yet, the expired among the tile's.
+      // Its late button's rows; none where lateness does not apply.
       const lateRows = lateOpened[kind]
         ? (await rows(lateOpened[kind])).length
-        : listed.filter((row) => {
-            const expiry =
-              kind === 'expiring'
-                ? row.lotExpiresAt
-                : kind === 'licences'
-                  ? row.expiresAt
-                  : null;
-            return !!expiry && expiry < today;
-          }).length;
+        : 0;
       expect({ kind, late: lateRows }).toEqual({ kind, late });
     }
 
@@ -622,6 +614,19 @@ describe('Home (e2e)', () => {
       (await rows<{ id: string }>(path)).map((row) => row.id);
     expect(await lateIds(lateOpened.toShip)).toEqual([lateSale.id]);
     expect(await lateIds(lateOpened.toReceive)).toEqual([latePurchase.id]);
+    const lotCodes = async (path: string) =>
+      (await rows<{ lotCode: string }>(path)).map((row) => row.lotCode);
+    const numbers = async (path: string) =>
+      (await rows<{ number: string }>(path)).map((row) => row.number);
+    expect(await lotCodes(lateOpened.expiring)).toEqual(['LOT-GONE']);
+    expect(await numbers(lateOpened.licences)).toEqual(['L-GONE']);
+
+    // Expired alone, without the tile's filter, is the same rows: never a
+    // withdrawn licence, whatever its day.
+    expect(await lotCodes('/v1/stock?expired=true')).toEqual(['LOT-GONE']);
+    expect(await numbers('/v1/product-licences?expired=true')).toEqual([
+      'L-GONE',
+    ]);
 
     // Late brings outstanding with it: a draft's day passing is not late.
     expect(
@@ -629,10 +634,8 @@ describe('Home (e2e)', () => {
     ).toEqual([lateSale.id]);
 
     // Soonest first, the expired leading.
-    const lots = await rows<{ lotCode: string }>(opened.expiring);
-    expect(lots.map((row) => row.lotCode)).toEqual(['LOT-GONE', 'LOT-SOON']);
-    const licences = await rows<{ number: string }>(opened.licences);
-    expect(licences.map((row) => row.number)).toEqual(['L-GONE', 'L-SOON']);
+    expect(await lotCodes(opened.expiring)).toEqual(['LOT-GONE', 'LOT-SOON']);
+    expect(await numbers(opened.licences)).toEqual(['L-GONE', 'L-SOON']);
   });
 
   /**

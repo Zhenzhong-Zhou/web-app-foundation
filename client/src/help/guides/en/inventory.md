@@ -70,6 +70,7 @@ Nothing is saved until you create it, and what you create shows on the row at on
 - **Free**: stock that can be promised, sampled or used in production.
 - **Not available**: a location whose stock is not for sending, such as a bin of returns waiting to be checked.
 - **Expiring soon**: a lot that expires within the days your organization has set.
+- **Expired**: a lot past its expiry day. As a filter, the list shows only these, the soonest first, until you remove it.
 
 ## If something is refused {#refused}
 

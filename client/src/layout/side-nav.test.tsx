@@ -30,6 +30,29 @@ describe('the menu', () => {
     );
   });
 
+  // A record, which Home's Licences tile opens (ADR-091, #460).
+  it('offers Licences among the records, before Products, to whoever may view them', () => {
+    renderNav(['product_licences.view', 'products.view', 'partners.view']);
+
+    const records = screen.getByRole('navigation', { name: 'Records' });
+    const links = [...records.querySelectorAll('a')].map(
+      (link) => link.textContent,
+    );
+    expect(links).toEqual(['Licences', 'Products', 'Partners']);
+    expect(screen.getByRole('link', { name: 'Licences' })).toHaveAttribute(
+      'href',
+      '/licences',
+    );
+  });
+
+  it('leaves Licences out for a role that may not view them', () => {
+    renderNav(['products.view']);
+
+    expect(
+      screen.queryByRole('link', { name: 'Licences' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('leaves Members and Roles out with no organization, which grants nothing (#169)', () => {
     renderNav([]);
 

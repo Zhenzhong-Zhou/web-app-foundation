@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq, lte, type SQL } from 'drizzle-orm';
+import { and, asc, eq, lt, lte, type SQL } from 'drizzle-orm';
 
 import { addDays } from '../../common/today';
 import { recordPrevious } from '../../core/audit/audit-context';
@@ -36,6 +36,19 @@ export function expiringLicence(today: string): SQL {
 }
 
 /**
+ * Expired (ADR-091): an active licence whose expiry is before the
+ * organization's today, as its status reads Expired. The list's `expired`
+ * and Home's late count on Licences, so the late button's count and the
+ * rows it opens cannot drift.
+ */
+export function expiredLicence(today: string): SQL {
+  return and(
+    eq(productLicences.isActive, true),
+    lt(productLicences.expiresAt, today),
+  )!;
+}
+
+/**
  * The registrations formulations are made and sold under — an NPN, a DIN, a
  * cosmetic notification number (ADR-029).
  *
@@ -52,11 +65,13 @@ export class ProductLicencesService {
 
   /**
    * Every licence, by authority then number; or, with `expiring`, those
-   * expiring within the notice or expired, soonest first, so the expired
-   * lead (ADR-091).
+   * expiring within the notice or expired, and with `expired` the expired
+   * alone, soonest first, so the expired lead (ADR-091).
    */
   async list(query: ListProductLicencesDto = {}): Promise<ProductLicence[]> {
-    if (query.expiring !== 'true') {
+    const expiring = query.expiring === 'true';
+    const expired = query.expired === 'true';
+    if (!expiring && !expired) {
       const rows = await this.tenantDb.select(productLicences, undefined, {
         orderBy: [asc(productLicences.authority), asc(productLicences.number)],
       });
@@ -72,7 +87,8 @@ export class ProductLicencesService {
         .where(
           and(
             eq(productLicences.organizationId, organizationId),
-            expiringLicence(today),
+            expiring ? expiringLicence(today) : undefined,
+            expired ? expiredLicence(today) : undefined,
           ),
         )
         .orderBy(

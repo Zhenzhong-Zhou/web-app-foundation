@@ -70,6 +70,7 @@ Rien n’est enregistré tant que vous ne le créez pas, et ce que vous créez s
 - **Libre** : du stock qui peut être promis, donné en échantillon ou utilisé en production.
 - **Non disponible** : un emplacement dont le stock n’est pas à expédier, comme un casier de retours à vérifier.
 - **Expire bientôt** : un lot qui expire dans le nombre de jours fixé par votre organisation.
+- **Périmés** : les lots dont la date de péremption est passée. Comme filtre, la liste n’affiche que ceux-là, le plus proche d’abord, jusqu’à ce que vous le retiriez.
 
 ## Si quelque chose est refusé {#refused}
 

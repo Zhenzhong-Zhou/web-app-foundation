@@ -265,6 +265,49 @@ describe('InventoryPage', () => {
     await expect.poll(() => asked.at(-1)?.get('order')).toBe('desc');
   });
 
+  /**
+   * Home's late button for Expiring soon opens the expired lots alone
+   * (ADR-091), soonest first, Expired a chip that clears it.
+   */
+  it('lists the expired when the address asks, soonest first, until cleared', async () => {
+    const user = userEvent.setup();
+    const asked: URLSearchParams[] = [];
+    server.use(
+      http.get('/api/v1/stock', ({ request }) => {
+        asked.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ entries: [ROW], nextCursor: null });
+      }),
+      http.get('/api/v1/stock/counts', () =>
+        HttpResponse.json({ expiring: 1, needsCost: 0 }),
+      ),
+      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/inventory?expiring=1&expired=1']}>
+        <InventoryPage />
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+
+    const chip = await screen.findByRole('button', { name: 'Expired' });
+    await expect.poll(() => asked.length).toBeGreaterThan(0);
+    expect(Object.fromEntries(asked[0])).toMatchObject({
+      expiringWithin: '90',
+      expired: 'true',
+      sort: 'expiry',
+      order: 'asc',
+    });
+
+    // Cleared, every lot expiring soon, still soonest first.
+    chip.focus();
+    await user.keyboard('{Delete}');
+    expect(
+      screen.queryByRole('button', { name: 'Expired' }),
+    ).not.toBeInTheDocument();
+    await expect.poll(() => asked.at(-1)?.has('expired')).toBe(false);
+    expect(asked.at(-1)?.get('sort')).toBe('expiry');
+  });
+
   describe('the search', () => {
     function answer() {
       const asked: Record<'stock' | 'points', (string | null)[]> = {

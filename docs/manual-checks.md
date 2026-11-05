@@ -162,6 +162,12 @@ a second organization.
   Trace lot on a lot's row, and nothing that changes stock. As an Admin,
   they also offer Move, Ship out, Send sample, Correct the count and, on a
   lot's row, Edit lot details.
+- **MC-311** *(ADR-091)* Inventory's Expired. As the demo Owner, open
+  `/inventory?expiring=1&expired=1`: Expiring soon is pressed, a chip
+  reads Expired, and the list holds only the lots past their day, VC-0301
+  first, with Expires marked as the sort. Remove Expired: every lot
+  expiring soon, the expired still first. In Français the chip reads
+  Périmés; in 中文, 已过期.
 
 ## 4. Buying
 
@@ -237,6 +243,17 @@ a second organization.
   under carries its status (Current, Expires in N days, Expired, Withdrawn),
   so a lapse is seen before a run is planned. With *Valid until* set to
   today it reads *Expires today*, and release treats it as current.
+- **MC-512** *(ADR-091, #460)* Licences in the menu, and its filters. As
+  the demo Owner, Licences is under Records, before Products, in the rail
+  and in the drawer; for a role that may not view licences it is not
+  there. Open it from the menu: Expiring soon is not pressed, and every
+  licence is listed. Press it: the address gains `expiring=1`, and the
+  list holds the licences within 60 days of their day or past it, 300456
+  first, then EXP-2026-0619; 80091234, which never expires, is gone. Open
+  `/licences?expiring=1&expired=1`: a chip reads Expired, and only 300456
+  is listed. Remove it: the expiring ones again. Home's Licences card
+  opens Licences with Expiring soon pressed. In Français they read Expire
+  bientôt and Expirées; in 中文, 即将过期 and 已过期.
 
 ## 6. Selling
 
@@ -586,10 +603,11 @@ Paper is checked first because it must not change at all.
 - **MC-1506** On a phone or tablet, buttons, icon buttons and table rows are at
   least a fingertip tall; with a mouse they are compact.
 - **MC-1507** From 1200px wide the navigation is a dark rail beside the page:
-  the daily work first (Inventory to Production), then Records (Products,
-  Partners, Locations, Trace a lot, Stock value, Audit log), then Settings
-  (Organization, Members, Tax codes, Exchange rates, Price lists). The current
-  page is highlighted, and the rail stays put while the page scrolls.
+  the daily work first (Inventory to Production), then Records (Licences,
+  Products, Partners, Locations, Trace a lot, Stock value, Audit log), then
+  Settings (Organization, Members, Tax codes, Exchange rates, Price lists).
+  The current page is highlighted, and the rail stays put while the page
+  scrolls.
 - **MC-1508** Fold the rail with the arrows at its top: only icons remain,
   each naming itself when pointed at, and following one still works. Reload:
   it stays folded. Unfold it again.
@@ -4733,3 +4751,6 @@ first.
 - 2026-11-05: ADR-091 and #302, the lists' filters and sort kept in the
   address while they are open, and a keyboard sort keeping its header's
   focus: MC-406 and MC-R97 added.
+- 2026-11-05: ADR-091 and #460, Licences in the menu's Records with its
+  Expiring soon, and Expired on Inventory and Licences: MC-311 and MC-512
+  added, MC-1507 rewritten.

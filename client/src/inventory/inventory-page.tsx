@@ -141,17 +141,19 @@ export function InventoryPage() {
  * The Stock tab's filters, in the address (ADR-091): Home's tiles open it
  * narrowed, `?expiring=1`, and what is pressed or chosen here is kept
  * there. "Expiring soon" is lots within the amber threshold, the expired
- * included; "Needs a cost" is stock whose value is still provisional
+ * included; "Expired" is those past their day alone, which Home's late
+ * button adds; "Needs a cost" is stock whose value is still provisional
  * (ADR-048).
  */
 const ADDRESS_FILTERS = {
   expiring: flag,
+  expired: flag,
   needsCost: flag,
   includeEmpty: flag,
   locationId: id,
 };
 
-/** Expiring soon's own order: the soonest first, the expired leading. */
+/** Expiring soon's and Expired's order: the soonest first, the expired leading. */
 const SOONEST_EXPIRY: ListSort<'expiry'> = { key: 'expiry', order: 'asc' };
 
 /**
@@ -170,7 +172,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
 
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
-  const { expiring, needsCost, includeEmpty } = filters;
+  const { expiring, expired, needsCost, includeEmpty } = filters;
   // Sales sees stock but not locations (ADR-080): the page asks only for
   // what its reader may read, and leaves the Location filter out.
   const canSeeLocations = can('locations.view');
@@ -194,10 +196,10 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   } | null>(null);
   const [viewing, setViewing] = useState<StockRow | null>(null);
   // By the lot's expiry when its header is chosen (ADR-057), and, with
-  // Expiring soon on, soonest first until one is (ADR-091).
+  // Expiring soon or Expired on, soonest first until one is (ADR-091).
   const { sort, header } = useListSort(
     ['expiry'],
-    expiring ? SOONEST_EXPIRY : null,
+    expiring || expired ? SOONEST_EXPIRY : null,
   );
   const [expiringCount, setExpiringCount] = useState<number | null>(null);
   const [needsCostCount, setNeedsCostCount] = useState<number | null>(null);
@@ -229,6 +231,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     if (includeEmpty) params.set('includeEmpty', 'true');
     if (search) params.set('search', search);
     if (expiring) params.set('expiringWithin', String(expiringWithin));
+    if (expired) params.set('expired', 'true');
     if (needsCost) params.set('needsCost', 'true');
     if (sort) {
       params.set('sort', sort.key);
@@ -241,6 +244,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     search,
     expiring,
     expiringWithin,
+    expired,
     needsCost,
     sort,
   ]);
@@ -483,6 +487,20 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
         )}
       </FilterRow>
 
+      {/* What a link narrowed that no button shows, removable: Home's
+          late button, the expired lots alone. */}
+      {expired && (
+        <Stack direction="row" spacing={1}>
+          <Chip
+            label={intl.formatMessage({
+              id: 'inventory.filter.expired',
+              defaultMessage: 'Expired',
+            })}
+            onDelete={() => setFilters({ expired: false })}
+          />
+        </Stack>
+      )}
+
       {!failed && (
         <Paper variant="outlined">
           {loading ? (
@@ -607,29 +625,34 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
             </TableContainer>
           ) : (
             <EmptyState learnMore={{ guide: 'inventory', section: 'receive' }}>
-              {needsCost && !expiring
+              {expired
                 ? intl.formatMessage({
-                    id: 'inventory.noneNeedsCost',
-                    defaultMessage: 'Everything here has a cost.',
+                    id: 'inventory.noneExpired',
+                    defaultMessage: 'No lot here has expired.',
                   })
-                : expiring
-                  ? intl.formatMessage(
-                      {
-                        id: 'inventory.noneExpiring',
-                        defaultMessage:
-                          'No lot here expires within {days} days.',
-                      },
-                      { days: expiringWithin },
-                    )
-                  : search
-                    ? intl.formatMessage({
-                        id: 'inventory.noMatch',
-                        defaultMessage: 'Nothing matches that search.',
-                      })
-                    : intl.formatMessage({
-                        id: 'inventory.empty',
-                        defaultMessage: 'Nothing here yet.',
-                      })}
+                : needsCost && !expiring
+                  ? intl.formatMessage({
+                      id: 'inventory.noneNeedsCost',
+                      defaultMessage: 'Everything here has a cost.',
+                    })
+                  : expiring
+                    ? intl.formatMessage(
+                        {
+                          id: 'inventory.noneExpiring',
+                          defaultMessage:
+                            'No lot here expires within {days} days.',
+                        },
+                        { days: expiringWithin },
+                      )
+                    : search
+                      ? intl.formatMessage({
+                          id: 'inventory.noMatch',
+                          defaultMessage: 'Nothing matches that search.',
+                        })
+                      : intl.formatMessage({
+                          id: 'inventory.empty',
+                          defaultMessage: 'Nothing here yet.',
+                        })}
             </EmptyState>
           )}
         </Paper>

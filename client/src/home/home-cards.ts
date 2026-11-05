@@ -141,7 +141,8 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     title: TITLES.licences,
     empty: EMPTY.licences,
     icon: VerifiedOutlined,
-    list: '/licences',
+    // Expiring soon, the expired among them, soonest first (ADR-091, #460).
+    list: '/licences?expiring=1',
     late: 'expired',
   },
   // After To receive on the page, as the server orders it (ADR-085).

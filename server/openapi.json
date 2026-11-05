@@ -2790,6 +2790,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -3824,6 +3832,14 @@
             }
           },
           {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "needsCost",
             "required": false,
             "in": "query",
@@ -3946,6 +3962,14 @@
               "minimum": 1,
               "maximum": 3650,
               "type": "number"
+            }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -4210,6 +4234,14 @@
               "minimum": 1,
               "maximum": 3650,
               "type": "number"
+            }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           },
           {

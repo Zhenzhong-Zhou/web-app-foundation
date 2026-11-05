@@ -48,6 +48,15 @@ export class ListStockDto extends KeysetQueryDto {
   expiringWithin?: number;
 
   /**
+   * Only lots already past their expiry, before the organization's today
+   * (ADR-072): what Home counts late among Expiring soon, opened by its
+   * late button (ADR-091).
+   */
+  @IsOptional()
+  @IsBooleanString()
+  expired?: string;
+
+  /**
    * Only stock whose cost is still waiting (ADR-048): received with no
    * price, or a batch whose run has not closed. The inventory's "Needs a
    * cost" (ADR-055), meaning exactly what Stock value lists.
