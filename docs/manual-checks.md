@@ -769,8 +769,8 @@ Paper is checked first because it must not change at all.
   In use in quiet blue and Retired in grey; a retired price list is grey.
 - **MC-1555** On SO-DEMO-2 in 中文 at 1440px, the 未完成 column reads 500 with 短缺
   162 in amber under it, not beside it; the Total column is in view without
-  scrolling sideways, and the pinned ⋮ covers nothing. Hovering the chip still
-  says how much is held.
+  scrolling sideways, held beside the pinned ⋮, which covers nothing (MC-R96).
+  Hovering the chip still says how much is held.
 - **MC-1556** From any page, `/` or ⌘K focuses the top bar's search. Typing
   `2609` lists BF-2609 and FOC-2609-01 under Lots, each with its SKU and
   expiry chip; arrow keys move, Enter opens the lot's trace, Escape closes.
@@ -3183,6 +3183,15 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R96** *(the order's Total cut under its actions on a computer, #221)*
+  Open SO-DEMO-1 at 1440 px, in English, Français and 中文, at Standard and
+  at Larger text (account menu → Text size), in light and in dark: each
+  line's Total is in view beside its ⋮ without scrolling sideways. Scroll
+  the Items table sideways: the columns before the Total pass under it, a
+  shadow on its left edge while they do, gone at the table's right end. At
+  390 px only the ⋮ stays at the right; the Total scrolls with the rest
+  (#159).
+
 - **MC-R95** *(focus falling to the page as an invoice was issued, #462)*
   With the keyboard alone at 1440 px, as the demo Owner. Open SO-DEMO-5's
   draft invoice, press Enter on Issue, then on the dialog's Issue: once the
@@ -4693,3 +4702,5 @@ first.
   change logged without its words: MC-1704 added.
 - 2026-11-05: ADR-091, the type scale of 16 px text and the corners grown
   to 10, 12 and 16 px on every screen: MC-1560 added.
+- 2026-11-05: #221, the order's Total held beside its actions on a
+  computer: MC-R96 added, MC-1555 rewritten.

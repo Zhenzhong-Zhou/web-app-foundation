@@ -17,6 +17,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { alpha, type Theme } from '@mui/material/styles';
 import { useId, useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -26,6 +27,7 @@ import { displayQuantity, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { showsPrices } from './prices';
 import { doneLabel } from './status';
+import { useHeldTotal } from './use-held-total';
 
 /**
  * The actions column, held at the table's right edge (ADR-055). With the
@@ -35,6 +37,27 @@ import { doneLabel } from './status';
  * tint; a body cell is given the panel's colour so rows pass beneath it.
  */
 const PINNED = { position: 'sticky', right: 0, zIndex: 1 } as const;
+
+/**
+ * On a computer, the Total held beside the actions too, the other columns
+ * passing under both (#221): at the 16 px text the table is wider than its
+ * place beside the summary in every language, and the Total is what a
+ * line is read for. A shadow on its left edge says columns run under it,
+ * there only while they do. The phone keeps only the actions held (#159).
+ */
+const heldTotal =
+  (right: number, under: boolean, body = false) =>
+  (theme: Theme) => ({
+    [theme.breakpoints.up('md')]: {
+      position: 'sticky' as const,
+      right,
+      zIndex: 1,
+      ...(body && { bgcolor: 'background.paper' }),
+      boxShadow: under
+        ? `-8px 0 8px -8px ${alpha(theme.palette.common.black, 0.25)}`
+        : 'none',
+    },
+  });
 
 /**
  * An order's items: the table, what each line can do, and the totals.
@@ -85,6 +108,12 @@ export function OrderLinesSection({
   const intl = useIntl();
   const isDraft = order.status === 'draft';
   const priced = showsPrices(order);
+  const {
+    scroller,
+    actions: actionsHead,
+    right: totalRight,
+    under,
+  } = useHeldTotal();
 
   return (
     <Box>
@@ -162,7 +191,7 @@ export function OrderLinesSection({
             past the Paper is what put "Close short" over the border.
             nowrap on the numbers and the actions, so a squeeze becomes a
             scroll rather than "Close" above "short". */}
-        <TableContainer>
+        <TableContainer ref={scroller}>
           <Table
             size="small"
             sx={{
@@ -228,7 +257,7 @@ export function OrderLinesSection({
                         defaultMessage: 'Unit price',
                       })}
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell align="right" sx={heldTotal(totalRight, under)}>
                       {intl.formatMessage({
                         id: 'orders.lines.total',
                         defaultMessage: 'Total',
@@ -239,8 +268,10 @@ export function OrderLinesSection({
                 {/* No visible title — the buttons explain themselves —
                     but a screen reader announces the column by name.
                     Pinned to the right edge, as its cells are, so the ⋮
-                    stays in view when the table scrolls sideways. */}
+                    stays in view when the table scrolls sideways; its
+                    width is where the Total is held from. */}
                 <TableCell
+                  ref={actionsHead}
                   align="right"
                   sx={PINNED}
                   aria-label={intl.formatMessage({
@@ -367,7 +398,10 @@ export function OrderLinesSection({
                           </Typography>
                         )}
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell
+                        align="right"
+                        sx={heldTotal(totalRight, under, true)}
+                      >
                         {formatMoney(
                           line.lineTotal ?? null,
                           line.currency ?? null,

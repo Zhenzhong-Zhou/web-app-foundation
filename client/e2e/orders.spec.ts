@@ -1,5 +1,6 @@
 import { expect, test } from './fixtures';
 import {
+  created,
   createLocation,
   createPartner,
   createProduct,
@@ -149,4 +150,76 @@ test('hides every write control from a viewer', async ({
   // that always fails is worse than one that is absent. Asserted as a link:
   // against the wrong role this would pass with the control on screen.
   await expect(page.getByRole('link', { name: 'Raise an order' })).toBeHidden();
+});
+
+/**
+ * #221: at the 16 px text an order's items are wider than their place
+ * beside the summary, and its Total ran under the row's actions. On a
+ * computer the Total is held beside them, the other columns passing under
+ * both, a shadow on its edge while they do; the phone holds only the
+ * actions (#159).
+ */
+test('holds each line’s Total beside its actions on a computer', async ({
+  page,
+  freshOrg,
+}) => {
+  const partner = await createPartner(freshOrg.api, { name: 'E2E Total Co' });
+  const product = await createProduct(freshOrg.api, {
+    sku: 'E2E-TOTAL-1',
+    name: 'E2E Focus capsules, sixty count, with lemon balm and chamomile',
+  });
+  const { order } = await created<{ order: { id: string } }>(
+    await freshOrg.api.post('/v1/orders', {
+      data: {
+        partnerId: partner.id,
+        direction: 'sale',
+        lines: [
+          {
+            variantId: product.variantId,
+            quantityOrdered: '500',
+            unitPrice: '14.00',
+            currency: 'CAD',
+          },
+        ],
+      },
+    }),
+  );
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signInAs(page, freshOrg.api);
+  await page.goto(`/orders/${order.id}`);
+
+  const row = page.getByRole('row', { name: /E2E-TOTAL-1/ });
+  const cells = row.getByRole('cell');
+  await expect(cells.last()).toBeVisible();
+  const count = await cells.count();
+  const total = cells.nth(count - 2);
+  const actions = cells.nth(count - 1);
+  const frame = page.locator('.MuiTableContainer-root').filter({ has: row });
+  await expect(total).toContainText('7,000.00');
+
+  // The table is wider than its frame, as SO-DEMO-1's is at 1440.
+  expect(await frame.evaluate((box) => box.scrollWidth > box.clientWidth)).toBe(
+    true,
+  );
+
+  const totalBox = (await total.boundingBox())!;
+  const actionsBox = (await actions.boundingBox())!;
+  const frameBox = (await frame.boundingBox())!;
+  expect(totalBox.x + totalBox.width).toBeLessThanOrEqual(actionsBox.x + 1);
+  expect(totalBox.x).toBeGreaterThanOrEqual(frameBox.x);
+  const shadow = () =>
+    total.evaluate((cell) => getComputedStyle(cell).boxShadow);
+  expect(await shadow()).not.toBe('none');
+
+  // Scrolled to its end, nothing is under the Total, and no shadow says so.
+  await frame.evaluate((box) => {
+    box.scrollLeft = box.scrollWidth;
+  });
+  await expect.poll(shadow).toBe('none');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() => total.evaluate((cell) => getComputedStyle(cell).position))
+    .toBe('static');
 });
