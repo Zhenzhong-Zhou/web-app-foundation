@@ -201,7 +201,7 @@ steps; this section stays the rule.
   whole (of eight picked from one-line lists on 24 and 25 October, three
   stopped, needing a decision or more files), no choice left open, small
   enough (one that names more than about five files goes to the Mac:
-  #310 stopped for thirteen dialogs on 4 November), and no commit on
+  #310 stopped for nine dialogs on 4 November), and no commit on
   `main` already fixing it (two of four on 2 November). Two rules bend for it,
   each said in the skill: it takes no dependency commit, and without
   Docker it pushes after `scripts/verify.sh --quick`, the rest left to

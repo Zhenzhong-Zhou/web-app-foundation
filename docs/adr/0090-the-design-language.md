@@ -266,7 +266,7 @@ chat shortlists from it, with their comments too. All of them with
 their comments came to 780 KB on 4 November, too much to read whole;
 without, 290 KB. And an issue that names more than
 about five files goes to a Mac branch: #310's session stopped for its
-thirteen dialogs on 4 November.
+nine dialogs on 4 November.
 
 ## Decision — its own docs pull request
 

@@ -164,7 +164,7 @@ for n in <N> <N> <N>; do gh issue view "$n" --json number,title,labels,body,comm
 The chat picks only what the skill would not stop on: read whole,
 comments included, from the second; no choice left open, no `later` or `decision` label;
 small, an issue that names more than about five files going to a Mac
-branch instead (#310 stopped for thirteen dialogs); and no commit on
+branch instead (#310 stopped for nine dialogs); and no commit on
 `main` already fixing it,
 `git log --oneline -E --grep '#<N>([^0-9]|$)' origin/main` on a clone with
 its whole history. A session's DONE or BLOCKED comes back here as a

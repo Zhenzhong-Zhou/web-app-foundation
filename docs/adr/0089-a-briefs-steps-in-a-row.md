@@ -425,5 +425,5 @@ commits name are the list checked before it opens.
   `tmp/cloud-picks.json`, then the few shortlisted from it with their
   comments, to `tmp/cloud-picks-shortlist.json`, each attached to the
   chat rather than read from GitHub's pages. An issue that names more than about five files
-  goes to a Mac branch instead: #310's session stopped for thirteen
+  goes to a Mac branch instead: #310's session stopped for nine
   dialogs on 4 November 2026.
