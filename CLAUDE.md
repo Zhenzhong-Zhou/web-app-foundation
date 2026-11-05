@@ -154,7 +154,7 @@ panel, `/usability-walkthrough panel <journey>`, on each journey of
 when the PR changes what a person sees, then `/simplify`, then
 `/code-review`, then
 `/production-readiness` on the sections the change touches, then
-`/doctor prompt-audit`, Claude Code's audit of its instruction files
-(v2.1.283 or later), which Bob types in the session, since a session
-cannot run it. Their findings are numbered together and nothing is fixed
-until Bob chooses; each fix chosen is its own commit.
+`/doctor prompt-audit`, Claude Code's audit of its instruction files,
+which Bob types in the session, since a session cannot run it. Their
+findings are numbered together and nothing is fixed until Bob chooses;
+each fix chosen is its own commit.

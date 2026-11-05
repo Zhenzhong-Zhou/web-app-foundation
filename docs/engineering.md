@@ -169,10 +169,9 @@ steps; this section stays the rule.
   `--quick` by what it touches ([Commits](#commits)), the full verify, the
   push and the PR. `/doctor prompt-audit` is Claude Code's own audit of
   its instruction files (`CLAUDE.md`, `.claude/rules/`, the skills) for
-  contradictions and references to files that no longer exist. It needs
-  Claude Code v2.1.283 or later, and Bob types it in the session, since a
-  session cannot run it: the session asks for it, and numbers its
-  findings with the rest. It changes nothing itself.
+  contradictions and references to files that no longer exist. Bob
+  types it in the session, since a session cannot run it: the session
+  asks for it, and numbers its findings with the rest. It changes nothing itself.
 - **`caffeinate -dims` in a second terminal** during a long Claude Code
   step, such as the full verify (October 2026): a Mac asleep cut one off.
 - **A second working folder,** for a branch built while another runs in
