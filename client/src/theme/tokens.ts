@@ -114,13 +114,20 @@ export const MARK_SHAPE = {
 } as const;
 
 /**
- * Controls, then panels. Chips are round.
+ * Controls, then panels, then dialogs. Chips are round, but for a made
+ * role's, square enough beside a round one to be told from it by its
+ * shape (ADR-080), whatever the others become.
  *
  * The emails keep a copy of control and panel, the button's corners and
  * the note's, in server/src/shared/mail/mail-layout.ts: a change to either
  * is made there too.
  */
-export const RADIUS = { control: 6, panel: 8, dialog: 10 } as const;
+export const RADIUS = {
+  control: 6,
+  panel: 8,
+  dialog: 10,
+  squareChip: 6,
+} as const;
 
 /**
  * A colour mixed toward white by `weight` (0 to 1). Dark mode's accent is
