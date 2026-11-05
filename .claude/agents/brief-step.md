@@ -139,8 +139,9 @@ where a step must act on it.
   delivered"][delivered]):
   1. **The findings.** The walkthrough panel,
      `/usability-walkthrough panel <journey>`, on each journey the brief
-     names from `journeys.md`, a journey or a persona added there first
-     when it is new, for any change a person sees; `/simplify`;
+     names from `.claude/skills/usability-walkthrough/journeys.md`, for
+     any change a person sees; a new journey is added to `journeys.md`
+     first, and a new persona to `personas.md` beside it; `/simplify`;
      `/code-review`;
      `/production-readiness` on the sections the change touches;
      `/doctor prompt-audit`, which needs Claude Code v2.1.283 or later
