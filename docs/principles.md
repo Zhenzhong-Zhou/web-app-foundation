@@ -3,7 +3,8 @@
 What this application aims for, so a change can be judged against
 something other than taste. The ADRs record what was decided and why;
 these say what the decisions were for. Each names the ADRs that already
-hold to it.
+hold to it. How a screen meets them, its principles and patterns at
+every size, is [the design language](design-language.md) (ADR-090).
 
 Draft, October 2026: proposed from the ADRs as they stand. Edit freely;
 a principle nobody would defend should go, and one that keeps coming up

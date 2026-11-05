@@ -150,9 +150,22 @@ gets:
 
 The prompt is one line, `/fix-issue <N>`, a new session each, with
 `leave <path>` after it only for a branch not pushed (ADR-089's
-amendment). The chat picks only what the skill would not stop on: read
-whole, comments included; no choice left open, no `later` or `decision`
-label; and no commit on `main` already fixing it,
+amendment). The candidates come from two exports Bob writes and
+attaches, not from GitHub's pages (ADR-090): first the open `fix-now`
+and `when-touched` issues without their comments, `tmp/cloud-picks.json`;
+then the few the chat shortlists from it, with their comments,
+`tmp/cloud-picks-shortlist.json`, the chat filling in their numbers:
+
+```bash
+gh issue list --state open --limit 500 --json number,title,labels,body --jq '[.[] | select(any(.labels[]; .name == "fix-now" or .name == "when-touched")) | select(all(.labels[]; .name != "later" and .name != "decision"))]' > tmp/cloud-picks.json
+for n in <N> <N> <N>; do gh issue view "$n" --json number,title,labels,body,comments; done | jq -s . > tmp/cloud-picks-shortlist.json
+```
+
+The chat picks only what the skill would not stop on: read whole,
+comments included, from the second; no choice left open, no `later` or `decision` label;
+small, an issue that names more than about five files going to a Mac
+branch instead (#310 stopped for nine dialogs); and no commit on
+`main` already fixing it,
 `git log --oneline -E --grep '#<N>([^0-9]|$)' origin/main` on a clone with
 its whole history. A session's DONE or BLOCKED comes back here as a
 step's stop does.

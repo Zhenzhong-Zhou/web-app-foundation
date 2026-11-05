@@ -124,6 +124,11 @@ deploys the static site at the same commit. A `main` whose CI fails
 deploys neither, and if the API's deploy fails, the client stays where it
 was, matching it.
 
+**A green Deploy means the migrations applied:** the API's build command
+runs `npm run migrate` after the build, joined by `&&`, so a migration
+that fails fails the build, and the wait for `/api/health` never sees
+the commit.
+
 **Deploying by hand:** Actions → Deploy → Run workflow deploys `main`'s
 newest commit whose CI passed on a push, in the same order, and says in
 its first step which commit and which CI run. A missed deploy (a run

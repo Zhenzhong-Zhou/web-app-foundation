@@ -237,7 +237,7 @@ work under updates it.
 | Before drafting an ADR                 | `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n>`, then attach `tmp/adr-NNN/check.txt` to the chat                                  |
 | Building from a brief                  | `/build-from-brief <brief> from <N>`; paste only the stops into the chat                                                                        |
 | A small issue, in a cloud session      | `/fix-issue <N>`; merge its pull request with Squash and merge                                                                                  |
-| Every pull request's review            | `/usability-walkthrough`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                                          |
+| Every pull request's review            | `/usability-walkthrough panel <journey>`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                          |
 | Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                                                              |
 | After a merge                          | `scripts/prune-branches.sh --yes`                                                                                                               |
 | After a merge, now and then            | `scripts/clean-local.sh`, then `--yes`; `--docker` for Docker's space                                                                           |
@@ -412,8 +412,9 @@ licences.
 - [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with seven project
   skills in `.claude/skills/`: `/code-review`, `/usability-walkthrough`,
   `/production-readiness`, `/build-from-brief`, `/rules-file`, `/triage`
-  and `/fix-issue`; one subagent, `brief-step`, in `.claude/agents/`, which
-  runs a brief's step (ADR-089); and the chat's planning skill,
+  and `/fix-issue`; two subagents in `.claude/agents/`, `brief-step`,
+  which runs a brief's step (ADR-089), and `walkthrough`, one persona's
+  walk in a panel (ADR-090); and the chat's planning skill,
   `plan-feature`, in `.claude/chat-skills/`, uploaded to claude.ai
   (ADR-088)
 - [`docs/releases/`](docs/releases) — the notes each tagged release was made with

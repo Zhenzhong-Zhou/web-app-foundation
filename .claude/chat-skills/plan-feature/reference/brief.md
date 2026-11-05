@@ -15,8 +15,9 @@ repeat; a brief holds only its decisions and its steps.
 3. **This brief's own rules:** what the change is not (no API change,
    no migration), the verify mode for each kind of commit, the seeds
    (what to add, or why nothing), the manual checks (which, in the same
-   commit as what they check), the persona for `/usability-walkthrough`
-   or why none, the stop rule when not 30 minutes, and anything every
+   commit as what they check), the journeys for the walkthrough panel,
+   `/usability-walkthrough panel <journey>`, or why none, the stop rule
+   when not 30 minutes, and anything every
    summary must say. The reviews have none: they wait for their
    helpers and for Bob.
 4. **The steps:** a table (#, Who, What), then a section per step: what

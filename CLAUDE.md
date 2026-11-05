@@ -124,7 +124,10 @@ Andrej Karpathy's observations on LLM coding pitfalls
 - `/code-review`: reviews a branch or pull request against these rules,
   `docs/conventions.md` and `docs/principles.md`.
 - `/usability-walkthrough`: walks a task through the running app as a
-  persona and reports what gets in the way.
+  persona and reports what gets in the way; `panel <journey>` walks a
+  journey from its `journeys.md` as several personas at once, each in a
+  `walkthrough` subagent (`.claude/agents/walkthrough.md`), and merges
+  what they found.
 - `/production-readiness`: reviews whether the deployed app is ready for
   real users, report only.
 - `/build-from-brief`: runs a build brief in `tmp/`, one step as
@@ -145,12 +148,13 @@ Andrej Karpathy's observations on LLM coding pitfalls
   skill list, as `anthropic-skills:plan-feature`; it is the chat's alone,
   so Claude Code never runs it.
 
-Every feature branch runs, before the PR is opened,
-`/usability-walkthrough` as one of its personas
-(`.claude/skills/usability-walkthrough/personas.md`) when the PR changes
-what a person sees, then `/simplify`, then `/code-review`, then
+Every feature branch runs, before the PR is opened, the walkthrough
+panel, `/usability-walkthrough panel <journey>`, on each journey of
+`.claude/skills/usability-walkthrough/journeys.md` its change touches,
+when the PR changes what a person sees, then `/simplify`, then
+`/code-review`, then
 `/production-readiness` on the sections the change touches, then
-`/doctor prompt-audit`, Claude Code's audit of its instruction files
-(v2.1.283 or later), which Bob types in the session, since a session
-cannot run it. Their findings are numbered together and nothing is fixed
-until Bob chooses; each fix chosen is its own commit.
+`/doctor prompt-audit`, Claude Code's audit of its instruction files,
+which Bob types in the session, since a session cannot run it. Their
+findings are numbered together and nothing is fixed until Bob chooses;
+each fix chosen is its own commit.

@@ -22,9 +22,9 @@ except to check that they changed whenever the API did.
 
 ## 2. Read the rules it touches
 
-`CLAUDE.md` first, then the parts of `docs/conventions.md` and
-`docs/principles.md` the change bears on, and every ADR it names or
-amends in `docs/adr/`.
+`CLAUDE.md` first, then the parts of `docs/conventions.md`,
+`docs/principles.md` and, for a screen, `docs/design-language.md` the
+change bears on, and every ADR it names or amends in `docs/adr/`.
 
 Then the rules of each area the change touches (ADR-087), where the area
 has them: `.claude/rules/<area>.md`, Claude's code rules, whose `paths`
@@ -121,6 +121,12 @@ allows, refuses and works out there.
 
 - Does any screen leave someone guessing, lose something silently, or
   show a number the server did not compute?
+
+### The design language (`docs/design-language.md`)
+
+- Does each screen the change touches follow its principles and
+  patterns, at each width class it changes? A pattern it needs and the
+  document lacks is a finding, added there first.
 
 ## 4. Report
 

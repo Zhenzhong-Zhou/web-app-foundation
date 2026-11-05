@@ -3,6 +3,7 @@ status: accepted
 date: 2026-11-02
 areas: [docs, ops]
 amends: [ADR-083, ADR-088]
+amended-by: [ADR-090]
 ---
 
 # ADR-089 — A brief's steps in a row: each in a fresh subagent, stopping only for a person (amends ADR-083 and ADR-088)
@@ -409,3 +410,20 @@ commits name are the list checked before it opens.
 - Eight issues went through `/fix-issue` in its first day, 2 and 3
   November: #358, #315, #242, #179, #428, #125, #165 and #245, each
   merged.
+
+## Amendment (November 2026) — the walkthrough panel in the review step, and cloud picks from an export (ADR-090)
+
+- **The review step's walkthrough is a panel:** `/usability-walkthrough
+  panel <journey>` on each journey of
+  `.claude/skills/usability-walkthrough/journeys.md` the change touches,
+  its personas at once, each in a `walkthrough` subagent
+  (`.claude/agents/walkthrough.md`), with their findings merged. A brief
+  names the journeys, or says why none; `brief-step` asks for them as it
+  asked for one persona.
+- **A cloud pick comes from an export:** the open `fix-now` and
+  `when-touched` issues with their text, written by `gh` to
+  `tmp/cloud-picks.json`, then the few shortlisted from it with their
+  comments, to `tmp/cloud-picks-shortlist.json`, each attached to the
+  chat rather than read from GitHub's pages. An issue that names more than about five files
+  goes to a Mac branch instead: #310's session stopped for nine
+  dialogs on 4 November 2026.

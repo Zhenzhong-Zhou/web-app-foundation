@@ -9,17 +9,19 @@
   feature PR rather than getting one of their own.
 - **The reviews, before the PR is opened** (21 October 2026; from
   ADR-081 four, and from ADR-086 five): every feature branch runs, for
-  any PR that changes what a person sees, `/usability-walkthrough` as one
-  of its personas
-  (`.claude/skills/usability-walkthrough/personas.md`), then `/simplify`,
+  any PR that changes what a person sees, the walkthrough panel on each
+  journey its change touches, `/usability-walkthrough panel <journey>`,
+  the journey's personas at once (ADR-090;
+  `.claude/skills/usability-walkthrough/journeys.md`, a journey added
+  there first when its task is new), then `/simplify`,
   then `/code-review`, then
   `/production-readiness` on the sections the change touches
   ([conventions.md, "Production readiness"](conventions.md#production-readiness)),
   then `/doctor prompt-audit` on Claude's instruction files
   ([How code is delivered](#how-code-is-delivered)). Their findings are
   numbered together and nothing is fixed until Bob chooses; each fix
-  chosen is its own commit. The PR description names the journey
-  walked and the persona who walked it. `/usability-walkthrough` was
+  chosen is its own commit. The PR description names the journeys
+  walked and their personas. `/usability-walkthrough` was
   missed on several recent PRs, so ADR-079's branch walked
   two journeys, to make up for ADR-077 and ADR-078.
 - **Claude Code Review on Sonnet** (October 2026): the reviews in each
@@ -167,10 +169,9 @@ steps; this section stays the rule.
   `--quick` by what it touches ([Commits](#commits)), the full verify, the
   push and the PR. `/doctor prompt-audit` is Claude Code's own audit of
   its instruction files (`CLAUDE.md`, `.claude/rules/`, the skills) for
-  contradictions and references to files that no longer exist. It needs
-  Claude Code v2.1.283 or later, and Bob types it in the session, since a
-  session cannot run it: the session asks for it, and numbers its
-  findings with the rest. It changes nothing itself.
+  contradictions and references to files that no longer exist. Bob
+  types it in the session, since a session cannot run it: the session
+  asks for it, and numbers its findings with the rest. It changes nothing itself.
 - **`caffeinate -dims` in a second terminal** during a long Claude Code
   step, such as the full verify (October 2026): a Mac asleep cut one off.
 - **A second working folder,** for a branch built while another runs in
@@ -191,17 +192,27 @@ steps; this section stays the rule.
   proves and verifies, and opens a pull request that closes it. A branch
   built on the Mac is pushed at each stop of its run, so its files show;
   `leave <path>` after the number names one that is not. The chat picks
-  only what the skill would not stop on: an issue read whole (of eight
-  picked from one-line lists on 24 and 25 October, three stopped, needing
-  a decision or more files), no choice left open, and no commit on `main`
-  already fixing it (two of four on 2 November). Two rules bend for it,
+  from two exports the maintainer attaches (ADR-090): the open `fix-now`
+  and `when-touched` issues with their text, `tmp/cloud-picks.json`,
+  then the few it shortlists with their comments too,
+  `tmp/cloud-picks-shortlist.json`; and only what the skill would not
+  stop on: an issue read
+  whole (of eight picked from one-line lists on 24 and 25 October, three
+  stopped, needing a decision or more files), no choice left open, small
+  enough (one that names more than about five files goes to the Mac:
+  #310 stopped for nine dialogs on 4 November), and no commit on
+  `main` already fixing it (two of four on 2 November). Two rules bend for it,
   each said in the skill: it takes no dependency commit, and without
   Docker it pushes after `scripts/verify.sh --quick`, the rest left to
   CI. A proof runs only the changed tests; a sweep, a load proof or
   anything needing the large seed stays on the Mac. A session signs with a key of its own, so under the
   maintainer's vigilant mode its commits show Unverified: its pull
   requests are squashed and merged, so each lands on `main` as one commit
-  GitHub signs (1 November 2026). PRs merge one at a time, each when
+  GitHub signs (1 November 2026). Squash and merge is chosen from the
+  merge button's menu, since the button offers the method used last:
+  from 2 November every cloud pull request went in as a merge commit. A
+  feature branch's pull request keeps Create a merge commit, so its
+  commits stay apart (4 November 2026). PRs merge one at a time, each when
   green; a branch behind
   `main` with no conflict merges as it is, and a conflict in
   `docs/manual-checks.md` is settled on GitHub with "Accept both changes",
@@ -237,7 +248,11 @@ steps; this section stays the rule.
   packs itself, laid out as the repository is and named for its step
   (`adr-088-step-07.zip`, ending `-v2` when corrected), unpacked from
   the repository's root with `unzip ~/Downloads/<zip> && rm
-  ~/Downloads/<zip>`; `unzip` asks before overwriting a file.
+  ~/Downloads/<zip>`; `unzip` asks before overwriting a file. Text for
+  GitHub, an issue's or a comment's, comes as a file too, passed with
+  `--body-file` (4 November 2026): a script that held an issue's text
+  inside `$( )` filed it cut short, since macOS's bash 3.2 closed the
+  `$( )` at a parenthesis in the text and ran the rest as commands.
 - **A file already in the repository changes by a patch, never sent
   whole** (29 October 2026; from 26 October, only a file of 600 lines or
   more). The chat makes it from a shallow, read-only clone of the

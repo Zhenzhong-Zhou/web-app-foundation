@@ -14,6 +14,12 @@ issue or a commit.** If one leaks, change it (sections 1 and 6).
 | Freshness check | 16:30 UTC daily: fails if the newest backup is over 26 hours old                           | Actions → **Backup**                           |
 | Restore drill   | 11:00 UTC on the 1st: restores the newest backup, times it, checks every file has its copy | Actions → **Restore drill**, the run's summary |
 
+The drill restores the newest backup, so a drill meant to prove a deploy
+(a new Postgres extension, a new kind of migration) needs a backup taken
+after that deploy: wait for the next Backup, or run it by hand, then the
+drill. Drill #4 restored the first dump holding `btree_gin` this way, on
+4 November 2026.
+
 A failed scheduled run emails the person who last changed the workflow file.
 GitHub pauses scheduled workflows after 60 days with no activity in the
 repository; the freshness check then stops too, so after a long quiet spell,

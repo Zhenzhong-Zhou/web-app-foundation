@@ -15,6 +15,19 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 4 November 2026:
 
+- **ADR-090, the design language** ([#338]): [#465], planned and built on
+  4 November, its own docs pull request, its as-built in
+  [ADR-090](adr/0090-the-design-language.md): eight principles and
+  their patterns, at five width classes, in a design language document
+  of their own.
+  With no newcomers to test with, a panel of personas walked two
+  journeys instead (`/usability-walkthrough panel <journey>`): `home`,
+  four personas, 45 findings, and `on-the-road`, a sales rep on a slow
+  phone, 17. The reviews found 27 more, 13 fixed on the branch and the
+  rest in [#467]. The type is drawn on the canvas in a row of its own, at
+  each text size, and 16 px stays for text a person decides by. Home for
+  a newcomer, ADR-091 ([#335]), is next, by 6 November, built to it.
+
 - **The Fix-ups' first batch, CI that can be trusted:** [#435], merged
   on 3 November as 066f05a1 and deployed the same day (Deploy run
   41714355019), closing [#183], [#232], [#248], [#290], [#271], [#334],
@@ -35,9 +48,9 @@ On 4 November 2026:
   indexes led by the organization (migration 0077, `btree_gin`), and the
   orders' partner arm as an array. The second timed run's median was 231
   ms against the 240 ms bar, so #225's known miss is gone; Home's ([#276])
-  holds until 31 January 2027, for its redesign. Next, the translations
-  on `fix-ups-i18n`, whose first commit amends ADR-054 with 3 November's
-  decisions.
+  holds until 31 January 2027, for its redesign. Deployed on 4 November
+  (Deploy #95): `btree_gin` 1.3 is on production, backups #72 and #73 ran
+  after it, and restore drill #4 restored the first dump holding it.
 - **ADR-089, a brief's steps in a row** ([#348]): [#403], merged on 2
   November, its as-built in
   [ADR-089](adr/0089-a-briefs-steps-in-a-row.md). Claude Code's steps of
@@ -82,7 +95,15 @@ On 4 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** from cloud sessions, 3 November, through
+- **The last merges:** on 4 November, after ADR-090's reviews, [#463]
+  ([#155]'s last parts, its invoice's moved to [#462]) and [#464] ([#448],
+  proved by the plan check in its cloud session); before them, [#450]
+  ([#445], on the Mac), and
+  from cloud sessions through `/fix-issue`, the cloud credit's last day:
+  [#451] ([#312]), [#452] ([#267]), [#453] ([#447]), [#455] ([#214]),
+  [#456] ([#432]) and [#457] ([#454], found by ADR-090's `home` panel);
+  [#310]'s session stopped for its size, and its nine dialogs are a Mac
+  branch of their own. From cloud sessions, 3 November, through
   `/fix-issue`: [#438] ([#355]), [#439] ([#273]), [#440] ([#353]), [#443]
   ([#430]) and [#444] ([#354]); from cloud sessions, 2 and 3 November: [#411]
   ([#212]), [#412] ([#357]), [#413] ([#286]), [#414] ([#311]), [#415]
@@ -189,8 +210,11 @@ On 4 November 2026:
   parts; then [#303], widened to every item picker, [#339], [#310]'s
   Receive part, [#304] and [#323], each merged; [#310]'s other dialogs
   are listed on the issue. On 2 and 3 November, nineteen more, the last
-  thirteen through `/fix-issue` (The last merges, above). The cloud
-  credit ended on 4 November.
+  thirteen through `/fix-issue` (The last merges, above); on 4 November,
+  eight more. The cloud credit ended on 4 November. The next pick is
+  [#466], found by #463's session. Since ADR-090 a pick
+  comes from an export of the issues, and one that names more than about
+  five files goes to the Mac.
 - **About 19 November:** replace Render's free database before it expires
   on 21 November, by
   [`render.md`, "Replacing the database"](runbooks/render.md#replacing-the-database),
@@ -201,25 +225,19 @@ On 4 November 2026:
 
 ## Still to do, by hand
 
+- **After [#463] and [#464]:** the run of every browser by hand on
+  `main`, started on 4 November, read; a failure filed.
 - **After [#361]'s merge,** in this order:
   - MC-3424's third tab, where one was left on Home across the deploy:
     it shows one banner, and one Reload brings Home back;
   - MC-4201 on the live site with a test item: one notice in the bell
     within the hour while the service is awake; then remove the point.
-- **After [#435]'s merge:** the `full-e2e` label deleted and the flake
-  hunt passed (3 November); left, `scripts/prune-branches.sh --yes` and
-  `scripts/clean-local.sh`, a dry run, then `--yes`; and the project's
-  knowledge re-synced.
-- **After [#449]'s merge:** the Deploy run's log shows 0077 applied, with
-  `btree_gin` created, and `/api/health` names the merge commit; then one
-  restore drill (`gh workflow run restore-drill.yml`), the first on a
-  dump holding `btree_gin`; the perf database the branch measured on
-  dropped (`docker exec foundation-postgres dropdb -U app
-  foundation_perf_fix225`); and the comments on [#276] and [#335] the
-  chat gave with the as-built.
 - **The planning skill's `evals.md`:** prompts 3, 5 and 6, for the skill
   uploaded after [#417], walked on 3 and 4 November, in the Fix-ups'
-  second batch's planning; 4 waits for a patch that is refused.
+  second batch's planning, and 1 and 2 on 4 November, in ADR-090's; 4
+  waits for a patch that is refused. ADR-090 changes the skill, so after
+  its merge it is packed from `main` and uploaded again, and prompt 6 is
+  walked.
 - **[#245] in Safari and Edge, once deployed:** the page asked to translate
   into Chinese stays as written, a typed field included; WebKit and
   Firefox have known gaps with fields. What changes is filed.
@@ -279,26 +297,29 @@ request or a set of them:
    says, and [#417], `/fix-issue`; the multer override went with
    `fix-ups-ci`'s dependency step.
 7. **The fix-ups,** the Fix-ups milestone, each batch writing its areas'
-   rules files, in six batches first:
+   rules files, in this order (revised on 4 November 2026):
    1. CI that can be trusted: [#435], as ADR-008's and ADR-051's
       as-builts say;
    2. the typo lookup: [#449], as ADR-051's as-built says; Home's miss
       ([#276]) moved to 31 January 2027, for ADR-091;
-   3. the translations, before 30 November: [#371] to [#398] and [#419]
+   3. the design language ([#338], ADR-090): [#465], a docs pull
+      request, as its as-built says;
+   4. Home for a newcomer ([#335], ADR-091), by 6 November, built to
+      it, which also meets Home's budget and ends its known miss by 31
+      January 2027; then Customise Home, a pull request of its own, the
+      week after; then [#310]'s nine dialogs with [#295], one shared
+      hook, on the Mac;
+   5. the translations, before 30 November: [#371] to [#398] and [#419]
       to [#423], each with the natural-wording pass's comment, the style
       rules into the glossary, the corrections of the reviewer who reads
-      only Chinese, and [#148], [#149] and [#249];
-   4. expired lots: [#333] with [#331] and [#442], a new lot's expiry
-      and its batch code; lot labels ([#441], `later`) after it;
-   5. the audit log: [#133] with [#168] ([#339] was fixed on 2
+      only Chinese, ADR-090's rule for Chinese beside Latin letters, and
+      [#148], [#149] and [#249];
+   6. expired lots: [#333] with [#331] and [#442], a new lot's expiry
+      and its batch code; lot labels ([#441], `later`) after it. First
+      instead, if real stock goes into the app sooner;
+   7. the audit log: [#133] with [#168] ([#339] was fixed on 2
       November);
-   6. then TypeScript 7 ([#336]); the newcomer test; the design language
-      ([#338], ADR-090); and Home for a newcomer ([#335], ADR-091),
-      renumbered by ADR-089, which also meets Home's budget and ends its
-      known miss by 31 January 2027.
-
-   Not yet in a batch: [#445], the inventory screen's flaky axe check
-   (`fix-now`).
+   8. then TypeScript 7 ([#336]).
 
    Then [#261] with [#154] and [#150]; [#263]'s rest with [#198];
    [#264]; [#426], production orders' rules file's findings; and [#255]
@@ -367,6 +388,7 @@ Not repeated here; each list has one home:
 [#149]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/149
 [#150]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/150
 [#154]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/154
+[#155]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/155
 [#165]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/165
 [#168]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/168
 [#178]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/178
@@ -375,6 +397,7 @@ Not repeated here; each list has one home:
 [#186]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/186
 [#198]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/198
 [#212]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/212
+[#214]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/214
 [#222]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/222
 [#225]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/225
 [#226]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/226
@@ -402,6 +425,7 @@ Not repeated here; each list has one home:
 [#264]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/264
 [#265]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/265
 [#266]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/266
+[#267]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/267
 [#268]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/268
 [#269]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/269
 [#271]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/271
@@ -415,6 +439,7 @@ Not repeated here; each list has one home:
 [#291]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/291
 [#293]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/293
 [#294]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/294
+[#295]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/295
 [#298]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/298
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
 [#301]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/301
@@ -423,6 +448,7 @@ Not repeated here; each list has one home:
 [#309]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/309
 [#310]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/310
 [#311]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/311
+[#312]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/312
 [#313]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/313
 [#315]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/315
 [#316]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/316
@@ -495,6 +521,7 @@ Not repeated here; each list has one home:
 [#428]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/428
 [#429]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/429
 [#430]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/430
+[#432]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/432
 [#434]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/434
 [#435]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/435
 [#436]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/436
@@ -508,4 +535,20 @@ Not repeated here; each list has one home:
 [#444]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/444
 [#445]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/445
 [#446]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/446
+[#447]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/447
+[#448]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/448
 [#449]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/449
+[#450]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/450
+[#451]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/451
+[#452]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/452
+[#453]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/453
+[#454]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/454
+[#455]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/455
+[#456]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/456
+[#457]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/457
+[#462]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/462
+[#463]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/463
+[#464]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/464
+[#465]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/465
+[#466]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/466
+[#467]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/467
