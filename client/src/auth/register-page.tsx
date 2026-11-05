@@ -33,6 +33,7 @@ import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
 } from '../lib/validation';
+import { RADIUS } from '../theme/tokens';
 import { AuthLayout } from './auth-layout';
 import { authMessageFor } from './auth-message';
 import { useAuth } from './use-auth';
@@ -335,7 +336,9 @@ function Way({
           width: 40,
           height: 40,
           flex: 'none',
-          borderRadius: 2.5,
+          // In px, as Home's tiles draw their icons: a multiple of the
+          // theme's corner grew it to a circle (ADR-091).
+          borderRadius: `${RADIUS.control}px`,
           bgcolor: 'action.hover',
           color: 'primary.main',
           display: 'flex',

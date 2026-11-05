@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 
-import { expect, type Page, test } from '@playwright/test';
+import { type BrowserContext, expect, type Page, test } from '@playwright/test';
 
 import { SHOTS, type Width, type Words } from './shots';
-import { readTargets } from './targets';
+import { NO_ORGANIZATION_PATH, readTargets } from './targets';
 
 /**
  * The app's language, and the browser's to go with it, so dates and
@@ -76,7 +76,7 @@ for (const language of LANGUAGES) {
             'Not taken at this width',
           );
 
-          const path = shot.path(readTargets());
+          const path = shot.path(readTargets(), language.app);
           test.skip(path === null, 'Not in this demo: seed a fresh one');
 
           // The language this device chose last, which the app starts from.
@@ -88,7 +88,21 @@ for (const language of LANGUAGES) {
             }
           }, language.app);
 
-          if (shot.signedOut) await page.context().clearCookies();
+          if (shot.signedOut || shot.noOrganization) {
+            await page.context().clearCookies();
+          }
+          if (shot.noOrganization) {
+            const state = JSON.parse(
+              readFileSync(NO_ORGANIZATION_PATH, 'utf8'),
+            ) as { cookies: Parameters<BrowserContext['addCookies']>[0] };
+            await page.context().addCookies(state.cookies);
+          }
+
+          if (shot.byInvitation) {
+            await page.route('**/api/v1/auth/registration', (route) =>
+              route.fulfill({ json: { registration: 'invitation' } }),
+            );
+          }
 
           await page.goto(path!);
           await settle(page);

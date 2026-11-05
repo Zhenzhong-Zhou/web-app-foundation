@@ -9,6 +9,7 @@ import { formatDayLong } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { organizationInitialsOf } from '../lib/person-initials';
 import { browserTimeZone } from '../lib/time-zone';
+import { RADIUS } from '../theme/tokens';
 import {
   AcceptSignedIn,
   InvitationLayout,
@@ -214,7 +215,9 @@ function NewOrganizationMark({ name }: { name: string }) {
           flex: 'none',
           border: '1.5px dashed',
           borderColor: 'primary.light',
-          borderRadius: 2,
+          // In px, a logo's corners: a multiple of the theme's corner grew
+          // it to a circle (ADR-091).
+          borderRadius: `${RADIUS.control}px`,
           color: 'primary.main',
           fontWeight: 700,
           fontSize: 14,

@@ -198,10 +198,12 @@ at the first failure; `--quick` leaves out the two end-to-end suites.
 
 `DEMO_EMAIL=<the account seed:demo printed> npm run screenshots`, also from
 `client/`, pictures every screen of the demo in English, French and Chinese,
-light and dark, at desktop and phone width, into `client/screenshots/out/`.
+light and dark, at a size of each width class, into `client/screenshots/out/`.
 It starts its own API and client on ports 3200/5373 against the dev database,
 so the dev servers can stay as they are; compare a run before and after a
-visual change.
+visual change. For the pages a person outside the demo sees, it keeps in that
+database an account in no organization, the organization it left, and an
+organization invitation in each language, made again each run.
 
 To compare, copy `client/screenshots/out/` aside before the change and again
 after it, say to `tmp/<branch>/before/` and `after/`, then from `client/`

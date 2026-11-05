@@ -819,9 +819,12 @@ Paper is checked first because it must not change at all.
   above its text by its size, not only its weight, and the page's title
   is 25 px. Panels have 12 px corners, buttons and fields 10 and a dialog
   (Receive stock) 16. On Members a made role's chip stays square beside a
-  built-in one's pill (MC-3312). The confirmation email's button in
-  Mailpit has the buttons' corners, and the invitation's note the panels'.
-  At Larger text (account menu → Text size) the 16 px text is 20, and
+  built-in one's pill (MC-3312). The icons beside Register's ways in (with
+  REGISTRATION=invitation) and on Home for an account in no organization,
+  and the dashed tile on an organization invitation's page (`npm run
+  org:invite`), are rounded squares, not circles. The confirmation email's
+  button in Mailpit has the buttons' corners, and the invitation's note the
+  panels'. At Larger text (account menu → Text size) the 16 px text is 20, and
   nothing scrolls sideways (MC-2803).
 
 ## 16. Files (ADR-059)
@@ -4704,3 +4707,6 @@ first.
   to 10, 12 and 16 px on every screen: MC-1560 added.
 - 2026-11-05: #221, the order's Total held beside its actions on a
   computer: MC-R96 added, MC-1555 rewritten.
+- 2026-11-05: ADR-091, the icons on Register, on Home in no organization
+  and on an organization invitation kept rounded squares: MC-1560
+  rewritten.
