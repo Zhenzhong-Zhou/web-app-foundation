@@ -190,6 +190,10 @@ as the catalogues word it.
 | English | Français (Canada) | 简体中文 | Notes |
 | --- | --- | --- | --- |
 | Help | Aide | 帮助 | The button in the top bar, and the panel it opens (ADR-079). |
+| Menu | Menu | 菜单 | The top bar's word under ☰ below `lg`, which opens the drawer (ADR-091). |
+| Search | Rechercher | 搜索 | The top bar's word under the search's icon on a phone; the field itself is Search everything / Tout rechercher / 全局搜索. |
+| Notifications | Notifications | 通知 | The bell, and its word under it below `lg`. |
+| Account | Compte | 账户 | The top bar's word under the person's face below `lg`, which opens the account menu. |
 | Guide | Guide | 指南 | A page's help: what it is for, how to work in it, what may be refused. |
 | All guides | Tous les guides | 所有指南 | The list at Help's foot. |
 | Learn more | En savoir plus | 了解更多 | Opens Help at the section a page points to. |

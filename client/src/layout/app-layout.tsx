@@ -21,7 +21,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { type ReactNode, useRef, useState } from 'react';
+import { type ReactNode, useId, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 
@@ -54,7 +54,10 @@ import { NewVersionButton } from '../version/new-version-button';
 import { reloadPage } from '../version/reload-page';
 import { VersionAnnouncement } from '../version/version-announcement';
 import { useNewVersion } from '../version/version-check';
+import { BAR, BAR_SX } from './bar';
+import { BarButton } from './bar-button';
 import { IdleGuard } from './idle-guard';
+import { LoadingBar } from './loading-bar';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
 import { OrganizationMark } from './organization-mark';
@@ -70,18 +73,6 @@ import { SideNav } from './side-nav';
 import { MAIN_CONTENT_ID, SkipLink } from './skip-link';
 import { UnverifiedBannerContext } from './unverified-banner-context';
 import { useMoreBelow } from './use-more-below';
-
-/**
- * Where the rail appears (ADR-055). Below it the same groups open in a
- * drawer behind the menu button, so narrowing the window moves the links
- * and never hides one.
- *
- * The rail replaced a top bar that ran out of room: seven links, the
- * organization's name and two icons measured a little over 1000px, French
- * had about 30px to spare at 1280, and the lot trace, the settings and an
- * organization's logo still needed a place.
- */
-const BAR = 'lg' as const;
 
 /** This device's choice of a folded rail. */
 const FOLDED_KEY = 'nav.folded';
@@ -100,15 +91,21 @@ const FOLDED_KEY = 'nav.folded';
  * open or closed: the select gives focus back to where it was opened from,
  * so Escape, or a choice, returns to the row and the menu's arrow keys,
  * and the row is read again with its choice. Only a press on the row
- * itself: a click inside the select, or on one of its options, which
- * reaches the row through the portal, is the select's own.
+ * itself, or on its label: a click inside the select, or on one of its
+ * options, which reaches the row through the portal, is the select's own.
+ *
+ * Its label is in words above the select, which it names (ADR-091), so
+ * the text size is found by its name, not behind the person's initials.
  */
 function PreferenceItem({
+  label,
   children,
 }: {
+  label: string;
   children: (control: PreferenceControl) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const labelId = useId();
 
   return (
     <MenuItem
@@ -116,8 +113,21 @@ function PreferenceItem({
       onClick={(event) => {
         if (event.target === event.currentTarget) setOpen(true);
       }}
-      sx={{ '&:hover': { bgcolor: 'transparent' } }}
+      sx={{
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        gap: 0.5,
+        '&:hover': { bgcolor: 'transparent' },
+      }}
     >
+      <Typography
+        id={labelId}
+        variant="body2"
+        onClick={() => setOpen(true)}
+        sx={{ fontWeight: 600, color: 'text.secondary' }}
+      >
+        {label}
+      </Typography>
       <Box
         sx={{ display: 'contents' }}
         onFocus={(event) => event.stopPropagation()}
@@ -127,6 +137,7 @@ function PreferenceItem({
           open,
           onOpen: () => setOpen(true),
           onClose: () => setOpen(false),
+          labelId,
         })}
       </Box>
     </MenuItem>
@@ -251,6 +262,16 @@ function Frame() {
       }),
   };
 
+  /** The bar's words below `lg` (ADR-091), the app's own names. */
+  const menuWord = intl.formatMessage({
+    id: 'layout.bar.menu',
+    defaultMessage: 'Menu',
+  });
+  const accountWord = intl.formatMessage({
+    id: 'layout.bar.account',
+    defaultMessage: 'Account',
+  });
+
   const orgName =
     session?.organization?.name ??
     intl.formatMessage({
@@ -359,26 +380,28 @@ function Frame() {
               any text size and with any pointer: the bar is the one place
               every page shares, and on a phone it is reached with a thumb
               (ADR-075). Set here, not in the theme, which sizes the rest of
-              the app's controls by the pointer. */}
+              the app's controls by the pointer. Below `lg` a word under
+              each icon (ADR-091), where the bar is wide enough for all five
+              beside the organization's initials, which BarButton measures
+              it for, as a container. */}
           <Toolbar
             sx={{
+              ...BAR_SX,
               gap: { xs: 0.5, sm: 1 },
               minHeight: { xs: 56 },
               '& > .MuiIconButton-root, & > .MuiButton-root, & > * > .MuiIconButton-root':
                 { minWidth: 44, minHeight: 44 },
             }}
           >
-            <IconButton
+            {/* Named by its word, which it shows (WCAG 2.5.3). */}
+            <BarButton
               edge="start"
-              aria-label={intl.formatMessage({
-                id: 'layout.openNavigation',
-                defaultMessage: 'Open navigation',
-              })}
+              icon={<MenuIcon />}
+              word={menuWord}
+              aria-label={menuWord}
               onClick={openDialog(() => setDrawer(true))}
               sx={{ display: { xs: 'inline-flex', [BAR]: 'none' } }}
-            >
-              <MenuIcon />
-            </IconButton>
+            />
 
             {/* The organization's place: its logo when it has one (ADR-060),
                 its name until then. The way home, which is what a person
@@ -410,13 +433,14 @@ function Frame() {
             </Link>
 
             {/* The lookup (ADR-056) in the space between the organization and
-                the bell: a box from md, a button that opens it below. */}
+                the bell: a box from md, a button that opens it below, which
+                keeps its width, so the name is what shortens. */}
             <Box
               sx={{
                 flexGrow: 1,
                 display: 'flex',
                 justifyContent: { xs: 'flex-end', md: 'center' },
-                minWidth: 0,
+                minWidth: { xs: 'auto', md: 0 },
                 '& .MuiInputBase-root': { minHeight: 44 },
               }}
             >
@@ -430,53 +454,57 @@ function Frame() {
 
             <NotificationBell />
 
-            {/* The face alone (ADR-063): on a shared computer it says whose
-                account this is at a glance; the name and email are on hover
-                and at the top of the menu. Its name starts with the initials
-                the circle shows, so a voice user can say what they see
-                (WCAG 2.5.3, Label in Name). */}
+            {/* The face (ADR-063), and below `lg` the word Account
+                (ADR-091): on a shared computer it says whose account this
+                is at a glance; the name and email are on hover and at the
+                top of the menu. Its name starts with the word and the
+                initials the circle shows, so a voice user can say what they
+                see (WCAG 2.5.3, Label in Name). */}
             <Tooltip
               title={[session?.user.name, session?.user.email]
                 .filter(Boolean)
                 .join(' · ')}
             >
-              <IconButton
+              <BarButton
                 edge="end"
+                word={accountWord}
                 aria-label={
                   dot
                     ? intl.formatMessage(
                         {
                           id: 'layout.signedInAsWithNewVersion',
                           defaultMessage:
-                            '{initials}, signed in as {email}, a new version is ready',
+                            '{account}, {initials}, signed in as {email}, a new version is ready',
                         },
-                        account,
+                        { ...account, account: accountWord },
                       )
                     : intl.formatMessage(
                         {
                           id: 'layout.signedInAsWithInitials',
-                          defaultMessage: '{initials}, signed in as {email}',
+                          defaultMessage:
+                            '{account}, {initials}, signed in as {email}',
                         },
-                        account,
+                        { ...account, account: accountWord },
                       )
                 }
                 onClick={(event) => setMenu(event.currentTarget)}
-              >
-                <Badge
-                  variant="dot"
-                  color="info"
-                  overlap="circular"
-                  invisible={!dot}
-                >
-                  <PersonAvatar
-                    userId={session?.user.id ?? null}
-                    name={session?.user.name ?? null}
-                    email={session?.user.email}
-                    photoFileId={session?.user.photoFileId}
-                    size={32}
-                  />
-                </Badge>
-              </IconButton>
+                icon={
+                  <Badge
+                    variant="dot"
+                    color="info"
+                    overlap="circular"
+                    invisible={!dot}
+                  >
+                    <PersonAvatar
+                      userId={session?.user.id ?? null}
+                      name={session?.user.name ?? null}
+                      email={session?.user.email}
+                      photoFileId={session?.user.photoFileId}
+                      size={32}
+                    />
+                  </Badge>
+                }
+              />
             </Tooltip>
 
             {/* The person's own things. The organization's settings are in
@@ -566,13 +594,28 @@ function Frame() {
 
               {/* A preference, not a destination — and not a reason to close
                   the menu, unlike everything above it. */}
-              <PreferenceItem>
+              <PreferenceItem
+                label={intl.formatMessage({
+                  id: 'components.colorMode.label',
+                  defaultMessage: 'Colour mode',
+                })}
+              >
                 {(control) => <ColorModeSelect control={control} />}
               </PreferenceItem>
-              <PreferenceItem>
+              <PreferenceItem
+                label={intl.formatMessage({
+                  id: 'language.label',
+                  defaultMessage: 'Language',
+                })}
+              >
                 {(control) => <LanguageSelect control={control} />}
               </PreferenceItem>
-              <PreferenceItem>
+              <PreferenceItem
+                label={intl.formatMessage({
+                  id: 'components.textSize.label',
+                  defaultMessage: 'Text size',
+                })}
+              >
                 {(control) => <TextSizeSelect control={control} />}
               </PreferenceItem>
 
@@ -596,6 +639,10 @@ function Frame() {
               </MenuItem>
             </Menu>
           </Toolbar>
+
+          {/* Along the bar's foot, from a tap until the next screen is in
+              (#431). */}
+          <LoadingBar />
         </AppBar>
 
         {/* The same groups as the rail, open, for a window too narrow for

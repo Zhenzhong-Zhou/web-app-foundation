@@ -689,9 +689,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
           // Below 1200 px, the menu drawer's Close, its first stop.
           await page.setViewportSize({ width: 1024, height: 768 });
-          await page
-            .getByRole('button', { name: 'Open navigation', exact: true })
-            .focus();
+          await page.getByRole('button', { name: 'Menu', exact: true }).focus();
           await page.keyboard.press('Enter');
           const close = page.getByRole('button', {
             name: 'Close navigation',

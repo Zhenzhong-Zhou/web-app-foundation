@@ -190,9 +190,17 @@ a second organization.
   only, Still to receive and Late, and the list holds only purchases
   expected before today, PO-DEMO-9 among them, the earliest first, with
   Expected marked as the sort. Remove Late: every purchase still to
-  receive, the late ones still first. Press Expected: the latest first.
-  Remove Still to receive too: the open orders, newest first. In
-  Français the chip reads En retard; in 中文, 逾期.
+  receive, the late ones still first, each with its chip beside Expected,
+  in red, saying how late (2 days late), a later one with none. Press
+  Expected: the latest first. Remove Still to receive too: the open
+  orders, newest first, with no row saying late. In Français the chip
+  reads En retard and a row 2 jours de retard; in 中文, 逾期 and 逾期 2 天.
+- **MC-407** *(ADR-091)* Orders for a role that cannot raise one. Give a
+  member a role made with only Orders' view (Settings → Roles) and sign
+  in as them: on Orders, where Raise an order would be, one grey line
+  says their role does not include raising orders, and whom to ask
+  (the Owners first, at most three). As the demo Owner, Raise an order,
+  and no such line.
 - **MC-406** *(ADR-091)* The lists keep what is chosen in the address. On
   Orders press All, set Expected from to the 1st of this month, then Tab to
   Expected's header and press Enter: the address gains `status=all`,
@@ -611,13 +619,14 @@ Paper is checked first because it must not change at all.
 - **MC-1508** Fold the rail with the arrows at its top: only icons remain,
   each naming itself when pointed at, and following one still works. Reload:
   it stays folded. Unfold it again.
-- **MC-1509** Below 1200px the rail is gone and a menu button opens the same
-  three groups in a drawer; choosing a page closes it. Widen the window past
+- **MC-1509** Below 1200px the rail is gone and Menu, its word under ☰,
+  opens the same three groups in a drawer; choosing a page closes it. Widen the window past
   1200px with the drawer open: it closes and the rail appears.
 - **MC-1510** As a Viewer, groups with nothing the role may see are left out
   entirely, heading and all; nothing in the rail leads to a refusal.
-- **MC-1511** The account menu holds the email, Account, Devices, the colour
-  mode, the language and Sign out, and no settings. In Français and 简体中文 the
+- **MC-1511** The account menu holds the email, Account, Devices, Colour
+  mode, Language and Text size, each named in words above its select
+  (ADR-091), and Sign out, and no settings. In Français and 简体中文 the
   rail's headings and Collapse/Expand read in that language.
 - **MC-1512** Open SO-DEMO-1: its title is SO-DEMO-1, Confirmed beside it in a
   quiet blue, and "Selling · Northside Pharmacy" under it. The sections are
@@ -869,6 +878,28 @@ Paper is checked first because it must not change at all.
   with only Orders' view (Settings → Roles) and sign in as them: in place
   of Home's actions one grey line says their role does not include
   raising orders, receiving stock or planning runs, and whom to ask.
+- **MC-1561** *(ADR-091)* The top bar's words. Below 1200 px wide each of
+  the bar's icons has its word under it, the app's own names: Menu,
+  Search (below 900 px, where it is a button), Help, Notifications and
+  Account; in Français Menu, Rechercher, Aide, Notifications, Compte; in
+  中文 菜单、搜索、帮助、通知、账户. At 360 px in English the
+  organization's name is what shortens, to a few letters, so
+  Notifications fits under the bell; at 390 px in 中文 everything fits.
+  Each word is a fingertip tall with its icon (44 px or more, DevTools),
+  and a screen reader reads the account button as Account, your initials,
+  signed in as …. In a window narrower than about 352 px, 392 px at
+  Large text and 432 px at Larger, the icons stand alone, as before, and
+  nothing scrolls sideways. From 1200 px the bar is as it was: the search box in
+  the middle between the rail and Help, at 1366 and at 2560 px too, Help
+  with its word beside its icon, the bell and your face alone.
+- **MC-1562** *(ADR-091, #431)* The loading bar. In Chrome, DevTools →
+  Network → Slow 4G, on Home press Plan a run: at once a thin bar in the
+  accent runs along the top bar's foot, Home staying until Production's
+  form is in, and the bar goes once the form has read what it needs. On
+  Orders press an order, then Back: the bar each time, until the screen
+  is in. Pressing a filter or a tab on a list shows no bar, only the
+  list's own placeholder. With Reduce motion on (the system's
+  accessibility settings), the bar stands still while shown.
 - **MC-1560** *(ADR-091)* The type scale and the corners. On Inventory,
   SO-DEMO-1 and INV-000001, in light and in dark, at 1440 px and on a
   phone: buttons, fields, menus and the text under a heading read at 16
@@ -1389,8 +1420,9 @@ few invoices and orders.
 
 Any page, signed in, in a browser at its default font size.
 
-- **MC-2801** *(ADR-075)* Open the avatar menu: Text size sits under the
-  colour mode and the language, reading Standard text. Open it: Standard
+- **MC-2801** *(ADR-075; ADR-091)* Open the avatar menu: Text size sits
+  under Colour mode and Language, its name in words above its select,
+  reading Standard text. Open it: Standard
   text, Large text and Larger text, each drawn at the size it gives.
 - **MC-2802** *(ADR-075)* Choose Larger text: every word on the page grows
   at once, the rail and the summary panel widen with it, and nothing else
@@ -1720,8 +1752,8 @@ The pages, in a private window unless a check says otherwise.
   the right of the page instead, with nothing dimmed, and the page beneath still scrolls
   and works. Narrower than about 1085 px, a dialog the page opens there
   stays centred, and Help dims with the page.
-- **MC-3204** *(ADR-079)* Help on a phone, about 390 px: the bar shows
-  Help as its icon alone. It opens full screen, headed Help · Orders, with
+- **MC-3204** *(ADR-079; ADR-091)* Help on a phone, about 390 px: the bar
+  shows Help as its icon with the word Help under it. It opens full screen, headed Help · Orders, with
   Close, which returns to the page. Closed by Close, and again by Esc,
   focus is back on Help, which a screen reader names, with no Blocked
   aria-hidden warning in Chrome's console (#294). On a real phone at
@@ -2177,8 +2209,8 @@ the file, or wait ten minutes.
   full, with no browser Leave site? after the app's.
 - **MC-3402** *(ADR-081)* A new version on a phone. At 390 px, and at 320
   px with Larger text, deploy: no new button, a dot on the account button,
-  whose name a screen reader reads as …, signed in as …, a new version is
-  ready, and the bar still fits its six targets. The account menu's first
+  whose name a screen reader reads as Account, …, signed in as …, a new
+  version is ready, and the bar still fits its six targets. The account menu's first
   item reads A new version is ready · Reload now, It also loads by itself
   when you open another page. Everything you’ve saved is kept; you don’t
   need to do anything., and loads the page. In 中文, 新版本已就绪 ·
@@ -3821,7 +3853,7 @@ first.
   SO-DEMO-2, Ship, then Cancel; on PO-DEMO-9, a line's Receive, then
   Escape; on Account, Delete my account, then Cancel; on a product, History,
   then Escape; on a role made here, Delete, then Cancel, and Move everyone
-  to…, then Escape; at 390 px, Open navigation, then Escape, with no
+  to…, then Escape; at 390 px, Menu, then Escape, with no
   Blocked aria-hidden warning in Chrome's console. Each time focus is back
   on the button that opened it, with its ring, and Enter opens it again; a
   screen reader names that button, not the page from the top.
@@ -4801,3 +4833,9 @@ first.
   Fold, What we do in it, each first-week item and each area a link:
   MC-1559, MC-3205, MC-3207, MC-3208, MC-3209, MC-3210 and MC-R33
   rewritten.
+- 2026-11-05: ADR-091 and #431, the frame: a word under each of the top
+  bar's icons below 1200 px, the search's place, the account menu's
+  selects named in words, the top loading bar, and on Orders the late
+  chip and the line in Raise an order's place: MC-407, MC-1561 and
+  MC-1562 added, MC-405, MC-1509, MC-1511, MC-2801, MC-3204, MC-3402 and
+  MC-R27 rewritten.

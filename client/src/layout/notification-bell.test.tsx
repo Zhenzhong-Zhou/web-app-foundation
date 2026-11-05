@@ -80,7 +80,7 @@ describe('NotificationBell', () => {
 
     expect(
       screen.getByRole('button', { name: 'Notifications' }),
-    ).toHaveTextContent(/^$/);
+    ).toHaveTextContent(/^Notifications$/);
   });
 
   it('opens the page on People of someone the reader invited, once they join (ADR-079)', async () => {

@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Divider,
-  IconButton,
   MenuItem,
   MenuList,
   Popover,
@@ -27,6 +26,7 @@ import { useFailureWords } from '../lib/use-failure-words';
 import { useWhileVisible } from '../lib/use-while-visible';
 import { rem } from '../theme/rem';
 import { useNewVersion } from '../version/version-check';
+import { BarButton } from './bar-button';
 
 /** How often the badge re-checks while the app is open. */
 const POLL_MS = 60_000;
@@ -178,7 +178,8 @@ export function NotificationBell() {
   return (
     <>
       <Tooltip title={title}>
-        <IconButton
+        <BarButton
+          word={title}
           aria-label={
             count > 0
               ? intl.formatMessage(
@@ -193,15 +194,16 @@ export function NotificationBell() {
           aria-haspopup="dialog"
           aria-expanded={anchor !== null}
           onClick={open}
-        >
-          {/* Nothing rather than 0: a Badge hiding a 0 still holds the
-              last number it showed, once anything around it renders
-              again, and text in the button that its name does not say
-              fails Label in Name (WCAG 2.5.3). */}
-          <Badge badgeContent={count || undefined} color="error" max={99}>
-            <NotificationsNoneIcon />
-          </Badge>
-        </IconButton>
+          icon={
+            // Nothing rather than 0: a Badge hiding a 0 still holds the
+            // last number it showed, once anything around it renders
+            // again, and text in the button that its name does not say
+            // fails Label in Name (WCAG 2.5.3).
+            <Badge badgeContent={count || undefined} color="error" max={99}>
+              <NotificationsNoneIcon />
+            </Badge>
+          }
+        />
       </Tooltip>
 
       {/* A popover holding a menu of the entries, not a menu: the title,

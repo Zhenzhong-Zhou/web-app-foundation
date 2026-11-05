@@ -76,7 +76,7 @@ test('the navigation drawer closed by Escape gives focus back to its button, wit
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  const opener = page.getByRole('button', { name: 'Open navigation' });
+  const opener = page.getByRole('button', { name: 'Menu', exact: true });
   const drawer = page.getByRole('dialog', { name: 'Navigation' });
 
   await opener.click();

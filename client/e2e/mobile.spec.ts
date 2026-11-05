@@ -17,7 +17,7 @@ test('finds its way round on a phone, through the drawer', async ({ page }) => {
   // Below 1200px the rail folds into a drawer behind ☰ (ADR-055). Its
   // foot is pinned below the links, in view on a phone's screen without
   // scrolling them (ADR-082).
-  await page.getByRole('button', { name: 'Open navigation' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await expect(
     page.getByRole('dialog', { name: 'Navigation' }).getByText(/^Powered by /),
   ).toBeInViewport({ ratio: 1 });
@@ -39,7 +39,7 @@ test('scrolls the drawer as one on a phone held sideways, its foot last', async 
 }) => {
   await page.setViewportSize({ width: 844, height: 340 });
   await page.goto('/inventory');
-  await page.getByRole('button', { name: 'Open navigation' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
 
   const drawer = page.getByRole('dialog', { name: 'Navigation' });
   const foot = drawer.getByText(/^Powered by /);
@@ -116,7 +116,7 @@ test('opens Help full screen on a phone, in Chinese, and closes it', async ({
   await page.goto('/orders');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-  // The icon alone in the bar, named for a screen reader (ADR-079).
+  // In the bar, its word under its icon (ADR-091).
   const button = page.getByRole('button', { name: '帮助', exact: true });
   await button.click();
 
@@ -134,3 +134,53 @@ test('opens Help full screen on a phone, in Chinese, and closes it', async ({
   await expect(help).toBeHidden();
   await expect(button).toBeFocused();
 });
+
+/**
+ * The top bar on a phone (ADR-091): a word under each icon, the app's own
+ * names, each target 44 px, and the organization's name what shortens so
+ * Notifications fits under the bell. 360 px in English and 390 in Chinese,
+ * as the frame's board draws it.
+ */
+for (const [width, language, words] of [
+  [360, 'en', ['Menu', 'Search', 'Help', 'Notifications', 'Account']],
+  [390, 'zh-Hans', ['菜单', '搜索', '帮助', '通知', '账户']],
+] as const) {
+  test(`puts a word under each icon in the top bar at ${width} px, in ${language}`, async ({
+    page,
+  }) => {
+    if (language !== 'en') {
+      await page.addInitScript(
+        (chosen) => localStorage.setItem('language', chosen),
+        language,
+      );
+    }
+    await page.setViewportSize({ width, height: 780 });
+    await page.goto('/orders');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    const bar = page.getByRole('banner');
+    for (const word of words) {
+      const label = bar.getByText(word, { exact: true });
+      await expect(label).toBeVisible();
+      const button = bar
+        .getByRole('button')
+        .filter({ has: page.getByText(word, { exact: true }) });
+      const icon = button.locator('svg, .MuiAvatar-root').first();
+      const [target, text, picture] = await Promise.all([
+        button.boundingBox(),
+        label.boundingBox(),
+        icon.boundingBox(),
+      ]);
+      expect(target!.width, word).toBeGreaterThanOrEqual(44);
+      expect(target!.height, word).toBeGreaterThanOrEqual(44);
+      // Under its icon, not beside it.
+      expect(text!.y, word).toBeGreaterThanOrEqual(
+        picture!.y + picture!.height - 1,
+      );
+    }
+    // Nothing runs off the screen: the name gives way.
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
+  });
+}

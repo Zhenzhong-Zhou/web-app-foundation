@@ -14,6 +14,7 @@ import { reportFault, startReporting } from './errors/report-fault';
 import { LanguageFailureToast } from './i18n/language-failure';
 import { LanguageProvider } from './i18n/language-provider';
 import { LocalizedTheme } from './i18n/localized-theme';
+import { watchNavigations } from './layout/page-loading';
 import { removeLoadingMark } from './lib/loading-mark';
 import { ROOT_ROUTE } from './root-route';
 import { initTextSize } from './theme/text-size';
@@ -30,6 +31,8 @@ initTextSize();
  * (root-route.tsx).
  */
 const router = createBrowserRouter([ROOT_ROUTE]);
+// The top loading bar follows the router's location (ADR-091).
+watchNavigations(router);
 
 /**
  * A render error outside the router, in the language, the theme or the

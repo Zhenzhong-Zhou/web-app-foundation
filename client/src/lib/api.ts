@@ -6,6 +6,7 @@ import {
   noteOutdated,
   noteServed,
 } from '../version/version-check';
+import { trackRead } from './reads-in-flight';
 
 const BASE = '/api/v1';
 
@@ -153,7 +154,16 @@ type ApiInit = Omit<RequestInit, 'headers'> & {
  * X-Api-Revision lets the API refuse a tab open across a deploy that
  * changed it, before anything is read (ADR-081).
  */
-export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
+export function api<T>(path: string, init: ApiInit = {}): Promise<T> {
+  const answer = receive<T>(path, init);
+  // A read, counted while on its way, which the top loading bar waits for
+  // after a tap (ADR-091).
+  return (init.method ?? 'GET').toUpperCase() === 'GET'
+    ? trackRead(answer)
+    : answer;
+}
+
+async function receive<T>(path: string, init: ApiInit): Promise<T> {
   const response = await send(path, init);
 
   // 204 from logout and reset-password: no body to parse (ADR-011, ADR-017).

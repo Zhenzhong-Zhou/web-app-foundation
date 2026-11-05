@@ -3,7 +3,6 @@ import {
   Autocomplete,
   Box,
   Dialog,
-  IconButton,
   InputAdornment,
   Stack,
   TextField,
@@ -19,6 +18,7 @@ import type { LookupResponse, LookupResult } from '../api/types.gen';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ProductCover } from '../components/product-cover';
 import { OPEN_LOOKUP } from '../errors/open-lookup';
+import { BarButton } from '../layout/bar-button';
 import { api } from '../lib/api';
 import type { LookupKind } from '../lib/api-names';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -114,9 +114,15 @@ export function LookupBox() {
 
   return (
     <>
-      <IconButton aria-label={label} onClick={openDialog(() => setOpen(true))}>
-        <SearchIcon />
-      </IconButton>
+      <BarButton
+        aria-label={label}
+        word={intl.formatMessage({
+          id: 'layout.bar.search',
+          defaultMessage: 'Search',
+        })}
+        icon={<SearchIcon />}
+        onClick={openDialog(() => setOpen(true))}
+      />
       <Dialog
         open={open}
         onClose={() => setOpen(false)}

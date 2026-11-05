@@ -852,8 +852,9 @@ Navigation is a rail beside the page from `lg` up (ADR-055), in three groups
 defined once in `layout/navigation.ts`: the work, the records and places to look
 something up, and the organization's settings. It folds to its icons, each named
 in a tooltip, and each device remembers that. Below `lg` the same groups open in
-a left drawer behind a menu button: narrowing the window moves the links and
-never hides one. The person's own things (profile, devices, language, colour
+a left drawer behind Menu: narrowing the window moves the links and
+never hides one. Below `lg` the top bar's icons each have a word under them
+(ADR-091), where the bar is wide enough for all of them (`layout/bar.ts`). The person's own things (profile, devices, language, colour
 mode, sign out) stay behind the avatar at every width. The top bar is slim and
 sticky and never hides on scroll: the organization's name, where its logo will
 go, then the bell and the avatar. Which elements show is CSS `display` at the

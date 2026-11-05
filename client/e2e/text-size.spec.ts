@@ -323,7 +323,7 @@ for (const size of ['standard', 'larger'] as const) {
 
       const targets = phone
         ? [
-            bar.getByRole('button', { name: 'Open navigation', exact: true }),
+            bar.getByRole('button', { name: 'Menu', exact: true }),
             mark,
             bar.getByRole('button', { name: 'Search everything', exact: true }),
             bar.getByRole('button', { name: 'Help', exact: true }),

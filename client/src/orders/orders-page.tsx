@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Chip,
   Link,
@@ -11,11 +12,12 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Typography,
 } from '@mui/material';
 import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { OrderSummary } from '../api/types.gen';
+import type { MemberAccess, OrderSummary } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
@@ -29,12 +31,16 @@ import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import type { OrderDirection } from '../lib/api-names';
 import { withDays } from '../lib/date-range';
+import { daysUntil } from '../lib/expiry';
 import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
+import { organizationToday } from '../lib/time-zone';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { day, flag, oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
 import { type ListSort, useListSort, withSort } from '../lib/use-list-sort';
+import { useResource } from '../lib/use-resource';
+import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
 import { orderStatusLabel } from './status';
 
@@ -152,6 +158,11 @@ export function OrdersPage() {
     reload,
   } = useKeysetList<OrderSummary>(path);
   const showSkeleton = useDelayedFlag(loading);
+  // Every row of these is outstanding, as the server counts it, so one
+  // expected before the organization's today is late, as Home says
+  // (ADR-091). Elsewhere a row's own sums cannot tell: a line closed short
+  // still counts what never came.
+  const today = outstanding || late ? organizationToday() : null;
 
   if (refused) {
     return <RevisionRefusalPage failure={refused} onRetry={reload} />;
@@ -168,13 +179,15 @@ export function OrdersPage() {
         actions={
           <>
             <ExportButton path={path.replace('/orders', '/orders/export')} />
-            {canCreate && (
+            {canCreate ? (
               <Button component={RouterLink} to="/orders/new">
                 {intl.formatMessage({
                   id: 'orders.raise',
                   defaultMessage: 'Raise an order',
                 })}
               </Button>
+            ) : (
+              <NoRaise />
             )}
           </>
         }
@@ -372,6 +385,7 @@ export function OrdersPage() {
                         {order.expectedAt
                           ? formatDay(order.expectedAt)
                           : NO_VALUE}
+                        <LateChip expected={order.expectedAt} today={today} />
                       </TableCell>
 
                       {/* Rendered as Postgres computed them, only the decimal
@@ -437,5 +451,69 @@ export function OrdersPage() {
         onLoadMore={loadMore}
       />
     </Stack>
+  );
+}
+
+/**
+ * Home's chip on a late row (ADR-091), "2 days late", so the word a tile
+ * and its late button said is on the list they open. Nothing on a row that
+ * is not late, or where the list cannot tell (`today` null).
+ */
+function LateChip({
+  expected,
+  today,
+}: {
+  expected: string | null;
+  today: string | null;
+}) {
+  const intl = useIntl();
+  const days = expected && today ? -daysUntil(expected, today) : 0;
+  if (days <= 0) return null;
+
+  return (
+    <Box component="span" sx={{ display: 'inline-flex', ml: 1 }}>
+      <StatusChip
+        tone="critical"
+        label={intl.formatMessage(
+          {
+            id: 'orders.chip.late',
+            defaultMessage:
+              '{days, plural, one {# day late} other {# days late}}',
+          },
+          { days },
+        )}
+      />
+    </Box>
+  );
+}
+
+/**
+ * Where Raise an order would be, for a role that cannot raise one: one
+ * quiet line saying so, and whom to ask, the people Home's line and Your
+ * access name (ADR-091, ADR-079). Nothing until they are read, so the line
+ * does not change under the reader.
+ */
+function NoRaise() {
+  const intl = useIntl();
+  const { data, error } = useResource<MemberAccess>('/account/membership');
+  if (!data && !error) return null;
+  const names = data?.whomToAsk.map((person) => person.name) ?? [];
+
+  return (
+    <Typography sx={{ color: 'text.secondary', maxWidth: rem(480) }}>
+      {names.length > 0
+        ? intl.formatMessage(
+            {
+              id: 'orders.raise.ask',
+              defaultMessage:
+                'Your role does not include raising orders. To do more, ask {names}.',
+            },
+            { names: intl.formatList(names, { type: 'disjunction' }) },
+          )
+        : intl.formatMessage({
+            id: 'orders.raise.none',
+            defaultMessage: 'Your role does not include raising orders.',
+          })}
+    </Typography>
   );
 }
