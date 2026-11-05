@@ -169,7 +169,4 @@ behind it for the fourth.
 - **Set up:** a phone, 390 × 844, the network slowed through
   Playwright's CDP session to about 150 ms of round trip and 1.6 Mbit/s
   down, as Lighthouse's mobile run assumes, and one reload half way
-  through a task. The client built for production (`npm run build`, then
-  `npm run preview` in `client/`), since the development build sends
-  about 16 MB in 214 files, which would time that build rather than the
-  app.
+  through a task.

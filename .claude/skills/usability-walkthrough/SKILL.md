@@ -26,7 +26,10 @@ Follow the README's Setup: the database up, the server on
 password is `demo-password-2026`. Sign in, and set the persona's
 language on the Account page. Then follow the persona's **Set up:**
 line, where it has one: a screen size, a text size, a slower network,
-an account of its own, or each task walked twice.
+an account of its own, or each task walked twice. A Set up that slows
+the network is walked on the client's production build
+(`npm run build`, then `npm run preview` in `client/`), so the walk
+times what a person loads, not the development build.
 
 ## 3. Walk the task
 
@@ -86,7 +89,8 @@ then merges what they found. `as <personas>` walks only those; `into
 <folder>` names where the reports go, `tmp/walkthroughs/` when none is
 given, which git ignores.
 
-1. **Set up once,** in this session: the app as section 2 says, kept
+1. **Set up once,** in this session: the app as section 2 says, its
+   production build when any persona's Set up slows the network, kept
    running; then `npm run seed:demo` in `server/` once per persona, one
    after another, keeping each account's email.
 2. **Start the subagents together,** one per persona, each given its
