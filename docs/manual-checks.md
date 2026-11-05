@@ -1877,6 +1877,21 @@ The pages, in a private window unless a check says otherwise.
   can do here as on the card, with To do more, ask … opening People. It is
   there with the card dismissed. As the demo Owner, it reads Owner, its
   line, and You may do everything here, in one line.
+- **MC-3213** *(ADR-091)* Home's guide. As the demo Owner on Home, open
+  Help: Home's guide names Home's three moments (every day, the first two
+  weeks, a new organization), then Every day, Where each tile leads, What
+  is late, Your first two weeks, Getting started, The top bar, With no
+  organization and Words you’ll meet. Every word it puts in bold reads
+  the same on the screen: What needs you today, 2 late, Raise an order,
+  Recently opened, Refresh; each tile's name, and where the guide says it
+  leads is where the tile opens; 2 orders to ship, and Late, Out and
+  Expired on the lists the late buttons open; the welcome's Open and Fold;
+  Getting started's seven steps, Learn more and Skip; and, at 390 px, the
+  top bar's Menu, Search, Help, Notifications and Account. Nowhere does it
+  say overdue, See all or cards. In Français (Accueil) and 中文 (首页) the
+  same: 2 en retard, Ce qui vous attend aujourd’hui, Déployer and Réduire,
+  Inviter votre équipe; 2 项逾期, 今天要处理的事, 展开 and 收起, 库存下限.
+  Its Inventory link opens Inventory, its guide at Reorder points.
 
 ## 33. Job roles (ADR-080)
 
@@ -3281,8 +3296,8 @@ site, after a deploy that changes the setting, the route or the relay.
   to order and Order or make what is low after Promised to customers,
   and two more refusals; every button it names reads the same on the
   screen, Add reorder point ending Add's steps, with Save when editing.
-  Home's guide has Low stock after What needs attention, and Out
-  among its words. In 中文: 了解更多 follows 待发 with no space and opens
+  Home's guide has Low stock under Where each tile leads, opening Reorder
+  points, and Out among its words. In 中文: 了解更多 follows 待发 with no space and opens
   物品的库存情况, and Home's guide has 库存不足; in French, En savoir plus
   opens Où en est un article.
 
@@ -4862,3 +4877,7 @@ first.
   MC-2601 extended.
 - 2026-11-05: #380, Home in no organization in 中文 and Français, the
   last of its suggestions: MC-3109 extended.
+- 2026-11-05: ADR-091, Home's guide rewritten for the new Home in three
+  languages: its three moments, where each tile leads, what is late, the
+  welcome folded, Getting started and the top bar's words: MC-3213 added,
+  MC-4217 reworded.
