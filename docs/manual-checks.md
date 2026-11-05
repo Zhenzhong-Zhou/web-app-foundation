@@ -1694,7 +1694,10 @@ The pages, in a private window unless a check says otherwise.
   sentence, a screen reader reading the card's heading out. With Home
   open in two tabs, schedule the account's deletion in one; in the other,
   Start an organization is refused and the deletion banner, with Keep my
-  account, appears.
+  account, appears. In 中文 the first card reads 加入组织, and the
+  sentence 创建新组织需要邀请; in Français it reads « Les nouvelles
+  organisations se créent sur invitation », and the card's line ends
+  « rien d’une organisation précédente n’est repris » (#380).
 - **MC-3110** *(ADR-078)* With `REGISTRATION=invitation`, sign-in has no
   Create an account: New here? Accounts start from an invitation, with
   How to get one, which opens Accounts here start from an invitation, with
@@ -4857,3 +4860,5 @@ first.
   export and the guides: MC-4206, MC-4210, MC-4212 and MC-4216 reworded.
 - 2026-11-05: ADR-091, late in place of overdue in the time zone's help:
   MC-2601 extended.
+- 2026-11-05: #380, Home in no organization in 中文 and Français, the
+  last of its suggestions: MC-3109 extended.
