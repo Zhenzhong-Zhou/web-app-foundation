@@ -10,9 +10,8 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type { ReturnAuthorizationSummary } from '../api/types.gen';
 import { DateRangeFilter } from '../components/date-range-filter';
@@ -23,13 +22,13 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { fromAddress } from '../lib/address-filter';
 import type { ReturnAuthorizationStatus } from '../lib/api-names';
-import { type DayRange, withInstants } from '../lib/date-range';
+import { withInstants } from '../lib/date-range';
 import { formatDay } from '../lib/format';
 import { organizationDayOf } from '../lib/time-zone';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { day, oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
 import { STATUS_TONES } from '../theme/status';
 import { rmaStatus } from './rma-labels';
@@ -44,6 +43,17 @@ const LABELS = defineMessages({
 });
 
 const FILTER_VALUES: readonly Filter[] = ['all', 'open', 'closed', 'cancelled'];
+
+/**
+ * The list's filters, in the address (ADR-091): Home's tile opens the open
+ * ones, the default, and what is pressed here is kept there, with the days
+ * raised, `from` and `to`.
+ */
+const ADDRESS_FILTERS = {
+  status: oneOf(FILTER_VALUES, 'open'),
+  from: day,
+  to: day,
+};
 
 const FILTERS: { value: Filter; label: MessageDescriptor }[] = [
   { value: 'open', label: LABELS.open },
@@ -68,14 +78,11 @@ function query(filter: Filter): string {
  */
 export function RmasPage() {
   const intl = useIntl();
-  // Home's card opens the open ones: ?status=open (ADR-058).
-  const [params] = useSearchParams();
-  const [filter, setFilter] = useState<Filter>(() =>
-    fromAddress(params, 'status', FILTER_VALUES, 'open'),
-  );
+  const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  const filter = filters.status;
   const { text, setText, search } = useListSearch();
   // When raised, the reader's days as instants (ADR-057).
-  const [range, setRange] = useState<DayRange>({});
+  const range = { from: filters.from, to: filters.to };
   const {
     entries: rows,
     error,
@@ -124,7 +131,7 @@ export function RmasPage() {
           id: option.value,
           label: intl.formatMessage(option.label),
           pressed: filter === option.value,
-          onToggle: () => setFilter(option.value),
+          onToggle: () => setFilters({ status: option.value }),
         }))}
       >
         <DateRangeFilter
@@ -133,7 +140,7 @@ export function RmasPage() {
             defaultMessage: 'Raised',
           })}
           value={range}
-          onChange={setRange}
+          onChange={(next) => setFilters({ from: next.from, to: next.to })}
         />
       </FilterRow>
 

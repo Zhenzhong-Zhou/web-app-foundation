@@ -43,7 +43,7 @@ export function CreditNotesPage() {
   const { text, setText, search } = useListSearch();
   // By credit date, sortable by date and amount (ADR-057).
   const [range, setRange] = useState<DayRange>({});
-  const { sort, toggle } = useListSort<'creditDate' | 'total'>();
+  const { sort, header } = useListSort(['creditDate', 'total']);
   const path = withSort(
     withDays(withSearch('/credit-notes', search), range),
     sort,
@@ -158,18 +158,11 @@ export function CreditNotesPage() {
                         defaultMessage: 'Customer',
                       })}
                     </TableCell>
-                    <SortHeader
-                      label={creditDate}
-                      active={sort?.key === 'creditDate'}
-                      order={sort?.order ?? 'asc'}
-                      onSort={() => toggle('creditDate')}
-                    />
+                    <SortHeader label={creditDate} {...header('creditDate')} />
                     <SortHeader
                       align="right"
                       label={amount}
-                      active={sort?.key === 'total'}
-                      order={sort?.order ?? 'asc'}
-                      onSort={() => toggle('total')}
+                      {...header('total')}
                     />
                     <TableCell />
                   </TableRow>

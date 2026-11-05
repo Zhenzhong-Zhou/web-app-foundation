@@ -187,6 +187,18 @@ a second organization.
   receive, the late ones still first. Press Expected: the latest first.
   Remove Still to receive too: the open orders, newest first. In
   Français the chip reads En retard; in 中文, 逾期.
+- **MC-406** *(ADR-091)* The lists keep what is chosen in the address. On
+  Orders press All, set Expected from to the 1st of this month, then Tab to
+  Expected's header and press Enter: the address gains `status=all`,
+  `from=…`, `sort=expectedAt&order=asc`, and once the list is back the
+  focus ring is still on Expected. Open an order and press Back: All
+  pressed, the day and the sort as they were. Press Orders in the menu:
+  the plain list, Open pressed, the address `/orders`. Do the same on
+  Invoices (Drafts, a day, Total), Returns (Closed, a day), Production (a
+  status, a day), Inventory (Expiring soon, Needs a cost, Show emptied, a
+  Location, Expires) and Reorder points (Low): each choice is in the
+  address, and Back from a page opened from there keeps it. Type
+  `?status=nonsense` after `/orders`: Open is pressed, as with none.
 
 ## 5. Making
 
@@ -3187,6 +3199,11 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R97** *(a list keeping the filter pressed when a link to it is
+  followed while it is open, #302)* On Inventory → Reorder points press
+  Out, then follow a low-stock notice from the bell, or type
+  `?tab=reorder-points&status=low` in its place: Low is pressed and the
+  list shows the low items, not Out's.
 - **MC-R96** *(the order's Total cut under its actions on a computer, #221)*
   Open SO-DEMO-1 at 1440 px, in English, Français and 中文, at Standard and
   at Larger text (account menu → Text size), in light and in dark: each
@@ -4713,3 +4730,6 @@ first.
   rewritten.
 - 2026-11-05: ADR-091, Chinese text on lines of 28 and 24 px: MC-1560
   rewritten.
+- 2026-11-05: ADR-091 and #302, the lists' filters and sort kept in the
+  address while they are open, and a keyboard sort keeping its header's
+  focus: MC-406 and MC-R97 added.

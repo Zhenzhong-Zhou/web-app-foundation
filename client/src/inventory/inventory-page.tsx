@@ -26,7 +26,7 @@ import {
   useState,
 } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type { Availability, Location, StockRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -40,7 +40,6 @@ import { PageHeader } from '../components/page-header';
 import { ProductCover } from '../components/product-cover';
 import { SortHeader } from '../components/sort-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { flagFromAddress } from '../lib/address-filter';
 import { api, messageFor } from '../lib/api';
 import {
   displayQuantity,
@@ -53,6 +52,7 @@ import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { flag, id, useListFilters } from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
 import { type ListSort, useListSort } from '../lib/use-list-sort';
 import { useTab } from '../lib/use-tab';
@@ -137,6 +137,20 @@ export function InventoryPage() {
   );
 }
 
+/**
+ * The Stock tab's filters, in the address (ADR-091): Home's tiles open it
+ * narrowed, `?expiring=1`, and what is pressed or chosen here is kept
+ * there. "Expiring soon" is lots within the amber threshold, the expired
+ * included; "Needs a cost" is stock whose value is still provisional
+ * (ADR-048).
+ */
+const ADDRESS_FILTERS = {
+  expiring: flag,
+  needsCost: flag,
+  includeEmpty: flag,
+  locationId: id,
+};
+
 /** Expiring soon's own order: the soonest first, the expired leading. */
 const SOONEST_EXPIRY: ListSort<'expiry'> = { key: 'expiry', order: 'asc' };
 
@@ -155,8 +169,20 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   const { warning: expiringWithin } = useExpiryDays();
 
   const [locations, setLocations] = useState<Location[] | null>(null);
-  const [locationId, setLocationId] = useState('');
-  const [params] = useSearchParams();
+  const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  const { expiring, needsCost, includeEmpty } = filters;
+  // Sales sees stock but not locations (ADR-080): the page asks only for
+  // what its reader may read, and leaves the Location filter out.
+  const canSeeLocations = can('locations.view');
+  const leaves = locations ? leavesOf(locations) : [];
+  // The place the address names: taken while the locations are read, then
+  // only if stock can sit there; any other is ignored, as Everywhere.
+  const locationId =
+    canSeeLocations &&
+    (locations === null ||
+      leaves.some((location) => location.id === filters.locationId))
+      ? filters.locationId
+      : '';
   // In the address, as every list's (#301): the lookup's "Show all" narrows
   // it while open, and Reorder points shares it, the same ?search=.
   const { text: searchText, setText: setSearchText, search } = useListSearch();
@@ -167,22 +193,13 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     row: StockRow;
   } | null>(null);
   const [viewing, setViewing] = useState<StockRow | null>(null);
-  const [includeEmpty, setIncludeEmpty] = useState(false);
-  // "Expiring soon": lots within the amber threshold, the expired included.
-  // Home's cards open this list narrowed: ?expiring=1, ?needsCost=1.
-  const [expiring, setExpiring] = useState(() =>
-    flagFromAddress(params, 'expiring'),
-  );
   // By the lot's expiry when its header is chosen (ADR-057), and, with
   // Expiring soon on, soonest first until one is (ADR-091).
-  const { sort, toggle } = useListSort<'expiry'>(
+  const { sort, header } = useListSort(
+    ['expiry'],
     expiring ? SOONEST_EXPIRY : null,
   );
   const [expiringCount, setExpiringCount] = useState<number | null>(null);
-  // "Needs a cost": stock whose value is still provisional (ADR-048).
-  const [needsCost, setNeedsCost] = useState(() =>
-    flagFromAddress(params, 'needsCost'),
-  );
   const [needsCostCount, setNeedsCostCount] = useState<number | null>(null);
   /** Bumped by Refresh and by every dialog that moves stock. */
   const [changes, setChanges] = useState(0);
@@ -271,12 +288,8 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
 
   const error = listError ?? setupError;
   const showSkeleton = useDelayedFlag(loading);
-  const leaves = locations ? leavesOf(locations) : [];
 
   const canAdjust = can('stock.adjust');
-  // Sales sees stock but not locations (ADR-080): the page asks only for
-  // what its reader may read, and leaves the Location filter out.
-  const canSeeLocations = can('locations.view');
 
   const loadAvailability = useCallback(async () => {
     try {
@@ -419,7 +432,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
             }),
             count: expiringCount ?? undefined,
             pressed: expiring,
-            onToggle: () => setExpiring((on) => !on),
+            onToggle: () => setFilters({ expiring: !expiring }),
           },
           {
             id: 'needs-cost',
@@ -429,7 +442,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
             }),
             count: needsCostCount ?? undefined,
             pressed: needsCost,
-            onToggle: () => setNeedsCost((on) => !on),
+            onToggle: () => setFilters({ needsCost: !needsCost }),
           },
           {
             id: 'emptied',
@@ -438,7 +451,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
               defaultMessage: 'Show emptied',
             }),
             pressed: includeEmpty,
-            onToggle: () => setIncludeEmpty((on) => !on),
+            onToggle: () => setFilters({ includeEmpty: !includeEmpty }),
           },
         ]}
       >
@@ -451,8 +464,8 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
               defaultMessage: 'Location',
             })}
             select
-            value={locationId}
-            onChange={(event) => setLocationId(event.target.value)}
+            value={locations === null ? '' : locationId}
+            onChange={(event) => setFilters({ locationId: event.target.value })}
             sx={{ minWidth: rem(200) }}
           >
             <MenuItem value="">
@@ -515,9 +528,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                         id: 'inventory.lot.expires',
                         defaultMessage: 'Expires',
                       })}
-                      active={sort?.key === 'expiry'}
-                      order={sort?.order ?? 'asc'}
-                      onSort={() => toggle('expiry')}
+                      {...header('expiry')}
                     />
                     <TableCell align="right">
                       {intl.formatMessage({

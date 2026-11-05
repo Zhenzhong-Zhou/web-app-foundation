@@ -12,9 +12,8 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type { OrderSummary } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -28,12 +27,12 @@ import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { flagFromAddress, fromAddress } from '../lib/address-filter';
 import type { OrderDirection } from '../lib/api-names';
-import { type DayRange, withDays } from '../lib/date-range';
+import { withDays } from '../lib/date-range';
 import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { day, flag, oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
 import { type ListSort, useListSort, withSort } from '../lib/use-list-sort';
 import { STATUS_TONES } from '../theme/status';
@@ -83,6 +82,22 @@ const FILTER_VALUES: readonly Filter[] = [
   'confirmed',
 ];
 
+/**
+ * The list's filters, in the address (ADR-091): Home's tiles open it
+ * narrowed, `?direction=sale&outstanding=1`, and what is pressed here is
+ * kept there. `outstanding` is something still to ship or to come (ADR-058,
+ * #163); `late` is that and expected before the organization's today,
+ * which the server decides; `from` and `to` are the expected days.
+ */
+const ADDRESS_FILTERS = {
+  status: oneOf(FILTER_VALUES, 'open'),
+  direction: oneOf<OrderDirection | ''>(['', 'sale', 'purchase'], ''),
+  outstanding: flag,
+  late: flag,
+  from: day,
+  to: day,
+};
+
 /** What is still to ship or to receive: soonest first, the late leading. */
 const SOONEST_EXPECTED: ListSort<'expectedAt'> = {
   key: 'expectedAt',
@@ -93,32 +108,15 @@ export function OrdersPage() {
   const intl = useIntl();
   const can = useCan();
 
-  // Opened from Home: ?direction=sale&status=confirmed (ADR-058).
-  const [params] = useSearchParams();
-  const [filter, setFilter] = useState<Filter>(() =>
-    fromAddress(params, 'status', FILTER_VALUES, 'open'),
-  );
-  const [direction, setDirection] = useState<OrderDirection | ''>(() =>
-    fromAddress<OrderDirection | ''>(
-      params,
-      'direction',
-      ['', 'sale', 'purchase'],
-      '',
-    ),
-  );
-  // Something still to ship or to come (ADR-058, #163): Home's ?outstanding=1.
-  const [outstanding, setOutstanding] = useState(() =>
-    flagFromAddress(params, 'outstanding'),
-  );
-  // Late (ADR-091): still to ship or to come, and expected before the
-  // organization's today, which the server decides: Home's ?late=1.
-  const [late, setLate] = useState(() => flagFromAddress(params, 'late'));
+  const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  const { status: filter, direction, outstanding, late } = filters;
+  const range = { from: filters.from, to: filters.to };
   const { text, setText, search } = useListSearch();
   // By expected date, and sortable by it (ADR-057); the export takes the
   // same query, so the file is what the list shows. What is still to ship
   // or to receive runs soonest first until a header is chosen (ADR-091).
-  const [range, setRange] = useState<DayRange>({});
-  const { sort, toggle } = useListSort<'expectedAt'>(
+  const { sort, header } = useListSort(
+    ['expectedAt'],
     outstanding || late ? SOONEST_EXPECTED : null,
   );
   const path = withSort(
@@ -198,10 +196,14 @@ export function OrdersPage() {
           id: option.value,
           label: intl.formatMessage(option.label),
           pressed: filter === option.value,
-          onToggle: () => setFilter(option.value),
+          onToggle: () => setFilters({ status: option.value }),
         }))}
       >
-        <DateRangeFilter label={expected} value={range} onChange={setRange} />
+        <DateRangeFilter
+          label={expected}
+          value={range}
+          onChange={(next) => setFilters({ from: next.from, to: next.to })}
+        />
       </FilterRow>
 
       {/* What a link narrowed that no button shows, each removable. */}
@@ -224,13 +226,13 @@ export function OrdersPage() {
                       defaultMessage: 'Purchases only',
                     })
               }
-              onDelete={() => setDirection('')}
+              onDelete={() => setFilters({ direction: '' })}
             />
           )}
           {(filter === 'draft' || filter === 'confirmed') && (
             <Chip
               label={orderStatusLabel(filter, direction || 'sale')}
-              onDelete={() => setFilter('open')}
+              onDelete={() => setFilters({ status: 'open' })}
             />
           )}
           {outstanding && (
@@ -251,7 +253,7 @@ export function OrdersPage() {
                         defaultMessage: 'Still to ship or receive',
                       })
               }
-              onDelete={() => setOutstanding(false)}
+              onDelete={() => setFilters({ outstanding: false })}
             />
           )}
           {late && (
@@ -260,7 +262,7 @@ export function OrdersPage() {
                 id: 'orders.filter.late',
                 defaultMessage: 'Late',
               })}
-              onDelete={() => setLate(false)}
+              onDelete={() => setFilters({ late: false })}
             />
           )}
         </Stack>
@@ -308,12 +310,7 @@ export function OrdersPage() {
                         defaultMessage: 'Reference',
                       })}
                     </TableCell>
-                    <SortHeader
-                      label={expected}
-                      active={sort?.key === 'expectedAt'}
-                      order={sort?.order ?? 'asc'}
-                      onSort={() => toggle('expectedAt')}
-                    />
+                    <SortHeader label={expected} {...header('expectedAt')} />
                     <TableCell align="right">
                       {intl.formatMessage({
                         id: 'orders.fulfilled',

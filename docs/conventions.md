@@ -794,10 +794,11 @@ knows from the link, not from a guess.
 - **Passes none:** the menu, the trail above a record, an "up" link, and
   a move after an action, such as a delete. A new tab and a bookmark
   carry no state, so no Back, as before.
-- **Kept while the page writes its own address:** a list's search, a tab
-  and a filter replace the address with the location's state, as
-  `useListSearch` and `useTab` do, so Back stays after the first letter
-  typed or the first tab chosen.
+- **Kept while the page writes its own address:** a list's search, a tab,
+  its filters and its sort replace the address with the location's state,
+  as `useListSearch`, `useTab`, `useListFilters` and `useListSort` do, so
+  Back stays after the first letter typed, the first tab or the first
+  filter chosen.
 - MC-R69 checks each such link by hand.
 
 ## Status pages
