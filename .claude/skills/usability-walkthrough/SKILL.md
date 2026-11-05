@@ -82,7 +82,9 @@ each finding:
 Then what worked well; the last line is `DONE: <why>` or
 `BLOCKED: <what is needed>`, as `CLAUDE.md`'s "Report for a quick
 read" says. When asked, file each blocker or major finding with
-`gh issue create`, one issue per finding.
+`gh issue create`: one issue per finding for a single walk; for a
+panel, one issue per screen for the findings its screens own, and none
+for those the design language settles (ADR-090).
 
 ## 6. A panel: several personas at once
 
