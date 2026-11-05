@@ -87,10 +87,7 @@ behind it for the fourth.
   account starts with, noting whether anything leads to Larger text;
   then the same tasks at Larger text. A screenshot at each step, since
   what they can read is the question, judged also against WCAG 2.2's
-  contrast (1.4.3), resize text (1.4.4), reflow (1.4.10) and target
-  size. For this persona a target's bar is 44 by 44 px, as WCAG's
-  enhanced level (2.5.5) and Apple's guidelines ask, not the 24 px
-  minimum of 2.5.8.
+  contrast (1.4.3), resize text (1.4.4) and reflow (1.4.10).
 
 ## The outsider on the first day
 

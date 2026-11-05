@@ -60,6 +60,10 @@ Against:
 - Nielsen's ten usability heuristics.
 - WCAG 2.2 AA basics: every control labelled, the whole task possible
   from the keyboard, colour never the only signal.
+- The design language's
+  [Text and targets](../../../docs/design-language.md#text-and-targets):
+  text to decide by at 16 px, and on a phone or a tablet every target at
+  least 44 × 44 px.
 - Language: text left untranslated, awkward or inconsistent in the
   persona's language.
 
