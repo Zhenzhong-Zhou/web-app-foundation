@@ -8,8 +8,9 @@ tokens, the type, the colours and the shared pieces it builds with are
 [conventions.md, The look](conventions.md#the-look-adr-055); the code
 rules, [`.claude/rules/ui.md`](../.claude/rules/ui.md); the mark,
 [brand/](brand/README.md). The Claude Design canvas that
-[engineering.md](engineering.md#how-code-is-delivered) names has a
-Design language section, each pattern drawn as a screen uses it.
+[engineering.md](engineering.md#how-code-is-delivered) names gains a
+Design language section with ADR-091's boards, each pattern drawn as
+Home uses it.
 
 It came from a first-time viewer's look at Home (#335) and from two
 walkthrough panels of personas, on 4 November 2026: who they are is in
