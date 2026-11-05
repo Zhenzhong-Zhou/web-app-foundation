@@ -17,8 +17,6 @@ import {
   Paper,
   Skeleton,
   Stack,
-  type SxProps,
-  type Theme,
   Typography,
 } from '@mui/material';
 import {
@@ -55,6 +53,7 @@ import { greeting } from './greeting';
 import { CARDS, isKnownCard, type KnownCard } from './home-cards';
 import { NoOrganization } from './no-organization';
 import { RecentCard } from './recent-card';
+import { TONAL } from './tonal';
 import { useMinute } from './use-minute';
 import { useReadOnReturn } from './use-read-on-return';
 import { WelcomeCard } from './welcome-card';
@@ -362,23 +361,12 @@ function OrganizationHome() {
         )
       ) : (
         <>
-          {/* While a new organization is set up, Getting started's seven
-              steps, said once above it (ADR-058). */}
-          {showStart && (
-            <Typography sx={{ color: 'text.secondary' }}>
-              {intl.formatMessage({
-                id: 'home.summary.start',
-                defaultMessage:
-                  'Seven steps get your organization ready to work. Each is ticked when it is done.',
-              })}
-            </Typography>
-          )}
-
           <WhatIsLate cards={cards} />
 
           {welcome && (
             <WelcomeCard
               welcome={welcome}
+              whatWeDo={home.whatWeDo}
               startShows={!!showStart}
               onDismiss={dismissWelcome}
               headingRef={welcomeHeading}
@@ -480,13 +468,6 @@ function OrganizationHome() {
     </Stack>
   );
 }
-
-/** A button beside the main one: filled in a neutral tint, not the accent. */
-const TONAL: SxProps<Theme> = {
-  bgcolor: 'tone.neutral.bg',
-  color: 'text.primary',
-  '&:hover': { bgcolor: 'tone.neutral.border' },
-};
 
 /**
  * Between a tile's parts, which a flex box does not draw but its words

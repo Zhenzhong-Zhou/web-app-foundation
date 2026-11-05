@@ -69,18 +69,21 @@ test('Learn more on a Getting started step opens Help at its section', async ({
   await signInAs(page, freshOrg.api);
   await page.goto('/');
 
+  // Beside the next step's button, a new organization's first: its
+  // profile (ADR-091).
   const step = page
     .getByRole('region', { name: 'Getting started', exact: true })
-    .getByText('Where stock is kept', { exact: false });
+    .getByRole('listitem')
+    .filter({ hasText: 'Address, tax number and currency' });
   await step.getByRole('button', { name: 'Learn more', exact: true }).click();
 
   const help = page.getByRole('complementary', { name: 'Help', exact: true });
   await expect(
-    help.getByRole('heading', { level: 2, name: 'Locations', exact: true }),
+    help.getByRole('heading', { level: 2, name: 'Organization', exact: true }),
   ).toBeAttached();
   const section = help.getByRole('heading', {
     level: 3,
-    name: 'Add a location',
+    name: 'Profile',
     exact: true,
   });
   await expect(section).toBeFocused();

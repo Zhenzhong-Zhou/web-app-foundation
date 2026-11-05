@@ -850,16 +850,22 @@ Paper is checked first because it must not change at all.
   few seconds, it does not. Switch to 中文 and to a phone (or a narrow
   window): the tiles two by two, three from 600 px, nothing scrolls
   sideways, and the wording reads naturally. Register a
-  new organization: Getting started leads with seven steps, straight after
-  the welcome, its first open step's button the only filled one on Home,
-  and the quick actions after it, grey; Nothing needs you today. in one
-  line and the tiles quiet in their places; add a location and
-  see its step ticked on Refresh. The last step reads Invite your team: its
-  Invite someone opens Members with the Invite dialog, and closing it takes
-  `?invite` off the address, so Back and a reload leave it shut (ADR-077).
-  Skip the team step; Dismiss the card (focus moves to the greeting at the
-  top of Home) and bring it back with Show Getting started. Sign in as a viewer: no Skip or Dismiss, the team step with no
-  button, and only the tiles that role may see. Give a member a role made
+  new organization: Getting started's seven steps, straight after the
+  welcome, at 0 of 7 done over a bar in the accent, with Seven steps get
+  your organization ready to work… inside the card. The next step is
+  shaded, its ring in the accent, its button the only filled one on Home
+  with Learn more beside it, and the quick actions after the card, grey.
+  Every other step is one link, its whole row, at least 44 px tall (on a
+  phone too), opening its page with Back; a done one is ticked, grey, and
+  reads … · Done. Nothing needs you today. in one line and the tiles quiet
+  in their places; add a location and see its step ticked on Refresh.
+  The last step reads Invite your team: its row opens Members with the
+  Invite dialog, and closing it takes `?invite` off the address, so Back
+  and a reload leave it shut (ADR-077). Once it is the next step, Skip
+  sits beside its button: skip it; Dismiss the card (focus moves to the
+  greeting at the top of Home) and bring it back with Show Getting
+  started. Sign in as a viewer: no Skip or Dismiss, the team step plain,
+  not a link, and only the tiles that role may see. Give a member a role made
   with only Orders' view (Settings → Roles) and sign in as them: in place
   of Home's actions one grey line says their role does not include
   raising orders, receiving stock or planning runs, and whom to ask.
@@ -1725,9 +1731,9 @@ The pages, in a private window unless a check says otherwise.
   Larger, on the phone and on a computer, every control in the bar,
   the organization and the search box among them, is a full fingertip
   wide and tall (44 px, DevTools' box model).
-- **MC-3205** *(ADR-079)* Learn more: on a new organization's Home, each
-  Getting started step's hint ends with Learn more, which opens Help at
-  that step's section, scrolled to it and marked for a moment; with the
+- **MC-3205** *(ADR-079)* Learn more: on a new organization's Home, the
+  next Getting started step has Learn more beside its button, which opens
+  Help at that step's section, scrolled to it and marked for a moment; with the
   system's Reduce motion on, it jumps there and the mark comes and goes
   without fading. An empty list, such as Production with no runs, has
   Learn more beside its words. Organization's Numbering (Documents) and
@@ -1746,21 +1752,25 @@ The pages, in a private window unless a check says otherwise.
   right after the words it follows, with no space before it.
 - **MC-3207** *(ADR-079)* The welcome as a Viewer, on a computer: as the
   demo Owner, invite an address as a Viewer with a note of two lines, and
-  accept it from Mailpit in a private window. Home leads with Welcome to
-  Demo …, your name, above the counts: You joined today as a Viewer, and
-  the card stays for your first two weeks, until the day fourteen days on.
-  On the left, the note as typed, its line break kept, under the Owner's
-  photo or initials, their name opening their page on People; then What
-  you can do here, a line per area, ending To do more, ask … with each
-  name opening People. On the right, Your first week, 0 of 3 done: Say
-  who you are, Look up a product or a lot and Open an order, each with
-  its button. The foot says Help is at the top, beside the bell, its
+  accept it from Mailpit in a private window, at 900 px wide or more.
+  Home's card, above the tiles, is open: its head reads Welcome to Demo …,
+  your name, and Your first week · 0 of 3 done, with Fold. Under it the
+  demo's What we do, as under Home's date; You joined today as a Viewer,
+  and the card stays for your first two weeks, until the day fourteen
+  days on; and the note as typed, its line break kept, under the Owner's
+  photo or initials, their name opening their page on People. Then the
+  first week: Say who you are, Look up a product or a lot and Open an
+  order, each one link, its whole row, with its hint. Then What you can do
+  here, a line per area, each area's name a link to its page (Orders opens
+  Orders), ending To do more, ask … with each name opening People. Fold:
+  the card is its head alone; Open brings the rest back in place. The
+  foot says Help is at the top, beside the bell, its
   Help a link with the ? icon before it: pressing the word or the icon
   opens Help on Home's guide, as the bar's Help does, and the bar's
   button shows pressed; pressed again, Help stays open on Home's guide;
   Esc puts focus back on it. VoiceOver reads it as one button, Help.
-  Open a product and come back: Look up is ticked and reads You opened … as a
-  link to it. Dismiss: the card goes, focus moves to the greeting at the
+  Open a product and come back: Look up is ticked, grey, and reads You
+  opened …, its row opening it. Dismiss, under the foot: the card goes, focus moves to the greeting at the
   top of Home, and a message says What you can do here stays on Your
   account, with Undo. Tab once: Undo has focus, and the message stays
   while it does, or while the pointer is on it, well past its eight
@@ -1786,7 +1796,7 @@ The pages, in a private window unless a check says otherwise.
   Confirmed, and the banner is gone everywhere. Add a photo on Your
   account: Say who
   you are reads Photo added, opening Account. Receive stock or raise an
-  order: it is ticked, naming what you did as a link to it.
+  order: it is ticked, naming what you did, its row opening it.
 - **MC-3209** *(ADR-079)* The welcome for a founder: set up an
   organization from `npm run org:invite`'s link. Home's card reads You
   started this organization today, then in one line You may do everything
@@ -1794,19 +1804,20 @@ The pages, in a private window unless a check says otherwise.
   the organization is in Getting started, below. Getting started comes
   straight after the card, before the quick actions, and the card's first
   week has only Confirm your email address
-  and Say who you are, 0 of 2 done, its bar empty on a grey track, as
-  Getting started's is at 0 of 7.
+  and Say who you are, Your first week · 0 of 2 done in its head, and
+  Getting started's bar is empty on a grey track at 0 of 7.
   Dismiss Getting started, as its Owner, and reload: the first week grows
   to the founder's work, Look up, Receive stock and Raise an order.
 - **MC-3210** *(ADR-079)* The welcome in 中文 on a phone, about 390 px,
-  with Account's language set to 中文: as MC-3207's Viewer, the card reads
-  欢迎来到 Demo …，your name, and 您今天以查看者身份加入。这张卡片在首页显示两周，到
-  the day. One column: the note, then 您的第一周 with 已完成 0/3, then one
-  row, 您在这里可以做什么 with how many areas and 点开查看, which opens the
-  areas on a tap and closes them on another; then the foot about 帮助.
-  The card is about a screen long, and nothing scrolls sideways at Larger
-  text either. 隐藏 shows 欢迎卡片已隐藏… with 撤销. As MC-3209's founder,
-  您在这里可以做所有事情 comes first, above 您的第一周, and no row folds.
+  with Account's language set to 中文: as MC-3207's Viewer, the card is
+  folded to one line above the tiles: 欢迎来到 Demo …，your name, 您的第一周 · 已完成
+  0/3, and 展开, a full fingertip tall. 展开 opens it in place and reads
+  收起: 您今天以查看者身份加入。这张卡片在首页显示两周，到 the day, the note,
+  the first week's items, each a row to tap, then 您在这里可以做什么, each
+  area's name a link, then the foot about 帮助, and 隐藏. Nothing scrolls
+  sideways at Larger text either. 收起 folds it back to its one line.
+  隐藏 shows 欢迎卡片已隐藏。“您在这里可以做什么”仍保留在“我的账户”中。 with
+  撤销. As MC-3209's founder, 您在这里可以做所有事情 in one line.
 - **MC-3211** *(ADR-079)* The demo's newcomer, and People's New. On a
   freshly seeded demo, the Owner's Home has no welcome, nor has any of the
   team's but Fatima Haddad's: she joined three days ago by the Owner's
@@ -3772,9 +3783,10 @@ first.
   navigation: the menu is read as a dialog named Navigation (导航 in
   中文), and Close navigation closes it.
 - **MC-R33** *(a step done, to a screen reader)* With VoiceOver, on Home,
-  a ticked step in Getting started or Your first week reads its title,
-  then done, as two words: Say who you are (done), never you are(done); in
-  Français … (fait).
+  a ticked item in Your first week reads its title, then done, as two
+  words: Say who you are (done), never you are(done); in Français …
+  (fait). A done step in Getting started says so on the screen too: Your
+  organization · Done, in Français … · Fait, in 中文 … · 已完成.
 - **MC-R32** *(Home's date line)* In English, Home's line under the
   greeting reads the day and the time as the browser's region writes
   them, such as Thursday, November 5, 7:42 AM, a calendar before it and
@@ -4783,3 +4795,9 @@ first.
   its place, Recently opened as rows, and the read on return: MC-1559,
   MC-3421, MC-3423, MC-4213, MC-2505, MC-R24, MC-R32, MC-R37, MC-R39,
   MC-R49, MC-R57, MC-R59, MC-R69 and MC-R72 rewritten.
+- 2026-11-05: ADR-091, Getting started and the welcome: the next step the
+  page's main action with Learn more beside it and every other step one
+  link; the welcome folded below 900 px with Open, open from it with
+  Fold, What we do in it, each first-week item and each area a link:
+  MC-1559, MC-3205, MC-3207, MC-3208, MC-3209, MC-3210 and MC-R33
+  rewritten.

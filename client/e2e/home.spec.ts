@@ -33,7 +33,8 @@ test('a new organization lands on Home, led by Getting started', async ({
 
   const start = page.getByRole('region', { name: 'Getting started' });
   await expect(start).toBeVisible();
-  await expect(start.getByRole('button', { name: 'Skip' })).toHaveCount(1);
+  // Skip only once the team step is the next.
+  await expect(start.getByRole('button', { name: 'Skip' })).toHaveCount(0);
   // Nothing to do yet: said in one line, the tiles quiet in their places.
   await expect(page.getByText('Nothing needs you today.')).toBeVisible();
   await expect(
@@ -48,6 +49,57 @@ test('a new organization lands on Home, led by Getting started', async ({
     page.getByRole('region', { name: 'Getting started' }),
   ).toBeVisible();
 });
+
+/**
+ * Getting started at a phone's and a laptop's width (ADR-091): the next
+ * step its one filled button with Learn more beside it, every other step
+ * one link, its whole row, at least 44 px tall, nothing wider than the
+ * window.
+ */
+for (const size of [
+  { width: 390, height: 844 },
+  { width: 1366, height: 768 },
+]) {
+  test(`Getting started at ${size.width} px: the next step its main action, each other step one link`, async ({
+    page,
+    freshOrg,
+  }) => {
+    await page.setViewportSize(size);
+    await signInAs(page, freshOrg.api);
+    await page.goto('/');
+
+    const start = page.getByRole('region', { name: 'Getting started' });
+    await expect(start.getByText(/^\d of 7 done$/)).toBeVisible();
+    const steps = start.getByRole('listitem');
+    await expect(steps).toHaveCount(7);
+
+    // A new organization's next step is its profile.
+    const next = steps.filter({ hasText: 'Address, tax number and currency' });
+    await expect(
+      next.getByRole('link', { name: 'Open settings', exact: true }),
+    ).toHaveClass(/MuiButton-contained/);
+    await expect(
+      next.getByRole('button', { name: 'Learn more', exact: true }),
+    ).toBeVisible();
+    await expect(start.locator('.MuiButton-contained')).toHaveCount(1);
+
+    await expect(
+      start.getByRole('link', { name: /^Add a location/ }),
+    ).toHaveAttribute('href', '/locations');
+    for (const name of [
+      /^Add a location/,
+      /^Add a product/,
+      /^Add a partner/,
+      /^Receive stock/,
+      /^Ship and invoice an order/,
+      /^Invite your team/,
+    ]) {
+      const box = await start.getByRole('link', { name }).boundingBox();
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+      expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(size.width);
+    }
+  });
+}
 
 /** A confirmed purchase of 10, still to receive, expected `days` from now. */
 async function purchase(

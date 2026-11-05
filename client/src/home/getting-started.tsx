@@ -1,8 +1,9 @@
-import CheckCircle from '@mui/icons-material/CheckCircle';
-import RadioButtonUnchecked from '@mui/icons-material/RadioButtonUnchecked';
+import Check from '@mui/icons-material/Check';
+import ChevronRight from '@mui/icons-material/ChevronRight';
 import {
   Box,
   Button,
+  ButtonBase,
   LinearProgress,
   Paper,
   Stack,
@@ -159,13 +160,15 @@ const STEPS: { key: GettingStartedStep; meta: StepMeta }[] = [
 ];
 
 /**
- * Getting started (ADR-058): seven steps, each ticked by what the
- * organization holds. The first open step's button is the page's primary
- * action. Only the team step can be skipped; the card can be dismissed.
- * Both controls are the organization's settings, offered only to those who
- * may change them (`canManage`). The team step's Invite someone is for
- * those who may invite (`canInvite`, users.create); anyone else sees the
- * step without it.
+ * Getting started (ADR-058; ADR-091): seven steps, each ticked by what the
+ * organization holds, under a progress bar. The next step to take is the
+ * page's one main action, its button filled, with Learn more beside it; a
+ * done step is ticked and grey; every other step is one link, its whole
+ * row. Only the team step can be skipped, once it is the next; the card
+ * can be dismissed. Both controls are the organization's settings, offered
+ * only to those who may change them (`canManage`). The team step goes to
+ * Invite someone for those who may invite (`canInvite`, users.create);
+ * anyone else sees the step without a link.
  */
 export function GettingStarted({
   state,
@@ -191,128 +194,273 @@ export function GettingStarted({
       variant="outlined"
       component="section"
       aria-labelledby="getting-started-title"
-      sx={{ p: { xs: 2, sm: 3 } }}
+      sx={{ overflow: 'hidden' }}
     >
-      <Stack
-        direction="row"
-        sx={{ justifyContent: 'space-between', alignItems: 'baseline', gap: 2 }}
-      >
-        <Typography variant="h6" component="h2" id="getting-started-title">
-          {intl.formatMessage({
-            id: 'home.start.title',
-            defaultMessage: 'Getting started',
-          })}
-        </Typography>
-        <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
-          <Typography sx={{ color: 'text.secondary' }}>
-            {intl.formatMessage(
-              {
-                id: 'home.start.progress',
-                defaultMessage: '{done} of {total} done',
-              },
-              { done, total: STEPS.length },
-            )}
+      <Stack spacing={1} sx={{ p: 2 }}>
+        <Stack
+          direction="row"
+          sx={{
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1,
+          }}
+        >
+          <Typography variant="h6" component="h2" id="getting-started-title">
+            {intl.formatMessage({
+              id: 'home.start.title',
+              defaultMessage: 'Getting started',
+            })}
           </Typography>
-          {canManage && (
-            <Button variant="text" onClick={onDismiss}>
-              {intl.formatMessage({
-                id: 'home.start.dismiss',
-                defaultMessage: 'Dismiss',
-              })}
-            </Button>
-          )}
-        </Stack>
-      </Stack>
-      <LinearProgress
-        variant="determinate"
-        value={(done / STEPS.length) * 100}
-        color="success"
-        aria-hidden
-        // A grey track, as the welcome's first week has (first-week.tsx).
-        sx={{
-          my: 1.5,
-          height: 8,
-          borderRadius: 4,
-          bgcolor: 'action.selected',
-        }}
-      />
-      {STEPS.map(({ key, meta }) => {
-        const finished = doneOf(key);
-        return (
-          <Stack
-            key={key}
-            direction={{ xs: 'column', sm: 'row' }}
-            sx={{
-              alignItems: { sm: 'center' },
-              gap: { xs: 1, sm: 2 },
-              py: 1.5,
-              borderTop: 1,
-              borderColor: 'divider',
-            }}
-          >
-            <Stack
-              direction="row"
-              spacing={2}
-              sx={{ alignItems: 'center', flex: 1 }}
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <Typography
+              variant="body2"
+              sx={{ color: 'text.secondary', fontWeight: 600 }}
             >
-              {finished ? (
-                <CheckCircle color="success" aria-hidden />
-              ) : (
-                <RadioButtonUnchecked color="disabled" aria-hidden />
+              {intl.formatMessage(
+                {
+                  id: 'home.start.progress',
+                  defaultMessage: '{done} of {total} done',
+                },
+                { done, total: STEPS.length },
               )}
-              <Box>
-                <Typography sx={{ fontWeight: 600 }}>
-                  {intl.formatMessage(meta.title)}
-                  {/* The space outside the message, which extraction trims. */}
-                  {finished && (
-                    <>
-                      {' '}
-                      <Box
-                        component="span"
-                        sx={{ position: 'absolute', left: -9999 }}
-                      >
-                        {intl.formatMessage({
-                          id: 'home.start.done',
-                          defaultMessage: '(done)',
-                        })}
-                      </Box>
-                    </>
-                  )}
-                </Typography>
-                <Typography sx={{ color: 'text.secondary' }}>
-                  <LearnMore
-                    target={meta.learnMore}
-                    variant="inline"
-                    after={intl.formatMessage(meta.hint)}
-                  />
-                </Typography>
-              </Box>
-            </Stack>
-            {!finished && (
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                {key === 'team' && canManage && (
-                  <Button variant="text" onClick={onSkipTeam}>
-                    {intl.formatMessage({
-                      id: 'home.start.skip',
-                      defaultMessage: 'Skip',
-                    })}
-                  </Button>
-                )}
-                {(key !== 'team' || canInvite) && (
-                  <Button
-                    component={RouterLink}
-                    to={meta.to}
-                    state={OFFER_BACK}
-                    variant={key === next ? 'contained' : 'outlined'}
-                  >
-                    {intl.formatMessage(meta.action)}
-                  </Button>
-                )}
-              </Stack>
+            </Typography>
+            {canManage && (
+              <Button variant="text" onClick={onDismiss}>
+                {intl.formatMessage({
+                  id: 'home.start.dismiss',
+                  defaultMessage: 'Dismiss',
+                })}
+              </Button>
             )}
           </Stack>
-        );
-      })}
+        </Stack>
+        <LinearProgress
+          variant="determinate"
+          value={(done / STEPS.length) * 100}
+          aria-hidden
+          // A grey track, as the welcome's first week has (first-week.tsx).
+          sx={{ height: 8, borderRadius: 4, bgcolor: 'action.selected' }}
+        />
+        <Typography sx={{ color: 'text.secondary' }}>
+          {intl.formatMessage({
+            id: 'home.summary.start',
+            defaultMessage:
+              'Seven steps get your organization ready to work. Each is ticked when it is done.',
+          })}
+        </Typography>
+      </Stack>
+      <Box component="ol" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+        {STEPS.map(({ key, meta }, index) => (
+          <Box
+            component="li"
+            key={key}
+            sx={{ borderTop: 1, borderColor: 'divider' }}
+          >
+            {key === next ? (
+              <NextStep
+                stepKey={key}
+                meta={meta}
+                number={index + 1}
+                canSkip={key === 'team' && canManage}
+                canInvite={canInvite}
+                onSkipTeam={onSkipTeam}
+              />
+            ) : (
+              <Step
+                meta={meta}
+                number={index + 1}
+                finished={doneOf(key)}
+                linked={key !== 'team' || canInvite}
+              />
+            )}
+          </Box>
+        ))}
+      </Box>
     </Paper>
+  );
+}
+
+/** A step's mark: a tick once done, else its number, ringed. */
+function Mark({
+  number,
+  finished,
+  next = false,
+}: {
+  number: number;
+  finished: boolean;
+  next?: boolean;
+}) {
+  return (
+    <Box
+      aria-hidden
+      sx={{
+        width: 32,
+        height: 32,
+        flex: 'none',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        typography: 'body2',
+        fontWeight: 700,
+        ...(finished
+          ? { bgcolor: 'tone.positive.bg', color: 'tone.positive.fg' }
+          : {
+              border: 2,
+              borderColor: next ? 'primary.main' : 'divider',
+              color: 'text.secondary',
+            }),
+      }}
+    >
+      {finished ? <Check fontSize="small" /> : number}
+    </Box>
+  );
+}
+
+/** A step's title over its hint, grey once done. */
+function Words({ meta, finished }: { meta: StepMeta; finished: boolean }) {
+  const intl = useIntl();
+  const title = intl.formatMessage(meta.title);
+  return (
+    <Box
+      component="span"
+      sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}
+    >
+      <Typography
+        component="span"
+        sx={{
+          fontWeight: 600,
+          color: finished ? 'text.secondary' : 'text.primary',
+        }}
+      >
+        {finished
+          ? intl.formatMessage(
+              { id: 'home.start.stepDone', defaultMessage: '{step} · Done' },
+              { step: title },
+            )
+          : title}
+      </Typography>
+      <Typography
+        component="span"
+        variant="body2"
+        sx={{ color: 'text.secondary' }}
+      >
+        {intl.formatMessage(meta.hint)}
+      </Typography>
+    </Box>
+  );
+}
+
+const ROW = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  gap: 1.5,
+  width: '100%',
+  // Above 44 px, the hint's second line included (ADR-091).
+  minHeight: 64,
+  px: 2,
+  py: 1,
+  textAlign: 'start',
+} as const;
+
+/**
+ * A step other than the next: one link, its whole row, where it is done;
+ * plain where the reader cannot go there (the team step, without
+ * users.create).
+ */
+function Step({
+  meta,
+  number,
+  finished,
+  linked,
+}: {
+  meta: StepMeta;
+  number: number;
+  finished: boolean;
+  linked: boolean;
+}) {
+  const inside = (
+    <>
+      <Mark number={number} finished={finished} />
+      <Words meta={meta} finished={finished} />
+    </>
+  );
+  if (!linked) return <Box sx={ROW}>{inside}</Box>;
+  return (
+    <ButtonBase
+      component={RouterLink}
+      to={meta.to}
+      state={OFFER_BACK}
+      sx={{ ...ROW, '&:hover': { bgcolor: 'action.hover' } }}
+    >
+      {inside}
+      <ChevronRight
+        aria-hidden
+        fontSize="small"
+        sx={{ color: 'text.secondary' }}
+      />
+    </ButtonBase>
+  );
+}
+
+/**
+ * The next step: marked in the accent, its button the page's one main
+ * action, Learn more beside it, and Skip for the team step.
+ */
+function NextStep({
+  stepKey,
+  meta,
+  number,
+  canSkip,
+  canInvite,
+  onSkipTeam,
+}: {
+  stepKey: GettingStartedStep;
+  meta: StepMeta;
+  number: number;
+  canSkip: boolean;
+  canInvite: boolean;
+  onSkipTeam: () => void;
+}) {
+  const intl = useIntl();
+  return (
+    <Stack spacing={1.25} sx={{ px: 2, py: 1.75, bgcolor: 'surface.chosen' }}>
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+        <Mark number={number} finished={false} next />
+        <Words meta={meta} finished={false} />
+      </Stack>
+      <Stack
+        direction="row"
+        sx={{
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: 1.5,
+          // Under the words, past the mark and its gap.
+          pl: 5.5,
+        }}
+      >
+        {(stepKey !== 'team' || canInvite) && (
+          <Button
+            component={RouterLink}
+            to={meta.to}
+            state={OFFER_BACK}
+            variant="contained"
+          >
+            {intl.formatMessage(meta.action)}
+          </Button>
+        )}
+        <LearnMore target={meta.learnMore} variant="beside" />
+        {canSkip && (
+          <Button variant="text" onClick={onSkipTeam}>
+            {intl.formatMessage({
+              id: 'home.start.skip',
+              defaultMessage: 'Skip',
+            })}
+          </Button>
+        )}
+      </Stack>
+    </Stack>
   );
 }

@@ -399,7 +399,7 @@ describe('HomePage', () => {
     expect(screen.queryByText(/Failed to fetch/)).toBeNull();
   });
 
-  it('leads a new organization with Getting started, Skip only on the team step', async () => {
+  it('leads a new organization with Getting started: the next step its main action, every other step one link', async () => {
     serve({
       gettingStarted: {
         ...COMPLETE,
@@ -415,6 +415,57 @@ describe('HomePage', () => {
       },
       cards: [{ kind: 'toShip', count: 0, late: 0 }],
     });
+    renderWithAuth(routed(<HomePage />), {
+      permissions: ['organizations.update', 'orders.view', 'users.create'],
+    });
+
+    const start = await screen.findByRole('region', {
+      name: 'Getting started',
+    });
+    expect(within(start).getByText('2 of 7 done')).toBeVisible();
+    // Said once, inside the card it is about (ADR-091).
+    expect(
+      within(start).getByText(/^Seven steps get your organization ready/),
+    ).toBeVisible();
+    expect(within(start).getByRole('button', { name: 'Dismiss' })).toBeTruthy();
+
+    // A done step: ticked and grey, still a link to where it was done.
+    expect(
+      within(start).getByRole('link', { name: /^Your organization · Done/ }),
+    ).toHaveAttribute('href', '/settings/organization');
+    // The next: its button the one filled (Learn more beside it, which
+    // needs Help's frame, is help.spec's).
+    expect(
+      within(start).getByRole('link', { name: 'Add a product' }),
+    ).toHaveClass('MuiButton-contained');
+    // Every other step one link, its whole row, title and hint.
+    expect(
+      within(start).getByRole('link', {
+        name: /^Add a partner\s*A customer you sell to/,
+      }),
+    ).toHaveAttribute('href', '/partners');
+    expect(
+      within(start).getByRole('link', { name: /^Invite your team/ }),
+    ).toHaveAttribute('href', '/members?invite');
+    // Skip only once the team step is the next.
+    expect(within(start).queryByRole('button', { name: 'Skip' })).toBeNull();
+
+    // Nothing to do yet: the tiles stay in their places, quiet (ADR-091).
+    expect(
+      screen.getByRole('link', { name: 'To ship, No orders to ship' }),
+    ).toBeVisible();
+    expect(screen.getByText('Nothing needs you today.')).toBeVisible();
+  });
+
+  it('offers Skip on the team step once it is the next, and no link to invite without users.create', async () => {
+    serve({
+      gettingStarted: {
+        ...COMPLETE,
+        steps: { ...COMPLETE.steps, team: false },
+        complete: false,
+      },
+      cards: [],
+    });
     let skipped = false;
     server.use(
       http.post('/api/v1/home/getting-started/skip-team', () => {
@@ -424,23 +475,15 @@ describe('HomePage', () => {
     );
     const user = userEvent.setup();
     renderWithAuth(routed(<HomePage />), {
-      permissions: ['organizations.update', 'orders.view'],
+      permissions: ['organizations.update'],
     });
 
     const start = await screen.findByRole('region', {
       name: 'Getting started',
     });
-    expect(within(start).getByText('2 of 7 done')).toBeTruthy();
-    expect(within(start).getAllByRole('button', { name: 'Skip' })).toHaveLength(
-      1,
-    );
-    expect(within(start).getByRole('button', { name: 'Dismiss' })).toBeTruthy();
-    // Nothing to do yet: the tiles stay in their places, quiet (ADR-091).
     expect(
-      screen.getByRole('link', { name: 'To ship, No orders to ship' }),
-    ).toBeVisible();
-    expect(screen.getByText('Nothing needs you today.')).toBeVisible();
-
+      within(start).queryByRole('link', { name: 'Invite someone' }),
+    ).toBeNull();
     await user.click(within(start).getByRole('button', { name: 'Skip' }));
     await vi.waitFor(() => expect(skipped).toBe(true));
   });

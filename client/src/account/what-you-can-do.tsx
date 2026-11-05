@@ -1,13 +1,5 @@
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import {
-  Box,
-  ButtonBase,
-  Collapse,
-  Link,
-  Stack,
-  Typography,
-} from '@mui/material';
-import { type ReactNode, useId, useState } from 'react';
+import { Link, Stack, Typography } from '@mui/material';
+import type { ReactNode } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -15,7 +7,6 @@ import type { MemberAccess } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { AccessList } from './access-list';
-import { accessAreas } from './access-phrases';
 
 /**
  * What you can do here (ADR-079): a sentence per area the reader may
@@ -24,21 +15,18 @@ import { accessAreas } from './access-phrases';
  * plain for anyone else. One line for whoever holds every
  * permission. The welcome on Home and Your access on Account both show it.
  *
- * `folded`, on a phone's welcome: one row that opens on a tap, so the card
- * stays a screen long and what to do comes before what to read.
+ * `linked`, in the welcome: each area's name a link to its page (ADR-091).
  */
 export function WhatYouCanDo({
   access,
-  folded = false,
+  linked = false,
 }: {
   access: MemberAccess;
-  folded?: boolean;
+  linked?: boolean;
 }) {
   const intl = useIntl();
   const { session } = useAuth();
   const can = useCan();
-  const [open, setOpen] = useState(false);
-  const listId = useId();
 
   if (access.holdsEverything) {
     return (
@@ -60,7 +48,7 @@ export function WhatYouCanDo({
 
   const body = (
     <Stack spacing={0.75}>
-      <AccessList permissions={permissions} />
+      <AccessList permissions={permissions} linked={linked} />
       {access.whomToAsk.length > 0 && (
         <Typography>
           {intl.formatMessage(
@@ -93,65 +81,12 @@ export function WhatYouCanDo({
     </Stack>
   );
 
-  if (!folded) {
-    return (
-      <Stack spacing={0.75}>
-        <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 600 }}>
-          {title}
-        </Typography>
-        {body}
-      </Stack>
-    );
-  }
-
   return (
-    <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
-      <Typography variant="subtitle1" component="h3">
-        <ButtonBase
-          aria-expanded={open}
-          aria-controls={listId}
-          onClick={() => setOpen(!open)}
-          sx={{
-            width: '100%',
-            minHeight: 44,
-            py: 1,
-            gap: 1,
-            justifyContent: 'space-between',
-            textAlign: 'start',
-            font: 'inherit',
-          }}
-        >
-          <Stack component="span">
-            <Box component="span" sx={{ fontWeight: 600 }}>
-              {title}
-            </Box>
-            <Typography
-              component="span"
-              variant="body2"
-              sx={{ color: 'text.secondary' }}
-            >
-              {intl.formatMessage(
-                {
-                  id: 'account.access.folded',
-                  defaultMessage:
-                    '{count, plural, one {# area} other {# areas}}, tap to open',
-                },
-                { count: accessAreas(intl, permissions).length },
-              )}
-            </Typography>
-          </Stack>
-          <ExpandMore
-            aria-hidden
-            sx={{
-              transform: open ? 'rotate(180deg)' : 'none',
-              transition: 'transform 150ms',
-            }}
-          />
-        </ButtonBase>
+    <Stack spacing={0.75}>
+      <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 600 }}>
+        {title}
       </Typography>
-      <Collapse in={open} id={listId}>
-        {body}
-      </Collapse>
-    </Box>
+      {body}
+    </Stack>
   );
 }
