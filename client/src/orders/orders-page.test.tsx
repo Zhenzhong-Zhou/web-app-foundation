@@ -47,4 +47,93 @@ describe('OrdersPage', () => {
       .poll(() => asked.at(-1)?.searchParams.has('outstanding'))
       .toBe(false);
   });
+
+  /**
+   * Home's late button opens the late ones only (ADR-091), by expected
+   * date, soonest first, as To ship does, until a header or the filters
+   * are changed.
+   */
+  it('lists the late when the address asks, soonest first, until cleared', async () => {
+    const user = userEvent.setup();
+    const asked: URLSearchParams[] = [];
+    server.use(
+      http.get('/api/v1/orders', ({ request }) => {
+        asked.push(new URL(request.url).searchParams);
+        return HttpResponse.json({
+          entries: [
+            {
+              id: 'order-1',
+              number: 'SO-1',
+              partnerId: 'partner-1',
+              partnerName: 'Harbour Pharmacy',
+              direction: 'sale',
+              isSample: false,
+              status: 'confirmed',
+              reference: null,
+              expectedAt: '2026-11-03',
+              createdAt: '2026-10-01T10:00:00.000Z',
+              lineCount: 1,
+              quantityOrdered: '5.0000',
+              quantityFulfilled: '0.0000',
+            },
+          ],
+          nextCursor: null,
+        });
+      }),
+    );
+
+    renderWithAuth(
+      <MemoryRouter
+        initialEntries={['/orders?direction=sale&outstanding=1&late=1']}
+      >
+        <OrdersPage />
+      </MemoryRouter>,
+      { permissions: ['orders.view'] },
+    );
+
+    const chip = await screen.findByRole('button', { name: 'Late' });
+    await expect.poll(() => asked.length).toBeGreaterThan(0);
+    expect(Object.fromEntries(asked[0])).toMatchObject({
+      outstanding: 'true',
+      late: 'true',
+      sort: 'expectedAt',
+      order: 'asc',
+    });
+    expect(
+      await screen.findByRole('columnheader', { name: 'Expected' }),
+    ).toHaveAttribute('aria-sort', 'ascending');
+
+    // The header turns it round, and the filters keep that.
+    await user.click(screen.getByRole('button', { name: 'Expected' }));
+    await expect.poll(() => asked.at(-1)?.get('order')).toBe('desc');
+
+    chip.focus();
+    await user.keyboard('{Delete}');
+    expect(
+      screen.queryByRole('button', { name: 'Late' }),
+    ).not.toBeInTheDocument();
+    await expect.poll(() => asked.at(-1)?.has('late')).toBe(false);
+    expect(asked.at(-1)?.get('order')).toBe('desc');
+  });
+
+  // With neither filter, the list stays newest first, as every list was.
+  it('stays newest first without Still to ship or Late', async () => {
+    const asked: URLSearchParams[] = [];
+    server.use(
+      http.get('/api/v1/orders', ({ request }) => {
+        asked.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ entries: [], nextCursor: null });
+      }),
+    );
+
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/orders?direction=sale']}>
+        <OrdersPage />
+      </MemoryRouter>,
+      { permissions: ['orders.view'] },
+    );
+
+    await expect.poll(() => asked.length).toBeGreaterThan(0);
+    expect(asked[0].has('sort')).toBe(false);
+  });
 });

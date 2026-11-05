@@ -54,7 +54,7 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch } from '../lib/use-list-search';
-import { useListSort } from '../lib/use-list-sort';
+import { type ListSort, useListSort } from '../lib/use-list-sort';
 import { useTab } from '../lib/use-tab';
 import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
@@ -137,6 +137,9 @@ export function InventoryPage() {
   );
 }
 
+/** Expiring soon's own order: the soonest first, the expired leading. */
+const SOONEST_EXPIRY: ListSort<'expiry'> = { key: 'expiry', order: 'asc' };
+
 /**
  * One screen for receiving stock and seeing what is where.
  *
@@ -157,7 +160,6 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   // In the address, as every list's (#301): the lookup's "Show all" narrows
   // it while open, and Reorder points shares it, the same ?search=.
   const { text: searchText, setText: setSearchText, search } = useListSearch();
-  const { sort, toggle } = useListSort<'expiry'>();
   const [setupError, setSetupError] = useState<string | null>(null);
   const [receiving, setReceiving] = useState(false);
   const [moving, setMoving] = useState<{
@@ -170,6 +172,11 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   // Home's cards open this list narrowed: ?expiring=1, ?needsCost=1.
   const [expiring, setExpiring] = useState(() =>
     flagFromAddress(params, 'expiring'),
+  );
+  // By the lot's expiry when its header is chosen (ADR-057), and, with
+  // Expiring soon on, soonest first until one is (ADR-091).
+  const { sort, toggle } = useListSort<'expiry'>(
+    expiring ? SOONEST_EXPIRY : null,
   );
   const [expiringCount, setExpiringCount] = useState<number | null>(null);
   // "Needs a cost": stock whose value is still provisional (ADR-048).
@@ -206,7 +213,6 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     if (search) params.set('search', search);
     if (expiring) params.set('expiringWithin', String(expiringWithin));
     if (needsCost) params.set('needsCost', 'true');
-    // By the lot's expiry when its header is chosen (ADR-057).
     if (sort) {
       params.set('sort', sort.key);
       params.set('order', sort.order);

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, eq, lt, lte, type SQL, sql } from 'drizzle-orm';
+import { and, eq, lt, type SQL, sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
 import { todayIn } from '../../common/today';
@@ -17,13 +17,11 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { openNeedsCost } from '../costs/open-needs-cost';
-import { outstandingOrder } from '../orders/orders.service';
+import { lateOrder, outstandingOrder } from '../orders/orders.service';
+import { expiringLicence } from '../product-licences/product-licences.service';
 import { lowStockTotals } from '../stock/reorder-points-reads.service';
 import { stockRowsOf } from '../stock/stock-reads.service';
 import { WelcomeService } from './welcome.service';
-
-/** Licences: issue #17's notice. */
-export const LICENCE_WARNING_DAYS = 60;
 
 export type HomeKind =
   | 'toShip'
@@ -80,12 +78,6 @@ const CARDS: { kind: HomeKind; permission: Permission }[] = [
   { kind: 'licences', permission: 'product_licences.view' },
 ];
 
-function addDays(day: string, days: number): string {
-  const date = new Date(`${day}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
 /** A tile's count, and how many of those are late. */
 type Totals = Pick<HomeCard, 'count' | 'late'>;
 
@@ -99,15 +91,6 @@ function isOrderKind(kind: HomeKind): kind is OrderKind {
 /** To ship is the sales, to receive the purchases. */
 function directionOf(kind: OrderKind) {
   return kind === 'toShip' ? 'sale' : 'purchase';
-}
-
-/** Licences: the active ones expiring within the notice, or already. */
-function licencesDue(organizationId: string, today: string) {
-  return and(
-    eq(productLicences.organizationId, organizationId),
-    eq(productLicences.isActive, true),
-    lte(productLicences.expiresAt, addDays(today, LICENCE_WARNING_DAYS)),
-  );
 }
 
 /**
@@ -341,7 +324,7 @@ async function totalsOf(
 /**
  * To ship's and To receive's branch of totalsOf(): the outstanding orders,
  * as their list filters them (outstandingOrder()), counted by direction,
- * the overdue among them late. A direction with none has no row.
+ * the late among them as the list's Late has them (lateOrder()). A direction with none has no row.
  *
  * One read for both tiles. As a branch each, they read the organization's
  * orders and open lines twice, and the planner, pricing the two, ran the
@@ -360,7 +343,7 @@ function outstandingTotals(organizationId: string, today: string): SQL {
         when ${directionOf('toReceive')} then 'toReceive'
       end as kind,
       count(*)::int as count,
-      count(*) filter (where ${lt(orders.expectedAt, today)})::int as late
+      count(*) filter (where ${lateOrder(today)})::int as late
     from ${orders}
     where ${where}
     group by ${orders.direction}
@@ -423,10 +406,16 @@ function totalOf(
       return counted(sql`${productionOrders} where ${where}`);
     }
 
-    case 'licences':
+    // The licences list's Expiring (ADR-091), the expired late.
+    case 'licences': {
+      const where = and(
+        eq(productLicences.organizationId, organizationId),
+        expiringLicence(today),
+      );
       return counted(
-        sql`${productLicences} where ${licencesDue(organizationId, today)}`,
+        sql`${productLicences} where ${where}`,
         lt(productLicences.expiresAt, today),
       );
+    }
   }
 }

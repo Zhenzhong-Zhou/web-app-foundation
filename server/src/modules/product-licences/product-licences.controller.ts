@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
@@ -15,6 +16,7 @@ import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CreateProductLicenceDto } from './dto/create-product-licence.dto';
+import { ListProductLicencesDto } from './dto/list-product-licences.dto';
 import type {
   LicenceEnvelope,
   ProductLicence,
@@ -33,8 +35,8 @@ export class ProductLicencesController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PRODUCT_LICENCES_VIEW)
-  list(): Promise<ProductLicence[]> {
-    return this.licences.list();
+  list(@Query() query: ListProductLicencesDto): Promise<ProductLicence[]> {
+    return this.licences.list(query);
   }
 
   @Post()

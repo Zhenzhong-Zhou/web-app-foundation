@@ -179,6 +179,14 @@ a second organization.
   appears under Stock value as needing a cost. Enter the rate under Exchange
   rates; a later receipt is valued, and the earlier one stays as it was
   until corrected (ADR-048).
+- **MC-405** *(ADR-091)* Orders' Late. As the demo Owner, open
+  `/orders?direction=purchase&outstanding=1&late=1`: chips read Purchases
+  only, Still to receive and Late, and the list holds only purchases
+  expected before today, PO-DEMO-9 among them, the earliest first, with
+  Expected marked as the sort. Remove Late: every purchase still to
+  receive, the late ones still first. Press Expected: the latest first.
+  Remove Still to receive too: the open orders, newest first. In
+  Français the chip reads En retard; in 中文, 逾期.
 
 ## 5. Making
 
@@ -647,9 +655,11 @@ Paper is checked first because it must not change at all.
   filter."
 - **MC-1528** Inventory's filters are one row: Search, Location, then Expiring
   soon with its count and Show emptied. Pressing Expiring soon shows only lots
-  within 90 days, ELD-24A among them, and nothing untracked; the count is the
-  number of rows it shows. With a search that matches none of them, the count
-  drops to 0.
+  within 90 days, ELD-24A among them, and nothing untracked, the soonest
+  first, so the expired VC-0301 leads, with Expires marked as the sort
+  (ADR-091); pressing Expires turns it round. The count is the number of
+  rows it shows. With a search that matches none of them, the count drops
+  to 0.
 - **MC-1529** Expires shows days left within 90 days, amber, and within 30
   days red (ELD-24A: "20 days left"), the date beside each; a lot two years
   off shows only its date. Quantities read "400 each", and the Promised to
@@ -4656,3 +4666,6 @@ first.
 - 2026-11-05: ADR-091, Home's cards counted with no rows, Costs waiting's
   See all opening Stock value, and the API revision raised to 3: MC-4213
   and MC-3422 rewritten, MC-R38 removed, MC-3424's raise now 2 to 3.
+- 2026-11-05: ADR-091, Orders' Late, and Expiring soon and what is still
+  to ship or receive listed soonest first: MC-405 added, MC-1528
+  rewritten.

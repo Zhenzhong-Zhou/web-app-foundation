@@ -1135,6 +1135,7 @@
   "orders.filter.all": "Toutes",
   "orders.filter.cancelled": "Annulées",
   "orders.filter.fulfilled": "Exécutées",
+  "orders.filter.late": "En retard",
   "orders.filter.open": "Ouvertes",
   "orders.filter.outstanding": "Reste à expédier ou à recevoir",
   "orders.filter.purchases": "Achats seulement",

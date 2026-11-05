@@ -21,9 +21,12 @@ import {
   partner,
   point,
   receive,
+  recipe,
+  run,
   site,
 } from './utils/reorder-world';
 import { resetDatabase } from './utils/reset-db';
+import { shippedSale } from './utils/sales';
 import { captureStatements } from './utils/statements';
 
 interface HomeResponse {
@@ -448,6 +451,188 @@ describe('Home (e2e)', () => {
     );
     expect(counts).toHaveLength(1);
     expect(counts[0].text.match(/from "orders"/g)).toHaveLength(1);
+  });
+
+  /**
+   * Each tile opens its list (ADR-091): the count is the rows the list
+   * returns at the address the tile opens, and the late count the rows
+   * that are late, which Orders' Late and Reorder points' Out list alone.
+   * Licences open on Expiring, soonest first, the expired leading.
+   */
+  it('opens, from each tile, as many rows as it counts, the late among them', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const { agent } = alpha;
+
+    // A sale part shipped, with no expected day: to ship, and never late.
+    // Its shipment drafts an invoice, and two bottles come back on an RMA.
+    const sold = await shippedSale(agent);
+    await agent
+      .post('/v1/invoices')
+      .send({ shipmentId: sold.shipmentId })
+      .expect(201);
+    await agent
+      .post('/v1/return-authorizations')
+      .send({
+        orderId: sold.orderId,
+        reason: 'Two bottles arrived cracked',
+        lines: [
+          { lineId: sold.capsulesLine, quantity: '2', resolution: 'credit' },
+        ],
+      })
+      .expect(201);
+
+    // Orders: late and not, each way; a late draft is nothing to ship yet.
+    const goods = await item(agent, 'GOODS');
+    const customer = await partner(agent, 'Customer');
+    const supplier = await partner(agent, 'Supplier');
+    const lateSale = await order(agent, 'sale', customer, goods, '5', {
+      expectedAt: day(-3),
+    });
+    await order(agent, 'sale', customer, goods, '5', { expectedAt: day(4) });
+    await order(agent, 'sale', customer, goods, '5', {
+      draft: true,
+      expectedAt: day(-9),
+    });
+    const latePurchase = await order(agent, 'purchase', supplier, goods, '5', {
+      expectedAt: day(-6),
+    });
+    await order(agent, 'purchase', supplier, goods, '5', {
+      expectedAt: day(13),
+    });
+
+    // Lots: one expired yesterday, one within 90 days, one a year off.
+    const shelf = await site(agent, 'SHELF');
+    const lotted = await item(agent, 'LOTTED', true);
+    for (const [code, expiresAt] of [
+      ['LOT-LATER', day(330)],
+      ['LOT-SOON', day(13)],
+      ['LOT-GONE', day(-1)],
+    ]) {
+      await receive(agent, lotted, shelf, '5', { code, expiresAt });
+    }
+
+    // Low stock: one out, one low; and a run released, of GOODS from LOW.
+    const out = await item(agent, 'OUT');
+    await point(agent, out, '10');
+    const low = await item(agent, 'LOW');
+    await receive(agent, low, shelf, '3');
+    await point(agent, low, '10');
+    const bomId = await recipe(agent, goods, low, '1');
+    await run(
+      agent,
+      { outputId: goods, bomId, locationId: shelf, quantityPlanned: '1' },
+      shelf,
+    );
+
+    // Licences: expired, within 60 days, past it, with none, withdrawn.
+    for (const [number, expiresAt, isActive] of [
+      ['L-SOON', day(30), true],
+      ['L-GONE', day(-2), true],
+      ['L-LATER', day(200), true],
+      ['L-NEVER', undefined, true],
+      ['L-WITHDRAWN', day(10), false],
+    ] as const) {
+      const { licence } = body<{ licence: { id: string } }>(
+        await agent
+          .post('/v1/product-licences')
+          .send({ number, authority: 'Health Canada', expiresAt })
+          .expect(201),
+      );
+      if (!isActive) {
+        await agent
+          .patch(`/v1/product-licences/${licence.id}`)
+          .send({ isActive: false })
+          .expect(204);
+      }
+    }
+
+    /** A list's rows, all on one page. */
+    async function rows<T>(path: string): Promise<T[]> {
+      const answer = body<T[] | { entries: T[]; nextCursor: string | null }>(
+        await agent.get(path).expect(200),
+      );
+      if (Array.isArray(answer)) return answer;
+      expect(answer.nextCursor).toBeNull();
+      return answer.entries;
+    }
+
+    // Each tile's address, as the list's page asks its endpoint: To ship's
+    // /orders?direction=sale&outstanding=1, the page's status Open beside
+    // it, and Expiring soon's /inventory?expiring=1, by expiry (ADR-091).
+    const today = day(0);
+    const opened: Record<string, string> = {
+      toShip: '/v1/orders?status=open&direction=sale&outstanding=true',
+      toReceive: '/v1/orders?status=open&direction=purchase&outstanding=true',
+      lowStock: '/v1/stock/reorder-points?status=low',
+      expiring: '/v1/stock?expiringWithin=90&sort=expiry&order=asc',
+      costsWaiting: '/v1/costs/needs-cost',
+      invoicesToIssue: '/v1/invoices?status=draft',
+      returnsOpen: '/v1/return-authorizations?status=open',
+      production: '/v1/production-orders?status=released',
+      licences: '/v1/product-licences?expiring=true',
+    };
+    // Its late button's, where the list has a filter for it.
+    const lateOpened: Record<string, string> = {
+      toShip: `${opened.toShip}&late=true`,
+      toReceive: `${opened.toReceive}&late=true`,
+      lowStock: '/v1/stock/reorder-points?status=out',
+    };
+
+    const cards = await home(alpha);
+    expect(cards).toHaveLength(Object.keys(opened).length);
+    for (const { kind, count, late } of cards) {
+      const listed = await rows<{
+        lotExpiresAt?: string | null;
+        expiresAt?: string | null;
+      }>(opened[kind]);
+      expect({ kind, count: listed.length }).toEqual({ kind, count });
+      expect(count).toBeGreaterThan(0);
+
+      // Its late button's rows; or, where the list has no filter for them
+      // yet, the expired among the tile's.
+      const lateRows = lateOpened[kind]
+        ? (await rows(lateOpened[kind])).length
+        : listed.filter((row) => {
+            const expiry =
+              kind === 'expiring'
+                ? row.lotExpiresAt
+                : kind === 'licences'
+                  ? row.expiresAt
+                  : null;
+            return !!expiry && expiry < today;
+          }).length;
+      expect({ kind, late: lateRows }).toEqual({ kind, late });
+    }
+
+    // Every tile has something; the late are those named above.
+    expect(
+      Object.fromEntries(cards.map(({ kind, late }) => [kind, late])),
+    ).toEqual({
+      toShip: 1,
+      toReceive: 1,
+      lowStock: 1,
+      expiring: 1,
+      costsWaiting: 0,
+      invoicesToIssue: 0,
+      returnsOpen: 0,
+      production: 0,
+      licences: 1,
+    });
+    const lateIds = async (path: string) =>
+      (await rows<{ id: string }>(path)).map((row) => row.id);
+    expect(await lateIds(lateOpened.toShip)).toEqual([lateSale.id]);
+    expect(await lateIds(lateOpened.toReceive)).toEqual([latePurchase.id]);
+
+    // Late brings outstanding with it: a draft's day passing is not late.
+    expect(
+      await lateIds('/v1/orders?status=all&direction=sale&late=true'),
+    ).toEqual([lateSale.id]);
+
+    // Soonest first, the expired leading.
+    const lots = await rows<{ lotCode: string }>(opened.expiring);
+    expect(lots.map((row) => row.lotCode)).toEqual(['LOT-GONE', 'LOT-SOON']);
+    const licences = await rows<{ number: string }>(opened.licences);
+    expect(licences.map((row) => row.number)).toEqual(['L-GONE', 'L-SOON']);
   });
 
   /**

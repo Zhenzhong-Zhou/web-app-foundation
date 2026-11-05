@@ -2782,7 +2782,16 @@
     "/v1/product-licences": {
       "get": {
         "operationId": "ProductLicencesController_list_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "expiring",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -6405,6 +6414,14 @@
             }
           },
           {
+            "name": "late",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -6570,6 +6587,14 @@
           },
           {
             "name": "outstanding",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "late",
             "required": false,
             "in": "query",
             "schema": {

@@ -35,7 +35,7 @@ import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch, withSearch } from '../lib/use-list-search';
-import { useListSort, withSort } from '../lib/use-list-sort';
+import { type ListSort, useListSort, withSort } from '../lib/use-list-sort';
 import { STATUS_TONES } from '../theme/status';
 import { orderStatusLabel } from './status';
 
@@ -83,6 +83,12 @@ const FILTER_VALUES: readonly Filter[] = [
   'confirmed',
 ];
 
+/** What is still to ship or to receive: soonest first, the late leading. */
+const SOONEST_EXPECTED: ListSort<'expectedAt'> = {
+  key: 'expectedAt',
+  order: 'asc',
+};
+
 export function OrdersPage() {
   const intl = useIntl();
   const can = useCan();
@@ -104,11 +110,17 @@ export function OrdersPage() {
   const [outstanding, setOutstanding] = useState(() =>
     flagFromAddress(params, 'outstanding'),
   );
+  // Late (ADR-091): still to ship or to come, and expected before the
+  // organization's today, which the server decides: Home's ?late=1.
+  const [late, setLate] = useState(() => flagFromAddress(params, 'late'));
   const { text, setText, search } = useListSearch();
   // By expected date, and sortable by it (ADR-057); the export takes the
-  // same query, so the file is what the list shows.
+  // same query, so the file is what the list shows. What is still to ship
+  // or to receive runs soonest first until a header is chosen (ADR-091).
   const [range, setRange] = useState<DayRange>({});
-  const { sort, toggle } = useListSort<'expectedAt'>();
+  const { sort, toggle } = useListSort<'expectedAt'>(
+    outstanding || late ? SOONEST_EXPECTED : null,
+  );
   const path = withSort(
     withDays(
       withSearch(
@@ -116,6 +128,7 @@ export function OrdersPage() {
           status: filter,
           ...(direction ? { direction } : {}),
           ...(outstanding ? { outstanding: 'true' } : {}),
+          ...(late ? { late: 'true' } : {}),
         }).toString()}`,
         search,
       ),
@@ -194,6 +207,7 @@ export function OrdersPage() {
       {/* What a link narrowed that no button shows, each removable. */}
       {(direction ||
         outstanding ||
+        late ||
         filter === 'draft' ||
         filter === 'confirmed') && (
         <Stack direction="row" spacing={1}>
@@ -238,6 +252,15 @@ export function OrdersPage() {
                       })
               }
               onDelete={() => setOutstanding(false)}
+            />
+          )}
+          {late && (
+            <Chip
+              label={intl.formatMessage({
+                id: 'orders.filter.late',
+                defaultMessage: 'Late',
+              })}
+              onDelete={() => setLate(false)}
             />
           )}
         </Stack>

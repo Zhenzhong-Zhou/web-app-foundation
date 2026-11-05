@@ -5042,7 +5042,9 @@ export type ProductsControllerRemoveImageV1Response =
 export type ProductLicencesControllerListV1Data = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    expiring?: string;
+  };
   url: '/v1/product-licences';
 };
 
@@ -6632,6 +6634,7 @@ export type OrdersControllerListV1Data = {
     partnerId?: string;
     direction?: 'purchase' | 'sale';
     outstanding?: string;
+    late?: string;
     sort?: 'expectedAt';
     order?: 'asc' | 'desc';
     from?: string;
@@ -6678,6 +6681,7 @@ export type OrdersControllerExportOrdersV1Data = {
     partnerId?: string;
     direction?: 'purchase' | 'sale';
     outstanding?: string;
+    late?: string;
     sort?: 'expectedAt';
     order?: 'asc' | 'desc';
     from?: string;

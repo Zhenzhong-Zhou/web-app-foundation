@@ -218,6 +218,53 @@ describe('InventoryPage', () => {
    * Show all narrows Stock while it is open, and Reorder points shares the
    * one search, either way.
    */
+  /**
+   * Expiring soon lists the soonest first whenever it is on (ADR-091): the
+   * panel's senior stopped at which lot expires first.
+   */
+  it('sorts Expiring soon by expiry, soonest first, until a header is chosen', async () => {
+    const user = userEvent.setup();
+    const asked: URLSearchParams[] = [];
+    server.use(
+      http.get('/api/v1/stock', ({ request }) => {
+        asked.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ entries: [ROW], nextCursor: null });
+      }),
+      http.get('/api/v1/stock/counts', () =>
+        HttpResponse.json({ expiring: 1, needsCost: 0 }),
+      ),
+      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/inventory?expiring=1']}>
+        <InventoryPage />
+      </MemoryRouter>,
+      { permissions: ['stock.view'] },
+    );
+    await screen.findByText('VITD-60');
+
+    expect(Object.fromEntries(asked[0])).toMatchObject({
+      expiringWithin: '90',
+      sort: 'expiry',
+      order: 'asc',
+    });
+    expect(
+      screen.getByRole('columnheader', { name: 'Expires' }),
+    ).toHaveAttribute('aria-sort', 'ascending');
+
+    // Off, the list is in its own order again; on, soonest first again.
+    const expiring = screen.getByRole('button', { name: /Expiring soon/ });
+    await user.click(expiring);
+    await expect.poll(() => asked.at(-1)?.has('expiringWithin')).toBe(false);
+    expect(asked.at(-1)?.has('sort')).toBe(false);
+    await user.click(expiring);
+    await expect.poll(() => asked.at(-1)?.get('sort')).toBe('expiry');
+
+    // The header chosen replaces it: the latest first.
+    await user.click(screen.getByRole('button', { name: 'Expires' }));
+    await expect.poll(() => asked.at(-1)?.get('order')).toBe('desc');
+  });
+
   describe('the search', () => {
     function answer() {
       const asked: Record<'stock' | 'points', (string | null)[]> = {

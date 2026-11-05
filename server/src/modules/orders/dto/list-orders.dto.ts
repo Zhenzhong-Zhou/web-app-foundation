@@ -50,6 +50,15 @@ export class ListOrdersDto extends CalendarRangeQueryDto {
   @IsBooleanString()
   outstanding?: string;
 
+  /**
+   * Late (ADR-091): outstanding, and expected before the organization's
+   * today, the orders Home counts late on To ship and To receive. Brings
+   * `outstanding` with it.
+   */
+  @IsOptional()
+  @IsBooleanString()
+  late?: string;
+
   /** Sorted by expected date (ADR-057), orders without one last. */
   @IsOptional()
   @IsIn(['expectedAt'])
