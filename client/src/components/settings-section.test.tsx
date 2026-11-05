@@ -5,12 +5,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { SettingsSection } from './settings-section';
 
-function renderSection(
-  props: Partial<Parameters<typeof SettingsSection>[0]> = {},
-) {
-  const onSubmit = vi.fn((event: SubmitEvent) => event.preventDefault());
+type Props = Partial<Parameters<typeof SettingsSection>[0]>;
 
-  render(
+function renderSection(props: Props = {}) {
+  const onSubmit = vi.fn((event: SubmitEvent) => event.preventDefault());
+  const section = (over: Props) => (
     <SettingsSection
       title="Base currency"
       onSubmit={onSubmit}
@@ -18,13 +17,15 @@ function renderSection(
       submitting={false}
       readOnly={false}
       saveLabel="Save base currency"
-      {...props}
+      {...over}
     >
       <input aria-label="Code" />
-    </SettingsSection>,
+    </SettingsSection>
   );
 
-  return { onSubmit };
+  const { rerender } = render(section(props));
+
+  return { onSubmit, rerender: (over: Props) => rerender(section(over)) };
 }
 
 describe('SettingsSection', () => {
@@ -50,14 +51,48 @@ describe('SettingsSection', () => {
 
   it('holds Save back while saving', () => {
     renderSection({ submitting: true });
-    expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Saving…' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
   });
 
   it('holds Save back when the section says nothing has changed', () => {
     renderSection({ saveDisabled: true });
     expect(
       screen.getByRole('button', { name: 'Save base currency' }),
-    ).toBeDisabled();
+    ).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  /**
+   * A disabled button drops its focus to the page, and a keyboard or
+   * screen-reader user starts again from the top (#155, WCAG 2.4.3).
+   */
+  it('keeps focus on Save as it saves, and ignores a press while held back', async () => {
+    const user = userEvent.setup();
+    const { onSubmit, rerender } = renderSection();
+    const save = screen.getByRole('button', { name: 'Save base currency' });
+
+    save.focus();
+    await user.keyboard('{Enter}');
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+
+    rerender({ submitting: true });
+    expect(save).toHaveAccessibleName('Saving…');
+    expect(save).toHaveAttribute('aria-disabled', 'true');
+    expect(save).not.toBeDisabled();
+    expect(save).toHaveFocus();
+    await user.keyboard('{Enter}');
+
+    // Saved, and nothing changed since.
+    rerender({ saveDisabled: true });
+    expect(save).toHaveFocus();
+    await user.keyboard('{Enter}');
+    await user.type(screen.getByRole('textbox', { name: 'Code' }), '{Enter}');
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+
+    rerender({});
+    expect(save).not.toHaveAttribute('aria-disabled');
   });
 
   it('says its notice before the error', () => {

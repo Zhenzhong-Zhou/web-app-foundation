@@ -3164,6 +3164,17 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R93** *(focus falling to the page as a section saved, the rail
+  folded or Copy link's dialog closed, #155)* With the keyboard alone at
+  1440 px, as the demo Owner. On Organization, choose another time zone and
+  press Enter on Save time zone: it reads Saving…, then greys, keeping
+  focus and its ring; Enter on it again does nothing, and Tab goes on from
+  it. Press Enter on the rail's Collapse navigation: the rail folds with
+  focus on its plate, showing »; Enter there opens it with focus on
+  Collapse navigation. On Members, Invite an address with Copy link, and
+  Done; then Enter on its row's Copy link under Invited, and Done: focus is
+  back on Copy link. A screen reader names each, a greyed Save as dimmed.
+
 - **MC-R92** *(A sale raised from Home saved as a purchase, #454)* As the
   demo Owner, press Raise an order on Home: Direction comes first, Selling
   and Buying as two cards, neither chosen. Choose Northside Pharmacy under
@@ -4633,3 +4644,6 @@ first.
 - 2026-11-04: #454, a sale raised from Home saved as a purchase: MC-R92
   added, Selling or Buying asked first with neither chosen, and MC-4215's
   New order opening with Buying chosen.
+- 2026-11-04: #155, focus falling to the page as a section saved, the rail
+  folded or Copy link's dialog closed: MC-R93 added, a greyed Save keeping
+  focus.

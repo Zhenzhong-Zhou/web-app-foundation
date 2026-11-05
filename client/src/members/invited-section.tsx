@@ -292,7 +292,9 @@ function RowButtons({
       <Button
         variant="outlined"
         disabled={disabled}
-        onClick={onCopy}
+        // Its dialog opens once the link is made, and gives focus back here
+        // as it closes (#155).
+        onClick={openDialog(onCopy)}
         aria-label={intl.formatMessage(
           {
             // Its visible words first, so a voice command finds it (WCAG

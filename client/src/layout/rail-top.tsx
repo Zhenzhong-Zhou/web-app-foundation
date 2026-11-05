@@ -8,6 +8,7 @@ import {
   Stack,
   Tooltip,
 } from '@mui/material';
+import { useEffect, useRef } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -45,6 +46,23 @@ export function RailTop({
     branding?.logoFileId ?? null,
     branding?.squareLogoFileId ?? null,
   );
+
+  // The fold button and the plate are each drawn in their own state only,
+  // so the one pressed is gone after it: the other takes focus, after a
+  // press and not on load, or a keyboard or screen-reader user starts
+  // again from the top of the page (#155, WCAG 2.4.3).
+  const foldButton = useRef<HTMLButtonElement>(null);
+  const unfoldButton = useRef<HTMLButtonElement>(null);
+  const pressed = useRef(false);
+  useEffect(() => {
+    if (!pressed.current) return;
+    pressed.current = false;
+    (folded ? unfoldButton : foldButton).current?.focus();
+  }, [folded]);
+  const toggle = () => {
+    pressed.current = true;
+    onToggle();
+  };
 
   // A square logo shows at once. Without one, the logo's own width and
   // height, read when it loads, open or folded, so a fold draws it at once;
@@ -86,7 +104,8 @@ export function RailTop({
             defaultMessage: 'Collapse navigation',
           })}
           aria-expanded
-          onClick={onToggle}
+          ref={foldButton}
+          onClick={toggle}
           sx={{
             flex: 'none',
             color: 'rail.text',
@@ -136,7 +155,8 @@ export function RailTop({
                 )
           }
           aria-expanded={false}
-          onClick={onToggle}
+          ref={unfoldButton}
+          onClick={toggle}
           sx={{
             // In rem, as a box with words in it is, so the initials still
             // fit it at Larger text (ADR-075); 44 px at Standard.

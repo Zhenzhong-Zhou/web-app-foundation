@@ -1,6 +1,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -224,5 +225,42 @@ describe('RailTop', () => {
         name: '清禾, Expand navigation (清禾药业有限公司)',
       }),
     ).toHaveTextContent('清禾');
+  });
+
+  /**
+   * The fold button and the plate are each drawn in their own state only,
+   * so the one pressed is gone after it: focus goes to the other, never to
+   * the page (#155, WCAG 2.4.3), and only after a press.
+   */
+  it('gives focus to the plate as the rail folds, and to the fold button as it opens', async () => {
+    const user = userEvent.setup();
+    function Folding() {
+      const [folded, setFolded] = useState(true);
+      return (
+        <RailTop
+          name="WIDE Naturals Inc."
+          folded={folded}
+          onToggle={() => setFolded(!folded)}
+        />
+      );
+    }
+    renderWithAuth(
+      <MemoryRouter>
+        <ThemeProvider theme={themeFor('en')}>
+          <Folding />
+        </ThemeProvider>
+      </MemoryRouter>,
+    );
+
+    // Not on load.
+    expect(plate()).not.toHaveFocus();
+
+    plate().focus();
+    await user.keyboard('{Enter}');
+    const fold = screen.getByRole('button', { name: 'Collapse navigation' });
+    expect(fold).toHaveFocus();
+
+    await user.keyboard('{Enter}');
+    expect(plate()).toHaveFocus();
   });
 });

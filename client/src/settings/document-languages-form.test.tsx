@@ -29,7 +29,7 @@ describe('RequiredNameLanguages', () => {
     );
 
     const save = screen.getByRole('button', { name: 'Save required names' });
-    expect(save).toBeDisabled();
+    expect(save).toHaveAttribute('aria-disabled', 'true');
 
     // Checked back to front, sent in the catalogue's order.
     await user.click(screen.getByRole('checkbox', { name: '简体中文' }));
@@ -59,6 +59,6 @@ describe('RequiredNameLanguages', () => {
 
     expect(
       screen.getByRole('button', { name: 'Save required names' }),
-    ).toBeDisabled();
+    ).toHaveAttribute('aria-disabled', 'true');
   });
 });

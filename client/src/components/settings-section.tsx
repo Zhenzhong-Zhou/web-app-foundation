@@ -16,8 +16,10 @@ import { FormError } from './form-error';
  * other.
  *
  * Save is absent, not disabled, for someone who can only read: a button they
- * can never press is noise. It is disabled while saving and for the
- * section's own reason (`saveDisabled`), usually that nothing has changed.
+ * can never press is noise. It is held back while saving and for the
+ * section's own reason (`saveDisabled`), usually that nothing has changed:
+ * drawn disabled and aria-disabled, a press ignored, but still focusable, so
+ * the Save someone pressed keeps focus as it saves (#155).
  *
  * `notice` sits above the error, for what the section needs said before
  * anything else ("Not set yet"), as the sections that have one already did.
@@ -50,10 +52,12 @@ export function SettingsSection({
   children: ReactNode;
 }) {
   const intl = useIntl();
+  const held = submitting || saveDisabled;
 
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
-      <form onSubmit={onSubmit}>
+      {/* Held back, Save and Enter in a field submit nothing. */}
+      <form onSubmit={held ? (event) => event.preventDefault() : onSubmit}>
         <Stack spacing={2}>
           <Stack
             direction="row"
@@ -80,7 +84,10 @@ export function SettingsSection({
           {!readOnly && (
             <Button
               type="submit"
-              disabled={submitting || saveDisabled}
+              // Not `disabled`, which would drop the focus to the page; the
+              // class draws it as MUI draws a disabled button.
+              aria-disabled={held || undefined}
+              className={held ? 'Mui-disabled' : undefined}
               sx={{ alignSelf: 'flex-start' }}
             >
               {submitting
