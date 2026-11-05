@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Dialog,
+  Drawer,
   GlobalStyles,
   IconButton,
   Link,
@@ -31,6 +32,8 @@ import { useCan } from '../auth/permissions';
 import { reportFault } from '../errors/report-fault';
 import { Reload } from '../errors/status-actions';
 import { useLanguage } from '../i18n/use-language';
+import { BAR } from '../layout/bar';
+import { RAIL_FOLDED_PX } from '../layout/rail';
 import { copyrightLine, useAppName } from '../lib/app-name';
 import { formatDate, SEPARATOR } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -57,12 +60,9 @@ const WIDTH_PX = 420;
 
 /**
  * The least room a page keeps beside Help, about a small laptop's page with
- * the rail folded: with less, Help slides over the page instead.
+ * the rail folded: with less, Help is a modal side sheet instead (ADR-091).
  */
 const PAGE_MIN_PX = 720;
-
-/** A dialog's margin either side of its paper, as MUI draws it. */
-const DIALOG_MARGINS = 64;
 
 const M = defineMessages({
   help: { id: 'help.title', defaultMessage: 'Help' },
@@ -105,14 +105,17 @@ const noDialog = () => false;
  * sits beside the page, which takes the width left, the rail folded to make
  * room while Help is open (the frame does that): nothing of the page is
  * covered, and a control focused in it is never under Help (WCAG 2.4.11).
- * Where that would leave the page less than about 720 px, Help slides over
- * the right of the page instead, with nothing dimmed, so the page still
- * works while the person follows the steps. On a phone, Help is full
- * screen, with Close.
+ * Where the window would leave the page less than 720 px, the rail counted
+ * folded, Help is a modal side sheet instead (ADR-091, #272): the page
+ * dimmed, focus kept inside Help, closed by Esc, Close or a press on the
+ * dimming. Nothing of the page can then be focused under it. On a phone,
+ * Help is full screen, with Close.
  *
- * The top bar is measured rather than assumed: Help starts under it, at
- * whatever height the text size gives it, and the bar's width is the room
- * the page and the panel share.
+ * Which of the three is the window's, not the room the rail leaves at the
+ * moment: the rail folds as Help opens, and someone unfolding it with Help
+ * beside the page keeps Help beside it. The top bar is measured rather than
+ * assumed: Help beside the page starts under it, at whatever height the
+ * text size gives it.
  *
  * A dialog the page opens moves into the room beside Help, and Help stays
  * above the dialog's dimming, so the steps can still be read while they
@@ -121,8 +124,7 @@ const noDialog = () => false;
  * keyboard's focus to itself and hides the rest of the page, Help with
  * it, from assistive technology, so what someone sees beside the dialog is
  * never something they could press that a screen reader could not reach.
- * Where the window leaves no room beside Help for a dialog at its usual
- * width, Help is dimmed with the page, as before.
+ * Beside the page there is always room for a dialog at its usual width.
  */
 export function HelpFrame({
   bar,
@@ -134,15 +136,13 @@ export function HelpFrame({
   const help = useHelp();
   const theme = useTheme();
   const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
+  const rail = useMediaQuery(theme.breakpoints.up(BAR), { noSsr: true });
   // A new text size changes the panel's width in px: render again for it.
   useTextSize();
-  const [size, setSize] = useState({ height: 56, width: 0, viewport: 0 });
-  // Watched only while Help is open: every tooltip, menu and snackbar
-  // mounts at the end of <body> too.
-  const dialog = useSyncExternalStore(
-    help?.open ? subscribeToDialogs : watchNothing,
-    help?.open ? dialogShown : noDialog,
-  );
+  const [size, setSize] = useState(() => ({
+    height: 56,
+    viewport: window.innerWidth,
+  }));
 
   useEffect(() => {
     const element = bar.current;
@@ -151,7 +151,6 @@ export function HelpFrame({
     const observer = new ResizeObserver(() =>
       setSize({
         height: element.offsetHeight,
-        width: element.offsetWidth,
         viewport: window.innerWidth,
       }),
     );
@@ -159,20 +158,27 @@ export function HelpFrame({
     return () => observer.disconnect();
   }, [bar]);
 
-  const width = (WIDTH_PX / 16) * rootFontSize();
-  const beside = !!help?.open && !phone && size.width - width >= PAGE_MIN_PX;
-  const roomForDialog =
-    !!help?.open &&
-    !phone &&
-    size.viewport - width >= theme.breakpoints.values.sm + DIALOG_MARGINS;
-  const aboveDialog = roomForDialog && dialog;
+  const rootPx = rootFontSize();
+  const width = (WIDTH_PX / 16) * rootPx;
+  const railPx = rail ? (RAIL_FOLDED_PX / 16) * rootPx : 0;
+  // Whether Help would be a sheet, open or not, so it closes as one.
+  const sheet = !phone && size.viewport - railPx - width < PAGE_MIN_PX;
+  const beside = !!help?.open && !phone && !sheet;
+
+  // Watched only while Help is beside the page: every tooltip, menu and
+  // snackbar mounts at the end of <body> too.
+  const dialog = useSyncExternalStore(
+    beside ? subscribeToDialogs : watchNothing,
+    beside ? dialogShown : noDialog,
+  );
+  const aboveDialog = beside && dialog;
 
   return (
     <>
       <Box sx={beside ? { pr: `${width}px` } : undefined}>{children}</Box>
 
       {/* A dialog centres in the room beside Help, not under it. */}
-      {roomForDialog && (
+      {beside && (
         <GlobalStyles
           styles={{ '.MuiDialog-container': { paddingRight: `${width}px` } }}
         />
@@ -197,8 +203,27 @@ export function HelpFrame({
               transition: { onExited: help.giveFocusBack },
             }}
           >
-            <PanelBody help={help} phone />
+            <PanelBody help={help} modal />
           </Dialog>
+        ) : sheet ? (
+          <Drawer
+            anchor="right"
+            open={help.open}
+            onClose={help.close}
+            // Focus goes back to what opened Help, as on a phone.
+            disableRestoreFocus
+            slotProps={{
+              paper: {
+                id: HELP_PANEL_ID,
+                'aria-labelledby': HELP_HEADING_ID,
+                sx: { width: `min(${rem(WIDTH_PX)}, 100%)` },
+              },
+              // Once the page is shown again, as on a phone (#294).
+              transition: { onExited: help.giveFocusBack },
+            }}
+          >
+            <PanelBody help={help} modal />
+          </Drawer>
         ) : (
           <Slide
             in={help.open}
@@ -233,11 +258,6 @@ export function HelpFrame({
                 bgcolor: 'background.paper',
                 borderLeft: 1,
                 borderColor: 'divider',
-                // Over the page, a shadow says it floats; beside it, the
-                // border is enough.
-                boxShadow: beside
-                  ? 'none'
-                  : '-8px 0 24px rgba(20, 26, 36, 0.14)',
                 // Beside a dialog, scrolled and read, never pressed.
                 ...(aboveDialog && {
                   '& *': { pointerEvents: 'none' },
@@ -245,7 +265,7 @@ export function HelpFrame({
                 }),
               }}
             >
-              <PanelBody help={help} phone={false} />
+              <PanelBody help={help} modal={false} />
             </Box>
           </Slide>
         ))}
@@ -255,9 +275,10 @@ export function HelpFrame({
 
 /**
  * The header with Close, the guide, and the list of guides and the version
- * at its foot.
+ * at its foot. Modal, on a phone or as a sheet, its title names the guide,
+ * since the page whose guide it is is hidden or dimmed.
  */
-function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
+function PanelBody({ help, modal }: { help: HelpState; modal: boolean }) {
   const intl = useIntl();
   const { locale } = useLanguage();
   const { guide, section, request, takeFocusRef } = help;
@@ -363,7 +384,7 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
           }}
         >
           <HelpOutlineOutlined fontSize="small" aria-hidden />
-          {phone
+          {modal
             ? intl.formatMessage(
                 {
                   id: 'help.titleWithGuide',

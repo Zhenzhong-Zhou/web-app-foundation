@@ -14,6 +14,14 @@ import { handlers } from './handlers';
 
 export const server = setupServer(...handlers);
 
+/**
+ * A laptop's window, 1366 px wide, where jsdom's is 1024: Help is a modal
+ * sheet there (ADR-091), and the specs that open it mean a computer's, with
+ * Help beside the page. A spec stubs `innerWidth` for another width; the
+ * lint specs run in Node, with no window.
+ */
+if (typeof window !== 'undefined') window.innerWidth = 1366;
+
 type Wrapper = JSXElementConstructor<{ children: ReactNode }>;
 
 /**

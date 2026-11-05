@@ -1744,14 +1744,19 @@ The pages, in a private window unless a check says otherwise.
   its links or Close does nothing, and Tab stays in the dialog. With
   VoiceOver on, Help is not read while the dialog is open. Cancel: Help
   works again.
-- **MC-3203** *(ADR-079)* Help on a wide screen, about 1900 px: opening
-  Help folds the rail as on a laptop, the page keeps its full width beside
-  Help, and closing Help opens the rail again. In a window about 1100 px
-  wide, or below about 1265 px at Large text and 1330 px at Larger, where
-  the page would keep less than about 720 px beside Help, Help slides over
-  the right of the page instead, with nothing dimmed, and the page beneath still scrolls
-  and works. Narrower than about 1085 px, a dialog the page opens there
-  stays centred, and Help dims with the page.
+- **MC-3203** *(ADR-079; ADR-091)* Help on a wide screen, about 1900 px:
+  opening Help folds the rail as on a laptop, the page keeps its full
+  width beside Help, and closing Help opens the rail again. In a window
+  under about 1140 px wide, such as the Duo open (890 × 626) or a tablet
+  (1024 × 768), or under about 1265 px at Large text and 1325 px at
+  Larger, where the page would keep less than 720 px beside Help, Help is
+  a sheet from the right over the whole window instead, headed Help ·
+  Orders, the page and the top bar dimmed behind it (#272), in light and
+  in dark. Tab and Shift+Tab stay inside Help, and a click on the dimmed
+  page closes Help rather than pressing what is under it. Closed by Esc,
+  Close or that click, focus is back on Help in the top bar, with no
+  Blocked aria-hidden warning in Chrome's console. With VoiceOver on,
+  only Help is read while it is open.
 - **MC-3204** *(ADR-079; ADR-091)* Help on a phone, about 390 px: the bar
   shows Help as its icon with the word Help under it. It opens full screen, headed Help · Orders, with
   Close, which returns to the page. Closed by Close, and again by Esc,
@@ -3282,6 +3287,10 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R98** *(a control focused under Help in a window under about
+  1140 px, #272)* At 1024 px on Orders, open Help and press Tab twenty
+  times: every stop is in Help, none on the page under it, and Raise an
+  order is reached again only once Help is closed.
 - **MC-R97** *(a list keeping the filter pressed when a link to it is
   followed while it is open, #302)* On Inventory → Reorder points press
   Out, then follow a low-stock notice from the bell, or type
@@ -4839,3 +4848,6 @@ first.
   chip and the line in Raise an order's place: MC-407, MC-1561 and
   MC-1562 added, MC-405, MC-1509, MC-1511, MC-2801, MC-3204, MC-3402 and
   MC-R27 rewritten.
+- 2026-11-05: ADR-091 and #272, Help a modal side sheet where the window
+  leaves the page less than 720 px beside it: MC-R98 added, MC-3203
+  rewritten.

@@ -11,7 +11,9 @@ import { rem } from '../theme/rem';
  * needs such a file to export nothing else but literals.
  */
 export const RAIL_WIDTH = rem(232);
-export const RAIL_FOLDED_WIDTH = rem(64);
+/** The folded rail in px at the browser's 16 px, which Help counts. */
+export const RAIL_FOLDED_PX = 64;
+export const RAIL_FOLDED_WIDTH = rem(RAIL_FOLDED_PX);
 
 /**
  * A window too short to spare the foot its own place: a phone held

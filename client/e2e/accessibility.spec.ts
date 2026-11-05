@@ -270,6 +270,20 @@ const SCREENS: Screen[] = [
     ready: (page) => help(page).getByText(/ · Version /),
   },
   {
+    // A modal side sheet over the dimmed page, where the window leaves it
+    // less than 720 px beside Help (ADR-091, #272).
+    name: 'Help as a sheet, at 1024 × 768',
+    path: () => '/orders',
+    open: async (page) => {
+      await page.setViewportSize({ width: 1024, height: 768 });
+      await page.getByRole('button', { name: 'Help', exact: true }).click();
+    },
+    ready: (page) =>
+      page
+        .getByRole('dialog', { name: 'Help · Orders', exact: true })
+        .getByRole('heading', { level: 2, name: 'Orders', exact: true }),
+  },
+  {
     // A MacBook's window, 1440 × 900: every link above the rail's foot,
     // with nothing fading into it, under the build's own name too, as CI
     // has it, which takes the foot to two lines. At a laptop's 1280 × 800
