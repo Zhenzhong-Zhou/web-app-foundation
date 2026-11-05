@@ -70,8 +70,10 @@ finding for the as-built and one question for him.*
 
 > Anything else I can run in a cloud session?
 
-- The issues come from `tmp/cloud-picks.json`, which it asks Bob to
-  write and attach, not from GitHub's pages.
+- The issues come from `tmp/cloud-picks.json`, without comments, then
+  the few it shortlists from `tmp/cloud-picks-shortlist.json`, with
+  them; it asks Bob to write and attach each, not to read GitHub's
+  pages.
 - Each issue offered was read whole, its comments included, and checked
   against `main`'s whole history,
   `git log --oneline -E --grep '#<N>([^0-9]|$)' origin/main`; one already

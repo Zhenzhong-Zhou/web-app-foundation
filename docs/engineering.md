@@ -193,9 +193,11 @@ steps; this section stays the rule.
   proves and verifies, and opens a pull request that closes it. A branch
   built on the Mac is pushed at each stop of its run, so its files show;
   `leave <path>` after the number names one that is not. The chat picks
-  from an export the maintainer attaches, `tmp/cloud-picks.json`, of the
-  open `fix-now` and `when-touched` issues with their text and comments
-  (ADR-090), and only what the skill would not stop on: an issue read
+  from two exports the maintainer attaches (ADR-090): the open `fix-now`
+  and `when-touched` issues with their text, `tmp/cloud-picks.json`,
+  then the few it shortlists with their comments too,
+  `tmp/cloud-picks-shortlist.json`; and only what the skill would not
+  stop on: an issue read
   whole (of eight picked from one-line lists on 24 and 25 October, three
   stopped, needing a decision or more files), no choice left open, small
   enough (one that names more than about five files goes to the Mac:

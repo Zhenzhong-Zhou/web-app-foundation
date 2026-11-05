@@ -257,10 +257,13 @@ Duo's two sizes in ADR-091's branch.
 
 ## Decision — cloud picks from an export, and small enough
 
-The chat picks a cloud session's issue from an export the maintainer
-attaches, `tmp/cloud-picks.json`, of the open `fix-now` and
-`when-touched` issues with their text and comments, written by `gh`
-rather than read from GitHub's pages. And an issue that names more than
+The chat picks a cloud session's issue from two exports the maintainer
+attaches, written by `gh` rather than read from GitHub's pages:
+`tmp/cloud-picks.json`, the open `fix-now` and `when-touched` issues
+with their text; then `tmp/cloud-picks-shortlist.json`, the few the
+chat shortlists from it, with their comments too. All of them with
+their comments came to 780 KB on 4 November, too much to read whole;
+without, 290 KB. And an issue that names more than
 about five files goes to a Mac branch: #310's session stopped for its
 thirteen dialogs on 4 November.
 

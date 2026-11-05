@@ -421,8 +421,9 @@ commits name are the list checked before it opens.
   names the journeys, or says why none; `brief-step` asks for them as it
   asked for one persona.
 - **A cloud pick comes from an export:** the open `fix-now` and
-  `when-touched` issues, with their text and comments, written by `gh`
-  to `tmp/cloud-picks.json` and attached to the chat, rather than read
-  from GitHub's pages. An issue that names more than about five files
+  `when-touched` issues with their text, written by `gh` to
+  `tmp/cloud-picks.json`, then the few shortlisted from it with their
+  comments, to `tmp/cloud-picks-shortlist.json`, each attached to the
+  chat rather than read from GitHub's pages. An issue that names more than about five files
   goes to a Mac branch instead: #310's session stopped for thirteen
   dialogs on 4 November 2026.
