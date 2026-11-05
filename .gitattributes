@@ -2,3 +2,5 @@
 # language statistics. They change only through npm run api (ADR-068).
 server/openapi.json linguist-generated=true
 client/src/api/** linguist-generated=true
+# Drizzle's snapshots of the schema, written with each migration.
+server/src/database/migrations/meta/*_snapshot.json linguist-generated=true
