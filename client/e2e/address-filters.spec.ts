@@ -19,6 +19,25 @@ test('opens Orders narrowed by direction and status, as chips', async ({
   await expect(page.getByRole('button', { name: 'Confirmed' })).toBeVisible();
 });
 
+// Credit notes keeps its days in the address as Invoices does, so Back
+// and a link bring both the days and the sort (ADR-091's review).
+test('opens Credit notes on the days in its address', async ({
+  page,
+  freshOrg,
+}) => {
+  await signInAs(page, freshOrg.api);
+  const asked = page.waitForRequest((request) => {
+    const url = new URL(request.url());
+    return (
+      url.pathname.endsWith('/v1/credit-notes') &&
+      url.searchParams.get('from') === '2026-10-01' &&
+      url.searchParams.get('to') === '2026-10-31'
+    );
+  });
+  await page.goto('/credit-notes?from=2026-10-01&to=2026-10-31');
+  await asked;
+});
+
 test('opens Inventory with Expiring soon pressed', async ({
   page,
   freshOrg,

@@ -203,7 +203,7 @@ a second organization.
   focus ring is still on Expected. Open an order and press Back: All
   pressed, the day and the sort as they were. Press Orders in the menu:
   the plain list, Open pressed, the address `/orders`. Do the same on
-  Invoices (To issue, a day, Total), Returns (Closed, a day), Production (a
+  Invoices (To issue, a day, Total), Credit notes (a day, Amount), Returns (Closed, a day), Production (a
   status, a day), Inventory (Expiring soon, Waiting for a cost, Show emptied, a
   Location, Expires) and Reorder points (Low stock): each choice is in the
   address, and Back from a page opened from there keeps it. Type
@@ -5019,3 +5019,5 @@ first.
   checked by axe: MC-1559 extended.
 - 2026-11-05: ADR-091's review, a code alone in a table cell kept whole,
   as a Reference is: MC-1552 extended.
+- 2026-11-05: ADR-091's review, Credit notes' days in the address with
+  its sort: MC-406 extended.

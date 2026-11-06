@@ -11,7 +11,6 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -26,10 +25,11 @@ import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { type DayRange, withDays } from '../lib/date-range';
+import { withDays } from '../lib/date-range';
 import { formatCredit, formatDay, NO_VALUE } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { day, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
 import { useListSort, withSort } from '../lib/use-list-sort';
 
@@ -38,11 +38,16 @@ import { useListSort, withSort } from '../lib/use-list-sort';
  * so a quarter's credit notes could be neither shown nor exported; now
  * they sit beside Invoices, with the same search.
  */
+/** The credit date's range, kept in the address as Invoices keeps it. */
+const ADDRESS_FILTERS = { from: day, to: day };
+
 export function CreditNotesPage() {
   const intl = useIntl();
   const { text, setText, search } = useListSearch();
-  // By credit date, sortable by date and amount (ADR-057).
-  const [range, setRange] = useState<DayRange>({});
+  // By credit date, sortable by date and amount (ADR-057), the days in
+  // the address with the sort, so Back keeps both (ADR-091's review).
+  const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  const range = { from: filters.from, to: filters.to };
   const { sort, header } = useListSort(['creditDate', 'total']);
   const path = withSort(
     withDays(withSearch('/credit-notes', search), range),
@@ -111,7 +116,11 @@ export function CreditNotesPage() {
           onChange: setText,
         }}
       >
-        <DateRangeFilter label={creditDate} value={range} onChange={setRange} />
+        <DateRangeFilter
+          label={creditDate}
+          value={range}
+          onChange={(next) => setFilters({ from: next.from, to: next.to })}
+        />
       </FilterRow>
 
       <ListError error={error} onRetry={failed ? reload : undefined} />
