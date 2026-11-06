@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-08
 areas: [api, ui]
-amended-by: [ADR-072, ADR-076]
+amended-by: [ADR-072, ADR-076, ADR-091]
 ---
 
 # ADR-057 — Lists by date range, sorted where it helps, exported as CSV
@@ -218,3 +218,13 @@ never happens, as in Santiago. The audit log, its export and Your
 activity had kept their own `to`, compared with `<=` at UTC midnight, so
 "To 7 October" left the 7th out; they take `from` and `until` like the
 rest now.
+
+## Amendment (November 2026) — oldest first, with no sort (ADR-091)
+
+The default stays newest first. `order=asc` with no sort lists oldest
+first, by when each record was made, its id (ADR-010), read from the
+same index backwards. Orders takes it first, for Home's drafts tile, so
+the draft forgotten longest comes first. No column names that order, so
+the list shows it as a chip that can be removed, as it shows a filter
+only a link set. Another list takes it when asked, as More sortable
+columns, above, says.

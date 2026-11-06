@@ -2,10 +2,10 @@
 status: accepted
 date: 2026-11-04
 areas: [home, organizations, ui]
-amends: [ADR-051, ADR-055, ADR-058, ADR-079, ADR-090]
+amends: [ADR-051, ADR-055, ADR-057, ADR-058, ADR-069, ADR-079, ADR-090]
 ---
 
-# ADR-091 — Home, redesigned: a few large tiles that open their lists (amends ADR-051, ADR-055, ADR-058, ADR-079 and ADR-090)
+# ADR-091 — Home, redesigned: a few large tiles that open their lists (amends ADR-051, ADR-055, ADR-057, ADR-058, ADR-069, ADR-079 and ADR-090)
 
 ## Context
 
@@ -532,9 +532,12 @@ translations, before 30 November, then Orders.
 
 ## As built (6 November 2026)
 
-Built in #477 on `adr-091-home-redesigned`, 74 commits above `main` at
+Built in #477 on `adr-091-home-redesigned`, 76 commits above `main` at
 51941f3c, by the build brief's 22 steps (`tmp/adr-091/brief.md`, its
-summaries beside it). The canvas keeps every look drawn, a row each.
+summaries beside it), the last two this as-built and f3256a8f, a flaky
+test's fix: a React Router transition let an ordinary update draw before
+a removed chip left the page, so `useFocusAfterRemove` focused a chip
+that then vanished. The canvas keeps every look drawn, a row each.
 
 - **Home's time:** `GET /home`'s median on GitHub's runners is 177 ms,
   where it was 314 ms, a newcomer's 165 ms; on the Mac, 41 ms at small
@@ -586,3 +589,104 @@ summaries beside it). The canvas keeps every look drawn, a row each.
 - **After the merge:** Items (#476) and then Movements (#470), two
   branches back to back, before Customise Home; and the test with whoever
   can be found.
+
+## Amendment (November 2026) — Customise Home, before Items and Movements
+
+Decided on 6 November 2026, before its branch, `customise-home`. It is
+built as this ADR's, with no ADR of its own, from the decision
+"Customise Home, decided here, built next", above, and these:
+
+- **The order of work:** Customise Home first, then Items (#476,
+  ADR-092), then Movements (#470, ADR-093). This reverses "after
+  Movements', so Home's tiles have stable kinds from the start", and the
+  order in "What the panel found on other screens" and the as-built:
+  neither Items nor Movements adds or removes a tile's kind, and a kind
+  added later takes its default place while one that is gone is skipped.
+- **Where a layout is kept:** one column on the membership, `home_layout`,
+  holding the tiles' order, which are hidden and whether Recently opened
+  shows; empty is the default. The person alone sets it, through Home's
+  own routes, `PUT` and `DELETE /v1/home/layout`, which act only on their
+  own membership. It is not audited, as the welcome's dismissal is not
+  (ADR-079): it changes only what that person sees. It goes in their own
+  data (ADR-069's amendment).
+- **The default order:** a tile leads when the member may do its work;
+  the rest follow; both keep the working day's order, so an Owner's Home
+  is as it is today.
+
+  | Tile | Leads for whoever holds |
+  | --- | --- |
+  | To ship | `orders.ship` |
+  | To receive | `orders.receive` |
+  | Orders · Draft | `orders.create` |
+  | Low stock | `orders.create` or `production.create` |
+  | Expiring soon | `stock.adjust` |
+  | Stock value · Waiting for a cost | `costs.update` |
+  | Invoices · To issue | `invoices.issue` |
+  | Open returns | `return_authorizations.update` |
+  | Production · In progress | `production.complete` |
+  | Licences expiring | `product_licences.update` |
+
+- **A drafts tile,** Deferred above, its trigger this planning: Orders ·
+  Draft (订单 · 草稿), after To receive. It is hidden for everyone until
+  they show it in Customise Home, and Reset to default hides it again: the
+  first tile hidden by default, so the default says which kinds start
+  hidden. It counts every draft order the member may see, exactly as
+  Orders lists them with Draft chosen, and opens that list oldest first
+  (ADR-057's amendment), the forgotten draft first. A draft is never
+  late, so the panel of what needs you now never counts it.
+- **Dragging:** `@dnd-kit/react`, the library's current line, at the
+  newest 0.5 version 7 days old on the build's day, for its keyboard
+  dragging (Space, the arrows, Space) and its spoken announcements. Up,
+  Down and Hide stay as buttons beside each tile, for anyone who cannot
+  drag (WCAG 2.5.7). Moving to 0.6 is a choice of its own, never in range.
+- **What is drawn:** the canvas's row "Customise Home v2", where it starts,
+  while customising on a phone and dragging on a laptop, and decision
+  64a's board, over the first row's. Customise Home is a button at the
+  right of "What needs you today". Done saves; Reset to default returns to
+  the default; leaving with changes not saved asks first, as every form's
+  guard does (`useUnsavedChanges`, #198's rule). The design language's new
+  pattern, Arranging your own screen, holds it for the places #337 names.
+- **Not here:** each person choosing their own main action and More's
+  order stays later, as above.
+- **Riders:** from #505, its 8 (the second half), 52, 55, 66, 67, 68, 93
+  and 117, each in a file this branch changes, or a pattern it would
+  otherwise copy again.
+- **No revision raise:** each change to the API adds something (a tile's
+  kind, the layout and its routes, Orders' order), and Home skips a kind
+  it does not know (ADR-058's amendment for ADR-085).
+
+### Checked before drafting
+
+The areas `home`, `orders`, `recent`, `auth`, `help` and `ui`, and the
+issues #337 and #505 (`scripts/adr-check.mjs 091`, 6 November 2026), with
+the Deferred lines of their ADRs, ADR-051's watch list and Open
+decisions.
+
+**Fired, and taken here:**
+
+- This ADR's Deferred "A drafts tile", its trigger this planning.
+- ADR-057's Deferred "More sortable columns", by the drafts tile's oldest
+  first.
+- #505's eight above.
+
+**Not fired, and left:**
+
+- Orders' #458, #479, #481, #159, #160, #157, #177 and #25: Orders gains
+  only its oldest first and its chip, and these need designs of their own.
+- Home's #482, #485 and #489, other parts of Home; #502, with each
+  person's main action; #504, since Recently opened gains only its switch.
+- #392, #324, #255, #258, #261, #154 and #150, in screens this does not
+  change, and the translation reviews, for their batch.
+- The `ui` area's issues: the new controls meet #170's 44 px themselves.
+- #300 and #337, `later`, their triggers not fired.
+- ADR-051's watch "Home with the data": Home is timed again at small and
+  large with the drafts count.
+- This ADR's Deferred "An organization's default Home per role".
+
+**Found while checking:**
+
+- Orders sorts by expected date alone, so oldest first is ADR-057's
+  amendment.
+- `scripts/adr-check.mjs` writes only to `tmp/adr-NNN/`, so a branch with
+  no ADR of its own moves its check into its own folder.
+- #477 ended with 76 commits, not 74: corrected in the as-built above.

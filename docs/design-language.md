@@ -195,6 +195,24 @@ Each with what holds it in the code today, or the issue that will.
 - A breadcrumb shows the way the person came, not a page they never
   visited.
 
+### Arranging your own screen
+
+Where a person may arrange a screen: Home, by Customise Home (ADR-091),
+and the places #337 names, each when its trigger comes.
+
+- One button opens it, named for what it changes ("Customise Home"),
+  beside the part it changes, not in a menu.
+- Each thing that moves has a handle, and Up, Down and Hide as buttons,
+  always there, so dragging is never the only way (WCAG 2.5.7). The
+  keyboard drags too: Space to pick up, the arrows to move, Space to
+  drop, and a screen reader hears the new place.
+- What may not move stays in view, faded, with a lock and words saying
+  so.
+- What is hidden waits in one list below, each with Show.
+- Done saves; leaving with changes not saved asks first (Unsaved work).
+  Reset to default returns to the order the person's role gives.
+- It changes that person's screen alone, on every device they use.
+
 ### Text and targets
 
 - Text a person reads to decide (a tile's label, a status, a name, a

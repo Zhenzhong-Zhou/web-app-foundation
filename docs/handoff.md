@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 4 November 2026
+# web-app-foundation — handoff, 6 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,11 +13,28 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 4 November 2026:
+On 6 November 2026:
+
+- **Customise Home,** decided in ADR-091: planned on 6 November, its
+  details in [ADR-091's amendment](adr/0091-home-redesigned.md), built
+  next on `customise-home` from the ignored `tmp/customise-home/brief.md`,
+  before Items and Movements. Tiles and Recently opened move and hide, by
+  buttons and by dragging; each person's arrangement is kept on their
+  membership; the default order follows what their role may do; and
+  Orders · Draft, hidden until shown, opens Orders oldest first. Its
+  boards are the canvas's row "Customise Home v2" and decision 64a's.
+- **[#506], the test of Home's More menu in Firefox:** merged on 6
+  November as 965fdd76 and deployed with [#477] (Deploy run 42279308129),
+  `/api/health` and `version.json` naming it with `apiRevision: 3`.
+  `main`'s first every-browser run after #477 failed in Firefox on that
+  test alone (run 42263826673), the test's fault and not the app's; the
+  branch's run of every browser by hand passed, and so did `main`'s run
+  after the merge (42277221713).
 
 - **ADR-091, Home redesigned** ([#335]): planned on 4 November and built
-  on 5 and 6 November in [#477], on `adr-091-home-redesigned`, waiting to
-  merge; its as-built is in [ADR-091](adr/0091-home-redesigned.md). Home's
+  on 5 and 6 November in [#477], merged on 6 November at 7d9af388 with 76
+  commits and deployed with [#506]; its as-built is in
+  [ADR-091](adr/0091-home-redesigned.md). Home's
   three moments are built to the design language: Getting started and the
   welcome first, then what needs you now, a few large tiles that open
   their lists, and one main action by role, with More. `GET /home`'s
@@ -25,9 +42,10 @@ On 4 November 2026:
   ([#276]). The type scale and the corners reach every screen; the lists
   keep their filters and sorts in the address ([#302]); Help is a modal
   sheet on a narrow window ([#272]). The reviews' follow-ups are [#478]
-  to [#505], [#505] holding the small ones. The reports are in the
-  ignored `tmp/adr-091/`, which Items' and Movements' branches read
-  next.
+  to [#505], [#505] holding the small ones; `/triage` read its areas
+  after the merge and folded nine of them into #505. The reports moved
+  into the ignored `tmp/adr-092/from-adr-091/`, which Items' and
+  Movements' branches read.
 
 - **ADR-090, the design language** ([#338]): [#465], planned and built on
   4 November, its own docs pull request, its as-built in
@@ -109,7 +127,8 @@ On 4 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 4 November, from cloud sessions, [#468]
+- **The last merges:** on 6 November, from the terminal as merge commits,
+  [#477] (ADR-091) and [#506]. On 4 November, from cloud sessions, [#468]
   ([#466]) and [#469] ([#462]), each as a merge commit, since the button
   offered the method used last; a cloud pull request is merged from the
   terminal from now on ([engineering.md](engineering.md#how-code-is-delivered)).
@@ -171,11 +190,14 @@ On 4 November 2026:
 
 ## Dates
 
-- **Since 29 October:** ask whether the corrections of the reviewer who
-  reads only Chinese are back. The export was made at `b933b912` (22
-  October 2026); once it is imported, the next round is only what
-  changed, `node scripts/i18n-review.mjs export --since b933b912`, and the
-  corrections go into a fix-up. The first note: 头像 for the profile
+- **The second translation review,** in ChatGPT, one chat per language:
+  on the workbooks `node scripts/i18n-review.mjs export` wrote at
+  `19e1b7aa` (6 November 2026, 08:38), the Chinese 95% done on 6
+  November, the French next. The reviewer who reads only Chinese checks
+  the Chinese corrections before `import`; the next round is only what
+  changed, `node scripts/i18n-review.mjs export --since 19e1b7aa`, and the
+  corrections go into the translations' fix-up. The first round's export
+  was at `b933b912` (22 October 2026). For the same reviewer: 头像 for the profile
   picture everywhere, since Your account says 照片 while Home says 头像.
   With them, ADR-083's two questions: whether Panivo in a Chinese email
   reads out of place beside 品桥 in the app (ADR-082's trigger for the
@@ -247,30 +269,22 @@ On 4 November 2026:
 
 ## Still to do, by hand
 
-- **After [#463], [#464], [#468] and [#469]:** one run of every browser
-  by hand on `main`, read; a failure filed.
-- **After [#477]'s merge,** in this order: the deploy's checks
-  (`render.md`), `/api/health` naming the merge's commit and
-  `apiRevision: 3`, and 79 migrations; an old tab open on Home across the
-  deploy offering the reload; Home on a phone held sideways, about 844 ×
-  390, the main action, what is late and the first tiles reachable; Home
-  in WeChat or 360 in 中文, two columns of tiles and the top bar's words;
-  the planning skill packed from `main` and uploaded, and `evals.md`
-  walked; `tmp/adr-091/`'s panel reports moved into Items' `tmp/` folder
-  before `scripts/clean-local.sh --yes`; and ADR-091's test with whoever
-  can be found, fifteen minutes on the live site.
+- **After [#477]'s merge,** still to do: Home on a phone held sideways,
+  about 844 × 390, the main action, what is late and the first tiles
+  reachable; Home in WeChat or 360 in 中文, two columns of tiles and the
+  top bar's words; and ADR-091's test with whoever can be found, fifteen
+  minutes on the live site. Done on 6 November: the deploy's checks, an
+  old tab offering the reload, the planning skill packed from `main` and
+  uploaded, and the panel's reports moved before
+  `scripts/clean-local.sh --yes`.
 - **After [#361]'s merge,** in this order:
   - MC-3424's third tab, where one was left on Home across the deploy:
     it shows one banner, and one Reload brings Home back;
   - MC-4201 on the live site with a test item, set up again on the
     database of 5 November: one notice in the bell within the hour while
     the service is awake; then remove the point.
-- **The planning skill's `evals.md`:** prompts 3, 5 and 6, for the skill
-  uploaded after [#417], walked on 3 and 4 November, in the Fix-ups'
-  second batch's planning, and 1 and 2 on 4 November, in ADR-090's; 4
-  waits for a patch that is refused. ADR-090 changes the skill, so after
-  its merge it is packed from `main` and uploaded again, and prompt 6 is
-  walked.
+- **The planning skill's `evals.md`:** prompt 6 for the skill uploaded on
+  6 November, after [#477]; 4 still waits for a patch that is refused.
 - **[#245] in Safari and Edge, once deployed:** the page asked to translate
   into Chinese stays as written, a typed field included; WebKit and
   Firefox have known gaps with fields. What changes is filed.
@@ -333,14 +347,15 @@ request or a set of them:
       ([#276]) moved to 31 January 2027, for ADR-091;
    3. the design language ([#338], ADR-090): [#465], a docs pull
       request, as its as-built says;
-   4. Home redesigned ([#335], ADR-091): built in [#477], to merge; then
-      Items ([#476]), its own ADR with canvas boards first, the page and
-      the menu named Items · Articles · 物品, Products · 商品 the goods
-      tab; then Movements ([#470]) right after, with Inventory's findings
-      from ADR-091's panel, the two branches back to back; then
-      Customise Home, decided in ADR-091, each person choosing their main
-      action and More's order too, a pull request of its own; then
-      [#310]'s nine dialogs with [#295], one shared hook, on the Mac;
+   4. Home redesigned ([#335], ADR-091): [#477], merged on 6 November;
+      then Customise Home, a pull request of its own, as ADR-091's
+      amendment says (revised on 6 November 2026); then Items ([#476]),
+      ADR-092 with canvas boards first, the page and the menu named Items
+      · Articles · 物品, Products · 商品 the goods tab; then Movements
+      ([#470]), ADR-093, right after, with Inventory's findings from
+      ADR-091's panel, the two branches back to back; each person
+      choosing their main action and More's order, later; then [#310]'s
+      nine dialogs with [#295], one shared hook, on the Mac;
    5. the translations, before 30 November: first a second review by
       ChatGPT on the website, one chat per language, on the workbooks
       `node scripts/i18n-review.mjs export` writes, the reviewer who reads
@@ -600,3 +615,4 @@ Not repeated here; each list has one home:
 [#477]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/477
 [#478]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/478
 [#505]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/505
+[#506]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/506

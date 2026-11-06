@@ -66,6 +66,15 @@
 - **Every pull request says "Closes #N" for each issue it fixes,** a
   rider included: the issues its commits name are the list checked before
   it opens (2 November 2026: #361 fixed seven and closed none).
+- **A review files an issue only for what a person meets, or for a rule
+  that is wrong** (6 November 2026): every smaller tidy-up from the same
+  reviews goes into one issue, "Left from ADR-NNN's reviews",
+  `when-touched`, each item naming its file, as #505 does. The triage of
+  6 November folded nine issues filed one by one into #505.
+- **After a feature pull request merges, `/triage` reads the areas it
+  touched** (6 November 2026): an issue the pull request made obsolete is
+  closed `not planned`, naming it; one it did in part gets a comment
+  saying what is left. The maintainer approves each first.
 - Each of these prints nothing when every open issue is labelled: still
   `needs-triage`, no group label, no area label.
 
@@ -186,6 +195,10 @@ steps; this section stays the rule.
   the server's prettier, and their tests read the client's FormatJS
   (2 November 2026). Removed after the merge with `git worktree remove
   ../<folder>`.
+- **Never switch branches in a folder a Claude Code session is working
+  in** (6 November 2026): a `git switch main` there, while a session
+  committed, put its commit on the local `main`. A job on `main` waits for
+  the session, or runs in a second working folder.
 - **Cloud sessions** (Claude Code on the web, from October 2026): one new
   session per task, from `main`, each cloning the repository fresh, so
   nothing is pulled first; a long session pays for its whole history at
