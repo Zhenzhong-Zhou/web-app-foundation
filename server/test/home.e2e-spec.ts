@@ -1,11 +1,17 @@
 import type { INestApplication } from '@nestjs/common';
-import { inArray } from 'drizzle-orm';
+import { eq, inArray, isNotNull } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { permissions, rolePermissions, roles } from '../src/database/schema';
+import {
+  memberships,
+  permissions,
+  rolePermissions,
+  roles,
+  sessions,
+} from '../src/database/schema';
 import {
   addMember,
   body,
@@ -13,7 +19,10 @@ import {
   createLocation,
   createPartner,
   createVariant,
+  customRole,
+  insertMember,
   registerOrganization,
+  roleIdNamed,
 } from './utils/fixtures';
 import {
   item,
@@ -823,6 +832,170 @@ describe('Home (e2e)', () => {
       await viewer.post('/v1/home/getting-started/skip-team').expect(403);
       // A second member: the team step is done for everyone.
       expect((await started(alpha)).steps.team).toBe(true);
+    });
+  });
+
+  /**
+   * Customise Home's layout (ADR-091, amended November 2026): the
+   * person's own, on their membership alone, saved by Done and cleared by
+   * Done on the default.
+   */
+  describe('the layout', () => {
+    /** Every layout saved, by whose membership in which organization. */
+    const saved = () =>
+      db
+        .select({
+          userId: memberships.userId,
+          organizationId: memberships.organizationId,
+          homeLayout: memberships.homeLayout,
+        })
+        .from(memberships)
+        .where(isNotNull(memberships.homeLayout));
+
+    const arranged = {
+      order: ['lowStock', 'toShip', 'licences', 'toReceive'],
+      hidden: ['licences'],
+      recent: false,
+    };
+
+    it('keeps the layout saved, replaced by the next, and DELETE clears it', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+
+      await alpha.agent.put('/v1/home/layout').send(arranged).expect(204);
+      expect(await saved()).toEqual([
+        {
+          userId: alpha.userId,
+          organizationId: alpha.organizationId,
+          homeLayout: arranged,
+        },
+      ]);
+
+      const next = { order: ['toReceive'], hidden: [], recent: true };
+      await alpha.agent.put('/v1/home/layout').send(next).expect(204);
+      expect((await saved()).map((row) => row.homeLayout)).toEqual([next]);
+
+      await alpha.agent.delete('/v1/home/layout').expect(204);
+      expect(await saved()).toEqual([]);
+    });
+
+    it('refuses with 400 a kind it does not know, a kind twice, a hidden kind not in the order, or a part missing, writing nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await alpha.agent.put('/v1/home/layout').send(arranged).expect(204);
+
+      const refused = [
+        { ...arranged, order: [...arranged.order, 'weather'] },
+        { ...arranged, hidden: ['weather'] },
+        { ...arranged, order: ['toShip', 'lowStock', 'toShip'] },
+        { ...arranged, hidden: ['licences', 'licences'] },
+        { ...arranged, hidden: ['expiring'] },
+        { ...arranged, order: 'toShip' },
+        { ...arranged, recent: 'yes' },
+        { order: arranged.order, hidden: arranged.hidden },
+        { hidden: [], recent: true },
+        { ...arranged, pinned: ['toShip'] },
+      ];
+      for (const layout of refused) {
+        await alpha.agent.put('/v1/home/layout').send(layout).expect(400);
+      }
+      expect((await saved()).map((row) => row.homeLayout)).toEqual([arranged]);
+
+      // The hidden kind not placed says how to send it.
+      const { message } = body<{ message: string[] }>(
+        await alpha.agent
+          .put('/v1/home/layout')
+          .send({ ...arranged, hidden: ['expiring'] })
+          .expect(400),
+      );
+      expect(message).toEqual([
+        'Each kind in hidden must also be in order — send the hidden ones in their place there too',
+      ]);
+    });
+
+    it('keeps a kind the member may not see today, since their roles may change', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await customRole(app, alpha.organizationId, 'Packer', ['orders.view']);
+      const packer = await addMember(
+        app,
+        alpha,
+        'packer@example.com',
+        'Packer',
+      );
+      expect((await home({ agent: packer })).map((each) => each.kind)).toEqual([
+        'toShip',
+        'toReceive',
+      ]);
+
+      const layout = {
+        order: ['licences', 'toReceive', 'toShip'],
+        hidden: ['licences'],
+        recent: true,
+      };
+      await packer.put('/v1/home/layout').send(layout).expect(204);
+      expect((await saved()).map((row) => row.homeLayout)).toEqual([layout]);
+    });
+
+    it("changes only the reader's own: nobody else's, nor theirs in another organization", async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const viewer = await addMember(
+        app,
+        alpha,
+        'viewer@example.com',
+        'Viewer',
+      );
+      const { user: viewerUser } = body<{ user: { id: string } }>(
+        await viewer.get('/v1/auth/me').expect(200),
+      );
+      // Alpha's Owner works in beta too.
+      await insertMember(app, {
+        userId: alpha.userId,
+        organizationId: beta.organizationId,
+        roleId: await roleIdNamed(app, beta.organizationId, 'Owner'),
+      });
+      const row = (
+        userId: string,
+        organizationId: string,
+        homeLayout: unknown,
+      ) => ({
+        userId,
+        organizationId,
+        homeLayout,
+      });
+
+      await alpha.agent.put('/v1/home/layout').send(arranged).expect(204);
+      expect(await saved()).toEqual([
+        row(alpha.userId, alpha.organizationId, arranged),
+      ]);
+
+      // A Viewer arranges their own, no permission asked; beta's Owner
+      // clears theirs, which is no one else's.
+      const theirs = { order: ['returnsOpen'], hidden: [], recent: true };
+      await viewer.put('/v1/home/layout').send(theirs).expect(204);
+      await beta.agent.delete('/v1/home/layout').expect(204);
+
+      // Alpha's Owner, switched to beta, arranges it otherwise there.
+      await db
+        .update(sessions)
+        .set({ currentOrgId: beta.organizationId })
+        .where(eq(sessions.userId, alpha.userId));
+      const inBeta = { order: ['production'], hidden: [], recent: false };
+      await alpha.agent.put('/v1/home/layout').send(inBeta).expect(204);
+
+      const all = await saved();
+      expect(all).toHaveLength(3);
+      expect(all).toEqual(
+        expect.arrayContaining([
+          row(alpha.userId, alpha.organizationId, arranged),
+          row(alpha.userId, beta.organizationId, inBeta),
+          row(viewerUser.id, alpha.organizationId, theirs),
+        ]),
+      );
+
+      await viewer.delete('/v1/home/layout').expect(204);
+      expect((await saved()).map((each) => each.userId)).toEqual([
+        alpha.userId,
+        alpha.userId,
+      ]);
     });
   });
 });

@@ -401,6 +401,7 @@ export class AccountDeletionService {
             workPhone: memberships.workPhone,
             extension: memberships.extension,
             joinedAt: memberships.createdAt,
+            homeLayout: memberships.homeLayout,
           })
           .from(memberships)
           .innerJoin(

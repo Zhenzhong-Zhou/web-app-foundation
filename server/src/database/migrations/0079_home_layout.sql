@@ -1,0 +1,1 @@
+ALTER TABLE "memberships" ADD COLUMN "home_layout" jsonb;

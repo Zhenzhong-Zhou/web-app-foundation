@@ -7,7 +7,9 @@ import type { RequestContext } from '../../core/auth/request-context';
 import type { Permission } from '../../core/authorization/permissions';
 import type { Transaction } from '../../database/database.module';
 import {
+  type HomeLayout,
   invoices,
+  memberships,
   orders,
   organizations,
   productionOrders,
@@ -81,6 +83,12 @@ const CARDS: { kind: HomeKind; permission: Permission }[] = [
   { kind: 'production', permission: 'production.view' },
   { kind: 'licences', permission: 'product_licences.view' },
 ];
+
+/**
+ * Every kind of tile this build knows, in the order of a working day: what
+ * a layout saved may name (ADR-091, amended November 2026).
+ */
+export const HOME_KINDS: readonly HomeKind[] = CARDS.map(({ kind }) => kind);
 
 /** A tile's count, and how many of those are late. */
 type Totals = Pick<HomeCard, 'count' | 'late' | 'anyPoint'>;
@@ -164,6 +172,25 @@ export class HomeService {
       locale,
     });
     return { whatWeDo, gettingStarted, welcome, cards };
+  }
+
+  /**
+   * Customise Home's Done (ADR-091, amended November 2026): the reader's
+   * own arrangement, on their membership here alone. Null clears it, so
+   * they follow the default, and any later change to it.
+   */
+  async setLayout(userId: string, layout: HomeLayout | null): Promise<void> {
+    await this.tenantDb.update(
+      memberships,
+      {
+        homeLayout: layout && {
+          order: layout.order,
+          hidden: layout.hidden,
+          recent: layout.recent,
+        },
+      },
+      eq(memberships.userId, userId),
+    );
   }
 
   /** Dismiss the card for everyone, or bring it back (`at` null). */

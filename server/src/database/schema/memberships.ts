@@ -1,5 +1,6 @@
 import {
   index,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -10,6 +11,18 @@ import {
 import { primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
 import { users } from './users';
+
+/**
+ * How a member arranged Home (ADR-091, amended November 2026): every kind
+ * of tile they placed, the hidden ones included, in their order; which
+ * are hidden; and whether Recently opened shows. Kinds as stored: a later
+ * build may no longer know one, and Home skips it.
+ */
+export interface HomeLayout {
+  order: string[];
+  hidden: string[];
+  recent: boolean;
+}
 
 /**
  * The join that makes ADR-004 work: a user is not "an Admin", they are an
@@ -60,6 +73,15 @@ export const memberships = pgTable(
     welcomeDismissedAt: timestamp('welcome_dismissed_at', {
       withTimezone: true,
     }),
+
+    /**
+     * Customise Home (ADR-091, amended November 2026): how this member
+     * arranged Home here (null: the default, worked out from what they may
+     * do). The membership's, since someone in two organizations does other
+     * work in each; set and cleared by the person alone, and not audited,
+     * as it changes only what they see.
+     */
+    homeLayout: jsonb('home_layout').$type<HomeLayout>(),
 
     ...timestamps,
   },

@@ -742,5 +742,24 @@ describe('Account deletion (e2e)', () => {
         'account.registered',
       );
     });
+
+    it('holds how the person arranged Home in each organization (ADR-091, amended)', async () => {
+      const owner = await registerOrganization(app, 'alpha');
+      const layoutOf = async () =>
+        body<{ memberships: { homeLayout: unknown }[] }>(
+          await owner.agent.get('/v1/account/export').expect(200),
+        ).memberships.map((each) => each.homeLayout);
+
+      // The default: nothing arranged.
+      expect(await layoutOf()).toEqual([null]);
+
+      const layout = {
+        order: ['production', 'toShip'],
+        hidden: ['toShip'],
+        recent: false,
+      };
+      await owner.agent.put('/v1/home/layout').send(layout).expect(204);
+      expect(await layoutOf()).toEqual([layout]);
+    });
   });
 });

@@ -79,6 +79,11 @@ const SELF_SERVICE = new Map<string, string>([
     'Your own welcome, on your own membership (ADR-079)',
   ],
   ['HomeController.showWelcome', 'As above'],
+  [
+    'HomeController.saveLayout',
+    'Your own arrangement of Home, on your own membership (ADR-091, amended)',
+  ],
+  ['HomeController.resetLayout', 'As above'],
 ]);
 
 /**

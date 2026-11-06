@@ -16,6 +16,7 @@ erDiagram
     text extension
     timestamptz last_active_at
     timestamptz welcome_dismissed_at
+    jsonb home_layout
     timestamptz created_at
     timestamptz updated_at
   }

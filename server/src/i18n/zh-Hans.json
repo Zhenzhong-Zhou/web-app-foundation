@@ -1032,6 +1032,7 @@
   "validation.creditLineTwice": "同一张贷项中某个发票行出现了两次——请只发送一次合计数量",
   "validation.currencyCode": "{property} 必须是 3 个字母的 ISO 代码",
   "validation.exchangeRate": "exchangeRate 必须大于零、最多 8 位小数，并以字符串发送",
+  "validation.hiddenNotPlaced": "{property} 中的每种类型也必须在 order 中——请把隐藏的磁贴也按其位置放进 order",
   "validation.isArray": "{property} 必须是数组",
   "validation.isBoolean": "{property} 必须是布尔值",
   "validation.isBooleanString": "{property} 必须是布尔字符串",

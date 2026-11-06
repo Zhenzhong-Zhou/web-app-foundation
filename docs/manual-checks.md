@@ -1142,7 +1142,9 @@ await fetch(`${api}/v1/files/product-image`, {
   refused as its only member, with the same link.
 - **MC-2302** As that Viewer, Download your data: a JSON file with your
   profile, memberships, devices and account history, and nothing of the
-  organization's records. Delete my account: a wrong password is refused;
+  organization's records; each membership holds how you arranged Home
+  there, null until you save Customise Home. Delete my account: a wrong
+  password is refused;
   the right one closes the dialog, the banner names the day 30 days
   ahead on every page, your other browser is signed out, and an email
   (Mailpit) says the account will be deleted after that same day, and

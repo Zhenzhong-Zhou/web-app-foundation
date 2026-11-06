@@ -1032,6 +1032,7 @@
   "validation.creditLineTwice": "An invoice line appears twice on one credit — send its total once",
   "validation.currencyCode": "{property} must be a 3-letter ISO code",
   "validation.exchangeRate": "exchangeRate must be greater than zero with at most 8 decimal places, sent as a string",
+  "validation.hiddenNotPlaced": "Each kind in {property} must also be in order — send the hidden ones in their place there too",
   "validation.isArray": "{property} must be an array",
   "validation.isBoolean": "{property} must be a boolean value",
   "validation.isBooleanString": "{property} must be a boolean string",

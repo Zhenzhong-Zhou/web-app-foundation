@@ -1,10 +1,12 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
   HttpCode,
   HttpStatus,
   Post,
+  Put,
 } from '@nestjs/common';
 
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
@@ -18,6 +20,7 @@ import { PermissionsService } from '../../core/authorization/permissions.service
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { AcceptLanguage } from '../../i18n/accept-language.decorator';
 import { localeOf } from '../../i18n/translate';
+import { HomeLayoutDto } from './dto/home-layout.dto';
 import type { HomeResponse } from './dto/home-response.dto';
 import { HomeService } from './home.service';
 import { WelcomeService } from './welcome.service';
@@ -58,6 +61,28 @@ export class HomeController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async showWelcome(@CurrentUser() user: RequestContext): Promise<void> {
     await this.welcome.setDismissed(user.userId, false);
+  }
+
+  /**
+   * Customise Home's Done (ADR-091, amended November 2026): the person's
+   * own arrangement, on their membership alone, so no permission; and not
+   * audited, since it changes only what they see, as the welcome's
+   * dismissal does (ADR-079).
+   */
+  @Put('layout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async saveLayout(
+    @CurrentUser() user: RequestContext,
+    @Body() layout: HomeLayoutDto,
+  ): Promise<void> {
+    await this.home.setLayout(user.userId, layout);
+  }
+
+  /** Done on the default arrangement: cleared, so later defaults follow. */
+  @Delete('layout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async resetLayout(@CurrentUser() user: RequestContext): Promise<void> {
+    await this.home.setLayout(user.userId, null);
   }
 
   /**
