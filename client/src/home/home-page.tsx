@@ -346,8 +346,11 @@ function OrganizationHome() {
             <Typography sx={{ pt: 0.75 }}>{home.whatWeDo}</Typography>
           )}
         </Stack>
-        {quick.length > 0 ? (
-          <MainAction actions={quick} quiet={!!showStart} />
+        {/* None while Getting started shows: its next step is the page's
+            one main action (ADR-058), and a new organization has nothing
+            to raise an order for yet (ADR-091's review). */}
+        {showStart ? null : quick.length > 0 ? (
+          <MainAction actions={quick} />
         ) : (
           // Where the button would be, once Home has said whom to ask.
           home && (

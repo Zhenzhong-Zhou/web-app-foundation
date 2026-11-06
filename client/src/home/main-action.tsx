@@ -25,17 +25,11 @@ export interface QuickAction {
  * Home's main action (ADR-091): the first the member may do of Raise an
  * order, Receive stock, Plan a run and Trace a lot, in the accent, and
  * beside it More, a menu of the others they may do; with none other, no
- * More. While Getting started shows, its next step is the page's one main
- * action (ADR-058), so this one is tonal. Full width below `md`, the main
- * button taking the room.
+ * More. Home leaves it out while Getting started shows, whose next step
+ * is then the page's one main action (ADR-058). Full width below `md`, the
+ * main button taking the room.
  */
-export function MainAction({
-  actions,
-  quiet,
-}: {
-  actions: QuickAction[];
-  quiet: boolean;
-}) {
+export function MainAction({ actions }: { actions: QuickAction[] }) {
   const intl = useIntl();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const menuId = useId();
@@ -51,9 +45,8 @@ export function MainAction({
         to={main.to}
         state={OFFER_BACK}
         startIcon={main.icon}
-        variant={quiet ? 'text' : 'contained'}
-        color={quiet ? 'inherit' : 'primary'}
-        sx={{ flexGrow: { xs: 1, md: 0 }, ...(quiet ? TONAL : {}) }}
+        variant="contained"
+        sx={{ flexGrow: { xs: 1, md: 0 } }}
       >
         {main.label}
       </Button>

@@ -612,14 +612,17 @@ describe('HomePage', () => {
     expect(
       within(start).getByRole('link', { name: 'Open settings' }),
     ).toHaveClass('MuiButton-contained');
-    const quick = screen
-      .getAllByRole('link', { name: 'Raise an order' })
-      .filter((link) => !start.contains(link));
-    expect(quick).toHaveLength(1);
-    expect(quick[0]).not.toHaveClass('MuiButton-contained');
+    // No main action beside it: a new organization has nothing to raise
+    // an order for yet (ADR-091's review).
+    expect(
+      screen
+        .queryAllByRole('link', { name: 'Raise an order' })
+        .filter((link) => !start.contains(link)),
+    ).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
   });
 
-  it('puts Getting started straight after the welcome, the main action above both and quiet while it shows', async () => {
+  it('puts Getting started straight after the welcome, with no main action while it shows', async () => {
     const respond = (start: HomeResponse['gettingStarted']) =>
       server.use(
         http.get('/api/v1/home', () =>
@@ -645,14 +648,13 @@ describe('HomePage', () => {
     });
     const card = await screen.findByRole('region', { name: /^Welcome to/ });
     const start = screen.getByRole('region', { name: 'Getting started' });
-    const raise = screen
-      .getAllByRole('link', { name: 'Raise an order' })
-      .find((link) => !start.contains(link))!;
     expect(follows(card, start)).toBe(true);
-    // In the greeting's row (ADR-091), tonal: Getting started's next step
-    // is the page's one main action.
-    expect(follows(raise, card)).toBe(true);
-    expect(raise).not.toHaveClass('MuiButton-contained');
+    // Getting started's next step is the page's one main action.
+    expect(
+      screen
+        .queryAllByRole('link', { name: 'Raise an order' })
+        .filter((link) => !start.contains(link)),
+    ).toHaveLength(0);
     unmount();
 
     // Without Getting started, the main action in the accent, above the
