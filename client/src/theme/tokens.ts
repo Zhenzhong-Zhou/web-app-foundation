@@ -219,6 +219,12 @@ export interface Scheme {
   border: string;
   /** Lines between table rows, fainter than a border. */
   line: string;
+  /**
+   * Where a table cuts what scrolls sideways under a held column or past
+   * its frame: a line seen in both modes, 3:1 on a panel and on a head
+   * (ADR-091's review), where a border is meant to be quiet.
+   */
+  edge: string;
   text: string;
   /** Secondary text: labels, captions, notes. */
   muted: string;
@@ -234,6 +240,7 @@ export const LIGHT: Scheme = {
   border: '#E1E4EA',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   line: '#EEF0F4',
+  edge: '#858E9E',
   text: '#141A24',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   muted: '#5B6575',
@@ -259,6 +266,7 @@ export const DARK: Scheme = {
   head: '#232934',
   border: '#2E3440',
   line: '#282E39',
+  edge: '#6B7484',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   text: '#E6E9EF',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */

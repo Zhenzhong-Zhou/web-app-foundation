@@ -17,7 +17,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { alpha, type Theme } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
 import { useId, useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -25,6 +25,7 @@ import type { LineHold, OrderDetail, OrderLine } from '../api/types.gen';
 import { StatusChip } from '../components/status-chip';
 import { displayQuantity, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { cutEdge } from '../theme/cut-edge';
 import { showsPrices } from './prices';
 import { doneLabel } from './status';
 import { useHeldTotal } from './use-held-total';
@@ -39,11 +40,22 @@ import { useHeldTotal } from './use-held-total';
 const PINNED = { position: 'sticky', right: 0, zIndex: 1 } as const;
 
 /**
+ * On a phone the actions alone are held, so their edge is the one the
+ * columns pass under, shown while they do.
+ */
+const pinned =
+  (under: boolean, ground: 'head' | 'paper') => (theme: Theme) => ({
+    ...PINNED,
+    ...(ground === 'paper' && { bgcolor: 'background.paper' }),
+    [theme.breakpoints.down('md')]: under ? cutEdge(theme, ground) : {},
+  });
+
+/**
  * On a computer, the Total held beside the actions too, the other columns
  * passing under both (#221): at the 16 px text the table is wider than its
  * place beside the summary in every language, and the Total is what a
- * line is read for. A shadow on its left edge says columns run under it,
- * there only while they do. The phone keeps only the actions held (#159).
+ * line is read for. Its left edge says columns run under it, there only
+ * while they do. The phone keeps only the actions held (#159).
  */
 const heldTotal =
   (right: number, under: boolean, body = false) =>
@@ -53,9 +65,7 @@ const heldTotal =
       right,
       zIndex: 1,
       ...(body && { bgcolor: 'background.paper' }),
-      boxShadow: under
-        ? `-8px 0 8px -8px ${alpha(theme.palette.common.black, 0.25)}`
-        : 'none',
+      ...(under && cutEdge(theme, body ? 'paper' : 'head')),
     },
   });
 
@@ -273,7 +283,7 @@ export function OrderLinesSection({
                 <TableCell
                   ref={actionsHead}
                   align="right"
-                  sx={PINNED}
+                  sx={pinned(under, 'head')}
                   aria-label={intl.formatMessage({
                     id: 'orders.lines.actions',
                     defaultMessage: 'Actions',
@@ -410,10 +420,7 @@ export function OrderLinesSection({
                     </>
                   )}
 
-                  <TableCell
-                    align="right"
-                    sx={{ ...PINNED, bgcolor: 'background.paper' }}
-                  >
+                  <TableCell align="right" sx={pinned(under, 'paper')}>
                     <LineActions
                       order={order}
                       line={line}

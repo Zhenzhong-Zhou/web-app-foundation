@@ -3341,9 +3341,13 @@ first.
   at Larger text (account menu → Text size), in light and in dark: each
   line's Total is in view beside its ⋮ without scrolling sideways. Scroll
   the Items table sideways: the columns before the Total pass under it, a
-  shadow on its left edge while they do, gone at the table's right end. At
-  390 px only the ⋮ stays at the right; the Total scrolls with the rest
-  (#159).
+  grey line on its left edge while they do, the column cut there fading
+  into it, so "200" cut to "20" never reads as a number, in light and in
+  dark; gone at the table's right end. At 390 px only the ⋮ stays at the
+  right, the same line and fade on its edge; the Total scrolls with the
+  rest (#159). Any other table that scrolls sideways on a phone (an
+  invoice's credit notes, Stock value) shows a grey shade at the side
+  with more, gone once that side is reached.
 
 - **MC-R95** *(focus falling to the page as an invoice was issued, #462)*
   With the keyboard alone at 1440 px, as the demo Owner. Open SO-DEMO-5's
@@ -4921,3 +4925,6 @@ first.
   Home's Refresh among them: MC-1542 extended.
 - 2026-11-05: ADR-091's review, Learn more beside a heading or a step 44
   px tall on touch: MC-1559 extended.
+- 2026-11-05: ADR-091's review, a held column's edge and a sideways
+  table's cut side seen in both modes, from the edge token: MC-R96
+  extended.

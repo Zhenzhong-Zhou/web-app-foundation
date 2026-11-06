@@ -10,6 +10,7 @@ import type { Locale } from '../lib/locales';
 import { returnFocus } from '../lib/open-dialog';
 import { VersionPaper } from '../version/version-paper';
 import { type Brand, DEFAULT_BRAND } from './brand-store';
+import { scrollShades } from './cut-edge';
 import { OptionGroup } from './option-group';
 import { rem } from './rem';
 import {
@@ -37,12 +38,17 @@ import {
 declare module '@mui/material/styles' {
   interface Palette {
     tone: Record<ToneName, Tone>;
-    surface: { head: string; line: string; chosen: string };
+    surface: { head: string; line: string; edge: string; chosen: string };
     rail: Rail;
   }
   interface PaletteOptions {
     tone?: Record<ToneName, Tone>;
-    surface?: { head: string; line: string; chosen: string };
+    surface?: {
+      head: string;
+      line: string;
+      edge: string;
+      chosen: string;
+    };
     rail?: Rail;
   }
 }
@@ -62,6 +68,7 @@ function palette(scheme: Scheme, accent: string, onAccent: string, rail: Rail) {
     surface: {
       head: scheme.head,
       line: scheme.line,
+      edge: scheme.edge,
       chosen: mix(accent, scheme.surface, CHOSEN_WEIGHT),
     },
   };
@@ -393,6 +400,10 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
      * Heads are tinted and quieter than the rows, so the labels stand
      * apart from the figures; rows are taller under a finger.
      */
+    // Every table frame that scrolls sideways shows where it cuts.
+    MuiTableContainer: {
+      styleOverrides: { root: ({ theme }) => scrollShades(theme) },
+    },
     MuiTableCell: {
       styleOverrides: {
         root: ({ theme }) => ({
