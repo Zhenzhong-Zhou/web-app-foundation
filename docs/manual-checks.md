@@ -3594,8 +3594,8 @@ first.
   guide, and Your account at Help's foot. Any of these pages opened from the menu, from the trail above a
   record, or by its address in a new tab, shows no Back. Opened by a
   link, a list keeps its Back through a search typed, a tab or a filter
-  chosen: Reorder points from Low stock's See all, after a letter in its
-  search and a move to Stock; Orders from To ship's See all, after a
+  chosen: Reorder points from the Low stock tile, after a letter in its
+  search and a move to Stock; Orders from the To ship tile, after a
   search; the audit log from a record's History, Open in audit log, after
   an action chosen; Members from Getting started, after Invite is closed.
 
@@ -4944,3 +4944,5 @@ first.
   extended, MC-1561's words 14 px.
 - 2026-11-05: ADR-091's review, a tile is 磁贴 in Chinese, 卡片 left to
   the welcome card: MC-3213 extended.
+- 2026-11-05: ADR-091's review, Back from a list opened by a tile, not
+  by See all, which Home no longer has: MC-R69 reworded.
