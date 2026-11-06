@@ -873,7 +873,9 @@ Paper is checked first because it must not change at all.
   nothing is below the tiles but Recently opened. As Tom Becker
   (Warehouse) the button reads Receive stock, More holding Trace a lot;
   in a role made from the Production template, Plan a run, the same; as
-  Sarah Chen (Viewer), Trace a lot alone, with no More. In 中文 More
+  Sarah Chen (Viewer), no button: the grey line says her role does not
+  include raising orders, receiving stock or planning runs, and whom to
+  ask, Trace a lot staying in the menu. In 中文 More
   reads 更多, in Français Plus. Recently opened lists
   each record by its name, its code and kind under it, and when, the
   whole row a link. Leave Home's tab for another for a minute or more and
@@ -4961,3 +4963,6 @@ first.
   button saying late, expired or out: MC-1559 and MC-3213 reworded.
 - 2026-11-05: ADR-091's review, no main action while Getting started
   shows, its next step the page's one: MC-1559 reworded.
+- 2026-11-05: ADR-091's review, decision 4A, a role whose only action is
+  Trace a lot has the quiet line and whom to ask, not the button: MC-1559
+  reworded.

@@ -362,11 +362,33 @@ describe('HomePage', () => {
 
   it('shows no More where the role may take one action alone', async () => {
     serve({ gettingStarted: COMPLETE, cards: [] });
+    renderWithAuth(routed(<HomePage />), {
+      permissions: ['stock.view', 'production.create'],
+    });
+
+    expect(await screen.findByRole('link', { name: 'Plan a run' })).toHaveClass(
+      'MuiButton-contained',
+    );
+    expect(screen.getByRole('button', { name: 'More' })).toBeVisible();
+  });
+
+  // Trace a lot is never the main action alone (ADR-091's review): a
+  // Viewer has the quiet line and whom to ask, as a role with none does.
+  it('gives a role that may only trace a lot the line, not the button', async () => {
+    serve({ gettingStarted: COMPLETE, cards: [] });
+    server.use(
+      http.get('/api/v1/account/membership', () =>
+        HttpResponse.json(welcome().access),
+      ),
+    );
     renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
 
     expect(
-      await screen.findByRole('link', { name: 'Trace a lot' }),
-    ).toHaveClass('MuiButton-contained');
+      await screen.findByText(
+        'Your role does not include raising orders, receiving stock or planning runs. To do more, ask Mei Lin or David Park.',
+      ),
+    ).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Trace a lot' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
   });
 

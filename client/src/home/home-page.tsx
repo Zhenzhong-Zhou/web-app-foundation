@@ -177,8 +177,10 @@ function OrganizationHome() {
   const showStart = started && !started.complete && !started.dismissed;
 
   // The main action is the first of these the member may do, the rest
-  // under More (ADR-091).
-  const quick = [
+  // under More (ADR-091); Trace a lot never alone, since a trade word and
+  // an empty field are no way in for someone with no lot code: a role
+  // with only that has the quiet line and whom to ask (ADR-091's review).
+  const actions = [
     can('orders.create') && {
       to: '/orders/new',
       label: intl.formatMessage({
@@ -212,6 +214,7 @@ function OrganizationHome() {
       icon: <AccountTreeOutlined />,
     },
   ].filter((item): item is QuickAction => Boolean(item));
+  const quick = actions.some((action) => action.to !== '/lots') ? actions : [];
   const refresh = intl.formatMessage({
     id: 'common.refresh',
     defaultMessage: 'Refresh',

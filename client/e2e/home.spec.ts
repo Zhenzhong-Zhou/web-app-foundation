@@ -184,8 +184,8 @@ async function memberIn(
 /**
  * Home's main action by role (ADR-091): the first the member may do of
  * Raise an order, Receive stock, Plan a run and Trace a lot, in the accent,
- * the others under More, a menu worked from the keyboard; a Viewer traces
- * a lot, with no More. At a phone's width it runs the page's width under
+ * the others under More, a menu worked from the keyboard; a Viewer, who
+ * may only trace a lot, has the line saying whom to ask instead. At a phone's width it runs the page's width under
  * the greeting; on a laptop it sits at the right of the greeting's row.
  */
 for (const size of [
@@ -218,9 +218,18 @@ for (const size of [
         main: 'Plan a run',
         more: ['Trace a lot'],
       },
-      { api: await memberIn(owner, 'Viewer'), main: 'Trace a lot', more: [] },
     ];
     await page.setViewportSize(size);
+
+    const viewer = await memberIn(owner, 'Viewer');
+    await signInAs(page, viewer);
+    await page.goto('/');
+    await expect(
+      page.getByText(/^Your role does not include raising orders/),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('main').getByRole('link', { name: 'Trace a lot' }),
+    ).toHaveCount(0);
 
     for (const person of people) {
       await signInAs(page, person.api);
