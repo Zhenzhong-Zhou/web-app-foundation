@@ -12,6 +12,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { Shipment } from '../api/types.gen';
 import { ExpiryChip } from '../components/expiry-chip';
+import { Reference } from '../components/reference';
 import { NO_VALUE } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { displayWithUnit } from '../products/units';
@@ -67,7 +68,9 @@ export function LotItemsTable({ items }: { items: Shipment['items'] }) {
         <TableBody>
           {items.map((item) => (
             <TableRow key={`${item.sku}-${item.lotCode ?? 'none'}`}>
-              <TableCell>{item.sku}</TableCell>
+              <TableCell>
+                <Reference>{item.sku}</Reference>
+              </TableCell>
               <TableCell>{item.description}</TableCell>
               <TableCell>
                 {item.lotCode ? (

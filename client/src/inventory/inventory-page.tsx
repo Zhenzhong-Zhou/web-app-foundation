@@ -38,6 +38,7 @@ import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { ProductCover } from '../components/product-cover';
+import { Reference } from '../components/reference';
 import { SortHeader } from '../components/sort-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api, messageFor } from '../lib/api';
@@ -563,7 +564,9 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                 <TableBody>
                   {rows.map((row) => (
                     <TableRow key={row.id} hover>
-                      <TableCell>{row.sku}</TableCell>
+                      <TableCell>
+                        <Reference>{row.sku}</Reference>
+                      </TableCell>
                       {/* The product, with the variant when it has a name of
                       its own — "Focus (60ct)" — as the packing slip and the
                       variant picker already say it. */}
@@ -737,7 +740,9 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                     )
                     .map((row) => (
                       <TableRow key={row.variantId}>
-                        <TableCell>{row.sku}</TableCell>
+                        <TableCell>
+                          <Reference>{row.sku}</Reference>
+                        </TableCell>
                         {/* In the reader's language, as Stock above names
                           it (#296). */}
                         <TableCell>

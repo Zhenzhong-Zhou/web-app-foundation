@@ -597,7 +597,9 @@ export function ReleaseRunDialog({
                         <TableBody>
                           {line.lots.map((lot) => (
                             <TableRow key={lot.lotId}>
-                              <TableCell>{lot.code}</TableCell>
+                              <TableCell>
+                                <Reference>{lot.code}</Reference>
+                              </TableCell>
                               <TableCell>
                                 {lot.expiresAt
                                   ? formatDay(lot.expiresAt)

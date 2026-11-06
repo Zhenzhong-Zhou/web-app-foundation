@@ -22,6 +22,7 @@ import { useId, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { LineHold, OrderDetail, OrderLine } from '../api/types.gen';
+import { Reference } from '../components/reference';
 import { StatusChip } from '../components/status-chip';
 import { displayQuantity, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -295,7 +296,9 @@ export function OrderLinesSection({
             <TableBody>
               {order.lines.map((line) => (
                 <TableRow key={line.id} hover>
-                  <TableCell>{line.sku}</TableCell>
+                  <TableCell>
+                    <Reference>{line.sku}</Reference>
+                  </TableCell>
                   <TableCell>{line.description}</TableCell>
                   <TableCell align="right">
                     {displayQuantity(line.quantityOrdered)}

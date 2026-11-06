@@ -26,6 +26,7 @@ import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { Reference } from '../components/reference';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -345,7 +346,7 @@ export function OrdersPage() {
                       {/* Ours, which every order has (ADR-071): the link. */}
                       <TableCell>
                         <Link component={RouterLink} to={`/orders/${order.id}`}>
-                          {order.number}
+                          <Reference>{order.number}</Reference>
                         </Link>
                       </TableCell>
                       <TableCell>{order.partnerName}</TableCell>

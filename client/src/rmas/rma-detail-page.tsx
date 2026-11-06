@@ -347,7 +347,9 @@ export function RmaDetailPage() {
             <TableBody>
               {rma.lines.map((line) => (
                 <TableRow key={line.id}>
-                  <TableCell>{line.sku}</TableCell>
+                  <TableCell>
+                    <Reference>{line.sku}</Reference>
+                  </TableCell>
                   <TableCell>{resolutionLabel(line.resolution)}</TableCell>
                   <TableCell align="right">
                     {displayQuantity(line.quantity)}

@@ -184,7 +184,9 @@ export function LotSearchPage() {
                         {lot.code}
                       </Link>
                     </TableCell>
-                    <TableCell>{lot.sku}</TableCell>
+                    <TableCell>
+                      <Reference>{lot.sku}</Reference>
+                    </TableCell>
                     <TableCell>
                       {lot.expiresAt ? formatDay(lot.expiresAt) : NO_VALUE}
                     </TableCell>

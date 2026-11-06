@@ -208,7 +208,9 @@ export function CreditNoteDetailPage() {
             <TableBody>
               {note.lines.map((line) => (
                 <TableRow key={line.id}>
-                  <TableCell>{line.sku}</TableCell>
+                  <TableCell>
+                    <Reference>{line.sku}</Reference>
+                  </TableCell>
                   <TableCell>{line.description}</TableCell>
                   <TableCell align="right">
                     {displayQuantity(line.quantity)}

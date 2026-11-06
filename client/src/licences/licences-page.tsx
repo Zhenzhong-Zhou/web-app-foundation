@@ -22,6 +22,7 @@ import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { FilterRow } from '../components/filter-row';
 import { PageHeader } from '../components/page-header';
+import { Reference } from '../components/reference';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { withQuery } from '../lib/api';
 import { formatDay, NO_VALUE } from '../lib/format';
@@ -222,7 +223,9 @@ export function LicencesPage() {
               <TableBody>
                 {licences?.map((licence) => (
                   <TableRow key={licence.id}>
-                    <TableCell>{licence.number}</TableCell>
+                    <TableCell>
+                      <Reference>{licence.number}</Reference>
+                    </TableCell>
                     <TableCell>{licence.authority}</TableCell>
                     <TableCell>
                       {licence.issuedAt

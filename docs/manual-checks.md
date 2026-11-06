@@ -803,7 +803,9 @@ Paper is checked first because it must not change at all.
   the error appears and the password is dots again. The same on Change
   password when the current password is wrong: every field shown goes back to
   dots.
-- **MC-1552** Inventory's quick filters read Expiring soon, Waiting for a
+- **MC-1552** A code alone in a table's cell stays on one line on a
+  computer, never broken at its hyphen (MAGCAP-SAMPLE on Inventory,
+  SO-DEMO-8 on Orders), so rows keep one height. Inventory's quick filters read Expiring soon, Waiting for a
   cost (the name Home's tile and Stock value give it; 等待成本, En attente
   d’un coût) and Show emptied, each with its count. Pressing Waiting for a cost shows THE-0915's
   L-theanine, received with no price (PO-DEMO-5), and the count matches the
@@ -5015,3 +5017,5 @@ first.
   no organization's greeting at the page title's size: MC-3421 extended.
 - 2026-11-05: ADR-091's review, More's menu named by its button and
   checked by axe: MC-1559 extended.
+- 2026-11-05: ADR-091's review, a code alone in a table cell kept whole,
+  as a Reference is: MC-1552 extended.

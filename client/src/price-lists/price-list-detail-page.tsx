@@ -22,6 +22,7 @@ import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { PageHeader } from '../components/page-header';
+import { Reference } from '../components/reference';
 import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import { formatUnitCost, SEPARATOR } from '../lib/format';
@@ -208,7 +209,9 @@ export function PriceListDetailPage() {
               <TableBody>
                 {list.items.map((item) => (
                   <TableRow key={item.variantId}>
-                    <TableCell>{item.sku}</TableCell>
+                    <TableCell>
+                      <Reference>{item.sku}</Reference>
+                    </TableCell>
                     <TableCell>{item.description}</TableCell>
                     <TableCell align="right">
                       {formatUnitCost(item.unitPrice, list.currency)}
