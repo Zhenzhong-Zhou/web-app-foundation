@@ -74,7 +74,7 @@ as the catalogues word it.
 | --- | --- | --- | --- |
 | Home | Accueil | 首页 | |
 | Getting started | Premiers pas | 入门指引 | A new organization's first steps, on Home (ADR-058). |
-| Tile | Tuile | 磁贴 | One kind of work on Home, under What needs you today: its count, opening its list (ADR-091). Home's guide names it; the screen does not. Chinese says 磁贴, not 卡片, which the welcome card (欢迎卡片) is (ADR-091's review). A tile and the filter it opens share one name, the plainer of the two, each held in its row below: Low stock, Expiring soon, Waiting for a cost, To issue, Open returns, In progress, Licences expiring. |
+| Tile | Tuile | 磁贴 | One kind of work on Home, under What needs you today: its count, opening its list (ADR-091). Home's guide names it; the screen does not. Chinese says 磁贴, not 卡片, which the welcome card (欢迎卡片) is (ADR-091's review). A tile and the filter it opens share one name, the plainer of the two, each held in its row below: Low stock, Expiring soon, Waiting for a cost, To issue, Open returns, In progress, Licences expiring. Where that word alone does not say what it is about, the page's name goes first, the word after it still the filter's: Stock value · Waiting for a cost, Invoices · To issue, Production · In progress (发票 · 待开具, Factures · À émettre; decision 47a). |
 | More | Plus | 更多 | Beside Home's main action, a menu of the other actions the member may take (ADR-091). |
 | People | Personnes | 同事 | Everyone in the organization, and how to reach them (ADR-063). |
 | Audit log | Journal d’audit | 审计日志 | |

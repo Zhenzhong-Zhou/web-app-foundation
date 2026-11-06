@@ -445,6 +445,7 @@
   "home.start.title": "Premiers pas",
   "home.summary.start": "Sept étapes pour préparer votre organisation. Chacune est cochée une fois faite.",
   "home.tile.count": "{name}, {count}",
+  "home.tile.ofPage": "{page} · {name}",
   "home.tile.quiet": "{name}, {words}",
   "home.tile.status": "{name}, {count}, {status}",
   "home.timeZoneChange": "Changer le fuseau horaire",

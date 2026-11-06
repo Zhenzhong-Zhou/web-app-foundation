@@ -102,7 +102,9 @@ describe('HomePage', () => {
     );
     expect(within(ship).getByText('2 late')).toBeVisible();
     expect(
-      within(today).getByRole('link', { name: 'Waiting for a cost, 2' }),
+      within(today).getByRole('link', {
+        name: 'Stock value · Waiting for a cost, 2',
+      }),
     ).toHaveAttribute('href', '/costs');
     expect(within(today).getAllByRole('link')).toHaveLength(2);
   });
@@ -141,9 +143,9 @@ describe('HomePage', () => {
     });
     for (const [name, href] of [
       ['Low stock, 3', '/inventory?tab=reorder-points&status=low'],
-      ['To issue, 4', '/invoices?status=draft'],
+      ['Invoices · To issue, 4', '/invoices?status=draft'],
       ['Open returns, 1', '/return-authorizations?status=open'],
-      ['In progress, 2', '/production?status=released'],
+      ['Production · In progress, 2', '/production?status=released'],
       ['Licences expiring, 5', '/licences?expiring=1'],
     ]) {
       expect(within(today).getByRole('link', { name })).toHaveAttribute(

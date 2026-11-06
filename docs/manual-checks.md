@@ -712,7 +712,8 @@ Paper is checked first because it must not change at all.
   within 90 days.
 - **MC-1531** Invoices has a page title with its one-line explanation under
   it, then All, To issue, Issued and Voided as a row of buttons where the
-  tabs were, All pressed; To issue, Home's tile's name, lists the drafts,
+  tabs were, All pressed; To issue, the word of Home's Invoices · To
+  issue tile, lists the drafts,
   in Français À émettre, in 中文 待开具. Draft reads grey, Issued quiet blue, Voided red, on the
   list and on each invoice's header.
 - **MC-1532** On INV-000001 the quantity reads 400, and Credit notes is a
@@ -853,7 +854,10 @@ Paper is checked first because it must not change at all.
   greeting by the time of day on the organization's clock, Vancouver's
   for the demo, then the organization's day and time to
   the minute, never seconds, which moves on at the next minute by itself,
-  and What we do under it, in plain text, no card. What is late is a pale
+  and What we do under it, in plain text, no card. Three tiles name their
+  page first, their word after it the filter's: Stock value · Waiting for
+  a cost, Invoices · To issue and Production · In progress (库存价值 ·
+  等待成本, 发票 · 待开具, 生产 · 进行中; Factures · À émettre). What is late is a pale
   red panel headed by how many ("3 things need you now", in 中文
   有 3 项需要马上处理) over "Choose one to see just those." (no tap with a
   mouse, nothing to act on for a Viewer), with a button per kind saying late, expired or
@@ -4992,3 +4996,5 @@ first.
   without #380's calque, in Français and 中文: MC-3110 extended.
 - 2026-11-05: ADR-091's review, a partner with no contacts says 订单逾期
   in 中文, the glossary's word for late, not 延误: MC-405 extended.
+- 2026-11-05: ADR-091's review, decision 47a, three tiles with their
+  page's name first: MC-1559 extended, MC-1531 reworded.

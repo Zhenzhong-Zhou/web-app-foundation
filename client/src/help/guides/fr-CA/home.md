@@ -24,10 +24,10 @@ Une tuile ouvre sa liste avec seulement ce qu’elle compte, le plus urgent d’
 - **À expédier** et **À recevoir** : Commandes, les ventes qui restent à expédier ou les achats qui restent à recevoir, les commandes en retard d’abord.
 - **Stock bas** : Points de commande, dans [Inventaire](/inventory#reorder-points), les plus loin sous leur point d’abord.
 - **Expire bientôt** : Inventaire, les lots qui périment dans le nombre de jours fixé par l’organisation, le plus proche d’abord.
-- **En attente d’un coût** : Valeur du stock, où vous fixez le coût du stock arrivé sans coût.
-- **À émettre** : Factures, les brouillons.
+- **Valeur du stock · En attente d’un coût** : Valeur du stock, où vous fixez le coût du stock arrivé sans coût.
+- **Factures · À émettre** : Factures, les brouillons.
 - **Retours en cours** : Retours, ceux qui sont en cours.
-- **En cours** : Production, les ordres de fabrication lancés et pas encore clos.
+- **Production · En cours** : Production, les ordres de fabrication lancés et pas encore clos.
 - **Licences qui expirent** : Licences, celles qui expirent d’ici 60 jours ou ont expiré, la plus proche d’abord.
 
 La liste garde ce choix pendant que vous y travaillez : en revenant d’une fiche, vous la retrouvez telle quelle.

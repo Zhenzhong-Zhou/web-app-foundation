@@ -11,6 +11,7 @@ import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
 import { defineMessages, type MessageDescriptor } from 'react-intl';
 
 import type { HomeCard } from '../api/types.gen';
+import { NAV_LABELS } from '../layout/navigation';
 import type { HomeKind } from '../lib/api-names';
 
 /**
@@ -33,6 +34,12 @@ interface Late {
  */
 interface CardMeta {
   title: MessageDescriptor;
+  /**
+   * The page's name, before a title that alone does not say what it is
+   * about (decision 47a): "Invoices · To issue", the word after it still
+   * the filter's own.
+   */
+  page?: MessageDescriptor;
   empty: MessageDescriptor;
   icon: SvgIconComponent;
   /** The tile's list: exactly what the tile counted, the late first. */
@@ -220,6 +227,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
   },
   costsWaiting: {
     title: TITLES.costsWaiting,
+    page: NAV_LABELS.stockValue,
     empty: EMPTY.costsWaiting,
     icon: PaidOutlined,
     // Stock value's Waiting for a cost, the rows the server counts, where
@@ -228,6 +236,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
   },
   invoicesToIssue: {
     title: TITLES.invoicesToIssue,
+    page: NAV_LABELS.invoices,
     empty: EMPTY.invoicesToIssue,
     icon: DescriptionOutlined,
     list: '/invoices?status=draft',
@@ -240,6 +249,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
   },
   production: {
     title: TITLES.production,
+    page: NAV_LABELS.production,
     empty: EMPTY.production,
     icon: PrecisionManufacturingOutlined,
     list: '/production?status=released',

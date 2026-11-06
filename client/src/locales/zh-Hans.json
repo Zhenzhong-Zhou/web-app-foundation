@@ -445,6 +445,7 @@
   "home.start.title": "入门指引",
   "home.summary.start": "完成以下七个步骤，您的组织即可开始使用。每完成一步会自动打勾。",
   "home.tile.count": "{name}，{count}",
+  "home.tile.ofPage": "{page} · {name}",
   "home.tile.quiet": "{name}，{words}",
   "home.tile.status": "{name}，{count}，{status}",
   "home.timeZoneChange": "更改时区",

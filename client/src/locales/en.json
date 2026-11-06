@@ -445,6 +445,7 @@
   "home.start.title": "Getting started",
   "home.summary.start": "Seven steps get your organization ready to work. Each is ticked when it is done.",
   "home.tile.count": "{name}, {count}",
+  "home.tile.ofPage": "{page} · {name}",
   "home.tile.quiet": "{name}, {words}",
   "home.tile.status": "{name}, {count}, {status}",
   "home.timeZoneChange": "Change the time zone",

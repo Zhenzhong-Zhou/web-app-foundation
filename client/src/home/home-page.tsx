@@ -641,7 +641,13 @@ function Tile({ card }: { card: KnownCard }) {
   // Nothing watched, not nothing low (ADR-085).
   const unset = card.anyPoint === false ? meta.unset : undefined;
 
-  const title = intl.formatMessage(meta.title);
+  const name = intl.formatMessage(meta.title);
+  const title = meta.page
+    ? intl.formatMessage(
+        { id: 'home.tile.ofPage', defaultMessage: '{page} · {name}' },
+        { page: intl.formatMessage(meta.page), name },
+      )
+    : name;
   const status = quiet
     ? intl.formatMessage(unset?.empty ?? meta.empty, { days: expiringWithin })
     : late && meta.late
