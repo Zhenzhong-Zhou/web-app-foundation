@@ -3153,12 +3153,12 @@ site, after a deploy that changes the setting, the route or the relay.
 
 - **MC-4201** *(ADR-085)* The bell, once each time an item falls below
   its reorder point. On a fresh demo, the server's first start tells the
-  six low items in one notice: "6 items fell below their reorder point",
+  six low items in one notice: "6 items are low on stock", the tile's Low stock (库存不足, Stock bas),
   then "VITC-100, MAGCAP-SAMPLE and 4 more. Order or plan them from
   Reorder points.". As the demo Owner, on Reorder points, give a bought
   item with stock a point above what it has, and restart the server (it
-  checks at start, then hourly): the bell gets one notice, "… fell below
-  its reorder point" with the item's SKU, then its name and "Raise a
+  checks at start, then hourly): the bell gets one notice, "… is low
+  on stock" with the item's SKU, then its name and "Raise a
   purchase order from Reorder points.", with no quantity anywhere.
   Restart again: no second notice. Give two more items points above what
   they have, one of them made, and restart: one notice, "2 items fell
@@ -5007,3 +5007,5 @@ first.
   leaving it to the header: MC-1704 extended.
 - 2026-11-05: ADR-091's review, the welcome's heading at the section
   size: MC-3207 extended.
+- 2026-11-05: ADR-091's review, the bell's notice says low on stock, the
+  tile's Low stock: MC-4201 reworded.
