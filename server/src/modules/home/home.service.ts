@@ -85,8 +85,9 @@ function isOrderKind(kind: HomeKind): kind is OrderKind {
  * (Customise Home, ADR-091's amendment of November 2026).
  *
  * The reads every Home makes share one transaction (ADR-091): the
- * organization's days and zone, the tiles' counts, Getting started, and
- * the reader's membership for their welcome (ADR-079) and their layout.
+ * organization's days and zone with Getting started, the tiles' counts,
+ * and the reader's membership for their welcome (ADR-079) and their
+ * layout.
  * The welcome's own reads, while it shows, come after it.
  */
 @Injectable()
@@ -113,7 +114,7 @@ export class HomeService {
     const { timeZone, whatWeDo, totals, gettingStarted, membership } =
       await this.tenantDb.transaction(async (tx, organizationId) => {
         // The organization's own warning days (ADR-060), for Expiring
-        // soon, its today, and its What we do (ADR-091).
+        // soon, its today, its What we do (ADR-091) and Getting started.
         const organization = await organizationOf(tx, organizationId);
         return {
           timeZone: organization.timeZone,
@@ -125,7 +126,7 @@ export class HomeService {
             todayIn(organization.timeZone),
             organization.days,
           ),
-          gettingStarted: await gettingStartedOf(tx, organizationId),
+          gettingStarted: organization.gettingStarted,
           membership: await this.welcome.membership(
             tx,
             organizationId,
@@ -198,25 +199,10 @@ export class HomeService {
 }
 
 /**
- * When a lot counts as expiring here (ADR-060), 90 days by default, the
- * organization's time zone (ADR-072), and its What we do (ADR-091).
- */
-async function organizationOf(
-  tx: Transaction,
-  organizationId: string,
-): Promise<{ days: number; timeZone: string; whatWeDo: string | null }> {
-  const [organization] = await tx
-    .select({
-      days: organizations.expiryWarningDays,
-      timeZone: organizations.timeZone,
-      whatWeDo: organizations.whatWeDo,
-    })
-    .from(organizations)
-    .where(eq(organizations.id, organizationId));
-  return organization;
-}
-
-/**
+ * The organization's row, read once for all of Home (#505's 68): when a
+ * lot counts as expiring here (ADR-060), 90 days by default, its time
+ * zone (ADR-072), its What we do (ADR-091), and Getting started.
+ *
  * Getting started (ADR-058): each step ticked by what the organization
  * holds, read in one query, never stored; only Skip (the team step) and
  * Dismiss (the card) are, on the organization. `complete` once steps 1
@@ -230,12 +216,20 @@ async function organizationOf(
  * only cheap plan is that index: this organization's rows, up to the
  * first match, and never another tenant's (ADR-058 amended, #187).
  */
-async function gettingStartedOf(
+async function organizationOf(
   tx: Transaction,
   organizationId: string,
-): Promise<GettingStarted> {
+): Promise<{
+  days: number;
+  timeZone: string;
+  whatWeDo: string | null;
+  gettingStarted: GettingStarted;
+}> {
   const result = await tx.execute(sql`
     select
+      o.expiry_warning_days as days,
+      o.time_zone as "timeZone",
+      o.what_we_do as "whatWeDo",
       (o.tax_registration_number is not null
         and o.base_currency is not null
         and exists (select 1 from addresses a
@@ -270,7 +264,7 @@ async function gettingStartedOf(
   const row = result.rows[0] as Record<
     GettingStartedStep | 'teamSkipped' | 'dismissed',
     boolean
-  >;
+  > & { days: number; timeZone: string; whatWeDo: string | null };
   const steps = Object.fromEntries(
     GETTING_STARTED_STEPS.map((step) => [step, row[step]]),
   ) as Record<GettingStartedStep, boolean>;
@@ -279,10 +273,15 @@ async function gettingStartedOf(
     (steps.team || row.teamSkipped);
 
   return {
-    steps,
-    teamSkipped: row.teamSkipped,
-    dismissed: row.dismissed,
-    complete,
+    days: row.days,
+    timeZone: row.timeZone,
+    whatWeDo: row.whatWeDo,
+    gettingStarted: {
+      steps,
+      teamSkipped: row.teamSkipped,
+      dismissed: row.dismissed,
+      complete,
+    },
   };
 }
 

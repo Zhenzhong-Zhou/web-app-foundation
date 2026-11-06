@@ -699,21 +699,19 @@ describe('Home (e2e)', () => {
 
   /**
    * The reads every Home makes, in one transaction (ADR-091): the
-   * organization's days, zone and What we do, the counts in one statement
-   * and Low stock's beside it, Getting started, and the reader's
-   * membership with its roles. The welcome's own reads, while it shows,
-   * come after its commit.
+   * organization's days, zone and What we do with Getting started, its
+   * row read once (#505's 68), the counts in one statement and Low
+   * stock's beside it, and the reader's membership with its roles. The
+   * welcome's own reads, while it shows, come after its commit.
    */
-  it("reads Home's figures in one transaction of six statements", async () => {
+  it("reads Home's figures in one transaction of five statements", async () => {
     const alpha = await registerOrganization(app, 'alpha');
 
     /** Home's transaction: its statements, and what was sent after it. */
     async function transaction() {
       const { statements } = await captureStatements(() => home(alpha));
       const first = statements.findIndex(({ text }) =>
-        /"expiry_warning_days", "time_zone", "what_we_do" from "organizations"/.test(
-          text,
-        ),
+        /o\.expiry_warning_days as days,\s*o\.time_zone/.test(text),
       );
       expect(first).toBeGreaterThan(0);
       const { client } = statements[first];
@@ -737,24 +735,23 @@ describe('Home (e2e)', () => {
 
     // The founder's welcome shows: its reads come after the commit.
     const welcomed = await transaction();
-    expect(welcomed.inside).toHaveLength(6);
+    expect(welcomed.inside).toHaveLength(5);
     expect(welcomed.beside).toEqual([]);
     expect(welcomed.after.length).toBeGreaterThan(0);
 
     // Dismissed, Home is the transaction and nothing after it.
     await alpha.agent.post('/v1/home/welcome/dismiss').expect(204);
     const { inside, beside, after } = await transaction();
-    // The organization, the counts, Low stock's, Getting started, then the
-    // membership and its roles.
+    // The organization with Getting started, the counts, Low stock's, then
+    // the membership and its roles.
     expect(inside.map((text) => text.replace(/\s+/g, ' ').trim())).toEqual([
       expect.stringMatching(
-        /^select "expiry_warning_days", "time_zone", "what_we_do" from "organizations"/,
+        /^select o\.expiry_warning_days as days, .* \(o\.tax_registration_number .* from organizations o where/,
       ),
       expect.stringMatching(
         /^\( select kind, count\(\*\)::int as count, .* union all /,
       ),
       expect.stringMatching(/^with p as materialized .* 'lowStock'::text/),
-      expect.stringMatching(/^select \(o\.tax_registration_number/),
       expect.stringMatching(
         /^select "memberships"\."id", .* from "memberships"/,
       ),
