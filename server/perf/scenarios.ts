@@ -265,16 +265,9 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       'zh-Hans',
     ),
     read('GET /partners?search', () => '/partners?search=harbour'),
-    // Home (ADR-058): the page everyone opens first, every card an owner
-    // sees and Getting started, in one request. Over its budget again from
-    // 1 November 2026, on runners about 1.35× slower on every budget, with
-    // the same plans (#276): known until 31 January 2027, and failing past
-    // 400 ms (ADR-082). Home's redesign, ADR-091, must bring it within its
-    // budget and remove this miss (ADR-051's amendment for #225 and #276).
-    {
-      ...read('GET /home', () => '/home'),
-      knownMiss: { issue: '#276', until: '2027-01-31', ceilingMs: 400 },
-    },
+    // Home (ADR-058, ADR-091): the page everyone opens first, every tile's
+    // count an owner sees and Getting started, in one request.
+    read('GET /home', () => '/home'),
     // Recently opened (ADR-058), read with Home and on each search's focus.
     read('GET /recent', () => '/recent?limit=6'),
     // Reorder points (ADR-085): the low list, as Home's See all opens it.

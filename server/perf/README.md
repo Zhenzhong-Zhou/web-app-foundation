@@ -178,14 +178,18 @@ weekly run starts at 11:00 UTC, the same day in Vancouver. The summary lists
 each known miss under the budgets, with its issue, its date and its ceiling,
 whether this run met it or not. On CI, the median is what meets it or not.
 
-One today, until 31 January 2027 with a ceiling of 400 ms:
+None today.
 
-- **Home's, #276, owned by Home's redesign, ADR-091.** Back over its
-  budget on 1 November 2026: 249 ms the night before, then 329, 321 and
-  308 in three runs on ADR-085's branch, on runners about 1.35× slower on
-  every other budget too, with the same plans. It was to end on 30
-  November 2026; ADR-091 must bring `GET /home` within its budget and
-  remove it (ADR-051's amendment for #225 and #276).
+Home's, #276, the second, ended with Home's redesign, ADR-091: Home reads
+each tile's count and no rows, its own reads in one transaction, where it
+read eight cards' rows in transactions of their own (ADR-051's amendment
+for ADR-091). It counts as fixed at a median of 240 ms or less on
+GitHub's runners, and measured 177 ms on the branch's timed run, from
+rounds of 133, 191 and 177, on runners as fast as the typo lookup's
+second run, where Home measured 314. It had missed from 1 November 2026:
+249 ms the night before, then 329, 321 and 308 in three runs on ADR-085's
+branch, on runners about 1.35× slower on every other budget too, with
+the same plans.
 
 The typo lookup's, #225, the first, ended with the three changes that
 brought its budget back, each an amendment of ADR-051: the lookup sends
