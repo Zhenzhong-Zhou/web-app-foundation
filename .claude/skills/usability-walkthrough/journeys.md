@@ -111,3 +111,5 @@ An owner making the application their company's.
 - **Personas:** the sales rep on the road.
 - **Tasks:** check whether a product can be promised by Friday; find
   where a customer's order is; raise an order from the phone.
+- **Sizes:** a phone, 390 × 844, and the iPhone Duo closed, about
+  466 × 678: the rep is on the road, never at a desk.

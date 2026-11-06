@@ -37,7 +37,7 @@ Drive the real interface through its accessibility tree, the roles and
 names of what is on screen: a browser tool if one is available, or a
 throwaway Playwright script using the client's `@playwright/test` and
 `getByRole`. Screenshots are a last resort, unless the persona's Set up
-asks for them, as when what the persona can read is the question.
+asks for them.
 
 Stay in the persona:
 
@@ -97,12 +97,16 @@ given, which git ignores.
 
 1. **Set up once,** in this session: the app as section 2 says, its
    production build when any persona's Set up slows the network, kept
-   running; then `npm run seed:demo` in `server/` once per persona, one
-   after another, keeping each account's email. A journey that starts on
-   a new organization takes no seed: one account per persona instead,
-   made through `POST /v1/auth/register` as the sign-up form makes one,
-   with an address new to this run, the demo's password and a company
-   name of its own.
+   running, its API started with `RATE_LIMIT_MAX=10000` and
+   `THROTTLE_FACTOR=1000`, as the screenshots' API is, since the walkers
+   share one address and the dev limit of 100 a minute showed one a 429;
+   then `npm run seed:demo` in `server/` once per persona, one after
+   another, keeping each account's email. A journey that starts on a new
+   organization takes no seed: one account per persona and size it walks
+   instead, since a second size would meet a Getting started the first
+   had done, each made through `POST /v1/auth/register` as the sign-up
+   form makes one, with an address new to this run, the demo's password
+   and a company name of its own.
 2. **Give out the sizes,** so every journey is walked at each of the
    design language's five
    [width classes](../../../docs/design-language.md#screen-sizes), the
@@ -123,9 +127,8 @@ given, which git ignores.
    the persona's Set up, and the rest of it stays.
 3. **Start the subagents together,** one per persona, each given its
    persona, its account, the journey's tasks as written for it, its
-   screen sizes, and its report's path: `<folder>/<journey>-<persona>.md`,
-   the persona being its heading without "The", in lowercase words joined
-   by hyphens, as in `home-senior-who-reads-only-chinese.md`.
+   screen sizes, and its report's path, `<folder>/<journey>-<persona>.md`,
+   as in `home-senior-who-reads-only-chinese.md`.
 4. **Wait for all of them.** One that ends BLOCKED is named in the
    merge, and the others still count.
 5. **Merge** into `<folder>/<journey>.md`: each finding once, the
@@ -138,7 +141,5 @@ given, which git ignores.
 6. **Stop the app if the panel started it;** one already running before
    it is left as it was. End as section 5 does, with the merge's path.
 
-The walks can run at once because each only reads the app, through an
-account of its own, and writes only its own files; what would spoil
-another walk, a restart, a reseed or a shared account, is the panel's
-alone and done before they start.
+Why the walks can run at once, and what each may touch:
+[`walkthrough.md`](../../agents/walkthrough.md).

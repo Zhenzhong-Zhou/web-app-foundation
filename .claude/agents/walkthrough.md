@@ -16,8 +16,9 @@ Walk the one persona and journey given, and nothing else.
 - **The input,** from the panel: the persona's name, its account's
   email (the password is the demo's, `demo-password-2026`), the tasks,
   and the report's path. Any of them missing: stop and say so.
-- **The screen sizes,** when the panel gives them from the journey's
-  Sizes line: walk at those, in place of the persona's Set up's.
+- **The screen sizes,** which the panel gives from the width classes or
+  the journey's Sizes line: walk at those, in place of the sizes in the
+  persona's Set up, the rest of which still holds.
 - **How to walk, judge and report:** sections 3 to 5 of
   `.claude/skills/usability-walkthrough/SKILL.md`.
 - **The persona,** in `.claude/skills/usability-walkthrough/personas.md`,
