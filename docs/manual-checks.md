@@ -1894,7 +1894,8 @@ The pages, in a private window unless a check says otherwise.
   area's name a link, then the foot about 帮助, and 隐藏. Nothing scrolls
   sideways at Larger text either. 收起 folds it back to its one line.
   隐藏 shows 欢迎卡片已隐藏。“您在这里可以做什么”仍保留在“我的账户”中。 with
-  撤销. As MC-3209's founder, 您在这里可以做所有事情 in one line.
+  撤销. As MC-3209's founder, 您在这里可以做所有事情 in one line. What you can do here lists 查看采购订单、销售订单和订单价格, one 和, and
+  我的账户 in the account menu opens a page headed 我的账户.
 - **MC-3211** *(ADR-079)* The demo's newcomer, and People's New. On a
   freshly seeded demo, the Owner's Home has no welcome, nor has any of the
   team's but Fatima Haddad's: she joined three days ago by the Owner's
@@ -4981,3 +4982,6 @@ first.
   extended.
 - 2026-11-05: ADR-091's review, what is late's line the same for a mouse,
   a finger and a Viewer: MC-1559 extended.
+- 2026-11-05: ADR-091's review, in 中文 a Viewer's Orders line reads
+  查看采购订单、销售订单和订单价格, and the account page is 我的账户, as
+  the menu and the guides call it: MC-3210 extended.
