@@ -406,7 +406,9 @@ export function InvoiceDetailPage() {
             <TableBody>
               {invoice.lines.map((line) => (
                 <TableRow key={line.id}>
-                  <TableCell>{line.sku}</TableCell>
+                  <TableCell>
+                    <Reference>{line.sku}</Reference>
+                  </TableCell>
                   <TableCell>{line.description}</TableCell>
                   {/* Read without padding zeros, grouped the reader's way,
                     and never parsed (displayQuantity, ADR-025, ADR-055). */}

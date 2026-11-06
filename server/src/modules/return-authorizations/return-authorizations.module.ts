@@ -21,6 +21,6 @@ import { ReturnAuthorizationsService } from './return-authorizations.service';
     ReturnAuthorizationReplacementsService,
   ],
   // Exported for returns, which are held to an RMA they are received against.
-  exports: [ReturnAuthorizationReceiptsService, ReturnAuthorizationsService],
+  exports: [ReturnAuthorizationReceiptsService],
 })
 export class ReturnAuthorizationsModule {}

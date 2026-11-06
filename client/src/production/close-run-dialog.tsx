@@ -19,6 +19,7 @@ import { useIntl } from 'react-intl';
 import type { LineVariance, OutputVariance, RunDetail } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { Reference } from '../components/reference';
 import { api } from '../lib/api';
 import {
   formatQuantity,
@@ -174,7 +175,9 @@ export function CloseRunDialog({
                 <TableBody>
                   {stocked.map((line) => (
                     <TableRow key={line.id}>
-                      <TableCell>{line.sku}</TableCell>
+                      <TableCell>
+                        <Reference>{line.sku}</Reference>
+                      </TableCell>
                       <TableCell align="right">
                         {withUnit(
                           line.quantityPlanned,

@@ -15,7 +15,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { assertListAssignable } from '../../modules/price-lists/list-price';
-import { recordPrevious } from '../audit/audit-context';
+import { recordContext, recordPrevious } from '../audit/audit-context';
 import { FilesService } from '../files/files.service';
 import { normalizeHex, safeAccent } from './accent';
 import { assertLanguagePair } from './document-languages';
@@ -57,6 +57,7 @@ export class OrganizationsService {
           name: organizations.name,
           slug: organizations.slug,
           taxRegistrationNumber: organizations.taxRegistrationNumber,
+          whatWeDo: organizations.whatWeDo,
           baseCurrency: organizations.baseCurrency,
           defaultSalePriceListId: organizations.defaultSalePriceListId,
           licenceNotInForcePolicy: organizations.licenceNotInForcePolicy,
@@ -118,6 +119,7 @@ export class OrganizationsService {
         .select({
           name: organizations.name,
           taxRegistrationNumber: organizations.taxRegistrationNumber,
+          whatWeDo: organizations.whatWeDo,
           baseCurrency: organizations.baseCurrency,
           defaultSalePriceListId: organizations.defaultSalePriceListId,
           licenceNotInForcePolicy: organizations.licenceNotInForcePolicy,
@@ -186,6 +188,21 @@ export class OrganizationsService {
         idleSignOutMinutes: existing.idleSignOutMinutes,
         idleSignOutScope: existing.idleSignOutScope,
       });
+
+      // Empty clears it, as the tax number's does.
+      const whatWeDo =
+        input.whatWeDo === undefined ? undefined : input.whatWeDo || null;
+      const changesWhatWeDo =
+        whatWeDo !== undefined && whatWeDo !== existing.whatWeDo;
+
+      /**
+       * What we do is free text, so the log keeps that it was changed or
+       * cleared, never what it says (ADR-018, ADR-091); a save of the same
+       * words records nothing about it.
+       */
+      if (changesWhatWeDo) {
+        recordContext({ whatWeDo: whatWeDo === null ? 'cleared' : 'changed' });
+      }
 
       // The two expiry days as they will stand, one sent alone checked
       // against the other as stored (ADR-060).
@@ -282,6 +299,7 @@ export class OrganizationsService {
               taxRegistrationNumber: input.taxRegistrationNumber || null,
             }
           : {}),
+        ...(changesWhatWeDo ? { whatWeDo } : {}),
         ...(changesBase ? { baseCurrency: input.baseCurrency } : {}),
         ...(input.defaultSalePriceListId !== undefined
           ? { defaultSalePriceListId: input.defaultSalePriceListId }

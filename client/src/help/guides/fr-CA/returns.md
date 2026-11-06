@@ -33,7 +33,7 @@ Quand plus rien ne se fera, appuyez sur **Clore l’autorisation**. **Annuler l�
 
 ## Les mots que vous verrez {#words}
 
-- **Ouverte** : d’autres articles peuvent encore revenir ou être crédités.
+- **En cours** : d’autres articles peuvent encore revenir ou être crédités.
 - **Close** : terminée. Ce qui a été reçu et crédité reste tel quel.
 - **Annulée** : rien ne s’est passé.
 

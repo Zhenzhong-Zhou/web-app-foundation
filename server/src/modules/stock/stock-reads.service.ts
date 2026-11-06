@@ -43,13 +43,14 @@ import type { Tx } from './stock.service';
 const STOCK_PAGE_SIZE = 50;
 
 /**
- * Reading stock: what is on the shelves now, and the ledger that put it
- * there.
- *
- * Its own service because StockService is the one write path into the
- * ledger (ADR-023), injected by every module that moves stock, while only
- * the stock controller calls these two reads.
+ * Expired (ADR-091): a lot whose expiry is before the organization's
+ * today. The list's `expired` and Home's late count on Expiring soon, so
+ * the late button's count and the rows it opens cannot drift.
  */
+export function expiredLot(today: string): SQL {
+  return lt(lots.expiresAt, today);
+}
+
 /**
  * The stock list's filters as conditions (ADR-051), shared by the list and
  * by its counts, so "Expiring soon 2" counts exactly the rows pressing it
@@ -109,6 +110,10 @@ function filtersOf(
     );
   }
 
+  if (query.expired === 'true') {
+    scope.push(expiredLot(today));
+  }
+
   /**
    * The same pool as a waiting cost row: its variant, and its lot or none.
    *
@@ -166,6 +171,14 @@ export function stockRowsOf(
     where ${and(...filtersOf(query, organizationId, today))}`;
 }
 
+/**
+ * Reading stock: what is on the shelves now, and the ledger that put it
+ * there.
+ *
+ * Its own service because StockService is the one write path into the
+ * ledger (ADR-023), injected by every module that moves stock, while only
+ * the stock controller calls these two reads.
+ */
 @Injectable()
 export class StockReadsService {
   constructor(private readonly tenantDb: TenantDb) {}
@@ -323,7 +336,7 @@ export class StockReadsService {
   counts(query: ListStockDto = {}) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const { expiringWithin, ...rest } = query;
-      const unfiltered = { ...rest, needsCost: undefined };
+      const unfiltered = { ...rest, needsCost: undefined, expired: undefined };
       const today = await todayOf(tx, organizationId);
 
       const count = async (filters: ListStockDto) => {

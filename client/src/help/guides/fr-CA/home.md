@@ -1,55 +1,81 @@
 # Accueil
 
-L’accueil est la première page que vous voyez. Il dit combien de choses demandent votre attention aujourd’hui, offre les actions que vous faites le plus souvent et liste le travail en attente, par sorte. Ce qu’il montre suit ce que vous pouvez faire ici.
+L’accueil est la première page que vous voyez : ce qui vous attend aujourd’hui, et les actions que vous faites le plus souvent. Ce qu’il montre suit ce que vous pouvez faire ici, et où vous en êtes :
+
+- **Chaque jour** : les tuiles.
+- **Dans vos deux premières semaines**, après votre arrivée sur invitation : votre carte de bienvenue en plus.
+- **Pendant la mise en place d’une nouvelle organisation** : Premiers pas en plus.
+
+## Chaque jour {#today}
+
+- En haut : la salutation avec **Actualiser** à côté, la date et l’heure de l’organisation, et sa ligne Ce que nous faisons, dans ses propres mots.
+- À côté, ou dessous sur un écran étroit, votre action principale : la première que votre rôle permet parmi **Créer une commande**, **Recevoir du stock**, **Planifier un ordre** et **Tracer un lot**. **Plus**, à côté, ouvre les autres que votre rôle permet. S’il ne permet aucune des trois premières, une ligne dit plutôt à qui vous adresser.
+- Sous **Ce qui vous attend aujourd’hui**, une tuile par sorte de travail : son nombre, son nom, et combien sont en retard, périmés ou épuisés, comme **2 en retard**. Une tuile sans rien à faire reste à sa place et le dit.
+- **Ouverts récemment** vous ramène à ce que vous avez ouvert en dernier.
+
+L’accueil relit ses nombres quand vous y revenez après une minute d’absence. **Actualiser**, la flèche en rond à côté de la salutation, les relit tout de suite.
+
+> Vous ne voyez une tuile que pour le travail que votre rôle peut voir.
+
+## Où mène chaque tuile {#tiles}
+
+Une tuile ouvre sa liste avec seulement ce qu’elle compte, le plus urgent d’abord :
+
+- **À expédier** et **À recevoir** : Commandes, les ventes qui restent à expédier ou les achats qui restent à recevoir, les commandes en retard d’abord.
+- **Stock bas** : Points de commande, dans [Inventaire](/inventory#reorder-points), les plus loin sous leur point d’abord.
+- **Expire bientôt** : Inventaire, les lots qui périment dans le nombre de jours fixé par l’organisation, le plus proche d’abord.
+- **Valeur du stock · En attente d’un coût** : Valeur du stock, où vous fixez le coût du stock arrivé sans coût.
+- **Factures · À émettre** : Factures, les brouillons.
+- **Retours en cours** : Retours, ceux qui sont en cours.
+- **Production · En cours** : Production, les ordres de fabrication lancés et pas encore clos.
+- **Licences qui expirent** : Licences, celles qui expirent d’ici 60 jours ou ont expiré, la plus proche d’abord.
+
+La liste garde ce choix pendant que vous y travaillez : en revenant d’une fiche, vous la retrouvez telle quelle.
+
+## Ce qui est en retard {#late}
+
+Quand quelque chose est en retard, périmé ou épuisé, l’accueil dit combien d’éléments sont à traiter maintenant, avec un bouton par sorte, comme **2 commandes en retard à expédier**. Chacun ouvre sa liste avec seulement ce qui est en retard : **En retard** choisi dans Commandes, **Épuisé** dans Points de commande, **Périmés** dans Inventaire et **Expirées** dans Licences.
+
+Sans rien en retard, une ligne dit **Rien n’est en retard aujourd’hui**; sans rien du tout à faire, **Rien ne vous attend aujourd’hui**.
 
 ## Vos deux premières semaines {#welcome}
 
-Quand vous arrivez, l’accueil commence par une carte de bienvenue à vous : le mot de la personne qui vous a invité, ce que vous pouvez faire ici et votre première semaine. Chaque élément de la première semaine se coche quand vous le faites, jamais à la main, et son bouton vous mène là où il se fait.
+Quand vous arrivez sur invitation, l’accueil a une carte de bienvenue à vous : le mot de la personne qui vous a invité, votre première semaine et ce que vous pouvez faire ici. Sur un écran de moins de 900 px, un téléphone ou une tablette tenue à la verticale, elle commence réduite à une ligne : **Déployer** l’ouvre, et **Réduire** la replie.
 
 1. Lisez le mot, si la personne qui vous a invité en a laissé un.
-2. Avancez dans votre première semaine, en confirmant d’abord votre adresse courriel si elle est demandée.
-3. Appuyez sur **Masquer** quand vous n’avez plus besoin de la carte. **Annuler** la ramène pendant un moment.
+2. Avancez dans votre première semaine, en confirmant d’abord votre adresse courriel si elle est demandée. Chaque élément ouvre l’endroit où il se fait, et se coche quand vous le faites.
+3. Sous **Ce que vous pouvez faire ici**, le nom d’un domaine ouvre sa page.
+4. Appuyez sur **Masquer** quand vous n’avez plus besoin de la carte. **Annuler** la ramène pendant un moment.
 
-La carte part d’elle-même quand chaque élément est fait, ou deux semaines après votre arrivée, et elle nomme ce jour. Ce que vous pouvez faire ici reste dans [Votre compte](/account#your-access).
+La carte part d’elle-même quand chaque élément est fait, ou deux semaines après votre arrivée. Ce que vous pouvez faire ici reste dans [Votre compte](/account#your-access).
 
 ## Premiers pas {#getting-started}
 
-Une nouvelle organisation reçoit sept étapes plutôt qu’une page de zéros. Chacune se coche d’après ce que l’organisation contient :
+Une nouvelle organisation reçoit sept étapes plutôt qu’une page de zéros, chacune cochée d’après ce que l’organisation contient :
 
-1. **Votre organisation** : l’adresse, le numéro de taxe et la devise dont les factures ont besoin.
-2. **Ajouter un emplacement**, là où le stock est gardé.
+1. **Votre organisation** : l’adresse, le numéro de taxe et la devise, nécessaires aux factures.
+2. **Ajouter un emplacement**, là où vous gardez le stock.
 3. **Ajouter un produit** : ce que vous achetez, fabriquez ou vendez.
 4. **Ajouter un partenaire** : un client ou un fournisseur.
 5. **Recevoir du stock**, pour avoir quelque chose à expédier.
-6. **Expédier et facturer une commande**, le parcours complet une fois.
-7. **Invitez votre équipe**, une étape que vous pouvez passer.
+6. **Expédier et facturer une commande**, pour faire le parcours complet une première fois.
+7. **Inviter votre équipe**, une étape que vous pouvez passer.
+
+L’étape suivante a son bouton, avec **En savoir plus** à côté; chaque autre étape ouvre sa page depuis toute sa ligne. **Passer** apparaît quand **Inviter votre équipe** est l’étape suivante.
 
 > Seule une personne qui peut changer les paramètres de l’organisation voit **Masquer** et **Passer** ici, et seule une personne qui peut inviter voit **Inviter quelqu’un**.
 
-## Ce qui demande votre attention {#attention}
+## La barre du haut {#top-bar}
 
-- Les nombres disent combien de choses vous attendent, et combien sont en retard ou expirées.
-- Chaque carte liste les plus urgentes, comme **À expédier**, **À recevoir** ou **Expire bientôt**. **Tout voir** ouvre la liste complète.
-- **Ouverts récemment** vous ramène à ce que vous avez ouvert en dernier.
-
-L’accueil est lu quand vous l’ouvrez. Appuyez sur **Actualiser** pour le relire.
-
-## Stock bas {#low-stock}
-
-Stock bas compte les articles sous leur point de commande, qui se définit dans [Inventaire](/inventory#reorder-points). Quand l’un d’eux est épuisé, il dit aussi combien, et l’accueil les compte avec ceux en retard.
-
-- Sa carte liste les cinq les plus loin sous leur point, chacun avec ce qu’il a sur son point, comme 800 sur 2 000, ou **épuisé**.
-- **brouillon fait** dit qu’un bon de commande ou un ordre de fabrication en brouillon le couvre déjà, sans qu’il en faille un autre.
-- **Tout voir** ouvre Points de commande sur Bas, où vous les commandez ou les planifiez.
-
-> Seule une personne qui peut voir le stock voit Stock bas.
+Sur un téléphone ou une tablette, chaque icône de la barre du haut a son mot dessous : **Menu**, les pages; **Rechercher**, une commande, un lot, un article ou un partenaire; **Aide**, le guide de la page où vous êtes; **Notifications**, ce qu’on vous a signalé; et **Compte**, votre compte, **Mode de couleur**, **Langue** et **Taille du texte**.
 
 ## Sans organisation {#no-organization}
 
-Demandez à quelqu’un d’une organisation d’inviter votre adresse, puis ouvrez son lien en étant connecté : vous vous joignez avec ce compte. Un lien pour créer votre propre organisation s’ouvre de la même façon. Là où l’accueil offre **Créer une organisation**, vous pouvez aussi en créer une, dont vous serez propriétaire.
+Demandez à quelqu’un d’une organisation d’inviter votre adresse, puis ouvrez son lien en étant connecté : vous la rejoignez avec ce compte. Un lien pour créer votre propre organisation s’ouvre de la même façon. Là où l’accueil offre **Créer une organisation**, vous pouvez aussi en créer une, dont vous serez propriétaire.
 
 ## Les mots que vous verrez {#words}
 
-- **En retard** : passé le jour où c’était attendu ou dû.
-- **Expire bientôt** : des lots qui périment dans le nombre de jours fixé par l’organisation.
+- **En retard** : une commande qui reste à expédier ou à recevoir, passé le jour où elle était attendue, selon la date de l’organisation.
+- **Expire bientôt** : un lot qui périme dans le nombre de jours fixé par l’organisation.
+- **Licences qui expirent** : une licence à moins de 60 jours de son dernier jour, ou au-delà.
 - **Épuisé** : un article avec un point de commande dont il ne reste rien : ce que les ventes requièrent encore prend tout ce qui est utilisable et à venir, ou plus.

@@ -84,7 +84,8 @@ test.describe('invitations', () => {
   }) => {
     await signInAs(page, freshOrg.api);
     await page.goto('/');
-    await page.getByRole('link', { name: 'Invite someone' }).click();
+    // The team step, one link, its whole row (ADR-091).
+    await page.getByRole('link', { name: /^Invite your team/ }).click();
 
     await expect(page).toHaveURL(/\/members\?invite$/);
     const dialog = inviteDialog(page, freshOrg.organizationName);

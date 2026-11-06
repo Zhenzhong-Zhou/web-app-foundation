@@ -114,7 +114,10 @@ steps; this section stays the rule.
   `server/` and `client/`, taking the in-range updates as a commit of their
   own at the branch's start, and again before the reviews. From ADR-081,
   only versions at least 7 days old, judged package by package from its
-  own publish time and never moving a locked version back; not `npm
+  own publish time and never moving a locked version back: the newest in
+  range that is, not only npm's Wanted version, which a package that
+  publishes daily keeps moving (6 November 2026, as Dependabot's cooldown
+  does); not `npm
   update --before`, which does both wrong (the square logo's step 2, 25
   October 2026). A security fix is excepted, and any other exception is
   Bob's, named in its commit ([conventions.md, "Dependencies"](conventions.md#dependencies)).
@@ -123,7 +126,9 @@ steps; this section stays the rule.
   Deferred lines, the watch lists, Open decisions and the open issues),
   the decisions for Bob to confirm, the ADR as the branch's first commit
   (it tidies the handoff too), the canvas designs (on the Claude Design
-  canvas, <https://claude.ai/artifact/RqG3iKw4V41is3w1go53EJ>), and a
+  canvas, <https://claude.ai/artifact/RqG3iKw4V41is3w1go53EJ>, where a
+  changed design is drawn as a new row and every earlier one stays as its
+  history, from 4 November 2026), and a
   build brief, whose steps Claude Code runs in a row (below). Claude Code
   writes the code from each step, runs
   `scripts/verify.sh`, `/simplify` and `/code-review`, and opens the PR.
@@ -208,11 +213,12 @@ steps; this section stays the rule.
   anything needing the large seed stays on the Mac. A session signs with a key of its own, so under the
   maintainer's vigilant mode its commits show Unverified: its pull
   requests are squashed and merged, so each lands on `main` as one commit
-  GitHub signs (1 November 2026). Squash and merge is chosen from the
-  merge button's menu, since the button offers the method used last:
-  from 2 November every cloud pull request went in as a merge commit. A
-  feature branch's pull request keeps Create a merge commit, so its
-  commits stay apart (4 November 2026). PRs merge one at a time, each when
+  GitHub signs (1 November 2026). It is merged from the terminal, `gh pr
+  merge <N> --squash --delete-branch`, never from the button, which
+  offers the method used last: from 2 November every cloud pull request
+  went in as a merge commit, #469 too. A feature branch's pull request
+  keeps a merge commit, `gh pr merge <N> --merge`, so its commits stay
+  apart (4 November 2026). PRs merge one at a time, each when
   green; a branch behind
   `main` with no conflict merges as it is, and a conflict in
   `docs/manual-checks.md` is settled on GitHub with "Accept both changes",

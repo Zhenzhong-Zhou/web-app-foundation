@@ -22,7 +22,7 @@ export interface QuickFilter {
 /**
  * The one row of filters above a list (ADR-055): a search box, any selects
  * the list needs (as children), then quick filters with their counts —
- * "Expiring soon 2", "Needs a cost 1" — which people new to a list find
+ * "Expiring soon 2", "Waiting for a cost 1" — which people new to a list find
  * before they find a search box. It wraps as a row, never as a column of
  * full-width fields stacked down the page.
  */

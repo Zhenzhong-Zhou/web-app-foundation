@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 /** Written by global-setup, read by every picture. Ignored by git. */
 export const SESSION_PATH = './screenshots/.state/session.json';
 export const TARGETS_PATH = './screenshots/.state/targets.json';
+/** An account in no organization, for Home's page for it. */
+export const NO_ORGANIZATION_PATH = './screenshots/.state/no-organization.json';
 
 /**
  * The demo records the detail pages open, found by what people call them
@@ -23,6 +25,12 @@ export interface Targets {
   batchLotId: string | null;
   /** Calm 90ct, the product with a recipe and a run under way. */
   recipeProductId: string | null;
+  /**
+   * An invitation to set up a new organization (ADR-078), its link's path
+   * by the language it is in, which its page speaks: the page's dashed
+   * tile, standing in for the logo.
+   */
+  organizationInvitationPaths: Record<string, string>;
 }
 
 /**

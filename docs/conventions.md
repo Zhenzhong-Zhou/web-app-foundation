@@ -794,10 +794,11 @@ knows from the link, not from a guess.
 - **Passes none:** the menu, the trail above a record, an "up" link, and
   a move after an action, such as a delete. A new tab and a bookmark
   carry no state, so no Back, as before.
-- **Kept while the page writes its own address:** a list's search, a tab
-  and a filter replace the address with the location's state, as
-  `useListSearch` and `useTab` do, so Back stays after the first letter
-  typed or the first tab chosen.
+- **Kept while the page writes its own address:** a list's search, a tab,
+  its filters and its sort replace the address with the location's state,
+  as `useListSearch`, `useTab`, `useListFilters` and `useListSort` do, so
+  Back stays after the first letter typed, the first tab or the first
+  filter chosen.
 - MC-R69 checks each such link by hand.
 
 ## Status pages
@@ -851,9 +852,11 @@ Navigation is a rail beside the page from `lg` up (ADR-055), in three groups
 defined once in `layout/navigation.ts`: the work, the records and places to look
 something up, and the organization's settings. It folds to its icons, each named
 in a tooltip, and each device remembers that. Below `lg` the same groups open in
-a left drawer behind a menu button: narrowing the window moves the links and
-never hides one. The person's own things (profile, devices, language, colour
-mode, sign out) stay behind the avatar at every width. The top bar is slim and
+a left drawer behind Menu: narrowing the window moves the links and
+never hides one. Below `lg` the top bar's icons each have a word under them
+(ADR-091), where the bar is wide enough for all of them (`layout/bar.ts`). The person's own things (profile, language, colour
+mode, text size, sign out) stay behind the avatar at every width; Your
+devices is on Your account (ADR-091). The top bar is slim and
 sticky and never hides on scroll: the organization's name, where its logo will
 go, then the bell and the avatar. Which elements show is CSS `display` at the
 breakpoint, not a `useMediaQuery` branch, so the first paint is right; the hook

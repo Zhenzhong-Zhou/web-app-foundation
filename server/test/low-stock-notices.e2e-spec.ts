@@ -90,7 +90,7 @@ describe('Low stock notices (e2e)', () => {
     expect(await notices.check(now)).toBe(0);
     expect(await bell(alpha.agent)).toEqual([
       expect.objectContaining({
-        title: 'FOCUS-60CT fell below its reorder point',
+        title: 'FOCUS-60CT is low on stock',
         body: 'FOCUS-60CT. Raise a purchase order from Reorder points.',
         // The list, which the bell opens filtered to Low.
         resourceType: 'reorder_points',
@@ -176,20 +176,20 @@ describe('Low stock notices (e2e)', () => {
     // Bought and made: either.
     expect(await bell(alpha.agent)).toEqual([
       expect.objectContaining({
-        title: '5 items fell below their reorder point',
+        title: '5 items are low on stock',
         body: 'CALM-90, CAP-38MM and 3 more. Order or plan them from Reorder points.',
       }),
     ]);
     // Three are all named: "and 1 more" would be no shorter.
     expect(await bell(buyer)).toEqual([
       expect.objectContaining({
-        title: '3 items fell below their reorder point',
+        title: '3 items are low on stock',
         body: 'CALM-90, CAP-38MM and LID-38MM. Order them from Reorder points.',
       }),
     ]);
     expect(await bell(maker)).toEqual([
       expect.objectContaining({
-        title: '2 items fell below their reorder point',
+        title: '2 items are low on stock',
         body: 'SAMPLE-BAG and SCOOP-BAG. Plan them from Reorder points.',
       }),
     ]);
@@ -198,7 +198,7 @@ describe('Low stock notices (e2e)', () => {
     // The Owner may plan runs too, but both items are bought.
     expect(await bell(beta.agent)).toEqual([
       expect.objectContaining({
-        title: '2 items fell below their reorder point',
+        title: '2 items are low on stock',
         body: 'BETA-1 and BETA-2. Order them from Reorder points.',
       }),
     ]);
@@ -236,8 +236,8 @@ describe('Low stock notices (e2e)', () => {
     expect(await notices.check(now)).toBe(1);
     expect(await bell(alpha.agent, 'zh-Hans')).toEqual([
       expect.objectContaining({
-        title: 'FOCUS-60CT 已低于再订货点',
-        body: '专注胶囊 (60粒)。请在“再订货点”中计划生产订单。',
+        title: 'FOCUS-60CT 库存不足',
+        body: '专注胶囊 (60粒)。请在“库存下限”中计划生产订单。',
       }),
     ]);
   });

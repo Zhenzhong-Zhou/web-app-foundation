@@ -130,8 +130,9 @@ test('an Owner makes a role from a template, gives it, and its holder meets it o
     card.getByText(/^You joined today as Dock crew\./),
   ).toBeVisible();
   await expect(card.getByText(/receive what was ordered/)).toBeVisible();
+  // The first week's item, one link, its whole row (ADR-091).
   await expect(
-    card.getByRole('link', { name: 'Receive stock', exact: true }),
+    card.getByRole('link', { name: /^Receive stock/ }),
   ).toBeVisible();
   // The menu, by what Dock crew grants.
   const main = holder.getByRole('navigation', { name: 'Main' });

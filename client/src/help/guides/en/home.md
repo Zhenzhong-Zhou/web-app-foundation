@@ -1,20 +1,57 @@
 # Home
 
-Home is the first page you see. It says how many things need attention today, offers the actions you take most, and lists the work waiting, by kind. What it shows follows what you may do here.
+Home is the first page you see: what needs you today, and the actions you take most. What it shows follows what you may do here, and where you stand:
+
+- **Every day**: the tiles.
+- **In your first two weeks**, after joining by invitation: your welcome card too.
+- **While a new organization is set up**: Getting started too.
+
+## Every day {#today}
+
+- At the top: the greeting with **Refresh** beside it, the organization’s date and time, and its What we do, one line in its own words.
+- Beside them, or under them on a narrow screen, your main action: the first your role allows of **Raise an order**, **Receive stock**, **Plan a run** and **Trace a lot**. **More** beside it opens the others your role allows. Where it allows none of the first three, a line says whom to ask instead.
+- Under **What needs you today**, a tile for each kind of work: its count, its name, and how many are late, expired or out, such as **2 late**. A tile with nothing to do stays in its place and says so.
+- **Recently opened** takes you back to what you opened last.
+
+Home reads its counts again when you come back to it after a minute away. **Refresh**, the round arrow beside the greeting, reads them now.
+
+> You see a tile only for the work your role may see.
+
+## Where each tile leads {#tiles}
+
+A tile opens its list with just what it counts, the most urgent first:
+
+- **To ship** and **To receive**: Orders, the sales still to ship or the purchases still to receive, the late first.
+- **Low stock**: Reorder points, on [Inventory](/inventory#reorder-points), the furthest below their point first.
+- **Expiring soon**: Inventory, the lots expiring within the days the organization has set, the soonest first.
+- **Stock value · Waiting for a cost**: Stock value, where you set the cost of stock that arrived without one.
+- **Invoices · To issue**: Invoices, the drafts.
+- **Open returns**: Returns, the open ones.
+- **Production · In progress**: Production, the runs released and not yet closed.
+- **Licences expiring**: Licences, those within 60 days of expiring or past it, the soonest first.
+
+The list keeps that choice while you work there: Back from a record returns to it.
+
+## What is late {#late}
+
+When anything is late, expired or out, Home says how many things need you now, with a button for each kind, such as **2 late orders to ship**. Each opens its list with just the late ones: **Late** chosen on Orders, **Out** on Reorder points, **Expired** on Inventory and on Licences.
+
+With nothing late, one line says **Nothing is late today**; with nothing at all to do, **Nothing needs you today**.
 
 ## Your first two weeks {#welcome}
 
-When you join, Home starts with a welcome card of your own: your inviter’s note, what you can do here, and your first week. Each item of the first week is ticked by doing it, never by hand, and its button takes you where it is done.
+When you join by invitation, Home has a welcome card of your own: your inviter’s note, your first week, and what you can do here. On a screen narrower than 900 px, a phone or a tablet held upright, it starts folded to one line: **Open** shows it, and **Fold** folds it again.
 
 1. Read the note, if your inviter left one.
-2. Work through your first week, confirming your email address first if it is listed.
-3. Press **Dismiss** once you no longer need the card. **Undo** brings it back for a moment.
+2. Work through your first week, confirming your email address first if it is listed. Each item opens where it is done, and is ticked by doing it.
+3. Under **What you can do here**, an area’s name opens its page.
+4. Press **Dismiss** once you no longer need the card. **Undo** brings it back for a moment.
 
-The card goes by itself when every item is done, or two weeks after you joined, and it names that day. What you can do here stays on [Your account](/account#your-access).
+The card goes by itself when every item is done, or two weeks after you joined. What you can do here stays on [Your account](/account#your-access).
 
 ## Getting started {#getting-started}
 
-A new organization gets seven steps instead of a page of zeros. Each is ticked by what the organization holds:
+A new organization gets seven steps instead of a page of zeros, each ticked by what the organization holds:
 
 1. **Your organization**: the address, tax number and currency that invoices need.
 2. **Add a location**, where stock is kept.
@@ -24,25 +61,13 @@ A new organization gets seven steps instead of a page of zeros. Each is ticked b
 6. **Ship and invoice an order**, the whole flow once.
 7. **Invite your team**, which you may skip.
 
+The next step has its button, with **Learn more** beside it; every other step opens its page from its whole row. **Skip** appears once **Invite your team** is next.
+
 > Only someone who may change the organization’s settings sees **Dismiss** and **Skip** here, and only someone who may invite sees **Invite someone**.
 
-## What needs attention {#attention}
+## The top bar {#top-bar}
 
-- The counts say how many things wait for you, and how many are overdue or expired.
-- Each card lists the most urgent, such as **To ship**, **To receive** or **Expiring soon**. **See all** opens the whole list.
-- **Recently opened** takes you back to what you opened last.
-
-Home is read when you open it. Press **Refresh** to read it again.
-
-## Low stock {#low-stock}
-
-Low stock counts the items below their reorder point, which is set on [Inventory](/inventory#reorder-points). When any of them is out, it also says how many, and Home counts those with the overdue.
-
-- Its card lists the five furthest below their point, each as how much it has of its point, such as 800 of 2,000, or **out**.
-- **drafted** says a draft purchase order or run already covers it, so it needs no other.
-- **See all** opens Reorder points on Low, where you order or plan them.
-
-> Only someone who may see stock sees Low stock.
+On a phone or a tablet, each icon in the top bar has its word under it: **Menu**, the pages; **Search**, for an order, a lot, an item or a partner; **Help**, the guide to the page you are on; **Notifications**, what you have been told; and **Account**, your account, **Colour mode**, **Language** and **Text size**.
 
 ## With no organization {#no-organization}
 
@@ -50,6 +75,7 @@ Ask someone in an organization to invite your address, then open their link whil
 
 ## Words you’ll meet {#words}
 
-- **Overdue**: past the day it was expected or due.
-- **Expiring soon**: lots that expire within the days the organization has set.
+- **Late**: an order still to ship or receive, past the day it was expected, by the organization’s date.
+- **Expiring soon**: a lot that expires within the days the organization has set.
+- **Licences expiring**: a licence within 60 days of its last day, or past it.
 - **Out**: an item with a reorder point and nothing to spare: what sales still need takes all that is usable and coming, or more.

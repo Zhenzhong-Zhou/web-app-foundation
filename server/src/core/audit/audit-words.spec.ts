@@ -299,6 +299,12 @@ describe('wordEntry, a time zone', () => {
     expect(detail.value?.text).toMatch(/^\S.* — Kolkata$/);
   });
 
+  // UTC's generic name is an offset, GMT+00:00, which says nothing to a
+  // reader, on Home or in an invitation's email (ADR-091's review).
+  it('names UTC in words, not as an offset', () => {
+    expect(zoneLabel('en', 'UTC')).toBe('Coordinated Universal Time — UTC');
+  });
+
   // On a winter day, when ICU's own names for some zones carry brackets:
   // Vancouver's, "Pacific Time (Canada)", since British Columbia stayed on
   // UTC−7 (#343). A city in brackets after it would double them.

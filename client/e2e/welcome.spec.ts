@@ -2,6 +2,7 @@ import { expect, test } from './fixtures';
 import {
   E2E_PASSWORD,
   inviteByLink,
+  joinByLink,
   registerOrganization,
   signInAs,
   uniqueEmail,
@@ -61,7 +62,7 @@ test('a newcomer accepts with a note, meets their welcome, and the inviter hears
   // A copied link confirms nothing, so the week starts with confirming
   // the address. An emailed link's newcomer, confirmed as they join,
   // starts at Say who you are (welcome.e2e-spec.ts).
-  await expect(card.getByText('0 of 4 done')).toBeVisible();
+  await expect(card.getByText('Your first week · 0 of 4 done')).toBeVisible();
   await expect(
     card.getByText('Confirm your email address', { exact: true }),
   ).toBeVisible();
@@ -112,3 +113,75 @@ test('a newcomer accepts with a note, meets their welcome, and the inviter hears
   await expect(page).toHaveURL(/\/people\/[0-9a-f-]+$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Wang Fang');
 });
+
+/**
+ * The welcome at a phone's width and a tablet's held sideways (ADR-091):
+ * folded to one line above the tiles below `md`, opening in place; open
+ * from `md`, with Fold. Open, each first-week item and each area under
+ * What you can do here is a link.
+ */
+for (const size of [
+  { width: 390, height: 844 },
+  { width: 1180, height: 820 },
+]) {
+  test(`the welcome at ${size.width} px: ${size.width < 900 ? 'folded, opened in place' : 'open, with Fold'}`, async ({
+    page,
+  }) => {
+    const org = await registerOrganization('welcome-fold');
+    await confirmEmailInDatabase(org.email);
+    const dismissed = await org.api.post('/v1/home/getting-started/dismiss');
+    expect(dismissed.ok(), await dismissed.text()).toBeTruthy();
+    const { token } = await inviteByLink(
+      org.api,
+      uniqueEmail('fatima'),
+      'Viewer',
+      { note: 'Start with the orders to ship.' },
+    );
+    const newcomer = await joinByLink(token, 'Fatima Haddad');
+
+    await page.setViewportSize(size);
+    await signInAs(page, newcomer);
+    await page.goto('/');
+
+    const card = page.getByRole('region', {
+      name: `Welcome to ${org.organizationName}, Fatima Haddad`,
+      exact: true,
+    });
+    await expect(
+      card.getByText(/^Your first week · \d of \d done$/),
+    ).toBeVisible();
+    // Above the tiles, in either state.
+    const tiles = page.getByRole('heading', { name: 'What needs you today' });
+    expect((await card.boundingBox())!.y).toBeLessThan(
+      (await tiles.boundingBox())!.y,
+    );
+
+    if (size.width < 900) {
+      const open = card.getByRole('button', { name: 'Open', exact: true });
+      await expect(open).toHaveAttribute('aria-expanded', 'false');
+      // Its head alone: neither the note nor the first week.
+      await expect(card.getByRole('figure')).toBeHidden();
+      await expect(
+        card.getByRole('list', { name: 'Your first week' }),
+      ).toBeHidden();
+      await open.click();
+    }
+
+    const fold = card.getByRole('button', { name: 'Fold', exact: true });
+    await expect(fold).toHaveAttribute('aria-expanded', 'true');
+    await expect(card.getByRole('figure')).toContainText(
+      'Start with the orders to ship.',
+    );
+    const lookUp = card.getByRole('link', {
+      name: /^Look up a product or a lot/,
+    });
+    await expect(lookUp).toHaveAttribute('href', '/products');
+    expect((await lookUp.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await expect(
+      card.getByRole('link', { name: 'Products', exact: true }),
+    ).toHaveAttribute('href', '/products');
+
+    await fold.click();
+    await expect(card.getByRole('figure')).toBeHidden();
+  });
+}

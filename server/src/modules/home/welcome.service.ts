@@ -120,7 +120,7 @@ const KIND_OF: Record<
 };
 
 /** The facts about the reader's membership the welcome starts from. */
-interface Membership {
+export interface Membership {
   id: string;
   createdAt: Date;
   dismissedAt: Date | null;
@@ -138,8 +138,9 @@ interface Membership {
  * have done here since joining, never by hand.
  *
  * A member past their two weeks, or who dismissed it, costs Home one read
- * of their membership; the rest is read only while the card shows, the
- * items, the inviter and whom to ask side by side.
+ * of their membership, in Home's own transaction (ADR-091); the rest is
+ * read only while the card shows, after that transaction, the items, the
+ * inviter and whom to ask side by side.
  */
 @Injectable()
 export class WelcomeService {
@@ -153,14 +154,15 @@ export class WelcomeService {
    * The card, or null once dismissed, past its last day, or with every
    * item done. `startShows` while Getting started is on Home, whose steps
    * are then this member's list, so the week keeps only their own two.
-   * What was done is named in the reader's language (ADR-056).
+   * What was done is named in the reader's language (ADR-056). It starts
+   * from the reader's membership, as membership() read it.
    */
   async of(
     context: Pick<RequestContext, 'userId' | 'organizationId'>,
     held: ReadonlySet<Permission>,
+    membership: Membership | undefined,
     options: { timeZone: string; startShows: boolean; locale: Locale },
   ): Promise<Welcome | null> {
-    const membership = await this.membership(context.userId);
     if (!membership || membership.dismissedAt) return null;
 
     const joinedOn = dayIn(options.timeZone, membership.createdAt);
@@ -207,36 +209,39 @@ export class WelcomeService {
    * transaction's now(). Not the organization's oldest membership, which
    * passes to the next member when the founder leaves; and not "no
    * invitation behind it", which the demo seed's colleagues also have.
+   * Read in Home's transaction, which every Home opens (ADR-091).
    */
-  private membership(userId: string): Promise<Membership | undefined> {
-    return this.tenantDb.transaction(async (tx, organizationId) => {
-      const [row] = await tx
-        .select({
-          id: memberships.id,
-          createdAt: memberships.createdAt,
-          dismissedAt: memberships.welcomeDismissedAt,
-          jobTitle: memberships.jobTitle,
-          photoFileId: users.photoFileId,
-          emailVerifiedAt: users.emailVerifiedAt,
-          founder: sql<boolean>`${memberships.createdAt} = ${organizations.createdAt}`,
-        })
-        .from(memberships)
-        .innerJoin(users, eq(users.id, memberships.userId))
-        .innerJoin(
-          organizations,
-          eq(organizations.id, memberships.organizationId),
-        )
-        .where(
-          and(
-            eq(memberships.organizationId, organizationId),
-            eq(memberships.userId, userId),
-          ),
-        );
-      if (!row) return undefined;
+  async membership(
+    tx: Transaction,
+    organizationId: string,
+    userId: string,
+  ): Promise<Membership | undefined> {
+    const [row] = await tx
+      .select({
+        id: memberships.id,
+        createdAt: memberships.createdAt,
+        dismissedAt: memberships.welcomeDismissedAt,
+        jobTitle: memberships.jobTitle,
+        photoFileId: users.photoFileId,
+        emailVerifiedAt: users.emailVerifiedAt,
+        founder: sql<boolean>`${memberships.createdAt} = ${organizations.createdAt}`,
+      })
+      .from(memberships)
+      .innerJoin(users, eq(users.id, memberships.userId))
+      .innerJoin(
+        organizations,
+        eq(organizations.id, memberships.organizationId),
+      )
+      .where(
+        and(
+          eq(memberships.organizationId, organizationId),
+          eq(memberships.userId, userId),
+        ),
+      );
+    if (!row) return undefined;
 
-      const held = await rolesOfMember(tx, row.id);
-      return { ...row, roles: held.map(memberRole) };
-    });
+    const held = await rolesOfMember(tx, row.id);
+    return { ...row, roles: held.map(memberRole) };
   }
 
   /**

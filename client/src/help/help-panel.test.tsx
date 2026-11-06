@@ -322,6 +322,48 @@ describe('Help', () => {
     }
   });
 
+  /**
+   * Where the window leaves the page less than 720 px beside Help, Help is
+   * a modal side sheet (ADR-091, #272): the page hidden from a screen
+   * reader while it is open; Esc closes it, and focus goes back to the
+   * button once the page is no longer hidden, as on a phone (#294).
+   */
+  it('in a window under 1140 px, is a modal sheet over the hidden page', async () => {
+    vi.stubGlobal('innerWidth', 1024);
+    try {
+      renderFrame('/orders');
+      const button = screen.getByRole('button', { name: 'Help' });
+      const page = screen.getByRole('heading', {
+        level: 1,
+        name: 'The orders page',
+      });
+
+      await userEvent.click(button);
+      const sheet = await screen.findByRole('dialog', {
+        name: 'Help · Orders',
+      });
+      expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+      const title = await within(sheet).findByRole('heading', {
+        level: 2,
+        name: 'Orders',
+      });
+      await waitFor(() => expect(title).toHaveFocus());
+      expect(page.closest('[aria-hidden="true"]')).not.toBeNull();
+
+      const hiddenWhenFocused: boolean[] = [];
+      button.addEventListener('focus', () =>
+        hiddenWhenFocused.push(button.closest('[aria-hidden="true"]') !== null),
+      );
+      await userEvent.keyboard('{Escape}');
+      await waitFor(() => expect(sheet).not.toBeInTheDocument());
+      expect(button).toHaveFocus();
+      expect(hiddenWhenFocused).toEqual([false]);
+      expect(page.closest('[aria-hidden="true"]')).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('opens at a Learn more’s section, marked, and returns to it on Esc', async () => {
     renderFrame('/');
     // After the words it follows, as the language joins them.

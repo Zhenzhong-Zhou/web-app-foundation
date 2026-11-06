@@ -23,7 +23,7 @@ import { HomeService } from './home.service';
 import { WelcomeService } from './welcome.service';
 
 /**
- * Home (ADR-058). No permission on the route: each card is gated by its
+ * Home (ADR-058). No permission on the route: each tile is gated by its
  * own view permission inside, as the lookup's kinds are (ADR-056).
  */
 @Controller({ path: 'home', version: '1' })

@@ -10,7 +10,7 @@ Inventory shows what you have and where: each item, at each location, by lot. Fr
 4. For a product tracked by lot, type the lot number and expiry as printed on the box. Receiving the same lot again adds to it.
 5. Press **Receive**.
 
-Goods a supplier sends against a purchase are received on the order instead, on [Orders](/orders). Stock received here has no cost until one is set on [Stock value](/costs); **Needs a cost** lists it.
+Goods a supplier sends against a purchase are received on the order instead, on [Orders](/orders). Stock received here has no cost until one is set on [Stock value](/costs); **Waiting for a cost** lists it.
 
 ## Move, ship or correct {#move}
 
@@ -45,7 +45,7 @@ Each row’s actions offer **Edit reorder point**, **Stock of the item** and **R
 
 An item’s **Position** = usable + coming − still needed: stock at locations marked available, less expired lots and what was issued to runs; plus confirmed purchase orders and released runs still to come; less confirmed sales still to ship. So a purchase order already raised does not raise another.
 
-An item is **Low** below its point, **Out** at zero or less, and **Enough** otherwise. The furthest below their point come first, and **Low** shows the out ones too. Open a row to see what makes up its position, late orders marked.
+An item is **Low** below its point, **Out** at zero or less, and **Enough** otherwise. The furthest below their point come first, and **Low stock** shows the out ones too. Open a row to see what makes up its position, late orders marked.
 
 ## How much to order {#how-much}
 
@@ -70,6 +70,7 @@ Nothing is saved until you create it, and what you create shows on the row at on
 - **Free**: stock that can be promised, sampled or used in production.
 - **Not available**: a location whose stock is not for sending, such as a bin of returns waiting to be checked.
 - **Expiring soon**: a lot that expires within the days your organization has set.
+- **Expired**: a lot past its expiry day. As a filter, the list shows only these, the soonest first, until you remove it.
 
 ## If something is refused {#refused}
 

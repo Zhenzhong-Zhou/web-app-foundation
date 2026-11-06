@@ -10,9 +10,8 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type { InvoiceSummary } from '../api/types.gen';
 import { DateRangeFilter } from '../components/date-range-filter';
@@ -25,12 +24,12 @@ import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { fromAddress } from '../lib/address-filter';
 import type { InvoiceStatus } from '../lib/api-names';
-import { type DayRange, withDays } from '../lib/date-range';
+import { withDays } from '../lib/date-range';
 import { formatDay, formatMoney, NO_VALUE } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { day, oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
 import { useListSort, withSort } from '../lib/use-list-sort';
 import { STATUS_TONES } from '../theme/status';
@@ -41,12 +40,24 @@ type Filter = InvoiceStatus | 'all';
 
 const LABELS = defineMessages({
   all: { id: 'invoices.filter.all', defaultMessage: 'All' },
-  draft: { id: 'invoices.filter.drafts', defaultMessage: 'Drafts' },
+  // Home's tile's name, what a draft waits for (ADR-091).
+  draft: { id: 'invoices.filter.toIssue', defaultMessage: 'To issue' },
   issued: { id: 'invoices.status.issued', defaultMessage: 'Issued' },
   voided: { id: 'orders.shipments.voided', defaultMessage: 'Voided' },
 });
 
 const FILTER_VALUES: readonly Filter[] = ['all', 'draft', 'issued', 'voided'];
+
+/**
+ * The list's filters, in the address (ADR-091): Home's tile opens the
+ * drafts, `?status=draft`, and what is pressed here is kept there, with
+ * the invoice days, `from` and `to`.
+ */
+const ADDRESS_FILTERS = {
+  status: oneOf(FILTER_VALUES, 'all'),
+  from: day,
+  to: day,
+};
 
 const FILTERS: { value: Filter; label: MessageDescriptor }[] = [
   { value: 'all', label: LABELS.all },
@@ -74,16 +85,13 @@ function query(filter: Filter): string {
  */
 export function InvoicesPage() {
   const intl = useIntl();
-  // Home's card opens drafts: ?status=draft (ADR-058).
-  const [params] = useSearchParams();
-  const [filter, setFilter] = useState<Filter>(() =>
-    fromAddress(params, 'status', FILTER_VALUES, 'all'),
-  );
+  const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  const filter = filters.status;
+  const range = { from: filters.from, to: filters.to };
   const { text, setText, search } = useListSearch();
   // By invoice date, sortable by date and total (ADR-057); the export
   // takes the same query.
-  const [range, setRange] = useState<DayRange>({});
-  const { sort, toggle } = useListSort<'invoiceDate' | 'total'>();
+  const { sort, header } = useListSort(['invoiceDate', 'total']);
   const path = withSort(
     withDays(withSearch(query(filter), search), range),
     sort,
@@ -151,13 +159,13 @@ export function InvoicesPage() {
           id: option.value,
           label: intl.formatMessage(option.label),
           pressed: filter === option.value,
-          onToggle: () => setFilter(option.value),
+          onToggle: () => setFilters({ status: option.value }),
         }))}
       >
         <DateRangeFilter
           label={invoiceDate}
           value={range}
-          onChange={setRange}
+          onChange={(next) => setFilters({ from: next.from, to: next.to })}
         />
       </FilterRow>
 
@@ -206,9 +214,7 @@ export function InvoicesPage() {
                     </TableCell>
                     <SortHeader
                       label={invoiceDate}
-                      active={sort?.key === 'invoiceDate'}
-                      order={sort?.order ?? 'asc'}
-                      onSort={() => toggle('invoiceDate')}
+                      {...header('invoiceDate')}
                     />
                     <TableCell>
                       {intl.formatMessage({
@@ -219,9 +225,7 @@ export function InvoicesPage() {
                     <SortHeader
                       align="right"
                       label={total}
-                      active={sort?.key === 'total'}
-                      order={sort?.order ?? 'asc'}
-                      onSort={() => toggle('total')}
+                      {...header('total')}
                     />
                     <TableCell>
                       {intl.formatMessage({

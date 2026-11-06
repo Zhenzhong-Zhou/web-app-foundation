@@ -25,12 +25,35 @@ const VIEWER = [
   'orders.view',
 ];
 
-function serve(card: Welcome | null, start = GETTING_STARTED_DONE) {
+function serve(
+  card: Welcome | null,
+  start = GETTING_STARTED_DONE,
+  whatWeDo: string | null = null,
+) {
   server.use(
     http.get('/api/v1/home', () =>
-      HttpResponse.json({ gettingStarted: start, welcome: card, cards: [] }),
+      HttpResponse.json({
+        whatWeDo,
+        gettingStarted: start,
+        welcome: card,
+        cards: [],
+      }),
     ),
   );
+}
+
+/** A window this wide, for the card's width queries; jsdom has none. */
+function widthIs(px: number) {
+  vi.stubGlobal('matchMedia', (query: string) => {
+    const min = /min-width:\s*([\d.]+)px/.exec(query);
+    const max = /max-width:\s*([\d.]+)px/.exec(query);
+    return {
+      matches: (!min || px >= Number(min[1])) && (!max || px <= Number(max[1])),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    };
+  });
 }
 
 function renderHome(
@@ -76,17 +99,34 @@ describe('the welcome card', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-10-20T12:00:00.000Z'));
     setOrganizationTimeZone('UTC');
+    // A tablet held sideways, from `md`: the card starts open (ADR-091).
+    widthIs(1180);
   });
   afterEach(() => {
     vi.useRealTimers();
     setOrganizationTimeZone(null);
+    vi.unstubAllGlobals();
   });
 
   it('greets a Viewer with the note, what they can do and their first week', async () => {
-    serve(welcome());
+    serve(
+      welcome(),
+      GETTING_STARTED_DONE,
+      'We import and distribute natural health products.',
+    );
     renderHome();
 
     const region = await card();
+    // The organization's own words once, under Home's date, not again in
+    // the card (ADR-091's review).
+    expect(
+      screen.getAllByText('We import and distribute natural health products.'),
+    ).toHaveLength(1);
+    expect(
+      within(region).queryByText(
+        'We import and distribute natural health products.',
+      ),
+    ).toBeNull();
     expect(
       within(region).getByText(
         'You joined today as a Viewer. This card stays on Home for your first two weeks, until November 3.',
@@ -118,16 +158,32 @@ describe('the welcome card', () => {
     expect(
       within(region).getByRole('link', { name: 'David Park' }),
     ).toHaveAttribute('href', '/people/user-david');
-
-    expect(within(region).getByText('0 of 3 done')).toBeVisible();
-    expect(
-      within(region).getByRole('link', { name: 'Your account' }),
-    ).toHaveAttribute('href', '/account');
-    expect(
-      within(region).getByRole('link', { name: 'Products' }),
-    ).toHaveAttribute('href', '/products');
+    // Each area a link to its page, named as the menu names it (ADR-091's
+    // review): Inventory, not Stock and locations.
     expect(
       within(region).getByRole('link', { name: 'Orders' }),
+    ).toHaveAttribute('href', '/orders');
+    expect(
+      within(region).getByRole('link', { name: 'Inventory' }),
+    ).toHaveAttribute('href', '/inventory');
+    expect(
+      within(region).queryByRole('link', { name: 'Stock and locations' }),
+    ).toBeNull();
+
+    expect(
+      within(region).getByText('Your first week · 0 of 3 done'),
+    ).toBeVisible();
+    // Each item one link, its whole row: its title, then its hint.
+    expect(
+      within(region).getByRole('link', {
+        name: /^Say who you are\s*A photo or your job title/,
+      }),
+    ).toHaveAttribute('href', '/account');
+    expect(
+      within(region).getByRole('link', { name: /^Look up a product or a lot/ }),
+    ).toHaveAttribute('href', '/products');
+    expect(
+      within(region).getByRole('link', { name: /^Open an order/ }),
     ).toHaveAttribute('href', '/orders');
     expect(
       within(region).getByText(/at the top, beside the bell/),
@@ -153,14 +209,11 @@ describe('the welcome card', () => {
       },
     );
 
-    await userEvent.click(
-      within(await card()).getByRole('link', { name: 'Products' }),
-    );
+    const lookUp = { name: /^Look up a product or a lot/ };
+    await userEvent.click(within(await card()).getByRole('link', lookUp));
     await userEvent.click(screen.getByRole('button', { name: 'Back' }));
 
-    expect(
-      within(await card()).getByRole('link', { name: 'Products' }),
-    ).toBeVisible();
+    expect(within(await card()).getByRole('link', lookUp)).toBeVisible();
   });
 
   it('opens Help on Home’s guide from the Help in its foot, as the bar’s does', async () => {
@@ -261,12 +314,14 @@ describe('the welcome card', () => {
     // Someone who may change roles has nobody to ask.
     expect(within(region).queryByText(/To do more/)).toBeNull();
 
-    expect(within(region).getByText('2 of 5 done')).toBeVisible();
+    expect(
+      within(region).getByText('Your first week · 2 of 5 done'),
+    ).toBeVisible();
     // A ticked step reads as done, after a space, to a screen reader.
     expect(
       within(region).getByText(
         (_, element) =>
-          element?.tagName === 'P' &&
+          element?.tagName === 'SPAN' &&
           element.textContent === 'Say who you are (done)',
       ),
     ).toBeInTheDocument();
@@ -275,11 +330,14 @@ describe('the welcome card', () => {
         'We sent a link to wang.fang@alpha.example. Inviting colleagues waits until you confirm.',
       ),
     ).toBeVisible();
+    // A done item's row opens what was done.
     expect(
-      within(region).getByRole('link', { name: 'Photo added' }),
+      within(region).getByRole('link', {
+        name: /^Say who you are \(done\)\s*Photo added$/,
+      }),
     ).toHaveAttribute('href', '/account');
     expect(
-      within(region).getByRole('link', { name: 'NN-2410-07' }),
+      within(region).getByRole('link', { name: /You opened lot NN-2410-07$/ }),
     ).toHaveAttribute('href', '/lots/lot-7');
     expect(
       within(region).getByText(
@@ -287,7 +345,7 @@ describe('the welcome card', () => {
       ),
     ).toBeVisible();
     expect(
-      within(region).getByRole('link', { name: 'Receive stock' }),
+      within(region).getByRole('link', { name: /^Receive stock/ }),
     ).toHaveAttribute('href', '/inventory');
 
     await user.click(
@@ -356,11 +414,8 @@ describe('the welcome card', () => {
       ),
     ).toBeVisible();
     expect(
-      within(region).getByRole('link', { name: 'Orders' }),
+      within(region).getByRole('link', { name: /^Receive stock/ }),
     ).toHaveAttribute('href', '/orders?direction=purchase&status=confirmed');
-    expect(
-      within(region).queryByRole('link', { name: 'Receive stock' }),
-    ).toBeNull();
   });
 
   it('gives the founder one line, and only their own two items while Getting started shows', async () => {
@@ -412,7 +467,9 @@ describe('the welcome card', () => {
         'Setting up the organization is in Getting started, below.',
       ),
     ).toBeVisible();
-    expect(within(region).getByText('1 of 2 done')).toBeVisible();
+    expect(
+      within(region).getByText('Your first week · 1 of 2 done'),
+    ).toBeVisible();
     expect(within(region).getByText('Confirmed')).toBeVisible();
     expect(
       screen.getByRole('region', { name: 'Getting started' }),
@@ -433,17 +490,23 @@ describe('the welcome card', () => {
     ).toBeVisible();
   });
 
-  it('draws its progress empty with nothing done, on a grey track', async () => {
+  it('starts open from `md`, and Fold folds it to its one line', async () => {
     serve(welcome());
+    const user = userEvent.setup();
     renderHome();
 
     const region = await card();
-    expect(within(region).getByText('0 of 3 done')).toBeVisible();
-    const track = region.querySelector('.MuiLinearProgress-root');
-    const bar = region.querySelector('.MuiLinearProgress-bar');
-    // Not a pale shade of the bar's green, which read as a full bar.
-    expect(track).toHaveStyle({ backgroundColor: 'rgba(0, 0, 0, 0.08)' });
-    expect(bar).toHaveStyle({ transform: 'translateX(-100%)' });
+    const fold = within(region).getByRole('button', { name: 'Fold' });
+    expect(fold).toHaveAttribute('aria-expanded', 'true');
+    expect(within(region).getByRole('figure')).toBeVisible();
+
+    await user.click(fold);
+    expect(fold).toHaveAttribute('aria-expanded', 'false');
+    expect(fold).toHaveTextContent('Open');
+    expect(within(region).queryByRole('figure')).toBeNull();
+    expect(
+      within(region).getByText('Your first week · 0 of 3 done'),
+    ).toBeVisible();
   });
 
   it('says Done, opening nothing, for an item whose record has since gone', async () => {
@@ -469,7 +532,9 @@ describe('the welcome card', () => {
     if (!item) throw new Error('No item for the lookup');
     expect(within(item).getByText('Done')).toBeVisible();
     expect(within(item).queryByRole('link')).toBeNull();
-    expect(within(region).getByText('1 of 3 done')).toBeVisible();
+    expect(
+      within(region).getByText('Your first week · 1 of 3 done'),
+    ).toBeVisible();
   });
 
   it('names a role the organization made as named, with no article', async () => {
@@ -575,45 +640,42 @@ describe('the welcome card', () => {
   });
 
   describe('on a phone', () => {
-    beforeEach(() => {
-      // Every width query matches, as at 390 px; jsdom has no matchMedia.
-      vi.stubGlobal('matchMedia', (query: string) => ({
-        matches: query.includes('max-width'),
-        media: query,
-        addEventListener: () => undefined,
-        removeEventListener: () => undefined,
-      }));
-    });
-    afterEach(() => vi.unstubAllGlobals());
+    beforeEach(() => widthIs(390));
 
-    it('folds what you can do here into one row after the first week, opened by a tap', async () => {
+    it('starts folded to one line above the tiles, and opens in place, what to do before what to read', async () => {
       serve(welcome());
       const user = userEvent.setup();
       renderHome();
 
       const region = await card();
-      const fold = within(region).getByRole('button', {
-        name: /What you can do here/,
-      });
-      expect(fold).toHaveAttribute('aria-expanded', 'false');
-      expect(fold).toHaveTextContent('4 areas, tap to open');
+      const open = within(region).getByRole('button', { name: 'Open' });
+      expect(open).toHaveAttribute('aria-expanded', 'false');
       expect(
-        within(region).queryByText('See purchase and sales orders.'),
-      ).not.toBeVisible();
-
-      // What to do before what to read.
-      const week = within(region).getByRole('heading', {
-        name: 'Your first week',
-      });
+        within(region).getByText('Your first week · 0 of 3 done'),
+      ).toBeVisible();
+      expect(within(region).queryByRole('figure')).toBeNull();
       expect(
-        week.compareDocumentPosition(fold) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
+        within(region).queryByRole('button', {
+          name: 'Dismiss the welcome card',
+        }),
+      ).toBeNull();
 
-      await user.click(fold);
-      expect(fold).toHaveAttribute('aria-expanded', 'true');
+      await user.click(open);
+      expect(open).toHaveAttribute('aria-expanded', 'true');
+      expect(open).toHaveTextContent('Fold');
+      expect(within(region).getByRole('figure')).toBeVisible();
       expect(
         within(region).getByText('See purchase and sales orders.'),
       ).toBeVisible();
+      const week = within(region).getByRole('list', {
+        name: 'Your first week',
+      });
+      const youCan = within(region).getByRole('heading', {
+        name: 'What you can do here',
+      });
+      expect(
+        week.compareDocumentPosition(youCan) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
     });
   });
 });

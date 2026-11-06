@@ -10,7 +10,7 @@ L’inventaire montre ce que vous avez et où : chaque article, à chaque empla
 4. Pour un produit suivi par lot, saisissez le numéro de lot et la date de péremption tels qu’imprimés sur la boîte. Recevoir le même lot à nouveau s’y ajoute.
 5. Appuyez sur **Recevoir**.
 
-Les marchandises qu’un fournisseur envoie pour un achat se reçoivent plutôt sur la commande, dans [Commandes](/orders). Le stock reçu ici n’a pas de coût tant qu’on ne lui en donne pas un dans [Valeur du stock](/costs); **Sans coût** le liste.
+Les marchandises qu’un fournisseur envoie pour un achat se reçoivent plutôt sur la commande, dans [Commandes](/orders). Le stock reçu ici n’a pas de coût tant qu’on ne lui en donne pas un dans [Valeur du stock](/costs); **En attente d’un coût** le liste.
 
 ## Déplacer, expédier ou corriger {#move}
 
@@ -45,7 +45,7 @@ Les actions de chaque ligne proposent **Modifier le point de commande**, **Stock
 
 La **Position** d’un article = utilisable + à venir − encore requis : le stock aux emplacements marqués disponibles, moins les lots périmés et ce qui a été remis aux ordres de fabrication; plus les achats confirmés et les ordres de fabrication lancés encore à venir; moins les ventes confirmées encore à expédier. Ainsi, un bon de commande déjà créé n’en fait pas créer un autre.
 
-Un article est **Bas** sous son point, **Épuisé** à zéro ou moins, et **Suffisant** autrement. Les plus loin sous leur point viennent en premier, et **Bas** montre aussi les épuisés. Ouvrez une ligne pour voir ce qui fait sa position, les commandes en retard indiquées.
+Un article est **Bas** sous son point, **Épuisé** à zéro ou moins, et **Suffisant** autrement. Les plus loin sous leur point viennent en premier, et **Stock bas** montre aussi les épuisés. Ouvrez une ligne pour voir ce qui fait sa position, les commandes en retard indiquées.
 
 ## Combien commander {#how-much}
 
@@ -70,6 +70,7 @@ Rien n’est enregistré tant que vous ne le créez pas, et ce que vous créez s
 - **Libre** : du stock qui peut être promis, donné en échantillon ou utilisé en production.
 - **Non disponible** : un emplacement dont le stock n’est pas à expédier, comme un casier de retours à vérifier.
 - **Expire bientôt** : un lot qui expire dans le nombre de jours fixé par votre organisation.
+- **Périmés** : les lots dont la date de péremption est passée. Comme filtre, la liste n’affiche que ceux-là, le plus proche d’abord, jusqu’à ce que vous le retiriez.
 
 ## Si quelque chose est refusé {#refused}
 

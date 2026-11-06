@@ -178,6 +178,12 @@ export function OrganizationPage() {
                 // The name is in the side rail and the top bar too.
                 onSaved={reloadAll}
               />
+              <WhatWeDoForm
+                key={`what-${organization.whatWeDo ?? ''}`}
+                value={organization.whatWeDo}
+                readOnly={!canUpdate}
+                onSaved={reload}
+              />
               <TaxNumberForm
                 key={`tax-${organization.taxRegistrationNumber ?? ''}`}
                 value={organization.taxRegistrationNumber}
@@ -387,6 +393,79 @@ function NameForm({
             'Shown across the app and on new invoices, credit notes and packing slips. Those already issued keep the name they were issued with.',
         })}
         slotProps={{ htmlInput: { maxLength: 100 } }}
+      />
+    </SettingsSection>
+  );
+}
+
+/**
+ * What we do (ADR-091): one line in the organization's own words, which
+ * Home shows every member under the date, and a newcomer's welcome too.
+ * Empty clears it. Save waits for a change: the log keeps no words
+ * (ADR-018), so a save of the same ones would be an entry saying nothing.
+ */
+function WhatWeDoForm({
+  value,
+  readOnly,
+  onSaved,
+}: {
+  value: string | null;
+  readOnly: boolean;
+  onSaved: () => Promise<void>;
+}) {
+  const intl = useIntl();
+  const [text, setText] = useState(value ?? '');
+  const { submitting, error, submit } = useSubmit(onSaved, {
+    success: intl.formatMessage({
+      id: 'settings.org.whatWeDo.saved',
+      defaultMessage: 'What we do saved',
+    }),
+  });
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    void submit(() =>
+      api('/organization', {
+        method: 'PATCH',
+        body: JSON.stringify({ whatWeDo: text.trim() }),
+      }),
+    );
+  }
+
+  return (
+    <SettingsSection
+      title={intl.formatMessage({
+        id: 'settings.org.whatWeDo.title',
+        defaultMessage: 'What we do',
+      })}
+      onSubmit={handleSubmit}
+      error={error}
+      submitting={submitting}
+      readOnly={readOnly}
+      saveLabel={intl.formatMessage({
+        id: 'settings.org.whatWeDo.save',
+        defaultMessage: 'Save what we do',
+      })}
+      saveDisabled={text.trim() === (value ?? '')}
+    >
+      <TextField
+        id="organization-what-we-do"
+        label={intl.formatMessage({
+          id: 'settings.org.whatWeDo.label',
+          defaultMessage: 'What we do',
+        })}
+        fullWidth
+        multiline
+        minRows={2}
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        disabled={readOnly}
+        helperText={intl.formatMessage({
+          id: 'settings.org.whatWeDo.help',
+          defaultMessage:
+            'One line about what your organization does, in your own words. Home shows it to every member, under the date. Up to 200 characters; leave blank to show nothing.',
+        })}
+        slotProps={{ htmlInput: { maxLength: 200 } }}
       />
     </SettingsSection>
   );

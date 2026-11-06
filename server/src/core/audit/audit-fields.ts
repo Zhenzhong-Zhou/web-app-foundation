@@ -232,6 +232,12 @@ const GETTINGSTARTED_WORDS: Record<string, Translatable> = {
   }),
 };
 
+/** whatWeDo: free text, so only whether it was changed (ADR-018, ADR-091). */
+const WHATWEDO_WORDS: Record<'changed' | 'cleared', Translatable> = {
+  changed: t({ id: 'audit.value.whatWeDo.changed', defaultMessage: 'Changed' }),
+  cleared: t({ id: 'audit.value.whatWeDo.cleared', defaultMessage: 'Cleared' }),
+};
+
 /** reset */
 const RESET_WORDS: Record<NumberingReset, Translatable> = {
   never: t({ id: 'audit.value.reset.never', defaultMessage: 'Never' }),
@@ -681,6 +687,11 @@ export const AUDIT_FIELDS = {
       defaultMessage: 'Getting started',
     }),
     read: { set: GETTINGSTARTED_WORDS },
+  },
+  // What we do (ADR-091): never its words, which stay out of the log.
+  whatWeDo: {
+    name: t({ id: 'audit.field.whatWeDo', defaultMessage: 'What we do' }),
+    read: { set: WHATWEDO_WORDS },
   },
   reset: {
     name: t({ id: 'audit.field.reset', defaultMessage: 'Restarts' }),

@@ -126,7 +126,7 @@ describe('the menu on a phone', () => {
     const user = userEvent.setup();
     renderFrame();
 
-    await user.click(screen.getByRole('button', { name: 'Open navigation' }));
+    await user.click(screen.getByRole('button', { name: 'Menu' }));
     const menu = await screen.findByRole('dialog', { name: 'Navigation' });
     expect(
       within(menu).getByRole('button', { name: 'Close navigation' }),
@@ -138,7 +138,7 @@ describe('the menu on a phone', () => {
     const user = userEvent.setup();
     renderFrame();
 
-    await user.click(screen.getByRole('button', { name: 'Open navigation' }));
+    await user.click(screen.getByRole('button', { name: 'Menu' }));
     const menu = await screen.findByRole('dialog', { name: 'Navigation' });
     expect(within(menu).getByText(/^Powered by/)).toHaveTextContent(
       'Powered by web-app-foundation',
@@ -155,6 +155,22 @@ describe('the account menu’s preferences', () => {
     );
   });
   afterEach(() => localStorage.clear());
+
+  // Your devices is reached from Your account and the sign-in emails, not
+  // from here (ADR-091).
+  it('leads to Your account alone, without Your devices', async () => {
+    const user = userEvent.setup();
+    renderFrame();
+    await user.click(screen.getByRole('button', { name: /signed in as/ }));
+    const menu = screen.getByRole('menu');
+
+    expect(
+      within(menu).getByRole('menuitem', { name: 'Your account' }),
+    ).toHaveAttribute('href', '/account');
+    expect(
+      within(menu).queryByRole('menuitem', { name: 'Your devices' }),
+    ).toBeNull();
+  });
 
   it('opens a preference from its row, and Escape comes back to the row', async () => {
     const user = userEvent.setup();
@@ -183,6 +199,26 @@ describe('the account menu’s preferences', () => {
 
     await user.keyboard(' ');
     expect(await screen.findByRole('listbox')).toBeVisible();
+  });
+
+  /**
+   * Each select's name in words above it, which names it (ADR-091), so the
+   * text size is found by its name where a person looks for it.
+   */
+  it('labels its selects in words, the words naming them', async () => {
+    const user = userEvent.setup();
+    renderFrame();
+    await user.click(screen.getByRole('button', { name: /signed in as/ }));
+    const menu = screen.getByRole('menu');
+
+    for (const name of ['Language', 'Text size']) {
+      const label = within(menu).getByText(name);
+      expect(label).toBeVisible();
+      expect(within(menu).getByRole('combobox', { name })).toHaveAttribute(
+        'aria-labelledby',
+        label.id,
+      );
+    }
   });
 });
 
@@ -258,7 +294,7 @@ describe('a new version', () => {
       screen.queryByRole('button', { name: 'New version' }),
     ).not.toBeInTheDocument();
     const account = screen.getByRole('button', {
-      name: 'OW, signed in as owner@alpha.example.com, a new version is ready',
+      name: 'Account, OW, signed in as owner@alpha.example.com, a new version is ready',
     });
     expect(
       account.querySelector('.MuiBadge-dot:not(.MuiBadge-invisible)'),
@@ -318,7 +354,7 @@ describe('a new version', () => {
     expect(screen.getByRole('status')).toBeInTheDocument();
     expect(
       screen.getByRole('button', {
-        name: 'OW, signed in as owner@alpha.example.com',
+        name: 'Account, OW, signed in as owner@alpha.example.com',
       }),
     ).toBeInTheDocument();
   });

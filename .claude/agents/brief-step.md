@@ -94,10 +94,12 @@ where a step must act on it.
 - **After a pull or rebase that changed a lock file,** `npm ci` in that
   folder first, so what is installed is what the lock holds.
 - `npm outdated` in `server/` and `client/`. **Each package by its own
-  publish time:** `npm view <package> time --json` gives its Wanted
-  version's; take it with `npm update <package>` only when that was at
-  least 7 × 24 hours ago, and say on which day each of the rest comes of
-  age.
+  publish time:** `npm view <package> time --json` gives every version's;
+  take the newest in range published at least 7 × 24 hours ago, the
+  Wanted version when it is that old, keeping `package.json`'s range as it
+  is, and say on which day each of the rest comes of age. A package that
+  publishes daily never lets its Wanted version come of age, so its newest
+  version of age is the one to take.
 - **A package not yet 7 days old never makes a step BLOCKED:** its date
   listed, the step goes on.
 - **Never move a locked version back,** and never `npm update --before`,

@@ -32,6 +32,5 @@ import { ProductionOrdersService } from './production-orders.service';
     ProductionCloseService,
     LicenceOverrideGuard,
   ],
-  exports: [ProductionOrdersService],
 })
 export class ProductionOrdersModule {}

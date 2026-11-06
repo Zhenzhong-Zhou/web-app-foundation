@@ -1,0 +1,2 @@
+ALTER TABLE "organizations" ADD COLUMN "what_we_do" text;--> statement-breakpoint
+ALTER TABLE "organizations" ADD CONSTRAINT "organizations_what_we_do_check" CHECK ("organizations"."what_we_do" is null or (length(btrim("organizations"."what_we_do")) > 0 and char_length("organizations"."what_we_do") <= 200));

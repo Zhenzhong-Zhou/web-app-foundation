@@ -19,34 +19,61 @@ import { useIntl } from 'react-intl';
 import type { ProductLicence } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
+import { EmptyState } from '../components/empty-state';
+import { FilterRow } from '../components/filter-row';
 import { PageHeader } from '../components/page-header';
+import { Reference } from '../components/reference';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { withQuery } from '../lib/api';
 import { formatDay, NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useFocusAfterRemove } from '../lib/use-focus-after-remove';
+import { flag, useListFilters } from '../lib/use-list-filters';
 import { useResource } from '../lib/use-resource';
 import { EditLicenceDialog } from './edit-licence-dialog';
 import { licenceStatus } from './licence-status';
 import { NewLicenceDialog } from './new-licence-dialog';
 
 /**
+ * The list's filters, in the address (ADR-091): Home's Licences tile opens
+ * it on Expiring soon, `?expiring=1`, and its late button with Expired too.
+ * Expiring soon is within the 60 days' notice or past it; Expired is past
+ * it. The server decides both by the organization's today.
+ */
+const ADDRESS_FILTERS = {
+  expiring: flag,
+  expired: flag,
+};
+
+/**
  * The registrations formulations are made and sold under — an NPN, a DIN, a
  * cosmetic notification number.
  *
- * Reference data, set up once and then chosen on a recipe, so it is reached
- * from Products rather than the top nav: a screen visited twice a year does
- * not earn a permanent tab.
+ * Reference data, set up once and then chosen on a recipe, in the menu's
+ * records (ADR-091, #460); Products links to it too.
  */
 export function LicencesPage() {
   const intl = useIntl();
   const can = useCan();
+  const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  // Focus to the chip in a removed one's place, or the heading (ADR-091's
+  // review).
+  const { row: chipRow, removed } = useFocusAfterRemove();
+  const { expiring, expired } = filters;
+  // Soonest first with either on, the server's order.
   const {
     data: licences,
     error,
     refused,
     loading,
     reload,
-  } = useResource<ProductLicence[]>('/product-licences');
+  } = useResource<ProductLicence[]>(
+    withQuery('/product-licences', {
+      expiring: expiring ? 'true' : undefined,
+      expired: expired ? 'true' : undefined,
+    }),
+  );
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<ProductLicence | null>(null);
 
@@ -63,12 +90,10 @@ export function LicencesPage() {
 
   return (
     <Stack spacing={3}>
-      {/* Not in the menu, so reached by a link inside the app, which
-          offers Back (#341). */}
       <PageHeader
         crumbs={[]}
         title={intl.formatMessage({
-          id: 'products.licences',
+          id: 'layout.nav.licences',
           defaultMessage: 'Licences',
         })}
         actions={
@@ -91,6 +116,39 @@ export function LicencesPage() {
         })}
       </Typography>
 
+      {/* The one filter row (ADR-055): Licences expiring, Home's tile's
+          name, as the tile opens it (ADR-091). */}
+      <FilterRow
+        quick={[
+          {
+            id: 'expiring',
+            label: intl.formatMessage({
+              id: 'licences.filter.expiring',
+              defaultMessage: 'Licences expiring',
+            }),
+            pressed: expiring,
+            onToggle: () => setFilters({ expiring: !expiring }),
+          },
+        ]}
+      />
+
+      {/* What a link narrowed that no button shows, removable: Home's
+          late button, the expired alone. */}
+      {expired && (
+        <Stack ref={chipRow} direction="row" spacing={1}>
+          <Chip
+            label={intl.formatMessage({
+              id: 'licences.filter.expired',
+              defaultMessage: 'Expired',
+            })}
+            onDelete={(event) => {
+              removed(event);
+              setFilters({ expired: false });
+            }}
+          />
+        </Stack>
+      )}
+
       {error && <Alert severity="error">{error}</Alert>}
 
       <Paper variant="outlined">
@@ -98,6 +156,18 @@ export function LicencesPage() {
           <Stack sx={{ p: 2 }} spacing={1}>
             {showSkeleton ? <Skeleton height={48} /> : null}
           </Stack>
+        ) : licences?.length === 0 && (expiring || expired) ? (
+          <EmptyState>
+            {expired
+              ? intl.formatMessage({
+                  id: 'licences.noneExpired',
+                  defaultMessage: 'No licence has expired.',
+                })
+              : intl.formatMessage({
+                  id: 'licences.noneExpiring',
+                  defaultMessage: 'No licence expires within 60 days.',
+                })}
+          </EmptyState>
         ) : licences?.length === 0 ? (
           <Alert severity="info">
             {intl.formatMessage({
@@ -160,7 +230,9 @@ export function LicencesPage() {
               <TableBody>
                 {licences?.map((licence) => (
                   <TableRow key={licence.id}>
-                    <TableCell>{licence.number}</TableCell>
+                    <TableCell>
+                      <Reference>{licence.number}</Reference>
+                    </TableCell>
                     <TableCell>{licence.authority}</TableCell>
                     <TableCell>
                       {licence.issuedAt

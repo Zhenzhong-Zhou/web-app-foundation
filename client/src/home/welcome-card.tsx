@@ -1,5 +1,8 @@
 import ApartmentOutlined from '@mui/icons-material/ApartmentOutlined';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
 import HelpOutlineOutlined from '@mui/icons-material/HelpOutlineOutlined';
+import WavingHandOutlined from '@mui/icons-material/WavingHandOutlined';
 import {
   Avatar,
   Box,
@@ -11,7 +14,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import type { ReactNode, RefObject } from 'react';
+import { type ReactNode, type RefObject, useId, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 
@@ -25,18 +28,19 @@ import { useHelp } from '../help/use-help';
 import { formatDayMonth } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
 import { articleOf, roleList } from '../members/role-names';
+import { RADIUS } from '../theme/tokens';
 import { FirstWeek } from './first-week';
+import { TONAL } from './tonal';
 
 /**
- * The welcome (ADR-079): the member's own card on Home for their first two
- * weeks, with the inviter's note, what they can do here and their first
- * week. It names the day it goes, so it never vanishes unexplained, and its
- * foot says where Help is, in place of a tour.
- *
- * Two columns on a computer: the note and what you can do here, beside the
- * first week. On a phone, one: the note, the first week, then what you can
- * do here folded into one row, so what to do comes before what to read.
- * `startShows`, while Getting started is below it and is their list.
+ * The welcome (ADR-079; ADR-091): the member's own card on Home for their
+ * first two weeks. Its head names it and says how far the first week has
+ * come; below `md` it starts folded to that one line, with Open, and from
+ * `md` open, with Fold, until the reader chooses. Open, it holds the day
+ * the card goes, so it never vanishes
+ * unexplained, the inviter's note, the first week's items, what they can
+ * do here, each area a link to its page, and where Help is, in place of a
+ * tour. `startShows`, while Getting started is below it and is their list.
  */
 export function WelcomeCard({
   welcome,
@@ -52,7 +56,12 @@ export function WelcomeCard({
 }) {
   const intl = useIntl();
   const theme = useTheme();
-  const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
+  const wide = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
+  // Folded below `md`, open from it, until the reader chooses: a foldable
+  // opened follows its new width while nobody has.
+  const [chosen, setChosen] = useState<boolean | null>(null);
+  const open = chosen ?? wide;
+  const bodyId = useId();
   const { session } = useAuth();
   const can = useCan();
   const help = useHelp();
@@ -205,44 +214,42 @@ export function WelcomeCard({
     </Typography>
   );
 
-  const week = (
-    <FirstWeek
-      items={welcome.items}
-      canSeeProducts={can('products.view')}
-      canInvite={can('users.create')}
-      canMoveStock={can('stock.move')}
-    />
-  );
-  const youCan = (
-    <WhatYouCanDo access={access} folded={phone && !access.holdsEverything} />
-  );
+  const done = welcome.items.filter((item) => item.done).length;
 
   return (
     <Paper
       variant="outlined"
       component="section"
       aria-labelledby="welcome-title"
-      sx={{
-        p: { xs: 2, sm: 3 },
-        borderTop: 4,
-        borderTopColor: 'primary.main',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2.5,
-      }}
+      sx={{ overflow: 'hidden' }}
     >
       <Stack
         direction="row"
-        sx={{
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: 1.5,
-        }}
+        spacing={1.5}
+        sx={{ alignItems: 'center', px: 2, py: 1.5 }}
       >
-        <Box sx={{ minWidth: 0 }}>
+        <Box
+          aria-hidden
+          sx={{
+            width: 40,
+            height: 40,
+            flex: 'none',
+            borderRadius: `${RADIUS.control}px`,
+            bgcolor: 'surface.chosen',
+            color: 'primary.main',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <WavingHandOutlined fontSize="small" />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          {/* The section size, as Home's other headings (ADR-091's
+              review), told from the line under it by size. */}
           <Typography
             ref={headingRef}
-            variant="h5"
+            variant="h6"
             component="h2"
             id="welcome-title"
             tabIndex={-1}
@@ -255,100 +262,118 @@ export function WelcomeCard({
               { organization, name: session?.user.name ?? '' },
             )}
           </Typography>
-          <Typography sx={{ color: 'text.secondary', mt: 0.5 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {intl.formatMessage(
-              { id: 'home.welcome.lead', defaultMessage: '{who} {until}' },
-              { who, until },
+              {
+                id: 'home.welcome.weekProgress',
+                defaultMessage: 'Your first week · {done} of {total} done',
+              },
+              { done, total: welcome.items.length },
             )}
           </Typography>
         </Box>
         <Button
-          variant="text"
-          onClick={onDismiss}
-          aria-label={intl.formatMessage({
-            id: 'home.welcome.dismissLabel',
-            defaultMessage: 'Dismiss the welcome card',
-          })}
-          sx={{ flex: 'none' }}
+          variant="outlined"
+          color="inherit"
+          aria-expanded={open}
+          aria-controls={bodyId}
+          onClick={() => setChosen(!open)}
+          endIcon={open ? <ExpandLess /> : <ExpandMore />}
+          sx={{ flex: 'none', borderColor: 'divider' }}
         >
-          {intl.formatMessage({
-            id: 'home.welcome.dismiss',
-            defaultMessage: 'Dismiss',
-          })}
+          {open
+            ? intl.formatMessage({
+                id: 'home.welcome.fold',
+                defaultMessage: 'Fold',
+              })
+            : intl.formatMessage({
+                id: 'home.welcome.open',
+                defaultMessage: 'Open',
+              })}
         </Button>
       </Stack>
 
-      {phone ? (
-        // What to do before what to read; one line for whoever may do
-        // everything stays first, as it is no longer to read than a row.
-        <Stack spacing={2.5}>
-          {note}
-          {access.holdsEverything && youCan}
-          {week}
-          {!access.holdsEverything && youCan}
-          {startLine}
-        </Stack>
-      ) : (
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: 'minmax(0, 1fr)',
-              md: 'repeat(2, minmax(0, 1fr))',
-            },
-            gap: 3.5,
-            alignItems: 'start',
-          }}
-        >
-          <Stack spacing={2.5} sx={{ minWidth: 0 }}>
+      {open && (
+        <Box id={bodyId}>
+          <Stack spacing={1.25} sx={{ px: 2, pb: 2 }}>
+            <Typography sx={{ color: 'text.secondary' }}>
+              {intl.formatMessage(
+                { id: 'home.welcome.lead', defaultMessage: '{who} {until}' },
+                { who, until },
+              )}
+            </Typography>
             {note}
-            {youCan}
-            {startLine}
           </Stack>
-          <Box sx={{ minWidth: 0 }}>{week}</Box>
+          <FirstWeek
+            items={welcome.items}
+            canSeeProducts={can('products.view')}
+            canInvite={can('users.create')}
+            canMoveStock={can('stock.move')}
+          />
+          <Stack
+            spacing={1.5}
+            sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}
+          >
+            {startLine}
+            <WhatYouCanDo access={access} linked />
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              <FormattedMessage
+                id="home.welcome.help"
+                defaultMessage="Every page has <b>Help</b> at the top, beside the bell. It explains the page you’re on."
+                values={{
+                  // The word and its icon are one button, which opens Help
+                  // on this page's guide as the bar's does; already open,
+                  // it brings that guide back rather than closing it.
+                  b: (chunks: ReactNode[]) =>
+                    help ? (
+                      <Link
+                        component="button"
+                        type="button"
+                        underline="always"
+                        onClick={() => {
+                          const guide = guideFor(pathname);
+                          if (!help.open) help.toggle();
+                          else if (guide) help.show(guide);
+                        }}
+                        sx={{
+                          font: 'inherit',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          verticalAlign: 'bottom',
+                        }}
+                      >
+                        <HelpOutlineOutlined
+                          aria-hidden
+                          sx={{ fontSize: '1.15em' }}
+                        />
+                        {chunks}
+                      </Link>
+                    ) : (
+                      <strong>{chunks}</strong>
+                    ),
+                }}
+              />
+            </Typography>
+            <Box>
+              <Button
+                onClick={onDismiss}
+                aria-label={intl.formatMessage({
+                  id: 'home.welcome.dismissLabel',
+                  defaultMessage: 'Dismiss the welcome card',
+                })}
+                sx={TONAL}
+              >
+                {intl.formatMessage({
+                  id: 'home.welcome.dismiss',
+                  defaultMessage: 'Dismiss',
+                })}
+              </Button>
+            </Box>
+          </Stack>
         </Box>
       )}
-
-      <Typography sx={{ borderTop: 1, borderColor: 'divider', pt: 1.75 }}>
-        <FormattedMessage
-          id="home.welcome.help"
-          defaultMessage="Every page has <b>Help</b> at the top, beside the bell. It explains the page you’re on."
-          values={{
-            // The word and its icon are one button, which opens Help on
-            // this page's guide as the bar's does; already open, it brings
-            // that guide back rather than closing it.
-            b: (chunks: ReactNode[]) =>
-              help ? (
-                <Link
-                  component="button"
-                  type="button"
-                  underline="always"
-                  onClick={() => {
-                    const guide = guideFor(pathname);
-                    if (!help.open) help.toggle();
-                    else if (guide) help.show(guide);
-                  }}
-                  sx={{
-                    font: 'inherit',
-                    fontWeight: 600,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    verticalAlign: 'bottom',
-                  }}
-                >
-                  <HelpOutlineOutlined
-                    aria-hidden
-                    sx={{ fontSize: '1.15em' }}
-                  />
-                  {chunks}
-                </Link>
-              ) : (
-                <strong>{chunks}</strong>
-              ),
-          }}
-        />
-      </Typography>
     </Paper>
   );
 }

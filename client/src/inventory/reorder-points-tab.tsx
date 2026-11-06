@@ -30,7 +30,7 @@ import {
   useState,
 } from 'react';
 import { useIntl } from 'react-intl';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import type { ReorderPointCounts, ReorderPointRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -43,7 +43,6 @@ import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
-import { fromAddress } from '../lib/address-filter';
 import { api } from '../lib/api';
 import type { ReorderStatus } from '../lib/api-names';
 import { displayQuantity, itemName, NO_VALUE } from '../lib/format';
@@ -51,6 +50,7 @@ import { HIDDEN } from '../lib/hidden';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
 import { fillState } from '../orders/order-fill';
 import { CreateRunDialog } from '../production/create-run-dialog';
@@ -78,6 +78,9 @@ const PAGE_SIZE = 50;
 /** The list's three views (ADR-085): '' is All; Low holds the out too. */
 const FILTERS = ['', 'low', 'out'] as const;
 type Filter = (typeof FILTERS)[number];
+
+/** The view in the address (ADR-091), All left out: `?status=low`. */
+const ADDRESS_FILTERS = { status: oneOf<Filter>(FILTERS, '') };
 
 /** Each status's icon beside its word, so it is never told by colour alone. */
 const STATUS_ICONS: Partial<Record<ReorderStatus, ReactElement>> = {
@@ -498,10 +501,9 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
   const intl = useIntl();
   const can = useCan();
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const [filter, setFilter] = useState<Filter>(() =>
-    fromAddress<Filter>(params, 'status', FILTERS, ''),
-  );
+  const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  const filter = filters.status;
+  const setFilter = (status: Filter) => setFilters({ status });
   const { text, setText, search } = useListSearch();
   const [counts, setCounts] = useState<ReorderPointCounts | null>(null);
   // By item, kept while the filter or the search changes, so a buyer can
@@ -669,7 +671,7 @@ export function ReorderPointsTab({ tabs }: { tabs: ReactNode }) {
                     id: 'low',
                     label: intl.formatMessage({
                       id: 'inventory.reorder.filter.low',
-                      defaultMessage: 'Low',
+                      defaultMessage: 'Low stock',
                     }),
                     count: counts?.low,
                     pressed: filter === 'low',

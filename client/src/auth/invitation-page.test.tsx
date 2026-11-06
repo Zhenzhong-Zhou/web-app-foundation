@@ -150,6 +150,19 @@ describe('InvitationPage (ADR-077)', () => {
     expect(screen.getByText('From Mei Lin')).toBeVisible();
   });
 
+  // The locked field cuts a long address before its domain on a phone:
+  // the help under it says the whole address (ADR-091's review).
+  it('says the invited address in full under its field', async () => {
+    reads(preview());
+    open();
+
+    expect(
+      await screen.findByText(
+        'The invitation is for sam@example.com. You’ll sign in with it.',
+      ),
+    ).toBeVisible();
+  });
+
   it('names only the organization once the inviter has gone', async () => {
     reads(preview({ inviter: null }));
     open();

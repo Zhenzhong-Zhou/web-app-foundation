@@ -27,7 +27,15 @@ import { parseArgs } from 'node:util';
 
 const LANGUAGES = { en: 'English', 'fr-CA': 'Français', 'zh-Hans': '中文' };
 const MODES = { light: 'Light', dark: 'Dark' };
-const WIDTHS = { desktop: 'Desktop', laptop: 'Laptop', phone: 'Phone' };
+const WIDTHS = {
+  wide: 'Wide',
+  desktop: 'Desktop',
+  laptop: 'Laptop',
+  tablet: 'Tablet',
+  'duo-open': 'Duo open',
+  'duo-closed': 'Duo closed',
+  phone: 'Phone',
+};
 
 const USAGE =
   'Usage: npm run screenshots:compare -- [--out <folder>] <before folder> <after folder>';
@@ -227,6 +235,7 @@ const html = `<!doctype html>
   .pair figcaption .moved { color: var(--moved); }
   .sides { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .pair.phone .sides { grid-template-columns: repeat(2, minmax(0, 390px)); }
+  .pair.duo-closed .sides { grid-template-columns: repeat(2, minmax(0, 466px)); }
   .sides a, .sides p { display: block; margin: 0; color: var(--muted); text-decoration: none; }
   .sides span { display: block; font-size: 13px; }
   .sides img { display: block; width: 100%; height: auto; border: 1px solid var(--line); }

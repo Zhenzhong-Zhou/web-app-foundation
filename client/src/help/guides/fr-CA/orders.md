@@ -45,6 +45,7 @@ Quand plus rien n’est attendu, appuyez sur **Clore la commande**, que tout soi
 - **Reçue** ou **Expédiée** : close. Le filtre de la liste appelle les deux **Exécutées**.
 - **Annulée** : abandonnée avant que rien ne bouge.
 - **Close incomplète** : une ligne qui n’attend plus rien, son écart conservé.
+- **En retard** : confirmée, avec encore quelque chose à expédier ou à recevoir, et prévue avant aujourd’hui.
 
 ## Si quelque chose est refusé {#refused}
 

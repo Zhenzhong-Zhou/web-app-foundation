@@ -55,7 +55,7 @@ export function SideNav({
                     color: 'rail.muted',
                     fontWeight: 600,
                     px: 1.5,
-                    pt: 1.5,
+                    pt: 1,
                   }}
                 >
                   {name}
@@ -107,7 +107,10 @@ function RailLink({
         alignItems: 'center',
         justifyContent: folded ? 'center' : 'flex-start',
         gap: 1.25,
-        minHeight: 34,
+        // 32 px under a mouse, so every link of the open rail stays above
+        // its foot at a MacBook's 1440 × 900, Licences among them
+        // (ADR-082, ADR-091); 44 on touch.
+        minHeight: 32,
         px: 1.25,
         borderRadius: 1,
         typography: 'body1',

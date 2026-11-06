@@ -327,7 +327,11 @@ export function NewAccountForm({
       value={email}
       fullWidth
       helperText={emailHelp}
-      slotProps={{ htmlInput: { readOnly: true } }}
+      slotProps={{
+        htmlInput: { readOnly: true },
+        // A long address breaks rather than runs off a phone.
+        formHelperText: { sx: { overflowWrap: 'anywhere' } },
+      }}
     />
   );
 

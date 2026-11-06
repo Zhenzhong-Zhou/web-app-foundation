@@ -75,6 +75,12 @@ Each with what holds it in the code today, or the issue that will.
   "Expiring soon" opens Inventory's expiring lots, the soonest first.
 - The filter and the sort are in the address, so Back and a bookmark
   keep them (#302).
+- A tile and the filter it opens share one name, the plainer of the two,
+  in each language: "Late", never "overdue". A tile whose word alone does
+  not say what it is about puts its page's name first: "Invoices · To
+  issue".
+- A tile with nothing to do stays in its place, quiet: muted, "Nothing to
+  ship", still a link.
 
 ### Rows
 
@@ -193,7 +199,12 @@ Each with what holds it in the code today, or the issue that will.
 
 - Text a person reads to decide (a tile's label, a status, a name, a
   field's label) is 16 px at the Standard text size; secondary detail 14
-  px; a caption only for footnotes.
+  px; a caption only for footnotes. Nothing else a person reads is under
+  14 px.
+- The scale steps by 1.25: a section heading at 20 px and a page's title
+  at 25 px, so a heading is told apart by size, not weight alone. Line
+  heights sit on a 4 px grid: 16 on 24, 14 on 20, 20 on 28, 25 on 32; in
+  Chinese, with more room for its strokes, 16 on 28 and 14 on 24.
 - The text size is named in words where a person looks for it, not only
   behind their initials.
 - On touch every target is at least 44 × 44 px (#170); with a mouse,
@@ -227,12 +238,17 @@ breakpoints:
   screens.
 - **The menu** is a rail from `lg`, and below it ADR-055's drawer, with
   its words, not a rail of icons.
-- **Help** sits beside the page where there is room, and must not cover
-  a focused control where there is not (#272).
+- **The top bar** below `lg` has a short word under each icon, as a
+  phone's tab bar has, the app's own names (Notifications under the
+  bell); on a narrow phone the organization's name shortens first.
+- **Help** sits beside the page where there is room; where there is not,
+  it is a modal side sheet that keeps focus inside it, so nothing focused
+  sits under it (#272).
 - **Checked** by the before-and-after screenshots at each class, the
-  Duo's two sizes among them; by the walkthrough panel at each class; and
-  by `/production-readiness`'s device pass on real devices before real
-  users.
+  Duo's two sizes among them; by the walkthrough panel, which gives the
+  classes to a journey's personas in turn unless the journey names its
+  own sizes; and by `/production-readiness`'s device pass on real devices
+  before real users.
 
 The Duo's sizes are estimates, at the 3× scale iPhones use, until
 measured on the device.
@@ -240,7 +256,7 @@ measured on the device.
 ## Chinese beside Latin letters
 
 - A space between Chinese and Latin letters or digits: "D3-1000-120
-  已有再订货点", "另外 4 个".
+  已有库存下限", "另外 4 个".
 - A list joins with 、 and its last item with 和, the joiner adding the
   space beside Latin text, once on each side (`joinList` on the server,
   its copy in the client).
@@ -257,7 +273,10 @@ measured on the device.
   (`/usability-walkthrough panel <journey>`), and what two personas or
   more hit is settled here.
 - **The canvas:** a design is drawn there, at the classes it changes,
-  before its code.
+  before its code. A changed design is a new row, titled with its
+  version, never drawn over the old one: every earlier row stays as the
+  design's history, and the version the build follows is named in its
+  ADR.
 
 ## Not yet
 

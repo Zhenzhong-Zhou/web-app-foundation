@@ -360,7 +360,10 @@ describe('Reorder points', () => {
     );
 
     expect(
-      await screen.findByRole('button', { name: /^Low\s*3$/, pressed: true }),
+      await screen.findByRole('button', {
+        name: /^Low stock\s*3$/,
+        pressed: true,
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /^All\s*4$/ }),

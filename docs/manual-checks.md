@@ -78,7 +78,7 @@ replace two bottles; **SO-DEMO-8** invoiced in US dollars; and **Retail CAD
 Owner's, as the roles allow.
 
 Last, nine reorder points, set by the Owner, which Reorder points counts
-**All 9 · Low 6 · Out 1** (ADR-085): **VITC-100** out, lot **VC-0402**
+**All 9 · Low stock 6 · Out 1** (ADR-085): **VITC-100** out, lot **VC-0402**
 past its date too and left on the shelf; **MAGCAP-SAMPLE**, sample bags
 made twelve from a bottle by **MCS-RUN-01** at the **Office**, 12 of 36;
 **ELDER-250**, 58 of 96 up to 192, with **PO-DEMO-12** five days late and
@@ -162,6 +162,12 @@ a second organization.
   Trace lot on a lot's row, and nothing that changes stock. As an Admin,
   they also offer Move, Ship out, Send sample, Correct the count and, on a
   lot's row, Edit lot details.
+- **MC-311** *(ADR-091)* Inventory's Expired. As the demo Owner, open
+  `/inventory?expiring=1&expired=1`: Expiring soon is pressed, a chip
+  reads Expired, and the list holds only the lots past their day, VC-0301
+  first, with Expires marked as the sort. Remove Expired: every lot
+  expiring soon, the expired still first. In Français the chip reads
+  Périmés; in 中文, 已过期.
 
 ## 4. Buying
 
@@ -179,6 +185,38 @@ a second organization.
   appears under Stock value as needing a cost. Enter the rate under Exchange
   rates; a later receipt is valued, and the earlier one stays as it was
   until corrected (ADR-048).
+- **MC-405** *(ADR-091)* Orders' Late. As the demo Owner, open
+  `/orders?direction=purchase&outstanding=1&late=1`: chips read Purchases
+  only, Still to receive and Late, and the list holds only purchases
+  expected before today, PO-DEMO-9 among them, the earliest first, with
+  Expected marked as the sort. Remove Late: every purchase still to
+  receive, the late ones still first, each with its chip beside Expected,
+  in red, saying how late (2 days late), a later one with none. Press
+  Expected: the latest first. Remove Still to receive too: the open
+  orders, newest first, with no row saying late. In Français the chip
+  reads En retard and a row 2 jours de retard; in 中文, 逾期 and 逾期 2 天,
+  and a partner with no contacts says 订单逾期时, never 延误.
+- **MC-406** *(ADR-091)* The lists keep what is chosen in the address. On
+  Orders press All, set Expected from to the 1st of this month, then Tab to
+  Expected's header and press Enter: the address gains `status=all`,
+  `from=…`, `sort=expectedAt&order=asc`, and once the list is back the
+  focus ring is still on Expected. Open an order and press Back: All
+  pressed, the day and the sort as they were. Press Orders in the menu:
+  the plain list, Open pressed, the address `/orders`. Do the same on
+  Invoices (To issue, a day, Total), Credit notes (a day, Amount), Returns (Closed, a day), Production (a
+  status, a day), Inventory (Expiring soon, Waiting for a cost, Show emptied, a
+  Location, Expires) and Reorder points (Low stock): each choice is in the
+  address, and Back from a page opened from there keeps it. Type
+  `?status=nonsense` after `/orders`: Open is pressed, as with none.
+  From a late button's Orders, Tab to the Late chip and press Delete:
+  focus moves to Still to ship, the chip now beside it; remove the last
+  chip and focus is on the page's title, never lost to the page.
+- **MC-407** *(ADR-091)* Orders for a role that cannot raise one. Give a
+  member a role made with only Orders' view (Settings → Roles) and sign
+  in as them: on Orders, where Raise an order would be, one grey line
+  says their role does not include raising orders, and whom to ask
+  (the Owners first, at most three). As the demo Owner, Raise an order,
+  and no such line.
 
 ## 5. Making
 
@@ -217,6 +255,18 @@ a second organization.
   under carries its status (Current, Expires in N days, Expired, Withdrawn),
   so a lapse is seen before a run is planned. With *Valid until* set to
   today it reads *Expires today*, and release treats it as current.
+- **MC-512** *(ADR-091, #460)* Licences in the menu, and its filters. As
+  the demo Owner, Licences is under Records, before Products, in the rail
+  and in the drawer; for a role that may not view licences it is not
+  there. Open it from the menu: Licences expiring is not pressed, and every
+  licence is listed. Press it: the address gains `expiring=1`, and the
+  list holds the licences within 60 days of their day or past it, 300456
+  first, then EXP-2026-0619; 80091234, which never expires, is gone. Open
+  `/licences?expiring=1&expired=1`: a chip reads Expired, and only 300456
+  is listed. Remove it: the expiring ones again. Home's Licences expiring
+  tile opens Licences with Licences expiring pressed, one name for both.
+  In Français they read Licences qui expirent and Expirées; in 中文,
+  即将到期的许可证 and 已过期.
 
 ## 6. Selling
 
@@ -566,20 +616,23 @@ Paper is checked first because it must not change at all.
 - **MC-1506** On a phone or tablet, buttons, icon buttons and table rows are at
   least a fingertip tall; with a mouse they are compact.
 - **MC-1507** From 1200px wide the navigation is a dark rail beside the page:
-  the daily work first (Inventory to Production), then Records (Products,
-  Partners, Locations, Trace a lot, Stock value, Audit log), then Settings
-  (Organization, Members, Tax codes, Exchange rates, Price lists). The current
-  page is highlighted, and the rail stays put while the page scrolls.
+  the daily work first (Inventory to Production), then Records (Licences,
+  Products, Partners, Locations, Trace a lot, Stock value, Audit log), then
+  Settings (Organization, Members, Tax codes, Exchange rates, Price lists).
+  The current page is highlighted, and the rail stays put while the page
+  scrolls.
 - **MC-1508** Fold the rail with the arrows at its top: only icons remain,
   each naming itself when pointed at, and following one still works. Reload:
   it stays folded. Unfold it again.
-- **MC-1509** Below 1200px the rail is gone and a menu button opens the same
-  three groups in a drawer; choosing a page closes it. Widen the window past
+- **MC-1509** Below 1200px the rail is gone and Menu, its word under ☰,
+  opens the same three groups in a drawer; choosing a page closes it. Widen the window past
   1200px with the drawer open: it closes and the rail appears.
 - **MC-1510** As a Viewer, groups with nothing the role may see are left out
   entirely, heading and all; nothing in the rail leads to a refusal.
-- **MC-1511** The account menu holds the email, Account, Devices, the colour
-  mode, the language and Sign out, and no settings. In Français and 简体中文 the
+- **MC-1511** The account menu holds the email, Your account, Colour
+  mode, Language and Text size, and no Your devices, which Your account
+  and the sign-in emails still open (ADR-091), each named in words above its select
+  (ADR-091), and Sign out, and no settings. In Français and 简体中文 the
   rail's headings and Collapse/Expand read in that language.
 - **MC-1512** Open SO-DEMO-1: its title is SO-DEMO-1, Confirmed beside it in a
   quiet blue, and "Selling · Northside Pharmacy" under it. The sections are
@@ -647,9 +700,11 @@ Paper is checked first because it must not change at all.
   filter."
 - **MC-1528** Inventory's filters are one row: Search, Location, then Expiring
   soon with its count and Show emptied. Pressing Expiring soon shows only lots
-  within 90 days, ELD-24A among them, and nothing untracked; the count is the
-  number of rows it shows. With a search that matches none of them, the count
-  drops to 0.
+  within 90 days, ELD-24A among them, and nothing untracked, the soonest
+  first, so the expired VC-0301 leads, with Expires marked as the sort
+  (ADR-091); pressing Expires turns it round. The count is the number of
+  rows it shows. With a search that matches none of them, the count drops
+  to 0.
 - **MC-1529** Expires shows days left within 90 days, amber, and within 30
   days red (ELD-24A: "20 days left"), the date beside each; a lot two years
   off shows only its date. Quantities read "400 each", and the Promised to
@@ -659,8 +714,10 @@ Paper is checked first because it must not change at all.
   With Expiring soon pressed and none due, the list says no lot here expires
   within 90 days.
 - **MC-1531** Invoices has a page title with its one-line explanation under
-  it, then All, Drafts, Issued and Voided as a row of buttons where the tabs
-  were, All pressed. Draft reads grey, Issued quiet blue, Voided red, on the
+  it, then All, To issue, Issued and Voided as a row of buttons where the
+  tabs were, All pressed; To issue, the word of Home's Invoices · To
+  issue tile, lists the drafts,
+  in Français À émettre, in 中文 待开具. Draft reads grey, Issued quiet blue, Voided red, on the
   list and on each invoice's header.
 - **MC-1532** On INV-000001 the quantity reads 400, and Credit notes is a
   table: CN-000001 linked, its date, its reason wrapping when long, and
@@ -673,7 +730,9 @@ Paper is checked first because it must not change at all.
 - **MC-1534** Returns has a page title with its explanation under it, then its
   statuses as a row of buttons where the tabs were, Open pressed. Open reads
   quiet blue, Closed and Cancelled grey, on the list and on RMA-000001's
-  header.
+  header. In Français the button and the status read En cours, in 中文 未结,
+  as Home's Retours en cours and 未结退货 do; Orders' Open stays Ouvertes
+  and 未完成.
 - **MC-1535** On RMA-000001, Authorized, Received and Credited read 2, not
   2.0000. With a filter that matches nothing, the list says "Nothing here." in
   the shared empty state.
@@ -699,8 +758,14 @@ Paper is checked first because it must not change at all.
 - **MC-1541** At 375px, an order: the summary sits above the tabs, Ship is
   full width, and the tabs scroll sideways when they do not fit, the open one
   still visible. A line's ⋮ menu opens fully on screen.
-- **MC-1542** On a touch screen (or with touch emulation), buttons, filters
-  and table actions are at least 44px tall; with a mouse, 36px.
+- **MC-1542** On a touch screen (or with touch emulation), buttons, filters,
+  icon buttons (Home's Refresh among them), a chip that does something
+  and its × (Orders' Late, from Home's late button) and table actions are
+  at least 44px tall; with a mouse, 36px. No text a person reads to decide
+  by is under 14 px (DevTools): the top bar's words, a field's hint, a
+  status chip, the avatar's initials at every text size; Settings'
+  section headings are 20 px, Branding's Logo 16, the account menu's
+  Colour mode, Language and Text size 16, a quiet tile's words 16.
 - **MC-1543** With the keyboard alone, on an order: Tab reaches the tabs, the
   arrow keys move between them and Enter opens one; the address changes and
   Back leaves the page. Focus is always visible.
@@ -741,8 +806,11 @@ Paper is checked first because it must not change at all.
   the error appears and the password is dots again. The same on Change
   password when the current password is wrong: every field shown goes back to
   dots.
-- **MC-1552** Inventory's quick filters read Expiring soon, Needs a cost and
-  Show emptied, each with its count. Pressing Needs a cost shows THE-0915's
+- **MC-1552** A code alone in a table's cell stays on one line on a
+  computer, never broken at its hyphen (MAGCAP-SAMPLE on Inventory,
+  SO-DEMO-8 on Orders), so rows keep one height. Inventory's quick filters read Expiring soon, Waiting for a
+  cost (the name Home's tile and Stock value give it; 等待成本, En attente
+  d’un coût) and Show emptied, each with its count. Pressing Waiting for a cost shows THE-0915's
   L-theanine, received with no price (PO-DEMO-5), and the count matches the
   rows; set its cost on Stock value, come back, and it is gone and the count
   is one lower. Stock value has a page header with its explanation under it,
@@ -759,8 +827,8 @@ Paper is checked first because it must not change at all.
   In use in quiet blue and Retired in grey; a retired price list is grey.
 - **MC-1555** On SO-DEMO-2 in 中文 at 1440px, the 未完成 column reads 500 with 短缺
   162 in amber under it, not beside it; the Total column is in view without
-  scrolling sideways, and the pinned ⋮ covers nothing. Hovering the chip still
-  says how much is held.
+  scrolling sideways, held beside the pinned ⋮, which covers nothing (MC-R96).
+  Hovering the chip still says how much is held.
 - **MC-1556** From any page, `/` or ⌘K focuses the top bar's search. Typing
   `2609` lists BF-2609 and FOC-2609-01 under Lots, each with its SKU and
   expiry chip; arrow keys move, Enter opens the lot's trace, Escape closes.
@@ -788,20 +856,114 @@ Paper is checked first because it must not change at all.
   log's entry names the filter, not what was typed.
   Orders' Created, Movements' When and the Audit log's When read like
   `2026-10-15 18:54:11`, in UTC, and open as dates.
-- **MC-1559** Sign in as the demo owner: Home opens, greeting by the time of
-  day, the sentence's counts matching the cards, red only on late or expired.
-  Each card's See all opens its list showing the same number of rows. Switch
-  to 中文 and to a phone (or a narrow window): the counts sit two by two, cards
-  stack, nothing scrolls sideways, and the wording reads naturally. Register a
-  new organization: Getting started leads with seven steps, straight after
-  the welcome, its first open step's button the only filled one on Home,
-  and the quick actions after it, outlined; add a location and
-  see its step ticked on Refresh. The last step reads Invite your team: its
-  Invite someone opens Members with the Invite dialog, and closing it takes
-  `?invite` off the address, so Back and a reload leave it shut (ADR-077).
-  Skip the team step; Dismiss the card (focus moves to the greeting at the
-  top of Home) and bring it back with Show Getting started. Sign in as a viewer: no Skip or Dismiss, the team step with no
-  button, and only the cards that role may see.
+- **MC-1559** *(ADR-058; ADR-091)* Sign in as the demo owner: Home opens,
+  greeting by the time of day on the organization's clock, Vancouver's
+  for the demo, then the organization's day and time to
+  the minute, never seconds, which moves on at the next minute by itself,
+  and What we do under it, in plain text, no card. Three tiles name their
+  page first, their word after it the filter's: Stock value · Waiting for
+  a cost, Invoices · To issue and Production · In progress (库存价值 ·
+  等待成本, 发票 · 待开具, 生产 · 进行中; Factures · À émettre). What is late is a pale
+  red panel headed by how many ("3 things need you now", in 中文
+  有 3 项需要马上处理) over "Choose one to see just those." (no tap with a
+  mouse, nothing to act on for a Viewer), with a button per kind saying late, expired or
+  out, such as "1 late order to receive": each opens its list with just the
+  late ones, Late (Expired for lots and licences, Out for low stock)
+  chosen, and Back to Home. Under What needs you today, a tile per kind,
+  its icon red while anything in it is late, its count, its name and its
+  pill ("2 late"): the whole tile opens its list with as many rows as the
+  count, the late first, the filter in the address. A tile with nothing
+  to do stays in its place, grey, its words in place of the count (No
+  returns open), still a link. Under a mouse a tile's edge turns the
+  accent and it lifts a little; Tab shows the accent ring; a phone or a
+  tablet shows no hover. Refresh is an icon beside the greeting, named in
+  a tooltip. At the right of the greeting's row, Raise an order, the one
+  filled button, and More beside it, grey: its menu holds Receive stock,
+  Plan a run and Trace a lot, each opening its page with Back to Home;
+  from the keyboard, Enter opens it on its first item, the arrows move,
+  Escape closes it with focus back on More. Below 900 px (a phone, the
+  Duo open) the two run the page's width under the date and What we do;
+  nothing is below the tiles but Recently opened. As Tom Becker
+  (Warehouse) the button reads Receive stock, More holding Trace a lot;
+  in a role made from the Production template, Plan a run, the same; as
+  Sarah Chen (Viewer), no button: the grey line says her role does not
+  include raising orders, receiving stock or planning runs, and whom to
+  ask, Trace a lot staying in the menu. In 中文 More
+  reads 更多, in Français Plus; a screen reader names its menu More. Recently opened lists
+  each record by its name, its code and kind under it, and when, the
+  whole row a link. Leave Home's tab for another for a minute or more and
+  come back: Home reads again (DevTools → Network, `home`); back after a
+  few seconds, it does not. Switch to 中文 and to a phone (or a narrow
+  window): the tiles two by two, three from a window about 648 px wide
+  (Home's page 600 px, DevTools), nothing scrolls
+  sideways, and the wording reads naturally. Register a
+  new organization: the welcome first, then Getting started's seven
+  steps, both above what is late and the tiles, at 0 of 7 done over a bar in the accent, with Seven steps get
+  your organization ready to work… inside the card. The next step is
+  shaded, its ring in the accent, its button the only filled one on Home
+  with Learn more beside it (44 px tall on touch), and no main action at
+  the top: Raise an order and More come back once Getting started is done
+  or dismissed.
+  On a tablet, tap a step and come Back: its row is not left tinted.
+  Every other step is one link, its whole row, at least 44 px tall (on a
+  phone too), opening its page with Back; a done one is ticked, grey, and
+  reads … · Done. Nothing needs you today. in one line and the tiles quiet
+  in their places; add a location and see its step ticked on Refresh.
+  The last step reads Invite your team: its row opens Members with the
+  Invite dialog, and closing it takes `?invite` off the address, so Back
+  and a reload leave it shut (ADR-077). Once it is the next step, Skip
+  sits beside its button: skip it; Dismiss the card (focus moves to the
+  greeting at the top of Home) and bring it back with Show Getting
+  started. Sign in as a viewer: no Skip or Dismiss, the team step plain,
+  not a link, and only the tiles that role may see. Give a member a role made
+  with only Orders' view (Settings → Roles) and sign in as them: in place
+  of Home's actions one grey line says their role does not include
+  raising orders, receiving stock or planning runs, and whom to ask, the
+  names there from the first, never the line without them first.
+- **MC-1560** *(ADR-091)* The type scale and the corners. On Inventory,
+  SO-DEMO-1 and INV-000001, in light and in dark, at 1440 px and on a
+  phone: buttons, fields, menus and the text under a heading read at 16
+  px, a table's rows and heads at 14; a section's heading, 20 px, stands
+  above its text by its size, not only its weight, and the page's title
+  is 25 px. In 中文 the lines of a paragraph are 28 px apart, a small
+  text's 24, more open than in English. Panels have 12 px corners, buttons and fields 10 and a dialog
+  (Receive stock) 16. On Members a made role's chip stays square beside a
+  built-in one's pill (MC-3312). The icons beside Register's ways in (with
+  REGISTRATION=invitation) and on Home for an account in no organization,
+  and the dashed tile on an organization invitation's page (`npm run
+  org:invite`), are rounded squares, not circles. The confirmation email's
+  button in Mailpit has the buttons' corners, and the invitation's note the
+  panels'. At Larger text (account menu → Text size) the 16 px text is 20, and
+  nothing scrolls sideways (MC-2803). In 中文 a table's
+  rows, the account menu's items, the rail's links and Home's late buttons
+  have Chinese's taller lines (16 on 28, 14 on 24), as its paragraphs do.
+
+- **MC-1561** *(ADR-091)* The top bar's words. Below 1200 px wide each of
+  the bar's icons has its word under it, the app's own names: Menu,
+  Search (below 900 px, where it is a button), Help, Notifications and
+  Account; in Français Menu, Rechercher, Aide, Notifications, Compte; in
+  中文 菜单、搜索、帮助、通知、账户. At 360 px in English the
+  organization's name is what shortens, to a few letters, so
+  Notifications fits under the bell; at 390 px in 中文 everything fits.
+  The five words sit on one line, Account's under its taller avatar too.
+  The bell's count shows whole, its round top inside the bar, never cut
+  flat at the screen's edge. Each word is a fingertip tall with its icon (44 px or more, DevTools),
+  and a screen reader reads the account button as Account, your initials,
+  signed in as …. The words give way by language, the icons standing
+  alone, as before, with nothing scrolling sideways, in a window narrower
+  than about 348 px in English (388 at Large text, 427 at Larger), 372 in
+  Français (415, 457) and 294 in 中文 (327, 360): at Larger on a 390 px
+  phone 中文 keeps its words. The words are 14 px, the small size. From 1200 px the bar is as it was: the search box in
+  the middle between the rail and Help, at 1366 and at 2560 px too, Help
+  with its word beside its icon, the bell and your face alone.
+- **MC-1562** *(ADR-091, #431)* The loading bar. In Chrome, DevTools →
+  Network → Slow 4G, on Home press Plan a run: at once a thin bar in the
+  accent runs along the top bar's foot, Home staying until Production's
+  form is in, and the bar goes once the form has read what it needs. On
+  Orders press an order, then Back: the bar each time, until the screen
+  is in. Pressing a filter or a tab on a list shows no bar, only the
+  list's own placeholder. With Reduce motion on (the system's
+  accessibility settings), the bar stands still while shown.
 
 ## 16. Files (ADR-059)
 
@@ -869,6 +1031,16 @@ await fetch(`${api}/v1/files/product-image`, {
   address, go Back and issue: it goes through. In 中文 the link reads
   前往“组织 → 概况”设置. The customer's billing address does the same
   (MC-702).
+
+- **MC-1704** *(ADR-091)* What we do. As the demo Owner, Settings →
+  Organization → Profile: What we do, under Name, reads "We import and
+  distribute natural health products.", and its Save is greyed until the
+  words change. Change them and Save, then clear them and Save: the
+  History button lists What we do as Changed, then Cleared, and never the
+  words. The field takes no more than 200 characters. As a Viewer, the
+  words show greyed, with no Save. In Français the section reads Ce que
+  nous faisons; in 中文, 业务简介. On Home, a newcomer whose welcome is
+  open reads the words once, under the date, not again in the welcome.
 
 ## 18. Product images (ADR-062)
 
@@ -1081,14 +1253,12 @@ await fetch(`${api}/v1/files/product-image`, {
   for purchases, counting up from 000001 in the order they were made. A
   new order takes the next one, a draft included, and a duplicated
   order, or an RMA's replacement, takes its own. Type an order's number
-  in the lookup: it is found, titled by it. Home's recent records name an
-  order by its number, and the orders CSV starts with a Number column.
+  in the lookup: it is found, titled by it. Home's Recently opened names
+  an order by its partner, its number under it, and the orders CSV starts with a Number column.
   Orders lists the number first, as the link; an order's page is headed
   by it, with the partner, linked, and their reference beneath.
 - **MC-2505** *(ADR-071)* Every place that names an order names it by its
-  number: Home's To ship and To receive, titled SO-… and PO-…, the
-  partner and their reference beneath; Invoices to issue, by the order's
-  number; an invoice's and an RMA's link to its order; a lot's trace,
+  number: Home's Recently opened, under the partner's name; an invoice's and an RMA's link to its order; a lot's trace,
   where it came in and where it went; the audit log's entries for an
   order, as `SO-000001 · Northside Pharmacy`; and the invoices CSV, whose
   Order column holds the number, the reference beside it. A packing
@@ -1170,7 +1340,8 @@ Time — Vancouver while Los Angeles is on UTC−7 too (#343).
 - **MC-2601** *(ADR-072)* Register a new organization with the computer
   in Shanghai. Settings → Organization → Profile → Time zone shows China
   Standard Time — Shanghai, UTC+8 now · Asia/Shanghai, and what time it is
-  there.
+  there. Its help says the zone decides what Home counts as late, never
+  overdue.
 - **MC-2602** *(ADR-072)* An organization from before ADR-072 is on UTC:
   Time zone shows an amber note, Still on UTC. In Français it ends « le
   soir, dans les Amériques, il est déjà demain en UTC. » With the computer in
@@ -1179,7 +1350,11 @@ Time — Vancouver while Los Angeles is on UTC−7 too (#343).
   zone saves it, saying Time zone saved. The audit log's entry reads Time
   zone: Coordinated Universal Time — UTC → Pacific Time (Canada) —
   Vancouver. Save again unchanged: Save is greyed out, and no entry is
-  added.
+  added. Back on Home with the computer in Vancouver, the note under the
+  date reads Dates follow the organization’s time zone: Coordinated
+  Universal Time — UTC, never GMT+00:00, and the greeting goes by UTC's
+  hour, the time beside it: "Good morning" at 4:20 a.m., whatever the
+  computer's clock says.
 - **MC-2603** *(ADR-072)* Finding a zone: type pacific t, then +8: each
   finds its zones, each named with its city, its offset and its standard
   name, and This device's zone comes first; on a phone in 中文 the group
@@ -1300,8 +1475,9 @@ few invoices and orders.
 
 Any page, signed in, in a browser at its default font size.
 
-- **MC-2801** *(ADR-075)* Open the avatar menu: Text size sits under the
-  colour mode and the language, reading Standard text. Open it: Standard
+- **MC-2801** *(ADR-075; ADR-091)* Open the avatar menu: Text size sits
+  under Colour mode and Language, its name in words above its select,
+  reading Standard text. Open it: Standard
   text, Large text and Larger text, each drawn at the size it gives.
 - **MC-2802** *(ADR-075)* Choose Larger text: every word on the page grows
   at once, the rail and the summary panel widen with it, and nothing else
@@ -1572,12 +1748,19 @@ The pages, in a private window unless a check says otherwise.
   sentence, a screen reader reading the card's heading out. With Home
   open in two tabs, schedule the account's deletion in one; in the other,
   Start an organization is refused and the deletion banner, with Keep my
-  account, appears.
+  account, appears. In 中文 the first card reads 加入组织, and the
+  sentence 创建新组织需要邀请; in Français it reads « Les nouvelles
+  organisations se créent sur invitation », and the card's line ends
+  « rien d’une organisation précédente n’est repris » (#380).
 - **MC-3110** *(ADR-078)* With `REGISTRATION=invitation`, sign-in has no
   Create an account: New here? Accounts start from an invitation, with
   How to get one, which opens Accounts here start from an invitation, with
-  Joining where you work, Starting a new organization and Sign in.
-  `/register` typed in the address bar shows the same page; on a slow
+  Joining where you work, Starting a new organization and Sign in; in
+  Français « Ici, on ouvre un compte sur invitation », in 中文
+  这里的账户通过邀请创建, never a word-for-word « commencent par » or
+  从邀请开始 (#380). On a phone, an invitation's page names the invited
+  address in full under its locked Email field, the domain too, however
+  the field cuts it. `/register` typed in the address bar shows the same page; on a slow
   connection (DevTools, Slow 4G) it shows the language and text size at
   once, and a spinner until the page is known. In 中文 at 390 px wide and
   at Larger text (ADR-075), the organization kind of the invitation page,
@@ -1623,16 +1806,21 @@ The pages, in a private window unless a check says otherwise.
   its links or Close does nothing, and Tab stays in the dialog. With
   VoiceOver on, Help is not read while the dialog is open. Cancel: Help
   works again.
-- **MC-3203** *(ADR-079)* Help on a wide screen, about 1900 px: opening
-  Help folds the rail as on a laptop, the page keeps its full width beside
-  Help, and closing Help opens the rail again. In a window about 1100 px
-  wide, or below about 1265 px at Large text and 1330 px at Larger, where
-  the page would keep less than about 720 px beside Help, Help slides over
-  the right of the page instead, with nothing dimmed, and the page beneath still scrolls
-  and works. Narrower than about 1085 px, a dialog the page opens there
-  stays centred, and Help dims with the page.
-- **MC-3204** *(ADR-079)* Help on a phone, about 390 px: the bar shows
-  Help as its icon alone. It opens full screen, headed Help · Orders, with
+- **MC-3203** *(ADR-079; ADR-091)* Help on a wide screen, about 1900 px:
+  opening Help folds the rail as on a laptop, the page keeps its full
+  width beside Help, and closing Help opens the rail again. In a window
+  under about 1140 px wide, such as the Duo open (890 × 626) or a tablet
+  (1024 × 768), or under about 1265 px at Large text and 1325 px at
+  Larger, where the page would keep less than 720 px beside Help, Help is
+  a sheet from the right over the whole window instead, headed Help ·
+  Orders, the page and the top bar dimmed behind it (#272), in light and
+  in dark. Tab and Shift+Tab stay inside Help, and a click on the dimmed
+  page closes Help rather than pressing what is under it. Closed by Esc,
+  Close or that click, focus is back on Help in the top bar, with no
+  Blocked aria-hidden warning in Chrome's console. With VoiceOver on,
+  only Help is read while it is open.
+- **MC-3204** *(ADR-079; ADR-091)* Help on a phone, about 390 px: the bar
+  shows Help as its icon with the word Help under it. It opens full screen, headed Help · Orders, with
   Close, which returns to the page. Closed by Close, and again by Esc,
   focus is back on Help, which a screen reader names, with no Blocked
   aria-hidden warning in Chrome's console (#294). On a real phone at
@@ -1642,9 +1830,9 @@ The pages, in a private window unless a check says otherwise.
   Larger, on the phone and on a computer, every control in the bar,
   the organization and the search box among them, is a full fingertip
   wide and tall (44 px, DevTools' box model).
-- **MC-3205** *(ADR-079)* Learn more: on a new organization's Home, each
-  Getting started step's hint ends with Learn more, which opens Help at
-  that step's section, scrolled to it and marked for a moment; with the
+- **MC-3205** *(ADR-079)* Learn more: on a new organization's Home, the
+  next Getting started step has Learn more beside its button, which opens
+  Help at that step's section, scrolled to it and marked for a moment; with the
   system's Reduce motion on, it jumps there and the mark comes and goes
   without fading. An empty list, such as Production with no runs, has
   Learn more beside its words. Organization's Numbering (Documents) and
@@ -1663,21 +1851,29 @@ The pages, in a private window unless a check says otherwise.
   right after the words it follows, with no space before it.
 - **MC-3207** *(ADR-079)* The welcome as a Viewer, on a computer: as the
   demo Owner, invite an address as a Viewer with a note of two lines, and
-  accept it from Mailpit in a private window. Home leads with Welcome to
-  Demo …, your name, above the counts: You joined today as a Viewer, and
-  the card stays for your first two weeks, until the day fourteen days on.
-  On the left, the note as typed, its line break kept, under the Owner's
-  photo or initials, their name opening their page on People; then What
-  you can do here, a line per area, ending To do more, ask … with each
-  name opening People. On the right, Your first week, 0 of 3 done: Say
-  who you are, Look up a product or a lot and Open an order, each with
-  its button. The foot says Help is at the top, beside the bell, its
+  accept it from Mailpit in a private window, at 900 px wide or more.
+  Home's card, above the tiles, is open (each of its areas a link named
+  as the menu names the page it opens, Inventory, Products, Orders, not
+  Stock and locations; an area whose first page is closed to the reader
+  links its next, Tax codes for costs): its head, at the size of Home's
+  other headings, reads Welcome to Demo …,
+  your name, and Your first week · 0 of 3 done, with Fold. Under it the
+  demo's What we do, as under Home's date; You joined today as a Viewer,
+  and the card stays for your first two weeks, until the day fourteen
+  days on; and the note as typed, its line break kept, under the Owner's
+  photo or initials, their name opening their page on People. Then the
+  first week: Say who you are, Look up a product or a lot and Open an
+  order, each one link, its whole row, with its hint. Then What you can do
+  here, a line per area, each area's name a link to its page (Orders opens
+  Orders), ending To do more, ask … with each name opening People. Fold:
+  the card is its head alone; Open brings the rest back in place. The
+  foot says Help is at the top, beside the bell, its
   Help a link with the ? icon before it: pressing the word or the icon
   opens Help on Home's guide, as the bar's Help does, and the bar's
   button shows pressed; pressed again, Help stays open on Home's guide;
   Esc puts focus back on it. VoiceOver reads it as one button, Help.
-  Open a product and come back: Look up is ticked and reads You opened … as a
-  link to it. Dismiss: the card goes, focus moves to the greeting at the
+  Open a product and come back: Look up is ticked, grey, and reads You
+  opened …, its row opening it. Dismiss, under the foot: the card goes, focus moves to the greeting at the
   top of Home, and a message says What you can do here stays on Your
   account, with Undo. Tab once: Undo has focus, and the message stays
   while it does, or while the pointer is on it, well past its eight
@@ -1703,27 +1899,30 @@ The pages, in a private window unless a check says otherwise.
   Confirmed, and the banner is gone everywhere. Add a photo on Your
   account: Say who
   you are reads Photo added, opening Account. Receive stock or raise an
-  order: it is ticked, naming what you did as a link to it.
+  order: it is ticked, naming what you did, its row opening it.
 - **MC-3209** *(ADR-079)* The welcome for a founder: set up an
   organization from `npm run org:invite`'s link. Home's card reads You
   started this organization today, then in one line You may do everything
   here, including settings and closing the organization, and Setting up
   the organization is in Getting started, below. Getting started comes
-  straight after the card, before the quick actions, and the card's first
+  straight after the card, both above what is late, no main action at the
+  top, and the card's first
   week has only Confirm your email address
-  and Say who you are, 0 of 2 done, its bar empty on a grey track, as
-  Getting started's is at 0 of 7.
+  and Say who you are, Your first week · 0 of 2 done in its head, and
+  Getting started's bar is empty on a grey track at 0 of 7.
   Dismiss Getting started, as its Owner, and reload: the first week grows
   to the founder's work, Look up, Receive stock and Raise an order.
 - **MC-3210** *(ADR-079)* The welcome in 中文 on a phone, about 390 px,
-  with Account's language set to 中文: as MC-3207's Viewer, the card reads
-  欢迎来到 Demo …，your name, and 您今天以查看者身份加入。这张卡片在首页显示两周，到
-  the day. One column: the note, then 您的第一周 with 已完成 0/3, then one
-  row, 您在这里可以做什么 with how many areas and 点开查看, which opens the
-  areas on a tap and closes them on another; then the foot about 帮助.
-  The card is about a screen long, and nothing scrolls sideways at Larger
-  text either. 隐藏 shows 欢迎卡片已隐藏… with 撤销. As MC-3209's founder,
-  您在这里可以做所有事情 comes first, above 您的第一周, and no row folds.
+  with Account's language set to 中文: as MC-3207's Viewer, the card is
+  folded to one line above the tiles: 欢迎来到 Demo …，your name, 您的第一周 · 已完成
+  0/3, and 展开, a full fingertip tall. 展开 opens it in place and reads
+  收起: 您今天以查看者身份加入。这张卡片在首页显示两周，到 the day, the note,
+  the first week's items, each a row to tap, then 您在这里可以做什么, each
+  area's name a link, then the foot about 帮助, and 隐藏. Nothing scrolls
+  sideways at Larger text either. 收起 folds it back to its one line.
+  隐藏 shows 欢迎卡片已隐藏。“您在这里可以做什么”仍保留在“我的账户”中。 with
+  撤销. As MC-3209's founder, 您在这里可以做所有事情 in one line. What you can do here lists 查看采购订单、销售订单和订单价格, one 和, and
+  我的账户 in the account menu opens a page headed 我的账户.
 - **MC-3211** *(ADR-079)* The demo's newcomer, and People's New. On a
   freshly seeded demo, the Owner's Home has no welcome, nor has any of the
   team's but Fatima Haddad's: she joined three days ago by the Owner's
@@ -1742,6 +1941,24 @@ The pages, in a private window unless a check says otherwise.
   can do here as on the card, with To do more, ask … opening People. It is
   there with the card dismissed. As the demo Owner, it reads Owner, its
   line, and You may do everything here, in one line.
+- **MC-3213** *(ADR-091)* Home's guide. As the demo Owner on Home, open
+  Help: Home's guide names Home's three moments (every day, the first two
+  weeks, a new organization), then Every day, Where each tile leads, What
+  is late, Your first two weeks, Getting started, The top bar, With no
+  organization and Words you’ll meet. Every word it puts in bold reads
+  the same on the screen: What needs you today, 2 late, Raise an order,
+  Recently opened, Refresh; each tile's name, and where the guide says it
+  leads is where the tile opens; 2 late orders to ship, and Late, Out and
+  Expired on the lists the late buttons open; the welcome's Open and Fold;
+  Getting started's seven steps, Learn more and Skip; and, at 390 px, the
+  top bar's Menu, Search, Help, Notifications and Account. Nowhere does it
+  say overdue, See all or cards. In Français (Accueil) and 中文 (首页) the
+  same: 2 en retard, Ce qui vous attend aujourd’hui, Déployer and Réduire,
+  Inviter votre équipe; 2 项逾期, 今天要处理的事, 展开 and 收起, 库存下限;
+  a tile is 磁贴, and 卡片 only the welcome card (欢迎卡片). Where it says
+  the welcome starts folded, it says below 900 px, as it does on a
+  tablet upright too.
+  Its Inventory link opens Inventory, its guide at Reorder points.
 
 ## 33. Job roles (ADR-080)
 
@@ -2083,8 +2300,8 @@ the file, or wait ten minutes.
   full, with no browser Leave site? after the app's.
 - **MC-3402** *(ADR-081)* A new version on a phone. At 390 px, and at 320
   px with Larger text, deploy: no new button, a dot on the account button,
-  whose name a screen reader reads as …, signed in as …, a new version is
-  ready, and the bar still fits its six targets. The account menu's first
+  whose name a screen reader reads as Account, …, signed in as …, a new
+  version is ready, and the bar still fits its six targets. The account menu's first
   item reads A new version is ready · Reload now, It also loads by itself
   when you open another page. Everything you’ve saved is kept; you don’t
   need to do anything., and loads the page. In 中文, 新版本已就绪 ·
@@ -2279,44 +2496,44 @@ menu's Colour mode.
   pale blue disc. MC-3409's Something went wrong: the warning sign dark
   red on a pale red disc. MC-3407's Can’t reach the server: the cloud dark
   grey on a pale grey disc. In dark mode each the other way round, a light
-  icon on a dark tint, and each icon stands clear of its disc. Then, in an
+  icon on a dark tint, and each icon stands clear of its disc; each
+  title is the page title's 25 px, as Home with no organization's greeting
+  is, not 34. Then, in an
   organization of your own (registered locally, `REGISTRATION=open`) with
-  Getting started dismissed, Home shows every card with nothing in it:
-  each says so in green, such as No runs in progress., dark green on the
-  light card and light green on the dark one, as easy to read as the
-  words around it.
+  Getting started dismissed, Home says Nothing needs you today. beside a
+  green tick, and every tile is quiet, grey on the page's grey, its words
+  such as No runs in production as easy to read as the words around them,
+  in light and in dark. With something late, the panel of what is late is
+  dark red on pale red, and in dark mode light red on a dark tint, its
+  buttons as easy to read.
 
 A reference (a document's number, a SKU, a lot code) is kept whole where
 words sit beside it; one alone, or first in its line, needs nothing.
 
 - **MC-3422** *(ADR-081)* References kept whole. At 390 px, then at 320
-  px with Larger text, in English and in 中文: Home's To receive reads
-  PO-000009 Lakeshore Packaging · PO-DEMO-9, a space between the number
-  and the partner, and wraps only between words, never inside PO-DEMO-9
-  (no PO- at a line's end with DEMO-9 below); To ship the same for
-  SO-DEMO-1. On SO-DEMO-1's order, the line under its number moves their
-  reference's SO-DEMO-1 to the next line whole when it must. Copy
-  SO-DEMO-1 from Home and paste it into the lookup: it finds the order.
-  With VoiceOver, a Home row reads as one line, SO-DEMO-1 among its words,
-  never split off on its own (MC-R38). A refusal the same: edit Harbour
+  px with Larger text, in English and in 中文: on SO-DEMO-1's order, the
+  line under its number moves their reference's SO-DEMO-1 to the next
+  line whole when it must, never inside it (no SO- at a line's end with
+  DEMO-1 below). Copy SO-DEMO-1 from the order and paste it into the
+  lookup: it finds the order. A refusal the same: edit Harbour
   Health, give it the code COOP-BSL and Save: Code COOP-BSL is already
   used by another partner, wrapping between words, never inside COOP-BSL;
   Cancel, and its code is still HARBOUR. Inventory → a row's Ship out, for
   more than can be taken while some is held for an order, the same: never
   inside the SKU or the order's number.
 
-Home's tiles take as few rows as the page's width needs, shared evenly
-across them. The demo Owner has eight tiles; Daniel Okafor, an Admin,
-seven (no Costs waiting).
+Home's tiles sit two across on a phone and three from a page 600 px wide,
+a window of about 648, never more (ADR-091), as few rows as that takes,
+shared evenly across them.
 
-- **MC-3423** *(ADR-081)* Home's tiles in even rows. As the Owner, at
-  1440 px and at 768 px: two rows of four, never seven and one alone; at
-  390 px, four rows of two. As Daniel, at 1440 px all seven in one row; at
-  1280 px four, then three as wide as the four above them, the end of the
-  second row left empty. Then Larger text (account menu → Text size) at
-  1440 px: the Owner's two rows of four, Daniel's four and three; at 390
-  px a tile no longer fits twice across, and each has the row to itself.
-  At no width does the page scroll sideways (MC-R39).
+- **MC-3423** *(ADR-081; ADR-091)* Home's tiles in even rows. As the
+  Owner, at 1440 px, at 1366 px with Help open beside the page and at
+  768 px: three across, every tile as wide as the others; at 390 px and
+  on the Duo closed (466 px), two across. As Daniel Okafor, an Admin, who
+  has no Waiting for a cost, the same: never four or more across. Then
+  Larger text (account menu → Text size): at 1440 px still three across;
+  at 390 px a tile no longer fits twice across, and each has the row to
+  itself. At no width does the page scroll sideways (MC-R39).
 
 A real deploy is a push to `main` that passes CI, with Render's settings
 as [`docs/runbooks/render.md`, "Deploys"](runbooks/render.md#deploys-adr-081), has them.
@@ -2334,7 +2551,7 @@ as [`docs/runbooks/render.md`, "Deploys"](runbooks/render.md#deploys-adr-081), h
   next deploy on, coming back to the Orders tab shows New version beside
   Help (MC-3401), Inventory from the rail loads in full, and Help's foot
   names the commit `/api/health` names (MC-3405). A deploy that raises the
-  API revision, as ADR-085's does from 1 to 2: leave a third tab on Home
+  API revision, as ADR-091's does from 2 to 3: leave a third tab on Home
   before the push. Back in it once the static site is out, the amber
   banner asks it to reload (MC-3404); Reload, once: Home, with its cards
   and no banner, and switching away and back asks nothing more.
@@ -2514,7 +2731,8 @@ private window.
 - **MC-3511** The rail's foot. At the bottom of the rail, pinned: a
   line, then Powered by, the P and Panivo, small, Panivo brighter than the
   words. At 1440 × 900, a MacBook's window, every link is above the line,
-  Price lists the last, with nothing fading into it; so too under the
+  Licences in Records among them, Price lists the last, with nothing
+  fading into it; so too under the
   build's own name, web-app-foundation, where VITE_APP_NAME is not set,
   which takes the foot to two lines. At 1280 × 800 the
   foot is in view without scrolling, open and folded, and the links run on
@@ -2954,12 +3172,12 @@ site, after a deploy that changes the setting, the route or the relay.
 
 - **MC-4201** *(ADR-085)* The bell, once each time an item falls below
   its reorder point. On a fresh demo, the server's first start tells the
-  six low items in one notice: "6 items fell below their reorder point",
+  six low items in one notice: "6 items are low on stock", the tile's Low stock (库存不足, Stock bas),
   then "VITC-100, MAGCAP-SAMPLE and 4 more. Order or plan them from
   Reorder points.". As the demo Owner, on Reorder points, give a bought
   item with stock a point above what it has, and restart the server (it
-  checks at start, then hourly): the bell gets one notice, "… fell below
-  its reorder point" with the item's SKU, then its name and "Raise a
+  checks at start, then hourly): the bell gets one notice, "… is low
+  on stock" with the item's SKU, then its name and "Raise a
   purchase order from Reorder points.", with no quantity anywhere.
   Restart again: no second notice. Give two more items points above what
   they have, one of them made, and restart: one notice, "2 items fell
@@ -2972,7 +3190,7 @@ site, after a deploy that changes the setting, the route or the relay.
   where it has one.
 - **MC-4202** *(ADR-085)* The list. As the demo Owner, Inventory → Reorder
   points: the address gains `?tab=reorder-points`, the switch reads All 9
-  · Low 6 · Out 1, and "Position = usable + coming − still needed" sits
+  · Low stock 6 · Out 1, and "Position = usable + coming − still needed" sits
   above the list. VITC-100 comes first, every low row before every other,
   and the rest by SKU. Each row has its SKU in bold, its name beside it
   and a small line under it: "Bought · 48 at a time" for D3-1000-120,
@@ -2984,13 +3202,14 @@ site, after a deploy that changes the setting, the route or the relay.
   says Drafted, with PO-DEMO-13 and its quantity, linked. ZINC-60 is
   grey, "Discontinued · never low, its point kept", with no chevron.
   The digits line up down each column.
-- **MC-4203** *(ADR-085)* Low, Out, the search and Export. Low shows the
-  six, VITC-100 among them; Out, VITC-100 alone; All, the nine. Type
-  ELDER: the counts follow the search, All 1 · Low 1 · Out 0. With Low
-  on and the search cleared, Export saves a CSV of the six, and the audit
+- **MC-4203** *(ADR-085)* Low stock, Out, the search and Export. Low stock
+  shows the six, VITC-100 among them; Out, VITC-100 alone; All, the nine.
+  Type ELDER: the counts follow the search, All 1 · Low stock 1 · Out 0.
+  With Low stock on and the search cleared, Export saves a CSV of the six, and the audit
   log's line for it reads its filter as Status Low, in 中文 不足. Open
   `/inventory?tab=reorder-points&status=low` in a new tab: it opens on
-  Low. In French the three read Tous, Bas and Épuisé.
+  Low stock. In French the three read Tous, Stock bas and Épuisé; in 中文
+  全部, 库存不足 and 缺货.
 - **MC-4204** *(ADR-085)* An opened row. ELDER-250's chevron opens four
   boxes: Usable by location; + Coming, PO-DEMO-12 with its supplier and
   Late; − Still needed, SO-DEMO-9 and SO-DEMO-10 with their customers;
@@ -3014,7 +3233,7 @@ site, after a deploy that changes the setting, the route or the relay.
   the bar's own text colour, plain on the dark bar, in both modes.
 - **MC-4206** *(ADR-085)* Read only, and in 中文. As Chloé Tremblay
   (Viewer): the same list, with no boxes, no header box and no bar; the
-  chevron still opens a row. In 中文: the tab reads 再订货点, the
+  chevron still opens a row. In 中文: the tab reads 库存下限, the
   statuses 缺货, 不足 and 充足, the line 预计可用 = 现有可用 + 在途 −
   待发; SLEEP-60CT's opened row says 建议生产, D3-1000-120's 建议订货,
   and each item shows its Chinese name.
@@ -3074,40 +3293,37 @@ site, after a deploy that changes the setting, the route or the relay.
   catalogue tick with it, the line above the areas saying so; the summary
   beside the boxes says the role can set reorder points. Save it as
   Reorder clerk and give it to Tom Becker: his Your access says he can
-  set reorder points, in 中文 设置再订货点, in Français définir les points
+  set reorder points, in 中文 设置库存下限, in Français définir les points
   de commande, and Reorder points now shows him Add reorder point and
   each row's ⋯.
 - **MC-4211** *(ADR-085)* The empty states. Register a new organization:
   Reorder points shows an icon, "No reorder points yet.", a sentence on
   what a point does, Add reorder point, and Learn more, which opens Help
-  at Reorder points; no All, Low and Out, no position line and no
+  at Reorder points; no All, Low stock and Out, no position line and no
   Export, so Learn more is the only one. Receive 50 of an item, give
-  it a point of 10, and press Low: a tick in green, "Nothing is low. 1 item
+  it a point of 10, and press Low stock: a tick in green, "Nothing is low. 1 item
   has a reorder point.", and Show all, which shows All with the row.
 - **MC-4212** *(ADR-085)* The dialog in 中文. The Owner's account in 中文:
-  the button reads 添加再订货点, the switch 采购 and 自制, the cards
-  补足到再订货点, 固定订货量 and 补到最高库存, Today's bars 现在的预计可用
+  the button reads 添加库存下限, the switch 采购 and 自制, the cards
+  补足到库存下限, 固定订货量 and 补到最高库存, Today's bars 现在的预计可用
   and 按建议订货后的预计可用, and its sentence reads naturally, such as "目前低于 500，因此建议订
   600，即 3 个 200。". Edit FOCUS-60CT, made: the bar reads 按建议生产后的预计可用,
-  and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的再订货点？
-- **MC-4213** *(ADR-085)* Home's Low stock. On a fresh demo, as the Owner:
-  the tile after To receive reads Low stock, 6 and "1 out", in red. Its
-  card lists five rows, each its SKU in bold and its name: VITC-100 with
-  "out" in red; MAGCAP-SAMPLE, "12 of 36"; ELDER-250, "58 of 96";
-  OMEGA3-90, "130 of 180" and "drafted"; D3-1000-120, "180 of 240".
-  SLEEP-60CT, the sixth, is left off. The rows open nothing; See all 6
-  opens Reorder points on Low, with Back to Home. Receive 100 of
-  VITC-100 and Refresh: Low stock reads 5, as the plain tiles do, and
-  the card starts at MAGCAP-SAMPLE. In 中文: 库存不足, "1 项缺货",
-  "12（再订货点 36）", 已下草稿 and 缺货; in French: Stock bas, "1 épuisé", "12 sur
-  36" and "brouillon fait". In a new organization, with no reorder
-  point, the card reads "No reorder point is set yet, so nothing can
-  show as low.", not in green, and Set one in Reorder points opens
-  Reorder points, with Back to Home; once one item has a point and
-  enough stock, the card reads "Nothing is low.", in green.
+  and the sentence 建议生产, never 订. Remove asks 删除 D3-1000-120 的库存下限？
+- **MC-4213** *(ADR-085; ADR-091)* Home's Low stock. On a fresh demo, as
+  the Owner: the tile after To receive reads 6, Low stock and "1 out",
+  its icon red. The tile opens Reorder points on Low stock, its own name,
+  six rows, VITC-100
+  first, with Back to Home; What is late's "1 item out of stock" opens it
+  on Out, that one row. Receive 100 of VITC-100 and Refresh: Low stock
+  reads 5, with no pill, and its button is gone from what is late. In
+  中文: 库存不足, "1 项缺货" and "1 个缺货物品"; in French: Stock bas,
+  "1 épuisé" and "1 article épuisé". In a new organization, with no
+  reorder point, the tile is quiet, Low stock and "No reorder points set
+  yet" (尚未设置库存下限), not Nothing low, and opens Reorder points with
+  no filter, where one is set.
 - **MC-4214** *(ADR-085)* The bell's notice, opened, and its words by
   the items. On a fresh demo, as the Owner, the bell's "6 items fell
-  below their reorder point" opens Inventory's Reorder points on Low,
+  below their reorder point" opens Inventory's Reorder points on Low stock,
   with Back to where the bell was. Sign in as Fatima Haddad (Sales), who
   raises orders but plans no runs: her notice names only the four bought
   items, "VITC-100, ELDER-250 and 2 more. Order them from Reorder
@@ -3117,7 +3333,7 @@ site, after a deploy that changes the setting, the route or the relay.
   Two made items: "Plan them from Reorder points."; one of each: "Order
   or plan them from Reorder points.".
 - **MC-4215** *(ADR-085)* Raise a purchase order, filled in from the list.
-  On a fresh demo, as the Owner, Reorder points on Low: choose
+  On a fresh demo, as the Owner, Reorder points on Low stock: choose
   D3-1000-120 and ELDER-250, and press Raise a purchase order in the
   dark bar. New order opens with Buying chosen, Partner empty, with a
   note: "Filled from Reorder points: 2 lines at their suggested
@@ -3125,7 +3341,7 @@ site, after a deploy that changes the setting, the route or the relay.
   and prices, then raise it as a draft.", in 中文 请在合作伙伴中选择供应商,
   and two lines, D3-1000-120 at 96 and ELDER-250
   at 134. Nothing is saved yet: Cancel goes back to Reorder points, on
-  Low, as it was. Raise it again, choose Prairie and Raise as
+  Low stock, as it was. Raise it again, choose Prairie and Raise as
   draft: the order opens as a draft, and Back returns to Reorder points,
   not to New order filled in again; there, both rows read Drafted with
   the order's number, and neither has a box to choose. Edit D3-1000-120:
@@ -3134,7 +3350,7 @@ site, after a deploy that changes the setting, the route or the relay.
   Fatima Haddad (Sales) has the boxes and the bar; Chloé Tremblay
   (Viewer), neither.
 - **MC-4216** *(ADR-085)* Plan a run, filled in from the list. On a fresh
-  demo, as the Owner, Reorder points on Low: MAGCAP-SAMPLE's row has Plan
+  demo, as the Owner, Reorder points on Low stock: MAGCAP-SAMPLE's row has Plan
   a run, and no bought row has one. It opens Plan a run with Making
   MAGCAP-SAMPLE, the recipe "v1 (current) — makes 12", Quantity to make
   24, Made at empty, and a note: "Filled from Reorder points: 24 brings
@@ -3146,7 +3362,7 @@ site, after a deploy that changes the setting, the route or the relay.
   start. Production's own Plan a run shows Uses too, once an
   item with a recipe and a quantity are in. Fatima Haddad (Sales) and
   Chloé Tremblay (Viewer), who plan no runs, see no Plan a run. In 中文:
-  计划生产, the note 已按再订货点填写, and 用料.
+  计划生产, the note 已按库存下限填写, and 用料.
 - **MC-4217** *(ADR-085)* Help's Inventory and Home guides. As the demo
   Owner, Inventory → Reorder points: "Position = usable + coming − still
   needed" ends with Learn more, which opens Help at Where an item stands.
@@ -3154,8 +3370,8 @@ site, after a deploy that changes the setting, the route or the relay.
   to order and Order or make what is low after Promised to customers,
   and two more refusals; every button it names reads the same on the
   screen, Add reorder point ending Add's steps, with Save when editing.
-  Home's guide has Low stock after What needs attention, and Out
-  among its words. In 中文: 了解更多 follows 待发 with no space and opens
+  Home's guide has Low stock under Where each tile leads, opening Reorder
+  points, and Out among its words. In 中文: 了解更多 follows 待发 with no space and opens
   物品的库存情况, and Home's guide has 库存不足; in French, En savoir plus
   opens Où en est un article.
 
@@ -3163,6 +3379,28 @@ site, after a deploy that changes the setting, the route or the relay.
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R98** *(a control focused under Help in a window under about
+  1140 px, #272)* At 1024 px on Orders, open Help and press Tab twenty
+  times: every stop is in Help, none on the page under it, and Raise an
+  order is reached again only once Help is closed.
+- **MC-R97** *(a list keeping the filter pressed when a link to it is
+  followed while it is open, #302)* On Inventory → Reorder points press
+  Out, then follow a low-stock notice from the bell, or type
+  `?tab=reorder-points&status=low` in its place: Low is pressed and the
+  list shows the low items, not Out's.
+- **MC-R96** *(the order's Total cut under its actions on a computer, #221)*
+  Open SO-DEMO-1 at 1440 px, in English, Français and 中文, at Standard and
+  at Larger text (account menu → Text size), in light and in dark: each
+  line's Total is in view beside its ⋮ without scrolling sideways. Scroll
+  the Items table sideways: the columns before the Total pass under it, a
+  grey line on its left edge while they do, the column cut there fading
+  into it, so "200" cut to "20" never reads as a number, in light and in
+  dark; gone at the table's right end. At 390 px only the ⋮ stays at the
+  right, the same line and fade on its edge; the Total scrolls with the
+  rest (#159). Any other table that scrolls sideways on a phone (an
+  invoice's credit notes, Stock value) shows a grey shade at the side
+  with more, gone once that side is reached.
 
 - **MC-R95** *(focus falling to the page as an invoice was issued, #462)*
   With the keyboard alone at 1440 px, as the demo Owner. Open SO-DEMO-5's
@@ -3363,8 +3601,8 @@ first.
   m2 on Locations and reload: the address bar offers no translation. Ask
   Chrome to translate the page anyway (right-click, Translate to 中文, if
   it is offered): the page stays as written, the location's line reading
-  m2 and every word in English. On Home, To ship's SO-DEMO-1 and the
-  page's words stay as written the same way. Switch the app to 简体中文
+  m2 and every word in English. On Home, the tiles' words and Recently
+  opened's SO-DEMO-1 stay as written the same way. Switch the app to 简体中文
   and reload: Chrome offers no translation, and asked to translate into
   English, the page stays in Chinese.
 
@@ -3388,12 +3626,12 @@ first.
 - **MC-R69** *(a top-level page opened by a link with no way back, such
   as Trace a lot, #341)* As the demo Owner, on Inventory press Trace a
   lot: Back shows beside its title and returns to Inventory. From Home's
-  quick action Trace a lot, Back returns to Home. Type `2609` and press
+  More → Trace a lot, Back returns to Home. Type `2609` and press
   Enter: Back is still there, and steps back to before the search, then
   to where you came from, as the browser's Back does. A lot opened from
   the list keeps its trail and its Back. Then the other links inside the
   app to a top-level page, each showing Back to where you were: Home's
-  Receive stock and Plan a run; a card's See all; Change the days; a
+  Receive stock and Plan a run; a tile, and a button of what is late; a
   step of Getting started; Look up in a newcomer's first week (a Viewer
   just invited, as MC-3207 sets up); the top bar's Show all in Orders; a licence's notice in the
   bell; Licences from Products, now under the header every list has;
@@ -3401,8 +3639,8 @@ first.
   guide, and Your account at Help's foot. Any of these pages opened from the menu, from the trail above a
   record, or by its address in a new tab, shows no Back. Opened by a
   link, a list keeps its Back through a search typed, a tab or a filter
-  chosen: Reorder points from Low stock's See all, after a letter in its
-  search and a move to Stock; Orders from To ship's See all, after a
+  chosen: Reorder points from the Low stock tile, after a letter in its
+  search and a move to Stock; Orders from the To ship tile, after a
   search; the audit log from a record's History, Open in audit log, after
   an action chosen; Members from Getting started, after Invite is closed.
 
@@ -3502,12 +3740,11 @@ first.
 
 - **MC-R59** *(To ship and To receive, only what is still to come, #163)*
   As the demo Owner, on Home: To ship leaves out SO-DEMO-QC and
-  SO-DEMO-ZH, shipped in full though still confirmed until closed, and
-  its count is as many as its rows. See all opens Orders with Sales only,
-  Confirmed and Still to ship, listing the same orders; clear Still to
-  ship and the two are back. To receive the same for purchases: one
-  received in full leaves it, one received in part stays, and its See all
-  reads Still to receive. In Français the filter reads Reste à expédier;
+  SO-DEMO-ZH, shipped in full though still confirmed until closed. Its
+  tile opens Orders with Sales only and Still to ship, as many orders as
+  its count, the soonest first; clear Still to ship and the two are back.
+  To receive the same for purchases: one received in full leaves it, one
+  received in part stays, and its tile's list reads Still to receive. In Français the filter reads Reste à expédier;
   in 中文, 待发货. Found by the walkthroughs on `walkthroughs-older`.
 
 - **MC-R58** *(Link a return waits for the returns, #126)* On SO-DEMO-7's
@@ -3518,10 +3755,11 @@ first.
   "links a return that arrived before the RMA".
 
 - **MC-R57** *(Recently opened's kinds in sentence case, #223)* Open
-  SO-DEMO-1 and a product, then Home: in Recently opened, each tile's kind
-  reads Order and Product, not ORDER and PRODUCT, quieter than the
-  record's name under it. In Français, Commande and Produit. Found by
-  `/simplify` on #196.
+  SO-DEMO-1 and a product, then Home: in Recently opened, SO-DEMO-1's row
+  is named by its partner, SO-DEMO-1 · Order in grey under it, and the
+  product's by its name, Product under it: Order and Product, not ORDER
+  and PRODUCT, each with its icon. In Français, Commande and Produit.
+  Found by `/simplify` on #196.
 
 - **MC-R55** *(quantities read without padding zeros, #213)* Products →
   Calm 90ct → Recipe: Makes 1,000 per batch, not 1000.0000. On SO-DEMO-7,
@@ -3590,9 +3828,7 @@ first.
   zone list does the same, and its chosen zone keeps the main text
   colour. Open the bell's menu and press ↓: the entry the keyboard is on
   has its time in the main text colour, the others' stay grey. Found
-  while building ADR-081. On Home, as the demo Owner, Expiring soon's
-  Change the days is grey and underlined, on a phone too, where nothing
-  hovers (found by #196's usability walkthrough).
+  while building ADR-081.
 
 - **MC-R48** *(typographic apostrophes in English, #184)* In English, as
   Tom Becker open a sale's invoice by its address, as MC-3320 does: You
@@ -3665,17 +3901,13 @@ first.
   until it is looked at again: no read each minute in the Network tab, and
   a person's page never loads in full by itself while hidden (MC-3412).
 
-- **MC-R39** *(Home's tiles)* On a computer, the Owner's eight tiles on
-  Home read as two rows of four, never seven and one alone (MC-3423).
-
-- **MC-R38** *(Home's rows, read aloud)* With VoiceOver, a row on Home
-  reads its number and its partner as two words, PO-000009 Lakeshore
-  Packaging, never run together as PO-000009Lakeshore (MC-3422).
+- **MC-R39** *(Home's tiles)* On a computer, the Owner's tiles on Home
+  read as rows of three, never more across (MC-3423).
 
 - **MC-R37** *(the status tones, #172's review)* In dark mode and in
   light, Something went wrong's warning sign stands out from its disc,
-  never a faint red on red, and Home's line for a card with nothing in it
-  is green and easy to read on the dark card, never plain white (MC-3421).
+  never a faint red on red, and on Home the calm line's tick is green and
+  a quiet tile's words grey, each easy to read on the dark page (MC-3421).
 
 - **MC-R36** *(a language that won't load)* In 中文, block
   `*compiled/zh-Hans*` (DevTools → Network request blocking) and reload:
@@ -3689,12 +3921,15 @@ first.
   navigation: the menu is read as a dialog named Navigation (导航 in
   中文), and Close navigation closes it.
 - **MC-R33** *(a step done, to a screen reader)* With VoiceOver, on Home,
-  a ticked step in Getting started or Your first week reads its title,
-  then done, as two words: Say who you are (done), never you are(done); in
-  Français … (fait).
+  a ticked item in Your first week reads its title, then done, as two
+  words: Say who you are (done), never you are(done); in Français …
+  (fait). A done step in Getting started says so on the screen too: Your
+  organization · Done, in Français … · Fait, in 中文 … · 已完成.
 - **MC-R32** *(Home's date line)* In English, Home's line under the
-  greeting reads Thursday, October 22 · Demo …, a space either side of the
-  dot, as it does in Français and 中文.
+  greeting reads the day and the time as the browser's region writes
+  them, such as Thursday, November 5, 7:42 AM, a calendar before it and
+  no organization's name after; in Français jeudi 5 novembre, 07 h 42,
+  and in 中文 the day, a space, then the time.
 - **MC-R31** *(your own row on Members)* With VoiceOver, on Members at
   1280 px and at 390 px, your own row reads your name, then you, as two
   words (Anika Sharma you, in Français Anika Sharma vous, in 中文 李静 您,
@@ -3724,7 +3959,7 @@ first.
   SO-DEMO-2, Ship, then Cancel; on PO-DEMO-9, a line's Receive, then
   Escape; on Account, Delete my account, then Cancel; on a product, History,
   then Escape; on a role made here, Delete, then Cancel, and Move everyone
-  to…, then Escape; at 390 px, Open navigation, then Escape, with no
+  to…, then Escape; at 390 px, Menu, then Escape, with no
   Blocked aria-hidden warning in Chrome's console. Each time focus is back
   on the button that opened it, with its ring, and Enter opens it again; a
   screen reader names that button, not the page from the top.
@@ -3741,10 +3976,11 @@ first.
   the other, each label whole. At 1280 px each pair sits side by side as
   before.
 - **MC-R24** *(late on Home)* With something late, such as PO-DEMO-9, Home's
-  To receive (and To ship, Expiring soon or Licences, whichever has a late
-  one) is tinted the pale red of a red chip, its title, count and "1
-  overdue" in dark red, easy to read; in dark mode a dark tint with light
-  red words. A tile with nothing late is plain.
+  To receive tile (and To ship, Expiring soon or Licences expiring,
+  whichever has a late one) has its icon on the pale red of a red chip
+  and its pill, "1 late", dark red, easy to read; in dark mode a dark tint
+  with light red words. A tile with nothing late has its icon in the
+  accent's light tint, and never says overdue.
 - **MC-R23** *(links under a page's title)* Open an order with an expected
   day, such as PO-DEMO-9, a duplicated order, INV-000001 and an RMA: under
   the number, every link (the partner's name, "duplicated from a previous
@@ -4668,3 +4904,151 @@ first.
   back.
 - 2026-11-04: #462, focus falling to the page as an invoice was issued:
   MC-R95 added, focus going to the heading with its new number.
+- 2026-11-05: ADR-091, Home's cards counted with no rows, Costs waiting's
+  See all opening Stock value, and the API revision raised to 3: MC-4213
+  and MC-3422 rewritten, MC-R38 removed, MC-3424's raise now 2 to 3.
+- 2026-11-05: ADR-091, Orders' Late, and Expiring soon and what is still
+  to ship or receive listed soonest first: MC-405 added, MC-1528
+  rewritten.
+- 2026-11-05: ADR-091, What we do on the organization's Profile, its
+  change logged without its words: MC-1704 added.
+- 2026-11-05: ADR-091, the type scale of 16 px text and the corners grown
+  to 10, 12 and 16 px on every screen: MC-1560 added.
+- 2026-11-05: #221, the order's Total held beside its actions on a
+  computer: MC-R96 added, MC-1555 rewritten.
+- 2026-11-05: ADR-091, the icons on Register, on Home in no organization
+  and on an organization invitation kept rounded squares: MC-1560
+  rewritten.
+- 2026-11-05: ADR-091, Chinese text on lines of 28 and 24 px: MC-1560
+  rewritten.
+- 2026-11-05: ADR-091 and #302, the lists' filters and sort kept in the
+  address while they are open, and a keyboard sort keeping its header's
+  focus: MC-406 and MC-R97 added.
+- 2026-11-05: ADR-091 and #460, Licences in the menu's Records with its
+  Expiring soon, and Expired on Inventory and Licences: MC-311 and MC-512
+  added, MC-1507 rewritten.
+- 2026-11-05: ADR-091, Home's fourth look: the date and the time, What
+  we do, what is late with a button per kind, the tiles each one link,
+  quiet when empty, three across at most, the main action and the line in
+  its place, Recently opened as rows, and the read on return: MC-1559,
+  MC-3421, MC-3423, MC-4213, MC-2505, MC-R24, MC-R32, MC-R37, MC-R39,
+  MC-R49, MC-R57, MC-R59, MC-R69 and MC-R72 rewritten.
+- 2026-11-05: ADR-091, Getting started and the welcome: the next step the
+  page's main action with Learn more beside it and every other step one
+  link; the welcome folded below 900 px with Open, open from it with
+  Fold, What we do in it, each first-week item and each area a link:
+  MC-1559, MC-3205, MC-3207, MC-3208, MC-3209, MC-3210 and MC-R33
+  rewritten.
+- 2026-11-05: ADR-091 and #431, the frame: a word under each of the top
+  bar's icons below 1200 px, the search's place, the account menu's
+  selects named in words, the top loading bar, and on Orders the late
+  chip and the line in Raise an order's place: MC-407, MC-1561 and
+  MC-1562 added, MC-405, MC-1509, MC-1511, MC-2801, MC-3204, MC-3402 and
+  MC-R27 rewritten.
+- 2026-11-05: ADR-091 and #272, Help a modal side sheet where the window
+  leaves the page less than 720 px beside it: MC-R98 added, MC-3203
+  rewritten.
+- 2026-11-05: ADR-091, 库存下限 for a reorder point in 中文, on
+  Inventory's tab, its dialog and rules, the bell's notices, History, the
+  export and the guides: MC-4206, MC-4210, MC-4212 and MC-4216 reworded.
+- 2026-11-05: ADR-091, late in place of overdue in the time zone's help:
+  MC-2601 extended.
+- 2026-11-05: #380, Home in no organization in 中文 and Français, the
+  last of its suggestions: MC-3109 extended.
+- 2026-11-05: ADR-091, Home's guide rewritten for the new Home in three
+  languages: its three moments, where each tile leads, what is late, the
+  welcome folded, Getting started and the top bar's words: MC-3213 added,
+  MC-4217 reworded.
+- 2026-11-05: ADR-091, the rail's links 32 px tall under a mouse, so every
+  link stays above its foot at 1440 × 900 with Licences in the menu:
+  MC-3511 extended.
+- 2026-11-05: ADR-091, each tile and the filter it opens one name: Low
+  stock, To issue, In progress and Licences expiring, and Returns' Open
+  « En cours » and 未结: the demo's reorder points, MC-406, MC-512,
+  MC-4202, MC-4203, MC-4211, MC-4213, MC-4214, MC-4215 and MC-4216
+  reworded, MC-1531 and MC-1534 extended.
+- 2026-11-05: ADR-091, Home's main action at the right of the greeting's
+  row, by role, the others under More, Refresh an icon beside the
+  greeting; Your devices out of the account menu: MC-1559 and MC-1511
+  extended, MC-3209 and MC-R69 reworded.
+- 2026-11-05: ADR-091's review, Low stock with no reorder point set
+  saying so again, not Nothing low, and opening the whole list: MC-4213
+  reworded.
+- 2026-11-05: ADR-091's review, every icon button 44 px tall on touch,
+  Home's Refresh among them: MC-1542 extended.
+- 2026-11-05: ADR-091's review, Learn more beside a heading or a step 44
+  px tall on touch: MC-1559 extended.
+- 2026-11-05: ADR-091's review, a held column's edge and a sideways
+  table's cut side seen in both modes, from the edge token: MC-R96
+  extended.
+- 2026-11-05: ADR-091's review, the top bar's words give way by each
+  language's own width, so 中文 keeps them at Larger on a 390 px phone:
+  MC-1561 reworded.
+- 2026-11-05: ADR-091's review, text people read at 14 px at least and
+  headings told by size, chips and their × 44 px on touch: MC-1542
+  extended, MC-1561's words 14 px.
+- 2026-11-05: ADR-091's review, a tile is 磁贴 in Chinese, 卡片 left to
+  the welcome card: MC-3213 extended.
+- 2026-11-05: ADR-091's review, Back from a list opened by a tile, not
+  by See all, which Home no longer has: MC-R69 reworded.
+- 2026-11-05: ADR-091's review, three tiles from Home's page 600 px wide,
+  a window of about 648: MC-1559 and MC-3423's lead reworded.
+- 2026-11-05: ADR-091's review, Home's guide saying the welcome folds
+  below 900 px, not only on a phone: MC-3213 extended.
+- 2026-11-05: ADR-091's review, decision 2A, what is late headed "things
+  need you now", since it counts the expired and the out too, each
+  button saying late, expired or out: MC-1559 and MC-3213 reworded.
+- 2026-11-05: ADR-091's review, no main action while Getting started
+  shows, its next step the page's one: MC-1559 reworded.
+- 2026-11-05: ADR-091's review, decision 4A, a role whose only action is
+  Trace a lot has the quiet line and whom to ask, not the button: MC-1559
+  reworded.
+- 2026-11-05: ADR-091's review, decision 5A, the welcome and Getting
+  started above what is late, as the boards draw them: MC-1559 and
+  MC-3209 reworded.
+- 2026-11-05: ADR-091's review, Home greeting by the organization's
+  clock, UTC named in words, the demo on Vancouver's: MC-1559 and MC-2602
+  extended.
+- 2026-11-05: ADR-091's review, what is late's line the same for a mouse,
+  a finger and a Viewer: MC-1559 extended.
+- 2026-11-05: ADR-091's review, in 中文 a Viewer's Orders line reads
+  查看采购订单、销售订单和订单价格, and the account page is 我的账户, as
+  the menu and the guides call it: MC-3210 extended.
+- 2026-11-05: ADR-091's review, the sign-in pages' by-invitation line
+  without #380's calque, in Français and 中文: MC-3110 extended.
+- 2026-11-05: ADR-091's review, a partner with no contacts says 订单逾期
+  in 中文, the glossary's word for late, not 延误: MC-405 extended.
+- 2026-11-05: ADR-091's review, decision 47a, three tiles with their
+  page's name first: MC-1559 extended, MC-1531 reworded.
+- 2026-11-05: ADR-091's review, Waiting for a cost one name on Inventory,
+  the trace, Stock value and Home: MC-1552 reworded.
+- 2026-11-05: ADR-091's review, What we do once on Home, the welcome
+  leaving it to the header: MC-1704 extended.
+- 2026-11-05: ADR-091's review, the welcome's heading at the section
+  size: MC-3207 extended.
+- 2026-11-05: ADR-091's review, the bell's notice says low on stock, the
+  tile's Low stock: MC-4201 reworded.
+- 2026-11-05: ADR-091's review, the status pages' titles and Home with
+  no organization's greeting at the page title's size: MC-3421 extended.
+- 2026-11-05: ADR-091's review, More's menu named by its button and
+  checked by axe: MC-1559 extended.
+- 2026-11-05: ADR-091's review, a code alone in a table cell kept whole,
+  as a Reference is: MC-1552 extended.
+- 2026-11-05: ADR-091's review, Credit notes' days in the address with
+  its sort: MC-406 extended.
+- 2026-11-05: ADR-091's review, the bell's count inside the bar below
+  1200 px: MC-1561 extended.
+- 2026-11-05: ADR-091's review, the top bar's words on one line below
+  1200 px, Account's too: MC-1561 extended.
+- 2026-11-05: ADR-091's review, the invitation page's help naming the
+  invited address in full under its field: MC-3110 extended.
+- 2026-11-05: ADR-091's review, Chinese line heights in tables, menus and
+  Home's late buttons too: MC-1560 extended.
+- 2026-11-05: ADR-091's review, focus after a removed chip on the chip in
+  its place, then the title: MC-406 extended.
+- 2026-11-05: ADR-091's review, whom to ask on Home read beside Home and
+  shown once with its names: MC-1559 extended.
+- 2026-11-05: ADR-091's review, Home's row links tinted only under a
+  mouse, never left tinted after a tap: MC-1559 extended.
+- 2026-11-05: ADR-091's review, the welcome's areas named and linked as
+  the menu has them: MC-3207 extended.

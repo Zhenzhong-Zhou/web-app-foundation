@@ -1,6 +1,8 @@
 import { Avatar } from '@mui/material';
 
 import { colourOf, initialsLang, initialsOf } from '../lib/person-initials';
+import { rem } from '../theme/rem';
+import { TYPE } from '../theme/tokens';
 
 /**
  * A person's face (ADR-063): their photo, or their initials on their own
@@ -39,9 +41,12 @@ export function PersonAvatar({
       alt={name ?? email ?? ''}
       slotProps={{ img: { loading: 'lazy', translate: 'no' } }}
       sx={{
-        width: size,
-        height: size,
-        fontSize: Math.max(11, Math.round(size * scale)),
+        // In rem, beside the words it goes with, so the initials grow with
+        // the text size and are never under the small size (ADR-075;
+        // ADR-091's review).
+        width: rem(size),
+        height: rem(size),
+        fontSize: rem(Math.max(TYPE.small, Math.round(size * scale))),
         fontWeight: 600,
         bgcolor: colourOf(name, email),
         color: '#FFFFFF',

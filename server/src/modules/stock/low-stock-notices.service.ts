@@ -270,7 +270,7 @@ function aboutOne(
     title: t(
       {
         id: 'notifications.stockLow.one',
-        defaultMessage: '{sku} fell below its reorder point',
+        defaultMessage: '{sku} is low on stock',
       },
       { sku: item.sku },
     ),
@@ -303,7 +303,7 @@ function aboutSeveral(items: Claimed[]): Pick<Emission, 'title' | 'body'> {
       {
         id: 'notifications.stockLow.several',
         defaultMessage:
-          '{count, plural, one {# item fell below its reorder point} other {# items fell below their reorder point}}',
+          '{count, plural, one {# item is low on stock} other {# items are low on stock}}',
       },
       { count: items.length },
     ),

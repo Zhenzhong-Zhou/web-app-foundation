@@ -114,13 +114,21 @@ export const MARK_SHAPE = {
 } as const;
 
 /**
- * Controls, then panels. Chips are round.
+ * Controls, then panels and tiles, then dialogs, grown with the type scale
+ * (ADR-091). Chips are round, but for a made role's, square enough beside
+ * a round one to be told from it by its shape (ADR-080), whatever the
+ * others become.
  *
  * The emails keep a copy of control and panel, the button's corners and
  * the note's, in server/src/shared/mail/mail-layout.ts: a change to either
  * is made there too.
  */
-export const RADIUS = { control: 6, panel: 8, dialog: 10 } as const;
+export const RADIUS = {
+  control: 10,
+  panel: 12,
+  dialog: 16,
+  squareChip: 6,
+} as const;
 
 /**
  * A colour mixed toward white by `weight` (0 to 1). Dark mode's accent is
@@ -211,6 +219,12 @@ export interface Scheme {
   border: string;
   /** Lines between table rows, fainter than a border. */
   line: string;
+  /**
+   * Where a table cuts what scrolls sideways under a held column or past
+   * its frame: a line seen in both modes, 3:1 on a panel and on a head
+   * (ADR-091's review), where a border is meant to be quiet.
+   */
+  edge: string;
   text: string;
   /** Secondary text: labels, captions, notes. */
   muted: string;
@@ -226,6 +240,7 @@ export const LIGHT: Scheme = {
   border: '#E1E4EA',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   line: '#EEF0F4',
+  edge: '#858E9E',
   text: '#141A24',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   muted: '#5B6575',
@@ -251,6 +266,7 @@ export const DARK: Scheme = {
   head: '#232934',
   border: '#2E3440',
   line: '#282E39',
+  edge: '#6B7484',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   text: '#E6E9EF',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */
@@ -272,13 +288,18 @@ export const DARK: Scheme = {
 
 /**
  * Five sizes and no others, in px: page title, section, body, small,
- * caption. The theme gives them to h5, h6, body1, body2 and caption.
+ * caption. The theme gives them to h5, h6, body1, body2 and caption, each
+ * on a line of its own (theme/index.ts).
+ *
+ * A step of 1.25 from the body's 16 px, the text to decide by (ADR-091),
+ * so a section's heading is told from its text by size, not weight alone.
+ * The small size is for detail; the caption, off the scale, for footnotes.
  */
 export const TYPE = {
   title: 25,
-  section: 17,
-  body: 14.5,
-  small: 13,
+  section: 20,
+  body: 16,
+  small: 14,
   caption: 12.5,
 } as const;
 

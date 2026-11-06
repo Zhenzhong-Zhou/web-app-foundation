@@ -17,15 +17,19 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import { useId, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { LineHold, OrderDetail, OrderLine } from '../api/types.gen';
+import { Reference } from '../components/reference';
 import { StatusChip } from '../components/status-chip';
 import { displayQuantity, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { cutEdge } from '../theme/cut-edge';
 import { showsPrices } from './prices';
 import { doneLabel } from './status';
+import { useHeldTotal } from './use-held-total';
 
 /**
  * The actions column, held at the table's right edge (ADR-055). With the
@@ -35,6 +39,36 @@ import { doneLabel } from './status';
  * tint; a body cell is given the panel's colour so rows pass beneath it.
  */
 const PINNED = { position: 'sticky', right: 0, zIndex: 1 } as const;
+
+/**
+ * On a phone the actions alone are held, so their edge is the one the
+ * columns pass under, shown while they do.
+ */
+const pinned =
+  (under: boolean, ground: 'head' | 'paper') => (theme: Theme) => ({
+    ...PINNED,
+    ...(ground === 'paper' && { bgcolor: 'background.paper' }),
+    [theme.breakpoints.down('md')]: under ? cutEdge(theme, ground) : {},
+  });
+
+/**
+ * On a computer, the Total held beside the actions too, the other columns
+ * passing under both (#221): at the 16 px text the table is wider than its
+ * place beside the summary in every language, and the Total is what a
+ * line is read for. Its left edge says columns run under it, there only
+ * while they do. The phone keeps only the actions held (#159).
+ */
+const heldTotal =
+  (right: number, under: boolean, body = false) =>
+  (theme: Theme) => ({
+    [theme.breakpoints.up('md')]: {
+      position: 'sticky' as const,
+      right,
+      zIndex: 1,
+      ...(body && { bgcolor: 'background.paper' }),
+      ...(under && cutEdge(theme, body ? 'paper' : 'head')),
+    },
+  });
 
 /**
  * An order's items: the table, what each line can do, and the totals.
@@ -85,6 +119,12 @@ export function OrderLinesSection({
   const intl = useIntl();
   const isDraft = order.status === 'draft';
   const priced = showsPrices(order);
+  const {
+    scroller,
+    actions: actionsHead,
+    right: totalRight,
+    under,
+  } = useHeldTotal();
 
   return (
     <Box>
@@ -162,7 +202,7 @@ export function OrderLinesSection({
             past the Paper is what put "Close short" over the border.
             nowrap on the numbers and the actions, so a squeeze becomes a
             scroll rather than "Close" above "short". */}
-        <TableContainer>
+        <TableContainer ref={scroller}>
           <Table
             size="small"
             sx={{
@@ -228,7 +268,7 @@ export function OrderLinesSection({
                         defaultMessage: 'Unit price',
                       })}
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell align="right" sx={heldTotal(totalRight, under)}>
                       {intl.formatMessage({
                         id: 'orders.lines.total',
                         defaultMessage: 'Total',
@@ -239,10 +279,12 @@ export function OrderLinesSection({
                 {/* No visible title — the buttons explain themselves —
                     but a screen reader announces the column by name.
                     Pinned to the right edge, as its cells are, so the ⋮
-                    stays in view when the table scrolls sideways. */}
+                    stays in view when the table scrolls sideways; its
+                    width is where the Total is held from. */}
                 <TableCell
+                  ref={actionsHead}
                   align="right"
-                  sx={PINNED}
+                  sx={pinned(under, 'head')}
                   aria-label={intl.formatMessage({
                     id: 'orders.lines.actions',
                     defaultMessage: 'Actions',
@@ -254,7 +296,9 @@ export function OrderLinesSection({
             <TableBody>
               {order.lines.map((line) => (
                 <TableRow key={line.id} hover>
-                  <TableCell>{line.sku}</TableCell>
+                  <TableCell>
+                    <Reference>{line.sku}</Reference>
+                  </TableCell>
                   <TableCell>{line.description}</TableCell>
                   <TableCell align="right">
                     {displayQuantity(line.quantityOrdered)}
@@ -367,7 +411,10 @@ export function OrderLinesSection({
                           </Typography>
                         )}
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell
+                        align="right"
+                        sx={heldTotal(totalRight, under, true)}
+                      >
                         {formatMoney(
                           line.lineTotal ?? null,
                           line.currency ?? null,
@@ -376,10 +423,7 @@ export function OrderLinesSection({
                     </>
                   )}
 
-                  <TableCell
-                    align="right"
-                    sx={{ ...PINNED, bgcolor: 'background.paper' }}
-                  >
+                  <TableCell align="right" sx={pinned(under, 'paper')}>
                     <LineActions
                       order={order}
                       line={line}

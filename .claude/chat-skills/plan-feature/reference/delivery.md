@@ -53,9 +53,10 @@ Their home is `docs/engineering.md`, "How code is delivered" and
 - Text for GitHub, an issue's or a comment's, comes as a file Bob passes
   with `--body-file`, never inside a script's `$( )`, which macOS's bash
   3.2 reads wrongly (ADR-090's as-built).
-- Merging: a cloud session's pull request by Squash and merge, chosen
-  from the merge button's menu; a feature branch's by Create a merge
-  commit.
+- Merging, from the terminal, never the button, which offers the method
+  used last: a cloud session's pull request with `gh pr merge <N>
+  --squash --delete-branch`; a feature branch's with `gh pr merge <N>
+  --merge`, so its commits stay apart.
 - A commit command, a Claude Code prompt or a slash command is never
   indented in the reply: a code block inside a list carries the list's
   indent, which git keeps in a commit's message and which makes Claude

@@ -196,7 +196,7 @@ function LogoRow({
         useFlexGap
         sx={{ alignItems: 'baseline', flexWrap: 'wrap' }}
       >
-        <Typography variant="subtitle2" component="h3" id={headingId}>
+        <Typography variant="subtitle1" component="h3" id={headingId}>
           {intl.formatMessage(row.words.heading)}
         </Typography>
         {row.optional && (
@@ -529,7 +529,7 @@ export function BrandingForm({
           both, since the square logo's line says in words what the plate
           shows. */}
       <Stack spacing={1} aria-hidden>
-        <Typography variant="subtitle2" component="h3">
+        <Typography variant="subtitle1" component="h3">
           {intl.formatMessage({
             id: 'settings.branding.preview',
             defaultMessage: 'How it looks in the sidebar',
@@ -649,7 +649,7 @@ export function BrandingForm({
       </Stack>
 
       <Stack spacing={1}>
-        <Typography variant="subtitle2" component="h3" id="branding-colour">
+        <Typography variant="subtitle1" component="h3" id="branding-colour">
           {intl.formatMessage({
             id: 'settings.branding.colour',
             defaultMessage: 'Colour',
@@ -760,7 +760,7 @@ export function BrandingForm({
       </Stack>
 
       <Stack spacing={1}>
-        <Typography variant="subtitle2" component="h3" id="branding-rail">
+        <Typography variant="subtitle1" component="h3" id="branding-rail">
           {intl.formatMessage({
             id: 'settings.branding.sidebar',
             defaultMessage: 'Sidebar',

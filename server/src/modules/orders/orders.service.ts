@@ -5,6 +5,7 @@ import {
   eq,
   inArray,
   isNotNull,
+  lt,
   or,
   type SQL,
   sql,
@@ -16,6 +17,7 @@ import type { Locale } from '../../common/locales';
 import { codeMatches, searchTerms } from '../../common/search';
 import { pagedBy } from '../../common/sorted-page';
 import type { Permission } from '../../core/authorization/permissions';
+import { todayOf } from '../../core/organizations/time-zone';
 import {
   creditNoteLines,
   creditNotes,
@@ -85,6 +87,17 @@ export function outstandingOrder(): SQL {
       and not ${orderLines.isClosedShort}
       and ${orderLines.quantityOrdered} > ${orderLines.quantityFulfilled}
   ))`;
+}
+
+/**
+ * Late (ADR-091): expected before the organization's today, among the
+ * outstanding (outstandingOrder()). The list's `late`, and Home's late
+ * count on To ship and To receive, so the filter a late button opens and
+ * the count beside it cannot drift. An order with no expected date is
+ * never late.
+ */
+export function lateOrder(today: string): SQL {
+  return lt(orders.expectedAt, today);
 }
 
 /**
@@ -188,7 +201,14 @@ export class OrdersService {
       if (paging.where) scope.push(paging.where);
       if (query.partnerId) scope.push(eq(orders.partnerId, query.partnerId));
       if (query.direction) scope.push(eq(orders.direction, query.direction));
-      if (query.outstanding === 'true') scope.push(outstandingOrder());
+      // Late is among the outstanding, so it brings them with it.
+      if (query.outstanding === 'true' || query.late === 'true') {
+        scope.push(outstandingOrder());
+      }
+      // Against the organization's today, in its own zone (ADR-072).
+      if (query.late === 'true') {
+        scope.push(lateOrder(await todayOf(tx, organizationId)));
+      }
       // By expected date (ADR-057); an order without one is left out.
       scope.push(...calendarRange(orders.expectedAt, query));
       // Its number, its reference or its partner's name (ADR-056, ADR-071).

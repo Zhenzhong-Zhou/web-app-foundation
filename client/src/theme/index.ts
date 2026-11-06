@@ -10,6 +10,8 @@ import type { Locale } from '../lib/locales';
 import { returnFocus } from '../lib/open-dialog';
 import { VersionPaper } from '../version/version-paper';
 import { type Brand, DEFAULT_BRAND } from './brand-store';
+import { scrollShades } from './cut-edge';
+import { TOUCH } from './media';
 import { OptionGroup } from './option-group';
 import { rem } from './rem';
 import {
@@ -37,12 +39,17 @@ import {
 declare module '@mui/material/styles' {
   interface Palette {
     tone: Record<ToneName, Tone>;
-    surface: { head: string; line: string; chosen: string };
+    surface: { head: string; line: string; edge: string; chosen: string };
     rail: Rail;
   }
   interface PaletteOptions {
     tone?: Record<ToneName, Tone>;
-    surface?: { head: string; line: string; chosen: string };
+    surface?: {
+      head: string;
+      line: string;
+      edge: string;
+      chosen: string;
+    };
     rail?: Rail;
   }
 }
@@ -62,6 +69,7 @@ function palette(scheme: Scheme, accent: string, onAccent: string, rail: Rail) {
     surface: {
       head: scheme.head,
       line: scheme.line,
+      edge: scheme.edge,
       chosen: mix(accent, scheme.surface, CHOSEN_WEIGHT),
     },
   };
@@ -85,9 +93,6 @@ const TONE_OF_COLOR: Record<string, ToneName> = {
   warning: 'warning',
   error: 'critical',
 };
-
-/** A fingertip, for touch screens; the mouse gets the compact sizes. */
-const TOUCH = '@media (pointer: coarse)';
 
 /**
  * Muted text drawn in the main text colour, inside the element this is set
@@ -113,7 +118,7 @@ const mutedAsMain = (theme: Theme) => ({
  * Everything below is ADR-055's tokens (tokens.ts) given to MUI. A value
  * that is not a token does not belong here either.
  */
-const optionsFor = (brand: Brand): ThemeOptions => ({
+const optionsFor = (brand: Brand, locale: Locale): ThemeOptions => ({
   cssVariables: { colorSchemeSelector: 'class' },
   colorSchemes: {
     light: {
@@ -134,14 +139,37 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
     },
   },
   shape: { borderRadius: RADIUS.control },
+  /**
+   * Each size on its line, 25 on 32, 20 on 28, 16 on 24 and 14 on 20, a
+   * 4 px grid at the Standard text size (ADR-091). Written as a share of
+   * the size, so the line grows with the person's text size (ADR-075).
+   */
   typography: {
     fontFamily: FONT_STACK,
     fontWeightMedium: 600,
-    h5: { fontSize: rem(TYPE.title), fontWeight: 700, lineHeight: 1.3 },
-    h6: { fontSize: rem(TYPE.section), fontWeight: 700, lineHeight: 1.4 },
+    h5: {
+      fontSize: rem(TYPE.title),
+      fontWeight: 700,
+      lineHeight: 32 / TYPE.title,
+    },
+    h6: {
+      fontSize: rem(TYPE.section),
+      fontWeight: 700,
+      lineHeight: 28 / TYPE.section,
+    },
     subtitle1: { fontSize: rem(TYPE.body), fontWeight: 600 },
-    body1: { fontSize: rem(TYPE.body), lineHeight: 1.45 },
-    body2: { fontSize: rem(TYPE.small), lineHeight: 1.45 },
+    // Chinese reads better with more room between lines, for its strokes:
+    // 16 on 28 and 14 on 24, on the same 4 px grid. Set on the variants
+    // themselves, so a table's cells, a menu's items and a button take it
+    // too, not only Typography (ADR-091's review).
+    body1: {
+      fontSize: rem(TYPE.body),
+      lineHeight: (locale === 'zh-Hans' ? 28 : 24) / TYPE.body,
+    },
+    body2: {
+      fontSize: rem(TYPE.small),
+      lineHeight: (locale === 'zh-Hans' ? 24 : 20) / TYPE.small,
+    },
     caption: { fontSize: rem(TYPE.caption), lineHeight: 1.4 },
     // Not capitals: a label in capitals is harder to read, and Chinese
     // has none to give it.
@@ -163,10 +191,6 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
       styleOverrides: {
         // Every digit the same width, so figures line up down a column.
         body: { fontVariantNumeric: 'tabular-nums' },
-        // Chinese reads better with more room between lines.
-        ':lang(zh) .MuiTypography-body1, :lang(zh) .MuiTypography-body2': {
-          lineHeight: 1.65,
-        },
         /**
          * Less motion for those who ask (ADR-075): transitions end at once
          * and scrolling jumps, so the drawer, menus, dialogs and the
@@ -229,7 +253,12 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
     },
     MuiIconButton: {
       styleOverrides: {
-        root: { borderRadius: RADIUS.control, [TOUCH]: { minWidth: 44 } },
+        // A fingertip each way on touch (ADR-079), Home's Refresh among
+        // them, which an icon's own 40 px left short (ADR-091's review).
+        root: {
+          borderRadius: RADIUS.control,
+          [TOUCH]: { minWidth: 44, minHeight: 44 },
+        },
       },
     },
     // One link style: the colour says it is a link, the underline comes
@@ -254,6 +283,10 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
     MuiFormHelperText: {
       styleOverrides: {
         root: ({ theme }) => ({
+          // Read to fill the field in: the small size, never a caption
+          // (ADR-090, Text and targets; ADR-091's review).
+          fontSize: rem(TYPE.small),
+          lineHeight: 20 / TYPE.small,
           '&.Mui-disabled': { color: paletteOf(theme).text.secondary },
         }),
       },
@@ -348,12 +381,28 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
           const tone = paletteOf(theme).tone[name ?? 'neutral'];
 
           return {
+            // A status or a filter read to decide by: the small size at
+            // least, as its neighbours are (ADR-091's review).
+            fontSize: rem(TYPE.small),
             fontWeight: 600,
             color: tone.fg,
             backgroundColor:
               ownerState.variant === 'outlined' ? 'transparent' : tone.bg,
             border: `1px solid ${tone.border}`,
             '& .MuiChip-icon, & .MuiChip-deleteIcon': { color: 'inherit' },
+            // A chip that does something is a fingertip on touch, its ×
+            // too, which MUI draws at 22 px (ADR-079).
+            '&.MuiChip-clickable, &.MuiChip-deletable': {
+              [TOUCH]: { minHeight: 44 },
+            },
+            '& .MuiChip-deleteIcon': {
+              [TOUCH]: {
+                boxSizing: 'content-box',
+                fontSize: 24,
+                padding: 10,
+                margin: '0 -6px 0 -6px',
+              },
+            },
           };
         },
       },
@@ -375,6 +424,10 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
      * Heads are tinted and quieter than the rows, so the labels stand
      * apart from the figures; rows are taller under a finger.
      */
+    // Every table frame that scrolls sideways shows where it cuts.
+    MuiTableContainer: {
+      styleOverrides: { root: ({ theme }) => scrollShades(theme) },
+    },
     MuiTableCell: {
       styleOverrides: {
         root: ({ theme }) => ({
@@ -410,7 +463,7 @@ export function themeFor(locale: Locale, brand: Brand = DEFAULT_BRAND): Theme {
   const key = `${locale} ${brand.accent} ${brand.rail}`;
   let theme = themes.get(key);
   if (!theme) {
-    theme = createTheme(optionsFor(brand), MUI_LOCALES[locale]);
+    theme = createTheme(optionsFor(brand, locale), MUI_LOCALES[locale]);
     themes.set(key, theme);
   }
   return theme;

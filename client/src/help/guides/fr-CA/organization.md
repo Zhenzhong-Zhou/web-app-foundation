@@ -9,7 +9,8 @@ La façon dont l’organisation fonctionne ici : son profil, ses finances, ses 
 Sous **Profil**, chaque facture imprime le nom, le numéro de taxes et l’adresse comme vendeur, tels qu’ils étaient le jour de son émission.
 
 1. Remplissez le **Nom de l’organisation**, le **Numéro d’inscription aux taxes** et l’**Adresse du siège**, en enregistrant chacun.
-2. Choisissez le **Fuseau horaire** de l’entreprise, puis appuyez sur **Enregistrer le fuseau horaire**. Il fixe le jour de l’organisation, par exemple quand une licence expire.
+2. Sous **Ce que nous faisons**, écrivez une ligne sur ce que fait l’organisation, dans vos propres mots, puis appuyez sur **Enregistrer ce que nous faisons**. L’Accueil l’affiche à chaque membre, sous la date.
+3. Choisissez le **Fuseau horaire** de l’entreprise, puis appuyez sur **Enregistrer le fuseau horaire**. Il fixe le jour de l’organisation, par exemple quand une licence expire.
 
 Tout télécharger et fermer l’organisation se trouvent à la fin de l’onglet.
 

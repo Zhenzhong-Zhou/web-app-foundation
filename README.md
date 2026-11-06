@@ -198,10 +198,12 @@ at the first failure; `--quick` leaves out the two end-to-end suites.
 
 `DEMO_EMAIL=<the account seed:demo printed> npm run screenshots`, also from
 `client/`, pictures every screen of the demo in English, French and Chinese,
-light and dark, at desktop and phone width, into `client/screenshots/out/`.
+light and dark, at a size of each width class, into `client/screenshots/out/`.
 It starts its own API and client on ports 3200/5373 against the dev database,
 so the dev servers can stay as they are; compare a run before and after a
-visual change.
+visual change. For the pages a person outside the demo sees, it keeps in that
+database an account in no organization, the organization it left, and an
+organization invitation in each language, made again each run.
 
 To compare, copy `client/screenshots/out/` aside before the change and again
 after it, say to `tmp/<branch>/before/` and `after/`, then from `client/`
@@ -236,7 +238,7 @@ work under updates it.
 | The planning skill changed             | After its merge, on `main`: `node scripts/pack-chat-skill.mjs`; replace it in claude.ai's Settings → Skills; walk `evals.md`                    |
 | Before drafting an ADR                 | `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n>`, then attach `tmp/adr-NNN/check.txt` to the chat                                  |
 | Building from a brief                  | `/build-from-brief <brief> from <N>`; paste only the stops into the chat                                                                        |
-| A small issue, in a cloud session      | `/fix-issue <N>`; merge its pull request with Squash and merge                                                                                  |
+| A small issue, in a cloud session      | `/fix-issue <N>`; merge its pull request with `gh pr merge <N> --squash --delete-branch`, never the button                                      |
 | Every pull request's review            | `/usability-walkthrough panel <journey>`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                          |
 | Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                                                              |
 | After a merge                          | `scripts/prune-branches.sh --yes`                                                                                                               |

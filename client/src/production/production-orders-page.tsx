@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type { ProductionRun } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -24,13 +24,13 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { fromAddress } from '../lib/address-filter';
 import type { RunStatus } from '../lib/api-names';
-import { type DayRange, withInstants } from '../lib/date-range';
+import { withInstants } from '../lib/date-range';
 import { displayQuantity, formatDate, NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { day, oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
 import { STATUS_TONES } from '../theme/status';
 import { CreateRunDialog } from './create-run-dialog';
@@ -43,18 +43,26 @@ function query(filter: RunStatus | ''): string {
     : '/production-orders';
 }
 
+/**
+ * The list's filters, in the address (ADR-091): Home's tile opens the runs
+ * in progress, `?status=released`, and what is pressed here is kept there,
+ * with the days planned, `from` and `to`; every status by default.
+ */
+const ADDRESS_FILTERS = {
+  status: oneOf<RunStatus | ''>(['', ...RUN_STATUSES], ''),
+  from: day,
+  to: day,
+};
+
 export function ProductionOrdersPage() {
   const intl = useIntl();
   const can = useCan();
 
-  // Home's card opens runs in progress: ?status=released (ADR-058).
-  const [params] = useSearchParams();
-  const [filter, setFilter] = useState<RunStatus | ''>(() =>
-    fromAddress<RunStatus | ''>(params, 'status', ['', ...RUN_STATUSES], ''),
-  );
+  const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  const filter = filters.status;
   const { text, setText, search } = useListSearch();
   // When planned, the reader's days as instants (ADR-057).
-  const [range, setRange] = useState<DayRange>({});
+  const range = { from: filters.from, to: filters.to };
   const [creating, setCreating] = useState(false);
 
   const canCreate = can('production.create');
@@ -115,13 +123,13 @@ export function ProductionOrdersPage() {
               defaultMessage: 'All',
             }),
             pressed: filter === '',
-            onToggle: () => setFilter(''),
+            onToggle: () => setFilters({ status: '' }),
           },
           ...RUN_STATUSES.map((status) => ({
             id: status,
             label: runStatusLabel(status),
             pressed: filter === status,
-            onToggle: () => setFilter(status),
+            onToggle: () => setFilters({ status }),
           })),
         ]}
       >
@@ -131,7 +139,7 @@ export function ProductionOrdersPage() {
             defaultMessage: 'Planned',
           })}
           value={range}
-          onChange={setRange}
+          onChange={(next) => setFilters({ from: next.from, to: next.to })}
         />
       </FilterRow>
 
@@ -268,7 +276,7 @@ export function ProductionOrdersPage() {
           // Back to All so the new run, which is a draft, is certainly in
           // view. Already on All, the rows stay up while the first page is
           // read again; from another filter it is a new list, read afresh.
-          setFilter('');
+          setFilters({ status: '' });
           reload();
         }}
       />

@@ -5,16 +5,48 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, lt, lte, type SQL } from 'drizzle-orm';
 
+import { addDays } from '../../common/today';
 import { recordPrevious } from '../../core/audit/audit-context';
+import { todayOf } from '../../core/organizations/time-zone';
 import { isCheckViolation, isUniqueViolation } from '../../database/errors';
 import { productLicences } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { CreateProductLicenceDto } from './dto/create-product-licence.dto';
+import type { ListProductLicencesDto } from './dto/list-product-licences.dto';
 import type { ProductLicence } from './dto/product-licence-response.dto';
 import type { UpdateProductLicenceDto } from './dto/update-product-licence.dto';
+
+/** How far ahead a licence counts as expiring: issue #17's notice. */
+const LICENCE_WARNING_DAYS = 60;
+
+/**
+ * Expiring (ADR-091): an active licence whose expiry is within the notice
+ * of the organization's today, or already past. The list's `expiring` and
+ * Home's Licences tile, so the tile's count and the rows it opens cannot
+ * drift; the expired among them are the tile's late.
+ */
+export function expiringLicence(today: string): SQL {
+  return and(
+    eq(productLicences.isActive, true),
+    lte(productLicences.expiresAt, addDays(today, LICENCE_WARNING_DAYS)),
+  )!;
+}
+
+/**
+ * Expired (ADR-091): an active licence whose expiry is before the
+ * organization's today, as its status reads Expired. The list's `expired`
+ * and Home's late count on Licences, so the late button's count and the
+ * rows it opens cannot drift.
+ */
+export function expiredLicence(today: string): SQL {
+  return and(
+    eq(productLicences.isActive, true),
+    lt(productLicences.expiresAt, today),
+  )!;
+}
 
 /**
  * The registrations formulations are made and sold under — an NPN, a DIN, a
@@ -31,11 +63,41 @@ export class ProductLicencesService {
 
   constructor(private readonly tenantDb: TenantDb) {}
 
-  async list(): Promise<ProductLicence[]> {
-    const rows = await this.tenantDb.select(productLicences, undefined, {
-      orderBy: [asc(productLicences.authority), asc(productLicences.number)],
+  /**
+   * Every licence, by authority then number; or, with `expiring`, those
+   * expiring within the notice or expired, and with `expired` the expired
+   * alone, soonest first, so the expired lead (ADR-091).
+   */
+  async list(query: ListProductLicencesDto = {}): Promise<ProductLicence[]> {
+    const expiring = query.expiring === 'true';
+    const expired = query.expired === 'true';
+    if (!expiring && !expired) {
+      const rows = await this.tenantDb.select(productLicences, undefined, {
+        orderBy: [asc(productLicences.authority), asc(productLicences.number)],
+      });
+      return rows.map(licenceOf);
+    }
+
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      // The organization's today, in its own zone (ADR-072), as Home's.
+      const today = await todayOf(tx, organizationId);
+      const rows = await tx
+        .select()
+        .from(productLicences)
+        .where(
+          and(
+            eq(productLicences.organizationId, organizationId),
+            expiring ? expiringLicence(today) : undefined,
+            expired ? expiredLicence(today) : undefined,
+          ),
+        )
+        .orderBy(
+          asc(productLicences.expiresAt),
+          asc(productLicences.authority),
+          asc(productLicences.number),
+        );
+      return rows.map(licenceOf);
     });
-    return rows.map(licenceOf);
   }
 
   async create(input: CreateProductLicenceDto): Promise<ProductLicence> {

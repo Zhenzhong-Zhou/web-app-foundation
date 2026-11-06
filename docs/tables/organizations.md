@@ -24,6 +24,7 @@ erDiagram
     text name
     text slug
     text tax_registration_number
+    text what_we_do
     char(3) base_currency
     uuid default_sale_price_list_id FK
     text licence_not_in_force_policy

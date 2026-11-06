@@ -3,6 +3,7 @@ status: accepted
 date: 2026-11-04
 areas: [docs, i18n, ui]
 amends: [ADR-055, ADR-089]
+amended-by: [ADR-091]
 ---
 
 # ADR-090 — The design language: eight principles and their patterns, at every screen size (amends ADR-055 and ADR-089)
@@ -374,3 +375,30 @@ decisions above, or found other than the Context assumed:
   And a cloud session's pull request is squashed from the merge button's
   menu: the button offers the method used last, so from 2 November each
   went in as a merge commit, its Unverified commit kept on `main`.
+
+## Amendment (November 2026) — the type scale's steps, the top bar's words and the panel's width classes (ADR-091)
+
+Home's redesign settled what this ADR left to it, and what its panel
+found the design language did not say:
+
+- **The type scale:** a step of 1.25 from the 16 px text, a section
+  heading at 20 px and a page's title at 25 px, so a heading is told apart
+  by size, not weight alone; line heights on a 4 px grid, 16 on 24, 14 on
+  20, 20 on 28 and 25 on 32. The caption stays 12.5 px.
+- **The top bar below `lg`:** a short word under each icon, as a phone's
+  tab bar has, each target 44 px, the app's own names; on a narrow phone
+  the organization's name shortens first.
+- **Tiles:** a tile and the filter it opens share one name, the plainer,
+  a tile whose word alone does not say what it is about putting its
+  page's name first; a tile with nothing to do stays in its place, quiet,
+  still a link.
+- **Text people read:** none under 14 px but a footnote's caption
+  (ADR-091's as-built).
+- **Help where there is no room beside the page** is a modal side sheet
+  (ADR-079 amended).
+- **The panel at every width class:** the panel gives the five classes to
+  a journey's personas in turn, the Duo's two sizes among them; a
+  journey's own Sizes line overrides it (#467's finding 15).
+- **The canvas keeps every version:** a changed design is a new row,
+  titled with its version, never drawn over the old one, and the version
+  the build follows is named in its ADR.

@@ -40,6 +40,11 @@ export class OrganizationProfile {
   name!: string;
   slug!: string;
   taxRegistrationNumber!: string | null;
+  /**
+   * What we do (ADR-091): one line in the organization's own words, which
+   * Home shows every member; null until written.
+   */
+  whatWeDo!: string | null;
   /** Null until set; no invoice can be issued before it is. */
   address!: OrganizationAddress | null;
   /** ISO 4217; null until set. Stock is valued in it (ADR-048). */

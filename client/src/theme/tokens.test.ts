@@ -91,6 +91,14 @@ describe('tokens (ADR-055)', () => {
     }
   });
 
+  // A table's cut edge is seen in both modes, on a panel and on a head
+  // (WCAG 1.4.11's 3:1 for what a person needs to see; ADR-091's review).
+  it.each(SCHEMES)('shows %s tables their cut edge', (_, s) => {
+    for (const ground of [s.surface, s.head]) {
+      expect(contrast(s.edge, ground)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
   it('lays a tint over its ground', () => {
     expect(mix('#000000', '#FFFFFF', 0.5)).toBe('#808080');
     expect(mix('#5546B8', '#FFFFFF', 0)).toBe('#FFFFFF');

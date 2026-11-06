@@ -19,6 +19,7 @@ import PrecisionManufacturingOutlined from '@mui/icons-material/PrecisionManufac
 import ReceiptLongOutlined from '@mui/icons-material/ReceiptLongOutlined';
 import SellOutlined from '@mui/icons-material/SellOutlined';
 import SwapHorizOutlined from '@mui/icons-material/SwapHorizOutlined';
+import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
 import { defineMessages, type MessageDescriptor } from 'react-intl';
 
 import type { Permission } from '../auth/permissions';
@@ -54,6 +55,7 @@ const labels = defineMessages({
   returns: { id: 'layout.nav.returns', defaultMessage: 'Returns' },
   production: { id: 'layout.nav.production', defaultMessage: 'Production' },
   people: { id: 'layout.nav.people', defaultMessage: 'People' },
+  licences: { id: 'layout.nav.licences', defaultMessage: 'Licences' },
   products: { id: 'layout.nav.products', defaultMessage: 'Products' },
   partners: { id: 'layout.nav.partners', defaultMessage: 'Partners' },
   locations: { id: 'layout.nav.locations', defaultMessage: 'Locations' },
@@ -73,7 +75,6 @@ const labels = defineMessages({
   },
   priceLists: { id: 'layout.menu.priceLists', defaultMessage: 'Price lists' },
   account: { id: 'layout.menu.account', defaultMessage: 'Your account' },
-  devices: { id: 'layout.menu.devices', defaultMessage: 'Your devices' },
 });
 
 /** The pages' names, which Help's list of guides uses too (ADR-079). */
@@ -145,6 +146,14 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: labels.records,
     items: [
+      // A record work is done under, which Home's Licences tile opens
+      // (ADR-091, #460): before Products, as the canvas draws it.
+      {
+        label: labels.licences,
+        to: '/licences',
+        icon: VerifiedOutlined,
+        permission: 'product_licences.view',
+      },
       {
         label: labels.products,
         to: '/products',
@@ -232,11 +241,11 @@ export const NAV_GROUPS: NavGroup[] = [
 
 /**
  * The person's own things, behind the account button at every width: not
- * places in the organization's work, so not in the rail.
+ * places in the organization's work, so not in the rail. Your devices is
+ * reached from Your account, and from the sign-in emails (ADR-091).
  */
 export const ACCOUNT_ITEMS: Pick<NavItem, 'label' | 'to'>[] = [
   { label: labels.account, to: '/account' },
-  { label: labels.devices, to: '/account/sessions' },
 ];
 
 /**

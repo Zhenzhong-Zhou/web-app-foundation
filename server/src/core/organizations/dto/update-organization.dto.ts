@@ -18,6 +18,7 @@ import {
 import { ORGANIZATION_NAME_MAX_LENGTH } from '../../../common/dto/account-rules';
 import { IsCurrencyCode } from '../../../common/dto/currency';
 import { IsLocale } from '../../../common/dto/locale';
+import { MaxCodePoints } from '../../../common/dto/max-code-points';
 import { IsTimeZone } from '../../../common/dto/time-zone';
 import { trim } from '../../../common/dto/trim';
 import type { Locale } from '../../../common/locales';
@@ -61,6 +62,20 @@ export class UpdateOrganizationDto {
   @IsString()
   @MaxLength(50)
   taxRegistrationNumber?: string | null;
+
+  /**
+   * What we do (ADR-091): one line in the organization's own words, up to
+   * 200 characters once trimmed, counted as the column's check counts
+   * them, which Home shows every member. Null or an empty string clears it.
+   */
+  @IsOptional()
+  @trim()
+  @IsString()
+  // MaxLength for the API document's maxLength; MaxCodePoints, the same
+  // refusal, for what the column's check counts.
+  @MaxLength(200)
+  @MaxCodePoints(200)
+  whatWeDo?: string | null;
 
   /**
    * ISO 4217, what stock is valued in (ADR-048). Cannot be cleared, and

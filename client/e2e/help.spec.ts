@@ -69,18 +69,21 @@ test('Learn more on a Getting started step opens Help at its section', async ({
   await signInAs(page, freshOrg.api);
   await page.goto('/');
 
+  // Beside the next step's button, a new organization's first: its
+  // profile (ADR-091).
   const step = page
     .getByRole('region', { name: 'Getting started', exact: true })
-    .getByText('Where stock is kept', { exact: false });
+    .getByRole('listitem')
+    .filter({ hasText: 'Address, tax number and currency' });
   await step.getByRole('button', { name: 'Learn more', exact: true }).click();
 
   const help = page.getByRole('complementary', { name: 'Help', exact: true });
   await expect(
-    help.getByRole('heading', { level: 2, name: 'Locations', exact: true }),
+    help.getByRole('heading', { level: 2, name: 'Organization', exact: true }),
   ).toBeAttached();
   const section = help.getByRole('heading', {
     level: 3,
-    name: 'Add a location',
+    name: 'Profile',
     exact: true,
   });
   await expect(section).toBeFocused();
@@ -92,6 +95,86 @@ test('Learn more on a Getting started step opens Help at its section', async ({
     step.getByRole('button', { name: 'Learn more', exact: true }),
   ).toBeFocused();
 });
+
+/**
+ * Where the window leaves the page less than 720 px beside Help, Help is a
+ * modal side sheet (ADR-091, #272): the Duo open, 890 px, and a small
+ * tablet's 1024. The page is dimmed and nothing in it takes focus, so no
+ * control can be focused under Help (WCAG 2.4.11); Esc closes it, and focus
+ * is back on Help in the top bar. MUI hides the page from assistive
+ * technology meanwhile, which Chrome refuses while something in it keeps
+ * focus, so the test turns Chrome's accessibility tree on, as
+ * keyboard.spec's drawer test does, to hear the refusal.
+ */
+for (const size of [
+  { width: 890, height: 626 },
+  { width: 1024, height: 768 },
+]) {
+  test(`at ${size.width} px Help is a modal side sheet: the page takes no focus, Esc closes it, focus is back on Help`, async ({
+    page,
+  }) => {
+    const refused: string[] = [];
+    page.on('console', (message) => {
+      if (message.text().includes('Blocked aria-hidden')) {
+        refused.push(message.text());
+      }
+    });
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Accessibility.enable');
+
+    await page.setViewportSize(size);
+    await page.goto('/orders');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    const button = page
+      .getByRole('banner')
+      .getByRole('button', { name: 'Help', exact: true });
+    await button.click();
+
+    const sheet = page.getByRole('dialog', { name: 'Help · Orders' });
+    await expect(
+      sheet.getByRole('heading', { level: 2, name: 'Orders', exact: true }),
+    ).toBeFocused();
+    await expect(
+      page.getByRole('complementary', { name: 'Help', exact: true }),
+    ).toHaveCount(0);
+
+    // Dimmed: what is pressed on the page is the dimming, not the page.
+    const covering = await page.evaluate(() => {
+      const box = document.querySelector('main h1')!.getBoundingClientRect();
+      return document
+        .elementFromPoint(box.left + 4, box.top + box.height / 2)
+        ?.classList.contains('MuiBackdrop-root');
+    });
+    expect(covering).toBe(true);
+
+    // Tab and Shift+Tab, each past either end of Help, stay inside it.
+    const inSheet = () =>
+      sheet.evaluate((element) => element.contains(document.activeElement));
+    const links = await sheet.locator('a[href], button').count();
+    for (const key of ['Tab', 'Shift+Tab']) {
+      for (let i = 0; i < links + 2; i += 1) {
+        await page.keyboard.press(key);
+        expect(await inSheet(), `${key} ${i + 1}`).toBe(true);
+      }
+    }
+    // Nor does the page take focus given it from a script.
+    await page.locator('main h1').evaluate((heading) => {
+      const raise = heading
+        .closest('main')!
+        .querySelector<HTMLElement>('a[href], button');
+      raise?.focus();
+    });
+    await expect.poll(inSheet).toBe(true);
+
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
+    await expect(button).toBeFocused();
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    // Past the close, so a refusal made during it has been heard.
+    await expect(page.locator('#root')).not.toHaveAttribute('aria-hidden');
+    expect(refused).toEqual([]);
+  });
+}
 
 test('a dialog opened beside Help leaves Help readable above its dimming', async ({
   page,
@@ -106,8 +189,8 @@ test('a dialog opened beside Help leaves Help readable above its dimming', async
   const title = help.locator('h2');
   await expect(title).toHaveText('Locations');
 
-  // Over the page at this width, Help covers its top right, where Add
-  // location is; the keyboard still reaches it.
+  // Beside the page at this width, Help leaves Add location in view, and
+  // the keyboard reaches it.
   await page.getByRole('button', { name: 'Add location', exact: true }).focus();
   await page.keyboard.press('Enter');
   const dialog = page.getByRole('dialog');

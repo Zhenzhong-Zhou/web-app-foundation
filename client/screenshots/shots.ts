@@ -2,7 +2,14 @@ import type { Page } from '@playwright/test';
 
 import type { Targets } from './targets';
 
-export type Width = 'desktop' | 'laptop' | 'phone';
+export type Width =
+  | 'wide'
+  | 'desktop'
+  | 'laptop'
+  | 'tablet'
+  | 'duo-open'
+  | 'duo-closed'
+  | 'phone';
 
 /** A message in the language being pictured, by its catalogue id. */
 export type Words = (id: string) => string;
@@ -10,9 +17,12 @@ export type Words = (id: string) => string;
 export interface Shot {
   /** The start of the file name, numbered by how much the page matters. */
   name: string;
-  /** Where the page is, or null when this demo has no such record. */
-  path: (targets: Targets) => string | null;
-  /** Desktop and phone unless listed. */
+  /**
+   * Where the page is, in the language pictured, or null when this demo
+   * has no such record.
+   */
+  path: (targets: Targets, language: string) => string | null;
+  /** Every width class's size but the laptop's, unless listed. */
   widths?: Width[];
   /** Before the picture: open a dialog, choose a filter. */
   prepare?: (page: Page, words: Words) => Promise<void>;
@@ -20,6 +30,13 @@ export interface Shot {
   windowOnly?: boolean;
   /** Signed out, for the sign-in page. */
   signedOut?: boolean;
+  /** Signed in as the account in no organization, for its Home. */
+  noOrganization?: boolean;
+  /**
+   * As a deployment where accounts start from an invitation, as production
+   * is (ADR-078): the pictures' API is open, as development is.
+   */
+  byInvitation?: boolean;
 }
 
 function at(id: string | null, path: (id: string) => string): string | null {
@@ -127,5 +144,20 @@ export const SHOTS: Shot[] = [
       await collapse.click();
       await collapse.waitFor({ state: 'detached' });
     },
+  },
+  // The pages a person outside the demo sees, their icons' corners among
+  // what the type scale's tokens moved (ADR-091).
+  {
+    // Its ways in, each with its icon, where the form is closed.
+    name: '17-register',
+    path: () => '/register',
+    signedOut: true,
+    byInvitation: true,
+  },
+  { name: '18-no-organization', path: () => '/', noOrganization: true },
+  {
+    name: '19-organization-invitation',
+    path: (targets, language) => targets.organizationInvitationPaths[language],
+    signedOut: true,
   },
 ];

@@ -1075,7 +1075,7 @@ describe('Reorder points (e2e)', () => {
         .split('\r\n');
 
       expect(lines).toEqual([
-        'SKU,物品,规格,状态,采购或自制,现有可用,在途,待发,预计可用,再订货点,订货量,固定订货量,最高库存,草稿中,建议订货,单位',
+        'SKU,物品,规格,状态,采购或自制,现有可用,在途,待发,预计可用,库存下限,订货量,固定订货量,最高库存,草稿中,建议订货,单位',
         'C-OUT,C-OUT,,out,bought,0.0000,0.0000,0.0000,0.0000,10.0000,just_enough,,,0.0000,10.0000,each',
       ]);
       expect(res.headers['content-disposition']).toMatch(
@@ -1105,8 +1105,9 @@ describe('Reorder points (e2e)', () => {
     });
 
     // One read up to EXPORT_LIMIT (#354): read a page of 1,000 at a time,
-    // each page worked every position out again.
-    it('works every position out once, past a page of 1,000 rows', async () => {
+    // each page worked every position out again. And no drafts, which the
+    // CSV never shows (#352).
+    it('works every position out once, past a page of 1,000 rows, and reads no drafts', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const org = sql`${alpha.organizationId}::uuid`;
       await db.execute(sql`
@@ -1138,6 +1139,11 @@ describe('Reorder points (e2e)', () => {
           text.includes('with p as materialized'),
         ),
       ).toHaveLength(1);
+      expect(
+        statements.filter(({ text }) =>
+          /po\.output_variant_id = any\(/.test(text),
+        ),
+      ).toHaveLength(0);
     });
   });
 });

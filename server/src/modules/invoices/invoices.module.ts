@@ -20,7 +20,6 @@ import { ProFormaService } from './pro-forma.service';
   // which records its own.
   imports: [TaxCodesModule, DocumentsModule, OrganizationsModule, AuditModule],
   controllers: [InvoicesController, CreditNotesController, ProFormaController],
-  exports: [InvoicesService],
   providers: [
     InvoicesService,
     InvoiceDraftsService,

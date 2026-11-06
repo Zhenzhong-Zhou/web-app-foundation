@@ -90,6 +90,8 @@ export class OrganizationController {
     fields: [
       // Renaming (ADR-061): the log keeps what it was called before.
       'name',
+      // Not whatWeDo: free text stays out of the log (ADR-018), which the
+      // service records as changed or cleared instead (ADR-091).
       'taxRegistrationNumber',
       'baseCurrency',
       'defaultSalePriceListId',

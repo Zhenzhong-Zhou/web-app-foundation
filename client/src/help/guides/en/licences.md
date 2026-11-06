@@ -1,6 +1,6 @@
 # Licences
 
-Licences are the numbers your formulations are registered under, such as a natural health product’s NPN in Canada. Recipes are made under them, so a batch traces back to its licence. You reach this page from **Licences** on Products.
+Licences are the numbers your formulations are registered under, such as a natural health product’s NPN in Canada. Recipes are made under them, so a batch traces back to its licence. Open it from **Licences** in the menu, or on Products.
 
 ## Add a licence {#add}
 
@@ -29,7 +29,8 @@ Whoever may change licences or release production runs is told in the bell 60, 3
 - **Current**: in force today.
 - **In force from**: issued from a later day, and usable from then.
 - **Expires in**: within 60 days of its **Valid until** day.
-- **Expired**: past its **Valid until** day.
+- **Licences expiring**: the filter for those within 60 days of their **Valid until** day or past it, the soonest first, as Home opens the list.
+- **Expired**: past its **Valid until** day. As a filter, the list shows only these until you remove it.
 - **Withdrawn**: no longer used, kept for what was made under it.
 
 ## If something is refused {#refused}

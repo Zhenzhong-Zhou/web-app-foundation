@@ -259,7 +259,7 @@ describe('ProductsPage', () => {
     }
   });
 
-  // Licences is not in the menu: reached from here, it offers Back (#341).
+  // Licences reached from here, a link inside the app, offers Back (#341).
   it('opens Licences with Back to Products', async () => {
     server.use(
       http.get('/api/v1/products', () => HttpResponse.json([])),

@@ -10,7 +10,8 @@ import { type SQL, sql } from 'drizzle-orm';
  * list's "Needs a cost" quick filter (ADR-055) included, which has to mean
  * exactly what Stock value lists as waiting.
  *
- * Each subquery names the organization itself, not the outer row's: read
+ * Each join and subquery names the organization itself (ADR-003), not
+ * the outer row's: read
  * as a set, Postgres hashes the run_close lookup once, and through the
  * outer row's column it read every organization's run closes to do so
  * (#276).
@@ -19,7 +20,8 @@ export function openNeedsCost(organizationId: string): SQL {
   return sql`
     select v.id, v.variant_id, v.lot_id, v.created_at
     from stock_valuations v
-    left join stock_movements m on m.id = v.movement_id
+    left join stock_movements m
+      on m.id = v.movement_id and m.organization_id = ${organizationId}::uuid
     where v.organization_id = ${organizationId}::uuid
       and v.needs_cost
       and not exists (

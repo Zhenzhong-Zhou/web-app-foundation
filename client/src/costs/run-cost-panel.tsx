@@ -16,6 +16,7 @@ import { useIntl } from 'react-intl';
 
 import type { RunCost } from '../api/types.gen';
 import { LabelledValue } from '../components/labelled-value';
+import { Reference } from '../components/reference';
 import {
   formatMoney,
   formatQuantity,
@@ -164,7 +165,9 @@ export function RunCostPanel({ runId }: { runId: string }) {
               <TableBody>
                 {cost.consumed.map((row) => (
                   <TableRow key={`${row.sku}:${row.lotCode ?? ''}`}>
-                    <TableCell>{row.sku}</TableCell>
+                    <TableCell>
+                      <Reference>{row.sku}</Reference>
+                    </TableCell>
                     <TableCell>{row.lotCode ?? NO_VALUE}</TableCell>
                     <TableCell align="right">
                       {formatQuantity(row.quantity)}

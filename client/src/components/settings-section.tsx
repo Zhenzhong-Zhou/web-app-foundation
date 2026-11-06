@@ -69,7 +69,7 @@ export function SettingsSection({
               columnGap: 1.5,
             }}
           >
-            <Typography variant="subtitle1" component="h2">
+            <Typography variant="h6" component="h2">
               {title}
             </Typography>
             {learnMore && <LearnMore target={learnMore} variant="beside" />}

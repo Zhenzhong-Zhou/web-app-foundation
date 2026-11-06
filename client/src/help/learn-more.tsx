@@ -75,6 +75,9 @@ export function LearnMore({
           alignItems: 'center',
           gap: 0.5,
           fontWeight: 600,
+          // A control of its own, not words in a sentence: a fingertip
+          // tall on touch (ADR-079), as Getting started's beside its step.
+          '@media (pointer: coarse)': { minHeight: 44 },
         }),
       }}
     >

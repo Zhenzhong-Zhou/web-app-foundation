@@ -2,7 +2,7 @@ import { expect, test } from './fixtures';
 import { daysFromNow, signInAs } from './support/api';
 
 /**
- * The licence registry through the browser: reached from Products, added,
+ * The licence registry through the browser: reached from the menu, added,
  * corrected, and the correction readable in its History. Plus the one status
  * a person never sets by hand — Expires in N days — to prove the page derives
  * it from the date.
@@ -16,9 +16,12 @@ test('adds a licence, corrects its number, and shows the correction in History',
 }) => {
   await signInAs(page, freshOrg.api);
 
-  // Reached from the catalogue rather than the top nav.
+  // In the menu's records (ADR-091, #460).
   await page.goto('/products');
-  await page.getByRole('link', { name: 'Licences' }).click();
+  await page
+    .getByRole('navigation', { name: 'Records' })
+    .getByRole('link', { name: 'Licences' })
+    .click();
   await expect(page).toHaveURL(/\/licences$/);
 
   await page.getByRole('button', { name: 'Add licence' }).click();

@@ -9,6 +9,7 @@ import { formatDayLong } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { organizationInitialsOf } from '../lib/person-initials';
 import { browserTimeZone } from '../lib/time-zone';
+import { RADIUS } from '../theme/tokens';
 import {
   AcceptSignedIn,
   InvitationLayout,
@@ -167,11 +168,14 @@ export function OrganizationInvitation({
       until={until}
       email={invitation.email}
       locale={locale}
-      emailHelp={intl.formatMessage({
-        id: 'invitation.organization.emailFixed',
-        defaultMessage:
-          'The invitation is for this address. You’ll sign in with it, and we’ll email it a link to confirm it’s yours.',
-      })}
+      emailHelp={intl.formatMessage(
+        {
+          id: 'invitation.organization.emailFixed',
+          defaultMessage:
+            'The invitation is for {email}. You’ll sign in with it, and we’ll email it a link to confirm it’s yours.',
+        },
+        { email: invitation.email },
+      )}
       belowEmail={
         <Typography variant="body2" sx={{ mt: 1 }}>
           <FormattedMessage
@@ -214,7 +218,9 @@ function NewOrganizationMark({ name }: { name: string }) {
           flex: 'none',
           border: '1.5px dashed',
           borderColor: 'primary.light',
-          borderRadius: 2,
+          // In px, a logo's corners: a multiple of the theme's corner grew
+          // it to a circle (ADR-091).
+          borderRadius: `${RADIUS.control}px`,
           color: 'primary.main',
           fontWeight: 700,
           fontSize: 14,

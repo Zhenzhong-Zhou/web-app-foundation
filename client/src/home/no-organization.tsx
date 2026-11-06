@@ -26,6 +26,7 @@ import { api, ApiError, hasCode, messageFor } from '../lib/api';
 import { OFFER_BACK } from '../lib/offer-back';
 import { browserTimeZone } from '../lib/time-zone';
 import { ORGANIZATION_NAME_MAX_LENGTH } from '../lib/validation';
+import { RADIUS } from '../theme/tokens';
 import { greeting } from './greeting';
 
 /**
@@ -50,7 +51,7 @@ export function NoOrganization() {
 
   return (
     <Stack spacing={2.5} sx={{ maxWidth: 1080 }}>
-      <Typography variant="h4" component="h1">
+      <Typography variant="h5" component="h1">
         {greeting(intl, session?.user.name ?? '')}
       </Typography>
       <Typography sx={{ color: 'text.secondary', mt: -1 }}>
@@ -161,7 +162,9 @@ function Way({
         sx={{
           width: 40,
           height: 40,
-          borderRadius: 2.5,
+          // In px, as Home's tiles draw their icons: a multiple of the
+          // theme's corner grew it to a circle (ADR-091).
+          borderRadius: `${RADIUS.control}px`,
           bgcolor: 'action.hover',
           color: 'primary.main',
           display: 'flex',

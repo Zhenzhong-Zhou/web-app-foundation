@@ -26,7 +26,7 @@ import {
   useState,
 } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import type { Availability, Location, StockRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -38,9 +38,9 @@ import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { ProductCover } from '../components/product-cover';
+import { Reference } from '../components/reference';
 import { SortHeader } from '../components/sort-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { flagFromAddress } from '../lib/address-filter';
 import { api, messageFor } from '../lib/api';
 import {
   displayQuantity,
@@ -52,9 +52,11 @@ import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
+import { useFocusAfterRemove } from '../lib/use-focus-after-remove';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { flag, id, useListFilters } from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
-import { useListSort } from '../lib/use-list-sort';
+import { type ListSort, useListSort } from '../lib/use-list-sort';
 import { useTab } from '../lib/use-tab';
 import { displayWithUnit } from '../products/units';
 import { rem } from '../theme/rem';
@@ -138,6 +140,25 @@ export function InventoryPage() {
 }
 
 /**
+ * The Stock tab's filters, in the address (ADR-091): Home's tiles open it
+ * narrowed, `?expiring=1`, and what is pressed or chosen here is kept
+ * there. "Expiring soon" is lots within the amber threshold, the expired
+ * included; "Expired" is those past their day alone, which Home's late
+ * button adds; "Waiting for a cost" is stock whose value is still provisional
+ * (ADR-048).
+ */
+const ADDRESS_FILTERS = {
+  expiring: flag,
+  expired: flag,
+  needsCost: flag,
+  includeEmpty: flag,
+  locationId: id,
+};
+
+/** Expiring soon's and Expired's order: the soonest first, the expired leading. */
+const SOONEST_EXPIRY: ListSort<'expiry'> = { key: 'expiry', order: 'asc' };
+
+/**
  * One screen for receiving stock and seeing what is where.
  *
  * Deliberately not a warehouse tree. A tree of empty locations proves the
@@ -152,12 +173,26 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   const { warning: expiringWithin } = useExpiryDays();
 
   const [locations, setLocations] = useState<Location[] | null>(null);
-  const [locationId, setLocationId] = useState('');
-  const [params] = useSearchParams();
+  const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  // Focus to the chip in a removed one's place, or the heading (ADR-091's
+  // review).
+  const { row: chipRow, removed } = useFocusAfterRemove();
+  const { expiring, expired, needsCost, includeEmpty } = filters;
+  // Sales sees stock but not locations (ADR-080): the page asks only for
+  // what its reader may read, and leaves the Location filter out.
+  const canSeeLocations = can('locations.view');
+  const leaves = locations ? leavesOf(locations) : [];
+  // The place the address names: taken while the locations are read, then
+  // only if stock can sit there; any other is ignored, as Everywhere.
+  const locationId =
+    canSeeLocations &&
+    (locations === null ||
+      leaves.some((location) => location.id === filters.locationId))
+      ? filters.locationId
+      : '';
   // In the address, as every list's (#301): the lookup's "Show all" narrows
   // it while open, and Reorder points shares it, the same ?search=.
   const { text: searchText, setText: setSearchText, search } = useListSearch();
-  const { sort, toggle } = useListSort<'expiry'>();
   const [setupError, setSetupError] = useState<string | null>(null);
   const [receiving, setReceiving] = useState(false);
   const [moving, setMoving] = useState<{
@@ -165,17 +200,13 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     row: StockRow;
   } | null>(null);
   const [viewing, setViewing] = useState<StockRow | null>(null);
-  const [includeEmpty, setIncludeEmpty] = useState(false);
-  // "Expiring soon": lots within the amber threshold, the expired included.
-  // Home's cards open this list narrowed: ?expiring=1, ?needsCost=1.
-  const [expiring, setExpiring] = useState(() =>
-    flagFromAddress(params, 'expiring'),
+  // By the lot's expiry when its header is chosen (ADR-057), and, with
+  // Expiring soon or Expired on, soonest first until one is (ADR-091).
+  const { sort, header } = useListSort(
+    ['expiry'],
+    expiring || expired ? SOONEST_EXPIRY : null,
   );
   const [expiringCount, setExpiringCount] = useState<number | null>(null);
-  // "Needs a cost": stock whose value is still provisional (ADR-048).
-  const [needsCost, setNeedsCost] = useState(() =>
-    flagFromAddress(params, 'needsCost'),
-  );
   const [needsCostCount, setNeedsCostCount] = useState<number | null>(null);
   /** Bumped by Refresh and by every dialog that moves stock. */
   const [changes, setChanges] = useState(0);
@@ -205,8 +236,8 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     if (includeEmpty) params.set('includeEmpty', 'true');
     if (search) params.set('search', search);
     if (expiring) params.set('expiringWithin', String(expiringWithin));
+    if (expired) params.set('expired', 'true');
     if (needsCost) params.set('needsCost', 'true');
-    // By the lot's expiry when its header is chosen (ADR-057).
     if (sort) {
       params.set('sort', sort.key);
       params.set('order', sort.order);
@@ -218,6 +249,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     search,
     expiring,
     expiringWithin,
+    expired,
     needsCost,
     sort,
   ]);
@@ -265,12 +297,8 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
 
   const error = listError ?? setupError;
   const showSkeleton = useDelayedFlag(loading);
-  const leaves = locations ? leavesOf(locations) : [];
 
   const canAdjust = can('stock.adjust');
-  // Sales sees stock but not locations (ADR-080): the page asks only for
-  // what its reader may read, and leaves the Location filter out.
-  const canSeeLocations = can('locations.view');
 
   const loadAvailability = useCallback(async () => {
     try {
@@ -413,17 +441,17 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
             }),
             count: expiringCount ?? undefined,
             pressed: expiring,
-            onToggle: () => setExpiring((on) => !on),
+            onToggle: () => setFilters({ expiring: !expiring }),
           },
           {
             id: 'needs-cost',
             label: intl.formatMessage({
               id: 'inventory.quick.needsCost',
-              defaultMessage: 'Needs a cost',
+              defaultMessage: 'Waiting for a cost',
             }),
             count: needsCostCount ?? undefined,
             pressed: needsCost,
-            onToggle: () => setNeedsCost((on) => !on),
+            onToggle: () => setFilters({ needsCost: !needsCost }),
           },
           {
             id: 'emptied',
@@ -432,7 +460,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
               defaultMessage: 'Show emptied',
             }),
             pressed: includeEmpty,
-            onToggle: () => setIncludeEmpty((on) => !on),
+            onToggle: () => setFilters({ includeEmpty: !includeEmpty }),
           },
         ]}
       >
@@ -445,8 +473,8 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
               defaultMessage: 'Location',
             })}
             select
-            value={locationId}
-            onChange={(event) => setLocationId(event.target.value)}
+            value={locations === null ? '' : locationId}
+            onChange={(event) => setFilters({ locationId: event.target.value })}
             sx={{ minWidth: rem(200) }}
           >
             <MenuItem value="">
@@ -463,6 +491,23 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
           </TextField>
         )}
       </FilterRow>
+
+      {/* What a link narrowed that no button shows, removable: Home's
+          late button, the expired lots alone. */}
+      {expired && (
+        <Stack ref={chipRow} direction="row" spacing={1}>
+          <Chip
+            label={intl.formatMessage({
+              id: 'inventory.filter.expired',
+              defaultMessage: 'Expired',
+            })}
+            onDelete={(event) => {
+              removed(event);
+              setFilters({ expired: false });
+            }}
+          />
+        </Stack>
+      )}
 
       {!failed && (
         <Paper variant="outlined">
@@ -509,9 +554,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                         id: 'inventory.lot.expires',
                         defaultMessage: 'Expires',
                       })}
-                      active={sort?.key === 'expiry'}
-                      order={sort?.order ?? 'asc'}
-                      onSort={() => toggle('expiry')}
+                      {...header('expiry')}
                     />
                     <TableCell align="right">
                       {intl.formatMessage({
@@ -528,7 +571,9 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                 <TableBody>
                   {rows.map((row) => (
                     <TableRow key={row.id} hover>
-                      <TableCell>{row.sku}</TableCell>
+                      <TableCell>
+                        <Reference>{row.sku}</Reference>
+                      </TableCell>
                       {/* The product, with the variant when it has a name of
                       its own — "Focus (60ct)" — as the packing slip and the
                       variant picker already say it. */}
@@ -590,29 +635,34 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
             </TableContainer>
           ) : (
             <EmptyState learnMore={{ guide: 'inventory', section: 'receive' }}>
-              {needsCost && !expiring
+              {expired
                 ? intl.formatMessage({
-                    id: 'inventory.noneNeedsCost',
-                    defaultMessage: 'Everything here has a cost.',
+                    id: 'inventory.noneExpired',
+                    defaultMessage: 'No lot here has expired.',
                   })
-                : expiring
-                  ? intl.formatMessage(
-                      {
-                        id: 'inventory.noneExpiring',
-                        defaultMessage:
-                          'No lot here expires within {days} days.',
-                      },
-                      { days: expiringWithin },
-                    )
-                  : search
-                    ? intl.formatMessage({
-                        id: 'inventory.noMatch',
-                        defaultMessage: 'Nothing matches that search.',
-                      })
-                    : intl.formatMessage({
-                        id: 'inventory.empty',
-                        defaultMessage: 'Nothing here yet.',
-                      })}
+                : needsCost && !expiring
+                  ? intl.formatMessage({
+                      id: 'inventory.noneNeedsCost',
+                      defaultMessage: 'Everything here has a cost.',
+                    })
+                  : expiring
+                    ? intl.formatMessage(
+                        {
+                          id: 'inventory.noneExpiring',
+                          defaultMessage:
+                            'No lot here expires within {days} days.',
+                        },
+                        { days: expiringWithin },
+                      )
+                    : search
+                      ? intl.formatMessage({
+                          id: 'inventory.noMatch',
+                          defaultMessage: 'Nothing matches that search.',
+                        })
+                      : intl.formatMessage({
+                          id: 'inventory.empty',
+                          defaultMessage: 'Nothing here yet.',
+                        })}
             </EmptyState>
           )}
         </Paper>
@@ -697,7 +747,9 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                     )
                     .map((row) => (
                       <TableRow key={row.variantId}>
-                        <TableCell>{row.sku}</TableCell>
+                        <TableCell>
+                          <Reference>{row.sku}</Reference>
+                        </TableCell>
                         {/* In the reader's language, as Stock above names
                           it (#296). */}
                         <TableCell>

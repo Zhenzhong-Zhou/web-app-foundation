@@ -76,7 +76,7 @@ test('the navigation drawer closed by Escape gives focus back to its button, wit
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  const opener = page.getByRole('button', { name: 'Open navigation' });
+  const opener = page.getByRole('button', { name: 'Menu', exact: true });
   const drawer = page.getByRole('dialog', { name: 'Navigation' });
 
   await opener.click();
@@ -139,8 +139,8 @@ test('the account menu’s preferences open from the keyboard, and come back to 
       .filter({ has: page.getByRole('combobox', { name, exact: true }) });
   const listbox = page.getByRole('listbox');
 
-  // Your account, Your devices, then the colour mode.
-  await page.keyboard.press('ArrowDown');
+  // Your account, then the colour mode (ADR-091: Your devices is on Your
+  // account).
   await page.keyboard.press('ArrowDown');
   await expect(rowOf('Colour mode')).toBeFocused();
 

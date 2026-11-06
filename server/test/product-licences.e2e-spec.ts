@@ -249,13 +249,28 @@ describe('Product licences (e2e)', () => {
     it('does not list another organization\u2019s licences', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const beta = await registerOrganization(app, 'beta');
-      await makeLicence(beta);
+      const { id } = await makeLicence(beta);
+      // Expired, so Expiring and Expired (ADR-091) would list it, were it
+      // alpha's.
+      await beta.agent
+        .patch(`/v1/product-licences/${id}`)
+        .send({ expiresAt: '2020-01-01' })
+        .expect(204);
 
-      expect(
-        body<LicenceResponse[]>(
-          await alpha.agent.get('/v1/product-licences').expect(200),
-        ),
-      ).toEqual([]);
+      for (const query of ['', '?expiring=true', '?expired=true']) {
+        expect(
+          body<LicenceResponse[]>(
+            await alpha.agent.get(`/v1/product-licences${query}`).expect(200),
+          ),
+        ).toEqual([]);
+      }
+      for (const query of ['?expiring=true', '?expired=true']) {
+        expect(
+          body<LicenceResponse[]>(
+            await beta.agent.get(`/v1/product-licences${query}`).expect(200),
+          ),
+        ).toHaveLength(1);
+      }
     });
   });
 });

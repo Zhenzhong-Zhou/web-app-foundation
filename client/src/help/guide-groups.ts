@@ -18,9 +18,6 @@ export interface GuideGroup {
  * The guides for the pages the person can open, grouped as the rail is: the
  * work, the records, the settings, then their own account (ADR-079). Read
  * from the rail itself, so a page added there is listed here too.
- *
- * Licences has no place in the rail, so it follows Products, the page that
- * leads to it.
  */
 export function guideGroups(can: (permission: Permission) => boolean) {
   const groups: GuideGroup[] = NAV_GROUPS.map((group, index) => {
@@ -31,9 +28,6 @@ export function guideGroups(can: (permission: Permission) => boolean) {
     for (const item of group.items) {
       if (item.permission && !can(item.permission)) continue;
       add(guideFor(item.to));
-      if (item.to === '/products' && can('product_licences.view')) {
-        add('licences');
-      }
     }
     // The first group's name is the landmark's, Main; here it is the work.
     return { label: index === 0 ? M.work : group.label, guides };

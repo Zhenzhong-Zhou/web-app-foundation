@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-01
 areas: [database, ops]
-amended-by: [ADR-081, ADR-082]
+amended-by: [ADR-081, ADR-082, ADR-091]
 ---
 
 # ADR-051 — Performance: a volume seed, response-time budgets, plan checks
@@ -175,15 +175,14 @@ so the timing is the evidence for the name lookup.
   #361). Trigger: p95 over budget at small scale. Then the open lines
   read once, with three filtered sums, and drafts read only for the
   items asked (#276's comment of 1 November, carried to #352).
-- **Home after ADR-085:** the median of three runs at small is 278 ms,
-  a newcomer's 217 ms, and one run of three missed 300 ms. What is left
-  is the database planning its statements (about 11 of the owner's 26
-  ms), its 14 transactions, and Low stock's read. Trigger: the median of
-  three over budget (#342). Then prepared statements, or one transaction
-  per request, which would need an ADR. Since 3 November 2026 they are
-  ADR-091's, Home's redesign, which must meet the budget by 31 January
-  2027, the end of Home's known miss (the amendment for #225 and #276,
-  below).
+- **Home after ADR-085:** closed by ADR-091's redesign (#477, 6 November
+  2026): GitHub's median 177 ms at small, a newcomer's 165 ms, and Home's
+  known miss gone.
+- **Home with the data** (ADR-091): 5.0× from small to large, 6.1× for a
+  newcomer, 41 to 205 ms at p95 on the Mac, past perf's 3× line, since
+  each count reads every row it counts. Trigger: `GET /home` over its
+  300 ms budget at large in a weekly run. Then the counts kept ready
+  rather than counted each time, which needs an ADR.
 - **Valuation** reads every pool by definition. Trigger: an organization
   whose valuation no longer fits a screen. Then an export.
 - **Migrations on large live tables.** 0036 builds its index inside the
@@ -508,3 +507,16 @@ owner and a date stays a debt; a raised budget would forget it
   search walking the orders by id, 23,106 rows read for 26 kept (#226,
   comment of 4 November); and Dependabot's alerts 8, 9 and 10, held back
   by eslint, the Nest CLI and Sentry (#446).
+
+## Amendment (November 2026) — Home's reads, by its redesign (ADR-091)
+
+The Deferred "Home's reads in one transaction, or prepared statements",
+above, whose trigger was ADR-091, is taken in part. Home's redesign reads
+counts only, no rows, and its own reads in one transaction, held by a test
+that counts its statements; that drops eight of its fourteen reads. It is
+met as the typo lookup was: the plans and the Mac's figures before and
+after, then one timed run with a median of 240 ms or less, and Home's
+known miss removed in the commit that meets it. Prepared statements stay
+deferred, now until Home's median is over 240 ms in a weekly run on
+`main`. The Watch's "Home after ADR-085" is closed by ADR-091's as-built,
+with its figures.

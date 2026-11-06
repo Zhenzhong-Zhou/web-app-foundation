@@ -44,7 +44,7 @@ const DARK = {
 } as const;
 
 /** RADIUS.control, the button's corners, and RADIUS.panel, the note's. */
-const RADIUS = { control: 6, panel: 8 } as const;
+const RADIUS = { control: 10, panel: 12 } as const;
 
 /** The system's own font, with Chinese ones for a Chinese email. */
 const FONT =

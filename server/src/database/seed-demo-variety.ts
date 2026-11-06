@@ -1,5 +1,6 @@
 import type { INestApplicationContext } from '@nestjs/common';
 
+import { addDays, todayIn } from '../common/today';
 import { BomsService } from '../modules/boms/boms.service';
 import { InvoiceDraftsService } from '../modules/invoices/invoice-drafts.service';
 import { InvoiceIssuingService } from '../modules/invoices/invoice-issuing.service';
@@ -36,10 +37,16 @@ export interface DemoAnchors {
  * day the seed runs, so the page reads the same whenever it is seeded.
  */
 export function daysFromNow(days: number): string {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
+  return addDays(todayIn(DEMO_TIME_ZONE), days);
 }
+
+/**
+ * The demo's clock, its company's, set on its organization by seed-demo.ts
+ * (ADR-091's review): Home's date, time and greeting read as a real
+ * company's would, not UTC's, and the days above are Vancouver's, which
+ * Home counts late and expired by.
+ */
+export const DEMO_TIME_ZONE = 'America/Vancouver';
 
 /**
  * A range around the demo's first product, for the screens rather than the

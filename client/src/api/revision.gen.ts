@@ -3,4 +3,4 @@
 // server/src/common/api-revision.ts, then run `npm run api` in server/.
 
 /** The API revision this client was built for. */
-export const API_REVISION = 2;
+export const API_REVISION = 3;

@@ -2782,7 +2782,24 @@
     "/v1/product-licences": {
       "get": {
         "operationId": "ProductLicencesController_list_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "expiring",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3815,6 +3832,14 @@
             }
           },
           {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "needsCost",
             "required": false,
             "in": "query",
@@ -3937,6 +3962,14 @@
               "minimum": 1,
               "maximum": 3650,
               "type": "number"
+            }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -4201,6 +4234,14 @@
               "minimum": 1,
               "maximum": 3650,
               "type": "number"
+            }
+          },
+          {
+            "name": "expired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -5130,6 +5171,1231 @@
         ]
       }
     },
+    "/v1/recent": {
+      "get": {
+        "operationId": "RecentController_list_v1",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 30,
+              "type": "number"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentList"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Recent"
+        ]
+      },
+      "post": {
+        "operationId": "RecentController_record_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordOpenedDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Recent"
+        ]
+      },
+      "delete": {
+        "operationId": "RecentController_clear_v1",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Recent"
+        ]
+      }
+    },
+    "/v1/locations": {
+      "get": {
+        "operationId": "LocationsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Location"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Locations"
+        ]
+      },
+      "post": {
+        "operationId": "LocationsController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedLocation"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Locations"
+        ]
+      }
+    },
+    "/v1/locations/{id}": {
+      "patch": {
+        "operationId": "LocationsController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Locations"
+        ]
+      }
+    },
+    "/v1/locations/{id}/address": {
+      "put": {
+        "operationId": "LocationsController_setAddress_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Locations"
+        ]
+      },
+      "delete": {
+        "operationId": "LocationsController_removeAddress_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Locations"
+        ]
+      }
+    },
+    "/v1/organization/numbering": {
+      "get": {
+        "operationId": "NumberingController_get_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NumberingEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Numbering"
+        ]
+      },
+      "put": {
+        "operationId": "NumberingController_update_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNumberingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Numbering"
+        ]
+      }
+    },
+    "/v1/costs/valuation": {
+      "get": {
+        "operationId": "CostsController_stockValuation_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockValuationEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Costs"
+        ]
+      }
+    },
+    "/v1/costs/valuation/export": {
+      "get": {
+        "operationId": "CostsController_exportValuation_v1",
+        "parameters": [
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Costs"
+        ]
+      }
+    },
+    "/v1/costs/lots/{id}": {
+      "get": {
+        "operationId": "CostsController_lotCost_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LotCostEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Costs"
+        ]
+      }
+    },
+    "/v1/costs/runs/{id}": {
+      "get": {
+        "operationId": "CostsController_runCost_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunCostEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Costs"
+        ]
+      }
+    },
+    "/v1/costs/needs-cost": {
+      "get": {
+        "operationId": "CostsController_needsCost_v1",
+        "parameters": [
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NeedsCostPage"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Costs"
+        ]
+      }
+    },
+    "/v1/costs/valuations/{id}": {
+      "put": {
+        "operationId": "CostsController_setCost_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCostDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrectedCostEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Costs"
+        ]
+      }
+    },
+    "/v1/costs/exchange-rates": {
+      "get": {
+        "operationId": "CostsController_listRates_v1",
+        "parameters": [
+          {
+            "name": "currency",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRateList"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Costs"
+        ]
+      },
+      "put": {
+        "operationId": "CostsController_setRate_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetExchangeRateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRateEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Costs"
+        ]
+      }
+    },
+    "/v1/price-lists": {
+      "get": {
+        "operationId": "PriceListsController_list_v1",
+        "parameters": [
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sale",
+                "purchase"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceListList"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PriceLists"
+        ]
+      },
+      "post": {
+        "operationId": "PriceListsController_create_v1",
+        "parameters": [
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePriceListDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceListEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PriceLists"
+        ]
+      }
+    },
+    "/v1/price-lists/{id}/export": {
+      "get": {
+        "operationId": "PriceListsController_exportPriceList_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PriceLists"
+        ]
+      }
+    },
+    "/v1/price-lists/{id}": {
+      "get": {
+        "operationId": "PriceListsController_findOne_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceListEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PriceLists"
+        ]
+      },
+      "patch": {
+        "operationId": "PriceListsController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePriceListDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PriceLists"
+        ]
+      }
+    },
+    "/v1/price-lists/{id}/items/{variantId}": {
+      "put": {
+        "operationId": "PriceListsController_setItem_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPriceListItemDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceListItemEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PriceLists"
+        ]
+      },
+      "delete": {
+        "operationId": "PriceListsController_removeItem_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "variantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PriceLists"
+        ]
+      }
+    },
+    "/v1/partners": {
+      "get": {
+        "operationId": "PartnersController_list_v1",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Partner"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Partners"
+        ]
+      },
+      "post": {
+        "operationId": "PartnersController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePartnerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartnerEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Partners"
+        ]
+      }
+    },
+    "/v1/partners/export": {
+      "get": {
+        "operationId": "PartnersController_exportPartners_v1",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "retired",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Partners"
+        ]
+      }
+    },
+    "/v1/partners/{id}": {
+      "get": {
+        "operationId": "PartnersController_find_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartnerDetail"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Partners"
+        ]
+      },
+      "patch": {
+        "operationId": "PartnersController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePartnerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Partners"
+        ]
+      }
+    },
+    "/v1/partners/{partnerId}/addresses": {
+      "get": {
+        "operationId": "PartnerAddressesController_list_v1",
+        "parameters": [
+          {
+            "name": "partnerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Address"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PartnerAddresses"
+        ]
+      },
+      "post": {
+        "operationId": "PartnerAddressesController_create_v1",
+        "parameters": [
+          {
+            "name": "partnerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PartnerAddresses"
+        ]
+      }
+    },
+    "/v1/partners/{partnerId}/addresses/{id}": {
+      "patch": {
+        "operationId": "PartnerAddressesController_update_v1",
+        "parameters": [
+          {
+            "name": "partnerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PartnerAddresses"
+        ]
+      },
+      "delete": {
+        "operationId": "PartnerAddressesController_retire_v1",
+        "parameters": [
+          {
+            "name": "partnerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PartnerAddresses"
+        ]
+      }
+    },
+    "/v1/partners/{partnerId}/contacts": {
+      "get": {
+        "operationId": "PartnerContactsController_list_v1",
+        "parameters": [
+          {
+            "name": "partnerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Contact"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PartnerContacts"
+        ]
+      },
+      "post": {
+        "operationId": "PartnerContactsController_create_v1",
+        "parameters": [
+          {
+            "name": "partnerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "PartnerContacts"
+        ]
+      }
+    },
+    "/v1/partners/{partnerId}/contacts/{id}": {
+      "patch": {
+        "operationId": "PartnerContactsController_update_v1",
+        "parameters": [
+          {
+            "name": "partnerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PartnerContacts"
+        ]
+      },
+      "delete": {
+        "operationId": "PartnerContactsController_retire_v1",
+        "parameters": [
+          {
+            "name": "partnerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PartnerContacts"
+        ]
+      }
+    },
     "/v1/orders": {
       "get": {
         "operationId": "OrdersController_list_v1",
@@ -5173,6 +6439,14 @@
           },
           {
             "name": "outstanding",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "late",
             "required": false,
             "in": "query",
             "schema": {
@@ -5345,6 +6619,14 @@
           },
           {
             "name": "outstanding",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "late",
             "required": false,
             "in": "query",
             "schema": {
@@ -6237,459 +7519,6 @@
         },
         "tags": [
           "OrderDocuments"
-        ]
-      }
-    },
-    "/v1/partners": {
-      "get": {
-        "operationId": "PartnersController_list_v1",
-        "parameters": [
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "maxLength": 100,
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Partner"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Partners"
-        ]
-      },
-      "post": {
-        "operationId": "PartnersController_create_v1",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePartnerDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PartnerEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Partners"
-        ]
-      }
-    },
-    "/v1/partners/export": {
-      "get": {
-        "operationId": "PartnersController_exportPartners_v1",
-        "parameters": [
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "maxLength": 100,
-              "type": "string"
-            }
-          },
-          {
-            "name": "retired",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "accept-language",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Partners"
-        ]
-      }
-    },
-    "/v1/partners/{id}": {
-      "get": {
-        "operationId": "PartnersController_find_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PartnerDetail"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Partners"
-        ]
-      },
-      "patch": {
-        "operationId": "PartnersController_update_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePartnerDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Partners"
-        ]
-      }
-    },
-    "/v1/partners/{partnerId}/addresses": {
-      "get": {
-        "operationId": "PartnerAddressesController_list_v1",
-        "parameters": [
-          {
-            "name": "partnerId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Address"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "PartnerAddresses"
-        ]
-      },
-      "post": {
-        "operationId": "PartnerAddressesController_create_v1",
-        "parameters": [
-          {
-            "name": "partnerId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateAddressDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AddressEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "PartnerAddresses"
-        ]
-      }
-    },
-    "/v1/partners/{partnerId}/addresses/{id}": {
-      "patch": {
-        "operationId": "PartnerAddressesController_update_v1",
-        "parameters": [
-          {
-            "name": "partnerId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAddressDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "PartnerAddresses"
-        ]
-      },
-      "delete": {
-        "operationId": "PartnerAddressesController_retire_v1",
-        "parameters": [
-          {
-            "name": "partnerId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "PartnerAddresses"
-        ]
-      }
-    },
-    "/v1/partners/{partnerId}/contacts": {
-      "get": {
-        "operationId": "PartnerContactsController_list_v1",
-        "parameters": [
-          {
-            "name": "partnerId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Contact"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "PartnerContacts"
-        ]
-      },
-      "post": {
-        "operationId": "PartnerContactsController_create_v1",
-        "parameters": [
-          {
-            "name": "partnerId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateContactDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ContactEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "PartnerContacts"
-        ]
-      }
-    },
-    "/v1/partners/{partnerId}/contacts/{id}": {
-      "patch": {
-        "operationId": "PartnerContactsController_update_v1",
-        "parameters": [
-          {
-            "name": "partnerId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateContactDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "PartnerContacts"
-        ]
-      },
-      "delete": {
-        "operationId": "PartnerContactsController_retire_v1",
-        "parameters": [
-          {
-            "name": "partnerId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "PartnerContacts"
         ]
       }
     },
@@ -7972,778 +8801,6 @@
         ]
       }
     },
-    "/v1/recent": {
-      "get": {
-        "operationId": "RecentController_list_v1",
-        "parameters": [
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 30,
-              "type": "number"
-            }
-          },
-          {
-            "name": "accept-language",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RecentList"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Recent"
-        ]
-      },
-      "post": {
-        "operationId": "RecentController_record_v1",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RecordOpenedDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Recent"
-        ]
-      },
-      "delete": {
-        "operationId": "RecentController_clear_v1",
-        "parameters": [],
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Recent"
-        ]
-      }
-    },
-    "/v1/locations": {
-      "get": {
-        "operationId": "LocationsController_list_v1",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Location"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Locations"
-        ]
-      },
-      "post": {
-        "operationId": "LocationsController_create_v1",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateLocationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreatedLocation"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Locations"
-        ]
-      }
-    },
-    "/v1/locations/{id}": {
-      "patch": {
-        "operationId": "LocationsController_update_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateLocationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Locations"
-        ]
-      }
-    },
-    "/v1/locations/{id}/address": {
-      "put": {
-        "operationId": "LocationsController_setAddress_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SiteAddressDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Locations"
-        ]
-      },
-      "delete": {
-        "operationId": "LocationsController_removeAddress_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Locations"
-        ]
-      }
-    },
-    "/v1/organization/numbering": {
-      "get": {
-        "operationId": "NumberingController_get_v1",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NumberingEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Numbering"
-        ]
-      },
-      "put": {
-        "operationId": "NumberingController_update_v1",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateNumberingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Numbering"
-        ]
-      }
-    },
-    "/v1/costs/valuation": {
-      "get": {
-        "operationId": "CostsController_stockValuation_v1",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StockValuationEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Costs"
-        ]
-      }
-    },
-    "/v1/costs/valuation/export": {
-      "get": {
-        "operationId": "CostsController_exportValuation_v1",
-        "parameters": [
-          {
-            "name": "accept-language",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Costs"
-        ]
-      }
-    },
-    "/v1/costs/lots/{id}": {
-      "get": {
-        "operationId": "CostsController_lotCost_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LotCostEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Costs"
-        ]
-      }
-    },
-    "/v1/costs/runs/{id}": {
-      "get": {
-        "operationId": "CostsController_runCost_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RunCostEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Costs"
-        ]
-      }
-    },
-    "/v1/costs/needs-cost": {
-      "get": {
-        "operationId": "CostsController_needsCost_v1",
-        "parameters": [
-          {
-            "name": "before",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NeedsCostPage"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Costs"
-        ]
-      }
-    },
-    "/v1/costs/valuations/{id}": {
-      "put": {
-        "operationId": "CostsController_setCost_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetCostDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CorrectedCostEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Costs"
-        ]
-      }
-    },
-    "/v1/costs/exchange-rates": {
-      "get": {
-        "operationId": "CostsController_listRates_v1",
-        "parameters": [
-          {
-            "name": "currency",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExchangeRateList"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Costs"
-        ]
-      },
-      "put": {
-        "operationId": "CostsController_setRate_v1",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetExchangeRateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExchangeRateEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Costs"
-        ]
-      }
-    },
-    "/v1/price-lists": {
-      "get": {
-        "operationId": "PriceListsController_list_v1",
-        "parameters": [
-          {
-            "name": "direction",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "sale",
-                "purchase"
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PriceListList"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "PriceLists"
-        ]
-      },
-      "post": {
-        "operationId": "PriceListsController_create_v1",
-        "parameters": [
-          {
-            "name": "accept-language",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePriceListDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PriceListEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "PriceLists"
-        ]
-      }
-    },
-    "/v1/price-lists/{id}/export": {
-      "get": {
-        "operationId": "PriceListsController_exportPriceList_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "accept-language",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "PriceLists"
-        ]
-      }
-    },
-    "/v1/price-lists/{id}": {
-      "get": {
-        "operationId": "PriceListsController_findOne_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "accept-language",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PriceListEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "PriceLists"
-        ]
-      },
-      "patch": {
-        "operationId": "PriceListsController_update_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePriceListDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "PriceLists"
-        ]
-      }
-    },
-    "/v1/price-lists/{id}/items/{variantId}": {
-      "put": {
-        "operationId": "PriceListsController_setItem_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "variantId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "accept-language",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetPriceListItemDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PriceListItemEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "PriceLists"
-        ]
-      },
-      "delete": {
-        "operationId": "PriceListsController_removeItem_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "variantId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "PriceLists"
-        ]
-      }
-    },
     "/health": {
       "get": {
         "operationId": "HealthController_check",
@@ -8804,7 +8861,7 @@
   "info": {
     "title": "web-app-foundation API",
     "description": "",
-    "version": "1.2",
+    "version": "1.3",
     "contact": {}
   },
   "tags": [],
@@ -12488,6 +12545,12 @@
               "null"
             ]
           },
+          "whatWeDo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "address": {
             "anyOf": [
               {
@@ -12637,6 +12700,7 @@
           "name",
           "slug",
           "taxRegistrationNumber",
+          "whatWeDo",
           "address",
           "baseCurrency",
           "defaultSalePriceListId",
@@ -12685,6 +12749,13 @@
               "null"
             ],
             "maxLength": 50
+          },
+          "whatWeDo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
           },
           "baseCurrency": {
             "type": "string"
@@ -15829,69 +15900,6 @@
           "items"
         ]
       },
-      "HomeRowReorder": {
-        "type": "object",
-        "properties": {
-          "position": {
-            "type": "string"
-          },
-          "reorderPoint": {
-            "type": "string"
-          },
-          "drafted": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "position",
-          "reorderPoint",
-          "drafted"
-        ]
-      },
-      "HomeRow": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "detail": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "due": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "late": {
-            "type": "boolean"
-          },
-          "reorder": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/HomeRowReorder"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "detail",
-          "due",
-          "late",
-          "reorder"
-        ]
-      },
       "HomeCard": {
         "type": "object",
         "properties": {
@@ -15915,12 +15923,6 @@
           "late": {
             "type": "number"
           },
-          "rows": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/HomeRow"
-            }
-          },
           "anyPoint": {
             "type": [
               "boolean",
@@ -15932,13 +15934,18 @@
           "kind",
           "count",
           "late",
-          "rows",
           "anyPoint"
         ]
       },
       "HomeResponse": {
         "type": "object",
         "properties": {
+          "whatWeDo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "gettingStarted": {
             "$ref": "#/components/schemas/GettingStarted"
           },
@@ -15960,10 +15967,1859 @@
           }
         },
         "required": [
+          "whatWeDo",
           "gettingStarted",
           "welcome",
           "cards"
         ]
+      },
+      "RecentEntry": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "invoice",
+              "order",
+              "lot",
+              "product",
+              "partner",
+              "run",
+              "return",
+              "priceList"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "detail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "openedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "title",
+          "detail",
+          "openedAt"
+        ]
+      },
+      "RecentList": {
+        "type": "object",
+        "properties": {
+          "recent": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecentEntry"
+            }
+          }
+        },
+        "required": [
+          "recent"
+        ]
+      },
+      "RecordOpenedDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "order",
+              "invoice",
+              "lot",
+              "product",
+              "partner",
+              "run",
+              "return",
+              "priceList"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "kind",
+          "id"
+        ]
+      },
+      "SiteAddress": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "region": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "line1",
+          "line2",
+          "city",
+          "region",
+          "postalCode",
+          "country"
+        ]
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isAvailable": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "name",
+          "code",
+          "parentId",
+          "isAvailable",
+          "isActive",
+          "address"
+        ]
+      },
+      "CreateLocationDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "site",
+              "zone",
+              "aisle",
+              "shelf",
+              "bin"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "parentId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "type",
+          "name"
+        ]
+      },
+      "CreatedLocation": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          }
+        },
+        "required": [
+          "location"
+        ]
+      },
+      "UpdateLocationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "isAvailable": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SiteAddressDto": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "line2": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 100
+          },
+          "region": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 100
+          },
+          "postalCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 32
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          }
+        },
+        "required": [
+          "line1",
+          "country"
+        ]
+      },
+      "NumberingNext": {
+        "type": "object",
+        "properties": {
+          "never": {
+            "type": "number"
+          },
+          "yearly": {
+            "type": "number"
+          },
+          "monthly": {
+            "type": "number"
+          },
+          "daily": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "never",
+          "yearly",
+          "monthly",
+          "daily"
+        ]
+      },
+      "NumberingSeries": {
+        "type": "object",
+        "properties": {
+          "prefix": {
+            "type": "string"
+          },
+          "digits": {
+            "type": "number"
+          },
+          "reset": {
+            "type": "string",
+            "enum": [
+              "never",
+              "yearly",
+              "monthly",
+              "daily"
+            ]
+          },
+          "next": {
+            "$ref": "#/components/schemas/NumberingNext"
+          },
+          "last": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "prefix",
+          "digits",
+          "reset",
+          "next",
+          "last"
+        ]
+      },
+      "Numbering": {
+        "type": "object",
+        "properties": {
+          "invoice": {
+            "$ref": "#/components/schemas/NumberingSeries"
+          },
+          "creditNote": {
+            "$ref": "#/components/schemas/NumberingSeries"
+          },
+          "returnAuthorization": {
+            "$ref": "#/components/schemas/NumberingSeries"
+          },
+          "saleOrder": {
+            "$ref": "#/components/schemas/NumberingSeries"
+          },
+          "purchaseOrder": {
+            "$ref": "#/components/schemas/NumberingSeries"
+          },
+          "documentsInDateOrder": {
+            "type": "boolean"
+          },
+          "today": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "invoice",
+          "creditNote",
+          "returnAuthorization",
+          "saleOrder",
+          "purchaseOrder",
+          "documentsInDateOrder",
+          "today"
+        ]
+      },
+      "NumberingEnvelope": {
+        "type": "object",
+        "properties": {
+          "numbering": {
+            "$ref": "#/components/schemas/Numbering"
+          }
+        },
+        "required": [
+          "numbering"
+        ]
+      },
+      "NumberingSeriesDto": {
+        "type": "object",
+        "properties": {
+          "prefix": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "digits": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "reset": {
+            "type": "string",
+            "enum": [
+              "never",
+              "yearly",
+              "monthly",
+              "daily"
+            ]
+          },
+          "next": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 9999999999
+          }
+        },
+        "required": [
+          "prefix",
+          "digits",
+          "reset"
+        ]
+      },
+      "UpdateNumberingDto": {
+        "type": "object",
+        "properties": {
+          "invoice": {
+            "$ref": "#/components/schemas/NumberingSeriesDto"
+          },
+          "creditNote": {
+            "$ref": "#/components/schemas/NumberingSeriesDto"
+          },
+          "returnAuthorization": {
+            "$ref": "#/components/schemas/NumberingSeriesDto"
+          },
+          "saleOrder": {
+            "$ref": "#/components/schemas/NumberingSeriesDto"
+          },
+          "purchaseOrder": {
+            "$ref": "#/components/schemas/NumberingSeriesDto"
+          },
+          "documentsInDateOrder": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "invoice",
+          "creditNote",
+          "returnAuthorization",
+          "saleOrder",
+          "purchaseOrder",
+          "documentsInDateOrder"
+        ]
+      },
+      "ValuationPool": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "string"
+          },
+          "provisional": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "variantId",
+          "sku",
+          "lotId",
+          "lotCode",
+          "quantity",
+          "value",
+          "unitCost",
+          "provisional"
+        ]
+      },
+      "StockValuation": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "total": {
+            "type": "string"
+          },
+          "provisional": {
+            "type": "boolean"
+          },
+          "pools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValuationPool"
+            }
+          }
+        },
+        "required": [
+          "currency",
+          "total",
+          "provisional",
+          "pools"
+        ]
+      },
+      "StockValuationEnvelope": {
+        "type": "object",
+        "properties": {
+          "valuation": {
+            "$ref": "#/components/schemas/StockValuation"
+          }
+        },
+        "required": [
+          "valuation"
+        ]
+      },
+      "LotCostEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "issued",
+              "movement",
+              "run_close",
+              "correction",
+              "opening"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "exchangeRate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "needsCost": {
+            "type": "boolean"
+          },
+          "referenceType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referenceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "reason",
+          "quantity",
+          "value",
+          "unitPrice",
+          "currency",
+          "exchangeRate",
+          "needsCost",
+          "referenceType",
+          "referenceId",
+          "createdAt"
+        ]
+      },
+      "LotCost": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotId": {
+            "type": "string"
+          },
+          "lotCode": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "provisional": {
+            "type": "boolean"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LotCostEntry"
+            }
+          }
+        },
+        "required": [
+          "currency",
+          "lotId",
+          "lotCode",
+          "sku",
+          "quantity",
+          "value",
+          "unitCost",
+          "provisional",
+          "entries"
+        ]
+      },
+      "LotCostEnvelope": {
+        "type": "object",
+        "properties": {
+          "lotCost": {
+            "$ref": "#/components/schemas/LotCost"
+          }
+        },
+        "required": [
+          "lotCost"
+        ]
+      },
+      "RunCostConsumed": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string"
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sku",
+          "lotCode",
+          "quantity",
+          "value"
+        ]
+      },
+      "RunCostOutput": {
+        "type": "object",
+        "properties": {
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lotCode",
+          "quantity",
+          "value"
+        ]
+      },
+      "RunCost": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "runId": {
+            "type": "string"
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sku": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "cancelled",
+              "released",
+              "completed"
+            ]
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "quantityProduced": {
+            "type": "string"
+          },
+          "materialCost": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitCost": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "provisional": {
+            "type": "boolean"
+          },
+          "consumed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunCostConsumed"
+            }
+          },
+          "outputs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunCostOutput"
+            }
+          }
+        },
+        "required": [
+          "currency",
+          "runId",
+          "reference",
+          "sku",
+          "status",
+          "closed",
+          "quantityProduced",
+          "materialCost",
+          "unitCost",
+          "provisional",
+          "consumed",
+          "outputs"
+        ]
+      },
+      "RunCostEnvelope": {
+        "type": "object",
+        "properties": {
+          "runCost": {
+            "$ref": "#/components/schemas/RunCost"
+          }
+        },
+        "required": [
+          "runCost"
+        ]
+      },
+      "NeedsCostEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "issued",
+              "movement",
+              "run_close",
+              "correction",
+              "opening"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sku": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referenceType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referenceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "reason",
+          "sku",
+          "variantId",
+          "lotId",
+          "lotCode",
+          "quantity",
+          "unitPrice",
+          "currency",
+          "referenceType",
+          "referenceId",
+          "createdAt"
+        ]
+      },
+      "NeedsCostPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NeedsCostEntry"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "SetCostDto": {
+        "type": "object",
+        "properties": {
+          "unitPrice": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "exchangeRate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "unitPrice",
+          "currency"
+        ]
+      },
+      "CorrectedCost": {
+        "type": "object",
+        "properties": {
+          "valuationId": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "held": {
+            "type": "string"
+          },
+          "issued": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "valuationId",
+          "value",
+          "held",
+          "issued"
+        ]
+      },
+      "CorrectedCostEnvelope": {
+        "type": "object",
+        "properties": {
+          "cost": {
+            "$ref": "#/components/schemas/CorrectedCost"
+          }
+        },
+        "required": [
+          "cost"
+        ]
+      },
+      "ExchangeRate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "rateDate": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "currency",
+          "rateDate",
+          "rate"
+        ]
+      },
+      "ExchangeRateList": {
+        "type": "object",
+        "properties": {
+          "rates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExchangeRate"
+            }
+          }
+        },
+        "required": [
+          "rates"
+        ]
+      },
+      "SetExchangeRateDto": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "rateDate": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currency",
+          "rateDate",
+          "rate"
+        ]
+      },
+      "ExchangeRateEnvelope": {
+        "type": "object",
+        "properties": {
+          "rate": {
+            "$ref": "#/components/schemas/ExchangeRate"
+          }
+        },
+        "required": [
+          "rate"
+        ]
+      },
+      "PriceList": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "sale",
+              "purchase"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "itemCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "direction",
+          "currency",
+          "isActive",
+          "itemCount"
+        ]
+      },
+      "PriceListList": {
+        "type": "object",
+        "properties": {
+          "priceLists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceList"
+            }
+          }
+        },
+        "required": [
+          "priceLists"
+        ]
+      },
+      "PriceListItem": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "variantId",
+          "sku",
+          "description",
+          "unitOfMeasure",
+          "unitPrice",
+          "updatedAt"
+        ]
+      },
+      "PriceListDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "sale",
+              "purchase"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceListItem"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "direction",
+          "currency",
+          "isActive",
+          "items"
+        ]
+      },
+      "PriceListEnvelope": {
+        "type": "object",
+        "properties": {
+          "priceList": {
+            "$ref": "#/components/schemas/PriceListDetail"
+          }
+        },
+        "required": [
+          "priceList"
+        ]
+      },
+      "CreatePriceListDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "sale",
+              "purchase"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "direction",
+          "currency"
+        ]
+      },
+      "UpdatePriceListDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SetPriceListItemDto": {
+        "type": "object",
+        "properties": {
+          "unitPrice": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "unitPrice"
+        ]
+      },
+      "PriceListItemEnvelope": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/PriceListItem"
+          }
+        },
+        "required": [
+          "item"
+        ]
+      },
+      "Partner": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taxId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "salePriceListId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "purchasePriceListId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "documentLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "documentSecondLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "code",
+          "taxId",
+          "salePriceListId",
+          "purchasePriceListId",
+          "documentLanguage",
+          "documentSecondLanguage",
+          "notes",
+          "isActive"
+        ]
+      },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "region": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "type": "string"
+          },
+          "isBilling": {
+            "type": "boolean"
+          },
+          "isShipping": {
+            "type": "boolean"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "line1",
+          "line2",
+          "city",
+          "region",
+          "postalCode",
+          "country",
+          "isBilling",
+          "isShipping",
+          "isDefault",
+          "isActive"
+        ]
+      },
+      "Contact": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role",
+          "email",
+          "phone",
+          "notes",
+          "isPrimary",
+          "isActive"
+        ]
+      },
+      "PartnerDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taxId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "salePriceListId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "purchasePriceListId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "documentLanguage": {
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "documentSecondLanguage": {
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "addresses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            }
+          },
+          "contacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contact"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "code",
+          "taxId",
+          "salePriceListId",
+          "purchasePriceListId",
+          "documentLanguage",
+          "documentSecondLanguage",
+          "notes",
+          "isActive",
+          "addresses",
+          "contacts"
+        ]
+      },
+      "CreatePartnerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "taxId": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "documentLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "documentSecondLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "PartnerEnvelope": {
+        "type": "object",
+        "properties": {
+          "partner": {
+            "$ref": "#/components/schemas/PartnerDetail"
+          }
+        },
+        "required": [
+          "partner"
+        ]
+      },
+      "UpdatePartnerDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "taxId": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "salePriceListId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "purchasePriceListId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "documentLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "documentSecondLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          }
+        }
+      },
+      "CreateAddressDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "line1": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "line2": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "region": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "postalCode": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "isBilling": {
+            "type": "boolean"
+          },
+          "isShipping": {
+            "type": "boolean"
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "line1",
+          "country"
+        ]
+      },
+      "AddressEnvelope": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
+      "UpdateAddressDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "line1": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "line2": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "region": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "postalCode": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "isBilling": {
+            "type": "boolean"
+          },
+          "isShipping": {
+            "type": "boolean"
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateContactDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "role": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ContactEnvelope": {
+        "type": "object",
+        "properties": {
+          "contact": {
+            "$ref": "#/components/schemas/Contact"
+          }
+        },
+        "required": [
+          "contact"
+        ]
+      },
+      "UpdateContactDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "role": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
       },
       "OrderSummary": {
         "type": "object",
@@ -17600,605 +19456,6 @@
           "orderReturn"
         ]
       },
-      "Partner": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "code": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "taxId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "salePriceListId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "purchasePriceListId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "documentLanguage": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "en",
-              "fr-CA",
-              "zh-Hans",
-              null
-            ]
-          },
-          "documentSecondLanguage": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "en",
-              "fr-CA",
-              "zh-Hans",
-              null
-            ]
-          },
-          "notes": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "code",
-          "taxId",
-          "salePriceListId",
-          "purchasePriceListId",
-          "documentLanguage",
-          "documentSecondLanguage",
-          "notes",
-          "isActive"
-        ]
-      },
-      "Address": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "label": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "line1": {
-            "type": "string"
-          },
-          "line2": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "city": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "region": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "postalCode": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "country": {
-            "type": "string"
-          },
-          "isBilling": {
-            "type": "boolean"
-          },
-          "isShipping": {
-            "type": "boolean"
-          },
-          "isDefault": {
-            "type": "boolean"
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "label",
-          "line1",
-          "line2",
-          "city",
-          "region",
-          "postalCode",
-          "country",
-          "isBilling",
-          "isShipping",
-          "isDefault",
-          "isActive"
-        ]
-      },
-      "Contact": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "role": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "email": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "phone": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "notes": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "isPrimary": {
-            "type": "boolean"
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "role",
-          "email",
-          "phone",
-          "notes",
-          "isPrimary",
-          "isActive"
-        ]
-      },
-      "PartnerDetail": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "code": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "taxId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "salePriceListId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "purchasePriceListId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "documentLanguage": {
-            "enum": [
-              "en",
-              "fr-CA",
-              "zh-Hans",
-              null
-            ],
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "documentSecondLanguage": {
-            "enum": [
-              "en",
-              "fr-CA",
-              "zh-Hans",
-              null
-            ],
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "notes": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "addresses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Address"
-            }
-          },
-          "contacts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Contact"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "code",
-          "taxId",
-          "salePriceListId",
-          "purchasePriceListId",
-          "documentLanguage",
-          "documentSecondLanguage",
-          "notes",
-          "isActive",
-          "addresses",
-          "contacts"
-        ]
-      },
-      "CreatePartnerDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200
-          },
-          "code": {
-            "type": "string",
-            "maxLength": 64
-          },
-          "taxId": {
-            "type": "string",
-            "maxLength": 64
-          },
-          "notes": {
-            "type": "string",
-            "maxLength": 1000
-          },
-          "documentLanguage": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "en",
-              "fr-CA",
-              "zh-Hans",
-              null
-            ]
-          },
-          "documentSecondLanguage": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "en",
-              "fr-CA",
-              "zh-Hans",
-              null
-            ]
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "PartnerEnvelope": {
-        "type": "object",
-        "properties": {
-          "partner": {
-            "$ref": "#/components/schemas/PartnerDetail"
-          }
-        },
-        "required": [
-          "partner"
-        ]
-      },
-      "UpdatePartnerDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200
-          },
-          "code": {
-            "type": "string",
-            "maxLength": 64
-          },
-          "taxId": {
-            "type": "string",
-            "maxLength": 64
-          },
-          "salePriceListId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
-          },
-          "purchasePriceListId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
-          },
-          "notes": {
-            "type": "string",
-            "maxLength": 1000
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "documentLanguage": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "en",
-              "fr-CA",
-              "zh-Hans",
-              null
-            ]
-          },
-          "documentSecondLanguage": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "en",
-              "fr-CA",
-              "zh-Hans",
-              null
-            ]
-          }
-        }
-      },
-      "CreateAddressDto": {
-        "type": "object",
-        "properties": {
-          "label": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "line1": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200
-          },
-          "line2": {
-            "type": "string",
-            "maxLength": 200
-          },
-          "city": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "region": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "postalCode": {
-            "type": "string",
-            "maxLength": 32
-          },
-          "country": {
-            "type": "string",
-            "pattern": "^[A-Z]{2}$"
-          },
-          "isBilling": {
-            "type": "boolean"
-          },
-          "isShipping": {
-            "type": "boolean"
-          },
-          "isDefault": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "line1",
-          "country"
-        ]
-      },
-      "AddressEnvelope": {
-        "type": "object",
-        "properties": {
-          "address": {
-            "$ref": "#/components/schemas/Address"
-          }
-        },
-        "required": [
-          "address"
-        ]
-      },
-      "UpdateAddressDto": {
-        "type": "object",
-        "properties": {
-          "label": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "line1": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200
-          },
-          "line2": {
-            "type": "string",
-            "maxLength": 200
-          },
-          "city": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "region": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "postalCode": {
-            "type": "string",
-            "maxLength": 32
-          },
-          "country": {
-            "type": "string",
-            "pattern": "^[A-Z]{2}$"
-          },
-          "isBilling": {
-            "type": "boolean"
-          },
-          "isShipping": {
-            "type": "boolean"
-          },
-          "isDefault": {
-            "type": "boolean"
-          }
-        }
-      },
-      "CreateContactDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200
-          },
-          "role": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "email": {
-            "type": "string",
-            "maxLength": 254,
-            "format": "email"
-          },
-          "phone": {
-            "type": "string",
-            "maxLength": 50
-          },
-          "notes": {
-            "type": "string",
-            "maxLength": 1000
-          },
-          "isPrimary": {
-            "type": "boolean"
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "ContactEnvelope": {
-        "type": "object",
-        "properties": {
-          "contact": {
-            "$ref": "#/components/schemas/Contact"
-          }
-        },
-        "required": [
-          "contact"
-        ]
-      },
-      "UpdateContactDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200
-          },
-          "role": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "email": {
-            "type": "string",
-            "maxLength": 254,
-            "format": "email"
-          },
-          "phone": {
-            "type": "string",
-            "maxLength": 50
-          },
-          "notes": {
-            "type": "string",
-            "maxLength": 1000
-          },
-          "isPrimary": {
-            "type": "boolean"
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        }
-      },
       "ReturnAuthorizationSummary": {
         "type": "object",
         "properties": {
@@ -19790,1255 +21047,6 @@
         "required": [
           "entries",
           "nextCursor"
-        ]
-      },
-      "RecentEntry": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "invoice",
-              "order",
-              "lot",
-              "product",
-              "partner",
-              "run",
-              "return",
-              "priceList"
-            ]
-          },
-          "id": {
-            "type": "string"
-          },
-          "title": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "detail": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "openedAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "kind",
-          "id",
-          "title",
-          "detail",
-          "openedAt"
-        ]
-      },
-      "RecentList": {
-        "type": "object",
-        "properties": {
-          "recent": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RecentEntry"
-            }
-          }
-        },
-        "required": [
-          "recent"
-        ]
-      },
-      "RecordOpenedDto": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "order",
-              "invoice",
-              "lot",
-              "product",
-              "partner",
-              "run",
-              "return",
-              "priceList"
-            ]
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": [
-          "kind",
-          "id"
-        ]
-      },
-      "SiteAddress": {
-        "type": "object",
-        "properties": {
-          "line1": {
-            "type": "string"
-          },
-          "line2": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "city": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "region": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "postalCode": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "country": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "line1",
-          "line2",
-          "city",
-          "region",
-          "postalCode",
-          "country"
-        ]
-      },
-      "Location": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "code": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "parentId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "isAvailable": {
-            "type": "boolean"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "address": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SiteAddress"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "type",
-          "name",
-          "code",
-          "parentId",
-          "isAvailable",
-          "isActive",
-          "address"
-        ]
-      },
-      "CreateLocationDto": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "site",
-              "zone",
-              "aisle",
-              "shelf",
-              "bin"
-            ]
-          },
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200
-          },
-          "code": {
-            "type": "string",
-            "maxLength": 64
-          },
-          "parentId": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": [
-          "type",
-          "name"
-        ]
-      },
-      "CreatedLocation": {
-        "type": "object",
-        "properties": {
-          "location": {
-            "$ref": "#/components/schemas/Location"
-          }
-        },
-        "required": [
-          "location"
-        ]
-      },
-      "UpdateLocationDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200
-          },
-          "code": {
-            "type": "string",
-            "maxLength": 64
-          },
-          "parentId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
-          },
-          "isAvailable": {
-            "type": "boolean"
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        }
-      },
-      "SiteAddressDto": {
-        "type": "object",
-        "properties": {
-          "line1": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200
-          },
-          "line2": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 200
-          },
-          "city": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 100
-          },
-          "region": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 100
-          },
-          "postalCode": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 32
-          },
-          "country": {
-            "type": "string",
-            "pattern": "^[A-Z]{2}$"
-          }
-        },
-        "required": [
-          "line1",
-          "country"
-        ]
-      },
-      "NumberingNext": {
-        "type": "object",
-        "properties": {
-          "never": {
-            "type": "number"
-          },
-          "yearly": {
-            "type": "number"
-          },
-          "monthly": {
-            "type": "number"
-          },
-          "daily": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "never",
-          "yearly",
-          "monthly",
-          "daily"
-        ]
-      },
-      "NumberingSeries": {
-        "type": "object",
-        "properties": {
-          "prefix": {
-            "type": "string"
-          },
-          "digits": {
-            "type": "number"
-          },
-          "reset": {
-            "type": "string",
-            "enum": [
-              "never",
-              "yearly",
-              "monthly",
-              "daily"
-            ]
-          },
-          "next": {
-            "$ref": "#/components/schemas/NumberingNext"
-          },
-          "last": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "prefix",
-          "digits",
-          "reset",
-          "next",
-          "last"
-        ]
-      },
-      "Numbering": {
-        "type": "object",
-        "properties": {
-          "invoice": {
-            "$ref": "#/components/schemas/NumberingSeries"
-          },
-          "creditNote": {
-            "$ref": "#/components/schemas/NumberingSeries"
-          },
-          "returnAuthorization": {
-            "$ref": "#/components/schemas/NumberingSeries"
-          },
-          "saleOrder": {
-            "$ref": "#/components/schemas/NumberingSeries"
-          },
-          "purchaseOrder": {
-            "$ref": "#/components/schemas/NumberingSeries"
-          },
-          "documentsInDateOrder": {
-            "type": "boolean"
-          },
-          "today": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "invoice",
-          "creditNote",
-          "returnAuthorization",
-          "saleOrder",
-          "purchaseOrder",
-          "documentsInDateOrder",
-          "today"
-        ]
-      },
-      "NumberingEnvelope": {
-        "type": "object",
-        "properties": {
-          "numbering": {
-            "$ref": "#/components/schemas/Numbering"
-          }
-        },
-        "required": [
-          "numbering"
-        ]
-      },
-      "NumberingSeriesDto": {
-        "type": "object",
-        "properties": {
-          "prefix": {
-            "type": "string",
-            "maxLength": 40
-          },
-          "digits": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 10
-          },
-          "reset": {
-            "type": "string",
-            "enum": [
-              "never",
-              "yearly",
-              "monthly",
-              "daily"
-            ]
-          },
-          "next": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 9999999999
-          }
-        },
-        "required": [
-          "prefix",
-          "digits",
-          "reset"
-        ]
-      },
-      "UpdateNumberingDto": {
-        "type": "object",
-        "properties": {
-          "invoice": {
-            "$ref": "#/components/schemas/NumberingSeriesDto"
-          },
-          "creditNote": {
-            "$ref": "#/components/schemas/NumberingSeriesDto"
-          },
-          "returnAuthorization": {
-            "$ref": "#/components/schemas/NumberingSeriesDto"
-          },
-          "saleOrder": {
-            "$ref": "#/components/schemas/NumberingSeriesDto"
-          },
-          "purchaseOrder": {
-            "$ref": "#/components/schemas/NumberingSeriesDto"
-          },
-          "documentsInDateOrder": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "invoice",
-          "creditNote",
-          "returnAuthorization",
-          "saleOrder",
-          "purchaseOrder",
-          "documentsInDateOrder"
-        ]
-      },
-      "ValuationPool": {
-        "type": "object",
-        "properties": {
-          "variantId": {
-            "type": "string"
-          },
-          "sku": {
-            "type": "string"
-          },
-          "lotId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "lotCode": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "quantity": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          },
-          "unitCost": {
-            "type": "string"
-          },
-          "provisional": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "variantId",
-          "sku",
-          "lotId",
-          "lotCode",
-          "quantity",
-          "value",
-          "unitCost",
-          "provisional"
-        ]
-      },
-      "StockValuation": {
-        "type": "object",
-        "properties": {
-          "currency": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "total": {
-            "type": "string"
-          },
-          "provisional": {
-            "type": "boolean"
-          },
-          "pools": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ValuationPool"
-            }
-          }
-        },
-        "required": [
-          "currency",
-          "total",
-          "provisional",
-          "pools"
-        ]
-      },
-      "StockValuationEnvelope": {
-        "type": "object",
-        "properties": {
-          "valuation": {
-            "$ref": "#/components/schemas/StockValuation"
-          }
-        },
-        "required": [
-          "valuation"
-        ]
-      },
-      "LotCostEntry": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "issued",
-              "movement",
-              "run_close",
-              "correction",
-              "opening"
-            ]
-          },
-          "reason": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "quantity": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          },
-          "unitPrice": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "currency": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "exchangeRate": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "needsCost": {
-            "type": "boolean"
-          },
-          "referenceType": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "referenceId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "kind",
-          "reason",
-          "quantity",
-          "value",
-          "unitPrice",
-          "currency",
-          "exchangeRate",
-          "needsCost",
-          "referenceType",
-          "referenceId",
-          "createdAt"
-        ]
-      },
-      "LotCost": {
-        "type": "object",
-        "properties": {
-          "currency": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "lotId": {
-            "type": "string"
-          },
-          "lotCode": {
-            "type": "string"
-          },
-          "sku": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          },
-          "unitCost": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "provisional": {
-            "type": "boolean"
-          },
-          "entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LotCostEntry"
-            }
-          }
-        },
-        "required": [
-          "currency",
-          "lotId",
-          "lotCode",
-          "sku",
-          "quantity",
-          "value",
-          "unitCost",
-          "provisional",
-          "entries"
-        ]
-      },
-      "LotCostEnvelope": {
-        "type": "object",
-        "properties": {
-          "lotCost": {
-            "$ref": "#/components/schemas/LotCost"
-          }
-        },
-        "required": [
-          "lotCost"
-        ]
-      },
-      "RunCostConsumed": {
-        "type": "object",
-        "properties": {
-          "sku": {
-            "type": "string"
-          },
-          "lotCode": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "quantity": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "sku",
-          "lotCode",
-          "quantity",
-          "value"
-        ]
-      },
-      "RunCostOutput": {
-        "type": "object",
-        "properties": {
-          "lotCode": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "quantity": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "lotCode",
-          "quantity",
-          "value"
-        ]
-      },
-      "RunCost": {
-        "type": "object",
-        "properties": {
-          "currency": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "runId": {
-            "type": "string"
-          },
-          "reference": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "sku": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "draft",
-              "cancelled",
-              "released",
-              "completed"
-            ]
-          },
-          "closed": {
-            "type": "boolean"
-          },
-          "quantityProduced": {
-            "type": "string"
-          },
-          "materialCost": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "unitCost": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "provisional": {
-            "type": "boolean"
-          },
-          "consumed": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RunCostConsumed"
-            }
-          },
-          "outputs": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RunCostOutput"
-            }
-          }
-        },
-        "required": [
-          "currency",
-          "runId",
-          "reference",
-          "sku",
-          "status",
-          "closed",
-          "quantityProduced",
-          "materialCost",
-          "unitCost",
-          "provisional",
-          "consumed",
-          "outputs"
-        ]
-      },
-      "RunCostEnvelope": {
-        "type": "object",
-        "properties": {
-          "runCost": {
-            "$ref": "#/components/schemas/RunCost"
-          }
-        },
-        "required": [
-          "runCost"
-        ]
-      },
-      "NeedsCostEntry": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "issued",
-              "movement",
-              "run_close",
-              "correction",
-              "opening"
-            ]
-          },
-          "reason": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "sku": {
-            "type": "string"
-          },
-          "variantId": {
-            "type": "string"
-          },
-          "lotId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "lotCode": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "quantity": {
-            "type": "string"
-          },
-          "unitPrice": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "currency": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "referenceType": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "referenceId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "kind",
-          "reason",
-          "sku",
-          "variantId",
-          "lotId",
-          "lotCode",
-          "quantity",
-          "unitPrice",
-          "currency",
-          "referenceType",
-          "referenceId",
-          "createdAt"
-        ]
-      },
-      "NeedsCostPage": {
-        "type": "object",
-        "properties": {
-          "entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/NeedsCostEntry"
-            }
-          },
-          "nextCursor": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "entries",
-          "nextCursor"
-        ]
-      },
-      "SetCostDto": {
-        "type": "object",
-        "properties": {
-          "unitPrice": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "exchangeRate": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "unitPrice",
-          "currency"
-        ]
-      },
-      "CorrectedCost": {
-        "type": "object",
-        "properties": {
-          "valuationId": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          },
-          "held": {
-            "type": "string"
-          },
-          "issued": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "valuationId",
-          "value",
-          "held",
-          "issued"
-        ]
-      },
-      "CorrectedCostEnvelope": {
-        "type": "object",
-        "properties": {
-          "cost": {
-            "$ref": "#/components/schemas/CorrectedCost"
-          }
-        },
-        "required": [
-          "cost"
-        ]
-      },
-      "ExchangeRate": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "rateDate": {
-            "type": "string"
-          },
-          "rate": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "currency",
-          "rateDate",
-          "rate"
-        ]
-      },
-      "ExchangeRateList": {
-        "type": "object",
-        "properties": {
-          "rates": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ExchangeRate"
-            }
-          }
-        },
-        "required": [
-          "rates"
-        ]
-      },
-      "SetExchangeRateDto": {
-        "type": "object",
-        "properties": {
-          "currency": {
-            "type": "string"
-          },
-          "rateDate": {
-            "type": "string"
-          },
-          "rate": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "currency",
-          "rateDate",
-          "rate"
-        ]
-      },
-      "ExchangeRateEnvelope": {
-        "type": "object",
-        "properties": {
-          "rate": {
-            "$ref": "#/components/schemas/ExchangeRate"
-          }
-        },
-        "required": [
-          "rate"
-        ]
-      },
-      "PriceList": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "direction": {
-            "type": "string",
-            "enum": [
-              "sale",
-              "purchase"
-            ]
-          },
-          "currency": {
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "itemCount": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "direction",
-          "currency",
-          "isActive",
-          "itemCount"
-        ]
-      },
-      "PriceListList": {
-        "type": "object",
-        "properties": {
-          "priceLists": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PriceList"
-            }
-          }
-        },
-        "required": [
-          "priceLists"
-        ]
-      },
-      "PriceListItem": {
-        "type": "object",
-        "properties": {
-          "variantId": {
-            "type": "string"
-          },
-          "sku": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "unitOfMeasure": {
-            "type": "string"
-          },
-          "unitPrice": {
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "variantId",
-          "sku",
-          "description",
-          "unitOfMeasure",
-          "unitPrice",
-          "updatedAt"
-        ]
-      },
-      "PriceListDetail": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "direction": {
-            "type": "string",
-            "enum": [
-              "sale",
-              "purchase"
-            ]
-          },
-          "currency": {
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PriceListItem"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "direction",
-          "currency",
-          "isActive",
-          "items"
-        ]
-      },
-      "PriceListEnvelope": {
-        "type": "object",
-        "properties": {
-          "priceList": {
-            "$ref": "#/components/schemas/PriceListDetail"
-          }
-        },
-        "required": [
-          "priceList"
-        ]
-      },
-      "CreatePriceListDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 100
-          },
-          "direction": {
-            "type": "string",
-            "enum": [
-              "sale",
-              "purchase"
-            ]
-          },
-          "currency": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "direction",
-          "currency"
-        ]
-      },
-      "UpdatePriceListDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 100
-          },
-          "isActive": {
-            "type": "boolean"
-          }
-        }
-      },
-      "SetPriceListItemDto": {
-        "type": "object",
-        "properties": {
-          "unitPrice": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "unitPrice"
-        ]
-      },
-      "PriceListItemEnvelope": {
-        "type": "object",
-        "properties": {
-          "item": {
-            "$ref": "#/components/schemas/PriceListItem"
-          }
-        },
-        "required": [
-          "item"
         ]
       },
       "Health": {

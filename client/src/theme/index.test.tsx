@@ -85,3 +85,34 @@ describe('options under a heading', () => {
     );
   });
 });
+
+// ADR-091: a step of 1.25 from the 16 px text, so a heading is told apart
+// by its size, and each line on a 4 px grid, at the Standard text size.
+describe('the type scale', () => {
+  const { typography } = themeFor('en');
+  const px = (size: unknown) => parseFloat(String(size)) * 16;
+
+  it.each([
+    ['h5', 25, 32],
+    ['h6', 20, 28],
+    ['body1', 16, 24],
+    ['body2', 14, 20],
+  ] as const)('sets %s at %s px on %s', (variant, size, line) => {
+    const { fontSize, lineHeight } = typography[variant];
+
+    expect(px(fontSize)).toBe(size);
+    expect(px(fontSize) * Number(lineHeight)).toBeCloseTo(line);
+  });
+
+  // More room for Chinese strokes, still on the grid (ADR-091), on the
+  // variants themselves, so a table's cells and a menu's items take it
+  // too, not Typography alone (ADR-091's review).
+  it.each([
+    ['body1', 28],
+    ['body2', 24],
+  ] as const)('sets Chinese %s on %s', (variant, line) => {
+    const { fontSize, lineHeight } = themeFor('zh-Hans').typography[variant];
+
+    expect(px(fontSize) * Number(lineHeight)).toBeCloseTo(line);
+  });
+});

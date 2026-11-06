@@ -15,11 +15,13 @@ import {
 import { solidPng } from './utils/images';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
+import { readCsv, readZip } from './utils/zip';
 
 interface OrganizationResponse {
   id: string;
   name: string;
   taxRegistrationNumber: string | null;
+  whatWeDo: string | null;
   licenceNotInForcePolicy: string;
   licenceExpiredPolicy: string;
   licenceRequired: boolean;
@@ -239,6 +241,136 @@ describe('Organization (e2e)', () => {
       .where(eq(auditLog.action, 'organization.updated'));
     expect(entry.payload).toEqual({
       name: { from: 'alpha Co', to: 'Northside Naturals' },
+    });
+  });
+
+  describe('What we do (ADR-091)', () => {
+    const LINE = 'We import and distribute natural health products.';
+
+    async function home(agent: ReturnType<typeof authedAgent>) {
+      return body<{ whatWeDo: string | null }>(
+        await agent.get('/v1/home').expect(200),
+      ).whatWeDo;
+    }
+
+    async function entries() {
+      return db
+        .select({ payload: auditLog.payload })
+        .from(auditLog)
+        .where(eq(auditLog.action, 'organization.updated'))
+        .orderBy(auditLog.id);
+    }
+
+    it('is written trimmed, shown on Home to every member, and cleared with an empty string', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const viewer = await addMember(
+        app,
+        org,
+        'viewer@alpha.example.com',
+        'Viewer',
+      );
+      expect((await current(org.agent)).whatWeDo).toBeNull();
+      expect(await home(viewer)).toBeNull();
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ whatWeDo: `  ${LINE}  ` })
+        .expect(204);
+      expect((await current(org.agent)).whatWeDo).toBe(LINE);
+      expect(await home(org.agent)).toBe(LINE);
+      // Every member reads it, whatever they may change.
+      expect(await home(viewer)).toBe(LINE);
+      await viewer
+        .patch('/v1/organization')
+        .send({ whatWeDo: 'Ours now' })
+        .expect(403);
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ whatWeDo: '   ' })
+        .expect(204);
+      expect((await current(org.agent)).whatWeDo).toBeNull();
+      expect(await home(viewer)).toBeNull();
+    });
+
+    it('refuses more than 200 characters, in any script', async () => {
+      const org = await registerOrganization(app, 'alpha');
+
+      // "✔️" is two characters to Postgres, a tick and its emoji form:
+      // refused as too long, never a 500 from the column's check.
+      for (const whatWeDo of [
+        'x'.repeat(201),
+        '保'.repeat(201),
+        '✔️'.repeat(150),
+        `${'x'.repeat(195)}${'✔️'.repeat(3)}`,
+      ]) {
+        await org.agent
+          .patch('/v1/organization')
+          .send({ whatWeDo })
+          .expect(400);
+      }
+      expect((await current(org.agent)).whatWeDo).toBeNull();
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ whatWeDo: '保'.repeat(200) })
+        .expect(204);
+      expect((await current(org.agent)).whatWeDo).toBe('保'.repeat(200));
+    });
+
+    // Free text stays out of a two-year table (ADR-018): the log says it
+    // changed, never what it says.
+    it('records each change without its words', async () => {
+      const org = await registerOrganization(app, 'alpha');
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ whatWeDo: LINE })
+        .expect(204);
+      await org.agent
+        .patch('/v1/organization')
+        .send({ whatWeDo: 'We make teas.' })
+        .expect(204);
+      await org.agent
+        .patch('/v1/organization')
+        .send({ whatWeDo: '' })
+        .expect(204);
+
+      const written = await entries();
+      expect(written.map(({ payload }) => payload)).toEqual([
+        { whatWeDo: 'changed' },
+        { whatWeDo: 'changed' },
+        { whatWeDo: 'cleared' },
+      ]);
+      const logged = JSON.stringify(written);
+      expect(logged).not.toContain('natural health');
+      expect(logged).not.toContain('teas');
+
+      // Beside a rename, each change in the one entry.
+      await org.agent
+        .patch('/v1/organization')
+        .send({ name: 'Northside Naturals', whatWeDo: LINE })
+        .expect(204);
+      expect((await entries()).at(-1)?.payload).toEqual({
+        whatWeDo: 'changed',
+        name: { from: 'alpha Co', to: 'Northside Naturals' },
+      });
+    });
+
+    it('is in the export, as organization.csv’s what_we_do', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      await org.agent
+        .patch('/v1/organization')
+        .send({ whatWeDo: LINE })
+        .expect(204);
+
+      const res = await org.agent
+        .get('/v1/organization/export')
+        .responseType('blob')
+        .expect(200);
+      const zip = readZip(res.body as Buffer);
+      const [organization] = readCsv(zip.get('organization.csv')!);
+      expect(organization.what_we_do).toBe(LINE);
     });
   });
 

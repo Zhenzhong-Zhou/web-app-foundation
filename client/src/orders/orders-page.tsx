@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Chip,
   Link,
@@ -12,10 +13,10 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
-import { Link as RouterLink, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
+import { WhomToAskRead } from '../account/whom-to-ask';
 import type { OrderSummary } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
@@ -25,17 +26,22 @@ import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { Reference } from '../components/reference';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
-import { flagFromAddress, fromAddress } from '../lib/address-filter';
 import type { OrderDirection } from '../lib/api-names';
-import { type DayRange, withDays } from '../lib/date-range';
+import { withDays } from '../lib/date-range';
+import { daysUntil } from '../lib/expiry';
 import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
+import { organizationToday } from '../lib/time-zone';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useFocusAfterRemove } from '../lib/use-focus-after-remove';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { day, flag, oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
-import { useListSort, withSort } from '../lib/use-list-sort';
+import { type ListSort, useListSort, withSort } from '../lib/use-list-sort';
+import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
 import { orderStatusLabel } from './status';
 
@@ -83,32 +89,46 @@ const FILTER_VALUES: readonly Filter[] = [
   'confirmed',
 ];
 
+/**
+ * The list's filters, in the address (ADR-091): Home's tiles open it
+ * narrowed, `?direction=sale&outstanding=1`, and what is pressed here is
+ * kept there. `outstanding` is something still to ship or to come (ADR-058,
+ * #163); `late` is that and expected before the organization's today,
+ * which the server decides; `from` and `to` are the expected days.
+ */
+const ADDRESS_FILTERS = {
+  status: oneOf(FILTER_VALUES, 'open'),
+  direction: oneOf<OrderDirection | ''>(['', 'sale', 'purchase'], ''),
+  outstanding: flag,
+  late: flag,
+  from: day,
+  to: day,
+};
+
+/** What is still to ship or to receive: soonest first, the late leading. */
+const SOONEST_EXPECTED: ListSort<'expectedAt'> = {
+  key: 'expectedAt',
+  order: 'asc',
+};
+
 export function OrdersPage() {
   const intl = useIntl();
   const can = useCan();
 
-  // Opened from Home: ?direction=sale&status=confirmed (ADR-058).
-  const [params] = useSearchParams();
-  const [filter, setFilter] = useState<Filter>(() =>
-    fromAddress(params, 'status', FILTER_VALUES, 'open'),
-  );
-  const [direction, setDirection] = useState<OrderDirection | ''>(() =>
-    fromAddress<OrderDirection | ''>(
-      params,
-      'direction',
-      ['', 'sale', 'purchase'],
-      '',
-    ),
-  );
-  // Something still to ship or to come (ADR-058, #163): Home's ?outstanding=1.
-  const [outstanding, setOutstanding] = useState(() =>
-    flagFromAddress(params, 'outstanding'),
-  );
+  const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  // Focus to the chip in a removed one's place, or the heading (ADR-091's
+  // review).
+  const { row: chipRow, removed } = useFocusAfterRemove();
+  const { status: filter, direction, outstanding, late } = filters;
+  const range = { from: filters.from, to: filters.to };
   const { text, setText, search } = useListSearch();
   // By expected date, and sortable by it (ADR-057); the export takes the
-  // same query, so the file is what the list shows.
-  const [range, setRange] = useState<DayRange>({});
-  const { sort, toggle } = useListSort<'expectedAt'>();
+  // same query, so the file is what the list shows. What is still to ship
+  // or to receive runs soonest first until a header is chosen (ADR-091).
+  const { sort, header } = useListSort(
+    ['expectedAt'],
+    outstanding || late ? SOONEST_EXPECTED : null,
+  );
   const path = withSort(
     withDays(
       withSearch(
@@ -116,6 +136,7 @@ export function OrdersPage() {
           status: filter,
           ...(direction ? { direction } : {}),
           ...(outstanding ? { outstanding: 'true' } : {}),
+          ...(late ? { late: 'true' } : {}),
         }).toString()}`,
         search,
       ),
@@ -141,6 +162,11 @@ export function OrdersPage() {
     reload,
   } = useKeysetList<OrderSummary>(path);
   const showSkeleton = useDelayedFlag(loading);
+  // Every row of these is outstanding, as the server counts it, so one
+  // expected before the organization's today is late, as Home says
+  // (ADR-091). Elsewhere a row's own sums cannot tell: a line closed short
+  // still counts what never came.
+  const today = outstanding || late ? organizationToday() : null;
 
   if (refused) {
     return <RevisionRefusalPage failure={refused} onRetry={reload} />;
@@ -157,13 +183,17 @@ export function OrdersPage() {
         actions={
           <>
             <ExportButton path={path.replace('/orders', '/orders/export')} />
-            {canCreate && (
+            {canCreate ? (
               <Button component={RouterLink} to="/orders/new">
                 {intl.formatMessage({
                   id: 'orders.raise',
                   defaultMessage: 'Raise an order',
                 })}
               </Button>
+            ) : (
+              <Box sx={{ maxWidth: rem(480) }}>
+                <WhomToAskRead {...NO_RAISE} />
+              </Box>
             )}
           </>
         }
@@ -185,18 +215,23 @@ export function OrdersPage() {
           id: option.value,
           label: intl.formatMessage(option.label),
           pressed: filter === option.value,
-          onToggle: () => setFilter(option.value),
+          onToggle: () => setFilters({ status: option.value }),
         }))}
       >
-        <DateRangeFilter label={expected} value={range} onChange={setRange} />
+        <DateRangeFilter
+          label={expected}
+          value={range}
+          onChange={(next) => setFilters({ from: next.from, to: next.to })}
+        />
       </FilterRow>
 
       {/* What a link narrowed that no button shows, each removable. */}
       {(direction ||
         outstanding ||
+        late ||
         filter === 'draft' ||
         filter === 'confirmed') && (
-        <Stack direction="row" spacing={1}>
+        <Stack ref={chipRow} direction="row" spacing={1}>
           {direction && (
             <Chip
               label={
@@ -210,13 +245,19 @@ export function OrdersPage() {
                       defaultMessage: 'Purchases only',
                     })
               }
-              onDelete={() => setDirection('')}
+              onDelete={(event) => {
+                removed(event);
+                setFilters({ direction: '' });
+              }}
             />
           )}
           {(filter === 'draft' || filter === 'confirmed') && (
             <Chip
               label={orderStatusLabel(filter, direction || 'sale')}
-              onDelete={() => setFilter('open')}
+              onDelete={(event) => {
+                removed(event);
+                setFilters({ status: 'open' });
+              }}
             />
           )}
           {outstanding && (
@@ -237,7 +278,22 @@ export function OrdersPage() {
                         defaultMessage: 'Still to ship or receive',
                       })
               }
-              onDelete={() => setOutstanding(false)}
+              onDelete={(event) => {
+                removed(event);
+                setFilters({ outstanding: false });
+              }}
+            />
+          )}
+          {late && (
+            <Chip
+              label={intl.formatMessage({
+                id: 'orders.filter.late',
+                defaultMessage: 'Late',
+              })}
+              onDelete={(event) => {
+                removed(event);
+                setFilters({ late: false });
+              }}
             />
           )}
         </Stack>
@@ -285,12 +341,7 @@ export function OrdersPage() {
                         defaultMessage: 'Reference',
                       })}
                     </TableCell>
-                    <SortHeader
-                      label={expected}
-                      active={sort?.key === 'expectedAt'}
-                      order={sort?.order ?? 'asc'}
-                      onSort={() => toggle('expectedAt')}
-                    />
+                    <SortHeader label={expected} {...header('expectedAt')} />
                     <TableCell align="right">
                       {intl.formatMessage({
                         id: 'orders.fulfilled',
@@ -312,7 +363,7 @@ export function OrdersPage() {
                       {/* Ours, which every order has (ADR-071): the link. */}
                       <TableCell>
                         <Link component={RouterLink} to={`/orders/${order.id}`}>
-                          {order.number}
+                          <Reference>{order.number}</Reference>
                         </Link>
                       </TableCell>
                       <TableCell>{order.partnerName}</TableCell>
@@ -352,6 +403,7 @@ export function OrdersPage() {
                         {order.expectedAt
                           ? formatDay(order.expectedAt)
                           : NO_VALUE}
+                        <LateChip expected={order.expectedAt} today={today} />
                       </TableCell>
 
                       {/* Rendered as Postgres computed them, only the decimal
@@ -419,3 +471,53 @@ export function OrdersPage() {
     </Stack>
   );
 }
+
+/**
+ * Home's chip on a late row (ADR-091), "2 days late", so the word a tile
+ * and its late button said is on the list they open. Nothing on a row that
+ * is not late, or where the list cannot tell (`today` null).
+ */
+function LateChip({
+  expected,
+  today,
+}: {
+  expected: string | null;
+  today: string | null;
+}) {
+  const intl = useIntl();
+  const days = expected && today ? -daysUntil(expected, today) : 0;
+  if (days <= 0) return null;
+
+  return (
+    <Box component="span" sx={{ display: 'inline-flex', ml: 1 }}>
+      <StatusChip
+        tone="critical"
+        label={intl.formatMessage(
+          {
+            id: 'orders.chip.late',
+            defaultMessage:
+              '{days, plural, one {# day late} other {# days late}}',
+          },
+          { days },
+        )}
+      />
+    </Box>
+  );
+}
+
+/**
+ * Where Raise an order would be, for a role that cannot raise one: one
+ * quiet line saying so, and whom to ask, the people Home's line and Your
+ * access name (ADR-091, ADR-079).
+ */
+const NO_RAISE = defineMessages({
+  ask: {
+    id: 'orders.raise.ask',
+    defaultMessage:
+      'Your role does not include raising orders. To do more, ask {names}.',
+  },
+  none: {
+    id: 'orders.raise.none',
+    defaultMessage: 'Your role does not include raising orders.',
+  },
+});

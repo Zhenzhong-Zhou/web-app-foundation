@@ -27,6 +27,7 @@ import { useCan } from '../auth/permissions';
 import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { Reference } from '../components/reference';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
@@ -324,7 +325,9 @@ export function StockValuePage() {
                   <TableBody>
                     {waiting?.entries.map((entry) => (
                       <TableRow key={entry.id}>
-                        <TableCell>{entry.sku}</TableCell>
+                        <TableCell>
+                          <Reference>{entry.sku}</Reference>
+                        </TableCell>
                         <TableCell>{entry.lotCode ?? NO_VALUE}</TableCell>
                         <TableCell align="right">
                           {displayQuantity(entry.quantity)}
@@ -439,7 +442,9 @@ export function StockValuePage() {
                   <TableBody>
                     {valuation?.pools.map((pool) => (
                       <TableRow key={`${pool.variantId}:${pool.lotId ?? ''}`}>
-                        <TableCell>{pool.sku}</TableCell>
+                        <TableCell>
+                          <Reference>{pool.sku}</Reference>
+                        </TableCell>
                         <TableCell>
                           {pool.lotId ? (
                             <Link

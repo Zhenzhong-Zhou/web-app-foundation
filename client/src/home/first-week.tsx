@@ -1,23 +1,20 @@
-import CheckCircle from '@mui/icons-material/CheckCircle';
-import RadioButtonUnchecked from '@mui/icons-material/RadioButtonUnchecked';
-import {
-  Box,
-  Button,
-  LinearProgress,
-  Link,
-  Stack,
-  Typography,
-} from '@mui/material';
+import ChevronRight from '@mui/icons-material/ChevronRight';
+import { Box, Button, Typography } from '@mui/material';
 import { type ReactNode, useEffect, useRef } from 'react';
-import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import {
+  defineMessages,
+  type IntlShape,
+  type MessageDescriptor,
+  useIntl,
+} from 'react-intl';
 
 import type { WelcomeDone, WelcomeItem } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
 import { useResendConfirmation } from '../auth/use-resend-confirmation';
-import { NAV_LABELS } from '../layout/navigation';
 import { OFFER_BACK } from '../lib/offer-back';
 import { RECENT_PATHS } from '../lib/recent';
+import { RowLink } from './row-link';
+import { StepMark } from './step-mark';
 
 type Key = WelcomeItem['key'];
 
@@ -46,10 +43,6 @@ const TITLES = defineMessages<Key>({
     id: 'home.welcome.draftInvoice',
     defaultMessage: 'Draft an invoice',
   },
-});
-
-const PLAN = defineMessages({
-  action: { id: 'production.plan', defaultMessage: 'Plan a run' },
 });
 
 const HINTS = defineMessages({
@@ -134,52 +127,46 @@ const DID: Partial<Record<Key, MessageDescriptor>> = defineMessages({
 });
 
 /**
- * Where each open item's button goes, and what it says. Receiving goes to
- * Inventory for whoever may move stock, and otherwise to the confirmed
- * purchases, the orders received against (ADR-080).
+ * Where each open item's row goes. Receiving goes to Inventory for
+ * whoever may move stock, and otherwise to the confirmed purchases, the
+ * orders received against (ADR-080).
  */
-function actionOf(
+function whereOf(
   key: Exclude<Key, 'confirmEmail'>,
   canSeeProducts: boolean,
   canMoveStock: boolean,
-): { to: string; label: MessageDescriptor } {
+): string {
   switch (key) {
     case 'sayWhoYouAre':
-      return { to: '/account', label: NAV_LABELS.account };
+      return '/account';
     case 'lookUp':
-      return canSeeProducts
-        ? { to: '/products', label: NAV_LABELS.products }
-        : { to: '/lots', label: NAV_LABELS.trace };
+      return canSeeProducts ? '/products' : '/lots';
     case 'openOrder':
-      return { to: '/orders', label: NAV_LABELS.orders };
+      return '/orders';
     case 'receiveStock':
       return canMoveStock
-        ? { to: '/inventory', label: TITLES.receiveStock }
-        : {
-            to: '/orders?direction=purchase&status=confirmed',
-            label: NAV_LABELS.orders,
-          };
+        ? '/inventory'
+        : '/orders?direction=purchase&status=confirmed';
     case 'raiseOrder':
-      return { to: '/orders/new', label: TITLES.raiseOrder };
+      return '/orders/new';
     case 'shipOrder':
-      return {
-        to: '/orders?direction=sale&status=confirmed',
-        label: NAV_LABELS.orders,
-      };
+      return '/orders?direction=sale&status=confirmed';
     case 'planRun':
-      return { to: '/production', label: PLAN.action };
+      return '/production';
     case 'draftInvoice':
-      return { to: '/orders?direction=sale', label: NAV_LABELS.orders };
+      return '/orders?direction=sale';
   }
 }
 
 /**
- * The first week (ADR-079): up to five items, chosen and ticked on the
- * server by what the person has done here since joining, never by hand.
- * An open item's button goes where it is done; a done one says what was
- * done and opens it. `canInvite`, for the line that says inviting waits
- * for a confirmed address (`email_unverified`); `canMoveStock`, for where
- * Receive stock goes.
+ * The first week (ADR-079; ADR-091): up to five items, chosen and ticked on
+ * the server by what the person has done here since joining, never by
+ * hand. Each is one link, its whole row: an open item to where it is done,
+ * a done one, ticked and grey, to what was done. Confirming the address is
+ * a row with Resend in it instead, and a done item with nothing to open is
+ * plain. `canInvite`, for the line that says inviting waits for a
+ * confirmed address (`email_unverified`); `canMoveStock`, for where Receive
+ * stock goes. The card's head says how many are done.
  */
 export function FirstWeek({
   items,
@@ -193,57 +180,44 @@ export function FirstWeek({
   canMoveStock: boolean;
 }) {
   const intl = useIntl();
-  const done = items.filter((item) => item.done).length;
-
   return (
-    <Stack spacing={1}>
-      <Stack
-        direction="row"
-        sx={{
-          justifyContent: 'space-between',
-          alignItems: 'baseline',
-          gap: 1.5,
-        }}
-      >
-        <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 600 }}>
-          {intl.formatMessage({
-            id: 'home.welcome.week',
-            defaultMessage: 'Your first week',
-          })}
-        </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {intl.formatMessage(
-            {
-              id: 'home.welcome.progress',
-              defaultMessage: '{done} of {total} done',
-            },
-            { done, total: items.length },
-          )}
-        </Typography>
-      </Stack>
-      <LinearProgress
-        variant="determinate"
-        value={(done / items.length) * 100}
-        color="success"
-        aria-hidden
-        // A grey track: MUI's is a pale shade of the bar, which reads as
-        // full with nothing done.
-        sx={{ height: 8, borderRadius: 4, bgcolor: 'action.selected' }}
-      />
-      <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-        {items.map((item) => (
+    <Box
+      component="ul"
+      aria-label={intl.formatMessage({
+        id: 'home.welcome.week',
+        defaultMessage: 'Your first week',
+      })}
+      sx={{ listStyle: 'none', m: 0, p: 0 }}
+    >
+      {items.map((item) => (
+        <Box
+          component="li"
+          key={item.key}
+          sx={{ borderTop: 1, borderColor: 'divider' }}
+        >
           <Item
-            key={item.key}
             item={item}
             canSeeProducts={canSeeProducts}
             canInvite={canInvite}
             canMoveStock={canMoveStock}
           />
-        ))}
-      </Box>
-    </Stack>
+        </Box>
+      ))}
+    </Box>
   );
 }
+
+const ROW = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  gap: 1.5,
+  width: '100%',
+  minHeight: 52,
+  px: 2,
+  py: 0.75,
+  textAlign: 'start',
+} as const;
 
 function Item({
   item,
@@ -258,6 +232,105 @@ function Item({
 }) {
   const intl = useIntl();
   const { session } = useAuth();
+
+  let detail: ReactNode = null;
+  let to: string | null = null;
+  if (item.done) {
+    if (item.what) {
+      const did = didOf(intl, item.key, item.what);
+      detail = did.words;
+      to = did.to;
+    }
+  } else if (item.key !== 'confirmEmail') {
+    const hint: MessageDescriptor =
+      item.key === 'receiveStock' && !canMoveStock
+        ? HINTS.receiveOrders
+        : HINTS[item.key];
+    detail = intl.formatMessage(hint, { products: String(canSeeProducts) });
+    to = whereOf(item.key, canSeeProducts, canMoveStock);
+  }
+
+  const words = (
+    <Box
+      component="span"
+      sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}
+    >
+      <Typography
+        component="span"
+        sx={{ color: item.done ? 'text.secondary' : 'text.primary' }}
+      >
+        {intl.formatMessage(TITLES[item.key])}
+        {/* The space outside the message, which extraction trims. */}
+        {item.done && (
+          <>
+            {' '}
+            <Box component="span" sx={{ position: 'absolute', left: -9999 }}>
+              {intl.formatMessage({
+                id: 'home.start.done',
+                defaultMessage: '(done)',
+              })}
+            </Box>
+          </>
+        )}
+      </Typography>
+      {detail && (
+        <Typography
+          component="span"
+          variant="body2"
+          sx={{ color: 'text.secondary' }}
+        >
+          {detail}
+        </Typography>
+      )}
+    </Box>
+  );
+  const inside = (
+    <>
+      <StepMark done={item.done} size={28} />
+      {words}
+    </>
+  );
+
+  if (!item.done && item.key === 'confirmEmail') {
+    return (
+      <Box sx={{ ...ROW, flexWrap: 'wrap' }}>
+        <StepMark done={false} size={28} />
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography>{intl.formatMessage(TITLES.confirmEmail)}</Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {intl.formatMessage(
+              {
+                id: 'home.welcome.confirmEmail.hint',
+                defaultMessage:
+                  'We sent a link to {email}.{invite, select, true { Inviting colleagues waits until you confirm.} other {}}',
+              },
+              { email: session?.user.email ?? '', invite: String(canInvite) },
+            )}
+          </Typography>
+        </Box>
+        <Resend />
+      </Box>
+    );
+  }
+  if (!to) return <Box sx={ROW}>{inside}</Box>;
+  return (
+    <RowLink to={to} state={OFFER_BACK} sx={ROW}>
+      {inside}
+      <ChevronRight
+        aria-hidden
+        fontSize="small"
+        sx={{ color: 'text.secondary' }}
+      />
+    </RowLink>
+  );
+}
+
+/**
+ * Resend the link: 202 whether or not a message went out, as the banner
+ * says it; what happened is announced, as the banner's alert is.
+ */
+function Resend() {
+  const intl = useIntl();
   const { sent, sending, error, resend } = useResendConfirmation();
   // Sent takes the place of the button that had focus, so focus goes to it.
   const sentRef = useRef<HTMLElement>(null);
@@ -265,176 +338,91 @@ function Item({
     if (sent) sentRef.current?.focus();
   }, [sent]);
 
-  let detail: ReactNode;
-  let action: ReactNode = null;
-
-  if (item.done) {
-    detail = item.what ? <Did keyOf={item.key} what={item.what} /> : null;
-  } else if (item.key === 'confirmEmail') {
-    detail = intl.formatMessage(
-      {
-        id: 'home.welcome.confirmEmail.hint',
-        defaultMessage:
-          'We sent a link to {email}.{invite, select, true { Inviting colleagues waits until you confirm.} other {}}',
-      },
-      { email: session?.user.email ?? '', invite: String(canInvite) },
-    );
-    // 202 whether or not a message went out, as the banner says it; what
-    // happened is announced, as the banner's alert is.
-    action = (
-      <Box role="status">
-        {sent ? (
-          <Typography
-            ref={sentRef}
-            tabIndex={-1}
-            variant="body2"
-            sx={{ color: 'text.secondary' }}
-          >
-            {intl.formatMessage({
-              id: 'layout.unverified.sent',
-              defaultMessage: 'Sent',
-            })}
-          </Typography>
-        ) : (
-          <Button variant="outlined" disabled={sending} onClick={resend}>
-            {intl.formatMessage({
-              id: 'home.welcome.resend',
-              defaultMessage: 'Resend the link',
-            })}
-          </Button>
-        )}
-        {error && (
-          <Typography variant="body2" color="error" sx={{ mt: 0.5 }}>
-            {error}
-          </Typography>
-        )}
-      </Box>
-    );
-  } else {
-    const hint: MessageDescriptor =
-      item.key === 'receiveStock' && !canMoveStock
-        ? HINTS.receiveOrders
-        : HINTS[item.key];
-    detail = intl.formatMessage(hint, { products: String(canSeeProducts) });
-    const { to, label } = actionOf(item.key, canSeeProducts, canMoveStock);
-    action = (
-      <Button
-        component={RouterLink}
-        to={to}
-        state={OFFER_BACK}
-        variant="outlined"
-      >
-        {intl.formatMessage(label)}
-      </Button>
-    );
-  }
-
   return (
-    <Stack
-      component="li"
-      direction={{ xs: 'column', sm: 'row' }}
-      sx={{
-        alignItems: { sm: 'center' },
-        gap: { xs: 1, sm: 1.5 },
-        py: 1.5,
-        borderTop: 1,
-        borderColor: 'divider',
-      }}
-    >
-      <Stack
-        direction="row"
-        spacing={1.5}
-        sx={{ alignItems: 'flex-start', flex: 1, minWidth: 0 }}
-      >
-        {item.done ? (
-          <CheckCircle color="success" aria-hidden />
-        ) : (
-          <RadioButtonUnchecked color="disabled" aria-hidden />
-        )}
-        <Box sx={{ minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 600 }}>
-            {intl.formatMessage(TITLES[item.key])}
-            {/* The space outside the message, which extraction trims. */}
-            {item.done && (
-              <>
-                {' '}
-                <Box
-                  component="span"
-                  sx={{ position: 'absolute', left: -9999 }}
-                >
-                  {intl.formatMessage({
-                    id: 'home.start.done',
-                    defaultMessage: '(done)',
-                  })}
-                </Box>
-              </>
-            )}
-          </Typography>
-          {detail && (
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {detail}
-            </Typography>
-          )}
-        </Box>
-      </Stack>
-      {action}
-    </Stack>
+    <Box role="status">
+      {sent ? (
+        <Typography
+          ref={sentRef}
+          tabIndex={-1}
+          variant="body2"
+          sx={{ color: 'text.secondary' }}
+        >
+          {intl.formatMessage({
+            id: 'layout.unverified.sent',
+            defaultMessage: 'Sent',
+          })}
+        </Typography>
+      ) : (
+        <Button variant="outlined" disabled={sending} onClick={resend}>
+          {intl.formatMessage({
+            id: 'home.welcome.resend',
+            defaultMessage: 'Resend the link',
+          })}
+        </Button>
+      )}
+      {error && (
+        <Typography variant="body2" color="error" sx={{ mt: 0.5 }}>
+          {error}
+        </Typography>
+      )}
+    </Box>
   );
 }
 
-/** What was done: confirmed, a photo or a title, or a record, linked. */
-function Did({ keyOf, what }: { keyOf: Key; what: WelcomeDone }) {
-  const intl = useIntl();
-  const account = (words: ReactNode) => (
-    <Link
-      component={RouterLink}
-      to="/account"
-      state={OFFER_BACK}
-      underline="always"
-    >
-      {words}
-    </Link>
-  );
-
+/**
+ * What a done item says was done, and where its row goes: confirmed, a
+ * photo or a title, on Your account; or a record, named, opening it. A
+ * record since deleted is done all the same, with nothing to open.
+ */
+function didOf(
+  intl: IntlShape,
+  key: Key,
+  what: WelcomeDone,
+): { words: string; to: string | null } {
   switch (what.kind) {
     case 'email':
-      return intl.formatMessage({
-        id: 'home.welcome.did.email',
-        defaultMessage: 'Confirmed',
-      });
+      return {
+        words: intl.formatMessage({
+          id: 'home.welcome.did.email',
+          defaultMessage: 'Confirmed',
+        }),
+        to: null,
+      };
     case 'photo':
-      return account(
-        intl.formatMessage({
+      return {
+        words: intl.formatMessage({
           id: 'home.welcome.did.photo',
           defaultMessage: 'Photo added',
         }),
-      );
+        to: '/account',
+      };
     case 'jobTitle':
-      return account(
-        intl.formatMessage({
+      return {
+        words: intl.formatMessage({
           id: 'home.welcome.did.jobTitle',
           defaultMessage: 'Job title added',
         }),
-      );
+        to: '/account',
+      };
   }
 
-  // A record since deleted: done all the same, with nothing to open.
-  const message = DID[keyOf];
+  const message = DID[key];
   if (!what.id || !what.words || !message) {
-    return intl.formatMessage({
-      id: 'home.welcome.did.gone',
-      defaultMessage: 'Done',
-    });
+    return {
+      words: intl.formatMessage({
+        id: 'home.welcome.did.gone',
+        defaultMessage: 'Done',
+      }),
+      to: null,
+    };
   }
-
-  const to = RECENT_PATHS[what.kind](what.id);
-  return intl.formatMessage(message, {
-    kind: what.kind,
-    words: what.words,
-    link: (chunks: ReactNode[]) => (
-      <Link component={RouterLink} to={to} underline="always">
-        {chunks}
-      </Link>
-    ),
-  });
+  return {
+    // The record's words plain, inside the row's one link.
+    words: intl.formatMessage(message, {
+      kind: what.kind,
+      words: what.words,
+      link: (chunks: ReactNode[]) => chunks.join(''),
+    }),
+    to: RECENT_PATHS[what.kind](what.id),
+  };
 }

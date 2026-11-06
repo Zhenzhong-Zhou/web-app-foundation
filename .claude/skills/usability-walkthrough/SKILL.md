@@ -37,7 +37,7 @@ Drive the real interface through its accessibility tree, the roles and
 names of what is on screen: a browser tool if one is available, or a
 throwaway Playwright script using the client's `@playwright/test` and
 `getByRole`. Screenshots are a last resort, unless the persona's Set up
-asks for them, as when what the persona can read is the question.
+asks for them.
 
 Stay in the persona:
 
@@ -97,28 +97,49 @@ given, which git ignores.
 
 1. **Set up once,** in this session: the app as section 2 says, its
    production build when any persona's Set up slows the network, kept
-   running; then `npm run seed:demo` in `server/` once per persona, one
-   after another, keeping each account's email.
-2. **Start the subagents together,** one per persona, each given its
-   persona, its account, the journey's tasks as written for it, and its
-   report's path: `<folder>/<journey>-<persona>.md`, the persona being
-   its heading without "The", in lowercase words joined by hyphens, as in
-   `home-senior-who-reads-only-chinese.md`. Where the journey has a
-   **Sizes:** line, each is given its screen sizes from it too, which
-   replace its own Set up's.
-3. **Wait for all of them.** One that ends BLOCKED is named in the
+   running, its API started with `RATE_LIMIT_MAX=10000` and
+   `THROTTLE_FACTOR=1000`, as the screenshots' API is, since the walkers
+   share one address and the dev limit of 100 a minute showed one a 429;
+   then `npm run seed:demo` in `server/` once per persona, one after
+   another, keeping each account's email. A journey that starts on a new
+   organization takes no seed: one account per persona and size it walks
+   instead, since a second size would meet a Getting started the first
+   had done, each made through `POST /v1/auth/register` as the sign-up
+   form makes one, with an address new to this run, the demo's password
+   and a company name of its own.
+2. **Give out the sizes,** so every journey is walked at each of the
+   design language's five
+   [width classes](../../../docs/design-language.md#screen-sizes), the
+   iPhone Duo's two sizes counted among them. These five, in this order,
+   go to the journey's personas in turn, in the order the journey lists
+   them, until each has a walker; a persona given more than one walks
+   them one after another, and a sixth persona starts again at the first:
+   1. a phone, 390 × 844 (`xs`);
+   2. the iPhone Duo, closed, about 466 × 678 (`xs`), then open, about
+      890 × 626 (`sm`);
+   3. a tablet held sideways, 1180 × 820 (`md`);
+   4. a laptop, 1366 × 768, where the rail first shows (`lg`);
+   5. a desktop, 1920 × 1080 (`xl`).
+
+   With `join`'s two personas, the outsider walks the first, third and
+   fifth, the senior the second and fourth. A journey's own **Sizes:**
+   line overrides them (ADR-091). Either way they replace the sizes in
+   the persona's Set up, and the rest of it stays.
+3. **Start the subagents together,** one per persona, each given its
+   persona, its account, the journey's tasks as written for it, its
+   screen sizes, and its report's path, `<folder>/<journey>-<persona>.md`,
+   as in `home-senior-who-reads-only-chinese.md`.
+4. **Wait for all of them.** One that ends BLOCKED is named in the
    merge, and the others still count.
-4. **Merge** into `<folder>/<journey>.md`: each finding once, the
+5. **Merge** into `<folder>/<journey>.md`: each finding once, the
    personas who hit it, its worst severity, "every screen" or "this
    journey", and the principle of the design language it breaks
    (`docs/design-language.md`), or none; sorted by severity, then by how
    many personas hit it. A finding that two personas or more hit, or that
    is marked every screen, is the design language's to settle; the rest
    belong to the journey's screens.
-5. **Stop the app if the panel started it;** one already running before
+6. **Stop the app if the panel started it;** one already running before
    it is left as it was. End as section 5 does, with the merge's path.
 
-The walks can run at once because each only reads the app, through an
-account of its own, and writes only its own files; what would spoil
-another walk, a restart, a reseed or a shared account, is the panel's
-alone and done before they start.
+Why the walks can run at once, and what each may touch:
+[`walkthrough.md`](../../agents/walkthrough.md).

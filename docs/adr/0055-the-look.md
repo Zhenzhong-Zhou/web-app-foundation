@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-07
 areas: [ui]
 amends: [ADR-021]
-amended-by: [ADR-071, ADR-075, ADR-081, ADR-082, ADR-090]
+amended-by: [ADR-071, ADR-075, ADR-081, ADR-082, ADR-090, ADR-091]
 ---
 
 # ADR-055 — The look: tokens, a side rail, tabs and a summary beside the work (amends ADR-021)
@@ -429,3 +429,11 @@ rules change:
 - **Density by pointer** stands, 44 px targets on touch, and so does the
   menu: a rail from `lg`, the drawer with its words below it, on a tablet
   and a foldable too.
+
+## Amendment (November 2026) — the corners (ADR-091)
+
+The radius grows with ADR-091's type scale: 12 px for panels and tiles,
+10 px for controls and 16 px for dialogs, where "Shape and space" above
+has 6 and 8. The brand tokens' radius scale stays an organization's to
+replace later. Chinese text under `:lang(zh)` is set 16 on 28 and 14 on
+24, on the 4 px grid, where it had 1.65 (ADR-091's as-built).

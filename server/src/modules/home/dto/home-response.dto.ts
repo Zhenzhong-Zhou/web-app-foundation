@@ -8,38 +8,21 @@ import type { WelcomeDoneKind, WelcomeItemKey } from '../welcome.service';
  */
 
 /**
- * A low item's figures on Home, "800 of 2,000" (ADR-085): numeric(18,4)
- * strings in the item's unit, as the reorder points list gives them.
+ * One of Home's tiles, in the order of a working day (ADR-091): every row
+ * the list it opens shows, and no rows of its own.
  */
-export class HomeRowReorder {
-  /** Usable, plus coming, less still needed. */
-  position!: string;
-  reorderPoint!: string;
-  /** Its drafts leave nothing to suggest, so nobody orders it twice. */
-  drafted!: boolean;
-}
-
-/** One record a card lists. */
-export class HomeRow {
-  id!: string;
-  title!: string;
-  detail!: string | null;
-  /** A calendar day, YYYY-MM-DD (ADR-052). */
-  due!: string | null;
-  late!: boolean;
-  /** Low stock's figures; null on every other card. */
-  reorder!: HomeRowReorder | null;
-}
-
-/** One of Home's cards, in the order of a working day. */
 export class HomeCard {
   kind!: HomeKind;
+  /** Every row its list shows, filtered as the tile opens it. */
   count!: number;
+  /**
+   * How many of them are late: overdue orders, expired lots and licences,
+   * low items that are out.
+   */
   late!: number;
-  rows!: HomeRow[];
   /**
    * Low stock's: whether any item has a reorder point, so nothing low is
-   * told apart from nothing watched (ADR-085); null on every other card.
+   * told apart from nothing watched (ADR-085); null on every other tile.
    */
   anyPoint!: boolean | null;
 }
@@ -114,6 +97,11 @@ export class Welcome {
 
 /** GET /home. */
 export class HomeResponse {
+  /**
+   * The organization's What we do (ADR-091), in its own words, for every
+   * member; null until written.
+   */
+  whatWeDo!: string | null;
   gettingStarted!: GettingStarted;
   /** The reader's welcome, or null when it does not show. */
   welcome!: Welcome | null;

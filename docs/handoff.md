@@ -15,6 +15,20 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 4 November 2026:
 
+- **ADR-091, Home redesigned** ([#335]): planned on 4 November and built
+  on 5 and 6 November in [#477], on `adr-091-home-redesigned`, waiting to
+  merge; its as-built is in [ADR-091](adr/0091-home-redesigned.md). Home's
+  three moments are built to the design language: Getting started and the
+  welcome first, then what needs you now, a few large tiles that open
+  their lists, and one main action by role, with More. `GET /home`'s
+  median on GitHub's runners is 177 ms, so Home's known miss is gone
+  ([#276]). The type scale and the corners reach every screen; the lists
+  keep their filters and sorts in the address ([#302]); Help is a modal
+  sheet on a narrow window ([#272]). The reviews' follow-ups are [#478]
+  to [#505], [#505] holding the small ones. The reports are in the
+  ignored `tmp/adr-091/`, which Items' and Movements' branches read
+  next.
+
 - **ADR-090, the design language** ([#338]): [#465], planned and built on
   4 November, its own docs pull request, its as-built in
   [ADR-090](adr/0090-the-design-language.md): eight principles and
@@ -25,8 +39,8 @@ On 4 November 2026:
   four personas, 45 findings, and `on-the-road`, a sales rep on a slow
   phone, 17. The reviews found 27 more, 13 fixed on the branch and the
   rest in [#467]. The type is drawn on the canvas in a row of its own, at
-  each text size, and 16 px stays for text a person decides by. Home for
-  a newcomer, ADR-091 ([#335]), is next, by 6 November, built to it.
+  each text size, and 16 px stays for text a person decides by. Home's
+  redesign, ADR-091 ([#335]), is built to it.
 
 - **The Fix-ups' first batch, CI that can be trusted:** [#435], merged
   on 3 November as 066f05a1 and deployed the same day (Deploy run
@@ -95,7 +109,11 @@ On 4 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 4 November, after ADR-090's reviews, [#463]
+- **The last merges:** on 4 November, from cloud sessions, [#468]
+  ([#466]) and [#469] ([#462]), each as a merge commit, since the button
+  offered the method used last; a cloud pull request is merged from the
+  terminal from now on ([engineering.md](engineering.md#how-code-is-delivered)).
+  Before them, after ADR-090's reviews, [#463]
   ([#155]'s last parts, its invoice's moved to [#462]) and [#464] ([#448],
   proved by the plan check in its cloud session); before them, [#450]
   ([#445], on the Mac), and
@@ -137,7 +155,8 @@ On 4 November 2026:
   versions are 0.7.0.
 - **Migrations** through 0077 (the trigram indexes led by the
   organization, in [#449]), 78 files in `server/src/database/migrations/`.
-- **Render:** a free database (`foundation-db`, created 22 October 2026)
+- **Render:** a free database (`foundation-db`, created 5 November 2026,
+  replacing the first, whose rows all went with it)
   and a free web service, with the static site. Deploy runs from the
   `production` environment, which allows `main` alone and holds both
   deploy hooks (ADR-081; [`render.md`, "Deploys"](runbooks/render.md#deploys-adr-081)).
@@ -169,19 +188,21 @@ On 4 November 2026:
   merges once green, one at a time. [#403] makes Claude Code Review skip
   them, since a run Dependabot starts is refused by the action and gets
   none of the repository's secrets.
-- **4 to 11 November:** what Dependabot has not opened comes of age; the
-  next branch's dependency step takes what is 7 days old that day.
-  `fix-ups-ci` took `@nestjs/cli`, the Nest packages at 12.3.2 and
-  react-intl on 3 November, and the multer override went (ADR-019);
-  `fix-225-typo-lookup` took react-router-dom on 3 November and
-  `@nestjs/schematics` on 4 November. Of age and waiting, in Vancouver
-  time: the Sentry packages at 11.10.0, `@types/node` and dotenv-cli (4
-  November); then nodemailer on 5 November; eslint and
-  `@aws-sdk/client-s3` on 6 November; the formatjs packages on 7
-  November; globals on 8 November; `@nestjs/swagger`, vitest,
-  `@vitejs/plugin-react` and argon2 on 9 November; rimraf on 10 November;
-  the Nest packages at 12.3.3 and `@nestjs/config` 12.1.0 on 11 November.
-  Dependabot's alerts 8, 9 and 10 wait for their upstreams ([#446]).
+- **6 to 12 November:** what Dependabot has not opened comes of age; the
+  next branch's dependency step takes, package by package, the newest
+  version in range that is 7 days old that day (engineering.md, since 6
+  November). ADR-091's branch took `@types/node`, nodemailer and
+  dotenv-cli on 5 November. Of age and waiting, in Vancouver time:
+  eslint 10.14.0 on 6 November; the formatjs packages on 7 November;
+  globals on 8 November; `@nestjs/swagger`, vitest, `@vitejs/plugin-react`
+  and argon2 0.45.2 on 9 November, argon2's `allowScripts` entry in
+  `server/package.json` changed to 0.45.2 with it; rimraf on 10 November;
+  the Nest packages at 12.3.3, `@nestjs/config` 12.1.0 and vite on 11
+  November; the Sentry packages at 11.11.0, which close alert 9,
+  `@playwright/test` 1.65.0, after which `npx playwright install`, and
+  msw on 12 November. `@aws-sdk/client-s3` publishes almost daily, so only
+  its newest version of age is ever taken. Dependabot's alerts 9, 11 and
+  12 wait for their upstreams ([#446]).
 - **The translation review:** done on 2 November with the API credits,
   against the glossary: the catalogues' findings in [#371] to [#397],
   one area each, and the Help guides' in [#398]. A second pass, for how
@@ -211,27 +232,39 @@ On 4 November 2026:
   Receive part, [#304] and [#323], each merged; [#310]'s other dialogs
   are listed on the issue. On 2 and 3 November, nineteen more, the last
   thirteen through `/fix-issue` (The last merges, above); on 4 November,
-  eight more. The cloud credit ended on 4 November. The next pick is
-  [#466], found by #463's session. Since ADR-090 a pick
+  eight more. The cloud credit ended on 4 November. [#466] and [#462]
+  went in the same evening ([#468], [#469]); no pick is chosen yet. Since
+  ADR-090 a pick
   comes from an export of the issues, and one that names more than about
   five files goes to the Mac.
-- **About 19 November:** replace Render's free database before it expires
-  on 21 November, by
+- **About 3 December:** replace Render's free database before it expires
+  on 5 December, by
   [`render.md`, "Replacing the database"](runbooks/render.md#replacing-the-database),
-  warning anyone besides the maintainer who uses the app; Render deletes it about 5
+  warning anyone besides the maintainer who uses the app; Render deletes it about 19
   December. Record the new dates here. A free Render database lasts 30
   days, so until a paid one this comes back monthly; Neon and Supabase
   are free candidates for the replacement.
 
 ## Still to do, by hand
 
-- **After [#463] and [#464]:** the run of every browser by hand on
-  `main`, started on 4 November, read; a failure filed.
+- **After [#463], [#464], [#468] and [#469]:** one run of every browser
+  by hand on `main`, read; a failure filed.
+- **After [#477]'s merge,** in this order: the deploy's checks
+  (`render.md`), `/api/health` naming the merge's commit and
+  `apiRevision: 3`, and 79 migrations; an old tab open on Home across the
+  deploy offering the reload; Home on a phone held sideways, about 844 ×
+  390, the main action, what is late and the first tiles reachable; Home
+  in WeChat or 360 in 中文, two columns of tiles and the top bar's words;
+  the planning skill packed from `main` and uploaded, and `evals.md`
+  walked; `tmp/adr-091/`'s panel reports moved into Items' `tmp/` folder
+  before `scripts/clean-local.sh --yes`; and ADR-091's test with whoever
+  can be found, fifteen minutes on the live site.
 - **After [#361]'s merge,** in this order:
   - MC-3424's third tab, where one was left on Home across the deploy:
     it shows one banner, and one Reload brings Home back;
-  - MC-4201 on the live site with a test item: one notice in the bell
-    within the hour while the service is awake; then remove the point.
+  - MC-4201 on the live site with a test item, set up again on the
+    database of 5 November: one notice in the bell within the hour while
+    the service is awake; then remove the point.
 - **The planning skill's `evals.md`:** prompts 3, 5 and 6, for the skill
   uploaded after [#417], walked on 3 and 4 November, in the Fix-ups'
   second batch's planning, and 1 and 2 on 4 November, in ADR-090's; 4
@@ -256,10 +289,6 @@ On 4 November 2026:
 - **Lighthouse on the live site, and the site reached from China,**
   before the first paying customer (`/production-readiness`'s H5 and H6,
   #317's review).
-- **The pinyin backfill** on the current database: `npm run
-  backfill:pinyin` once in `server/`, against its External URL with
-  `?sslmode=no-verify`, since Render runs the migrations but not that
-  script (ADR-056).
 - **`foundation_perf_large` kept migrated** for [#226]: `npm run
   migrate:all` does not reach it, so after each new migration run `npm run
   migrate` against it, as [`server/perf/README.md`](../server/perf/README.md)
@@ -304,16 +333,25 @@ request or a set of them:
       ([#276]) moved to 31 January 2027, for ADR-091;
    3. the design language ([#338], ADR-090): [#465], a docs pull
       request, as its as-built says;
-   4. Home for a newcomer ([#335], ADR-091), by 6 November, built to
-      it, which also meets Home's budget and ends its known miss by 31
-      January 2027; then Customise Home, a pull request of its own, the
-      week after; then [#310]'s nine dialogs with [#295], one shared
-      hook, on the Mac;
-   5. the translations, before 30 November: [#371] to [#398] and [#419]
-      to [#423], each with the natural-wording pass's comment, the style
+   4. Home redesigned ([#335], ADR-091): built in [#477], to merge; then
+      Items ([#476]), its own ADR with canvas boards first, the page and
+      the menu named Items · Articles · 物品, Products · 商品 the goods
+      tab; then Movements ([#470]) right after, with Inventory's findings
+      from ADR-091's panel, the two branches back to back; then
+      Customise Home, decided in ADR-091, each person choosing their main
+      action and More's order too, a pull request of its own; then
+      [#310]'s nine dialogs with [#295], one shared hook, on the Mac;
+   5. the translations, before 30 November: first a second review by
+      ChatGPT on the website, one chat per language, on the workbooks
+      `node scripts/i18n-review.mjs export` writes, the reviewer who reads
+      only Chinese checking the Chinese before `import`; a pseudo-locale
+      and a browser check for cut text in French and Chinese; then [#371]
+      to [#398] and [#419] to [#423], each with the natural-wording pass's
+      comment, the style
       rules into the glossary, the corrections of the reviewer who reads
       only Chinese, ADR-090's rule for Chinese beside Latin letters, and
-      [#148], [#149] and [#249];
+      [#148], [#149] and [#249]; then Orders, built to the design
+      language, its findings from ADR-091's panel, [#159] among them;
    6. expired lots: [#333] with [#331] and [#442], a new lot's expiry
       and its batch code; lot labels ([#441], `later`) after it. First
       instead, if real stock goes into the app sooner;
@@ -389,6 +427,7 @@ Not repeated here; each list has one home:
 [#150]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/150
 [#154]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/154
 [#155]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/155
+[#159]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/159
 [#165]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/165
 [#168]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/168
 [#178]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/178
@@ -429,6 +468,7 @@ Not repeated here; each list has one home:
 [#268]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/268
 [#269]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/269
 [#271]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/271
+[#272]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/272
 [#273]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/273
 [#276]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/276
 [#279]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/279
@@ -443,6 +483,7 @@ Not repeated here; each list has one home:
 [#298]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/298
 [#300]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/300
 [#301]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/301
+[#302]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/302
 [#303]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/303
 [#304]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/304
 [#309]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/309
@@ -552,3 +593,10 @@ Not repeated here; each list has one home:
 [#465]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/465
 [#466]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/466
 [#467]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/467
+[#468]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/468
+[#469]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/469
+[#470]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/470
+[#476]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/476
+[#477]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/477
+[#478]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/478
+[#505]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/505

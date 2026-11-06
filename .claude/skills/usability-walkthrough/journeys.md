@@ -4,8 +4,9 @@ What a panel walks (`/usability-walkthrough panel <journey>`, the
 skill's section 6): each journey is a task a person takes through the
 application from start to end, in their own words, with the personas
 from [personas.md](personas.md) who take it. A panel walks a journey as
-all its personas at once. Add a journey when a feature brings a task
-people do often.
+all its personas at once, at the sizes the skill gives them, unless the
+journey's **Sizes:** line names its own. Add a journey when a feature
+brings a task people do often.
 
 ## home
 
@@ -29,8 +30,8 @@ What needs doing today, from Home and one step past it.
 - **Sizes:** each persona at a width class of its own: the senior on a
   phone, 390 × 844; the outsider on the iPhone Duo, closed, about 466 ×
   678, then open, about 890 × 626; the owner on a tablet, upright, 820 ×
-  1180, then held sideways, 1180 × 820; the operations lead on a desktop,
-  1920 × 1080.
+  1180, then held sideways, 1180 × 820; the operations lead on a laptop,
+  1366 × 768, where the rail first shows, then on a desktop, 1920 × 1080.
 
 ## join
 
@@ -46,7 +47,10 @@ A person's first day, from the invitation to their first task.
 
 An owner making the application their company's.
 
-- **Starts on:** Home, as the Owner.
+- **Starts on:** Home, as the Owner of a new organization made for the
+  walk (the skill's section 6), so Getting started leads Home; its mail,
+  the address's confirmation among it, in Mailpit
+  (<http://localhost:8025>).
 - **Personas:** the owner who learns fast.
 - **Tasks:** put the company's name and logo on its documents; set its
   time zone; invite a colleague.
@@ -107,3 +111,5 @@ An owner making the application their company's.
 - **Personas:** the sales rep on the road.
 - **Tasks:** check whether a product can be promised by Friday; find
   where a customer's order is; raise an order from the phone.
+- **Sizes:** a phone, 390 × 844, and the iPhone Duo closed, about
+  466 × 678: the rep is on the road, never at a desk.

@@ -195,6 +195,22 @@ const SCREENS: Screen[] = [
     },
     ready: (page) => joined(page).and(keyboardOn(page)),
   },
+  {
+    // Getting started dismissed, so Home has its main action and More.
+    name: 'Home’s More menu, the keyboard on an entry',
+    path: () => '/',
+    open: async (page) => {
+      await page
+        .getByRole('region', { name: 'Getting started' })
+        .getByRole('button', { name: 'Dismiss' })
+        .click();
+      await page.getByRole('button', { name: 'More', exact: true }).focus();
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('menu', { name: 'More' })).toBeVisible();
+    },
+    ready: (page) =>
+      page.getByRole('menu', { name: 'More' }).locator('.Mui-focusVisible'),
+  },
   { name: 'inventory', path: () => '/inventory', ready: heading },
   {
     // A low row opened and chosen: its four boxes and the floating bar
@@ -247,7 +263,8 @@ const SCREENS: Screen[] = [
   { name: 'movements', path: () => '/movements', ready: heading },
   { name: 'orders', path: () => '/orders', ready: heading },
   {
-    // Over the page, which still reads beside it (ADR-079).
+    // Beside the page at this run's 1280 px, the page keeping its room
+    // (ADR-079; ADR-091).
     name: 'Help, open on Orders',
     path: () => '/orders',
     open: (page) =>
@@ -268,6 +285,20 @@ const SCREENS: Screen[] = [
         .scrollIntoViewIfNeeded();
     },
     ready: (page) => help(page).getByText(/ · Version /),
+  },
+  {
+    // A modal side sheet over the dimmed page, where the window leaves it
+    // less than 720 px beside Help (ADR-091, #272).
+    name: 'Help as a sheet, at 1024 × 768',
+    path: () => '/orders',
+    open: async (page) => {
+      await page.setViewportSize({ width: 1024, height: 768 });
+      await page.getByRole('button', { name: 'Help', exact: true }).click();
+    },
+    ready: (page) =>
+      page
+        .getByRole('dialog', { name: 'Help · Orders', exact: true })
+        .getByRole('heading', { level: 2, name: 'Orders', exact: true }),
   },
   {
     // A MacBook's window, 1440 × 900: every link above the rail's foot,
@@ -689,9 +720,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
           // Below 1200 px, the menu drawer's Close, its first stop.
           await page.setViewportSize({ width: 1024, height: 768 });
-          await page
-            .getByRole('button', { name: 'Open navigation', exact: true })
-            .focus();
+          await page.getByRole('button', { name: 'Menu', exact: true }).focus();
           await page.keyboard.press('Enter');
           const close = page.getByRole('button', {
             name: 'Close navigation',

@@ -45,6 +45,7 @@ When nothing more is coming, press **Close order**, whether everything arrived o
 - **Received** or **Shipped**: closed. The list’s filter calls both **Fulfilled**.
 - **Cancelled**: called off before anything moved.
 - **Closed short**: a line that expects no more, its shortfall kept.
+- **Late**: confirmed, with something still to ship or receive, and expected before today.
 
 ## If something is refused {#refused}
 
