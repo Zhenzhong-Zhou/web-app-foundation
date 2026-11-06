@@ -569,7 +569,7 @@ function WhatIsLate({ cards }: { cards: KnownCard[] }) {
           <Typography variant="body2" sx={{ color: 'inherit' }}>
             {intl.formatMessage({
               id: 'home.late.hint',
-              defaultMessage: 'Tap one to open just those.',
+              defaultMessage: 'Choose one to see just those.',
             })}
           </Typography>
         </Box>

@@ -404,7 +404,7 @@
   "home.greeting.evening": "晚上好，{name}",
   "home.greeting.morning": "早上好，{name}",
   "home.late.expiring": "{count, plural, other {<b>#</b> 个过期批次}}",
-  "home.late.hint": "点一项，直接打开要处理的那些。",
+  "home.late.hint": "选择一项，只查看这些。",
   "home.late.licences": "{count, plural, other {<b>#</b> 个过期许可证}}",
   "home.late.lowStock": "{count, plural, other {<b>#</b> 个缺货物品}}",
   "home.late.none": "今天没有逾期的事。",

@@ -854,7 +854,8 @@ Paper is checked first because it must not change at all.
   the minute, never seconds, which moves on at the next minute by itself,
   and What we do under it, in plain text, no card. What is late is a pale
   red panel headed by how many ("3 things need you now", in 中文
-  有 3 项需要马上处理), with a button per kind saying late, expired or
+  有 3 项需要马上处理) over "Choose one to see just those." (no tap with a
+  mouse, nothing to act on for a Viewer), with a button per kind saying late, expired or
   out, such as "1 late order to receive": each opens its list with just the
   late ones, Late (Expired for lots and licences, Out for low stock)
   chosen, and Back to Home. Under What needs you today, a tile per kind,
@@ -4978,3 +4979,5 @@ first.
 - 2026-11-05: ADR-091's review, Home greeting by the organization's
   clock, UTC named in words, the demo on Vancouver's: MC-1559 and MC-2602
   extended.
+- 2026-11-05: ADR-091's review, what is late's line the same for a mouse,
+  a finger and a Viewer: MC-1559 extended.

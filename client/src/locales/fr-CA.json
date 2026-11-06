@@ -404,7 +404,7 @@
   "home.greeting.evening": "Bonsoir, {name}",
   "home.greeting.morning": "Bonjour, {name}",
   "home.late.expiring": "{count, plural, one {<b>#</b> lot périmé} other {<b>#</b> lots périmés}}",
-  "home.late.hint": "Touchez-en un pour n’ouvrir que ceux-là.",
+  "home.late.hint": "Choisissez-en un pour ne voir que ceux-là.",
   "home.late.licences": "{count, plural, one {<b>#</b> licence expirée} other {<b>#</b> licences expirées}}",
   "home.late.lowStock": "{count, plural, one {<b>#</b> article épuisé} other {<b>#</b> articles épuisés}}",
   "home.late.none": "Rien n’est en retard aujourd’hui.",
