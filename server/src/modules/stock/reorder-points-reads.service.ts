@@ -145,7 +145,8 @@ const IS_OUT = sql`p.status = 'out'`;
 /**
  * Home's Low stock (ADR-085; ADR-091), read in Home's transaction: the
  * rows the list on Low shows, the out among them late, counted as counts()
- * counts them, over the same positions, and no row read.
+ * counts them, over the same positions, and no row read; and whether any
+ * item has a point at all, so nothing low is told from nothing watched.
  */
 export function lowStockTotals(organizationId: string, today: string): SQL {
   return sql`
@@ -153,7 +154,8 @@ export function lowStockTotals(organizationId: string, today: string): SQL {
     select
       'lowStock'::text as kind,
       (count(*) filter (where ${IS_LOW}))::int as count,
-      (count(*) filter (where ${IS_OUT}))::int as late
+      (count(*) filter (where ${IS_OUT}))::int as late,
+      count(*) > 0 as "anyPoint"
     from p
   `;
 }

@@ -395,6 +395,7 @@
   "home.empty.invoicesToIssue": "Aucune facture à émettre",
   "home.empty.licences": "Aucune licence n’expire d’ici 60 jours",
   "home.empty.lowStock": "Aucun stock bas",
+  "home.empty.lowStockUnset": "Aucun point de commande pour l’instant",
   "home.empty.production": "Aucun ordre de fabrication en cours",
   "home.empty.returnsOpen": "Aucun retour en cours",
   "home.empty.toReceive": "Aucune commande à recevoir",

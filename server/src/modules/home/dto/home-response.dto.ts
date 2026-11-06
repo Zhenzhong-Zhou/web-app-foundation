@@ -20,6 +20,11 @@ export class HomeCard {
    * low items that are out.
    */
   late!: number;
+  /**
+   * Low stock's: whether any item has a reorder point, so nothing low is
+   * told apart from nothing watched (ADR-085); null on every other tile.
+   */
+  anyPoint!: boolean | null;
 }
 
 /** Which getting-started steps the organization has done. */

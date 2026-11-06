@@ -45,6 +45,8 @@ export interface HomeCard {
   kind: HomeKind;
   count: number;
   late: number;
+  /** Low stock's: whether any item has a reorder point (ADR-085). */
+  anyPoint: boolean | null;
 }
 
 /** Getting started's steps, in the order they depend on each other. */
@@ -81,7 +83,7 @@ const CARDS: { kind: HomeKind; permission: Permission }[] = [
 ];
 
 /** A tile's count, and how many of those are late. */
-type Totals = Pick<HomeCard, 'count' | 'late'>;
+type Totals = Pick<HomeCard, 'count' | 'late' | 'anyPoint'>;
 
 /** The two tiles of outstanding orders, a direction each. */
 type OrderKind = 'toShip' | 'toReceive';
@@ -154,7 +156,7 @@ export class HomeService {
     const cards: HomeCard[] = kinds.map((kind) => ({
       kind,
       // A direction with nothing outstanding has no row.
-      ...(totals.get(kind) ?? { count: 0, late: 0 }),
+      ...(totals.get(kind) ?? { count: 0, late: 0, anyPoint: null }),
     }));
     const welcome = await this.welcome.of(context, held, membership, {
       timeZone,
@@ -301,10 +303,11 @@ async function totalsOf(
   const totals = new Map<HomeKind, Totals>();
   const counted = async (statement: SQL) => {
     const result = await tx.execute(statement);
-    for (const { kind, count, late } of result.rows as ({
+    for (const { kind, count, late, anyPoint } of result.rows as ({
       kind: HomeKind;
-    } & Totals)[]) {
-      totals.set(kind, { count, late });
+    } & Pick<Totals, 'count' | 'late'> &
+      Partial<Pick<Totals, 'anyPoint'>>)[]) {
+      totals.set(kind, { count, late, anyPoint: anyPoint ?? null });
     }
   };
 

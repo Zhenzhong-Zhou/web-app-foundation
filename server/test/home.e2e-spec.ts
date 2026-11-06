@@ -41,6 +41,7 @@ interface HomeResponse {
     kind: string;
     count: number;
     late: number;
+    anyPoint: boolean | null;
   }[];
 }
 
@@ -103,7 +104,18 @@ describe('Home (e2e)', () => {
       true,
     );
     // Counts, and no rows (ADR-091).
-    expect(Object.keys(cards[0]).sort()).toEqual(['count', 'kind', 'late']);
+    expect(Object.keys(cards[0]).sort()).toEqual([
+      'anyPoint',
+      'count',
+      'kind',
+      'late',
+    ]);
+    // Nothing low is not nothing watched (ADR-085): Low stock says no
+    // item has a point yet; every other tile, null.
+    expect(card(cards, 'lowStock')?.anyPoint).toBe(false);
+    expect(
+      cards.filter((entry) => entry.kind !== 'lowStock').map((e) => e.anyPoint),
+    ).toEqual(Array(8).fill(null));
   });
 
   it('counts confirmed purchases to receive as their list does, the overdue late', async () => {
@@ -374,7 +386,11 @@ describe('Home (e2e)', () => {
       home(alpha),
     );
 
-    expect(card(cards, 'lowStock')).toMatchObject({ count: 6, late: 1 });
+    expect(card(cards, 'lowStock')).toMatchObject({
+      count: 6,
+      late: 1,
+      anyPoint: true,
+    });
     // Every point's position worked out once, and no read of the drafts,
     // which Home never shows.
     expect(

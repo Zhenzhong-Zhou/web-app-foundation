@@ -395,6 +395,7 @@
   "home.empty.invoicesToIssue": "没有待开具的发票",
   "home.empty.licences": "60 天内没有到期的许可证",
   "home.empty.lowStock": "没有库存不足的物品",
+  "home.empty.lowStockUnset": "尚未设置库存下限",
   "home.empty.production": "没有进行中的生产订单",
   "home.empty.returnsOpen": "没有未结退货",
   "home.empty.toReceive": "没有待收货的订单",

@@ -395,6 +395,7 @@
   "home.empty.invoicesToIssue": "No invoices to issue",
   "home.empty.licences": "None expiring in 60 days",
   "home.empty.lowStock": "Nothing low",
+  "home.empty.lowStockUnset": "No reorder points set yet",
   "home.empty.production": "No runs in progress",
   "home.empty.returnsOpen": "No returns open",
   "home.empty.toReceive": "No orders to receive",

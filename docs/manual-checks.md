@@ -3263,8 +3263,9 @@ site, after a deploy that changes the setting, the route or the relay.
   reads 5, with no pill, and its button is gone from what is late. In
   中文: 库存不足, "1 项缺货" and "1 个缺货物品"; in French: Stock bas,
   "1 épuisé" and "1 article épuisé". In a new organization, with no
-  reorder point, the tile is quiet, Low stock and Nothing low, still
-  opening Reorder points.
+  reorder point, the tile is quiet, Low stock and "No reorder points set
+  yet" (尚未设置库存下限), not Nothing low, and opens Reorder points with
+  no filter, where one is set.
 - **MC-4214** *(ADR-085)* The bell's notice, opened, and its words by
   the items. On a fresh demo, as the Owner, the bell's "6 items fell
   below their reorder point" opens Inventory's Reorder points on Low stock,
@@ -4911,3 +4912,6 @@ first.
   row, by role, the others under More, Refresh an icon beside the
   greeting; Your devices out of the account menu: MC-1559 and MC-1511
   extended, MC-3209 and MC-R69 reworded.
+- 2026-11-05: ADR-091's review, Low stock with no reorder point set
+  saying so again, not Nothing low, and opening the whole list: MC-4213
+  reworded.

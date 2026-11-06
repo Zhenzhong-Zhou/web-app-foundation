@@ -15922,12 +15922,19 @@
           },
           "late": {
             "type": "number"
+          },
+          "anyPoint": {
+            "type": [
+              "boolean",
+              "null"
+            ]
           }
         },
         "required": [
           "kind",
           "count",
-          "late"
+          "late",
+          "anyPoint"
         ]
       },
       "HomeResponse": {

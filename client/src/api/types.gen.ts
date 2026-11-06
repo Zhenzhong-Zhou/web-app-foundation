@@ -2052,6 +2052,7 @@ export type HomeCard = {
     | 'licences';
   count: number;
   late: number;
+  anyPoint: boolean | null;
 };
 
 export type HomeResponse = {

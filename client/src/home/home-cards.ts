@@ -37,6 +37,11 @@ interface CardMeta {
   /** The tile's list: exactly what the tile counted, the late first. */
   list: string;
   late?: Late;
+  /**
+   * Low stock's, with no reorder point set at all (ADR-085): its words and
+   * the whole list, where one is set, in place of "Nothing low".
+   */
+  unset?: { empty: MessageDescriptor; list: string };
 }
 
 /**
@@ -101,6 +106,13 @@ const EMPTY = defineMessages<HomeKind>({
     defaultMessage: 'None expiring in 60 days',
   },
   lowStock: { id: 'home.empty.lowStock', defaultMessage: 'Nothing low' },
+});
+
+const LOW_STOCK_UNSET = defineMessages({
+  empty: {
+    id: 'home.empty.lowStockUnset',
+    defaultMessage: 'No reorder points set yet',
+  },
 });
 
 const PILLS = defineMessages({
@@ -187,6 +199,10 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       pill: PILLS.out,
       button: BUTTONS.lowStock,
       list: '/inventory?tab=reorder-points&status=out',
+    },
+    unset: {
+      empty: LOW_STOCK_UNSET.empty,
+      list: '/inventory?tab=reorder-points',
     },
   },
   expiring: {

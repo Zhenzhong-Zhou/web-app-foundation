@@ -629,10 +629,12 @@ function Tile({ card }: { card: KnownCard }) {
   const Icon = meta.icon;
   const quiet = card.count === 0;
   const late = meta.late && card.late > 0 ? card.late : 0;
+  // Nothing watched, not nothing low (ADR-085).
+  const unset = card.anyPoint === false ? meta.unset : undefined;
 
   const title = intl.formatMessage(meta.title);
   const status = quiet
-    ? intl.formatMessage(meta.empty, { days: expiringWithin })
+    ? intl.formatMessage(unset?.empty ?? meta.empty, { days: expiringWithin })
     : late && meta.late
       ? intl.formatMessage(meta.late.pill, { count: late })
       : null;
@@ -661,7 +663,7 @@ function Tile({ card }: { card: KnownCard }) {
   return (
     <ButtonBase
       component={RouterLink}
-      to={meta.list}
+      to={unset?.list ?? meta.list}
       state={OFFER_BACK}
       aria-label={label}
       sx={(theme) => ({
