@@ -435,4 +435,5 @@ rules change:
 The radius grows with ADR-091's type scale: 12 px for panels and tiles,
 10 px for controls and 16 px for dialogs, where "Shape and space" above
 has 6 and 8. The brand tokens' radius scale stays an organization's to
-replace later.
+replace later. Chinese text under `:lang(zh)` is set 16 on 28 and 14 on
+24, on the 4 px grid, where it had 1.65 (ADR-091's as-built).

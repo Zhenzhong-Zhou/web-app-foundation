@@ -114,7 +114,10 @@ steps; this section stays the rule.
   `server/` and `client/`, taking the in-range updates as a commit of their
   own at the branch's start, and again before the reviews. From ADR-081,
   only versions at least 7 days old, judged package by package from its
-  own publish time and never moving a locked version back; not `npm
+  own publish time and never moving a locked version back: the newest in
+  range that is, not only npm's Wanted version, which a package that
+  publishes daily keeps moving (6 November 2026, as Dependabot's cooldown
+  does); not `npm
   update --before`, which does both wrong (the square logo's step 2, 25
   October 2026). A security fix is excepted, and any other exception is
   Bob's, named in its commit ([conventions.md, "Dependencies"](conventions.md#dependencies)).

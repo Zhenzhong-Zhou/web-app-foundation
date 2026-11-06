@@ -388,8 +388,12 @@ found the design language did not say:
 - **The top bar below `lg`:** a short word under each icon, as a phone's
   tab bar has, each target 44 px, the app's own names; on a narrow phone
   the organization's name shortens first.
-- **Tiles:** a tile and the filter it opens share one name, the plainer;
-  a tile with nothing to do stays in its place, quiet, still a link.
+- **Tiles:** a tile and the filter it opens share one name, the plainer,
+  a tile whose word alone does not say what it is about putting its
+  page's name first; a tile with nothing to do stays in its place, quiet,
+  still a link.
+- **Text people read:** none under 14 px but a footnote's caption
+  (ADR-091's as-built).
 - **Help where there is no room beside the page** is a modal side sheet
   (ADR-079 amended).
 - **The panel at every width class:** the panel gives the five classes to

@@ -76,7 +76,9 @@ Each with what holds it in the code today, or the issue that will.
 - The filter and the sort are in the address, so Back and a bookmark
   keep them (#302).
 - A tile and the filter it opens share one name, the plainer of the two,
-  in each language: "Late", never "overdue".
+  in each language: "Late", never "overdue". A tile whose word alone does
+  not say what it is about puts its page's name first: "Invoices · To
+  issue".
 - A tile with nothing to do stays in its place, quiet: muted, "Nothing to
   ship", still a link.
 
@@ -197,7 +199,8 @@ Each with what holds it in the code today, or the issue that will.
 
 - Text a person reads to decide (a tile's label, a status, a name, a
   field's label) is 16 px at the Standard text size; secondary detail 14
-  px; a caption only for footnotes.
+  px; a caption only for footnotes. Nothing else a person reads is under
+  14 px.
 - The scale steps by 1.25: a section heading at 20 px and a page's title
   at 25 px, so a heading is told apart by size, not weight alone. Line
   heights sit on a 4 px grid: 16 on 24, 14 on 20, 20 on 28, 25 on 32; in

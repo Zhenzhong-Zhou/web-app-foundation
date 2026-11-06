@@ -544,7 +544,10 @@ ways is twelve categories and nothing filters. Categories nest — Supplements
 is long enough that scrolling is annoying, which is also when the categories
 will be known rather than guessed. "Series" is deliberately not on this list:
 it means a product line, a collection, or a numbering scheme depending on who
-says it, and a field that vague gets used for all three.
+says it, and a field that vague gets used for all three. The trigger
+fired on 6 November 2026, from a reviewer's feedback on the Products
+page: #476, its own ADR right after ADR-091, which also names the list
+Items.
 
 ## Bulk create and CSV import
 

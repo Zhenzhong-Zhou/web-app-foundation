@@ -367,6 +367,8 @@ Movements' (below), so Home's tiles have stable kinds from the start:
   its default place; a kind that is gone, or unknown to the build, is
   skipped.
 - **Places kept** until the person moves them, empty tiles included.
+- **The main action too,** later: each person may choose their own main
+  action and the order of More's menu (6 November 2026).
 - **What a person can change:** the tiles, and Recently opened, which can
   be switched off. The greeting with What we do, what is late, and the
   main action stay where they are, so a newcomer always finds them and
@@ -527,3 +529,60 @@ translations, before 30 November, then Orders.
   → the timed run and the miss removed → the dependencies again → the
   reviews and the panel → the pull request, closing #335, #276, #302,
   #272, #380 and #431, and part of #170, #352, #460 and #467.
+
+## As built (6 November 2026)
+
+Built in #477 on `adr-091-home-redesigned`, 74 commits above `main` at
+51941f3c, by the build brief's 22 steps (`tmp/adr-091/brief.md`, its
+summaries beside it). The canvas keeps every look drawn, a row each.
+
+- **Home's time:** `GET /home`'s median on GitHub's runners is 177 ms,
+  where it was 314 ms, a newcomer's 165 ms; on the Mac, 41 ms at small
+  (71 before) and 205 ms at large (378). An Owner's Home sends 11
+  statements at small, where it sent 23, in one transaction. The known
+  miss is gone (e91b7dea), and ADR-051's Watch closes "Home after
+  ADR-085", with a line for Home's growth with the data.
+- **Changed from the decisions above,** on the canvas and in the reviews,
+  on 5 and 6 November:
+  - **The main action:** one button, at the right of the greeting's row
+    from 900 px and full width under the greeting below it: the first the
+    member may do of Raise an order, Receive stock and Plan a run, the
+    others under More, Trace a lot only there. With none of them, the
+    quiet line and whom to ask; while Getting started shows, no main
+    action. Refresh is an icon button, and nothing stays below the tiles.
+    This replaces item 5 of Home's order above.
+  - **Home's order:** the welcome and Getting started come first, above
+    what is late, and the welcome's fold is remembered.
+  - **What is late:** its heading is "7 things need you now", each button
+    saying late, expired or out, with "Choose one to see just those."; the
+    lots' and licences' buttons open Expired, a filter both lists gained.
+  - **Tile names:** each tile and the filter it opens share one name, the
+    plainer; a tile whose word alone does not say what it is about puts
+    its page's name first: "Invoices · To issue", "Production · In
+    progress", "Stock value · Waiting for a cost".
+  - **Text and targets:** nothing a person reads is under 14 px, the top
+    bar's words, hints, chips and initials among it; chips and their × are
+    44 px on touch. Chinese is set 16 on 28 and 14 on 24, on every type
+    variant. The top bar's words give way below 316 px in English, 340 in
+    French and 262 in Chinese.
+  - **The order's items (#221):** from 900 px Total and Actions are held
+    at the right, the other columns scrolling under an edge from a new
+    `edge` token, which every table that scrolls sideways on a phone shows
+    too.
+  - **Your devices** leaves the avatar menu; Your account and the sign-in
+    emails still lead to it.
+  - **A new organization's Low stock** says "No reorder points set yet",
+    as ADR-085's review had it; Home reads that in its counting statement.
+- **The reviews:** 127 findings (`tmp/adr-091/review.md`), about 50
+  fixed here. Issues #478 to #505 hold the rest worth keeping, #505 "Left
+  from ADR-091's reviews" the small ones, the welcome's trade words among
+  them; comments went on #159, #170, #310, #458, #459, #467, #472, #473
+  and #474; the rest were dropped with their reasons.
+- **Found on the way:** Waiting for a cost is counted as Stock value lists
+  it, a row per receipt; 库存下限 is in 63 lines of catalogues and guides;
+  Licences sits first in Records; Help's sheet is Help's 420 px; the
+  search sits 8 px right of the middle, and the report of it far to the
+  right at 2560 px was not reproduced.
+- **After the merge:** Items (#476) and then Movements (#470), two
+  branches back to back, before Customise Home; and the test with whoever
+  can be found.

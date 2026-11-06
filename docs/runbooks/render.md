@@ -96,9 +96,9 @@ use; the reasons are in the sections named.
 - **The database expires 30 days after it was created.** It then stops
   answering, and Render deletes it after a 14-day grace period unless it is
   moved to a paid instance type. Note the creation date in the handoff.
-  The current one, Free, was created on 22 October 2026, and its page
-  says "Your database will expire on November 21, 2026": it stops
-  answering then and is deleted about 5 December. Until the database is
+  The current one, Free, was created on 5 November 2026, and its page
+  says "Your database will expire on December 5, 2026": it stops
+  answering then and is deleted about 19 December. Until the database is
   paid for, this comes back every 30 days.
 - **The web service sleeps after 15 minutes without a request,** and the
   next request waits about a minute while it starts. The six hourly jobs
@@ -521,8 +521,10 @@ step 4.
 3. **Point the API at it.** The new database → **Connect** → copy the
    **Internal Database URL**. The web service → **Environment** →
    `DATABASE_URL` → paste → **Save**. Then **Manual Deploy** → **Deploy
-   latest commit**: Auto-Deploy is off since ADR-081 (if Save offers to
-   rebuild and deploy, that does the same). The build runs every migration
+   latest commit**: Auto-Deploy is off since ADR-081 ("Save, rebuild, and
+   deploy" does the same). Not "Save and deploy", which reuses the last
+   build, so the migrations and the seed never run: on 5 November 2026 the
+   API answered ready on an empty database. The build runs every migration
    and the seed; the log ends with the service live. The static site needs
    nothing.
 4. **Check it answers.** It may take a minute while the service wakes:
@@ -531,24 +533,30 @@ step 4.
    curl -s https://web-app-foundation-client.onrender.com/api/health/ready
    ```
 
-   Done when it says `{"status":"ready","database":"up"}`.
+   Done when it says `{"status":"ready","database":"up"}`. It runs only
+   `select 1`, so it passes on an empty database too: step 6's count is
+   the proof.
 5. **Backups, the same day,** or that night's scheduled backup fails. The
    new database → **Connect** → copy the **External Database URL**, exactly
    as Render gives it: `backup.sh` asks for SSL itself
    (`PGSSLMODE=require`), and `pg_dump` refuses `sslmode=no-verify`.
    GitHub → the repository → Settings → Secrets and variables → Actions →
-   `BACKUP_DATABASE_URL` → **Update** → paste. Then Actions → **Backup** →
-   **Run workflow**. Done when the run is green.
+   `BACKUP_DATABASE_URL` → **Update** → paste. Run the backup after step
+   6's count: one taken before the migrations is refused as empty (1,609
+   bytes against the 10,240 minimum, on 5 November 2026).
 6. **Count the migrations,** with that same External URL, pasted at the
    prompt so it stays out of the shell's history. One row per migration,
    so the count is the number of files in `server/src/database/migrations/`
-   that end in `.sql` (75 at ADR-081):
+   that end in `.sql` (78 on 5 November 2026, 79 with ADR-091's):
 
    ```bash
    read -s "DB?Paste the External URL, then Enter: "; echo
    docker exec -it foundation-postgres psql "${DB}?sslmode=require" -c "select count(*) from drizzle.__drizzle_migrations;"
    unset DB
    ```
+
+   Then Actions → **Backup** → **Run workflow**. Done when the count is
+   the number of files and the run is green.
 
 7. **Your organization again.** Everything on the old database went with
    it, accounts included: invite yourself with `npm run org:invite`
@@ -571,6 +579,7 @@ pinyin backfill is not needed, and new credentials retire the old ones.
 | --- | --- |
 | The deploy fails at `npm run migrate` | `DATABASE_URL` is the External URL, or the database is in another region: use the Internal URL from the same region |
 | `/api/health/ready` says the database is `down` | the deploy hasn't finished, or the URL was saved without a deploy: deploy by hand again |
+| Ready, but the app says Can't reach the server; Backup says treated as empty; or step 6 says relation `drizzle.__drizzle_migrations` does not exist | the build never ran, as after "Save and deploy": Manual Deploy → Deploy latest commit |
 | Backup says `invalid sslmode value: "no-verify"` | the secret ends in `?sslmode=no-verify`: paste the External URL as Render gives it |
 | Backup fails to connect | the secret is the Internal URL: use the External one |
 | `psql: invalid connection option "<postgresql…` | the `<` and `>` around the URL were kept: leave them out |
