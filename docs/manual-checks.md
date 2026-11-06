@@ -753,8 +753,9 @@ Paper is checked first because it must not change at all.
 - **MC-1541** At 375px, an order: the summary sits above the tabs, Ship is
   full width, and the tabs scroll sideways when they do not fit, the open one
   still visible. A line's ⋮ menu opens fully on screen.
-- **MC-1542** On a touch screen (or with touch emulation), buttons, filters
-  and table actions are at least 44px tall; with a mouse, 36px.
+- **MC-1542** On a touch screen (or with touch emulation), buttons, filters,
+  icon buttons (Home's Refresh among them) and table actions are at least
+  44px tall; with a mouse, 36px.
 - **MC-1543** With the keyboard alone, on an order: Tab reaches the tabs, the
   arrow keys move between them and Enter opens one; the address changes and
   Back leaves the page. Focus is always visible.
@@ -4915,3 +4916,5 @@ first.
 - 2026-11-05: ADR-091's review, Low stock with no reorder point set
   saying so again, not Nothing low, and opening the whole list: MC-4213
   reworded.
+- 2026-11-05: ADR-091's review, every icon button 44 px tall on touch,
+  Home's Refresh among them: MC-1542 extended.

@@ -242,7 +242,12 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
     },
     MuiIconButton: {
       styleOverrides: {
-        root: { borderRadius: RADIUS.control, [TOUCH]: { minWidth: 44 } },
+        // A fingertip each way on touch (ADR-079), Home's Refresh among
+        // them, which an icon's own 40 px left short (ADR-091's review).
+        root: {
+          borderRadius: RADIUS.control,
+          [TOUCH]: { minWidth: 44, minHeight: 44 },
+        },
       },
     },
     // One link style: the colour says it is a link, the underline comes

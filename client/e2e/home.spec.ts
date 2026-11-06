@@ -106,6 +106,30 @@ for (const size of [
 }
 
 /**
+ * Home's own targets on a touch phone (ADR-079): a fingertip, 44 px each
+ * way, however small the icon or the words.
+ */
+test.describe('on a touch phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  test("Home's own targets are 44 px each way", async ({ page, freshOrg }) => {
+    await signInAs(page, freshOrg.api);
+    await page.goto('/');
+    await expect(
+      page.getByRole('region', { name: 'Getting started' }),
+    ).toBeVisible();
+
+    for (const target of [
+      page.getByRole('main').getByRole('button', { name: 'Refresh' }),
+    ]) {
+      const box = await target.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(44);
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+    }
+  });
+});
+
+/**
  * A member of the Owner's organization, signed in on its own: in a
  * built-in role, or in one made from a template of the same key.
  */
