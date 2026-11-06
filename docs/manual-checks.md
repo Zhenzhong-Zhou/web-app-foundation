@@ -878,7 +878,8 @@ Paper is checked first because it must not change at all.
   whole row a link. Leave Home's tab for another for a minute or more and
   come back: Home reads again (DevTools → Network, `home`); back after a
   few seconds, it does not. Switch to 中文 and to a phone (or a narrow
-  window): the tiles two by two, three from 600 px, nothing scrolls
+  window): the tiles two by two, three from a window about 648 px wide
+  (Home's page 600 px, DevTools), nothing scrolls
   sideways, and the wording reads naturally. Register a
   new organization: Getting started's seven steps, straight after the
   welcome, at 0 of 7 done over a bar in the accent, with Seven steps get
@@ -2478,8 +2479,9 @@ words sit beside it; one alone, or first in its line, needs nothing.
   more than can be taken while some is held for an order, the same: never
   inside the SKU or the order's number.
 
-Home's tiles sit two across on a phone and three from 600 px, never more
-(ADR-091), as few rows as that takes, shared evenly across them.
+Home's tiles sit two across on a phone and three from a page 600 px wide,
+a window of about 648, never more (ADR-091), as few rows as that takes,
+shared evenly across them.
 
 - **MC-3423** *(ADR-081; ADR-091)* Home's tiles in even rows. As the
   Owner, at 1440 px, at 1366 px with Help open beside the page and at
@@ -4946,3 +4948,5 @@ first.
   the welcome card: MC-3213 extended.
 - 2026-11-05: ADR-091's review, Back from a list opened by a tile, not
   by See all, which Home no longer has: MC-R69 reworded.
+- 2026-11-05: ADR-091's review, three tiles from Home's page 600 px wide,
+  a window of about 648: MC-1559 and MC-3423's lead reworded.

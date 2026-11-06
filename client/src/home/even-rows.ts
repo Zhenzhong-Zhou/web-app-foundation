@@ -17,7 +17,11 @@ export function evenColumns(count: number, fit: number): number {
   return Math.ceil(count / rows);
 }
 
-/** At most three across, and three only from 600 px (ADR-091). */
+/**
+ * At most three across, and three only from a page 600 px wide (ADR-091),
+ * Home's own width, which a window of about 648 px gives beside its
+ * gutters.
+ */
 const MOST = 3;
 const THREE_FROM = 600;
 
