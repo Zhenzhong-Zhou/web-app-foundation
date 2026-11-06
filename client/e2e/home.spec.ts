@@ -130,6 +130,24 @@ test.describe('on a touch phone', () => {
       expect(box?.height).toBeGreaterThanOrEqual(44);
     }
   });
+
+  // What a late button chose, a chip whose × takes it off: a fingertip
+  // each way, the chip and its × (ADR-091's review).
+  test("a late button's chip and its × are 44 px", async ({
+    page,
+    freshOrg,
+  }) => {
+    await signInAs(page, freshOrg.api);
+    await page.goto('/orders?direction=sale&outstanding=1&late=1');
+    const chip = page.locator('.MuiChip-deletable').filter({ hasText: 'Late' });
+    await expect(chip).toBeVisible();
+
+    for (const target of [chip, chip.locator('.MuiChip-deleteIcon')]) {
+      const box = await target.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(44);
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+    }
+  });
 });
 
 /**

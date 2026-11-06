@@ -48,7 +48,7 @@ export function BarButton({
         sx={(theme) => ({
           display: 'none',
           order: 1,
-          ...theme.typography.caption,
+          ...theme.typography.body2,
           color: 'text.secondary',
           whiteSpace: 'nowrap',
           [theme.breakpoints.down(BAR)]: { [fit]: { display: 'block' } },

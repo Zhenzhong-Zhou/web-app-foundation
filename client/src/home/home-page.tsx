@@ -734,7 +734,6 @@ function Tile({ card }: { card: KnownCard }) {
         {quiet ? (
           <Typography
             component="span"
-            variant="body2"
             sx={{ order: 2, color: 'text.secondary' }}
           >
             {status}

@@ -122,7 +122,6 @@ function PreferenceItem({
     >
       <Typography
         id={labelId}
-        variant="body2"
         onClick={() => setOpen(true)}
         sx={{ fontWeight: 600, color: 'text.secondary' }}
       >

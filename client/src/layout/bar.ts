@@ -20,7 +20,7 @@ const BAR_CONTAINER = 'bar';
  * The bar's width, inside its gutters, from which Menu, Search, Help,
  * Notifications and Account fit with their words beside the
  * organization's initials, measured in each language at the standard text
- * size, since their words differ most: Chinese's two characters each sit
+ * size with the words at 14 px (ADR-091's review), since they differ most: Chinese's two characters each sit
  * inside the 44 px target, where "Notifications" and « Rechercher » do
  * not. In rem, so it grows with the text size (ADR-075): Chinese keeps its
  * words at Larger on a phone 390 px wide, where one threshold for all,
@@ -29,8 +29,8 @@ const BAR_CONTAINER = 'bar';
  * (ADR-079).
  */
 const WORDS_NEED: Record<Locale, number> = {
-  en: 300,
-  'fr-CA': 320,
+  en: 316,
+  'fr-CA': 340,
   'zh-Hans': 262,
 };
 

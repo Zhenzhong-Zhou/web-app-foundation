@@ -754,8 +754,13 @@ Paper is checked first because it must not change at all.
   full width, and the tabs scroll sideways when they do not fit, the open one
   still visible. A line's ⋮ menu opens fully on screen.
 - **MC-1542** On a touch screen (or with touch emulation), buttons, filters,
-  icon buttons (Home's Refresh among them) and table actions are at least
-  44px tall; with a mouse, 36px.
+  icon buttons (Home's Refresh among them), a chip that does something
+  and its × (Orders' Late, from Home's late button) and table actions are
+  at least 44px tall; with a mouse, 36px. No text a person reads to decide
+  by is under 14 px (DevTools): the top bar's words, a field's hint, a
+  status chip, the avatar's initials at every text size; Settings'
+  section headings are 20 px, Branding's Logo 16, the account menu's
+  Colour mode, Language and Text size 16, a quiet tile's words 16.
 - **MC-1543** With the keyboard alone, on an order: Tab reaches the tabs, the
   arrow keys move between them and Enter opens one; the address changes and
   Back leaves the page. Focus is always visible.
@@ -906,9 +911,9 @@ Paper is checked first because it must not change at all.
   and a screen reader reads the account button as Account, your initials,
   signed in as …. The words give way by language, the icons standing
   alone, as before, with nothing scrolling sideways, in a window narrower
-  than about 332 px in English (370 at Large text, 407 at Larger), 352 in
-  Français (392, 432) and 294 in 中文 (327, 360): at Larger on a 390 px
-  phone 中文 keeps its words. From 1200 px the bar is as it was: the search box in
+  than about 348 px in English (388 at Large text, 427 at Larger), 372 in
+  Français (415, 457) and 294 in 中文 (327, 360): at Larger on a 390 px
+  phone 中文 keeps its words. The words are 14 px, the small size. From 1200 px the bar is as it was: the search box in
   the middle between the rail and Help, at 1366 and at 2560 px too, Help
   with its word beside its icon, the bell and your face alone.
 - **MC-1562** *(ADR-091, #431)* The loading bar. In Chrome, DevTools →
@@ -4933,3 +4938,6 @@ first.
 - 2026-11-05: ADR-091's review, the top bar's words give way by each
   language's own width, so 中文 keeps them at Larger on a 390 px phone:
   MC-1561 reworded.
+- 2026-11-05: ADR-091's review, text people read at 14 px at least and
+  headings told by size, chips and their × 44 px on touch: MC-1542
+  extended, MC-1561's words 14 px.

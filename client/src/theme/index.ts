@@ -279,6 +279,10 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
     MuiFormHelperText: {
       styleOverrides: {
         root: ({ theme }) => ({
+          // Read to fill the field in: the small size, never a caption
+          // (ADR-090, Text and targets; ADR-091's review).
+          fontSize: rem(TYPE.small),
+          lineHeight: 20 / TYPE.small,
           '&.Mui-disabled': { color: paletteOf(theme).text.secondary },
         }),
       },
@@ -373,12 +377,28 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
           const tone = paletteOf(theme).tone[name ?? 'neutral'];
 
           return {
+            // A status or a filter read to decide by: the small size at
+            // least, as its neighbours are (ADR-091's review).
+            fontSize: rem(TYPE.small),
             fontWeight: 600,
             color: tone.fg,
             backgroundColor:
               ownerState.variant === 'outlined' ? 'transparent' : tone.bg,
             border: `1px solid ${tone.border}`,
             '& .MuiChip-icon, & .MuiChip-deleteIcon': { color: 'inherit' },
+            // A chip that does something is a fingertip on touch, its ×
+            // too, which MUI draws at 22 px (ADR-079).
+            '&.MuiChip-clickable, &.MuiChip-deletable': {
+              [TOUCH]: { minHeight: 44 },
+            },
+            '& .MuiChip-deleteIcon': {
+              [TOUCH]: {
+                boxSizing: 'content-box',
+                fontSize: 24,
+                padding: 10,
+                margin: '0 -6px 0 -6px',
+              },
+            },
           };
         },
       },
