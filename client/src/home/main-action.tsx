@@ -33,6 +33,7 @@ export function MainAction({ actions }: { actions: QuickAction[] }) {
   const intl = useIntl();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const menuId = useId();
+  const moreId = useId();
   const [main, ...others] = actions;
 
   return (
@@ -56,6 +57,7 @@ export function MainAction({ actions }: { actions: QuickAction[] }) {
           {/* A menu button: it says so and whether it is open; MUI's menu
               takes the arrows, and Escape gives focus back here. */}
           <Button
+            id={moreId}
             variant="text"
             color="inherit"
             endIcon={<KeyboardArrowDown />}
@@ -77,6 +79,8 @@ export function MainAction({ actions }: { actions: QuickAction[] }) {
             onClose={() => setAnchor(null)}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            // Named by the button that opens it (ADR-091's review).
+            slotProps={{ list: { 'aria-labelledby': moreId } }}
           >
             {others.map((action) => (
               <MenuItem

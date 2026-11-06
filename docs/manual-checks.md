@@ -884,7 +884,7 @@ Paper is checked first because it must not change at all.
   Sarah Chen (Viewer), no button: the grey line says her role does not
   include raising orders, receiving stock or planning runs, and whom to
   ask, Trace a lot staying in the menu. In 中文 More
-  reads 更多, in Français Plus. Recently opened lists
+  reads 更多, in Français Plus; a screen reader names its menu More. Recently opened lists
   each record by its name, its code and kind under it, and when, the
   whole row a link. Leave Home's tab for another for a minute or more and
   come back: Home reads again (DevTools → Network, `home`); back after a
@@ -5013,3 +5013,5 @@ first.
   tile's Low stock: MC-4201 reworded.
 - 2026-11-05: ADR-091's review, the status pages' titles and Home with
   no organization's greeting at the page title's size: MC-3421 extended.
+- 2026-11-05: ADR-091's review, More's menu named by its button and
+  checked by axe: MC-1559 extended.

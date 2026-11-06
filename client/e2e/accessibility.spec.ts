@@ -195,6 +195,22 @@ const SCREENS: Screen[] = [
     },
     ready: (page) => joined(page).and(keyboardOn(page)),
   },
+  {
+    // Getting started dismissed, so Home has its main action and More.
+    name: 'Home’s More menu, the keyboard on an entry',
+    path: () => '/',
+    open: async (page) => {
+      await page
+        .getByRole('region', { name: 'Getting started' })
+        .getByRole('button', { name: 'Dismiss' })
+        .click();
+      await page.getByRole('button', { name: 'More', exact: true }).focus();
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('menu', { name: 'More' })).toBeVisible();
+    },
+    ready: (page) =>
+      page.getByRole('menu', { name: 'More' }).locator('.Mui-focusVisible'),
+  },
   { name: 'inventory', path: () => '/inventory', ready: heading },
   {
     // A low row opened and chosen: its four boxes and the floating bar
