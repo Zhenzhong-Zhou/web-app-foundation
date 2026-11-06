@@ -120,7 +120,7 @@ const mutedAsMain = (theme: Theme) => ({
  * Everything below is ADR-055's tokens (tokens.ts) given to MUI. A value
  * that is not a token does not belong here either.
  */
-const optionsFor = (brand: Brand): ThemeOptions => ({
+const optionsFor = (brand: Brand, locale: Locale): ThemeOptions => ({
   cssVariables: { colorSchemeSelector: 'class' },
   colorSchemes: {
     light: {
@@ -160,8 +160,18 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
       lineHeight: 28 / TYPE.section,
     },
     subtitle1: { fontSize: rem(TYPE.body), fontWeight: 600 },
-    body1: { fontSize: rem(TYPE.body), lineHeight: 24 / TYPE.body },
-    body2: { fontSize: rem(TYPE.small), lineHeight: 20 / TYPE.small },
+    // Chinese reads better with more room between lines, for its strokes:
+    // 16 on 28 and 14 on 24, on the same 4 px grid. Set on the variants
+    // themselves, so a table's cells, a menu's items and a button take it
+    // too, not only Typography (ADR-091's review).
+    body1: {
+      fontSize: rem(TYPE.body),
+      lineHeight: (locale === 'zh-Hans' ? 28 : 24) / TYPE.body,
+    },
+    body2: {
+      fontSize: rem(TYPE.small),
+      lineHeight: (locale === 'zh-Hans' ? 24 : 20) / TYPE.small,
+    },
     caption: { fontSize: rem(TYPE.caption), lineHeight: 1.4 },
     // Not capitals: a label in capitals is harder to read, and Chinese
     // has none to give it.
@@ -183,10 +193,6 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
       styleOverrides: {
         // Every digit the same width, so figures line up down a column.
         body: { fontVariantNumeric: 'tabular-nums' },
-        // Chinese reads better with more room between lines, for its
-        // strokes: 16 on 28 and 14 on 24, on the same 4 px grid.
-        ':lang(zh) .MuiTypography-body1': { lineHeight: 28 / TYPE.body },
-        ':lang(zh) .MuiTypography-body2': { lineHeight: 24 / TYPE.small },
         /**
          * Less motion for those who ask (ADR-075): transitions end at once
          * and scrolling jumps, so the drawer, menus, dialogs and the
@@ -459,7 +465,7 @@ export function themeFor(locale: Locale, brand: Brand = DEFAULT_BRAND): Theme {
   const key = `${locale} ${brand.accent} ${brand.rail}`;
   let theme = themes.get(key);
   if (!theme) {
-    theme = createTheme(optionsFor(brand), MUI_LOCALES[locale]);
+    theme = createTheme(optionsFor(brand, locale), MUI_LOCALES[locale]);
     themes.set(key, theme);
   }
   return theme;

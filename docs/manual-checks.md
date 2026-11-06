@@ -929,7 +929,10 @@ Paper is checked first because it must not change at all.
   org:invite`), are rounded squares, not circles. The confirmation email's
   button in Mailpit has the buttons' corners, and the invitation's note the
   panels'. At Larger text (account menu → Text size) the 16 px text is 20, and
-  nothing scrolls sideways (MC-2803).
+  nothing scrolls sideways (MC-2803). In 中文 a table's
+  rows, the account menu's items, the rail's links and Home's late buttons
+  have Chinese's taller lines (16 on 28, 14 on 24), as its paragraphs do.
+
 - **MC-1561** *(ADR-091)* The top bar's words. Below 1200 px wide each of
   the bar's icons has its word under it, the app's own names: Menu,
   Search (below 900 px, where it is a button), Help, Notifications and
@@ -5031,3 +5034,5 @@ first.
   1200 px, Account's too: MC-1561 extended.
 - 2026-11-05: ADR-091's review, the invitation page's help naming the
   invited address in full under its field: MC-3110 extended.
+- 2026-11-05: ADR-091's review, Chinese line heights in tables, menus and
+  Home's late buttons too: MC-1560 extended.

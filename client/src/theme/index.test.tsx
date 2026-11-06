@@ -104,15 +104,15 @@ describe('the type scale', () => {
     expect(px(fontSize) * Number(lineHeight)).toBeCloseTo(line);
   });
 
-  // More room for Chinese strokes, still on the grid (ADR-091).
+  // More room for Chinese strokes, still on the grid (ADR-091), on the
+  // variants themselves, so a table's cells and a menu's items take it
+  // too, not Typography alone (ADR-091's review).
   it.each([
     ['body1', 28],
     ['body2', 24],
   ] as const)('sets Chinese %s on %s', (variant, line) => {
-    const overrides = themeFor('zh-Hans').components?.MuiCssBaseline
-      ?.styleOverrides as Record<string, { lineHeight: number }>;
-    const { lineHeight } = overrides[`:lang(zh) .MuiTypography-${variant}`];
+    const { fontSize, lineHeight } = themeFor('zh-Hans').typography[variant];
 
-    expect(px(typography[variant].fontSize) * lineHeight).toBeCloseTo(line);
+    expect(px(fontSize) * Number(lineHeight)).toBeCloseTo(line);
   });
 });
