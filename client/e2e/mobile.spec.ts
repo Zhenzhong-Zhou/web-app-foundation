@@ -203,6 +203,11 @@ for (const [width, language, words] of [
         picture!.y + picture!.height - 1,
       );
     }
+    // The bell's count inside the bar, not cut at the screen's top.
+    const badge = bar.locator('.MuiBadge-standard');
+    if (await badge.count()) {
+      expect((await badge.boundingBox())!.y).toBeGreaterThanOrEqual(0);
+    }
     // Nothing runs off the screen: the name gives way.
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),

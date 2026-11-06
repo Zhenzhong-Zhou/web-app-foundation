@@ -937,7 +937,8 @@ Paper is checked first because it must not change at all.
   中文 菜单、搜索、帮助、通知、账户. At 360 px in English the
   organization's name is what shortens, to a few letters, so
   Notifications fits under the bell; at 390 px in 中文 everything fits.
-  Each word is a fingertip tall with its icon (44 px or more, DevTools),
+  The bell's count shows whole, its round top inside the bar, never cut
+  flat at the screen's edge. Each word is a fingertip tall with its icon (44 px or more, DevTools),
   and a screen reader reads the account button as Account, your initials,
   signed in as …. The words give way by language, the icons standing
   alone, as before, with nothing scrolling sideways, in a window narrower
@@ -5021,3 +5022,5 @@ first.
   as a Reference is: MC-1552 extended.
 - 2026-11-05: ADR-091's review, Credit notes' days in the address with
   its sort: MC-406 extended.
+- 2026-11-05: ADR-091's review, the bell's count inside the bar below
+  1200 px: MC-1561 extended.

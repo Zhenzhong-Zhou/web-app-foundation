@@ -37,6 +37,10 @@ export function BarButton({
               px: 0.5,
               py: 0.5,
               borderRadius: `${RADIUS.control}px`,
+              // The bell's count lower by its own overhang, so it stays
+              // inside the bar, not cut flat at the screen's top edge
+              // (ADR-091's review).
+              '& .MuiBadge-standard': { top: 6 },
             },
           },
         }),
