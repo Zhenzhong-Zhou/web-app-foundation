@@ -15893,15 +15893,15 @@
           "key": {
             "type": "string",
             "enum": [
-              "confirmEmail",
-              "sayWhoYouAre",
-              "lookUp",
-              "openOrder",
               "receiveStock",
               "raiseOrder",
               "shipOrder",
               "planRun",
-              "draftInvoice"
+              "draftInvoice",
+              "confirmEmail",
+              "sayWhoYouAre",
+              "lookUp",
+              "openOrder"
             ]
           },
           "done": {
@@ -15982,12 +15982,16 @@
               "expiring",
               "toShip",
               "toReceive",
+              "drafts",
               "lowStock",
               "costsWaiting",
               "invoicesToIssue",
               "returnsOpen",
               "licences"
             ]
+          },
+          "hidden": {
+            "type": "boolean"
           },
           "count": {
             "type": "number"
@@ -16004,6 +16008,7 @@
         },
         "required": [
           "kind",
+          "hidden",
           "count",
           "late",
           "anyPoint"
@@ -16036,13 +16041,17 @@
             "items": {
               "$ref": "#/components/schemas/HomeCard"
             }
+          },
+          "recent": {
+            "type": "boolean"
           }
         },
         "required": [
           "whatWeDo",
           "gettingStarted",
           "welcome",
-          "cards"
+          "cards",
+          "recent"
         ]
       },
       "HomeLayoutDto": {
@@ -16051,12 +16060,13 @@
           "order": {
             "type": "array",
             "uniqueItems": true,
-            "maxItems": 9,
+            "maxItems": 10,
             "items": {
               "type": "string",
               "enum": [
                 "toShip",
                 "toReceive",
+                "drafts",
                 "lowStock",
                 "expiring",
                 "costsWaiting",
@@ -16070,12 +16080,13 @@
           "hidden": {
             "type": "array",
             "uniqueItems": true,
-            "maxItems": 9,
+            "maxItems": 10,
             "items": {
               "type": "string",
               "enum": [
                 "toShip",
                 "toReceive",
+                "drafts",
                 "lowStock",
                 "expiring",
                 "costsWaiting",

@@ -391,6 +391,7 @@
   "home.count.out": "{count} 项缺货",
   "home.dateTime": "{day} {time}",
   "home.empty.costsWaiting": "每笔收货都已定成本",
+  "home.empty.drafts": "没有草稿",
   "home.empty.expiring": "{days} 天内没有过期的批次",
   "home.empty.invoicesToIssue": "没有待开具的发票",
   "home.empty.licences": "60 天内没有到期的许可证",

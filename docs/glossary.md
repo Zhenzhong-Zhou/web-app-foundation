@@ -84,6 +84,7 @@ as the catalogues word it.
 | English | Français (Canada) | 简体中文 | Notes |
 | --- | --- | --- | --- |
 | Draft | Brouillon | 草稿 | Written, not yet agreed. |
+| Orders · Draft | Commandes · Brouillon | 订单 · 草稿 | Home's drafts tile, its page's name first and Orders' Draft filter after it; hidden until a person shows it in Customise Home, never late (ADR-091, amended November 2026). |
 | Confirmed | Confirmée | 已确认 | Agreed with the partner. |
 | Received / Shipped | Reçue / Expédiée | 已收货 / 已发货 | Closed: the one status, in its direction's word (ADR-041). |
 | Cancelled | Annulée | 已取消 | |

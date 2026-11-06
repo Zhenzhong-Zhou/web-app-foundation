@@ -48,10 +48,12 @@ interface HomeResponse {
   welcome: unknown;
   cards: {
     kind: string;
+    hidden: boolean;
     count: number;
     late: number;
     anyPoint: boolean | null;
   }[];
+  recent: boolean;
 }
 
 /**
@@ -94,11 +96,35 @@ describe('Home (e2e)', () => {
   const card = (cards: HomeResponse['cards'], kind: string) =>
     cards.find((entry) => entry.kind === kind);
 
-  it('shows every card to an owner, each empty in a new organization', async () => {
+  /** The tiles drawn, in their order: the ones not hidden. */
+  const shown = (cards: HomeResponse['cards']) =>
+    cards.filter((entry) => !entry.hidden).map((entry) => entry.kind);
+
+  /**
+   * An Owner may do every tile's work, so every tile leads and their Home
+   * is in the working day's order, as it was before Customise Home: Drafts
+   * after To receive, hidden (ADR-091, amended November 2026).
+   */
+  it('shows every card to an owner in the order of a working day, each empty in a new organization', async () => {
     const alpha = await registerOrganization(app, 'alpha');
 
-    const cards = await home(alpha);
+    const answer = body<HomeResponse>(
+      await alpha.agent.get('/v1/home').expect(200),
+    );
+    const { cards } = answer;
     expect(cards.map((entry) => entry.kind)).toEqual([
+      'toShip',
+      'toReceive',
+      'drafts',
+      'lowStock',
+      'expiring',
+      'costsWaiting',
+      'invoicesToIssue',
+      'returnsOpen',
+      'production',
+      'licences',
+    ]);
+    expect(shown(cards)).toEqual([
       'toShip',
       'toReceive',
       'lowStock',
@@ -109,6 +135,7 @@ describe('Home (e2e)', () => {
       'production',
       'licences',
     ]);
+    expect(answer.recent).toBe(true);
     expect(cards.every((entry) => entry.count === 0 && entry.late === 0)).toBe(
       true,
     );
@@ -116,6 +143,7 @@ describe('Home (e2e)', () => {
     expect(Object.keys(cards[0]).sort()).toEqual([
       'anyPoint',
       'count',
+      'hidden',
       'kind',
       'late',
     ]);
@@ -124,7 +152,7 @@ describe('Home (e2e)', () => {
     expect(card(cards, 'lowStock')?.anyPoint).toBe(false);
     expect(
       cards.filter((entry) => entry.kind !== 'lowStock').map((e) => e.anyPoint),
-    ).toEqual(Array(8).fill(null));
+    ).toEqual(Array(9).fill(null));
   });
 
   it('counts confirmed purchases to receive as their list does, the overdue late', async () => {
@@ -446,7 +474,8 @@ describe('Home (e2e)', () => {
   });
 
   // To ship and To receive are counted from one read of the orders, by
-  // direction, each as its list filters it, the overdue late.
+  // direction, each as its list filters it, the overdue late; the drafts
+  // beside them.
   it('counts To ship and To receive from one read of the orders', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const goods = await item(alpha.agent, 'FOCUS-60');
@@ -470,12 +499,15 @@ describe('Home (e2e)', () => {
 
     expect(card(cards, 'toShip')).toMatchObject({ count: 2, late: 1 });
     expect(card(cards, 'toReceive')).toMatchObject({ count: 1, late: 0 });
-    // The statement of counts reads the orders once, not once a card.
+    expect(card(cards, 'drafts')).toMatchObject({ count: 1, late: 0 });
+    // The statement of counts reads the outstanding orders once, not once
+    // a card, and the drafts beside them.
     const counts = statements.filter(({ text }) =>
-      /as kind,\s*count\(\*\)::int as count/.test(text),
+      /'drafts' as kind/.test(text),
     );
     expect(counts).toHaveLength(1);
-    expect(counts[0].text.match(/from "orders"/g)).toHaveLength(1);
+    expect(counts[0].text.match(/from "orders"/g)).toHaveLength(2);
+    expect(counts[0].text.match(/from "order_lines"/g)).toHaveLength(1);
   });
 
   /**
@@ -589,6 +621,7 @@ describe('Home (e2e)', () => {
     const opened: Record<string, string> = {
       toShip: '/v1/orders?status=open&direction=sale&outstanding=true',
       toReceive: '/v1/orders?status=open&direction=purchase&outstanding=true',
+      drafts: '/v1/orders?status=draft',
       lowStock: '/v1/stock/reorder-points?status=low',
       expiring: '/v1/stock?expiringWithin=90&sort=expiry&order=asc',
       costsWaiting: '/v1/costs/needs-cost',
@@ -627,6 +660,7 @@ describe('Home (e2e)', () => {
     ).toEqual({
       toShip: 1,
       toReceive: 1,
+      drafts: 0,
       lowStock: 1,
       expiring: 1,
       costsWaiting: 0,
@@ -717,7 +751,7 @@ describe('Home (e2e)', () => {
         /^select "expiry_warning_days", "time_zone", "what_we_do" from "organizations"/,
       ),
       expect.stringMatching(
-        /^\( select case "orders"\."direction" .* union all /,
+        /^\( select kind, count\(\*\)::int as count, .* union all /,
       ),
       expect.stringMatching(/^with p as materialized .* 'lowStock'::text/),
       expect.stringMatching(/^select \(o\.tax_registration_number/),
@@ -755,7 +789,150 @@ describe('Home (e2e)', () => {
     );
 
     const kinds = (await home({ agent: member })).map((entry) => entry.kind);
-    expect(kinds).toEqual(['toShip', 'toReceive', 'lowStock', 'expiring']);
+    expect(kinds).toEqual([
+      'toShip',
+      'toReceive',
+      'drafts',
+      'lowStock',
+      'expiring',
+    ]);
+  });
+
+  /**
+   * The default order (ADR-091, amended November 2026): the tiles whose
+   * work the member may do lead, the rest follow, both in the working
+   * day's order. Roles are each organization's own, so it goes by the
+   * permissions held, never by a role's name.
+   */
+  it('leads with the tiles whose work the member may do', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    // Every tile's view, so only the work held changes the order.
+    const views = [
+      'orders.view',
+      'stock.view',
+      'costs.view',
+      'invoices.view',
+      'return_authorizations.view',
+      'production.view',
+      'product_licences.view',
+    ];
+    const homeAs = async (name: string, work: string[]) => {
+      await customRole(app, alpha.organizationId, name, [...views, ...work]);
+      const member = await addMember(
+        app,
+        alpha,
+        `${name.toLowerCase()}@example.com`,
+        name,
+      );
+      return home({ agent: member });
+    };
+    const rest = [
+      'expiring',
+      'costsWaiting',
+      'invoicesToIssue',
+      'returnsOpen',
+      'production',
+      'licences',
+    ];
+
+    // Ships and receives: To ship and To receive first.
+    expect(
+      shown(await homeAs('Dock', ['orders.ship', 'orders.receive'])),
+    ).toEqual(['toShip', 'toReceive', 'lowStock', ...rest]);
+    // Receives alone: To receive before To ship.
+    expect(shown(await homeAs('Receiving', ['orders.receive']))).toEqual([
+      'toReceive',
+      'toShip',
+      'lowStock',
+      ...rest,
+    ]);
+    // Plans and completes runs: Low stock and In progress first.
+    expect(
+      shown(
+        await homeAs('Planning', ['production.create', 'production.complete']),
+      ),
+    ).toEqual([
+      'lowStock',
+      'production',
+      'toShip',
+      'toReceive',
+      'expiring',
+      'costsWaiting',
+      'invoicesToIssue',
+      'returnsOpen',
+      'licences',
+    ]);
+    // Raises orders: Drafts leads with Low stock, still hidden.
+    const buying = await homeAs('Buying', ['orders.create']);
+    expect(buying.map((entry) => entry.kind)).toEqual([
+      'drafts',
+      'lowStock',
+      'toShip',
+      'toReceive',
+      ...rest,
+    ]);
+    expect(card(buying, 'drafts')?.hidden).toBe(true);
+  });
+
+  /**
+   * Drafts (ADR-091, amended November 2026): every draft order, as Orders
+   * lists them with Draft chosen, both ways, never late, and hidden until
+   * the person shows it; Reset to default hides it again.
+   */
+  it('counts every draft as Orders lists them with Draft chosen, never late, hidden by default', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const goods = await item(alpha.agent, 'GOODS');
+    const customer = await partner(alpha.agent, 'Customer');
+    const supplier = await partner(alpha.agent, 'Supplier');
+    // Its expected day long past, a draft is still not late.
+    await order(alpha.agent, 'sale', customer, goods, '5', {
+      draft: true,
+      expectedAt: day(-9),
+    });
+    await order(alpha.agent, 'purchase', supplier, goods, '5', {
+      draft: true,
+    });
+    await order(alpha.agent, 'sale', customer, goods, '5', {
+      expectedAt: day(-3),
+    });
+    // Another organization's draft is not alpha's.
+    const beta = await registerOrganization(app, 'beta');
+    await order(
+      beta.agent,
+      'sale',
+      await partner(beta.agent, 'Customer'),
+      await item(beta.agent, 'GOODS'),
+      '5',
+      { draft: true },
+    );
+
+    const cards = await home(alpha);
+    expect(card(cards, 'drafts')).toEqual({
+      kind: 'drafts',
+      hidden: true,
+      count: 2,
+      late: 0,
+      anyPoint: null,
+    });
+    expect(card(cards, 'toShip')).toMatchObject({ count: 1, late: 1 });
+    const { entries, nextCursor } = body<{
+      entries: unknown[];
+      nextCursor: string | null;
+    }>(await alpha.agent.get('/v1/orders?status=draft').expect(200));
+    expect({ rows: entries.length, nextCursor }).toEqual({
+      rows: 2,
+      nextCursor: null,
+    });
+
+    // Shown in Customise Home, then Reset to default: hidden again.
+    const kinds = cards.map((entry) => entry.kind);
+    await alpha.agent
+      .put('/v1/home/layout')
+      .send({ order: kinds, hidden: [], recent: true })
+      .expect(204);
+    expect(card(await home(alpha), 'drafts')?.hidden).toBe(false);
+    await alpha.agent.delete('/v1/home/layout').expect(204);
+    expect(card(await home(alpha), 'drafts')?.hidden).toBe(true);
   });
 
   describe('Getting started', () => {
@@ -878,6 +1055,99 @@ describe('Home (e2e)', () => {
       expect(await saved()).toEqual([]);
     });
 
+    it('puts the tiles in the order saved, hidden as saved, with Recently opened as saved', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const order = [
+        'returnsOpen',
+        'drafts',
+        'toShip',
+        'licences',
+        'lowStock',
+        'toReceive',
+        'production',
+        'expiring',
+        'invoicesToIssue',
+        'costsWaiting',
+      ];
+      await alpha.agent
+        .put('/v1/home/layout')
+        .send({ order, hidden: ['toShip', 'production'], recent: false })
+        .expect(204);
+
+      const answer = body<HomeResponse>(
+        await alpha.agent.get('/v1/home').expect(200),
+      );
+      expect(answer.cards.map((entry) => entry.kind)).toEqual(order);
+      expect(shown(answer.cards)).toEqual(
+        order.filter((kind) => !['toShip', 'production'].includes(kind)),
+      );
+      expect(answer.recent).toBe(false);
+    });
+
+    /**
+     * A layout from another build: a kind this one does not know is
+     * skipped, and one the layout does not hold, such as a kind added
+     * since, takes its default place, after the kind before it by
+     * default, hidden only if it is by default.
+     */
+    it('skips a kind it does not know, and puts one missing where it goes by default', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await db
+        .update(memberships)
+        .set({
+          homeLayout: {
+            order: [
+              'lowStock',
+              'weather',
+              'toReceive',
+              'toShip',
+              'expiring',
+              'costsWaiting',
+              'invoicesToIssue',
+              'returnsOpen',
+              'production',
+            ],
+            hidden: ['toReceive', 'weather'],
+            recent: true,
+          },
+        })
+        .where(eq(memberships.userId, alpha.userId));
+
+      const cards = await home(alpha);
+      expect(cards.map(({ kind, hidden }) => [kind, hidden])).toEqual([
+        ['lowStock', false],
+        ['toReceive', true],
+        ['drafts', true],
+        ['toShip', false],
+        ['expiring', false],
+        ['costsWaiting', false],
+        ['invoicesToIssue', false],
+        ['returnsOpen', false],
+        ['production', false],
+        ['licences', false],
+      ]);
+    });
+
+    // A hidden tile buries nothing (ADR-091): its late still count.
+    it('still counts a hidden tile, and its late', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const goods = await item(alpha.agent, 'GOODS');
+      const customer = await partner(alpha.agent, 'Customer');
+      for (const expectedAt of [day(-3), day(4)]) {
+        await order(alpha.agent, 'sale', customer, goods, '5', { expectedAt });
+      }
+      await alpha.agent
+        .put('/v1/home/layout')
+        .send({ order: ['toShip'], hidden: ['toShip'], recent: true })
+        .expect(204);
+
+      expect(card(await home(alpha), 'toShip')).toMatchObject({
+        hidden: true,
+        count: 2,
+        late: 1,
+      });
+    });
+
     it('refuses with 400 a kind it does not know, a kind twice, a hidden kind not in the order, or a part missing, writing nothing', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await alpha.agent.put('/v1/home/layout').send(arranged).expect(204);
@@ -923,6 +1193,7 @@ describe('Home (e2e)', () => {
       expect((await home({ agent: packer })).map((each) => each.kind)).toEqual([
         'toShip',
         'toReceive',
+        'drafts',
       ]);
 
       const layout = {
@@ -932,6 +1203,15 @@ describe('Home (e2e)', () => {
       };
       await packer.put('/v1/home/layout').send(layout).expect(204);
       expect((await saved()).map((row) => row.homeLayout)).toEqual([layout]);
+
+      // Home skips it, never counting it; Drafts, not in the layout, goes
+      // after To receive, where it is by default, hidden.
+      const cards = await home({ agent: packer });
+      expect(cards.map(({ kind, hidden }) => [kind, hidden])).toEqual([
+        ['toReceive', false],
+        ['drafts', true],
+        ['toShip', false],
+      ]);
     });
 
     it("changes only the reader's own: nobody else's, nor theirs in another organization", async () => {

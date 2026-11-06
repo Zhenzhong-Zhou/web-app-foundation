@@ -888,7 +888,14 @@ Paper is checked first because it must not change at all.
   in a role made from the Production template, Plan a run, the same; as
   Sarah Chen (Viewer), no button: the grey line says her role does not
   include raising orders, receiving stock or planning runs, and whom to
-  ask, Trace a lot staying in the menu. In 中文 More
+  ask, Trace a lot staying in the menu. The tiles lead with the work the
+  member may do, the rest after them, each part in the working day's
+  order: the demo owner's run To ship, To receive, Low stock, Expiring
+  soon and on, as before; as Fatima Haddad (Sales), who raises orders,
+  Low stock comes first, then To ship and To receive; in a role made from
+  the Finance template, Stock value · Waiting for a cost, Invoices · To
+  issue and Open returns, then To ship and To receive. Orders · Draft is
+  on no one's Home until they show it. In 中文 More
   reads 更多, in Français Plus; a screen reader names its menu More. Recently opened lists
   each record by its name, its code and kind under it, and when, the
   whole row a link. Leave Home's tab for another for a minute or more and
@@ -5054,3 +5061,5 @@ first.
   mouse, never left tinted after a tap: MC-1559 extended.
 - 2026-11-05: ADR-091's review, the welcome's areas named and linked as
   the menu has them: MC-3207 extended.
+- 2026-11-06: Customise Home, the tiles leading with the work a member
+  may do, and Orders · Draft hidden by default: MC-1559 extended.

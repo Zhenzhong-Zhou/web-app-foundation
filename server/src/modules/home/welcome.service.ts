@@ -15,6 +15,7 @@ import type { Permission } from '../../core/authorization/permissions';
 import { inviterStillHere } from '../../core/invitations/inviter';
 import type { Transaction } from '../../database/database.module';
 import {
+  type HomeLayout,
   invitations,
   memberships,
   organizations,
@@ -119,7 +120,11 @@ const KIND_OF: Record<
   invoice: 'invoice',
 };
 
-/** The facts about the reader's membership the welcome starts from. */
+/**
+ * The facts about the reader's membership the welcome starts from, and
+ * their Home's layout (ADR-091, amended November 2026), read with them so
+ * that Home pays no read more for it.
+ */
 export interface Membership {
   id: string;
   createdAt: Date;
@@ -129,6 +134,7 @@ export interface Membership {
   emailVerifiedAt: Date | null;
   founder: boolean;
   roles: MemberRole[];
+  homeLayout: HomeLayout | null;
 }
 
 /**
@@ -222,6 +228,7 @@ export class WelcomeService {
         createdAt: memberships.createdAt,
         dismissedAt: memberships.welcomeDismissedAt,
         jobTitle: memberships.jobTitle,
+        homeLayout: memberships.homeLayout,
         photoFileId: users.photoFileId,
         emailVerifiedAt: users.emailVerifiedAt,
         founder: sql<boolean>`${memberships.createdAt} = ${organizations.createdAt}`,

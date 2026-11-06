@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 
 import { defineMessage, rule } from '../../../i18n/validation';
-import { HOME_KINDS, type HomeKind } from '../home.service';
+import { HOME_KINDS, type HomeKind } from '../home-kinds';
 
 /** Each hidden kind is also placed in `order`, where Show puts it back. */
 const IsPlaced = () =>

@@ -391,6 +391,7 @@
   "home.count.out": "{count, plural, other {# out}}",
   "home.dateTime": "{day}, {time}",
   "home.empty.costsWaiting": "Every receipt has a cost",
+  "home.empty.drafts": "No drafts",
   "home.empty.expiring": "No lots expiring in {days} days",
   "home.empty.invoicesToIssue": "No invoices to issue",
   "home.empty.licences": "None expiring in 60 days",

@@ -173,8 +173,11 @@ function OrganizationHome() {
   );
 
   // Only the tiles this build knows: a newer server's kind is skipped,
-  // never a crash, and what is late counts only what shows.
+  // never a crash, and what is late counts only what this build knows.
+  // A tile the person hid is not drawn, but buries nothing: its late
+  // items stay in the panel (ADR-091, amended November 2026).
   const cards = (home?.cards ?? []).filter(isKnownCard);
+  const tiles = cards.filter((card) => !card.hidden);
   const started = home?.gettingStarted;
   const showStart = started && !started.complete && !started.dismissed;
 
@@ -413,7 +416,7 @@ function OrganizationHome() {
               and Getting started stays above the fold on a laptop. */}
           <WhatIsLate cards={cards} />
 
-          {cards.length > 0 && (
+          {tiles.length > 0 && (
             <Stack
               component="section"
               aria-labelledby="today-title"
@@ -428,8 +431,8 @@ function OrganizationHome() {
               {/* In even rows, measured against the page's width rather
                   than the screen's (ADR-081). */}
               <Box sx={{ containerType: 'inline-size' }}>
-                <Box sx={evenRowsSx(cards.length)}>
-                  {cards.map((card) => (
+                <Box sx={evenRowsSx(tiles.length)}>
+                  {tiles.map((card) => (
                     <Tile key={card.kind} card={card} />
                   ))}
                 </Box>

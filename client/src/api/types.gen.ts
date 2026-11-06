@@ -2023,15 +2023,15 @@ export type WelcomeDone = {
 
 export type WelcomeItem = {
   key:
-    | 'confirmEmail'
-    | 'sayWhoYouAre'
-    | 'lookUp'
-    | 'openOrder'
     | 'receiveStock'
     | 'raiseOrder'
     | 'shipOrder'
     | 'planRun'
-    | 'draftInvoice';
+    | 'draftInvoice'
+    | 'confirmEmail'
+    | 'sayWhoYouAre'
+    | 'lookUp'
+    | 'openOrder';
   done: boolean;
   what: WelcomeDone | null;
 };
@@ -2052,11 +2052,13 @@ export type HomeCard = {
     | 'expiring'
     | 'toShip'
     | 'toReceive'
+    | 'drafts'
     | 'lowStock'
     | 'costsWaiting'
     | 'invoicesToIssue'
     | 'returnsOpen'
     | 'licences';
+  hidden: boolean;
   count: number;
   late: number;
   anyPoint: boolean | null;
@@ -2067,12 +2069,14 @@ export type HomeResponse = {
   gettingStarted: GettingStarted;
   welcome: Welcome | null;
   cards: Array<HomeCard>;
+  recent: boolean;
 };
 
 export type HomeLayoutDto = {
   order: Array<
     | 'toShip'
     | 'toReceive'
+    | 'drafts'
     | 'lowStock'
     | 'expiring'
     | 'costsWaiting'
@@ -2084,6 +2088,7 @@ export type HomeLayoutDto = {
   hidden: Array<
     | 'toShip'
     | 'toReceive'
+    | 'drafts'
     | 'lowStock'
     | 'expiring'
     | 'costsWaiting'

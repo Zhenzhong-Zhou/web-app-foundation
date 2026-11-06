@@ -391,6 +391,7 @@
   "home.count.out": "{count, plural, one {# épuisé} other {# épuisés}}",
   "home.dateTime": "{day}, {time}",
   "home.empty.costsWaiting": "Chaque réception a un coût",
+  "home.empty.drafts": "Aucun brouillon",
   "home.empty.expiring": "Aucun lot n’expire d’ici {days} jours",
   "home.empty.invoicesToIssue": "Aucune facture à émettre",
   "home.empty.licences": "Aucune licence n’expire d’ici 60 jours",

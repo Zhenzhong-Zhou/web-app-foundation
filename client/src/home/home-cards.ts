@@ -1,6 +1,7 @@
 import type { SvgIconComponent } from '@mui/icons-material';
 import AssignmentReturnOutlined from '@mui/icons-material/AssignmentReturnOutlined';
 import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
+import EditNoteOutlined from '@mui/icons-material/EditNoteOutlined';
 import HourglassBottomOutlined from '@mui/icons-material/HourglassBottomOutlined';
 import Inventory2Outlined from '@mui/icons-material/Inventory2Outlined';
 import LocalShippingOutlined from '@mui/icons-material/LocalShippingOutlined';
@@ -61,6 +62,7 @@ interface CardMeta {
 const TITLES = defineMessages<HomeKind>({
   toShip: { id: 'home.card.toShip', defaultMessage: 'To ship' },
   toReceive: { id: 'home.card.toReceive', defaultMessage: 'To receive' },
+  drafts: { id: 'orders.status.draft', defaultMessage: 'Draft' },
   expiring: { id: 'inventory.quick.expiring', defaultMessage: 'Expiring soon' },
   costsWaiting: { id: 'costs.waiting', defaultMessage: 'Waiting for a cost' },
   invoicesToIssue: {
@@ -89,6 +91,7 @@ const EMPTY = defineMessages<HomeKind>({
     id: 'home.empty.toReceive',
     defaultMessage: 'No orders to receive',
   },
+  drafts: { id: 'home.empty.drafts', defaultMessage: 'No drafts' },
   expiring: {
     id: 'home.empty.expiring',
     defaultMessage: 'No lots expiring in {days} days',
@@ -195,6 +198,15 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       button: BUTTONS.toReceive,
       list: '/orders?direction=purchase&outstanding=1&late=1',
     },
+  },
+  // Orders · Draft (ADR-091, amended November 2026): hidden until the
+  // person shows it, and never late, so nothing in the panel.
+  drafts: {
+    title: TITLES.drafts,
+    page: NAV_LABELS.orders,
+    empty: EMPTY.drafts,
+    icon: EditNoteOutlined,
+    list: '/orders?status=draft',
   },
   // After To receive on the page, as the server orders it (ADR-085).
   lowStock: {

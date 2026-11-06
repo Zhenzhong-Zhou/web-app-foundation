@@ -47,8 +47,13 @@ const routed = (element: ReactElement) => (
  * Home for a member past their first two weeks: no welcome (ADR-079), and
  * no What we do written yet (ADR-091).
  */
-function serve(home: Omit<HomeResponse, 'welcome' | 'whatWeDo'>) {
-  const response: HomeResponse = { ...home, welcome: null, whatWeDo: null };
+function serve(home: Omit<HomeResponse, 'welcome' | 'whatWeDo' | 'recent'>) {
+  const response: HomeResponse = {
+    ...home,
+    welcome: null,
+    whatWeDo: null,
+    recent: true,
+  };
   server.use(http.get('/api/v1/home', () => HttpResponse.json(response)));
 }
 
@@ -61,9 +66,22 @@ describe('HomePage', () => {
           gettingStarted: COMPLETE,
           welcome: null,
           cards: [
-            { kind: 'toShip', count: 12, late: 2, anyPoint: null },
-            { kind: 'costsWaiting', count: 2, late: 0, anyPoint: null },
+            {
+              kind: 'toShip',
+              hidden: false,
+              count: 12,
+              late: 2,
+              anyPoint: null,
+            },
+            {
+              kind: 'costsWaiting',
+              hidden: false,
+              count: 2,
+              late: 0,
+              anyPoint: null,
+            },
           ],
+          recent: true,
         } satisfies HomeResponse),
       ),
     );
@@ -119,17 +137,56 @@ describe('HomePage', () => {
           gettingStarted: COMPLETE,
           welcome: null,
           cards: [
-            { kind: 'lowStock', count: 3, late: 0, anyPoint: true },
-            { kind: 'invoicesToIssue', count: 4, late: 0, anyPoint: null },
-            { kind: 'returnsOpen', count: 1, late: 0, anyPoint: null },
-            { kind: 'production', count: 2, late: 0, anyPoint: null },
-            { kind: 'licences', count: 5, late: 0, anyPoint: null },
+            {
+              kind: 'drafts',
+              hidden: false,
+              count: 3,
+              late: 0,
+              anyPoint: null,
+            },
+            {
+              kind: 'lowStock',
+              hidden: false,
+              count: 3,
+              late: 0,
+              anyPoint: true,
+            },
+            {
+              kind: 'invoicesToIssue',
+              hidden: false,
+              count: 4,
+              late: 0,
+              anyPoint: null,
+            },
+            {
+              kind: 'returnsOpen',
+              hidden: false,
+              count: 1,
+              late: 0,
+              anyPoint: null,
+            },
+            {
+              kind: 'production',
+              hidden: false,
+              count: 2,
+              late: 0,
+              anyPoint: null,
+            },
+            {
+              kind: 'licences',
+              hidden: false,
+              count: 5,
+              late: 0,
+              anyPoint: null,
+            },
           ],
+          recent: true,
         } satisfies HomeResponse),
       ),
     );
     renderWithAuth(routed(<HomePage />), {
       permissions: [
+        'orders.view',
         'stock.view',
         'invoices.view',
         'return_authorizations.view',
@@ -142,6 +199,7 @@ describe('HomePage', () => {
       name: 'What needs you today',
     });
     for (const [name, href] of [
+      ['Orders · Draft, 3', '/orders?status=draft'],
       ['Low stock, 3', '/inventory?tab=reorder-points&status=low'],
       ['Invoices · To issue, 4', '/invoices?status=draft'],
       ['Open returns, 1', '/return-authorizations?status=open'],
@@ -160,7 +218,9 @@ describe('HomePage', () => {
   it('shows Low stock with its out count, opening Reorder points on Low, and Out from what is late', async () => {
     serve({
       gettingStarted: COMPLETE,
-      cards: [{ kind: 'lowStock', count: 3, late: 1, anyPoint: true }],
+      cards: [
+        { kind: 'lowStock', hidden: false, count: 3, late: 1, anyPoint: true },
+      ],
     });
     renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
 
@@ -181,10 +241,10 @@ describe('HomePage', () => {
     serve({
       gettingStarted: COMPLETE,
       cards: [
-        { kind: 'toShip', count: 12, late: 2, anyPoint: null },
-        { kind: 'toReceive', count: 5, late: 0, anyPoint: null },
-        { kind: 'expiring', count: 4, late: 1, anyPoint: null },
-        { kind: 'licences', count: 1, late: 1, anyPoint: null },
+        { kind: 'toShip', hidden: false, count: 12, late: 2, anyPoint: null },
+        { kind: 'toReceive', hidden: false, count: 5, late: 0, anyPoint: null },
+        { kind: 'expiring', hidden: false, count: 4, late: 1, anyPoint: null },
+        { kind: 'licences', hidden: false, count: 1, late: 1, anyPoint: null },
       ],
     });
     renderWithAuth(routed(<HomePage />), {
@@ -213,10 +273,42 @@ describe('HomePage', () => {
     ).toHaveAttribute('href', '/inventory?expiring=1');
   });
 
+  /**
+   * Customise Home (ADR-091, amended November 2026): a tile the person hid,
+   * or hidden by default as Drafts is, is not drawn, but buries nothing:
+   * its late items stay in the panel.
+   */
+  it('leaves a hidden tile out, its late still in the panel', async () => {
+    serve({
+      gettingStarted: COMPLETE,
+      cards: [
+        { kind: 'toReceive', hidden: false, count: 5, late: 0, anyPoint: null },
+        { kind: 'drafts', hidden: true, count: 3, late: 0, anyPoint: null },
+        { kind: 'toShip', hidden: true, count: 12, late: 2, anyPoint: null },
+      ],
+    });
+    renderWithAuth(routed(<HomePage />), { permissions: ['orders.view'] });
+
+    const late = await screen.findByRole('region', {
+      name: '2 things need you now',
+    });
+    expect(
+      within(late).getByRole('link', { name: '2 late orders to ship' }),
+    ).toBeVisible();
+    const today = screen.getByRole('region', { name: 'What needs you today' });
+    expect(
+      within(today)
+        .getAllByRole('link')
+        .map((tile) => tile.getAttribute('aria-label')),
+    ).toEqual(['To receive, 5']);
+  });
+
   it('says nothing is late in one calm line, and nothing needs you when all is done', async () => {
     serve({
       gettingStarted: COMPLETE,
-      cards: [{ kind: 'toShip', count: 3, late: 0, anyPoint: null }],
+      cards: [
+        { kind: 'toShip', hidden: false, count: 3, late: 0, anyPoint: null },
+      ],
     });
     const { unmount } = renderWithAuth(routed(<HomePage />), {
       permissions: ['orders.view'],
@@ -227,7 +319,9 @@ describe('HomePage', () => {
 
     serve({
       gettingStarted: COMPLETE,
-      cards: [{ kind: 'toShip', count: 0, late: 0, anyPoint: null }],
+      cards: [
+        { kind: 'toShip', hidden: false, count: 0, late: 0, anyPoint: null },
+      ],
     });
     renderWithAuth(routed(<HomePage />), { permissions: ['orders.view'] });
     expect(await screen.findByText('Nothing needs you today.')).toBeVisible();
@@ -238,7 +332,9 @@ describe('HomePage', () => {
   it('keeps a tile with nothing to do, quiet and still a link', async () => {
     serve({
       gettingStarted: COMPLETE,
-      cards: [{ kind: 'lowStock', count: 0, late: 0, anyPoint: true }],
+      cards: [
+        { kind: 'lowStock', hidden: false, count: 0, late: 0, anyPoint: true },
+      ],
     });
     renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
 
@@ -258,7 +354,9 @@ describe('HomePage', () => {
   it('says no reorder point is set yet, rather than that nothing is low', async () => {
     serve({
       gettingStarted: COMPLETE,
-      cards: [{ kind: 'lowStock', count: 0, late: 0, anyPoint: false }],
+      cards: [
+        { kind: 'lowStock', hidden: false, count: 0, late: 0, anyPoint: false },
+      ],
     });
     renderWithAuth(routed(<HomePage />), { permissions: ['stock.view'] });
 
@@ -276,9 +374,10 @@ describe('HomePage', () => {
     serve({
       gettingStarted: COMPLETE,
       cards: [
-        { kind: 'toShip', count: 1, late: 0, anyPoint: null },
+        { kind: 'toShip', hidden: false, count: 1, late: 0, anyPoint: null },
         {
           kind: 'fromANewerServer' as string as HomeKind,
+          hidden: false,
           count: 4,
           late: 2,
           anyPoint: null,
@@ -301,7 +400,9 @@ describe('HomePage', () => {
   it('draws what is late in the critical tone, at 4.5 : 1 in both modes', async () => {
     serve({
       gettingStarted: COMPLETE,
-      cards: [{ kind: 'toShip', count: 2, late: 1, anyPoint: null }],
+      cards: [
+        { kind: 'toShip', hidden: false, count: 2, late: 1, anyPoint: null },
+      ],
     });
     renderWithAuth(
       routed(
@@ -479,7 +580,9 @@ describe('HomePage', () => {
     it('from a tile and from a late button', async () => {
       serve({
         gettingStarted: COMPLETE,
-        cards: [{ kind: 'toShip', count: 3, late: 1, anyPoint: null }],
+        cards: [
+          { kind: 'toShip', hidden: false, count: 3, late: 1, anyPoint: null },
+        ],
       });
       atHome(['orders.view']);
 
@@ -525,6 +628,7 @@ describe('HomePage', () => {
           gettingStarted: COMPLETE,
           welcome: null,
           cards: [],
+          recent: true,
         } satisfies HomeResponse);
       }),
     );
@@ -561,7 +665,9 @@ describe('HomePage', () => {
         },
         complete: false,
       },
-      cards: [{ kind: 'toShip', count: 0, late: 0, anyPoint: null }],
+      cards: [
+        { kind: 'toShip', hidden: false, count: 0, late: 0, anyPoint: null },
+      ],
     });
     renderWithAuth(routed(<HomePage />), {
       permissions: ['organizations.update', 'orders.view', 'users.create'],

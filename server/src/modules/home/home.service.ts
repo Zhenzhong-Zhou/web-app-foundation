@@ -25,18 +25,8 @@ import {
 } from '../product-licences/product-licences.service';
 import { lowStockTotals } from '../stock/reorder-points-reads.service';
 import { expiredLot, stockRowsOf } from '../stock/stock-reads.service';
+import { arranged, type HomeKind, kindsSeenWith } from './home-kinds';
 import { WelcomeService } from './welcome.service';
-
-export type HomeKind =
-  | 'toShip'
-  | 'toReceive'
-  | 'lowStock'
-  | 'expiring'
-  | 'costsWaiting'
-  | 'invoicesToIssue'
-  | 'returnsOpen'
-  | 'production'
-  | 'licences';
 
 /**
  * A tile's figures (ADR-091): every row its list shows, filtered as the
@@ -45,6 +35,8 @@ export type HomeKind =
  */
 export interface HomeCard {
   kind: HomeKind;
+  /** Hidden in Customise Home, or by default: counted, not drawn. */
+  hidden: boolean;
   count: number;
   late: number;
   /** Low stock's: whether any item has a reorder point (ADR-085). */
@@ -71,50 +63,31 @@ export interface GettingStarted {
   complete: boolean;
 }
 
-/** The tiles in the order of a working day, and who may see each. */
-const CARDS: { kind: HomeKind; permission: Permission }[] = [
-  { kind: 'toShip', permission: 'orders.view' },
-  { kind: 'toReceive', permission: 'orders.view' },
-  { kind: 'lowStock', permission: 'stock.view' },
-  { kind: 'expiring', permission: 'stock.view' },
-  { kind: 'costsWaiting', permission: 'costs.view' },
-  { kind: 'invoicesToIssue', permission: 'invoices.view' },
-  { kind: 'returnsOpen', permission: 'return_authorizations.view' },
-  { kind: 'production', permission: 'production.view' },
-  { kind: 'licences', permission: 'product_licences.view' },
-];
-
-/**
- * Every kind of tile this build knows, in the order of a working day: what
- * a layout saved may name (ADR-091, amended November 2026).
- */
-export const HOME_KINDS: readonly HomeKind[] = CARDS.map(({ kind }) => kind);
-
 /** A tile's count, and how many of those are late. */
 type Totals = Pick<HomeCard, 'count' | 'late' | 'anyPoint'>;
 
-/** The two tiles of outstanding orders, a direction each. */
-type OrderKind = 'toShip' | 'toReceive';
+/**
+ * The three tiles of orders: the outstanding, a direction each, and the
+ * drafts.
+ */
+type OrderKind = 'toShip' | 'toReceive' | 'drafts';
 
 function isOrderKind(kind: HomeKind): kind is OrderKind {
-  return kind === 'toShip' || kind === 'toReceive';
-}
-
-/** To ship is the sales, to receive the purchases. */
-function directionOf(kind: OrderKind) {
-  return kind === 'toShip' ? 'sale' : 'purchase';
+  return kind === 'toShip' || kind === 'toReceive' || kind === 'drafts';
 }
 
 /**
  * Home (ADR-058; ADR-091): a tile per kind the member may see, each with
  * its count and how many are late, counted as the list the tile opens
  * filters it, and no rows: the list holds them. A tile the member may not
- * view is never counted.
+ * view is never counted. They come in the reader's order, each saying
+ * whether they hid it, and Home says whether Recently opened shows
+ * (Customise Home, ADR-091's amendment of November 2026).
  *
  * The reads every Home makes share one transaction (ADR-091): the
  * organization's days and zone, the tiles' counts, Getting started, and
- * the reader's membership for their welcome (ADR-079). The welcome's own
- * reads, while it shows, come after it.
+ * the reader's membership for their welcome (ADR-079) and their layout.
+ * The welcome's own reads, while it shows, come after it.
  */
 @Injectable()
 export class HomeService {
@@ -127,16 +100,16 @@ export class HomeService {
    * Home's tiles, counted against the organization's today, in its own
    * time zone (ADR-058, ADR-072). The server decides it, as the lists the
    * tiles open do: a screen left open past midnight would send yesterday,
-   * and a tile's count would then go by another day than its list.
+   * and a tile's count would then go by another day than its list. A tile
+   * the reader hid is counted too, since its late items still show in the
+   * panel of what is late (ADR-091).
    */
   async home(
     context: Pick<RequestContext, 'userId' | 'organizationId'>,
     held: ReadonlySet<Permission>,
     locale: Locale,
   ) {
-    const kinds = CARDS.flatMap(({ kind, permission }) =>
-      held.has(permission) ? [kind] : [],
-    );
+    const kinds = kindsSeenWith(held);
     const { timeZone, whatWeDo, totals, gettingStarted, membership } =
       await this.tenantDb.transaction(async (tx, organizationId) => {
         // The organization's own warning days (ADR-060), for Expiring
@@ -161,17 +134,27 @@ export class HomeService {
         };
       });
 
-    const cards: HomeCard[] = kinds.map((kind) => ({
-      kind,
-      // A direction with nothing outstanding has no row.
-      ...(totals.get(kind) ?? { count: 0, late: 0, anyPoint: null }),
-    }));
+    const layout = membership?.homeLayout ?? null;
+    const cards: HomeCard[] = arranged(held, layout).map(
+      ({ kind, hidden }) => ({
+        kind,
+        hidden,
+        // A kind of order with none has no row.
+        ...(totals.get(kind) ?? { count: 0, late: 0, anyPoint: null }),
+      }),
+    );
     const welcome = await this.welcome.of(context, held, membership, {
       timeZone,
       startShows: !gettingStarted.complete && !gettingStarted.dismissed,
       locale,
     });
-    return { whatWeDo, gettingStarted, welcome, cards };
+    return {
+      whatWeDo,
+      gettingStarted,
+      welcome,
+      cards,
+      recent: layout?.recent ?? true,
+    };
   }
 
   /**
@@ -339,9 +322,7 @@ async function totalsOf(
   };
 
   const branches = [
-    ...(kinds.some(isOrderKind)
-      ? [outstandingTotals(organizationId, today)]
-      : []),
+    ...(kinds.some(isOrderKind) ? [orderTotals(organizationId, today)] : []),
     ...kinds.flatMap((kind) =>
       isOrderKind(kind) || kind === 'lowStock'
         ? []
@@ -356,31 +337,46 @@ async function totalsOf(
 }
 
 /**
- * To ship's and To receive's branch of totalsOf(): the outstanding orders,
- * as their list filters them (outstandingOrder()), counted by direction,
- * the late among them as the list's Late has them (lateOrder()). A direction with none has no row.
+ * The orders' branch of totalsOf(): To ship and To receive, the outstanding
+ * orders as their list filters them (outstandingOrder()), by direction,
+ * the late among them as the list's Late has them (lateOrder()); and
+ * Drafts, every draft as Orders lists them with Draft chosen, never late
+ * (ADR-091, amended November 2026). A kind with none has no row.
  *
- * One read for both tiles. As a branch each, they read the organization's
- * orders and open lines twice, and the planner, pricing the two, ran the
- * whole statement on parallel workers, which took longer to start than
- * the counts took to read.
+ * One read of the outstanding orders for both directions. As a branch
+ * each, they read the organization's orders and open lines twice, and the
+ * planner, pricing the two, ran the whole statement on parallel workers,
+ * which took longer to start than the counts took to read. The drafts are
+ * a read of their own beside it, on the orders' status index: as one
+ * condition with the outstanding (`draft or outstanding`), the open lines
+ * were looked up once an order, ten times slower at large.
  */
-function outstandingTotals(organizationId: string, today: string): SQL {
-  const where = and(
+function orderTotals(organizationId: string, today: string): SQL {
+  const outstanding = and(
     eq(orders.organizationId, organizationId),
     outstandingOrder(),
   );
+  const drafts = and(
+    eq(orders.organizationId, organizationId),
+    eq(orders.status, 'draft'),
+  );
   return sql`
-    select
-      case ${orders.direction}
-        when ${directionOf('toShip')} then 'toShip'
-        when ${directionOf('toReceive')} then 'toReceive'
-      end as kind,
-      count(*)::int as count,
-      count(*) filter (where ${lateOrder(today)})::int as late
-    from ${orders}
-    where ${where}
-    group by ${orders.direction}
+    select kind, count(*)::int as count, count(*) filter (where late)::int as late
+    from (
+      select
+        case ${orders.direction}
+          when 'sale' then 'toShip'
+          when 'purchase' then 'toReceive'
+        end as kind,
+        ${lateOrder(today)} as late
+      from ${orders}
+      where ${outstanding}
+      union all
+      select 'drafts' as kind, false as late
+      from ${orders}
+      where ${drafts}
+    ) counted
+    group by kind
   `;
 }
 
