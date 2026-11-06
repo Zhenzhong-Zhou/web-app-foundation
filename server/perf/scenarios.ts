@@ -270,7 +270,8 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     read('GET /home', () => '/home'),
     // Recently opened (ADR-058), read with Home and on each search's focus.
     read('GET /recent', () => '/recent?limit=6'),
-    // Reorder points (ADR-085): the low list, as Home's See all opens it.
+    // Reorder points (ADR-085): the low list, as Home's Low stock tile
+    // opens it.
     read(
       'GET /stock/reorder-points?status=low',
       () => '/stock/reorder-points?status=low',

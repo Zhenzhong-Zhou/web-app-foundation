@@ -333,8 +333,8 @@ async function buildProbes(
       name: 'lookup: typo',
       run: () => lookups.lookup('fokus dialy', EVERY_PERMISSION, 'en'),
     },
-    // Home (ADR-058): every card's rows and counts, and Getting started's
-    // steps, as an owner sees them.
+    // Home (ADR-058; ADR-091): every tile's count and Getting started's
+    // steps, as an owner sees them, in one transaction.
     {
       name: 'home',
       run: () => home.home(org, EVERY_PERMISSION, 'en'),

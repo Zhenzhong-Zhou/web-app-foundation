@@ -214,11 +214,6 @@ describe('InventoryPage', () => {
   });
 
   /**
-   * The search lives in the address, as every list's (#301): the lookup's
-   * Show all narrows Stock while it is open, and Reorder points shares the
-   * one search, either way.
-   */
-  /**
    * Expiring soon lists the soonest first whenever it is on (ADR-091): the
    * panel's senior stopped at which lot expires first.
    */

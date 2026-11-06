@@ -196,12 +196,6 @@ a second organization.
   orders, newest first, with no row saying late. In Français the chip
   reads En retard and a row 2 jours de retard; in 中文, 逾期 and 逾期 2 天,
   and a partner with no contacts says 订单逾期时, never 延误.
-- **MC-407** *(ADR-091)* Orders for a role that cannot raise one. Give a
-  member a role made with only Orders' view (Settings → Roles) and sign
-  in as them: on Orders, where Raise an order would be, one grey line
-  says their role does not include raising orders, and whom to ask
-  (the Owners first, at most three). As the demo Owner, Raise an order,
-  and no such line.
 - **MC-406** *(ADR-091)* The lists keep what is chosen in the address. On
   Orders press All, set Expected from to the 1st of this month, then Tab to
   Expected's header and press Enter: the address gains `status=all`,
@@ -214,6 +208,12 @@ a second organization.
   Location, Expires) and Reorder points (Low stock): each choice is in the
   address, and Back from a page opened from there keeps it. Type
   `?status=nonsense` after `/orders`: Open is pressed, as with none.
+- **MC-407** *(ADR-091)* Orders for a role that cannot raise one. Give a
+  member a role made with only Orders' view (Settings → Roles) and sign
+  in as them: on Orders, where Raise an order would be, one grey line
+  says their role does not include raising orders, and whom to ask
+  (the Owners first, at most three). As the demo Owner, Raise an order,
+  and no such line.
 
 ## 5. Making
 
@@ -915,6 +915,21 @@ Paper is checked first because it must not change at all.
   with only Orders' view (Settings → Roles) and sign in as them: in place
   of Home's actions one grey line says their role does not include
   raising orders, receiving stock or planning runs, and whom to ask.
+- **MC-1560** *(ADR-091)* The type scale and the corners. On Inventory,
+  SO-DEMO-1 and INV-000001, in light and in dark, at 1440 px and on a
+  phone: buttons, fields, menus and the text under a heading read at 16
+  px, a table's rows and heads at 14; a section's heading, 20 px, stands
+  above its text by its size, not only its weight, and the page's title
+  is 25 px. In 中文 the lines of a paragraph are 28 px apart, a small
+  text's 24, more open than in English. Panels have 12 px corners, buttons and fields 10 and a dialog
+  (Receive stock) 16. On Members a made role's chip stays square beside a
+  built-in one's pill (MC-3312). The icons beside Register's ways in (with
+  REGISTRATION=invitation) and on Home for an account in no organization,
+  and the dashed tile on an organization invitation's page (`npm run
+  org:invite`), are rounded squares, not circles. The confirmation email's
+  button in Mailpit has the buttons' corners, and the invitation's note the
+  panels'. At Larger text (account menu → Text size) the 16 px text is 20, and
+  nothing scrolls sideways (MC-2803).
 - **MC-1561** *(ADR-091)* The top bar's words. Below 1200 px wide each of
   the bar's icons has its word under it, the app's own names: Menu,
   Search (below 900 px, where it is a button), Help, Notifications and
@@ -939,21 +954,6 @@ Paper is checked first because it must not change at all.
   is in. Pressing a filter or a tab on a list shows no bar, only the
   list's own placeholder. With Reduce motion on (the system's
   accessibility settings), the bar stands still while shown.
-- **MC-1560** *(ADR-091)* The type scale and the corners. On Inventory,
-  SO-DEMO-1 and INV-000001, in light and in dark, at 1440 px and on a
-  phone: buttons, fields, menus and the text under a heading read at 16
-  px, a table's rows and heads at 14; a section's heading, 20 px, stands
-  above its text by its size, not only its weight, and the page's title
-  is 25 px. In 中文 the lines of a paragraph are 28 px apart, a small
-  text's 24, more open than in English. Panels have 12 px corners, buttons and fields 10 and a dialog
-  (Receive stock) 16. On Members a made role's chip stays square beside a
-  built-in one's pill (MC-3312). The icons beside Register's ways in (with
-  REGISTRATION=invitation) and on Home for an account in no organization,
-  and the dashed tile on an organization invitation's page (`npm run
-  org:invite`), are rounded squares, not circles. The confirmation email's
-  button in Mailpit has the buttons' corners, and the invitation's note the
-  panels'. At Larger text (account menu → Text size) the 16 px text is 20, and
-  nothing scrolls sideways (MC-2803).
 
 ## 16. Files (ADR-059)
 
