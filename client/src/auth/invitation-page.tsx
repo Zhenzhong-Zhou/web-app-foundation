@@ -407,11 +407,16 @@ function Invitation({
       until={until}
       email={invitation.email}
       locale={locale}
-      emailHelp={intl.formatMessage({
-        id: 'invitation.emailFixed',
-        defaultMessage:
-          'The invitation is for this address. You’ll sign in with it.',
-      })}
+      // The address in full under the field, which a phone cuts before
+      // its domain (ADR-091's review).
+      emailHelp={intl.formatMessage(
+        {
+          id: 'invitation.emailFixed',
+          defaultMessage:
+            'The invitation is for {email}. You’ll sign in with it.',
+        },
+        { email: invitation.email },
+      )}
       accept={accept}
       onAccepted={joined}
       onRefused={refused}

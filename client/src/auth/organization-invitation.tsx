@@ -168,11 +168,14 @@ export function OrganizationInvitation({
       until={until}
       email={invitation.email}
       locale={locale}
-      emailHelp={intl.formatMessage({
-        id: 'invitation.organization.emailFixed',
-        defaultMessage:
-          'The invitation is for this address. You’ll sign in with it, and we’ll email it a link to confirm it’s yours.',
-      })}
+      emailHelp={intl.formatMessage(
+        {
+          id: 'invitation.organization.emailFixed',
+          defaultMessage:
+            'The invitation is for {email}. You’ll sign in with it, and we’ll email it a link to confirm it’s yours.',
+        },
+        { email: invitation.email },
+      )}
       belowEmail={
         <Typography variant="body2" sx={{ mt: 1 }}>
           <FormattedMessage

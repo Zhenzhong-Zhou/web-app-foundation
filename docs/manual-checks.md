@@ -1750,7 +1750,9 @@ The pages, in a private window unless a check says otherwise.
   Joining where you work, Starting a new organization and Sign in; in
   Français « Ici, on ouvre un compte sur invitation », in 中文
   这里的账户通过邀请创建, never a word-for-word « commencent par » or
-  从邀请开始 (#380). `/register` typed in the address bar shows the same page; on a slow
+  从邀请开始 (#380). On a phone, an invitation's page names the invited
+  address in full under its locked Email field, the domain too, however
+  the field cuts it. `/register` typed in the address bar shows the same page; on a slow
   connection (DevTools, Slow 4G) it shows the language and text size at
   once, and a spinner until the page is known. In 中文 at 390 px wide and
   at Larger text (ADR-075), the organization kind of the invitation page,
@@ -5027,3 +5029,5 @@ first.
   1200 px: MC-1561 extended.
 - 2026-11-05: ADR-091's review, the top bar's words on one line below
   1200 px, Account's too: MC-1561 extended.
+- 2026-11-05: ADR-091's review, the invitation page's help naming the
+  invited address in full under its field: MC-3110 extended.
