@@ -51,7 +51,7 @@ export function NoOrganization() {
 
   return (
     <Stack spacing={2.5} sx={{ maxWidth: 1080 }}>
-      <Typography variant="h4" component="h1">
+      <Typography variant="h5" component="h1">
         {greeting(intl, session?.user.name ?? '')}
       </Typography>
       <Typography sx={{ color: 'text.secondary', mt: -1 }}>

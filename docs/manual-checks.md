@@ -2479,7 +2479,9 @@ menu's Colour mode.
   pale blue disc. MC-3409's Something went wrong: the warning sign dark
   red on a pale red disc. MC-3407's Can’t reach the server: the cloud dark
   grey on a pale grey disc. In dark mode each the other way round, a light
-  icon on a dark tint, and each icon stands clear of its disc. Then, in an
+  icon on a dark tint, and each icon stands clear of its disc; each
+  title is the page title's 25 px, as Home with no organization's greeting
+  is, not 34. Then, in an
   organization of your own (registered locally, `REGISTRATION=open`) with
   Getting started dismissed, Home says Nothing needs you today. beside a
   green tick, and every tile is quiet, grey on the page's grey, its words
@@ -5009,3 +5011,5 @@ first.
   size: MC-3207 extended.
 - 2026-11-05: ADR-091's review, the bell's notice says low on stock, the
   tile's Low stock: MC-4201 reworded.
+- 2026-11-05: ADR-091's review, the status pages' titles and Home with
+  no organization's greeting at the page title's size: MC-3421 extended.
