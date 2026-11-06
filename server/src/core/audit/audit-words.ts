@@ -344,12 +344,18 @@ export function zoneLabel(locale: Locale, zone: string): string {
   const current = canonicalTimeZone(zone);
   if (!current) return zone;
   try {
-    const name = new Intl.DateTimeFormat(locale, {
-      timeZone: current,
-      timeZoneName: 'longGeneric',
-    })
-      .formatToParts(new Date())
-      .find((part) => part.type === 'timeZoneName')?.value;
+    const named = (style: 'longGeneric' | 'long') =>
+      new Intl.DateTimeFormat(locale, {
+        timeZone: current,
+        timeZoneName: style,
+      })
+        .formatToParts(new Date())
+        .find((part) => part.type === 'timeZoneName')?.value;
+    const generic = named('longGeneric');
+    // An offset is no name, "GMT+00:00" for UTC: its long name says it in
+    // words, "Coordinated Universal Time", as the client's does.
+    const name =
+      generic && /^(GMT|UTC)([+−-]|$)/.test(generic) ? named('long') : generic;
     if (!name) return zone;
     const city = (current.split('/').pop() ?? current).replace(/_/g, ' ');
     return translate(

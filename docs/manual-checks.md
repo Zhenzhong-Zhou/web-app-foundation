@@ -849,7 +849,8 @@ Paper is checked first because it must not change at all.
   Orders' Created, Movements' When and the Audit log's When read like
   `2026-10-15 18:54:11`, in UTC, and open as dates.
 - **MC-1559** *(ADR-058; ADR-091)* Sign in as the demo owner: Home opens,
-  greeting by the time of day, then the organization's day and time to
+  greeting by the time of day on the organization's clock, Vancouver's
+  for the demo, then the organization's day and time to
   the minute, never seconds, which moves on at the next minute by itself,
   and What we do under it, in plain text, no card. What is late is a pale
   red panel headed by how many ("3 things need you now", in 中文
@@ -1329,7 +1330,11 @@ Time — Vancouver while Los Angeles is on UTC−7 too (#343).
   zone saves it, saying Time zone saved. The audit log's entry reads Time
   zone: Coordinated Universal Time — UTC → Pacific Time (Canada) —
   Vancouver. Save again unchanged: Save is greyed out, and no entry is
-  added.
+  added. Back on Home with the computer in Vancouver, the note under the
+  date reads Dates follow the organization’s time zone: Coordinated
+  Universal Time — UTC, never GMT+00:00, and the greeting goes by UTC's
+  hour, the time beside it: "Good morning" at 4:20 a.m., whatever the
+  computer's clock says.
 - **MC-2603** *(ADR-072)* Finding a zone: type pacific t, then +8: each
   finds its zones, each named with its city, its offset and its standard
   name, and This device's zone comes first; on a phone in 中文 the group
@@ -4970,3 +4975,6 @@ first.
 - 2026-11-05: ADR-091's review, decision 5A, the welcome and Getting
   started above what is late, as the boards draw them: MC-1559 and
   MC-3209 reworded.
+- 2026-11-05: ADR-091's review, Home greeting by the organization's
+  clock, UTC named in words, the demo on Vancouver's: MC-1559 and MC-2602
+  extended.

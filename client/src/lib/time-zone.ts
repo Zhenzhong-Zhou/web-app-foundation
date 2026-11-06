@@ -199,23 +199,29 @@ export function cityOf(zone: string): string {
  * the city beside it stays as the zone's standard name spells it.
  */
 export function zoneName(zone: string, locale: string): string {
+  const named = (style: 'longGeneric' | 'long') =>
+    cached(
+      `zone-name:${style}:${locale}:${zone}`,
+      () =>
+        new Intl.DateTimeFormat(locale, {
+          timeZone: zone,
+          timeZoneName: style,
+        }),
+    )
+      .formatToParts(new Date())
+      .find((part) => part.type === 'timeZoneName')?.value ?? zone;
   try {
-    return (
-      cached(
-        `zone-name:${locale}:${zone}`,
-        () =>
-          new Intl.DateTimeFormat(locale, {
-            timeZone: zone,
-            timeZoneName: 'longGeneric',
-          }),
-      )
-        .formatToParts(new Date())
-        .find((part) => part.type === 'timeZoneName')?.value ?? zone
-    );
+    const generic = named('longGeneric');
+    // An offset is no name, "GMT+00:00" for UTC: its long name says it in
+    // words, "Coordinated Universal Time" (ADR-091's review).
+    return IS_OFFSET.test(generic) ? named('long') : generic;
   } catch {
     return zone;
   }
 }
+
+/** What Intl gives for a zone it has no name for: GMT+00:00, UTC+8. */
+const IS_OFFSET = /^(GMT|UTC)([+−-]|$)/;
 
 /**
  * A zone the server takes (ADR-072): UTC, or a place, one of the time-zone

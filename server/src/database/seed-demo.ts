@@ -45,7 +45,7 @@ import {
   startOf,
 } from './seed-demo-team';
 import { addTeamWork } from './seed-demo-team-work';
-import { addVariety, daysFromNow } from './seed-demo-variety';
+import { addVariety, daysFromNow, DEMO_TIME_ZONE } from './seed-demo-variety';
 import { runInTenantContext } from './tenant-context';
 
 /**
@@ -218,9 +218,18 @@ async function seedDemo(): Promise<void> {
         // Stock is valued in the base currency from the first receipt
         // (ADR-048). Set only if empty, like the tax number below: an
         // existing organization's choice must survive.
-        const { baseCurrency, squareLogoFileId, whatWeDo, documentLanguage } =
-          await organization.get();
+        const {
+          baseCurrency,
+          squareLogoFileId,
+          whatWeDo,
+          documentLanguage,
+          timeZone,
+        } = await organization.get();
         if (!baseCurrency) await organization.update({ baseCurrency: 'CAD' });
+        // Vancouver, while the zone is still UTC, the default.
+        if (timeZone === 'UTC') {
+          await organization.update({ timeZone: DEMO_TIME_ZONE });
+        }
         if (!whatWeDo) {
           await organization.update({ whatWeDo: WHAT_WE_DO[documentLanguage] });
         }

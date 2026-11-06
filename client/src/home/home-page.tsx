@@ -241,7 +241,7 @@ function OrganizationHome() {
         <Stack spacing={0.75} sx={{ minWidth: 0 }}>
           <Stack direction="row" sx={{ alignItems: 'center', gap: 0.5 }}>
             <Typography ref={heading} variant="h5" component="h1" tabIndex={-1}>
-              {greeting(intl, session?.user.name ?? '')}
+              {greeting(intl, session?.user.name ?? '', zone)}
             </Typography>
             {/* Next after the heading, where Dismiss puts focus, so the
                 next Tab reaches Undo; shown at the foot of the screen all

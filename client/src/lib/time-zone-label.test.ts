@@ -29,6 +29,12 @@ describe('zoneLabel', () => {
     expect(zoneLabel('Asia/Calcutta')).toMatch(/^\S.* — Kolkata$/);
   });
 
+  // UTC's generic name is an offset, GMT+00:00, which says nothing to a
+  // reader (ADR-091's review): its long name, in words.
+  it('names UTC in words, not as an offset', () => {
+    expect(zoneLabel('UTC')).toBe('Coordinated Universal Time — UTC');
+  });
+
   // On a winter day, when the browser's own names for some zones carry
   // brackets: Vancouver's, "Pacific Time (Canada)", since British Columbia
   // stayed on UTC−7 (#343). A city in brackets after it would double them.
