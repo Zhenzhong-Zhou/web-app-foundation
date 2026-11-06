@@ -178,7 +178,7 @@ for (const size of [
     await expect(lookUp).toHaveAttribute('href', '/products');
     expect((await lookUp.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     await expect(
-      card.getByRole('link', { name: 'Products and licences', exact: true }),
+      card.getByRole('link', { name: 'Products', exact: true }),
     ).toHaveAttribute('href', '/products');
 
     await fold.click();

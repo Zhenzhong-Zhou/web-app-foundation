@@ -158,13 +158,17 @@ describe('the welcome card', () => {
     expect(
       within(region).getByRole('link', { name: 'David Park' }),
     ).toHaveAttribute('href', '/people/user-david');
-    // Each area a link to its page (ADR-091).
+    // Each area a link to its page, named as the menu names it (ADR-091's
+    // review): Inventory, not Stock and locations.
     expect(
       within(region).getByRole('link', { name: 'Orders' }),
     ).toHaveAttribute('href', '/orders');
     expect(
-      within(region).getByRole('link', { name: 'Stock and locations' }),
+      within(region).getByRole('link', { name: 'Inventory' }),
     ).toHaveAttribute('href', '/inventory');
+    expect(
+      within(region).queryByRole('link', { name: 'Stock and locations' }),
+    ).toBeNull();
 
     expect(
       within(region).getByText('Your first week · 0 of 3 done'),

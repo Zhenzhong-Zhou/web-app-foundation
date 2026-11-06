@@ -1852,7 +1852,10 @@ The pages, in a private window unless a check says otherwise.
 - **MC-3207** *(ADR-079)* The welcome as a Viewer, on a computer: as the
   demo Owner, invite an address as a Viewer with a note of two lines, and
   accept it from Mailpit in a private window, at 900 px wide or more.
-  Home's card, above the tiles, is open: its head, at the size of Home's
+  Home's card, above the tiles, is open (each of its areas a link named
+  as the menu names the page it opens, Inventory, Products, Orders, not
+  Stock and locations; an area whose first page is closed to the reader
+  links its next, Tax codes for costs): its head, at the size of Home's
   other headings, reads Welcome to Demo …,
   your name, and Your first week · 0 of 3 done, with Fold. Under it the
   demo's What we do, as under Home's date; You joined today as a Viewer,
@@ -5047,3 +5050,5 @@ first.
   shown once with its names: MC-1559 extended.
 - 2026-11-05: ADR-091's review, Home's row links tinted only under a
   mouse, never left tinted after a tap: MC-1559 extended.
+- 2026-11-05: ADR-091's review, the welcome's areas named and linked as
+  the menu has them: MC-3207 extended.

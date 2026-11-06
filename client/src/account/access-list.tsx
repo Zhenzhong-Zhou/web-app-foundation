@@ -4,21 +4,31 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import type { Permission } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
+import { NAV_GROUPS } from '../layout/navigation';
 import { OFFER_BACK } from '../lib/offer-back';
 import { rem } from '../theme/rem';
 import { accessAreas, type Area } from './access-phrases';
 
-/** Each area's page, and what opening it takes (ADR-091). */
-const AREA_PAGES: Record<Area, { to: string; permission: Permission }> = {
-  stock: { to: '/inventory', permission: 'stock.view' },
-  products: { to: '/products', permission: 'products.view' },
-  orders: { to: '/orders', permission: 'orders.view' },
-  production: { to: '/production', permission: 'production.view' },
-  invoices: { to: '/invoices', permission: 'invoices.view' },
-  costs: { to: '/costs', permission: 'costs.view' },
-  partners: { to: '/partners', permission: 'partners.view' },
-  people: { to: '/people', permission: 'users.view' },
+/**
+ * The menu's pages each area opens, the first the reader may open taking
+ * the link (ADR-091's review): its name, its address and what opening it
+ * takes come from the menu itself, so a row says the name the reader will
+ * find there, Inventory for stock, Tax codes where costs are closed.
+ */
+const AREA_PATHS: Record<Area, readonly string[]> = {
+  stock: ['/inventory', '/locations'],
+  products: ['/products', '/licences'],
+  orders: ['/orders'],
+  production: ['/production'],
+  invoices: ['/invoices', '/return-authorizations'],
+  costs: ['/costs', '/settings/tax-codes', '/settings/price-lists'],
+  partners: ['/partners'],
+  people: ['/people', '/settings/organization'],
 };
+
+const NAV_ITEMS = new Map(
+  NAV_GROUPS.flatMap((group) => group.items).map((item) => [item.to, item]),
+);
 
 /**
  * Your access's sentences (ADR-079) for any permissions: an area's name
@@ -41,6 +51,10 @@ export function AccessList({
 }) {
   const intl = useIntl();
   const can = useCan();
+  const pageOf = (area: Area) =>
+    AREA_PATHS[area]
+      .map((path) => NAV_ITEMS.get(path))
+      .find((item) => item && (!item.permission || can(item.permission)));
 
   return (
     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
@@ -60,10 +74,10 @@ export function AccessList({
           }}
         >
           <Typography component="span" sx={{ fontWeight: 600 }}>
-            {linked && can(AREA_PAGES[area].permission) ? (
+            {linked && pageOf(area) ? (
               <Link
                 component={RouterLink}
-                to={AREA_PAGES[area].to}
+                to={pageOf(area)!.to}
                 state={OFFER_BACK}
                 underline="always"
                 // A target of 44 px on touch (ADR-091).
@@ -75,7 +89,7 @@ export function AccessList({
                   },
                 }}
               >
-                {label}
+                {intl.formatMessage(pageOf(area)!.label)}
               </Link>
             ) : (
               label
