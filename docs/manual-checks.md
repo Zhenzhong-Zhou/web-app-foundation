@@ -1914,7 +1914,8 @@ The pages, in a private window unless a check says otherwise.
   top bar's Menu, Search, Help, Notifications and Account. Nowhere does it
   say overdue, See all or cards. In Français (Accueil) and 中文 (首页) the
   same: 2 en retard, Ce qui vous attend aujourd’hui, Déployer and Réduire,
-  Inviter votre équipe; 2 项逾期, 今天要处理的事, 展开 and 收起, 库存下限.
+  Inviter votre équipe; 2 项逾期, 今天要处理的事, 展开 and 收起, 库存下限;
+  a tile is 磁贴, and 卡片 only the welcome card (欢迎卡片).
   Its Inventory link opens Inventory, its guide at Reorder points.
 
 ## 33. Job roles (ADR-080)
@@ -4941,3 +4942,5 @@ first.
 - 2026-11-05: ADR-091's review, text people read at 14 px at least and
   headings told by size, chips and their × 44 px on touch: MC-1542
   extended, MC-1561's words 14 px.
+- 2026-11-05: ADR-091's review, a tile is 磁贴 in Chinese, 卡片 left to
+  the welcome card: MC-3213 extended.
