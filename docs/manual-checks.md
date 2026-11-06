@@ -1838,7 +1838,8 @@ The pages, in a private window unless a check says otherwise.
 - **MC-3207** *(ADR-079)* The welcome as a Viewer, on a computer: as the
   demo Owner, invite an address as a Viewer with a note of two lines, and
   accept it from Mailpit in a private window, at 900 px wide or more.
-  Home's card, above the tiles, is open: its head reads Welcome to Demo …,
+  Home's card, above the tiles, is open: its head, at the size of Home's
+  other headings, reads Welcome to Demo …,
   your name, and Your first week · 0 of 3 done, with Fold. Under it the
   demo's What we do, as under Home's date; You joined today as a Viewer,
   and the card stays for your first two weeks, until the day fourteen
@@ -5004,3 +5005,5 @@ first.
   the trace, Stock value and Home: MC-1552 reworded.
 - 2026-11-05: ADR-091's review, What we do once on Home, the welcome
   leaving it to the header: MC-1704 extended.
+- 2026-11-05: ADR-091's review, the welcome's heading at the section
+  size: MC-3207 extended.

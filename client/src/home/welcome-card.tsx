@@ -245,12 +245,14 @@ export function WelcomeCard({
           <WavingHandOutlined fontSize="small" />
         </Box>
         <Box sx={{ flex: 1, minWidth: 0 }}>
+          {/* The section size, as Home's other headings (ADR-091's
+              review), told from the line under it by size. */}
           <Typography
             ref={headingRef}
+            variant="h6"
             component="h2"
             id="welcome-title"
             tabIndex={-1}
-            sx={{ fontWeight: 700 }}
           >
             {intl.formatMessage(
               {
