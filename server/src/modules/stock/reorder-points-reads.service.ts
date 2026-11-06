@@ -153,10 +153,26 @@ export function lowStockTotals(organizationId: string, today: string): SQL {
     with p as materialized (${positionsOf(organizationId, today)})
     select
       'lowStock'::text as kind,
-      (count(*) filter (where ${IS_LOW}))::int as count,
-      (count(*) filter (where ${IS_OUT}))::int as late,
-      count(*) > 0 as "anyPoint"
-    from p
+      c."low" as count,
+      c."out" as late,
+      c."all" > 0 as "anyPoint"
+    from (${countsOver(sql`p`, [])}) c
+  `;
+}
+
+/**
+ * The list's counts, All, Low and Out (ADR-085), over `p`'s positions or
+ * the named ones a search reads: one builder for the list's counts() and
+ * Home's tile, which ADR-085 says must agree (ADR-091's review).
+ */
+function countsOver(from: SQL, search: SQL[]): SQL {
+  return sql`
+    select
+      count(*)::int as "all",
+      (count(*) filter (where ${IS_LOW}))::int as "low",
+      (count(*) filter (where ${IS_OUT}))::int as "out"
+    from ${from}
+    ${whereOf(search)}
   `;
 }
 
@@ -352,12 +368,10 @@ export class ReorderPointsReadsService {
         out: number;
       }>(sql`
         with p as materialized (${positionsOf(organizationId, today)})
-        select
-          count(*)::int as "all",
-          (count(*) filter (where ${IS_LOW}))::int as "low",
-          (count(*) filter (where ${IS_OUT}))::int as "out"
-        from ${search.length > 0 ? namedPositions(organizationId) : sql`p`}
-        ${whereOf(search)}
+        ${countsOver(
+          search.length > 0 ? namedPositions(organizationId) : sql`p`,
+          search,
+        )}
       `);
 
       return rows[0];
