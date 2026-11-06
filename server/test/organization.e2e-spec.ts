@@ -296,7 +296,14 @@ describe('Organization (e2e)', () => {
     it('refuses more than 200 characters, in any script', async () => {
       const org = await registerOrganization(app, 'alpha');
 
-      for (const whatWeDo of ['x'.repeat(201), '保'.repeat(201)]) {
+      // "✔️" is two characters to Postgres, a tick and its emoji form:
+      // refused as too long, never a 500 from the column's check.
+      for (const whatWeDo of [
+        'x'.repeat(201),
+        '保'.repeat(201),
+        '✔️'.repeat(150),
+        `${'x'.repeat(195)}${'✔️'.repeat(3)}`,
+      ]) {
         await org.agent
           .patch('/v1/organization')
           .send({ whatWeDo })
