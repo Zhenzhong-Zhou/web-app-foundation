@@ -210,7 +210,7 @@ a second organization.
   pressed, the day and the sort as they were. Press Orders in the menu:
   the plain list, Open pressed, the address `/orders`. Do the same on
   Invoices (To issue, a day, Total), Returns (Closed, a day), Production (a
-  status, a day), Inventory (Expiring soon, Needs a cost, Show emptied, a
+  status, a day), Inventory (Expiring soon, Waiting for a cost, Show emptied, a
   Location, Expires) and Reorder points (Low stock): each choice is in the
   address, and Back from a page opened from there keeps it. Type
   `?status=nonsense` after `/orders`: Open is pressed, as with none.
@@ -803,8 +803,9 @@ Paper is checked first because it must not change at all.
   the error appears and the password is dots again. The same on Change
   password when the current password is wrong: every field shown goes back to
   dots.
-- **MC-1552** Inventory's quick filters read Expiring soon, Needs a cost and
-  Show emptied, each with its count. Pressing Needs a cost shows THE-0915's
+- **MC-1552** Inventory's quick filters read Expiring soon, Waiting for a
+  cost (the name Home's tile and Stock value give it; 等待成本, En attente
+  d’un coût) and Show emptied, each with its count. Pressing Waiting for a cost shows THE-0915's
   L-theanine, received with no price (PO-DEMO-5), and the count matches the
   rows; set its cost on Stock value, come back, and it is gone and the count
   is one lower. Stock value has a page header with its explanation under it,
@@ -4998,3 +4999,5 @@ first.
   in 中文, the glossary's word for late, not 延误: MC-405 extended.
 - 2026-11-05: ADR-091's review, decision 47a, three tiles with their
   page's name first: MC-1559 extended, MC-1531 reworded.
+- 2026-11-05: ADR-091's review, Waiting for a cost one name on Inventory,
+  the trace, Stock value and Home: MC-1552 reworded.

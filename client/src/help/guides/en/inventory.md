@@ -10,7 +10,7 @@ Inventory shows what you have and where: each item, at each location, by lot. Fr
 4. For a product tracked by lot, type the lot number and expiry as printed on the box. Receiving the same lot again adds to it.
 5. Press **Receive**.
 
-Goods a supplier sends against a purchase are received on the order instead, on [Orders](/orders). Stock received here has no cost until one is set on [Stock value](/costs); **Needs a cost** lists it.
+Goods a supplier sends against a purchase are received on the order instead, on [Orders](/orders). Stock received here has no cost until one is set on [Stock value](/costs); **Waiting for a cost** lists it.
 
 ## Move, ship or correct {#move}
 

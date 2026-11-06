@@ -142,7 +142,7 @@ export function InventoryPage() {
  * narrowed, `?expiring=1`, and what is pressed or chosen here is kept
  * there. "Expiring soon" is lots within the amber threshold, the expired
  * included; "Expired" is those past their day alone, which Home's late
- * button adds; "Needs a cost" is stock whose value is still provisional
+ * button adds; "Waiting for a cost" is stock whose value is still provisional
  * (ADR-048).
  */
 const ADDRESS_FILTERS = {
@@ -442,7 +442,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
             id: 'needs-cost',
             label: intl.formatMessage({
               id: 'inventory.quick.needsCost',
-              defaultMessage: 'Needs a cost',
+              defaultMessage: 'Waiting for a cost',
             }),
             count: needsCostCount ?? undefined,
             pressed: needsCost,

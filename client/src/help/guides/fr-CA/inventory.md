@@ -10,7 +10,7 @@ L’inventaire montre ce que vous avez et où : chaque article, à chaque empla
 4. Pour un produit suivi par lot, saisissez le numéro de lot et la date de péremption tels qu’imprimés sur la boîte. Recevoir le même lot à nouveau s’y ajoute.
 5. Appuyez sur **Recevoir**.
 
-Les marchandises qu’un fournisseur envoie pour un achat se reçoivent plutôt sur la commande, dans [Commandes](/orders). Le stock reçu ici n’a pas de coût tant qu’on ne lui en donne pas un dans [Valeur du stock](/costs); **Sans coût** le liste.
+Les marchandises qu’un fournisseur envoie pour un achat se reçoivent plutôt sur la commande, dans [Commandes](/orders). Le stock reçu ici n’a pas de coût tant qu’on ne lui en donne pas un dans [Valeur du stock](/costs); **En attente d’un coût** le liste.
 
 ## Déplacer, expédier ou corriger {#move}
 

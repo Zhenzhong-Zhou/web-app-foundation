@@ -240,7 +240,7 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
                           size="small"
                           label={intl.formatMessage({
                             id: 'costs.needsCost',
-                            defaultMessage: 'Needs a cost',
+                            defaultMessage: 'Waiting for a cost',
                           })}
                           color="warning"
                           variant="outlined"
