@@ -1359,7 +1359,7 @@
   "partners.contact.role.help": "按对方的叫法——应付账款、仓库经理。",
   "partners.contact.saved": "联系人已保存",
   "partners.contacts": "联系人",
-  "partners.contacts.empty": "暂无联系人。订单延误时需要有人可以联系。",
+  "partners.contacts.empty": "暂无联系人。订单逾期时需要有人可以联系。",
   "partners.create.oneList": "买卖双方共用一个列表。这里无需选择——合作伙伴是供应商还是客户，取决于您与其下的订单。",
   "partners.create.title": "添加合作伙伴",
   "partners.documentLanguages.notice": "适用于此合作伙伴今后生成的装箱单、发票和贷项通知单。已生成的单据保持原有语言。",

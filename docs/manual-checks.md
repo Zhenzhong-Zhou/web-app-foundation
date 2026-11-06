@@ -194,7 +194,8 @@ a second organization.
   in red, saying how late (2 days late), a later one with none. Press
   Expected: the latest first. Remove Still to receive too: the open
   orders, newest first, with no row saying late. In Français the chip
-  reads En retard and a row 2 jours de retard; in 中文, 逾期 and 逾期 2 天.
+  reads En retard and a row 2 jours de retard; in 中文, 逾期 and 逾期 2 天,
+  and a partner with no contacts says 订单逾期时, never 延误.
 - **MC-407** *(ADR-091)* Orders for a role that cannot raise one. Give a
   member a role made with only Orders' view (Settings → Roles) and sign
   in as them: on Orders, where Raise an order would be, one grey line
@@ -4989,3 +4990,5 @@ first.
   the menu and the guides call it: MC-3210 extended.
 - 2026-11-05: ADR-091's review, the sign-in pages' by-invitation line
   without #380's calque, in Français and 中文: MC-3110 extended.
+- 2026-11-05: ADR-091's review, a partner with no contacts says 订单逾期
+  in 中文, the glossary's word for late, not 延误: MC-405 extended.
