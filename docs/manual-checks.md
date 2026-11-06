@@ -879,7 +879,8 @@ Paper is checked first because it must not change at all.
   welcome, at 0 of 7 done over a bar in the accent, with Seven steps get
   your organization ready to work… inside the card. The next step is
   shaded, its ring in the accent, its button the only filled one on Home
-  with Learn more beside it, and Raise an order and More at the top, grey.
+  with Learn more beside it (44 px tall on touch), and Raise an order and
+  More at the top, grey.
   Every other step is one link, its whole row, at least 44 px tall (on a
   phone too), opening its page with Back; a done one is ticked, grey, and
   reads … · Done. Nothing needs you today. in one line and the tiles quiet
@@ -4918,3 +4919,5 @@ first.
   reworded.
 - 2026-11-05: ADR-091's review, every icon button 44 px tall on touch,
   Home's Refresh among them: MC-1542 extended.
+- 2026-11-05: ADR-091's review, Learn more beside a heading or a step 44
+  px tall on touch: MC-1559 extended.

@@ -121,6 +121,9 @@ test.describe('on a touch phone', () => {
 
     for (const target of [
       page.getByRole('main').getByRole('button', { name: 'Refresh' }),
+      page
+        .getByRole('region', { name: 'Getting started' })
+        .getByRole('button', { name: 'Learn more', exact: true }),
     ]) {
       const box = await target.boundingBox();
       expect(box?.width).toBeGreaterThanOrEqual(44);
