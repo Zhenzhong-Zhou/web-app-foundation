@@ -299,6 +299,10 @@ steps; this section stays the rule.
   table or diagram to compare, a new term in plain words the first time;
   an empty section is left out, but Decisions needed never is. After any
   new migration, the reply reminds Bob to run `npm run migrate:all`.
+- **Every run or session the chat asks Bob to start comes with its rough
+  time and cost** (6 November 2026): the minutes or hours, the cost on
+  API credits, what it takes of his plan's usage, and what the figures
+  rest on. A build brief holds the same for each of its steps.
 - State the exact path of every file:
   - `server/src/modules/…`;
   - `server/src/core/…` (organizations, audit, authorization);
