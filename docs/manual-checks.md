@@ -1916,7 +1916,9 @@ The pages, in a private window unless a check says otherwise.
   say overdue, See all or cards. In Français (Accueil) and 中文 (首页) the
   same: 2 en retard, Ce qui vous attend aujourd’hui, Déployer and Réduire,
   Inviter votre équipe; 2 项逾期, 今天要处理的事, 展开 and 收起, 库存下限;
-  a tile is 磁贴, and 卡片 only the welcome card (欢迎卡片).
+  a tile is 磁贴, and 卡片 only the welcome card (欢迎卡片). Where it says
+  the welcome starts folded, it says below 900 px, as it does on a
+  tablet upright too.
   Its Inventory link opens Inventory, its guide at Reorder points.
 
 ## 33. Job roles (ADR-080)
@@ -4950,3 +4952,5 @@ first.
   by See all, which Home no longer has: MC-R69 reworded.
 - 2026-11-05: ADR-091's review, three tiles from Home's page 600 px wide,
   a window of about 648: MC-1559 and MC-3423's lead reworded.
+- 2026-11-05: ADR-091's review, Home's guide saying the welcome folds
+  below 900 px, not only on a phone: MC-3213 extended.

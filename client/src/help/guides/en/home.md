@@ -40,7 +40,7 @@ With nothing late, one line says **Nothing is late today**; with nothing at all 
 
 ## Your first two weeks {#welcome}
 
-When you join by invitation, Home has a welcome card of your own: your inviter’s note, your first week, and what you can do here. On a phone it starts folded to one line: **Open** shows it, and **Fold** folds it again.
+When you join by invitation, Home has a welcome card of your own: your inviter’s note, your first week, and what you can do here. On a screen narrower than 900 px, a phone or a tablet held upright, it starts folded to one line: **Open** shows it, and **Fold** folds it again.
 
 1. Read the note, if your inviter left one.
 2. Work through your first week, confirming your email address first if it is listed. Each item opens where it is done, and is ticked by doing it.

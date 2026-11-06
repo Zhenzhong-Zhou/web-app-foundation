@@ -40,7 +40,7 @@ Sans rien en retard, une ligne dit **Rien n’est en retard aujourd’hui**; san
 
 ## Vos deux premières semaines {#welcome}
 
-Quand vous arrivez sur invitation, l’accueil a une carte de bienvenue à vous : le mot de la personne qui vous a invité, votre première semaine et ce que vous pouvez faire ici. Sur un téléphone, elle commence réduite à une ligne : **Déployer** l’ouvre, et **Réduire** la replie.
+Quand vous arrivez sur invitation, l’accueil a une carte de bienvenue à vous : le mot de la personne qui vous a invité, votre première semaine et ce que vous pouvez faire ici. Sur un écran de moins de 900 px, un téléphone ou une tablette tenue à la verticale, elle commence réduite à une ligne : **Déployer** l’ouvre, et **Réduire** la replie.
 
 1. Lisez le mot, si la personne qui vous a invité en a laissé un.
 2. Avancez dans votre première semaine, en confirmant d’abord votre adresse courriel si elle est demandée. Chaque élément ouvre l’endroit où il se fait, et se coche quand vous le faites.
