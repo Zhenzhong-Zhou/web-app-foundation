@@ -429,6 +429,10 @@ reports success.
   root (both sides, CI's order, stops at the first failure; `--quick`
   skips the end-to-end suites). Editor auto-imports in the wrong quote
   style fail CI.
+  The full run also checks `e2e/accessibility.spec.ts` in Firefox, from
+  Playwright's Linux image in Docker
+  ([conventions.md, Supported browsers](conventions.md#supported-browsers)),
+  which a pull request's CI, Chromium alone, does not.
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
 - Before each commit, `scripts/verify.sh --quick`; or `--docs`, in
