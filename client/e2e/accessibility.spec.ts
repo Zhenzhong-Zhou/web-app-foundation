@@ -204,7 +204,18 @@ const SCREENS: Screen[] = [
         .getByRole('region', { name: 'Getting started' })
         .getByRole('button', { name: 'Dismiss' })
         .click();
-      await page.getByRole('button', { name: 'More', exact: true }).focus();
+      // Tabbed to from the main action, as a keyboard user reaches it.
+      // Firefox rings an element focused by script only if focus last
+      // moved by the keyboard, and a key that moves nothing, the Enter
+      // here, does not count: focused by script after the click on
+      // Dismiss, More and then the item MUI focuses had no ring.
+      const more = page.getByRole('button', { name: 'More', exact: true });
+      await expect(more).toBeVisible();
+      await page
+        .getByRole('link', { name: 'Raise an order', exact: true })
+        .focus();
+      await page.keyboard.press('Tab');
+      await expect(more).toBeFocused();
       await page.keyboard.press('Enter');
       await expect(page.getByRole('menu', { name: 'More' })).toBeVisible();
     },
