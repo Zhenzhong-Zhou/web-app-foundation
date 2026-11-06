@@ -142,7 +142,8 @@ export class OrdersService {
   constructor(private readonly tenantDb: TenantDb) {}
 
   /**
-   * Newest first, paged by keyset, filtered to open orders by default.
+   * Newest first unless asked, paged by keyset, filtered to open orders by
+   * default.
    *
    * Three things this does that the partners list does not, all because
    * orders accumulate forever where partners do not:
@@ -169,10 +170,12 @@ export class OrdersService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const scope = [eq(orders.organizationId, organizationId)];
 
-      // Newest first, or sorted (ADR-057), paged after the cursor either way.
+      // Newest first, oldest first with `order=asc` alone (ADR-057's
+      // amendment), or sorted (ADR-057), paged after the cursor either way.
       const paging = await pagedBy({
         id: orders.id,
         before: query.before,
+        byId: query.order,
         sorted: query.sort
           ? {
               value: { expectedAt: orders.expectedAt }[query.sort],
@@ -259,8 +262,9 @@ export class OrdersService {
         // restricts deletion, so an order with no partner cannot exist.
         .innerJoin(partners, eq(partners.id, orders.partnerId))
         .where(and(...scope))
-        // By id, newest first, unless sorted: UUIDv7 sorts chronologically
-        // (ADR-010), so one column is the cursor. A sort pages by (value, id).
+        // By id, newest or oldest first, unless sorted: UUIDv7 sorts
+        // chronologically (ADR-010), so one column is the cursor. A sort
+        // pages by (value, id).
         .orderBy(...paging.orderBy)
         // One extra row, to know whether there is another page without
         // counting the table.

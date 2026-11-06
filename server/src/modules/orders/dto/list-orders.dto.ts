@@ -64,7 +64,11 @@ export class ListOrdersDto extends CalendarRangeQueryDto {
   @IsIn(['expectedAt'])
   sort?: 'expectedAt';
 
-  /** Ascending unless asked; with no sort, the list is newest first. */
+  /**
+   * With a sort, ascending unless asked. With none, the list is newest
+   * first, or oldest first with `asc`: by id, which is when each order was
+   * made (ADR-010, ADR-057's amendment), for Home's drafts tile.
+   */
   @IsOptional()
   @IsIn(SORT_ORDERS)
   order?: SortOrder;

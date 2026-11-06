@@ -382,6 +382,17 @@ async function buildProbes(
       name: 'orders: by expected date',
       run: () => orders.list({ status: 'all', sort: 'expectedAt' }),
     },
+    // Oldest first with no sort (ADR-057's amendment), as Home's drafts
+    // tile opens Orders: by id, from the index newest first reads, read the
+    // other way, so no index of its own.
+    {
+      name: 'orders: drafts, oldest first',
+      run: () => orders.list({ status: 'draft', order: 'asc' }),
+    },
+    {
+      name: 'orders: all, oldest first',
+      run: () => orders.list({ status: 'all', order: 'asc' }),
+    },
     {
       name: 'inventory: by expiry',
       run: () => stock.list({ sort: 'expiry' }, 'en'),
