@@ -4,7 +4,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
  * How one of a list's filters is kept in the address: read from it, and
  * written to it, `null` at the filter's default, which is left out.
  */
-export interface AddressFilter<T> {
+interface AddressFilter<T> {
   read: (value: string | null) => T;
   write: (value: T) => string | null;
 }

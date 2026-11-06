@@ -189,8 +189,8 @@ test('a dialog opened beside Help leaves Help readable above its dimming', async
   const title = help.locator('h2');
   await expect(title).toHaveText('Locations');
 
-  // Over the page at this width, Help covers its top right, where Add
-  // location is; the keyboard still reaches it.
+  // Beside the page at this width, Help leaves Add location in view, and
+  // the keyboard reaches it.
   await page.getByRole('button', { name: 'Add location', exact: true }).focus();
   await page.keyboard.press('Enter');
   const dialog = page.getByRole('dialog');

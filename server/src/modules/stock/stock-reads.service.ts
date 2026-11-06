@@ -43,14 +43,6 @@ import type { Tx } from './stock.service';
 const STOCK_PAGE_SIZE = 50;
 
 /**
- * Reading stock: what is on the shelves now, and the ledger that put it
- * there.
- *
- * Its own service because StockService is the one write path into the
- * ledger (ADR-023), injected by every module that moves stock, while only
- * the stock controller calls these two reads.
- */
-/**
  * Expired (ADR-091): a lot whose expiry is before the organization's
  * today. The list's `expired` and Home's late count on Expiring soon, so
  * the late button's count and the rows it opens cannot drift.
@@ -179,6 +171,14 @@ export function stockRowsOf(
     where ${and(...filtersOf(query, organizationId, today))}`;
 }
 
+/**
+ * Reading stock: what is on the shelves now, and the ledger that put it
+ * there.
+ *
+ * Its own service because StockService is the one write path into the
+ * ledger (ADR-023), injected by every module that moves stock, while only
+ * the stock controller calls these two reads.
+ */
 @Injectable()
 export class StockReadsService {
   constructor(private readonly tenantDb: TenantDb) {}

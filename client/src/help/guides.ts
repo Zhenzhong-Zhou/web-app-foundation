@@ -32,7 +32,7 @@ export const GUIDES = {
   home: {
     routes: ['/'],
     label: NAV_LABELS.home,
-    sections: ['getting-started'],
+    sections: [],
   },
   account: {
     routes: ['/account', '/account/sessions', '/account/activity'],

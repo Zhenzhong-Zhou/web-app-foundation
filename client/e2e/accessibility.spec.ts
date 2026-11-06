@@ -263,7 +263,8 @@ const SCREENS: Screen[] = [
   { name: 'movements', path: () => '/movements', ready: heading },
   { name: 'orders', path: () => '/orders', ready: heading },
   {
-    // Over the page, which still reads beside it (ADR-079).
+    // Beside the page at this run's 1280 px, the page keeping its room
+    // (ADR-079; ADR-091).
     name: 'Help, open on Orders',
     path: () => '/orders',
     open: (page) =>

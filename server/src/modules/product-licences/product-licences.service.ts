@@ -20,7 +20,7 @@ import type { ProductLicence } from './dto/product-licence-response.dto';
 import type { UpdateProductLicenceDto } from './dto/update-product-licence.dto';
 
 /** How far ahead a licence counts as expiring: issue #17's notice. */
-export const LICENCE_WARNING_DAYS = 60;
+const LICENCE_WARNING_DAYS = 60;
 
 /**
  * Expiring (ADR-091): an active licence whose expiry is within the notice

@@ -22,7 +22,7 @@ const FILTERS = {
 
 function Probe() {
   const [filters, setFilters] = useListFilters(FILTERS);
-  const { sort, toggle } = useListSort(
+  const { sort, header } = useListSort(
     ['expiry', 'total'],
     filters.late ? { key: 'expiry', order: 'asc' } : null,
   );
@@ -44,7 +44,7 @@ function Probe() {
       >
         November
       </button>
-      <button onClick={() => toggle('expiry')}>Expires</button>
+      <button onClick={header('expiry').onSort}>Expires</button>
       <Link to="/list?status=out">Out from elsewhere</Link>
     </>
   );

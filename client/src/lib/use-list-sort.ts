@@ -62,7 +62,7 @@ export function useListSort<K extends string>(
     };
   }
 
-  return { sort, toggle, header };
+  return { sort, header };
 }
 
 /** A list's path with its sort added, when there is one. */
