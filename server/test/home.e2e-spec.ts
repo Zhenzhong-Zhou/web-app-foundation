@@ -701,10 +701,11 @@ describe('Home (e2e)', () => {
    * The reads every Home makes, in one transaction (ADR-091): the
    * organization's days, zone and What we do with Getting started, its
    * row read once (#505's 68), the counts in one statement and Low
-   * stock's beside it, and the reader's membership with its roles. The
-   * welcome's own reads, while it shows, come after its commit.
+   * stock's beside it, and the reader's membership with their layout. The
+   * welcome's own reads, while it shows, come after its commit, the
+   * member's roles among them, never read once it is gone (#505's 67).
    */
-  it("reads Home's figures in one transaction of five statements", async () => {
+  it("reads Home's figures in one transaction of four statements", async () => {
     const alpha = await registerOrganization(app, 'alpha');
 
     /** Home's transaction: its statements, and what was sent after it. */
@@ -733,17 +734,21 @@ describe('Home (e2e)', () => {
       return { inside, beside, after: statements.slice(index + 1) };
     }
 
-    // The founder's welcome shows: its reads come after the commit.
+    // The founder's welcome shows: its reads come after the commit, the
+    // roles among them.
+    const roles = /from "membership_roles"/;
     const welcomed = await transaction();
-    expect(welcomed.inside).toHaveLength(5);
+    expect(welcomed.inside).toHaveLength(4);
     expect(welcomed.beside).toEqual([]);
-    expect(welcomed.after.length).toBeGreaterThan(0);
+    expect(welcomed.after.filter(({ text }) => roles.test(text))).toHaveLength(
+      1,
+    );
 
     // Dismissed, Home is the transaction and nothing after it.
     await alpha.agent.post('/v1/home/welcome/dismiss').expect(204);
     const { inside, beside, after } = await transaction();
     // The organization with Getting started, the counts, Low stock's, then
-    // the membership and its roles.
+    // the membership, and never its roles.
     expect(inside.map((text) => text.replace(/\s+/g, ' ').trim())).toEqual([
       expect.stringMatching(
         /^select o\.expiry_warning_days as days, .* \(o\.tax_registration_number .* from organizations o where/,
@@ -755,7 +760,6 @@ describe('Home (e2e)', () => {
       expect.stringMatching(
         /^select "memberships"\."id", .* from "memberships"/,
       ),
-      expect.stringMatching(/^select "membership_roles"\."membership_id"/),
     ]);
     expect(beside).toEqual([]);
     expect(after).toEqual([]);

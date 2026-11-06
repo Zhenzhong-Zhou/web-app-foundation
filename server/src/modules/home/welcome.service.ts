@@ -5,7 +5,7 @@ import type { Locale } from '../../common/locales';
 import { addDays, dayIn, todayIn } from '../../common/today';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import type { RequestContext } from '../../core/auth/request-context';
-import type { MemberRole } from '../../core/authorization/dto/member-access-response.dto';
+import type { MemberAccess } from '../../core/authorization/dto/member-access-response.dto';
 import {
   MemberAccessService,
   memberRole,
@@ -133,7 +133,6 @@ export interface Membership {
   photoFileId: string | null;
   emailVerifiedAt: Date | null;
   founder: boolean;
-  roles: MemberRole[];
   homeLayout: HomeLayout | null;
 }
 
@@ -146,7 +145,7 @@ export interface Membership {
  * A member past their two weeks, or who dismissed it, costs Home one read
  * of their membership, in Home's own transaction (ADR-091); the rest is
  * read only while the card shows, after that transaction, the items, the
- * inviter and whom to ask side by side.
+ * inviter, and their roles with whom to ask, side by side (#505's 67).
  */
 @Injectable()
 export class WelcomeService {
@@ -184,7 +183,7 @@ export class WelcomeService {
         options.locale,
       ),
       this.inviter(membership.id),
-      this.access.given(context, membership.roles, held),
+      this.given(context, membership.id, held),
     ]);
     if (items.every((item) => item.done)) return null;
 
@@ -245,10 +244,22 @@ export class WelcomeService {
           eq(memberships.userId, userId),
         ),
       );
-    if (!row) return undefined;
+    return row;
+  }
 
-    const held = await rolesOfMember(tx, row.id);
-    return { ...row, roles: held.map(memberRole) };
+  /**
+   * What they may do here: their roles, read only while the card shows,
+   * and whom to ask for more (ADR-079).
+   */
+  private async given(
+    context: Pick<RequestContext, 'userId' | 'organizationId'>,
+    membershipId: string,
+    held: ReadonlySet<Permission>,
+  ): Promise<MemberAccess> {
+    const roles = await this.tenantDb.transaction((tx) =>
+      rolesOfMember(tx, membershipId),
+    );
+    return this.access.given(context, roles.map(memberRole), held);
   }
 
   /**
