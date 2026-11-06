@@ -208,6 +208,9 @@ a second organization.
   Location, Expires) and Reorder points (Low stock): each choice is in the
   address, and Back from a page opened from there keeps it. Type
   `?status=nonsense` after `/orders`: Open is pressed, as with none.
+  From a late button's Orders, Tab to the Late chip and press Delete:
+  focus moves to Still to ship, the chip now beside it; remove the last
+  chip and focus is on the page's title, never lost to the page.
 - **MC-407** *(ADR-091)* Orders for a role that cannot raise one. Give a
   member a role made with only Orders' view (Settings → Roles) and sign
   in as them: on Orders, where Raise an order would be, one grey line
@@ -5036,3 +5039,5 @@ first.
   invited address in full under its field: MC-3110 extended.
 - 2026-11-05: ADR-091's review, Chinese line heights in tables, menus and
   Home's late buttons too: MC-1560 extended.
+- 2026-11-05: ADR-091's review, focus after a removed chip on the chip in
+  its place, then the title: MC-406 extended.

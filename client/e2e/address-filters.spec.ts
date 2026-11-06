@@ -38,6 +38,29 @@ test('opens Credit notes on the days in its address', async ({
   await asked;
 });
 
+// A chip removed from the keyboard leaves focus on the chip now in its
+// place, and with none left on the page's heading, never on the body
+// (ADR-091's review; WCAG 2.4.3).
+test('keeps focus near a removed chip, then on the heading', async ({
+  page,
+  freshOrg,
+}) => {
+  await signInAs(page, freshOrg.api);
+  await page.goto('/orders?direction=sale&outstanding=1&late=1');
+  const chip = (name: string) =>
+    page.locator('.MuiChip-deletable').filter({ hasText: name });
+
+  await chip('Late').focus();
+  await page.keyboard.press('Delete');
+  await expect(chip('Late')).toHaveCount(0);
+  await expect(chip('Still to ship')).toBeFocused();
+
+  await page.keyboard.press('Delete');
+  await expect(chip('Sales only')).toBeFocused();
+  await page.keyboard.press('Delete');
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+});
+
 test('opens Inventory with Expiring soon pressed', async ({
   page,
   freshOrg,

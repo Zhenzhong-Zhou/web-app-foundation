@@ -52,6 +52,7 @@ import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
+import { useFocusAfterRemove } from '../lib/use-focus-after-remove';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { flag, id, useListFilters } from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
@@ -173,6 +174,9 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
 
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  // Focus to the chip in a removed one's place, or the heading (ADR-091's
+  // review).
+  const { row: chipRow, removed } = useFocusAfterRemove();
   const { expiring, expired, needsCost, includeEmpty } = filters;
   // Sales sees stock but not locations (ADR-080): the page asks only for
   // what its reader may read, and leaves the Location filter out.
@@ -491,13 +495,16 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
       {/* What a link narrowed that no button shows, removable: Home's
           late button, the expired lots alone. */}
       {expired && (
-        <Stack direction="row" spacing={1}>
+        <Stack ref={chipRow} direction="row" spacing={1}>
           <Chip
             label={intl.formatMessage({
               id: 'inventory.filter.expired',
               defaultMessage: 'Expired',
             })}
-            onDelete={() => setFilters({ expired: false })}
+            onDelete={(event) => {
+              removed(event);
+              setFilters({ expired: false });
+            }}
           />
         </Stack>
       )}

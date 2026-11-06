@@ -36,6 +36,7 @@ import { daysUntil } from '../lib/expiry';
 import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useFocusAfterRemove } from '../lib/use-focus-after-remove';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { day, flag, oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
@@ -116,6 +117,9 @@ export function OrdersPage() {
   const can = useCan();
 
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  // Focus to the chip in a removed one's place, or the heading (ADR-091's
+  // review).
+  const { row: chipRow, removed } = useFocusAfterRemove();
   const { status: filter, direction, outstanding, late } = filters;
   const range = { from: filters.from, to: filters.to };
   const { text, setText, search } = useListSearch();
@@ -226,7 +230,7 @@ export function OrdersPage() {
         late ||
         filter === 'draft' ||
         filter === 'confirmed') && (
-        <Stack direction="row" spacing={1}>
+        <Stack ref={chipRow} direction="row" spacing={1}>
           {direction && (
             <Chip
               label={
@@ -240,13 +244,19 @@ export function OrdersPage() {
                       defaultMessage: 'Purchases only',
                     })
               }
-              onDelete={() => setFilters({ direction: '' })}
+              onDelete={(event) => {
+                removed(event);
+                setFilters({ direction: '' });
+              }}
             />
           )}
           {(filter === 'draft' || filter === 'confirmed') && (
             <Chip
               label={orderStatusLabel(filter, direction || 'sale')}
-              onDelete={() => setFilters({ status: 'open' })}
+              onDelete={(event) => {
+                removed(event);
+                setFilters({ status: 'open' });
+              }}
             />
           )}
           {outstanding && (
@@ -267,7 +277,10 @@ export function OrdersPage() {
                         defaultMessage: 'Still to ship or receive',
                       })
               }
-              onDelete={() => setFilters({ outstanding: false })}
+              onDelete={(event) => {
+                removed(event);
+                setFilters({ outstanding: false });
+              }}
             />
           )}
           {late && (
@@ -276,7 +289,10 @@ export function OrdersPage() {
                 id: 'orders.filter.late',
                 defaultMessage: 'Late',
               })}
-              onDelete={() => setFilters({ late: false })}
+              onDelete={(event) => {
+                removed(event);
+                setFilters({ late: false });
+              }}
             />
           )}
         </Stack>

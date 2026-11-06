@@ -28,6 +28,7 @@ import { withQuery } from '../lib/api';
 import { formatDay, NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useFocusAfterRemove } from '../lib/use-focus-after-remove';
 import { flag, useListFilters } from '../lib/use-list-filters';
 import { useResource } from '../lib/use-resource';
 import { EditLicenceDialog } from './edit-licence-dialog';
@@ -56,6 +57,9 @@ export function LicencesPage() {
   const intl = useIntl();
   const can = useCan();
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  // Focus to the chip in a removed one's place, or the heading (ADR-091's
+  // review).
+  const { row: chipRow, removed } = useFocusAfterRemove();
   const { expiring, expired } = filters;
   // Soonest first with either on, the server's order.
   const {
@@ -131,13 +135,16 @@ export function LicencesPage() {
       {/* What a link narrowed that no button shows, removable: Home's
           late button, the expired alone. */}
       {expired && (
-        <Stack direction="row" spacing={1}>
+        <Stack ref={chipRow} direction="row" spacing={1}>
           <Chip
             label={intl.formatMessage({
               id: 'licences.filter.expired',
               defaultMessage: 'Expired',
             })}
-            onDelete={() => setFilters({ expired: false })}
+            onDelete={(event) => {
+              removed(event);
+              setFilters({ expired: false });
+            }}
           />
         </Stack>
       )}
