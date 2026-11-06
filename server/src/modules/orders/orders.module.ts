@@ -57,6 +57,5 @@ import { ShippingService } from './shipping.service';
     ShipmentVoidsService,
     ReturnsService,
   ],
-  exports: [OrdersService],
 })
 export class OrdersModule {}
