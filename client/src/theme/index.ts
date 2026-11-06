@@ -11,6 +11,7 @@ import { returnFocus } from '../lib/open-dialog';
 import { VersionPaper } from '../version/version-paper';
 import { type Brand, DEFAULT_BRAND } from './brand-store';
 import { scrollShades } from './cut-edge';
+import { TOUCH } from './media';
 import { OptionGroup } from './option-group';
 import { rem } from './rem';
 import {
@@ -92,9 +93,6 @@ const TONE_OF_COLOR: Record<string, ToneName> = {
   warning: 'warning',
   error: 'critical',
 };
-
-/** A fingertip, for touch screens; the mouse gets the compact sizes. */
-const TOUCH = '@media (pointer: coarse)';
 
 /**
  * Muted text drawn in the main text colour, inside the element this is set

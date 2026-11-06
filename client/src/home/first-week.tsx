@@ -1,6 +1,5 @@
-import Check from '@mui/icons-material/Check';
 import ChevronRight from '@mui/icons-material/ChevronRight';
-import { Box, Button, ButtonBase, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { type ReactNode, useEffect, useRef } from 'react';
 import {
   defineMessages,
@@ -8,13 +7,14 @@ import {
   type MessageDescriptor,
   useIntl,
 } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
 
 import type { WelcomeDone, WelcomeItem } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
 import { useResendConfirmation } from '../auth/use-resend-confirmation';
 import { OFFER_BACK } from '../lib/offer-back';
 import { RECENT_PATHS } from '../lib/recent';
+import { RowLink } from './row-link';
+import { StepMark } from './step-mark';
 
 type Key = WelcomeItem['key'];
 
@@ -286,7 +286,7 @@ function Item({
   );
   const inside = (
     <>
-      <Mark done={item.done} />
+      <StepMark done={item.done} size={28} />
       {words}
     </>
   );
@@ -294,7 +294,7 @@ function Item({
   if (!item.done && item.key === 'confirmEmail') {
     return (
       <Box sx={{ ...ROW, flexWrap: 'wrap' }}>
-        <Mark done={false} />
+        <StepMark done={false} size={28} />
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography>{intl.formatMessage(TITLES.confirmEmail)}</Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -314,42 +314,14 @@ function Item({
   }
   if (!to) return <Box sx={ROW}>{inside}</Box>;
   return (
-    <ButtonBase
-      component={RouterLink}
-      to={to}
-      state={OFFER_BACK}
-      sx={{ ...ROW, '&:hover': { bgcolor: 'action.hover' } }}
-    >
+    <RowLink to={to} state={OFFER_BACK} sx={ROW}>
       {inside}
       <ChevronRight
         aria-hidden
         fontSize="small"
         sx={{ color: 'text.secondary' }}
       />
-    </ButtonBase>
-  );
-}
-
-/** A tick once done, else an empty ring. */
-function Mark({ done }: { done: boolean }) {
-  return (
-    <Box
-      aria-hidden
-      sx={{
-        width: 28,
-        height: 28,
-        flex: 'none',
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...(done
-          ? { bgcolor: 'tone.positive.bg', color: 'tone.positive.fg' }
-          : { border: 2, borderColor: 'divider' }),
-      }}
-    >
-      {done && <Check fontSize="small" />}
-    </Box>
+    </RowLink>
   );
 }
 

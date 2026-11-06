@@ -46,6 +46,7 @@ import { zoneLabel } from '../lib/time-zone-label';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useFailureWords } from '../lib/use-failure-words';
+import { HOVER } from '../theme/media';
 import { rem } from '../theme/rem';
 import { RADIUS } from '../theme/tokens';
 import { evenRowsSx } from './even-rows';
@@ -468,9 +469,6 @@ function OrganizationHome() {
  * keep: "To ship 12", never "To ship12", as accessibility checks read them.
  */
 const SPACE = ' ';
-
-/** Only under a mouse: a touch screen shows no hover (ADR-091). */
-const HOVER = '@media (hover: hover)';
 
 /**
  * What is late (ADR-091): a pale red panel, its heading how many, a

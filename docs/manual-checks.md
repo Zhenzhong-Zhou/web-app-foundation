@@ -904,6 +904,7 @@ Paper is checked first because it must not change at all.
   with Learn more beside it (44 px tall on touch), and no main action at
   the top: Raise an order and More come back once Getting started is done
   or dismissed.
+  On a tablet, tap a step and come Back: its row is not left tinted.
   Every other step is one link, its whole row, at least 44 px tall (on a
   phone too), opening its page with Back; a done one is ticked, grey, and
   reads … · Done. Nothing needs you today. in one line and the tiles quiet
@@ -5044,3 +5045,5 @@ first.
   its place, then the title: MC-406 extended.
 - 2026-11-05: ADR-091's review, whom to ask on Home read beside Home and
   shown once with its names: MC-1559 extended.
+- 2026-11-05: ADR-091's review, Home's row links tinted only under a
+  mouse, never left tinted after a tap: MC-1559 extended.

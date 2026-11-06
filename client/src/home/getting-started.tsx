@@ -1,9 +1,7 @@
-import Check from '@mui/icons-material/Check';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import {
   Box,
   Button,
-  ButtonBase,
   LinearProgress,
   Paper,
   Stack,
@@ -17,6 +15,8 @@ import type { LearnMoreTarget } from '../help/guides';
 import { LearnMore } from '../help/learn-more';
 import type { GettingStartedStep } from '../lib/api-names';
 import { OFFER_BACK } from '../lib/offer-back';
+import { RowLink } from './row-link';
+import { StepMark } from './step-mark';
 
 interface StepMeta {
   title: MessageDescriptor;
@@ -281,43 +281,6 @@ export function GettingStarted({
   );
 }
 
-/** A step's mark: a tick once done, else its number, ringed. */
-function Mark({
-  number,
-  finished,
-  next = false,
-}: {
-  number: number;
-  finished: boolean;
-  next?: boolean;
-}) {
-  return (
-    <Box
-      aria-hidden
-      sx={{
-        width: 32,
-        height: 32,
-        flex: 'none',
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        typography: 'body2',
-        fontWeight: 700,
-        ...(finished
-          ? { bgcolor: 'tone.positive.bg', color: 'tone.positive.fg' }
-          : {
-              border: 2,
-              borderColor: next ? 'primary.main' : 'divider',
-              color: 'text.secondary',
-            }),
-      }}
-    >
-      {finished ? <Check fontSize="small" /> : number}
-    </Box>
-  );
-}
-
 /** A step's title over its hint, grey once done. */
 function Words({ meta, finished }: { meta: StepMeta; finished: boolean }) {
   const intl = useIntl();
@@ -383,25 +346,20 @@ function Step({
 }) {
   const inside = (
     <>
-      <Mark number={number} finished={finished} />
+      <StepMark number={number} done={finished} />
       <Words meta={meta} finished={finished} />
     </>
   );
   if (!linked) return <Box sx={ROW}>{inside}</Box>;
   return (
-    <ButtonBase
-      component={RouterLink}
-      to={meta.to}
-      state={OFFER_BACK}
-      sx={{ ...ROW, '&:hover': { bgcolor: 'action.hover' } }}
-    >
+    <RowLink to={meta.to} state={OFFER_BACK} sx={ROW}>
       {inside}
       <ChevronRight
         aria-hidden
         fontSize="small"
         sx={{ color: 'text.secondary' }}
       />
-    </ButtonBase>
+    </RowLink>
   );
 }
 
@@ -428,7 +386,7 @@ function NextStep({
   return (
     <Stack spacing={1.25} sx={{ px: 2, py: 1.75, bgcolor: 'surface.chosen' }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-        <Mark number={number} finished={false} next />
+        <StepMark number={number} done={false} next />
         <Words meta={meta} finished={false} />
       </Stack>
       <Stack

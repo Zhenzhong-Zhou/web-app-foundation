@@ -7,17 +7,9 @@ import HandshakeOutlined from '@mui/icons-material/HandshakeOutlined';
 import PrecisionManufacturingOutlined from '@mui/icons-material/PrecisionManufacturingOutlined';
 import ReceiptLongOutlined from '@mui/icons-material/ReceiptLongOutlined';
 import SellOutlined from '@mui/icons-material/SellOutlined';
-import {
-  Box,
-  Button,
-  ButtonBase,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Paper, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { type IntlShape, useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
 
 import { api } from '../lib/api';
 import { RECENT_PATHS, type RecentEntry, type RecentKind } from '../lib/recent';
@@ -26,6 +18,7 @@ import {
   recentTitle,
   recentWhen,
 } from '../lib/recent-labels';
+import { RowLink } from './row-link';
 
 /** How many Home shows (ADR-058). */
 const ON_HOME = 6;
@@ -144,8 +137,7 @@ export function RecentCard() {
               key={`${entry.kind}:${entry.id}`}
               sx={{ borderTop: 1, borderColor: 'surface.line' }}
             >
-              <ButtonBase
-                component={RouterLink}
+              <RowLink
                 to={RECENT_PATHS[entry.kind](entry.id)}
                 sx={{
                   width: '100%',
@@ -155,9 +147,6 @@ export function RecentCard() {
                   gap: 1.5,
                   justifyContent: 'flex-start',
                   textAlign: 'start',
-                  '@media (hover: hover)': {
-                    '&:hover': { bgcolor: 'action.hover' },
-                  },
                 }}
               >
                 <Box
@@ -194,7 +183,7 @@ export function RecentCard() {
                 >
                   {recentWhen(intl, entry.openedAt)}
                 </Typography>
-              </ButtonBase>
+              </RowLink>
             </Box>
           );
         })}
