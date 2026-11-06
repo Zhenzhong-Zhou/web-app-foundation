@@ -117,12 +117,16 @@ describe('the welcome card', () => {
     renderHome();
 
     const region = await card();
-    // The organization's own words, in the card as under Home's date.
+    // The organization's own words once, under Home's date, not again in
+    // the card (ADR-091's review).
     expect(
-      within(region).getByText(
+      screen.getAllByText('We import and distribute natural health products.'),
+    ).toHaveLength(1);
+    expect(
+      within(region).queryByText(
         'We import and distribute natural health products.',
       ),
-    ).toBeVisible();
+    ).toBeNull();
     expect(
       within(region).getByText(
         'You joined today as a Viewer. This card stays on Home for your first two weeks, until November 3.',

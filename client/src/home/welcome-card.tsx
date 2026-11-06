@@ -36,22 +36,19 @@ import { TONAL } from './tonal';
  * The welcome (ADR-079; ADR-091): the member's own card on Home for their
  * first two weeks. Its head names it and says how far the first week has
  * come; below `md` it starts folded to that one line, with Open, and from
- * `md` open, with Fold, until the reader chooses. Open, it holds the
- * organization's What we do, the day the card goes, so it never vanishes
+ * `md` open, with Fold, until the reader chooses. Open, it holds the day
+ * the card goes, so it never vanishes
  * unexplained, the inviter's note, the first week's items, what they can
  * do here, each area a link to its page, and where Help is, in place of a
  * tour. `startShows`, while Getting started is below it and is their list.
  */
 export function WelcomeCard({
   welcome,
-  whatWeDo,
   startShows,
   onDismiss,
   headingRef,
 }: {
   welcome: Welcome;
-  /** The organization's own words about itself, if written (ADR-091). */
-  whatWeDo: string | null;
   startShows: boolean;
   onDismiss: () => void;
   /** The title, for Home to move focus to when Undo brings the card back. */
@@ -297,8 +294,6 @@ export function WelcomeCard({
       {open && (
         <Box id={bodyId}>
           <Stack spacing={1.25} sx={{ px: 2, pb: 2 }}>
-            {/* In the organization's own words, as under Home's date. */}
-            {whatWeDo && <Typography>{whatWeDo}</Typography>}
             <Typography sx={{ color: 'text.secondary' }}>
               {intl.formatMessage(
                 { id: 'home.welcome.lead', defaultMessage: '{who} {until}' },

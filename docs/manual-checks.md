@@ -1027,7 +1027,8 @@ await fetch(`${api}/v1/files/product-image`, {
   History button lists What we do as Changed, then Cleared, and never the
   words. The field takes no more than 200 characters. As a Viewer, the
   words show greyed, with no Save. In Français the section reads Ce que
-  nous faisons; in 中文, 业务简介.
+  nous faisons; in 中文, 业务简介. On Home, a newcomer whose welcome is
+  open reads the words once, under the date, not again in the welcome.
 
 ## 18. Product images (ADR-062)
 
@@ -5001,3 +5002,5 @@ first.
   page's name first: MC-1559 extended, MC-1531 reworded.
 - 2026-11-05: ADR-091's review, Waiting for a cost one name on Inventory,
   the trace, Stock value and Home: MC-1552 reworded.
+- 2026-11-05: ADR-091's review, What we do once on Home, the welcome
+  leaving it to the header: MC-1704 extended.

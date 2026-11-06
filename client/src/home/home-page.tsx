@@ -386,7 +386,6 @@ function OrganizationHome() {
           {welcome && (
             <WelcomeCard
               welcome={welcome}
-              whatWeDo={home.whatWeDo}
               startShows={!!showStart}
               onDismiss={dismissWelcome}
               headingRef={welcomeHeading}
