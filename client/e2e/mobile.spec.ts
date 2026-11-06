@@ -203,6 +203,14 @@ for (const [width, language, words] of [
         picture!.y + picture!.height - 1,
       );
     }
+    // The words on one line, Account's under the taller avatar too.
+    const tops = await Promise.all(
+      words.map(
+        async (word) =>
+          (await bar.getByText(word, { exact: true }).boundingBox())!.y,
+      ),
+    );
+    expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(1);
     // The bell's count inside the bar, not cut at the screen's top.
     const badge = bar.locator('.MuiBadge-standard');
     if (await badge.count()) {

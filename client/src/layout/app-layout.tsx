@@ -438,6 +438,9 @@ function Frame() {
               sx={{
                 flexGrow: 1,
                 display: 'flex',
+                // The button's full height below md, its word on the
+                // others' line; the box's own from md.
+                alignSelf: { xs: 'stretch', md: 'auto' },
                 justifyContent: { xs: 'flex-end', md: 'center' },
                 minWidth: { xs: 'auto', md: 0 },
                 '& .MuiInputBase-root': { minHeight: 44 },

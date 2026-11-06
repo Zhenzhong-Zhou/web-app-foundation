@@ -41,6 +41,11 @@ export function BarButton({
               // inside the bar, not cut flat at the screen's top edge
               // (ADR-091's review).
               '& .MuiBadge-standard': { top: 6 },
+              // As tall as the bar, its word at the foot, so every word
+              // sits on one line, Account's under the taller avatar too
+              // (ADR-091's review).
+              alignSelf: 'stretch',
+              justifyContent: 'flex-end',
             },
           },
         }),

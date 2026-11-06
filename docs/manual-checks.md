@@ -937,6 +937,7 @@ Paper is checked first because it must not change at all.
   中文 菜单、搜索、帮助、通知、账户. At 360 px in English the
   organization's name is what shortens, to a few letters, so
   Notifications fits under the bell; at 390 px in 中文 everything fits.
+  The five words sit on one line, Account's under its taller avatar too.
   The bell's count shows whole, its round top inside the bar, never cut
   flat at the screen's edge. Each word is a fingertip tall with its icon (44 px or more, DevTools),
   and a screen reader reads the account button as Account, your initials,
@@ -5024,3 +5025,5 @@ first.
   its sort: MC-406 extended.
 - 2026-11-05: ADR-091's review, the bell's count inside the bar below
   1200 px: MC-1561 extended.
+- 2026-11-05: ADR-091's review, the top bar's words on one line below
+  1200 px, Account's too: MC-1561 extended.
