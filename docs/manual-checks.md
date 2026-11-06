@@ -1736,8 +1736,10 @@ The pages, in a private window unless a check says otherwise.
 - **MC-3110** *(ADR-078)* With `REGISTRATION=invitation`, sign-in has no
   Create an account: New here? Accounts start from an invitation, with
   How to get one, which opens Accounts here start from an invitation, with
-  Joining where you work, Starting a new organization and Sign in.
-  `/register` typed in the address bar shows the same page; on a slow
+  Joining where you work, Starting a new organization and Sign in; in
+  Français « Ici, on ouvre un compte sur invitation », in 中文
+  这里的账户通过邀请创建, never a word-for-word « commencent par » or
+  从邀请开始 (#380). `/register` typed in the address bar shows the same page; on a slow
   connection (DevTools, Slow 4G) it shows the language and text size at
   once, and a spinner until the page is known. In 中文 at 390 px wide and
   at Larger text (ADR-075), the organization kind of the invitation page,
@@ -4985,3 +4987,5 @@ first.
 - 2026-11-05: ADR-091's review, in 中文 a Viewer's Orders line reads
   查看采购订单、销售订单和订单价格, and the account page is 我的账户, as
   the menu and the guides call it: MC-3210 extended.
+- 2026-11-05: ADR-091's review, the sign-in pages' by-invitation line
+  without #380's calque, in Français and 中文: MC-3110 extended.
