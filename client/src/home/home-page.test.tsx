@@ -374,6 +374,25 @@ describe('HomePage', () => {
     expect(screen.getByRole('button', { name: 'More' })).toBeVisible();
   });
 
+  // Whom to ask is read beside Home's own read, not after it, and the line
+  // waits for the names rather than change under the reader (ADR-091's
+  // review).
+  it('reads whom to ask beside Home, the line once with its names', async () => {
+    server.use(
+      http.get('/api/v1/home', () => new Promise<never>(() => undefined)),
+      http.get('/api/v1/account/membership', () =>
+        HttpResponse.json(welcome().access),
+      ),
+    );
+    renderWithAuth(routed(<HomePage />), { permissions: ['orders.view'] });
+
+    expect(
+      await screen.findByText(
+        'Your role does not include raising orders, receiving stock or planning runs. To do more, ask Mei Lin or David Park.',
+      ),
+    ).toBeVisible();
+  });
+
   // Trace a lot is never the main action alone (ADR-091's review): a
   // Viewer has the quiet line and whom to ask, as a role with none does.
   it('gives a role that may only trace a lot the line, not the button', async () => {

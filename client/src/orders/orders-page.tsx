@@ -12,12 +12,12 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
 } from '@mui/material';
 import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { MemberAccess, OrderSummary } from '../api/types.gen';
+import { WhomToAskRead } from '../account/whom-to-ask';
+import type { OrderSummary } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
@@ -41,7 +41,6 @@ import { useKeysetList } from '../lib/use-keyset-list';
 import { day, flag, oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
 import { type ListSort, useListSort, withSort } from '../lib/use-list-sort';
-import { useResource } from '../lib/use-resource';
 import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
 import { orderStatusLabel } from './status';
@@ -192,7 +191,9 @@ export function OrdersPage() {
                 })}
               </Button>
             ) : (
-              <NoRaise />
+              <Box sx={{ maxWidth: rem(480) }}>
+                <WhomToAskRead {...NO_RAISE} />
+              </Box>
             )}
           </>
         }
@@ -507,30 +508,16 @@ function LateChip({
 /**
  * Where Raise an order would be, for a role that cannot raise one: one
  * quiet line saying so, and whom to ask, the people Home's line and Your
- * access name (ADR-091, ADR-079). Nothing until they are read, so the line
- * does not change under the reader.
+ * access name (ADR-091, ADR-079).
  */
-function NoRaise() {
-  const intl = useIntl();
-  const { data, error } = useResource<MemberAccess>('/account/membership');
-  if (!data && !error) return null;
-  const names = data?.whomToAsk.map((person) => person.name) ?? [];
-
-  return (
-    <Typography sx={{ color: 'text.secondary', maxWidth: rem(480) }}>
-      {names.length > 0
-        ? intl.formatMessage(
-            {
-              id: 'orders.raise.ask',
-              defaultMessage:
-                'Your role does not include raising orders. To do more, ask {names}.',
-            },
-            { names: intl.formatList(names, { type: 'disjunction' }) },
-          )
-        : intl.formatMessage({
-            id: 'orders.raise.none',
-            defaultMessage: 'Your role does not include raising orders.',
-          })}
-    </Typography>
-  );
-}
+const NO_RAISE = defineMessages({
+  ask: {
+    id: 'orders.raise.ask',
+    defaultMessage:
+      'Your role does not include raising orders. To do more, ask {names}.',
+  },
+  none: {
+    id: 'orders.raise.none',
+    defaultMessage: 'Your role does not include raising orders.',
+  },
+});

@@ -28,10 +28,11 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useIntl } from 'react-intl';
+import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { HomeResponse, MemberAccess } from '../api/types.gen';
+import { WhomToAsk, WhomToAskRead } from '../account/whom-to-ask';
+import type { HomeResponse } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { StatusChip } from '../components/status-chip';
@@ -45,7 +46,6 @@ import { zoneLabel } from '../lib/time-zone-label';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useFailureWords } from '../lib/use-failure-words';
-import { useResource } from '../lib/use-resource';
 import { rem } from '../theme/rem';
 import { RADIUS } from '../theme/tokens';
 import { evenRowsSx } from './even-rows';
@@ -356,16 +356,15 @@ function OrganizationHome() {
         {showStart ? null : quick.length > 0 ? (
           <MainAction actions={quick} />
         ) : (
-          // Where the button would be, once Home has said whom to ask.
-          home && (
-            <Box sx={{ maxWidth: { md: rem(400) } }}>
-              {welcome ? (
-                <NoActions access={welcome.access} />
-              ) : (
-                <NoActionsRead />
-              )}
-            </Box>
-          )
+          // Where the button would be: whom to ask, from the welcome once
+          // Home holds it, else read beside Home's own read, not after it.
+          <Box sx={{ maxWidth: { md: rem(400) } }}>
+            {welcome ? (
+              <WhomToAsk access={welcome.access} {...NO_ACTIONS} />
+            ) : (
+              <WhomToAskRead {...NO_ACTIONS} />
+            )}
+          </Box>
         )}
       </Stack>
 
@@ -782,37 +781,16 @@ function Tile({ card }: { card: KnownCard }) {
   );
 }
 
-/**
- * Where the member may use none of Home's actions (ADR-091): one quiet
- * line in their place, saying so and whom to ask, the names the welcome
- * and Your access give (ADR-079).
- */
-function NoActions({ access }: { access: MemberAccess | null }) {
-  const intl = useIntl();
-  const names = access?.whomToAsk.map((person) => person.name) ?? [];
-
-  return (
-    <Typography sx={{ color: 'text.secondary' }}>
-      {names.length > 0
-        ? intl.formatMessage(
-            {
-              id: 'home.actions.ask',
-              defaultMessage:
-                'Your role does not include raising orders, receiving stock or planning runs. To do more, ask {names}.',
-            },
-            { names: intl.formatList(names, { type: 'disjunction' }) },
-          )
-        : intl.formatMessage({
-            id: 'home.actions.none',
-            defaultMessage:
-              'Your role does not include raising orders, receiving stock or planning runs.',
-          })}
-    </Typography>
-  );
-}
-
-/** The same, past the welcome: whom to ask, from Your access's read. */
-function NoActionsRead() {
-  const { data } = useResource<MemberAccess>('/account/membership');
-  return <NoActions access={data} />;
-}
+/** Where the member may use none of Home's actions (ADR-091). */
+const NO_ACTIONS = defineMessages({
+  ask: {
+    id: 'home.actions.ask',
+    defaultMessage:
+      'Your role does not include raising orders, receiving stock or planning runs. To do more, ask {names}.',
+  },
+  none: {
+    id: 'home.actions.none',
+    defaultMessage:
+      'Your role does not include raising orders, receiving stock or planning runs.',
+  },
+});

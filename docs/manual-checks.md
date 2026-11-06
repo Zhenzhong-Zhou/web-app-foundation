@@ -917,7 +917,8 @@ Paper is checked first because it must not change at all.
   not a link, and only the tiles that role may see. Give a member a role made
   with only Orders' view (Settings → Roles) and sign in as them: in place
   of Home's actions one grey line says their role does not include
-  raising orders, receiving stock or planning runs, and whom to ask.
+  raising orders, receiving stock or planning runs, and whom to ask, the
+  names there from the first, never the line without them first.
 - **MC-1560** *(ADR-091)* The type scale and the corners. On Inventory,
   SO-DEMO-1 and INV-000001, in light and in dark, at 1440 px and on a
   phone: buttons, fields, menus and the text under a heading read at 16
@@ -5041,3 +5042,5 @@ first.
   Home's late buttons too: MC-1560 extended.
 - 2026-11-05: ADR-091's review, focus after a removed chip on the chip in
   its place, then the title: MC-406 extended.
+- 2026-11-05: ADR-091's review, whom to ask on Home read beside Home and
+  shown once with its names: MC-1559 extended.

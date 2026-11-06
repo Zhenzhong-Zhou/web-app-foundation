@@ -46,8 +46,11 @@ export function WhatYouCanDo({
     defaultMessage: 'What you can do here',
   });
 
-  const body = (
+  return (
     <Stack spacing={0.75}>
+      <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 600 }}>
+        {title}
+      </Typography>
       <AccessList permissions={permissions} linked={linked} />
       {access.whomToAsk.length > 0 && (
         <Typography>
@@ -78,15 +81,6 @@ export function WhatYouCanDo({
           )}
         </Typography>
       )}
-    </Stack>
-  );
-
-  return (
-    <Stack spacing={0.75}>
-      <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 600 }}>
-        {title}
-      </Typography>
-      {body}
     </Stack>
   );
 }
