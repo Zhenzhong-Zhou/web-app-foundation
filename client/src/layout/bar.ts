@@ -1,3 +1,4 @@
+import type { Locale } from '../lib/locales';
 import { rem } from '../theme/rem';
 
 /**
@@ -18,12 +19,26 @@ const BAR_CONTAINER = 'bar';
 /**
  * The bar's width, inside its gutters, from which Menu, Search, Help,
  * Notifications and Account fit with their words beside the
- * organization's initials, in French, the widest: 320 px at the standard
- * text size, so from a phone 360 px wide; in rem, so it grows with the
- * text size (ADR-075). Narrower, the icons stand alone, each named as
- * before, and every target keeps its 44 px (ADR-079).
+ * organization's initials, measured in each language at the standard text
+ * size, since their words differ most: Chinese's two characters each sit
+ * inside the 44 px target, where "Notifications" and « Rechercher » do
+ * not. In rem, so it grows with the text size (ADR-075): Chinese keeps its
+ * words at Larger on a phone 390 px wide, where one threshold for all,
+ * French's, left the icons alone (ADR-091's review). Narrower, the icons
+ * stand alone, each named as before, and every target keeps its 44 px
+ * (ADR-079).
  */
-export const WORDS_FIT = `@container ${BAR_CONTAINER} (min-width: ${rem(320)})`;
+const WORDS_NEED: Record<Locale, number> = {
+  en: 300,
+  'fr-CA': 320,
+  'zh-Hans': 262,
+};
+
+/** The container query under which a language's words show. */
+export function wordsFit(locale: Locale): string {
+  const need = WORDS_NEED[locale];
+  return `@container ${BAR_CONTAINER} (min-width: ${rem(need)})`;
+}
 
 /** What the toolbar sets, so its targets can measure it. */
 export const BAR_SX = {

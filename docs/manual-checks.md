@@ -904,9 +904,11 @@ Paper is checked first because it must not change at all.
   Notifications fits under the bell; at 390 px in 中文 everything fits.
   Each word is a fingertip tall with its icon (44 px or more, DevTools),
   and a screen reader reads the account button as Account, your initials,
-  signed in as …. In a window narrower than about 352 px, 392 px at
-  Large text and 432 px at Larger, the icons stand alone, as before, and
-  nothing scrolls sideways. From 1200 px the bar is as it was: the search box in
+  signed in as …. The words give way by language, the icons standing
+  alone, as before, with nothing scrolling sideways, in a window narrower
+  than about 332 px in English (370 at Large text, 407 at Larger), 352 in
+  Français (392, 432) and 294 in 中文 (327, 360): at Larger on a 390 px
+  phone 中文 keeps its words. From 1200 px the bar is as it was: the search box in
   the middle between the rail and Help, at 1366 and at 2560 px too, Help
   with its word beside its icon, the bell and your face alone.
 - **MC-1562** *(ADR-091, #431)* The loading bar. In Chrome, DevTools →
@@ -4928,3 +4930,6 @@ first.
 - 2026-11-05: ADR-091's review, a held column's edge and a sideways
   table's cut side seen in both modes, from the edge token: MC-R96
   extended.
+- 2026-11-05: ADR-091's review, the top bar's words give way by each
+  language's own width, so 中文 keeps them at Larger on a 390 px phone:
+  MC-1561 reworded.

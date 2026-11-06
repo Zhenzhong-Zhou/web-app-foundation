@@ -136,6 +136,31 @@ test('opens Help full screen on a phone, in Chinese, and closes it', async ({
 });
 
 /**
+ * The bar's words by language (ADR-091's review): Chinese's fit a phone 390
+ * px wide even at Larger, where the senior who reads only Chinese needs
+ * them most; French's, the widest, give way to the icons alone there.
+ */
+test('keeps the words in the top bar at Larger text on a 390 px phone, in Chinese', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('language', 'zh-Hans');
+    localStorage.setItem('textSize', 'larger');
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/orders');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  const bar = page.getByRole('banner');
+  for (const word of ['菜单', '搜索', '帮助', '通知', '账户']) {
+    await expect(bar.getByText(word, { exact: true })).toBeVisible();
+  }
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+});
+
+/**
  * The top bar on a phone (ADR-091): a word under each icon, the app's own
  * names, each target 44 px, and the organization's name what shortens so
  * Notifications fits under the bell. 360 px in English and 390 in Chinese,

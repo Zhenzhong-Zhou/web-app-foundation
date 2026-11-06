@@ -1,8 +1,9 @@
 import { Box, IconButton, type IconButtonProps } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import { useLanguage } from '../i18n/use-language';
 import { RADIUS } from '../theme/tokens';
-import { BAR, WORDS_FIT } from './bar';
+import { BAR, wordsFit } from './bar';
 
 /**
  * A target in the top bar (ADR-091): below `lg` its icon with a short word
@@ -22,13 +23,15 @@ export function BarButton({
   icon: ReactNode;
   word: string;
 }) {
+  // The app's language, not Intl's tag, which carries the browser's region.
+  const fit = wordsFit(useLanguage().locale);
   return (
     <IconButton
       {...props}
       sx={[
         (theme) => ({
           [theme.breakpoints.down(BAR)]: {
-            [WORDS_FIT]: {
+            [fit]: {
               flexDirection: 'column',
               gap: '2px',
               px: 0.5,
@@ -48,7 +51,7 @@ export function BarButton({
           ...theme.typography.caption,
           color: 'text.secondary',
           whiteSpace: 'nowrap',
-          [theme.breakpoints.down(BAR)]: { [WORDS_FIT]: { display: 'block' } },
+          [theme.breakpoints.down(BAR)]: { [fit]: { display: 'block' } },
         })}
       >
         {word}
