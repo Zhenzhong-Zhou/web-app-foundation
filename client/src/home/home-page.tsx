@@ -552,7 +552,7 @@ function WhatIsLate({ cards }: { cards: KnownCard[] }) {
               {
                 id: 'home.late.title',
                 defaultMessage:
-                  '{count, plural, one {# thing is late} other {# things are late}}',
+                  '{count, plural, one {# thing needs you now} other {# things need you now}}',
               },
               { count: total },
             )}

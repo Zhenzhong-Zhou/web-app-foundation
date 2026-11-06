@@ -190,7 +190,7 @@ describe('HomePage', () => {
     });
 
     const late = await screen.findByRole('region', {
-      name: '4 things are late',
+      name: '4 things need you now',
     });
     const buttons = within(late).getAllByRole('link');
     expect(
@@ -199,7 +199,7 @@ describe('HomePage', () => {
         button.getAttribute('href'),
       ]),
     ).toEqual([
-      ['2 orders to ship', '/orders?direction=sale&outstanding=1&late=1'],
+      ['2 late orders to ship', '/orders?direction=sale&outstanding=1&late=1'],
       ['1 expired lot', '/inventory?expiring=1&expired=1'],
       ['1 expired licence', '/licences?expiring=1&expired=1'],
     ]);
@@ -311,7 +311,7 @@ describe('HomePage', () => {
     );
 
     const late = await screen.findByRole('region', {
-      name: '1 thing is late',
+      name: '1 thing needs you now',
     });
     const { color, backgroundColor } = getComputedStyle(late);
     expect(color).toBe('var(--mui-palette-tone-critical-fg)');
@@ -440,7 +440,7 @@ describe('HomePage', () => {
       });
       atHome(['orders.view']);
 
-      for (const name of ['To ship, 3, 1 late', '1 order to ship']) {
+      for (const name of ['To ship, 3, 1 late', '1 late order to ship']) {
         await userEvent.click(await screen.findByRole('link', { name }));
         await userEvent.click(screen.getByRole('button', { name: 'Back' }));
       }

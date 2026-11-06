@@ -34,7 +34,7 @@ La liste garde ce choix pendant que vous y travaillez : en revenant d’une fic
 
 ## Ce qui est en retard {#late}
 
-Quand quelque chose est en retard, l’accueil dit combien, avec un bouton par sorte, comme **2 commandes à expédier**. Chacun ouvre sa liste avec seulement ce qui est en retard : **En retard** choisi dans Commandes, **Épuisé** dans Points de commande, **Périmés** dans Inventaire et **Expirées** dans Licences.
+Quand quelque chose est en retard, périmé ou épuisé, l’accueil dit combien d’éléments sont à traiter maintenant, avec un bouton par sorte, comme **2 commandes en retard à expédier**. Chacun ouvre sa liste avec seulement ce qui est en retard : **En retard** choisi dans Commandes, **Épuisé** dans Points de commande, **Périmés** dans Inventaire et **Expirées** dans Licences.
 
 Sans rien en retard, une ligne dit **Rien n’est en retard aujourd’hui**; sans rien du tout à faire, **Rien ne vous attend aujourd’hui**.
 

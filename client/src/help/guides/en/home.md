@@ -34,7 +34,7 @@ The list keeps that choice while you work there: Back from a record returns to i
 
 ## What is late {#late}
 
-When anything is late, Home says how many, with a button for each kind, such as **2 orders to ship**. Each opens its list with just the late ones: **Late** chosen on Orders, **Out** on Reorder points, **Expired** on Inventory and on Licences.
+When anything is late, expired or out, Home says how many things need you now, with a button for each kind, such as **2 late orders to ship**. Each opens its list with just the late ones: **Late** chosen on Orders, **Out** on Reorder points, **Expired** on Inventory and on Licences.
 
 With nothing late, one line says **Nothing is late today**; with nothing at all to do, **Nothing needs you today**.
 

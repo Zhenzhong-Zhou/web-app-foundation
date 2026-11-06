@@ -334,8 +334,8 @@ test('each tile opens its list with its count’s rows, a late button just the l
   await page.getByRole('button', { name: 'Back' }).click();
 
   // The late button, just the late one, with Late chosen.
-  const late = page.getByRole('region', { name: '1 thing is late' });
-  await late.getByRole('link', { name: '1 order to receive' }).click();
+  const late = page.getByRole('region', { name: '1 thing needs you now' });
+  await late.getByRole('link', { name: '1 late order to receive' }).click();
   await expect(page).toHaveURL(
     /\/orders\?direction=purchase&outstanding=1&late=1$/,
   );

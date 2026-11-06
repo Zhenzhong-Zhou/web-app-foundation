@@ -15,7 +15,8 @@ import type { HomeKind } from '../lib/api-names';
 
 /**
  * What is late in a kind (ADR-091): its tile's pill ("2 late"), its button
- * in the panel of what is late ("2 orders to ship"), and the list that
+ * in the panel of what is late ("2 late orders to ship"), each saying late,
+ * expired or out, since the panel's heading counts all three, and the list that
  * button opens, just the late ones, by the filter the server counts them
  * with.
  */
@@ -134,17 +135,17 @@ const PILLS = defineMessages({
   },
 });
 
-/** The number in bold, as the panel draws it: `<b>2</b> orders to ship`. */
+/** The number in bold, as the panel draws it: `<b>2</b> late orders to ship`. */
 const BUTTONS = defineMessages({
   toShip: {
     id: 'home.late.toShip',
     defaultMessage:
-      '{count, plural, one {<b>#</b> order to ship} other {<b>#</b> orders to ship}}',
+      '{count, plural, one {<b>#</b> late order to ship} other {<b>#</b> late orders to ship}}',
   },
   toReceive: {
     id: 'home.late.toReceive',
     defaultMessage:
-      '{count, plural, one {<b>#</b> order to receive} other {<b>#</b> orders to receive}}',
+      '{count, plural, one {<b>#</b> late order to receive} other {<b>#</b> late orders to receive}}',
   },
   lowStock: {
     id: 'home.late.lowStock',

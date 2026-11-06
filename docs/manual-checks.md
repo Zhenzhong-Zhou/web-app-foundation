@@ -852,8 +852,9 @@ Paper is checked first because it must not change at all.
   greeting by the time of day, then the organization's day and time to
   the minute, never seconds, which moves on at the next minute by itself,
   and What we do under it, in plain text, no card. What is late is a pale
-  red panel headed by how many ("3 things are late"), with a button per
-  kind, such as "1 order to receive": each opens its list with just the
+  red panel headed by how many ("3 things need you now", in 中文
+  有 3 项需要马上处理), with a button per kind saying late, expired or
+  out, such as "1 late order to receive": each opens its list with just the
   late ones, Late (Expired for lots and licences, Out for low stock)
   chosen, and Back to Home. Under What needs you today, a tile per kind,
   its icon red while anything in it is late, its count, its name and its
@@ -1909,7 +1910,7 @@ The pages, in a private window unless a check says otherwise.
   organization and Words you’ll meet. Every word it puts in bold reads
   the same on the screen: What needs you today, 2 late, Raise an order,
   Recently opened, Refresh; each tile's name, and where the guide says it
-  leads is where the tile opens; 2 orders to ship, and Late, Out and
+  leads is where the tile opens; 2 late orders to ship, and Late, Out and
   Expired on the lists the late buttons open; the welcome's Open and Fold;
   Getting started's seven steps, Learn more and Skip; and, at 390 px, the
   top bar's Menu, Search, Help, Notifications and Account. Nowhere does it
@@ -4954,3 +4955,6 @@ first.
   a window of about 648: MC-1559 and MC-3423's lead reworded.
 - 2026-11-05: ADR-091's review, Home's guide saying the welcome folds
   below 900 px, not only on a phone: MC-3213 extended.
+- 2026-11-05: ADR-091's review, decision 2A, what is late headed "things
+  need you now", since it counts the expired and the out too, each
+  button saying late, expired or out: MC-1559 and MC-3213 reworded.
