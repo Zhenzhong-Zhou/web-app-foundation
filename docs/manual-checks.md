@@ -884,8 +884,8 @@ Paper is checked first because it must not change at all.
   window): the tiles two by two, three from a window about 648 px wide
   (Home's page 600 px, DevTools), nothing scrolls
   sideways, and the wording reads naturally. Register a
-  new organization: Getting started's seven steps, straight after the
-  welcome, at 0 of 7 done over a bar in the accent, with Seven steps get
+  new organization: the welcome first, then Getting started's seven
+  steps, both above what is late and the tiles, at 0 of 7 done over a bar in the accent, with Seven steps get
   your organization ready to work… inside the card. The next step is
   shaded, its ring in the accent, its button the only filled one on Home
   with Learn more beside it (44 px tall on touch), and no main action at
@@ -1872,7 +1872,8 @@ The pages, in a private window unless a check says otherwise.
   started this organization today, then in one line You may do everything
   here, including settings and closing the organization, and Setting up
   the organization is in Getting started, below. Getting started comes
-  straight after the card, Raise an order grey at the top, and the card's first
+  straight after the card, both above what is late, no main action at the
+  top, and the card's first
   week has only Confirm your email address
   and Say who you are, Your first week · 0 of 2 done in its head, and
   Getting started's bar is empty on a grey track at 0 of 7.
@@ -4966,3 +4967,6 @@ first.
 - 2026-11-05: ADR-091's review, decision 4A, a role whose only action is
   Trace a lot has the quiet line and whom to ask, not the button: MC-1559
   reworded.
+- 2026-11-05: ADR-091's review, decision 5A, the welcome and Getting
+  started above what is late, as the boards draw them: MC-1559 and
+  MC-3209 reworded.

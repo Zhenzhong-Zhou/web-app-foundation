@@ -671,6 +671,10 @@ describe('HomePage', () => {
     const card = await screen.findByRole('region', { name: /^Welcome to/ });
     const start = screen.getByRole('region', { name: 'Getting started' });
     expect(follows(card, start)).toBe(true);
+    // Both above what is late, as the boards draw them (ADR-091's review).
+    expect(follows(start, screen.getByText('Nothing needs you today.'))).toBe(
+      true,
+    );
     // Getting started's next step is the page's one main action.
     expect(
       screen

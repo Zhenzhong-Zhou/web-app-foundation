@@ -72,10 +72,11 @@ const TILE_HEIGHT = 148;
  * Home (ADR-058; ADR-091): a few large tiles, each opening its list. From
  * the top: the greeting with Refresh, the date and the time, and the
  * organization's What we do, the main action at the right of them from
- * `md` and under them below it, or a line saying whom to ask; what is
- * late, a button per kind opening just the late ones; a newcomer's welcome
- * (ADR-079), and Getting started while it shows; the tiles under "What
- * needs you today"; and Recently opened.
+ * `md` and under them below it, or a line saying whom to ask; a
+ * newcomer's welcome (ADR-079), and Getting started while it shows, first
+ * while someone is setting up, as the boards draw them (ADR-091's review);
+ * what is late, a button per kind opening just the late ones; the tiles
+ * under "What needs you today"; and Recently opened.
  *
  * Read when the page opens, with Refresh, and again when its tab comes
  * back into view after a minute away; not live.
@@ -382,8 +383,6 @@ function OrganizationHome() {
         )
       ) : (
         <>
-          <WhatIsLate cards={cards} />
-
           {welcome && (
             <WelcomeCard
               welcome={welcome}
@@ -410,6 +409,10 @@ function OrganizationHome() {
               }
             />
           )}
+
+          {/* After both, so the welcome opens where a newcomer looks first
+              and Getting started stays above the fold on a laptop. */}
+          <WhatIsLate cards={cards} />
 
           {cards.length > 0 && (
             <Stack
