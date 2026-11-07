@@ -972,7 +972,9 @@ Paper is checked first because it must not change at all.
   down: Reset to default and Done stay at the top under the bar (not on
   a window under 700 px tall, where they scroll away). Press Orders in
   the menu: Leave without saving? says Your changes to Home aren’t saved
-  yet.; Stay keeps the cards as they were. Press Done: Home reads again
+  yet.; Stay keeps the cards as they were. With DevTools' network at
+  Slow 3G, press Done, and before Home comes back try Up, Hide, a handle
+  and the switch: none does anything. Home reads again
   in the new order, To ship gone, Orders · Draft second, no Recently
   opened, focus on Customise Home; reload, and sign in on a phone or a
   second browser: the same. Leave Home open in that second browser,
@@ -5176,3 +5178,5 @@ first.
 - 2026-11-07: Customise Home's reviews, Customise Home reading Home again
   as it opens, so a tab left open starts from the order saved last:
   MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, nothing in Customise Home usable
+  while Done saves: MC-1563 extended.

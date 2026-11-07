@@ -736,6 +736,40 @@ test('Reset to default and Done clear the layout, for an Owner and for a role wh
   expect((await untouched).method()).toBe('DELETE');
 });
 
+// While Done saves, which a free instance waking takes a minute over,
+// nothing in the panel can change what the save holds.
+test('while Done saves, nothing in Customise Home can be moved', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/v1/home/layout', async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const panel = customising(page);
+  await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
+  await panel.getByRole('button', { name: 'Done' }).click();
+
+  // Inert until it is back: the cards' buttons, their handles and the
+  // switch, but not Done's row.
+  const resting = panel.locator('[inert]');
+  await expect(resting.getByRole('button', { name: 'Up' })).toHaveCount(9);
+  await expect(resting.getByRole('button', { name: /^Drag / })).toHaveCount(9);
+  await expect(resting.getByRole('switch')).toHaveCount(1);
+  await expect(resting.getByRole('button', { name: 'Done' })).toHaveCount(0);
+  release();
+  await expect(panel).toBeHidden();
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To receive, /);
+});
+
 /**
  * The arrangement saved last, on whichever device (ADR-091, amended
  * November 2026): Home shows it after Orders and back, and Customise Home

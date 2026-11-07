@@ -215,7 +215,7 @@ export function CustomiseButton({
  * its handle, its count, and Up, Down and Hide; the hidden ones below, each
  * with Show; Recently opened's switch; Reset to default and Done in a row
  * that stays at the top while the page scrolls. Every change is on the
- * page until Done saves it. A tile drags by its handle, by a pointer, by
+ * page until Done saves it, and none can be made while it does. A tile drags by its handle, by a pointer, by
  * touch after a press and hold, or by the keyboard. After Up or Down focus
  * stays on the moved tile's button, after Hide it goes to the next tile,
  * after a drop by the keyboard on its handle, and a screen reader hears
@@ -396,186 +396,199 @@ export function CustomiseHome({
         </Stack>
       </Box>
 
-      <Box>
-        <Typography sx={{ color: 'text.secondary' }}>
-          {intl.formatMessage(WORDS.intro)}
-        </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {intl.formatMessage(WORDS.keyboard)}
-        </Typography>
-      </Box>
-
-      {failureWords && <Alert severity="error">{failureWords}</Alert>}
-
-      <DragDropProvider plugins={plugins} onDragEnd={dropped}>
-        <Box
-          component="ol"
-          sx={{
-            listStyle: 'none',
-            m: 0,
-            p: 0,
-            display: 'grid',
-            gap: 1.5,
-            // One across on a phone, two on a tablet, three on a laptop:
-            // each card wide enough for its three buttons.
-            gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${rem(280)}), 1fr))`,
-          }}
-        >
-          {shown.map((kind, index) => {
-            const words = tileWords(intl, byKind.get(kind)!, expiringWithin);
-            const Icon = CARDS[kind].icon;
-            const nameId = `${id}-${kind}`;
-            return (
-              <DraggableTile
-                key={kind}
-                kind={kind}
-                index={index}
-                total={shown.length}
-                name={words.title}
-                nameId={nameId}
-                register={register}
-                actions={
-                  <>
-                    <EdgeButton
-                      ref={refFor(kind, 'up')}
-                      edge={index === 0}
-                      icon={<ArrowUpward />}
-                      onClick={() => move(kind, -1)}
-                    >
-                      {intl.formatMessage(WORDS.up)}
-                    </EdgeButton>
-                    <EdgeButton
-                      ref={refFor(kind, 'down')}
-                      edge={index === shown.length - 1}
-                      icon={<ArrowDownward />}
-                      onClick={() => move(kind, 1)}
-                    >
-                      {intl.formatMessage(WORDS.down)}
-                    </EdgeButton>
-                    <EdgeButton
-                      ref={refFor(kind, 'hide')}
-                      icon={<VisibilityOffOutlined />}
-                      onClick={() => hideTile(kind)}
-                    >
-                      {intl.formatMessage(WORDS.hide)}
-                    </EdgeButton>
-                  </>
-                }
-              >
-                <IconBadge
-                  size={36}
-                  sx={
-                    words.late
-                      ? {
-                          bgcolor: 'tone.critical.bg',
-                          color: 'tone.critical.fg',
-                        }
-                      : { bgcolor: 'surface.chosen', color: 'primary.main' }
-                  }
-                >
-                  <Icon fontSize="small" />
-                </IconBadge>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography id={nameId} sx={{ fontWeight: 600 }}>
-                    {words.title}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    {words.quiet
-                      ? words.status
-                      : words.status
-                        ? intl.formatMessage(VALUED.summary, {
-                            count: words.count,
-                            status: words.status,
-                          })
-                        : words.count}
-                  </Typography>
-                </Box>
-              </DraggableTile>
-            );
-          })}
-        </Box>
-      </DragDropProvider>
-
-      {hidden.length > 0 && (
-        <Box
-          component="section"
-          aria-labelledby={`${id}-hidden`}
-          sx={{
-            p: 1.5,
-            border: 1,
-            borderStyle: 'dashed',
-            borderColor: 'divider',
-            borderRadius: `${RADIUS.panel}px`,
-            bgcolor: 'background.default',
-          }}
-        >
-          <Typography
-            variant="body1"
-            component="h3"
-            id={`${id}-hidden`}
-            sx={{ fontWeight: 600, mb: 1 }}
-          >
-            {intl.formatMessage(WORDS.hiddenTiles)}
+      {/* Out of use while Done saves, so no move is made that the save
+          would not hold. */}
+      <Box
+        inert={saving}
+        sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
+      >
+        <Box>
+          <Typography sx={{ color: 'text.secondary' }}>
+            {intl.formatMessage(WORDS.intro)}
           </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {intl.formatMessage(WORDS.keyboard)}
+          </Typography>
+        </Box>
+
+        {failureWords && <Alert severity="error">{failureWords}</Alert>}
+
+        <DragDropProvider plugins={plugins} onDragEnd={dropped}>
           <Box
-            component="ul"
-            sx={{ listStyle: 'none', m: 0, p: 0, display: 'grid', gap: 1 }}
+            component="ol"
+            sx={{
+              listStyle: 'none',
+              m: 0,
+              p: 0,
+              display: 'grid',
+              gap: 1.5,
+              // One across on a phone, two on a tablet, three on a laptop:
+              // each card wide enough for its three buttons.
+              gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${rem(280)}), 1fr))`,
+            }}
           >
-            {hidden.map((kind) => {
+            {shown.map((kind, index) => {
+              const words = tileWords(intl, byKind.get(kind)!, expiringWithin);
               const Icon = CARDS[kind].icon;
               const nameId = `${id}-${kind}`;
               return (
-                <Box
-                  component="li"
+                <DraggableTile
                   key={kind}
-                  aria-labelledby={nameId}
-                  sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}
+                  kind={kind}
+                  index={index}
+                  total={shown.length}
+                  name={words.title}
+                  nameId={nameId}
+                  register={register}
+                  actions={
+                    <>
+                      <EdgeButton
+                        ref={refFor(kind, 'up')}
+                        edge={index === 0}
+                        icon={<ArrowUpward />}
+                        onClick={() => move(kind, -1)}
+                      >
+                        {intl.formatMessage(WORDS.up)}
+                      </EdgeButton>
+                      <EdgeButton
+                        ref={refFor(kind, 'down')}
+                        edge={index === shown.length - 1}
+                        icon={<ArrowDownward />}
+                        onClick={() => move(kind, 1)}
+                      >
+                        {intl.formatMessage(WORDS.down)}
+                      </EdgeButton>
+                      <EdgeButton
+                        ref={refFor(kind, 'hide')}
+                        icon={<VisibilityOffOutlined />}
+                        onClick={() => hideTile(kind)}
+                      >
+                        {intl.formatMessage(WORDS.hide)}
+                      </EdgeButton>
+                    </>
+                  }
                 >
                   <IconBadge
                     size={36}
-                    sx={{ bgcolor: 'tone.neutral.bg', color: 'text.secondary' }}
+                    sx={
+                      words.late
+                        ? {
+                            bgcolor: 'tone.critical.bg',
+                            color: 'tone.critical.fg',
+                          }
+                        : { bgcolor: 'surface.chosen', color: 'primary.main' }
+                    }
                   >
                     <Icon fontSize="small" />
                   </IconBadge>
-                  <Typography id={nameId} sx={{ flex: 1, minWidth: 0 }}>
-                    {titleOf(kind)}
-                  </Typography>
-                  <EdgeButton
-                    ref={refFor(kind, 'show')}
-                    icon={<Add />}
-                    onClick={() => showTile(kind)}
-                  >
-                    {intl.formatMessage(WORDS.show)}
-                  </EdgeButton>
-                </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography id={nameId} sx={{ fontWeight: 600 }}>
+                      {words.title}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: 'text.secondary' }}
+                    >
+                      {words.quiet
+                        ? words.status
+                        : words.status
+                          ? intl.formatMessage(VALUED.summary, {
+                              count: words.count,
+                              status: words.status,
+                            })
+                          : words.count}
+                    </Typography>
+                  </Box>
+                </DraggableTile>
               );
             })}
           </Box>
-        </Box>
-      )}
+        </DragDropProvider>
 
-      <Paper variant="outlined" sx={{ px: 2 }}>
-        <FormControlLabel
-          labelPlacement="start"
-          control={
-            <Switch
-              checked={arrangement.recent}
-              onChange={(event) =>
-                onChange({ ...arrangement, recent: event.target.checked })
-              }
-            />
-          }
-          label={intl.formatMessage(WORDS.recent)}
-          sx={{
-            m: 0,
-            width: '100%',
-            minHeight: 48,
-            justifyContent: 'space-between',
-            gap: 1,
-            [TOUCH]: { minHeight: 56 },
-          }}
-        />
-      </Paper>
+        {hidden.length > 0 && (
+          <Box
+            component="section"
+            aria-labelledby={`${id}-hidden`}
+            sx={{
+              p: 1.5,
+              border: 1,
+              borderStyle: 'dashed',
+              borderColor: 'divider',
+              borderRadius: `${RADIUS.panel}px`,
+              bgcolor: 'background.default',
+            }}
+          >
+            <Typography
+              variant="body1"
+              component="h3"
+              id={`${id}-hidden`}
+              sx={{ fontWeight: 600, mb: 1 }}
+            >
+              {intl.formatMessage(WORDS.hiddenTiles)}
+            </Typography>
+            <Box
+              component="ul"
+              sx={{ listStyle: 'none', m: 0, p: 0, display: 'grid', gap: 1 }}
+            >
+              {hidden.map((kind) => {
+                const Icon = CARDS[kind].icon;
+                const nameId = `${id}-${kind}`;
+                return (
+                  <Box
+                    component="li"
+                    key={kind}
+                    aria-labelledby={nameId}
+                    sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}
+                  >
+                    <IconBadge
+                      size={36}
+                      sx={{
+                        bgcolor: 'tone.neutral.bg',
+                        color: 'text.secondary',
+                      }}
+                    >
+                      <Icon fontSize="small" />
+                    </IconBadge>
+                    <Typography id={nameId} sx={{ flex: 1, minWidth: 0 }}>
+                      {titleOf(kind)}
+                    </Typography>
+                    <EdgeButton
+                      ref={refFor(kind, 'show')}
+                      icon={<Add />}
+                      onClick={() => showTile(kind)}
+                    >
+                      {intl.formatMessage(WORDS.show)}
+                    </EdgeButton>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
+        )}
+
+        <Paper variant="outlined" sx={{ px: 2 }}>
+          <FormControlLabel
+            labelPlacement="start"
+            control={
+              <Switch
+                checked={arrangement.recent}
+                onChange={(event) =>
+                  onChange({ ...arrangement, recent: event.target.checked })
+                }
+              />
+            }
+            label={intl.formatMessage(WORDS.recent)}
+            sx={{
+              m: 0,
+              width: '100%',
+              minHeight: 48,
+              justifyContent: 'space-between',
+              gap: 1,
+              [TOUCH]: { minHeight: 56 },
+            }}
+          />
+        </Paper>
+      </Box>
 
       <UnsavedChangesDialog
         blocker={blocker}
