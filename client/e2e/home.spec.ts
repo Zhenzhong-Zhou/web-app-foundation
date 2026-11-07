@@ -466,8 +466,7 @@ test('moves its time on at the minute, by itself', async ({
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-  // The line under the greeting: the day and the time, no seconds.
-  // The date and the time, under the greeting's row.
+  // The date and the time, under the greeting's row, with no seconds.
   const now = page
     .getByRole('main')
     .locator('p')
@@ -476,6 +475,16 @@ test('moves its time on at the minute, by itself', async ({
   await page.clock.pauseAt(new Date('2026-11-05T15:41:40Z'));
   const before = await now.textContent();
   expect(before).not.toMatch(/\d:\d\d:\d\d/);
+  // Neither a live region nor inside one, which a screen reader would read
+  // out every minute (ADR-091).
+  expect(
+    await now.evaluate(
+      (line) =>
+        line.closest(
+          '[aria-live]:not([aria-live="off"]), [role="status"], [role="log"], [role="alert"]',
+        ) !== null,
+    ),
+  ).toBe(false);
 
   await page.clock.runFor(10_000);
   await expect(now).toHaveText(before ?? '');
