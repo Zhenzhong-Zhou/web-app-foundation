@@ -81,6 +81,11 @@ about 7 minutes; large an hour or more, since every service call is its own
 transaction. It writes `perf/volume-<scale>.json`, which `perf` and
 `perf:plans` read to sign in and find their way, by their own `--scale`
 (small when not given). Seeding one scale leaves the other's in place.
+It ends with `VACUUM ANALYZE`, so the planner has fresh statistics and the
+pages are marked all-visible. A database kept for weeks is never vacuumed
+again, its tables staying under autovacuum's threshold: before trusting a
+figure over budget, run `vacuum analyze` on it (Home at large read 337 ms
+before, 190–225 ms after).
 
 Each organization also gets a team (ADR-081): 15 members at small and 150
 at large, the Owner and the newcomer among them, holding one to three roles

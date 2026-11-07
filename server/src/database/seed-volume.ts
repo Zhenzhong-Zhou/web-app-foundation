@@ -211,9 +211,13 @@ async function seedVolume(): Promise<void> {
       newcomers.push(await addNewcomer(db, account, passwordHash));
     }
 
-    // Fresh statistics, so the plan check and the first perf run see the
-    // planner's view of this data rather than of an empty database.
-    await db.execute(sql`analyze`);
+    // Fresh statistics, and the pages marked all-visible, so the plan check
+    // and the first perf run see the planner's view of this data rather
+    // than of an empty database. Nothing vacuums these tables later: they
+    // stay under autovacuum's threshold, and Home at large drifted from
+    // 205 to 337 ms (review 80). VACUUM cannot run in a transaction, and
+    // this is no transaction.
+    await db.execute(sql`vacuum analyze`);
 
     const counts = await countRows(
       db,
