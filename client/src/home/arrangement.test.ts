@@ -8,6 +8,7 @@ import {
   byDefault,
   hide,
   moved,
+  placed,
   sameArrangement,
   show,
   shownOf,
@@ -149,6 +150,28 @@ describe('moving, hiding and showing', () => {
 
     expect(moved(shipHidden, 'toReceive', -1)).toBe(shipHidden);
     expect(moved(start, 'expiring', 1)).toBe(start);
+  });
+
+  // Dragging (ADR-091, amended November 2026): as many moves as places.
+  it('drags a tile to a place among those shown, as Up and Down would', () => {
+    const dragged = placed(start, 'toShip', 2);
+
+    expect(dragged).toEqual(moved(moved(start, 'toShip', 1), 'toShip', 1));
+    expect(shownOf(dragged)).toEqual([
+      'toReceive',
+      'lowStock',
+      'toShip',
+      'expiring',
+    ]);
+    expect(dragged.order[2]).toBe('drafts');
+    expect(placed(dragged, 'toShip', 0)).toEqual(start);
+  });
+
+  it('leaves a tile dropped where it was, and takes a place past an end as that end', () => {
+    expect(placed(start, 'lowStock', 2)).toBe(start);
+    expect(placed(start, 'drafts', 0)).toBe(start);
+    expect(shownOf(placed(start, 'toShip', 9)).at(-1)).toBe('toShip');
+    expect(shownOf(placed(start, 'expiring', -1))[0]).toBe('expiring');
   });
 
   it('hides a tile in its place, and shows it there again', () => {

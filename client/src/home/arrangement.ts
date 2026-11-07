@@ -76,6 +76,26 @@ export function moved(
   return { ...arrangement, order: next };
 }
 
+/**
+ * A tile dragged to another place among those shown (0 the first): one
+ * move for each place between, so a hidden tile on the way keeps its place,
+ * as Up and Down leave it. A place past either end is that end.
+ */
+export function placed(
+  arrangement: Arrangement,
+  kind: HomeKind,
+  to: number,
+): Arrangement {
+  const shown = shownOf(arrangement);
+  const from = shown.indexOf(kind);
+  if (from < 0) return arrangement;
+  const end = Math.min(Math.max(to, 0), shown.length - 1);
+  const by = end < from ? -1 : 1;
+  let next = arrangement;
+  for (let at = from; at !== end; at += by) next = moved(next, kind, by);
+  return next;
+}
+
 /** A tile hidden, kept in its place. */
 export function hide(arrangement: Arrangement, kind: HomeKind): Arrangement {
   if (arrangement.hidden.includes(kind)) return arrangement;

@@ -222,6 +222,33 @@ const SCREENS: Screen[] = [
     ready: (page) =>
       page.getByRole('menu', { name: 'More' }).locator('.Mui-focusVisible'),
   },
+  {
+    // Customise Home, a tile moved by the keyboard (ADR-091, amended
+    // November 2026): tabbed to its handle, Space, an arrow, Space, so each
+    // engine drags by the keyboard and the dropped tile keeps the keyboard.
+    name: 'Customise Home, a tile moved by the keyboard',
+    path: () => '/',
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Customise Home' }).click();
+      const panel = page.getByRole('region', { name: 'Customise Home' });
+      const tiles = panel.getByRole('list').first().getByRole('listitem');
+      await expect(tiles.first()).toHaveAccessibleName('To ship');
+      await tiles.first().getByRole('button', { name: 'Hide' }).focus();
+      await page.keyboard.press('Tab');
+      const handle = panel.getByRole('button', {
+        name: 'Drag To receive',
+        exact: true,
+      });
+      await expect(handle).toBeFocused();
+      await page.keyboard.press('Space');
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('Space');
+      await expect(tiles.first()).toHaveAccessibleName('To receive');
+      await expect(handle).toBeFocused();
+    },
+    ready: (page) =>
+      page.getByRole('button', { name: 'Drag To receive', exact: true }),
+  },
   { name: 'inventory', path: () => '/inventory', ready: heading },
   {
     // A low row opened and chosen: its four boxes and the floating bar

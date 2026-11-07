@@ -1,3 +1,6 @@
+import { Accessibility } from '@dnd-kit/dom';
+import { DragDropProvider, type DragEndEvent } from '@dnd-kit/react';
+import { isSortable, useSortable } from '@dnd-kit/react/sortable';
 import Add from '@mui/icons-material/Add';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import ArrowUpward from '@mui/icons-material/ArrowUpward';
@@ -10,20 +13,29 @@ import {
   Box,
   Button,
   FormControlLabel,
+  IconButton,
   Paper,
   Stack,
   Switch,
   Typography,
 } from '@mui/material';
 import {
+  type ComponentProps,
   type ReactNode,
   type RefObject,
+  useCallback,
   useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
-import { defineMessages, useIntl } from 'react-intl';
+import {
+  defineMessages,
+  type IntlShape,
+  type MessageDescriptor,
+  useIntl,
+} from 'react-intl';
 
 import { IconBadge } from '../components/icon-badge';
 import { StatusChip } from '../components/status-chip';
@@ -40,6 +52,7 @@ import {
   type Arrangement,
   hide,
   moved,
+  placed,
   sameArrangement,
   show,
   shownOf,
@@ -57,7 +70,18 @@ const WORDS = defineMessages({
   intro: {
     id: 'home.customise.intro',
     defaultMessage:
-      'Use Up and Down to put the tiles in your order, and hide the ones you never need. It changes only your Home, on every device.',
+      'Drag a tile, or use Up and Down to arrange them; hide the ones you never need. It changes only your Home, on every device.',
+  },
+  keyboard: {
+    id: 'home.customise.keyboard',
+    defaultMessage:
+      'With the keyboard: Tab to a handle, Space to pick it up, the arrows to move it, Space to drop it.',
+  },
+  draggable: { id: 'home.customise.draggable', defaultMessage: 'draggable' },
+  instructions: {
+    id: 'home.customise.instructions',
+    defaultMessage:
+      'To pick up a tile, press Space. Move it with the arrow keys, then press Space to drop it in its new place, or Escape to put it back.',
   },
   fixed: { id: 'home.customise.fixed', defaultMessage: 'Fixed, cannot move' },
   up: { id: 'home.customise.up', defaultMessage: 'Up' },
@@ -79,7 +103,15 @@ const WORDS = defineMessages({
 });
 
 /** With values, so each takes them: the card's line and what is heard. */
-const VALUED = defineMessages<'summary' | 'place' | 'hiddenNow'>({
+const VALUED = defineMessages<
+  | 'summary'
+  | 'place'
+  | 'hiddenNow'
+  | 'handle'
+  | 'pickedUp'
+  | 'dropped'
+  | 'cancelled'
+>({
   summary: {
     id: 'home.customise.summary',
     defaultMessage: '{count} · {status}',
@@ -91,6 +123,19 @@ const VALUED = defineMessages<'summary' | 'place' | 'hiddenNow'>({
   hiddenNow: {
     id: 'home.customise.hiddenNow',
     defaultMessage: '{name} hidden',
+  },
+  handle: { id: 'home.customise.handle', defaultMessage: 'Drag {name}' },
+  pickedUp: {
+    id: 'home.customise.pickedUp',
+    defaultMessage: 'Picked up {name}, {place} of {total}',
+  },
+  dropped: {
+    id: 'home.customise.dropped',
+    defaultMessage: '{name} dropped, {place} of {total}',
+  },
+  cancelled: {
+    id: 'home.customise.cancelled',
+    defaultMessage: 'Move cancelled: {name} back at {place} of {total}',
   },
 });
 
@@ -170,9 +215,11 @@ export function CustomiseButton({
  * its handle, its count, and Up, Down and Hide; the hidden ones below, each
  * with Show; Recently opened's switch; Reset to default and Done in a row
  * that stays at the top while the page scrolls. Every change is on the
- * page until Done saves it. After Up or Down focus stays on the moved
- * tile's button, after Hide it goes to the next tile, and a screen reader
- * hears each move ("To ship, 2 of 8").
+ * page until Done saves it. A tile drags by its handle, by a pointer, by
+ * touch after a press and hold, or by the keyboard. After Up or Down focus
+ * stays on the moved tile's button, after Hide it goes to the next tile,
+ * after a drop by the keyboard on its handle, and a screen reader hears
+ * each move ("To ship, 2 of 8").
  */
 export function CustomiseHome({
   cards,
@@ -216,6 +263,14 @@ export function CustomiseHome({
     (kind: HomeKind, action: string) => (element: HTMLButtonElement | null) => {
       buttons.current.set(`${kind}.${action}`, element);
     };
+  // The handles' own, one function from draw to draw, so the library keeps
+  // its hold of a handle while its tile is dragged.
+  const register = useCallback(
+    (key: string, element: HTMLButtonElement | null) => {
+      buttons.current.set(key, element);
+    },
+    [],
+  );
 
   const byKind = new Map(cards.map((card) => [card.kind, card]));
   const known = (kind: HomeKind) => byKind.has(kind);
@@ -225,6 +280,22 @@ export function CustomiseHome({
   );
   const titleOf = (kind: HomeKind) =>
     tileWords(intl, byKind.get(kind)!, expiringWithin).title;
+
+  const plugins = useMemo(() => draggingPlugins(intl), [intl]);
+
+  /** A drop: the tile in the place it was dropped, unless cancelled. */
+  function dropped(event: DragEndEvent) {
+    const { source, activatorEvent } = event.operation;
+    if (event.canceled || !isSortable(source)) return;
+    const kind = source.id as HomeKind;
+    const next = placed(arrangement, kind, source.index);
+    if (next === arrangement) return;
+    // The keyboard stays on the handle it dropped with.
+    if (activatorEvent instanceof KeyboardEvent) {
+      focusNext.current = `${kind}.handle`;
+    }
+    onChange(next);
+  }
 
   function sayPlace(next: Arrangement, kind: HomeKind) {
     const list = shownOf(next).filter(known);
@@ -325,53 +396,72 @@ export function CustomiseHome({
         </Stack>
       </Box>
 
-      <Typography sx={{ color: 'text.secondary' }}>
-        {intl.formatMessage(WORDS.intro)}
-      </Typography>
+      <Box>
+        <Typography sx={{ color: 'text.secondary' }}>
+          {intl.formatMessage(WORDS.intro)}
+        </Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          {intl.formatMessage(WORDS.keyboard)}
+        </Typography>
+      </Box>
 
       {failureWords && <Alert severity="error">{failureWords}</Alert>}
 
-      <Box
-        component="ol"
-        sx={{
-          listStyle: 'none',
-          m: 0,
-          p: 0,
-          display: 'grid',
-          gap: 1.5,
-          // One across on a phone, two on a tablet, three on a laptop:
-          // each card wide enough for its three buttons.
-          gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${rem(280)}), 1fr))`,
-        }}
-      >
-        {shown.map((kind, index) => {
-          const words = tileWords(intl, byKind.get(kind)!, expiringWithin);
-          const Icon = CARDS[kind].icon;
-          const nameId = `${id}-${kind}`;
-          return (
-            <Box
-              component="li"
-              key={kind}
-              aria-labelledby={nameId}
-              sx={{
-                p: 1.5,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1.25,
-                border: 1,
-                borderColor: 'divider',
-                borderRadius: `${RADIUS.panel}px`,
-                bgcolor: 'background.paper',
-              }}
-            >
-              <Stack direction="row" sx={{ gap: 1.25, alignItems: 'center' }}>
-                {/* The handle; dragging comes with it (ADR-091's step 13). */}
-                <IconBadge
-                  size={36}
-                  sx={{ bgcolor: 'tonal.bg', color: 'tonal.fg' }}
-                >
-                  <DragIndicator fontSize="small" />
-                </IconBadge>
+      <DragDropProvider plugins={plugins} onDragEnd={dropped}>
+        <Box
+          component="ol"
+          sx={{
+            listStyle: 'none',
+            m: 0,
+            p: 0,
+            display: 'grid',
+            gap: 1.5,
+            // One across on a phone, two on a tablet, three on a laptop:
+            // each card wide enough for its three buttons.
+            gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${rem(280)}), 1fr))`,
+          }}
+        >
+          {shown.map((kind, index) => {
+            const words = tileWords(intl, byKind.get(kind)!, expiringWithin);
+            const Icon = CARDS[kind].icon;
+            const nameId = `${id}-${kind}`;
+            return (
+              <DraggableTile
+                key={kind}
+                kind={kind}
+                index={index}
+                total={shown.length}
+                name={words.title}
+                nameId={nameId}
+                register={register}
+                actions={
+                  <>
+                    <EdgeButton
+                      ref={refFor(kind, 'up')}
+                      edge={index === 0}
+                      icon={<ArrowUpward />}
+                      onClick={() => move(kind, -1)}
+                    >
+                      {intl.formatMessage(WORDS.up)}
+                    </EdgeButton>
+                    <EdgeButton
+                      ref={refFor(kind, 'down')}
+                      edge={index === shown.length - 1}
+                      icon={<ArrowDownward />}
+                      onClick={() => move(kind, 1)}
+                    >
+                      {intl.formatMessage(WORDS.down)}
+                    </EdgeButton>
+                    <EdgeButton
+                      ref={refFor(kind, 'hide')}
+                      icon={<VisibilityOffOutlined />}
+                      onClick={() => hideTile(kind)}
+                    >
+                      {intl.formatMessage(WORDS.hide)}
+                    </EdgeButton>
+                  </>
+                }
+              >
                 <IconBadge
                   size={36}
                   sx={
@@ -400,36 +490,11 @@ export function CustomiseHome({
                         : words.count}
                   </Typography>
                 </Box>
-              </Stack>
-              <Stack direction="row" sx={{ gap: 0.75, flexWrap: 'wrap' }}>
-                <EdgeButton
-                  ref={refFor(kind, 'up')}
-                  edge={index === 0}
-                  icon={<ArrowUpward />}
-                  onClick={() => move(kind, -1)}
-                >
-                  {intl.formatMessage(WORDS.up)}
-                </EdgeButton>
-                <EdgeButton
-                  ref={refFor(kind, 'down')}
-                  edge={index === shown.length - 1}
-                  icon={<ArrowDownward />}
-                  onClick={() => move(kind, 1)}
-                >
-                  {intl.formatMessage(WORDS.down)}
-                </EdgeButton>
-                <EdgeButton
-                  ref={refFor(kind, 'hide')}
-                  icon={<VisibilityOffOutlined />}
-                  onClick={() => hideTile(kind)}
-                >
-                  {intl.formatMessage(WORDS.hide)}
-                </EdgeButton>
-              </Stack>
-            </Box>
-          );
-        })}
-      </Box>
+              </DraggableTile>
+            );
+          })}
+        </Box>
+      </DragDropProvider>
 
       {hidden.length > 0 && (
         <Box
@@ -525,6 +590,154 @@ export function CustomiseHome({
         {said}
       </Box>
     </Paper>
+  );
+}
+
+/** What a tile's card tells the library, for what a screen reader hears. */
+interface Spoken extends Record<string, unknown> {
+  name: string;
+  total: number;
+}
+
+/**
+ * The library's own plugins, its accessibility in the reader's language
+ * (ADR-091, amended November 2026): what the handle's description says,
+ * and what a screen reader hears as a tile is picked up, moved over a
+ * place, dropped or put back, by its name and place as Up and Down say it.
+ */
+function draggingPlugins(
+  intl: IntlShape,
+): ComponentProps<typeof DragDropProvider>['plugins'] {
+  const say = (message: MessageDescriptor, data: unknown, index: number) => {
+    const { name, total } = data as Spoken;
+    return intl.formatMessage(message, { name, place: index + 1, total });
+  };
+  const options: NonNullable<ConstructorParameters<typeof Accessibility>[1]> = {
+    screenReaderInstructions: {
+      draggable: intl.formatMessage(WORDS.instructions),
+    },
+    announcements: {
+      dragstart: ({ operation: { source } }) =>
+        isSortable(source)
+          ? say(VALUED.pickedUp, source.data, source.initialIndex)
+          : undefined,
+      dragover: ({ operation: { source, target } }) =>
+        isSortable(source) && isSortable(target) && target.id !== source.id
+          ? say(VALUED.place, source.data, target.index)
+          : undefined,
+      dragend: ({ operation: { source }, canceled }) => {
+        if (!isSortable(source)) return undefined;
+        return canceled
+          ? say(VALUED.cancelled, source.data, source.initialIndex)
+          : say(VALUED.dropped, source.data, source.index);
+      },
+    },
+  };
+  const accessibility = Accessibility.configure(options);
+  return (defaults) =>
+    defaults.map((plugin) =>
+      plugin === Accessibility ? accessibility : plugin,
+    );
+}
+
+/**
+ * A tile's card while Home is customised, dragged by its handle (ADR-091,
+ * amended November 2026): by a mouse as soon as it is pressed, by touch
+ * after a press held a quarter of a second, so a swipe still scrolls the
+ * page, by the keyboard with Space, the arrows, Space, and Escape to put
+ * it back; the library's defaults, each. Dragged, it lifts with the lift's
+ * shadow and an accent edge; where it would drop is a dashed accent box.
+ * Under less motion the library slides nothing.
+ */
+function DraggableTile({
+  kind,
+  index,
+  total,
+  name,
+  nameId,
+  register,
+  actions,
+  children,
+}: {
+  kind: HomeKind;
+  index: number;
+  /** How many tiles are shown, for the place a screen reader hears. */
+  total: number;
+  name: string;
+  nameId: string;
+  register: (key: string, element: HTMLButtonElement | null) => void;
+  actions: ReactNode;
+  children: ReactNode;
+}) {
+  const intl = useIntl();
+  const { ref, handleRef } = useSortable<Spoken>({
+    id: kind,
+    index,
+    data: { name, total },
+  });
+  const handle = useCallback(
+    (element: HTMLButtonElement | null) => {
+      handleRef(element);
+      register(`${kind}.handle`, element);
+    },
+    [handleRef, register, kind],
+  );
+  return (
+    <Box
+      component="li"
+      ref={ref}
+      aria-labelledby={nameId}
+      sx={(theme) => ({
+        p: 1.5,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.25,
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: `${RADIUS.panel}px`,
+        bgcolor: 'background.paper',
+        // The tile being dragged, which the library marks.
+        '&[data-dnd-dragging]': {
+          borderColor: 'primary.main',
+          boxShadow: theme.vars?.palette.surface.lift,
+        },
+        // Its place, the library's copy of it, which it hides: drawn as
+        // the box it drops into, the same size, its contents unseen.
+        '&&[data-dnd-placeholder]': {
+          visibility: 'visible',
+          m: '-1px',
+          border: 2,
+          borderStyle: 'dashed',
+          borderColor: 'primary.main',
+          bgcolor: 'surface.chosen',
+          '& > *': { visibility: 'hidden' },
+        },
+      })}
+    >
+      <Stack direction="row" sx={{ gap: 1.25, alignItems: 'center' }}>
+        <IconButton
+          ref={handle}
+          aria-label={intl.formatMessage(VALUED.handle, { name })}
+          aria-roledescription={intl.formatMessage(WORDS.draggable)}
+          sx={[
+            TONAL,
+            {
+              width: 44,
+              height: 44,
+              flex: 'none',
+              borderRadius: `${RADIUS.control}px`,
+              cursor: 'grab',
+            },
+          ]}
+        >
+          <DragIndicator fontSize="small" />
+        </IconButton>
+        {children}
+      </Stack>
+      <Stack direction="row" sx={{ gap: 0.75, flexWrap: 'wrap' }}>
+        {actions}
+      </Stack>
+    </Box>
   );
 }
 

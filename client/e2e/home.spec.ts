@@ -792,6 +792,97 @@ test('Recently opened switched off in Customise Home is neither shown nor read',
   expect(reads).toEqual([]);
 });
 
+/** A tile's handle in Customise Home, by its tile's name. */
+const handleOf = (page: Page, name: string) =>
+  customising(page).getByRole('button', { name: `Drag ${name}`, exact: true });
+
+/** What a screen reader hears while a tile is dragged, said by the library. */
+const dragSaid = (page: Page, words: string) =>
+  page.getByRole('status').filter({ hasText: words });
+
+/** A dropped tile flown to its place, after which another drag may start. */
+const settled = (page: Page) =>
+  expect(customising(page).locator('[data-dnd-dragging]')).toHaveCount(0);
+
+test('Customise Home by dragging: a mouse and the keyboard, the buttons beside, kept by Done', async ({
+  page,
+  freshOrg,
+}) => {
+  test.slow();
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const tiles = customising(page)
+    .getByRole('list')
+    .first()
+    .getByRole('listitem');
+  await expect(tiles).toHaveCount(9);
+
+  // A mouse: Licences expiring, last, dropped on To ship, first, both in
+  // a window tall enough to hold them.
+  await page.setViewportSize({ width: 1366, height: 1200 });
+  await handleOf(page, 'Licences expiring').scrollIntoViewIfNeeded();
+  const from = await handleOf(page, 'Licences expiring').boundingBox();
+  const to = await card(page, 'To ship').boundingBox();
+  if (!from || !to) throw new Error('the handle and the first tile are drawn');
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, {
+    steps: 15,
+  });
+  await page.mouse.up();
+  await settled(page);
+  await expect(tiles.first()).toHaveAccessibleName('Licences expiring');
+  await expect(tiles.nth(1)).toHaveAccessibleName('To ship');
+  await expect(dragSaid(page, 'Licences expiring dropped, 1 of 9')).toHaveCount(
+    1,
+  );
+
+  // The keyboard: Space picks To receive up, the arrow moves it a place
+  // back, Space drops it there, and the keyboard stays on its handle.
+  const receive = handleOf(page, 'To receive');
+  await receive.focus();
+  await page.keyboard.press('Space');
+  await expect(dragSaid(page, 'Picked up To receive, 3 of 9')).toHaveCount(1);
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('Space');
+  await settled(page);
+  await expect(tiles.nth(1)).toHaveAccessibleName('To receive');
+  await expect(receive).toBeFocused();
+  await expect(dragSaid(page, 'To receive dropped, 2 of 9')).toHaveCount(1);
+
+  // Escape puts it back where it was.
+  await page.keyboard.press('Space');
+  await expect(dragSaid(page, 'Picked up To receive, 2 of 9')).toHaveCount(1);
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Escape');
+  await settled(page);
+  await expect(
+    dragSaid(page, 'Move cancelled: To receive back at 2 of 9'),
+  ).toHaveCount(1);
+  await expect(tiles.nth(1)).toHaveAccessibleName('To receive');
+  await expect(receive).toBeFocused();
+
+  // Up still moves a tile beside the dragging.
+  await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
+  await expect(tiles.first()).toHaveAccessibleName('To receive');
+  await expect(customising(page).getByRole('status')).toHaveText(
+    'To receive, 1 of 9',
+  );
+
+  const saved = layoutWrite(page);
+  await customising(page).getByRole('button', { name: 'Done' }).click();
+  expect((await saved).method()).toBe('PUT');
+  for (const [index, name] of [
+    /^To receive, /,
+    /^Licences expiring, /,
+    /^To ship, /,
+  ].entries()) {
+    await expect(homeTiles(page).nth(index)).toHaveAccessibleName(name);
+  }
+});
+
 test.describe('Customise Home on a touch phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
@@ -812,6 +903,7 @@ test.describe('Customise Home on a touch phone', () => {
     for (const target of [
       panel.getByRole('button', { name: 'Reset to default' }),
       panel.getByRole('button', { name: 'Done' }),
+      first.getByRole('button', { name: 'Drag To ship' }),
       first.getByRole('button', { name: 'Up' }),
       first.getByRole('button', { name: 'Down' }),
       first.getByRole('button', { name: 'Hide' }),

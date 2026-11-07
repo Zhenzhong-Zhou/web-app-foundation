@@ -986,6 +986,33 @@ Paper is checked first because it must not change at all.
   Masquer, Afficher, Rétablir l’ordre par défaut, Terminé and Tuiles
   masquées. Another member's Home, and the owner's in another
   organization, do not change.
+- **MC-1564** *(ADR-091, amended November 2026)* Customise Home by
+  dragging, as the demo owner: at 1366 px with a mouse, then from the
+  keyboard alone, then by touch on a phone and on a tablet (a real one
+  each, since DevTools' touch does not hold a press). Press Customise
+  Home: its words start Drag a tile, or use Up and Down, and a line
+  under them gives the keyboard's keys. Drag Expiring soon by its handle,
+  the six dots, onto To ship: while it moves it lifts, with a shadow and
+  a purple edge, a dashed purple box shows where it will drop, and the
+  other cards make room; let go and it is first. A press on a handle
+  without moving changes nothing. Up, Down and Hide still work beside
+  it. Reset to default, then the keyboard: Tab to To receive's handle
+  (VoiceOver, ⌘F5, says Drag To receive, draggable, and how to pick it
+  up); Space says Picked up To receive, 2 of 9; the left arrow moves it
+  a place, To receive, 1 of 9; Space drops it, To receive dropped, 1 of
+  9, the keyboard still on its handle. Space, the right arrow, then
+  Escape puts it back: Move cancelled: To receive back at 1 of 9. With
+  less motion asked for (macOS: Accessibility → Display → Reduce
+  motion), nothing slides: the tile jumps to its place. On the phone
+  (390 px) and the tablet: a swipe that starts on a handle scrolls the
+  page; a press held on it for about a quarter of a second picks the
+  tile up, which then follows the finger while the page stays still,
+  and lifting the finger drops it. Every handle is 44 px each way. Done
+  saves a dragged order as it saves one made with the buttons. In 中文
+  the handle is 拖动“待收货” and a screen reader says 已拿起“待收货”，第 2
+  个，共 9 个 and 已放下“待收货”，第 1 个，共 9 个; in Français Faire glisser
+  À recevoir, Tuile À recevoir prise, 2 sur 9, and Tuile À recevoir
+  déposée, 1 sur 9.
 - **MC-1560** *(ADR-091)* The type scale and the corners. On Inventory,
   SO-DEMO-1 and INV-000001, in light and in dark, at 1440 px and on a
   phone: buttons, fields, menus and the text under a heading read at 16
@@ -5127,3 +5154,5 @@ first.
 - 2026-11-06: Customise Home by buttons: Up, Down, Hide, Show, Reset to
   default, Done, leaving asks first, Recently opened's switch: MC-1563
   added.
+- 2026-11-06: Customise Home by dragging, by a mouse, the keyboard and
+  touch, each move said in three languages: MC-1564 added.
