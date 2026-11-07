@@ -227,7 +227,11 @@ a second organization.
   Draft; open a draft and press Back: still newest first, with no chip.
   Open the first address again and press Expected instead: the chip goes,
   and Expected is the sort, soonest first. In Français the chip reads
-  Les plus anciennes d’abord; in 中文, 最早的在前.
+  Les plus anciennes d’abord; in 中文, 最早的在前. Open Help there:
+  Orders' guide, under What a link chose (Ce qu’un lien a choisi,
+  链接带来的筛选), names each chip as the list shows it, Sales only and
+  Purchases only, Draft and Confirmed, Still to ship, Still to receive,
+  Late and Oldest first, and says its × removes it.
 
 ## 5. Making
 
@@ -5281,3 +5285,5 @@ first.
   button is pressed: MC-1563 extended.
 - 2026-11-07: Customise Home's reviews, Home's guide saying the arrows
   move a tile to the next tile that way: MC-3213 extended.
+- 2026-11-07: Customise Home's reviews, Orders' guide naming the chips a
+  link chooses, Oldest first among them: MC-408 extended.
