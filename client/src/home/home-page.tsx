@@ -1,6 +1,5 @@
 import AccountTreeOutlined from '@mui/icons-material/AccountTreeOutlined';
 import AddIcon from '@mui/icons-material/Add';
-import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
 import CheckCircleOutlineOutlined from '@mui/icons-material/CheckCircleOutlineOutlined';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
@@ -52,12 +51,11 @@ import { rem } from '../theme/rem';
 import { RADIUS, TYPE } from '../theme/tokens';
 import { evenRowsSx } from './even-rows';
 import { GettingStarted } from './getting-started';
-import { greeting } from './greeting';
 import { CARDS, isKnownCard, type KnownCard } from './home-cards';
+import { HomeClock, HomeGreeting } from './home-clock';
 import { MainAction, type QuickAction } from './main-action';
 import { NoOrganization } from './no-organization';
 import { RecentCard } from './recent-card';
-import { useMinute } from './use-minute';
 import { useReadOnReturn } from './use-read-on-return';
 import { WelcomeCard } from './welcome-card';
 
@@ -113,7 +111,6 @@ function OrganizationHome() {
   // heading, where the page begins, rather than to nowhere.
   const heading = useRef<HTMLHeadingElement>(null);
   const zone = organizationTimeZone();
-  const now = useMinute();
 
   // The server counts the tiles from the same day itself.
   const load = useCallback(() => {
@@ -246,7 +243,7 @@ function OrganizationHome() {
         <Stack spacing={0.75} sx={{ minWidth: 0 }}>
           <Stack direction="row" sx={{ alignItems: 'center', gap: 0.5 }}>
             <Typography ref={heading} variant="h5" component="h1" tabIndex={-1}>
-              {greeting(intl, session?.user.name ?? '', zone)}
+              <HomeGreeting name={session?.user.name ?? ''} zone={zone} />
             </Typography>
             {/* Next after the heading, where Dismiss puts focus, so the
                 next Tab reaches Undo; shown at the foot of the screen all
@@ -282,35 +279,9 @@ function OrganizationHome() {
               </IconButton>
             </Tooltip>
           </Stack>
-          {/* The organization's day and time, which the tiles count from
-              (ADR-072), moving on each minute by itself: not a live
-              region, which would read it out every minute. */}
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'text.secondary',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.75,
-            }}
-          >
-            <CalendarTodayOutlined aria-hidden sx={{ fontSize: rem(16) }} />
-            {intl.formatMessage(
-              { id: 'home.dateTime', defaultMessage: '{day}, {time}' },
-              {
-                day: intl.formatDate(now, {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                  timeZone: zone,
-                }),
-                time: intl.formatTime(now, {
-                  timeStyle: 'short',
-                  timeZone: zone,
-                }),
-              },
-            )}
-          </Typography>
+          {/* The organization's day and time, the one part of Home that
+              draws again each minute. */}
+          <HomeClock zone={zone} />
           {/* Only for a reader on another clock (ADR-072): their own date
               may already be tomorrow, or still yesterday. */}
           {differsFromBrowser(zone) && (
