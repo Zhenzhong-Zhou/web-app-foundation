@@ -998,7 +998,8 @@ Paper is checked first because it must not change at all.
   here, the switch's row too, is 44 px tall or more, the cards one
   across; scroll to Stock value · Waiting for a cost and tap its Up twice
   in the same place: it moves up two places, the page following it, its
-  card never under the row at the top; in 中文 the button reads 调整首页, the buttons 上移、下移、隐藏、显示,
+  card never under the row at the top; in 中文 the button reads 调整首页, its words 只改您自己的首页 and
+  leaving asks 您对首页的调整还没有保存。, 您 as everywhere, the buttons 上移、下移、隐藏、显示,
   恢复默认 and 完成, the list 已隐藏的磁贴, the line and a screen reader say
   待收货，第 1 个，共 9 个 and 已隐藏“待发货”：在下方“已隐藏的磁贴”中; in Français Personnaliser l’accueil, Monter, Descendre,
   Masquer, Afficher, Rétablir l’ordre par défaut, Terminé and Tuiles
@@ -5212,3 +5213,5 @@ first.
   hidden tile whose late items it holds: MC-1563 extended.
 - 2026-11-07: Customise Home's reviews, Recently opened's Clear saying
   what it did and where the section is turned off: MC-1559 extended.
+- 2026-11-07: Customise Home's reviews, its two Chinese messages saying 您
+  as the rest do: MC-1563 extended.
