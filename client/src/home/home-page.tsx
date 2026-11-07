@@ -31,7 +31,7 @@ import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { WhomToAsk, WhomToAskRead } from '../account/whom-to-ask';
-import type { HomeResponse } from '../api/types.gen';
+import type { HomeLayoutDto, HomeResponse } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { IconBadge } from '../components/icon-badge';
@@ -236,7 +236,10 @@ function OrganizationHome() {
     try {
       await (sameArrangement(next, byDefault)
         ? api('/home/layout', { method: 'DELETE' })
-        : api('/home/layout', { method: 'PUT', body: JSON.stringify(next) }));
+        : api('/home/layout', {
+            method: 'PUT',
+            body: JSON.stringify(next satisfies HomeLayoutDto),
+          }));
       setHome(await api<HomeResponse>('/home'));
       setError(null);
       setDraft(null);

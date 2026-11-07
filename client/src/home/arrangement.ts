@@ -1,18 +1,15 @@
-import type { HomeResponse } from '../api/types.gen';
+import type { HomeLayoutDto, HomeResponse } from '../api/types.gen';
 import type { HomeKind } from '../lib/api-names';
 import { CARDS, type KnownCard } from './home-cards';
 
 /**
  * Customise Home's arrangement (ADR-091, amended November 2026), the
- * layout Done saves: every tile the person may see, in their order, the
- * hidden ones kept in their places, so Show puts one back where it was;
- * which are hidden; and whether Recently opened shows.
+ * layout Done saves, as the API declares it: every tile the person may
+ * see, in their order, the hidden ones kept in their places, so Show puts
+ * one back where it was; which are hidden; and whether Recently opened
+ * shows.
  */
-export interface Arrangement {
-  order: HomeKind[];
-  hidden: HomeKind[];
-  recent: boolean;
-}
+export type Arrangement = HomeLayoutDto;
 
 /** Home as it came: the server's order, which it hid, and Recently opened. */
 export function arrangementOf(
