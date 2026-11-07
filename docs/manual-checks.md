@@ -1010,7 +1010,10 @@ Paper is checked first because it must not change at all.
   待收货，第 1 个，共 9 个 and 已隐藏“待发货”：在下方“已隐藏的磁贴”中; in Français Personnaliser l’accueil, Monter, Descendre,
   Masquer, Afficher, Rétablir l’ordre par défaut, Terminé and Tuiles
   masquées. Another member's Home, and the owner's in another
-  organization, do not change. Last, Customise Home, Up on any tile,
+  organization, do not change. As a newcomer whose welcome shows, Dismiss
+  it and press Customise Home at once: Undo, at the foot of the screen,
+  still brings the card back, faded with the greeting. Last, Customise
+  Home, Up on any tile,
   then Orders in the menu and Leave: Orders opens, and Home, back, is as
   it was, nothing saved.
 - **MC-1564** *(ADR-091, amended November 2026)* Customise Home by
@@ -5236,3 +5239,5 @@ first.
   with the form's error line: MC-1563 extended.
 - 2026-11-07: Customise Home's reviews, Done reading Saving… and keeping
   focus while it saves: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, the welcome's Undo still pressed
+  once Customise Home opens: MC-1563 extended.

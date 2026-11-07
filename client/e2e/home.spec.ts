@@ -836,6 +836,33 @@ test('Done saved but Home not read again closes Customise Home, nothing left uns
   expect(layout.cards[0].kind).toBe('toReceive');
 });
 
+// The welcome's Undo, in the greeting that Customise Home fades and puts
+// out of use, still works there in its last seconds.
+test('the welcome’s Undo can still be pressed once Customise Home opens', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  const welcome = page.getByRole('heading', { name: /^Welcome/ });
+  await expect(welcome).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Dismiss the welcome card', exact: true })
+    .click();
+  await expect(welcome).toBeHidden();
+
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  await expect(customising(page)).toBeVisible();
+  const undo = page
+    .getByRole('status')
+    .filter({ hasText: 'Welcome card hidden.' })
+    .getByRole('button', { name: 'Undo', exact: true });
+  expect(await undo.evaluate((button) => button.closest('[inert]'))).toBeNull();
+  await undo.click();
+  await expect(welcome).toBeVisible();
+});
+
 // A read of Home that went out before Done's, and comes back after it, is
 // dropped: it holds the order from before the save.
 test('an older read of Home arriving after Done’s does not bring the old order back', async ({

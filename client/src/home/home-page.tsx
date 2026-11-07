@@ -307,6 +307,33 @@ function OrganizationHome() {
     defaultMessage: 'Refresh',
   });
 
+  // The welcome just dismissed, a moment to undo it, held there while focus
+  // or the pointer is on it.
+  const undo = (
+    <UndoSnackbar
+      open={undoing}
+      autoHideDuration={8000}
+      onClose={(_event, reason) => {
+        // A click elsewhere is somebody carrying on, not dismissing.
+        if (reason !== 'clickaway') setUndoing(false);
+      }}
+      message={intl.formatMessage({
+        id: 'home.welcome.dismissed',
+        defaultMessage:
+          'Welcome card hidden. What you can do here stays on Your account.',
+      })}
+      action={
+        <Button color="inherit" onClick={() => void undoWelcome()}>
+          {intl.formatMessage({
+            id: 'home.welcome.undo',
+            defaultMessage: 'Undo',
+          })}
+        </Button>
+      }
+      slotProps={{ content: { role: 'status' } }}
+    />
+  );
+
   if (!home && isRevisionRefusal(error)) {
     return <RevisionRefusalPage failure={error} onRetry={load} />;
   }
@@ -337,30 +364,8 @@ function OrganizationHome() {
               </Typography>
               {/* Next after the heading, where Dismiss puts focus, so the
                 next Tab reaches Undo; shown at the foot of the screen all
-                the same, and held there while focus or the pointer is on
-                it. */}
-              <UndoSnackbar
-                open={undoing}
-                autoHideDuration={8000}
-                onClose={(_event, reason) => {
-                  // A click elsewhere is somebody carrying on, not dismissing.
-                  if (reason !== 'clickaway') setUndoing(false);
-                }}
-                message={intl.formatMessage({
-                  id: 'home.welcome.dismissed',
-                  defaultMessage:
-                    'Welcome card hidden. What you can do here stays on Your account.',
-                })}
-                action={
-                  <Button color="inherit" onClick={() => void undoWelcome()}>
-                    {intl.formatMessage({
-                      id: 'home.welcome.undo',
-                      defaultMessage: 'Undo',
-                    })}
-                  </Button>
-                }
-                slotProps={{ content: { role: 'status' } }}
-              />
+                the same. */}
+              {!customising && undo}
               {/* Beside the greeting, an icon with its name in a tooltip
                 (ADR-091). */}
               <Tooltip title={refresh}>
@@ -434,6 +439,9 @@ function OrganizationHome() {
           )}
         </Stack>
       </Fixed>
+      {/* While Home is customised the greeting is out of use, so Undo
+          leaves it, to be pressed still in its last seconds. */}
+      {customising && undo}
 
       {errorWords && <Alert severity="error">{errorWords}</Alert>}
 
