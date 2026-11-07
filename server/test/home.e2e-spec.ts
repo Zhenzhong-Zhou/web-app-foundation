@@ -54,6 +54,7 @@ interface HomeResponse {
     anyPoint: boolean | null;
   }[];
   recent: boolean;
+  defaultLayout: { order: string[]; hidden: string[]; recent: boolean };
 }
 
 /**
@@ -1083,6 +1084,23 @@ describe('Home (e2e)', () => {
         order.filter((kind) => !['toShip', 'production'].includes(kind)),
       );
       expect(answer.recent).toBe(false);
+      // The default beside it, for Reset to default, whatever was saved.
+      expect(answer.defaultLayout).toEqual({
+        order: [
+          'toShip',
+          'toReceive',
+          'drafts',
+          'lowStock',
+          'expiring',
+          'costsWaiting',
+          'invoicesToIssue',
+          'returnsOpen',
+          'production',
+          'licences',
+        ],
+        hidden: ['drafts'],
+        recent: true,
+      });
     });
 
     /**

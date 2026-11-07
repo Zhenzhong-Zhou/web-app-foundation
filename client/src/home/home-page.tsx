@@ -52,7 +52,7 @@ import { RADIUS, TYPE } from '../theme/tokens';
 import {
   type Arrangement,
   arrangementOf,
-  byDefault,
+  defaultOf,
   sameArrangement,
 } from './arrangement';
 import { CustomiseButton, CustomiseHome, Fixed } from './customise-home';
@@ -205,11 +205,11 @@ function OrganizationHome() {
    * person follows later defaults; then Home read again, in its new order,
    * before the tiles come back.
    */
-  async function saveArrangement(next: Arrangement) {
+  async function saveArrangement(next: Arrangement, byDefault: Arrangement) {
     setSaving(true);
     setSaveFailure(null);
     try {
-      await (sameArrangement(next, byDefault(next.order, can))
+      await (sameArrangement(next, byDefault)
         ? api('/home/layout', { method: 'DELETE' })
         : api('/home/layout', { method: 'PUT', body: JSON.stringify(next) }));
       setHome(await api<HomeResponse>('/home'));
@@ -455,8 +455,8 @@ function OrganizationHome() {
               arrangement={draft}
               saved={arrangementOf(cards, home.recent)}
               onChange={setDraft}
-              onReset={() => setDraft(byDefault(draft.order, can))}
-              onDone={() => void saveArrangement(draft)}
+              onReset={() => setDraft(defaultOf(home))}
+              onDone={() => void saveArrangement(draft, defaultOf(home))}
               saving={saving}
               failure={saveFailure}
               headingRef={customiseHeading}

@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Permission } from '../auth/permissions';
 import type { HomeKind } from '../lib/api-names';
 import {
   type Arrangement,
   arrangementOf,
-  byDefault,
+  defaultOf,
   hide,
   moved,
   placed,
@@ -27,11 +26,6 @@ const EVERY: HomeKind[] = [
   'production',
   'licences',
 ];
-
-const holding =
-  (...held: Permission[]) =>
-  (permission: Permission) =>
-    held.includes(permission);
 
 const card = (kind: HomeKind, hidden = false): KnownCard => ({
   kind,
@@ -56,49 +50,22 @@ describe('arrangementOf', () => {
   });
 });
 
-describe('byDefault', () => {
-  // ADR-091, amended November 2026: an Owner's Home is as it was.
-  it('keeps the working day’s order for whoever does all the work', () => {
-    const owner = byDefault(EVERY, () => true);
-
-    expect(owner.order).toEqual(EVERY);
-    expect(owner.hidden).toEqual(['drafts']);
-    expect(owner.recent).toBe(true);
-  });
-
-  it('leads with the work the member may do, the rest after, each in order', () => {
-    const warehouse = byDefault(
-      EVERY,
-      holding('orders.ship', 'orders.receive', 'stock.adjust'),
-    );
-
-    expect(warehouse.order).toEqual([
-      'toShip',
-      'toReceive',
-      'expiring',
-      'drafts',
-      'lowStock',
-      'costsWaiting',
-      'invoicesToIssue',
-      'returnsOpen',
-      'production',
-      'licences',
-    ]);
-  });
-
-  it('leads with Low stock for whoever raises orders or plans runs', () => {
+describe('defaultOf', () => {
+  // ADR-091, amended November 2026: the server's, so the two cannot drift.
+  it('takes the default the server sends, in the kinds this build knows', () => {
     expect(
-      byDefault(EVERY, holding('production.create')).order.slice(0, 2),
-    ).toEqual(['lowStock', 'toShip']);
-    expect(
-      byDefault(EVERY, holding('orders.create')).order.slice(0, 3),
-    ).toEqual(['drafts', 'lowStock', 'toShip']);
-  });
-
-  it('holds only the kinds the member sees, drafts hidden only when seen', () => {
-    expect(
-      byDefault(['licences', 'expiring'], holding('product_licences.update')),
-    ).toEqual({ order: ['licences', 'expiring'], hidden: [], recent: true });
+      defaultOf({
+        defaultLayout: {
+          order: ['lowStock', 'weather' as HomeKind, 'drafts', 'toShip'],
+          hidden: ['drafts', 'weather' as HomeKind],
+          recent: true,
+        },
+      }),
+    ).toEqual({
+      order: ['lowStock', 'drafts', 'toShip'],
+      hidden: ['drafts'],
+      recent: true,
+    });
   });
 });
 
@@ -190,7 +157,7 @@ describe('moving, hiding and showing', () => {
 });
 
 describe('sameArrangement', () => {
-  const owner = byDefault(EVERY, () => true);
+  const owner: Arrangement = { order: EVERY, hidden: ['drafts'], recent: true };
 
   // What Done compares with the default: equal, it clears the layout, so
   // the person follows later defaults.
@@ -202,12 +169,7 @@ describe('sameArrangement', () => {
     expect(sameArrangement(back, owner)).toBe(true);
     expect(sameArrangement(hiddenAndShown, owner)).toBe(true);
     expect(sameArrangement(there, owner)).toBe(false);
-    expect(
-      sameArrangement(
-        byDefault(EVERY, () => true),
-        owner,
-      ),
-    ).toBe(true);
+    expect(sameArrangement({ ...owner, order: [...EVERY] }, owner)).toBe(true);
   });
 
   it('tells apart the hidden, whatever their order, and Recently opened', () => {

@@ -2064,12 +2064,41 @@ export type HomeCard = {
   anyPoint: boolean | null;
 };
 
+export type HomeDefaultLayout = {
+  order: Array<
+    | 'production'
+    | 'expiring'
+    | 'toShip'
+    | 'toReceive'
+    | 'drafts'
+    | 'lowStock'
+    | 'costsWaiting'
+    | 'invoicesToIssue'
+    | 'returnsOpen'
+    | 'licences'
+  >;
+  hidden: Array<
+    | 'production'
+    | 'expiring'
+    | 'toShip'
+    | 'toReceive'
+    | 'drafts'
+    | 'lowStock'
+    | 'costsWaiting'
+    | 'invoicesToIssue'
+    | 'returnsOpen'
+    | 'licences'
+  >;
+  recent: boolean;
+};
+
 export type HomeResponse = {
   whatWeDo: string | null;
   gettingStarted: GettingStarted;
   welcome: Welcome | null;
   cards: Array<HomeCard>;
   recent: boolean;
+  defaultLayout: HomeDefaultLayout;
 };
 
 export type HomeLayoutDto = {

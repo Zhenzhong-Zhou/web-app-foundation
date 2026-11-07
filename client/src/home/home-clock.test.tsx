@@ -47,6 +47,7 @@ describe('HomeClock', () => {
             },
           ],
           recent: false,
+          defaultLayout: { order: ['toShip'], hidden: [], recent: true },
         } satisfies HomeResponse),
       ),
     );

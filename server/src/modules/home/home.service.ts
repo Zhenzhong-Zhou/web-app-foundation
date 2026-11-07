@@ -81,8 +81,9 @@ function isOrderKind(kind: HomeKind): kind is OrderKind {
  * its count and how many are late, counted as the list the tile opens
  * filters it, and no rows: the list holds them. A tile the member may not
  * view is never counted. They come in the reader's order, each saying
- * whether they hid it, and Home says whether Recently opened shows
- * (Customise Home, ADR-091's amendment of November 2026).
+ * whether they hid it, and Home says whether Recently opened shows and
+ * what their default is (Customise Home, ADR-091's amendment of November
+ * 2026).
  *
  * The reads every Home makes share one transaction (ADR-091): the
  * organization's days and zone with Getting started, the tiles' counts,
@@ -144,6 +145,7 @@ export class HomeService {
         ...(totals.get(kind) ?? { count: 0, late: 0, anyPoint: null }),
       }),
     );
+    const byDefault = arranged(held, null);
     const welcome = await this.welcome.of(context, held, membership, {
       timeZone,
       startShows: !gettingStarted.complete && !gettingStarted.dismissed,
@@ -155,6 +157,13 @@ export class HomeService {
       welcome,
       cards,
       recent: layout?.recent ?? true,
+      defaultLayout: {
+        order: byDefault.map(({ kind }) => kind),
+        hidden: byDefault
+          .filter(({ hidden }) => hidden)
+          .map(({ kind }) => kind),
+        recent: true,
+      },
     };
   }
 

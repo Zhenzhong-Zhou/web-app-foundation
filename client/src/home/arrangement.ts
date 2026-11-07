@@ -1,4 +1,4 @@
-import type { Permission } from '../auth/permissions';
+import type { HomeResponse } from '../api/types.gen';
 import type { HomeKind } from '../lib/api-names';
 import { CARDS, type KnownCard } from './home-cards';
 
@@ -14,9 +14,6 @@ export interface Arrangement {
   recent: boolean;
 }
 
-/** The kinds in the order of a working day, CARDS' own. */
-const WORKING_DAY = Object.keys(CARDS) as HomeKind[];
-
 /** Home as it came: the server's order, which it hid, and Recently opened. */
 export function arrangementOf(
   cards: readonly KnownCard[],
@@ -30,22 +27,16 @@ export function arrangementOf(
 }
 
 /**
- * The default for these kinds, as the server works it out with no layout
- * saved: the tiles whose work the member may do lead, the rest follow,
- * both in the working day's order; drafts hidden; Recently opened on.
+ * The reader's default, as the server sends it beside the tiles: what
+ * Reset to default puts back, and what Done compares with. Only the kinds
+ * this build knows, as the tiles are.
  */
-export function byDefault(
-  kinds: readonly HomeKind[],
-  can: (permission: Permission) => boolean,
+export function defaultOf(
+  home: Pick<HomeResponse, 'defaultLayout'>,
 ): Arrangement {
-  const seen = WORKING_DAY.filter((kind) => kinds.includes(kind));
-  const leads = (kind: HomeKind) => CARDS[kind].leads.some(can);
-  const order = [...seen.filter(leads), ...seen.filter((kind) => !leads(kind))];
-  return {
-    order,
-    hidden: order.filter((kind) => CARDS[kind].hidden),
-    recent: true,
-  };
+  const known = (kind: HomeKind) => Object.hasOwn(CARDS, kind);
+  const { order, hidden, recent } = home.defaultLayout;
+  return { order: order.filter(known), hidden: hidden.filter(known), recent };
 }
 
 /** The tiles Home shows, in their order. */

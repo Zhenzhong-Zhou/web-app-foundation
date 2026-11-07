@@ -16014,6 +16014,55 @@
           "anyPoint"
         ]
       },
+      "HomeDefaultLayout": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "production",
+                "expiring",
+                "toShip",
+                "toReceive",
+                "drafts",
+                "lowStock",
+                "costsWaiting",
+                "invoicesToIssue",
+                "returnsOpen",
+                "licences"
+              ]
+            }
+          },
+          "hidden": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "production",
+                "expiring",
+                "toShip",
+                "toReceive",
+                "drafts",
+                "lowStock",
+                "costsWaiting",
+                "invoicesToIssue",
+                "returnsOpen",
+                "licences"
+              ]
+            }
+          },
+          "recent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "order",
+          "hidden",
+          "recent"
+        ]
+      },
       "HomeResponse": {
         "type": "object",
         "properties": {
@@ -16044,6 +16093,9 @@
           },
           "recent": {
             "type": "boolean"
+          },
+          "defaultLayout": {
+            "$ref": "#/components/schemas/HomeDefaultLayout"
           }
         },
         "required": [
@@ -16051,7 +16103,8 @@
           "gettingStarted",
           "welcome",
           "cards",
-          "recent"
+          "recent",
+          "defaultLayout"
         ]
       },
       "HomeLayoutDto": {

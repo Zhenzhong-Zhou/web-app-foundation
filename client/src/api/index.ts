@@ -287,6 +287,7 @@ export {
   type HomeControllerSkipTeamV1Data,
   type HomeControllerSkipTeamV1Response,
   type HomeControllerSkipTeamV1Responses,
+  type HomeDefaultLayout,
   type HomeLayoutDto,
   type HomeResponse,
   type ImageSizes,

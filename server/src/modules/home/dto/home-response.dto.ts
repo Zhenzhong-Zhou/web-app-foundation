@@ -101,6 +101,19 @@ export class Welcome {
   items!: WelcomeItem[];
 }
 
+/**
+ * Home's default arrangement for the reader (ADR-091, amended November
+ * 2026), as the layout Done saves: every tile they may see in their
+ * role's default order, the ones hidden by default, and Recently opened
+ * on. What Customise Home's Reset to default puts back, and what Done
+ * compares with, clearing the layout when they are the same.
+ */
+export class HomeDefaultLayout {
+  order!: HomeKind[];
+  hidden!: HomeKind[];
+  recent!: boolean;
+}
+
 /** GET /home. */
 export class HomeResponse {
   /**
@@ -118,4 +131,6 @@ export class HomeResponse {
   cards!: HomeCard[];
   /** Whether Recently opened shows: the reader's choice, true by default. */
   recent!: boolean;
+  /** The arrangement with no layout saved, whatever the reader saved. */
+  defaultLayout!: HomeDefaultLayout;
 }

@@ -48,13 +48,22 @@ const routed = (element: ReactElement) => (
  * no What we do written yet (ADR-091).
  */
 function serve(
-  home: Omit<HomeResponse, 'welcome' | 'whatWeDo' | 'recent'> &
+  home: Omit<
+    HomeResponse,
+    'welcome' | 'whatWeDo' | 'recent' | 'defaultLayout'
+  > &
     Partial<Pick<HomeResponse, 'recent'>>,
 ) {
   const response: HomeResponse = {
     welcome: null,
     whatWeDo: null,
     recent: true,
+    // The default as these cards come, with none saved.
+    defaultLayout: {
+      order: home.cards.map((card) => card.kind),
+      hidden: home.cards.filter((card) => card.hidden).map((card) => card.kind),
+      recent: true,
+    },
     ...home,
   };
   server.use(http.get('/api/v1/home', () => HttpResponse.json(response)));
@@ -85,6 +94,11 @@ describe('HomePage', () => {
             },
           ],
           recent: true,
+          defaultLayout: {
+            order: ['toShip', 'costsWaiting'],
+            hidden: [],
+            recent: true,
+          },
         } satisfies HomeResponse),
       ),
     );
@@ -184,6 +198,18 @@ describe('HomePage', () => {
             },
           ],
           recent: true,
+          defaultLayout: {
+            order: [
+              'drafts',
+              'lowStock',
+              'invoicesToIssue',
+              'returnsOpen',
+              'production',
+              'licences',
+            ],
+            hidden: ['drafts'],
+            recent: true,
+          },
         } satisfies HomeResponse),
       ),
     );
@@ -684,6 +710,7 @@ describe('HomePage', () => {
           welcome: null,
           cards: [],
           recent: true,
+          defaultLayout: { order: [], hidden: [], recent: true },
         } satisfies HomeResponse);
       }),
     );
