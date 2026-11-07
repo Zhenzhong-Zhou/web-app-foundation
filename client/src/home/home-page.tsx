@@ -141,7 +141,10 @@ function OrganizationHome() {
   useEffect(() => {
     load();
   }, [load]);
-  useReadOnReturn(load, READ_AGAIN_AWAY_MS);
+  // Not while customising: the draft is built from the Home it opened on.
+  useReadOnReturn(() => {
+    if (!draft) load();
+  }, READ_AGAIN_AWAY_MS);
 
   async function act(path: string, method: 'POST' | 'DELETE') {
     await api(path, { method }).catch(() => undefined);
@@ -199,6 +202,28 @@ function OrganizationHome() {
     wasCustomising.current = customising;
     (customising ? customiseHeading : customiseButton).current?.focus();
   }, [customising]);
+
+  /**
+   * Customise Home opened from Home read again, so it starts from the
+   * arrangement saved last, on whichever device: a tab left open would
+   * otherwise send an older one with Done, over the newer.
+   */
+  const opening = useRef(false);
+  async function openCustomise() {
+    if (opening.current) return;
+    opening.current = true;
+    setSaveFailure(null);
+    try {
+      const fresh = await api<HomeResponse>('/home');
+      setHome(fresh);
+      setError(null);
+      setDraft(arrangementOf(fresh.cards.filter(isKnownCard), fresh.recent));
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      opening.current = false;
+    }
+  }
 
   /**
    * Done: the layout saved, or cleared where it equals the default, so the
@@ -485,10 +510,7 @@ function OrganizationHome() {
                   </Typography>
                   <CustomiseButton
                     buttonRef={customiseButton}
-                    onClick={() => {
-                      setSaveFailure(null);
-                      setDraft(arrangementOf(cards, home.recent));
-                    }}
+                    onClick={() => void openCustomise()}
                   />
                 </Stack>
                 {/* In even rows, measured against the page's width rather

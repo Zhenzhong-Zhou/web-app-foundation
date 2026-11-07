@@ -736,6 +736,61 @@ test('Reset to default and Done clear the layout, for an Owner and for a role wh
   expect((await untouched).method()).toBe('DELETE');
 });
 
+/**
+ * The arrangement saved last, on whichever device (ADR-091, amended
+ * November 2026): Home shows it after Orders and back, and Customise Home
+ * reads it again as it opens, so Done in a tab left open keeps it rather
+ * than sending the tab's older one.
+ */
+test('Customise Home starts from the arrangement saved last, on any device', async ({
+  page,
+  freshOrg,
+}) => {
+  const owner = freshOrg.api;
+  await owner.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, owner);
+  await page.goto('/');
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To ship, /);
+
+  // Saved elsewhere while this tab is open.
+  const elsewhere = async (order: string[]) => {
+    const response = await owner.put('/v1/home/layout', {
+      data: { order, hidden: [], recent: true },
+    });
+    expect(response.status(), await response.text()).toBe(204);
+  };
+  await elsewhere(['lowStock', 'toShip']);
+  const menu = page.getByRole('navigation', { name: 'Main' });
+  await menu.getByRole('link', { name: 'Orders' }).click();
+  // Drawn, so Home has left the page and reads again on its return.
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Orders' }),
+  ).toBeVisible();
+  await menu.getByRole('link', { name: 'Home' }).click();
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^Low stock, /);
+
+  await elsewhere(['expiring', 'lowStock', 'toShip']);
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const panel = customising(page);
+  await expect(
+    panel.getByRole('list').first().getByRole('listitem').first(),
+  ).toHaveAccessibleName('Expiring soon');
+  const saved = layoutWrite(page);
+  await panel.getByRole('button', { name: 'Done' }).click();
+  const write = await saved;
+  expect(write.method()).toBe('PUT');
+  // The other device's order, kept.
+  const { order } = write.postDataJSON() as { order: string[] };
+  expect(
+    ['expiring', 'lowStock', 'toShip'].map((kind) => order.indexOf(kind)),
+  ).toEqual(
+    ['expiring', 'lowStock', 'toShip']
+      .map((kind) => order.indexOf(kind))
+      .sort((a, b) => a - b),
+  );
+  expect(order[0]).toBe('expiring');
+});
+
 test('leaving Customise Home with changes not saved asks first', async ({
   page,
   freshOrg,

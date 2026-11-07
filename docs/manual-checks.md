@@ -975,7 +975,10 @@ Paper is checked first because it must not change at all.
   yet.; Stay keeps the cards as they were. Press Done: Home reads again
   in the new order, To ship gone, Orders · Draft second, no Recently
   opened, focus on Customise Home; reload, and sign in on a phone or a
-  second browser: the same. Customise Home → Reset to default → Done:
+  second browser: the same. Leave Home open in that second browser,
+  move a tile on the first and press Done, then press Customise Home in
+  the second: its cards start in the first's new order, and Done there
+  keeps it. Customise Home → Reset to default → Done:
   the order is the owner's again, drafts hidden, Recently opened back.
   As Tom Becker (Warehouse), Reset to default puts To ship, To receive
   and Expiring soon first, the rest after them. On a phone every button
@@ -5170,3 +5173,6 @@ first.
   touch, each move said in three languages: MC-1564 added.
 - 2026-11-06: Customise Home in Home's guide, in three languages, with
   Orders · Draft among the tiles: MC-3213 extended.
+- 2026-11-07: Customise Home's reviews, Customise Home reading Home again
+  as it opens, so a tab left open starts from the order saved last:
+  MC-1563 extended.
