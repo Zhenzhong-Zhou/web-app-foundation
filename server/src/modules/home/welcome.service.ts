@@ -5,7 +5,7 @@ import type { Locale } from '../../common/locales';
 import { addDays, dayIn, todayIn } from '../../common/today';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import type { RequestContext } from '../../core/auth/request-context';
-import type { MemberAccess } from '../../core/authorization/dto/member-access-response.dto';
+import type { MemberRole } from '../../core/authorization/dto/member-access-response.dto';
 import {
   MemberAccessService,
   memberRole,
@@ -144,8 +144,9 @@ export interface Membership {
  *
  * A member past their two weeks, or who dismissed it, costs Home one read
  * of their membership, in Home's own transaction (ADR-091); the rest is
- * read only while the card shows, after that transaction, the items, the
- * inviter, and their roles with whom to ask, side by side (#505's 67).
+ * read only while the card shows, after that transaction: the items; the
+ * inviter, with their roles in the same transaction; and whom to ask, side
+ * by side (#505's 67).
  */
 @Injectable()
 export class WelcomeService {
@@ -174,7 +175,8 @@ export class WelcomeService {
     const lastDay = addDays(joinedOn, WELCOME_DAYS);
     if (todayIn(options.timeZone) > lastDay) return null;
 
-    const [items, inviter, access] = await Promise.all([
+    const invited = this.invitedWithRoles(membership.id);
+    const [items, { inviter, note }, access] = await Promise.all([
       this.items(
         context.userId,
         membership,
@@ -182,8 +184,14 @@ export class WelcomeService {
         held,
         options.locale,
       ),
-      this.inviter(membership.id),
-      this.given(context, membership.id, held),
+      invited,
+      // What they may do here (ADR-079): their roles, read with the
+      // invitation, and whom to ask for more, beside that read.
+      this.access.given(
+        context,
+        invited.then(({ roles }) => roles),
+        held,
+      ),
     ]);
     if (items.every((item) => item.done)) return null;
 
@@ -191,7 +199,8 @@ export class WelcomeService {
       joinedOn,
       lastDay,
       founder: membership.founder,
-      ...inviter,
+      inviter,
+      note,
       access,
       items,
     };
@@ -248,29 +257,15 @@ export class WelcomeService {
   }
 
   /**
-   * What they may do here: their roles, read only while the card shows,
-   * and whom to ask for more (ADR-079).
-   */
-  private async given(
-    context: Pick<RequestContext, 'userId' | 'organizationId'>,
-    membershipId: string,
-    held: ReadonlySet<Permission>,
-  ): Promise<MemberAccess> {
-    const roles = await this.tenantDb.transaction((tx) =>
-      rolesOfMember(tx, membershipId),
-    );
-    return this.access.given(context, roles.map(memberRole), held);
-  }
-
-  /**
    * The inviter and their note, from the invitation that made this
    * membership (ADR-077 keeps it for this). The inviter only while still a
    * member here; the note stays, from the organization, once they are not.
-   * Neither for a membership no invitation made.
+   * Neither for a membership no invitation made. With them, in the same
+   * transaction, the member's roles, read only while the card shows.
    */
-  private inviter(
+  private invitedWithRoles(
     membershipId: string,
-  ): Promise<Pick<Welcome, 'inviter' | 'note'>> {
+  ): Promise<Pick<Welcome, 'inviter' | 'note'> & { roles: MemberRole[] }> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [row] = await tx
         .select({
@@ -298,6 +293,7 @@ export class WelcomeService {
               }
             : null,
         note: row?.note ?? null,
+        roles: (await rolesOfMember(tx, membershipId)).map(memberRole),
       };
     });
   }

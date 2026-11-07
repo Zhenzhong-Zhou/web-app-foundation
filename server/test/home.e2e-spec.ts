@@ -704,7 +704,8 @@ describe('Home (e2e)', () => {
    * row read once (#505's 68), the counts in one statement and Low
    * stock's beside it, and the reader's membership with their layout. The
    * welcome's own reads, while it shows, come after its commit, the
-   * member's roles among them, never read once it is gone (#505's 67).
+   * member's roles among them, in the invitation's transaction, never
+   * read once it is gone (#505's 67).
    */
   it("reads Home's figures in one transaction of four statements", async () => {
     const alpha = await registerOrganization(app, 'alpha');
@@ -744,6 +745,19 @@ describe('Home (e2e)', () => {
     expect(welcomed.after.filter(({ text }) => roles.test(text))).toHaveLength(
       1,
     );
+    // The roles in the invitation's transaction, not one of their own.
+    const read = welcomed.after.findIndex(({ text }) => roles.test(text));
+    const invitation = welcomed.after.findIndex(({ text }) =>
+      /from "invitations"/.test(text),
+    );
+    const { client } = welcomed.after[read];
+    expect(welcomed.after[invitation].client).toBe(client);
+    expect(
+      welcomed.after
+        .slice(Math.min(read, invitation), Math.max(read, invitation))
+        .filter(({ client: on }) => on === client)
+        .map(({ text }) => text),
+    ).not.toContainEqual(expect.stringMatching(/^\s*(begin|commit)\b/i));
 
     // Dismissed, Home is the transaction and nothing after it.
     await alpha.agent.post('/v1/home/welcome/dismiss').expect(204);
