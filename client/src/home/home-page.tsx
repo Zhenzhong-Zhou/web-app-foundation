@@ -21,7 +21,10 @@ import {
   Typography,
 } from '@mui/material';
 import {
+  lazy,
   type ReactNode,
+  startTransition,
+  Suspense,
   useCallback,
   useEffect,
   useRef,
@@ -56,8 +59,9 @@ import {
   defaultOf,
   sameArrangement,
 } from './arrangement';
-import { CustomiseButton, CustomiseHome, Fixed } from './customise-home';
+import { CustomiseButton } from './customise-button';
 import { evenRowsSx } from './even-rows';
+import { Fixed } from './fixed';
 import { GettingStarted } from './getting-started';
 import {
   BADGE,
@@ -72,6 +76,17 @@ import { NoOrganization } from './no-organization';
 import { RecentCard } from './recent-card';
 import { useReadOnReturn } from './use-read-on-return';
 import { WelcomeCard } from './welcome-card';
+
+/**
+ * Customise Home, with the dragging library, loaded once its button is
+ * pressed, not with every Home, since few open it (#505's review, 46):
+ * asked for beside Home's read as it opens, so both come together.
+ */
+let customiseModule: Promise<typeof import('./customise-home')> | undefined;
+const loadCustomise = () => (customiseModule ??= import('./customise-home'));
+const CustomiseHome = lazy(() =>
+  loadCustomise().then((module) => ({ default: module.CustomiseHome })),
+);
 
 /** Back in view after this long away, Home reads its counts again. */
 const READ_AGAIN_AWAY_MS = 60_000;
@@ -233,10 +248,19 @@ function OrganizationHome() {
     opening.current = true;
     done.reset();
     try {
-      const fresh = await read();
+      const [fresh] = await Promise.all([read(), loadCustomise()]);
+      // In a transition, so Home stays as it is until the panel draws.
       if (fresh) {
-        setDraft(arrangementOf(fresh.cards.filter(isKnownCard), fresh.recent));
+        startTransition(() =>
+          setDraft(
+            arrangementOf(fresh.cards.filter(isKnownCard), fresh.recent),
+          ),
+        );
       }
+    } catch (caught) {
+      // The panel's code not loaded, as after a deploy: said as the page's
+      // own failure, which offers the way on.
+      setError(caught);
     } finally {
       opening.current = false;
     }
@@ -498,61 +522,65 @@ function OrganizationHome() {
 
           {/* In the tiles' place while customised; its button at the
               right of their heading, there while any tile is, hidden or
-              not, so a person who hid them all can bring them back. */}
-          {draft ? (
-            <CustomiseHome
-              cards={cards}
-              arrangement={draft}
-              changed={
-                !sameArrangement(draft, arrangementOf(cards, home.recent))
-              }
-              onChange={setDraft}
-              onReset={() => setDraft(defaultOf(home))}
-              onDone={() => saveArrangement(draft, defaultOf(home))}
-              saving={done.submitting}
-              error={done.error}
-            />
-          ) : (
-            cards.length > 0 && (
-              <Stack
-                component="section"
-                aria-labelledby="today-title"
-                spacing={1.5}
-              >
+              not, so a person who hid them all can bring them back. The
+              boundary always there, so while the panel loads, opened in a
+              transition, the tiles stay. */}
+          <Suspense fallback={null}>
+            {draft ? (
+              <CustomiseHome
+                cards={cards}
+                arrangement={draft}
+                changed={
+                  !sameArrangement(draft, arrangementOf(cards, home.recent))
+                }
+                onChange={setDraft}
+                onReset={() => setDraft(defaultOf(home))}
+                onDone={() => saveArrangement(draft, defaultOf(home))}
+                saving={done.submitting}
+                error={done.error}
+              />
+            ) : (
+              cards.length > 0 && (
                 <Stack
-                  direction="row"
-                  sx={{
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: 1,
-                  }}
+                  component="section"
+                  aria-labelledby="today-title"
+                  spacing={1.5}
                 >
-                  <Typography variant="h6" component="h2" id="today-title">
-                    {intl.formatMessage({
-                      id: 'home.today',
-                      defaultMessage: 'What needs you today',
-                    })}
-                  </Typography>
-                  <CustomiseButton
-                    ref={customiseButton}
-                    onClick={() => void openCustomise()}
-                  />
-                </Stack>
-                {/* In even rows, measured against the page's width rather
+                  <Stack
+                    direction="row"
+                    sx={{
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: 1,
+                    }}
+                  >
+                    <Typography variant="h6" component="h2" id="today-title">
+                      {intl.formatMessage({
+                        id: 'home.today',
+                        defaultMessage: 'What needs you today',
+                      })}
+                    </Typography>
+                    <CustomiseButton
+                      ref={customiseButton}
+                      onClick={() => void openCustomise()}
+                    />
+                  </Stack>
+                  {/* In even rows, measured against the page's width rather
                     than the screen's (ADR-081). */}
-                {tiles.length > 0 && (
-                  <Box sx={{ containerType: 'inline-size' }}>
-                    <Box sx={evenRowsSx(tiles.length)}>
-                      {tiles.map((card) => (
-                        <Tile key={card.kind} card={card} />
-                      ))}
+                  {tiles.length > 0 && (
+                    <Box sx={{ containerType: 'inline-size' }}>
+                      <Box sx={evenRowsSx(tiles.length)}>
+                        {tiles.map((card) => (
+                          <Tile key={card.kind} card={card} />
+                        ))}
+                      </Box>
                     </Box>
-                  </Box>
-                )}
-              </Stack>
-            )
-          )}
+                  )}
+                </Stack>
+              )
+            )}
+          </Suspense>
 
           {/* What this person opened last; hidden while empty (ADR-058).
               Switched off in Customise Home, it is neither drawn nor read

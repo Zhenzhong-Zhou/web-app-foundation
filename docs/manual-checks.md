@@ -958,7 +958,10 @@ Paper is checked first because it must not change at all.
   buttons, as the demo owner, at 1366 px with a mouse, then from the
   keyboard alone, then on a phone by touch (390 px; DevTools' touch is
   enough). Customise Home sits at the right of What needs you today, at
-  every width; press it: the tiles become cards, the panel's heading
+  every width. In a production build (`npm run build`, `npm run
+  preview`), DevTools → Network shows no `customise-home` file as Home
+  opens, and one as Customise Home is pressed; press it: the tiles become
+  cards, the panel's heading
   Customise Home focused, and the greeting with Raise an order and More,
   and the panel of what needs you now, stay in view, faded, the date
   under the greeting still easy to read in light and in dark, each with a
@@ -5272,3 +5275,5 @@ first.
 - 2026-11-07: Customise Home's reviews, a line under Recently opened's
   switch saying what it shows, and the demo owner's Recently opened
   seeded with SO-DEMO-1 and its product: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, its code loaded only once its
+  button is pressed: MC-1563 extended.

@@ -836,6 +836,30 @@ test('Done saved but Home not read again closes Customise Home, nothing left uns
   expect(layout.cards[0].kind).toBe('toReceive');
 });
 
+// Few open Customise Home, so its code and the dragging library come only
+// once its button is pressed, not with every Home (#505's review, 46).
+test('Customise Home and its dragging load only once it is pressed', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  const loaded: string[] = [];
+  page.on('request', (request) => {
+    if (/customise-home|dnd-kit/.test(request.url())) {
+      loaded.push(request.url());
+    }
+  });
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await expect(homeTiles(page).first()).toBeVisible();
+  expect(loaded).toEqual([]);
+
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  await expect(customising(page)).toBeVisible();
+  expect(loaded.some((url) => url.includes('customise-home'))).toBe(true);
+  expect(loaded.some((url) => url.includes('dnd-kit'))).toBe(true);
+});
+
 // The welcome's Undo, in the greeting that Customise Home fades and puts
 // out of use, still works there in its last seconds.
 test('the welcome’s Undo can still be pressed once Customise Home opens', async ({

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { TestProviders } from '../test/test-providers';
-import { Fixed } from './customise-home';
+import { Fixed } from './fixed';
 
 describe('Fixed', () => {
   // While Home is customised, the part itself leaves what a screen reader

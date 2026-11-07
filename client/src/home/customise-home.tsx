@@ -5,7 +5,6 @@ import Add from '@mui/icons-material/Add';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import ArrowUpward from '@mui/icons-material/ArrowUpward';
 import DragIndicator from '@mui/icons-material/DragIndicator';
-import LockOutlined from '@mui/icons-material/LockOutlined';
 import TuneOutlined from '@mui/icons-material/TuneOutlined';
 import VisibilityOffOutlined from '@mui/icons-material/VisibilityOffOutlined';
 import {
@@ -21,7 +20,6 @@ import {
 import {
   type ComponentProps,
   type ReactNode,
-  type RefObject,
   useEffect,
   useId,
   useLayoutEffect,
@@ -38,15 +36,13 @@ import {
 
 import { FormError } from '../components/form-error';
 import { IconBadge } from '../components/icon-badge';
-import { StatusChip } from '../components/status-chip';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
 import type { HomeKind } from '../lib/api-names';
-import { HIDDEN } from '../lib/hidden';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
 import { TOUCH } from '../theme/media';
 import { rem } from '../theme/rem';
-import { FIXED_OPACITY, RADIUS } from '../theme/tokens';
+import { RADIUS } from '../theme/tokens';
 import {
   type Arrangement,
   hide,
@@ -59,6 +55,7 @@ import { BADGE, CARDS, type KnownCard, tileWords } from './home-cards';
 import { TONAL } from './tonal';
 
 const CUSTOMISE = defineMessages({
+  // Customise Home's button's own message, its heading the same.
   open: { id: 'home.customise.open', defaultMessage: 'Customise Home' },
   reset: { id: 'home.customise.reset', defaultMessage: 'Reset to default' },
   done: { id: 'home.customise.done', defaultMessage: 'Done' },
@@ -81,7 +78,6 @@ const WORDS = defineMessages({
     defaultMessage:
       'To pick up a tile, press Space. Move it with the arrow keys, then press Space to drop it in its new place, or Escape to put it back.',
   },
-  fixed: { id: 'home.customise.fixed', defaultMessage: 'Fixed, cannot move' },
   up: { id: 'home.customise.up', defaultMessage: 'Up' },
   down: { id: 'home.customise.down', defaultMessage: 'Down' },
   hide: { id: 'home.customise.hide', defaultMessage: 'Hide' },
@@ -152,21 +148,6 @@ const VALUED = defineMessages<
   },
 });
 
-/**
- * Each fixed part's name, before its lock's words, for a screen reader:
- * what it marks has left what one reads while Home is customised, so the
- * lock says which part stays (WCAG 1.3.1).
- */
-const PARTS = defineMessages({
-  greeting: { id: 'home.customise.part.greeting', defaultMessage: 'Greeting:' },
-  welcome: { id: 'home.customise.part.welcome', defaultMessage: 'Welcome:' },
-  start: {
-    id: 'home.customise.part.start',
-    defaultMessage: 'Getting started:',
-  },
-  late: { id: 'home.customise.part.late', defaultMessage: 'What is late:' },
-});
-
 /** Under the top bar, where the page scrolls; never on a short window. */
 const STICKY = {
   '@media (min-height: 700px)': {
@@ -175,71 +156,6 @@ const STICKY = {
     zIndex: 1,
   },
 } as const;
-
-/**
- * What may not move, while Home is customised (the design language,
- * Arranging your own screen): in view, faded, and not to be used meanwhile,
- * with a lock and words saying it stays, the part named for a screen
- * reader; without a part, no lock. Outside it, as it is.
- */
-export function Fixed({
-  on,
-  part,
-  children,
-}: {
-  on: boolean;
-  part?: keyof typeof PARTS;
-  children: ReactNode;
-}) {
-  const intl = useIntl();
-  return (
-    <Box>
-      {on && part && (
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
-          <Box component="span" sx={HIDDEN}>
-            {intl.formatMessage(PARTS[part])}
-          </Box>
-          <StatusChip
-            tone="warning"
-            label={intl.formatMessage(WORDS.fixed)}
-            icon={<LockOutlined />}
-          />
-        </Box>
-      )}
-      <Box inert={on} sx={on ? { opacity: FIXED_OPACITY } : undefined}>
-        {children}
-      </Box>
-    </Box>
-  );
-}
-
-/**
- * The button that opens it, at the right of "What needs you today", beside
- * the tiles it changes, at every width (ADR-091, amended November 2026).
- */
-export function CustomiseButton({
-  ref,
-  onClick,
-}: {
-  ref: RefObject<HTMLButtonElement | null>;
-  onClick: () => void;
-}) {
-  const intl = useIntl();
-  return (
-    <Button
-      ref={ref}
-      variant="text"
-      color="inherit"
-      startIcon={<TuneOutlined />}
-      onClick={onClick}
-      // Right-aligned on a line of its own where the heading leaves it no
-      // room (the design language, Headings and their actions).
-      sx={[TONAL, { ml: 'auto' }]}
-    >
-      {intl.formatMessage(CUSTOMISE.open)}
-    </Button>
-  );
-}
 
 /**
  * Customise Home (ADR-091, amended November 2026; the design language,
