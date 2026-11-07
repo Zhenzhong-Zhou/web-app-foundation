@@ -1035,4 +1035,54 @@ test.describe('Customise Home on a touch phone', () => {
       .scrollIntoViewIfNeeded();
     await expect(panel.getByRole('button', { name: 'Done' })).toBeInViewport();
   });
+
+  // The page follows the card a tap moved, so a second tap in the same
+  // place moves it again rather than the tile that took its old place.
+  test('the page follows a tile moved up, its button still under the finger', async ({
+    page,
+    freshOrg,
+  }) => {
+    await freshOrg.api.post('/v1/home/getting-started/dismiss');
+    await signInAs(page, freshOrg.api);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Customise Home' }).click();
+    const panel = customising(page);
+    const tiles = panel.getByRole('list').first().getByRole('listitem');
+    await expect(tiles.nth(4)).toHaveAccessibleName(
+      'Stock value · Waiting for a cost',
+    );
+
+    const up = card(page, 'Stock value · Waiting for a cost').getByRole(
+      'button',
+      {
+        name: 'Up',
+      },
+    );
+    await up.scrollIntoViewIfNeeded();
+    const before = await up.boundingBox();
+    expect(before).not.toBeNull();
+    const x = before!.x + before!.width / 2;
+    const y = before!.y + before!.height / 2;
+
+    await page.touchscreen.tap(x, y);
+    await expect(tiles.nth(3)).toHaveAccessibleName(
+      'Stock value · Waiting for a cost',
+    );
+    const after = await up.boundingBox();
+    expect(Math.abs(after!.y - before!.y)).toBeLessThan(2);
+    await page.touchscreen.tap(x, y);
+    await expect(tiles.nth(2)).toHaveAccessibleName(
+      'Stock value · Waiting for a cost',
+    );
+
+    // Never under the row at the top: the moved card below its foot.
+    const rowFoot = await panel
+      .getByRole('status')
+      .evaluate((line) => line.parentElement!.getBoundingClientRect().bottom);
+    const cardTop = await card(
+      page,
+      'Stock value · Waiting for a cost',
+    ).evaluate((each) => each.getBoundingClientRect().top);
+    expect(cardTop).toBeGreaterThanOrEqual(rowFoot);
+  });
 });

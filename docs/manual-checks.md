@@ -989,7 +989,9 @@ Paper is checked first because it must not change at all.
   As Tom Becker (Warehouse), Reset to default puts To ship, To receive
   and Expiring soon first, the rest after them. On a phone every button
   here, the switch's row too, is 44 px tall or more, the cards one
-  across; in 中文 the button reads 调整首页, the buttons 上移、下移、隐藏、显示,
+  across; scroll to Stock value · Waiting for a cost and tap its Up twice
+  in the same place: it moves up two places, the page following it, its
+  card never under the row at the top; in 中文 the button reads 调整首页, the buttons 上移、下移、隐藏、显示,
   恢复默认 and 完成, the list 已隐藏的磁贴, the line and a screen reader say
   待收货，第 1 个，共 9 个 and 已隐藏“待发货”：在下方“已隐藏的磁贴”中; in Français Personnaliser l’accueil, Monter, Descendre,
   Masquer, Afficher, Rétablir l’ordre par défaut, Terminé and Tuiles
@@ -5189,3 +5191,5 @@ first.
 - 2026-11-07: Customise Home's reviews, what each change did shown under
   Done as well as heard, Show saying the tile's new place: MC-1563
   extended.
+- 2026-11-07: Customise Home's reviews, the page following a tile moved
+  by Up or Down, never under the row at the top: MC-1563 extended.

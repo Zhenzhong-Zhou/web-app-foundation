@@ -257,11 +257,25 @@ export function CustomiseHome({
   // Each button by its tile and what it does, for focus after a change.
   const buttons = useRef(new Map<string, HTMLButtonElement | null>());
   const focusNext = useRef<string | null>(null);
+  // Where a moved tile's card was on the screen, for the page to follow.
+  const followFrom = useRef<number | null>(null);
+  const row = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const key = focusNext.current;
     if (!key) return;
     focusNext.current = null;
-    buttons.current.get(key)?.focus();
+    const from = followFrom.current;
+    followFrom.current = null;
+    const button = buttons.current.get(key);
+    if (!button) return;
+    const card = button.closest('li') ?? button;
+    // The page follows a moved card, so the button under a finger is still
+    // its own: a second tap moves it again, not the tile in its old place.
+    if (from !== null) {
+      scrollBy(card.getBoundingClientRect().top - from);
+    }
+    button.focus({ preventScroll: true });
+    inView(card, row.current);
   });
   const refFor =
     (kind: HomeKind, action: string) => (element: HTMLButtonElement | null) => {
@@ -322,6 +336,11 @@ export function CustomiseHome({
     const next = moved(arrangement, kind, by);
     if (next === arrangement) return;
     focusNext.current = `${kind}.${by < 0 ? 'up' : 'down'}`;
+    followFrom.current =
+      buttons.current
+        .get(focusNext.current)
+        ?.closest('li')
+        ?.getBoundingClientRect().top ?? null;
     onChange(next);
     sayPlace(next, kind);
   }
@@ -362,6 +381,7 @@ export function CustomiseHome({
     >
       {/* Reset to default and Done in reach while the page scrolls. */}
       <Box
+        ref={row}
         sx={{
           ...STICKY,
           mx: -2,
@@ -621,6 +641,32 @@ export function CustomiseHome({
       />
     </Paper>
   );
+}
+
+/** Space kept between a card brought into view and what is around it. */
+const MARGIN = 8;
+
+function scrollBy(top: number) {
+  if (top !== 0) window.scrollBy(0, top);
+}
+
+/**
+ * A card in view after a change: below the top bar and the row that stays
+ * at the top while the page scrolls, never under them (WCAG 2.4.11), and
+ * above the window's foot.
+ */
+function inView(card: Element, row: Element | null) {
+  const { top, bottom } = card.getBoundingClientRect();
+  const bar =
+    Number.parseFloat(
+      getComputedStyle(card).getPropertyValue('--bar-height'),
+    ) || 0;
+  const below =
+    Math.max(bar, row?.getBoundingClientRect().bottom ?? 0) + MARGIN;
+  if (top < below) scrollBy(top - below);
+  else if (bottom > window.innerHeight - MARGIN) {
+    scrollBy(Math.min(bottom - window.innerHeight + MARGIN, top - below));
+  }
 }
 
 /** What a tile's card tells the library, for what a screen reader hears. */
