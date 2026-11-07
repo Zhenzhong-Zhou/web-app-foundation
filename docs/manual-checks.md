@@ -1006,7 +1006,10 @@ Paper is checked first because it must not change at all.
   the six dots, onto To ship: while it moves it lifts, with a shadow and
   a purple edge, a dashed purple box shows where it will drop, and the
   other cards make room; let go and it is first. A press on a handle
-  without moving changes nothing. Up, Down and Hide still work beside
+  without moving changes nothing. With the window 768 px tall, scroll so
+  a handle sits about 100 px above the window's foot, press it and wobble
+  a little: the page stays still; held right at the foot, or at the top
+  over the bar, it scrolls, steadily. Up, Down and Hide still work beside
   it. Reset to default, then the keyboard: Tab to To receive's handle
   (VoiceOver, ⌘F5, says Drag To receive, draggable, and how to pick it
   up); Space says Picked up To receive, 2 of 9; the left arrow moves it
@@ -5193,3 +5196,6 @@ first.
   extended.
 - 2026-11-07: Customise Home's reviews, the page following a tile moved
   by Up or Down, never under the row at the top: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, the page scrolling by itself only
+  in the window's outer tenth while a tile is held, more slowly: MC-1564
+  extended.

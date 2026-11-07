@@ -996,6 +996,44 @@ test('Customise Home by dragging: a mouse and the keyboard, the buttons beside, 
   }
 });
 
+// The page scrolls by itself only in the window's outer tenth: a handle
+// picked up 100 px above a laptop window's foot, a small wobble down, and
+// the page stays (review 2).
+test('a tile picked up near the window’s foot, wobbled, does not scroll the page', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const handle = handleOf(page, 'Licences expiring');
+  await handle.scrollIntoViewIfNeeded();
+  const seen = await handle.boundingBox();
+  if (!seen) throw new Error('the handle is drawn');
+  await page.evaluate(
+    (by) => window.scrollBy(0, by),
+    seen.y + seen.height / 2 - (768 - 100),
+  );
+  const box = await handle.boundingBox();
+  if (!box) throw new Error('the handle is drawn');
+  expect(Math.round(box.y + box.height / 2)).toBe(668);
+
+  const scrolled = () => page.evaluate(() => window.scrollY);
+  const before = await scrolled();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 4, {
+    steps: 4,
+  });
+  await page.waitForTimeout(400);
+  expect(await scrolled()).toBe(before);
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await settled(page);
+});
+
 test.describe('Customise Home on a touch phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 

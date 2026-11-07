@@ -1,4 +1,4 @@
-import { Accessibility } from '@dnd-kit/dom';
+import { Accessibility, AutoScroller } from '@dnd-kit/dom';
 import { DragDropProvider, type DragEndEvent } from '@dnd-kit/react';
 import { isSortable, useSortable } from '@dnd-kit/react/sortable';
 import Add from '@mui/icons-material/Add';
@@ -676,10 +676,19 @@ interface Spoken extends Record<string, unknown> {
 }
 
 /**
- * The library's own plugins, its accessibility in the reader's language
- * (ADR-091, amended November 2026): what the handle's description says,
- * and what a screen reader hears as a tile is picked up, moved over a
- * place, dropped or put back, by its name and place as Up and Down say it.
+ * The page scrolls by itself while a tile is held in the window's top or
+ * bottom tenth, half the library's fifth, at under half its speed, and
+ * never sideways: so a small wobble picking up a handle near the window's
+ * foot no longer carries the tile rows away.
+ */
+const AUTO_SCROLL = { threshold: { x: 0, y: 0.1 }, acceleration: 10 };
+
+/**
+ * The library's own plugins (ADR-091, amended November 2026): its
+ * accessibility in the reader's language, what the handle's description
+ * says, and what a screen reader hears as a tile is picked up, moved over
+ * a place, dropped or put back, by its name and place as Up and Down say
+ * it; and its scrolling while a tile is held, gentler.
  */
 function draggingPlugins(
   intl: IntlShape,
@@ -710,9 +719,14 @@ function draggingPlugins(
     },
   };
   const accessibility = Accessibility.configure(options);
+  const scrolling = AutoScroller.configure(AUTO_SCROLL);
   return (defaults) =>
     defaults.map((plugin) =>
-      plugin === Accessibility ? accessibility : plugin,
+      plugin === Accessibility
+        ? accessibility
+        : plugin === AutoScroller
+          ? scrolling
+          : plugin,
     );
 }
 
