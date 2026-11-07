@@ -844,10 +844,27 @@ describe('Home (e2e)', () => {
       'licences',
     ];
 
-    // Ships and receives: To ship and To receive first.
+    // Finance's work, issuing invoices, costing receipts and closing
+    // returns: those three first, the working day's order after them.
     expect(
-      shown(await homeAs('Dock', ['orders.ship', 'orders.receive'])),
-    ).toEqual(['toShip', 'toReceive', 'lowStock', ...rest]);
+      shown(
+        await homeAs('Finance', [
+          'invoices.issue',
+          'costs.update',
+          'return_authorizations.update',
+        ]),
+      ),
+    ).toEqual([
+      'costsWaiting',
+      'invoicesToIssue',
+      'returnsOpen',
+      'toShip',
+      'toReceive',
+      'lowStock',
+      'expiring',
+      'production',
+      'licences',
+    ]);
     // Receives alone: To receive before To ship.
     expect(shown(await homeAs('Receiving', ['orders.receive']))).toEqual([
       'toReceive',

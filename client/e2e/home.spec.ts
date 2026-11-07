@@ -679,7 +679,7 @@ test('Customise Home by buttons: moved, hidden and shown, kept by Done, on reloa
   await phone.close();
 });
 
-test('Reset to default and Done clear the layout, and Done untouched by a role of its own keeps none', async ({
+test('Reset to default and Done clear the layout, for an Owner and for a role whose default differs', async ({
   page,
   freshOrg,
 }) => {
@@ -714,15 +714,25 @@ test('Reset to default and Done clear the layout, and Done untouched by a role o
   expect((await cleared).method()).toBe('DELETE');
   await expect(homeTiles(page).first()).toHaveAccessibleName(/^To ship, /);
 
-  // A role whose default leads differently: Done with nothing changed
-  // finds the client's default the server's, so it saves no layout.
+  // A role whose default leads differently, Sales', with Low stock first:
+  // Reset puts its own default back, and Done on it saves no layout.
   await confirmEmailInDatabase(freshOrg.email);
-  const warehouse = await memberIn(owner, 'Warehouse', 'warehouse');
-  await signInAs(page, warehouse);
+  const sales = await memberIn(owner, 'Sales', 'sales');
+  await signInAs(page, sales);
   await page.goto('/');
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^Low stock, /);
   await page.getByRole('button', { name: 'Customise Home' }).click();
+  const theirs = customising(page);
+  await card(page, 'To ship').getByRole('button', { name: 'Up' }).click();
+  await expect(
+    theirs.getByRole('list').first().getByRole('listitem').first(),
+  ).toHaveAccessibleName('To ship');
+  await theirs.getByRole('button', { name: 'Reset to default' }).click();
+  await expect(
+    theirs.getByRole('list').first().getByRole('listitem').first(),
+  ).toHaveAccessibleName('Low stock');
   const untouched = layoutWrite(page);
-  await customising(page).getByRole('button', { name: 'Done' }).click();
+  await theirs.getByRole('button', { name: 'Done' }).click();
   expect((await untouched).method()).toBe('DELETE');
 });
 
