@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { HomeResponse } from '../api/types.gen';
 import { setOrganizationTimeZone } from '../lib/time-zone';
-import { GETTING_STARTED_DONE } from '../test/factories';
+import { GETTING_STARTED_DONE, homeCard } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { HomePage } from './home-page';
@@ -37,15 +37,7 @@ describe('HomeClock', () => {
           whatWeDo: null,
           gettingStarted: GETTING_STARTED_DONE,
           welcome: null,
-          cards: [
-            {
-              kind: 'toShip',
-              hidden: false,
-              count: 1,
-              late: 0,
-              anyPoint: null,
-            },
-          ],
+          cards: [homeCard({ kind: 'toShip', count: 1 })],
           recent: false,
           defaultLayout: { order: ['toShip'], hidden: [], recent: true },
         } satisfies HomeResponse),

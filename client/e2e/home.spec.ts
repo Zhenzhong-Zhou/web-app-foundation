@@ -12,6 +12,7 @@ import {
   signInAs,
   uniqueEmail,
 } from './support/api';
+import { shownCards } from './support/customise-home';
 import { confirmEmailInDatabase } from './support/mail';
 
 /**
@@ -557,11 +558,11 @@ test('moves its time on at the minute, by itself', async ({
   await expect(now).not.toHaveText(before ?? '');
 });
 
-/**
- * Customise Home by buttons (ADR-091, amended November 2026; the design
- * language, Arranging your own screen): in place of the tiles, each a card
- * with Up, Down and Hide, the hidden below with Show, saved by Done.
- */
+// Customise Home by buttons (ADR-091, amended November 2026; the design
+// language, Arranging your own screen): in place of the tiles, each a card
+// with Up, Down and Hide, the hidden below with Show, saved by Done.
+
+/** Customise Home's panel. */
 const customising = (page: Page) =>
   page.getByRole('region', { name: 'Customise Home' });
 
@@ -572,6 +573,13 @@ const card = (page: Page, name: string) =>
 /** Home's tiles, each its link, in the order Home shows them. */
 const homeTiles = (page: Page) =>
   page.getByRole('region', { name: 'What needs you today' }).getByRole('link');
+
+/** Home's first tiles are these, in this order, by their names. */
+async function tilesFirst(page: Page, names: RegExp[]) {
+  for (const [index, name] of names.entries()) {
+    await expect(homeTiles(page).nth(index)).toHaveAccessibleName(name);
+  }
+}
 
 /** Waits for Done's write to the layout, PUT or DELETE. */
 const layoutWrite = (page: Page) =>
@@ -599,7 +607,7 @@ test('Customise Home by buttons: moved, hidden and shown, kept by Done, on reloa
   // What may not move stays in view, saying so.
   await expect(page.getByText('Fixed, cannot move').first()).toBeVisible();
 
-  const tiles = panel.getByRole('list').first().getByRole('listitem');
+  const tiles = shownCards(panel);
   await expect(tiles).toHaveCount(9);
   await expect(tiles.first()).toHaveAccessibleName('To ship');
 
@@ -665,11 +673,12 @@ test('Customise Home by buttons: moved, hidden and shown, kept by Done, on reloa
   await expect(panel).toBeHidden();
   await expect(open).toBeFocused();
 
-  const order = [/^To receive, /, /^Orders · Draft, /, /^Low stock, /];
   const inOrder = async (where: Page) => {
-    for (const [index, name] of order.entries()) {
-      await expect(homeTiles(where).nth(index)).toHaveAccessibleName(name);
-    }
+    await tilesFirst(where, [
+      /^To receive, /,
+      /^Orders · Draft, /,
+      /^Low stock, /,
+    ]);
     await expect(homeTiles(where).filter({ hasText: /^To ship/ })).toHaveCount(
       0,
     );
@@ -718,9 +727,7 @@ test('Reset to default and Done clear the layout, for an Owner and for a role wh
   await expect(panel.getByRole('status')).toHaveText(
     'Back to the default order, not saved yet',
   );
-  await expect(
-    panel.getByRole('list').first().getByRole('listitem').first(),
-  ).toHaveAccessibleName('To ship');
+  await expect(shownCards(panel).first()).toHaveAccessibleName('To ship');
   await expect(recent).toBeChecked();
 
   const cleared = layoutWrite(page);
@@ -738,13 +745,9 @@ test('Reset to default and Done clear the layout, for an Owner and for a role wh
   await page.getByRole('button', { name: 'Customise Home' }).click();
   const theirs = customising(page);
   await card(page, 'To ship').getByRole('button', { name: 'Up' }).click();
-  await expect(
-    theirs.getByRole('list').first().getByRole('listitem').first(),
-  ).toHaveAccessibleName('To ship');
+  await expect(shownCards(theirs).first()).toHaveAccessibleName('To ship');
   await theirs.getByRole('button', { name: 'Reset to default' }).click();
-  await expect(
-    theirs.getByRole('list').first().getByRole('listitem').first(),
-  ).toHaveAccessibleName('Low stock');
+  await expect(shownCards(theirs).first()).toHaveAccessibleName('Low stock');
   const untouched = layoutWrite(page);
   await theirs.getByRole('button', { name: 'Done' }).click();
   expect((await untouched).method()).toBe('DELETE');
@@ -1006,9 +1009,7 @@ test('Customise Home starts from the arrangement saved last, on any device', asy
   await elsewhere(['expiring', 'lowStock', 'toShip']);
   await page.getByRole('button', { name: 'Customise Home' }).click();
   const panel = customising(page);
-  await expect(
-    panel.getByRole('list').first().getByRole('listitem').first(),
-  ).toHaveAccessibleName('Expiring soon');
+  await expect(shownCards(panel).first()).toHaveAccessibleName('Expiring soon');
   const saved = layoutWrite(page);
   await panel.getByRole('button', { name: 'Done' }).click();
   const write = await saved;
@@ -1042,9 +1043,9 @@ test('leaving Customise Home with changes not saved asks first', async ({
   const dialog = page.getByRole('dialog', { name: 'Leave without saving?' });
   await expect(dialog).toContainText('Your changes to Home aren’t saved yet.');
   await dialog.getByRole('button', { name: 'Stay' }).click();
-  await expect(
-    customising(page).getByRole('list').first().getByRole('listitem').first(),
-  ).toHaveAccessibleName('To receive');
+  await expect(shownCards(customising(page)).first()).toHaveAccessibleName(
+    'To receive',
+  );
 
   await orders.click();
   await page
@@ -1122,10 +1123,7 @@ test('Customise Home by dragging: a mouse and the keyboard, the buttons beside, 
   await signInAs(page, freshOrg.api);
   await page.goto('/');
   await page.getByRole('button', { name: 'Customise Home' }).click();
-  const tiles = customising(page)
-    .getByRole('list')
-    .first()
-    .getByRole('listitem');
+  const tiles = shownCards(customising(page));
   await expect(tiles).toHaveCount(9);
   // With a mouse, the keyboard's keys are given too.
   await expect(
@@ -1187,13 +1185,11 @@ test('Customise Home by dragging: a mouse and the keyboard, the buttons beside, 
   const saved = layoutWrite(page);
   await customising(page).getByRole('button', { name: 'Done' }).click();
   expect((await saved).method()).toBe('PUT');
-  for (const [index, name] of [
+  await tilesFirst(page, [
     /^To receive, /,
     /^Licences expiring, /,
     /^To ship, /,
-  ].entries()) {
-    await expect(homeTiles(page).nth(index)).toHaveAccessibleName(name);
-  }
+  ]);
 });
 
 // The page scrolls by itself only in the window's outer tenth: a handle
@@ -1307,7 +1303,7 @@ test.describe('Customise Home on a touch phone', () => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Customise Home' }).click();
     const panel = customising(page);
-    const tiles = panel.getByRole('list').first().getByRole('listitem');
+    const tiles = shownCards(panel);
     await expect(tiles.nth(4)).toHaveAccessibleName(
       'Stock value · Waiting for a cost',
     );

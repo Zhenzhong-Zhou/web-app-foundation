@@ -4,34 +4,28 @@ import { describe, expect, it } from 'vitest';
 import en from '../locales/en.json';
 import fr from '../locales/fr-CA.json';
 import zh from '../locales/zh-Hans.json';
-import { CARDS, type KnownCard, tileWords } from './home-cards';
+import { homeCard } from '../test/factories';
+import { CARDS, tileWords } from './home-cards';
 
 const intlFor = (locale: string, messages: Record<string, string>) =>
   createIntl({ locale, messages, defaultLocale: 'en' });
 const intl = intlFor('en', en);
 
-const card = (over: Partial<KnownCard>): KnownCard => ({
-  kind: 'toShip',
-  count: 0,
-  late: 0,
-  hidden: false,
-  anyPoint: null,
-  ...over,
-});
-
 // Home's tile and Customise Home's card draw their badge and line from
 // these, so a quiet tile is grey in both.
 describe("a tile's words", () => {
   it('gives the badge its tone and the card its line, late, busy and quiet', () => {
-    expect(tileWords(intl, card({ count: 4, late: 1 }), 30)).toMatchObject({
+    expect(tileWords(intl, homeCard({ count: 4, late: 1 }), 30)).toMatchObject({
       tone: 'late',
       summary: '4 · 1 late',
     });
-    expect(tileWords(intl, card({ count: 4 }), 30)).toMatchObject({
+    expect(tileWords(intl, homeCard({ count: 4 }), 30)).toMatchObject({
       tone: 'busy',
       summary: '4',
     });
-    expect(tileWords(intl, card({ kind: 'returnsOpen' }), 30)).toMatchObject({
+    expect(
+      tileWords(intl, homeCard({ kind: 'returnsOpen' }), 30),
+    ).toMatchObject({
       tone: 'quiet',
       summary: 'No returns open',
     });
@@ -39,7 +33,7 @@ describe("a tile's words", () => {
 
   it('is not late for a kind that is never late', () => {
     expect(
-      tileWords(intl, card({ kind: 'drafts', count: 2, late: 2 }), 30),
+      tileWords(intl, homeCard({ kind: 'drafts', count: 2, late: 2 }), 30),
     ).toMatchObject({ tone: 'busy', summary: '2' });
   });
 });
@@ -55,7 +49,7 @@ describe("a hidden tile's late line", () => {
   ) => {
     const words = intlFor(locale, messages);
     return words.formatMessage(CARDS[kind].late!.hidden, {
-      name: tileWords(words, card({ kind, count, late: count }), 30).title,
+      name: tileWords(words, homeCard({ kind, count, late: count }), 30).title,
       count,
     });
   };

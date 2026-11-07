@@ -19,6 +19,7 @@ import {
   signInAs,
   uniqueEmail,
 } from './support/api';
+import { shownCards } from './support/customise-home';
 import { confirmEmailInDatabase } from './support/mail';
 import { deploy } from './support/version';
 
@@ -231,7 +232,7 @@ const SCREENS: Screen[] = [
     open: async (page) => {
       await page.getByRole('button', { name: 'Customise Home' }).click();
       const panel = page.getByRole('region', { name: 'Customise Home' });
-      const tiles = panel.getByRole('list').first().getByRole('listitem');
+      const tiles = shownCards(panel);
       await expect(tiles.first()).toHaveAccessibleName('To ship');
       await tiles.first().getByRole('button', { name: 'Hide' }).focus();
       await page.keyboard.press('Tab');

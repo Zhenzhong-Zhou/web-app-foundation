@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { HomeKind } from '../lib/api-names';
+import { homeCard } from '../test/factories';
 import {
   type Arrangement,
   arrangementOf,
@@ -12,7 +13,6 @@ import {
   show,
   shownOf,
 } from './arrangement';
-import type { KnownCard } from './home-cards';
 
 const EVERY: HomeKind[] = [
   'toShip',
@@ -27,19 +27,15 @@ const EVERY: HomeKind[] = [
   'licences',
 ];
 
-const card = (kind: HomeKind, hidden = false): KnownCard => ({
-  kind,
-  hidden,
-  count: 0,
-  late: 0,
-  anyPoint: null,
-});
-
 describe('arrangementOf', () => {
   it('takes Home’s order, the hidden among it, and Recently opened', () => {
     expect(
       arrangementOf(
-        [card('toReceive'), card('drafts', true), card('toShip')],
+        [
+          homeCard({ kind: 'toReceive' }),
+          homeCard({ kind: 'drafts', hidden: true }),
+          homeCard({ kind: 'toShip' }),
+        ],
         false,
       ),
     ).toEqual({
