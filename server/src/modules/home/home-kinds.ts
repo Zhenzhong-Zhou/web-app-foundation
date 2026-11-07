@@ -124,3 +124,27 @@ export function arranged(
       : !!byDefault.find((tile) => tile.kind === kind)?.hidden,
   }));
 }
+
+/**
+ * A layout to save, with what the stored one holds of kinds it does not
+ * name (ADR-091, amended November 2026): a kind the member may not see
+ * today, which their Home never sends, or one a tab from an older build
+ * does not know. Those follow the rest, in their stored order, hidden as
+ * they were, so they last past the next Done.
+ */
+export function keptWith(
+  layout: HomeLayout,
+  stored: HomeLayout | null,
+): HomeLayout {
+  const missing = (stored?.order ?? []).filter(
+    (kind) => !layout.order.includes(kind),
+  );
+  return {
+    order: [...layout.order, ...missing],
+    hidden: [
+      ...layout.hidden,
+      ...(stored?.hidden ?? []).filter((kind) => missing.includes(kind)),
+    ],
+    recent: layout.recent,
+  };
+}

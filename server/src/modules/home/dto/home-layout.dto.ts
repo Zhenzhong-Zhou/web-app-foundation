@@ -38,7 +38,9 @@ const IsPlaced = () =>
  * person arranged, the hidden ones included, in their order; which are
  * hidden; and whether Recently opened shows. A kind this build does not
  * know, or one twice, is refused. A kind the member may not see today is
- * kept, since their roles may change; Home skips it until then.
+ * kept, since their roles may change; Home skips it until then. A kind
+ * stored that this one does not name, as Home never sends a kind the
+ * member may not see, is kept too, after the rest.
  */
 export class HomeLayoutDto {
   @IsArray()

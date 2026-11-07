@@ -1037,7 +1037,7 @@ describe('Home (e2e)', () => {
       recent: false,
     };
 
-    it('keeps the layout saved, replaced by the next, and DELETE clears it', async () => {
+    it('keeps the layout saved, replaced by the next, keeping the kinds stored it does not name, and DELETE clears it', async () => {
       const alpha = await registerOrganization(app, 'alpha');
 
       await alpha.agent.put('/v1/home/layout').send(arranged).expect(204);
@@ -1049,9 +1049,21 @@ describe('Home (e2e)', () => {
         },
       ]);
 
-      const next = { order: ['toReceive'], hidden: [], recent: true };
+      // The kinds stored that the next does not name follow it, hidden as
+      // they were.
+      const next = {
+        order: ['toReceive', 'toShip'],
+        hidden: ['toShip'],
+        recent: true,
+      };
       await alpha.agent.put('/v1/home/layout').send(next).expect(204);
-      expect((await saved()).map((row) => row.homeLayout)).toEqual([next]);
+      expect((await saved()).map((row) => row.homeLayout)).toEqual([
+        {
+          order: ['toReceive', 'toShip', 'lowStock', 'licences'],
+          hidden: ['toShip', 'licences'],
+          recent: true,
+        },
+      ]);
 
       await alpha.agent.delete('/v1/home/layout').expect(204);
       expect(await saved()).toEqual([]);
@@ -1230,6 +1242,24 @@ describe('Home (e2e)', () => {
         ['toReceive', false],
         ['drafts', true],
         ['toShip', false],
+      ]);
+
+      // Their next Done sends only the kinds they see: the one they may
+      // not see stays, after them, hidden as it was.
+      await packer
+        .put('/v1/home/layout')
+        .send({
+          order: ['toShip', 'toReceive', 'drafts'],
+          hidden: [],
+          recent: true,
+        })
+        .expect(204);
+      expect((await saved()).map((row) => row.homeLayout)).toEqual([
+        {
+          order: ['toShip', 'toReceive', 'drafts', 'licences'],
+          hidden: ['licences'],
+          recent: true,
+        },
       ]);
     });
 

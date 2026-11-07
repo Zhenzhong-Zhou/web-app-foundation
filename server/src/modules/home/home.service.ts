@@ -25,7 +25,7 @@ import {
 } from '../product-licences/product-licences.service';
 import { lowStockTotals } from '../stock/reorder-points-reads.service';
 import { expiredLot, stockRowsOf } from '../stock/stock-reads.service';
-import { arranged, type HomeKind, kindsSeenWith } from './home-kinds';
+import { arranged, type HomeKind, keptWith, kindsSeenWith } from './home-kinds';
 import { WelcomeService } from './welcome.service';
 
 /**
@@ -169,21 +169,34 @@ export class HomeService {
 
   /**
    * Customise Home's Done (ADR-091, amended November 2026): the reader's
-   * own arrangement, on their membership here alone. Null clears it, so
-   * they follow the default, and any later change to it.
+   * own arrangement, on their membership here alone, keeping the kinds
+   * stored that it does not name, after the rest. Null clears it, so they
+   * follow the default, and any later change to it.
    */
   async setLayout(userId: string, layout: HomeLayout | null): Promise<void> {
-    await this.tenantDb.update(
-      memberships,
-      {
-        homeLayout: layout && {
-          order: layout.order,
-          hidden: layout.hidden,
-          recent: layout.recent,
-        },
-      },
-      eq(memberships.userId, userId),
-    );
+    if (!layout) {
+      await this.tenantDb.update(
+        memberships,
+        { homeLayout: null },
+        eq(memberships.userId, userId),
+      );
+      return;
+    }
+    await this.tenantDb.transaction(async (tx, organizationId) => {
+      const mine = and(
+        eq(memberships.organizationId, organizationId),
+        eq(memberships.userId, userId),
+      );
+      const [row] = await tx
+        .select({ homeLayout: memberships.homeLayout })
+        .from(memberships)
+        .where(mine)
+        .for('update');
+      await tx
+        .update(memberships)
+        .set({ homeLayout: keptWith(layout, row?.homeLayout ?? null) })
+        .where(mine);
+    });
   }
 
   /** Dismiss the card for everyone, or bring it back (`at` null). */
