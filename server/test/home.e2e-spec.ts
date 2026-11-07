@@ -790,14 +790,21 @@ describe('Home (e2e)', () => {
       'Warehouse',
     );
 
-    const kinds = (await home({ agent: member })).map((entry) => entry.kind);
-    expect(kinds).toEqual([
+    const { result: cards, statements } = await captureStatements(() =>
+      home({ agent: member }),
+    );
+    expect(cards.map((entry) => entry.kind)).toEqual([
       'toShip',
       'toReceive',
       'drafts',
       'lowStock',
       'expiring',
     ]);
+    // A card the member may not view is never counted: no statement reads
+    // what only Licences expiring counts.
+    expect(statements.map(({ text }) => text).join('\n')).not.toMatch(
+      /\bproduct_licences\b/,
+    );
   });
 
   /**
@@ -1235,9 +1242,15 @@ describe('Home (e2e)', () => {
       await packer.put('/v1/home/layout').send(layout).expect(204);
       expect((await saved()).map((row) => row.homeLayout)).toEqual([layout]);
 
-      // Home skips it, never counting it; Drafts, not in the layout, goes
-      // after To receive, where it is by default, hidden.
-      const cards = await home({ agent: packer });
+      // Home skips it, never counting it: no statement reads its table.
+      // Drafts, not in the layout, goes after To receive, where it is by
+      // default, hidden.
+      const { result: cards, statements } = await captureStatements(() =>
+        home({ agent: packer }),
+      );
+      expect(statements.map(({ text }) => text).join('\n')).not.toMatch(
+        /\bproduct_licences\b/,
+      );
       expect(cards.map(({ kind, hidden }) => [kind, hidden])).toEqual([
         ['toReceive', false],
         ['drafts', true],
