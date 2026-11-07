@@ -48,7 +48,7 @@ import { useExpiryDays } from '../lib/use-expiry-days';
 import { useFailureWords } from '../lib/use-failure-words';
 import { HOVER } from '../theme/media';
 import { rem } from '../theme/rem';
-import { RADIUS } from '../theme/tokens';
+import { RADIUS, TYPE } from '../theme/tokens';
 import { evenRowsSx } from './even-rows';
 import { GettingStarted } from './getting-started';
 import { greeting } from './greeting';
@@ -760,8 +760,8 @@ function Tile({ card }: { card: KnownCard }) {
               order: 0,
               // In rem, so it grows with the text size (ADR-075): the
               // figure read across a room, on the 4 px grid.
-              fontSize: rem(32),
-              lineHeight: 40 / 32,
+              fontSize: rem(TYPE.figure),
+              lineHeight: 40 / TYPE.figure,
               fontWeight: 700,
             }}
           >

@@ -311,15 +311,19 @@ export const DARK: Scheme = {
 };
 
 /**
- * Five sizes and no others, in px: page title, section, body, small,
- * caption. The theme gives them to h5, h6, body1, body2 and caption, each
- * on a line of its own (theme/index.ts).
+ * Five sizes for text and one for a figure, and no others, in px: page
+ * title, section, body, small, caption; and figure. The theme gives the
+ * five to h5, h6, body1, body2 and caption, each on a line of its own
+ * (theme/index.ts).
  *
  * A step of 1.25 from the body's 16 px, the text to decide by (ADR-091),
  * so a section's heading is told from its text by size, not weight alone.
  * The small size is for detail; the caption, off the scale, for footnotes.
+ * The figure, a step above the title on the 4 px grid, is a count read
+ * across a room: Home's tile's, on a 40 px line.
  */
 export const TYPE = {
+  figure: 32,
   title: 25,
   section: 20,
   body: 16,
