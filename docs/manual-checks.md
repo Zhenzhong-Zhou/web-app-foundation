@@ -959,7 +959,9 @@ Paper is checked first because it must not change at all.
   every width; press it: the tiles become cards, the panel's heading
   Customise Home focused, and the greeting with Raise an order and More,
   and the panel of what needs you now, stay in view, faded, each with a
-  yellow lock reading Fixed, cannot move, and do nothing meanwhile. Each
+  yellow lock reading Fixed, cannot move, and do nothing meanwhile; a
+  screen reader reads each lock with its part, Greeting: Fixed, cannot
+  move, and What is late: (问候语：, 逾期的事： in 中文). Each
   card has its handle, its icon, its name, its count (4 · 1 late; a quiet
   one its words, No returns open), and Up, Down and Hide: Up on the
   first and Down on the last are grey and do nothing. Press Up on To
@@ -5199,3 +5201,5 @@ first.
 - 2026-11-07: Customise Home's reviews, the page scrolling by itself only
   in the window's outer tenth while a tile is held, more slowly: MC-1564
   extended.
+- 2026-11-07: Customise Home's reviews, each lock naming its part for a
+  screen reader: MC-1563 extended.

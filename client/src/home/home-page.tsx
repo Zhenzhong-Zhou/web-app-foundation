@@ -302,7 +302,7 @@ function OrganizationHome() {
       {/* The main action at the right of the greeting's row from `md`, as
           each list page has its own; below it, under What we do, full
           width (ADR-091). It stays, faded, while Home is customised. */}
-      <Fixed on={customising}>
+      <Fixed on={customising} part="greeting">
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           sx={{
@@ -436,7 +436,7 @@ function OrganizationHome() {
       ) : (
         <>
           {welcome && (
-            <Fixed on={customising}>
+            <Fixed on={customising} part="welcome">
               <WelcomeCard
                 welcome={welcome}
                 startShows={!!showStart}
@@ -449,7 +449,7 @@ function OrganizationHome() {
           {/* Straight after the welcome, which says the steps are in
               Getting started, below; the tiles after both. */}
           {showStart && started && (
-            <Fixed on={customising}>
+            <Fixed on={customising} part="start">
               <GettingStarted
                 state={started}
                 canManage={can('organizations.update')}
@@ -467,7 +467,7 @@ function OrganizationHome() {
 
           {/* After both, so the welcome opens where a newcomer looks first
               and Getting started stays above the fold on a laptop. */}
-          <Fixed on={customising}>
+          <Fixed on={customising} part="late">
             <WhatIsLate cards={cards} />
           </Fixed>
 
@@ -533,7 +533,7 @@ function OrganizationHome() {
               (ADR-091, amended November 2026); while customised, as the
               switch has it, faded. */}
           {(draft ? draft.recent : home.recent) && (
-            <Fixed on={customising} lock={false}>
+            <Fixed on={customising}>
               <RecentCard />
             </Fixed>
           )}
