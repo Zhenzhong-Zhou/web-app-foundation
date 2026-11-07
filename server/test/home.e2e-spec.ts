@@ -1289,6 +1289,17 @@ describe('Home (e2e)', () => {
       expect(message).toEqual([
         'Each kind in hidden must also be in order — send the hidden ones in their place there too',
       ]);
+
+      // With no order, only order's own refusal: nothing hidden is unplaced.
+      const missing = body<{ message: string[] }>(
+        await alpha.agent
+          .put('/v1/home/layout')
+          .send({ hidden: [], recent: true })
+          .expect(400),
+      ).message;
+      expect(missing.length).toBeGreaterThan(0);
+      expect(missing.join('\n')).toMatch(/\border\b/);
+      expect(missing.join('\n')).not.toMatch(/must also be in order/);
     });
 
     it('keeps a kind the member may not see today, since their roles may change', async () => {

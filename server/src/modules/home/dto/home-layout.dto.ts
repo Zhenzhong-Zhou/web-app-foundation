@@ -10,7 +10,11 @@ import {
 import { defineMessage, rule } from '../../../i18n/validation';
 import { HOME_KINDS, type HomeKind } from '../home-kinds';
 
-/** Each hidden kind is also placed in `order`, where Show puts it back. */
+/**
+ * Each hidden kind is also placed in `order`, where Show puts it back.
+ * Either part that is no list is left to its own rules, so its refusal is
+ * the one said.
+ */
 const IsPlaced = () =>
   ValidateBy({
     name: 'isPlaced',
@@ -18,8 +22,8 @@ const IsPlaced = () =>
       validate: (hidden: unknown, args) => {
         const { order } = (args?.object ?? {}) as Partial<HomeLayoutDto>;
         return (
-          Array.isArray(hidden) &&
-          Array.isArray(order) &&
+          !Array.isArray(order) ||
+          !Array.isArray(hidden) ||
           hidden.every((kind: HomeKind) => order.includes(kind))
         );
       },
