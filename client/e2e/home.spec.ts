@@ -352,6 +352,71 @@ test('each tile opens its list with its count’s rows, a late button just the l
   await expect(page.getByRole('button', { name: 'Late' })).toBeVisible();
 });
 
+/**
+ * The drafts tile, once shown, opens Orders oldest first (ADR-091, amended
+ * November 2026; ADR-057's amendment): Draft and Oldest first as chips,
+ * the draft forgotten longest at the top. The chip removed lists them
+ * newest first, and Back from a draft keeps either order.
+ */
+test('the drafts tile opens Orders oldest first, its chip removable, Back keeping the order', async ({
+  page,
+  freshOrg,
+}) => {
+  const product = await createProduct(freshOrg.api);
+  const partner = await createPartner(freshOrg.api);
+  const made: string[] = [];
+  for (let count = 0; count < 3; count += 1) {
+    const { order } = await created<{ order: { number: string } }>(
+      await freshOrg.api.post('/v1/orders', {
+        data: {
+          partnerId: partner.id,
+          direction: 'purchase',
+          lines: [{ variantId: product.variantId, quantityOrdered: '10' }],
+        },
+      }),
+    );
+    made.push(order.number);
+  }
+  // Drafts shown, as Customise Home's Show leaves it; the kinds the layout
+  // leaves out take their default places.
+  const shown = await freshOrg.api.put('/v1/home/layout', {
+    data: { order: ['drafts'], hidden: [], recent: true },
+  });
+  expect(shown.status(), await shown.text()).toBe(204);
+  const newestFirst = [...made].reverse();
+
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Orders · Draft, 3' }).click();
+
+  await expect(page).toHaveURL(/\/orders\?status=draft&order=asc$/);
+  await expect(
+    page.getByRole('button', { name: 'Draft', exact: true }),
+  ).toBeVisible();
+  const oldest = page.getByRole('button', { name: 'Oldest first' });
+  await expect(oldest).toBeVisible();
+  await expect(orderLinks(page)).toHaveText(made);
+
+  await orderLinks(page).first().click();
+  await expect(page).toHaveURL(/\/orders\/[0-9a-f-]+$/);
+  await page.goBack();
+  await expect(oldest).toBeVisible();
+  await expect(orderLinks(page)).toHaveText(made);
+
+  await oldest.focus();
+  await page.keyboard.press('Delete');
+  await expect(page).toHaveURL(/\/orders\?status=draft$/);
+  await expect(oldest).toBeHidden();
+  await expect(orderLinks(page)).toHaveText(newestFirst);
+
+  await orderLinks(page).first().click();
+  await expect(page).toHaveURL(/\/orders\/[0-9a-f-]+$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/orders\?status=draft$/);
+  await expect(orderLinks(page)).toHaveText(newestFirst);
+  await expect(oldest).toBeHidden();
+});
+
 test('Expiring soon opens Inventory’s expiring lots, and nothing late is one calm line', async ({
   page,
   freshOrg,

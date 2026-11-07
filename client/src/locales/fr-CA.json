@@ -1198,6 +1198,7 @@
   "orders.lines.total": "Total",
   "orders.lines.useListPrice": "Prix de la liste",
   "orders.number": "Numéro",
+  "orders.oldestFirst": "Les plus anciennes d’abord",
   "orders.partner": "Partenaire",
   "orders.proForma.action": "Facture proforma",
   "orders.proForma.currencies": "Une facture proforma est dans une seule devise, et cette commande en a plusieurs : {currencies}. Chiffrez chaque article dans l’une d’elles.",

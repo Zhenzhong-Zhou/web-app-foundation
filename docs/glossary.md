@@ -90,6 +90,7 @@ as the catalogues word it.
 | Cancelled | Annulée | 已取消 | |
 | Open / Fulfilled | Ouvertes / Exécutées | 未完成 / 已完成 | The list's filters. |
 | Late | En retard | 逾期 | An outstanding order past its expected day, in the organization's day: Orders' filter, and its chip "2 days late" / « 2 jours de retard » / 逾期 2 天. Home's panel of what is late counts these with the items out and the lots and licences expired (ADR-091). Never "overdue". |
+| Oldest first | Les plus anciennes d’abord | 最早的在前 | Orders' chip for the list by when each order was made, the oldest at the top, where no column is sorted: Home's drafts tile opens it so (ADR-057's amendment; ADR-091, amended November 2026). Removing it lists newest first again. |
 
 ### Shipping
 

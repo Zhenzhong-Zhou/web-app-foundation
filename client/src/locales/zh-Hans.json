@@ -1198,6 +1198,7 @@
   "orders.lines.total": "合计",
   "orders.lines.useListPrice": "使用价目表价格",
   "orders.number": "编号",
+  "orders.oldestFirst": "最早的在前",
   "orders.partner": "合作伙伴",
   "orders.proForma.action": "形式发票",
   "orders.proForma.currencies": "形式发票只能使用一种货币，而此订单包含 {currencies}。请用其中一种货币为每个物品定价。",

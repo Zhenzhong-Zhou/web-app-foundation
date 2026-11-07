@@ -95,6 +95,11 @@ const FILTER_VALUES: readonly Filter[] = [
  * kept there. `outstanding` is something still to ship or to come (ADR-058,
  * #163); `late` is that and expected before the organization's today,
  * which the server decides; `from` and `to` are the expected days.
+ *
+ * `order=asc` with no sort is oldest first, by when each order was made
+ * (ADR-057's amendment), as Home's drafts tile opens the list, the draft
+ * forgotten longest first. `order` is also the sort's, so it means this
+ * only while no sort is on.
  */
 const ADDRESS_FILTERS = {
   status: oneOf(FILTER_VALUES, 'open'),
@@ -103,6 +108,7 @@ const ADDRESS_FILTERS = {
   late: flag,
   from: day,
   to: day,
+  order: oneOf<'asc' | ''>(['', 'asc'], ''),
 };
 
 /** What is still to ship or to receive: soonest first, the late leading. */
@@ -129,6 +135,9 @@ export function OrdersPage() {
     ['expectedAt'],
     outstanding || late ? SOONEST_EXPECTED : null,
   );
+  // No column names this order, so a chip shows it, as one shows a filter
+  // only a link set; a header chosen replaces it.
+  const oldestFirst = !sort && filters.order === 'asc';
   const path = withSort(
     withDays(
       withSearch(
@@ -137,6 +146,7 @@ export function OrdersPage() {
           ...(direction ? { direction } : {}),
           ...(outstanding ? { outstanding: 'true' } : {}),
           ...(late ? { late: 'true' } : {}),
+          ...(oldestFirst ? { order: 'asc' } : {}),
         }).toString()}`,
         search,
       ),
@@ -225,10 +235,12 @@ export function OrdersPage() {
         />
       </FilterRow>
 
-      {/* What a link narrowed that no button shows, each removable. */}
+      {/* What a link narrowed or ordered that no button shows, each
+          removable. */}
       {(direction ||
         outstanding ||
         late ||
+        oldestFirst ||
         filter === 'draft' ||
         filter === 'confirmed') && (
         <Stack ref={chipRow} direction="row" spacing={1}>
@@ -293,6 +305,18 @@ export function OrdersPage() {
               onDelete={(event) => {
                 removed(event);
                 setFilters({ late: false });
+              }}
+            />
+          )}
+          {oldestFirst && (
+            <Chip
+              label={intl.formatMessage({
+                id: 'orders.oldestFirst',
+                defaultMessage: 'Oldest first',
+              })}
+              onDelete={(event) => {
+                removed(event);
+                setFilters({ order: '' });
               }}
             />
           )}

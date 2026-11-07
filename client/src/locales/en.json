@@ -1198,6 +1198,7 @@
   "orders.lines.total": "Total",
   "orders.lines.useListPrice": "Use list price",
   "orders.number": "Number",
+  "orders.oldestFirst": "Oldest first",
   "orders.partner": "Partner",
   "orders.proForma.action": "Pro forma invoice",
   "orders.proForma.currencies": "A pro forma is in one currency, and this order has {currencies}. Price every item in one of them.",

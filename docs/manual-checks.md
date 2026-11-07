@@ -217,6 +217,17 @@ a second organization.
   says their role does not include raising orders, and whom to ask
   (the Owners first, at most three). As the demo Owner, Raise an order,
   and no such line.
+- **MC-408** *(ADR-091; ADR-057)* Orders oldest first. As the demo Owner,
+  open `/orders?status=draft&order=asc`, where Home's Orders · Draft
+  goes: chips read Draft and Oldest first, and the list holds the drafts,
+  the one started longest ago first (SO-DEMO-3 under Reference), with
+  Expected not marked as the sort. Open a draft and press Back: still
+  oldest first, both chips there. Tab to Oldest first and press Delete:
+  the drafts newest first, `order=asc` gone from the address, focus on
+  Draft; open a draft and press Back: still newest first, with no chip.
+  Open the first address again and press Expected instead: the chip goes,
+  and Expected is the sort, soonest first. In Français the chip reads
+  Les plus anciennes d’abord; in 中文, 最早的在前.
 
 ## 5. Making
 
@@ -905,8 +916,9 @@ Paper is checked first because it must not change at all.
   Brouillon), the page first and the filter's word after, and counts as
   many drafts as Orders lists with Draft chosen, three on the demo, never
   late, so the red panel never counts it; with none it stays quiet, No
-  drafts (没有草稿, Aucun brouillon). It opens Orders with Draft chosen,
-  `?status=draft&order=asc` in the address, with Back to Home. With
+  drafts (没有草稿, Aucun brouillon). It opens Orders oldest first, with
+  Draft and Oldest first as chips, `?status=draft&order=asc` in the
+  address, with Back to Home (MC-408). With
   Recently opened switched off, Home neither shows it nor reads it
   (DevTools → Network: no `recent`). In 中文 More
   reads 更多, in Français Plus; a screen reader names its menu More. Recently opened lists
@@ -5076,3 +5088,5 @@ first.
   the menu has them: MC-3207 extended.
 - 2026-11-06: Customise Home, the tiles leading with the work a member
   may do, and Orders · Draft hidden by default: MC-1559 extended.
+- 2026-11-06: Customise Home, Orders oldest first with its chip, as the
+  drafts tile opens it: MC-408 added, MC-1559 extended.
