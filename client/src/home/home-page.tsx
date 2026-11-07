@@ -467,9 +467,18 @@ function OrganizationHome() {
 
           {/* After both, so the welcome opens where a newcomer looks first
               and Getting started stays above the fold on a laptop. */}
-          <Fixed on={customising} part="late">
-            <WhatIsLate cards={cards} />
-          </Fixed>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Fixed on={customising} part="late">
+              <WhatIsLate cards={cards} />
+            </Fixed>
+            <HiddenLate
+              cards={cards}
+              hidden={
+                draft?.hidden ??
+                cards.filter((card) => card.hidden).map((card) => card.kind)
+              }
+            />
+          </Box>
 
           {/* In the tiles' place while customised; its button at the
               right of their heading, there while any tile is, hidden or
@@ -706,6 +715,53 @@ function WhatIsLate({ cards }: { cards: KnownCard[] }) {
         })}
       </Box>
     </Paper>
+  );
+}
+
+/**
+ * Under what is late, a line for each tile hidden whose late items the
+ * panel still holds, so they say where they came from, as the boards draw
+ * it (ADR-091, amended November 2026): "To ship is hidden; its 2 late
+ * orders still show here". While Home is customised, as the draft hides
+ * them.
+ */
+function HiddenLate({
+  cards,
+  hidden,
+}: {
+  cards: KnownCard[];
+  hidden: readonly string[];
+}) {
+  const intl = useIntl();
+  const { warning: expiringWithin } = useExpiryDays();
+  const lines = cards.flatMap((card) => {
+    const late = CARDS[card.kind].late;
+    return late && card.late > 0 && hidden.includes(card.kind)
+      ? [{ card, message: late.hidden }]
+      : [];
+  });
+  if (lines.length === 0) return null;
+  return (
+    <Stack spacing={0.5}>
+      {lines.map(({ card, message }) => (
+        <Typography
+          key={card.kind}
+          variant="body2"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.75,
+            color: 'tone.critical.fg',
+          }}
+        >
+          <ErrorOutlineOutlined aria-hidden fontSize="small" />
+          {intl.formatMessage(message, {
+            name: tileWords(intl, card, expiringWithin).title,
+            count: card.late,
+          })}
+        </Typography>
+      ))}
+    </Stack>
   );
 }
 

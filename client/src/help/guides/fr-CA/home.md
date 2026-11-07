@@ -57,7 +57,7 @@ Rien n’est gardé avant que vous appuyiez sur **Terminé**. Quitter l’accuei
 
 Pendant que vous personnalisez, la salutation avec votre action principale, ce qui est en retard, et votre carte de bienvenue ou Premiers pas quand l’accueil les a, restent à leur place, estompés et marqués **Fixe, ne se déplace pas**.
 
-Une tuile masquée ne cache rien de ce qui est en retard : son bouton pour ce qui est en retard, comme **2 commandes en retard à expédier**, s’affiche toujours.
+Une tuile masquée ne cache rien de ce qui est en retard : son bouton pour ce qui est en retard, comme **2 commandes en retard à expédier**, s’affiche toujours, et une ligne sous le panneau dit de quelle tuile masquée il vient.
 
 ## Vos deux premières semaines {#welcome}
 

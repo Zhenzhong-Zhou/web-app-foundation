@@ -969,7 +969,10 @@ Paper is checked first because it must not change at all.
   says To receive, 1 of 9, as a screen reader (VoiceOver, ⌘F5) does;
   press Down, To receive, 2 of 9. Hide To ship: it goes to Hidden tiles
   below, the line saying To ship hidden: under Hidden tiles, below, focus
-  on the next tile's handle, its late orders still in the red panel. Show
+  on the next tile's handle, its late orders still in the red panel, and a
+  red line under the panel says To ship is hidden, and that its late
+  orders still show here (in 中文 “待发货”已隐藏，它的 … 个逾期订单仍然在这里),
+  the line still there on Home after Done. Show
   Orders · Draft: it comes back in its place, after To receive, the line
   saying Orders · Draft shown, 2 of 9, focus on its handle. Turn off Show
   Recently opened on Home: Recently opened, faded below, goes. Scroll
@@ -5203,3 +5206,5 @@ first.
   extended.
 - 2026-11-07: Customise Home's reviews, each lock naming its part for a
   screen reader: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, a line under what is late for each
+  hidden tile whose late items it holds: MC-1563 extended.

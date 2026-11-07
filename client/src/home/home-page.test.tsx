@@ -324,6 +324,11 @@ describe('HomePage', () => {
     expect(
       within(late).getByRole('link', { name: '2 late orders to ship' }),
     ).toBeVisible();
+    // Under the panel, where they came from; Drafts, never late, says none.
+    expect(
+      screen.getByText('To ship is hidden; its 2 late orders still show here'),
+    ).toBeVisible();
+    expect(screen.queryByText(/^Orders · Draft is hidden/)).toBeNull();
     const today = screen.getByRole('region', { name: 'What needs you today' });
     expect(
       within(today)

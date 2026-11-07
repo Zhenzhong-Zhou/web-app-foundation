@@ -57,7 +57,7 @@ Nothing is kept until you press **Done**. Leaving Home before then asks first: *
 
 While you customise, the greeting with your main action, what is late, and your welcome card or Getting started when Home has them, stay where they are, faded and marked **Fixed, cannot move**.
 
-A hidden tile hides nothing that is late: its button for what is late, such as **2 late orders to ship**, still shows.
+A hidden tile hides nothing that is late: its button for what is late, such as **2 late orders to ship**, still shows, and a line under the panel says which hidden tile it comes from.
 
 ## Your first two weeks {#welcome}
 

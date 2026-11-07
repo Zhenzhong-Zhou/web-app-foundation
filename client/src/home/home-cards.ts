@@ -30,6 +30,11 @@ interface Late {
   pill: MessageDescriptor;
   button: MessageDescriptor;
   list: string;
+  /**
+   * The line under the panel while the tile is hidden, saying its late
+   * items still show there (ADR-091, amended November 2026).
+   */
+  hidden: MessageDescriptor;
 }
 
 /**
@@ -178,6 +183,30 @@ const BUTTONS = defineMessages({
   },
 });
 
+/** A hidden tile's late items, which the panel still holds, by name. */
+const HIDDEN_LATE = defineMessages({
+  orders: {
+    id: 'home.late.hidden.orders',
+    defaultMessage:
+      '{count, plural, one {{name} is hidden; its late order still shows here} other {{name} is hidden; its # late orders still show here}}',
+  },
+  out: {
+    id: 'home.late.hidden.out',
+    defaultMessage:
+      '{count, plural, one {{name} is hidden; its item out of stock still shows here} other {{name} is hidden; its # items out of stock still show here}}',
+  },
+  expiredLots: {
+    id: 'home.late.hidden.expiredLots',
+    defaultMessage:
+      '{count, plural, one {{name} is hidden; its expired lot still shows here} other {{name} is hidden; its # expired lots still show here}}',
+  },
+  expiredLicences: {
+    id: 'home.late.hidden.expiredLicences',
+    defaultMessage:
+      '{count, plural, one {{name} is hidden; its expired licence still shows here} other {{name} is hidden; its # expired licences still show here}}',
+  },
+});
+
 /** In the order of a working day, the server's (ADR-091). */
 export const CARDS: Record<HomeKind, CardMeta> = {
   toShip: {
@@ -191,6 +220,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       pill: PILLS.late,
       button: BUTTONS.toShip,
       list: '/orders?direction=sale&outstanding=1&late=1',
+      hidden: HIDDEN_LATE.orders,
     },
   },
   toReceive: {
@@ -202,6 +232,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       pill: PILLS.late,
       button: BUTTONS.toReceive,
       list: '/orders?direction=purchase&outstanding=1&late=1',
+      hidden: HIDDEN_LATE.orders,
     },
   },
   // Orders · Draft (ADR-091, amended November 2026): hidden until the
@@ -225,6 +256,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       pill: PILLS.out,
       button: BUTTONS.lowStock,
       list: '/inventory?tab=reorder-points&status=out',
+      hidden: HIDDEN_LATE.out,
     },
     unset: {
       empty: LOW_STOCK_UNSET.empty,
@@ -241,6 +273,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       pill: PILLS.expiredLots,
       button: BUTTONS.expiring,
       list: '/inventory?expiring=1&expired=1',
+      hidden: HIDDEN_LATE.expiredLots,
     },
   },
   costsWaiting: {
@@ -283,6 +316,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       pill: PILLS.expiredLicences,
       button: BUTTONS.licences,
       list: '/licences?expiring=1&expired=1',
+      hidden: HIDDEN_LATE.expiredLicences,
     },
   },
 };
