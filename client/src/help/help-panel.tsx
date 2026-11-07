@@ -175,7 +175,16 @@ export function HelpFrame({
 
   return (
     <>
-      <Box sx={beside ? { pr: `${width}px` } : undefined}>{children}</Box>
+      {/* The bar's height, for what stays in view under it as the page
+          scrolls, as Customise Home's Done does (ADR-091). */}
+      <Box
+        sx={[
+          { '--bar-height': `${size.height}px` },
+          beside && { pr: `${width}px` },
+        ]}
+      >
+        {children}
+      </Box>
 
       {/* A dialog centres in the room beside Help, not under it. */}
       {beside && (

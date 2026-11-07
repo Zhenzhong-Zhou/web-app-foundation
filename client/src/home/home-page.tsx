@@ -49,9 +49,16 @@ import { useFailureWords } from '../lib/use-failure-words';
 import { HOVER } from '../theme/media';
 import { rem } from '../theme/rem';
 import { RADIUS, TYPE } from '../theme/tokens';
+import {
+  type Arrangement,
+  arrangementOf,
+  byDefault,
+  sameArrangement,
+} from './arrangement';
+import { CustomiseButton, CustomiseHome, Fixed } from './customise-home';
 import { evenRowsSx } from './even-rows';
 import { GettingStarted } from './getting-started';
-import { CARDS, isKnownCard, type KnownCard } from './home-cards';
+import { CARDS, isKnownCard, type KnownCard, tileWords } from './home-cards';
 import { HomeClock, HomeGreeting } from './home-clock';
 import { MainAction, type QuickAction } from './main-action';
 import { NoOrganization } from './no-organization';
@@ -111,6 +118,13 @@ function OrganizationHome() {
   // heading, where the page begins, rather than to nowhere.
   const heading = useRef<HTMLHeadingElement>(null);
   const zone = organizationTimeZone();
+  // Customise Home (ADR-091, amended November 2026): the arrangement on
+  // the page while it is open, kept only by Done.
+  const [draft, setDraft] = useState<Arrangement | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveFailure, setSaveFailure] = useState<unknown>(null);
+  const customiseButton = useRef<HTMLButtonElement>(null);
+  const customiseHeading = useRef<HTMLHeadingElement>(null);
 
   // The server counts the tiles from the same day itself.
   const load = useCallback(() => {
@@ -176,6 +190,37 @@ function OrganizationHome() {
   // items stay in the panel (ADR-091, amended November 2026).
   const cards = (home?.cards ?? []).filter(isKnownCard);
   const tiles = cards.filter((card) => !card.hidden);
+
+  // Opened, focus goes to its heading; closed by Done, back to its button.
+  const customising = draft !== null;
+  const wasCustomising = useRef(false);
+  useEffect(() => {
+    if (customising === wasCustomising.current) return;
+    wasCustomising.current = customising;
+    (customising ? customiseHeading : customiseButton).current?.focus();
+  }, [customising]);
+
+  /**
+   * Done: the layout saved, or cleared where it equals the default, so the
+   * person follows later defaults; then Home read again, in its new order,
+   * before the tiles come back.
+   */
+  async function saveArrangement(next: Arrangement) {
+    setSaving(true);
+    setSaveFailure(null);
+    try {
+      await (sameArrangement(next, byDefault(next.order, can))
+        ? api('/home/layout', { method: 'DELETE' })
+        : api('/home/layout', { method: 'PUT', body: JSON.stringify(next) }));
+      setHome(await api<HomeResponse>('/home'));
+      setError(null);
+      setDraft(null);
+    } catch (caught) {
+      setSaveFailure(caught);
+    } finally {
+      setSaving(false);
+    }
+  }
   const started = home?.gettingStarted;
   const showStart = started && !started.complete && !started.dismissed;
 
@@ -231,118 +276,125 @@ function OrganizationHome() {
     <Stack spacing={3} sx={{ maxWidth: 1140 }}>
       {/* The main action at the right of the greeting's row from `md`, as
           each list page has its own; below it, under What we do, full
-          width (ADR-091). */}
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        sx={{
-          justifyContent: 'space-between',
-          alignItems: { xs: 'stretch', md: 'flex-start' },
-          gap: 1.5,
-        }}
-      >
-        <Stack spacing={0.75} sx={{ minWidth: 0 }}>
-          <Stack direction="row" sx={{ alignItems: 'center', gap: 0.5 }}>
-            <Typography ref={heading} variant="h5" component="h1" tabIndex={-1}>
-              <HomeGreeting name={session?.user.name ?? ''} zone={zone} />
-            </Typography>
-            {/* Next after the heading, where Dismiss puts focus, so the
+          width (ADR-091). It stays, faded, while Home is customised. */}
+      <Fixed on={customising}>
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          sx={{
+            justifyContent: 'space-between',
+            alignItems: { xs: 'stretch', md: 'flex-start' },
+            gap: 1.5,
+          }}
+        >
+          <Stack spacing={0.75} sx={{ minWidth: 0 }}>
+            <Stack direction="row" sx={{ alignItems: 'center', gap: 0.5 }}>
+              <Typography
+                ref={heading}
+                variant="h5"
+                component="h1"
+                tabIndex={-1}
+              >
+                <HomeGreeting name={session?.user.name ?? ''} zone={zone} />
+              </Typography>
+              {/* Next after the heading, where Dismiss puts focus, so the
                 next Tab reaches Undo; shown at the foot of the screen all
                 the same, and held there while focus or the pointer is on
                 it. */}
-            <UndoSnackbar
-              open={undoing}
-              autoHideDuration={8000}
-              onClose={(_event, reason) => {
-                // A click elsewhere is somebody carrying on, not dismissing.
-                if (reason !== 'clickaway') setUndoing(false);
-              }}
-              message={intl.formatMessage({
-                id: 'home.welcome.dismissed',
-                defaultMessage:
-                  'Welcome card hidden. What you can do here stays on Your account.',
-              })}
-              action={
-                <Button color="inherit" onClick={() => void undoWelcome()}>
-                  {intl.formatMessage({
-                    id: 'home.welcome.undo',
-                    defaultMessage: 'Undo',
-                  })}
-                </Button>
-              }
-              slotProps={{ content: { role: 'status' } }}
-            />
-            {/* Beside the greeting, an icon with its name in a tooltip
-                (ADR-091). */}
-            <Tooltip title={refresh}>
-              <IconButton aria-label={refresh} onClick={load}>
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-          {/* The organization's day and time, the one part of Home that
-              draws again each minute. */}
-          <HomeClock zone={zone} />
-          {/* Only for a reader on another clock (ADR-072): their own date
-              may already be tomorrow, or still yesterday. */}
-          {differsFromBrowser(zone) && (
-            <Typography
-              variant="body2"
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: 1,
-              }}
-            >
-              <ScheduleIcon fontSize="small" aria-hidden />
-              {intl.formatMessage(
-                {
-                  id: 'home.timeZoneNote',
+              <UndoSnackbar
+                open={undoing}
+                autoHideDuration={8000}
+                onClose={(_event, reason) => {
+                  // A click elsewhere is somebody carrying on, not dismissing.
+                  if (reason !== 'clickaway') setUndoing(false);
+                }}
+                message={intl.formatMessage({
+                  id: 'home.welcome.dismissed',
                   defaultMessage:
-                    'Dates follow the organization’s time zone: {zone}.',
-                },
-                { zone: zoneLabel(zone) },
-              )}
-              {/* Where it is set, for whoever may change it: a wrong zone
+                    'Welcome card hidden. What you can do here stays on Your account.',
+                })}
+                action={
+                  <Button color="inherit" onClick={() => void undoWelcome()}>
+                    {intl.formatMessage({
+                      id: 'home.welcome.undo',
+                      defaultMessage: 'Undo',
+                    })}
+                  </Button>
+                }
+                slotProps={{ content: { role: 'status' } }}
+              />
+              {/* Beside the greeting, an icon with its name in a tooltip
+                (ADR-091). */}
+              <Tooltip title={refresh}>
+                <IconButton aria-label={refresh} onClick={load}>
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+            {/* The organization's day and time, the one part of Home that
+              draws again each minute. */}
+            <HomeClock zone={zone} />
+            {/* Only for a reader on another clock (ADR-072): their own date
+              may already be tomorrow, or still yesterday. */}
+            {differsFromBrowser(zone) && (
+              <Typography
+                variant="body2"
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                }}
+              >
+                <ScheduleIcon fontSize="small" aria-hidden />
+                {intl.formatMessage(
+                  {
+                    id: 'home.timeZoneNote',
+                    defaultMessage:
+                      'Dates follow the organization’s time zone: {zone}.',
+                  },
+                  { zone: zoneLabel(zone) },
+                )}
+                {/* Where it is set, for whoever may change it: a wrong zone
                   shows here first. */}
-              {can('organizations.update') && (
-                <Link
-                  component={RouterLink}
-                  to="/settings/organization?tab=profile"
-                  state={OFFER_BACK}
-                  underline="always"
-                >
-                  {intl.formatMessage({
-                    id: 'home.timeZoneChange',
-                    defaultMessage: 'Change the time zone',
-                  })}
-                </Link>
-              )}
-            </Typography>
-          )}
-          {/* In the organization's own words, at the body's size and
+                {can('organizations.update') && (
+                  <Link
+                    component={RouterLink}
+                    to="/settings/organization?tab=profile"
+                    state={OFFER_BACK}
+                    underline="always"
+                  >
+                    {intl.formatMessage({
+                      id: 'home.timeZoneChange',
+                      defaultMessage: 'Change the time zone',
+                    })}
+                  </Link>
+                )}
+              </Typography>
+            )}
+            {/* In the organization's own words, at the body's size and
               weight, without a card (ADR-091). */}
-          {home?.whatWeDo && (
-            <Typography sx={{ pt: 0.75 }}>{home.whatWeDo}</Typography>
-          )}
-        </Stack>
-        {/* None while Getting started shows: its next step is the page's
+            {home?.whatWeDo && (
+              <Typography sx={{ pt: 0.75 }}>{home.whatWeDo}</Typography>
+            )}
+          </Stack>
+          {/* None while Getting started shows: its next step is the page's
             one main action (ADR-058), and a new organization has nothing
             to raise an order for yet (ADR-091's review). */}
-        {showStart ? null : quick.length > 0 ? (
-          <MainAction actions={quick} />
-        ) : (
-          // Where the button would be: whom to ask, from the welcome once
-          // Home holds it, else read beside Home's own read, not after it.
-          <Box sx={{ maxWidth: { md: rem(400) } }}>
-            {welcome ? (
-              <WhomToAsk access={welcome.access} {...NO_ACTIONS} />
-            ) : (
-              <WhomToAskRead {...NO_ACTIONS} />
-            )}
-          </Box>
-        )}
-      </Stack>
+          {showStart ? null : quick.length > 0 ? (
+            <MainAction actions={quick} />
+          ) : (
+            // Where the button would be: whom to ask, from the welcome once
+            // Home holds it, else read beside Home's own read, not after it.
+            <Box sx={{ maxWidth: { md: rem(400) } }}>
+              {welcome ? (
+                <WhomToAsk access={welcome.access} {...NO_ACTIONS} />
+              ) : (
+                <WhomToAskRead {...NO_ACTIONS} />
+              )}
+            </Box>
+          )}
+        </Stack>
+      </Fixed>
 
       {errorWords && <Alert severity="error">{errorWords}</Alert>}
 
@@ -359,65 +411,113 @@ function OrganizationHome() {
       ) : (
         <>
           {welcome && (
-            <WelcomeCard
-              welcome={welcome}
-              startShows={!!showStart}
-              onDismiss={dismissWelcome}
-              headingRef={welcomeHeading}
-            />
+            <Fixed on={customising}>
+              <WelcomeCard
+                welcome={welcome}
+                startShows={!!showStart}
+                onDismiss={dismissWelcome}
+                headingRef={welcomeHeading}
+              />
+            </Fixed>
           )}
 
           {/* Straight after the welcome, which says the steps are in
               Getting started, below; the tiles after both. */}
           {showStart && started && (
-            <GettingStarted
-              state={started}
-              canManage={can('organizations.update')}
-              canInvite={can('users.create')}
-              onDismiss={() => {
-                heading.current?.focus();
-                void act('/home/getting-started/dismiss', 'POST');
-              }}
-              onSkipTeam={() =>
-                void act('/home/getting-started/skip-team', 'POST')
-              }
-            />
+            <Fixed on={customising}>
+              <GettingStarted
+                state={started}
+                canManage={can('organizations.update')}
+                canInvite={can('users.create')}
+                onDismiss={() => {
+                  heading.current?.focus();
+                  void act('/home/getting-started/dismiss', 'POST');
+                }}
+                onSkipTeam={() =>
+                  void act('/home/getting-started/skip-team', 'POST')
+                }
+              />
+            </Fixed>
           )}
 
           {/* After both, so the welcome opens where a newcomer looks first
               and Getting started stays above the fold on a laptop. */}
-          <WhatIsLate cards={cards} />
+          <Fixed on={customising}>
+            <WhatIsLate cards={cards} />
+          </Fixed>
 
-          {tiles.length > 0 && (
-            <Stack
-              component="section"
-              aria-labelledby="today-title"
-              spacing={1.5}
-            >
-              <Typography variant="h6" component="h2" id="today-title">
-                {intl.formatMessage({
-                  id: 'home.today',
-                  defaultMessage: 'What needs you today',
-                })}
-              </Typography>
-              {/* In even rows, measured against the page's width rather
-                  than the screen's (ADR-081). */}
-              <Box sx={{ containerType: 'inline-size' }}>
-                <Box sx={evenRowsSx(tiles.length)}>
-                  {tiles.map((card) => (
-                    <Tile key={card.kind} card={card} />
-                  ))}
-                </Box>
-              </Box>
-            </Stack>
+          {/* In the tiles' place while customised; its button at the
+              right of their heading, there while any tile is, hidden or
+              not, so a person who hid them all can bring them back. */}
+          {draft ? (
+            <CustomiseHome
+              cards={cards}
+              arrangement={draft}
+              saved={arrangementOf(cards, home.recent)}
+              onChange={setDraft}
+              onReset={() => setDraft(byDefault(draft.order, can))}
+              onDone={() => void saveArrangement(draft)}
+              saving={saving}
+              failure={saveFailure}
+              headingRef={customiseHeading}
+            />
+          ) : (
+            cards.length > 0 && (
+              <Stack
+                component="section"
+                aria-labelledby="today-title"
+                spacing={1.5}
+              >
+                <Stack
+                  direction="row"
+                  sx={{
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="h6" component="h2" id="today-title">
+                    {intl.formatMessage({
+                      id: 'home.today',
+                      defaultMessage: 'What needs you today',
+                    })}
+                  </Typography>
+                  <CustomiseButton
+                    buttonRef={customiseButton}
+                    onClick={() => {
+                      setSaveFailure(null);
+                      setDraft(arrangementOf(cards, home.recent));
+                    }}
+                  />
+                </Stack>
+                {/* In even rows, measured against the page's width rather
+                    than the screen's (ADR-081). */}
+                {tiles.length > 0 && (
+                  <Box sx={{ containerType: 'inline-size' }}>
+                    <Box sx={evenRowsSx(tiles.length)}>
+                      {tiles.map((card) => (
+                        <Tile key={card.kind} card={card} />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </Stack>
+            )
           )}
 
           {/* What this person opened last; hidden while empty (ADR-058).
               Switched off in Customise Home, it is neither drawn nor read
-              (ADR-091, amended November 2026). */}
-          {home.recent && <RecentCard />}
+              (ADR-091, amended November 2026); while customised, as the
+              switch has it, faded. */}
+          {(draft ? draft.recent : home.recent) && (
+            <Fixed on={customising} lock={false}>
+              <RecentCard />
+            </Fixed>
+          )}
 
-          {started &&
+          {!customising &&
+            started &&
             started.dismissed &&
             !started.complete &&
             can('organizations.update') && (
@@ -600,27 +700,14 @@ function Tile({ card }: { card: KnownCard }) {
   const { warning: expiringWithin } = useExpiryDays();
   const meta = CARDS[card.kind];
   const Icon = meta.icon;
-  const quiet = card.count === 0;
-  const late = meta.late && card.late > 0 ? card.late : 0;
-  // Nothing watched, not nothing low (ADR-085).
-  const unset = card.anyPoint === false ? meta.unset : undefined;
-
-  const name = intl.formatMessage(meta.title);
-  const title = meta.page
-    ? intl.formatMessage(
-        { id: 'home.tile.ofPage', defaultMessage: '{page} · {name}' },
-        { page: intl.formatMessage(meta.page), name },
-      )
-    : name;
-  const status = quiet
-    ? intl.formatMessage(unset?.empty ?? meta.empty, { days: expiringWithin })
-    : late && meta.late
-      ? intl.formatMessage(meta.late.pill, { count: late })
-      : null;
+  const { title, count, status, quiet, late, unset } = tileWords(
+    intl,
+    card,
+    expiringWithin,
+  );
   // "To ship, 12, 2 late": the name a screen reader reads, holding the
   // tile's visible words in their order (WCAG 2.5.3), so the name comes
   // first in the markup and only looks second.
-  const count = intl.formatNumber(card.count);
   const label = quiet
     ? intl.formatMessage(
         { id: 'home.tile.quiet', defaultMessage: '{name}, {words}' },

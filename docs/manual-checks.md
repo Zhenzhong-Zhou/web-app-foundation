@@ -952,6 +952,40 @@ Paper is checked first because it must not change at all.
   of Home's actions one grey line says their role does not include
   raising orders, receiving stock or planning runs, and whom to ask, the
   names there from the first, never the line without them first.
+- **MC-1563** *(ADR-091, amended November 2026)* Customise Home by
+  buttons, as the demo owner, at 1366 px with a mouse, then from the
+  keyboard alone, then on a phone by touch (390 px; DevTools' touch is
+  enough). Customise Home sits at the right of What needs you today, at
+  every width; press it: the tiles become cards, the panel's heading
+  Customise Home focused, and the greeting with Raise an order and More,
+  and the panel of what needs you now, stay in view, faded, each with a
+  yellow lock reading Fixed, cannot move, and do nothing meanwhile. Each
+  card has its handle, its icon, its name, its count (4 · 1 late; a quiet
+  one its words, No returns open), and Up, Down and Hide: Up on the
+  first and Down on the last are grey and do nothing. Press Up on To
+  receive: it is first, focus still on its Up, and a screen reader
+  (VoiceOver, ⌘F5) says To receive, 1 of 9; press Down, To receive, 2 of
+  9. Hide To ship: it goes to Hidden tiles below, focus on the next
+  tile's Hide, its late orders still in the red panel. Show Orders ·
+  Draft: it comes back in its place, after To receive. Turn off Show
+  Recently opened on Home: Recently opened, faded below, goes. Scroll
+  down: Reset to default and Done stay at the top under the bar (not on
+  a window under 700 px tall, where they scroll away). Press Orders in
+  the menu: Leave without saving? says Your changes to Home aren’t saved
+  yet.; Stay keeps the cards as they were. Press Done: Home reads again
+  in the new order, To ship gone, Orders · Draft second, no Recently
+  opened, focus on Customise Home; reload, and sign in on a phone or a
+  second browser: the same. Customise Home → Reset to default → Done:
+  the order is the owner's again, drafts hidden, Recently opened back.
+  As Tom Becker (Warehouse), Reset to default puts To ship, To receive
+  and Expiring soon first, the rest after them. On a phone every button
+  here, the switch's row too, is 44 px tall or more, the cards one
+  across; in 中文 the button reads 调整首页, the buttons 上移、下移、隐藏、显示,
+  恢复默认 and 完成, the list 已隐藏的磁贴, and a screen reader says 待收货，第
+  1 个，共 9 个; in Français Personnaliser l’accueil, Monter, Descendre,
+  Masquer, Afficher, Rétablir l’ordre par défaut, Terminé and Tuiles
+  masquées. Another member's Home, and the owner's in another
+  organization, do not change.
 - **MC-1560** *(ADR-091)* The type scale and the corners. On Inventory,
   SO-DEMO-1 and INV-000001, in light and in dark, at 1440 px and on a
   phone: buttons, fields, menus and the text under a heading read at 16
@@ -5090,3 +5124,6 @@ first.
   may do, and Orders · Draft hidden by default: MC-1559 extended.
 - 2026-11-06: Customise Home, Orders oldest first with its chip, as the
   drafts tile opens it: MC-408 added, MC-1559 extended.
+- 2026-11-06: Customise Home by buttons: Up, Down, Hide, Show, Reset to
+  default, Done, leaving asks first, Recently opened's switch: MC-1563
+  added.

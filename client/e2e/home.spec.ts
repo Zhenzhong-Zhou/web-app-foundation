@@ -556,3 +556,278 @@ test('moves its time on at the minute, by itself', async ({
   await page.clock.runFor(15_000);
   await expect(now).not.toHaveText(before ?? '');
 });
+
+/**
+ * Customise Home by buttons (ADR-091, amended November 2026; the design
+ * language, Arranging your own screen): in place of the tiles, each a card
+ * with Up, Down and Hide, the hidden below with Show, saved by Done.
+ */
+const customising = (page: Page) =>
+  page.getByRole('region', { name: 'Customise Home' });
+
+/** A tile's card in Customise Home, by its name. */
+const card = (page: Page, name: string) =>
+  customising(page).getByRole('listitem', { name, exact: true });
+
+/** Home's tiles, each its link, in the order Home shows them. */
+const homeTiles = (page: Page) =>
+  page.getByRole('region', { name: 'What needs you today' }).getByRole('link');
+
+/** Waits for Done's write to the layout, PUT or DELETE. */
+const layoutWrite = (page: Page) =>
+  page.waitForRequest(
+    (request) =>
+      request.url().endsWith('/v1/home/layout') && request.method() !== 'GET',
+  );
+
+test('Customise Home by buttons: moved, hidden and shown, kept by Done, on reload and on another device', async ({
+  page,
+  browser,
+  freshOrg,
+}) => {
+  test.slow();
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+
+  const open = page.getByRole('button', { name: 'Customise Home' });
+  await open.click();
+  const panel = customising(page);
+  await expect(
+    panel.getByRole('heading', { name: 'Customise Home' }),
+  ).toBeFocused();
+  // What may not move stays in view, saying so.
+  await expect(page.getByText('Fixed, cannot move').first()).toBeVisible();
+
+  const tiles = panel.getByRole('list').first().getByRole('listitem');
+  await expect(tiles).toHaveCount(9);
+  await expect(tiles.first()).toHaveAccessibleName('To ship');
+
+  // Up: To receive first, focus still on its Up, the new place said.
+  const up = card(page, 'To receive').getByRole('button', { name: 'Up' });
+  await up.click();
+  await expect(tiles.first()).toHaveAccessibleName('To receive');
+  await expect(up).toBeFocused();
+  await expect(panel.getByRole('status')).toHaveText('To receive, 1 of 9');
+  // At the top it goes no further, and keeps focus.
+  await expect(up).toHaveAttribute('aria-disabled', 'true');
+  await page.keyboard.press('Enter');
+  await expect(tiles.first()).toHaveAccessibleName('To receive');
+  await expect(up).toBeFocused();
+
+  const down = card(page, 'To receive').getByRole('button', { name: 'Down' });
+  await down.click();
+  await expect(tiles.nth(1)).toHaveAccessibleName('To receive');
+  await expect(down).toBeFocused();
+  await expect(panel.getByRole('status')).toHaveText('To receive, 2 of 9');
+
+  // Hide: To ship waits below with Show, focus on the next tile.
+  await card(page, 'To ship').getByRole('button', { name: 'Hide' }).click();
+  await expect(tiles).toHaveCount(8);
+  await expect(
+    card(page, 'To receive').getByRole('button', { name: 'Hide' }),
+  ).toBeFocused();
+  const hidden = panel.getByRole('region', { name: 'Hidden tiles' });
+  await expect(hidden.getByRole('listitem')).toHaveText([
+    /To ship/,
+    /Orders · Draft/,
+  ]);
+
+  // The drafts shown, in their place after To receive.
+  await card(page, 'Orders · Draft')
+    .getByRole('button', { name: 'Show' })
+    .click();
+  await expect(tiles.nth(1)).toHaveAccessibleName('Orders · Draft');
+  await expect(panel.getByRole('status')).toHaveText('Orders · Draft, 2 of 9');
+
+  const saved = layoutWrite(page);
+  await panel.getByRole('button', { name: 'Done' }).click();
+  const write = await saved;
+  expect(write.method()).toBe('PUT');
+  expect(write.postDataJSON()).toMatchObject({
+    hidden: ['toShip'],
+    recent: true,
+  });
+  await expect(panel).toBeHidden();
+  await expect(open).toBeFocused();
+
+  const order = [/^To receive, /, /^Orders · Draft, /, /^Low stock, /];
+  const inOrder = async (where: Page) => {
+    for (const [index, name] of order.entries()) {
+      await expect(homeTiles(where).nth(index)).toHaveAccessibleName(name);
+    }
+    await expect(homeTiles(where).filter({ hasText: /^To ship/ })).toHaveCount(
+      0,
+    );
+  };
+  await inOrder(page);
+  await page.reload();
+  await inOrder(page);
+
+  // Another device: a phone, signed in on its own.
+  const phone = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+  });
+  const other = await phone.newPage();
+  await other.goto('/login');
+  await other.getByLabel(/^email/i).fill(freshOrg.email);
+  await other.getByLabel(/^password/i).fill(freshOrg.password);
+  await other.getByRole('button', { name: 'Sign in' }).click();
+  await inOrder(other);
+  await phone.close();
+});
+
+test('Reset to default and Done clear the layout, and Done untouched by a role of its own keeps none', async ({
+  page,
+  freshOrg,
+}) => {
+  test.slow();
+  const owner = freshOrg.api;
+  await owner.post('/v1/home/getting-started/dismiss');
+  const shown = await owner.put('/v1/home/layout', {
+    data: { order: ['licences', 'toShip'], hidden: ['toShip'], recent: false },
+  });
+  expect(shown.status(), await shown.text()).toBe(204);
+  await signInAs(page, owner);
+  await page.goto('/');
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^Licences/);
+
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const panel = customising(page);
+  const recent = panel.getByRole('switch', {
+    name: 'Show Recently opened on Home',
+  });
+  await expect(recent).not.toBeChecked();
+  await panel.getByRole('button', { name: 'Reset to default' }).click();
+  await expect(panel.getByRole('status')).toHaveText(
+    'Back to the default order, not saved yet',
+  );
+  await expect(
+    panel.getByRole('list').first().getByRole('listitem').first(),
+  ).toHaveAccessibleName('To ship');
+  await expect(recent).toBeChecked();
+
+  const cleared = layoutWrite(page);
+  await panel.getByRole('button', { name: 'Done' }).click();
+  expect((await cleared).method()).toBe('DELETE');
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To ship, /);
+
+  // A role whose default leads differently: Done with nothing changed
+  // finds the client's default the server's, so it saves no layout.
+  await confirmEmailInDatabase(freshOrg.email);
+  const warehouse = await memberIn(owner, 'Warehouse', 'warehouse');
+  await signInAs(page, warehouse);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const untouched = layoutWrite(page);
+  await customising(page).getByRole('button', { name: 'Done' }).click();
+  expect((await untouched).method()).toBe('DELETE');
+});
+
+test('leaving Customise Home with changes not saved asks first', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
+
+  const orders = page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('link', { name: 'Orders' });
+  await orders.click();
+  const dialog = page.getByRole('dialog', { name: 'Leave without saving?' });
+  await expect(dialog).toContainText('Your changes to Home aren’t saved yet.');
+  await dialog.getByRole('button', { name: 'Stay' }).click();
+  await expect(
+    customising(page).getByRole('list').first().getByRole('listitem').first(),
+  ).toHaveAccessibleName('To receive');
+
+  await orders.click();
+  await page
+    .getByRole('dialog', { name: 'Leave without saving?' })
+    .getByRole('button', { name: 'Leave' })
+    .click();
+  await expect(page).toHaveURL(/\/orders$/);
+  // Nothing was saved: Home is as it was.
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('link', { name: 'Home' })
+    .click();
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To ship, /);
+});
+
+test('Recently opened switched off in Customise Home is neither shown nor read', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  // Home's own read, its six rows; the search box reads five of its own.
+  const reads: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/v1/recent?limit=6')) reads.push(request.url());
+  });
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await expect.poll(() => reads.length).toBeGreaterThan(0);
+
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  await customising(page)
+    .getByRole('switch', { name: 'Show Recently opened on Home' })
+    .uncheck();
+  const saved = layoutWrite(page);
+  await customising(page).getByRole('button', { name: 'Done' }).click();
+  expect((await saved).postDataJSON()).toMatchObject({ recent: false });
+
+  reads.length = 0;
+  await page.reload();
+  await expect(homeTiles(page).first()).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Recently opened' }),
+  ).toHaveCount(0);
+  expect(reads).toEqual([]);
+});
+
+test.describe('Customise Home on a touch phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  test('its controls are 44 px each way, and Done stays in reach as the page scrolls', async ({
+    page,
+    freshOrg,
+  }) => {
+    await freshOrg.api.post('/v1/home/getting-started/dismiss');
+    await signInAs(page, freshOrg.api);
+    await page.goto('/');
+    const open = page.getByRole('button', { name: 'Customise Home' });
+    const openBox = await open.boundingBox();
+    expect(openBox?.height).toBeGreaterThanOrEqual(44);
+    await open.click();
+
+    const panel = customising(page);
+    const first = card(page, 'To ship');
+    for (const target of [
+      panel.getByRole('button', { name: 'Reset to default' }),
+      panel.getByRole('button', { name: 'Done' }),
+      first.getByRole('button', { name: 'Up' }),
+      first.getByRole('button', { name: 'Down' }),
+      first.getByRole('button', { name: 'Hide' }),
+      card(page, 'Orders · Draft').getByRole('button', { name: 'Show' }),
+      panel
+        .locator('label')
+        .filter({ hasText: 'Show Recently opened on Home' }),
+    ]) {
+      const box = await target.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(44);
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+    }
+
+    await panel
+      .getByRole('region', { name: 'Hidden tiles' })
+      .scrollIntoViewIfNeeded();
+    await expect(panel.getByRole('button', { name: 'Done' })).toBeInViewport();
+  });
+});

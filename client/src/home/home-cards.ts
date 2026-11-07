@@ -9,7 +9,11 @@ import MoveToInboxOutlined from '@mui/icons-material/MoveToInboxOutlined';
 import PaidOutlined from '@mui/icons-material/PaidOutlined';
 import PrecisionManufacturingOutlined from '@mui/icons-material/PrecisionManufacturingOutlined';
 import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
-import { defineMessages, type MessageDescriptor } from 'react-intl';
+import {
+  defineMessages,
+  type IntlShape,
+  type MessageDescriptor,
+} from 'react-intl';
 
 import type { HomeCard } from '../api/types.gen';
 import type { Permission } from '../auth/permissions';
@@ -318,4 +322,43 @@ export type KnownCard = HomeCard & { kind: HomeKind };
  */
 export function isKnownCard(card: HomeCard): card is KnownCard {
   return Object.hasOwn(CARDS, card.kind);
+}
+
+/**
+ * A tile's words (ADR-091): its name, the page's first where the tile has
+ * one; its count, as the reader writes numbers; and its status, the quiet
+ * words with nothing to do (Low stock's own where no reorder point is
+ * set, ADR-085), else what is late in it, else none. Home's tile and
+ * Customise Home's card say the same.
+ */
+export function tileWords(
+  intl: IntlShape,
+  card: KnownCard,
+  expiringWithin: number,
+) {
+  const meta = CARDS[card.kind];
+  const quiet = card.count === 0;
+  const late = meta.late && card.late > 0 ? card.late : 0;
+  // Nothing watched, not nothing low (ADR-085).
+  const unset = card.anyPoint === false ? meta.unset : undefined;
+  const name = intl.formatMessage(meta.title);
+  const title = meta.page
+    ? intl.formatMessage(
+        { id: 'home.tile.ofPage', defaultMessage: '{page} · {name}' },
+        { page: intl.formatMessage(meta.page), name },
+      )
+    : name;
+  const status = quiet
+    ? intl.formatMessage(unset?.empty ?? meta.empty, { days: expiringWithin })
+    : late && meta.late
+      ? intl.formatMessage(meta.late.pill, { count: late })
+      : null;
+  return {
+    title,
+    count: intl.formatNumber(card.count),
+    status,
+    quiet,
+    late,
+    unset,
+  };
 }
