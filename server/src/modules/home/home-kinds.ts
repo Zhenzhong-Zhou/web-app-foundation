@@ -96,7 +96,7 @@ export function storedLayout(stored: unknown): HomeLayout | null {
 }
 
 /** A tile in its place on the reader's Home, and whether they hid it. */
-export interface Placed {
+interface Placed {
   kind: HomeKind;
   hidden: boolean;
 }
@@ -131,11 +131,11 @@ export function arranged(
     kinds.includes(kind as HomeKind),
   );
   const saved = new Set(order);
+  // Each kind before this one is in `order` by now, saved or placed, so the
+  // kind before it by default is the one it follows.
   kinds.forEach((kind, index) => {
     if (saved.has(kind)) return;
-    const before = kinds
-      .slice(0, index)
-      .findLast((each) => order.includes(each));
+    const before = kinds[index - 1];
     order.splice(before ? order.indexOf(before) + 1 : 0, 0, kind);
   });
   return order.map((kind) => ({
