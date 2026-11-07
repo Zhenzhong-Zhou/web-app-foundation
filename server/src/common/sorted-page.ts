@@ -58,8 +58,11 @@ export function afterCursor(
  * text, scoped to the organization; undefined means it is not in this list.
  *
  * `byId: 'asc'` runs the id alone oldest first, by when each row was made
- * (ADR-010, ADR-057's amendment), from the same index read the other way;
- * only a list that takes it passes it, Orders today.
+ * (ADR-010, ADR-057's amendment); only a list that takes it passes it,
+ * Orders today. Its drafts the planner reads from `orders_pkey` forward,
+ * across every organization, keeping the list's own rows: 1 ms at large,
+ * growing with the older orders that are not drafts, which `perf:plans`
+ * fails past 10 ms (review 78).
  */
 export async function pagedBy(options: {
   id: SQLWrapper & AnyPgColumn;
