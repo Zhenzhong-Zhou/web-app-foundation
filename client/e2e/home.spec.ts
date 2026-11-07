@@ -603,12 +603,14 @@ test('Customise Home by buttons: moved, hidden and shown, kept by Done, on reloa
   await expect(tiles).toHaveCount(9);
   await expect(tiles.first()).toHaveAccessibleName('To ship');
 
-  // Up: To receive first, focus still on its Up, the new place said.
+  // Up: To receive first, focus still on its Up, the new place said and
+  // shown, under Done.
   const up = card(page, 'To receive').getByRole('button', { name: 'Up' });
   await up.click();
   await expect(tiles.first()).toHaveAccessibleName('To receive');
   await expect(up).toBeFocused();
   await expect(panel.getByRole('status')).toHaveText('To receive, 1 of 9');
+  await expect(panel.getByRole('status')).toBeVisible();
   // At the top it goes no further, and keeps focus.
   await expect(up).toHaveAttribute('aria-disabled', 'true');
   await page.keyboard.press('Enter');
@@ -625,6 +627,9 @@ test('Customise Home by buttons: moved, hidden and shown, kept by Done, on reloa
   // so a second Enter does not hide that one too.
   await card(page, 'To ship').getByRole('button', { name: 'Hide' }).click();
   await expect(tiles).toHaveCount(8);
+  await expect(panel.getByRole('status')).toHaveText(
+    'To ship hidden: under Hidden tiles, below',
+  );
   await expect(
     card(page, 'To receive').getByRole('button', { name: 'Drag To receive' }),
   ).toBeFocused();
@@ -645,7 +650,9 @@ test('Customise Home by buttons: moved, hidden and shown, kept by Done, on reloa
       name: 'Drag Orders · Draft',
     }),
   ).toBeFocused();
-  await expect(panel.getByRole('status')).toHaveText('Orders · Draft, 2 of 9');
+  await expect(panel.getByRole('status')).toHaveText(
+    'Orders · Draft shown, 2 of 9',
+  );
 
   const saved = layoutWrite(page);
   await panel.getByRole('button', { name: 'Done' }).click();

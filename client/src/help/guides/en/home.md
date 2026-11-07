@@ -45,7 +45,7 @@ Beside **What needs you today**, **Customise Home** puts the tiles in the order 
 
 1. Press **Customise Home**. Each tile shows its handle, its count, and **Up**, **Down** and **Hide**.
 2. Drag a tile by its handle to where you want it. On a phone or a tablet, hold your finger on the handle for a moment first; a swipe still scrolls the page. Or press **Up** or **Down** to move it one place.
-3. Press **Hide** on a tile you never need. It moves to **Hidden tiles**, where **Show** brings it back.
+3. Press **Hide** on a tile you never need. It moves to **Hidden tiles**, below, where **Show** brings it back. A line under **Done** says what each change did, and where a tile went.
 4. Turn off **Show Recently opened on Home** if you do not use it.
 5. Press **Done**. Home shows your tiles in their new order.
 

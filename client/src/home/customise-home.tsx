@@ -41,7 +41,6 @@ import { IconBadge } from '../components/icon-badge';
 import { StatusChip } from '../components/status-chip';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
 import type { HomeKind } from '../lib/api-names';
-import { HIDDEN } from '../lib/hidden';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useFailureWords } from '../lib/use-failure-words';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
@@ -107,6 +106,7 @@ const VALUED = defineMessages<
   | 'summary'
   | 'place'
   | 'hiddenNow'
+  | 'shownNow'
   | 'handle'
   | 'pickedUp'
   | 'dropped'
@@ -122,7 +122,11 @@ const VALUED = defineMessages<
   },
   hiddenNow: {
     id: 'home.customise.hiddenNow',
-    defaultMessage: '{name} hidden',
+    defaultMessage: '{name} hidden: under Hidden tiles, below',
+  },
+  shownNow: {
+    id: 'home.customise.shownNow',
+    defaultMessage: '{name} shown, {place} of {total}',
   },
   handle: { id: 'home.customise.handle', defaultMessage: 'Drag {name}' },
   pickedUp: {
@@ -285,6 +289,8 @@ export function CustomiseHome({
 
   /** A drop: the tile in the place it was dropped, unless cancelled. */
   function dropped(event: DragEndEvent) {
+    // The library says where a drop put it; the line says no older move.
+    setSaid('');
     const { source, activatorEvent } = event.operation;
     if (event.canceled || !isSortable(source)) return;
     const kind = source.id as HomeKind;
@@ -297,10 +303,14 @@ export function CustomiseHome({
     onChange(next);
   }
 
-  function sayPlace(next: Arrangement, kind: HomeKind) {
+  function sayPlace(
+    next: Arrangement,
+    kind: HomeKind,
+    message: MessageDescriptor = VALUED.place,
+  ) {
     const list = shownOf(next).filter(known);
     setSaid(
-      intl.formatMessage(VALUED.place, {
+      intl.formatMessage(message, {
         name: titleOf(kind),
         place: list.indexOf(kind) + 1,
         total: list.length,
@@ -331,7 +341,7 @@ export function CustomiseHome({
     focusNext.current = `${kind}.handle`;
     const next = show(arrangement, kind);
     onChange(next);
-    sayPlace(next, kind);
+    sayPlace(next, kind, VALUED.shownNow);
   }
 
   return (
@@ -395,6 +405,17 @@ export function CustomiseHome({
             {intl.formatMessage(CUSTOMISE.done)}
           </Button>
         </Stack>
+        {/* What the last change did, where it is seen while the page
+            scrolls, and heard: a tile's new place, where a hidden one
+            went, a reset not saved yet. Its line kept while empty, so
+            the cards below do not jump when it fills. */}
+        <Typography
+          role="status"
+          variant="body2"
+          sx={{ flexBasis: '100%', minHeight: rem(24) }}
+        >
+          {said}
+        </Typography>
       </Box>
 
       {/* Out of use while Done saves, so no move is made that the save
@@ -598,11 +619,6 @@ export function CustomiseHome({
           defaultMessage: 'Your changes to Home aren’t saved yet.',
         })}
       />
-
-      {/* What a move did, for a screen reader. */}
-      <Box role="status" sx={HIDDEN}>
-        {said}
-      </Box>
     </Paper>
   );
 }

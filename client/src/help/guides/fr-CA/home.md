@@ -45,7 +45,7 @@ Sans rien en retard, une ligne dit **Rien n’est en retard aujourd’hui**; san
 
 1. Appuyez sur **Personnaliser l’accueil**. Chaque tuile montre sa poignée, son nombre, et **Monter**, **Descendre** et **Masquer**.
 2. Faites glisser une tuile par sa poignée jusqu’à l’endroit voulu. Sur un téléphone ou une tablette, gardez d’abord le doigt un moment sur la poignée; un simple balayage fait toujours défiler la page. Ou appuyez sur **Monter** ou **Descendre** pour la déplacer d’une place.
-3. Appuyez sur **Masquer** sur une tuile dont vous n’avez jamais besoin. Elle passe dans **Tuiles masquées**, où **Afficher** la ramène.
+3. Appuyez sur **Masquer** sur une tuile dont vous n’avez jamais besoin. Elle passe dans **Tuiles masquées**, plus bas, où **Afficher** la ramène. Une ligne sous **Terminé** dit ce que chaque changement a fait, et où une tuile est allée.
 4. Désactivez **Afficher Ouverts récemment sur l’accueil** si vous ne vous en servez pas.
 5. Appuyez sur **Terminé**. L’accueil montre vos tuiles dans leur nouvel ordre.
 

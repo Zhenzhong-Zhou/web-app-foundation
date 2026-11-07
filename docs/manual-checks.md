@@ -963,14 +963,16 @@ Paper is checked first because it must not change at all.
   card has its handle, its icon, its name, its count (4 · 1 late; a quiet
   one its words, No returns open), and Up, Down and Hide: Up on the
   first and Down on the last are grey and do nothing. Press Up on To
-  receive: it is first, focus still on its Up, and a screen reader
-  (VoiceOver, ⌘F5) says To receive, 1 of 9; press Down, To receive, 2 of
-  9. Hide To ship: it goes to Hidden tiles below, focus on the next
-  tile's handle, its late orders still in the red panel. Show Orders ·
-  Draft: it comes back in its place, after To receive, focus on its
-  handle. Turn off Show
+  receive: it is first, focus still on its Up, and the line under Done
+  says To receive, 1 of 9, as a screen reader (VoiceOver, ⌘F5) does;
+  press Down, To receive, 2 of 9. Hide To ship: it goes to Hidden tiles
+  below, the line saying To ship hidden: under Hidden tiles, below, focus
+  on the next tile's handle, its late orders still in the red panel. Show
+  Orders · Draft: it comes back in its place, after To receive, the line
+  saying Orders · Draft shown, 2 of 9, focus on its handle. Turn off Show
   Recently opened on Home: Recently opened, faded below, goes. Scroll
-  down: Reset to default and Done stay at the top under the bar (not on
+  down: Reset to default, Done and the line under them stay at the top
+  under the bar (not on
   a window under 700 px tall, where they scroll away). Press Orders in
   the menu: Leave without saving? says Your changes to Home aren’t saved
   yet.; Stay keeps the cards as they were. With DevTools' network at
@@ -981,14 +983,15 @@ Paper is checked first because it must not change at all.
   second browser: the same. Leave Home open in that second browser,
   move a tile on the first and press Done, then press Customise Home in
   the second: its cards start in the first's new order, and Done there
-  keeps it. Customise Home → Reset to default → Done:
+  keeps it. Customise Home → Reset to default, the line saying Back to
+  the default order, not saved yet → Done:
   the order is the owner's again, drafts hidden, Recently opened back.
   As Tom Becker (Warehouse), Reset to default puts To ship, To receive
   and Expiring soon first, the rest after them. On a phone every button
   here, the switch's row too, is 44 px tall or more, the cards one
   across; in 中文 the button reads 调整首页, the buttons 上移、下移、隐藏、显示,
-  恢复默认 and 完成, the list 已隐藏的磁贴, and a screen reader says 待收货，第
-  1 个，共 9 个; in Français Personnaliser l’accueil, Monter, Descendre,
+  恢复默认 and 完成, the list 已隐藏的磁贴, the line and a screen reader say
+  待收货，第 1 个，共 9 个 and 已隐藏“待发货”：在下方“已隐藏的磁贴”中; in Français Personnaliser l’accueil, Monter, Descendre,
   Masquer, Afficher, Rétablir l’ordre par défaut, Terminé and Tuiles
   masquées. Another member's Home, and the owner's in another
   organization, do not change.
@@ -5183,3 +5186,6 @@ first.
   while Done saves: MC-1563 extended.
 - 2026-11-07: Customise Home's reviews, focus after Hide on the next
   tile's handle, after Show on the shown tile's: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, what each change did shown under
+  Done as well as heard, Show saying the tile's new place: MC-1563
+  extended.
