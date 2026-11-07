@@ -12,6 +12,7 @@ import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
 import { defineMessages, type MessageDescriptor } from 'react-intl';
 
 import type { HomeCard } from '../api/types.gen';
+import type { Permission } from '../auth/permissions';
 import { NAV_LABELS } from '../layout/navigation';
 import type { HomeKind } from '../lib/api-names';
 
@@ -51,6 +52,16 @@ interface CardMeta {
    * the whole list, where one is set, in place of "Nothing low".
    */
   unset?: { empty: MessageDescriptor; list: string };
+  /**
+   * Who does its work, any one of these held, so it leads their Home by
+   * default (ADR-091, amended November 2026). The server's own table,
+   * `TILES` in server/src/modules/home/home-kinds.ts, orders Home; this
+   * copy is what Customise Home's Reset to default puts back, so the two
+   * change together.
+   */
+  leads: Permission[];
+  /** Hidden by default, until the person shows it: drafts alone. */
+  hidden?: true;
 }
 
 /**
@@ -174,6 +185,7 @@ const BUTTONS = defineMessages({
   },
 });
 
+/** In the order of a working day, the server's (ADR-091). */
 export const CARDS: Record<HomeKind, CardMeta> = {
   toShip: {
     title: TITLES.toShip,
@@ -182,6 +194,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     // Still to ship, which only a confirmed order can be; Orders runs it
     // soonest first, the late leading (ADR-091).
     list: '/orders?direction=sale&outstanding=1',
+    leads: ['orders.ship'],
     late: {
       pill: PILLS.late,
       button: BUTTONS.toShip,
@@ -193,6 +206,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.toReceive,
     icon: MoveToInboxOutlined,
     list: '/orders?direction=purchase&outstanding=1',
+    leads: ['orders.receive'],
     late: {
       pill: PILLS.late,
       button: BUTTONS.toReceive,
@@ -208,6 +222,8 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.drafts,
     icon: EditNoteOutlined,
     list: '/orders?status=draft&order=asc',
+    leads: ['orders.create'],
+    hidden: true,
   },
   // After To receive on the page, as the server orders it (ADR-085).
   lowStock: {
@@ -215,6 +231,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.lowStock,
     icon: Inventory2Outlined,
     list: '/inventory?tab=reorder-points&status=low',
+    leads: ['orders.create', 'production.create'],
     // Out: nothing usable and nothing coming (ADR-085).
     late: {
       pill: PILLS.out,
@@ -232,6 +249,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     icon: HourglassBottomOutlined,
     // By expiry, the soonest first, whenever the filter is on (ADR-091).
     list: '/inventory?expiring=1',
+    leads: ['stock.adjust'],
     late: {
       pill: PILLS.expiredLots,
       button: BUTTONS.expiring,
@@ -247,6 +265,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     // a cost is set (ADR-091): the page opened at that list, not its top,
     // by Help's id for its section on it (#505's 8).
     list: '/costs#costs',
+    leads: ['costs.update'],
   },
   invoicesToIssue: {
     title: TITLES.invoicesToIssue,
@@ -254,12 +273,14 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.invoicesToIssue,
     icon: DescriptionOutlined,
     list: '/invoices?status=draft',
+    leads: ['invoices.issue'],
   },
   returnsOpen: {
     title: TITLES.returnsOpen,
     empty: EMPTY.returnsOpen,
     icon: AssignmentReturnOutlined,
     list: '/return-authorizations?status=open',
+    leads: ['return_authorizations.update'],
   },
   production: {
     title: TITLES.production,
@@ -267,6 +288,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.production,
     icon: PrecisionManufacturingOutlined,
     list: '/production?status=released',
+    leads: ['production.complete'],
   },
   licences: {
     title: TITLES.licences,
@@ -274,6 +296,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     icon: VerifiedOutlined,
     // Expiring soon, the expired among them, soonest first (ADR-091, #460).
     list: '/licences?expiring=1',
+    leads: ['product_licences.update'],
     late: {
       pill: PILLS.expiredLicences,
       button: BUTTONS.licences,
