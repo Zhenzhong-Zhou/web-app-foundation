@@ -542,6 +542,7 @@ describe('Home (e2e)', () => {
       .expect(201);
 
     // Orders: late and not, each way; a late draft is nothing to ship yet.
+    // Two drafts, so that the tile's oldest first has an order to keep.
     const goods = await item(agent, 'GOODS');
     const customer = await partner(agent, 'Customer');
     const supplier = await partner(agent, 'Supplier');
@@ -549,9 +550,12 @@ describe('Home (e2e)', () => {
       expectedAt: day(-3),
     });
     await order(agent, 'sale', customer, goods, '5', { expectedAt: day(4) });
-    await order(agent, 'sale', customer, goods, '5', {
+    const firstDraft = await order(agent, 'sale', customer, goods, '5', {
       draft: true,
       expectedAt: day(-9),
+    });
+    const secondDraft = await order(agent, 'purchase', supplier, goods, '5', {
+      draft: true,
     });
     const latePurchase = await order(agent, 'purchase', supplier, goods, '5', {
       expectedAt: day(-6),
@@ -619,11 +623,12 @@ describe('Home (e2e)', () => {
 
     // Each tile's address, as the list's page asks its endpoint: To ship's
     // /orders?direction=sale&outstanding=1, the page's status Open beside
-    // it, and Expiring soon's /inventory?expiring=1, by expiry (ADR-091).
+    // it, Drafts' /orders?status=draft&order=asc, and Expiring soon's
+    // /inventory?expiring=1, by expiry (ADR-091).
     const opened: Record<string, string> = {
       toShip: '/v1/orders?status=open&direction=sale&outstanding=true',
       toReceive: '/v1/orders?status=open&direction=purchase&outstanding=true',
-      drafts: '/v1/orders?status=draft',
+      drafts: '/v1/orders?status=draft&order=asc',
       lowStock: '/v1/stock/reorder-points?status=low',
       expiring: '/v1/stock?expiringWithin=90&sort=expiry&order=asc',
       costsWaiting: '/v1/costs/needs-cost',
@@ -697,6 +702,11 @@ describe('Home (e2e)', () => {
     // Soonest first, the expired leading.
     expect(await lotCodes(opened.expiring)).toEqual(['LOT-GONE', 'LOT-SOON']);
     expect(await numbers(opened.licences)).toEqual(['L-GONE', 'L-SOON']);
+
+    // The drafts oldest first, by when each was made (ADR-057, amended).
+    expect(
+      (await rows<{ id: string }>(opened.drafts)).map((row) => row.id),
+    ).toEqual([firstDraft.id, secondDraft.id]);
   });
 
   /**
