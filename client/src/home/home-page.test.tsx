@@ -3,7 +3,13 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import type { ReactElement } from 'react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import {
+  createMemoryRouter,
+  MemoryRouter,
+  Route,
+  RouterProvider,
+  Routes,
+} from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { HomeResponse } from '../api/types.gen';
@@ -305,7 +311,8 @@ describe('HomePage', () => {
   /**
    * Customise Home (ADR-091, amended November 2026): a tile the person hid,
    * or hidden by default as Drafts is, is not drawn, but buries nothing:
-   * its late items stay in the panel.
+   * its late items stay in the panel. The line saying where they came from
+   * is Customise Home's alone, as the boards draw it.
    */
   it('leaves a hidden tile out, its late still in the panel', async () => {
     serve({
@@ -324,17 +331,45 @@ describe('HomePage', () => {
     expect(
       within(late).getByRole('link', { name: '2 late orders to ship' }),
     ).toBeVisible();
-    // Under the panel, where they came from; Drafts, never late, says none.
-    expect(
-      screen.getByText('To ship is hidden; its 2 late orders still show here'),
-    ).toBeVisible();
-    expect(screen.queryByText(/^Orders · Draft is hidden/)).toBeNull();
+    // No line under the panel saying where they came from: on Home it is
+    // the panel that says so.
+    expect(screen.queryByText(/ is hidden; its /)).toBeNull();
     const today = screen.getByRole('region', { name: 'What needs you today' });
     expect(
       within(today)
         .getAllByRole('link')
         .map((tile) => tile.getAttribute('aria-label')),
     ).toEqual(['To receive, 5']);
+  });
+
+  // While customised, a tile hidden in the draft says, under the panel,
+  // that its late items still show there, one in the singular.
+  it('says under the panel, while customised, where a hidden tile’s late items went', async () => {
+    serve({
+      gettingStarted: COMPLETE,
+      cards: [
+        { kind: 'toShip', hidden: false, count: 3, late: 1, anyPoint: null },
+        { kind: 'toReceive', hidden: false, count: 5, late: 0, anyPoint: null },
+      ],
+    });
+    const router = createMemoryRouter([{ path: '/', element: <HomePage /> }]);
+    renderWithAuth(<RouterProvider router={router} />, {
+      permissions: ['orders.view'],
+    });
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Customise Home' }),
+    );
+    const panel = await screen.findByRole('region', { name: 'Customise Home' });
+    const line = 'To ship is hidden; its 1 late order still shows here';
+    expect(screen.queryByText(line)).toBeNull();
+    await user.click(
+      within(
+        within(panel).getByRole('listitem', { name: 'To ship' }),
+      ).getByRole('button', { name: 'Hide' }),
+    );
+    expect(screen.getByText(line)).toBeVisible();
   });
 
   /**

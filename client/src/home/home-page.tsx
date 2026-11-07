@@ -493,13 +493,7 @@ function OrganizationHome() {
             <Fixed on={customising} part="late">
               <WhatIsLate cards={cards} />
             </Fixed>
-            <HiddenLate
-              cards={cards}
-              hidden={
-                draft?.hidden ??
-                cards.filter((card) => card.hidden).map((card) => card.kind)
-              }
-            />
+            {draft && <HiddenLate cards={cards} hidden={draft.hidden} />}
           </Box>
 
           {/* In the tiles' place while customised; its button at the
@@ -742,11 +736,11 @@ function WhatIsLate({ cards }: { cards: KnownCard[] }) {
 }
 
 /**
- * Under what is late, a line for each tile hidden whose late items the
- * panel still holds, so they say where they came from, as the boards draw
- * it (ADR-091, amended November 2026): "To ship is hidden; its 2 late
- * orders still show here". While Home is customised, as the draft hides
- * them.
+ * Under what is late, while Home is customised and only then, as the
+ * boards draw it (ADR-091, amended November 2026): a line for each tile
+ * the draft hides whose late items the panel still holds, so they say
+ * where they came from, "To ship is hidden; its 2 late orders still show
+ * here", one as "its 1 late order still shows here".
  */
 function HiddenLate({
   cards,

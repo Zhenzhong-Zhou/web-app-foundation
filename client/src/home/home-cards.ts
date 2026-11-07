@@ -183,27 +183,30 @@ const BUTTONS = defineMessages({
   },
 });
 
-/** A hidden tile's late items, which the panel still holds, by name. */
+/**
+ * A hidden tile's late items, which the panel still holds, by name and
+ * number, one as "its 1 late order".
+ */
 const HIDDEN_LATE = defineMessages({
   orders: {
     id: 'home.late.hidden.orders',
     defaultMessage:
-      '{count, plural, one {{name} is hidden; its late order still shows here} other {{name} is hidden; its # late orders still show here}}',
+      '{count, plural, one {{name} is hidden; its # late order still shows here} other {{name} is hidden; its # late orders still show here}}',
   },
   out: {
     id: 'home.late.hidden.out',
     defaultMessage:
-      '{count, plural, one {{name} is hidden; its item out of stock still shows here} other {{name} is hidden; its # items out of stock still show here}}',
+      '{count, plural, one {{name} is hidden; its # item out of stock still shows here} other {{name} is hidden; its # items out of stock still show here}}',
   },
   expiredLots: {
     id: 'home.late.hidden.expiredLots',
     defaultMessage:
-      '{count, plural, one {{name} is hidden; its expired lot still shows here} other {{name} is hidden; its # expired lots still show here}}',
+      '{count, plural, one {{name} is hidden; its # expired lot still shows here} other {{name} is hidden; its # expired lots still show here}}',
   },
   expiredLicences: {
     id: 'home.late.hidden.expiredLicences',
     defaultMessage:
-      '{count, plural, one {{name} is hidden; its expired licence still shows here} other {{name} is hidden; its # expired licences still show here}}',
+      '{count, plural, one {{name} is hidden; its # expired licence still shows here} other {{name} is hidden; its # expired licences still show here}}',
   },
 });
 

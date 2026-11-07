@@ -975,7 +975,9 @@ Paper is checked first because it must not change at all.
   on the next tile's handle, its late orders still in the red panel, and a
   red line under the panel says To ship is hidden, and that its late
   orders still show here (in 中文 “待发货”已隐藏，它的 … 个逾期订单仍然在这里),
-  the line still there on Home after Done. Show
+  one late order as its 1 late order still shows here (La tuile À
+  expédier est masquée; 1 commande en retard reste ici; 它的 1 个逾期订单);
+  the line is Customise Home's alone, gone from Home after Done. Show
   Orders · Draft: it comes back in its place, after To receive, the line
   saying Orders · Draft shown, 2 of 9, focus on its handle. Turn off Show
   Recently opened on Home: Recently opened, faded below, goes. Scroll
@@ -5241,3 +5243,6 @@ first.
   focus while it saves: MC-1563 extended.
 - 2026-11-07: Customise Home's reviews, the welcome's Undo still pressed
   once Customise Home opens: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, the line under what is late shown
+  only while Customise Home is open, one late item in the singular with
+  its number: MC-1563 corrected.
