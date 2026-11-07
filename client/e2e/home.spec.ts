@@ -1287,7 +1287,13 @@ test.describe('Customise Home on a touch phone', () => {
     await panel
       .getByRole('region', { name: 'Hidden tiles' })
       .scrollIntoViewIfNeeded();
-    await expect(panel.getByRole('button', { name: 'Done' })).toBeInViewport();
+    // In the window and not under the top bar, which toBeInViewport does not
+    // see: the button's top at or below the bar's foot.
+    const done = panel.getByRole('button', { name: 'Done' });
+    await expect(done).toBeInViewport();
+    const bar = await page.getByRole('banner').boundingBox();
+    const doneBox = await done.boundingBox();
+    expect(doneBox!.y).toBeGreaterThanOrEqual(bar!.y + bar!.height);
   });
 
   // The page follows the card a tap moved, so a second tap in the same
