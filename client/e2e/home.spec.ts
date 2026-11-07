@@ -784,6 +784,38 @@ test('while Done saves, nothing in Customise Home can be moved', async ({
   await expect(homeTiles(page).first()).toHaveAccessibleName(/^To receive, /);
 });
 
+// A save refused keeps the cards as they were moved, and says why as every
+// form does, labelled, offering Reload to an outdated tab (ADR-081).
+test('Done refused keeps the cards and says why', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.route('**/v1/home/layout', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        statusCode: 503,
+        message: 'Home could not be saved — try again in a moment',
+      }),
+    }),
+  );
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const panel = customising(page);
+  await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
+  await panel.getByRole('button', { name: 'Done' }).click();
+
+  await expect(panel.getByRole('alert', { name: 'Error' })).toContainText(
+    'Home could not be saved — try again in a moment',
+  );
+  await expect(panel.getByRole('listitem').first()).toHaveAccessibleName(
+    'To receive',
+  );
+});
+
 /**
  * The arrangement saved last, on whichever device (ADR-091, amended
  * November 2026): Home shows it after Orders and back, and Customise Home

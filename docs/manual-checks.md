@@ -985,7 +985,9 @@ Paper is checked first because it must not change at all.
   the menu: Leave without saving? says Your changes to Home aren’t saved
   yet.; Stay keeps the cards as they were. With DevTools' network at
   Slow 3G, press Done, and before Home comes back try Up, Hide, a handle
-  and the switch: none does anything. Home reads again
+  and the switch: none does anything. (Offline instead, Done leaves the
+  cards as they were moved, an error line above them saying what
+  failed.) Home reads again
   in the new order, To ship gone, Orders · Draft second, no Recently
   opened, focus on Customise Home; reload, and sign in on a phone or a
   second browser: the same. Leave Home open in that second browser,
@@ -5229,3 +5231,5 @@ first.
   MC-2302 corrected, MC-1563 extended.
 - 2026-11-07: Customise Home's reviews, a card's icon in its tile's
   colours, grey while quiet: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, Done refused keeping the cards
+  with the form's error line: MC-1563 extended.

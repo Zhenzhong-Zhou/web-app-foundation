@@ -9,7 +9,6 @@ import LockOutlined from '@mui/icons-material/LockOutlined';
 import TuneOutlined from '@mui/icons-material/TuneOutlined';
 import VisibilityOffOutlined from '@mui/icons-material/VisibilityOffOutlined';
 import {
-  Alert,
   Box,
   Button,
   FormControlLabel,
@@ -37,13 +36,13 @@ import {
   useIntl,
 } from 'react-intl';
 
+import { FormError } from '../components/form-error';
 import { IconBadge } from '../components/icon-badge';
 import { StatusChip } from '../components/status-chip';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
 import type { HomeKind } from '../lib/api-names';
 import { HIDDEN } from '../lib/hidden';
 import { useExpiryDays } from '../lib/use-expiry-days';
-import { useFailureWords } from '../lib/use-failure-words';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
 import { TOUCH } from '../theme/media';
 import { rem } from '../theme/rem';
@@ -248,7 +247,7 @@ export function CustomiseHome({
   onReset,
   onDone,
   saving,
-  failure,
+  error,
 }: {
   cards: readonly KnownCard[];
   arrangement: Arrangement;
@@ -258,11 +257,11 @@ export function CustomiseHome({
   onReset: () => void;
   onDone: () => void;
   saving: boolean;
-  failure: unknown;
+  /** Why Done's save failed, worded as the page renders. */
+  error: string | null;
 }) {
   const intl = useIntl();
   const id = useId();
-  const failureWords = useFailureWords(failure);
   const { warning: expiringWithin } = useExpiryDays();
   const [said, setSaid] = useState('');
   // Leaving with changes not saved asks first (Unsaved work).
@@ -460,7 +459,7 @@ export function CustomiseHome({
           </Typography>
         </Box>
 
-        {failureWords && <Alert severity="error">{failureWords}</Alert>}
+        {error && <FormError message={error} />}
 
         <DragDropProvider plugins={plugins} onDragEnd={dropped}>
           <Box

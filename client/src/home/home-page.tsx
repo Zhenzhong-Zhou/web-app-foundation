@@ -46,6 +46,7 @@ import { zoneLabel } from '../lib/time-zone-label';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useFailureWords } from '../lib/use-failure-words';
+import { useSubmit } from '../lib/use-submit';
 import { HOVER } from '../theme/media';
 import { rem } from '../theme/rem';
 import { RADIUS, TYPE } from '../theme/tokens';
@@ -127,8 +128,7 @@ function OrganizationHome() {
   // Customise Home (ADR-091, amended November 2026): the arrangement on
   // the page while it is open, kept only by Done.
   const [draft, setDraft] = useState<Arrangement | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saveFailure, setSaveFailure] = useState<unknown>(null);
+  const done = useSubmit(() => setDraft(null));
   const customiseButton = useRef<HTMLButtonElement>(null);
 
   // The server counts the tiles from the same day itself.
@@ -218,7 +218,7 @@ function OrganizationHome() {
   async function openCustomise() {
     if (opening.current) return;
     opening.current = true;
-    setSaveFailure(null);
+    done.reset();
     try {
       const fresh = await api<HomeResponse>('/home');
       setHome(fresh);
@@ -236,10 +236,8 @@ function OrganizationHome() {
    * person follows later defaults; then Home read again, in its new order,
    * before the tiles come back.
    */
-  async function saveArrangement(next: Arrangement, byDefault: Arrangement) {
-    setSaving(true);
-    setSaveFailure(null);
-    try {
+  function saveArrangement(next: Arrangement, byDefault: Arrangement) {
+    void done.submit(async () => {
       await (sameArrangement(next, byDefault)
         ? api('/home/layout', { method: 'DELETE' })
         : api('/home/layout', {
@@ -248,12 +246,7 @@ function OrganizationHome() {
           }));
       setHome(await api<HomeResponse>('/home'));
       setError(null);
-      setDraft(null);
-    } catch (caught) {
-      setSaveFailure(caught);
-    } finally {
-      setSaving(false);
-    }
+    });
   }
   const started = home?.gettingStarted;
   const showStart = started && !started.complete && !started.dismissed;
@@ -501,9 +494,9 @@ function OrganizationHome() {
               }
               onChange={setDraft}
               onReset={() => setDraft(defaultOf(home))}
-              onDone={() => void saveArrangement(draft, defaultOf(home))}
-              saving={saving}
-              failure={saveFailure}
+              onDone={() => saveArrangement(draft, defaultOf(home))}
+              saving={done.submitting}
+              error={done.error}
             />
           ) : (
             cards.length > 0 && (
