@@ -238,8 +238,9 @@ export interface Scheme {
   line: string;
   /**
    * Where a table cuts what scrolls sideways under a held column or past
-   * its frame: a line seen in both modes, 3:1 on a panel and on a head
-   * (ADR-091's review), where a border is meant to be quiet.
+   * its frame, and a switch's track while off: a line seen in both modes,
+   * 3:1 on a panel and on a head (ADR-091's review; WCAG 1.4.11), where a
+   * border is meant to be quiet.
    */
   edge: string;
   text: string;

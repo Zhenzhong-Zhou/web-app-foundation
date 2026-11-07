@@ -984,7 +984,9 @@ Paper is checked first because it must not change at all.
   the line is Customise Home's alone, gone from Home after Done. Show
   Orders · Draft: it comes back in its place, after To receive, the line
   saying Orders · Draft shown, 2 of 9, focus on its handle. Turn off Show
-  Recently opened on Home: Recently opened, faded below, goes. Scroll
+  Recently opened on Home: Recently opened, faded below, goes, and the
+  switch's track, off, is a grey as clear as a table's cut edge, in light
+  and in dark, as every switch's in the app is. Scroll
   down: Reset to default, Done and the line under them stay at the top
   under the bar (not on
   a window under 700 px tall, where they scroll away). Press Orders in
@@ -5260,3 +5262,5 @@ first.
   a touch screen: MC-1564 extended.
 - 2026-11-07: Customise Home's reviews, the fixed parts faded less, their
   date still easy to read: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, every switch's track while off at
+  3:1 on a panel: MC-1563 extended.

@@ -239,6 +239,20 @@ const optionsFor = (brand: Brand, locale: Locale): ThemeOptions => ({
       },
     },
     /**
+     * A switch's track while off, in the edge's grey at full strength,
+     * seen at 3:1 on a panel in both modes (WCAG 1.4.11), where MUI's own
+     * pale track was about 2.7:1. On and disabled, MUI's own rules, the
+     * more specific, still draw it.
+     */
+    MuiSwitch: {
+      styleOverrides: {
+        track: ({ theme }) => ({
+          backgroundColor: paletteOf(theme).surface.edge,
+          opacity: 1,
+        }),
+      },
+    },
+    /**
      * A button never shrinks to fit its row, so its label never wraps to make
      * room: "New" stacked over "version" doubles the button's height, which
      * shoves its whole row taller and reads as a layout bug. Rows of buttons

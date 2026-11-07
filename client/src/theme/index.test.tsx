@@ -1,10 +1,13 @@
-import { Autocomplete, Menu, MenuItem, TextField } from '@mui/material';
+import { Autocomplete, Menu, MenuItem, Switch, TextField } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
+import { drawnIn } from '../test/drawn-colour';
 import { themeFor } from '.';
+import { contrast } from './accent';
+import { DARK, LIGHT } from './tokens';
 
 /** The colour muted text takes inside an element. */
 const mutedIn = (element: Element) =>
@@ -114,5 +117,49 @@ describe('the type scale', () => {
     const { fontSize, lineHeight } = themeFor('zh-Hans').typography[variant];
 
     expect(px(fontSize) * Number(lineHeight)).toBeCloseTo(line);
+  });
+});
+
+// A switch off is seen by its track, which MUI draws pale: the theme's is
+// the edge's grey, 3:1 on a panel in both modes (WCAG 1.4.11).
+describe('a switch', () => {
+  it('draws its track while off at 3:1 on a panel, in both modes', () => {
+    render(
+      <ThemeProvider theme={themeFor('en')}>
+        <Switch slotProps={{ input: { 'aria-label': 'Recently opened' } }} />
+      </ThemeProvider>,
+    );
+    const track = screen
+      .getByRole('switch', { name: 'Recently opened' })
+      .closest('.MuiSwitch-root')!
+      .querySelector('.MuiSwitch-track')!;
+    const { backgroundColor, opacity } = getComputedStyle(track);
+    expect(opacity).toBe('1');
+    for (const [mode, scheme] of [
+      ['light', LIGHT],
+      ['dark', DARK],
+    ] as const) {
+      expect(
+        contrast(drawnIn(mode, backgroundColor), scheme.surface),
+      ).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('leaves its track while on as MUI draws it, in the accent', () => {
+    render(
+      <ThemeProvider theme={themeFor('en')}>
+        <Switch
+          defaultChecked
+          slotProps={{ input: { 'aria-label': 'Recently opened' } }}
+        />
+      </ThemeProvider>,
+    );
+    const track = screen
+      .getByRole('switch', { name: 'Recently opened' })
+      .closest('.MuiSwitch-root')!
+      .querySelector('.MuiSwitch-track')!;
+    expect(getComputedStyle(track).backgroundColor).toBe(
+      'var(--mui-palette-primary-main)',
+    );
   });
 });
