@@ -40,7 +40,7 @@ import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
 import type { HomeKind } from '../lib/api-names';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
-import { TOUCH } from '../theme/media';
+import { TALL_WINDOW, TOUCH } from '../theme/media';
 import { rem } from '../theme/rem';
 import { RADIUS } from '../theme/tokens';
 import {
@@ -150,7 +150,7 @@ const VALUED = defineMessages<
 
 /** Under the top bar, where the page scrolls; never on a short window. */
 const STICKY = {
-  '@media (min-height: 700px)': {
+  [TALL_WINDOW]: {
     position: 'sticky',
     top: 'var(--bar-height, 0px)',
     zIndex: 1,
