@@ -1692,6 +1692,7 @@
   "products.variation.helpOptional": "Optional. 60ct, Large, Blue — leave blank if there is only one.",
   "products.variationColumn": "Variation",
   "recent.clear": "Clear",
+  "recent.cleared": "Cleared. It fills again as you open things; turn it off in Customise Home.",
   "recent.codeKind": "{code} · {kind}",
   "recent.kind.invoice": "Invoice",
   "recent.kind.lot": "Lot",

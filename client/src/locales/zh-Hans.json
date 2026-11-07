@@ -1692,6 +1692,7 @@
   "products.variation.helpOptional": "可选。如60粒、大号、蓝色——只有一种时请留空。",
   "products.variationColumn": "规格",
   "recent.clear": "清除",
+  "recent.cleared": "已清除。您打开记录后，这里会再次出现；可以在“调整首页”中关闭。",
   "recent.codeKind": "{code} · {kind}",
   "recent.kind.invoice": "发票",
   "recent.kind.lot": "批次",

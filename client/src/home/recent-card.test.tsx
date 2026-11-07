@@ -78,7 +78,7 @@ describe('RecentCard', () => {
     );
   });
 
-  it('clears the history, and goes', async () => {
+  it('clears the history, saying so and where Recently opened is turned off', async () => {
     let cleared = false;
     server.use(
       http.get('/api/v1/recent', () => HttpResponse.json({ recent: ENTRIES })),
@@ -95,5 +95,10 @@ describe('RecentCard', () => {
     expect(
       screen.queryByRole('region', { name: 'Recently opened' }),
     ).toBeNull();
+    const said = await screen.findByRole('status');
+    expect(said).toHaveTextContent(
+      'Cleared. It fills again as you open things; turn it off in Customise Home.',
+    );
+    await waitFor(() => expect(said).toHaveFocus());
   });
 });

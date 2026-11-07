@@ -8,7 +8,7 @@ import PrecisionManufacturingOutlined from '@mui/icons-material/PrecisionManufac
 import ReceiptLongOutlined from '@mui/icons-material/ReceiptLongOutlined';
 import SellOutlined from '@mui/icons-material/SellOutlined';
 import { Box, Button, Paper, Stack, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { type IntlShape, useIntl } from 'react-intl';
 
 import { IconBadge } from '../components/icon-badge';
@@ -74,7 +74,8 @@ function linesOf(
 /**
  * Recently opened, on Home (ADR-058; ADR-091): the last six records this
  * person opened, a row each, the whole row its link, with its kind's icon,
- * its name, its code and kind, and when; with Clear. Not a to-do, so not
+ * its name, its code and kind, and when; with Clear, which says what it
+ * did and where Recently opened is turned off. Not a to-do, so not
  * counted with the tiles; and left out while empty, since an empty history
  * is not work done.
  */
@@ -94,12 +95,38 @@ export function RecentCard() {
     };
   }, []);
 
+  // Cleared, a line in its place says so, and where the section is turned
+  // off, since Clear only empties it; focus goes to it, Clear being gone.
+  const [cleared, setCleared] = useState(false);
+  const clearedLine = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (cleared) clearedLine.current?.focus();
+  }, [cleared]);
+
   async function clear() {
     await api('/recent', { method: 'DELETE' }).catch(() => undefined);
     setEntries([]);
+    setCleared(true);
   }
 
-  if (entries.length === 0) return null;
+  if (entries.length === 0) {
+    return cleared ? (
+      <Paper variant="outlined" sx={{ px: 2, py: 1.5 }}>
+        <Typography
+          ref={clearedLine}
+          role="status"
+          tabIndex={-1}
+          sx={{ color: 'text.secondary' }}
+        >
+          {intl.formatMessage({
+            id: 'recent.cleared',
+            defaultMessage:
+              'Cleared. It fills again as you open things; turn it off in Customise Home.',
+          })}
+        </Typography>
+      </Paper>
+    ) : null;
+  }
 
   return (
     <Paper

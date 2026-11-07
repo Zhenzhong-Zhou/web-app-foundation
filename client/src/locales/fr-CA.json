@@ -1692,6 +1692,7 @@
   "products.variation.helpOptional": "Facultatif. 60 unités, Grand, Bleu — laissez vide s’il n’y en a qu’une.",
   "products.variationColumn": "Variante",
   "recent.clear": "Effacer",
+  "recent.cleared": "Effacé. La liste se remplit de nouveau à mesure que vous ouvrez des éléments; désactivez-la dans Personnaliser l’accueil.",
   "recent.codeKind": "{code} · {kind}",
   "recent.kind.invoice": "Facture",
   "recent.kind.lot": "Lot",

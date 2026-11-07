@@ -923,7 +923,9 @@ Paper is checked first because it must not change at all.
   (DevTools → Network: no `recent`). In 中文 More
   reads 更多, in Français Plus; a screen reader names its menu More. Recently opened lists
   each record by its name, its code and kind under it, and when, the
-  whole row a link. Leave Home's tab for another for a minute or more and
+  whole row a link. Its Clear empties it, and a line in its place, focused,
+  says Cleared. It fills again as you open things; turn it off in
+  Customise Home. (in 中文 已清除。…可以在“调整首页”中关闭。). Leave Home's tab for another for a minute or more and
   come back: Home reads again (DevTools → Network, `home`); back after a
   few seconds, it does not. Switch to 中文 and to a phone (or a narrow
   window): the tiles two by two, three from a window about 648 px wide
@@ -5208,3 +5210,5 @@ first.
   screen reader: MC-1563 extended.
 - 2026-11-07: Customise Home's reviews, a line under what is late for each
   hidden tile whose late items it holds: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, Recently opened's Clear saying
+  what it did and where the section is turned off: MC-1559 extended.
