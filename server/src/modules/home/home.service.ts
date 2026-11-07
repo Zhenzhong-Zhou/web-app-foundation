@@ -322,8 +322,9 @@ async function organizationOf(
  * Now a `union all` with a branch per tile the member may see: Postgres
  * plans each branch on its own, as it planned each query before, and the
  * page pays for one round trip instead of eight. To ship and To receive
- * share one branch, outstandingTotals(), which reads the orders once for
- * both. A direction with nothing outstanding has no row.
+ * share one branch with Drafts, orderTotals(), which reads the outstanding
+ * orders once for both directions. A direction with nothing outstanding has
+ * no row.
  *
  * Low stock is a statement of its own, the list's counts over every
  * point's position: as a branch, it made the planner run the orders'
