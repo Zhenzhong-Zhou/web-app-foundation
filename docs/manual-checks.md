@@ -993,8 +993,10 @@ Paper is checked first because it must not change at all.
   keeps it. Customise Home → Reset to default, the line saying Back to
   the default order, not saved yet → Done:
   the order is the owner's again, drafts hidden, Recently opened back.
-  As Tom Becker (Warehouse), Reset to default puts To ship, To receive
-  and Expiring soon first, the rest after them. On a phone every button
+  As Fatima Haddad (Sales), whose role raises orders, Customise Home opens
+  on Low stock first, then To ship and To receive; Up on To ship, then
+  Reset to default, puts Low stock first again, and Done saves no layout
+  (DevTools → Network: a `DELETE` of `home/layout`). On a phone every button
   here, the switch's row too, is 44 px tall or more, the cards one
   across; scroll to Stock value · Waiting for a cost and tap its Up twice
   in the same place: it moves up two places, the page following it, its
@@ -5215,3 +5217,6 @@ first.
   what it did and where the section is turned off: MC-1559 extended.
 - 2026-11-07: Customise Home's reviews, its two Chinese messages saying 您
   as the rest do: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, a role whose default differs
+  walked as Fatima Haddad (Sales), not Tom Becker, whose default is the
+  Owner's: MC-1563 corrected.
