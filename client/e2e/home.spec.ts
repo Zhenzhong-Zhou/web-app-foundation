@@ -788,6 +788,103 @@ test('while Done saves, nothing in Customise Home can be moved', async ({
   await expect(homeTiles(page).first()).toHaveAccessibleName(/^To receive, /);
 });
 
+// Saved, then Home not read again: the save is not called a failure, and
+// nothing is left that leaving would ask about.
+test('Done saved but Home not read again closes Customise Home, nothing left unsaved', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const panel = customising(page);
+  await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
+  // The read after the save fails, once.
+  await page.route(
+    '**/v1/home',
+    (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          statusCode: 503,
+          message: 'Home could not be read — try again in a moment',
+        }),
+      }),
+    { times: 1 },
+  );
+  const saved = layoutWrite(page);
+  await panel.getByRole('button', { name: 'Done' }).click();
+  await saved;
+
+  await expect(panel).toBeHidden();
+  await expect(page.getByRole('alert')).toContainText(
+    'Home could not be read — try again in a moment',
+  );
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('link', { name: 'Orders' })
+    .click();
+  await expect(page).toHaveURL(/\/orders$/);
+  await expect(
+    page.getByRole('dialog', { name: 'Leave without saving?' }),
+  ).toHaveCount(0);
+  const layout = (await (await freshOrg.api.get('/v1/home')).json()) as {
+    cards: { kind: string }[];
+  };
+  expect(layout.cards[0].kind).toBe('toReceive');
+});
+
+// A read of Home that went out before Done's, and comes back after it, is
+// dropped: it holds the order from before the save.
+test('an older read of Home arriving after Done’s does not bring the old order back', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To ship, /);
+
+  // The next read is fetched at once, then held before it reaches Home.
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(
+    '**/v1/home',
+    async (route) => {
+      const response = await route.fetch();
+      await held;
+      await route.fulfill({ response });
+    },
+    { times: 1 },
+  );
+  const older = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/v1/home') && response.status() === 200,
+  );
+  await page.getByRole('button', { name: 'Refresh' }).click();
+
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
+  await customising(page).getByRole('button', { name: 'Done' }).click();
+  await expect(customising(page)).toBeHidden();
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To receive, /);
+
+  release();
+  await older;
+  // Two frames, for what the older read would draw.
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To receive, /);
+});
+
 // A save refused keeps the cards as they were moved, and says why as every
 // form does, labelled, offering Reload to an outdated tab (ADR-081).
 test('Done refused keeps the cards and says why', async ({

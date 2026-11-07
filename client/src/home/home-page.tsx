@@ -131,17 +131,30 @@ function OrganizationHome() {
   const done = useSubmit(() => setDraft(null));
   const customiseButton = useRef<HTMLButtonElement>(null);
 
-  // The server counts the tiles from the same day itself.
-  const load = useCallback(() => {
-    api<HomeResponse>('/home')
-      .then((response) => {
+  // Each read of Home numbered, so one that comes back after a newer one
+  // went out is dropped: it may hold the order from before Done's save.
+  const reads = useRef(0);
+  /**
+   * Home read, the server counting the tiles from the same day itself:
+   * what came back, or null where it failed, shown as the page's error,
+   * or a newer read went out meanwhile. Never throws.
+   */
+  const read = useCallback((): Promise<HomeResponse | null> => {
+    const mine = ++reads.current;
+    return api<HomeResponse>('/home').then(
+      (response) => {
+        if (mine !== reads.current) return null;
         setHome(response);
         setError(null);
-      })
-      .catch((caught: unknown) => {
-        setError(caught);
-      });
+        return response;
+      },
+      (caught: unknown) => {
+        if (mine === reads.current) setError(caught);
+        return null;
+      },
+    );
   }, []);
+  const load = useCallback(() => void read(), [read]);
 
   useEffect(() => {
     load();
@@ -220,12 +233,10 @@ function OrganizationHome() {
     opening.current = true;
     done.reset();
     try {
-      const fresh = await api<HomeResponse>('/home');
-      setHome(fresh);
-      setError(null);
-      setDraft(arrangementOf(fresh.cards.filter(isKnownCard), fresh.recent));
-    } catch (caught) {
-      setError(caught);
+      const fresh = await read();
+      if (fresh) {
+        setDraft(arrangementOf(fresh.cards.filter(isKnownCard), fresh.recent));
+      }
     } finally {
       opening.current = false;
     }
@@ -234,7 +245,9 @@ function OrganizationHome() {
   /**
    * Done: the layout saved, or cleared where it equals the default, so the
    * person follows later defaults; then Home read again, in its new order,
-   * before the tiles come back.
+   * before the tiles come back. Only the save can fail Done: a read that
+   * fails after it is the page's own error, and Customise Home closes on
+   * what was saved.
    */
   function saveArrangement(next: Arrangement, byDefault: Arrangement) {
     void done.submit(async () => {
@@ -244,8 +257,7 @@ function OrganizationHome() {
             method: 'PUT',
             body: JSON.stringify(next satisfies HomeLayoutDto),
           }));
-      setHome(await api<HomeResponse>('/home'));
-      setError(null);
+      await read();
     });
   }
   const started = home?.gettingStarted;
