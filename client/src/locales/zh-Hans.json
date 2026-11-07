@@ -412,6 +412,7 @@
   "home.customise.pickedUp": "已拿起“{name}”，第 {place} 个，共 {total} 个",
   "home.customise.place": "{name}，第 {place} 个，共 {total} 个",
   "home.customise.recent": "在首页显示“最近打开”",
+  "home.customise.recentWhat": "磁贴下方列出您最近打开的订单、产品、批次等记录。",
   "home.customise.reset": "恢复默认",
   "home.customise.resetNow": "已恢复默认顺序，尚未保存",
   "home.customise.show": "显示",

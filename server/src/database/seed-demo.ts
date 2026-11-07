@@ -24,6 +24,7 @@ import { ProductionCloseService } from '../modules/production-orders/production-
 import { ProductionExecutionService } from '../modules/production-orders/production-execution.service';
 import { ProductionOrdersService } from '../modules/production-orders/production-orders.service';
 import { ProductsService } from '../modules/products/products.service';
+import { RecentService } from '../modules/recent/recent.service';
 import { ReturnAuthorizationsService } from '../modules/return-authorizations/return-authorizations.service';
 import { StockService } from '../modules/stock/stock.service';
 import { TaxCodesService } from '../modules/tax-codes/tax-codes.service';
@@ -840,6 +841,13 @@ async function seedDemo(): Promise<void> {
           secondCustomerId: secondCustomer.id,
           gstId: gst.id,
         });
+
+        // What the Owner would have opened by now, SO-DEMO-1 last, so Home
+        // shows Recently opened and Customise Home's switch has something
+        // to turn off, with no record opened first (ADR-081).
+        const recent = app.get(RecentService);
+        await recent.record(actor, 'product', finished.id);
+        await recent.record(actor, 'order', sale.id);
 
         logger.log(
           `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s); SO-DEMO-1 shipped 400 of 600, invoiced as ${invoice.number}, with 5 returned, ${rma.number} received and credited as ${creditNote.number}, and a shipment of 100 voided; 4 retained, 2 sampled; PO-DEMO-2 bought in USD at 1.37; SO-DEMO-2 confirmed for 500 and partly backordered; ${quebecInvoice.number} printing in French and English for Pharmacie Saint-Laurent, ${chineseInvoice.number} in Chinese for 明德药房`,

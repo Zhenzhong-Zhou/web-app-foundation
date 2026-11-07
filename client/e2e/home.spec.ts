@@ -1051,9 +1051,14 @@ test('Recently opened switched off in Customise Home is neither shown nor read',
   await expect.poll(() => reads.length).toBeGreaterThan(0);
 
   await page.getByRole('button', { name: 'Customise Home' }).click();
-  await customising(page)
-    .getByRole('switch', { name: 'Show Recently opened on Home' })
-    .uncheck();
+  const recent = customising(page).getByRole('switch', {
+    name: 'Show Recently opened on Home',
+  });
+  // What it shows, which is not on the screen while Home is customised.
+  await expect(recent).toHaveAccessibleDescription(
+    'Under the tiles, what you opened last: orders, products, lots and more.',
+  );
+  await recent.uncheck();
   const saved = layoutWrite(page);
   await customising(page).getByRole('button', { name: 'Done' }).click();
   expect((await saved).postDataJSON()).toMatchObject({ recent: false });

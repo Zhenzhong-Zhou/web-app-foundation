@@ -94,6 +94,11 @@ const WORDS = defineMessages({
     id: 'home.customise.recent',
     defaultMessage: 'Show Recently opened on Home',
   },
+  recentWhat: {
+    id: 'home.customise.recentWhat',
+    defaultMessage:
+      'Under the tiles, what you opened last: orders, products, lots and more.',
+  },
   resetNow: {
     id: 'home.customise.resetNow',
     defaultMessage: 'Back to the default order, not saved yet',
@@ -636,7 +641,9 @@ export function CustomiseHome({
           </Box>
         )}
 
-        <Paper variant="outlined" sx={{ px: 2 }}>
+        {/* What the switch shows, which is not on the screen while Home is
+            customised, nor anywhere until something is opened. */}
+        <Paper variant="outlined" sx={{ px: 2, pb: 1.5 }}>
           <FormControlLabel
             labelPlacement="start"
             control={
@@ -645,6 +652,9 @@ export function CustomiseHome({
                 onChange={(event) =>
                   onChange({ ...arrangement, recent: event.target.checked })
                 }
+                slotProps={{
+                  input: { 'aria-describedby': `${id}-recent-what` },
+                }}
               />
             }
             label={intl.formatMessage(WORDS.recent)}
@@ -657,6 +667,13 @@ export function CustomiseHome({
               [TOUCH]: { minHeight: 56 },
             }}
           />
+          <Typography
+            id={`${id}-recent-what`}
+            variant="body2"
+            sx={{ color: 'text.secondary' }}
+          >
+            {intl.formatMessage(WORDS.recentWhat)}
+          </Typography>
         </Paper>
       </Box>
 

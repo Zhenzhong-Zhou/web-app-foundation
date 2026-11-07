@@ -412,6 +412,7 @@
   "home.customise.pickedUp": "Picked up {name}, {place} of {total}",
   "home.customise.place": "{name}, {place} of {total}",
   "home.customise.recent": "Show Recently opened on Home",
+  "home.customise.recentWhat": "Under the tiles, what you opened last: orders, products, lots and more.",
   "home.customise.reset": "Reset to default",
   "home.customise.resetNow": "Back to the default order, not saved yet",
   "home.customise.show": "Show",

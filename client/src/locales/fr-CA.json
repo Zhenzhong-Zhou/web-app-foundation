@@ -412,6 +412,7 @@
   "home.customise.pickedUp": "Tuile {name} prise, {place} sur {total}",
   "home.customise.place": "{name}, {place} sur {total}",
   "home.customise.recent": "Afficher Ouverts récemment sur l’accueil",
+  "home.customise.recentWhat": "Sous les tuiles, ce que vous avez ouvert en dernier : commandes, produits, lots et plus.",
   "home.customise.reset": "Rétablir l’ordre par défaut",
   "home.customise.resetNow": "Ordre par défaut rétabli, pas encore enregistré",
   "home.customise.show": "Afficher",

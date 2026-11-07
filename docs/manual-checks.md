@@ -983,7 +983,12 @@ Paper is checked first because it must not change at all.
   expédier est masquée; 1 commande en retard reste ici; 它的 1 个逾期订单);
   the line is Customise Home's alone, gone from Home after Done. Show
   Orders · Draft: it comes back in its place, after To receive, the line
-  saying Orders · Draft shown, 2 of 9, focus on its handle. Turn off Show
+  saying Orders · Draft shown, 2 of 9, focus on its handle. Under the switch a
+  line says what it shows, Under the tiles, what you opened last: orders,
+  products, lots and more (磁贴下方列出您最近打开的订单、产品、批次等记录。;
+  Sous les tuiles, ce que vous avez ouvert en dernier…), and below, faded,
+  the demo owner's Recently opened holds SO-DEMO-1 and Focus 60ct from the
+  seed, nothing opened first. Turn off Show
   Recently opened on Home: Recently opened, faded below, goes, and the
   switch's track, off, is a grey as clear as a table's cut edge, in light
   and in dark, as every switch's in the app is. Scroll
@@ -5264,3 +5269,6 @@ first.
   date still easy to read: MC-1563 extended.
 - 2026-11-07: Customise Home's reviews, every switch's track while off at
   3:1 on a panel: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, a line under Recently opened's
+  switch saying what it shows, and the demo owner's Recently opened
+  seeded with SO-DEMO-1 and its product: MC-1563 extended.
