@@ -337,11 +337,28 @@ export function isKnownCard(card: HomeCard): card is KnownCard {
 }
 
 /**
+ * A tile's icon badge (ADR-091): red while anything in it is late, grey
+ * while it is quiet, else the accent's.
+ */
+export const BADGE = {
+  late: { bgcolor: 'tone.critical.bg', color: 'tone.critical.fg' },
+  quiet: { bgcolor: 'tone.neutral.bg', color: 'text.secondary' },
+  busy: { bgcolor: 'surface.chosen', color: 'primary.main' },
+} as const;
+
+/** With values, so it takes them. */
+const SUMMARY = defineMessages<'line'>({
+  line: { id: 'home.customise.summary', defaultMessage: '{count} · {status}' },
+});
+
+/**
  * A tile's words (ADR-091): its name, the page's first where the tile has
  * one; its count, as the reader writes numbers; and its status, the quiet
  * words with nothing to do (Low stock's own where no reorder point is
- * set, ADR-085), else what is late in it, else none. Home's tile and
- * Customise Home's card say the same.
+ * set, ADR-085), else what is late in it, else none. With them, its
+ * badge's tone, and the count and status in one line, "4 · 1 late", or
+ * the quiet words alone. Home's tile and Customise Home's card say and
+ * draw the same.
  */
 export function tileWords(
   intl: IntlShape,
@@ -365,12 +382,19 @@ export function tileWords(
     : late && meta.late
       ? intl.formatMessage(meta.late.pill, { count: late })
       : null;
+  const count = intl.formatNumber(card.count);
   return {
     title,
-    count: intl.formatNumber(card.count),
+    count,
     status,
     quiet,
     late,
     unset,
-  };
+    tone: late ? 'late' : quiet ? 'quiet' : 'busy',
+    summary: quiet
+      ? status
+      : status
+        ? intl.formatMessage(SUMMARY.line, { count, status })
+        : count,
+  } as const;
 }

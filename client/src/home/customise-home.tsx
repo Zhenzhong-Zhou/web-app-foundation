@@ -57,7 +57,7 @@ import {
   show,
   shownOf,
 } from './arrangement';
-import { CARDS, type KnownCard, tileWords } from './home-cards';
+import { BADGE, CARDS, type KnownCard, tileWords } from './home-cards';
 import { TONAL } from './tonal';
 
 const CUSTOMISE = defineMessages({
@@ -102,9 +102,8 @@ const WORDS = defineMessages({
   },
 });
 
-/** With values, so each takes them: the card's line and what is heard. */
+/** With values, so each takes them: what is heard. */
 const VALUED = defineMessages<
-  | 'summary'
   | 'place'
   | 'hiddenNow'
   | 'shownNow'
@@ -113,10 +112,6 @@ const VALUED = defineMessages<
   | 'dropped'
   | 'cancelled'
 >({
-  summary: {
-    id: 'home.customise.summary',
-    defaultMessage: '{count} · {status}',
-  },
   place: {
     id: 'home.customise.place',
     defaultMessage: '{name}, {place} of {total}',
@@ -530,17 +525,7 @@ export function CustomiseHome({
                     </>
                   }
                 >
-                  <IconBadge
-                    size={36}
-                    sx={
-                      words.late
-                        ? {
-                            bgcolor: 'tone.critical.bg',
-                            color: 'tone.critical.fg',
-                          }
-                        : { bgcolor: 'surface.chosen', color: 'primary.main' }
-                    }
-                  >
+                  <IconBadge size={36} sx={BADGE[words.tone]}>
                     <Icon fontSize="small" />
                   </IconBadge>
                   <Box sx={{ minWidth: 0 }}>
@@ -551,14 +536,7 @@ export function CustomiseHome({
                       variant="body2"
                       sx={{ color: 'text.secondary' }}
                     >
-                      {words.quiet
-                        ? words.status
-                        : words.status
-                          ? intl.formatMessage(VALUED.summary, {
-                              count: words.count,
-                              status: words.status,
-                            })
-                          : words.count}
+                      {words.summary}
                     </Typography>
                   </Box>
                 </DraggableTile>
@@ -602,13 +580,7 @@ export function CustomiseHome({
                     aria-labelledby={nameId}
                     sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}
                   >
-                    <IconBadge
-                      size={36}
-                      sx={{
-                        bgcolor: 'tone.neutral.bg',
-                        color: 'text.secondary',
-                      }}
-                    >
+                    <IconBadge size={36} sx={BADGE.quiet}>
                       <Icon fontSize="small" />
                     </IconBadge>
                     <Typography id={nameId} sx={{ flex: 1, minWidth: 0 }}>

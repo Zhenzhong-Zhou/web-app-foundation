@@ -965,7 +965,8 @@ Paper is checked first because it must not change at all.
   screen reader reads each lock with its part, Greeting: Fixed, cannot
   move, and What is late: (问候语：, 逾期的事： in 中文). Each
   card has its handle, its icon, its name, its count (4 · 1 late; a quiet
-  one its words, No returns open), and Up, Down and Hide: Up on the
+  one its words, No returns open), its icon red while late and grey while
+  quiet, as its tile on Home, and Up, Down and Hide: Up on the
   first and Down on the last are grey and do nothing. Press Up on To
   receive: it is first, focus still on its Up, and the line under Done
   says To receive, 1 of 9, as a screen reader (VoiceOver, ⌘F5) does;
@@ -5226,3 +5227,5 @@ first.
 - 2026-11-07: Customise Home's reviews, the export's layout null while
   Done saves only the default, and leaving Customise Home by Leave:
   MC-2302 corrected, MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, a card's icon in its tile's
+  colours, grey while quiet: MC-1563 extended.

@@ -58,7 +58,13 @@ import {
 import { CustomiseButton, CustomiseHome, Fixed } from './customise-home';
 import { evenRowsSx } from './even-rows';
 import { GettingStarted } from './getting-started';
-import { CARDS, isKnownCard, type KnownCard, tileWords } from './home-cards';
+import {
+  BADGE,
+  CARDS,
+  isKnownCard,
+  type KnownCard,
+  tileWords,
+} from './home-cards';
 import { HomeClock, HomeGreeting } from './home-clock';
 import { MainAction, type QuickAction } from './main-action';
 import { NoOrganization } from './no-organization';
@@ -781,7 +787,7 @@ function Tile({ card }: { card: KnownCard }) {
   const { warning: expiringWithin } = useExpiryDays();
   const meta = CARDS[card.kind];
   const Icon = meta.icon;
-  const { title, count, status, quiet, late, unset } = tileWords(
+  const { title, count, status, quiet, late, unset, tone } = tileWords(
     intl,
     card,
     expiringWithin,
@@ -848,15 +854,7 @@ function Tile({ card }: { card: KnownCard }) {
           justifyContent: 'space-between',
         }}
       >
-        <IconBadge
-          sx={
-            late
-              ? { bgcolor: 'tone.critical.bg', color: 'tone.critical.fg' }
-              : quiet
-                ? { bgcolor: 'tone.neutral.bg', color: 'text.secondary' }
-                : { bgcolor: 'surface.chosen', color: 'primary.main' }
-          }
-        >
+        <IconBadge sx={BADGE[tone]}>
           <Icon fontSize="small" />
         </IconBadge>
         <ChevronRight
