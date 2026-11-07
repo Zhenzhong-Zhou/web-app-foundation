@@ -441,8 +441,10 @@ function OrganizationHome() {
             </Stack>
           )}
 
-          {/* What this person opened last; hidden while empty (ADR-058). */}
-          <RecentCard />
+          {/* What this person opened last; hidden while empty (ADR-058).
+              Switched off in Customise Home, it is neither drawn nor read
+              (ADR-091, amended November 2026). */}
+          {home.recent && <RecentCard />}
 
           {started &&
             started.dismissed &&

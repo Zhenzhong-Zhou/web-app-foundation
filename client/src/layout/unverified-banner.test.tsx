@@ -21,6 +21,7 @@ function serve(card: Welcome | null) {
         gettingStarted: GETTING_STARTED_DONE,
         welcome: card,
         cards: [],
+        recent: true,
       }),
     ),
     http.get('/api/v1/notifications/unread-count', () =>

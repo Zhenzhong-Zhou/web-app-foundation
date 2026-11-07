@@ -47,12 +47,15 @@ const routed = (element: ReactElement) => (
  * Home for a member past their first two weeks: no welcome (ADR-079), and
  * no What we do written yet (ADR-091).
  */
-function serve(home: Omit<HomeResponse, 'welcome' | 'whatWeDo' | 'recent'>) {
+function serve(
+  home: Omit<HomeResponse, 'welcome' | 'whatWeDo' | 'recent'> &
+    Partial<Pick<HomeResponse, 'recent'>>,
+) {
   const response: HomeResponse = {
-    ...home,
     welcome: null,
     whatWeDo: null,
     recent: true,
+    ...home,
   };
   server.use(http.get('/api/v1/home', () => HttpResponse.json(response)));
 }
@@ -199,7 +202,7 @@ describe('HomePage', () => {
       name: 'What needs you today',
     });
     for (const [name, href] of [
-      ['Orders · Draft, 3', '/orders?status=draft'],
+      ['Orders · Draft, 3', '/orders?status=draft&order=asc'],
       ['Low stock, 3', '/inventory?tab=reorder-points&status=low'],
       ['Invoices · To issue, 4', '/invoices?status=draft'],
       ['Open returns, 1', '/return-authorizations?status=open'],
@@ -301,6 +304,58 @@ describe('HomePage', () => {
         .getAllByRole('link')
         .map((tile) => tile.getAttribute('aria-label')),
     ).toEqual(['To receive, 5']);
+  });
+
+  /**
+   * Recently opened, switched off in Customise Home (ADR-091, amended
+   * November 2026): Home neither shows it nor reads it; on, as before.
+   */
+  it('reads and shows Recently opened only while the person has it on', async () => {
+    server.use(
+      http.get('/api/v1/recent', () =>
+        HttpResponse.json({
+          recent: [
+            {
+              kind: 'order',
+              id: 'order-1',
+              title: 'SO-000001',
+              detail: 'Acme Co',
+              openedAt: new Date().toISOString(),
+            },
+          ],
+        }),
+      ),
+    );
+    // The reads this test makes, by fetch: a handler would also count one
+    // the test before sent as it ended.
+    const fetched = vi.spyOn(globalThis, 'fetch');
+    const reads = () =>
+      fetched.mock.calls
+        .map(([input]) => String(input))
+        .filter((url) => url.includes('/v1/recent'));
+    const cards: HomeResponse['cards'] = [
+      { kind: 'toShip', hidden: false, count: 1, late: 0, anyPoint: null },
+    ];
+
+    serve({ gettingStarted: COMPLETE, cards, recent: false });
+    const { unmount } = renderWithAuth(routed(<HomePage />), {
+      permissions: ['orders.view'],
+    });
+    expect(
+      await screen.findByRole('link', { name: 'To ship, 1' }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('region', { name: 'Recently opened' }),
+    ).toBeNull();
+    expect(reads()).toEqual([]);
+    unmount();
+
+    serve({ gettingStarted: COMPLETE, cards });
+    renderWithAuth(routed(<HomePage />), { permissions: ['orders.view'] });
+    expect(
+      await screen.findByRole('region', { name: 'Recently opened' }),
+    ).toBeVisible();
+    expect(reads()).toEqual(['/api/v1/recent?limit=6']);
   });
 
   it('says nothing is late in one calm line, and nothing needs you when all is done', async () => {

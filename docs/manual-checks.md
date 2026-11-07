@@ -896,7 +896,15 @@ Paper is checked first because it must not change at all.
   Low stock comes first, then To ship and To receive; in a role made from
   the Finance template, Stock value · Waiting for a cost, Invoices · To
   issue and Open returns, then To ship and To receive. Orders · Draft is
-  on no one's Home until they show it. In 中文 More
+  on no one's Home until they show it (Customise Home, Show); shown, it
+  sits after To receive, reads Orders · Draft (订单 · 草稿, Commandes ·
+  Brouillon), the page first and the filter's word after, and counts as
+  many drafts as Orders lists with Draft chosen, three on the demo, never
+  late, so the red panel never counts it; with none it stays quiet, No
+  drafts (没有草稿, Aucun brouillon). It opens Orders with Draft chosen,
+  `?status=draft&order=asc` in the address, with Back to Home. With
+  Recently opened switched off, Home neither shows it nor reads it
+  (DevTools → Network: no `recent`). In 中文 More
   reads 更多, in Français Plus; a screen reader names its menu More. Recently opened lists
   each record by its name, its code and kind under it, and when, the
   whole row a link. Leave Home's tab for another for a minute or more and

@@ -200,13 +200,14 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     },
   },
   // Orders · Draft (ADR-091, amended November 2026): hidden until the
-  // person shows it, and never late, so nothing in the panel.
+  // person shows it, and never late, so nothing in the panel. Oldest
+  // first, the forgotten draft at the top (ADR-057's amendment).
   drafts: {
     title: TITLES.drafts,
     page: NAV_LABELS.orders,
     empty: EMPTY.drafts,
     icon: EditNoteOutlined,
-    list: '/orders?status=draft',
+    list: '/orders?status=draft&order=asc',
   },
   // After To receive on the page, as the server orders it (ADR-085).
   lowStock: {

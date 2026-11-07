@@ -37,6 +37,7 @@ function serve(
         gettingStarted: start,
         welcome: card,
         cards: [],
+        recent: true,
       }),
     ),
   );
@@ -590,6 +591,7 @@ describe('the welcome card', () => {
           gettingStarted: GETTING_STARTED_DONE,
           welcome: dismissed ? null : welcome(),
           cards: [],
+          recent: true,
         }),
       ),
       http.post('/api/v1/home/welcome/dismiss', () => {
