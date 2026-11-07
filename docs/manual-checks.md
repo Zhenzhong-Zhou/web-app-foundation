@@ -1006,7 +1006,9 @@ Paper is checked first because it must not change at all.
   待收货，第 1 个，共 9 个 and 已隐藏“待发货”：在下方“已隐藏的磁贴”中; in Français Personnaliser l’accueil, Monter, Descendre,
   Masquer, Afficher, Rétablir l’ordre par défaut, Terminé and Tuiles
   masquées. Another member's Home, and the owner's in another
-  organization, do not change.
+  organization, do not change. Last, Customise Home, Up on any tile,
+  then Orders in the menu and Leave: Orders opens, and Home, back, is as
+  it was, nothing saved.
 - **MC-1564** *(ADR-091, amended November 2026)* Customise Home by
   dragging, as the demo owner: at 1366 px with a mouse, then from the
   keyboard alone, then by touch on a phone and on a tablet (a real one
@@ -1260,7 +1262,8 @@ await fetch(`${api}/v1/files/product-image`, {
 - **MC-2302** As that Viewer, Download your data: a JSON file with your
   profile, memberships, devices and account history, and nothing of the
   organization's records; each membership holds how you arranged Home
-  there, null until you save Customise Home. Delete my account: a wrong
+  there, null until Done saves an order other than your role's default
+  (Done on the default saves none). Delete my account: a wrong
   password is refused;
   the right one closes the dialog, the banner names the day 30 days
   ahead on every page, your other browser is signed out, and an email
@@ -5220,3 +5223,6 @@ first.
 - 2026-11-07: Customise Home's reviews, a role whose default differs
   walked as Fatima Haddad (Sales), not Tom Becker, whose default is the
   Owner's: MC-1563 corrected.
+- 2026-11-07: Customise Home's reviews, the export's layout null while
+  Done saves only the default, and leaving Customise Home by Leave:
+  MC-2302 corrected, MC-1563 extended.

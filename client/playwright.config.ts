@@ -35,8 +35,10 @@ const API_URL = process.env.E2E_API_URL ?? 'http://localhost:3100';
  * E2E_FIREFOX=1. Playwright's Firefox build cannot open its profile on some
  * macOS versions ("Could not find profile folder", "Operation not
  * permitted"), whatever the temporary folder, while Chromium and WebKit
- * start there; off by default, it no longer stops verify.sh on such a Mac,
- * and CI still checks every screen in it.
+ * start there; so it is off by default on the Mac, where scripts/verify.sh
+ * in full runs e2e/accessibility.spec.ts in Firefox from Playwright's Linux
+ * image instead, with E2E_FIREFOX=1, and CI's every-browser runs check
+ * every screen in it.
  */
 const FIREFOX = Boolean(process.env.CI || process.env.E2E_FIREFOX);
 

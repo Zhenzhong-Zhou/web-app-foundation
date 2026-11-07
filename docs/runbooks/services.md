@@ -63,6 +63,8 @@ Panivo's own is deferred to the first customers (ADR-082).
 - **Docker** runs PostgreSQL 18 and Mailpit (`localhost:8025`): the
   README's setup.
 - **Playwright's Docker image** runs Firefox and Linux WebKit where they
-  cannot start on macOS; the commands are in #232.
+  cannot start on macOS: `scripts/verify.sh` in full runs the
+  accessibility spec in Firefox from it, and conventions.md's "Firefox on
+  such a Mac" gives the commands for a run by hand.
 - **The pre-push hook** comes from `scripts/hooks/`, set once per clone by
   `git config core.hooksPath scripts/hooks`.
