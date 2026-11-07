@@ -76,15 +76,11 @@ export async function pagedBy(options: {
   const { id, before, byId, sorted, readCursor } = options;
 
   if (!sorted) {
-    if (byId === 'asc') {
-      return {
-        where: before ? gt(id, before) : undefined,
-        orderBy: [sql`${id} asc`],
-      };
-    }
+    const oldestFirst = byId === 'asc';
+    const after = oldestFirst ? gt : lt;
     return {
-      where: before ? lt(id, before) : undefined,
-      orderBy: [sql`${id} desc`],
+      where: before ? after(id, before) : undefined,
+      orderBy: [oldestFirst ? sql`${id} asc` : sql`${id} desc`],
     };
   }
 
