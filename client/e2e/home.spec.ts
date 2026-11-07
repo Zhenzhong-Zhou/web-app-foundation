@@ -772,13 +772,17 @@ test('while Done saves, nothing in Customise Home can be moved', async ({
   await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
   await panel.getByRole('button', { name: 'Done' }).click();
 
+  // Done says it is saving, held but still focused, as every save does.
+  const saving = panel.getByRole('button', { name: 'Saving…' });
+  await expect(saving).toBeFocused();
+  await expect(saving).toHaveAttribute('aria-disabled', 'true');
   // Inert until it is back: the cards' buttons, their handles and the
   // switch, but not Done's row.
   const resting = panel.locator('[inert]');
   await expect(resting.getByRole('button', { name: 'Up' })).toHaveCount(9);
   await expect(resting.getByRole('button', { name: /^Drag / })).toHaveCount(9);
   await expect(resting.getByRole('switch')).toHaveCount(1);
-  await expect(resting.getByRole('button', { name: 'Done' })).toHaveCount(0);
+  await expect(resting.getByRole('button', { name: 'Saving…' })).toHaveCount(0);
   release();
   await expect(panel).toBeHidden();
   await expect(homeTiles(page).first()).toHaveAccessibleName(/^To receive, /);
@@ -811,6 +815,8 @@ test('Done refused keeps the cards and says why', async ({
   await expect(panel.getByRole('alert', { name: 'Error' })).toContainText(
     'Home could not be saved — try again in a moment',
   );
+  // The keyboard still on Done, to try again.
+  await expect(panel.getByRole('button', { name: 'Done' })).toBeFocused();
   await expect(panel.getByRole('listitem').first()).toHaveAccessibleName(
     'To receive',
   );

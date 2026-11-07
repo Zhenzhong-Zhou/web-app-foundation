@@ -984,8 +984,9 @@ Paper is checked first because it must not change at all.
   a window under 700 px tall, where they scroll away). Press Orders in
   the menu: Leave without saving? says Your changes to Home aren’t saved
   yet.; Stay keeps the cards as they were. With DevTools' network at
-  Slow 3G, press Done, and before Home comes back try Up, Hide, a handle
-  and the switch: none does anything. (Offline instead, Done leaves the
+  Slow 3G, press Done from the keyboard: it reads Saving… (正在保存…,
+  Enregistrement…), grey and still focused; before Home comes back try
+  Up, Hide, a handle and the switch: none does anything. (Offline instead, Done leaves the
   cards as they were moved, an error line above them saying what
   failed.) Home reads again
   in the new order, To ship gone, Orders · Draft second, no Recently
@@ -5233,3 +5234,5 @@ first.
   colours, grey while quiet: MC-1563 extended.
 - 2026-11-07: Customise Home's reviews, Done refused keeping the cards
   with the form's error line: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, Done reading Saving… and keeping
+  focus while it saves: MC-1563 extended.

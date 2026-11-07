@@ -414,21 +414,39 @@ export function CustomiseHome({
           <TuneOutlined aria-hidden fontSize="small" />
           {intl.formatMessage(CUSTOMISE.open)}
         </Typography>
+        {/* Held while Done saves, not `disabled`, which would drop focus
+            to the page: after a failed save the keyboard is still on
+            Done. The class draws them as MUI draws a disabled button. */}
         <Stack direction="row" sx={{ gap: 1, flexWrap: 'wrap' }}>
           <Button
             variant="text"
             color="inherit"
-            disabled={saving}
+            aria-disabled={saving || undefined}
+            className={saving ? 'Mui-disabled' : undefined}
             sx={TONAL}
-            onClick={() => {
-              onReset();
-              setSaid(intl.formatMessage(WORDS.resetNow));
-            }}
+            onClick={
+              saving
+                ? undefined
+                : () => {
+                    onReset();
+                    setSaid(intl.formatMessage(WORDS.resetNow));
+                  }
+            }
           >
             {intl.formatMessage(CUSTOMISE.reset)}
           </Button>
-          <Button variant="contained" disabled={saving} onClick={onDone}>
-            {intl.formatMessage(CUSTOMISE.done)}
+          <Button
+            variant="contained"
+            aria-disabled={saving || undefined}
+            className={saving ? 'Mui-disabled' : undefined}
+            onClick={saving ? undefined : onDone}
+          >
+            {saving
+              ? intl.formatMessage({
+                  id: 'common.saving',
+                  defaultMessage: 'Saving…',
+                })
+              : intl.formatMessage(CUSTOMISE.done)}
           </Button>
         </Stack>
         {/* What the last change did, where it is seen while the page
