@@ -2112,7 +2112,9 @@ The pages, in a private window unless a check says otherwise.
   Down, Hide, Hidden tiles, Show, Show Recently opened on Home, Reset to
   default and Done; Fixed, cannot move on the parts that stay; its
   keyboard keys those of the panel's keyboard line, and the arrows moving
-  a tile as the guide says; leaving before Done offers Stay and Leave as
+  a tile as the guide says, to the next tile that way: at 1366 px Left on
+  a row's first tile leaves it there, and at 390 px only Up and Down move
+  it; leaving before Done offers Stay and Leave as
   it says. It says the change is the reader's own Home alone. In Français, Personnaliser
   l’accueil, Monter, Descendre, Masquer, Tuiles masquées, Afficher,
   Rétablir l’ordre par défaut, Terminé, Rester and Quitter; in 中文,
@@ -5277,3 +5279,5 @@ first.
   seeded with SO-DEMO-1 and its product: MC-1563 extended.
 - 2026-11-07: Customise Home's reviews, its code loaded only once its
   button is pressed: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, Home's guide saying the arrows
+  move a tile to the next tile that way: MC-3213 extended.

@@ -49,7 +49,7 @@ Sans rien en retard, une ligne dit **Rien n’est en retard aujourd’hui**; san
 4. Désactivez **Afficher Ouverts récemment sur l’accueil** si vous ne vous en servez pas.
 5. Appuyez sur **Terminé**. L’accueil montre vos tuiles dans leur nouvel ordre.
 
-Au clavier : Tab jusqu’à la poignée d’une tuile, Espace pour la prendre, les flèches pour la déplacer, gauche et droite d’une place à la fois, haut et bas d’une rangée, puis Espace pour la déposer; Échap la remet à sa place. Un lecteur d’écran annonce la nouvelle place de chaque tuile.
+Au clavier : Tab jusqu’à la poignée d’une tuile, Espace pour la prendre, les flèches pour la porter jusqu’à la tuile voisine dans ce sens, gauche et droite le long de sa rangée, haut et bas d’une rangée, puis Espace pour la déposer; Échap la remet à sa place. Quand les tuiles sont sur une seule colonne, comme sur un téléphone, seules les flèches haut et bas la déplacent. Un lecteur d’écran annonce la nouvelle place de chaque tuile.
 
 Appuyez sur **Rétablir l’ordre par défaut** pour remettre l’ordre de départ de l’accueil : les tuiles du travail que fait votre rôle d’abord, **Commandes · Brouillon** masquée et **Ouverts récemment** affiché. Appuyez sur **Terminé** pour le garder, et l’accueil suit de nouveau votre rôle, si votre rôle change.
 

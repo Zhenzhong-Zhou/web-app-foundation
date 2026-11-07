@@ -49,7 +49,7 @@ Beside **What needs you today**, **Customise Home** puts the tiles in the order 
 4. Turn off **Show Recently opened on Home** if you do not use it.
 5. Press **Done**. Home shows your tiles in their new order.
 
-With the keyboard: Tab to a tile’s handle, Space to pick it up, the arrow keys to move it, left and right a place at a time, up and down a row, then Space to drop it; Escape puts it back. A screen reader says each tile’s new place.
+With the keyboard: Tab to a tile’s handle, Space to pick it up, the arrow keys to move it to the next tile that way, left and right along its row, up and down a row, then Space to drop it; Escape puts it back. Where the tiles are one across, as on a phone, only up and down move it. A screen reader says each tile’s new place.
 
 Press **Reset to default** to put back the order Home starts with: the tiles of the work your role does first, **Orders · Draft** hidden and **Recently opened** shown. Press **Done** to keep it, and Home follows your role again, if your role changes.
 
