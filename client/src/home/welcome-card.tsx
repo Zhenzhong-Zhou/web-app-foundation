@@ -22,13 +22,13 @@ import { WhatYouCanDo } from '../account/what-you-can-do';
 import type { Welcome } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
+import { IconBadge } from '../components/icon-badge';
 import { PersonAvatar } from '../components/person-avatar';
 import { guideFor } from '../help/guides';
 import { useHelp } from '../help/use-help';
 import { formatDayMonth } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
 import { articleOf, roleList } from '../members/role-names';
-import { RADIUS } from '../theme/tokens';
 import { FirstWeek } from './first-week';
 import { TONAL } from './tonal';
 
@@ -228,22 +228,9 @@ export function WelcomeCard({
         spacing={1.5}
         sx={{ alignItems: 'center', px: 2, py: 1.5 }}
       >
-        <Box
-          aria-hidden
-          sx={{
-            width: 40,
-            height: 40,
-            flex: 'none',
-            borderRadius: `${RADIUS.control}px`,
-            bgcolor: 'surface.chosen',
-            color: 'primary.main',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
+        <IconBadge sx={{ bgcolor: 'surface.chosen', color: 'primary.main' }}>
           <WavingHandOutlined fontSize="small" />
-        </Box>
+        </IconBadge>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           {/* The section size, as Home's other headings (ADR-091's
               review), told from the line under it by size. */}

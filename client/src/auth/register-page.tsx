@@ -21,6 +21,7 @@ import {
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
+import { IconBadge } from '../components/icon-badge';
 import { PasswordField } from '../components/password-field';
 import { useLanguage } from '../i18n/use-language';
 import { api, ApiError, hasCode } from '../lib/api';
@@ -33,7 +34,6 @@ import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
 } from '../lib/validation';
-import { RADIUS } from '../theme/tokens';
 import { AuthLayout } from './auth-layout';
 import { authMessageFor } from './auth-message';
 import { useAuth } from './use-auth';
@@ -330,24 +330,9 @@ function Way({
 }) {
   return (
     <Box sx={{ display: 'flex', gap: 1.75, alignItems: 'flex-start' }}>
-      <Box
-        aria-hidden
-        sx={{
-          width: 40,
-          height: 40,
-          flex: 'none',
-          // In px, as Home's tiles draw their icons: a multiple of the
-          // theme's corner grew it to a circle (ADR-091).
-          borderRadius: `${RADIUS.control}px`,
-          bgcolor: 'action.hover',
-          color: 'primary.main',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <IconBadge sx={{ bgcolor: 'action.hover', color: 'primary.main' }}>
         {icon}
-      </Box>
+      </IconBadge>
       <Box>
         <Typography component="h2" variant="h6">
           {title}

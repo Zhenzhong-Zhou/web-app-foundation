@@ -11,6 +11,7 @@ import { Box, Button, Paper, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { type IntlShape, useIntl } from 'react-intl';
 
+import { IconBadge } from '../components/icon-badge';
 import { api } from '../lib/api';
 import { RECENT_PATHS, type RecentEntry, type RecentKind } from '../lib/recent';
 import {
@@ -149,22 +150,13 @@ export function RecentCard() {
                   textAlign: 'start',
                 }}
               >
-                <Box
-                  aria-hidden
-                  sx={{
-                    width: 36,
-                    height: 36,
-                    flex: 'none',
-                    borderRadius: '50%',
-                    bgcolor: 'tone.neutral.bg',
-                    color: 'tone.neutral.fg',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+                <IconBadge
+                  round
+                  size={36}
+                  sx={{ bgcolor: 'tone.neutral.bg', color: 'tone.neutral.fg' }}
                 >
                   <Icon fontSize="small" />
-                </Box>
+                </IconBadge>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography noWrap sx={{ fontWeight: 600 }}>
                     {name}

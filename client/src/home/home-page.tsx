@@ -35,6 +35,7 @@ import { WhomToAsk, WhomToAskRead } from '../account/whom-to-ask';
 import type { HomeResponse } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
+import { IconBadge } from '../components/icon-badge';
 import { StatusChip } from '../components/status-chip';
 import { UndoSnackbar } from '../components/undo-snackbar';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -533,22 +534,13 @@ function WhatIsLate({ cards }: { cards: KnownCard[] }) {
       }}
     >
       <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center' }}>
-        <Box
-          aria-hidden
-          sx={{
-            width: 32,
-            height: 32,
-            flex: 'none',
-            borderRadius: '50%',
-            bgcolor: 'background.paper',
-            color: 'error.main',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+        <IconBadge
+          round
+          size={32}
+          sx={{ bgcolor: 'background.paper', color: 'error.main' }}
         >
           <ErrorOutlineOutlined fontSize="small" />
-        </Box>
+        </IconBadge>
         <Box>
           <Typography
             variant="h6"
@@ -715,24 +707,17 @@ function Tile({ card }: { card: KnownCard }) {
           justifyContent: 'space-between',
         }}
       >
-        <Box
-          aria-hidden
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: `${RADIUS.control}px`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            ...(late
+        <IconBadge
+          sx={
+            late
               ? { bgcolor: 'tone.critical.bg', color: 'tone.critical.fg' }
               : quiet
                 ? { bgcolor: 'tone.neutral.bg', color: 'text.secondary' }
-                : { bgcolor: 'surface.chosen', color: 'primary.main' }),
-          }}
+                : { bgcolor: 'surface.chosen', color: 'primary.main' }
+          }
         >
           <Icon fontSize="small" />
-        </Box>
+        </IconBadge>
         <ChevronRight
           aria-hidden
           fontSize="small"
