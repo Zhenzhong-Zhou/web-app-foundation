@@ -402,7 +402,7 @@
   "home.customise.hide": "Masquer",
   "home.customise.hideOf": "Masquer {name}",
   "home.customise.instructions": "Pour prendre une tuile, appuyez sur Espace. Déplacez-la avec les flèches, puis appuyez sur Espace pour la déposer à sa nouvelle place, ou sur Échap pour la remettre.",
-  "home.customise.intro": "Glissez une tuile, ou utilisez Monter et Descendre pour les placer; masquez celles dont vous n’avez jamais besoin. Seul votre accueil change, sur tous vos appareils.",
+  "home.customise.intro": "Glissez une tuile par sa poignée, ou utilisez Monter et Descendre pour les placer; masquez celles dont vous n’avez jamais besoin. Seul votre accueil change, sur tous vos appareils.",
   "home.customise.keyboard": "Au clavier : Tab jusqu’à une poignée, Espace pour la prendre, les flèches pour la déplacer, Espace pour la déposer.",
   "home.customise.open": "Personnaliser l’accueil",
   "home.customise.part.greeting": "Salutation :",

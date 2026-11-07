@@ -402,7 +402,7 @@
   "home.customise.hide": "Hide",
   "home.customise.hideOf": "Hide {name}",
   "home.customise.instructions": "To pick up a tile, press Space. Move it with the arrow keys, then press Space to drop it in its new place, or Escape to put it back.",
-  "home.customise.intro": "Drag a tile, or use Up and Down to arrange them; hide the ones you never need. It changes only your Home, on every device.",
+  "home.customise.intro": "Drag a tile by its handle, or use Up and Down to arrange them; hide the ones you never need. It changes only your Home, on every device.",
   "home.customise.keyboard": "With the keyboard: Tab to a handle, Space to pick it up, the arrows to move it, Space to drop it.",
   "home.customise.open": "Customise Home",
   "home.customise.part.greeting": "Greeting:",

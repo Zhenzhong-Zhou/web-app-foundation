@@ -68,7 +68,7 @@ const WORDS = defineMessages({
   intro: {
     id: 'home.customise.intro',
     defaultMessage:
-      'Drag a tile, or use Up and Down to arrange them; hide the ones you never need. It changes only your Home, on every device.',
+      'Drag a tile by its handle, or use Up and Down to arrange them; hide the ones you never need. It changes only your Home, on every device.',
   },
   keyboard: {
     id: 'home.customise.keyboard',

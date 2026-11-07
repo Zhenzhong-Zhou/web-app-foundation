@@ -1025,7 +1025,8 @@ Paper is checked first because it must not change at all.
   dragging, as the demo owner: at 1366 px with a mouse, then from the
   keyboard alone, then by touch on a phone and on a tablet (a real one
   each, since DevTools' touch does not hold a press). Press Customise
-  Home: its words start Drag a tile, or use Up and Down, and a line
+  Home: its words start Drag a tile by its handle, or use Up and Down
+  (用手柄拖动磁贴, Glissez une tuile par sa poignée), and a line
   under them gives the keyboard's keys. Drag Expiring soon by its handle,
   the six dots, onto To ship: while it moves it lifts, with a shadow and
   a purple edge, a dashed purple box shows where it will drop, and the
@@ -5251,3 +5252,5 @@ first.
   its number: MC-1563 corrected.
 - 2026-11-07: Customise Home's reviews, Up, Down, Hide and Show naming
   their tile for a screen reader: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, its words saying a tile drags by
+  its handle: MC-1564 corrected.
