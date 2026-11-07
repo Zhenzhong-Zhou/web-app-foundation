@@ -364,12 +364,21 @@ describe('HomePage', () => {
     const panel = await screen.findByRole('region', { name: 'Customise Home' });
     const line = 'To ship is hidden; its 1 late order still shows here';
     expect(screen.queryByText(line)).toBeNull();
-    await user.click(
-      within(
-        within(panel).getByRole('listitem', { name: 'To ship' }),
-      ).getByRole('button', { name: 'Hide' }),
+    // Each button names its tile for a screen reader, its word on screen.
+    const ship = within(
+      within(panel).getByRole('listitem', { name: 'To ship' }),
     );
+    expect(
+      ship.getByRole('button', { name: 'Move To ship up' }),
+    ).toHaveTextContent('Up');
+    expect(
+      ship.getByRole('button', { name: 'Move To ship down' }),
+    ).toHaveTextContent('Down');
+    await user.click(ship.getByRole('button', { name: 'Hide To ship' }));
     expect(screen.getByText(line)).toBeVisible();
+    expect(
+      within(panel).getByRole('button', { name: 'Show To ship' }),
+    ).toHaveTextContent('Show');
   });
 
   /**

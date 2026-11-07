@@ -967,7 +967,10 @@ Paper is checked first because it must not change at all.
   card has its handle, its icon, its name, its count (4 · 1 late; a quiet
   one its words, No returns open), its icon red while late and grey while
   quiet, as its tile on Home, and Up, Down and Hide: Up on the
-  first and Down on the last are grey and do nothing. Press Up on To
+  first and Down on the last are grey and do nothing. A screen reader
+  names each with its tile, Move To receive up, Move To receive down,
+  Hide To receive, and Show To ship below (上移“待收货”, 隐藏“待收货”;
+  Monter À recevoir, Masquer À recevoir). Press Up on To
   receive: it is first, focus still on its Up, and the line under Done
   says To receive, 1 of 9, as a screen reader (VoiceOver, ⌘F5) does;
   press Down, To receive, 2 of 9. Hide To ship: it goes to Hidden tiles
@@ -5246,3 +5249,5 @@ first.
 - 2026-11-07: Customise Home's reviews, the line under what is late shown
   only while Customise Home is open, one late item in the singular with
   its number: MC-1563 corrected.
+- 2026-11-07: Customise Home's reviews, Up, Down, Hide and Show naming
+  their tile for a screen reader: MC-1563 extended.

@@ -106,6 +106,10 @@ const VALUED = defineMessages<
   | 'hiddenNow'
   | 'shownNow'
   | 'handle'
+  | 'upOf'
+  | 'downOf'
+  | 'hideOf'
+  | 'showOf'
   | 'pickedUp'
   | 'dropped'
   | 'cancelled'
@@ -123,6 +127,12 @@ const VALUED = defineMessages<
     defaultMessage: '{name} shown, {place} of {total}',
   },
   handle: { id: 'home.customise.handle', defaultMessage: 'Drag {name}' },
+  // Each button's name for a screen reader, its tile in it as the
+  // handle's is; on screen its word alone.
+  upOf: { id: 'home.customise.upOf', defaultMessage: 'Move {name} up' },
+  downOf: { id: 'home.customise.downOf', defaultMessage: 'Move {name} down' },
+  hideOf: { id: 'home.customise.hideOf', defaultMessage: 'Hide {name}' },
+  showOf: { id: 'home.customise.showOf', defaultMessage: 'Show {name}' },
   pickedUp: {
     id: 'home.customise.pickedUp',
     defaultMessage: 'Picked up {name}, {place} of {total}',
@@ -509,6 +519,9 @@ export function CustomiseHome({
                     <>
                       <EdgeButton
                         focus={`${kind}.up`}
+                        label={intl.formatMessage(VALUED.upOf, {
+                          name: words.title,
+                        })}
                         edge={index === 0}
                         icon={<ArrowUpward />}
                         onClick={() => move(kind, -1)}
@@ -517,6 +530,9 @@ export function CustomiseHome({
                       </EdgeButton>
                       <EdgeButton
                         focus={`${kind}.down`}
+                        label={intl.formatMessage(VALUED.downOf, {
+                          name: words.title,
+                        })}
                         edge={index === shown.length - 1}
                         icon={<ArrowDownward />}
                         onClick={() => move(kind, 1)}
@@ -525,6 +541,9 @@ export function CustomiseHome({
                       </EdgeButton>
                       <EdgeButton
                         focus={`${kind}.hide`}
+                        label={intl.formatMessage(VALUED.hideOf, {
+                          name: words.title,
+                        })}
                         icon={<VisibilityOffOutlined />}
                         onClick={() => hideTile(kind)}
                       >
@@ -596,6 +615,9 @@ export function CustomiseHome({
                     </Typography>
                     <EdgeButton
                       focus={`${kind}.show`}
+                      label={intl.formatMessage(VALUED.showOf, {
+                        name: titleOf(kind),
+                      })}
                       icon={<Add />}
                       onClick={() => showTile(kind)}
                     >
@@ -832,6 +854,7 @@ function DraggableTile({
  */
 function EdgeButton({
   focus,
+  label,
   edge = false,
   icon,
   onClick,
@@ -839,6 +862,8 @@ function EdgeButton({
 }: {
   /** Its tile and what it does, where focus finds it after a change. */
   focus: string;
+  /** What a screen reader hears, its word and its tile: "Move To ship up". */
+  label: string;
   edge?: boolean;
   icon: ReactNode;
   onClick: () => void;
@@ -847,6 +872,7 @@ function EdgeButton({
   return (
     <Button
       data-focus={focus}
+      aria-label={label}
       variant="text"
       color="inherit"
       startIcon={icon}
