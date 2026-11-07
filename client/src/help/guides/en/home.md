@@ -10,8 +10,8 @@ Home is the first page you see: what needs you today, and the actions you take m
 
 - At the top: the greeting with **Refresh** beside it, the organization’s date and time, and its What we do, one line in its own words.
 - Beside them, or under them on a narrow screen, your main action: the first your role allows of **Raise an order**, **Receive stock**, **Plan a run** and **Trace a lot**. **More** beside it opens the others your role allows. Where it allows none of the first three, a line says whom to ask instead.
-- Under **What needs you today**, a tile for each kind of work: its count, its name, and how many are late, expired or out, such as **2 late**. A tile with nothing to do stays in its place and says so.
-- **Recently opened** takes you back to what you opened last.
+- Under **What needs you today**, a tile for each kind of work: its count, its name, and how many are late, expired or out, such as **2 late**. A tile with nothing to do stays in its place and says so. The tiles of the work your role does come first; **Customise Home**, beside the heading, puts them in your own order.
+- **Recently opened** takes you back to what you opened last, unless you have switched it off in Customise Home.
 
 Home reads its counts again when you come back to it after a minute away. **Refresh**, the round arrow beside the greeting, reads them now.
 
@@ -22,6 +22,7 @@ Home reads its counts again when you come back to it after a minute away. **Refr
 A tile opens its list with just what it counts, the most urgent first:
 
 - **To ship** and **To receive**: Orders, the sales still to ship or the purchases still to receive, the late first.
+- **Orders · Draft**: Orders, the draft orders, the oldest first, with **Draft** and **Oldest first** chosen. It is hidden until you show it in Customise Home.
 - **Low stock**: Reorder points, on [Inventory](/inventory#reorder-points), the furthest below their point first.
 - **Expiring soon**: Inventory, the lots expiring within the days the organization has set, the soonest first.
 - **Stock value · Waiting for a cost**: Stock value, where you set the cost of stock that arrived without one.
@@ -37,6 +38,26 @@ The list keeps that choice while you work there: Back from a record returns to i
 When anything is late, expired or out, Home says how many things need you now, with a button for each kind, such as **2 late orders to ship**. Each opens its list with just the late ones: **Late** chosen on Orders, **Out** on Reorder points, **Expired** on Inventory and on Licences.
 
 With nothing late, one line says **Nothing is late today**; with nothing at all to do, **Nothing needs you today**.
+
+## Customise Home {#customise}
+
+Beside **What needs you today**, **Customise Home** puts the tiles in the order you want, and hides the ones you never need. It changes only your own Home, in this organization, and follows you to every device you sign in on.
+
+1. Press **Customise Home**. Each tile shows its handle, its count, and **Up**, **Down** and **Hide**.
+2. Drag a tile by its handle to where you want it. On a phone or a tablet, hold your finger on the handle for a moment first; a swipe still scrolls the page. Or press **Up** or **Down** to move it one place.
+3. Press **Hide** on a tile you never need. It moves to **Hidden tiles**, where **Show** brings it back.
+4. Turn off **Show Recently opened on Home** if you do not use it.
+5. Press **Done**. Home shows your tiles in their new order.
+
+With the keyboard: Tab to a tile’s handle, Space to pick it up, the arrow keys to move it, left and right a place at a time, up and down a row, then Space to drop it; Escape puts it back. A screen reader says each tile’s new place.
+
+Press **Reset to default** to put back the order Home starts with: the tiles of the work your role does first, **Orders · Draft** hidden and **Recently opened** shown. Press **Done** to keep it, and Home follows your role again, if your role changes.
+
+Nothing is kept until you press **Done**. Leaving Home before then asks first: **Stay** keeps your changes, **Leave** drops them.
+
+While you customise, the greeting with your main action, what is late, and your welcome card or Getting started when Home has them, stay where they are, faded and marked **Fixed, cannot move**.
+
+A hidden tile hides nothing that is late: its button for what is late, such as **2 late orders to ship**, still shows.
 
 ## Your first two weeks {#welcome}
 

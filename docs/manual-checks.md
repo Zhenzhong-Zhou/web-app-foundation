@@ -2039,7 +2039,7 @@ The pages, in a private window unless a check says otherwise.
 - **MC-3213** *(ADR-091)* Home's guide. As the demo Owner on Home, open
   Help: Home's guide names Home's three moments (every day, the first two
   weeks, a new organization), then Every day, Where each tile leads, What
-  is late, Your first two weeks, Getting started, The top bar, With no
+  is late, Customise Home, Your first two weeks, Getting started, The top bar, With no
   organization and Words you’ll meet. Every word it puts in bold reads
   the same on the screen: What needs you today, 2 late, Raise an order,
   Recently opened, Refresh; each tile's name, and where the guide says it
@@ -2054,6 +2054,18 @@ The pages, in a private window unless a check says otherwise.
   the welcome starts folded, it says below 900 px, as it does on a
   tablet upright too.
   Its Inventory link opens Inventory, its guide at Reorder points.
+  Under Where each tile leads, Orders · Draft opens Orders with Draft and
+  Oldest first chosen, and says it is hidden until shown. Customise Home's
+  section reads as the panel does, open beside it: Customise Home, Up,
+  Down, Hide, Hidden tiles, Show, Show Recently opened on Home, Reset to
+  default and Done; Fixed, cannot move on the parts that stay; its
+  keyboard keys those of the panel's keyboard line, and the arrows moving
+  a tile as the guide says; leaving before Done offers Stay and Leave as
+  it says. It says the change is the reader's own Home alone. In Français, Personnaliser
+  l’accueil, Monter, Descendre, Masquer, Tuiles masquées, Afficher,
+  Rétablir l’ordre par défaut, Terminé, Rester and Quitter; in 中文,
+  调整首页, 上移, 下移, 隐藏, 已隐藏的磁贴, 显示, 恢复默认, 完成, 留下 and
+  离开, with a space beside Tab and Esc.
 
 ## 33. Job roles (ADR-080)
 
@@ -5156,3 +5168,5 @@ first.
   added.
 - 2026-11-06: Customise Home by dragging, by a mouse, the keyboard and
   touch, each move said in three languages: MC-1564 added.
+- 2026-11-06: Customise Home in Home's guide, in three languages, with
+  Orders · Draft among the tiles: MC-3213 extended.
