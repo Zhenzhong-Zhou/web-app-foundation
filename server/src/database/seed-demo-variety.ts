@@ -442,10 +442,11 @@ export async function addVariety(
 
   /**
    * A sale still being put together: a draft, holding nothing. Started six
-   * days ago, as a membership is dated (seed-demo-team.ts), so Home's
-   * drafts tile lists it first, oldest first, before the two the team
-   * starts today (seed-demo-team-work.ts). Its id, made first of the three,
-   * orders it so too.
+   * days ago, as a membership is dated (seed-demo-team.ts), so the demo's
+   * drafts begin on different days, this one before the two the team starts
+   * today (seed-demo-team-work.ts). The backdate does not put it first:
+   * the drafts run oldest first by id (ADR-057, amended), and its id, made
+   * first of the three, does.
    */
   const unfinished = await ordering.create({
     partnerId: cooperative.id,
