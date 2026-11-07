@@ -1060,7 +1060,8 @@ test('leaving Customise Home with changes not saved asks first', async ({
   await expect(homeTiles(page).first()).toHaveAccessibleName(/^To ship, /);
 });
 
-test('Recently opened switched off in Customise Home is neither shown nor read', async ({
+// Not read is the unit test's: here, saved off and gone from Home on reload.
+test('Recently opened switched off in Customise Home is saved off and gone from Home', async ({
   page,
   freshOrg,
 }) => {
@@ -1087,13 +1088,17 @@ test('Recently opened switched off in Customise Home is neither shown nor read',
   await customising(page).getByRole('button', { name: 'Done' }).click();
   expect((await saved).postDataJSON()).toMatchObject({ recent: false });
 
-  reads.length = 0;
+  const read = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/v1/home') &&
+      response.request().method() === 'GET',
+  );
   await page.reload();
+  expect(await (await read).json()).toMatchObject({ recent: false });
   await expect(homeTiles(page).first()).toBeVisible();
   await expect(
     page.getByRole('region', { name: 'Recently opened' }),
   ).toHaveCount(0);
-  expect(reads).toEqual([]);
 });
 
 /** A tile's handle in Customise Home, by its tile's name. */
