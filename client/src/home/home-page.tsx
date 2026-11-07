@@ -130,7 +130,6 @@ function OrganizationHome() {
   const [saving, setSaving] = useState(false);
   const [saveFailure, setSaveFailure] = useState<unknown>(null);
   const customiseButton = useRef<HTMLButtonElement>(null);
-  const customiseHeading = useRef<HTMLHeadingElement>(null);
 
   // The server counts the tiles from the same day itself.
   const load = useCallback(() => {
@@ -200,13 +199,14 @@ function OrganizationHome() {
   const cards = (home?.cards ?? []).filter(isKnownCard);
   const tiles = cards.filter((card) => !card.hidden);
 
-  // Opened, focus goes to its heading; closed by Done, back to its button.
+  // Closed by Done, focus goes back to its button; opened, Customise Home
+  // takes it to its own heading.
   const customising = draft !== null;
   const wasCustomising = useRef(false);
   useEffect(() => {
     if (customising === wasCustomising.current) return;
     wasCustomising.current = customising;
-    (customising ? customiseHeading : customiseButton).current?.focus();
+    if (!customising) customiseButton.current?.focus();
   }, [customising]);
 
   /**
@@ -496,13 +496,14 @@ function OrganizationHome() {
             <CustomiseHome
               cards={cards}
               arrangement={draft}
-              saved={arrangementOf(cards, home.recent)}
+              changed={
+                !sameArrangement(draft, arrangementOf(cards, home.recent))
+              }
               onChange={setDraft}
               onReset={() => setDraft(defaultOf(home))}
               onDone={() => void saveArrangement(draft, defaultOf(home))}
               saving={saving}
               failure={saveFailure}
-              headingRef={customiseHeading}
             />
           ) : (
             cards.length > 0 && (
@@ -527,7 +528,7 @@ function OrganizationHome() {
                     })}
                   </Typography>
                   <CustomiseButton
-                    buttonRef={customiseButton}
+                    ref={customiseButton}
                     onClick={() => void openCustomise()}
                   />
                 </Stack>

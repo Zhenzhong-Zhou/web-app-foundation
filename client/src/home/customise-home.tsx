@@ -23,7 +23,7 @@ import {
   type ComponentProps,
   type ReactNode,
   type RefObject,
-  useCallback,
+  useEffect,
   useId,
   useLayoutEffect,
   useMemo,
@@ -53,7 +53,6 @@ import {
   hide,
   moved,
   placed,
-  sameArrangement,
   show,
   shownOf,
 } from './arrangement';
@@ -205,16 +204,16 @@ export function Fixed({
  * the tiles it changes, at every width (ADR-091, amended November 2026).
  */
 export function CustomiseButton({
-  buttonRef,
+  ref,
   onClick,
 }: {
-  buttonRef: RefObject<HTMLButtonElement | null>;
+  ref: RefObject<HTMLButtonElement | null>;
   onClick: () => void;
 }) {
   const intl = useIntl();
   return (
     <Button
-      ref={buttonRef}
+      ref={ref}
       variant="text"
       color="inherit"
       startIcon={<TuneOutlined />}
@@ -234,8 +233,9 @@ export function CustomiseButton({
  * its handle, its count, and Up, Down and Hide; the hidden ones below, each
  * with Show; Recently opened's switch; Reset to default and Done in a row
  * that stays at the top while the page scrolls. Every change is on the
- * page until Done saves it, and none can be made while it does. A tile drags by its handle, by a pointer, by
- * touch after a press and hold, or by the keyboard. After Up or Down focus
+ * page until Done saves it, and none can be made while it does. A tile
+ * drags by its handle, by a pointer, by touch after a press and hold, or by
+ * the keyboard. Opened, focus goes to its heading. After Up or Down focus
  * stays on the moved tile's button, after Hide it goes to the next tile's
  * handle, after Show to the shown tile's, after a drop by the keyboard on
  * its handle, and a screen reader hears each move ("To ship, 2 of 8").
@@ -243,24 +243,22 @@ export function CustomiseButton({
 export function CustomiseHome({
   cards,
   arrangement,
-  saved,
+  changed,
   onChange,
   onReset,
   onDone,
   saving,
   failure,
-  headingRef,
 }: {
   cards: readonly KnownCard[];
   arrangement: Arrangement;
-  /** Home as it came, which leaving without Done keeps. */
-  saved: Arrangement;
+  /** Whether it differs from Home as it came, which leaving keeps. */
+  changed: boolean;
   onChange: (next: Arrangement) => void;
   onReset: () => void;
   onDone: () => void;
   saving: boolean;
   failure: unknown;
-  headingRef: RefObject<HTMLHeadingElement | null>;
 }) {
   const intl = useIntl();
   const id = useId();
@@ -268,9 +266,16 @@ export function CustomiseHome({
   const { warning: expiringWithin } = useExpiryDays();
   const [said, setSaid] = useState('');
   // Leaving with changes not saved asks first (Unsaved work).
-  const { blocker } = useUnsavedChanges(!sameArrangement(arrangement, saved));
-  // Each button by its tile and what it does, for focus after a change.
-  const buttons = useRef(new Map<string, HTMLButtonElement | null>());
+  const { blocker } = useUnsavedChanges(changed);
+  const panel = useRef<HTMLDivElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    heading.current?.focus();
+  }, []);
+  // Each button by its tile and what it does, `data-focus="toShip.up"`,
+  // for focus after a change.
+  const button = (key: string) =>
+    panel.current?.querySelector<HTMLElement>(`[data-focus="${key}"]`) ?? null;
   const focusNext = useRef<string | null>(null);
   // Where a moved tile's card was on the screen, for the page to follow.
   const followFrom = useRef<number | null>(null);
@@ -281,29 +286,17 @@ export function CustomiseHome({
     focusNext.current = null;
     const from = followFrom.current;
     followFrom.current = null;
-    const button = buttons.current.get(key);
-    if (!button) return;
-    const card = button.closest('li') ?? button;
+    const target = button(key);
+    if (!target) return;
+    const card = target.closest('li') ?? target;
     // The page follows a moved card, so the button under a finger is still
     // its own: a second tap moves it again, not the tile in its old place.
     if (from !== null) {
       scrollBy(card.getBoundingClientRect().top - from);
     }
-    button.focus({ preventScroll: true });
+    target.focus({ preventScroll: true });
     inView(card, row.current);
   });
-  const refFor =
-    (kind: HomeKind, action: string) => (element: HTMLButtonElement | null) => {
-      buttons.current.set(`${kind}.${action}`, element);
-    };
-  // The handles' own, one function from draw to draw, so the library keeps
-  // its hold of a handle while its tile is dragged.
-  const register = useCallback(
-    (key: string, element: HTMLButtonElement | null) => {
-      buttons.current.set(key, element);
-    },
-    [],
-  );
 
   const byKind = new Map(cards.map((card) => [card.kind, card]));
   const known = (kind: HomeKind) => byKind.has(kind);
@@ -352,10 +345,8 @@ export function CustomiseHome({
     if (next === arrangement) return;
     focusNext.current = `${kind}.${by < 0 ? 'up' : 'down'}`;
     followFrom.current =
-      buttons.current
-        .get(focusNext.current)
-        ?.closest('li')
-        ?.getBoundingClientRect().top ?? null;
+      button(focusNext.current)?.closest('li')?.getBoundingClientRect().top ??
+      null;
     onChange(next);
     sayPlace(next, kind);
   }
@@ -380,6 +371,7 @@ export function CustomiseHome({
 
   return (
     <Paper
+      ref={panel}
       component="section"
       aria-labelledby={`${id}-title`}
       variant="outlined"
@@ -413,7 +405,7 @@ export function CustomiseHome({
         }}
       >
         <Typography
-          ref={headingRef}
+          ref={heading}
           variant="h6"
           component="h2"
           id={`${id}-title`}
@@ -496,11 +488,10 @@ export function CustomiseHome({
                   total={shown.length}
                   name={words.title}
                   nameId={nameId}
-                  register={register}
                   actions={
                     <>
                       <EdgeButton
-                        ref={refFor(kind, 'up')}
+                        focus={`${kind}.up`}
                         edge={index === 0}
                         icon={<ArrowUpward />}
                         onClick={() => move(kind, -1)}
@@ -508,7 +499,7 @@ export function CustomiseHome({
                         {intl.formatMessage(WORDS.up)}
                       </EdgeButton>
                       <EdgeButton
-                        ref={refFor(kind, 'down')}
+                        focus={`${kind}.down`}
                         edge={index === shown.length - 1}
                         icon={<ArrowDownward />}
                         onClick={() => move(kind, 1)}
@@ -516,7 +507,7 @@ export function CustomiseHome({
                         {intl.formatMessage(WORDS.down)}
                       </EdgeButton>
                       <EdgeButton
-                        ref={refFor(kind, 'hide')}
+                        focus={`${kind}.hide`}
                         icon={<VisibilityOffOutlined />}
                         onClick={() => hideTile(kind)}
                       >
@@ -587,7 +578,7 @@ export function CustomiseHome({
                       {titleOf(kind)}
                     </Typography>
                     <EdgeButton
-                      ref={refFor(kind, 'show')}
+                      focus={`${kind}.show`}
                       icon={<Add />}
                       onClick={() => showTile(kind)}
                     >
@@ -737,7 +728,6 @@ function DraggableTile({
   total,
   name,
   nameId,
-  register,
   actions,
   children,
 }: {
@@ -747,23 +737,17 @@ function DraggableTile({
   total: number;
   name: string;
   nameId: string;
-  register: (key: string, element: HTMLButtonElement | null) => void;
   actions: ReactNode;
   children: ReactNode;
 }) {
   const intl = useIntl();
+  // The library's handle ref, one function from draw to draw, so it keeps
+  // its hold of a handle while its tile is dragged.
   const { ref, handleRef } = useSortable<Spoken>({
     id: kind,
     index,
     data: { name, total },
   });
-  const handle = useCallback(
-    (element: HTMLButtonElement | null) => {
-      handleRef(element);
-      register(`${kind}.handle`, element);
-    },
-    [handleRef, register, kind],
-  );
   return (
     <Box
       component="li"
@@ -798,7 +782,8 @@ function DraggableTile({
     >
       <Stack direction="row" sx={{ gap: 1.25, alignItems: 'center' }}>
         <IconButton
-          ref={handle}
+          ref={handleRef}
+          data-focus={`${kind}.handle`}
           aria-label={intl.formatMessage(VALUED.handle, { name })}
           aria-roledescription={intl.formatMessage(WORDS.draggable)}
           sx={[
@@ -829,13 +814,14 @@ function DraggableTile({
  * the top still has it on its Up.
  */
 function EdgeButton({
-  ref,
+  focus,
   edge = false,
   icon,
   onClick,
   children,
 }: {
-  ref: (element: HTMLButtonElement | null) => void;
+  /** Its tile and what it does, where focus finds it after a change. */
+  focus: string;
   edge?: boolean;
   icon: ReactNode;
   onClick: () => void;
@@ -843,7 +829,7 @@ function EdgeButton({
 }) {
   return (
     <Button
-      ref={ref}
+      data-focus={focus}
       variant="text"
       color="inherit"
       startIcon={icon}
