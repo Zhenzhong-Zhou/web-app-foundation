@@ -701,7 +701,8 @@ function Tile({ card }: { card: KnownCard }) {
         [HOVER]: {
           '&:hover': {
             borderColor: 'primary.main',
-            boxShadow: 2,
+            // The lift token, as the variable the app's theme makes of it.
+            boxShadow: theme.vars?.palette.surface.lift,
             transform: 'translateY(-2px)',
           },
         },

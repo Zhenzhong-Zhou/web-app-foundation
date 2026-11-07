@@ -152,6 +152,13 @@ describe('tokens (ADR-055)', () => {
     }
   });
 
+  // Home's More and the welcome's Dismiss, at rest and under the pointer.
+  it.each(SCHEMES)('keeps %s tonal buttons readable', (_, s) => {
+    for (const ground of [s.tonal.bg, s.tonal.hover]) {
+      expect(contrast(s.tonal.fg, ground)).toBeGreaterThanOrEqual(AA);
+    }
+  });
+
   // Off its chip too, such as Home's line for a card with nothing to do
   // (ADR-081).
   it.each(SCHEMES)('keeps every %s tone’s text readable on panels', (_, s) => {

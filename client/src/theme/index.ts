@@ -26,6 +26,7 @@ import {
   type Rail,
   RAILS,
   type Scheme,
+  type Tonal,
   type Tone,
   type ToneName,
   towardWhite,
@@ -33,13 +34,21 @@ import {
 } from './tokens';
 
 /**
- * Two palette entries of our own, so the tones and the table surfaces are
- * CSS variables that switch with the colour mode like MUI's own.
+ * Palette entries of our own, so the tones, the table surfaces, the lift's
+ * shadow and the tonal buttons are CSS variables that switch with the
+ * colour mode like MUI's own.
  */
 declare module '@mui/material/styles' {
   interface Palette {
     tone: Record<ToneName, Tone>;
-    surface: { head: string; line: string; edge: string; chosen: string };
+    surface: {
+      head: string;
+      line: string;
+      edge: string;
+      chosen: string;
+      lift: string;
+    };
+    tonal: Tonal;
     rail: Rail;
   }
   interface PaletteOptions {
@@ -49,7 +58,9 @@ declare module '@mui/material/styles' {
       line: string;
       edge: string;
       chosen: string;
+      lift: string;
     };
+    tonal?: Tonal;
     rail?: Rail;
   }
 }
@@ -66,11 +77,13 @@ function palette(scheme: Scheme, accent: string, onAccent: string, rail: Rail) {
     text: { primary: scheme.text, secondary: scheme.muted },
     divider: scheme.border,
     tone: scheme.tones,
+    tonal: scheme.tonal,
     surface: {
       head: scheme.head,
       line: scheme.line,
       edge: scheme.edge,
       chosen: mix(accent, scheme.surface, CHOSEN_WEIGHT),
+      lift: scheme.lift,
     },
   };
 }

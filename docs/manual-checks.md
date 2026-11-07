@@ -875,10 +875,11 @@ Paper is checked first because it must not change at all.
   count, the late first, the filter in the address. A tile with nothing
   to do stays in its place, grey, its words in place of the count (No
   returns open), still a link. Under a mouse a tile's edge turns the
-  accent and it lifts a little; Tab shows the accent ring; a phone or a
-  tablet shows no hover. Refresh is an icon beside the greeting, named in
-  a tooltip. At the right of the greeting's row, Raise an order, the one
-  filled button, and More beside it, grey: its menu holds Receive stock,
+  accent and it lifts a little, its shadow seen in dark mode too; Tab
+  shows the accent ring; a phone or a tablet shows no hover. Refresh is
+  an icon beside the greeting, named in a tooltip. At the right of the
+  greeting's row, Raise an order, the one filled button, and More beside
+  it, grey: its menu holds Receive stock,
   Plan a run and Trace a lot, each opening its page with Back to Home;
   from the keyboard, Enter opens it on its first item, the arrows move,
   Escape closes it with focus back on More. Below 900 px (a phone, the

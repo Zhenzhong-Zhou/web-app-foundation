@@ -208,6 +208,14 @@ export interface Intents {
   info: string;
 }
 
+/** A button beside the main one: a neutral fill, not the accent. */
+export interface Tonal {
+  bg: string;
+  fg: string;
+  /** The fill under the pointer. */
+  hover: string;
+}
+
 export interface Scheme {
   /** Behind everything; panels sit on it. */
   page: string;
@@ -228,6 +236,18 @@ export interface Scheme {
   text: string;
   /** Secondary text: labels, captions, notes. */
   muted: string;
+  /**
+   * The shadow of what lifts off the page: a tile under the pointer. Panels
+   * are flat, told apart by their border; only what lifts or floats has a
+   * shadow. Deeper in dark, where a light shadow is lost on the page.
+   */
+  lift: string;
+  /**
+   * The grey buttons beside a main one, such as Home's More: the neutral
+   * tone's tint today, a token of its own so a button can change without
+   * a chip.
+   */
+  tonal: Tonal;
   intents: Intents;
   tones: Record<ToneName, Tone>;
 }
@@ -244,6 +264,8 @@ export const LIGHT: Scheme = {
   text: '#141A24',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   muted: '#5B6575',
+  lift: '0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12)',
+  tonal: { bg: '#F0F1F4', fg: '#141A24', hover: '#DCDFE6' },
   intents: {
     success: '#1E6B3E',
     warning: '#8A5300',
@@ -271,6 +293,8 @@ export const DARK: Scheme = {
   text: '#E6E9EF',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   muted: '#A3ACBA',
+  lift: '0px 3px 1px -2px rgba(0, 0, 0, 0.4), 0px 2px 2px 0px rgba(0, 0, 0, 0.28), 0px 1px 5px 0px rgba(0, 0, 0, 0.24)',
+  tonal: { bg: '#2A303A', fg: '#E6E9EF', hover: '#3A414D' },
   intents: {
     success: '#7FD1A0',
     warning: '#F2C26B',

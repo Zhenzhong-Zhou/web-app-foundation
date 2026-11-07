@@ -1,8 +1,8 @@
 import type { SxProps, Theme } from '@mui/material';
 
-/** A button beside the main one: filled in a neutral tint, not the accent. */
+/** A button beside the main one: the tonal token's fill, not the accent. */
 export const TONAL = {
-  bgcolor: 'tone.neutral.bg',
-  color: 'text.primary',
-  '&:hover': { bgcolor: 'tone.neutral.border' },
+  bgcolor: 'tonal.bg',
+  color: 'tonal.fg',
+  '&:hover': { bgcolor: 'tonal.hover' },
 } satisfies SxProps<Theme>;
