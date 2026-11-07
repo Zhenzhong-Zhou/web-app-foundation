@@ -188,7 +188,8 @@ against_main() {
 # @playwright/test, read here, so a raise needs nothing in this file. The
 # container has a name of its own and a free port, so one started by hand
 # is left alone, and the trap removes it however the run ends. Its own
-# logs are printed when it does not start.
+# logs are printed when it does not start, at once when it has exited and
+# after 120 seconds when it is running and silent.
 FIREFOX_CONTAINER=verify-firefox
 
 firefox_accessibility() {
@@ -209,6 +210,12 @@ firefox_accessibility() {
   fi
 
   until [[ "$(docker logs "$FIREFOX_CONTAINER" 2>&1)" == *'Listening on'* ]]; do
+    if [[ "$(docker inspect --format '{{.State.Running}}' "$FIREFOX_CONTAINER" 2> /dev/null)" != true ]]; then
+      docker logs "$FIREFOX_CONTAINER" >&2 || true
+      echo "Playwright's server in the container stopped before it listened;" >&2
+      echo 'its logs are above.' >&2
+      return 1
+    fi
     if ((waited == 120)); then
       docker logs "$FIREFOX_CONTAINER" >&2 || true
       echo "Playwright's server in the container did not start in 120 seconds;" >&2
