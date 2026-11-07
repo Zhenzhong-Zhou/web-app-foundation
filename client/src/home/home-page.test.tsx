@@ -126,7 +126,7 @@ describe('HomePage', () => {
       within(today).getByRole('link', {
         name: 'Stock value · Waiting for a cost, 2',
       }),
-    ).toHaveAttribute('href', '/costs');
+    ).toHaveAttribute('href', '/costs#costs');
     expect(within(today).getAllByRole('link')).toHaveLength(2);
   });
 

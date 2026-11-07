@@ -13,14 +13,20 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   defineMessages,
   FormattedMessage,
   type IntlShape,
   useIntl,
 } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 
 import type { NeedsCostEntry, StockValuation } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -31,6 +37,7 @@ import { Reference } from '../components/reference';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
+import { MAIN_CONTENT_ID } from '../layout/skip-link';
 import { api, isRevisionRefusal } from '../lib/api';
 import {
   displayQuantity,
@@ -44,6 +51,13 @@ import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useFailureWords } from '../lib/use-failure-words';
 import { SetCostDialog } from './set-cost-dialog';
+
+/**
+ * The address's `#costs`, Help's id for its section on giving stock its
+ * cost: the page opens at its list of what waits, as Home's Waiting for a
+ * cost tile does (ADR-091; #505's 8).
+ */
+const WAITING_HASH = '#costs';
 
 interface NeedsCostPage {
   entries: NeedsCostEntry[];
@@ -119,10 +133,34 @@ export function StockValuePage() {
   const errorWords = useFailureWords(error);
   const [costing, setCosting] = useState<NeedsCostEntry | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const location = useLocation();
+  const waitingSection = useRef<HTMLDivElement>(null);
+  const waitingHeading = useRef<HTMLHeadingElement>(null);
+  const openedAt = useRef<string | null>(null);
 
   const loading = (valuation === null || waiting === null) && error === null;
   const showSkeleton = useDelayedFlag(loading);
   const canUpdate = can('costs.update');
+
+  // Opened at what waits: once it has loaded, its list where the page's
+  // content begins, under the bar, and its heading given focus, as a link
+  // to a part of a page gives it; once per arrival, never again on a read
+  // after a cost is set.
+  useEffect(() => {
+    if (loading || location.hash !== WAITING_HASH) return;
+    if (openedAt.current === location.key) return;
+    openedAt.current = location.key;
+    const section = waitingSection.current;
+    const main = document.getElementById(MAIN_CONTENT_ID);
+    if (!section || !main) return;
+    window.scrollTo({
+      top:
+        section.getBoundingClientRect().top -
+        main.getBoundingClientRect().top -
+        parseFloat(getComputedStyle(main).paddingTop),
+    });
+    waitingHeading.current?.focus({ preventScroll: true });
+  }, [loading, location.hash, location.key]);
 
   const fetchAll = useCallback(
     () =>
@@ -262,8 +300,14 @@ export function StockValuePage() {
             </Stack>
           </Paper>
 
-          <Paper variant="outlined">
-            <Typography variant="subtitle1" component="h2" sx={{ p: 2 }}>
+          <Paper ref={waitingSection} variant="outlined">
+            <Typography
+              ref={waitingHeading}
+              variant="subtitle1"
+              component="h2"
+              tabIndex={-1}
+              sx={{ p: 2 }}
+            >
               {intl.formatMessage({
                 id: 'costs.waiting',
                 defaultMessage: 'Waiting for a cost',

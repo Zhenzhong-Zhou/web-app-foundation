@@ -244,8 +244,9 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.costsWaiting,
     icon: PaidOutlined,
     // Stock value's Waiting for a cost, the rows the server counts, where
-    // a cost is set (ADR-091).
-    list: '/costs',
+    // a cost is set (ADR-091): the page opened at that list, not its top,
+    // by Help's id for its section on it (#505's 8).
+    list: '/costs#costs',
   },
   invoicesToIssue: {
     title: TITLES.invoicesToIssue,

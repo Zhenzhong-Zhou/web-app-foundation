@@ -872,7 +872,11 @@ Paper is checked first because it must not change at all.
   chosen, and Back to Home. Under What needs you today, a tile per kind,
   its icon red while anything in it is late, its count, its name and its
   pill ("2 late"): the whole tile opens its list with as many rows as the
-  count, the late first, the filter in the address. A tile with nothing
+  count, the late first, the filter in the address. Stock value · Waiting
+  for a cost opens Stock value at its list of what waits, not at the
+  page's top: on a phone, or a window too short to show it, the list's
+  heading sits just under the bar, focused, `#costs` in the address, and
+  Help opened there shows Give stock its cost. A tile with nothing
   to do stays in its place, grey, its words in place of the count (No
   returns open), still a link. Under a mouse a tile's edge turns the
   accent and it lifts a little, its shadow seen in dark mode too; Tab

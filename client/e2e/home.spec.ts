@@ -384,6 +384,45 @@ test('Expiring soon opens Inventory’s expiring lots, and nothing late is one c
   await expect(page.getByText('E2E-SOON').first()).toBeVisible();
 });
 
+// Stock value holds its whole valuation; the tile opens it at the list of
+// what waits, under the bar, its heading taking focus (#505's 8). A short
+// window, so the list starts below the fold.
+test('Waiting for a cost opens Stock value at its list of what waits', async ({
+  page,
+  freshOrg,
+}) => {
+  const product = await createProduct(freshOrg.api);
+  const location = await createLocation(freshOrg.api);
+  await created(
+    await freshOrg.api.post('/v1/stock/movements', {
+      data: {
+        variantId: product.variantId,
+        toLocationId: location.id,
+        quantity: '5',
+        reason: 'receipt',
+      },
+    }),
+  );
+
+  await page.setViewportSize({ width: 390, height: 480 });
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await page
+    .getByRole('link', { name: 'Stock value · Waiting for a cost, 1' })
+    .click();
+
+  await expect(page).toHaveURL(/\/costs#costs$/);
+  const heading = page.getByRole('heading', { name: 'Waiting for a cost' });
+  await expect(heading).toBeFocused();
+  await expect(heading).toBeInViewport();
+  const bar = await page.getByRole('banner').boundingBox();
+  const top = await heading.boundingBox();
+  expect(top!.y).toBeGreaterThanOrEqual(bar!.y + bar!.height);
+  await expect(
+    page.getByRole('row', { name: new RegExp(product.sku) }).first(),
+  ).toBeInViewport();
+});
+
 /** The tab hidden or shown again, as switching to another tab does. */
 async function showTab(page: Page, state: 'hidden' | 'visible') {
   await page.evaluate((to) => {
