@@ -25,7 +25,13 @@ import {
 } from '../product-licences/product-licences.service';
 import { lowStockTotals } from '../stock/reorder-points-reads.service';
 import { expiredLot, stockRowsOf } from '../stock/stock-reads.service';
-import { arranged, type HomeKind, keptWith, kindsSeenWith } from './home-kinds';
+import {
+  arranged,
+  type HomeKind,
+  keptWith,
+  kindsSeenWith,
+  storedLayout,
+} from './home-kinds';
 import { WelcomeService } from './welcome.service';
 
 /**
@@ -136,7 +142,7 @@ export class HomeService {
         };
       });
 
-    const layout = membership?.homeLayout ?? null;
+    const layout = storedLayout(membership?.homeLayout);
     const cards: HomeCard[] = arranged(held, layout).map(
       ({ kind, hidden }) => ({
         kind,
@@ -194,7 +200,7 @@ export class HomeService {
         .for('update');
       await tx
         .update(memberships)
-        .set({ homeLayout: keptWith(layout, row?.homeLayout ?? null) })
+        .set({ homeLayout: keptWith(layout, storedLayout(row?.homeLayout)) })
         .where(mine);
     });
   }

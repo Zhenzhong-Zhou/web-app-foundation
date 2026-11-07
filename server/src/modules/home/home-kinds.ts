@@ -74,6 +74,27 @@ export function kindsSeenWith(held: ReadonlySet<Permission>): HomeKind[] {
   );
 }
 
+/**
+ * A layout as stored, read as this build's shape: two arrays of kinds, each
+ * kind once, the first kept, and Recently opened shown unless it says
+ * false. Anything else reads as none, so the person's Home follows the
+ * default rather than failing; only a later build that changed the shape,
+ * then rolled back, would store one.
+ */
+export function storedLayout(stored: unknown): HomeLayout | null {
+  if (!stored || typeof stored !== 'object') return null;
+  const { order, hidden, recent } = stored as Record<string, unknown>;
+  if (!Array.isArray(order) || !Array.isArray(hidden)) return null;
+  const kinds = (list: unknown[]) => [
+    ...new Set(list.filter((kind) => typeof kind === 'string')),
+  ];
+  return {
+    order: kinds(order),
+    hidden: kinds(hidden),
+    recent: recent !== false,
+  };
+}
+
 /** A tile in its place on the reader's Home, and whether they hid it. */
 export interface Placed {
   kind: HomeKind;

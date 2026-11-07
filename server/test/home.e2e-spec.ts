@@ -6,6 +6,7 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import {
+  type HomeLayout,
   memberships,
   permissions,
   rolePermissions,
@@ -1195,6 +1196,46 @@ describe('Home (e2e)', () => {
         ['production', false],
         ['licences', false],
       ]);
+    });
+
+    /**
+     * A layout stored in another shape, which only a later build rolled
+     * back would leave: read as none, never a failed Home, and a kind in
+     * it twice comes back once.
+     */
+    it('reads a stored layout of another shape as none, and a kind twice once', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const store = (homeLayout: unknown) =>
+        db
+          .update(memberships)
+          .set({ homeLayout: homeLayout as HomeLayout })
+          .where(eq(memberships.userId, alpha.userId));
+      const byDefault = (await home(alpha)).map(({ kind }) => kind);
+
+      for (const shape of [
+        { order: ['lowStock', 'toShip'], recent: true },
+        { order: 'lowStock', hidden: [], recent: true },
+        ['lowStock', 'toShip'],
+      ]) {
+        await store(shape);
+        expect((await home(alpha)).map(({ kind }) => kind)).toEqual(byDefault);
+      }
+      // Done over it saves, as over none.
+      await alpha.agent.put('/v1/home/layout').send(arranged).expect(204);
+      expect((await saved()).map((row) => row.homeLayout)).toEqual([arranged]);
+
+      const order = [
+        'lowStock',
+        ...byDefault.filter((kind) => kind !== 'lowStock'),
+      ];
+      await store({
+        order: [...order, 'lowStock'],
+        hidden: ['toShip', 'toShip'],
+        recent: true,
+      });
+      const cards = await home(alpha);
+      expect(cards.map(({ kind }) => kind)).toEqual(order);
+      expect(card(cards, 'toShip')).toMatchObject({ hidden: true });
     });
 
     // A hidden tile buries nothing (ADR-091): its late still count.
