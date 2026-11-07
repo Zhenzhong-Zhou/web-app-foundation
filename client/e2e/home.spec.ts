@@ -1093,6 +1093,10 @@ test('Customise Home by dragging: a mouse and the keyboard, the buttons beside, 
     .first()
     .getByRole('listitem');
   await expect(tiles).toHaveCount(9);
+  // With a mouse, the keyboard's keys are given too.
+  await expect(
+    customising(page).getByText(/^With the keyboard:/),
+  ).toBeVisible();
 
   // A mouse: Licences expiring, last, dropped on To ship, first, both in
   // a window tall enough to hold them.
@@ -1198,6 +1202,22 @@ test('a tile picked up near the window’s foot, wobbled, does not scroll the pa
 
 test.describe('Customise Home on a touch phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  // A phone's coarse pointer, which touch alone does not emulate: the
+  // keyboard's keys are no use there, and are not given.
+  test.describe('its pointer coarse', () => {
+    test.use({ isMobile: true });
+
+    test('gives no keyboard’s keys', async ({ page, freshOrg }) => {
+      await freshOrg.api.post('/v1/home/getting-started/dismiss');
+      await signInAs(page, freshOrg.api);
+      await page.goto('/');
+      await page.getByRole('button', { name: 'Customise Home' }).click();
+      const panel = customising(page);
+      await expect(panel.getByText(/^Drag a tile by its handle/)).toBeVisible();
+      await expect(panel.getByText(/^With the keyboard:/)).toBeHidden();
+    });
+  });
 
   test('its controls are 44 px each way, and Done stays in reach as the page scrolls', async ({
     page,

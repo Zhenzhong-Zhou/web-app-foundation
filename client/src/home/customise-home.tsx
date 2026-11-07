@@ -482,7 +482,13 @@ export function CustomiseHome({
           <Typography sx={{ color: 'text.secondary' }}>
             {intl.formatMessage(WORDS.intro)}
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          {/* The keyboard's keys, not on a touch screen, where they are no
+              use; a screen reader hears the same from each handle's
+              description, the library's instructions. */}
+          <Typography
+            variant="body2"
+            sx={{ color: 'text.secondary', [TOUCH]: { display: 'none' } }}
+          >
             {intl.formatMessage(WORDS.keyboard)}
           </Typography>
         </Box>

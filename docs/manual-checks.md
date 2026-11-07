@@ -1027,7 +1027,8 @@ Paper is checked first because it must not change at all.
   each, since DevTools' touch does not hold a press). Press Customise
   Home: its words start Drag a tile by its handle, or use Up and Down
   (用手柄拖动磁贴, Glissez une tuile par sa poignée), and a line
-  under them gives the keyboard's keys. Drag Expiring soon by its handle,
+  under them gives the keyboard's keys; on a phone and a tablet that line
+  is not there. Drag Expiring soon by its handle,
   the six dots, onto To ship: while it moves it lifts, with a shadow and
   a purple edge, a dashed purple box shows where it will drop, and the
   other cards make room; let go and it is first. A press on a handle
@@ -5254,3 +5255,5 @@ first.
   their tile for a screen reader: MC-1563 extended.
 - 2026-11-07: Customise Home's reviews, its words saying a tile drags by
   its handle: MC-1564 corrected.
+- 2026-11-07: Customise Home's reviews, the keyboard's keys not given on
+  a touch screen: MC-1564 extended.
