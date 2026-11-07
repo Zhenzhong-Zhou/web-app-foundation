@@ -966,8 +966,9 @@ Paper is checked first because it must not change at all.
   receive: it is first, focus still on its Up, and a screen reader
   (VoiceOver, ⌘F5) says To receive, 1 of 9; press Down, To receive, 2 of
   9. Hide To ship: it goes to Hidden tiles below, focus on the next
-  tile's Hide, its late orders still in the red panel. Show Orders ·
-  Draft: it comes back in its place, after To receive. Turn off Show
+  tile's handle, its late orders still in the red panel. Show Orders ·
+  Draft: it comes back in its place, after To receive, focus on its
+  handle. Turn off Show
   Recently opened on Home: Recently opened, faded below, goes. Scroll
   down: Reset to default and Done stay at the top under the bar (not on
   a window under 700 px tall, where they scroll away). Press Orders in
@@ -5180,3 +5181,5 @@ first.
   MC-1563 extended.
 - 2026-11-07: Customise Home's reviews, nothing in Customise Home usable
   while Done saves: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, focus after Hide on the next
+  tile's handle, after Show on the shown tile's: MC-1563 extended.

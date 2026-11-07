@@ -217,9 +217,9 @@ export function CustomiseButton({
  * that stays at the top while the page scrolls. Every change is on the
  * page until Done saves it, and none can be made while it does. A tile drags by its handle, by a pointer, by
  * touch after a press and hold, or by the keyboard. After Up or Down focus
- * stays on the moved tile's button, after Hide it goes to the next tile,
- * after a drop by the keyboard on its handle, and a screen reader hears
- * each move ("To ship, 2 of 8").
+ * stays on the moved tile's button, after Hide it goes to the next tile's
+ * handle, after Show to the shown tile's, after a drop by the keyboard on
+ * its handle, and a screen reader hears each move ("To ship, 2 of 8").
  */
 export function CustomiseHome({
   cards,
@@ -316,18 +316,19 @@ export function CustomiseHome({
     sayPlace(next, kind);
   }
 
+  // On the next tile's handle, not its Hide, so a second Enter does not
+  // hide that one too.
   function hideTile(kind: HomeKind) {
     const at = shown.indexOf(kind);
     const after = shown[at + 1] ?? shown[at - 1];
-    focusNext.current = after ? `${after}.hide` : `${kind}.show`;
+    focusNext.current = after ? `${after}.handle` : `${kind}.show`;
     onChange(hide(arrangement, kind));
     setSaid(intl.formatMessage(VALUED.hiddenNow, { name: titleOf(kind) }));
   }
 
+  // On the tile shown, where it now is.
   function showTile(kind: HomeKind) {
-    const at = hidden.indexOf(kind);
-    const after = hidden[at + 1] ?? hidden[at - 1];
-    focusNext.current = after ? `${after}.show` : `${kind}.hide`;
+    focusNext.current = `${kind}.handle`;
     const next = show(arrangement, kind);
     onChange(next);
     sayPlace(next, kind);

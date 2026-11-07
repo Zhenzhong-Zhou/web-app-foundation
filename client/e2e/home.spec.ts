@@ -621,11 +621,12 @@ test('Customise Home by buttons: moved, hidden and shown, kept by Done, on reloa
   await expect(down).toBeFocused();
   await expect(panel.getByRole('status')).toHaveText('To receive, 2 of 9');
 
-  // Hide: To ship waits below with Show, focus on the next tile.
+  // Hide: To ship waits below with Show, focus on the next tile's handle,
+  // so a second Enter does not hide that one too.
   await card(page, 'To ship').getByRole('button', { name: 'Hide' }).click();
   await expect(tiles).toHaveCount(8);
   await expect(
-    card(page, 'To receive').getByRole('button', { name: 'Hide' }),
+    card(page, 'To receive').getByRole('button', { name: 'Drag To receive' }),
   ).toBeFocused();
   const hidden = panel.getByRole('region', { name: 'Hidden tiles' });
   await expect(hidden.getByRole('listitem')).toHaveText([
@@ -633,11 +634,17 @@ test('Customise Home by buttons: moved, hidden and shown, kept by Done, on reloa
     /Orders · Draft/,
   ]);
 
-  // The drafts shown, in their place after To receive.
+  // The drafts shown, in their place after To receive, focus on their
+  // handle there.
   await card(page, 'Orders · Draft')
     .getByRole('button', { name: 'Show' })
     .click();
   await expect(tiles.nth(1)).toHaveAccessibleName('Orders · Draft');
+  await expect(
+    card(page, 'Orders · Draft').getByRole('button', {
+      name: 'Drag Orders · Draft',
+    }),
+  ).toBeFocused();
   await expect(panel.getByRole('status')).toHaveText('Orders · Draft, 2 of 9');
 
   const saved = layoutWrite(page);
