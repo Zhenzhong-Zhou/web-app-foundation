@@ -28,6 +28,11 @@ export interface Shot {
   prepare?: (page: Page, words: Words) => Promise<void>;
   /** The window only, not the whole page: a dialog, the top bar. */
   windowOnly?: boolean;
+  /**
+   * The browser's clock fixed at this moment, for a page that shows the
+   * date, the time or a greeting, so its picture is the same on any day.
+   */
+  clock?: Date;
   /** Signed out, for the sign-in page. */
   signedOut?: boolean;
   /** Signed in as the account in no organization, for its Home. */
@@ -58,6 +63,9 @@ async function press(page: Page, filter: string) {
   await page.getByRole('button', { name: filter }).first().click();
   await answered;
 }
+
+/** Home's date, time and greeting: three in the afternoon in Vancouver. */
+const HOME_CLOCK = new Date('2026-11-06T15:00:00-07:00');
 
 /**
  * Most-used and most-telling first, so the lowest numbers are the ones to
@@ -159,5 +167,18 @@ export const SHOTS: Shot[] = [
     name: '19-organization-invitation',
     path: (targets, language) => targets.organizationInvitationPaths[language],
     signedOut: true,
+  },
+  // Home, the demo Owner's, and Customise Home open over it (ADR-091), the
+  // clock fixed so the date, the time and the greeting do not move.
+  { name: '20-home', path: () => '/', clock: HOME_CLOCK },
+  {
+    name: '21-home-customise',
+    path: () => '/',
+    clock: HOME_CLOCK,
+    prepare: async (page, words) => {
+      const customise = words('home.customise.open');
+      await page.getByRole('button', { name: customise, exact: true }).click();
+      await page.getByRole('region', { name: customise }).waitFor();
+    },
   },
 ];
