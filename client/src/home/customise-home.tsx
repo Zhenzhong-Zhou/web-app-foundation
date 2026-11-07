@@ -46,7 +46,7 @@ import { useExpiryDays } from '../lib/use-expiry-days';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
 import { TOUCH } from '../theme/media';
 import { rem } from '../theme/rem';
-import { RADIUS } from '../theme/tokens';
+import { FIXED_OPACITY, RADIUS } from '../theme/tokens';
 import {
   type Arrangement,
   hide,
@@ -201,7 +201,7 @@ export function Fixed({
           />
         </Box>
       )}
-      <Box inert={on} sx={on ? { opacity: 0.55 } : undefined}>
+      <Box inert={on} sx={on ? { opacity: FIXED_OPACITY } : undefined}>
         {children}
       </Box>
     </Box>

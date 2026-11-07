@@ -5,6 +5,7 @@ import {
   CHOSEN_WEIGHT,
   DARK,
   DARK_ACCENT_WEIGHT,
+  FIXED_OPACITY,
   LIGHT,
   MARK,
   mix,
@@ -96,6 +97,15 @@ describe('tokens (ADR-055)', () => {
   it.each(SCHEMES)('shows %s tables their cut edge', (_, s) => {
     for (const ground of [s.surface, s.head]) {
       expect(contrast(s.edge, ground)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  // What may not move while a screen is arranged, faded: its smallest,
+  // mutest words, Home's date, still read (Arranging your own screen).
+  it.each(SCHEMES)('keeps %s muted text legible where it is faded', (_, s) => {
+    for (const ground of [s.page, s.surface]) {
+      const faded = mix(s.muted, ground, FIXED_OPACITY);
+      expect(contrast(faded, ground)).toBeGreaterThanOrEqual(3);
     }
   });
 

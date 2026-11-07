@@ -960,7 +960,8 @@ Paper is checked first because it must not change at all.
   enough). Customise Home sits at the right of What needs you today, at
   every width; press it: the tiles become cards, the panel's heading
   Customise Home focused, and the greeting with Raise an order and More,
-  and the panel of what needs you now, stay in view, faded, each with a
+  and the panel of what needs you now, stay in view, faded, the date
+  under the greeting still easy to read in light and in dark, each with a
   yellow lock reading Fixed, cannot move, and do nothing meanwhile; a
   screen reader reads each lock with its part, Greeting: Fixed, cannot
   move, and What is late: (问候语：, 逾期的事： in 中文). Each
@@ -5257,3 +5258,5 @@ first.
   its handle: MC-1564 corrected.
 - 2026-11-07: Customise Home's reviews, the keyboard's keys not given on
   a touch screen: MC-1564 extended.
+- 2026-11-07: Customise Home's reviews, the fixed parts faded less, their
+  date still easy to read: MC-1563 extended.

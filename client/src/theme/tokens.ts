@@ -183,6 +183,15 @@ export function mix(colour: string, ground: string, weight: number): string {
 export const CHOSEN_WEIGHT = 0.06;
 
 /**
+ * How much shows of what may not move while a person arranges a screen
+ * (the design language, Arranging your own screen): faded so the parts
+ * that move stand out, its muted text still 3:1 on the page and on a
+ * panel in both modes, though out of use, which WCAG 1.4.3 leaves out.
+ * Home's today; #337's later places take it too.
+ */
+export const FIXED_OPACITY = 0.75;
+
+/**
  * Text on the accent: white on the light accent, near black on the dark.
  *
  * The server keeps a copy of both, the light in
