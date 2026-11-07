@@ -33,6 +33,27 @@ What needs doing today, from Home and one step past it.
   1180, then held sideways, 1180 × 820; the operations lead on a laptop,
   1366 × 768, where the rail first shows, then on a desktop, 1920 × 1080.
 
+## customise-home
+
+Arranging Home for oneself, and finding it the same on another device.
+
+- **Starts on:** Home.
+- **Personas:** the senior who reads only Chinese, the owner who learns
+  fast, the operations lead.
+- **Tasks:** put the tiles you use first; hide one you never need, then
+  bring it back; show the drafts and open them; turn Recently opened
+  off; go back to how it was; open Home on another device and find it as
+  you left it.
+- **For the senior:** by the buttons, not by dragging.
+- **For the owner:** by touch, dragging where they can.
+- **For the operations lead:** by mouse, then each task again by
+  keyboard alone.
+- **Sizes:** the senior on a phone, 390 × 844, the other device a tablet
+  upright, 820 × 1180; the owner on a tablet held sideways, 1180 × 820,
+  the other device a phone, 390 × 844; the operations lead on a laptop,
+  1366 × 768, where the rail first shows, the other device a desktop,
+  1920 × 1080.
+
 ## join
 
 A person's first day, from the invitation to their first task.
