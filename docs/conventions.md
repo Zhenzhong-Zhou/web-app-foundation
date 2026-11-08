@@ -619,6 +619,13 @@ The error tracker hears of real faults only (ADR-084).
   chunk to stand for a dropped connection (ADR-081).
 - `toBeVisible` passes while a popover or a menu is still fading in, so axe
   run on one just opened measures it halfway: wait until it has settled.
+- **A keyboard drag in a browser test goes through `dragByKeyboard`**
+  (`client/e2e/support/drag.ts`, ADR-089's amendment), which presses each
+  key only once the screen has answered the one before: the pick-up
+  marked, each move said in the live region, the drop finished. The drag
+  library starts a drag a render after Space and ignores an arrow before
+  then, and Linux WebKit, as CI runs it, started it a render later than
+  the Mac's WebKit, so an arrow pressed at once moved nothing (5631d0d8).
 - **A spec that switches the browser's session clears its cookies first:**
   `clearCookies`, then `addCookies`, as `signInAs` does
   (`client/e2e/support/api.ts`). The page arrives with the shared owner's

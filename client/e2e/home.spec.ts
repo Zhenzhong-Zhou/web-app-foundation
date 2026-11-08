@@ -13,6 +13,7 @@ import {
   uniqueEmail,
 } from './support/api';
 import { shownCards } from './support/customise-home';
+import { dragByKeyboard } from './support/drag';
 import { confirmEmailInDatabase } from './support/mail';
 
 /**
@@ -1151,24 +1152,21 @@ test('Customise Home by dragging: a mouse and the keyboard, the buttons beside, 
   );
 
   // The keyboard: Space picks To receive up, the arrow moves it a place
-  // back, Space drops it there, and the keyboard stays on its handle.
+  // back, Space drops it there, each said as it happens, and the keyboard
+  // stays on its handle.
   const receive = handleOf(page, 'To receive');
-  await receive.focus();
-  await page.keyboard.press('Space');
-  await expect(dragSaid(page, 'Picked up To receive, 3 of 9')).toHaveCount(1);
-  await page.keyboard.press('ArrowLeft');
-  await page.keyboard.press('Space');
-  await settled(page);
+  expect(await dragByKeyboard(page, receive, ['ArrowLeft'])).toEqual([
+    'Picked up To receive, 3 of 9',
+    'To receive, 2 of 9',
+  ]);
   await expect(tiles.nth(1)).toHaveAccessibleName('To receive');
   await expect(receive).toBeFocused();
   await expect(dragSaid(page, 'To receive dropped, 2 of 9')).toHaveCount(1);
 
   // Escape puts it back where it was.
-  await page.keyboard.press('Space');
-  await expect(dragSaid(page, 'Picked up To receive, 2 of 9')).toHaveCount(1);
-  await page.keyboard.press('ArrowRight');
-  await page.keyboard.press('Escape');
-  await settled(page);
+  expect(await dragByKeyboard(page, receive, ['ArrowRight', 'Escape'])).toEqual(
+    ['Picked up To receive, 2 of 9', 'To receive, 3 of 9'],
+  );
   await expect(
     dragSaid(page, 'Move cancelled: To receive back at 2 of 9'),
   ).toHaveCount(1);
