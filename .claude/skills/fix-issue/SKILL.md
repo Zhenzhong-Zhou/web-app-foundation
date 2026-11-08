@@ -151,9 +151,9 @@ the client's tests fail; then `npm ci` in `server/` and `client/`.
 
 Short bullets: what changed, each proof with its command and result,
 the pull request's link, and what it left alone; then, for the
-maintainer, that it merges once green from the terminal, `gh pr merge <N>
---squash --delete-branch`, never from the button
-([engineering.md][merge]). The last
+maintainer, that it merges once green from the terminal, `gh pr merge <PR>
+--squash --delete-branch`, the pull request's number and not the
+issue's, never from the button ([engineering.md][merge]). The last
 line, as every report's ([CLAUDE.md, "How to work"][how-to-work]):
 `DONE: <why>` or `BLOCKED: <what is needed>`.
 

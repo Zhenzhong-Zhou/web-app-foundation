@@ -238,8 +238,8 @@ work under updates it.
 | The planning skill changed             | After its merge, on `main`: `node scripts/pack-chat-skill.mjs`; replace it in claude.ai's Settings → Skills; walk `evals.md`                    |
 | Before drafting an ADR                 | `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n>`, then attach `tmp/adr-NNN/check.txt` to the chat                                  |
 | Building from a brief                  | `/build-from-brief <brief> from <N>`; paste only the stops into the chat                                                                        |
-| A small issue, in a cloud session      | `/fix-issue <N>`; merge its pull request with `gh pr merge <N> --squash --delete-branch`, never the button                                      |
-| Every pull request's review            | `/usability-walkthrough panel <journey>`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                          |
+| Every feature branch's review step     | `/review-step <brief> <N>` for the findings, then again with Bob's choices after it ([which reviews](docs/engineering.md#the-review-step))      |
+| A small issue, in a cloud session      | `/fix-issue <N>`; merge its pull request with `gh pr merge <PR> --squash --delete-branch`, never the button                                     |
 | Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                                                              |
 | After a merge                          | `scripts/prune-branches.sh --yes`                                                                                                               |
 | After a merge, now and then            | `scripts/clean-local.sh`, then `--yes`; `--docker` for Docker's space                                                                           |
@@ -411,14 +411,14 @@ licences.
 - [`docs/principles.md`](docs/principles.md) — what the product aims for, and
   the ADRs that hold to each aim
 - [`docs/handoff.md`](docs/handoff.md) — where the work stands and what is next
-- [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with seven project
+- [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with eight project
   skills in `.claude/skills/`: `/code-review`, `/usability-walkthrough`,
-  `/production-readiness`, `/build-from-brief`, `/rules-file`, `/triage`
-  and `/fix-issue`; two subagents in `.claude/agents/`, `brief-step`,
-  which runs a brief's step (ADR-089), and `walkthrough`, one persona's
-  walk in a panel (ADR-090); and the chat's planning skill,
-  `plan-feature`, in `.claude/chat-skills/`, uploaded to claude.ai
-  (ADR-088)
+  `/production-readiness`, `/build-from-brief`, `/review-step`,
+  `/rules-file`, `/triage` and `/fix-issue`; two subagents in
+  `.claude/agents/`, `brief-step`, which runs a brief's step (ADR-089),
+  and `walkthrough`, one persona's walk in a panel (ADR-090); and the
+  chat's planning skill, `plan-feature`, in `.claude/chat-skills/`,
+  uploaded to claude.ai (ADR-088)
 - [`docs/releases/`](docs/releases) — the notes each tagged release was made with
 
 The ADRs and `docs/conventions.md` are both worth reading before a change that

@@ -287,7 +287,8 @@ measured on the device.
   reads it with every screen's files.
 - **`/code-review`** judges a screen the change touches against it.
 - **The walkthrough panel:** every pull request that changes what a
-  person sees walks the journeys it touches, the personas at once
+  person sees walks the journeys it touches, the personas at once, in
+  [the review step](engineering.md#the-review-step)
   (`/usability-walkthrough panel <journey>`), and what two personas or
   more hit is settled here.
 - **The canvas:** a design is drawn there, at the classes it changes,

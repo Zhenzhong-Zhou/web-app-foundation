@@ -619,6 +619,13 @@ The error tracker hears of real faults only (ADR-084).
   chunk to stand for a dropped connection (ADR-081).
 - `toBeVisible` passes while a popover or a menu is still fading in, so axe
   run on one just opened measures it halfway: wait until it has settled.
+- **A keyboard drag in a browser test goes through `dragByKeyboard`**
+  (`client/e2e/support/drag.ts`, ADR-089's amendment), which presses each
+  key only once the screen has answered the one before: the pick-up
+  marked, each move said in the live region, the drop finished. The drag
+  library starts a drag a render after Space and ignores an arrow before
+  then, and Linux WebKit, as CI runs it, started it a render later than
+  the Mac's WebKit, so an arrow pressed at once moved nothing (5631d0d8).
 - **A spec that switches the browser's session clears its cookies first:**
   `clearCookies`, then `addCookies`, as `signInAs` does
   (`client/e2e/support/api.ts`). The page arrives with the shared owner's
@@ -685,6 +692,25 @@ The error tracker hears of real faults only (ADR-084).
   turns the run red, and the run's summary names it and how often it
   failed. The hunt files nothing and retries nothing: each test it names is
   filed by hand as a "Flaky:" issue, as above.
+- **A new or changed test runs before its commit** (ADR-089's amendment),
+  repeatedly, so a flake shows before CI finds it: a client unit test five times
+  (`npx vitest run <file>` in `client/`, five runs); a browser test five
+  times (`npx playwright test <spec> --repeat-each=5` in `client/`, the
+  account spec's password tests as the bullet above says); a server
+  end-to-end test three times (`server/scripts/e2e-flake-hunt.sh 3
+  <suite>`). A test that fails in any of them is not committed, and the
+  commit's step gives the command and the result in its summary.
+- **CI burns in the browser specs a pull request changes** (ADR-089's
+  amendment): after the browser job's run, the specs it changes and those
+  importing a file it changes run five times each in Chromium, with
+  retries off (`--only-changed`, `.github/workflows/ci.yml`), each shard
+  taking a third of the runs, within 20 minutes. More than 150 tests, each
+  counted once before the five repeats, as a change to a file every spec
+  imports gives, burns in only the specs the pull request changes itself,
+  and the job's summary says which ran, with a warning on the pull
+  request, the trigger of #516. Its
+  list, beforehand: `npx playwright test --list --only-changed=origin/main
+  --project=chromium` in `client/`.
 
 ---
 
@@ -1041,10 +1067,12 @@ Internet Explorer, and any browser's IE mode, is not supported.
   `<loopback>` lets the container's browser reach the Mac's
   `localhost:5273` and `:3100`, so the session cookies stay on
   `localhost`. Without `E2E_FIREFOX` and with `--project=webkit`, it is
-  Linux WebKit, which showed a flake macOS WebKit never did (#232).
-  `scripts/verify.sh` in full runs the Firefox part itself, after the
-  client's Playwright suite, in a container of its own on a free port,
-  stopped whatever the result; the commands above are for a run by hand.
+  Linux WebKit, which showed a flake macOS WebKit never did (#232) and
+  times a keyboard drag apart from it ([Tests](#tests), 5631d0d8).
+  `scripts/verify.sh` in full runs both itself, after the client's
+  Playwright suite: the spec in Firefox, then in Linux WebKit, from one
+  container of its own on a free port, stopped whatever the result; the
+  commands above are for a run by hand.
 - The product's name is VITE_APP_NAME in the repository's .env, with one
   per language as `VITE_APP_NAME_<TAG>` (`VITE_APP_NAME_ZH_HANS`,
   `VITE_APP_NAME_FR_CA`), each falling back to it. A tab's title comes

@@ -8,20 +8,9 @@
   Small chores (a CI line, a lint rule, a docs tidy) ride along in the next
   feature PR rather than getting one of their own.
 - **The reviews, before the PR is opened** (21 October 2026; from
-  ADR-081 four, and from ADR-086 five): every feature branch runs, for
-  any PR that changes what a person sees, the walkthrough panel on each
-  journey its change touches, `/usability-walkthrough panel <journey>`,
-  the journey's personas at once (ADR-090;
-  `.claude/skills/usability-walkthrough/journeys.md`, a journey added
-  there first when its task is new), then `/simplify`,
-  then `/code-review`, then
-  `/production-readiness` on the sections the change touches
-  ([conventions.md, "Production readiness"](conventions.md#production-readiness)),
-  then `/doctor prompt-audit` on Claude's instruction files
-  ([How code is delivered](#how-code-is-delivered)). Their findings are
-  numbered together and nothing is fixed until Bob chooses; each fix
-  chosen is its own commit. The PR description names the journeys
-  walked and their personas. `/usability-walkthrough` was
+  ADR-081 four, and from ADR-086 five): every feature branch ends with
+  [the review step](#the-review-step), which says which reviews, in what
+  order, and how their findings are chosen. `/usability-walkthrough` was
   missed on several recent PRs, so ADR-079's branch walked
   two journeys, to make up for ADR-077 and ADR-078.
 - **Claude Code Review on Sonnet** (October 2026): the reviews in each
@@ -152,18 +141,24 @@ steps; this section stays the rule.
   commit, and uploaded by hand once each change has merged (ADR-084); its
   first step compares the uploaded copy with `main`'s.
 - **The build, through `/build-from-brief`** (from ADR-083; in a row
-  from ADR-089). The brief and the canvas's boards go in `tmp/adr-NNN/`,
+  from ADR-089; each step on its own model from ADR-089's amendment of
+  November 2026). The brief and the canvas's boards go in `tmp/adr-NNN/`,
   ignored by git and by markdownlint, so `scripts/verify.sh` does not
   lint its Markdown. A brief's steps table names who runs each step:
   Claude Code, Claude Code's main session (the reviews), the chat or
-  Bob. `/build-from-brief tmp/adr-NNN/brief.md from <N>` runs step N and
-  each one after it, each in a new `brief-step` subagent, whose
+  Bob, and the model of each Claude Code step
+  ([Which model runs a step](#which-model-runs-a-step)).
+  `/build-from-brief tmp/adr-NNN/brief.md from <N>` runs step N and
+  each one after it, each in a new `brief-step` subagent on the model its
+  row names, whose
   `.claude/agents/brief-step.md` holds the ground rules every brief
   repeated, so a brief holds its decisions and its steps;
   `/build-from-brief tmp/adr-NNN/brief.md <N>` runs one step the same
   way. A run stops at a step that is the chat's or Bob's; before a
-  main-session step; at a step BLOCKED, by a question the brief does not
-  answer or by verify failing after one honest retry; before anything
+  main-session step, which it refuses, naming `/review-step`; at a step
+  BLOCKED, by a question the brief does not
+  answer or by verify failing after one honest retry; at a summary that
+  names another model than its row's; before anything
   that would push, open a pull request, merge or change `main`; after
   the current step when a file named `STOP` is beside the brief, which
   the run removes; and at the stop rule. Each step's summary is appended
@@ -176,16 +171,21 @@ steps; this section stays the rule.
   building, the chat changes the brief only when an answer changes a
   step not yet run, and keeps the as-built notes in the chat (29 October
   2026): #260's brief was sent again after nearly every step. The review
-  step runs in the main session, in two prompts, each step named alone:
-  the reviews, `/doctor prompt-audit` among them, write
-  their findings, numbered, to `tmp/adr-NNN/review.md` and stop for Bob's
-  choices; then the fixes by number, each verified with `--docs` or
-  `--quick` by what it touches ([Commits](#commits)), the full verify, the
-  push and the PR. `/doctor prompt-audit` is Claude Code's own audit of
-  its instruction files (`CLAUDE.md`, `.claude/rules/`, the skills) for
-  contradictions and references to files that no longer exist. Bob
-  types it in the session, since a session cannot run it: the session
-  asks for it, and numbers its findings with the rest. It changes nothing itself.
+  step runs in the main session, by `/review-step`, in two prompts
+  ([The review step](#the-review-step)).
+  Around each step, the loop does what Bob sees here (ADR-089's
+  amendment); [its skill](../.claude/skills/build-from-brief/SKILL.md)
+  holds the checks themselves. `from <N>` prints the plan first, each
+  step up to the next stop with its model and its minutes, and starts
+  without a question; `plan` prints the whole brief's and runs nothing.
+  It refuses to start, naming why, when the branch, the tree, Claude
+  Code's version, a variable that can put every step on one model, or
+  Docker is not as the run needs. A Sonnet or Haiku step that fails on
+  its own code, or meets work above its model, runs again on Opus, once
+  a run, its first attempt saved as `step-N-<model>.diff` beside the
+  brief. Each step leaves two summaries: the full one in `summaries.md`,
+  under a heading with its model, its minutes and its tokens, and its
+  `## For the chat`, printed at a stop for Bob to paste.
 - **`caffeinate -dims` in a second terminal** during a long Claude Code
   step, such as the full verify (October 2026): a Mac asleep cut one off.
 - **A second working folder,** for a branch built while another runs in
@@ -312,6 +312,75 @@ steps; this section stays the rule.
   - `client/e2e/…`;
   - `docs/adr/NNNN-<slug>.md`.
 
+### Which model runs a step
+
+ADR-089's amendment (6 and 7 November 2026). A brief's steps table has a
+Model column, which the chat sets when it plans, from this table:
+
+| Model | The step's work |
+| --- | --- |
+| `opus` | New server or client logic; design; the reviews and their fixes; a test written with them; any new or changed browser test |
+| `sonnet` | Dependencies; seeds; Help guides; docs; a unit or server test copied from one beside it |
+| `haiku` | Only a step that runs commands and reports, never one that writes code |
+
+- **A step above its model stops,** with `BLOCKED: model` and before it
+  commits anything, and the loop runs it again on Opus
+  ([the escalation](#how-code-is-delivered)). The one that is always
+  above Sonnet and Haiku is a browser test, a `.spec.ts` in `client/e2e/`
+  or a file in `client/e2e/support/`: a check written on Sonnet raced the
+  page's own read in CI (3cdebcd7), and a keyboard drag's keys came too
+  soon for Linux WebKit (5631d0d8, [conventions.md, Tests](conventions.md#tests)).
+- **The loop itself runs on the session's model, kept on Opus,** with
+  no model of its own: a skill's model holds for its first turn only,
+  and each step's result comes back in a new turn, so a pin to Sonnet
+  lasted one step (the router's review, finding 27). The review step
+  runs on Opus, by `/review-step`; the walkthrough's personas run on
+  Sonnet.
+- **The table follows what is measured:** each summary's heading gives
+  its minutes and tokens, the as-built sets them against the brief's
+  time-and-cost table, and this one changes where they disagree.
+
+### The review step
+
+The last Claude Code step of a brief, before its pull request is opened,
+and the one row whose Who is `Claude Code, main session`. It runs in the
+session, on Opus at high effort, by `/review-step tmp/adr-NNN/brief.md
+<N>`; `/build-from-brief` refuses it and names that command. It stays in
+the main session, never in a `brief-step`, because it stops for Bob's
+choices, `/doctor prompt-audit` is typed in the session, and the reviews'
+own skills start helpers of their own. Two prompts, the same command
+twice:
+
+1. **The findings.** The reviews, in this order:
+   1. the walkthrough panel, `/usability-walkthrough panel <journey>`, on
+      each journey the change touches, the journey's personas at once, for
+      any PR that changes what a person sees (ADR-090). The brief names
+      the journeys, from `.claude/skills/usability-walkthrough/journeys.md`;
+      a journey is added there first when its task is new, and a persona to
+      `personas.md` beside it;
+   2. `/simplify`;
+   3. `/code-review`;
+   4. `/production-readiness` on the sections the change touches
+      ([conventions.md, "Production readiness"](conventions.md#production-readiness));
+   5. `/doctor prompt-audit`, Claude Code's own audit of its instruction
+      files (`CLAUDE.md`, `.claude/rules/`, the skills) for contradictions
+      and references to files that no longer exist. Bob types it in the
+      session, since a session cannot run it: the session asks for it and
+      waits, since it is a step of the reviews and not a decision, and
+      numbers its findings with the rest. It runs on the session's model,
+      so the ask says `/model opus` first. It changes nothing itself.
+
+   Every finding is numbered, together, and written to the file the brief
+   names, usually `tmp/adr-NNN/review.md`. Nothing is fixed, `/simplify`'s
+   included: the prompt stops there for Bob's choices in the chat.
+2. **The fixes.** The same command with Bob's choices after the step's
+   number, by their numbers. Each fix is its own commit, verified with
+   `--docs` or `--quick` by what it touches ([Commits](#commits)); a
+   finding left is filed as an issue ([Issues and
+   labels](#issues-and-labels)) or said in the PR. Then
+   `scripts/verify.sh` in full, the push and the PR, whose description
+   names the journeys walked and their personas.
+
 ## Process
 
 - ADR before code for each new area. Server first with e2e tests, then the
@@ -346,7 +415,7 @@ steps; this section stays the rule.
 - **At each release,** before tagging it, set both packages' version to
   it: `npm version <x.y.z> --no-git-tag-version` in `server/` and in
   `client/`; and run `/doctor prompt-audit`
-  ([How code is delivered](#how-code-is-delivered)). Release notes are
+  ([The review step](#the-review-step)). Release notes are
   release notes only: they say nothing of manual checks or the
   walkthrough.
 - A type change on the client means fixing the test fixtures that build that
@@ -430,10 +499,11 @@ reports success.
   root (both sides, CI's order, stops at the first failure; `--quick`
   skips the end-to-end suites). Editor auto-imports in the wrong quote
   style fail CI.
-  The full run also checks `e2e/accessibility.spec.ts` in Firefox, from
-  Playwright's Linux image in Docker
+  The full run also checks `e2e/accessibility.spec.ts` in Firefox and in
+  Linux WebKit, from one container of Playwright's Linux image in Docker
   ([conventions.md, Supported browsers](conventions.md#supported-browsers)),
-  which a pull request's CI, Chromium alone, does not.
+  which a pull request's CI, Chromium alone, does not; Linux WebKit's
+  timing differs from the Mac's ([conventions.md, Tests](conventions.md#tests)).
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
 - Before each commit, `scripts/verify.sh --quick`; or `--docs`, in

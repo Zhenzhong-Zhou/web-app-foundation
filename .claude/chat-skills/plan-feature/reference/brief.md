@@ -20,24 +20,29 @@ repeat; a brief holds only its decisions and its steps.
    when not 30 minutes, and anything every
    summary must say. The reviews have none: they wait for their
    helpers and for Bob.
-4. **The steps:** a table (#, Who, What), then a section per step: what
-   it builds, its files, the test that proves it, one commit unless it
-   says otherwise. Who is `Claude Code`; `Claude Code, main session` for
-   the reviews, which a run stops before and which run when named
-   alone; `Chat`; or `Bob`. A run stops at every step not Claude Code's,
-   so a restart or a pull by hand is a step of Bob's.
+4. **The steps:** a table (#, Who, Model, What), then a section per
+   step: what it builds, its files, the test that proves it, one commit
+   unless it says otherwise. Who is `Claude Code`; `Claude Code, main
+   session` for the reviews, which `/build-from-brief` refuses and
+   `/review-step` runs; `Chat`; or `Bob`. Model is `opus`, `sonnet` or
+   `haiku` for each Claude Code step, from `docs/engineering.md`'s
+   "Which model runs a step", and a dash for the others; the loop
+   refuses a run whose Claude Code step has none. A run stops at every
+   step not Claude Code's, so a restart or a pull by hand is a step of
+   Bob's.
    - Dependencies first, and again before the reviews.
    - An inventory first for a change across many screens.
    - The seeds where a feature adds a table or a screen.
-   - The reviews in two prompts: the findings, numbered, to
-     `tmp/adr-NNN/review.md` with nothing fixed; then the fixes Bob
-     chose, given after the step's number, the full verify, the push and
-     the pull request.
+   - The reviews, run by `/review-step tmp/adr-NNN/brief.md <N>`, in two
+     prompts: the findings, numbered, to `tmp/adr-NNN/review.md` with
+     nothing fixed; then the same command with the fixes Bob chose after
+     the step's number, the full verify, the push and the pull request.
    - The as-built last, by the chat; then what is done by hand after
      the merge.
-5. **Time and cost:** a table of each step's rough time, the run's
-   total, and its cost on API credits and on Bob's plan, with what the
-   figures rest on; a stop of Bob's where the run is long enough to be
+5. **Time and cost:** a table with the columns `#`, `Model`, `Minutes`,
+   `At API prices` and `On the plan`, each step's rough time in its
+   `Minutes` cell, which the loop's plan reads; the run's total, with what
+   the figures rest on; a stop of Bob's where the run is long enough to be
    worth splitting, or where it switches between the two.
 6. **Where `/clear` is safe:** after a run stops, once its summary is
    pasted into the chat; never inside a step, nor while a run goes on.

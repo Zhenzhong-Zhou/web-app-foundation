@@ -106,7 +106,11 @@ given, which git ignores.
    instead, since a second size would meet a Getting started the first
    had done, each made through `POST /v1/auth/register` as the sign-up
    form makes one, with an address new to this run, the demo's password
-   and a company name of its own.
+   and a company name of its own. A journey that starts on an invitation,
+   as `join` does, gets one invitation for each persona and size it
+   walks, since an invitation is accepted once: each sent from that
+   persona's demo account, as the outsider's Set up sends one, to an
+   address new to this run.
 2. **Give out the sizes,** so every journey is walked at each of the
    design language's five
    [width classes](../../../docs/design-language.md#screen-sizes), the
@@ -126,9 +130,12 @@ given, which git ignores.
    line overrides them (ADR-091). Either way they replace the sizes in
    the persona's Set up, and the rest of it stays.
 3. **Start the subagents together,** one per persona, each given its
-   persona, its account, the journey's tasks as written for it, its
-   screen sizes, and its report's path, `<folder>/<journey>-<persona>.md`,
-   as in `home-senior-who-reads-only-chinese.md`.
+   persona; its account, or one for each size where step 1 made one per
+   size; its invitations, one for each size, where step 1 sent them, in
+   place of any its Set up would send; the journey's tasks as written
+   for it; its screen sizes; and its report's path,
+   `<folder>/<journey>-<persona>.md`, as in
+   `home-senior-who-reads-only-chinese.md`.
 4. **Wait for all of them.** One that ends BLOCKED is named in the
    merge, and the others still count.
 5. **Merge** into `<folder>/<journey>.md`: each finding once, the

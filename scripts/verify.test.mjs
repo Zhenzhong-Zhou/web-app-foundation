@@ -1,6 +1,7 @@
 /**
- * Tests for verify.sh's API contract step (#346) and the wait for Firefox's
- * container, on Node's own runner:
+ * Tests for verify.sh's API contract step (#346) and the container of
+ * Playwright's Linux image, its wait and the browsers it serves, on Node's
+ * own runner:
  * scripts/ sits outside both packages, so neither one's Vitest would find
  * them.
  *
@@ -10,10 +11,12 @@
  * copy of the script, the API document and the client's types. Stand-ins
  * take every other step's place: npm and npx come first on the PATH and
  * pass, but for `npm run api`, which writes what the test says it
- * generates, as openapi-ts does: the folder emptied, then written. The
- * Firefox tests run the full script, with a docker of their own. The
- * script runs through /bin/bash, the Mac's 3.2 where the tests run on a
- * Mac, so anything newer than 3.2 fails here.
+ * generates, as openapi-ts does: the folder emptied, then written. npx
+ * notes where it runs, the remote browser it is given and its arguments.
+ * The container's tests run the full script, with a docker of their own,
+ * which notes what it is asked. The script runs through /bin/bash, the
+ * Mac's 3.2 where the tests run on a Mac, so anything newer than 3.2 fails
+ * here.
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -75,7 +78,8 @@ function put(root, files) {
  * `verify.sh --quick` (or with the arguments in `mode`, none for the full
  * run), its npm writing `generated` on `npm run
  * api`, from server/ as the script runs it, and a docker, when `docker` is
- * given, that is this script. The run, with npm's calls.
+ * given, that is this script. The run, with npm's, npx's and docker's
+ * calls.
  */
 function verify(t, root, generated, { mode = ["--quick"], docker } = {}) {
   const bin = folder(t, "verify-bin");
@@ -96,7 +100,18 @@ fi
 `,
     { mode: 0o755 },
   );
-  writeFileSync(path.join(bin, "npx"), "#!/bin/sh\n", { mode: 0o755 });
+  writeFileSync(
+    path.join(bin, "npx"),
+    `#!/bin/sh
+echo "\${PWD##*/}, \${PW_TEST_CONNECT_WS_ENDPOINT:-no remote} \${PW_TEST_CONNECT_EXPOSE_NETWORK:-}: $*" >> "$0.log"
+`,
+    { mode: 0o755 },
+  );
+  // Each stand-in notes its calls in its own name's .log beside it.
+  const npxLog = path.join(bin, "npx.log");
+  const dockerLog = path.join(bin, "docker.log");
+  writeFileSync(npxLog, "");
+  writeFileSync(dockerLog, "");
   if (docker) writeFileSync(path.join(bin, "docker"), docker, { mode: 0o755 });
   const run = spawnSync("/bin/bash", ["scripts/verify.sh", ...mode], {
     cwd: root,
@@ -104,7 +119,13 @@ fi
     env: { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}` },
     timeout: 60_000,
   });
-  return { ...run, npm: readFileSync(log, "utf8").trimEnd().split("\n") };
+  const lines = (file) => readFileSync(file, "utf8").trimEnd().split("\n");
+  return {
+    ...run,
+    npm: lines(log),
+    npx: lines(npxLog),
+    docker: lines(dockerLog),
+  };
 }
 
 const read = (root, file) => readFileSync(path.join(root, file), "utf8");
@@ -185,9 +206,11 @@ test("--quick stops when uncommitted files are stale, a file added and one remov
 
 /**
  * A docker whose Playwright container logs `logs` and, asked whether it is
- * running, says `running`; everything else it is asked, it does.
+ * running, says `running`; everything else it is asked, it does. It notes
+ * each call in docker.log beside it.
  */
 const container = (logs, running) => `#!/bin/sh
+echo "$*" >> "$0.log"
 case "$1" in
   logs) echo '${logs}' ;;
   inspect) echo '${running}' ;;
@@ -204,7 +227,11 @@ function withPlaywright(root) {
   );
 }
 
-test("the full run stops at once, with the container's logs, when Firefox's container has exited", (t) => {
+/** The Playwright suites the run started, each as npx noted it. */
+const playwright = (run) =>
+  run.npx.filter((call) => call.includes(": playwright "));
+
+test("the full run stops at once, with the container's logs, when the browsers' container has exited", (t) => {
   const root = fixture(t);
   withPlaywright(root);
   const run = verify(t, root, OLD, {
@@ -221,9 +248,10 @@ test("the full run stops at once, with the container's logs, when Firefox's cont
   );
   assert.doesNotMatch(run.stderr, /did not start in 120 seconds/);
   assert.doesNotMatch(run.stdout, /== All passed/);
+  assert.deepEqual(playwright(run), []);
 });
 
-test("the full run goes on when Firefox's container is listening", (t) => {
+test("the full run, once the container listens, runs the accessibility spec in its Firefox, then in its WebKit", (t) => {
   const root = fixture(t);
   withPlaywright(root);
   const run = verify(t, root, OLD, {
@@ -232,6 +260,17 @@ test("the full run goes on when Firefox's container is listening", (t) => {
   });
 
   assert.equal(run.status, 0, run.stdout + run.stderr);
-  assert.match(run.stdout, /accessibility spec in Firefox/);
-  assert.match(run.stdout, /^== All passed$/m);
+  assert.deepEqual(playwright(run), [
+    "client, ws://127.0.0.1:49152/ <loopback>: playwright test e2e/accessibility.spec.ts --project=firefox",
+    "client, ws://127.0.0.1:49152/ <loopback>: playwright test e2e/accessibility.spec.ts --project=webkit",
+  ]);
+  assert.equal(
+    run.docker.filter((call) => call.startsWith("run ")).length,
+    1,
+    run.docker.join("\n"),
+  );
+  assert.match(
+    run.stdout,
+    /accessibility spec in Firefox[^]*accessibility spec in Linux WebKit[^]*^== All passed$/m,
+  );
 });

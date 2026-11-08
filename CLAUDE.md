@@ -122,19 +122,23 @@ Andrej Karpathy's observations on LLM coding pitfalls
 ## Skills
 
 - `/code-review`: reviews a branch or pull request against these rules,
-  `docs/conventions.md` and `docs/principles.md`.
+  `docs/conventions.md`, `docs/principles.md` and, for a screen,
+  `docs/design-language.md`.
 - `/usability-walkthrough`: walks a task through the running app as a
   persona and reports what gets in the way; `panel <journey>` walks a
-  journey from its `journeys.md` as several personas at once, each in a
-  `walkthrough` subagent (`.claude/agents/walkthrough.md`), and merges
-  what they found.
+  journey as several personas at once.
 - `/production-readiness`: reviews whether the deployed app is ready for
   real users, report only.
 - `/build-from-brief`: runs a build brief in `tmp/`, one step as
   `/build-from-brief tmp/adr-NNN/brief.md <N>` or from N in a row as
   `/build-from-brief tmp/adr-NNN/brief.md from <N>`, each Claude Code
-  step in a `brief-step` subagent and the reviews in the session,
-  stopping where a person is needed; only when a prompt names it.
+  step in a `brief-step` subagent on the model its row names (`opus`,
+  `sonnet` or `haiku`; the loop itself on the session's model, kept on
+  Opus), stopping where a person is needed; only when a prompt names it.
+- `/review-step`: runs a brief's review step, the one whose Who is
+  `Claude Code, main session`, in this session on Opus, as
+  `/review-step tmp/adr-NNN/brief.md <N>` for the findings and with Bob's
+  choices after the number for the fixes; only when a prompt names it.
 - `/rules-file`: writes an area's rules files from its code and tests.
 - `/triage`: proposes a group, areas or a close for each open issue in
   `tmp/triage.md`, then, with Bob's choices, writes the `gh` commands
@@ -148,13 +152,7 @@ Andrej Karpathy's observations on LLM coding pitfalls
   skill list, as `anthropic-skills:plan-feature`; it is the chat's alone,
   so Claude Code never runs it.
 
-Every feature branch runs, before the PR is opened, the walkthrough
-panel, `/usability-walkthrough panel <journey>`, on each journey of
-`.claude/skills/usability-walkthrough/journeys.md` its change touches,
-when the PR changes what a person sees, then `/simplify`, then
-`/code-review`, then
-`/production-readiness` on the sections the change touches, then
-`/doctor prompt-audit`, Claude Code's audit of its instruction files,
-which Bob types in the session, since a session cannot run it. Their
-findings are numbered together and nothing is fixed until Bob chooses;
-each fix chosen is its own commit.
+Every feature branch ends with its review step, run by `/review-step`:
+which reviews, in what order, and how their findings are chosen is
+[`docs/engineering.md`, The review step](docs/engineering.md#the-review-step).
+Nothing is fixed until Bob chooses; each fix chosen is its own commit.

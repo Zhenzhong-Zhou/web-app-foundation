@@ -101,11 +101,18 @@ checking**. Each item names its issue or ADR.
 ## 4. The brief
 
 `tmp/adr-NNN/brief.md`, in [the brief's shape](reference/brief.md): a
-step per commit, its table saying who runs each. Claude Code's steps run
-in a row, `/build-from-brief tmp/adr-NNN/brief.md from N`, each in a
-fresh `brief-step` subagent, until one needs a person (ADR-089). Sent
-once, whole. Changed only when an answer changes a step not yet run;
-what building settles stays in the chat for the as-built.
+step per commit, its table saying who runs each and, for a Claude Code
+step, on which model. Claude Code's steps run in a row,
+`/build-from-brief tmp/adr-NNN/brief.md from N`, each in a fresh
+`brief-step` subagent on the model its row names, until one needs a
+person (ADR-089). The Model column is set from the table in
+`docs/engineering.md`'s "Which model runs a step", its one home, read
+on the clone at the session's start (section 0). A step above its model
+stops and runs again on Opus, so a doubtful step is given `opus`. The
+reviews are the row `Claude Code, main session`, run by `/review-step`,
+never by the loop. Sent once, whole. Changed only when an answer
+changes a step not yet run; what building settles stays in the chat for
+the as-built.
 
 ## 5. While building
 
@@ -121,7 +128,7 @@ gets:
 - A question a step hands back: the options, one recommended, and the
   exact text to type.
 - The reviews' choices, by number, after the step's number:
-  `/build-from-brief tmp/adr-NNN/brief.md N` followed by them.
+  `/review-step tmp/adr-NNN/brief.md N` followed by them.
 - A chat step (the docs, a design, a fix the chat writes): its files as
   [the delivery rules](reference/delivery.md) say, from a clone of the
   branch Bob has pushed, at the commit he names.
