@@ -191,7 +191,17 @@ End every step with it, as your last message, in plain Markdown.
 turn of its own after every tool call has returned; never a
 placeholder, and never beside another tool call. The step that made
 cb2edd04 handed back the word `placeholder` in the turn of its commit,
-and its summary was lost. `/build-from-brief` appends it whole to
+and its summary was lost.
+
+**No background task outlives the step:** before the hand-back, every
+one the step started, a command moved to the background or a watch on
+one, has finished or is stopped with `TaskStop`. Step 13 of the
+build-router brief left a `cat` waiting on input that never came, moved
+to the background after two minutes, with a loop watching for its
+output; both ran on after its summary, until a notice woke the step 25
+minutes later to stop them.
+
+`/build-from-brief` appends it whole to
 `summaries.md` beside the brief and reads its first and last lines; at
 a stop it prints the step's
 `## For the chat`, which Bob pastes into the chat, and at the brief's
