@@ -54,9 +54,10 @@ Their home is `docs/engineering.md`, "How code is delivered" and
   with `--body-file`, never inside a script's `$( )`, which macOS's bash
   3.2 reads wrongly (ADR-090's as-built).
 - Merging, from the terminal, never the button, which offers the method
-  used last: a cloud session's pull request with `gh pr merge <N>
-  --squash --delete-branch`; a feature branch's with `gh pr merge <N>
-  --merge`, so its commits stay apart.
+  used last: a cloud session's pull request with `gh pr merge <PR>
+  --squash --delete-branch`; a feature branch's with `gh pr merge <PR>
+  --merge`, so its commits stay apart; `<PR>` is the pull request's
+  number, not the issue's.
 - A commit command, a Claude Code prompt or a slash command is never
   indented in the reply: a code block inside a list carries the list's
   indent, which git keeps in a commit's message and which makes Claude
