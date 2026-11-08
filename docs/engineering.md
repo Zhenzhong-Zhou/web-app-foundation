@@ -173,42 +173,19 @@ steps; this section stays the rule.
   2026): #260's brief was sent again after nearly every step. The review
   step runs in the main session, by `/review-step`, in two prompts
   ([The review step](#the-review-step)).
-  Around each step, the loop does this (ADR-089's amendment):
-  - **It prints the plan first.** `from <N>` lists each step up to the
-    next stop with its model and its minutes from the brief's
-    time-and-cost table, and where the run will stop and why; then it
-    starts, asking nothing, since a reply would be a new turn outside the
-    loop's Sonnet pin. `/build-from-brief tmp/adr-NNN/brief.md plan`
-    prints the plan of the whole brief and runs nothing.
-  - **It refuses to start,** naming why, when the branch is not the
-    brief's; when a tracked file has changes; when Claude Code is older
-    than 2.1.251, the first to put the model named for one subagent
-    above the one in its file; when `CLAUDE_CODE_SUBAGENT_MODEL` or
-    `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is set, either of which can put
-    every step on one model; or when Docker is not running and a step in
-    the run verifies with more than `--docs`. A steps table with no model
-    for a Claude Code step, or another value than `opus`, `sonnet` or
-    `haiku`, is refused too, naming the step.
-  - **The model check:** each step starts on its row's model, and its
-    summary's first line, `Model: …`, must name that family. Another, or
-    none, stops the run as BLOCKED, naming both, so no step drops to
-    another model unseen; a result missing either that line or a
-    `DONE:` or `BLOCKED:` last line is first asked once, with
-    SendMessage, for its full summary.
-  - **The escalation, once a run:** a Sonnet or Haiku step that ends
-    `BLOCKED: verify (code)` or `BLOCKED: model`, having committed
-    nothing, has its work set aside (`git stash`) and saved as
-    `step-N-<model>.diff` beside the brief, and is run again on Opus,
-    told where the diff is and why the first attempt stopped, and never
-    applying it. A failure of the environment (Docker, the database, the
-    network, a port), a step that committed, and a second escalation stop
-    the run for Bob.
-  - **Two summaries:** the full one is appended to `summaries.md` under a
-    heading that gives the step's model, its minutes and its tokens (the
-    count the Agent tool shows, otherwise `tokens not shown`); the short
-    one, `## For the chat`, 10 to 15 lines, is printed at a stop for Bob
-    to paste. The as-built compares the minutes and tokens with the
-    brief's time-and-cost table.
+  Around each step, the loop does what Bob sees here (ADR-089's
+  amendment); [its skill](../.claude/skills/build-from-brief/SKILL.md)
+  holds the checks themselves. `from <N>` prints the plan first, each
+  step up to the next stop with its model and its minutes, and starts
+  without a question; `plan` prints the whole brief's and runs nothing.
+  It refuses to start, naming why, when the branch, the tree, Claude
+  Code's version, a variable that can put every step on one model, or
+  Docker is not as the run needs. A Sonnet or Haiku step that fails on
+  its own code, or meets work above its model, runs again on Opus, once
+  a run, its first attempt saved as `step-N-<model>.diff` beside the
+  brief. Each step leaves two summaries: the full one in `summaries.md`,
+  under a heading with its model, its minutes and its tokens, and its
+  `## For the chat`, printed at a stop for Bob to paste.
 - **`caffeinate -dims` in a second terminal** during a long Claude Code
   step, such as the full verify (October 2026): a Mac asleep cut one off.
 - **A second working folder,** for a branch built while another runs in
