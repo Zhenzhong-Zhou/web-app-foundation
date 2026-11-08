@@ -39,9 +39,10 @@ repeat; a brief holds only its decisions and its steps.
      the step's number, the full verify, the push and the pull request.
    - The as-built last, by the chat; then what is done by hand after
      the merge.
-5. **Time and cost:** a table of each step's model and rough time, the
-   run's total, and its cost on API credits and on Bob's plan, with what the
-   figures rest on; a stop of Bob's where the run is long enough to be
+5. **Time and cost:** a table with the columns `#`, `Model`, `Minutes`,
+   `At API prices` and `On the plan`, each step's rough time in its
+   `Minutes` cell, which the loop's plan reads; the run's total, with what
+   the figures rest on; a stop of Bob's where the run is long enough to be
    worth splitting, or where it switches between the two.
 6. **Where `/clear` is safe:** after a run stops, once its summary is
    pasted into the chat; never inside a step, nor while a run goes on.
