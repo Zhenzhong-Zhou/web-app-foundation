@@ -1056,10 +1056,12 @@ Internet Explorer, and any browser's IE mode, is not supported.
   `<loopback>` lets the container's browser reach the Mac's
   `localhost:5273` and `:3100`, so the session cookies stay on
   `localhost`. Without `E2E_FIREFOX` and with `--project=webkit`, it is
-  Linux WebKit, which showed a flake macOS WebKit never did (#232).
-  `scripts/verify.sh` in full runs the Firefox part itself, after the
-  client's Playwright suite, in a container of its own on a free port,
-  stopped whatever the result; the commands above are for a run by hand.
+  Linux WebKit, which showed a flake macOS WebKit never did (#232) and
+  started a keyboard drag a render later (5631d0d8).
+  `scripts/verify.sh` in full runs both itself, after the client's
+  Playwright suite: the spec in Firefox, then in Linux WebKit, from one
+  container of its own on a free port, stopped whatever the result; the
+  commands above are for a run by hand.
 - The product's name is VITE_APP_NAME in the repository's .env, with one
   per language as `VITE_APP_NAME_<TAG>` (`VITE_APP_NAME_ZH_HANS`,
   `VITE_APP_NAME_FR_CA`), each falling back to it. A tab's title comes
