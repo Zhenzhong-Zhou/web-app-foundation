@@ -100,15 +100,17 @@ fi
 `,
     { mode: 0o755 },
   );
-  const npxLog = path.join(bin, "npx.log");
   writeFileSync(
     path.join(bin, "npx"),
     `#!/bin/sh
-echo "\${PWD##*/}, \${PW_TEST_CONNECT_WS_ENDPOINT:-no remote} \${PW_TEST_CONNECT_EXPOSE_NETWORK:-}: $*" >> '${npxLog}'
+echo "\${PWD##*/}, \${PW_TEST_CONNECT_WS_ENDPOINT:-no remote} \${PW_TEST_CONNECT_EXPOSE_NETWORK:-}: $*" >> "$0.log"
 `,
     { mode: 0o755 },
   );
+  // Each stand-in notes its calls in its own name's .log beside it.
+  const npxLog = path.join(bin, "npx.log");
   const dockerLog = path.join(bin, "docker.log");
+  writeFileSync(npxLog, "");
   writeFileSync(dockerLog, "");
   if (docker) writeFileSync(path.join(bin, "docker"), docker, { mode: 0o755 });
   const run = spawnSync("/bin/bash", ["scripts/verify.sh", ...mode], {
