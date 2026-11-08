@@ -330,8 +330,10 @@ Model column, which the chat sets when it plans, from this table:
   or a file in `client/e2e/support/`: a check written on Sonnet raced the
   page's own read in CI (3cdebcd7), and a keyboard drag's keys came too
   soon for Linux WebKit (5631d0d8, [conventions.md, Tests](conventions.md#tests)).
-- **The loop itself runs on Sonnet,** since it reads this column, starts
-  each step and appends its summary, and judges none. The review step
+- **The loop itself runs on the session's model, kept on Opus,** with
+  no model of its own: a skill's model holds for its first turn only,
+  and each step's result comes back in a new turn, so a pin to Sonnet
+  lasted one step (the router's review, finding 27). The review step
   runs on Opus, by `/review-step`; the walkthrough's personas run on
   Sonnet.
 - **The table follows what is measured:** each summary's heading gives

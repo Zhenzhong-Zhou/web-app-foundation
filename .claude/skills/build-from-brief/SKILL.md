@@ -3,7 +3,6 @@ name: build-from-brief
 description: Run a build brief kept in tmp/ (tmp/adr-NNN/brief.md), one step or from step N in a row, each Claude Code step in a new brief-step subagent on the model its row names, stopping where a person is needed, and end with the short summary Bob pastes into the chat. Runs only when a prompt names it, as /build-from-brief <brief> <N>, /build-from-brief <brief> from <N> or /build-from-brief <brief> plan.
 argument-hint: <brief> <N> [choices] | <brief> from <N> | <brief> plan
 disable-model-invocation: true
-model: sonnet
 ---
 
 # Build from a brief
@@ -15,7 +14,9 @@ work needs][models]): it reads the brief's steps, runs each of Claude
 Code's in a new `brief-step` subagent on the model its row names, and
 stops where a person is needed. A step's rules are in
 [`.claude/agents/brief-step.md`][step], not here; the loop does no
-step's work itself, and judges none.
+step's work itself, and judges none. It runs on the session's model,
+kept on Opus: a skill's own model would hold for its first turn only,
+and each step's result comes back in a new turn.
 
 ## 1. The arguments
 
@@ -44,8 +45,7 @@ saying so, and run nothing.
 
 ## 3. The plan
 
-At `from <N>`, printed first; then the run starts with no question,
-since a reply would be a new turn, outside this skill's Sonnet pin:
+At `from <N>`, printed first; then the run starts with no question:
 
 - **Each step from N up to the next stop** that the brief shows before
   the run: its number, its Who, its model, its minutes and its What.

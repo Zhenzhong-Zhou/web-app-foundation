@@ -133,8 +133,8 @@ Andrej Karpathy's observations on LLM coding pitfalls
   `/build-from-brief tmp/adr-NNN/brief.md <N>` or from N in a row as
   `/build-from-brief tmp/adr-NNN/brief.md from <N>`, each Claude Code
   step in a `brief-step` subagent on the model its row names (`opus`,
-  `sonnet` or `haiku`; the loop itself runs on Sonnet), stopping where a
-  person is needed; only when a prompt names it.
+  `sonnet` or `haiku`; the loop itself on the session's model, kept on
+  Opus), stopping where a person is needed; only when a prompt names it.
 - `/review-step`: runs a brief's review step, the one whose Who is
   `Claude Code, main session`, in this session on Opus, as
   `/review-step tmp/adr-NNN/brief.md <N>` for the findings and with Bob's
