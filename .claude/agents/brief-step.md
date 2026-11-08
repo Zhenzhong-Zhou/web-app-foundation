@@ -189,17 +189,13 @@ where a step must act on it.
 End every step with it, as your last message, in plain Markdown.
 **The summary is the hand-back itself:** sent once and in full, in a
 turn of its own after every tool call has returned; never a
-placeholder, and never beside another tool call. The step that made
-cb2edd04 handed back the word `placeholder` in the turn of its commit,
-and its summary was lost.
+placeholder, and never beside another tool call, since only the last
+message reaches the loop.
 
 **No background task outlives the step:** before the hand-back, every
 one the step started, a command moved to the background or a watch on
-one, has finished or is stopped with `TaskStop`. Step 13 of the
-build-router brief left a `cat` waiting on input that never came, moved
-to the background after two minutes, with a loop watching for its
-output; both ran on after its summary, until a notice woke the step 25
-minutes later to stop them.
+one, has finished or is stopped with `TaskStop`, since one left running
+wakes the step again after its summary.
 
 `/build-from-brief` appends it whole to
 `summaries.md` beside the brief and reads its first and last lines; at
