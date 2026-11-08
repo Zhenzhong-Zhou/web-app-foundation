@@ -116,8 +116,13 @@ Claude Code needs a restart to find `.claude/agents/`.
    rerun on Opus, `· escalated from <model>` at the end.
 3. **The model check:** its first line, `Model: …`, names the family of
    the model it was started on, `opus`, `sonnet` or `haiku`, in any case.
-   Another family, or no such line, stops the run as BLOCKED, naming
-   both.
+   Another family stops the run at once, as BLOCKED, naming both.
+   - **A result missing either a `Model:` line or a `DONE:` or `BLOCKED:`
+     last line,** such as a placeholder: one message to that same agent
+     with SendMessage, asking for its full summary as `brief-step`'s
+     section 4 says. Its reply is appended under the same heading and
+     checked here and in item 4 in the result's place; a reply still
+     missing either stops the run as BLOCKED, saying so.
 4. **Its last line:**
    - `DONE` goes on to the next step, in a row, unless a `STOP` file is
      beside the brief, which stops it;

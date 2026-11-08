@@ -192,7 +192,9 @@ steps; this section stays the rule.
   - **The model check:** each step starts on its row's model, and its
     summary's first line, `Model: …`, must name that family. Another, or
     none, stops the run as BLOCKED, naming both, so no step drops to
-    another model unseen.
+    another model unseen; a result missing either that line or a
+    `DONE:` or `BLOCKED:` last line is first asked once, with
+    SendMessage, for its full summary.
   - **The escalation, once a run:** a Sonnet or Haiku step that ends
     `BLOCKED: verify (code)` or `BLOCKED: model`, having committed
     nothing, has its work set aside (`git stash`) and saved as

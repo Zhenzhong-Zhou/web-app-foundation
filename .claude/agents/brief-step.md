@@ -186,9 +186,14 @@ where a step must act on it.
 
 ## 4. The summary for the chat
 
-End every step with it, as your last message, in plain Markdown:
-`/build-from-brief` appends it whole to `summaries.md` beside the brief
-and reads its first and last lines; at a stop it prints the step's
+End every step with it, as your last message, in plain Markdown.
+**The summary is the hand-back itself:** sent once and in full, in a
+turn of its own after every tool call has returned; never a
+placeholder, and never beside another tool call. The step that made
+cb2edd04 handed back the word `placeholder` in the turn of its commit,
+and its summary was lost. `/build-from-brief` appends it whole to
+`summaries.md` beside the brief and reads its first and last lines; at
+a stop it prints the step's
 `## For the chat`, which Bob pastes into the chat, and at the brief's
 end Bob attaches the file, from which the chat writes the as-built
 amendment and the docs. Its first line is `Model:`, as section 2 says;
