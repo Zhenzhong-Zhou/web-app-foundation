@@ -166,6 +166,80 @@ describe('OrdersPage', () => {
   });
 
   /**
+   * Home's drafts tile opens the list oldest first (ADR-057's amendment):
+   * `order=asc` with no sort, shown as a chip beside Draft, since no column
+   * names that order. Removing it lists newest first again.
+   */
+  it('lists oldest first when the address asks with no sort, until its chip is removed', async () => {
+    const user = userEvent.setup();
+    const asked: URLSearchParams[] = [];
+    server.use(
+      http.get('/api/v1/orders', ({ request }) => {
+        asked.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ entries: [], nextCursor: null });
+      }),
+    );
+
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/orders?status=draft&order=asc']}>
+        <OrdersPage />
+      </MemoryRouter>,
+      { permissions: ['orders.view'] },
+    );
+
+    const chip = await screen.findByRole('button', { name: 'Oldest first' });
+    expect(screen.getByRole('button', { name: 'Draft' })).toBeVisible();
+    await expect.poll(() => asked.length).toBeGreaterThan(0);
+    expect(Object.fromEntries(asked[0])).toEqual({
+      status: 'draft',
+      order: 'asc',
+    });
+
+    chip.focus();
+    await user.keyboard('{Delete}');
+    expect(
+      screen.queryByRole('button', { name: 'Oldest first' }),
+    ).not.toBeInTheDocument();
+    await expect.poll(() => asked.at(-1)?.has('order')).toBe(false);
+    expect(asked.at(-1)?.get('status')).toBe('draft');
+    expect(screen.getByRole('button', { name: 'Draft' })).toHaveFocus();
+  });
+
+  // A header chosen replaces it, its order now the column's.
+  it('leaves oldest first for a sort chosen', async () => {
+    const user = userEvent.setup();
+    const asked: URLSearchParams[] = [];
+    server.use(
+      http.get('/api/v1/orders', ({ request }) => {
+        asked.push(new URL(request.url).searchParams);
+        return HttpResponse.json({
+          entries: [toShip('SO-1', dayFromToday(3))],
+          nextCursor: null,
+        });
+      }),
+    );
+
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/orders?status=draft&order=asc']}>
+        <OrdersPage />
+      </MemoryRouter>,
+      { permissions: ['orders.view'] },
+    );
+
+    await screen.findByRole('button', { name: 'Oldest first' });
+    await user.click(await screen.findByRole('button', { name: 'Expected' }));
+
+    await expect.poll(() => asked.at(-1)?.get('sort')).toBe('expectedAt');
+    expect(asked.at(-1)?.get('order')).toBe('asc');
+    expect(
+      screen.queryByRole('button', { name: 'Oldest first' }),
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('columnheader', { name: 'Expected' }),
+    ).toHaveAttribute('aria-sort', 'ascending');
+  });
+
+  /**
    * Home's chip on the list it opens (ADR-091): a row expected before the
    * organization's today says how late it is; one due later says nothing.
    */

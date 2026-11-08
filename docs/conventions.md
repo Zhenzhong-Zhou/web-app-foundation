@@ -905,9 +905,10 @@ and the tokens lack becomes a token first.
 - **Status is a tone, not a colour.** A chip's colour prop names one: default
   neutral, primary info, success positive, warning warning, error critical. The
   words on the chip carry the meaning, so nothing is told by colour alone.
-- **Five type sizes:** `h5` for a page title, `h6` for a section, `body1`,
-  `body2` and `caption`. No others, and no capitals: `overline` is sentence
-  case.
+- **Five type sizes, and one figure:** `h5` for a page title, `h6` for a
+  section, `body1`, `body2` and `caption`; and `TYPE.figure`, a count read
+  across a room, Home's tile's today (#505's 55). No others, and no
+  capitals: `overline` is sentence case.
 - **Text that grows** (ADR-075). A font size is rem, through the theme's
   variants, and never px on a page: px ignores the person's text size. A
   width beside or around text (a field, a label column, a panel, a flex
@@ -955,6 +956,9 @@ Use these rather than writing the thing again on a page:
   hyphen; **`ReferencesWhole`** for text the server wrote, which keeps every
   hyphenated word whole (ADR-081). A code over 16 characters may still
   break, rather than run off a phone's screen; a page heading is left alone.
+- **`IconBadge`** for an icon on a tinted square or circle, a tile's, a
+  card's, a way in's or a row's mark: square with the control's corner, or
+  round, its colours the caller's (#505's 52). Never a box drawn by hand.
 - **`UndoSnackbar`** for the message after something that can be undone: its
   timer waits while focus or the pointer is on it, and runs again only once
   both have left (WCAG 2.2.1). MUI's `Snackbar` runs again when either does.
@@ -1038,6 +1042,9 @@ Internet Explorer, and any browser's IE mode, is not supported.
   `localhost:5273` and `:3100`, so the session cookies stay on
   `localhost`. Without `E2E_FIREFOX` and with `--project=webkit`, it is
   Linux WebKit, which showed a flake macOS WebKit never did (#232).
+  `scripts/verify.sh` in full runs the Firefox part itself, after the
+  client's Playwright suite, in a container of its own on a free port,
+  stopped whatever the result; the commands above are for a run by hand.
 - The product's name is VITE_APP_NAME in the repository's .env, with one
   per language as `VITE_APP_NAME_<TAG>` (`VITE_APP_NAME_ZH_HANS`,
   `VITE_APP_NAME_FR_CA`), each falling back to it. A tab's title comes

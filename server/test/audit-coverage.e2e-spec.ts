@@ -88,6 +88,14 @@ const NOT_AUDITED = new Map<string, string>([
   ],
   ['HomeController.showWelcome', 'Its Undo, as above (ADR-079)'],
   [
+    'HomeController.saveLayout',
+    'Your own arrangement of Home: it changes only what you see, as the welcome’s dismissal does (ADR-091, amended)',
+  ],
+  [
+    'HomeController.resetLayout',
+    'Back to the default arrangement, as above (ADR-091, amended)',
+  ],
+  [
     'FilesController.uploadLogo',
     'An upload changes nothing until a record uses it; attaching it is that record’s audited save (ADR-059)',
   ],

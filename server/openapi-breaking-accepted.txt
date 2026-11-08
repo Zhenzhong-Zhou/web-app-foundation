@@ -8,3 +8,4 @@
 # A new permission needs no line: the script lets it through itself (#340).
 #
 # Once main has a change, oasdiff no longer reports it: its line can go.
+GET /v1/home added the new `drafts` enum value to the `cards/items/kind` response property for the response status `200` -- an open tab skips a tile kind it does not know (isKnownCard, ADR-058's amendment for ADR-085), so Drafts reaches it as nothing until it reloads; and Drafts is hidden by default anyway (ADR-091, amended November 2026).

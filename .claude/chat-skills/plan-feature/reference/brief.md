@@ -35,7 +35,11 @@ repeat; a brief holds only its decisions and its steps.
      the pull request.
    - The as-built last, by the chat; then what is done by hand after
      the merge.
-5. **Where `/clear` is safe:** after a run stops, once its summary is
+5. **Time and cost:** a table of each step's rough time, the run's
+   total, and its cost on API credits and on Bob's plan, with what the
+   figures rest on; a stop of Bob's where the run is long enough to be
+   worth splitting, or where it switches between the two.
+6. **Where `/clear` is safe:** after a run stops, once its summary is
    pasted into the chat; never inside a step, nor while a run goes on.
    Every summary is also in `summaries.md` beside the brief, for the
    as-built.

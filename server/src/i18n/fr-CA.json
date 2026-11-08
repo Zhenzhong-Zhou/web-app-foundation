@@ -1032,6 +1032,7 @@
   "validation.creditLineTwice": "Une ligne de facture apparaît deux fois dans un même crédit — envoyez son total une seule fois",
   "validation.currencyCode": "{property} doit être un code ISO de 3 lettres",
   "validation.exchangeRate": "exchangeRate doit être supérieur à zéro avec au plus 8 décimales, envoyé comme chaîne",
+  "validation.hiddenNotPlaced": "Chaque type dans {property} doit aussi figurer dans order — envoyez-y aussi les tuiles masquées, à leur place",
   "validation.isArray": "{property} doit être un tableau",
   "validation.isBoolean": "{property} doit être une valeur booléenne",
   "validation.isBooleanString": "{property} doit être une chaîne booléenne",

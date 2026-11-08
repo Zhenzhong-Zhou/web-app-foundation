@@ -1,6 +1,5 @@
 import AccountTreeOutlined from '@mui/icons-material/AccountTreeOutlined';
 import AddIcon from '@mui/icons-material/Add';
-import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
 import CheckCircleOutlineOutlined from '@mui/icons-material/CheckCircleOutlineOutlined';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
@@ -22,7 +21,10 @@ import {
   Typography,
 } from '@mui/material';
 import {
+  lazy,
   type ReactNode,
+  startTransition,
+  Suspense,
   useCallback,
   useEffect,
   useRef,
@@ -32,9 +34,10 @@ import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { WhomToAsk, WhomToAskRead } from '../account/whom-to-ask';
-import type { HomeResponse } from '../api/types.gen';
+import type { HomeLayoutDto, HomeResponse } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
+import { IconBadge } from '../components/icon-badge';
 import { StatusChip } from '../components/status-chip';
 import { UndoSnackbar } from '../components/undo-snackbar';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -46,19 +49,44 @@ import { zoneLabel } from '../lib/time-zone-label';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { useFailureWords } from '../lib/use-failure-words';
+import { useSubmit } from '../lib/use-submit';
 import { HOVER } from '../theme/media';
 import { rem } from '../theme/rem';
-import { RADIUS } from '../theme/tokens';
+import { RADIUS, TYPE } from '../theme/tokens';
+import {
+  type Arrangement,
+  arrangementOf,
+  defaultOf,
+  sameArrangement,
+} from './arrangement';
+import { CustomiseButton } from './customise-button';
 import { evenRowsSx } from './even-rows';
+import { Fixed } from './fixed';
 import { GettingStarted } from './getting-started';
-import { greeting } from './greeting';
-import { CARDS, isKnownCard, type KnownCard } from './home-cards';
+import {
+  BADGE,
+  CARDS,
+  isKnownCard,
+  type KnownCard,
+  tileWords,
+} from './home-cards';
+import { HomeClock, HomeGreeting } from './home-clock';
 import { MainAction, type QuickAction } from './main-action';
 import { NoOrganization } from './no-organization';
 import { RecentCard } from './recent-card';
-import { useMinute } from './use-minute';
 import { useReadOnReturn } from './use-read-on-return';
 import { WelcomeCard } from './welcome-card';
+
+/**
+ * Customise Home, with the dragging library, loaded once its button is
+ * pressed, not with every Home, since few open it (#505's review, 46):
+ * asked for beside Home's read as it opens, so both come together.
+ */
+let customiseModule: Promise<typeof import('./customise-home')> | undefined;
+const loadCustomise = () => (customiseModule ??= import('./customise-home'));
+const CustomiseHome = lazy(() =>
+  loadCustomise().then((module) => ({ default: module.CustomiseHome })),
+);
 
 /** Back in view after this long away, Home reads its counts again. */
 const READ_AGAIN_AWAY_MS = 60_000;
@@ -112,24 +140,44 @@ function OrganizationHome() {
   // heading, where the page begins, rather than to nowhere.
   const heading = useRef<HTMLHeadingElement>(null);
   const zone = organizationTimeZone();
-  const now = useMinute();
+  // Customise Home (ADR-091, amended November 2026): the arrangement on
+  // the page while it is open, kept only by Done.
+  const [draft, setDraft] = useState<Arrangement | null>(null);
+  const done = useSubmit(() => setDraft(null));
+  const customiseButton = useRef<HTMLButtonElement>(null);
 
-  // The server counts the tiles from the same day itself.
-  const load = useCallback(() => {
-    api<HomeResponse>('/home')
-      .then((response) => {
+  // Each read of Home numbered, so one that comes back after a newer one
+  // went out is dropped: it may hold the order from before Done's save.
+  const reads = useRef(0);
+  /**
+   * Home read, the server counting the tiles from the same day itself:
+   * what came back, or null where it failed, shown as the page's error,
+   * or a newer read went out meanwhile. Never throws.
+   */
+  const read = useCallback((): Promise<HomeResponse | null> => {
+    const mine = ++reads.current;
+    return api<HomeResponse>('/home').then(
+      (response) => {
+        if (mine !== reads.current) return null;
         setHome(response);
         setError(null);
-      })
-      .catch((caught: unknown) => {
-        setError(caught);
-      });
+        return response;
+      },
+      (caught: unknown) => {
+        if (mine === reads.current) setError(caught);
+        return null;
+      },
+    );
   }, []);
+  const load = useCallback(() => void read(), [read]);
 
   useEffect(() => {
     load();
   }, [load]);
-  useReadOnReturn(load, READ_AGAIN_AWAY_MS);
+  // Not while customising: the draft is built from the Home it opened on.
+  useReadOnReturn(() => {
+    if (!draft) load();
+  }, READ_AGAIN_AWAY_MS);
 
   async function act(path: string, method: 'POST' | 'DELETE') {
     await api(path, { method }).catch(() => undefined);
@@ -173,8 +221,69 @@ function OrganizationHome() {
   );
 
   // Only the tiles this build knows: a newer server's kind is skipped,
-  // never a crash, and what is late counts only what shows.
+  // never a crash, and what is late counts only what this build knows.
+  // A tile the person hid is not drawn, but buries nothing: its late
+  // items stay in the panel (ADR-091, amended November 2026).
   const cards = (home?.cards ?? []).filter(isKnownCard);
+  const tiles = cards.filter((card) => !card.hidden);
+
+  // Closed by Done, focus goes back to its button; opened, Customise Home
+  // takes it to its own heading.
+  const customising = draft !== null;
+  const wasCustomising = useRef(false);
+  useEffect(() => {
+    if (customising === wasCustomising.current) return;
+    wasCustomising.current = customising;
+    if (!customising) customiseButton.current?.focus();
+  }, [customising]);
+
+  /**
+   * Customise Home opened from Home read again, so it starts from the
+   * arrangement saved last, on whichever device: a tab left open would
+   * otherwise send an older one with Done, over the newer.
+   */
+  const opening = useRef(false);
+  async function openCustomise() {
+    if (opening.current) return;
+    opening.current = true;
+    done.reset();
+    try {
+      const [fresh] = await Promise.all([read(), loadCustomise()]);
+      // In a transition, so Home stays as it is until the panel draws.
+      if (fresh) {
+        startTransition(() =>
+          setDraft(
+            arrangementOf(fresh.cards.filter(isKnownCard), fresh.recent),
+          ),
+        );
+      }
+    } catch (caught) {
+      // The panel's code not loaded, as after a deploy: said as the page's
+      // own failure, which offers the way on.
+      setError(caught);
+    } finally {
+      opening.current = false;
+    }
+  }
+
+  /**
+   * Done: the layout saved, or cleared where it equals the default, so the
+   * person follows later defaults; then Home read again, in its new order,
+   * before the tiles come back. Only the save can fail Done: a read that
+   * fails after it is the page's own error, and Customise Home closes on
+   * what was saved.
+   */
+  function saveArrangement(next: Arrangement, byDefault: Arrangement) {
+    void done.submit(async () => {
+      await (sameArrangement(next, byDefault)
+        ? api('/home/layout', { method: 'DELETE' })
+        : api('/home/layout', {
+            method: 'PUT',
+            body: JSON.stringify(next satisfies HomeLayoutDto),
+          }));
+      await read();
+    });
+  }
   const started = home?.gettingStarted;
   const showStart = started && !started.complete && !started.dismissed;
 
@@ -222,6 +331,33 @@ function OrganizationHome() {
     defaultMessage: 'Refresh',
   });
 
+  // The welcome just dismissed, a moment to undo it, held there while focus
+  // or the pointer is on it.
+  const undo = (
+    <UndoSnackbar
+      open={undoing}
+      autoHideDuration={8000}
+      onClose={(_event, reason) => {
+        // A click elsewhere is somebody carrying on, not dismissing.
+        if (reason !== 'clickaway') setUndoing(false);
+      }}
+      message={intl.formatMessage({
+        id: 'home.welcome.dismissed',
+        defaultMessage:
+          'Welcome card hidden. What you can do here stays on Your account.',
+      })}
+      action={
+        <Button color="inherit" onClick={() => void undoWelcome()}>
+          {intl.formatMessage({
+            id: 'home.welcome.undo',
+            defaultMessage: 'Undo',
+          })}
+        </Button>
+      }
+      slotProps={{ content: { role: 'status' } }}
+    />
+  );
+
   if (!home && isRevisionRefusal(error)) {
     return <RevisionRefusalPage failure={error} onRetry={load} />;
   }
@@ -230,144 +366,106 @@ function OrganizationHome() {
     <Stack spacing={3} sx={{ maxWidth: 1140 }}>
       {/* The main action at the right of the greeting's row from `md`, as
           each list page has its own; below it, under What we do, full
-          width (ADR-091). */}
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        sx={{
-          justifyContent: 'space-between',
-          alignItems: { xs: 'stretch', md: 'flex-start' },
-          gap: 1.5,
-        }}
-      >
-        <Stack spacing={0.75} sx={{ minWidth: 0 }}>
-          <Stack direction="row" sx={{ alignItems: 'center', gap: 0.5 }}>
-            <Typography ref={heading} variant="h5" component="h1" tabIndex={-1}>
-              {greeting(intl, session?.user.name ?? '', zone)}
-            </Typography>
-            {/* Next after the heading, where Dismiss puts focus, so the
+          width (ADR-091). It stays, faded, while Home is customised. */}
+      <Fixed on={customising} part="greeting">
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          sx={{
+            justifyContent: 'space-between',
+            alignItems: { xs: 'stretch', md: 'flex-start' },
+            gap: 1.5,
+          }}
+        >
+          <Stack spacing={0.75} sx={{ minWidth: 0 }}>
+            <Stack direction="row" sx={{ alignItems: 'center', gap: 0.5 }}>
+              <Typography
+                ref={heading}
+                variant="h5"
+                component="h1"
+                tabIndex={-1}
+              >
+                <HomeGreeting name={session?.user.name ?? ''} zone={zone} />
+              </Typography>
+              {/* Next after the heading, where Dismiss puts focus, so the
                 next Tab reaches Undo; shown at the foot of the screen all
-                the same, and held there while focus or the pointer is on
-                it. */}
-            <UndoSnackbar
-              open={undoing}
-              autoHideDuration={8000}
-              onClose={(_event, reason) => {
-                // A click elsewhere is somebody carrying on, not dismissing.
-                if (reason !== 'clickaway') setUndoing(false);
-              }}
-              message={intl.formatMessage({
-                id: 'home.welcome.dismissed',
-                defaultMessage:
-                  'Welcome card hidden. What you can do here stays on Your account.',
-              })}
-              action={
-                <Button color="inherit" onClick={() => void undoWelcome()}>
-                  {intl.formatMessage({
-                    id: 'home.welcome.undo',
-                    defaultMessage: 'Undo',
-                  })}
-                </Button>
-              }
-              slotProps={{ content: { role: 'status' } }}
-            />
-            {/* Beside the greeting, an icon with its name in a tooltip
+                the same. */}
+              {!customising && undo}
+              {/* Beside the greeting, an icon with its name in a tooltip
                 (ADR-091). */}
-            <Tooltip title={refresh}>
-              <IconButton aria-label={refresh} onClick={load}>
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-          {/* The organization's day and time, which the tiles count from
-              (ADR-072), moving on each minute by itself: not a live
-              region, which would read it out every minute. */}
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'text.secondary',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.75,
-            }}
-          >
-            <CalendarTodayOutlined aria-hidden sx={{ fontSize: rem(16) }} />
-            {intl.formatMessage(
-              { id: 'home.dateTime', defaultMessage: '{day}, {time}' },
-              {
-                day: intl.formatDate(now, {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                  timeZone: zone,
-                }),
-                time: intl.formatTime(now, {
-                  timeStyle: 'short',
-                  timeZone: zone,
-                }),
-              },
-            )}
-          </Typography>
-          {/* Only for a reader on another clock (ADR-072): their own date
+              <Tooltip title={refresh}>
+                <IconButton aria-label={refresh} onClick={load}>
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+            {/* The organization's day and time, the one part of Home that
+              draws again each minute. */}
+            <HomeClock zone={zone} />
+            {/* Only for a reader on another clock (ADR-072): their own date
               may already be tomorrow, or still yesterday. */}
-          {differsFromBrowser(zone) && (
-            <Typography
-              variant="body2"
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: 1,
-              }}
-            >
-              <ScheduleIcon fontSize="small" aria-hidden />
-              {intl.formatMessage(
-                {
-                  id: 'home.timeZoneNote',
-                  defaultMessage:
-                    'Dates follow the organization’s time zone: {zone}.',
-                },
-                { zone: zoneLabel(zone) },
-              )}
-              {/* Where it is set, for whoever may change it: a wrong zone
+            {differsFromBrowser(zone) && (
+              <Typography
+                variant="body2"
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                }}
+              >
+                <ScheduleIcon fontSize="small" aria-hidden />
+                {intl.formatMessage(
+                  {
+                    id: 'home.timeZoneNote',
+                    defaultMessage:
+                      'Dates follow the organization’s time zone: {zone}.',
+                  },
+                  { zone: zoneLabel(zone) },
+                )}
+                {/* Where it is set, for whoever may change it: a wrong zone
                   shows here first. */}
-              {can('organizations.update') && (
-                <Link
-                  component={RouterLink}
-                  to="/settings/organization?tab=profile"
-                  state={OFFER_BACK}
-                  underline="always"
-                >
-                  {intl.formatMessage({
-                    id: 'home.timeZoneChange',
-                    defaultMessage: 'Change the time zone',
-                  })}
-                </Link>
-              )}
-            </Typography>
-          )}
-          {/* In the organization's own words, at the body's size and
+                {can('organizations.update') && (
+                  <Link
+                    component={RouterLink}
+                    to="/settings/organization?tab=profile"
+                    state={OFFER_BACK}
+                    underline="always"
+                  >
+                    {intl.formatMessage({
+                      id: 'home.timeZoneChange',
+                      defaultMessage: 'Change the time zone',
+                    })}
+                  </Link>
+                )}
+              </Typography>
+            )}
+            {/* In the organization's own words, at the body's size and
               weight, without a card (ADR-091). */}
-          {home?.whatWeDo && (
-            <Typography sx={{ pt: 0.75 }}>{home.whatWeDo}</Typography>
-          )}
-        </Stack>
-        {/* None while Getting started shows: its next step is the page's
+            {home?.whatWeDo && (
+              <Typography sx={{ pt: 0.75 }}>{home.whatWeDo}</Typography>
+            )}
+          </Stack>
+          {/* None while Getting started shows: its next step is the page's
             one main action (ADR-058), and a new organization has nothing
             to raise an order for yet (ADR-091's review). */}
-        {showStart ? null : quick.length > 0 ? (
-          <MainAction actions={quick} />
-        ) : (
-          // Where the button would be: whom to ask, from the welcome once
-          // Home holds it, else read beside Home's own read, not after it.
-          <Box sx={{ maxWidth: { md: rem(400) } }}>
-            {welcome ? (
-              <WhomToAsk access={welcome.access} {...NO_ACTIONS} />
-            ) : (
-              <WhomToAskRead {...NO_ACTIONS} />
-            )}
-          </Box>
-        )}
-      </Stack>
+          {showStart ? null : quick.length > 0 ? (
+            <MainAction actions={quick} />
+          ) : (
+            // Where the button would be: whom to ask, from the welcome once
+            // Home holds it, else read beside Home's own read, not after it.
+            <Box sx={{ maxWidth: { md: rem(400) } }}>
+              {welcome ? (
+                <WhomToAsk access={welcome.access} {...NO_ACTIONS} />
+              ) : (
+                <WhomToAskRead {...NO_ACTIONS} />
+              )}
+            </Box>
+          )}
+        </Stack>
+      </Fixed>
+      {/* While Home is customised the greeting is out of use, so Undo
+          leaves it, to be pressed still in its last seconds. */}
+      {customising && undo}
 
       {errorWords && <Alert severity="error">{errorWords}</Alert>}
 
@@ -384,63 +482,118 @@ function OrganizationHome() {
       ) : (
         <>
           {welcome && (
-            <WelcomeCard
-              welcome={welcome}
-              startShows={!!showStart}
-              onDismiss={dismissWelcome}
-              headingRef={welcomeHeading}
-            />
+            <Fixed on={customising} part="welcome">
+              <WelcomeCard
+                welcome={welcome}
+                startShows={!!showStart}
+                onDismiss={dismissWelcome}
+                headingRef={welcomeHeading}
+              />
+            </Fixed>
           )}
 
           {/* Straight after the welcome, which says the steps are in
               Getting started, below; the tiles after both. */}
           {showStart && started && (
-            <GettingStarted
-              state={started}
-              canManage={can('organizations.update')}
-              canInvite={can('users.create')}
-              onDismiss={() => {
-                heading.current?.focus();
-                void act('/home/getting-started/dismiss', 'POST');
-              }}
-              onSkipTeam={() =>
-                void act('/home/getting-started/skip-team', 'POST')
-              }
-            />
+            <Fixed on={customising} part="start">
+              <GettingStarted
+                state={started}
+                canManage={can('organizations.update')}
+                canInvite={can('users.create')}
+                onDismiss={() => {
+                  heading.current?.focus();
+                  void act('/home/getting-started/dismiss', 'POST');
+                }}
+                onSkipTeam={() =>
+                  void act('/home/getting-started/skip-team', 'POST')
+                }
+              />
+            </Fixed>
           )}
 
           {/* After both, so the welcome opens where a newcomer looks first
               and Getting started stays above the fold on a laptop. */}
-          <WhatIsLate cards={cards} />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Fixed on={customising} part="late">
+              <WhatIsLate cards={cards} />
+            </Fixed>
+            {draft && <HiddenLate cards={cards} hidden={draft.hidden} />}
+          </Box>
 
-          {cards.length > 0 && (
-            <Stack
-              component="section"
-              aria-labelledby="today-title"
-              spacing={1.5}
-            >
-              <Typography variant="h6" component="h2" id="today-title">
-                {intl.formatMessage({
-                  id: 'home.today',
-                  defaultMessage: 'What needs you today',
-                })}
-              </Typography>
-              {/* In even rows, measured against the page's width rather
-                  than the screen's (ADR-081). */}
-              <Box sx={{ containerType: 'inline-size' }}>
-                <Box sx={evenRowsSx(cards.length)}>
-                  {cards.map((card) => (
-                    <Tile key={card.kind} card={card} />
-                  ))}
-                </Box>
-              </Box>
-            </Stack>
+          {/* In the tiles' place while customised; its button at the
+              right of their heading, there while any tile is, hidden or
+              not, so a person who hid them all can bring them back. The
+              boundary always there, so while the panel loads, opened in a
+              transition, the tiles stay. */}
+          <Suspense fallback={null}>
+            {draft ? (
+              <CustomiseHome
+                cards={cards}
+                arrangement={draft}
+                changed={
+                  !sameArrangement(draft, arrangementOf(cards, home.recent))
+                }
+                onChange={setDraft}
+                onReset={() => setDraft(defaultOf(home))}
+                onDone={() => saveArrangement(draft, defaultOf(home))}
+                saving={done.submitting}
+                error={done.error}
+              />
+            ) : (
+              cards.length > 0 && (
+                <Stack
+                  component="section"
+                  aria-labelledby="today-title"
+                  spacing={1.5}
+                >
+                  <Stack
+                    direction="row"
+                    sx={{
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: 1,
+                    }}
+                  >
+                    <Typography variant="h6" component="h2" id="today-title">
+                      {intl.formatMessage({
+                        id: 'home.today',
+                        defaultMessage: 'What needs you today',
+                      })}
+                    </Typography>
+                    <CustomiseButton
+                      ref={customiseButton}
+                      onClick={() => void openCustomise()}
+                    />
+                  </Stack>
+                  {/* In even rows, measured against the page's width rather
+                    than the screen's (ADR-081). */}
+                  {tiles.length > 0 && (
+                    <Box sx={{ containerType: 'inline-size' }}>
+                      <Box sx={evenRowsSx(tiles.length)}>
+                        {tiles.map((card) => (
+                          <Tile key={card.kind} card={card} />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </Stack>
+              )
+            )}
+          </Suspense>
+
+          {/* What this person opened last; hidden while empty (ADR-058).
+              Switched off in Customise Home, it is neither drawn nor read
+              (ADR-091, amended November 2026); while customised, as the
+              switch has it, faded. */}
+          {(draft ? draft.recent : home.recent) && (
+            <Fixed on={customising}>
+              <RecentCard />
+            </Fixed>
           )}
 
-          {/* What this person opened last; hidden while empty (ADR-058). */}
-          <RecentCard />
-
-          {started &&
+          {!customising &&
+            started &&
             started.dismissed &&
             !started.complete &&
             can('organizations.update') && (
@@ -530,22 +683,13 @@ function WhatIsLate({ cards }: { cards: KnownCard[] }) {
       }}
     >
       <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center' }}>
-        <Box
-          aria-hidden
-          sx={{
-            width: 32,
-            height: 32,
-            flex: 'none',
-            borderRadius: '50%',
-            bgcolor: 'background.paper',
-            color: 'error.main',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+        <IconBadge
+          round
+          size={32}
+          sx={{ bgcolor: 'background.paper', color: 'error.main' }}
         >
           <ErrorOutlineOutlined fontSize="small" />
-        </Box>
+        </IconBadge>
         <Box>
           <Typography
             variant="h6"
@@ -620,6 +764,53 @@ function WhatIsLate({ cards }: { cards: KnownCard[] }) {
 }
 
 /**
+ * Under what is late, while Home is customised and only then, as the
+ * boards draw it (ADR-091, amended November 2026): a line for each tile
+ * the draft hides whose late items the panel still holds, so they say
+ * where they came from, "To ship is hidden; its 2 late orders still show
+ * here", one as "its 1 late order still shows here".
+ */
+function HiddenLate({
+  cards,
+  hidden,
+}: {
+  cards: KnownCard[];
+  hidden: readonly string[];
+}) {
+  const intl = useIntl();
+  const { warning: expiringWithin } = useExpiryDays();
+  const lines = cards.flatMap((card) => {
+    const late = CARDS[card.kind].late;
+    return late && card.late > 0 && hidden.includes(card.kind)
+      ? [{ card, message: late.hidden }]
+      : [];
+  });
+  if (lines.length === 0) return null;
+  return (
+    <Stack spacing={0.5}>
+      {lines.map(({ card, message }) => (
+        <Typography
+          key={card.kind}
+          variant="body2"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.75,
+            color: 'tone.critical.fg',
+          }}
+        >
+          <ErrorOutlineOutlined aria-hidden fontSize="small" />
+          {intl.formatMessage(message, {
+            name: tileWords(intl, card, expiringWithin).title,
+            count: card.late,
+          })}
+        </Typography>
+      ))}
+    </Stack>
+  );
+}
+
+/**
  * A tile (ADR-091): its kind's icon, red while anything in it is late; its
  * count in large figures; its name; and its status in words and colour
  * together. The whole tile is one link to its list, filtered and sorted
@@ -632,27 +823,14 @@ function Tile({ card }: { card: KnownCard }) {
   const { warning: expiringWithin } = useExpiryDays();
   const meta = CARDS[card.kind];
   const Icon = meta.icon;
-  const quiet = card.count === 0;
-  const late = meta.late && card.late > 0 ? card.late : 0;
-  // Nothing watched, not nothing low (ADR-085).
-  const unset = card.anyPoint === false ? meta.unset : undefined;
-
-  const name = intl.formatMessage(meta.title);
-  const title = meta.page
-    ? intl.formatMessage(
-        { id: 'home.tile.ofPage', defaultMessage: '{page} · {name}' },
-        { page: intl.formatMessage(meta.page), name },
-      )
-    : name;
-  const status = quiet
-    ? intl.formatMessage(unset?.empty ?? meta.empty, { days: expiringWithin })
-    : late && meta.late
-      ? intl.formatMessage(meta.late.pill, { count: late })
-      : null;
+  const { title, count, status, quiet, late, unset, tone } = tileWords(
+    intl,
+    card,
+    expiringWithin,
+  );
   // "To ship, 12, 2 late": the name a screen reader reads, holding the
   // tile's visible words in their order (WCAG 2.5.3), so the name comes
   // first in the markup and only looks second.
-  const count = intl.formatNumber(card.count);
   const label = quiet
     ? intl.formatMessage(
         { id: 'home.tile.quiet', defaultMessage: '{name}, {words}' },
@@ -698,7 +876,8 @@ function Tile({ card }: { card: KnownCard }) {
         [HOVER]: {
           '&:hover': {
             borderColor: 'primary.main',
-            boxShadow: 2,
+            // The lift token, as the variable the app's theme makes of it.
+            boxShadow: theme.vars?.palette.surface.lift,
             transform: 'translateY(-2px)',
           },
         },
@@ -711,24 +890,9 @@ function Tile({ card }: { card: KnownCard }) {
           justifyContent: 'space-between',
         }}
       >
-        <Box
-          aria-hidden
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: `${RADIUS.control}px`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            ...(late
-              ? { bgcolor: 'tone.critical.bg', color: 'tone.critical.fg' }
-              : quiet
-                ? { bgcolor: 'tone.neutral.bg', color: 'text.secondary' }
-                : { bgcolor: 'surface.chosen', color: 'primary.main' }),
-          }}
-        >
+        <IconBadge sx={BADGE[tone]}>
           <Icon fontSize="small" />
-        </Box>
+        </IconBadge>
         <ChevronRight
           aria-hidden
           fontSize="small"
@@ -756,8 +920,8 @@ function Tile({ card }: { card: KnownCard }) {
               order: 0,
               // In rem, so it grows with the text size (ADR-075): the
               // figure read across a room, on the 4 px grid.
-              fontSize: rem(32),
-              lineHeight: 40 / 32,
+              fontSize: rem(TYPE.figure),
+              lineHeight: 40 / TYPE.figure,
               fontWeight: 700,
             }}
           >

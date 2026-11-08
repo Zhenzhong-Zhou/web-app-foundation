@@ -50,11 +50,11 @@ Around those, for the screens rather than the figures: a dozen more items,
 lot **ELD-24A** expiring in 20 days and **PRB-0731** in 60 (red and amber
 expiry chips), **THE-0915** waiting for a cost (PO-DEMO-5), **PO-DEMO-4**
 partly received and mixing kilograms with bottles, run **CALM-RUN-01**
-released and **CALM-RUN-02** planned, **SO-DEMO-3** a draft, **SO-DEMO-4**
-cancelled, **SO-DEMO-5** shipped with its invoice in draft and a closed
-RMA, **SO-DEMO-6** with a voided invoice and its full credit note,
-**PO-DEMO-6** with a line closed short, a discontinued product and a
-retired partner. Every state the redesigned screens draw (ADR-055) has
+released and **CALM-RUN-02** planned, **SO-DEMO-3** a draft started six
+days ago, **SO-DEMO-4** cancelled, **SO-DEMO-5** shipped with its invoice
+in draft and a closed RMA, **SO-DEMO-6** with a voided invoice and its full
+credit note, **PO-DEMO-6** with a line closed short, a discontinued product
+and a retired partner. Every state the redesigned screens draw (ADR-055) has
 one example among them.
 
 Around those, a team of nine, whose addresses the seed prints; each signs in
@@ -217,6 +217,21 @@ a second organization.
   says their role does not include raising orders, and whom to ask
   (the Owners first, at most three). As the demo Owner, Raise an order,
   and no such line.
+- **MC-408** *(ADR-091; ADR-057)* Orders oldest first. As the demo Owner,
+  open `/orders?status=draft&order=asc`, where Home's Orders · Draft
+  goes: chips read Draft and Oldest first, and the list holds the drafts,
+  the one started longest ago first (SO-DEMO-3 under Reference), with
+  Expected not marked as the sort. Open a draft and press Back: still
+  oldest first, both chips there. Tab to Oldest first and press Delete:
+  the drafts newest first, `order=asc` gone from the address, focus on
+  Draft; open a draft and press Back: still newest first, with no chip.
+  Open the first address again and press Expected instead: the chip goes,
+  and Expected is the sort, soonest first. In Français the chip reads
+  Les plus anciennes d’abord; in 中文, 最早的在前. Open Help there:
+  Orders' guide, under What a link chose (Ce qu’un lien a choisi,
+  链接带来的筛选), names each chip as the list shows it, Sales only and
+  Purchases only, Draft and Confirmed, Still to ship, Still to receive,
+  Late and Oldest first, and says its × removes it.
 
 ## 5. Making
 
@@ -872,13 +887,18 @@ Paper is checked first because it must not change at all.
   chosen, and Back to Home. Under What needs you today, a tile per kind,
   its icon red while anything in it is late, its count, its name and its
   pill ("2 late"): the whole tile opens its list with as many rows as the
-  count, the late first, the filter in the address. A tile with nothing
+  count, the late first, the filter in the address. Stock value · Waiting
+  for a cost opens Stock value at its list of what waits, not at the
+  page's top: on a phone, or a window too short to show it, the list's
+  heading sits just under the bar, focused, `#costs` in the address, and
+  Help opened there shows Give stock its cost. A tile with nothing
   to do stays in its place, grey, its words in place of the count (No
   returns open), still a link. Under a mouse a tile's edge turns the
-  accent and it lifts a little; Tab shows the accent ring; a phone or a
-  tablet shows no hover. Refresh is an icon beside the greeting, named in
-  a tooltip. At the right of the greeting's row, Raise an order, the one
-  filled button, and More beside it, grey: its menu holds Receive stock,
+  accent and it lifts a little, its shadow seen in dark mode too; Tab
+  shows the accent ring; a phone or a tablet shows no hover. Refresh is
+  an icon beside the greeting, named in a tooltip. At the right of the
+  greeting's row, Raise an order, the one filled button, and More beside
+  it, grey: its menu holds Receive stock,
   Plan a run and Trace a lot, each opening its page with Back to Home;
   from the keyboard, Enter opens it on its first item, the arrows move,
   Escape closes it with focus back on More. Below 900 px (a phone, the
@@ -888,10 +908,28 @@ Paper is checked first because it must not change at all.
   in a role made from the Production template, Plan a run, the same; as
   Sarah Chen (Viewer), no button: the grey line says her role does not
   include raising orders, receiving stock or planning runs, and whom to
-  ask, Trace a lot staying in the menu. In 中文 More
+  ask, Trace a lot staying in the menu. The tiles lead with the work the
+  member may do, the rest after them, each part in the working day's
+  order: the demo owner's run To ship, To receive, Low stock, Expiring
+  soon and on, as before; as Fatima Haddad (Sales), who raises orders,
+  Low stock comes first, then To ship and To receive; in a role made from
+  the Finance template, Stock value · Waiting for a cost, Invoices · To
+  issue and Open returns, then To ship and To receive. Orders · Draft is
+  on no one's Home until they show it (Customise Home, Show); shown, it
+  sits after To receive, reads Orders · Draft (订单 · 草稿, Commandes ·
+  Brouillon), the page first and the filter's word after, and counts as
+  many drafts as Orders lists with Draft chosen, three on the demo, never
+  late, so the red panel never counts it; with none it stays quiet, No
+  drafts (没有草稿, Aucun brouillon). It opens Orders oldest first, with
+  Draft and Oldest first as chips, `?status=draft&order=asc` in the
+  address, with Back to Home (MC-408). With
+  Recently opened switched off, Home neither shows it nor reads it
+  (DevTools → Network: no `recent`). In 中文 More
   reads 更多, in Français Plus; a screen reader names its menu More. Recently opened lists
   each record by its name, its code and kind under it, and when, the
-  whole row a link. Leave Home's tab for another for a minute or more and
+  whole row a link. Its Clear empties it, and a line in its place, focused,
+  says Cleared. It fills again as you open things; turn it off in
+  Customise Home. (in 中文 已清除。…可以在“调整首页”中关闭。). Leave Home's tab for another for a minute or more and
   come back: Home reads again (DevTools → Network, `home`); back after a
   few seconds, it does not. Switch to 中文 and to a phone (or a narrow
   window): the tiles two by two, three from a window about 648 px wide
@@ -920,6 +958,116 @@ Paper is checked first because it must not change at all.
   of Home's actions one grey line says their role does not include
   raising orders, receiving stock or planning runs, and whom to ask, the
   names there from the first, never the line without them first.
+- **MC-1563** *(ADR-091, amended November 2026)* Customise Home by
+  buttons, as the demo owner, at 1366 px with a mouse, then from the
+  keyboard alone, then on a phone by touch (390 px; DevTools' touch is
+  enough). Customise Home sits at the right of What needs you today, at
+  every width. In a production build (`npm run build`, `npm run
+  preview`), DevTools → Network shows no `customise-home` file as Home
+  opens, and one as Customise Home is pressed; press it: the tiles become
+  cards, the panel's heading
+  Customise Home focused, and the greeting with Raise an order and More,
+  and the panel of what needs you now, stay in view, faded, the date
+  under the greeting still easy to read in light and in dark, each with a
+  yellow lock reading Fixed, cannot move, and do nothing meanwhile; a
+  screen reader reads each lock with its part, Greeting: Fixed, cannot
+  move, and What is late: (问候语：, 逾期的事： in 中文). Each
+  card has its handle, its icon, its name, its count (4 · 1 late; a quiet
+  one its words, No returns open), its icon red while late and grey while
+  quiet, as its tile on Home, and Up, Down and Hide: Up on the
+  first and Down on the last are grey and do nothing. A screen reader
+  names each with its tile, Move To receive up, Move To receive down,
+  Hide To receive, and Show To ship below (上移“待收货”, 隐藏“待收货”;
+  Monter À recevoir, Masquer À recevoir). Press Up on To
+  receive: it is first, focus still on its Up, and the line under Done
+  says To receive, 1 of 9, as a screen reader (VoiceOver, ⌘F5) does;
+  press Down, To receive, 2 of 9. Hide To ship: it goes to Hidden tiles
+  below, the line saying To ship hidden: under Hidden tiles, below, focus
+  on the next tile's handle, its late orders still in the red panel, and a
+  red line under the panel says To ship is hidden, and that its late
+  orders still show here (in 中文 “待发货”已隐藏，它的 … 个逾期订单仍然在这里),
+  one late order as its 1 late order still shows here (La tuile À
+  expédier est masquée; 1 commande en retard reste ici; 它的 1 个逾期订单);
+  the line is Customise Home's alone, gone from Home after Done. Show
+  Orders · Draft: it comes back in its place, after To receive, the line
+  saying Orders · Draft shown, 2 of 9, focus on its handle. Under the switch a
+  line says what it shows, Under the tiles, what you opened last: orders,
+  products, lots and more (磁贴下方列出您最近打开的订单、产品、批次等记录。;
+  Sous les tuiles, ce que vous avez ouvert en dernier…), and below, faded,
+  the demo owner's Recently opened holds SO-DEMO-1 and Focus 60ct from the
+  seed, nothing opened first. Turn off Show
+  Recently opened on Home: Recently opened, faded below, goes, and the
+  switch's track, off, is a grey as clear as a table's cut edge, in light
+  and in dark, as every switch's in the app is. Scroll
+  down: Reset to default, Done and the line under them stay at the top
+  under the bar (not on
+  a window under 700 px tall, where they scroll away). Press Orders in
+  the menu: Leave without saving? says Your changes to Home aren’t saved
+  yet.; Stay keeps the cards as they were. With DevTools' network at
+  Slow 3G, press Done from the keyboard: it reads Saving… (正在保存…,
+  Enregistrement…), grey and still focused; before Home comes back try
+  Up, Hide, a handle and the switch: none does anything. (Offline instead, Done leaves the
+  cards as they were moved, an error line above them saying what
+  failed.) Home reads again
+  in the new order, To ship gone, Orders · Draft second, no Recently
+  opened, focus on Customise Home; reload, and sign in on a phone or a
+  second browser: the same. Leave Home open in that second browser,
+  move a tile on the first and press Done, then press Customise Home in
+  the second: its cards start in the first's new order, and Done there
+  keeps it. Customise Home → Reset to default, the line saying Back to
+  the default order, not saved yet → Done:
+  the order is the owner's again, drafts hidden, Recently opened back.
+  As Fatima Haddad (Sales), whose role raises orders, Customise Home opens
+  on Low stock first, then To ship and To receive; Up on To ship, then
+  Reset to default, puts Low stock first again, and Done saves no layout
+  (DevTools → Network: a `DELETE` of `home/layout`). On a phone every button
+  here, the switch's row too, is 44 px tall or more, the cards one
+  across; scroll to Stock value · Waiting for a cost and tap its Up twice
+  in the same place: it moves up two places, the page following it, its
+  card never under the row at the top; in 中文 the button reads 调整首页, its words 只改您自己的首页 and
+  leaving asks 您对首页的调整还没有保存。, 您 as everywhere, the buttons 上移、下移、隐藏、显示,
+  恢复默认 and 完成, the list 已隐藏的磁贴, the line and a screen reader say
+  待收货，第 1 个，共 9 个 and 已隐藏“待发货”：在下方“已隐藏的磁贴”中; in Français Personnaliser l’accueil, Monter, Descendre,
+  Masquer, Afficher, Rétablir l’ordre par défaut, Terminé and Tuiles
+  masquées. Another member's Home, and the owner's in another
+  organization, do not change. As a newcomer whose welcome shows, Dismiss
+  it and press Customise Home at once: Undo, at the foot of the screen,
+  still brings the card back, faded with the greeting. Last, Customise
+  Home, Up on any tile,
+  then Orders in the menu and Leave: Orders opens, and Home, back, is as
+  it was, nothing saved.
+- **MC-1564** *(ADR-091, amended November 2026)* Customise Home by
+  dragging, as the demo owner: at 1366 px with a mouse, then from the
+  keyboard alone, then by touch on a phone and on a tablet (a real one
+  each, since DevTools' touch does not hold a press). Press Customise
+  Home: its words start Drag a tile by its handle, or use Up and Down
+  (用手柄拖动磁贴, Glissez une tuile par sa poignée), and a line
+  under them gives the keyboard's keys; on a phone and a tablet that line
+  is not there. Drag Expiring soon by its handle,
+  the six dots, onto To ship: while it moves it lifts, with a shadow and
+  a purple edge, a dashed purple box shows where it will drop, and the
+  other cards make room; let go and it is first. A press on a handle
+  without moving changes nothing. With the window 768 px tall, scroll so
+  a handle sits about 100 px above the window's foot, press it and wobble
+  a little: the page stays still; held right at the foot, or at the top
+  over the bar, it scrolls, steadily. Up, Down and Hide still work beside
+  it. Reset to default, then the keyboard: Tab to To receive's handle
+  (VoiceOver, ⌘F5, says Drag To receive, draggable, and how to pick it
+  up); Space says Picked up To receive, 2 of 9; the left arrow moves it
+  a place, To receive, 1 of 9; Space drops it, To receive dropped, 1 of
+  9, the keyboard still on its handle. Space, the right arrow, then
+  Escape puts it back: Move cancelled: To receive back at 1 of 9. With
+  less motion asked for (macOS: Accessibility → Display → Reduce
+  motion), nothing slides: the tile jumps to its place. On the phone
+  (390 px) and the tablet: a swipe that starts on a handle scrolls the
+  page; a press held on it for about a quarter of a second picks the
+  tile up, which then follows the finger while the page stays still,
+  and lifting the finger drops it. Every handle is 44 px each way. Done
+  saves a dragged order as it saves one made with the buttons. In 中文
+  the handle is 拖动“待收货” and a screen reader says 已拿起“待收货”，第 2
+  个，共 9 个 and 已放下“待收货”，第 1 个，共 9 个; in Français Faire glisser
+  À recevoir, Tuile À recevoir prise, 2 sur 9, and Tuile À recevoir
+  déposée, 1 sur 9.
 - **MC-1560** *(ADR-091)* The type scale and the corners. On Inventory,
   SO-DEMO-1 and INV-000001, in light and in dark, at 1440 px and on a
   phone: buttons, fields, menus and the text under a heading read at 16
@@ -1142,7 +1290,10 @@ await fetch(`${api}/v1/files/product-image`, {
   refused as its only member, with the same link.
 - **MC-2302** As that Viewer, Download your data: a JSON file with your
   profile, memberships, devices and account history, and nothing of the
-  organization's records. Delete my account: a wrong password is refused;
+  organization's records; each membership holds how you arranged Home
+  there, null until Done saves an order other than your role's default
+  (Done on the default saves none). Delete my account: a wrong
+  password is refused;
   the right one closes the dialog, the banner names the day 30 days
   ahead on every page, your other browser is signed out, and an email
   (Mailpit) says the account will be deleted after that same day, and
@@ -1944,7 +2095,7 @@ The pages, in a private window unless a check says otherwise.
 - **MC-3213** *(ADR-091)* Home's guide. As the demo Owner on Home, open
   Help: Home's guide names Home's three moments (every day, the first two
   weeks, a new organization), then Every day, Where each tile leads, What
-  is late, Your first two weeks, Getting started, The top bar, With no
+  is late, Customise Home, Your first two weeks, Getting started, The top bar, With no
   organization and Words you’ll meet. Every word it puts in bold reads
   the same on the screen: What needs you today, 2 late, Raise an order,
   Recently opened, Refresh; each tile's name, and where the guide says it
@@ -1959,6 +2110,20 @@ The pages, in a private window unless a check says otherwise.
   the welcome starts folded, it says below 900 px, as it does on a
   tablet upright too.
   Its Inventory link opens Inventory, its guide at Reorder points.
+  Under Where each tile leads, Orders · Draft opens Orders with Draft and
+  Oldest first chosen, and says it is hidden until shown. Customise Home's
+  section reads as the panel does, open beside it: Customise Home, Up,
+  Down, Hide, Hidden tiles, Show, Show Recently opened on Home, Reset to
+  default and Done; Fixed, cannot move on the parts that stay; its
+  keyboard keys those of the panel's keyboard line, and the arrows moving
+  a tile as the guide says, to the next tile that way: at 1366 px Left on
+  a row's first tile leaves it there, and at 390 px only Up and Down move
+  it; leaving before Done offers Stay and Leave as
+  it says. It says the change is the reader's own Home alone. In Français, Personnaliser
+  l’accueil, Monter, Descendre, Masquer, Tuiles masquées, Afficher,
+  Rétablir l’ordre par défaut, Terminé, Rester and Quitter; in 中文,
+  调整首页, 上移, 下移, 隐藏, 已隐藏的磁贴, 显示, 恢复默认, 完成, 留下 and
+  离开, with a space beside Tab and Esc.
 
 ## 33. Job roles (ADR-080)
 
@@ -5052,3 +5217,73 @@ first.
   mouse, never left tinted after a tap: MC-1559 extended.
 - 2026-11-05: ADR-091's review, the welcome's areas named and linked as
   the menu has them: MC-3207 extended.
+- 2026-11-06: Customise Home, the tiles leading with the work a member
+  may do, and Orders · Draft hidden by default: MC-1559 extended.
+- 2026-11-06: Customise Home, Orders oldest first with its chip, as the
+  drafts tile opens it: MC-408 added, MC-1559 extended.
+- 2026-11-06: Customise Home by buttons: Up, Down, Hide, Show, Reset to
+  default, Done, leaving asks first, Recently opened's switch: MC-1563
+  added.
+- 2026-11-06: Customise Home by dragging, by a mouse, the keyboard and
+  touch, each move said in three languages: MC-1564 added.
+- 2026-11-06: Customise Home in Home's guide, in three languages, with
+  Orders · Draft among the tiles: MC-3213 extended.
+- 2026-11-07: Customise Home's reviews, Customise Home reading Home again
+  as it opens, so a tab left open starts from the order saved last:
+  MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, nothing in Customise Home usable
+  while Done saves: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, focus after Hide on the next
+  tile's handle, after Show on the shown tile's: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, what each change did shown under
+  Done as well as heard, Show saying the tile's new place: MC-1563
+  extended.
+- 2026-11-07: Customise Home's reviews, the page following a tile moved
+  by Up or Down, never under the row at the top: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, the page scrolling by itself only
+  in the window's outer tenth while a tile is held, more slowly: MC-1564
+  extended.
+- 2026-11-07: Customise Home's reviews, each lock naming its part for a
+  screen reader: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, a line under what is late for each
+  hidden tile whose late items it holds: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, Recently opened's Clear saying
+  what it did and where the section is turned off: MC-1559 extended.
+- 2026-11-07: Customise Home's reviews, its two Chinese messages saying 您
+  as the rest do: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, a role whose default differs
+  walked as Fatima Haddad (Sales), not Tom Becker, whose default is the
+  Owner's: MC-1563 corrected.
+- 2026-11-07: Customise Home's reviews, the export's layout null while
+  Done saves only the default, and leaving Customise Home by Leave:
+  MC-2302 corrected, MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, a card's icon in its tile's
+  colours, grey while quiet: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, Done refused keeping the cards
+  with the form's error line: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, Done reading Saving… and keeping
+  focus while it saves: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, the welcome's Undo still pressed
+  once Customise Home opens: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, the line under what is late shown
+  only while Customise Home is open, one late item in the singular with
+  its number: MC-1563 corrected.
+- 2026-11-07: Customise Home's reviews, Up, Down, Hide and Show naming
+  their tile for a screen reader: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, its words saying a tile drags by
+  its handle: MC-1564 corrected.
+- 2026-11-07: Customise Home's reviews, the keyboard's keys not given on
+  a touch screen: MC-1564 extended.
+- 2026-11-07: Customise Home's reviews, the fixed parts faded less, their
+  date still easy to read: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, every switch's track while off at
+  3:1 on a panel: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, a line under Recently opened's
+  switch saying what it shows, and the demo owner's Recently opened
+  seeded with SO-DEMO-1 and its product: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, its code loaded only once its
+  button is pressed: MC-1563 extended.
+- 2026-11-07: Customise Home's reviews, Home's guide saying the arrows
+  move a tile to the next tile that way: MC-3213 extended.
+- 2026-11-07: Customise Home's reviews, Orders' guide naming the chips a
+  link chooses, Oldest first among them: MC-408 extended.

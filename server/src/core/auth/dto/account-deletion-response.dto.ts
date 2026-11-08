@@ -28,6 +28,17 @@ export class ExportedProfile {
   deletionScheduledAt!: string | null;
 }
 
+/**
+ * How the person arranged Home in one organization (ADR-091, amended
+ * November 2026), as stored: the tiles' kinds in their order, the hidden
+ * ones, and whether Recently opened shows.
+ */
+export class ExportedHomeLayout {
+  order!: string[];
+  hidden!: string[];
+  recent!: boolean;
+}
+
 /** One organization the person belongs to, and their details there. */
 export class ExportedMembership {
   organizationId!: string;
@@ -40,6 +51,8 @@ export class ExportedMembership {
   workPhone!: string | null;
   extension!: string | null;
   joinedAt!: Date;
+  /** Their own arrangement of Home there; null while it is the default. */
+  homeLayout!: ExportedHomeLayout | null;
 }
 
 /** A notification as it was stored for the person. */

@@ -5,3 +5,10 @@
  */
 export const TOUCH = '@media (pointer: coarse)';
 export const HOVER = '@media (hover: hover)';
+
+/**
+ * A window tall enough for a row to stay fixed under the top bar: under
+ * about 700 px (a phone held sideways, the Duo open or closed) nothing
+ * fixed takes more than the bar (the design language, Screen sizes).
+ */
+export const TALL_WINDOW = '@media (min-height: 700px)';

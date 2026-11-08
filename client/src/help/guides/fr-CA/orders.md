@@ -38,6 +38,16 @@ Tout ce qui est listé part ensemble, ou rien ne part : mettez une ligne à 0 p
 
 Quand plus rien n’est attendu, appuyez sur **Clore la commande**, que tout soit arrivé ou non. **Annuler la commande** n’est offert que tant que rien n’a bougé.
 
+## Ce qu’un lien a choisi {#chips}
+
+Les tuiles de l’accueil et ses boutons des retards ouvrent Commandes avec la liste déjà réduite ou triée. Chaque choix s’affiche en puce au-dessus de la liste : appuyez sur son × pour le retirer, et la liste s’élargit de nouveau.
+
+- **Ventes seulement** ou **Achats seulement** : un seul sens.
+- **Brouillon** ou **Confirmée** : un seul statut.
+- **Reste à expédier**, **Reste à recevoir** ou **Reste à expédier ou à recevoir** : les commandes confirmées dont il reste quelque chose à faire passer, la date prévue la plus proche d’abord, jusqu’à ce que vous triiez par une colonne.
+- **En retard** : parmi celles-là, celles prévues avant aujourd’hui.
+- **Les plus anciennes d’abord** : les commandes créées en premier en haut, comme **Commandes · Brouillon** les ouvre depuis l’accueil, pour que le brouillon oublié depuis le plus longtemps se voie d’abord. Retirez-la, et les plus récentes reviennent en premier.
+
 ## Les mots que vous verrez {#words}
 
 - **Brouillon** : rédigée, pas encore convenue.

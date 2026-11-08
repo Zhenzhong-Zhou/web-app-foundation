@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-08
 areas: [api, ui]
-amended-by: [ADR-072, ADR-076]
+amended-by: [ADR-072, ADR-076, ADR-091]
 ---
 
 # ADR-057 — Lists by date range, sorted where it helps, exported as CSV
@@ -195,7 +195,8 @@ amount, voided, with the date range and search (ADR-056) like the rest.
 - **Export to the books** (QuickBooks, Sage), already deferred in ADR-048.
   Trigger: an accountant asking to stop re-keying.
 - **More sortable columns.** Trigger: asked for, one at a time, each with
-  its index.
+  its index. Taken in part in November 2026: Orders' oldest first, with no
+  sort, for Home's drafts tile (this ADR's amendment for ADR-091).
 
 ## Amendment (October 2026) — an instant as a spreadsheet opens it
 
@@ -218,3 +219,18 @@ never happens, as in Santiago. The audit log, its export and Your
 activity had kept their own `to`, compared with `<=` at UTC midnight, so
 "To 7 October" left the 7th out; they take `from` and `until` like the
 rest now.
+
+## Amendment (November 2026) — oldest first, with no sort (ADR-091)
+
+The default stays newest first. `order=asc` with no sort lists oldest
+first, by when each record was made, its id (ADR-010), read from the
+same index backwards. Orders takes it first, for Home's drafts tile, so
+the draft forgotten longest comes first. No column names that order, so
+the list shows it as a chip that can be removed, as it shows a filter
+only a link set. Another list takes it when asked, as More sortable
+columns, above, says.
+
+As built (7 November 2026): the planner reads the orders' primary key
+forward, not the organization's index backwards, about 1 ms for the
+drafts at large. Past 10 ms, `npm run perf:plans` fails and says to widen
+the orders' status index.

@@ -1,4 +1,5 @@
 import type { INestApplicationContext } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 
 import { addDays, todayIn } from '../common/today';
 import { BomsService } from '../modules/boms/boms.service';
@@ -12,9 +13,11 @@ import { ProductionExecutionService } from '../modules/production-orders/product
 import { ProductionOrdersService } from '../modules/production-orders/production-orders.service';
 import { ProductsService } from '../modules/products/products.service';
 import { ReturnAuthorizationsService } from '../modules/return-authorizations/return-authorizations.service';
-import type { ProductType } from './schema';
+import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
+import { orders, type ProductType } from './schema';
 import type { Audited } from './seed-demo-audit';
 import { orderSteps } from './seed-demo-orders';
+import { daysAgo } from './seed-demo-team';
 
 /**
  * What seed-demo.ts has already made that this builds on: where stock goes,
@@ -47,6 +50,9 @@ export function daysFromNow(days: number): string {
  * Home counts late and expired by.
  */
 export const DEMO_TIME_ZONE = 'America/Vancouver';
+
+/** SO-DEMO-3's age, so the demo's drafts begin on different days. */
+const DRAFT_STARTED_DAYS_AGO = 6;
 
 /**
  * A range around the demo's first product, for the screens rather than the
@@ -434,8 +440,15 @@ export async function addVariety(
     reference: 'CALM-RUN-02',
   });
 
-  // A sale still being put together: a draft, holding nothing.
-  await ordering.create({
+  /**
+   * A sale still being put together: a draft, holding nothing. Started six
+   * days ago, as a membership is dated (seed-demo-team.ts), so the demo's
+   * drafts begin on different days, this one before the two the team starts
+   * today (seed-demo-team-work.ts). The backdate does not put it first:
+   * the drafts run oldest first by id (ADR-057, amended), and its id, made
+   * first of the three, does.
+   */
+  const unfinished = await ordering.create({
     partnerId: cooperative.id,
     direction: 'sale',
     reference: 'SO-DEMO-3',
@@ -444,6 +457,11 @@ export async function addVariety(
       cad(elderberry.variantId, '24', '12.4900'),
     ],
   });
+  await app
+    .get<Database>(UNSAFE_GLOBAL_DB)
+    .update(orders)
+    .set({ createdAt: daysAgo(DRAFT_STARTED_DAYS_AGO) })
+    .where(eq(orders.id, unfinished.id));
 
   // One the customer called off before it was confirmed.
   const calledOff = await ordering.create({
@@ -569,7 +587,8 @@ export async function addVariety(
   return (
     'Variety added: 12 more items, ELD-24A expiring in 20 days, ' +
     'THE-0915 waiting for a cost (PO-DEMO-5), PO-DEMO-4 partly received, ' +
-    'CALM-RUN-01 released and CALM-RUN-02 planned, SO-DEMO-3 a draft, ' +
+    'CALM-RUN-01 released and CALM-RUN-02 planned, ' +
+    `SO-DEMO-3 a draft started ${DRAFT_STARTED_DAYS_AGO} days ago, ` +
     'SO-DEMO-4 cancelled, SO-DEMO-5 shipped with a draft invoice and a ' +
     'closed RMA, SO-DEMO-6 with a voided invoice, PO-DEMO-6 closed short; ' +
     'ZINC-60 discontinued, Old Mill Herbs retired'

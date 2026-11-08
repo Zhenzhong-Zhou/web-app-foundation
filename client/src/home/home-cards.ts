@@ -1,6 +1,7 @@
 import type { SvgIconComponent } from '@mui/icons-material';
 import AssignmentReturnOutlined from '@mui/icons-material/AssignmentReturnOutlined';
 import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
+import EditNoteOutlined from '@mui/icons-material/EditNoteOutlined';
 import HourglassBottomOutlined from '@mui/icons-material/HourglassBottomOutlined';
 import Inventory2Outlined from '@mui/icons-material/Inventory2Outlined';
 import LocalShippingOutlined from '@mui/icons-material/LocalShippingOutlined';
@@ -8,7 +9,11 @@ import MoveToInboxOutlined from '@mui/icons-material/MoveToInboxOutlined';
 import PaidOutlined from '@mui/icons-material/PaidOutlined';
 import PrecisionManufacturingOutlined from '@mui/icons-material/PrecisionManufacturingOutlined';
 import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
-import { defineMessages, type MessageDescriptor } from 'react-intl';
+import {
+  defineMessages,
+  type IntlShape,
+  type MessageDescriptor,
+} from 'react-intl';
 
 import type { HomeCard } from '../api/types.gen';
 import { NAV_LABELS } from '../layout/navigation';
@@ -25,6 +30,11 @@ interface Late {
   pill: MessageDescriptor;
   button: MessageDescriptor;
   list: string;
+  /**
+   * The line under the panel while the tile is hidden, saying its late
+   * items still show there (ADR-091, amended November 2026).
+   */
+  hidden: MessageDescriptor;
 }
 
 /**
@@ -61,6 +71,7 @@ interface CardMeta {
 const TITLES = defineMessages<HomeKind>({
   toShip: { id: 'home.card.toShip', defaultMessage: 'To ship' },
   toReceive: { id: 'home.card.toReceive', defaultMessage: 'To receive' },
+  drafts: { id: 'orders.status.draft', defaultMessage: 'Draft' },
   expiring: { id: 'inventory.quick.expiring', defaultMessage: 'Expiring soon' },
   costsWaiting: { id: 'costs.waiting', defaultMessage: 'Waiting for a cost' },
   invoicesToIssue: {
@@ -89,6 +100,7 @@ const EMPTY = defineMessages<HomeKind>({
     id: 'home.empty.toReceive',
     defaultMessage: 'No orders to receive',
   },
+  drafts: { id: 'home.empty.drafts', defaultMessage: 'No drafts' },
   expiring: {
     id: 'home.empty.expiring',
     defaultMessage: 'No lots expiring in {days} days',
@@ -171,6 +183,34 @@ const BUTTONS = defineMessages({
   },
 });
 
+/**
+ * A hidden tile's late items, which the panel still holds, by name and
+ * number, one as "its 1 late order".
+ */
+const HIDDEN_LATE = defineMessages({
+  orders: {
+    id: 'home.late.hidden.orders',
+    defaultMessage:
+      '{count, plural, one {{name} is hidden; its # late order still shows here} other {{name} is hidden; its # late orders still show here}}',
+  },
+  out: {
+    id: 'home.late.hidden.out',
+    defaultMessage:
+      '{count, plural, one {{name} is hidden; its # item out of stock still shows here} other {{name} is hidden; its # items out of stock still show here}}',
+  },
+  expiredLots: {
+    id: 'home.late.hidden.expiredLots',
+    defaultMessage:
+      '{count, plural, one {{name} is hidden; its # expired lot still shows here} other {{name} is hidden; its # expired lots still show here}}',
+  },
+  expiredLicences: {
+    id: 'home.late.hidden.expiredLicences',
+    defaultMessage:
+      '{count, plural, one {{name} is hidden; its # expired licence still shows here} other {{name} is hidden; its # expired licences still show here}}',
+  },
+});
+
+/** In the order of a working day, the server's (ADR-091). */
 export const CARDS: Record<HomeKind, CardMeta> = {
   toShip: {
     title: TITLES.toShip,
@@ -183,6 +223,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       pill: PILLS.late,
       button: BUTTONS.toShip,
       list: '/orders?direction=sale&outstanding=1&late=1',
+      hidden: HIDDEN_LATE.orders,
     },
   },
   toReceive: {
@@ -194,7 +235,18 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       pill: PILLS.late,
       button: BUTTONS.toReceive,
       list: '/orders?direction=purchase&outstanding=1&late=1',
+      hidden: HIDDEN_LATE.orders,
     },
+  },
+  // Orders · Draft (ADR-091, amended November 2026): hidden until the
+  // person shows it, and never late, so nothing in the panel. Oldest
+  // first, the forgotten draft at the top (ADR-057's amendment).
+  drafts: {
+    title: TITLES.drafts,
+    page: NAV_LABELS.orders,
+    empty: EMPTY.drafts,
+    icon: EditNoteOutlined,
+    list: '/orders?status=draft&order=asc',
   },
   // After To receive on the page, as the server orders it (ADR-085).
   lowStock: {
@@ -207,6 +259,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       pill: PILLS.out,
       button: BUTTONS.lowStock,
       list: '/inventory?tab=reorder-points&status=out',
+      hidden: HIDDEN_LATE.out,
     },
     unset: {
       empty: LOW_STOCK_UNSET.empty,
@@ -223,6 +276,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       pill: PILLS.expiredLots,
       button: BUTTONS.expiring,
       list: '/inventory?expiring=1&expired=1',
+      hidden: HIDDEN_LATE.expiredLots,
     },
   },
   costsWaiting: {
@@ -231,8 +285,9 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     empty: EMPTY.costsWaiting,
     icon: PaidOutlined,
     // Stock value's Waiting for a cost, the rows the server counts, where
-    // a cost is set (ADR-091).
-    list: '/costs',
+    // a cost is set (ADR-091): the page opened at that list, not its top,
+    // by Help's id for its section on it (#505's 8).
+    list: '/costs#costs',
   },
   invoicesToIssue: {
     title: TITLES.invoicesToIssue,
@@ -264,6 +319,7 @@ export const CARDS: Record<HomeKind, CardMeta> = {
       pill: PILLS.expiredLicences,
       button: BUTTONS.licences,
       list: '/licences?expiring=1&expired=1',
+      hidden: HIDDEN_LATE.expiredLicences,
     },
   },
 };
@@ -281,4 +337,67 @@ export type KnownCard = HomeCard & { kind: HomeKind };
  */
 export function isKnownCard(card: HomeCard): card is KnownCard {
   return Object.hasOwn(CARDS, card.kind);
+}
+
+/**
+ * A tile's icon badge (ADR-091): red while anything in it is late, grey
+ * while it is quiet, else the accent's.
+ */
+export const BADGE = {
+  late: { bgcolor: 'tone.critical.bg', color: 'tone.critical.fg' },
+  quiet: { bgcolor: 'tone.neutral.bg', color: 'text.secondary' },
+  busy: { bgcolor: 'surface.chosen', color: 'primary.main' },
+} as const;
+
+/** With values, so it takes them. */
+const SUMMARY = defineMessages<'line'>({
+  line: { id: 'home.customise.summary', defaultMessage: '{count} · {status}' },
+});
+
+/**
+ * A tile's words (ADR-091): its name, the page's first where the tile has
+ * one; its count, as the reader writes numbers; and its status, the quiet
+ * words with nothing to do (Low stock's own where no reorder point is
+ * set, ADR-085), else what is late in it, else none. With them, its
+ * badge's tone, and the count and status in one line, "4 · 1 late", or
+ * the quiet words alone. Home's tile and Customise Home's card say and
+ * draw the same.
+ */
+export function tileWords(
+  intl: IntlShape,
+  card: KnownCard,
+  expiringWithin: number,
+) {
+  const meta = CARDS[card.kind];
+  const quiet = card.count === 0;
+  const late = meta.late && card.late > 0 ? card.late : 0;
+  // Nothing watched, not nothing low (ADR-085).
+  const unset = card.anyPoint === false ? meta.unset : undefined;
+  const name = intl.formatMessage(meta.title);
+  const title = meta.page
+    ? intl.formatMessage(
+        { id: 'home.tile.ofPage', defaultMessage: '{page} · {name}' },
+        { page: intl.formatMessage(meta.page), name },
+      )
+    : name;
+  const status = quiet
+    ? intl.formatMessage(unset?.empty ?? meta.empty, { days: expiringWithin })
+    : late && meta.late
+      ? intl.formatMessage(meta.late.pill, { count: late })
+      : null;
+  const count = intl.formatNumber(card.count);
+  return {
+    title,
+    count,
+    status,
+    quiet,
+    late,
+    unset,
+    tone: late ? 'late' : quiet ? 'quiet' : 'busy',
+    summary: quiet
+      ? status
+      : status
+        ? intl.formatMessage(SUMMARY.line, { count, status })
+        : count,
+  } as const;
 }

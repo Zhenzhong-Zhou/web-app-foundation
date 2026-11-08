@@ -230,6 +230,12 @@ export type ExportedProfile = {
   deletionScheduledAt: string | null;
 };
 
+export type ExportedHomeLayout = {
+  order: Array<string>;
+  hidden: Array<string>;
+  recent: boolean;
+};
+
 export type ExportedMembership = {
   organizationId: string;
   organizationName: string;
@@ -240,6 +246,7 @@ export type ExportedMembership = {
   workPhone: string | null;
   extension: string | null;
   joinedAt: string;
+  homeLayout: ExportedHomeLayout | null;
 };
 
 export type ExportedNotification = {
@@ -2045,14 +2052,44 @@ export type HomeCard = {
     | 'expiring'
     | 'toShip'
     | 'toReceive'
+    | 'drafts'
     | 'lowStock'
     | 'costsWaiting'
     | 'invoicesToIssue'
     | 'returnsOpen'
     | 'licences';
+  hidden: boolean;
   count: number;
   late: number;
   anyPoint: boolean | null;
+};
+
+export type HomeDefaultLayout = {
+  order: Array<
+    | 'production'
+    | 'expiring'
+    | 'toShip'
+    | 'toReceive'
+    | 'drafts'
+    | 'lowStock'
+    | 'costsWaiting'
+    | 'invoicesToIssue'
+    | 'returnsOpen'
+    | 'licences'
+  >;
+  hidden: Array<
+    | 'production'
+    | 'expiring'
+    | 'toShip'
+    | 'toReceive'
+    | 'drafts'
+    | 'lowStock'
+    | 'costsWaiting'
+    | 'invoicesToIssue'
+    | 'returnsOpen'
+    | 'licences'
+  >;
+  recent: boolean;
 };
 
 export type HomeResponse = {
@@ -2060,6 +2097,36 @@ export type HomeResponse = {
   gettingStarted: GettingStarted;
   welcome: Welcome | null;
   cards: Array<HomeCard>;
+  recent: boolean;
+  defaultLayout: HomeDefaultLayout;
+};
+
+export type HomeLayoutDto = {
+  order: Array<
+    | 'toShip'
+    | 'toReceive'
+    | 'drafts'
+    | 'lowStock'
+    | 'expiring'
+    | 'costsWaiting'
+    | 'invoicesToIssue'
+    | 'returnsOpen'
+    | 'production'
+    | 'licences'
+  >;
+  hidden: Array<
+    | 'toShip'
+    | 'toReceive'
+    | 'drafts'
+    | 'lowStock'
+    | 'expiring'
+    | 'costsWaiting'
+    | 'invoicesToIssue'
+    | 'returnsOpen'
+    | 'production'
+    | 'licences'
+  >;
+  recent: boolean;
 };
 
 export type RecentEntry = {
@@ -5976,6 +6043,34 @@ export type HomeControllerDismissWelcomeV1Responses = {
 
 export type HomeControllerDismissWelcomeV1Response =
   HomeControllerDismissWelcomeV1Responses[keyof HomeControllerDismissWelcomeV1Responses];
+
+export type HomeControllerResetLayoutV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/home/layout';
+};
+
+export type HomeControllerResetLayoutV1Responses = {
+  204: void;
+};
+
+export type HomeControllerResetLayoutV1Response =
+  HomeControllerResetLayoutV1Responses[keyof HomeControllerResetLayoutV1Responses];
+
+export type HomeControllerSaveLayoutV1Data = {
+  body: HomeLayoutDto;
+  path?: never;
+  query?: never;
+  url: '/v1/home/layout';
+};
+
+export type HomeControllerSaveLayoutV1Responses = {
+  204: void;
+};
+
+export type HomeControllerSaveLayoutV1Response =
+  HomeControllerSaveLayoutV1Responses[keyof HomeControllerSaveLayoutV1Responses];
 
 export type HomeControllerShowV1Data = {
   body?: never;

@@ -104,6 +104,8 @@ for (const language of LANGUAGES) {
             );
           }
 
+          if (shot.clock) await page.clock.setFixedTime(shot.clock);
+
           await page.goto(path!);
           await settle(page);
 

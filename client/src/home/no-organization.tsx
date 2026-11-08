@@ -22,11 +22,11 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
 import { useRegistration } from '../auth/use-registration';
+import { IconBadge } from '../components/icon-badge';
 import { api, ApiError, hasCode, messageFor } from '../lib/api';
 import { OFFER_BACK } from '../lib/offer-back';
 import { browserTimeZone } from '../lib/time-zone';
 import { ORGANIZATION_NAME_MAX_LENGTH } from '../lib/validation';
-import { RADIUS } from '../theme/tokens';
 import { greeting } from './greeting';
 
 /**
@@ -157,23 +157,9 @@ function Way({
       component="section"
       sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 1.25 }}
     >
-      <Box
-        aria-hidden
-        sx={{
-          width: 40,
-          height: 40,
-          // In px, as Home's tiles draw their icons: a multiple of the
-          // theme's corner grew it to a circle (ADR-091).
-          borderRadius: `${RADIUS.control}px`,
-          bgcolor: 'action.hover',
-          color: 'primary.main',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <IconBadge sx={{ bgcolor: 'action.hover', color: 'primary.main' }}>
         {icon}
-      </Box>
+      </IconBadge>
       <Typography
         ref={headingRef}
         tabIndex={headingRef ? -1 : undefined}

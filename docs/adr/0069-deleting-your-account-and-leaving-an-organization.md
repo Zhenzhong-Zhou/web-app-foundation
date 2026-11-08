@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-14
 areas: [organizations, users, mail]
 amends: [ADR-012]
-amended-by: [ADR-070, ADR-077, ADR-079]
+amended-by: [ADR-070, ADR-077, ADR-079, ADR-091]
 ---
 
 # ADR-069 — Deleting your account, and leaving an organization (amends ADR-012)
@@ -167,3 +167,10 @@ kept doing so after the account joined or started another. The session
 middleware now repairs a session whose organization is none, or is no
 longer one of the account's memberships, picking one as sign-in does, and
 stores it. A session whose organization is still valid is never moved.
+
+## Amendment (November 2026) — Home's arrangement in the person's own data (ADR-091)
+
+Each membership in the person's own export also holds how they arranged
+Home there: the tiles' order, the ones hidden, and whether Recently
+opened shows (Customise Home). It is theirs, set by them alone, and goes
+with the membership.

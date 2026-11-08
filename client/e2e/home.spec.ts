@@ -12,6 +12,7 @@ import {
   signInAs,
   uniqueEmail,
 } from './support/api';
+import { shownCards } from './support/customise-home';
 import { confirmEmailInDatabase } from './support/mail';
 
 /**
@@ -352,6 +353,71 @@ test('each tile opens its list with its count’s rows, a late button just the l
   await expect(page.getByRole('button', { name: 'Late' })).toBeVisible();
 });
 
+/**
+ * The drafts tile, once shown, opens Orders oldest first (ADR-091, amended
+ * November 2026; ADR-057's amendment): Draft and Oldest first as chips,
+ * the draft forgotten longest at the top. The chip removed lists them
+ * newest first, and Back from a draft keeps either order.
+ */
+test('the drafts tile opens Orders oldest first, its chip removable, Back keeping the order', async ({
+  page,
+  freshOrg,
+}) => {
+  const product = await createProduct(freshOrg.api);
+  const partner = await createPartner(freshOrg.api);
+  const made: string[] = [];
+  for (let count = 0; count < 3; count += 1) {
+    const { order } = await created<{ order: { number: string } }>(
+      await freshOrg.api.post('/v1/orders', {
+        data: {
+          partnerId: partner.id,
+          direction: 'purchase',
+          lines: [{ variantId: product.variantId, quantityOrdered: '10' }],
+        },
+      }),
+    );
+    made.push(order.number);
+  }
+  // Drafts shown, as Customise Home's Show leaves it; the kinds the layout
+  // leaves out take their default places.
+  const shown = await freshOrg.api.put('/v1/home/layout', {
+    data: { order: ['drafts'], hidden: [], recent: true },
+  });
+  expect(shown.status(), await shown.text()).toBe(204);
+  const newestFirst = [...made].reverse();
+
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Orders · Draft, 3' }).click();
+
+  await expect(page).toHaveURL(/\/orders\?status=draft&order=asc$/);
+  await expect(
+    page.getByRole('button', { name: 'Draft', exact: true }),
+  ).toBeVisible();
+  const oldest = page.getByRole('button', { name: 'Oldest first' });
+  await expect(oldest).toBeVisible();
+  await expect(orderLinks(page)).toHaveText(made);
+
+  await orderLinks(page).first().click();
+  await expect(page).toHaveURL(/\/orders\/[0-9a-f-]+$/);
+  await page.goBack();
+  await expect(oldest).toBeVisible();
+  await expect(orderLinks(page)).toHaveText(made);
+
+  await oldest.focus();
+  await page.keyboard.press('Delete');
+  await expect(page).toHaveURL(/\/orders\?status=draft$/);
+  await expect(oldest).toBeHidden();
+  await expect(orderLinks(page)).toHaveText(newestFirst);
+
+  await orderLinks(page).first().click();
+  await expect(page).toHaveURL(/\/orders\/[0-9a-f-]+$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/orders\?status=draft$/);
+  await expect(orderLinks(page)).toHaveText(newestFirst);
+  await expect(oldest).toBeHidden();
+});
+
 test('Expiring soon opens Inventory’s expiring lots, and nothing late is one calm line', async ({
   page,
   freshOrg,
@@ -382,6 +448,45 @@ test('Expiring soon opens Inventory’s expiring lots, and nothing late is one c
     page.getByRole('button', { name: /^Expiring soon/ }),
   ).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByText('E2E-SOON').first()).toBeVisible();
+});
+
+// Stock value holds its whole valuation; the tile opens it at the list of
+// what waits, under the bar, its heading taking focus (#505's 8). A short
+// window, so the list starts below the fold.
+test('Waiting for a cost opens Stock value at its list of what waits', async ({
+  page,
+  freshOrg,
+}) => {
+  const product = await createProduct(freshOrg.api);
+  const location = await createLocation(freshOrg.api);
+  await created(
+    await freshOrg.api.post('/v1/stock/movements', {
+      data: {
+        variantId: product.variantId,
+        toLocationId: location.id,
+        quantity: '5',
+        reason: 'receipt',
+      },
+    }),
+  );
+
+  await page.setViewportSize({ width: 390, height: 480 });
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await page
+    .getByRole('link', { name: 'Stock value · Waiting for a cost, 1' })
+    .click();
+
+  await expect(page).toHaveURL(/\/costs#costs$/);
+  const heading = page.getByRole('heading', { name: 'Waiting for a cost' });
+  await expect(heading).toBeFocused();
+  await expect(heading).toBeInViewport();
+  const bar = await page.getByRole('banner').boundingBox();
+  const top = await heading.boundingBox();
+  expect(top!.y).toBeGreaterThanOrEqual(bar!.y + bar!.height);
+  await expect(
+    page.getByRole('row', { name: new RegExp(product.sku) }).first(),
+  ).toBeInViewport();
 });
 
 /** The tab hidden or shown again, as switching to another tab does. */
@@ -427,8 +532,7 @@ test('moves its time on at the minute, by itself', async ({
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-  // The line under the greeting: the day and the time, no seconds.
-  // The date and the time, under the greeting's row.
+  // The date and the time, under the greeting's row, with no seconds.
   const now = page
     .getByRole('main')
     .locator('p')
@@ -437,9 +541,804 @@ test('moves its time on at the minute, by itself', async ({
   await page.clock.pauseAt(new Date('2026-11-05T15:41:40Z'));
   const before = await now.textContent();
   expect(before).not.toMatch(/\d:\d\d:\d\d/);
+  // Neither a live region nor inside one, which a screen reader would read
+  // out every minute (ADR-091).
+  expect(
+    await now.evaluate(
+      (line) =>
+        line.closest(
+          '[aria-live]:not([aria-live="off"]), [role="status"], [role="log"], [role="alert"]',
+        ) !== null,
+    ),
+  ).toBe(false);
 
   await page.clock.runFor(10_000);
   await expect(now).toHaveText(before ?? '');
   await page.clock.runFor(15_000);
   await expect(now).not.toHaveText(before ?? '');
+});
+
+// Customise Home by buttons (ADR-091, amended November 2026; the design
+// language, Arranging your own screen): in place of the tiles, each a card
+// with Up, Down and Hide, the hidden below with Show, saved by Done.
+
+/** Customise Home's panel. */
+const customising = (page: Page) =>
+  page.getByRole('region', { name: 'Customise Home' });
+
+/** A tile's card in Customise Home, by its name. */
+const card = (page: Page, name: string) =>
+  customising(page).getByRole('listitem', { name, exact: true });
+
+/** Home's tiles, each its link, in the order Home shows them. */
+const homeTiles = (page: Page) =>
+  page.getByRole('region', { name: 'What needs you today' }).getByRole('link');
+
+/** Home's first tiles are these, in this order, by their names. */
+async function tilesFirst(page: Page, names: RegExp[]) {
+  for (const [index, name] of names.entries()) {
+    await expect(homeTiles(page).nth(index)).toHaveAccessibleName(name);
+  }
+}
+
+/** Waits for Done's write to the layout, PUT or DELETE. */
+const layoutWrite = (page: Page) =>
+  page.waitForRequest(
+    (request) =>
+      request.url().endsWith('/v1/home/layout') && request.method() !== 'GET',
+  );
+
+test('Customise Home by buttons: moved, hidden and shown, kept by Done, on reload and on another device', async ({
+  page,
+  browser,
+  freshOrg,
+}) => {
+  test.slow();
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+
+  const open = page.getByRole('button', { name: 'Customise Home' });
+  await open.click();
+  const panel = customising(page);
+  await expect(
+    panel.getByRole('heading', { name: 'Customise Home' }),
+  ).toBeFocused();
+  // What may not move stays in view, saying so.
+  await expect(page.getByText('Fixed, cannot move').first()).toBeVisible();
+
+  const tiles = shownCards(panel);
+  await expect(tiles).toHaveCount(9);
+  await expect(tiles.first()).toHaveAccessibleName('To ship');
+
+  // Up: To receive first, focus still on its Up, the new place said and
+  // shown, under Done.
+  const up = card(page, 'To receive').getByRole('button', { name: 'Up' });
+  await up.click();
+  await expect(tiles.first()).toHaveAccessibleName('To receive');
+  await expect(up).toBeFocused();
+  await expect(panel.getByRole('status')).toHaveText('To receive, 1 of 9');
+  await expect(panel.getByRole('status')).toBeVisible();
+  // At the top it goes no further, and keeps focus.
+  await expect(up).toHaveAttribute('aria-disabled', 'true');
+  await page.keyboard.press('Enter');
+  await expect(tiles.first()).toHaveAccessibleName('To receive');
+  await expect(up).toBeFocused();
+
+  const down = card(page, 'To receive').getByRole('button', { name: 'Down' });
+  await down.click();
+  await expect(tiles.nth(1)).toHaveAccessibleName('To receive');
+  await expect(down).toBeFocused();
+  await expect(panel.getByRole('status')).toHaveText('To receive, 2 of 9');
+
+  // Hide: To ship waits below with Show, focus on the next tile's handle,
+  // so a second Enter does not hide that one too.
+  await card(page, 'To ship').getByRole('button', { name: 'Hide' }).click();
+  await expect(tiles).toHaveCount(8);
+  await expect(panel.getByRole('status')).toHaveText(
+    'To ship hidden: under Hidden tiles, below',
+  );
+  await expect(
+    card(page, 'To receive').getByRole('button', { name: 'Drag To receive' }),
+  ).toBeFocused();
+  const hidden = panel.getByRole('region', { name: 'Hidden tiles' });
+  await expect(hidden.getByRole('listitem')).toHaveText([
+    /To ship/,
+    /Orders · Draft/,
+  ]);
+
+  // The drafts shown, in their place after To receive, focus on their
+  // handle there.
+  await card(page, 'Orders · Draft')
+    .getByRole('button', { name: 'Show' })
+    .click();
+  await expect(tiles.nth(1)).toHaveAccessibleName('Orders · Draft');
+  await expect(
+    card(page, 'Orders · Draft').getByRole('button', {
+      name: 'Drag Orders · Draft',
+    }),
+  ).toBeFocused();
+  await expect(panel.getByRole('status')).toHaveText(
+    'Orders · Draft shown, 2 of 9',
+  );
+
+  const saved = layoutWrite(page);
+  await panel.getByRole('button', { name: 'Done' }).click();
+  const write = await saved;
+  expect(write.method()).toBe('PUT');
+  expect(write.postDataJSON()).toMatchObject({
+    hidden: ['toShip'],
+    recent: true,
+  });
+  await expect(panel).toBeHidden();
+  await expect(open).toBeFocused();
+
+  const inOrder = async (where: Page) => {
+    await tilesFirst(where, [
+      /^To receive, /,
+      /^Orders · Draft, /,
+      /^Low stock, /,
+    ]);
+    await expect(homeTiles(where).filter({ hasText: /^To ship/ })).toHaveCount(
+      0,
+    );
+  };
+  await inOrder(page);
+  await page.reload();
+  await inOrder(page);
+
+  // Another device: a phone, signed in on its own.
+  const phone = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+  });
+  const other = await phone.newPage();
+  await other.goto('/login');
+  await other.getByLabel(/^email/i).fill(freshOrg.email);
+  await other.getByLabel(/^password/i).fill(freshOrg.password);
+  await other.getByRole('button', { name: 'Sign in' }).click();
+  await inOrder(other);
+  await phone.close();
+});
+
+test('Reset to default and Done clear the layout, for an Owner and for a role whose default differs', async ({
+  page,
+  freshOrg,
+}) => {
+  test.slow();
+  const owner = freshOrg.api;
+  await owner.post('/v1/home/getting-started/dismiss');
+  const shown = await owner.put('/v1/home/layout', {
+    data: { order: ['licences', 'toShip'], hidden: ['toShip'], recent: false },
+  });
+  expect(shown.status(), await shown.text()).toBe(204);
+  await signInAs(page, owner);
+  await page.goto('/');
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^Licences/);
+
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const panel = customising(page);
+  const recent = panel.getByRole('switch', {
+    name: 'Show Recently opened on Home',
+  });
+  await expect(recent).not.toBeChecked();
+  await panel.getByRole('button', { name: 'Reset to default' }).click();
+  await expect(panel.getByRole('status')).toHaveText(
+    'Back to the default order, not saved yet',
+  );
+  await expect(shownCards(panel).first()).toHaveAccessibleName('To ship');
+  await expect(recent).toBeChecked();
+
+  const cleared = layoutWrite(page);
+  await panel.getByRole('button', { name: 'Done' }).click();
+  expect((await cleared).method()).toBe('DELETE');
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To ship, /);
+
+  // A role whose default leads differently, Sales', with Low stock first:
+  // Reset puts its own default back, and Done on it saves no layout.
+  await confirmEmailInDatabase(freshOrg.email);
+  const sales = await memberIn(owner, 'Sales', 'sales');
+  await signInAs(page, sales);
+  await page.goto('/');
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^Low stock, /);
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const theirs = customising(page);
+  await card(page, 'To ship').getByRole('button', { name: 'Up' }).click();
+  await expect(shownCards(theirs).first()).toHaveAccessibleName('To ship');
+  await theirs.getByRole('button', { name: 'Reset to default' }).click();
+  await expect(shownCards(theirs).first()).toHaveAccessibleName('Low stock');
+  const untouched = layoutWrite(page);
+  await theirs.getByRole('button', { name: 'Done' }).click();
+  expect((await untouched).method()).toBe('DELETE');
+});
+
+// While Done saves, which a free instance waking takes a minute over,
+// nothing in the panel can change what the save holds.
+test('while Done saves, nothing in Customise Home can be moved', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/v1/home/layout', async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const panel = customising(page);
+  await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
+  await panel.getByRole('button', { name: 'Done' }).click();
+
+  // Done says it is saving, held but still focused, as every save does.
+  const saving = panel.getByRole('button', { name: 'Saving…' });
+  await expect(saving).toBeFocused();
+  await expect(saving).toHaveAttribute('aria-disabled', 'true');
+  // Inert until it is back: the cards' buttons, their handles and the
+  // switch, but not Done's row.
+  const resting = panel.locator('[inert]');
+  await expect(resting.getByRole('button', { name: 'Up' })).toHaveCount(9);
+  await expect(resting.getByRole('button', { name: /^Drag / })).toHaveCount(9);
+  await expect(resting.getByRole('switch')).toHaveCount(1);
+  await expect(resting.getByRole('button', { name: 'Saving…' })).toHaveCount(0);
+  release();
+  await expect(panel).toBeHidden();
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To receive, /);
+});
+
+// Saved, then Home not read again: the save is not called a failure, and
+// nothing is left that leaving would ask about.
+test('Done saved but Home not read again closes Customise Home, nothing left unsaved', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const panel = customising(page);
+  await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
+  // The read after the save fails, once.
+  await page.route(
+    '**/v1/home',
+    (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          statusCode: 503,
+          message: 'Home could not be read — try again in a moment',
+        }),
+      }),
+    { times: 1 },
+  );
+  const saved = layoutWrite(page);
+  await panel.getByRole('button', { name: 'Done' }).click();
+  await saved;
+
+  await expect(panel).toBeHidden();
+  await expect(page.getByRole('alert')).toContainText(
+    'Home could not be read — try again in a moment',
+  );
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('link', { name: 'Orders' })
+    .click();
+  await expect(page).toHaveURL(/\/orders$/);
+  await expect(
+    page.getByRole('dialog', { name: 'Leave without saving?' }),
+  ).toHaveCount(0);
+  const layout = (await (await freshOrg.api.get('/v1/home')).json()) as {
+    cards: { kind: string }[];
+  };
+  expect(layout.cards[0].kind).toBe('toReceive');
+});
+
+// Few open Customise Home, so its code and the dragging library come only
+// once its button is pressed, not with every Home (#505's review, 46).
+test('Customise Home and its dragging load only once it is pressed', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  const loaded: string[] = [];
+  page.on('request', (request) => {
+    if (/customise-home|dnd-kit/.test(request.url())) {
+      loaded.push(request.url());
+    }
+  });
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await expect(homeTiles(page).first()).toBeVisible();
+  expect(loaded).toEqual([]);
+
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  await expect(customising(page)).toBeVisible();
+  expect(loaded.some((url) => url.includes('customise-home'))).toBe(true);
+  expect(loaded.some((url) => url.includes('dnd-kit'))).toBe(true);
+});
+
+// The welcome's Undo, in the greeting that Customise Home fades and puts
+// out of use, still works there in its last seconds.
+test('the welcome’s Undo can still be pressed once Customise Home opens', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  const welcome = page.getByRole('heading', { name: /^Welcome/ });
+  await expect(welcome).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Dismiss the welcome card', exact: true })
+    .click();
+  await expect(welcome).toBeHidden();
+
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  await expect(customising(page)).toBeVisible();
+  const undo = page
+    .getByRole('status')
+    .filter({ hasText: 'Welcome card hidden.' })
+    .getByRole('button', { name: 'Undo', exact: true });
+  expect(await undo.evaluate((button) => button.closest('[inert]'))).toBeNull();
+  await undo.click();
+  await expect(welcome).toBeVisible();
+});
+
+// A read of Home that went out before Done's, and comes back after it, is
+// dropped: it holds the order from before the save.
+test('an older read of Home arriving after Done’s does not bring the old order back', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To ship, /);
+
+  // The next read is fetched at once, then held before it reaches Home.
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(
+    '**/v1/home',
+    async (route) => {
+      const response = await route.fetch();
+      await held;
+      await route.fulfill({ response });
+    },
+    { times: 1 },
+  );
+  const older = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/v1/home') && response.status() === 200,
+  );
+  await page.getByRole('button', { name: 'Refresh' }).click();
+
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
+  await customising(page).getByRole('button', { name: 'Done' }).click();
+  await expect(customising(page)).toBeHidden();
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To receive, /);
+
+  release();
+  await older;
+  // Two frames, for what the older read would draw.
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To receive, /);
+});
+
+// A save refused keeps the cards as they were moved, and says why as every
+// form does, labelled, offering Reload to an outdated tab (ADR-081).
+test('Done refused keeps the cards and says why', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.route('**/v1/home/layout', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        statusCode: 503,
+        message: 'Home could not be saved — try again in a moment',
+      }),
+    }),
+  );
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const panel = customising(page);
+  await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
+  await panel.getByRole('button', { name: 'Done' }).click();
+
+  await expect(panel.getByRole('alert', { name: 'Error' })).toContainText(
+    'Home could not be saved — try again in a moment',
+  );
+  // The keyboard still on Done, to try again.
+  await expect(panel.getByRole('button', { name: 'Done' })).toBeFocused();
+  await expect(panel.getByRole('listitem').first()).toHaveAccessibleName(
+    'To receive',
+  );
+});
+
+/**
+ * The arrangement saved last, on whichever device (ADR-091, amended
+ * November 2026): Home shows it after Orders and back, and Customise Home
+ * reads it again as it opens, so Done in a tab left open keeps it rather
+ * than sending the tab's older one.
+ */
+test('Customise Home starts from the arrangement saved last, on any device', async ({
+  page,
+  freshOrg,
+}) => {
+  const owner = freshOrg.api;
+  await owner.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, owner);
+  await page.goto('/');
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To ship, /);
+
+  // Saved elsewhere while this tab is open.
+  const elsewhere = async (order: string[]) => {
+    const response = await owner.put('/v1/home/layout', {
+      data: { order, hidden: [], recent: true },
+    });
+    expect(response.status(), await response.text()).toBe(204);
+  };
+  await elsewhere(['lowStock', 'toShip']);
+  const menu = page.getByRole('navigation', { name: 'Main' });
+  await menu.getByRole('link', { name: 'Orders' }).click();
+  // Drawn, so Home has left the page and reads again on its return.
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Orders' }),
+  ).toBeVisible();
+  await menu.getByRole('link', { name: 'Home' }).click();
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^Low stock, /);
+
+  await elsewhere(['expiring', 'lowStock', 'toShip']);
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const panel = customising(page);
+  await expect(shownCards(panel).first()).toHaveAccessibleName('Expiring soon');
+  const saved = layoutWrite(page);
+  await panel.getByRole('button', { name: 'Done' }).click();
+  const write = await saved;
+  expect(write.method()).toBe('PUT');
+  // The other device's order, kept.
+  const { order } = write.postDataJSON() as { order: string[] };
+  expect(
+    ['expiring', 'lowStock', 'toShip'].map((kind) => order.indexOf(kind)),
+  ).toEqual(
+    ['expiring', 'lowStock', 'toShip']
+      .map((kind) => order.indexOf(kind))
+      .sort((a, b) => a - b),
+  );
+  expect(order[0]).toBe('expiring');
+});
+
+test('leaving Customise Home with changes not saved asks first', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
+
+  const orders = page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('link', { name: 'Orders' });
+  await orders.click();
+  const dialog = page.getByRole('dialog', { name: 'Leave without saving?' });
+  await expect(dialog).toContainText('Your changes to Home aren’t saved yet.');
+  await dialog.getByRole('button', { name: 'Stay' }).click();
+  await expect(shownCards(customising(page)).first()).toHaveAccessibleName(
+    'To receive',
+  );
+
+  await orders.click();
+  await page
+    .getByRole('dialog', { name: 'Leave without saving?' })
+    .getByRole('button', { name: 'Leave' })
+    .click();
+  await expect(page).toHaveURL(/\/orders$/);
+  // Nothing was saved: Home is as it was.
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('link', { name: 'Home' })
+    .click();
+  await expect(homeTiles(page).first()).toHaveAccessibleName(/^To ship, /);
+});
+
+// Not read is the unit test's: here, saved off and gone from Home on reload.
+test('Recently opened switched off in Customise Home is saved off and gone from Home', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  // Home's own read, its six rows; the search box reads five of its own.
+  const reads: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/v1/recent?limit=6')) reads.push(request.url());
+  });
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await expect.poll(() => reads.length).toBeGreaterThan(0);
+
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const recent = customising(page).getByRole('switch', {
+    name: 'Show Recently opened on Home',
+  });
+  // What it shows, which is not on the screen while Home is customised.
+  await expect(recent).toHaveAccessibleDescription(
+    'Under the tiles, what you opened last: orders, products, lots and more.',
+  );
+  await recent.uncheck();
+  const saved = layoutWrite(page);
+  await customising(page).getByRole('button', { name: 'Done' }).click();
+  expect((await saved).postDataJSON()).toMatchObject({ recent: false });
+  // Closed once saved and Home read again, so the server has it now.
+  await expect(customising(page)).toBeHidden();
+
+  // Read by the API, not caught off the page: Done's own read of Home can
+  // land after the reload starts, its body gone with the page.
+  await page.reload();
+  const home = await freshOrg.api.get('/v1/home');
+  expect(await home.json()).toMatchObject({ recent: false });
+  await expect(homeTiles(page).first()).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Recently opened' }),
+  ).toHaveCount(0);
+});
+
+/** A tile's handle in Customise Home, by its tile's name. */
+const handleOf = (page: Page, name: string) =>
+  customising(page).getByRole('button', { name: `Drag ${name}`, exact: true });
+
+/** What a screen reader hears while a tile is dragged, said by the library. */
+const dragSaid = (page: Page, words: string) =>
+  page.getByRole('status').filter({ hasText: words });
+
+/** A dropped tile flown to its place, after which another drag may start. */
+const settled = (page: Page) =>
+  expect(customising(page).locator('[data-dnd-dragging]')).toHaveCount(0);
+
+test('Customise Home by dragging: a mouse and the keyboard, the buttons beside, kept by Done', async ({
+  page,
+  freshOrg,
+}) => {
+  test.slow();
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const tiles = shownCards(customising(page));
+  await expect(tiles).toHaveCount(9);
+  // With a mouse, the keyboard's keys are given too.
+  await expect(
+    customising(page).getByText(/^With the keyboard:/),
+  ).toBeVisible();
+
+  // A mouse: Licences expiring, last, dropped on To ship, first, both in
+  // a window tall enough to hold them.
+  await page.setViewportSize({ width: 1366, height: 1200 });
+  await handleOf(page, 'Licences expiring').scrollIntoViewIfNeeded();
+  const from = await handleOf(page, 'Licences expiring').boundingBox();
+  const to = await card(page, 'To ship').boundingBox();
+  if (!from || !to) throw new Error('the handle and the first tile are drawn');
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, {
+    steps: 15,
+  });
+  await page.mouse.up();
+  await settled(page);
+  await expect(tiles.first()).toHaveAccessibleName('Licences expiring');
+  await expect(tiles.nth(1)).toHaveAccessibleName('To ship');
+  await expect(dragSaid(page, 'Licences expiring dropped, 1 of 9')).toHaveCount(
+    1,
+  );
+
+  // The keyboard: Space picks To receive up, the arrow moves it a place
+  // back, Space drops it there, and the keyboard stays on its handle.
+  const receive = handleOf(page, 'To receive');
+  await receive.focus();
+  await page.keyboard.press('Space');
+  await expect(dragSaid(page, 'Picked up To receive, 3 of 9')).toHaveCount(1);
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('Space');
+  await settled(page);
+  await expect(tiles.nth(1)).toHaveAccessibleName('To receive');
+  await expect(receive).toBeFocused();
+  await expect(dragSaid(page, 'To receive dropped, 2 of 9')).toHaveCount(1);
+
+  // Escape puts it back where it was.
+  await page.keyboard.press('Space');
+  await expect(dragSaid(page, 'Picked up To receive, 2 of 9')).toHaveCount(1);
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Escape');
+  await settled(page);
+  await expect(
+    dragSaid(page, 'Move cancelled: To receive back at 2 of 9'),
+  ).toHaveCount(1);
+  await expect(tiles.nth(1)).toHaveAccessibleName('To receive');
+  await expect(receive).toBeFocused();
+
+  // Up still moves a tile beside the dragging.
+  await card(page, 'To receive').getByRole('button', { name: 'Up' }).click();
+  await expect(tiles.first()).toHaveAccessibleName('To receive');
+  await expect(customising(page).getByRole('status')).toHaveText(
+    'To receive, 1 of 9',
+  );
+
+  const saved = layoutWrite(page);
+  await customising(page).getByRole('button', { name: 'Done' }).click();
+  expect((await saved).method()).toBe('PUT');
+  await tilesFirst(page, [
+    /^To receive, /,
+    /^Licences expiring, /,
+    /^To ship, /,
+  ]);
+});
+
+// The page scrolls by itself only in the window's outer tenth: a handle
+// picked up 100 px above a laptop window's foot, a small wobble down, and
+// the page stays (review 2).
+test('a tile picked up near the window’s foot, wobbled, does not scroll the page', async ({
+  page,
+  freshOrg,
+}) => {
+  await freshOrg.api.post('/v1/home/getting-started/dismiss');
+  await signInAs(page, freshOrg.api);
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Customise Home' }).click();
+  const handle = handleOf(page, 'Licences expiring');
+  await handle.scrollIntoViewIfNeeded();
+  const seen = await handle.boundingBox();
+  if (!seen) throw new Error('the handle is drawn');
+  await page.evaluate(
+    (by) => window.scrollBy(0, by),
+    seen.y + seen.height / 2 - (768 - 100),
+  );
+  const box = await handle.boundingBox();
+  if (!box) throw new Error('the handle is drawn');
+  expect(Math.round(box.y + box.height / 2)).toBe(668);
+
+  const scrolled = () => page.evaluate(() => window.scrollY);
+  const before = await scrolled();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 4, {
+    steps: 4,
+  });
+  await page.waitForTimeout(400);
+  expect(await scrolled()).toBe(before);
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await settled(page);
+});
+
+test.describe('Customise Home on a touch phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  // A phone's coarse pointer, which touch alone does not emulate: the
+  // keyboard's keys are no use there, and are not given.
+  test.describe('its pointer coarse', () => {
+    test.use({ isMobile: true });
+
+    test('gives no keyboard’s keys', async ({ page, freshOrg }) => {
+      await freshOrg.api.post('/v1/home/getting-started/dismiss');
+      await signInAs(page, freshOrg.api);
+      await page.goto('/');
+      await page.getByRole('button', { name: 'Customise Home' }).click();
+      const panel = customising(page);
+      await expect(panel.getByText(/^Drag a tile by its handle/)).toBeVisible();
+      await expect(panel.getByText(/^With the keyboard:/)).toBeHidden();
+    });
+  });
+
+  test('its controls are 44 px each way, and Done stays in reach as the page scrolls', async ({
+    page,
+    freshOrg,
+  }) => {
+    await freshOrg.api.post('/v1/home/getting-started/dismiss');
+    await signInAs(page, freshOrg.api);
+    await page.goto('/');
+    const open = page.getByRole('button', { name: 'Customise Home' });
+    const openBox = await open.boundingBox();
+    expect(openBox?.height).toBeGreaterThanOrEqual(44);
+    await open.click();
+
+    const panel = customising(page);
+    const first = card(page, 'To ship');
+    for (const target of [
+      panel.getByRole('button', { name: 'Reset to default' }),
+      panel.getByRole('button', { name: 'Done' }),
+      first.getByRole('button', { name: 'Drag To ship' }),
+      first.getByRole('button', { name: 'Up' }),
+      first.getByRole('button', { name: 'Down' }),
+      first.getByRole('button', { name: 'Hide' }),
+      card(page, 'Orders · Draft').getByRole('button', { name: 'Show' }),
+      panel
+        .locator('label')
+        .filter({ hasText: 'Show Recently opened on Home' }),
+    ]) {
+      const box = await target.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(44);
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+    }
+
+    await panel
+      .getByRole('region', { name: 'Hidden tiles' })
+      .scrollIntoViewIfNeeded();
+    // In the window and not under the top bar, which toBeInViewport does not
+    // see: the button's top at or below the bar's foot.
+    const done = panel.getByRole('button', { name: 'Done' });
+    await expect(done).toBeInViewport();
+    const bar = await page.getByRole('banner').boundingBox();
+    const doneBox = await done.boundingBox();
+    expect(doneBox!.y).toBeGreaterThanOrEqual(bar!.y + bar!.height);
+  });
+
+  // The page follows the card a tap moved, so a second tap in the same
+  // place moves it again rather than the tile that took its old place.
+  test('the page follows a tile moved up, its button still under the finger', async ({
+    page,
+    freshOrg,
+  }) => {
+    await freshOrg.api.post('/v1/home/getting-started/dismiss');
+    await signInAs(page, freshOrg.api);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Customise Home' }).click();
+    const panel = customising(page);
+    const tiles = shownCards(panel);
+    await expect(tiles.nth(4)).toHaveAccessibleName(
+      'Stock value · Waiting for a cost',
+    );
+
+    const up = card(page, 'Stock value · Waiting for a cost').getByRole(
+      'button',
+      {
+        name: 'Up',
+      },
+    );
+    await up.scrollIntoViewIfNeeded();
+    const before = await up.boundingBox();
+    expect(before).not.toBeNull();
+    const x = before!.x + before!.width / 2;
+    const y = before!.y + before!.height / 2;
+
+    await page.touchscreen.tap(x, y);
+    await expect(tiles.nth(3)).toHaveAccessibleName(
+      'Stock value · Waiting for a cost',
+    );
+    const after = await up.boundingBox();
+    expect(Math.abs(after!.y - before!.y)).toBeLessThan(2);
+    await page.touchscreen.tap(x, y);
+    await expect(tiles.nth(2)).toHaveAccessibleName(
+      'Stock value · Waiting for a cost',
+    );
+
+    // Never under the row at the top: the moved card below its foot.
+    const rowFoot = await panel
+      .getByRole('status')
+      .evaluate((line) => line.parentElement!.getBoundingClientRect().bottom);
+    const cardTop = await card(
+      page,
+      'Stock value · Waiting for a cost',
+    ).evaluate((each) => each.getBoundingClientRect().top);
+    expect(cardTop).toBeGreaterThanOrEqual(rowFoot);
+  });
 });

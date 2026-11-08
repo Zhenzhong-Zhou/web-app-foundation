@@ -1,5 +1,5 @@
 import type { MemberAccess } from '../../../core/authorization/dto/member-access-response.dto';
-import type { HomeKind } from '../home.service';
+import type { HomeKind } from '../home-kinds';
 import type { WelcomeDoneKind, WelcomeItemKey } from '../welcome.service';
 
 /**
@@ -8,11 +8,17 @@ import type { WelcomeDoneKind, WelcomeItemKey } from '../welcome.service';
  */
 
 /**
- * One of Home's tiles, in the order of a working day (ADR-091): every row
- * the list it opens shows, and no rows of its own.
+ * One of Home's tiles, in the reader's order (ADR-091, amended November
+ * 2026): every row the list it opens shows, and no rows of its own.
  */
 export class HomeCard {
   kind!: HomeKind;
+  /**
+   * Hidden by the reader in Customise Home, or by default, as Drafts is:
+   * still counted, its late items in the panel of what is late, but not
+   * drawn as a tile.
+   */
+  hidden!: boolean;
   /** Every row its list shows, filtered as the tile opens it. */
   count!: number;
   /**
@@ -95,6 +101,19 @@ export class Welcome {
   items!: WelcomeItem[];
 }
 
+/**
+ * Home's default arrangement for the reader (ADR-091, amended November
+ * 2026), as the layout Done saves: every tile they may see in their
+ * role's default order, the ones hidden by default, and Recently opened
+ * on. What Customise Home's Reset to default puts back, and what Done
+ * compares with, clearing the layout when they are the same.
+ */
+export class HomeDefaultLayout {
+  order!: HomeKind[];
+  hidden!: HomeKind[];
+  recent!: boolean;
+}
+
 /** GET /home. */
 export class HomeResponse {
   /**
@@ -105,5 +124,13 @@ export class HomeResponse {
   gettingStarted!: GettingStarted;
   /** The reader's welcome, or null when it does not show. */
   welcome!: Welcome | null;
+  /**
+   * Every tile the reader may see, in their order or their role's
+   * default, the hidden ones among them.
+   */
   cards!: HomeCard[];
+  /** Whether Recently opened shows: the reader's choice, true by default. */
+  recent!: boolean;
+  /** The arrangement with no layout saved, whatever the reader saved. */
+  defaultLayout!: HomeDefaultLayout;
 }

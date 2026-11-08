@@ -66,6 +66,15 @@
 - **Every pull request says "Closes #N" for each issue it fixes,** a
   rider included: the issues its commits name are the list checked before
   it opens (2 November 2026: #361 fixed seven and closed none).
+- **A review files an issue only for what a person meets, or for a rule
+  that is wrong** (6 November 2026): every smaller tidy-up from the same
+  reviews goes into one issue, "Left from ADR-NNN's reviews",
+  `when-touched`, each item naming its file, as #505 does. The triage of
+  6 November folded nine issues filed one by one into #505.
+- **After a feature pull request merges, `/triage` reads the areas it
+  touched** (6 November 2026): an issue the pull request made obsolete is
+  closed `not planned`, naming it; one it did in part gets a comment
+  saying what is left. The maintainer approves each first.
 - Each of these prints nothing when every open issue is labelled: still
   `needs-triage`, no group label, no area label.
 
@@ -186,6 +195,10 @@ steps; this section stays the rule.
   the server's prettier, and their tests read the client's FormatJS
   (2 November 2026). Removed after the merge with `git worktree remove
   ../<folder>`.
+- **Never switch branches in a folder a Claude Code session is working
+  in** (6 November 2026): a `git switch main` there, while a session
+  committed, put its commit on the local `main`. A job on `main` waits for
+  the session, or runs in a second working folder.
 - **Cloud sessions** (Claude Code on the web, from October 2026): one new
   session per task, from `main`, each cloning the repository fresh, so
   nothing is pulled first; a long session pays for its whole history at
@@ -286,6 +299,10 @@ steps; this section stays the rule.
   table or diagram to compare, a new term in plain words the first time;
   an empty section is left out, but Decisions needed never is. After any
   new migration, the reply reminds Bob to run `npm run migrate:all`.
+- **Every run or session the chat asks Bob to start comes with its rough
+  time and cost** (6 November 2026): the minutes or hours, the cost on
+  API credits, what it takes of his plan's usage, and what the figures
+  rest on. A build brief holds the same for each of its steps.
 - State the exact path of every file:
   - `server/src/modules/…`;
   - `server/src/core/…` (organizations, audit, authorization);
@@ -355,11 +372,12 @@ Each command in `server/`:
 3. append the hand-written parts (triggers, backfills) after a
    `--> statement-breakpoint`;
 4. run `npm run migrate:all`, for the dev, test and e2e databases;
-5. where `foundation_perf_large` exists, which `migrate:all` does not
-   reach, `DATABASE_URL=$PERF_DB_LARGE npm run migrate`, `PERF_DB_LARGE`
-   being that database's URL, as
+5. on each volume database that exists, which `migrate:all` does not
+   reach, `DATABASE_URL=<its URL> npm run migrate`: `foundation_perf_large`,
+   at `PERF_DB_LARGE` as
    [`server/perf/README.md`](../server/perf/README.md#running-it-locally)
-   sets it.
+   sets it, and the small one its ignored manifest, volume-small.json,
+   names (7 November 2026: three steps migrated an unused one).
 
 What a migration may take away while the running release reads it is
 [conventions.md, "Migrations against the running release (ADR-081)"](conventions.md#migrations-against-the-running-release-adr-081),
@@ -412,6 +430,10 @@ reports success.
   root (both sides, CI's order, stops at the first failure; `--quick`
   skips the end-to-end suites). Editor auto-imports in the wrong quote
   style fail CI.
+  The full run also checks `e2e/accessibility.spec.ts` in Firefox, from
+  Playwright's Linux image in Docker
+  ([conventions.md, Supported browsers](conventions.md#supported-browsers)),
+  which a pull request's CI, Chromium alone, does not.
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
 - Before each commit, `scripts/verify.sh --quick`; or `--docs`, in

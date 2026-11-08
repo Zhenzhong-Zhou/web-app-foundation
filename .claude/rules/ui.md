@@ -25,9 +25,9 @@ What to keep true when a component styles itself (ADR-055;
   follow one kept in a variable.
 - **Status is a tone:** `StatusChip` with a row in `STATUS_TONES`
   (`client/src/theme/status.ts`), the words carrying the meaning.
-- **Five type sizes,** `h5`, `h6`, `body1`, `body2` and `caption`, and no
-  capitals. A font size is rem through the theme, never px; a width
-  beside text is `rem(px)` from `client/src/theme/rem.ts` (ADR-075).
+- **Five type sizes,** `h5`, `h6`, `body1`, `body2` and `caption`, and
+  `TYPE.figure` for a count; no capitals. A font size is rem through the
+  theme, never px; a width beside text is `rem(px)` (`client/src/theme/rem.ts`, ADR-075).
 - **One filled button per group;** a control's height is the theme's
   density, and an outline is never removed.
 - **Breakpoint props where a layout breaks;** what shows is CSS `display`
@@ -35,7 +35,7 @@ What to keep true when a component styles itself (ADR-055;
   ([conventions.md, Responsive layout](../../docs/conventions.md#responsive-layout)).
 - **The shared pieces before a new one:** `ExpiryChip`, `displayQuantity`,
   `DetailLayout`, `FilterRow`, `EmptyState`, `ListError`, `Reference`,
-  `UndoSnackbar`, `PasswordField`
+  `UndoSnackbar`, `PasswordField`, `IconBadge`
   ([conventions.md, Shared pieces for screens](../../docs/conventions.md#shared-pieces-for-screens-adr-055)).
 - **A new screen gets its line in SCREENS** in
   `client/e2e/accessibility.spec.ts`; a violation is fixed, never

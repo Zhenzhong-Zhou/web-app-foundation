@@ -74,8 +74,11 @@ as the catalogues word it.
 | --- | --- | --- | --- |
 | Home | Accueil | 首页 | |
 | Getting started | Premiers pas | 入门指引 | A new organization's first steps, on Home (ADR-058). |
-| Tile | Tuile | 磁贴 | One kind of work on Home, under What needs you today: its count, opening its list (ADR-091). Home's guide names it; the screen does not. Chinese says 磁贴, not 卡片, which the welcome card (欢迎卡片) is (ADR-091's review). A tile and the filter it opens share one name, the plainer of the two, each held in its row below: Low stock, Expiring soon, Waiting for a cost, To issue, Open returns, In progress, Licences expiring. Where that word alone does not say what it is about, the page's name goes first, the word after it still the filter's: Stock value · Waiting for a cost, Invoices · To issue, Production · In progress (发票 · 待开具, Factures · À émettre; decision 47a). |
+| Tile | Tuile | 磁贴 | One kind of work on Home, under What needs you today: its count, opening its list (ADR-091). Home's guide names it; the screen does not. Chinese says 磁贴, not 卡片, which the welcome card (欢迎卡片) is (ADR-091's review). A tile and the filter it opens share one name, the plainer of the two, each held in its row below: Low stock, Expiring soon, Waiting for a cost, To issue, Open returns, In progress, Licences expiring. Where that word alone does not say what it is about, the page's name goes first, the word after it still the filter's: Stock value · Waiting for a cost, Invoices · To issue, Production · In progress, Orders · Draft (发票 · 待开具, Factures · À émettre; decision 47a). |
 | More | Plus | 更多 | Beside Home's main action, a menu of the other actions the member may take (ADR-091). |
+| Customise Home | Personnaliser l’accueil | 调整首页 | The button at the right of What needs you today, and what it opens: each person's own order of Home's tiles, which are hidden, and whether Recently opened shows, on every device they use (ADR-091, amended November 2026). Up and Down (Monter, Descendre; 上移、下移) move a tile, as its handle (poignée, 手柄) drags it (Faire glisser, 拖动); Hide and Show (Masquer, Afficher; 隐藏、显示) take it off and back; Done (Terminé, 完成) saves. |
+| Hidden tiles | Tuiles masquées | 已隐藏的磁贴 | Customise Home's list below the tiles, each with Show; a hidden tile's late items still show in the panel of what is late. |
+| Reset to default | Rétablir l’ordre par défaut | 恢复默认 | In Customise Home: the order the person's role gives, the drafts hidden and Recently opened on, saved by Done. |
 | People | Personnes | 同事 | Everyone in the organization, and how to reach them (ADR-063). |
 | Audit log | Journal d’audit | 审计日志 | |
 
@@ -84,11 +87,13 @@ as the catalogues word it.
 | English | Français (Canada) | 简体中文 | Notes |
 | --- | --- | --- | --- |
 | Draft | Brouillon | 草稿 | Written, not yet agreed. |
+| Orders · Draft | Commandes · Brouillon | 订单 · 草稿 | Home's drafts tile, its page's name first and Orders' Draft filter after it; hidden until a person shows it in Customise Home, never late (ADR-091, amended November 2026). |
 | Confirmed | Confirmée | 已确认 | Agreed with the partner. |
 | Received / Shipped | Reçue / Expédiée | 已收货 / 已发货 | Closed: the one status, in its direction's word (ADR-041). |
 | Cancelled | Annulée | 已取消 | |
 | Open / Fulfilled | Ouvertes / Exécutées | 未完成 / 已完成 | The list's filters. |
 | Late | En retard | 逾期 | An outstanding order past its expected day, in the organization's day: Orders' filter, and its chip "2 days late" / « 2 jours de retard » / 逾期 2 天. Home's panel of what is late counts these with the items out and the lots and licences expired (ADR-091). Never "overdue". |
+| Oldest first | Les plus anciennes d’abord | 最早的在前 | Orders' chip for the list by when each order was made, the oldest at the top, where no column is sorted: Home's drafts tile opens it so (ADR-057's amendment; ADR-091, amended November 2026). Removing it lists newest first again. |
 
 ### Shipping
 

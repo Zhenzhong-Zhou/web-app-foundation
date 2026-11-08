@@ -91,6 +91,11 @@ const ALLOWED: { probe: string; table: string; reason: string }[] = [
 interface Probe {
   name: string;
   run: () => Promise<unknown>;
+  /**
+   * A plan kept on purpose though it grows with the data: past `ms` for
+   * its slowest statement, the check fails, saying what to do then.
+   */
+  trigger?: { ms: number; then: string };
 }
 
 interface PlanNode {
@@ -164,8 +169,13 @@ async function main(): Promise<number> {
         .filter((scan) => !scan.allowed)
         .map((scan) => ({ probe: entry.probe, ...scan })),
     );
+    const slow = probes.flatMap(({ name, trigger }) => {
+      if (!trigger) return [];
+      const ms = slowestOf(explained, name);
+      return ms > trigger.ms ? [{ probe: name, ms, trigger }] : [];
+    });
 
-    const markdown = summary(probes, explained, violations, minRows);
+    const markdown = summary(probes, explained, violations, slow, minRows);
     console.log(`\n${markdown}`);
 
     mkdirSync(REPORTS, { recursive: true });
@@ -181,7 +191,7 @@ async function main(): Promise<number> {
       appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n${markdown}\n`);
     }
 
-    return violations.length > 0 ? 1 : 0;
+    return violations.length > 0 || slow.length > 0 ? 1 : 0;
   } finally {
     await app.close();
   }
@@ -381,6 +391,23 @@ async function buildProbes(
     {
       name: 'orders: by expected date',
       run: () => orders.list({ status: 'all', sort: 'expectedAt' }),
+    },
+    // Oldest first with no sort (ADR-057's amendment), as Home's drafts
+    // tile opens Orders: by id, with no index of its own. The planner
+    // walks orders_pkey forward, across every organization, keeping this
+    // one's drafts: at large about 3,500 rows for 26, in 1 ms. It grows
+    // with every older order that is not a draft (review 78).
+    {
+      name: 'orders: drafts, oldest first',
+      run: () => orders.list({ status: 'draft', order: 'asc' }),
+      trigger: {
+        ms: 10,
+        then: 'Widen orders_org_status_idx to (organization_id, status, id), a migration with its plan, so drafts oldest first read their own rows alone.',
+      },
+    },
+    {
+      name: 'orders: all, oldest first',
+      run: () => orders.list({ status: 'all', order: 'asc' }),
     },
     {
       name: 'inventory: by expiry',
@@ -622,10 +649,21 @@ async function tableSizes(pool: Pool): Promise<Map<string, number>> {
   return new Map(rows.map((row) => [row.relname, Number(row.rows)]));
 }
 
+/** A probe's slowest statement, in milliseconds. */
+function slowestOf(explained: Explained[], probe: string): number {
+  return Math.max(
+    0,
+    ...explained
+      .filter((entry) => entry.probe === probe)
+      .map((entry) => entry.executionMs),
+  );
+}
+
 function summary(
   probes: Probe[],
   explained: Explained[],
   violations: { probe: string; table: string; rows: number }[],
+  slow: { probe: string; ms: number; trigger: { ms: number; then: string } }[],
   minRows: number,
 ): string {
   const lines = [
@@ -637,7 +675,7 @@ function summary(
 
   for (const probe of probes) {
     const mine = explained.filter((entry) => entry.probe === probe.name);
-    const slowest = Math.max(0, ...mine.map((entry) => entry.executionMs));
+    const slowest = slowestOf(explained, probe.name);
     const scans = mine.flatMap((entry) =>
       entry.seqScans.map(
         (scan) =>
@@ -652,14 +690,27 @@ function summary(
 
   lines.push('');
 
-  if (violations.length === 0) {
-    lines.push('Passed: no unexpected sequential scan of a large table.');
+  if (violations.length === 0 && slow.length === 0) {
+    lines.push(
+      'Passed: no unexpected sequential scan of a large table, and no probe past its trigger.',
+    );
   } else {
     lines.push('**Failed:**', '');
     for (const violation of violations) {
       lines.push(
         `- ${violation.probe} scans ${violation.table} (${violation.rows.toLocaleString('en')} rows) in full. Add an index, bound the query, or allow it in perf/plans.ts with the reason.`,
       );
+    }
+    for (const { probe, ms, trigger } of slow) {
+      lines.push(
+        `- ${probe} took ${ms.toFixed(1)} ms, past its trigger of ${trigger.ms} ms. ${trigger.then}`,
+      );
+    }
+  }
+
+  for (const { name, trigger } of probes) {
+    if (trigger) {
+      lines.push('', `Trigger: ${name} at ${trigger.ms} ms. ${trigger.then}`);
     }
   }
 

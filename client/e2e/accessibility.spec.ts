@@ -19,6 +19,7 @@ import {
   signInAs,
   uniqueEmail,
 } from './support/api';
+import { shownCards } from './support/customise-home';
 import { confirmEmailInDatabase } from './support/mail';
 import { deploy } from './support/version';
 
@@ -221,6 +222,42 @@ const SCREENS: Screen[] = [
     },
     ready: (page) =>
       page.getByRole('menu', { name: 'More' }).locator('.Mui-focusVisible'),
+  },
+  {
+    // Customise Home, a tile moved by the keyboard (ADR-091, amended
+    // November 2026): tabbed to its handle, Space, an arrow, Space, so each
+    // engine drags by the keyboard and the dropped tile keeps the keyboard.
+    name: 'Customise Home, a tile moved by the keyboard',
+    path: () => '/',
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Customise Home' }).click();
+      const panel = page.getByRole('region', { name: 'Customise Home' });
+      const tiles = shownCards(panel);
+      await expect(tiles.first()).toHaveAccessibleName('To ship');
+      await tiles.first().getByRole('button', { name: 'Hide' }).focus();
+      await page.keyboard.press('Tab');
+      const handle = panel.getByRole('button', {
+        name: 'Drag To receive',
+        exact: true,
+      });
+      await expect(handle).toBeFocused();
+      // Each key after the screen has answered the last, as a person
+      // presses them: the library starts a drag a render after Space, and
+      // Linux WebKit had the arrow before then, which moved nothing.
+      await page.keyboard.press('Space');
+      await expect(
+        page
+          .getByRole('status')
+          .filter({ hasText: 'Picked up To receive, 2 of 9' }),
+      ).toHaveCount(1);
+      await page.keyboard.press('ArrowLeft');
+      await expect(tiles.first()).toHaveAccessibleName('To receive');
+      await page.keyboard.press('Space');
+      await expect(tiles.first()).toHaveAccessibleName('To receive');
+      await expect(handle).toBeFocused();
+    },
+    ready: (page) =>
+      page.getByRole('button', { name: 'Drag To receive', exact: true }),
   },
   { name: 'inventory', path: () => '/inventory', ready: heading },
   {

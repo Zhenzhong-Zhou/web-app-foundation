@@ -41,22 +41,29 @@ export class MemberAccessService {
     return this.given(context, roles.map(memberRole), held);
   }
 
-  /** The same, for a caller that has read the member's roles already. */
+  /**
+   * The same, for a caller that reads the member's roles itself: read
+   * already, or still being read, whom to ask read beside them.
+   */
   async given(
     context: Pick<RequestContext, 'userId' | 'organizationId'>,
-    roles: MemberRole[],
+    roles: MemberRole[] | Promise<MemberRole[]>,
     held: ReadonlySet<Permission>,
   ): Promise<MemberAccess> {
     const organizationId = context.organizationId;
     if (!organizationId) throw notWorkingHere();
 
-    return {
+    const [theirs, whomToAsk] = await Promise.all([
       roles,
-      holdsEverything: ALL_PERMISSIONS.every((key) => held.has(key)),
-      whomToAsk: await this.permissions.whomToAsk(
+      this.permissions.whomToAsk(
         { userId: context.userId, organizationId },
         held,
       ),
+    ]);
+    return {
+      roles: theirs,
+      holdsEverything: ALL_PERMISSIONS.every((key) => held.has(key)),
+      whomToAsk,
     };
   }
 }

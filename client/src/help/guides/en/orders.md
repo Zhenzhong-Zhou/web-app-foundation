@@ -38,6 +38,16 @@ Everything listed ships together, or nothing does: set a line to 0 to leave it f
 
 When nothing more is coming, press **Close order**, whether everything arrived or not. **Cancel order** is offered only until something has moved.
 
+## What a link chose {#chips}
+
+Home’s tiles and its late buttons open Orders with the list already narrowed or ordered. Each choice shows as a chip above the list: press its × to remove it, and the list widens again.
+
+- **Sales only** or **Purchases only**: one direction.
+- **Draft** or **Confirmed**: one status.
+- **Still to ship**, **Still to receive**, or **Still to ship or receive**: confirmed orders with something left to move, the soonest expected first, until you sort by a column.
+- **Late**: of those, the ones expected before today.
+- **Oldest first**: the orders made first at the top, as Home’s **Orders · Draft** opens them, so a draft forgotten longest is seen first. Remove it, and the newest are first again.
+
 ## Words you’ll meet {#words}
 
 - **Draft**: written, not yet agreed.

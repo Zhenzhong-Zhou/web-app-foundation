@@ -18,7 +18,8 @@ interface Page<T> {
 /**
  * Sorted lists (ADR-057, step 4): by the value, then id, rows with no value
  * last; paged by keyset after (value, id), so walking every page in either
- * order sees every row once. Columns not offered are refused.
+ * order sees every row once. Columns not offered are refused. Orders also
+ * runs oldest first with no sort, by id (ADR-057's amendment).
  */
 describe('Sorting (e2e)', () => {
   let app: INestApplication;
@@ -111,6 +112,52 @@ describe('Sorting (e2e)', () => {
       'PO-A',
       'PO-NONE',
     ]);
+  });
+
+  // Oldest first, with no sort (ADR-057's amendment): by id, when each
+  // order was made, for Home's drafts tile. ordersExpected makes PO-B,
+  // PO-NONE, PO-A, PO-C1 and PO-C2, in that order.
+  it('lists drafts oldest first with order=asc and no sort, newest first without', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await ordersExpected(alpha);
+    const [confirmed] = body<Page<{ id: string; reference: string }>>(
+      await alpha.agent.get('/v1/orders?status=all').expect(200),
+    ).entries.filter((row) => row.reference === 'PO-A');
+    await alpha.agent
+      .patch(`/v1/orders/${confirmed.id}`)
+      .send({ status: 'confirmed' })
+      .expect(204);
+
+    const references = async (path: string) =>
+      body<Page<{ reference: string }>>(
+        await alpha.agent.get(path).expect(200),
+      ).entries.map((row) => row.reference);
+
+    expect(await references('/v1/orders?status=draft&order=asc')).toEqual([
+      'PO-B',
+      'PO-NONE',
+      'PO-C1',
+      'PO-C2',
+    ]);
+    const newestFirst = ['PO-C2', 'PO-C1', 'PO-NONE', 'PO-B'];
+    expect(await references('/v1/orders?status=draft')).toEqual(newestFirst);
+    expect(await references('/v1/orders?status=draft&order=desc')).toEqual(
+      newestFirst,
+    );
+  });
+
+  it('pages oldest first across pages, every order once', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await ordersExpected(alpha);
+
+    type Row = { reference: string };
+    const made = ['PO-B', 'PO-NONE', 'PO-A', 'PO-C1', 'PO-C2'];
+
+    const up = await walk<Row>(alpha, '/v1/orders?status=all&order=asc');
+    expect(up.map((row) => row.reference)).toEqual(made);
+
+    const down = await walk<Row>(alpha, '/v1/orders?status=all');
+    expect(down.map((row) => row.reference)).toEqual([...made].reverse());
   });
 
   it('pages inventory by expiry, soonest first, stock without a lot last', async () => {

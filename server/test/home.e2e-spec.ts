@@ -1,11 +1,18 @@
 import type { INestApplication } from '@nestjs/common';
-import { inArray } from 'drizzle-orm';
+import { eq, inArray, isNotNull } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { permissions, rolePermissions, roles } from '../src/database/schema';
+import {
+  type HomeLayout,
+  memberships,
+  permissions,
+  rolePermissions,
+  roles,
+  sessions,
+} from '../src/database/schema';
 import {
   addMember,
   body,
@@ -13,7 +20,10 @@ import {
   createLocation,
   createPartner,
   createVariant,
+  customRole,
+  insertMember,
   registerOrganization,
+  roleIdNamed,
 } from './utils/fixtures';
 import {
   item,
@@ -39,10 +49,13 @@ interface HomeResponse {
   welcome: unknown;
   cards: {
     kind: string;
+    hidden: boolean;
     count: number;
     late: number;
     anyPoint: boolean | null;
   }[];
+  recent: boolean;
+  defaultLayout: { order: string[]; hidden: string[]; recent: boolean };
 }
 
 /**
@@ -85,11 +98,35 @@ describe('Home (e2e)', () => {
   const card = (cards: HomeResponse['cards'], kind: string) =>
     cards.find((entry) => entry.kind === kind);
 
-  it('shows every card to an owner, each empty in a new organization', async () => {
+  /** The tiles drawn, in their order: the ones not hidden. */
+  const shown = (cards: HomeResponse['cards']) =>
+    cards.filter((entry) => !entry.hidden).map((entry) => entry.kind);
+
+  /**
+   * An Owner may do every tile's work, so every tile leads and their Home
+   * is in the working day's order, as it was before Customise Home: Drafts
+   * after To receive, hidden (ADR-091, amended November 2026).
+   */
+  it('shows every card to an owner in the order of a working day, each empty in a new organization', async () => {
     const alpha = await registerOrganization(app, 'alpha');
 
-    const cards = await home(alpha);
+    const answer = body<HomeResponse>(
+      await alpha.agent.get('/v1/home').expect(200),
+    );
+    const { cards } = answer;
     expect(cards.map((entry) => entry.kind)).toEqual([
+      'toShip',
+      'toReceive',
+      'drafts',
+      'lowStock',
+      'expiring',
+      'costsWaiting',
+      'invoicesToIssue',
+      'returnsOpen',
+      'production',
+      'licences',
+    ]);
+    expect(shown(cards)).toEqual([
       'toShip',
       'toReceive',
       'lowStock',
@@ -100,6 +137,7 @@ describe('Home (e2e)', () => {
       'production',
       'licences',
     ]);
+    expect(answer.recent).toBe(true);
     expect(cards.every((entry) => entry.count === 0 && entry.late === 0)).toBe(
       true,
     );
@@ -107,6 +145,7 @@ describe('Home (e2e)', () => {
     expect(Object.keys(cards[0]).sort()).toEqual([
       'anyPoint',
       'count',
+      'hidden',
       'kind',
       'late',
     ]);
@@ -115,7 +154,7 @@ describe('Home (e2e)', () => {
     expect(card(cards, 'lowStock')?.anyPoint).toBe(false);
     expect(
       cards.filter((entry) => entry.kind !== 'lowStock').map((e) => e.anyPoint),
-    ).toEqual(Array(8).fill(null));
+    ).toEqual(Array(9).fill(null));
   });
 
   it('counts confirmed purchases to receive as their list does, the overdue late', async () => {
@@ -437,7 +476,8 @@ describe('Home (e2e)', () => {
   });
 
   // To ship and To receive are counted from one read of the orders, by
-  // direction, each as its list filters it, the overdue late.
+  // direction, each as its list filters it, the overdue late; the drafts
+  // beside them.
   it('counts To ship and To receive from one read of the orders', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const goods = await item(alpha.agent, 'FOCUS-60');
@@ -461,12 +501,15 @@ describe('Home (e2e)', () => {
 
     expect(card(cards, 'toShip')).toMatchObject({ count: 2, late: 1 });
     expect(card(cards, 'toReceive')).toMatchObject({ count: 1, late: 0 });
-    // The statement of counts reads the orders once, not once a card.
+    expect(card(cards, 'drafts')).toMatchObject({ count: 1, late: 0 });
+    // The statement of counts reads the outstanding orders once, not once
+    // a card, and the drafts beside them.
     const counts = statements.filter(({ text }) =>
-      /as kind,\s*count\(\*\)::int as count/.test(text),
+      /'drafts' as kind/.test(text),
     );
     expect(counts).toHaveLength(1);
-    expect(counts[0].text.match(/from "orders"/g)).toHaveLength(1);
+    expect(counts[0].text.match(/from "orders"/g)).toHaveLength(2);
+    expect(counts[0].text.match(/from "order_lines"/g)).toHaveLength(1);
   });
 
   /**
@@ -499,6 +542,7 @@ describe('Home (e2e)', () => {
       .expect(201);
 
     // Orders: late and not, each way; a late draft is nothing to ship yet.
+    // Two drafts, so that the tile's oldest first has an order to keep.
     const goods = await item(agent, 'GOODS');
     const customer = await partner(agent, 'Customer');
     const supplier = await partner(agent, 'Supplier');
@@ -506,9 +550,12 @@ describe('Home (e2e)', () => {
       expectedAt: day(-3),
     });
     await order(agent, 'sale', customer, goods, '5', { expectedAt: day(4) });
-    await order(agent, 'sale', customer, goods, '5', {
+    const firstDraft = await order(agent, 'sale', customer, goods, '5', {
       draft: true,
       expectedAt: day(-9),
+    });
+    const secondDraft = await order(agent, 'purchase', supplier, goods, '5', {
+      draft: true,
     });
     const latePurchase = await order(agent, 'purchase', supplier, goods, '5', {
       expectedAt: day(-6),
@@ -576,10 +623,12 @@ describe('Home (e2e)', () => {
 
     // Each tile's address, as the list's page asks its endpoint: To ship's
     // /orders?direction=sale&outstanding=1, the page's status Open beside
-    // it, and Expiring soon's /inventory?expiring=1, by expiry (ADR-091).
+    // it, Drafts' /orders?status=draft&order=asc, and Expiring soon's
+    // /inventory?expiring=1, by expiry (ADR-091).
     const opened: Record<string, string> = {
       toShip: '/v1/orders?status=open&direction=sale&outstanding=true',
       toReceive: '/v1/orders?status=open&direction=purchase&outstanding=true',
+      drafts: '/v1/orders?status=draft&order=asc',
       lowStock: '/v1/stock/reorder-points?status=low',
       expiring: '/v1/stock?expiringWithin=90&sort=expiry&order=asc',
       costsWaiting: '/v1/costs/needs-cost',
@@ -618,6 +667,7 @@ describe('Home (e2e)', () => {
     ).toEqual({
       toShip: 1,
       toReceive: 1,
+      drafts: 0,
       lowStock: 1,
       expiring: 1,
       costsWaiting: 0,
@@ -652,25 +702,30 @@ describe('Home (e2e)', () => {
     // Soonest first, the expired leading.
     expect(await lotCodes(opened.expiring)).toEqual(['LOT-GONE', 'LOT-SOON']);
     expect(await numbers(opened.licences)).toEqual(['L-GONE', 'L-SOON']);
+
+    // The drafts oldest first, by when each was made (ADR-057, amended).
+    expect(
+      (await rows<{ id: string }>(opened.drafts)).map((row) => row.id),
+    ).toEqual([firstDraft.id, secondDraft.id]);
   });
 
   /**
    * The reads every Home makes, in one transaction (ADR-091): the
-   * organization's days, zone and What we do, the counts in one statement
-   * and Low stock's beside it, Getting started, and the reader's
-   * membership with its roles. The welcome's own reads, while it shows,
-   * come after its commit.
+   * organization's days, zone and What we do with Getting started, its
+   * row read once (#505's 68), the counts in one statement and Low
+   * stock's beside it, and the reader's membership with their layout. The
+   * welcome's own reads, while it shows, come after its commit, the
+   * member's roles among them, in the invitation's transaction, never
+   * read once it is gone (#505's 67).
    */
-  it("reads Home's figures in one transaction of six statements", async () => {
+  it("reads Home's figures in one transaction of four statements", async () => {
     const alpha = await registerOrganization(app, 'alpha');
 
     /** Home's transaction: its statements, and what was sent after it. */
     async function transaction() {
       const { statements } = await captureStatements(() => home(alpha));
       const first = statements.findIndex(({ text }) =>
-        /"expiry_warning_days", "time_zone", "what_we_do" from "organizations"/.test(
-          text,
-        ),
+        /o\.expiry_warning_days as days,\s*o\.time_zone/.test(text),
       );
       expect(first).toBeGreaterThan(0);
       const { client } = statements[first];
@@ -692,30 +747,45 @@ describe('Home (e2e)', () => {
       return { inside, beside, after: statements.slice(index + 1) };
     }
 
-    // The founder's welcome shows: its reads come after the commit.
+    // The founder's welcome shows: its reads come after the commit, the
+    // roles among them.
+    const roles = /from "membership_roles"/;
     const welcomed = await transaction();
-    expect(welcomed.inside).toHaveLength(6);
+    expect(welcomed.inside).toHaveLength(4);
     expect(welcomed.beside).toEqual([]);
-    expect(welcomed.after.length).toBeGreaterThan(0);
+    expect(welcomed.after.filter(({ text }) => roles.test(text))).toHaveLength(
+      1,
+    );
+    // The roles in the invitation's transaction, not one of their own.
+    const read = welcomed.after.findIndex(({ text }) => roles.test(text));
+    const invitation = welcomed.after.findIndex(({ text }) =>
+      /from "invitations"/.test(text),
+    );
+    const { client } = welcomed.after[read];
+    expect(welcomed.after[invitation].client).toBe(client);
+    expect(
+      welcomed.after
+        .slice(Math.min(read, invitation), Math.max(read, invitation))
+        .filter(({ client: on }) => on === client)
+        .map(({ text }) => text),
+    ).not.toContainEqual(expect.stringMatching(/^\s*(begin|commit)\b/i));
 
     // Dismissed, Home is the transaction and nothing after it.
     await alpha.agent.post('/v1/home/welcome/dismiss').expect(204);
     const { inside, beside, after } = await transaction();
-    // The organization, the counts, Low stock's, Getting started, then the
-    // membership and its roles.
+    // The organization with Getting started, the counts, Low stock's, then
+    // the membership, and never its roles.
     expect(inside.map((text) => text.replace(/\s+/g, ' ').trim())).toEqual([
       expect.stringMatching(
-        /^select "expiry_warning_days", "time_zone", "what_we_do" from "organizations"/,
+        /^select o\.expiry_warning_days as days, .* \(o\.tax_registration_number .* from organizations o where/,
       ),
       expect.stringMatching(
-        /^\( select case "orders"\."direction" .* union all /,
+        /^\( select kind, count\(\*\)::int as count, .* union all /,
       ),
       expect.stringMatching(/^with p as materialized .* 'lowStock'::text/),
-      expect.stringMatching(/^select \(o\.tax_registration_number/),
       expect.stringMatching(
         /^select "memberships"\."id", .* from "memberships"/,
       ),
-      expect.stringMatching(/^select "membership_roles"\."membership_id"/),
     ]);
     expect(beside).toEqual([]);
     expect(after).toEqual([]);
@@ -745,8 +815,175 @@ describe('Home (e2e)', () => {
       'Warehouse',
     );
 
-    const kinds = (await home({ agent: member })).map((entry) => entry.kind);
-    expect(kinds).toEqual(['toShip', 'toReceive', 'lowStock', 'expiring']);
+    const { result: cards, statements } = await captureStatements(() =>
+      home({ agent: member }),
+    );
+    expect(cards.map((entry) => entry.kind)).toEqual([
+      'toShip',
+      'toReceive',
+      'drafts',
+      'lowStock',
+      'expiring',
+    ]);
+    // A card the member may not view is never counted: no statement reads
+    // what only Licences expiring counts.
+    expect(statements.map(({ text }) => text).join('\n')).not.toMatch(
+      /\bproduct_licences\b/,
+    );
+  });
+
+  /**
+   * The default order (ADR-091, amended November 2026): the tiles whose
+   * work the member may do lead, the rest follow, both in the working
+   * day's order. Roles are each organization's own, so it goes by the
+   * permissions held, never by a role's name.
+   */
+  it('leads with the tiles whose work the member may do', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    // Every tile's view, so only the work held changes the order.
+    const views = [
+      'orders.view',
+      'stock.view',
+      'costs.view',
+      'invoices.view',
+      'return_authorizations.view',
+      'production.view',
+      'product_licences.view',
+    ];
+    const homeAs = async (name: string, work: string[]) => {
+      await customRole(app, alpha.organizationId, name, [...views, ...work]);
+      const member = await addMember(
+        app,
+        alpha,
+        `${name.toLowerCase()}@example.com`,
+        name,
+      );
+      return home({ agent: member });
+    };
+    const rest = [
+      'expiring',
+      'costsWaiting',
+      'invoicesToIssue',
+      'returnsOpen',
+      'production',
+      'licences',
+    ];
+
+    // Finance's work, issuing invoices, costing receipts and closing
+    // returns: those three first, the working day's order after them.
+    expect(
+      shown(
+        await homeAs('Finance', [
+          'invoices.issue',
+          'costs.update',
+          'return_authorizations.update',
+        ]),
+      ),
+    ).toEqual([
+      'costsWaiting',
+      'invoicesToIssue',
+      'returnsOpen',
+      'toShip',
+      'toReceive',
+      'lowStock',
+      'expiring',
+      'production',
+      'licences',
+    ]);
+    // Receives alone: To receive before To ship.
+    expect(shown(await homeAs('Receiving', ['orders.receive']))).toEqual([
+      'toReceive',
+      'toShip',
+      'lowStock',
+      ...rest,
+    ]);
+    // Plans and completes runs: Low stock and In progress first.
+    expect(
+      shown(
+        await homeAs('Planning', ['production.create', 'production.complete']),
+      ),
+    ).toEqual([
+      'lowStock',
+      'production',
+      'toShip',
+      'toReceive',
+      'expiring',
+      'costsWaiting',
+      'invoicesToIssue',
+      'returnsOpen',
+      'licences',
+    ]);
+    // Raises orders: Drafts leads with Low stock, still hidden.
+    const buying = await homeAs('Buying', ['orders.create']);
+    expect(buying.map((entry) => entry.kind)).toEqual([
+      'drafts',
+      'lowStock',
+      'toShip',
+      'toReceive',
+      ...rest,
+    ]);
+    expect(card(buying, 'drafts')?.hidden).toBe(true);
+  });
+
+  /**
+   * Drafts (ADR-091, amended November 2026): every draft order, as Orders
+   * lists them with Draft chosen, both ways, never late, and hidden until
+   * the person shows it; Reset to default hides it again.
+   */
+  it('counts every draft as Orders lists them with Draft chosen, never late, hidden by default', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const goods = await item(alpha.agent, 'GOODS');
+    const customer = await partner(alpha.agent, 'Customer');
+    const supplier = await partner(alpha.agent, 'Supplier');
+    // Its expected day long past, a draft is still not late.
+    await order(alpha.agent, 'sale', customer, goods, '5', {
+      draft: true,
+      expectedAt: day(-9),
+    });
+    await order(alpha.agent, 'purchase', supplier, goods, '5', {
+      draft: true,
+    });
+    await order(alpha.agent, 'sale', customer, goods, '5', {
+      expectedAt: day(-3),
+    });
+    // Another organization's draft is not alpha's.
+    const beta = await registerOrganization(app, 'beta');
+    await order(
+      beta.agent,
+      'sale',
+      await partner(beta.agent, 'Customer'),
+      await item(beta.agent, 'GOODS'),
+      '5',
+      { draft: true },
+    );
+
+    const cards = await home(alpha);
+    expect(card(cards, 'drafts')).toEqual({
+      kind: 'drafts',
+      hidden: true,
+      count: 2,
+      late: 0,
+      anyPoint: null,
+    });
+    expect(card(cards, 'toShip')).toMatchObject({ count: 1, late: 1 });
+    const { entries, nextCursor } = body<{
+      entries: unknown[];
+      nextCursor: string | null;
+    }>(await alpha.agent.get('/v1/orders?status=draft').expect(200));
+    expect({ rows: entries.length, nextCursor }).toEqual({
+      rows: 2,
+      nextCursor: null,
+    });
+
+    // Shown in Customise Home, then Reset to default: hidden again.
+    const kinds = cards.map((entry) => entry.kind);
+    await alpha.agent
+      .put('/v1/home/layout')
+      .send({ order: kinds, hidden: [], recent: true })
+      .expect(204);
+    expect(card(await home(alpha), 'drafts')?.hidden).toBe(false);
+    await alpha.agent.delete('/v1/home/layout').expect(204);
+    expect(card(await home(alpha), 'drafts')?.hidden).toBe(true);
   });
 
   describe('Getting started', () => {
@@ -823,6 +1060,377 @@ describe('Home (e2e)', () => {
       await viewer.post('/v1/home/getting-started/skip-team').expect(403);
       // A second member: the team step is done for everyone.
       expect((await started(alpha)).steps.team).toBe(true);
+    });
+  });
+
+  /**
+   * Customise Home's layout (ADR-091, amended November 2026): the
+   * person's own, on their membership alone, saved by Done and cleared by
+   * Done on the default.
+   */
+  describe('the layout', () => {
+    /** Every layout saved, by whose membership in which organization. */
+    const saved = () =>
+      db
+        .select({
+          userId: memberships.userId,
+          organizationId: memberships.organizationId,
+          homeLayout: memberships.homeLayout,
+        })
+        .from(memberships)
+        .where(isNotNull(memberships.homeLayout));
+
+    const arranged = {
+      order: ['lowStock', 'toShip', 'licences', 'toReceive'],
+      hidden: ['licences'],
+      recent: false,
+    };
+
+    it('keeps the layout saved, replaced by the next, keeping the kinds stored it does not name, and DELETE clears it', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+
+      await alpha.agent.put('/v1/home/layout').send(arranged).expect(204);
+      expect(await saved()).toEqual([
+        {
+          userId: alpha.userId,
+          organizationId: alpha.organizationId,
+          homeLayout: arranged,
+        },
+      ]);
+
+      // The kinds stored that the next does not name follow it, hidden as
+      // they were.
+      const next = {
+        order: ['toReceive', 'toShip'],
+        hidden: ['toShip'],
+        recent: true,
+      };
+      await alpha.agent.put('/v1/home/layout').send(next).expect(204);
+      expect((await saved()).map((row) => row.homeLayout)).toEqual([
+        {
+          order: ['toReceive', 'toShip', 'lowStock', 'licences'],
+          hidden: ['toShip', 'licences'],
+          recent: true,
+        },
+      ]);
+
+      await alpha.agent.delete('/v1/home/layout').expect(204);
+      expect(await saved()).toEqual([]);
+    });
+
+    it('puts the tiles in the order saved, hidden as saved, with Recently opened as saved', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const order = [
+        'returnsOpen',
+        'drafts',
+        'toShip',
+        'licences',
+        'lowStock',
+        'toReceive',
+        'production',
+        'expiring',
+        'invoicesToIssue',
+        'costsWaiting',
+      ];
+      await alpha.agent
+        .put('/v1/home/layout')
+        .send({ order, hidden: ['toShip', 'production'], recent: false })
+        .expect(204);
+
+      const answer = body<HomeResponse>(
+        await alpha.agent.get('/v1/home').expect(200),
+      );
+      expect(answer.cards.map((entry) => entry.kind)).toEqual(order);
+      expect(shown(answer.cards)).toEqual(
+        order.filter((kind) => !['toShip', 'production'].includes(kind)),
+      );
+      expect(answer.recent).toBe(false);
+      // The default beside it, for Reset to default, whatever was saved.
+      expect(answer.defaultLayout).toEqual({
+        order: [
+          'toShip',
+          'toReceive',
+          'drafts',
+          'lowStock',
+          'expiring',
+          'costsWaiting',
+          'invoicesToIssue',
+          'returnsOpen',
+          'production',
+          'licences',
+        ],
+        hidden: ['drafts'],
+        recent: true,
+      });
+    });
+
+    /**
+     * A layout from another build: a kind this one does not know is
+     * skipped, and one the layout does not hold, such as a kind added
+     * since, takes its default place, after the kind before it by
+     * default, hidden only if it is by default.
+     */
+    it('skips a kind it does not know, and puts one missing where it goes by default', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await db
+        .update(memberships)
+        .set({
+          homeLayout: {
+            order: [
+              'lowStock',
+              'weather',
+              'toReceive',
+              'toShip',
+              'expiring',
+              'costsWaiting',
+              'invoicesToIssue',
+              'returnsOpen',
+              'production',
+            ],
+            hidden: ['toReceive', 'weather'],
+            recent: true,
+          },
+        })
+        .where(eq(memberships.userId, alpha.userId));
+
+      const cards = await home(alpha);
+      expect(cards.map(({ kind, hidden }) => [kind, hidden])).toEqual([
+        ['lowStock', false],
+        ['toReceive', true],
+        ['drafts', true],
+        ['toShip', false],
+        ['expiring', false],
+        ['costsWaiting', false],
+        ['invoicesToIssue', false],
+        ['returnsOpen', false],
+        ['production', false],
+        ['licences', false],
+      ]);
+    });
+
+    /**
+     * A layout stored in another shape, which only a later build rolled
+     * back would leave: read as none, never a failed Home, and a kind in
+     * it twice comes back once.
+     */
+    it('reads a stored layout of another shape as none, and a kind twice once', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const store = (homeLayout: unknown) =>
+        db
+          .update(memberships)
+          .set({ homeLayout: homeLayout as HomeLayout })
+          .where(eq(memberships.userId, alpha.userId));
+      const byDefault = (await home(alpha)).map(({ kind }) => kind);
+
+      for (const shape of [
+        { order: ['lowStock', 'toShip'], recent: true },
+        { order: 'lowStock', hidden: [], recent: true },
+        ['lowStock', 'toShip'],
+      ]) {
+        await store(shape);
+        expect((await home(alpha)).map(({ kind }) => kind)).toEqual(byDefault);
+      }
+      // Done over it saves, as over none.
+      await alpha.agent.put('/v1/home/layout').send(arranged).expect(204);
+      expect((await saved()).map((row) => row.homeLayout)).toEqual([arranged]);
+
+      const order = [
+        'lowStock',
+        ...byDefault.filter((kind) => kind !== 'lowStock'),
+      ];
+      await store({
+        order: [...order, 'lowStock'],
+        hidden: ['toShip', 'toShip'],
+        recent: true,
+      });
+      const cards = await home(alpha);
+      expect(cards.map(({ kind }) => kind)).toEqual(order);
+      expect(card(cards, 'toShip')).toMatchObject({ hidden: true });
+    });
+
+    // A hidden tile buries nothing (ADR-091): its late still count.
+    it('still counts a hidden tile, and its late', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const goods = await item(alpha.agent, 'GOODS');
+      const customer = await partner(alpha.agent, 'Customer');
+      for (const expectedAt of [day(-3), day(4)]) {
+        await order(alpha.agent, 'sale', customer, goods, '5', { expectedAt });
+      }
+      await alpha.agent
+        .put('/v1/home/layout')
+        .send({ order: ['toShip'], hidden: ['toShip'], recent: true })
+        .expect(204);
+
+      expect(card(await home(alpha), 'toShip')).toMatchObject({
+        hidden: true,
+        count: 2,
+        late: 1,
+      });
+    });
+
+    it('refuses with 400 a kind it does not know, a kind twice, a hidden kind not in the order, or a part missing, writing nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await alpha.agent.put('/v1/home/layout').send(arranged).expect(204);
+
+      const refused = [
+        { ...arranged, order: [...arranged.order, 'weather'] },
+        { ...arranged, hidden: ['weather'] },
+        { ...arranged, order: ['toShip', 'lowStock', 'toShip'] },
+        { ...arranged, hidden: ['licences', 'licences'] },
+        { ...arranged, hidden: ['expiring'] },
+        { ...arranged, order: 'toShip' },
+        { ...arranged, recent: 'yes' },
+        { order: arranged.order, hidden: arranged.hidden },
+        { hidden: [], recent: true },
+        { ...arranged, pinned: ['toShip'] },
+      ];
+      for (const layout of refused) {
+        await alpha.agent.put('/v1/home/layout').send(layout).expect(400);
+      }
+      expect((await saved()).map((row) => row.homeLayout)).toEqual([arranged]);
+
+      // The hidden kind not placed says how to send it.
+      const { message } = body<{ message: string[] }>(
+        await alpha.agent
+          .put('/v1/home/layout')
+          .send({ ...arranged, hidden: ['expiring'] })
+          .expect(400),
+      );
+      expect(message).toEqual([
+        'Each kind in hidden must also be in order — send the hidden ones in their place there too',
+      ]);
+
+      // With no order, only order's own refusal: nothing hidden is unplaced.
+      const missing = body<{ message: string[] }>(
+        await alpha.agent
+          .put('/v1/home/layout')
+          .send({ hidden: [], recent: true })
+          .expect(400),
+      ).message;
+      expect(missing.length).toBeGreaterThan(0);
+      expect(missing.join('\n')).toMatch(/\border\b/);
+      expect(missing.join('\n')).not.toMatch(/must also be in order/);
+    });
+
+    it('keeps a kind the member may not see today, since their roles may change', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await customRole(app, alpha.organizationId, 'Packer', ['orders.view']);
+      const packer = await addMember(
+        app,
+        alpha,
+        'packer@example.com',
+        'Packer',
+      );
+      expect((await home({ agent: packer })).map((each) => each.kind)).toEqual([
+        'toShip',
+        'toReceive',
+        'drafts',
+      ]);
+
+      const layout = {
+        order: ['licences', 'toReceive', 'toShip'],
+        hidden: ['licences'],
+        recent: true,
+      };
+      await packer.put('/v1/home/layout').send(layout).expect(204);
+      expect((await saved()).map((row) => row.homeLayout)).toEqual([layout]);
+
+      // Home skips it, never counting it: no statement reads its table.
+      // Drafts, not in the layout, goes after To receive, where it is by
+      // default, hidden.
+      const { result: cards, statements } = await captureStatements(() =>
+        home({ agent: packer }),
+      );
+      expect(statements.map(({ text }) => text).join('\n')).not.toMatch(
+        /\bproduct_licences\b/,
+      );
+      expect(cards.map(({ kind, hidden }) => [kind, hidden])).toEqual([
+        ['toReceive', false],
+        ['drafts', true],
+        ['toShip', false],
+      ]);
+
+      // Their next Done sends only the kinds they see: the one they may
+      // not see stays, after them, hidden as it was.
+      await packer
+        .put('/v1/home/layout')
+        .send({
+          order: ['toShip', 'toReceive', 'drafts'],
+          hidden: [],
+          recent: true,
+        })
+        .expect(204);
+      expect((await saved()).map((row) => row.homeLayout)).toEqual([
+        {
+          order: ['toShip', 'toReceive', 'drafts', 'licences'],
+          hidden: ['licences'],
+          recent: true,
+        },
+      ]);
+    });
+
+    it("changes only the reader's own: nobody else's, nor theirs in another organization", async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const viewer = await addMember(
+        app,
+        alpha,
+        'viewer@example.com',
+        'Viewer',
+      );
+      const { user: viewerUser } = body<{ user: { id: string } }>(
+        await viewer.get('/v1/auth/me').expect(200),
+      );
+      // Alpha's Owner works in beta too.
+      await insertMember(app, {
+        userId: alpha.userId,
+        organizationId: beta.organizationId,
+        roleId: await roleIdNamed(app, beta.organizationId, 'Owner'),
+      });
+      const row = (
+        userId: string,
+        organizationId: string,
+        homeLayout: unknown,
+      ) => ({
+        userId,
+        organizationId,
+        homeLayout,
+      });
+
+      await alpha.agent.put('/v1/home/layout').send(arranged).expect(204);
+      expect(await saved()).toEqual([
+        row(alpha.userId, alpha.organizationId, arranged),
+      ]);
+
+      // A Viewer arranges their own, no permission asked; beta's Owner
+      // clears theirs, which is no one else's.
+      const theirs = { order: ['returnsOpen'], hidden: [], recent: true };
+      await viewer.put('/v1/home/layout').send(theirs).expect(204);
+      await beta.agent.delete('/v1/home/layout').expect(204);
+
+      // Alpha's Owner, switched to beta, arranges it otherwise there.
+      await db
+        .update(sessions)
+        .set({ currentOrgId: beta.organizationId })
+        .where(eq(sessions.userId, alpha.userId));
+      const inBeta = { order: ['production'], hidden: [], recent: false };
+      await alpha.agent.put('/v1/home/layout').send(inBeta).expect(204);
+
+      const all = await saved();
+      expect(all).toHaveLength(3);
+      expect(all).toEqual(
+        expect.arrayContaining([
+          row(alpha.userId, alpha.organizationId, arranged),
+          row(alpha.userId, beta.organizationId, inBeta),
+          row(viewerUser.id, alpha.organizationId, theirs),
+        ]),
+      );
+
+      await viewer.delete('/v1/home/layout').expect(204);
+      expect((await saved()).map((each) => each.userId)).toEqual([
+        alpha.userId,
+        alpha.userId,
+      ]);
     });
   });
 });

@@ -5131,6 +5131,42 @@
         ]
       }
     },
+    "/v1/home/layout": {
+      "put": {
+        "operationId": "HomeController_saveLayout_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HomeLayoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Home"
+        ]
+      },
+      "delete": {
+        "operationId": "HomeController_resetLayout_v1",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Home"
+        ]
+      }
+    },
     "/v1/home/getting-started/dismiss": {
       "post": {
         "operationId": "HomeController_dismiss_v1",
@@ -9610,6 +9646,31 @@
           "deletionScheduledAt"
         ]
       },
+      "ExportedHomeLayout": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hidden": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "recent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "order",
+          "hidden",
+          "recent"
+        ]
+      },
       "ExportedMembership": {
         "type": "object",
         "properties": {
@@ -9658,6 +9719,16 @@
           "joinedAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "homeLayout": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExportedHomeLayout"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -9669,7 +9740,8 @@
           "location",
           "workPhone",
           "extension",
-          "joinedAt"
+          "joinedAt",
+          "homeLayout"
         ]
       },
       "ExportedNotification": {
@@ -15910,12 +15982,16 @@
               "expiring",
               "toShip",
               "toReceive",
+              "drafts",
               "lowStock",
               "costsWaiting",
               "invoicesToIssue",
               "returnsOpen",
               "licences"
             ]
+          },
+          "hidden": {
+            "type": "boolean"
           },
           "count": {
             "type": "number"
@@ -15932,9 +16008,59 @@
         },
         "required": [
           "kind",
+          "hidden",
           "count",
           "late",
           "anyPoint"
+        ]
+      },
+      "HomeDefaultLayout": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "production",
+                "expiring",
+                "toShip",
+                "toReceive",
+                "drafts",
+                "lowStock",
+                "costsWaiting",
+                "invoicesToIssue",
+                "returnsOpen",
+                "licences"
+              ]
+            }
+          },
+          "hidden": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "production",
+                "expiring",
+                "toShip",
+                "toReceive",
+                "drafts",
+                "lowStock",
+                "costsWaiting",
+                "invoicesToIssue",
+                "returnsOpen",
+                "licences"
+              ]
+            }
+          },
+          "recent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "order",
+          "hidden",
+          "recent"
         ]
       },
       "HomeResponse": {
@@ -15964,13 +16090,74 @@
             "items": {
               "$ref": "#/components/schemas/HomeCard"
             }
+          },
+          "recent": {
+            "type": "boolean"
+          },
+          "defaultLayout": {
+            "$ref": "#/components/schemas/HomeDefaultLayout"
           }
         },
         "required": [
           "whatWeDo",
           "gettingStarted",
           "welcome",
-          "cards"
+          "cards",
+          "recent",
+          "defaultLayout"
+        ]
+      },
+      "HomeLayoutDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "array",
+            "uniqueItems": true,
+            "maxItems": 10,
+            "items": {
+              "type": "string",
+              "enum": [
+                "toShip",
+                "toReceive",
+                "drafts",
+                "lowStock",
+                "expiring",
+                "costsWaiting",
+                "invoicesToIssue",
+                "returnsOpen",
+                "production",
+                "licences"
+              ]
+            }
+          },
+          "hidden": {
+            "type": "array",
+            "uniqueItems": true,
+            "maxItems": 10,
+            "items": {
+              "type": "string",
+              "enum": [
+                "toShip",
+                "toReceive",
+                "drafts",
+                "lowStock",
+                "expiring",
+                "costsWaiting",
+                "invoicesToIssue",
+                "returnsOpen",
+                "production",
+                "licences"
+              ]
+            }
+          },
+          "recent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "order",
+          "hidden",
+          "recent"
         ]
       },
       "RecentEntry": {

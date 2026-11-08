@@ -81,6 +81,11 @@ about 7 minutes; large an hour or more, since every service call is its own
 transaction. It writes `perf/volume-<scale>.json`, which `perf` and
 `perf:plans` read to sign in and find their way, by their own `--scale`
 (small when not given). Seeding one scale leaves the other's in place.
+It ends with `VACUUM ANALYZE`, so the planner has fresh statistics and the
+pages are marked all-visible. A database kept for weeks is never vacuumed
+again, its tables staying under autovacuum's threshold: before trusting a
+figure over budget, run `vacuum analyze` on it (Home at large read 337 ms
+before, 190–225 ms after).
 
 Each organization also gets a team (ADR-081): 15 members at small and 150
 at large, the Owner and the newcomer among them, holding one to three roles
@@ -233,7 +238,10 @@ that is the decision rather than an accident goes in the allow-list in
 `perf/plans.ts`, with the reason; valuation's is the one there today. An
 `exists` that a scan answers at its first match is not a reason: for an
 organization with no such row, the scan reads every organization's
-(#187). Every plan goes to `perf/reports/<time>-<scale>-plans.json`.
+(#187). It fails, too, when a probe with a trigger takes longer than it:
+a plan kept on purpose though it grows with the data, such as Orders'
+drafts oldest first at 10 ms, says there what to do then. Every plan goes
+to `perf/reports/<time>-<scale>-plans.json`.
 
 ## Reports
 

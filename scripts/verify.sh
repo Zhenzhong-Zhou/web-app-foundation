@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # What CI runs, on this machine and in CI's order: the Markdown check, the
 # server's checks and both its suites, the tests of scripts/ itself, then
-# the client's checks, unit tests and the Playwright suite. Stops at the
-# first failure, so the last heading printed is what failed.
+# the client's checks, unit tests and the Playwright suite, and in full
+# the accessibility spec in Firefox, below. Stops at the first failure,
+# so the last heading printed is what failed.
 #
 #   scripts/verify.sh            everything, about as long as CI takes
 #   scripts/verify.sh --quick    format, lint, types, checks, build and unit
@@ -31,6 +32,14 @@
 # release working (squawk; both ADR-081), and no commit the branch adds
 # carries a placeholder identity (ADR-082). Each says why when it cannot
 # run.
+#
+# The full run ends with e2e/accessibility.spec.ts in Firefox, which a
+# pull request's CI does not run, since it runs Chromium alone: a failure
+# there first met main (#506). Playwright's Firefox cannot start on some
+# Macs, so it runs from Playwright's Linux image in Docker, as
+# conventions.md's "Firefox on such a Mac" does by hand, at the client's
+# Playwright version; it needs the network, and stops the run when the
+# container cannot start. WebKit already runs in the client's suite.
 #
 # Not run here, though CI runs it: npm run seed:demo, which would add a demo
 # organization to the dev database on every run, and the check after it
@@ -171,6 +180,58 @@ against_main() {
   fi
 }
 
+# The accessibility spec in Firefox, the browser in Playwright's Linux
+# image and the tests on this machine, connected to it as a remote
+# browser; '<loopback>' lets that browser reach this machine's
+# localhost:5273 and :3100, so the session cookies stay on localhost. The
+# image and the playwright it runs are the version of the client's
+# @playwright/test, read here, so a raise needs nothing in this file. The
+# container has a name of its own and a free port, so one started by hand
+# is left alone, and the trap removes it however the run ends. Its own
+# logs are printed when it does not start, at once when it has exited and
+# after 120 seconds when it is running and silent.
+FIREFOX_CONTAINER=verify-firefox
+
+firefox_accessibility() {
+  step "Client: the accessibility spec in Firefox, from Playwright's Linux image"
+  local version address waited=0
+  version="$(node -p "require('./client/node_modules/@playwright/test/package.json').version")"
+
+  docker rm --force "$FIREFOX_CONTAINER" > /dev/null 2>&1 || true
+  trap 'docker rm --force "$FIREFOX_CONTAINER" > /dev/null 2>&1 || true' EXIT
+  if ! docker run --detach --init --name "$FIREFOX_CONTAINER" \
+    --publish 127.0.0.1::3333 --ipc=host \
+    "mcr.microsoft.com/playwright:v$version-noble" \
+    /bin/sh -c "cd /tmp && npx -y playwright@$version run-server --port 3333 --host 0.0.0.0" \
+    > /dev/null; then
+    echo "Could not start Playwright's Linux image, v$version-noble (Docker" >&2
+    echo 'not answering, offline, or the registry down).' >&2
+    return 1
+  fi
+
+  until [[ "$(docker logs "$FIREFOX_CONTAINER" 2>&1)" == *'Listening on'* ]]; do
+    if [[ "$(docker inspect --format '{{.State.Running}}' "$FIREFOX_CONTAINER" 2> /dev/null)" != true ]]; then
+      docker logs "$FIREFOX_CONTAINER" >&2 || true
+      echo "Playwright's server in the container stopped before it listened;" >&2
+      echo 'its logs are above.' >&2
+      return 1
+    fi
+    if ((waited == 120)); then
+      docker logs "$FIREFOX_CONTAINER" >&2 || true
+      echo "Playwright's server in the container did not start in 120 seconds;" >&2
+      echo 'its logs are above.' >&2
+      return 1
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+  address="$(docker port "$FIREFOX_CONTAINER" 3333/tcp)"
+
+  (cd client && E2E_FIREFOX=1 PW_TEST_CONNECT_WS_ENDPOINT="ws://$address/" \
+    PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
+    npx playwright test e2e/accessibility.spec.ts --project=firefox)
+}
+
 # --docs stands in for --quick only when the docs' checks are all a change
 # needs (ADR-086): every uncommitted change, staged or not, and every new
 # file git does not ignore, is a .md file or in scripts/, and none is in
@@ -225,6 +286,8 @@ else
 
   step 'Client: format, lint, catalogues, build, unit tests, Playwright'
   (cd client && npm run verify:all)
+
+  firefox_accessibility
 fi
 
 step 'All passed'

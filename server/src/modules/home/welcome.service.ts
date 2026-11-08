@@ -15,6 +15,7 @@ import type { Permission } from '../../core/authorization/permissions';
 import { inviterStillHere } from '../../core/invitations/inviter';
 import type { Transaction } from '../../database/database.module';
 import {
+  type HomeLayout,
   invitations,
   memberships,
   organizations,
@@ -119,7 +120,11 @@ const KIND_OF: Record<
   invoice: 'invoice',
 };
 
-/** The facts about the reader's membership the welcome starts from. */
+/**
+ * The facts about the reader's membership the welcome starts from, and
+ * their Home's layout (ADR-091, amended November 2026), read with them so
+ * that Home pays no read more for it.
+ */
 export interface Membership {
   id: string;
   createdAt: Date;
@@ -128,7 +133,7 @@ export interface Membership {
   photoFileId: string | null;
   emailVerifiedAt: Date | null;
   founder: boolean;
-  roles: MemberRole[];
+  homeLayout: HomeLayout | null;
 }
 
 /**
@@ -139,8 +144,9 @@ export interface Membership {
  *
  * A member past their two weeks, or who dismissed it, costs Home one read
  * of their membership, in Home's own transaction (ADR-091); the rest is
- * read only while the card shows, after that transaction, the items, the
- * inviter and whom to ask side by side.
+ * read only while the card shows, after that transaction: the items; the
+ * inviter, with their roles in the same transaction; and whom to ask, side
+ * by side (#505's 67).
  */
 @Injectable()
 export class WelcomeService {
@@ -169,7 +175,8 @@ export class WelcomeService {
     const lastDay = addDays(joinedOn, WELCOME_DAYS);
     if (todayIn(options.timeZone) > lastDay) return null;
 
-    const [items, inviter, access] = await Promise.all([
+    const invited = this.invitedWithRoles(membership.id);
+    const [items, { inviter, note }, access] = await Promise.all([
       this.items(
         context.userId,
         membership,
@@ -177,8 +184,14 @@ export class WelcomeService {
         held,
         options.locale,
       ),
-      this.inviter(membership.id),
-      this.access.given(context, membership.roles, held),
+      invited,
+      // What they may do here (ADR-079): their roles, read with the
+      // invitation, and whom to ask for more, beside that read.
+      this.access.given(
+        context,
+        invited.then(({ roles }) => roles),
+        held,
+      ),
     ]);
     if (items.every((item) => item.done)) return null;
 
@@ -186,7 +199,8 @@ export class WelcomeService {
       joinedOn,
       lastDay,
       founder: membership.founder,
-      ...inviter,
+      inviter,
+      note,
       access,
       items,
     };
@@ -222,6 +236,7 @@ export class WelcomeService {
         createdAt: memberships.createdAt,
         dismissedAt: memberships.welcomeDismissedAt,
         jobTitle: memberships.jobTitle,
+        homeLayout: memberships.homeLayout,
         photoFileId: users.photoFileId,
         emailVerifiedAt: users.emailVerifiedAt,
         founder: sql<boolean>`${memberships.createdAt} = ${organizations.createdAt}`,
@@ -238,21 +253,19 @@ export class WelcomeService {
           eq(memberships.userId, userId),
         ),
       );
-    if (!row) return undefined;
-
-    const held = await rolesOfMember(tx, row.id);
-    return { ...row, roles: held.map(memberRole) };
+    return row;
   }
 
   /**
    * The inviter and their note, from the invitation that made this
    * membership (ADR-077 keeps it for this). The inviter only while still a
    * member here; the note stays, from the organization, once they are not.
-   * Neither for a membership no invitation made.
+   * Neither for a membership no invitation made. With them, in the same
+   * transaction, the member's roles, read only while the card shows.
    */
-  private inviter(
+  private invitedWithRoles(
     membershipId: string,
-  ): Promise<Pick<Welcome, 'inviter' | 'note'>> {
+  ): Promise<Pick<Welcome, 'inviter' | 'note'> & { roles: MemberRole[] }> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [row] = await tx
         .select({
@@ -280,6 +293,7 @@ export class WelcomeService {
               }
             : null,
         note: row?.note ?? null,
+        roles: (await rolesOfMember(tx, membershipId)).map(memberRole),
       };
     });
   }

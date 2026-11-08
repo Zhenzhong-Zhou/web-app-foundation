@@ -1,4 +1,5 @@
 import type {
+  HomeCard,
   HomeResponse,
   OrderLine,
   Role,
@@ -40,6 +41,22 @@ export function orderLine(over: Partial<OrderLine> = {}): OrderLine {
     isComplete: false,
     isClosedShort: false,
     closedReason: null,
+    ...over,
+  };
+}
+
+/**
+ * A tile of Home as GET /home gives it (ADR-091): To ship, shown, with
+ * nothing counted, and whatever the case is about overridden. One builder,
+ * so a field the API adds to a tile is added here once.
+ */
+export function homeCard(over: Partial<HomeCard> = {}): HomeCard {
+  return {
+    kind: 'toShip',
+    hidden: false,
+    count: 0,
+    late: 0,
+    anyPoint: null,
     ...over,
   };
 }

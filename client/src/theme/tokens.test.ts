@@ -5,6 +5,7 @@ import {
   CHOSEN_WEIGHT,
   DARK,
   DARK_ACCENT_WEIGHT,
+  FIXED_OPACITY,
   LIGHT,
   MARK,
   mix,
@@ -99,6 +100,15 @@ describe('tokens (ADR-055)', () => {
     }
   });
 
+  // What may not move while a screen is arranged, faded: its smallest,
+  // mutest words, Home's date, still read (Arranging your own screen).
+  it.each(SCHEMES)('keeps %s muted text legible where it is faded', (_, s) => {
+    for (const ground of [s.page, s.surface]) {
+      const faded = mix(s.muted, ground, FIXED_OPACITY);
+      expect(contrast(faded, ground)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
   it('lays a tint over its ground', () => {
     expect(mix('#000000', '#FFFFFF', 0.5)).toBe('#808080');
     expect(mix('#5546B8', '#FFFFFF', 0)).toBe('#FFFFFF');
@@ -149,6 +159,13 @@ describe('tokens (ADR-055)', () => {
   it.each(SCHEMES)('keeps every %s status tone readable', (_, s) => {
     for (const tone of Object.values(s.tones)) {
       expect(contrast(tone.fg, tone.bg)).toBeGreaterThanOrEqual(AA);
+    }
+  });
+
+  // Home's More and the welcome's Dismiss, at rest and under the pointer.
+  it.each(SCHEMES)('keeps %s tonal buttons readable', (_, s) => {
+    for (const ground of [s.tonal.bg, s.tonal.hover]) {
+      expect(contrast(s.tonal.fg, ground)).toBeGreaterThanOrEqual(AA);
     }
   });
 

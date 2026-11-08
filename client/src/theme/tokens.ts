@@ -183,6 +183,15 @@ export function mix(colour: string, ground: string, weight: number): string {
 export const CHOSEN_WEIGHT = 0.06;
 
 /**
+ * How much shows of what may not move while a person arranges a screen
+ * (the design language, Arranging your own screen): faded so the parts
+ * that move stand out, its muted text still 3:1 on the page and on a
+ * panel in both modes, though out of use, which WCAG 1.4.3 leaves out.
+ * Home's today; #337's later places take it too.
+ */
+export const FIXED_OPACITY = 0.75;
+
+/**
  * Text on the accent: white on the light accent, near black on the dark.
  *
  * The server keeps a copy of both, the light in
@@ -208,6 +217,14 @@ export interface Intents {
   info: string;
 }
 
+/** A button beside the main one: a neutral fill, not the accent. */
+export interface Tonal {
+  bg: string;
+  fg: string;
+  /** The fill under the pointer. */
+  hover: string;
+}
+
 export interface Scheme {
   /** Behind everything; panels sit on it. */
   page: string;
@@ -221,13 +238,26 @@ export interface Scheme {
   line: string;
   /**
    * Where a table cuts what scrolls sideways under a held column or past
-   * its frame: a line seen in both modes, 3:1 on a panel and on a head
-   * (ADR-091's review), where a border is meant to be quiet.
+   * its frame, and a switch's track while off: a line seen in both modes,
+   * 3:1 on a panel and on a head (ADR-091's review; WCAG 1.4.11), where a
+   * border is meant to be quiet.
    */
   edge: string;
   text: string;
   /** Secondary text: labels, captions, notes. */
   muted: string;
+  /**
+   * The shadow of what lifts off the page: a tile under the pointer. Panels
+   * are flat, told apart by their border; only what lifts or floats has a
+   * shadow. Deeper in dark, where a light shadow is lost on the page.
+   */
+  lift: string;
+  /**
+   * The grey buttons beside a main one, such as Home's More: the neutral
+   * tone's tint today, a token of its own so a button can change without
+   * a chip.
+   */
+  tonal: Tonal;
   intents: Intents;
   tones: Record<ToneName, Tone>;
 }
@@ -244,6 +274,8 @@ export const LIGHT: Scheme = {
   text: '#141A24',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   muted: '#5B6575',
+  lift: '0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12)',
+  tonal: { bg: '#F0F1F4', fg: '#141A24', hover: '#DCDFE6' },
   intents: {
     success: '#1E6B3E',
     warning: '#8A5300',
@@ -271,6 +303,8 @@ export const DARK: Scheme = {
   text: '#E6E9EF',
   /** The emails keep a copy (mail-layout.ts): a change is made to both. */
   muted: '#A3ACBA',
+  lift: '0px 3px 1px -2px rgba(0, 0, 0, 0.4), 0px 2px 2px 0px rgba(0, 0, 0, 0.28), 0px 1px 5px 0px rgba(0, 0, 0, 0.24)',
+  tonal: { bg: '#2A303A', fg: '#E6E9EF', hover: '#3A414D' },
   intents: {
     success: '#7FD1A0',
     warning: '#F2C26B',
@@ -287,15 +321,19 @@ export const DARK: Scheme = {
 };
 
 /**
- * Five sizes and no others, in px: page title, section, body, small,
- * caption. The theme gives them to h5, h6, body1, body2 and caption, each
- * on a line of its own (theme/index.ts).
+ * Five sizes for text and one for a figure, and no others, in px: page
+ * title, section, body, small, caption; and figure. The theme gives the
+ * five to h5, h6, body1, body2 and caption, each on a line of its own
+ * (theme/index.ts).
  *
  * A step of 1.25 from the body's 16 px, the text to decide by (ADR-091),
  * so a section's heading is told from its text by size, not weight alone.
  * The small size is for detail; the caption, off the scale, for footnotes.
+ * The figure, a step above the title on the 4 px grid, is a count read
+ * across a room: Home's tile's, on a 40 px line.
  */
 export const TYPE = {
+  figure: 32,
   title: 25,
   section: 20,
   body: 16,

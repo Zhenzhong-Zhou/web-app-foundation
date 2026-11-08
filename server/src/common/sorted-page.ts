@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { lt, type SQL, sql, type SQLWrapper } from 'drizzle-orm';
+import { gt, lt, type SQL, sql, type SQLWrapper } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
 import { t } from '../i18n/translate';
@@ -56,21 +56,31 @@ export function afterCursor(
  * newest first, as every list was, when no sort is asked for; by the value
  * and then id when one is. `readCursor` reads the cursor row's value as
  * text, scoped to the organization; undefined means it is not in this list.
+ *
+ * `byId: 'asc'` runs the id alone oldest first, by when each row was made
+ * (ADR-010, ADR-057's amendment); only a list that takes it passes it,
+ * Orders today. Its drafts the planner reads from `orders_pkey` forward,
+ * across every organization, keeping the list's own rows: 1 ms at large,
+ * growing with the older orders that are not drafts, which `perf:plans`
+ * fails past 10 ms (review 78).
  */
 export async function pagedBy(options: {
   id: SQLWrapper & AnyPgColumn;
   before?: string;
+  byId?: SortOrder;
   sorted?: { value: SQLWrapper; order: SortOrder };
   readCursor: (
     before: string,
   ) => Promise<{ value: string | null; id: string } | undefined>;
 }): Promise<{ where?: SQL; orderBy: SQL[] }> {
-  const { id, before, sorted, readCursor } = options;
+  const { id, before, byId, sorted, readCursor } = options;
 
   if (!sorted) {
+    const oldestFirst = byId === 'asc';
+    const after = oldestFirst ? gt : lt;
     return {
-      where: before ? lt(id, before) : undefined,
-      orderBy: [sql`${id} desc`],
+      where: before ? after(id, before) : undefined,
+      orderBy: [oldestFirst ? sql`${id} asc` : sql`${id} desc`],
     };
   }
 

@@ -23,7 +23,9 @@ each reply does.
 - **Reminders, unasked:** after a new migration, `npm run migrate:all`,
   and the large performance database as the handoff says; with every
   Claude Code prompt, where `/clear` is safe; when work ends in a pull
-  request, its title and description.
+  request, its title and description; with every run or session Bob is
+  asked to start, its rough time and cost, on API credits and on his
+  plan, and what the figures rest on.
 - **Bob writes briefly.** Read what he means, and ask only what would
   change the answer.
 - **Honest before agreeable:** say when an earlier recommendation was
