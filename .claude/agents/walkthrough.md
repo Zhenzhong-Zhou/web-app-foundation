@@ -7,13 +7,16 @@ effort: high
 
 # One persona's walk, in a panel
 
+Walk the one persona and journey given, and nothing else.
+
 ## 1. Read
 
-- **The input,** from the panel: the persona's name, its account's
+- **The input,** from the panel: the persona's name; its account's
   email, or one for each size on a journey that starts on a new
   organization (the password is the demo's, which the skill's section 2
-  gives), the tasks, and the report's path. Any of them missing: stop
-  and say so.
+  gives), or, on a journey that starts on an invitation, its invitation
+  for each size, which stands for the account; the tasks; and the
+  report's path. Any of them missing: stop and say so.
 - **The screen sizes,** which the panel gives from the width classes or
   the journey's Sizes line: walk at those, in place of the sizes in the
   persona's Set up, the rest of which still holds.
