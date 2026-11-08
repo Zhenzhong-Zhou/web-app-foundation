@@ -1,7 +1,7 @@
 ---
 name: brief-step
 description: Runs one step of a build brief kept in tmp/ (tmp/adr-NNN/brief.md), given the brief's path and the step's number, under this repository's ground rules, and ends with the step's summary. Started only by /build-from-brief, never chosen on its own.
-model: inherit
+model: opus
 ---
 
 # A step of a brief
@@ -15,9 +15,14 @@ named, and nothing else.
 
 ## 1. Read
 
-- **The input,** from `/build-from-brief`: the brief's path and the
-  step's number. Either missing, or no step by that number in the brief:
-  stop and say so.
+- **The input,** from `/build-from-brief`, or from `/review-step` for a
+  step of the main session: the brief's path and the step's number, with
+  Bob's choices when he gave any. Either missing, or no step by that
+  number in the brief: stop and say so.
+- **A rerun,** given a first attempt's last line and the path of its
+  saved diff, if one was saved: read that diff first, for what was tried
+  and where it stopped, and never apply it; start from the tree as it
+  is, which the loop has set back to the last commit.
 - **The whole brief,** not only the step: its own ground rules, what its
   ADR leaves to the build, and the steps around this one, so the step
   neither redoes an earlier one nor reaches into a later one.
@@ -56,6 +61,20 @@ where a step must act on it.
   wrapped paragraphs saying why.
 - **Push and open the pull request** only in the step that says to.
 
+### Your model ([ADR-089's amendment][models])
+
+- **Named in the summary's first line,** `Model: <the model you run
+  on>`, as your own instructions name it, with its exact id where they
+  give one. The loop stops the run when it is not the one the brief's
+  row names.
+- **Work above your model** ends the step with `BLOCKED: model:` and
+  what it is, which the loop runs again on Opus.
+- **On Sonnet or Haiku, a step never writes or changes a browser test,**
+  a file in `client/e2e/` ending `.spec.ts`, or one in
+  `client/e2e/support/`. It stops with `BLOCKED: model` before it starts
+  that part: before anything, when the step's text names it, so nothing
+  is committed and the loop can run the whole step on Opus.
+
 ### Verify ([engineering.md, "Commits"][commits]; `scripts/verify.sh`'s own header)
 
 - Before each commit, `scripts/verify.sh --docs` when it changes only
@@ -63,8 +82,13 @@ where a step must act on it.
   `--quick` for anything else, `client/` and `docs/tables/` included,
   the Help guides with them. In full before a
   push.
-- **Verify failing:** one honest retry, then stop, the last line
-  `BLOCKED:` and what fails.
+- **Verify failing:** one honest retry, then stop, the last line naming
+  its kind and what fails:
+  - `BLOCKED: verify (code): …`, when it still fails on the step's own
+    changes: the loop runs a Sonnet or Haiku step again on Opus, once a
+    run;
+  - `BLOCKED: verify (environment): …`, when it fails for Docker, the
+    database, the network or a port: it waits for Bob.
 - When lint reformats a file, the change is committed as a fixup of that
   step's commit (`git commit --fixup=<hash>`, then `git rebase
   --autosquash <hash>~` while unpushed), never restored.
@@ -113,6 +137,9 @@ where a step must act on it.
 
 - A new rule arrives with the test that proves it: failing before the
   change, passing after.
+- **A new or changed test runs before its commit,** as conventions.md's
+  "Tests" says: five times for a client unit test or a browser test
+  (`--repeat-each=5`), three times for a server end-to-end test.
 - **Manual checks go in the same commit as what they check:** a commit
   that changes what a person sees, or a rule they work under, updates
   `docs/manual-checks.md` itself. A brief that puts them in a later step
@@ -138,7 +165,8 @@ where a step must act on it.
   rule with no test, or one where the code and its ADR disagree, is a
   finding for the batch.
 - **The reviews, in two prompts** ([engineering.md, "How code is
-  delivered"][delivered]):
+  delivered"][delivered]), run by `/review-step <brief> <N> [choices]` in
+  the main session, never in a `brief-step`:
   1. **The findings.** The walkthrough panel,
      `/usability-walkthrough panel <journey>`, on each journey the brief
      names from `.claude/skills/usability-walkthrough/journeys.md`, for
@@ -169,11 +197,13 @@ where a step must act on it.
 ## 4. The summary for the chat
 
 End every step with it, as your last message, in plain Markdown:
-`/build-from-brief` appends it to `summaries.md` beside the brief and
-reads its last line; Bob pastes the one a run stops at into the chat
-and, at the brief's end, attaches the file, from which the chat writes
-the as-built amendment and the docs. These five parts, in this order,
-written as [CLAUDE.md's "Report for a quick read"][how-to-work] says:
+`/build-from-brief` appends it whole to `summaries.md` beside the brief
+and reads its first and last lines; at a stop it prints the step's
+`## For the chat`, which Bob pastes into the chat, and at the brief's
+end Bob attaches the file, from which the chat writes the as-built
+amendment and the docs. Its first line is `Model:`, as section 2 says;
+then these five parts, in this order, written as [CLAUDE.md's "Report
+for a quick read"][how-to-work] says:
 
 1. **Done:** each commit's short hash and subject, in order, and what it
    builds, a bullet each; or no commit, and why.
@@ -185,7 +215,13 @@ written as [CLAUDE.md's "Report for a quick read"][how-to-work] says:
    recommended; or "none".
 5. **Next:** the next step's prompt.
 
-The last line: `DONE: <why>`, or `BLOCKED: <what is needed>`.
+After the five parts, a section `## For the chat`: 10 to 15 lines, as
+bullets, of what was done, what verify said, the findings and the
+decisions, and the last line.
+
+The last line: `DONE: <why>`, or `BLOCKED:` and its kind, as its first
+words: `verify (code)`, `verify (environment)` or `model`, as section 2
+says, or what is needed, as `a decision`.
 
 [how-to-work]: ../../CLAUDE.md#how-to-work
 [rules]: ../../CLAUDE.md#rules-of-this-repository
@@ -200,3 +236,4 @@ The last line: `DONE: <why>`, or `BLOCKED: <what is needed>`.
 [rules-files]: ../../docs/adr/0087-the-rules-written-down.md#decision--the-pilot-then-the-rest
 [seeds]: ../../docs/conventions.md#seeds
 [adr-089]: ../../docs/adr/0089-a-briefs-steps-in-a-row.md
+[models]: ../../docs/adr/0089-a-briefs-steps-in-a-row.md#amendment-november-2026--each-step-on-the-model-its-work-needs

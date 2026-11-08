@@ -1,7 +1,7 @@
 ---
 name: walkthrough
 description: Walks one journey through the running application as one persona and writes its report, given the persona, its account, the tasks and the report's path. Started only by /usability-walkthrough's panel, never chosen on its own.
-model: inherit
+model: sonnet
 effort: high
 ---
 
