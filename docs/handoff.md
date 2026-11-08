@@ -16,26 +16,29 @@ as-built amendments, [the working agreements](engineering.md),
 On 7 November 2026:
 
 - **Customise Home,** decided in ADR-091: planned on 6 November and
-  built on 6 and 7 November on `customise-home`, 78 commits, its pull
-  request open to merge once green; the as-built is in
-  [ADR-091's amendment](adr/0091-home-redesigned.md). Tiles and Recently
+  built on 6 and 7 November on `customise-home`, 78 commits, merged on 7
+  November as [#515] (807fa43) and deployed the same day; the as-built
+  is in [ADR-091's amendment](adr/0091-home-redesigned.md). Tiles and Recently
   opened move and hide, by buttons and by dragging; each person's
   arrangement is kept on their membership; the default order follows
   what their role may do; Orders · Draft, hidden until shown, opens
   Orders oldest first. Its reviews found 92, fixed 53, and filed #507 to
   #514. Its boards are the canvas's row "Customise Home v2" and decisions
   64a's and 81's.
-- **The router for `/build-from-brief`,** next, before Items: each step
-  names its model, Opus for new logic, design, reviews and fixes, tests
-  among them, Sonnet for dependencies, seeds, guides and docs, Haiku only
-  to run a command and report; the loop itself on Sonnet; the plan shown
-  before a run; a short summary for the chat, the full one in the
-  summaries file; a stop that says to run a step again on Opus; the
-  walkthrough's personas on Sonnet; and a check in the planning skill's
-  `evals.md`. With it: Customise Home's review findings 89, 90 and 91, a
-  shared `dragByKeyboard` test helper with its line in conventions.md,
-  and WebKit from Playwright's Linux image in the full verify. Its
-  ADR-089 amendment is planned in a fresh chat.
+- **The router for `/build-from-brief`,** next, before Items: planned on
+  7 November as [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md),
+  built on `build-router`. Each step names its model, from a default
+  table: Opus for new logic, design, reviews and fixes, browser tests
+  among them; Sonnet for dependencies, seeds, guides and docs; Haiku only
+  to run a command and report. The loop runs on Sonnet and the reviews
+  on Opus, through a new `/review-step`; a Sonnet or Haiku step that
+  fails on its code goes again on Opus by itself, once a run; a run shows
+  its plan and checks the branch, the tree and Claude Code's version
+  first; each stop prints a short summary with its model, minutes and
+  tokens; and CI burns in the browser specs a pull request changes. With
+  it: Customise Home's review findings 89, 90 and 91, one helper for a
+  keyboard drag, Linux WebKit in the full verify, and a seventh prompt in
+  the planning skill's `evals.md`.
 - **[#506], the test of Home's More menu in Firefox:** merged on 6
   November as 965fdd76 and deployed with [#477] (Deploy run 42279308129),
   `/api/health` and `version.json` naming it with `apiRevision: 3`.
@@ -140,7 +143,8 @@ On 7 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 6 November, from the terminal as merge commits,
+- **The last merges:** on 7 November, from the terminal as a merge
+  commit, [#515] (Customise Home). On 6 November, from the terminal as merge commits,
   [#477] (ADR-091) and [#506]. On 4 November, from cloud sessions, [#468]
   ([#466]) and [#469] ([#462]), each as a merge commit, since the button
   offered the method used last; a cloud pull request is merged from the
@@ -185,8 +189,8 @@ On 7 November 2026:
   amended, 26 October) and [#247] (the brand, ADR-082, 25 October).
 - **The release:** v0.7.0, tagged on 16 October 2026; both packages'
   versions are 0.7.0.
-- **Migrations** through 0077 (the trigram indexes led by the
-  organization, in [#449]), 78 files in `server/src/database/migrations/`.
+- **Migrations** through 0079 (each person's arrangement of Home, in
+  [#515]), 80 files in `server/src/database/migrations/`.
 - **Render:** a free database (`foundation-db`, created 5 November 2026,
   replacing the first, whose rows all went with it)
   and a free web service, with the static site. Deploy runs from the
@@ -284,15 +288,15 @@ On 7 November 2026:
 
 ## Still to do, by hand
 
-- **After Customise Home's merge,** in this order: the deploy's checks
-  (`render.md`), `/api/health` naming the merge with `apiRevision: 3`,
-  and `npm run migrate:all` on the Mac for migration 0079; a tab left
+- **After Customise Home's merge** ([#515]), still to do: a tab left
   open across the deploy keeps working, and a reload shows Customise
   Home; a drag on an older iPhone, iOS 16.4 to 16.7, with no Popover API;
-  Android WeChat in 中文, by touch; a phone held sideways in Customise
-  Home, Reset and Done reachable; `/triage` on the areas it touched, #514's
-  group among them, proposed `when-touched`; and the planning skill
-  packed from `main` and uploaded again, since the branch changed it.
+  Android WeChat in 中文, by touch; and a phone held sideways in
+  Customise Home, Reset and Done reachable. Done on 7 November: the
+  deploy's checks, `npm run migrate:all` on the Mac for migrations 0078
+  and 0079, the clean-up, the planning skill packed from `main` and
+  uploaded, and `/triage` over all 154 open issues, its choices applied
+  the same day.
 - **The small volume database's manifest,** ignored, was overwritten on
   7 November: seed it again, or rebuild the manifest, before the next
   small timed run on the Mac.
@@ -310,9 +314,9 @@ On 7 November 2026:
   - MC-4201 on the live site with a test item, set up again on the
     database of 5 November: one notice in the bell within the hour while
     the service is awake; then remove the point.
-- **The planning skill's `evals.md`:** prompt 6, after the upload that
-  follows Customise Home's merge; 4 still waits for a patch that is
-  refused.
+- **The planning skill's `evals.md`:** prompt 6, now that the upload
+  after Customise Home's merge is done; prompt 7 after the router's
+  upload; 4 still waits for a patch that is refused.
 - **[#245] in Safari and Edge, once deployed:** the page asked to translate
   into Chinese stays as written, a typed field included; WebKit and
   Firefox have known gaps with fields. What changes is filed.
@@ -376,8 +380,9 @@ request or a set of them:
    3. the design language ([#338], ADR-090): [#465], a docs pull
       request, as its as-built says;
    4. Home redesigned ([#335], ADR-091): [#477], merged on 6 November;
-      then Customise Home, built on `customise-home`, its pull request
-      open; then the router for `/build-from-brief`, a small pull request;
+      then Customise Home, merged on 7 November ([#515]); then the
+      router for `/build-from-brief`, ADR-089's amendment, on
+      `build-router`;
       then Items ([#476]),
       ADR-092 with canvas boards first, the page and the menu named Items
       · Articles · 物品, Products · 商品 the goods tab; then Movements
@@ -645,3 +650,4 @@ Not repeated here; each list has one home:
 [#478]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/478
 [#505]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/505
 [#506]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/506
+[#515]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/515

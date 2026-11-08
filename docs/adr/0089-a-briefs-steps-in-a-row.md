@@ -427,3 +427,220 @@ commits name are the list checked before it opens.
   chat rather than read from GitHub's pages. An issue that names more than about five files
   goes to a Mac branch instead: #310's session stopped for nine
   dialogs on 4 November 2026.
+
+## Amendment (November 2026) — each step on the model its work needs
+
+Since this ADR, every step of a brief runs in a `brief-step` subagent
+that inherits the session's model. A brief therefore ran on Opus from
+its dependency step to its docs, or on Sonnet throughout when the
+maintainer switched for routine steps by hand (`/model sonnet`). Two
+things on Customise Home's branch (#515) showed what that costs: a check
+written on Sonnet raced Done's own read of Home in CI (3cdebcd7), and
+Linux WebKit started a keyboard drag a render later than the Mac's
+WebKit, so a test's arrow came too soon (5631d0d8). The maintainer chose
+each decision below on 6 and 7 November 2026. The same amendment takes
+Customise Home's review findings 89, 90 and 91, from its
+`/doctor prompt-audit`.
+
+Checked before drafting, for the areas docs and ops and for the issues
+it names, #505, #507 and #514 (`scripts/adr-check.mjs`, 7 November
+2026):
+
+- **Fired, and taken here:**
+  - #467 (`when-touched`), for the files this changes: 11, the review
+    step written in one home, engineering.md, the other places linking
+    to it; 20, `CLAUDE.md`'s lines for the skills; 21,
+    `.claude/rules/ui.md` naming the parts of the design language a
+    change to a screen reads, with finding 91; and 22's repeats in
+    `.claude/agents/walkthrough.md`.
+  - #505's 93: a test that Home's time line is not a live region, in
+    `client/e2e/home.spec.ts`, which the drag helper changes.
+- **Not fired, and left:**
+  - #467's 13 (a `tools:` line for the walker), 22's report fields, 16
+    and 18 each change what a panel does, and only a walk proves them.
+    This branch changes nothing a person sees and walks no panel; Items'
+    branch, which does, takes them. 12 waits for cloud sessions to come
+    back. 14, 17 and 25: their files are not changed.
+  - #292's two parts left, each for its own batch, as its comment says.
+  - #253, the review workflow, is not changed; #226 needs a query, and
+    this has none; #263 is the client's, in its Fix-ups batch; #336 is
+    reported by each dependency step; #446 waits upstream, with #410 on
+    the same advisories; and #197, #142, #283, #319 and #320 are not
+    touched.
+  - #284 asks for whole workflows in WebKit and Firefox; this adds one
+    spec in Linux WebKit to the full verify, and leaves it open.
+  - #321: the router reads this repository's own rules, so it stays
+    here, one more candidate under this ADR's Deferred.
+  - #507 and #514: none of their files is changed.
+  - The Deferred lines of the docs and ops ADRs, ADR-051's watch list
+    and Open decisions hold nothing on models or on how a step runs.
+- **Found while checking:** `@dnd-kit/dom` 0.5.3 sets `aria-pressed` on
+  a tile's handle a frame after the pick-up, and its placeholder copy
+  keeps `false`, so a log of 7 November that never saw it change
+  probably read it too early, or read the copy. The drag helper's step
+  checks it once.
+
+### Decision — a model for every step, named in its brief
+
+- **A brief's steps table gains a Model column:** `opus`, `sonnet` or
+  `haiku` for each of Claude Code's steps, set by the chat when it plans,
+  from a default table in engineering.md:
+  - Opus for new server or client logic, design, the reviews and their
+    fixes, a test written with them, and any new or changed browser
+    test;
+  - Sonnet for dependencies, seeds, Help guides, docs, and a unit or
+    server test copied from one beside it;
+  - Haiku only for a step that runs commands and reports, never one
+    that writes code.
+- **The loop names the model** each time it starts a step. Claude Code
+  puts a model named for one subagent above the one in its file, from
+  2.1.251. `brief-step`'s file says `opus`, never `inherit`, so a step
+  that somehow has none never drops to the loop's model. A brief without
+  the column, or with another value, is refused.
+
+### Decision — the loop on Sonnet, the reviews on Opus
+
+- **`/build-from-brief` is pinned to Sonnet** (`model: sonnet`). It reads
+  the table, starts each step and appends its summary; it judges none.
+  The planning that a strong model does is the chat's, in the brief.
+- **A skill's pin lasts the turn that runs it,** so the reviews leave
+  the loop: a new skill, `/review-step <brief> <N> [choices]`, pinned to
+  Opus at high effort, runs a step whose Who is `Claude Code, main
+  session`, by `brief-step`'s rules, in the two prompts this ADR set.
+  `/build-from-brief` refuses such a step, naming the command.
+- **No silent downgrade:** each step's summary names the model it ran
+  on, and a model other than the brief's stops the run.
+- **The walkthrough's personas run on Sonnet** (`walkthrough.md`), and
+  the panel merges their reports in the review step's session, on Opus.
+
+### Decision — a failed step escalates once to Opus
+
+A Sonnet or Haiku step that ends BLOCKED is run again on Opus by the
+loop itself, when either its verify still fails on its own code after
+the one honest retry, or it stops at work above its model, such as a
+browser test.
+
+- **From a clean tree:** the attempt's uncommitted work is set aside
+  with `git stash` and saved as a diff beside the brief, and the Opus
+  step is told where it is and why the first attempt stopped.
+- **Never** for a failure of the environment (Docker, the database, the
+  network), which stops for the maintainer, nor for a step that
+  committed before it failed.
+- **Once a run:** a second escalation stops the run. Both attempts are
+  in the summaries.
+- This replaces the first wording, a stop that said to run the step
+  again on Opus. Routing elsewhere escalates on its own when an
+  objective check fails, and verify is one.
+
+### Decision — the plan before a run, and checks before its first step
+
+- **`from N` prints the plan,** each step up to the next stop with its
+  model and its minutes from the brief's table, and where the run will
+  stop; then it starts. `/build-from-brief <brief> plan` prints the plan
+  alone. It never waits for a "go": a reply is a new turn, which the
+  Sonnet pin does not reach.
+- **It refuses to start, naming why,** when the branch is not the
+  brief's; when a tracked file has changes; when Claude Code is older
+  than 2.1.251; when `CLAUDE_CODE_SUBAGENT_MODEL` or
+  `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is set, either of which can put
+  every step on one model; or when Docker is not running and a step's
+  verify needs it.
+
+### Decision — what a stop reports, and what it cost
+
+- **Two summaries:** each step ends with its full summary, appended to
+  `summaries.md` beside the brief, and a short one of 10 to 15 lines,
+  which the run prints at a stop for the chat.
+- **Each summary's heading names its model, its minutes and its tokens**
+  where Claude Code reports them. The as-built compares them with the
+  brief's time-and-cost table, and the default table changes where they
+  disagree.
+
+### Decision — a new test proved before its commit, and burned in by CI
+
+- **Each new or changed test runs before its commit** as the flake hunt
+  runs: five times for a client unit test or a browser test
+  (`--repeat-each=5`), three times for a server end-to-end test.
+- **CI burns in** what a pull request changed: in the browser job, after
+  its run, the specs it changed and those importing a file it changed,
+  five times each in Chromium, with retries off. It stops at 20 minutes;
+  a selection too wide for that burns in only the specs the pull request
+  changed itself.
+- **A keyboard drag in a test goes through one helper,** which waits for
+  the pick-up and for each move before the next key.
+- **The full verify runs the accessibility spec in Linux WebKit** from
+  Playwright's image, as it runs Firefox.
+
+### Decision — the planning skill checked for its models
+
+`evals.md` gains a prompt: the models of a brief's steps follow the
+default table.
+
+### Decision — Customise Home's review findings 89, 90 and 91
+
+- **89:** `/fix-issue` and the README merge a cloud session's pull
+  request with `gh pr merge <PR>`, the pull request's number and not the
+  issue's.
+- **90:** the panel hands each walker an account for each size where
+  step 1 made one per size, and a journey that starts on an invitation
+  gets an invitation for each size, since one is accepted once.
+- **91:** `scripts/check-docs.mjs` holds a code rules file in
+  `.claude/rules/` to at most 40 lines after its front matter, the limit
+  ADR-087 set and nothing checked. `ui.md`, at 44, is trimmed to it.
+
+### Considered and not done
+
+- **One skill for the loop and the reviews,** the session's model
+  switched by hand: one forgotten switch runs the reviews on Sonnet.
+- **The reviews under the loop's Sonnet pin:** they are the work Opus is
+  for.
+- **The loop on Opus,** as a lead agent is in a research system: the
+  planning is the chat's, and the loop judges nothing.
+- **Escalation by hand after a stop,** the first wording: a stop for
+  what the loop can decide on an objective check.
+- **Opus going on from the failed attempt's changes:** it would inherit
+  the approach that failed.
+- **A plan that waits for a "go":** the run would go on outside the
+  pin.
+- **A learned router choosing each model:** there are no measurements
+  yet; the table and the measured minutes come first.
+- **Fewer than 40 lines,** which would trim `database.md` and
+  `production-orders.md` too, for no reason ADR-087 gives.
+
+### Deferred — each with what brings it in
+
+- **A model chosen per step from measurements** rather than the table.
+  Trigger: three briefs whose measured minutes or tokens disagree with
+  the table.
+- **Effort set per step.** Trigger: a kind of step the measurements show
+  slow or wasteful at its model's default effort.
+- **Server end-to-end tests burned in by CI.** Trigger: a server test
+  that passes three times on the Mac and then flakes in CI.
+
+### Consequences
+
+- `.claude/skills/build-from-brief/SKILL.md` gains the pin, the Model
+  column, the plan, the checks before a run, the escalation, the model
+  check and the short summary; `.claude/skills/review-step/SKILL.md` is
+  new; `.claude/agents/brief-step.md` says `opus`, names its model,
+  sorts a BLOCKED by its kind, and writes both summaries; and
+  `walkthrough.md` says `sonnet`.
+- engineering.md holds the default table, and the review step in its
+  one home (#467's 11). `CLAUDE.md`, the README's "Which tool, when",
+  `docs/README.md` and `docs/design-language.md` name `/review-step`, or
+  link to it. conventions.md's Tests says how a new test is proved and
+  burned in, and names the drag helper.
+- The planning skill's brief gains the Model column and `/review-step`,
+  and its `evals.md` a seventh prompt. It is uploaded again after the
+  merge (ADR-088's amendment).
+- `scripts/check-docs.mjs` and its tests, `.claude/rules/ui.md` and
+  `/rules-file`; `scripts/verify.sh`; and `.github/workflows/ci.yml`.
+- Until the loop's step lands and Claude Code restarts, a step inherits
+  the session's model, so this branch's first steps run one at a time,
+  each with its model set by hand.
+- No API change, no migration and nothing a person sees in the app.
+- Built on `build-router`, in this order: this amendment; dependencies;
+  findings 89 and 90; the loop, `/review-step` and the step's agent; a
+  restart and a run that proves the routing; the working agreements; the
+  planning skill; finding 91; the drag helper; Linux WebKit in the full
+  verify; CI's burn-in; dependencies again; the reviews; the as-built.
