@@ -602,14 +602,24 @@ const CLAUDE_RULE = /^\.claude\/rules\/.+\.md$/;
 /**
  * The `paths` list in a file of Claude Code's rules, each pattern with its
  * line, written one to a line as - "pattern", quoted or not; or why there
- * is none. Read once, for claudeRules and the notice.
+ * is none. With it, the file's `length`: its lines after its front matter,
+ * blank ones included, the last newline ending a line rather than
+ * starting one. The front matter is not counted, since its paths list
+ * grows with its area; a file without front matter counts whole. Read
+ * once, for claudeRules and the notice.
  */
 const pathsIn = once(readPaths);
 
 function readPaths(file) {
   const lines = readFileSync(path.join(ROOT, file), "utf8").split("\n");
-  const everySession = "or Claude Code loads it in every session";
   const end = frontMatterEnd(lines);
+  const length = lines.length - (lines.at(-1) === "" ? 1 : 0) - (end + 1);
+  return { length, ...pathsOf(file, lines, end) };
+}
+
+/** The paths list of `file`, whose `lines` end their front matter at `end`, or why there is none. */
+function pathsOf(file, lines, end) {
+  const everySession = "or Claude Code loads it in every session";
   if (end < 0) {
     return {
       failure: `${file}:1: front matter — none: open with a paths list between --- lines, ${everySession}`,
@@ -673,19 +683,6 @@ const fixedStart = (glob) => /^[^*?[{(!@+\\]*/.exec(glob)[0];
 const RULES_LINES = 40;
 
 /**
- * A file's lines after its front matter, blank ones included; the last
- * newline ends a line rather than starting one. The front matter is not
- * counted, since its paths list grows with its area. A file without
- * front matter counts whole.
- */
-function linesAfterFrontMatter(file) {
-  const lines = readFileSync(path.join(ROOT, file), "utf8")
-    .replace(/\n$/, "")
-    .split("\n");
-  return lines.length - (frontMatterEnd(lines) + 1);
-}
-
-/**
  * Claude Code's rules by area (ADR-087): each file under .claude/rules/
  * opens with front matter holding a `paths` list, since one without
  * loads in every session, which is CLAUDE.md's job; each pattern, its
@@ -702,14 +699,13 @@ function claudeRules({ files }) {
   let checked = 0;
   let longest = 0;
   for (const file of rules) {
-    const length = linesAfterFrontMatter(file);
+    const { failure, patterns, length } = pathsIn(file);
     longest = Math.max(longest, length);
     if (length > RULES_LINES) {
       failures.push(
         `${file}:1: ${length} lines after the front matter — more than ${RULES_LINES} (ADR-087): keep code rules only, each naming its home, and nothing CLAUDE.md or another area's file says`,
       );
     }
-    const { failure, patterns } = pathsIn(file);
     if (failure) {
       failures.push(failure);
       continue;
