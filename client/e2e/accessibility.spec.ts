@@ -241,8 +241,17 @@ const SCREENS: Screen[] = [
         exact: true,
       });
       await expect(handle).toBeFocused();
+      // Each key after the screen has answered the last, as a person
+      // presses them: the library starts a drag a render after Space, and
+      // Linux WebKit had the arrow before then, which moved nothing.
       await page.keyboard.press('Space');
+      await expect(
+        page
+          .getByRole('status')
+          .filter({ hasText: 'Picked up To receive, 2 of 9' }),
+      ).toHaveCount(1);
       await page.keyboard.press('ArrowLeft');
+      await expect(tiles.first()).toHaveAccessibleName('To receive');
       await page.keyboard.press('Space');
       await expect(tiles.first()).toHaveAccessibleName('To receive');
       await expect(handle).toBeFocused();
