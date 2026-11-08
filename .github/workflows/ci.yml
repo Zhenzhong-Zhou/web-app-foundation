@@ -420,8 +420,8 @@ jobs:
     runs-on: ubuntu-24.04
     # A shard takes 5 to 8 minutes with every browser. This ends one that
     # stalls long before GitHub's default of 6 hours, with room for Install
-    # browsers' three tries.
-    timeout-minutes: 45
+    # browsers' three tries and a pull request's burn-in.
+    timeout-minutes: 60
     strategy:
       # One shard failing must not cancel the others: their failures are
       # different tests, and all of them are wanted at once.
@@ -456,7 +456,11 @@ jobs:
           - 8025:8025
 
     steps:
+      # Two commits deep, so a pull request's burn-in, after the run, has
+      # its merge's first parent, HEAD^1, to compare with.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
 
       - uses: actions/setup-node@v7
         with:
@@ -569,6 +573,60 @@ jobs:
             npm run test:e2e -- --shard="$SHARD"
           else
             npm run test:e2e -- --project=chromium --shard="$SHARD"
+          fi
+        working-directory: client
+
+      # The burn-in (ADR-089's amendment), on a pull request: the specs it
+      # changes and those importing a file it changes, five times each in
+      # Chromium with retries off, so a test that fails one run in five
+      # fails here rather than on main later. HEAD^1 is main as the change
+      # merges into it. Each shard takes a third of the runs, as it does of
+      # the suite, so a test runs five times in all, not five on each
+      # machine. More than 40 tests, each counted once, is a selection too
+      # wide, as a change to a file every spec imports gives: then only the
+      # specs the pull request changes itself, which the job's summary
+      # says. A step of this job, so "CI — all jobs" requires it. npx, not
+      # test:e2e: the run above has migrated and seeded, and the config
+      # reads ../.env itself.
+      - name: Burn in the specs this pull request changes
+        if: github.event_name == 'pull_request'
+        timeout-minutes: 20
+        env:
+          BASE: HEAD^1
+          SHARD: ${{ matrix.shard }}/3
+        run: |
+          say() { echo "$1" | tee -a "$GITHUB_STEP_SUMMARY"; }
+          flags=(--pass-with-no-tests --project=chromium)
+          burn=(--repeat-each=5 --retries=0 --shard="$SHARD")
+
+          # Each test once, from the list's last line, "Total: 131 tests in
+          # 2 files". The list read into a variable first, so a failed
+          # Playwright fails the step rather than reading as no tests.
+          list=$(npx playwright test --list --reporter=list --only-changed="$BASE" "${flags[@]}")
+          echo "$list"
+          tests=$(sed -n 's/^Total: \([0-9][0-9]*\) tests* in .*/\1/p' <<< "$list")
+          if [ -z "$tests" ]; then
+            echo '::error title=Burn-in::The list of tests ended without its total.'
+            exit 1
+          fi
+
+          if [ "$tests" -eq 0 ]; then
+            say 'Burn-in: this pull request changes no spec, and no file a spec imports. Nothing ran.'
+          elif [ "$tests" -le 40 ]; then
+            say "Burn-in, the tests of the specs this pull request changes and of those importing a file it changes: $tests, five times each, a third of the runs on this shard."
+            npx playwright test --only-changed="$BASE" "${flags[@]}" "${burn[@]}"
+          else
+            # Its own specs, those added or changed, not deleted.
+            specs=()
+            while IFS= read -r spec; do
+              specs+=("$spec")
+            done < <(git diff --name-only --relative --no-renames --diff-filter=d "$BASE" HEAD -- 'e2e/*.spec.ts')
+            if [ "${#specs[@]}" -eq 0 ]; then
+              say "Burn-in: this pull request's changes reach $tests tests, more than 40, and it changes no spec itself. Nothing ran."
+            else
+              say "Burn-in: this pull request's changes reach $tests tests, more than 40, so only the specs it changes itself, five times each, a third of the runs on this shard: ${specs[*]}."
+              npx playwright test "${flags[@]}" "${burn[@]}" "${specs[@]}"
+            fi
           fi
         working-directory: client
 
