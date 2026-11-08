@@ -475,7 +475,8 @@ translations, before 30 November, then Orders.
 - **Which lists sort, and by what,** a rule for the design language.
   Trigger: each list's own turn, the rule written with the first.
 - **A drafts tile.** Trigger: Customise Home's planning, or a draft
-  someone forgot because nothing showed it.
+  someone forgot because nothing showed it. Taken in November 2026, by
+  Customise Home: this ADR's amendment of that month.
 - **Help hiding the steps a role cannot take.** Trigger: Orders' turn,
   whose guide told a Viewer to press a button they never see.
 - **Home in no organization built to the design language** (ADR-078).
@@ -690,3 +691,77 @@ decisions.
 - `scripts/adr-check.mjs` writes only to `tmp/adr-NNN/`, so a branch with
   no ADR of its own moves its check into its own folder.
 - #477 ended with 76 commits, not 74: corrected in the as-built above.
+
+### As built (7 November 2026)
+
+Built on `customise-home`, 78 commits above `main` at 965fdd76 with this
+as-built, by the build brief's 20 steps (`tmp/customise-home/brief.md`,
+its summaries beside it), then two test fixes that CI's Linux browsers
+found (5631d0d8, 3cdebcd7). The canvas keeps every look drawn, a row each.
+
+- **Home's time:** `GET /home` at large on the Mac is 190–225 ms against
+  300, and 44 ms at small. Step 7 read 337 ms at large because the large
+  seed's tables had never been vacuumed: `main` was as slow on the same
+  database, and after `VACUUM ANALYZE` both came back. So `seed:volume`
+  now ends with one. Home's statement-count test reads 4, where it read 6
+  (#505's 67 and 68).
+- **Home's download:** Customise Home and `@dnd-kit` load only when its
+  button is pressed. Home's chunk is 15.8 kB gzipped, the panel's 41.4 kB.
+- **Changed from the decisions above,** in the build and the reviews:
+  - **The default arrangement comes from the server:** `GET /v1/home`
+    sends `defaultLayout`, and the client keeps no copy of the default
+    order.
+  - **A save keeps what the reader cannot see:** a `PUT` keeps the stored
+    kinds it does not name, hidden as they were. A `DELETE` clears them
+    all, so the person follows later defaults.
+  - **A kind missing from a saved layout** goes after the kind before it
+    in the default order, hidden only if it is hidden by default.
+  - **The drafts tile** opens `/orders?status=draft&order=asc`, its icon
+    a page with a pencil (`EditNoteOutlined`). Orders reads it along the
+    orders' primary key (ADR-057's amendment, as built).
+  - **The line under the red panel,** for a hidden tile's late items,
+    shows only while Customise Home is open, as the boards draw it, with
+    the singular for one.
+  - **A status line** in the row with Done says where a tile went, or
+    that it was hidden or shown ("To ship, 2 of 8"). Up and Down keep
+    their words in a grid.
+  - **The fixed parts** fade to 75 % (`FIXED_OPACITY`), since 70 % left
+    the date at 2.96:1, each lock named for a screen reader ("Greeting:
+    fixed"). The keyboard's line is hidden under a coarse pointer. Every
+    switch's off track takes the `edge` token at full strength.
+  - **Recently opened:** Clear says what it did and where to turn it
+    off; the switch says what it shows; `seed:demo` opens two records for
+    the demo Owner.
+  - **Dragging:** auto-scroll works only in the window's outer tenth, at
+    speed 10, never sideways. `@dnd-kit/react` is 0.5.3, by the
+    maintainer's exception to the 7-day rule (c0e82ca7): six days old, its
+    0.5.2 a touch fix and its 0.5.3 a security fix.
+  - **Done** saves through `useSubmit`, saying "Saving…", with a refusal
+    in `FormError`. Opening Customise Home reads Home first, so an old tab
+    cannot write over another device's arrangement, and the panel is
+    inert while Done saves.
+- **Not built from the boards:** the dragged tile lifts with the `lift`
+  token, not the board's deeper shadow, and has no "dragging" chip; each
+  lock sits on its own line above the part it marks.
+- **The API:** revision 3. The drafts kind is accepted in
+  `server/openapi-breaking-accepted.txt`, as ADR-058's amendment for
+  ADR-085 expects. Migration 0079 adds one nullable column.
+- **The reviews:** 92 findings (`tmp/customise-home/review.md`), 53 fixed
+  here in three batches. #507, "Left from Customise Home's reviews",
+  holds the small ones, and #508 to #514 the rest worth keeping; comments
+  went on #337, #505 and 15 other issues. Findings 89, 90 and 91, on
+  Claude Code's own instructions, go to the router's pull request.
+- **Found on the way:**
+  - CI's Linux WebKit starts a keyboard drag a render later than the
+    Mac's, so a test's arrow came too soon (5631d0d8). The Mac's full
+    verify runs macOS's own WebKit, so only CI met it.
+  - `client/e2e/home.spec.ts` runs only in Chromium, even in CI.
+  - The small volume database is `foundation_perf_adr091`; its ignored
+    manifest was overwritten on 7 November, to be rebuilt before the next
+    small timed run.
+  - A tab open across the deploy keeps the old client until reloaded,
+    since the revision does not change (ADR-081).
+- **After the merge:** by hand, a drag on an older iPhone (iOS 16.4 to
+  16.7, with no Popover API), Android WeChat in 中文, a phone held
+  sideways and an old tab across the deploy; then the router's pull
+  request, then Items (#476) and Movements (#470).

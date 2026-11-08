@@ -195,7 +195,8 @@ amount, voided, with the date range and search (ADR-056) like the rest.
 - **Export to the books** (QuickBooks, Sage), already deferred in ADR-048.
   Trigger: an accountant asking to stop re-keying.
 - **More sortable columns.** Trigger: asked for, one at a time, each with
-  its index.
+  its index. Taken in part in November 2026: Orders' oldest first, with no
+  sort, for Home's drafts tile (this ADR's amendment for ADR-091).
 
 ## Amendment (October 2026) — an instant as a spreadsheet opens it
 
@@ -228,3 +229,8 @@ the draft forgotten longest comes first. No column names that order, so
 the list shows it as a chip that can be removed, as it shows a filter
 only a link set. Another list takes it when asked, as More sortable
 columns, above, says.
+
+As built (7 November 2026): the planner reads the orders' primary key
+forward, not the organization's index backwards, about 1 ms for the
+drafts at large. Past 10 ms, `npm run perf:plans` fails and says to widen
+the orders' status index.

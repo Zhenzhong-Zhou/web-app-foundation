@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 6 November 2026
+# web-app-foundation — handoff, 7 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,16 +13,29 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 6 November 2026:
+On 7 November 2026:
 
-- **Customise Home,** decided in ADR-091: planned on 6 November, its
-  details in [ADR-091's amendment](adr/0091-home-redesigned.md), built
-  next on `customise-home` from the ignored `tmp/customise-home/brief.md`,
-  before Items and Movements. Tiles and Recently opened move and hide, by
-  buttons and by dragging; each person's arrangement is kept on their
-  membership; the default order follows what their role may do; and
-  Orders · Draft, hidden until shown, opens Orders oldest first. Its
-  boards are the canvas's row "Customise Home v2" and decision 64a's.
+- **Customise Home,** decided in ADR-091: planned on 6 November and
+  built on 6 and 7 November on `customise-home`, 78 commits, its pull
+  request open to merge once green; the as-built is in
+  [ADR-091's amendment](adr/0091-home-redesigned.md). Tiles and Recently
+  opened move and hide, by buttons and by dragging; each person's
+  arrangement is kept on their membership; the default order follows
+  what their role may do; Orders · Draft, hidden until shown, opens
+  Orders oldest first. Its reviews found 92, fixed 53, and filed #507 to
+  #514. Its boards are the canvas's row "Customise Home v2" and decisions
+  64a's and 81's.
+- **The router for `/build-from-brief`,** next, before Items: each step
+  names its model, Opus for new logic, design, reviews and fixes, tests
+  among them, Sonnet for dependencies, seeds, guides and docs, Haiku only
+  to run a command and report; the loop itself on Sonnet; the plan shown
+  before a run; a short summary for the chat, the full one in the
+  summaries file; a stop that says to run a step again on Opus; the
+  walkthrough's personas on Sonnet; and a check in the planning skill's
+  `evals.md`. With it: Customise Home's review findings 89, 90 and 91, a
+  shared `dragByKeyboard` test helper with its line in conventions.md,
+  and WebKit from Playwright's Linux image in the full verify. Its
+  ADR-089 amendment is planned in a fresh chat.
 - **[#506], the test of Home's More menu in Firefox:** merged on 6
   November as 965fdd76 and deployed with [#477] (Deploy run 42279308129),
   `/api/health` and `version.json` naming it with `apiRevision: 3`.
@@ -192,8 +205,9 @@ On 6 November 2026:
 
 - **The second translation review,** in ChatGPT, one chat per language:
   on the workbooks `node scripts/i18n-review.mjs export` wrote at
-  `19e1b7aa` (6 November 2026, 08:38), the Chinese 95% done on 6
-  November, the French next. The reviewer who reads only Chinese checks
+  `19e1b7aa` (6 November 2026, 08:38), the Chinese done on 7 November
+  and saved beside the export as `zh-Hans.reviewed.xlsx`, the French in a
+  chat of its own next. The reviewer who reads only Chinese checks
   the Chinese corrections before `import`; the next round is only what
   changed, `node scripts/i18n-review.mjs export --since 19e1b7aa`, and the
   corrections go into the translations' fix-up. The first round's export
@@ -213,9 +227,10 @@ On 6 November 2026:
 - **6 to 12 November:** what Dependabot has not opened comes of age; the
   next branch's dependency step takes, package by package, the newest
   version in range that is 7 days old that day (engineering.md, since 6
-  November). ADR-091's branch took `@types/node`, nodemailer and
-  dotenv-cli on 5 November. Of age and waiting, in Vancouver time:
-  eslint 10.14.0 on 6 November; the formatjs packages on 7 November;
+  November). Customise Home's branch took eslint 10.14.0, the Sentry
+  packages at 11.10.0 and `@smithy/core` 3.38.1 on 6 November, and
+  `@dnd-kit/react` 0.5.3 by the maintainer's exception. Of age and
+  waiting, in Vancouver time: the formatjs packages on 7 November;
   globals on 8 November; `@nestjs/swagger`, vitest, `@vitejs/plugin-react`
   and argon2 0.45.2 on 9 November, argon2's `allowScripts` entry in
   `server/package.json` changed to 0.45.2 with it; rimraf on 10 November;
@@ -269,6 +284,18 @@ On 6 November 2026:
 
 ## Still to do, by hand
 
+- **After Customise Home's merge,** in this order: the deploy's checks
+  (`render.md`), `/api/health` naming the merge with `apiRevision: 3`,
+  and `npm run migrate:all` on the Mac for migration 0079; a tab left
+  open across the deploy keeps working, and a reload shows Customise
+  Home; a drag on an older iPhone, iOS 16.4 to 16.7, with no Popover API;
+  Android WeChat in 中文, by touch; a phone held sideways in Customise
+  Home, Reset and Done reachable; `/triage` on the areas it touched, #514's
+  group among them, proposed `when-touched`; and the planning skill
+  packed from `main` and uploaded again, since the branch changed it.
+- **The small volume database's manifest,** ignored, was overwritten on
+  7 November: seed it again, or rebuild the manifest, before the next
+  small timed run on the Mac.
 - **After [#477]'s merge,** still to do: Home on a phone held sideways,
   about 844 × 390, the main action, what is late and the first tiles
   reachable; Home in WeChat or 360 in 中文, two columns of tiles and the
@@ -283,8 +310,9 @@ On 6 November 2026:
   - MC-4201 on the live site with a test item, set up again on the
     database of 5 November: one notice in the bell within the hour while
     the service is awake; then remove the point.
-- **The planning skill's `evals.md`:** prompt 6 for the skill uploaded on
-  6 November, after [#477]; 4 still waits for a patch that is refused.
+- **The planning skill's `evals.md`:** prompt 6, after the upload that
+  follows Customise Home's merge; 4 still waits for a patch that is
+  refused.
 - **[#245] in Safari and Edge, once deployed:** the page asked to translate
   into Chinese stays as written, a typed field included; WebKit and
   Firefox have known gaps with fields. What changes is filed.
@@ -348,8 +376,9 @@ request or a set of them:
    3. the design language ([#338], ADR-090): [#465], a docs pull
       request, as its as-built says;
    4. Home redesigned ([#335], ADR-091): [#477], merged on 6 November;
-      then Customise Home, a pull request of its own, as ADR-091's
-      amendment says (revised on 6 November 2026); then Items ([#476]),
+      then Customise Home, built on `customise-home`, its pull request
+      open; then the router for `/build-from-brief`, a small pull request;
+      then Items ([#476]),
       ADR-092 with canvas boards first, the page and the menu named Items
       · Articles · 物品, Products · 商品 the goods tab; then Movements
       ([#470]), ADR-093, right after, with Inventory's findings from

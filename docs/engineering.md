@@ -372,11 +372,12 @@ Each command in `server/`:
 3. append the hand-written parts (triggers, backfills) after a
    `--> statement-breakpoint`;
 4. run `npm run migrate:all`, for the dev, test and e2e databases;
-5. where `foundation_perf_large` exists, which `migrate:all` does not
-   reach, `DATABASE_URL=$PERF_DB_LARGE npm run migrate`, `PERF_DB_LARGE`
-   being that database's URL, as
+5. on each volume database that exists, which `migrate:all` does not
+   reach, `DATABASE_URL=<its URL> npm run migrate`: `foundation_perf_large`,
+   at `PERF_DB_LARGE` as
    [`server/perf/README.md`](../server/perf/README.md#running-it-locally)
-   sets it.
+   sets it, and the small one its ignored manifest, volume-small.json,
+   names (7 November 2026: three steps migrated an unused one).
 
 What a migration may take away while the running release reads it is
 [conventions.md, "Migrations against the running release (ADR-081)"](conventions.md#migrations-against-the-running-release-adr-081),
