@@ -165,19 +165,9 @@ where a step must act on it.
   rule with no test, or one where the code and its ADR disagree, is a
   finding for the batch.
 - **The reviews** are the step of the main session, run by `/review-step
-  <brief> <N> [choices]`, never in a `brief-step`; which reviews, in what
-  order, is [engineering.md, "The review step"][review-step], read
-  first. In its two prompts a step acts on:
-  1. **The findings.** Every review there, `/doctor prompt-audit`
-     asked for and waited for; every finding numbered and written to the
-     file the brief names, usually `tmp/adr-NNN/review.md`; nothing fixed,
-     `/simplify`'s included. Stop there: Bob chooses in the chat.
-  2. **The fixes.** The prompt names Bob's choices by their numbers. Each
-     fix is its own commit, verified with `--docs` or `--quick` by what it
-     touches; a finding left is filed as an issue
-     ([engineering.md, "Issues and labels"][issues]) or said in the pull
-     request. Then `scripts/verify.sh` in full, the push and the pull
-     request.
+  <brief> <N> [choices]`, never in a `brief-step`. Its two prompts, the
+  findings and then the fixes, are [engineering.md, "The review
+  step"][review-step], read first and followed as written there.
 - **The stop rule.** Only the step named. Past about 30 minutes, unless
   the brief names another limit, or at a change outside the files the step
   names, stop and report what is done and what is left, the last line
@@ -234,7 +224,6 @@ says, or what is needed, as `a decision`.
 [migrations]: ../../docs/conventions.md#migrations-against-the-running-release-adr-081
 [dependencies]: ../../docs/conventions.md#dependencies
 [tests]: ../../docs/conventions.md#tests
-[issues]: ../../docs/engineering.md#issues-and-labels
 [rules-files]: ../../docs/adr/0087-the-rules-written-down.md#decision--the-pilot-then-the-rest
 [seeds]: ../../docs/conventions.md#seeds
 [adr-089]: ../../docs/adr/0089-a-briefs-steps-in-a-row.md

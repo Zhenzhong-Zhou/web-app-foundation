@@ -9,12 +9,11 @@ effort: high
 
 # A brief's review step
 
-The reviews of a branch run in the main session, never in a subagent:
-they stop for Bob's choices, `/doctor prompt-audit` is typed in the
-session, and the reviews' own skills start helpers of their own
-([ADR-089][adr-089]). `/build-from-brief` runs on Sonnet and refuses
-such a step; this skill runs it on Opus, at high effort, for the turn
-that runs it ([the amendment][models]).
+This skill runs a brief's review step, the row whose Who is `Claude
+Code, main session`, in this session, on Opus at high effort for the
+turn that runs it ([the amendment][models]). Which reviews, in what
+order, why they stay in the main session, and the step's two prompts
+are [engineering.md, "The review step"][review-step], read first.
 
 ## 1. The arguments
 
@@ -32,18 +31,11 @@ it.
 ## 2. The step
 
 Before it, `TZ=America/Vancouver date '+%Y-%m-%d %H:%M'` and `date +%s`,
-kept for its summary. Then the step, in this session, by the rules in
+kept for its summary. Then the prompt the arguments name, in this
+session, as engineering.md's "The review step" says, by the rules in
 [`.claude/agents/brief-step.md`][step], read from the file: its sections
-1 and 2 throughout, and the reviews' two prompts as its section 3 says.
-
-1. **The findings,** without choices: every finding numbered, to the
-   file the brief names, and nothing fixed. `/doctor prompt-audit` is
-   asked for and waited for, as that section says; it runs on the
-   session's model, outside this skill's pin, so the ask says `/model
-   opus` first when the session is on another. Stop there: Bob chooses
-   in the chat.
-2. **The fixes,** with Bob's choices: each its own commit, then
-   `scripts/verify.sh` in full, the push and the pull request.
+1 and 2 throughout. The findings stop there, for Bob's choices in the
+chat.
 
 ## 3. The summary
 
@@ -60,6 +52,6 @@ As `brief-step`'s section 4 says: its `Model:` line, the five parts and
   the full summary is in `summaries.md` only. The last line is the
   summary's own.
 
-[adr-089]: ../../../docs/adr/0089-a-briefs-steps-in-a-row.md#decision--the-reviews-stay-in-the-main-session
+[review-step]: ../../../docs/engineering.md#the-review-step
 [models]: ../../../docs/adr/0089-a-briefs-steps-in-a-row.md#decision--the-loop-on-sonnet-the-reviews-on-opus
 [step]: ../../agents/brief-step.md
