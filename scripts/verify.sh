@@ -188,7 +188,8 @@ against_main() {
 # as a remote browser; '<loopback>' lets that browser reach this machine's
 # localhost:5273 and :3100, so the session cookies stay on localhost.
 # E2E_FIREFOX=1 gives the config its firefox project, which it leaves out
-# on a Mac. One container serves both browsers, one run after the other.
+# on a Mac; --project=webkit leaves that project unused. One container
+# serves both browsers, one run after the other, each the same call.
 # The image and the playwright it runs are the version of the client's
 # @playwright/test, read here, so a raise needs nothing in this file. The
 # container has a name of its own and a free port, so one started by hand
@@ -232,14 +233,15 @@ linux_accessibility() {
   done
   address="$(docker port "$BROWSERS_CONTAINER" 3333/tcp)"
 
-  (cd client && E2E_FIREFOX=1 PW_TEST_CONNECT_WS_ENDPOINT="ws://$address/" \
-    PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
-    npx playwright test e2e/accessibility.spec.ts --project=firefox)
-
-  step 'Client: the accessibility spec in Linux WebKit, from the same container'
-  (cd client && PW_TEST_CONNECT_WS_ENDPOINT="ws://$address/" \
-    PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
-    npx playwright test e2e/accessibility.spec.ts --project=webkit)
+  local project
+  for project in firefox webkit; do
+    if [[ "$project" == webkit ]]; then
+      step 'Client: the accessibility spec in Linux WebKit, from the same container'
+    fi
+    (cd client && E2E_FIREFOX=1 PW_TEST_CONNECT_WS_ENDPOINT="ws://$address/" \
+      PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
+      npx playwright test e2e/accessibility.spec.ts --project="$project")
+  done
 }
 
 # --docs stands in for --quick only when the docs' checks are all a change
