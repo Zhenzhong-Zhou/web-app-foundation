@@ -152,18 +152,24 @@ steps; this section stays the rule.
   commit, and uploaded by hand once each change has merged (ADR-084); its
   first step compares the uploaded copy with `main`'s.
 - **The build, through `/build-from-brief`** (from ADR-083; in a row
-  from ADR-089). The brief and the canvas's boards go in `tmp/adr-NNN/`,
+  from ADR-089; each step on its own model from ADR-089's amendment of
+  November 2026). The brief and the canvas's boards go in `tmp/adr-NNN/`,
   ignored by git and by markdownlint, so `scripts/verify.sh` does not
   lint its Markdown. A brief's steps table names who runs each step:
   Claude Code, Claude Code's main session (the reviews), the chat or
-  Bob. `/build-from-brief tmp/adr-NNN/brief.md from <N>` runs step N and
-  each one after it, each in a new `brief-step` subagent, whose
+  Bob, and the model of each Claude Code step
+  ([Which model runs a step](#which-model-runs-a-step)).
+  `/build-from-brief tmp/adr-NNN/brief.md from <N>` runs step N and
+  each one after it, each in a new `brief-step` subagent on the model its
+  row names, whose
   `.claude/agents/brief-step.md` holds the ground rules every brief
   repeated, so a brief holds its decisions and its steps;
   `/build-from-brief tmp/adr-NNN/brief.md <N>` runs one step the same
   way. A run stops at a step that is the chat's or Bob's; before a
-  main-session step; at a step BLOCKED, by a question the brief does not
-  answer or by verify failing after one honest retry; before anything
+  main-session step, which it refuses, naming `/review-step`; at a step
+  BLOCKED, by a question the brief does not
+  answer or by verify failing after one honest retry; at a summary that
+  names another model than its row's; before anything
   that would push, open a pull request, merge or change `main`; after
   the current step when a file named `STOP` is beside the brief, which
   the run removes; and at the stop rule. Each step's summary is appended
@@ -176,8 +182,9 @@ steps; this section stays the rule.
   building, the chat changes the brief only when an answer changes a
   step not yet run, and keeps the as-built notes in the chat (29 October
   2026): #260's brief was sent again after nearly every step. The review
-  step runs in the main session, in two prompts, each step named alone:
-  the reviews, `/doctor prompt-audit` among them, write
+  step runs in the main session, on Opus, by `/review-step
+  tmp/adr-NNN/brief.md <N>`, in two prompts, the second with Bob's
+  choices after the number: the reviews, `/doctor prompt-audit` among them, write
   their findings, numbered, to `tmp/adr-NNN/review.md` and stop for Bob's
   choices; then the fixes by number, each verified with `--docs` or
   `--quick` by what it touches ([Commits](#commits)), the full verify, the
@@ -186,6 +193,40 @@ steps; this section stays the rule.
   contradictions and references to files that no longer exist. Bob
   types it in the session, since a session cannot run it: the session
   asks for it, and numbers its findings with the rest. It changes nothing itself.
+  Around each step, the loop does this (ADR-089's amendment):
+  - **It prints the plan first.** `from <N>` lists each step up to the
+    next stop with its model and its minutes from the brief's
+    time-and-cost table, and where the run will stop and why; then it
+    starts, asking nothing, since a reply would be a new turn outside the
+    loop's Sonnet pin. `/build-from-brief tmp/adr-NNN/brief.md plan`
+    prints the plan of the whole brief and runs nothing.
+  - **It refuses to start,** naming why, when the branch is not the
+    brief's; when a tracked file has changes; when Claude Code is older
+    than 2.1.251, the first to put the model named for one subagent
+    above the one in its file; when `CLAUDE_CODE_SUBAGENT_MODEL` or
+    `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is set, either of which can put
+    every step on one model; or when Docker is not running and a step in
+    the run verifies with more than `--docs`. A steps table with no model
+    for a Claude Code step, or another value than `opus`, `sonnet` or
+    `haiku`, is refused too, naming the step.
+  - **The model check:** each step starts on its row's model, and its
+    summary's first line, `Model: …`, must name that family. Another, or
+    none, stops the run as BLOCKED, naming both, so no step drops to
+    another model unseen.
+  - **The escalation, once a run:** a Sonnet or Haiku step that ends
+    `BLOCKED: verify (code)` or `BLOCKED: model`, having committed
+    nothing, has its work set aside (`git stash`) and saved as
+    `step-N-<model>.diff` beside the brief, and is run again on Opus,
+    told where the diff is and why the first attempt stopped, and never
+    applying it. A failure of the environment (Docker, the database, the
+    network, a port), a step that committed, and a second escalation stop
+    the run for Bob.
+  - **Two summaries:** the full one is appended to `summaries.md` under a
+    heading that gives the step's model, its minutes and its tokens (the
+    count the Agent tool shows, otherwise `tokens not shown`); the short
+    one, `## For the chat`, 10 to 15 lines, is printed at a stop for Bob
+    to paste. The as-built compares the minutes and tokens with the
+    brief's time-and-cost table.
 - **`caffeinate -dims` in a second terminal** during a long Claude Code
   step, such as the full verify (October 2026): a Mac asleep cut one off.
 - **A second working folder,** for a branch built while another runs in
@@ -311,6 +352,32 @@ steps; this section stays the rule.
   - `client/src/…` (feature folders, `lib/api-names.ts`, `auth/permissions.ts`);
   - `client/e2e/…`;
   - `docs/adr/NNNN-<slug>.md`.
+
+### Which model runs a step
+
+ADR-089's amendment (6 and 7 November 2026). A brief's steps table has a
+Model column, which the chat sets when it plans, from this table:
+
+| Model | The step's work |
+| --- | --- |
+| `opus` | New server or client logic; design; the reviews and their fixes; a test written with them; any new or changed browser test |
+| `sonnet` | Dependencies; seeds; Help guides; docs; a unit or server test copied from one beside it |
+| `haiku` | Only a step that runs commands and reports, never one that writes code |
+
+- **A step above its model stops,** with `BLOCKED: model` and before it
+  commits anything, and the loop runs it again on Opus
+  ([the escalation](#how-code-is-delivered)). The one that is always
+  above Sonnet and Haiku is a browser test, a `.spec.ts` in `client/e2e/`
+  or a file in `client/e2e/support/`: a check written on Sonnet raced the
+  page's own read in CI (3cdebcd7), and Linux WebKit started a keyboard
+  drag a render later than the Mac's (5631d0d8).
+- **The loop itself runs on Sonnet,** since it reads this column, starts
+  each step and appends its summary, and judges none. The review step
+  runs on Opus, by `/review-step`; the walkthrough's personas run on
+  Sonnet.
+- **The table follows what is measured:** each summary's heading gives
+  its minutes and tokens, the as-built sets them against the brief's
+  time-and-cost table, and this one changes where they disagree.
 
 ## Process
 

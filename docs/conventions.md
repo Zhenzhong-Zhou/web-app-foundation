@@ -685,6 +685,14 @@ The error tracker hears of real faults only (ADR-084).
   turns the run red, and the run's summary names it and how often it
   failed. The hunt files nothing and retries nothing: each test it names is
   filed by hand as a "Flaky:" issue, as above.
+- **A new or changed test runs before its commit** (ADR-089's amendment),
+  repeatedly, so a flake shows before CI finds it: a client unit test five times
+  (`npx vitest run <file>` in `client/`, five runs); a browser test five
+  times (`npx playwright test <spec> --repeat-each=5` in `client/`, the
+  account spec's password tests as the bullet above says); a server
+  end-to-end test three times (`server/scripts/e2e-flake-hunt.sh 3
+  <suite>`). A test that fails in any of them is not committed, and the
+  commit's step gives the command and the result in its summary.
 
 ---
 
