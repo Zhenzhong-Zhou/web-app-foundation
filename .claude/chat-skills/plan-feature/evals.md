@@ -85,3 +85,17 @@ finding for the as-built and one question for him.*
 - Each prompt is one line, `/fix-issue <N>`, not indented, with
   `leave <path>` only for a branch not pushed.
 - Five parts, Decisions needed present.
+
+## 7. A brief's models
+
+> Write the brief for ADR-092.
+
+- Every Claude Code step has a model in the steps table's Model column.
+- Opus has new logic, design, the reviews and their fixes, and every
+  browser test.
+- Sonnet has dependencies, seeds, guides, docs and tests copied from one
+  beside them.
+- Haiku has only a step that runs commands and reports.
+- The reviews are the row `Claude Code, main session`, run by
+  `/review-step`.
+- The time-and-cost table names each step's model.
