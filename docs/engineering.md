@@ -8,20 +8,9 @@
   Small chores (a CI line, a lint rule, a docs tidy) ride along in the next
   feature PR rather than getting one of their own.
 - **The reviews, before the PR is opened** (21 October 2026; from
-  ADR-081 four, and from ADR-086 five): every feature branch runs, for
-  any PR that changes what a person sees, the walkthrough panel on each
-  journey its change touches, `/usability-walkthrough panel <journey>`,
-  the journey's personas at once (ADR-090;
-  `.claude/skills/usability-walkthrough/journeys.md`, a journey added
-  there first when its task is new), then `/simplify`,
-  then `/code-review`, then
-  `/production-readiness` on the sections the change touches
-  ([conventions.md, "Production readiness"](conventions.md#production-readiness)),
-  then `/doctor prompt-audit` on Claude's instruction files
-  ([How code is delivered](#how-code-is-delivered)). Their findings are
-  numbered together and nothing is fixed until Bob chooses; each fix
-  chosen is its own commit. The PR description names the journeys
-  walked and their personas. `/usability-walkthrough` was
+  ADR-081 four, and from ADR-086 five): every feature branch ends with
+  [the review step](#the-review-step), which says which reviews, in what
+  order, and how their findings are chosen. `/usability-walkthrough` was
   missed on several recent PRs, so ADR-079's branch walked
   two journeys, to make up for ADR-077 and ADR-078.
 - **Claude Code Review on Sonnet** (October 2026): the reviews in each
@@ -182,17 +171,8 @@ steps; this section stays the rule.
   building, the chat changes the brief only when an answer changes a
   step not yet run, and keeps the as-built notes in the chat (29 October
   2026): #260's brief was sent again after nearly every step. The review
-  step runs in the main session, on Opus, by `/review-step
-  tmp/adr-NNN/brief.md <N>`, in two prompts, the second with Bob's
-  choices after the number: the reviews, `/doctor prompt-audit` among them, write
-  their findings, numbered, to `tmp/adr-NNN/review.md` and stop for Bob's
-  choices; then the fixes by number, each verified with `--docs` or
-  `--quick` by what it touches ([Commits](#commits)), the full verify, the
-  push and the PR. `/doctor prompt-audit` is Claude Code's own audit of
-  its instruction files (`CLAUDE.md`, `.claude/rules/`, the skills) for
-  contradictions and references to files that no longer exist. Bob
-  types it in the session, since a session cannot run it: the session
-  asks for it, and numbers its findings with the rest. It changes nothing itself.
+  step runs in the main session, by `/review-step`, in two prompts
+  ([The review step](#the-review-step)).
   Around each step, the loop does this (ADR-089's amendment):
   - **It prints the plan first.** `from <N>` lists each step up to the
     next stop with its model and its minutes from the brief's
@@ -379,6 +359,47 @@ Model column, which the chat sets when it plans, from this table:
   its minutes and tokens, the as-built sets them against the brief's
   time-and-cost table, and this one changes where they disagree.
 
+### The review step
+
+The last Claude Code step of a brief, before its pull request is opened,
+and the one row whose Who is `Claude Code, main session`. It runs in the
+session, on Opus at high effort, by `/review-step tmp/adr-NNN/brief.md
+<N>`; `/build-from-brief` refuses it and names that command. It stays in
+the main session, never in a `brief-step`, because it stops for Bob's
+choices, `/doctor prompt-audit` is typed in the session, and the reviews'
+own skills start helpers of their own. Two prompts, the same command
+twice:
+
+1. **The findings.** The reviews, in this order:
+   1. the walkthrough panel, `/usability-walkthrough panel <journey>`, on
+      each journey the change touches, the journey's personas at once, for
+      any PR that changes what a person sees (ADR-090). The brief names
+      the journeys, from `.claude/skills/usability-walkthrough/journeys.md`;
+      a journey is added there first when its task is new, and a persona to
+      `personas.md` beside it;
+   2. `/simplify`;
+   3. `/code-review`;
+   4. `/production-readiness` on the sections the change touches
+      ([conventions.md, "Production readiness"](conventions.md#production-readiness));
+   5. `/doctor prompt-audit`, Claude Code's own audit of its instruction
+      files (`CLAUDE.md`, `.claude/rules/`, the skills) for contradictions
+      and references to files that no longer exist. Bob types it in the
+      session, since a session cannot run it: the session asks for it and
+      waits, since it is a step of the reviews and not a decision, and
+      numbers its findings with the rest. It runs on the session's model,
+      so the ask says `/model opus` first. It changes nothing itself.
+
+   Every finding is numbered, together, and written to the file the brief
+   names, usually `tmp/adr-NNN/review.md`. Nothing is fixed, `/simplify`'s
+   included: the prompt stops there for Bob's choices in the chat.
+2. **The fixes.** The same command with Bob's choices after the step's
+   number, by their numbers. Each fix is its own commit, verified with
+   `--docs` or `--quick` by what it touches ([Commits](#commits)); a
+   finding left is filed as an issue ([Issues and
+   labels](#issues-and-labels)) or said in the PR. Then
+   `scripts/verify.sh` in full, the push and the PR, whose description
+   names the journeys walked and their personas.
+
 ## Process
 
 - ADR before code for each new area. Server first with e2e tests, then the
@@ -413,7 +434,7 @@ Model column, which the chat sets when it plans, from this table:
 - **At each release,** before tagging it, set both packages' version to
   it: `npm version <x.y.z> --no-git-tag-version` in `server/` and in
   `client/`; and run `/doctor prompt-audit`
-  ([How code is delivered](#how-code-is-delivered)). Release notes are
+  ([The review step](#the-review-step)). Release notes are
   release notes only: they say nothing of manual checks or the
   walkthrough.
 - A type change on the client means fixing the test fixtures that build that

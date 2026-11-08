@@ -164,24 +164,14 @@ where a step must act on it.
   written from that area's code and tests, not from its ADRs alone. A
   rule with no test, or one where the code and its ADR disagree, is a
   finding for the batch.
-- **The reviews, in two prompts** ([engineering.md, "How code is
-  delivered"][delivered]), run by `/review-step <brief> <N> [choices]` in
-  the main session, never in a `brief-step`:
-  1. **The findings.** The walkthrough panel,
-     `/usability-walkthrough panel <journey>`, on each journey the brief
-     names from `.claude/skills/usability-walkthrough/journeys.md`, for
-     any change a person sees; a new journey is added to `journeys.md`
-     first, and a new persona to `personas.md` beside it; `/simplify`;
-     `/code-review`;
-     `/production-readiness` on the sections the change touches;
-     `/doctor prompt-audit`, which Bob types in the session, since a
-     session cannot run it:
-     ask for it and wait, since it is a step of the reviews, not a
-     decision; then number its findings with the rest.
-     Every finding numbered and written to the file the brief names,
-     usually `tmp/adr-NNN/review.md`, and nothing fixed, `/simplify`'s
-     included.
-     Stop there: Bob chooses in the chat.
+- **The reviews** are the step of the main session, run by `/review-step
+  <brief> <N> [choices]`, never in a `brief-step`; which reviews, in what
+  order, is [engineering.md, "The review step"][review-step], read
+  first. In its two prompts a step acts on:
+  1. **The findings.** Every review there, `/doctor prompt-audit`
+     asked for and waited for; every finding numbered and written to the
+     file the brief names, usually `tmp/adr-NNN/review.md`; nothing fixed,
+     `/simplify`'s included. Stop there: Bob chooses in the chat.
   2. **The fixes.** The prompt names Bob's choices by their numbers. Each
      fix is its own commit, verified with `--docs` or `--quick` by what it
      touches; a finding left is filed as an issue
@@ -226,6 +216,7 @@ says, or what is needed, as `a decision`.
 [how-to-work]: ../../CLAUDE.md#how-to-work
 [rules]: ../../CLAUDE.md#rules-of-this-repository
 [delivered]: ../../docs/engineering.md#how-code-is-delivered
+[review-step]: ../../docs/engineering.md#the-review-step
 [process]: ../../docs/engineering.md#process
 [commits]: ../../docs/engineering.md#commits
 [api]: ../../docs/conventions.md#the-api-contract
