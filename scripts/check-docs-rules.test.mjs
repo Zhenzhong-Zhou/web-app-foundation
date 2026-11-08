@@ -266,6 +266,34 @@ paths:
   ]);
 });
 
+/**
+ * A file of Claude Code's rules with `count` lines after its front matter,
+ * opening as each does: a blank line, its heading, a blank line, its rules.
+ */
+const rulesOf = (area, count) => `---
+paths:
+  - "server/src/modules/invoices/**"
+---
+${[
+  "",
+  `# ${area}: the code rules, for Claude`,
+  "",
+  ...Array.from({ length: count - 3 }, (_, i) => `- Rule ${i + 1}.`),
+].join("\n")}
+`;
+
+test("Claude Code's rules: 40 lines after the front matter pass, and 41 fail, naming the file and its count", (t) => {
+  const root = fixture(t, {
+    ...AREA,
+    ".claude/rules/invoices.md": rulesOf("Invoices", 40),
+    ".claude/rules/stock.md": rulesOf("Stock", 41),
+  });
+
+  assert.deepEqual(failures(check(root)), [
+    ".claude/rules/stock.md:1: 41 lines after the front matter — more than 40 (ADR-087): keep code rules only, each naming its home, and nothing CLAUDE.md or another area's file says",
+  ]);
+});
+
 test("the notice names a rules file left alone while its tests or area changed, and never fails", (t) => {
   const root = fixture(t, {
     ...AREA,

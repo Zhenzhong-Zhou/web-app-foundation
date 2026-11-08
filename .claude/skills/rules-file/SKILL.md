@@ -126,11 +126,12 @@ links, and where the why, the how-to and the README are.
 - **Then the heading,** `# <Area>: the code rules, for Claude`, the line
   saying when it loads, and a paragraph naming `docs/rules/<area>.md` and
   the same-commit rule.
-- **Code rules only, under 40 lines after the front matter:** what to
-  keep true when changing the area's code, each naming its home: an ADR,
-  a linked section of `docs/conventions.md` or `docs/engineering.md`, or
-  an ESLint rule. A rule with no home is a finding, not a line. Nothing
-  `CLAUDE.md` or another area's file already says.
+- **Code rules only, at most 40 lines after the front matter, which
+  `scripts/check-docs.mjs` checks:** what to keep true when changing the
+  area's code, each naming its home: an ADR, a linked section of
+  `docs/conventions.md` or `docs/engineering.md`, or an ESLint rule. A
+  rule with no home is a finding, not a line. Nothing `CLAUDE.md` or
+  another area's file already says.
 
 ## 5. List it, and check
 

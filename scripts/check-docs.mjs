@@ -40,7 +40,8 @@
  *   test it cites as that test's file has it, and each manual check by
  *   an id docs/manual-checks.md has (rulesFiles);
  * - each file of Claude Code's rules in .claude/rules/ has a paths list,
- *   and each pattern matches a file (claudeRules);
+ *   each pattern matches a file, and it holds at most 40 lines after its
+ *   front matter (claudeRules);
  * - each manual check's id is given once in docs/manual-checks.md, a
  *   regression check's MC-R ids included, so two branches that took one
  *   number fail rather than both stand (manualChecks, ADR-089's
@@ -668,19 +669,46 @@ function expandBraces(pattern) {
  */
 const fixedStart = (glob) => /^[^*?[{(!@+\\]*/.exec(glob)[0];
 
+/** The most lines a file of Claude Code's rules holds after its front matter (ADR-087). */
+const RULES_LINES = 40;
+
+/**
+ * A file's lines after its front matter, blank ones included; the last
+ * newline ends a line rather than starting one. The front matter is not
+ * counted, since its paths list grows with its area. A file without
+ * front matter counts whole.
+ */
+function linesAfterFrontMatter(file) {
+  const lines = readFileSync(path.join(ROOT, file), "utf8")
+    .replace(/\n$/, "")
+    .split("\n");
+  return lines.length - (frontMatterEnd(lines) + 1);
+}
+
 /**
  * Claude Code's rules by area (ADR-087): each file under .claude/rules/
  * opens with front matter holding a `paths` list, since one without
- * loads in every session, which is CLAUDE.md's job; and each pattern, its
+ * loads in every session, which is CLAUDE.md's job; each pattern, its
  * braces expanded, matches a file in the repository, since Claude Code
- * skips one that matches nothing without a word.
+ * skips one that matches nothing without a word; and the rules after the
+ * front matter run to at most RULES_LINES lines, since a file loads with
+ * every file its paths match and stays in context (ADR-089's amendment,
+ * finding 91).
  */
 function claudeRules({ files }) {
   const known = [...files];
   const rules = known.filter((file) => CLAUDE_RULE.test(file)).sort();
   const failures = [];
   let checked = 0;
+  let longest = 0;
   for (const file of rules) {
+    const length = linesAfterFrontMatter(file);
+    longest = Math.max(longest, length);
+    if (length > RULES_LINES) {
+      failures.push(
+        `${file}:1: ${length} lines after the front matter — more than ${RULES_LINES} (ADR-087): keep code rules only, each naming its home, and nothing CLAUDE.md or another area's file says`,
+      );
+    }
     const { failure, patterns } = pathsIn(file);
     if (failure) {
       failures.push(failure);
@@ -703,7 +731,7 @@ function claudeRules({ files }) {
   }
   return {
     failures,
-    summary: `Claude Code's rules in .claude/rules/: ${rules.length}, each with its paths; ${checked} patterns, braces expanded, each matching a file.`,
+    summary: `Claude Code's rules in .claude/rules/: ${rules.length}, each with its paths; ${checked} patterns, braces expanded, each matching a file; each at most ${RULES_LINES} lines after its front matter, the longest ${longest}.`,
   };
 }
 
