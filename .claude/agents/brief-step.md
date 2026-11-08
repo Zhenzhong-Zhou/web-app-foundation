@@ -71,7 +71,8 @@ where a step must act on it.
   what it is, which the loop runs again on Opus.
 - **On Sonnet or Haiku, a step never writes or changes a browser test,**
   a file in `client/e2e/` ending `.spec.ts`, or one in
-  `client/e2e/support/`. It stops with `BLOCKED: model` before it starts
+  `client/e2e/support/` ([engineering.md, "Which model runs a
+  step"][model-table]). It stops with `BLOCKED: model` before it starts
   that part: before anything, when the step's text names it, so nothing
   is committed and the loop can run the whole step on Opus.
 
@@ -228,3 +229,4 @@ says, or what is needed, as `a decision`.
 [seeds]: ../../docs/conventions.md#seeds
 [adr-089]: ../../docs/adr/0089-a-briefs-steps-in-a-row.md
 [models]: ../../docs/adr/0089-a-briefs-steps-in-a-row.md#amendment-november-2026--each-step-on-the-model-its-work-needs
+[model-table]: ../../docs/engineering.md#which-model-runs-a-step
