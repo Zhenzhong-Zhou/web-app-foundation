@@ -328,8 +328,8 @@ Model column, which the chat sets when it plans, from this table:
   ([the escalation](#how-code-is-delivered)). The one that is always
   above Sonnet and Haiku is a browser test, a `.spec.ts` in `client/e2e/`
   or a file in `client/e2e/support/`: a check written on Sonnet raced the
-  page's own read in CI (3cdebcd7), and Linux WebKit started a keyboard
-  drag a render later than the Mac's (5631d0d8).
+  page's own read in CI (3cdebcd7), and a keyboard drag's keys came too
+  soon for Linux WebKit (5631d0d8, [conventions.md, Tests](conventions.md#tests)).
 - **The loop itself runs on Sonnet,** since it reads this column, starts
   each step and appends its summary, and judges none. The review step
   runs on Opus, by `/review-step`; the walkthrough's personas run on
@@ -500,8 +500,8 @@ reports success.
   The full run also checks `e2e/accessibility.spec.ts` in Firefox and in
   Linux WebKit, from one container of Playwright's Linux image in Docker
   ([conventions.md, Supported browsers](conventions.md#supported-browsers)),
-  which a pull request's CI, Chromium alone, does not. Linux WebKit's
-  timing differs from the Mac's WebKit, which the client's suite runs.
+  which a pull request's CI, Chromium alone, does not; Linux WebKit's
+  timing differs from the Mac's ([conventions.md, Tests](conventions.md#tests)).
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
 - Before each commit, `scripts/verify.sh --quick`; or `--docs`, in

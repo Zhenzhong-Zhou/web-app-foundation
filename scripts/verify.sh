@@ -40,8 +40,8 @@
 # image in Docker, as conventions.md's "Firefox on such a Mac" does by
 # hand, at the client's Playwright version, and WebKit from the same
 # container. The client's suite runs the Mac's WebKit, whose timing
-# differs from Linux WebKit's: Linux WebKit started a keyboard drag a
-# render later (5631d0d8), and showed a flake the Mac's never did (#232).
+# differs from Linux WebKit's (#232, and 5631d0d8 in conventions.md's
+# "Tests").
 # It needs the network, and stops the run when the container cannot start.
 #
 # Not run here, though CI runs it: npm run seed:demo, which would add a demo
