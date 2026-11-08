@@ -1088,14 +1088,14 @@ test('Recently opened switched off in Customise Home is saved off and gone from 
   const saved = layoutWrite(page);
   await customising(page).getByRole('button', { name: 'Done' }).click();
   expect((await saved).postDataJSON()).toMatchObject({ recent: false });
+  // Closed once saved and Home read again, so the server has it now.
+  await expect(customising(page)).toBeHidden();
 
-  const read = page.waitForResponse(
-    (response) =>
-      response.url().endsWith('/v1/home') &&
-      response.request().method() === 'GET',
-  );
+  // Read by the API, not caught off the page: Done's own read of Home can
+  // land after the reload starts, its body gone with the page.
   await page.reload();
-  expect(await (await read).json()).toMatchObject({ recent: false });
+  const home = await freshOrg.api.get('/v1/home');
+  expect(await home.json()).toMatchObject({ recent: false });
   await expect(homeTiles(page).first()).toBeVisible();
   await expect(
     page.getByRole('region', { name: 'Recently opened' }),
