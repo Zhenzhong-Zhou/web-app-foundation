@@ -25,20 +25,22 @@ On 7 November 2026:
   Orders oldest first. Its reviews found 92, fixed 53, and filed #507 to
   #514. Its boards are the canvas's row "Customise Home v2" and decisions
   64a's and 81's.
-- **The router for `/build-from-brief`,** next, before Items: planned on
-  7 November as [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md),
-  built on `build-router`. Each step names its model, from a default
-  table: Opus for new logic, design, reviews and fixes, browser tests
-  among them; Sonnet for dependencies, seeds, guides and docs; Haiku only
-  to run a command and report. The loop runs on Sonnet and the reviews
-  on Opus, through a new `/review-step`; a Sonnet or Haiku step that
-  fails on its code goes again on Opus by itself, once a run; a run shows
-  its plan and checks the branch, the tree and Claude Code's version
-  first; each stop prints a short summary with its model, minutes and
-  tokens; and CI burns in the browser specs a pull request changes. With
-  it: Customise Home's review findings 89, 90 and 91, one helper for a
-  keyboard drag, Linux WebKit in the full verify, and a seventh prompt in
-  the planning skill's `evals.md`.
+- **The router for `/build-from-brief`,** [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md):
+  planned on 7 November and built on 7 and 8 November on `build-router`,
+  40 commits, [#518] open with every check green, to merge once the
+  as-built is pushed; the as-built is in the amendment. Each step runs on
+  the model its brief names, from engineering.md's "Which model runs a
+  step"; a Sonnet or Haiku step that fails on its own code runs again on
+  Opus, once a run; a run shows its plan and checks the branch, the tree
+  and Claude Code's version first; each stop prints a short summary with
+  its model, minutes and tokens; the reviews run through `/review-step`.
+  The loop runs on the session's model, kept on Opus by the Mac's own
+  settings file, settings.local.json in `.claude/`, since a skill's
+  model holds one turn.
+  CI burns in the browser specs a pull request changes. With it:
+  Customise Home's review findings 89, 90 and 91, one helper for a
+  keyboard drag, Linux WebKit in the full verify, and [#516] and [#517]
+  filed. The steps took about half the brief's guessed time.
 - **[#506], the test of Home's More menu in Firefox:** merged on 6
   November as 965fdd76 and deployed with [#477] (Deploy run 42279308129),
   `/api/health` and `version.json` naming it with `apiRevision: 3`.
@@ -228,22 +230,23 @@ On 7 November 2026:
   merges once green, one at a time. [#403] makes Claude Code Review skip
   them, since a run Dependabot starts is refused by the action and gets
   none of the repository's secrets.
-- **6 to 12 November:** what Dependabot has not opened comes of age; the
+- **9 to 15 November:** what Dependabot has not opened comes of age; the
   next branch's dependency step takes, package by package, the newest
   version in range that is 7 days old that day (engineering.md, since 6
-  November). Customise Home's branch took eslint 10.14.0, the Sentry
-  packages at 11.10.0 and `@smithy/core` 3.38.1 on 6 November, and
-  `@dnd-kit/react` 0.5.3 by the maintainer's exception. Of age and
-  waiting, in Vancouver time: the formatjs packages on 7 November;
-  globals on 8 November; `@nestjs/swagger`, vitest, `@vitejs/plugin-react`
-  and argon2 0.45.2 on 9 November, argon2's `allowScripts` entry in
-  `server/package.json` changed to 0.45.2 with it; rimraf on 10 November;
-  the Nest packages at 12.3.3, `@nestjs/config` 12.1.0 and vite on 11
-  November; the Sentry packages at 11.11.0, which close alert 9,
-  `@playwright/test` 1.65.0, after which `npx playwright install`, and
-  msw on 12 November. `@aws-sdk/client-s3` publishes almost daily, so only
-  its newest version of age is ever taken. Dependabot's alerts 9, 11 and
-  12 wait for their upstreams ([#446]).
+  November). The router's branch took the formatjs packages and globals
+  17.14.0. Of age and waiting, in Vancouver time: `@nestjs/swagger`
+  12.1.0, vitest, `@vitejs/plugin-react` and, at 17:10, argon2 0.45.2 on
+  9 November, argon2's `allowScripts` entry in `server/package.json`
+  changed to 0.45.2 with it; rimraf on 10 November; the Nest packages at
+  12.3.3, `@nestjs/config` 12.1.0 and vite on 11 November; the Sentry
+  packages at 11.11.0, which close alert 9, `@playwright/test` 1.65.0,
+  after which `npx playwright install`, and msw on 12 November; the Nest
+  packages at 12.4.0, `@nestjs/cli`, `@nestjs/schematics`, and
+  `@nestjs/config` and `@nestjs/swagger` at 12.1.1 on 13 November;
+  supertest and nodemailer on 14 November; pdfmake 0.3.14 on 15
+  November. `@aws-sdk/client-s3` publishes almost daily, so only its
+  newest version of age is ever taken. Dependabot's alerts 9, 11 and 12
+  wait for their upstreams ([#446]).
 - **The translation review:** done on 2 November with the API credits,
   against the glossary: the catalogues' findings in [#371] to [#397],
   one area each, and the Help guides' in [#398]. A second pass, for how
@@ -288,6 +291,13 @@ On 7 November 2026:
 
 ## Still to do, by hand
 
+- **After [#518]'s merge,** in this order: restart Claude Code, so it
+  reads the loop's skill without its pin; the planning skill packed from
+  `main` and uploaded; `evals.md`'s prompts 6 and 7 walked in a new chat;
+  and `/triage` on the areas it touched, docs and ops. On any new
+  machine: `"model": "opus"` in settings.local.json in `.claude/`, that
+  file listed in the clone's own exclude file (`.git/info/exclude`), so
+  the loop runs on Opus.
 - **After Customise Home's merge** ([#515]), still to do: a tab left
   open across the deploy keeps working, and a reload shows Customise
   Home; a drag on an older iPhone, iOS 16.4 to 16.7, with no Popover API;
@@ -314,9 +324,8 @@ On 7 November 2026:
   - MC-4201 on the live site with a test item, set up again on the
     database of 5 November: one notice in the bell within the hour while
     the service is awake; then remove the point.
-- **The planning skill's `evals.md`:** prompt 6, now that the upload
-  after Customise Home's merge is done; prompt 7 after the router's
-  upload; 4 still waits for a patch that is refused.
+- **The planning skill's `evals.md`:** prompts 6 and 7 after the
+  router's upload; 4 still waits for a patch that is refused.
 - **[#245] in Safari and Edge, once deployed:** the page asked to translate
   into Chinese stays as written, a typed field included; WebKit and
   Firefox have known gaps with fields. What changes is filed.
@@ -381,8 +390,7 @@ request or a set of them:
       request, as its as-built says;
    4. Home redesigned ([#335], ADR-091): [#477], merged on 6 November;
       then Customise Home, merged on 7 November ([#515]); then the
-      router for `/build-from-brief`, ADR-089's amendment, on
-      `build-router`;
+      router for `/build-from-brief`, ADR-089's amendment, [#518];
       then Items ([#476]),
       ADR-092 with canvas boards first, the page and the menu named Items
       · Articles · 物品, Products · 商品 the goods tab; then Movements
@@ -651,3 +659,6 @@ Not repeated here; each list has one home:
 [#505]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/505
 [#506]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/506
 [#515]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/515
+[#516]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/516
+[#517]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/517
+[#518]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/518

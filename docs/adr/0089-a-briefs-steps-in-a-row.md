@@ -454,7 +454,8 @@ it names, #505, #507 and #514 (`scripts/adr-check.mjs`, 7 November
     change to a screen reads, with finding 91; and 22's repeats in
     `.claude/agents/walkthrough.md`.
   - #505's 93: a test that Home's time line is not a live region, in
-    `client/e2e/home.spec.ts`, which the drag helper changes.
+    `client/e2e/home.spec.ts`, which the drag helper changes. As built,
+    it was already done in #515 (4c231598), so nothing was left to take.
 - **Not fired, and left:**
   - #467's 13 (a `tools:` line for the walker), 22's report fields, 16
     and 18 each change what a panel does, and only a walk proves them.
@@ -512,6 +513,15 @@ it names, #505, #507 and #514 (`scripts/adr-check.mjs`, 7 November
   on, and a model other than the brief's stops the run.
 - **The walkthrough's personas run on Sonnet** (`walkthrough.md`), and
   the panel merges their reports in the review step's session, on Opus.
+
+**As built (review finding 27):** a skill's model holds for one turn,
+and each step's result comes back in a new turn, so the Sonnet pin
+reached only a run's first step. The loop has no model of its own: it
+runs on the session's model, kept on Opus by `"model": "opus"` in the
+maintainer's `.claude/settings.local.json`, which git never sees.
+`/review-step` keeps its pin for its first turn, and the session's Opus
+holds the rest. Each step's own model is unaffected, since the loop
+still names it when it starts the step.
 
 ### Decision — a failed step escalates once to Opus
 
@@ -595,7 +605,8 @@ default table.
 - **The reviews under the loop's Sonnet pin:** they are the work Opus is
   for.
 - **The loop on Opus,** as a lead agent is in a research system: the
-  planning is the chat's, and the loop judges nothing.
+  planning is the chat's, and the loop judges nothing. As built, it runs
+  on the session's Opus all the same, since a pin holds one turn.
 - **Escalation by hand after a stop,** the first wording: a stop for
   what the loop can decide on an objective check.
 - **Opus going on from the failed attempt's changes:** it would inherit
@@ -616,6 +627,14 @@ default table.
   slow or wasteful at its model's default effort.
 - **Server end-to-end tests burned in by CI.** Trigger: a server test
   that passes three times on the Mac and then flakes in CI.
+- **The loop's fixed parts in a script:** its checks before a run, its
+  times and its appends, which give the same result for the same input
+  (review finding 35). Trigger: a run in which the loop gets one of them
+  wrong.
+- **A browser-test step on Sonnet or Haiku refused at the plan,** rather
+  than when it runs, where it spends the run's one escalation (review
+  finding 15). Trigger: a Sonnet or Haiku row that reaches a browser
+  test.
 
 ### Consequences
 
@@ -644,3 +663,85 @@ default table.
   restart and a run that proves the routing; the working agreements; the
   planning skill; finding 91; the drag helper; Linux WebKit in the full
   verify; CI's burn-in; dependencies again; the reviews; the as-built.
+
+### As built
+
+Built on 7 and 8 November 2026 on `build-router`, 40 commits with this
+as-built, pull request #518.
+
+- **Each step on its row's model,** from step 7: Sonnet for 7, 8 and 13,
+  Opus for 9 to 12. Steps 2 and 3 ran on Opus, since the loop then in
+  place gave a step the session's model, and the maintainer chose not to
+  switch by hand. Step 6's proof ran Haiku, then Sonnet escalated to
+  Opus, then Opus, and refused a second escalation; it refused a changed
+  tracked file before any step.
+- **Measured against the brief's guesses,** minutes and the tokens the
+  Agent tool counted:
+
+  | Step | Model | Minutes (guess) | Tokens |
+  | --- | --- | --- | --- |
+  | 5 | opus | 8 (45) | not shown |
+  | 7 | sonnet | 5 (30) | 148,561 |
+  | 8 | sonnet | 1 (15) | 52,510 |
+  | 9 | opus | 10 (20) | 134,862 |
+  | 10 | opus | 19 (40) | 139,792 |
+  | 11 | opus | 20 (50) | 117,259 |
+  | 12 | opus | 16 (25) | 146,520 |
+  | 13 | sonnet | 7 (10) | 60,073 |
+  | 14, findings | opus | 33 (50) | its helpers 598,145 |
+  | 14, fixes | opus | 38 (90) | not shown |
+
+  The steps took about half the guessed time, and the next brief's
+  guesses start from these. The default table is unchanged: one brief is
+  not the three its Deferred line asks for.
+- **Every subagent starts in the background** in Claude Code 2.1.319, so
+  a step's hand-back is its summary:
+  - step 8, on Sonnet, handed back the word `placeholder` in the turn of
+    its commit, cb2edd04, and its summary was lost; reported to
+    Anthropic. A step now sends its summary alone and in full, and the
+    loop asks the same agent once more when the `Model:` line or the last
+    line is missing (e58030e8);
+  - step 13 handed back with two of its background commands still
+    running, one waiting on input; none may outlive its step now
+    (775859a3).
+- **The loop on the session's model,** not Sonnet, as the note under its
+  decision says (238f052c).
+- **The burn-in:** `--shard`, so each test runs five times in all, not
+  once per shard; the browser job's limit from 45 minutes to 60; a cap
+  of 150 tests, not 40, counted before the repeats; a warning on the
+  pull request when it narrows (938c11f3), and #516 for past 150. Its
+  first real run was #518's own: 131 tests on the `--only-changed` path,
+  all passing, each Playwright shard taking 11 to 14 minutes.
+- **Linux WebKit in the full verify** adds about 2 minutes to a run of
+  14 or 15. One container, `verify-linux-browsers`, serves Firefox and
+  WebKit.
+- **The drag helper** waits on the library's own signs, and each key
+  takes about half a second, the library's pause before it speaks a
+  move. `aria-pressed` turns `true` on the live handle a frame after the
+  pick-up, and the placeholder's copy stays `false`, so #507 needed no
+  comment. Proved in 1,165 runs on the Mac and 10 in Linux WebKit.
+- **Finding 90:** `join` gets an invitation for each persona and size,
+  not only the outsider's, since every persona starts on one; the
+  walker's input names its invitations, and its scope line is back
+  (a60f154c). "Your own account only" still speaks of signing in with
+  the email given.
+- **Finding 91:** `ui.md` first met the cap by joining lines, so review
+  finding 25 wrapped it again and cut it to 40 lines and 320 words; #517
+  asks for a cap in characters. `database.md` and `production-orders.md`
+  sit at exactly 40, and `ui.md` names the design language's parts in
+  quotes, which the docs check does not follow.
+- **The reviews:** 35 findings. Fixed: 1 to 8, 10, 11, 18, 24 to 29 and
+  33; filed: #516 and #517; comments on #284 and #467; dropped: 12 to 17,
+  19 to 23 and 32. Of the rest:
+  - 31: `## For the chat` keeps its 10 to 15 lines, which every stop met;
+  - 34: only `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` can override a model
+    named for one step, and refusing both variables costs nothing;
+  - 35 and 15: under Deferred.
+- **Dependencies:** the formatjs packages (4da037ea) and globals 17.14.0
+  (489beeb7). TypeScript 7 (#336) still waits on typescript-eslint, the
+  Nest CLI and `@hey-api/openapi-ts`.
+- **Riders:** #467's 11, 20, 21 and 22's repeats; its 30 left for Items'
+  branch, which walks a panel.
+- **The Opus setting lives on the Mac:** a new machine adds
+  `"model": "opus"` to `.claude/settings.local.json` and lists that file
+  in `.git/info/exclude`.
