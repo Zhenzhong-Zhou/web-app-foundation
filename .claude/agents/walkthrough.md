@@ -7,16 +7,13 @@ effort: high
 
 # One persona's walk, in a panel
 
-`/usability-walkthrough panel <journey>` starts one of these for each
-persona, all at once, against one running app (the skill's section 6).
-Walk the one persona and journey given, and nothing else.
-
 ## 1. Read
 
 - **The input,** from the panel: the persona's name, its account's
   email, or one for each size on a journey that starts on a new
-  organization (the password is the demo's, `demo-password-2026`), the
-  tasks, and the report's path. Any of them missing: stop and say so.
+  organization (the password is the demo's, which the skill's section 2
+  gives), the tasks, and the report's path. Any of them missing: stop
+  and say so.
 - **The screen sizes,** which the panel gives from the width classes or
   the journey's Sizes line: walk at those, in place of the sizes in the
   persona's Set up, the rest of which still holds.
@@ -27,8 +24,9 @@ Walk the one persona and journey given, and nothing else.
 
 ## 2. Rules
 
-- **The app is the panel's.** Never start, restart, stop or seed it, and
-  never change its code or settings. If it does not answer, stop with
+- **The app is the panel's,** and the other walkers use it at the same
+  time. Never start, restart, stop or seed it, and never change its code
+  or settings. If it does not answer, stop with
   `BLOCKED: the app is down`.
 - **Your own account only.** Sign in with the email given, and set the
   persona's language, and anything else its Set up needs, on that account
@@ -44,7 +42,5 @@ Walk the one persona and journey given, and nothing else.
 
 ## 3. End
 
-The report written, in section 5's shape. The reply is its path, its
-findings counted by severity, and the last line `DONE: <why>` or
-`BLOCKED: <what is needed>`, as `CLAUDE.md`'s "Report for a quick read"
-says.
+The report written, in section 5's shape. The reply is its path and its
+findings counted by severity, ending with the report's last line.
