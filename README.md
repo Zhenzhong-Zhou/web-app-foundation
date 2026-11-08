@@ -238,9 +238,8 @@ work under updates it.
 | The planning skill changed             | After its merge, on `main`: `node scripts/pack-chat-skill.mjs`; replace it in claude.ai's Settings → Skills; walk `evals.md`                    |
 | Before drafting an ADR                 | `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n>`, then attach `tmp/adr-NNN/check.txt` to the chat                                  |
 | Building from a brief                  | `/build-from-brief <brief> from <N>`; paste only the stops into the chat                                                                        |
-| A brief's review step                  | `/review-step <brief> <N>` for the findings, then again with Bob's choices after the number                                                     |
+| Every feature branch's review step     | `/review-step <brief> <N>` for the findings, then again with Bob's choices after it ([which reviews](docs/engineering.md#the-review-step))      |
 | A small issue, in a cloud session      | `/fix-issue <N>`; merge its pull request with `gh pr merge <PR> --squash --delete-branch`, never the button                                     |
-| Every pull request's review            | `/usability-walkthrough panel <journey>`, `/simplify`, `/code-review`, `/production-readiness`, `/doctor prompt-audit`                          |
 | Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                                                              |
 | After a merge                          | `scripts/prune-branches.sh --yes`                                                                                                               |
 | After a merge, now and then            | `scripts/clean-local.sh`, then `--yes`; `--docker` for Docker's space                                                                           |
