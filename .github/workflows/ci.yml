@@ -582,12 +582,14 @@ jobs:
       # fails here rather than on main later. HEAD^1 is main as the change
       # merges into it. Each shard takes a third of the runs, as it does of
       # the suite, so a test runs five times in all, not five on each
-      # machine. More than 40 tests, each counted once, is a selection too
-      # wide, as a change to a file every spec imports gives: then only the
-      # specs the pull request changes itself, which the job's summary
-      # says. A step of this job, so "CI — all jobs" requires it. npx, not
-      # test:e2e: the run above has migrated and seeded, and the config
-      # reads ../.env itself.
+      # machine. More than 150 tests, each counted once before the five
+      # repeats, is a selection too wide, as a change to a file every spec
+      # imports gives: then only the specs the pull request changes itself,
+      # which the job's summary says. 150 is 750 runs, about 250 a shard,
+      # about 7.5 minutes at the 1.8 s a test CI took in November 2026,
+      # well inside the step's 20. A step of this job, so "CI — all jobs"
+      # requires it. npx, not test:e2e: the run above has migrated and
+      # seeded, and the config reads ../.env itself.
       - name: Burn in the specs this pull request changes
         if: github.event_name == 'pull_request'
         timeout-minutes: 20
@@ -612,7 +614,7 @@ jobs:
 
           if [ "$tests" -eq 0 ]; then
             say 'Burn-in: this pull request changes no spec, and no file a spec imports. Nothing ran.'
-          elif [ "$tests" -le 40 ]; then
+          elif [ "$tests" -le 150 ]; then
             say "Burn-in, the tests of the specs this pull request changes and of those importing a file it changes: $tests, five times each, a third of the runs on this shard."
             npx playwright test --only-changed="$BASE" "${flags[@]}" "${burn[@]}"
           else
@@ -622,9 +624,9 @@ jobs:
               specs+=("$spec")
             done < <(git diff --name-only --relative --no-renames --diff-filter=d "$BASE" HEAD -- 'e2e/*.spec.ts')
             if [ "${#specs[@]}" -eq 0 ]; then
-              say "Burn-in: this pull request's changes reach $tests tests, more than 40, and it changes no spec itself. Nothing ran."
+              say "Burn-in: this pull request's changes reach $tests tests, more than 150, and it changes no spec itself. Nothing ran."
             else
-              say "Burn-in: this pull request's changes reach $tests tests, more than 40, so only the specs it changes itself, five times each, a third of the runs on this shard: ${specs[*]}."
+              say "Burn-in: this pull request's changes reach $tests tests, more than 150, so only the specs it changes itself, five times each, a third of the runs on this shard: ${specs[*]}."
               npx playwright test "${flags[@]}" "${burn[@]}" "${specs[@]}"
             fi
           fi

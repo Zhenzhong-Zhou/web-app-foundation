@@ -704,9 +704,10 @@ The error tracker hears of real faults only (ADR-084).
   amendment): after the browser job's run, the specs it changes and those
   importing a file it changes run five times each in Chromium, with
   retries off (`--only-changed`, `.github/workflows/ci.yml`), each shard
-  taking a third of the runs, within 20 minutes. More than 40 tests, as a
-  change to a file every spec imports gives, burns in only the specs the
-  pull request changes itself, and the job's summary says which ran. Its
+  taking a third of the runs, within 20 minutes. More than 150 tests, each
+  counted once before the five repeats, as a change to a file every spec
+  imports gives, burns in only the specs the pull request changes itself,
+  and the job's summary says which ran. Its
   list, beforehand: `npx playwright test --list --only-changed=origin/main
   --project=chromium` in `client/`.
 
