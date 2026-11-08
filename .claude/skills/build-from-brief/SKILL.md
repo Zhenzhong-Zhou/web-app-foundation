@@ -49,12 +49,9 @@ since a reply would be a new turn, outside this skill's Sonnet pin:
 
 - **Each step from N up to the next stop** that the brief shows before
   the run: its number, its Who, its model, its minutes and its What.
-- **Where the run will stop, and why:** at a step that is the chat's or
-  Bob's; before a main-session step, naming `/review-step <brief> <N>`;
-  before a step that would push, open a pull request, merge or change
-  `main`; or at the brief's end. It says too that a run stops sooner
-  where a step ends BLOCKED, a `STOP` file is made, or a step passes its
-  time.
+- **Where the run will stop, and why:** where section 5 would stop it,
+  or at the brief's end. It says too that a run stops sooner where a
+  step ends BLOCKED, a `STOP` file is made, or a step passes its time.
 
 At `plan`, the same for the whole brief from its first step: each run in
 turn up to its stop, then nothing run.
@@ -75,10 +72,9 @@ why and running nothing, when any of these holds:
 4. **A variable that can put every step on one model:** `printenv
    CLAUDE_CODE_SUBAGENT_MODEL CLAUDE_CODE_SUBAGENT_MODEL_FORCE` prints
    anything; name it.
-5. **Docker not running,** `docker info` failing, when a step in the run
-   (step N alone, or those in the plan) verifies with more than
-   `--docs`: any step that its text and the brief's rules do not hold to
-   `--docs` or to no verify.
+5. **Docker not running,** `docker info` failing, unless every step in
+   the run (step N alone, or those in the plan) verifies with `--docs`
+   or not at all, as its text and the brief's rules say.
 
 ## 5. Before each step, in this order
 
@@ -98,10 +94,10 @@ why and running nothing, when any of these holds:
 A new `brief-step` subagent, its `model` set to the model its row
 names, given the brief's path and the step's number, with Bob's choices
 when he gave any, and nothing else but what the escalation adds
-(section 8). Wait for its last message, its summary, doing nothing
-meanwhile. **One step at a time:** a subagent starts in the background
-here, so the next step is read only once this one's result has come
-back, and two never run at once. No `brief-step` to start: stop, saying
+(section 8). **One step at a time:** a subagent starts in the background
+here, so wait for its last message, its summary, doing nothing
+meanwhile, and read the next step only once it has come back. No
+`brief-step` to start: stop, saying
 Claude Code needs a restart to find `.claude/agents/`.
 
 ## 7. After each step
@@ -114,21 +110,20 @@ Claude Code needs a restart to find `.claude/agents/`.
    (<YYYY-MM-DD HH:MM>, Vancouver) · <model> · <minutes> min · <tokens>`:
    the time from before it, the model it was started on, and, for a
    rerun on Opus, `· escalated from <model>` at the end.
-3. **The model check:** its first line, `Model: …`, names the family of
+3. **A result missing either a `Model:` first line or a `DONE:` or
+   `BLOCKED:` last line,** such as a placeholder: one message to that
+   same agent with SendMessage, asking for its full summary as
+   `brief-step`'s section 4 says. Its reply is appended under the same
+   heading and checked in items 4 and 5 in the result's place; a reply
+   still missing either stops the run as BLOCKED, saying so.
+4. **The model check:** its first line, `Model: …`, names the family of
    the model it was started on, `opus`, `sonnet` or `haiku`, in any case.
    Another family stops the run at once, as BLOCKED, naming both.
-   - **A result missing either a `Model:` line or a `DONE:` or `BLOCKED:`
-     last line,** such as a placeholder: one message to that same agent
-     with SendMessage, asking for its full summary as `brief-step`'s
-     section 4 says. Its reply is appended under the same heading and
-     checked here and in item 4 in the result's place; a reply still
-     missing either stops the run as BLOCKED, saying so.
-4. **Its last line:**
+5. **Its last line:**
    - `DONE` goes on to the next step, in a row, unless a `STOP` file is
      beside the brief, which stops it;
    - `BLOCKED` goes to the escalation (section 8) when it qualifies, and
-     otherwise stops the run;
-   - anything else stops it, as BLOCKED does.
+     otherwise stops the run.
 
 ## 8. The escalation, once a run
 
@@ -152,9 +147,8 @@ Then:
 3. **Its summary** as section 7 says, both attempts' summaries in
    `summaries.md`.
 
-Any other BLOCKED stops the run: a second escalation in one run, which
-is not made; `verify (environment)`, which waits for Bob; one after a
-commit, naming it; or one on Opus.
+Otherwise a BLOCKED stops the run, as section 7 says: one after a
+commit names it, and `verify (environment)` waits for Bob.
 
 ## 9. At a stop, or the brief's end
 
