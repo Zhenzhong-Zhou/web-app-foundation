@@ -707,7 +707,8 @@ The error tracker hears of real faults only (ADR-084).
   taking a third of the runs, within 20 minutes. More than 150 tests, each
   counted once before the five repeats, as a change to a file every spec
   imports gives, burns in only the specs the pull request changes itself,
-  and the job's summary says which ran. Its
+  and the job's summary says which ran, with a warning on the pull
+  request, the trigger of #516. Its
   list, beforehand: `npx playwright test --list --only-changed=origin/main
   --project=chromium` in `client/`.
 
