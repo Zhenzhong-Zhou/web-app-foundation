@@ -61,7 +61,8 @@ Their home is `docs/engineering.md`, "How code is delivered" and
   indented in the reply: a code block inside a list carries the list's
   indent, which git keeps in a commit's message and which makes Claude
   Code read a slash command as plain text (ADR-089's build).
-- `scripts/verify.sh --docs` before a commit of only Markdown and
-  `scripts/`; `--quick` otherwise; in full before a push.
+- `scripts/verify.sh --docs` before a commit of only `scripts/` and
+  Markdown outside `client/` and `docs/tables/`; `--quick` otherwise, a
+  Help guide's Markdown included; in full before a push.
 - An alert is "Dependabot alert 4" or "code scanning alert 9", never
   "#4", which GitHub links to an issue.
