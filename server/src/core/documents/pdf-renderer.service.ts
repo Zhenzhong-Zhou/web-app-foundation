@@ -9,9 +9,10 @@ import { CHINESE, FAMILIES, fonts, LATIN } from './fonts';
 import { MARGIN } from './sheet';
 
 /**
- * pdfmake's in-memory file system, which its types leave out. On the server
- * it takes a font only as a name to look up, there or on disk: bytes given
- * in place of the name are read as a URL, and fail.
+ * pdfmake's in-memory file system, which its types leave out: the one every
+ * document reads through its own since 0.3.14, named `sharedVirtualfs`. On
+ * the server it takes a font only as a name to look up, there or on disk:
+ * bytes given in place of the name are read as a URL, and fail.
  */
 interface VirtualFiles {
   writeFileSync(name: string, content: Buffer): void;
@@ -30,9 +31,11 @@ interface VirtualFiles {
 @Injectable()
 export class PdfRenderer implements OnModuleInit {
   onModuleInit(): void {
-    const { virtualfs } = pdfmake as unknown as { virtualfs: VirtualFiles };
+    const { sharedVirtualfs } = pdfmake as unknown as {
+      sharedVirtualfs: VirtualFiles;
+    };
     for (const [file, bytes] of fonts().bytes) {
-      virtualfs.writeFileSync(file, bytes);
+      sharedVirtualfs.writeFileSync(file, bytes);
     }
     // No italics are designed; asked for, they fall back to upright.
     const family = ({ normal, bold }: { normal: string; bold: string }) => ({
