@@ -22,7 +22,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "creates a variant even when the product has no variation" ·
   [test](../../server/test/products.e2e-spec.ts) "rejects a product with no variant" ·
   [test](../../server/test/products.e2e-spec.ts) "rejects a duplicate SKU and leaves no orphaned product" ·
-  [test](../../client/e2e/products.spec.ts) "creates a product through the form and shows it in the table" ·
+  [test](../../client/e2e/items.spec.ts) "Add an item, Add item: saved, “Added …”; the new item’s page in the form’s place; Back, Items" ·
   [Help](../../client/src/help/guides/en/items.md#add-a-product-add) ·
   MC-201
 - **Add item asks what it is first, the six types each with a line in
@@ -35,7 +35,7 @@ How this file is kept is in the [README](README.md).
   [test](../../client/src/products/create-product-dialog.test.tsx) "asks what it is first, chosen from the tab, none from All, and says so under the types" ·
   [test](../../client/src/products/create-product-dialog.test.tsx) "starts on the open tab’s type" ·
   [test](../../client/src/products/create-product-dialog.test.tsx) "opens the new item’s page in the form’s place, saying what was added" ·
-  [test](../../client/e2e/products.spec.ts) "creates a product through the form and shows it in the table" ·
+  [test](../../client/e2e/items.spec.ts) "Add an item, Add item: saved, “Added …”; the new item’s page in the form’s place; Back, Items" ·
   MC-201
 - **An item's type says what it is for, one of six: products, raw
   materials, packaging, supplies, samples or equipment. It is chosen when
@@ -47,7 +47,7 @@ How this file is kept is in the [README](README.md).
   [ADR-092](../adr/0092-items.md#decision--adding-and-changing-an-item-by-its-type) ·
   [test](../../server/test/products.e2e-spec.ts) "rejects an unknown type" ·
   [test](../../server/test/products.e2e-spec.ts) "changes its type, which History records from and to, as Discontinue" ·
-  [test](../../client/e2e/products.spec.ts) "shows a product that already exists in the organisation" ·
+  [test](../../client/e2e/items.spec.ts) "shows a product that already exists in the organisation" ·
   [test](../../client/src/products/product-detail-page.test.tsx) "edits its name, description, category and type, sending only what changed" ·
   [Help](../../client/src/help/guides/en/items.md#add-a-product-add) ·
   MC-201
@@ -624,7 +624,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "refuses a variant belonging to another product" ·
   [test](../../server/test/product-images.e2e-spec.ts) "keeps each organization to its own products and files" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "never finds another organization's products, items or partners" ·
-  [test](../../client/e2e/products.spec.ts) "does not show another organisation's products" ·
+  [test](../../client/e2e/items.spec.ts) "does not show another organisation's products" ·
   [test](../../server/test/product-categories.e2e-spec.ts) "lets a Viewer read the tree but not change it" ·
   [test](../../server/test/product-categories.e2e-spec.ts) "never shows another organization’s categories, nor counts its items" ·
   [test](../../server/test/product-categories.e2e-spec.ts) "answers 404 for another organization’s category, to rename or delete" ·

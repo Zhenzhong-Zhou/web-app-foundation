@@ -123,6 +123,8 @@ export async function createProduct(
     type: string;
     sku: string;
     tracksLots: boolean;
+    /** Its category on Items (ADR-092), or none. */
+    categoryId: string;
   }> = {},
 ): Promise<SeededProduct> {
   const sku = overrides.sku ?? unique('SKU').toUpperCase();
@@ -132,6 +134,7 @@ export async function createProduct(
     data: {
       type: overrides.type ?? 'good',
       name,
+      categoryId: overrides.categoryId,
       variant: { sku, tracksLots: overrides.tracksLots ?? false },
     },
   });
@@ -152,6 +155,21 @@ export async function createProduct(
     name,
     sku,
   };
+}
+
+/**
+ * A category on Items (ADR-092), at the top or under `parentId`: one tree
+ * per organization, unique by name under one parent.
+ */
+export async function createCategory(
+  api: APIRequestContext,
+  name: string,
+  parentId?: string,
+): Promise<string> {
+  const { category } = await created<{ category: { id: string } }>(
+    await api.post('/v1/products/categories', { data: { name, parentId } }),
+  );
+  return category.id;
 }
 
 export interface SeededLocation {

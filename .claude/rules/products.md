@@ -7,7 +7,7 @@ paths:
   - "client/src/components/{variant-picker,product-cover}*.tsx"
   - "client/src/lib/{use-variants,use-picker-search}.ts"
   - "server/test/{products,product-categories,product-images,item-names,whole-list-search,items-list}.e2e-spec.ts"
-  - "client/e2e/{products,product-detail,product-images}.spec.ts"
+  - "client/e2e/{items,categories,product-detail,product-images}.spec.ts"
 ---
 
 # Products: the code rules, for Claude
