@@ -388,7 +388,8 @@ describe('InventoryPage', () => {
       }),
       http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
       http.get(`/api/v1/products/${ITEM}`, () =>
-        HttpResponse.json({ product: { displayName: 'Vitamin D' } }),
+        // The item itself, as GET /v1/products/:id answers.
+        HttpResponse.json({ displayName: 'Vitamin D' }),
       ),
     );
     renderWithAuth(

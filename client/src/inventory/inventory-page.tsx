@@ -33,7 +33,7 @@ import {
 import type {
   Availability,
   Location,
-  ProductEnvelope,
+  ProductDetail,
   StockRow,
 } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -193,8 +193,9 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   useEffect(() => {
     if (!productId || !canSeeItems) return;
     let ignore = false;
-    void api<ProductEnvelope>(`/products/${productId}`)
-      .then(({ product }) => {
+    // The item's read answers with the item itself, not an envelope.
+    void api<ProductDetail>(`/products/${productId}`)
+      .then((product) => {
         if (!ignore) setNamed({ id: productId, name: product.displayName });
       })
       // Silent: the chip still says one item, and its × still works.
