@@ -463,7 +463,7 @@ const ON_BRANCH = {
     '[{"number":521,"url":"https://github.com/o/r/pull/521"}]',
 };
 
-test("after a fix with its pull request, the merge command, squashed", () => {
+test("after a fix with its pull request, the folder detached, then the merge command, squashed", () => {
   const { run, calls } = standIn(ON_BRANCH);
   const report = afterRun("/waf-fix", run);
   assert.equal(report.unfinished, false);
@@ -472,7 +472,7 @@ test("after a fix with its pull request, the merge command, squashed", () => {
     "— the folder after the run —",
     "branch fix-520-a-typo · last commit abc1234 A typo in the Help guide (#520)",
     "pull request https://github.com/o/r/pull/521",
-    "Once its checks pass and you have read it, merge it squashed:\n  gh pr merge 521 --squash --delete-branch",
+    "Once its checks pass and you have read it, free its branch from that folder, then merge it squashed:\n  git -C /waf-fix switch --detach\n  gh pr merge 521 --squash --delete-branch",
   ]);
   assert.equal(calls.length, 4);
 });

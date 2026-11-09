@@ -29,7 +29,8 @@
 // commands up to 90 minutes in the foreground, and a line appended to the
 // system prompt). After a fix it reads the folder's git state and says
 // UNFINISHED when changes are left uncommitted or no pull request is open
-// for the branch, otherwise it gives the merge command.
+// for the branch, otherwise it gives the merge command, after the one
+// that frees the branch from that folder.
 //
 // Each run's every message is kept in tmp/fix-runs/logs/, and its line,
 // with the SDK's cost, in tmp/fix-runs/runs.tsv, both in the main working

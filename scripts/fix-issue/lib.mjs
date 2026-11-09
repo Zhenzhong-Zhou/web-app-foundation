@@ -455,7 +455,9 @@ export function runIn(cwd, command, args) {
 /**
  * The folder after a fix: its branch, last commit, uncommitted files and
  * pull request; UNFINISHED with the command that resumes it when changes
- * are left or no pull request is open, otherwise the merge command.
+ * are left or no pull request is open, otherwise the merge command, after
+ * the one that detaches the folder, since git deletes no branch another
+ * folder has checked out.
  */
 export function afterRun(folder, run = runIn) {
   const changes = run(folder, "git", ["status", "--porcelain"]);
@@ -489,7 +491,11 @@ export function afterRun(folder, run = runIn) {
   lines.push(
     unfinished
       ? `UNFINISHED: run  ${RUNNER} --resume last  to finish it.`
-      : `Once its checks pass and you have read it, merge it squashed:\n  gh pr merge ${pr.number} --squash --delete-branch`,
+      : [
+          "Once its checks pass and you have read it, free its branch from that folder, then merge it squashed:",
+          `  git -C ${folder} switch --detach`,
+          `  gh pr merge ${pr.number} --squash --delete-branch`,
+        ].join("\n"),
   );
   return { lines, unfinished, pr: pr?.url };
 }
