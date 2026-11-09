@@ -94,7 +94,7 @@ for (const size of [
     ).toHaveAttribute('href', '/locations');
     for (const name of [
       /^Add a location/,
-      /^Add a product/,
+      /^Add an item/,
       /^Add a partner/,
       /^Receive stock/,
       /^Ship and invoice an order/,
