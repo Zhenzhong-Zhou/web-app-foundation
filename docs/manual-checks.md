@@ -3545,6 +3545,13 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R101** *(Search below 900 px opened a full-screen sheet with no
+  way to close it, #480)* On a tablet held upright, or the browser's
+  device view at 820 × 1180 with touch, open Home, tap Search: Close sits
+  beside the field, a fingertip tall. Tap it: the sheet shuts and Home is
+  still there, not the page before. The same at 390 × 844, and in
+  Français and 中文.
+
 - **MC-R100** *(too many requests shown as "ThrottlerException: Too Many
   Requests", #483)* Start the API with `RATE_LIMIT_MAX=5 npm run
   start:dev` in `server/`, sign in, and reload Orders until it is refused:
@@ -5306,3 +5313,5 @@ first.
   screen draws, returning to the screen left: MC-R99 added.
 - 2026-11-08: #483, too many requests worded on every screen, with the
   wait the server states: MC-R100 added.
+- 2026-11-09: #480, Close on the full-screen search below 900 px:
+  MC-R101 added.

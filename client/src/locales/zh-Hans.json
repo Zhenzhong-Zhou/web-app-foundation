@@ -1853,6 +1853,7 @@
   "roles.told.none": "此角色不带来任何通知。",
   "roles.told.title": "同时通知",
   "search.close": "相近结果",
+  "search.closeSheet": "关闭搜索",
   "search.kind.creditNote": "贷项通知单",
   "search.kind.invoice": "发票",
   "search.kind.item": "物品",

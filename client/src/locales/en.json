@@ -1853,6 +1853,7 @@
   "roles.told.none": "Nothing from this role.",
   "roles.told.title": "Also told",
   "search.close": "close match",
+  "search.closeSheet": "Close search",
   "search.kind.creditNote": "Credit notes",
   "search.kind.invoice": "Invoices",
   "search.kind.item": "Items",

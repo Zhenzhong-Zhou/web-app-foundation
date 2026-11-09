@@ -94,3 +94,31 @@ for (const viewport of [
     expect(Math.abs(centre - middle)).toBeLessThanOrEqual(10);
   });
 }
+
+/**
+ * Below `md` the lookup is a sheet over the whole screen, and a tablet or
+ * a phone has no Escape: Close beside the field shuts it, and the person
+ * is still where they were, not on the page before (#480).
+ */
+test('closes the full-screen search on a tablet held upright, still on Home', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await page.goto('/orders');
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Orders' }),
+  ).toBeVisible();
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Search everything' }).click();
+  const sheet = page.getByRole('dialog');
+  await expect(
+    sheet.getByRole('combobox', { name: 'Search everything' }),
+  ).toBeFocused();
+  await sheet.getByRole('button', { name: 'Close search' }).click();
+
+  await expect(sheet).toBeHidden();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+});
