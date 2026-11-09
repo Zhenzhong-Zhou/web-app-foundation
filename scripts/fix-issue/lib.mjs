@@ -156,14 +156,16 @@ export function checkInit(message, mode) {
   return { found, stop };
 }
 
-/** git's output, its last newline dropped; a failure throws. */
-function git(cwd, ...args) {
-  return execFileSync("git", args, {
+/** A command's output in a folder, its last newline dropped; a failure throws. */
+function output(cwd, command, args) {
+  return execFileSync(command, args, {
     cwd,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   }).replace(/\n$/, "");
 }
+
+const git = (cwd, ...args) => output(cwd, "git", args);
 
 /**
  * The main working folder, the parent of the folder git shares, found
@@ -448,19 +450,6 @@ export function tally(results) {
   };
 }
 
-/** A command's output in a folder, or "" when it fails, for the report. */
-export function runIn(cwd, command, args) {
-  try {
-    return execFileSync(command, args, {
-      cwd,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trimEnd();
-  } catch {
-    return "";
-  }
-}
-
 /**
  * The folder after a fix: its branch, last commit, uncommitted files and
  * pull request; UNFINISHED with the command that resumes it when changes
@@ -469,22 +458,25 @@ export function runIn(cwd, command, args) {
  * otherwise the merge command, after the one that detaches the folder,
  * since git deletes no branch another folder has checked out.
  */
-export function afterRun(folder, run = runIn, { named = false } = {}) {
-  const changes = run(folder, "git", ["status", "--porcelain"]);
-  const branch = run(folder, "git", ["branch", "--show-current"]);
-  const last = run(folder, "git", ["log", "-1", "--oneline"]);
+export function afterRun(folder, run = output, { named = false } = {}) {
+  // What the folder says, or "" when a command fails: the report is
+  // written, and the run's line kept, whatever fails.
+  const ask = (command, args) => {
+    try {
+      return run(folder, command, args);
+    } catch {
+      return "";
+    }
+  };
+  const changes = ask("git", ["status", "--porcelain"]);
+  const branch = ask("git", ["branch", "--show-current"]);
+  const last = ask("git", ["log", "-1", "--oneline"]);
   let pr;
   if (branch) {
     try {
       pr = JSON.parse(
-        run(folder, "gh", [
-          "pr",
-          "list",
-          "--head",
-          branch,
-          "--json",
-          "number,url",
-        ]) || "[]",
+        ask("gh", ["pr", "list", "--head", branch, "--json", "number,url"]) ||
+          "[]",
       )[0];
     } catch {
       pr = undefined;
