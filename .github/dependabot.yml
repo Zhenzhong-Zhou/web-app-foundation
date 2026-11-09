@@ -74,6 +74,13 @@ updates:
     ignore:
       - dependency-name: '*'
         update-types: [version-update:semver-major]
+      # 1.65.0 bundles Firefox 159, which crashes 7 pages of the accessibility
+      # spec in Playwright's Linux image; Mozilla's own 159.0.1 does not.
+      # #521. Version-pinned, not a blanket ignore, so the next release still
+      # arrives on its own; CI runs Chromium only, so every browser is run by
+      # hand before it merges.
+      - dependency-name: '@playwright/test'
+        versions: ['1.65.0']
 
   # The fix runner's own package (ADR-089's amendment): the Agent SDK,
   # pinned exactly, which publishes every one to four days, so monthly,

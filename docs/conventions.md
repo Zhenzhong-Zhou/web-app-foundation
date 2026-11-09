@@ -1061,8 +1061,8 @@ Internet Explorer, and any browser's IE mode, is not supported.
 
   ```bash
   docker run -d --rm --init --name pw-browsers -p 127.0.0.1:3333:3333 --ipc=host \
-    mcr.microsoft.com/playwright:v1.65.0-noble \
-    /bin/sh -c "cd /tmp && npx -y playwright@1.65.0 run-server --port 3333 --host 0.0.0.0"
+    mcr.microsoft.com/playwright:v1.64.1-noble \
+    /bin/sh -c "cd /tmp && npx -y playwright@1.64.1 run-server --port 3333 --host 0.0.0.0"
 
   # in client/
   E2E_FIREFOX=1 PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3333/ \
