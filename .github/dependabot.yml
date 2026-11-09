@@ -75,6 +75,21 @@ updates:
       - dependency-name: '*'
         update-types: [version-update:semver-major]
 
+  # The fix runner's own package (ADR-089's amendment): the Agent SDK,
+  # pinned exactly, which publishes every one to four days, so monthly,
+  # and each raise proved by the runner's --probe. Nothing the app ships
+  # depends on it, so a branch's dependency step leaves it to this.
+  - package-ecosystem: npm
+    directory: /scripts/fix-issue
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
+
   # Actions pinned by major tag still drift, and a deprecated runner image
   # fails every workflow at once with an error that names nothing useful.
   - package-ecosystem: github-actions
