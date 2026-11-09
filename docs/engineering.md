@@ -194,11 +194,28 @@ steps; this section stays the rule.
   `scripts/verify.sh --docs` needs both: its scripts' check formats with
   the server's prettier, and their tests read the client's FormatJS
   (2 November 2026). Removed after the merge with `git worktree remove
-  ../<folder>`.
+  ../<folder>`. A build and a fix verify at once there: the end-to-end and
+  browser runs share one lock across the folders
+  (`scripts/one-at-a-time.mjs`), so the second waits at those parts and
+  goes on when the first is done.
 - **Never switch branches in a folder a Claude Code session is working
   in** (6 November 2026): a `git switch main` there, while a session
   committed, put its commit on the local `main`. A job on `main` waits for
   the session, or runs in a second working folder.
+- **Small fixes on the API credit** (November 2026, ADR-089's amendment):
+  the credit covers the Agent SDK, not Claude Code, so a runner in the
+  repository, `scripts/fix-issue/run.mjs`, runs `/fix-issue <N>` through
+  the SDK, in a second working folder (`../waf-fix`), started from the
+  main one. The key is set in the terminal only, `read -s
+  ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY`, and `npm ci` runs once
+  in `scripts/fix-issue/`. `--probe` is one cheap call that proves the
+  key, the credit and the skill; `--resume last` finishes a fix that
+  ended `UNFINISHED`; `--spent` lists the credit month's runs
+  (`tmp/fix-runs/runs.tsv`) against the credit, and a run warns once the
+  month is past 80 %. It runs on Opus, cannot merge or force-push, and
+  prints the merge for Bob to run: `git -C <folder> switch --detach`,
+  then `gh pr merge <PR> --squash --delete-branch`. Claude Code itself
+  cannot spend the credit: only this runner, with the key, does.
 - **Cloud sessions** (Claude Code on the web, from October 2026): one new
   session per task, from `main`, each cloning the repository fresh, so
   nothing is pulled first; a long session pays for its whole history at
@@ -538,8 +555,10 @@ reports success.
 
 ## Server
 
-- Server e2e: always `npm run test:e2e`. Never run two at once — the second
-  now refuses. Don't edit server files while Playwright runs against
+- Server e2e: always `npm run test:e2e`. Two runs never overlap, even from
+  two working folders: the second waits for the first
+  (`scripts/one-at-a-time.mjs`), and one started without that wrapper
+  refuses. Don't edit server files while Playwright runs against
   `start:dev`.
 - **`npm run api` is the truth about the document.** An enum written from
   a TypeScript union can change order when the code around it changes,

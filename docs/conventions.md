@@ -574,6 +574,9 @@ The error tracker hears of real faults only (ADR-084).
 - The repository's own scripts test with Node's runner:
   `scripts/*.test.mjs`, run by `node --test scripts/` from
   `scripts/verify.sh` and CI's server job (ADR-082).
+- A suite run by hand waits for another working folder's: `npm run test:e2e`
+  and the browser runs go through `scripts/one-at-a-time.mjs`, one at a
+  time across the folders.
 - Vitest does not type-check. A type error in a spec fails `npm run
   typecheck`, which CI and `scripts/verify.sh` run, not the test run.
 - Every integration test calls `await app.close()` in `afterAll`, or the
