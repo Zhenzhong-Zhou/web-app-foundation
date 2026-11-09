@@ -15,6 +15,11 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 9 November 2026:
 
+- **Items, ADR-092** ([#476]): planned on 8 and 9 November, its decisions
+  in [ADR-092](adr/0092-items.md) and its boards the canvas's rows
+  "Items v1", "Items v2" and "Items v2: flows and states", the build
+  following v2. Built on `adr-092-items` from its brief, in
+  `tmp/adr-092/`.
 - **Customise Home,** decided in ADR-091: planned on 6 November and
   built on 6 and 7 November on `customise-home`, 78 commits, merged on 7
   November as [#515] (807fa43) and deployed the same day; the as-built
@@ -31,8 +36,8 @@ On 9 November 2026:
   the ignored `tmp/sdk-fix/` runs `/fix-issue <N>` through the Agent SDK
   in a second working folder: [#514] first, merged on 8 November as
   [#519], for about US$1.70, then [#483] as [#520], for US$1.23. It moved
-  into the repository on `fix-runner`, 29 commits, [#523] open with every
-  check green, to merge once the as-built is pushed; the as-built is in
+  into the repository on `fix-runner`, merged on 9 November as [#523]
+  (ad3680ac); the as-built is in
   [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md). From the
   main folder, `node scripts/fix-issue/run.mjs <N>`; one lock,
   `scripts/one-at-a-time.mjs`, lets a build and a fix verify at once,
@@ -157,7 +162,8 @@ On 9 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 8 November, as merge commits, [#518] (the
+- **The last merges:** on 9 November, as a merge commit, [#523] (the
+  runner in the repository). On 8 November, as merge commits, [#518] (the
   router), [#519] ([#514]) and [#520] ([#483]), the last two from the
   runner; a runner's pull request is squashed from now on, with the two
   lines it prints. On 7 November, from
@@ -317,7 +323,7 @@ On 9 November 2026:
   the planning skill packed from `main` and uploaded; and `/triage` over
   all 155 open issues, with no closes and comments on [#446] and [#467].
   Still to do: `evals.md`'s prompt 6, walked when picking the runner's
-  fixes, and 7, checked on Items' brief. On any new
+  fixes; 7 was checked on Items' brief on 9 November. On any new
   machine: `"model": "opus"` in settings.local.json in `.claude/`, that
   file listed in the clone's own exclude file (`.git/info/exclude`), so
   the loop runs on Opus.
@@ -348,7 +354,8 @@ On 9 November 2026:
     database of 5 November: one notice in the bell within the hour while
     the service is awake; then remove the point.
 - **The planning skill's `evals.md`:** prompt 6 when picking the
-  runner's fixes, and 7 on Items' brief; 4 still waits for a patch that is refused.
+  runner's fixes; 7 checked on Items' brief on 9 November; 4 still waits
+  for a patch that is refused.
 - **[#245] in Safari and Edge, once deployed:** the page asked to translate
   into Chinese stays as written, a typed field included; WebKit and
   Firefox have known gaps with fields. What changes is filed.
@@ -417,10 +424,13 @@ request or a set of them:
       merged on 8 November; then the runner for small fixes on the API
       credit, in the repository, ADR-089's amendment, [#523];
       then Items ([#476]),
-      ADR-092 with canvas boards first, the page and the menu named Items
-      · Articles · 物品, Products · 商品 the goods tab; then Movements
-      ([#470]), ADR-093, right after, with Inventory's findings from
-      ADR-091's panel, the two branches back to back; each person
+      ADR-092, planned on 8 and 9 November, built on `adr-092-items`;
+      then a docs pull request for flows and states, ADR-092's decision:
+      the pieces every screen shares, their states drawn once in the
+      design language and one canvas row, and the planning skill asking
+      each feature for a wireflow, an interaction table and five states,
+      ADR-090 amended; then Movements ([#470]), ADR-093, with
+      Inventory's findings from ADR-091's panel; each person
       choosing their main action and More's order, later; then [#310]'s
       nine dialogs with [#295], one shared hook, on the Mac;
    5. the translations, before 30 November: first a second review by

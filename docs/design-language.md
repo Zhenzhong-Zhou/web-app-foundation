@@ -103,8 +103,12 @@ Each with what holds it in the code today, or the issue that will.
 
 ### Sorting and filters
 
+- A list sorts on the few columns a person decides by; its default is
+  the one most asked for, named in that list's own ADR (ADR-092).
 - What sorts looks sortable; the sort is kept in the address with the
   filters.
+- A date column shows the date the list is sorted by; where a list keeps
+  two dates, the column's header switches between them.
 - After sorting from the keyboard, focus stays on the column's header.
 
 ### Lists on a phone
