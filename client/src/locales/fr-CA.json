@@ -1853,6 +1853,7 @@
   "roles.told.none": "Rien pour ce rôle.",
   "roles.told.title": "Aussi avisé",
   "search.close": "résultat proche",
+  "search.closeSheet": "Fermer la recherche",
   "search.kind.creditNote": "Notes de crédit",
   "search.kind.invoice": "Factures",
   "search.kind.item": "Articles",

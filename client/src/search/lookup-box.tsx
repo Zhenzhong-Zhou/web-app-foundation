@@ -2,6 +2,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import {
   Autocomplete,
   Box,
+  Button,
   Dialog,
   InputAdornment,
   Stack,
@@ -131,13 +132,35 @@ export function LookupBox() {
         // The lookup, not a dialog to the person: no amber line (ADR-081).
         slotProps={{ paper: { component: 'div' } }}
       >
-        <Box ref={measure} sx={{ p: 2 }}>
-          <LookupField
-            autoFocus
-            onDone={() => setOpen(false)}
-            listHeight={`calc(100dvh - ${fieldEnd}px)`}
-          />
-        </Box>
+        {/* Close beside the field: a phone or a tablet has no Escape, and
+            the sheet covers the whole screen (#480). */}
+        <Stack
+          ref={measure}
+          direction="row"
+          spacing={1}
+          sx={{ p: 2, alignItems: 'center' }}
+        >
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <LookupField
+              autoFocus
+              onDone={() => setOpen(false)}
+              listHeight={`calc(100dvh - ${fieldEnd}px)`}
+            />
+          </Box>
+          {/* Its own name: the list's arrow is also "Close" while open. */}
+          <Button
+            onClick={() => setOpen(false)}
+            aria-label={intl.formatMessage({
+              id: 'search.closeSheet',
+              defaultMessage: 'Close search',
+            })}
+          >
+            {intl.formatMessage({
+              id: 'common.close',
+              defaultMessage: 'Close',
+            })}
+          </Button>
+        </Stack>
       </Dialog>
     </>
   );
