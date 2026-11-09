@@ -261,10 +261,21 @@ async function buildProbes(
   const [rma] = (await rmas.list({})).entries;
   if (!rma) throw new Error('No return authorization: was this volume-seeded?');
 
-  // Items by a category, the first in name order, or the Uncategorised
-  // until the volume seed writes categories (ADR-092); and the second page
+  // Items by a category, the top-level one with the most items beneath it,
+  // so the filter reads its whole branch (ADR-092); and the second page
   // sorted by stock, which compares each row's sum with the cursor's.
-  const [category] = await categories.list();
+  const tree = await categories.list();
+  const branch = (id: string): number =>
+    tree
+      .filter((each) => each.parentId === id)
+      .reduce((sum, child) => sum + branch(child.id), 0) +
+    tree
+      .filter((each) => each.id === id)
+      .flatMap((each) => each.items)
+      .reduce((sum, kept) => sum + kept.active + kept.discontinued, 0);
+  const [category] = tree
+    .filter((each) => !each.parentId)
+    .sort((a, b) => branch(b.id) - branch(a.id));
   const byStock = await products.list({ sort: 'stock' }, 'zh-Hans');
 
   const probes: Probe[] = [

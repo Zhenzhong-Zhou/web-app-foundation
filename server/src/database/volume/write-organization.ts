@@ -1,8 +1,15 @@
 import type { LoggerService } from '@nestjs/common';
 
+import type { ProductType } from '../schema';
 import type { Random } from './random';
 import { inWeek, type Volume, WEEKS } from './scale';
 import type { Services } from './services';
+import {
+  CATEGORY_COUNT,
+  type Kind,
+  typeAt,
+  writeCategories,
+} from './write-categories';
 import { writeReorderPoints } from './write-reorder-points';
 
 /** The handles perf and the plan check need, recorded in the manifest. */
@@ -14,8 +21,6 @@ export interface Anchors {
   /** A batch made from ingredient lots: a trace with both sides filled. */
   traceLotId: string | null;
 }
-
-type Kind = 'good' | 'material' | 'packaging';
 
 /**
  * One catalogue item and the seed's own count of it.
@@ -87,6 +92,19 @@ const MATERIALS = [
   'Elderberry',
   'Echinacea',
   'Rhodiola',
+];
+/** What a supply or a piece of equipment is called, by its position. */
+const SUPPLIES = [
+  'Nitrile gloves, box of 100',
+  'Hairnets, pack of 500',
+  'Cleaning wipes, tub of 200',
+  'Packing tape, 6 rolls',
+];
+const EQUIPMENT = [
+  'Capsule filling machine',
+  'Bottle labeller',
+  'Platform scale',
+  'Induction sealer',
 ];
 const PARTNER_WORDS = [
   ['Cascade', '清泉'],
@@ -324,6 +342,11 @@ export class OrganizationWriter {
     const materialBins = bins.slice(0, this.volume.materialBins);
     const goodsBins = bins.slice(this.volume.materialBins);
 
+    // About thirty categories, three levels deep, before the items that
+    // sit in them (ADR-092).
+    const categoryOf = await writeCategories(this.services.categories);
+    this.calls += CATEGORY_COUNT;
+
     const { products, materialShare, packagingShare } = this.volume;
     const materials = Math.round(products * materialShare);
     const packaging = Math.round(products * packagingShare);
@@ -339,8 +362,17 @@ export class OrganizationWriter {
         kind === 'material' ||
         (kind === 'good' && this.random.chance(this.volume.trackedGoodsShare));
 
-      const { input, chineseName } = this.productFor(kind, i, tracked);
-      const product = await this.services.products.create(input);
+      const drawn = this.productFor(kind, i, tracked);
+
+      // Its type and its category by position, after every draw, so the
+      // random source runs as it always has (ADR-092; write-categories.ts).
+      const type = typeAt(kind, i);
+      const { input, chineseName } = typed(type, i, drawn);
+      const product = await this.services.products.create({
+        ...input,
+        type,
+        categoryId: categoryOf(type, i) ?? undefined,
+      });
 
       // Names in other languages on most finished goods (ADR-054): French
       // on two in three, Chinese on one in three, so an invoice in either
@@ -1010,6 +1042,38 @@ export class OrganizationWriter {
     this.sequence += 1;
     return this.sequence;
   }
+}
+
+/**
+ * A supply, a sample or a piece of equipment named as one, from the name
+ * the random source already drew (so none is drawn here). A good keeps its
+ * name, its French and its Chinese; the others are named by position.
+ */
+function typed<
+  T extends { input: { name: string }; chineseName: string | null },
+>(type: ProductType, index: number, drawn: T): T {
+  const named = (name: string, chineseName: string | null): T => ({
+    ...drawn,
+    input: { ...drawn.input, name },
+    chineseName,
+  });
+
+  if (type === 'supply') {
+    return named(`${SUPPLIES[index % SUPPLIES.length]} ${pad(index, 5)}`, null);
+  }
+  if (type === 'equipment') {
+    return named(
+      `${EQUIPMENT[index % EQUIPMENT.length]} ${pad(index, 5)}`,
+      null,
+    );
+  }
+  if (type === 'sample') {
+    return named(
+      `${drawn.input.name} sample`,
+      drawn.chineseName && `${drawn.chineseName} 试用装`,
+    );
+  }
+  return drawn;
 }
 
 function free(item: Item): number {

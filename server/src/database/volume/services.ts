@@ -17,6 +17,7 @@ import { PriceListsService } from '../../modules/price-lists/price-lists.service
 import { ProductionCloseService } from '../../modules/production-orders/production-close.service';
 import { ProductionExecutionService } from '../../modules/production-orders/production-execution.service';
 import { ProductionOrdersService } from '../../modules/production-orders/production-orders.service';
+import { ProductCategoriesService } from '../../modules/products/product-categories.service';
 import { ProductsService } from '../../modules/products/products.service';
 import { ReturnAuthorizationsService } from '../../modules/return-authorizations/return-authorizations.service';
 import { ReorderPointsService } from '../../modules/stock/reorder-points.service';
@@ -33,6 +34,7 @@ import { TaxCodesService } from '../../modules/tax-codes/tax-codes.service';
 export interface Services {
   organization: OrganizationsService;
   products: ProductsService;
+  categories: ProductCategoriesService;
   locations: LocationsService;
   partners: PartnersService;
   partnerAddresses: PartnerAddressesService;
@@ -59,6 +61,7 @@ export function servicesOf(app: INestApplicationContext): Services {
   return {
     organization: app.get(OrganizationsService),
     products: app.get(ProductsService),
+    categories: app.get(ProductCategoriesService),
     locations: app.get(LocationsService),
     partners: app.get(PartnersService),
     partnerAddresses: app.get(PartnerAddressesService),

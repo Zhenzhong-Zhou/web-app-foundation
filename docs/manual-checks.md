@@ -90,6 +90,18 @@ it issued to CALM-RUN-01 and left out; and **ZINC-60** discontinued.
 Each of the nine is named in English, French and Chinese, so the list
 reads whole in every language.
 
+Then the items sorted for Items (ADR-092), by Daniel, after everything
+above: **14 categories**, two levels deep (Vitamins and minerals, Mind and
+sleep, Immunity and digestion, Bottling and shipping, and Plant and
+cleaning, which holds its two items directly), named in the language the
+organization writes its documents in, since a category has one name. Of
+the 25 items, 21 sit in one; **BLEND-FOCUS**, **BOTTLE-60**,
+**MAGCAP-SAMPLE** and **CALM-SAMPLE** sit in none. **CALM-SAMPLE** is the
+Samples tab's one item and holds no stock, and every type has an item.
+Among the products, **VITC-100** is Out and the rest of the nine reorder
+points leave several Low. Equipment is **EQ-CAPFILL-01**, received at
+18,500.00 CAD and left out of stock value (MC-802).
+
 Keep a second browser profile, or a private window, for one of the team or
 a second organization.
 
@@ -5338,3 +5350,6 @@ first.
   and language's names: MC-201 and MC-1558 extended.
 - 2026-11-09: ADR-092 step 7, equipment left out of stock value and of
   Waiting for a cost: MC-802 extended.
+- 2026-11-09: ADR-092 step 8, the demo gains a category tree, a sample
+  and its items sorted, and the volume seed categories and every type:
+  the demo's introduction extended.

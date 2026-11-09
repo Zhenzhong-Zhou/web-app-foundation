@@ -257,6 +257,9 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // Items sorted by stock (ADR-092): every item's stock summed to order
     // them, where the other sorts read the page's alone.
     read('GET /products?sort=stock', () => '/products?sort=stock', 'zh-Hans'),
+    // The category tree (ADR-092): every category with its items by type,
+    // read each time Items opens, for its filter's counts.
+    read('GET /products/categories', () => '/products/categories', 'zh-Hans'),
     read(
       'GET /products?search',
       () => `/products?search=${encodeURIComponent('专')}`,

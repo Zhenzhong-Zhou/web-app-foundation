@@ -46,6 +46,7 @@ const PASSWORD = 'volume-password-2026';
 const COUNTED = [
   'memberships',
   'products',
+  'product_categories',
   'partners',
   'orders',
   'order_lines',

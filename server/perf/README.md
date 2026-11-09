@@ -95,6 +95,14 @@ At the year's end, a fifth of each organization's items get a reorder
 point, about a third of them set above what is free, so low unless enough
 is on its way (ADR-085).
 
+Items (ADR-092): each organization gets 30 categories, three levels deep,
+and its catalogue is written with all six types and a category on four in
+five. By position, never from the random source, so the year is the data
+it was and the budgets still compare: a fifth of the packaging is
+supplies, a twentieth of the goods samples and a fiftieth equipment, all
+still bought, made and sold as before, since the type forks nothing but
+stock value.
+
 For large, give it a database of its own and skip the commit flush while
 seeding. It is safe for a throwaway database and several times faster, but
 must be undone before measuring, or writes would look faster than

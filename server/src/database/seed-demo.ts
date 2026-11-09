@@ -38,6 +38,7 @@ import {
   users,
 } from './schema';
 import { auditor, recordOpeningHistory } from './seed-demo-audit';
+import { addCategories } from './seed-demo-categories';
 import { orderSteps } from './seed-demo-orders';
 import {
   addTeam,
@@ -55,7 +56,8 @@ import { runInTenantContext } from './tenant-context';
  * of others around it for the screens (seed-demo-variety.ts), and a team of
  * nine doing the rest of the app's work, with the history each step leaves
  * (seed-demo-team.ts, seed-demo-team-work.ts, seed-demo-audit.ts,
- * seed-demo-orders.ts).
+ * seed-demo-orders.ts), and the items sorted into categories, in the
+ * organization's own language (seed-demo-categories.ts).
  *
  * Not part of `seed`, deliberately. That one runs on every deploy, production
  * included, and its job is the permission vocabulary — demo products written
@@ -884,8 +886,20 @@ async function seedDemo(): Promise<void> {
           exemptId: exempt.id,
         });
 
+        // Items sorted into categories (ADR-092), on the items above and
+        // one of its own, last of all so no figure above moves.
+        const sorted = await addCategories(
+          app,
+          db,
+          audited,
+          { userId: actor, organizationId: account.organizationId },
+          team,
+          documentLanguage,
+        );
+
         logger.log(`History opened with ${opened} records, by the Owner`);
         logger.log(teamWork);
+        logger.log(sorted);
         logger.log(describeTeam(team, DEMO_PASSWORD));
       },
     );
