@@ -134,6 +134,9 @@ the client's tests fail; then `npm ci` in `server/` and `client/`.
 
 ## 7. The commit, the push and the pull request
 
+- **Staged by path:** `git status`, then `git add <path>` for each file
+  the fix changed; never `git add -A` or `git add .`, which would commit
+  an untracked file the folder holds, a log or a `.flake-hunt/`.
 - **One commit,** authored `Zhenzhong Zhou <bob0823.zhou@gmail.com>`
   (`git commit --author=...`), the session as committer: a subject
   ending `(#<N>)`, a blank line, then why. Then
