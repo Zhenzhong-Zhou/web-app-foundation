@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 7 November 2026
+# web-app-foundation — handoff, 8 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,7 +13,7 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 7 November 2026:
+On 8 November 2026:
 
 - **Customise Home,** decided in ADR-091: planned on 6 November and
   built on 6 and 7 November on `customise-home`, 78 commits, merged on 7
@@ -25,10 +25,20 @@ On 7 November 2026:
   Orders oldest first. Its reviews found 92, fixed 53, and filed #507 to
   #514. Its boards are the canvas's row "Customise Home v2" and decisions
   64a's and 81's.
+- **Small fixes on the API credit:** the maintainer's API key carries a
+  promotional US$100 a month, the current one ending on 9 December 2026
+  (UTC), for the API and the Agent SDK but not Claude Code. A runner in
+  the ignored `tmp/sdk-fix/` runs `/fix-issue <N>` through the Agent SDK
+  in a second working folder: [#514] first, merged on 8 November as
+  [#519], for about US$1.70. It moves into the repository on
+  `fix-runner`, with one lock for the runs both folders share, as
+  [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md) of 8
+  November decides; until it merges, a fix's full verify or browser run
+  never overlaps one in the first folder.
 - **The router for `/build-from-brief`,** [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md):
   planned on 7 November and built on 7 and 8 November on `build-router`,
-  40 commits, [#518] open with every check green, to merge once the
-  as-built is pushed; the as-built is in the amendment. Each step runs on
+  40 commits, merged on 8 November as [#518] (fc6f90d); the as-built is
+  in the amendment. Each step runs on
   the model its brief names, from engineering.md's "Which model runs a
   step"; a Sonnet or Haiku step that fails on its own code runs again on
   Opus, once a run; a run shows its plan and checks the branch, the tree
@@ -145,8 +155,10 @@ On 7 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 7 November, from the terminal as a merge
-  commit, [#515] (Customise Home). On 6 November, from the terminal as merge commits,
+- **The last merges:** on 8 November, from the terminal as merge
+  commits, [#518] (the router) and [#519] ([#514], from the runner; a
+  runner's pull request is squashed from now on). On 7 November, from
+  the terminal as a merge commit, [#515] (Customise Home). On 6 November, from the terminal as merge commits,
   [#477] (ADR-091) and [#506]. On 4 November, from cloud sessions, [#468]
   ([#466]) and [#469] ([#462]), each as a merge commit, since the button
   offered the method used last; a cloud pull request is merged from the
@@ -258,7 +270,7 @@ On 7 November 2026:
   conventions; the reviewer who reads only Chinese checks only the first
   screens a newcomer sees. Their data stays in the ignored
   `tmp/i18n-review/` on the maintainer's Mac. The cloud credit ended on 4
-  November; the API credits, about US$80 left, last until 9 November.
+  November; the API key's credit is US$100 a month (Where things stand).
   Decided on 3 November: every suggestion applied, the natural pass's
   where both passes have one, with a workbook of the Chinese changes for
   the maintainer to clear any rejected; [#148], [#149] and [#249] riding
@@ -277,7 +289,8 @@ On 7 November 2026:
   are listed on the issue. On 2 and 3 November, nineteen more, the last
   thirteen through `/fix-issue` (The last merges, above); on 4 November,
   eight more. The cloud credit ended on 4 November. [#466] and [#462]
-  went in the same evening ([#468], [#469]); no pick is chosen yet. Since
+  went in the same evening ([#468], [#469]); from 8 November, picks run on
+  the API credit through the runner ([#519] first). Since
   ADR-090 a pick
   comes from an export of the issues, and one that names more than about
   five files goes to the Mac.
@@ -291,10 +304,11 @@ On 7 November 2026:
 
 ## Still to do, by hand
 
-- **After [#518]'s merge,** in this order: restart Claude Code, so it
-  reads the loop's skill without its pin; the planning skill packed from
-  `main` and uploaded; `evals.md`'s prompts 6 and 7 walked in a new chat;
-  and `/triage` on the areas it touched, docs and ops. On any new
+- **After [#518]'s merge,** done on 8 November: Claude Code restarted;
+  the planning skill packed from `main` and uploaded; and `/triage` over
+  all 155 open issues, with no closes and comments on [#446] and [#467].
+  Still to do: `evals.md`'s prompt 6, walked when picking the runner's
+  fixes, and 7, checked on Items' brief. On any new
   machine: `"model": "opus"` in settings.local.json in `.claude/`, that
   file listed in the clone's own exclude file (`.git/info/exclude`), so
   the loop runs on Opus.
@@ -324,8 +338,8 @@ On 7 November 2026:
   - MC-4201 on the live site with a test item, set up again on the
     database of 5 November: one notice in the bell within the hour while
     the service is awake; then remove the point.
-- **The planning skill's `evals.md`:** prompts 6 and 7 after the
-  router's upload; 4 still waits for a patch that is refused.
+- **The planning skill's `evals.md`:** prompt 6 when picking the
+  runner's fixes, and 7 on Items' brief; 4 still waits for a patch that is refused.
 - **[#245] in Safari and Edge, once deployed:** the page asked to translate
   into Chinese stays as written, a typed field included; WebKit and
   Firefox have known gaps with fields. What changes is filed.
@@ -390,7 +404,9 @@ request or a set of them:
       request, as its as-built says;
    4. Home redesigned ([#335], ADR-091): [#477], merged on 6 November;
       then Customise Home, merged on 7 November ([#515]); then the
-      router for `/build-from-brief`, ADR-089's amendment, [#518];
+      router for `/build-from-brief`, ADR-089's amendment, [#518],
+      merged on 8 November; then the runner for small fixes on the API
+      credit, in the repository, ADR-089's amendment, on `fix-runner`;
       then Items ([#476]),
       ADR-092 with canvas boards first, the page and the menu named Items
       · Articles · 物品, Products · 商品 the goods tab; then Movements
@@ -658,7 +674,9 @@ Not repeated here; each list has one home:
 [#478]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/478
 [#505]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/505
 [#506]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/506
+[#514]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/514
 [#515]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/515
 [#516]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/516
 [#517]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/517
 [#518]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/518
+[#519]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/519

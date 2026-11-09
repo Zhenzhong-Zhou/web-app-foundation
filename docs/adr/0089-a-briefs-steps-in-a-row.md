@@ -745,3 +745,210 @@ as-built, pull request #518.
 - **The Opus setting lives on the Mac:** a new machine adds
   `"model": "opus"` to `.claude/settings.local.json` and lists that file
   in `.git/info/exclude`.
+
+## Amendment (November 2026) — small fixes on the API credit, by a runner in the repository
+
+Since 8 November the maintainer's API key carries a promotional credit of
+US$100 a month, the current one ending on 9 December 2026 (UTC). It pays
+for the API and the Agent SDK, not for Claude Code: a Claude Code session
+on the key fails with "credit balance too low". A runner kept in the
+ignored `tmp/sdk-fix/` ran `/fix-issue <N>` through the Agent SDK in a
+second working folder, `../waf-fix`, so the credit paid for it. Its first
+fix, #514, merged as #519 the same day, for about US$1.70. A first run
+had ended while its verify ran in the background, since a session ends
+when the agent's turn ends; the runner then turned background tasks off,
+as #252 did for Claude Code Review, and checks the folder after each run.
+
+The runner was kept out of the repository while the credit was thought to
+end on 9 December. It comes every month, so the runner moves in, and a
+fix on the credit can run while a feature is built in the first folder.
+Two working folders share the app's ports and test databases, and a
+second full verify started while one runs clashes in three places:
+
+- the server's end-to-end suite refuses at its start, on the advisory
+  lock its global setup takes (issue #1);
+- the browser suite reuses the servers the first folder's run started on
+  3100 and 5273, since `reuseExistingServer` is on outside CI, so it
+  tests the other folder's code, on the database that run is using;
+- the Linux browsers' container is removed by name, `docker rm --force
+  verify-linux-browsers`, under the first run's tests.
+
+The maintainer chose each decision below on 8 November 2026, asking for
+the practice teams use in each, which the decisions follow.
+
+Checked before drafting, for the areas docs and ops
+(`scripts/adr-check.mjs`, 8 November 2026):
+
+- **Fired, and taken here:** #467's 12 (`when-touched`): the picks'
+  exports in `scripts/cloud-picks.sh`, under ShellCheck, rather than two
+  long lines in the planning skill's section 8, which this changes. The
+  router's check left it for cloud sessions' return; picks are back, each
+  month, on the credit.
+- **Not fired, and left:**
+  - #467's 13, 14, 16, 17, 18, 22's report fields, 25 and 8 November's
+    screenshot line: each changes what a panel does, and only a walk
+    proves it; Items' branch walks one.
+  - #253 (`when-touched`): the review workflow is not changed.
+  - #226 (`when-touched`): it needs a rule for the plan check; the lock
+    wraps the timed runs and changes no plan.
+  - #292 (`when-touched`): its two parts left each wait for their own
+    batch, as its comment says.
+  - #516 and #284: CI's burn-in and browsers are unchanged, and the lock
+    is off in CI.
+  - #446: the runner's lock file is one more that Dependabot reads; the
+    step that writes it says whether the three advisories reach it.
+  - #321: the runner reads this repository's own skill, so it stays
+    here, one more candidate under this ADR's Deferred.
+  - #142, #197, #263, #283, #319, #320, #336 and #517: their files are
+    not changed.
+  - This ADR's Deferred, steps in parallel in worktrees: not fired,
+    since one brief's steps still run one at a time; the lock is what
+    such steps would need first.
+  - The Deferred lines of the docs and ops ADRs, ADR-051's watch list
+    and Open decisions hold nothing on a second folder or on the credit.
+- **Found while checking:**
+  - `scripts/prune-branches.sh --yes` stops at a merged branch still
+    checked out in the second folder: git refuses to delete it, and the
+    script exits there.
+  - #519 went in as a merge commit, where the README's row for a small
+    fix says squash; its one commit is the maintainer's, so nothing is
+    undone, and the runner prints the command after each run.
+  - The SDK's own Claude Code comes as a package per platform, about
+    310 MB on a Mac and 330 MB on Linux.
+
+### Decision — the runner in `scripts/fix-issue/`, a package of its own
+
+- **`scripts/fix-issue/run.mjs`,** with its own `package.json` and
+  lock, as `server/` and `client/` have theirs, never workspaces; `npm
+  ci` in it once on each Mac. It runs from the main working folder, as
+  `node scripts/fix-issue/run.mjs <N>`, with `leave <path>` after the
+  number as `/fix-issue` takes it, and `--probe`, `--resume last`,
+  `--spent`, `--folder`, `--model` and `--budget`.
+- **Its test never loads the SDK:** the parts it checks (the arguments,
+  the guards, the report after a run, the cost list) are a module of
+  their own, and the SDK is imported only when a run starts. The scripts'
+  tests and CI install nothing new.
+- **The SDK pinned exactly.** Dependabot keeps it current, monthly with
+  its 7-day wait, since the SDK publishes every one to four days; a
+  branch's dependency step stays with `server/` and `client/`, since
+  nothing the app ships depends on it. After a raise, `--probe` proves it.
+- **Its guards, kept:** it stops before any work unless the session is
+  paid by `ANTHROPIC_API_KEY` and `/fix-issue` is found; it cannot merge
+  or force-push; it stops at US$15 a fix; it runs headless, with no
+  background tasks, commands up to 90 minutes in the foreground, and the
+  push and pull request before its last message; after each run it
+  prints the folder's branch, last commit, uncommitted files and pull
+  request, `UNFINISHED` when one is missing, and the merge command,
+  `gh pr merge <PR> --squash --delete-branch`.
+- **Its guards, added:** it refuses to start from a second folder, and
+  refuses the main working folder as the folder to fix in, where a build
+  runs; a new fix, not a resume, refuses a folder with uncommitted
+  changes, naming them. The folder is `../waf-fix` beside the main one
+  unless `--folder` names another; when it is missing, the runner prints
+  the commands that make it.
+
+### Decision — one lock for the runs both folders share
+
+- **What takes it:** the server's end-to-end suite; the client's browser
+  suite, `npm run test:e2e:ui` and the screenshots; the Linux browsers in
+  the full verify; and the timed runs, `npm run perf`. Each takes it for
+  its own run, so another folder's format, lint, build and unit tests go
+  on meanwhile.
+- **The lock is Postgres's,** a session-level advisory lock held on a
+  connection of its own by `scripts/one-at-a-time.mjs`, which runs the
+  command under it, as the server's suite already holds one (issue #1).
+  A run that ends or dies frees it, so nothing stale is left, where a
+  file left behind would block the next run.
+- **A second run waits,** printing each minute which folder holds it,
+  for what and since when, read from the holder's connection name; after
+  60 minutes it stops, naming the holder. A command run under the lock
+  that calls another passes straight through.
+- **A browser run reuses only its own folder's servers:** one already on
+  3100 or 5273 from the other folder stops the run, naming it.
+- **Off in CI,** where each job runs alone. The server's own refusal
+  stays, behind it, for a run started without it.
+
+### Decision — Opus for every fix
+
+The runner's model is Opus, `--model` kept for an exception the
+maintainer names. A fix comes with the test that fails before it, which
+engineering.md's table puts on Opus; #514 cost about US$1.70 on it.
+
+### Decision — every run's cost in a list, and the month against the credit
+
+- **`tmp/fix-runs/runs.tsv`,** in the main working folder, which git
+  ignores: one line per run, with its Vancouver time, the issue, the
+  model, minutes, turns, the cost the SDK reports, and the pull request
+  or `UNFINISHED`. The logs go beside it.
+- **`--spent`** prints the credit month's runs and their total against
+  US$100, from the day the credit renews; the amount and the day are
+  constants at the runner's top.
+- **A warning before a run** once the month is past US$80, 80 % of it,
+  the point budget alerts commonly use. The SDK's figure is an estimate;
+  the Console's balance is the real one.
+- The chat's time and cost for a fix rest on this list.
+
+### Decision — the picks offered as the runner's lines
+
+- **The planning skill's section 8** offers `node
+  scripts/fix-issue/run.mjs <N>` while the month's credit has room, with
+  each pick's time and cost on the credit, and `/fix-issue <N>` for a
+  cloud session or Claude Code on the plan.
+- **The exports in `scripts/cloud-picks.sh`** (#467's 12): without
+  numbers it writes `tmp/cloud-picks.json`; with them, the shortlist,
+  `tmp/cloud-picks-shortlist.json`. Section 8 names the script.
+- **A runner's pull request is squashed,** as a cloud session's: one fix,
+  one commit on `main`.
+
+### Decision — the prune keeps a branch another folder has checked out
+
+`scripts/prune-branches.sh` keeps a branch checked out in another
+working folder, naming the folder, as it keeps the current branch.
+
+### Considered and not done
+
+- **The SDK in `server/`'s devDependencies:** about 330 MB of its Claude
+  Code in every `npm ci` of the server, CI's included.
+- **A top folder of its own, `tools/`:** `scripts/verify.sh` and the
+  docs check would each need lines for it, which `scripts/` has.
+- **Each folder on its own ports, databases and container,** both
+  running at once: Playwright's ports read from `.env`, two more
+  databases made and migrated in each folder, and the container named
+  per folder. The volume databases show how a database beside the usual
+  ones is forgotten (7 November), and two browser suites at once on one
+  Mac make the timing tests flaky (5631d0d8).
+- **A lock file in the folder git shares:** a run killed leaves it.
+- **The lock over the whole full verify:** format, lint, build and unit
+  tests share nothing.
+- **Sonnet first, then Opus after a failure,** as the loop does: a fix
+  is small, and a failed first attempt costs more than it saves.
+- **Claude Code itself on the key:** the credit does not pay for it.
+
+### Deferred — each with what brings it in
+
+- **Each folder on its own ports and databases,** so both run at once.
+  Trigger: a wait on the lock past 30 minutes, twice in one week.
+- **Several picks run one after another** from one command. Trigger:
+  three picks waiting at once, twice in a month.
+
+### Consequences
+
+- `scripts/fix-issue/`, a package with its runner, module and test;
+  `scripts/one-at-a-time.mjs` and its test, around the end-to-end,
+  screenshot and timed runs in both packages' scripts and the Linux
+  browsers in `scripts/verify.sh`; `scripts/prune-branches.sh` with a
+  test; `scripts/cloud-picks.sh` with a test; `.prettierignore`, for the
+  runner's lock; and `.github/dependabot.yml`.
+- engineering.md's "How code is delivered" and "Server" and the
+  README's "Which tool, when" say how a fix runs on the credit and that
+  a second run waits.
+- The planning skill's section 8, `reference/delivery.md` and
+  `evals.md`'s prompt 6. It is uploaded again after the merge (ADR-088's
+  amendment).
+- After the merge, `tmp/sdk-fix/` goes: its logs into `tmp/fix-runs/`,
+  by hand.
+- No API change, no migration and nothing a person sees in the app.
+- Built on `fix-runner`, in this order: this amendment; dependencies;
+  the runner; the lock; the prune; the picks' script; the working
+  agreements; the planning skill; the runner's probe and the lock across
+  both folders, by hand; dependencies again; the reviews; the as-built.
