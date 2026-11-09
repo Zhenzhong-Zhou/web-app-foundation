@@ -509,6 +509,18 @@ test("changes left uncommitted are UNFINISHED, named, with the resume command", 
   );
 });
 
+test("a fix in a folder --folder named resumes with --folder, there", () => {
+  const { run } = standIn({
+    ...ON_BRANCH,
+    "git status --porcelain": " M client/src/a.ts",
+  });
+  const report = afterRun("/other", run, { named: true });
+  assert.equal(
+    report.lines.at(-1),
+    "UNFINISHED: run  node scripts/fix-issue/run.mjs --resume last --folder /other  to finish it.",
+  );
+});
+
 test("no pull request, or no branch, is UNFINISHED", () => {
   const none = standIn({
     ...ON_BRANCH,

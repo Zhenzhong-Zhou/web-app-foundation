@@ -464,11 +464,12 @@ export function runIn(cwd, command, args) {
 /**
  * The folder after a fix: its branch, last commit, uncommitted files and
  * pull request; UNFINISHED with the command that resumes it when changes
- * are left or no pull request is open, otherwise the merge command, after
- * the one that detaches the folder, since git deletes no branch another
- * folder has checked out.
+ * are left or no pull request is open, with --folder when the fix ran in a
+ * folder --folder named, since a resume runs in ../waf-fix otherwise;
+ * otherwise the merge command, after the one that detaches the folder,
+ * since git deletes no branch another folder has checked out.
  */
-export function afterRun(folder, run = runIn) {
+export function afterRun(folder, run = runIn, { named = false } = {}) {
   const changes = run(folder, "git", ["status", "--porcelain"]);
   const branch = run(folder, "git", ["branch", "--show-current"]);
   const last = run(folder, "git", ["log", "-1", "--oneline"]);
@@ -499,7 +500,7 @@ export function afterRun(folder, run = runIn) {
   if (changes) lines.push(`uncommitted:\n${changes}`);
   lines.push(
     unfinished
-      ? `UNFINISHED: run  ${RUNNER} --resume last  to finish it.`
+      ? `UNFINISHED: run  ${RUNNER} --resume last${named ? ` --folder ${folder}` : ""}  to finish it.`
       : [
           "Once its checks pass and you have read it, free its branch from that folder, then merge it squashed:",
           `  git -C ${folder} switch --detach`,

@@ -259,7 +259,10 @@ try {
 if (stopped) process.exit(1);
 
 const result = tally(results);
-const report = args.mode === "probe" ? undefined : afterRun(folder);
+const report =
+  args.mode === "probe"
+    ? undefined
+    : afterRun(folder, undefined, { named: args.folder !== undefined });
 if (report) console.log(report.lines.join("\n"));
 if (session) {
   recordRun(runs, {
