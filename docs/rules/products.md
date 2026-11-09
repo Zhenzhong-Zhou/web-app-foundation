@@ -28,8 +28,9 @@ How this file is kept is in the [README](README.md).
 - **An item's type says what it is for, one of six: products, raw
   materials, packaging, supplies, samples or equipment. It is chosen when
   the item is added and may change at any time,** since it changes
-  nothing else: the item moves to that type's tab, and its stock, lots and
-  History stay. History records the type from and to.
+  nothing else but whether its stock is stock value: the item moves to
+  that type's tab, and its stock, lots and History stay. History records
+  the type from and to.
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--type-distinguishes-what-a-thing-is-for-and-does-not-fork-the-schema) ·
   [ADR-092](../adr/0092-items.md#decision--adding-and-changing-an-item-by-its-type) ·
   [test](../../server/test/products.e2e-spec.ts) "rejects an unknown type" ·
@@ -37,6 +38,17 @@ How this file is kept is in the [README](README.md).
   [test](../../client/e2e/products.spec.ts) "shows a product that already exists in the organisation" ·
   [Help](../../client/src/help/guides/en/products.md#add-a-product-add) ·
   MC-201
+- **Equipment is received, moved and counted where it stands, as any
+  item is, but is not stock value:** Stock value's total, its list by item
+  and lot, and their export leave it out, and so does Waiting for a cost,
+  on Stock value, on Home and in Inventory. Its movements are still
+  valued in the ledger.
+  [ADR-092](../adr/0092-items.md#decision--equipment-is-counted-and-located-never-stock-value) ·
+  [ADR-048](../adr/0048-cost.md#amendment-november-2026--equipment-is-not-stock-value-adr-092) ·
+  [test](../../server/test/costs.e2e-spec.ts) "leaves equipment out of stock value and of what waits for a cost, though Inventory holds it" ·
+  [test](../../server/test/home.e2e-spec.ts) "leaves equipment out of Waiting for a cost, as Stock value does" ·
+  [Help](../../client/src/help/guides/en/stock-value.md#stock-value) ·
+  MC-802
 - **A product needs a name, up to 200 characters, and may have a
   description, up to 2,000. Two products may share a name:** the SKU tells
   them apart. Spaces around the name are dropped.

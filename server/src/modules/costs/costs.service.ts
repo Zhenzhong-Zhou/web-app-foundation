@@ -18,7 +18,7 @@ import type {
   StockValuation,
 } from './dto/cost-response.dto';
 import type { ListNeedsCostDto } from './dto/list-needs-cost.dto';
-import { openNeedsCost } from './open-needs-cost';
+import { inStockValue, openNeedsCost } from './open-needs-cost';
 
 /*
  * The rows of the raw queries below, as Postgres returns them: numeric and
@@ -131,7 +131,11 @@ export class CostsService {
     return corrected;
   }
 
-  /** Everything on hand, pool by pool, and what it is worth together. */
+  /**
+   * Everything on hand, pool by pool, and what it is worth together:
+   * stock value, which leaves equipment out (inStockValue; ADR-048, amended
+   * by ADR-092).
+   */
   stockValuation(): Promise<StockValuation> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const base = await baseCurrency(tx, organizationId);
@@ -172,6 +176,7 @@ export class CostsService {
          and op.lot_key = coalesce(p.lot_id, '00000000-0000-0000-0000-000000000000'::uuid)
         where p.organization_id = ${organizationId}::uuid
           and p.quantity > 0
+          and ${inStockValue(organizationId, sql`p.variant_id`)}
         order by pv.sku, l.code nulls first
       `);
 
@@ -180,6 +185,7 @@ export class CostsService {
         from valuation_pools p
         where p.organization_id = ${organizationId}::uuid
           and p.quantity > 0
+          and ${inStockValue(organizationId, sql`p.variant_id`)}
       `);
 
       const rows = pools.rows as unknown as PoolRow[];

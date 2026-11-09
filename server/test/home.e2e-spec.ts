@@ -475,6 +475,29 @@ describe('Home (e2e)', () => {
     expect(list).toHaveLength(2);
   });
 
+  // Equipment is not stock value (ADR-048, amended by ADR-092): its
+  // receipts, with a cost or without, are no one's to-do.
+  it('leaves equipment out of Waiting for a cost, as Stock value does', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const shelf = await site(alpha.agent, 'SHELF');
+    const goods = await item(alpha.agent, 'FOCUS-60');
+    const filler = await createVariant(alpha.agent, {
+      type: 'equipment',
+      name: 'Capsule filler',
+      variant: { sku: 'FILLER', unitOfMeasure: 'each' },
+    });
+    await receive(alpha.agent, goods, shelf, '5');
+    await receive(alpha.agent, filler, shelf, '1');
+
+    expect(card(await home(alpha), 'costsWaiting')).toMatchObject({
+      count: 1,
+    });
+    const list = body<{ entries: { sku: string }[] }>(
+      await alpha.agent.get('/v1/costs/needs-cost').expect(200),
+    ).entries;
+    expect(list.map((row) => row.sku)).toEqual(['FOCUS-60']);
+  });
+
   // To ship and To receive are counted from one read of the orders, by
   // direction, each as its list filters it, the overdue late; the drafts
   // beside them.

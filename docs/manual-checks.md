@@ -352,7 +352,12 @@ a second organization.
 - **MC-802** Stock value: the total, each pool's quantity, value and unit
   cost, and the needs-cost list. The demo's BF-2609 shows 1900.00 CAD. A
   pool with a receipt still needing a cost is marked provisional, and the
-  mark goes once the cost is set.
+  mark goes once the cost is set. Equipment is not stock value: the
+  capsule filler, EQ-CAPFILL-01, received on PO-DEMO-10 at 18,500.00 CAD,
+  is on Inventory in the Equipment cage but not in Stock value's list, its
+  total or its export. Receive it again by hand on Inventory, with no
+  price: Waiting for a cost, on Stock value, on Home and in Inventory,
+  keeps its count.
 - **MC-803** Correct a needs-cost receipt. The correction splits between
   stock still held and stock already gone, and the item leaves the
   needs-cost list.
@@ -5331,3 +5336,5 @@ first.
 - 2026-11-09: ADR-092 step 6, a code in use naming the item that has it,
   and the catalogue export by the list's query, with each type, category
   and language's names: MC-201 and MC-1558 extended.
+- 2026-11-09: ADR-092 step 7, equipment left out of stock value and of
+  Waiting for a cost: MC-802 extended.
