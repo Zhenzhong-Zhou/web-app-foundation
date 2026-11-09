@@ -1,9 +1,9 @@
 # Products
 
 What the app allows, refuses and works out for products and their
-variants, their names in other languages, the name each reader sees, the
-Products list's search and the item pickers, product images and the
-catalogue export, as the code does it today. Each rule links the ADR that
+variants, their categories, their names in other languages, the name each
+reader sees, the Products list's search and the item pickers, product
+images and the catalogue export, as the code does it today. Each rule links the ADR that
 decided it, the test that proves it, the Help section where a person
 meets it, and the manual check that walks it by hand. Why a rule is so is
 in its ADR; how to do a task is in the
@@ -132,6 +132,48 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a discontinued product, as the list shows it" ·
   partly tested ·
   MC-1546 · MC-3901
+
+## Categories
+
+- **An organization keeps its items' categories as one tree: a category
+  at the top or under another, at any depth, named in up to 100
+  characters. Two categories beside each other, under one parent or both
+  at the top, never share a name;** the same name under another parent is
+  another category. Spaces around a name are dropped.
+  [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "adds a category at the top and one under it, and answers it as the tree shows it" ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "refuses a name already used under the same parent, at the top too, and allows it under another" ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "refuses a blank name or one past 100 characters"
+- **Categories are listed by name: a Chinese name by its pinyin, the
+  others by their letters, accents and case aside, and a number inside a
+  name by its value,** so Size 2 comes before Size 10.
+  [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "lists the categories by name: a number by its value, a Chinese name by its pinyin"
+- **Each category counts the items it holds itself, by type, the
+  discontinued apart;** an item in a category under it is that
+  category's.
+  [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "counts the items each category holds itself, by type, the discontinued apart"
+- **A category can be renamed and moved at any time, to the top or under
+  another. A move under itself, or under any category inside it, is
+  refused, saying to choose another place;** so is a move to where its
+  name is already taken.
+  [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "renames a category, and moves it under another and back to the top" ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "refuses a move under itself or under any category inside it" ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "refuses a name already used under the same parent, at the top too, and allows it under another"
+- **A category is deleted only once nothing is in it. One holding items,
+  discontinued ones too, or other categories is refused, saying how many
+  of each and to move them out first.**
+  [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "deletes an empty category" ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "refuses to delete a category holding items or categories, saying how many and what to do"
+- **An item is in one category or none, Uncategorised: given one when it
+  is added, or none, and moved or taken out at any time.** A category
+  another organization keeps is refused, as one that is not there.
+  [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "puts an item in a category when it is added, moves it, and takes it out" ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "refuses another organization’s category with a 400, as a parent or on an item"
 
 ## Names in other languages, and the name each reader sees
 
@@ -343,11 +385,12 @@ How this file is kept is in the [README](README.md).
 - **Seeing the catalogue, adding a product and changing one each take
   their own permission: See the product catalogue, Add a product, and Edit
   or discontinue a product, which covers variants, names in other
-  languages and images too.** The Owner and an Admin hold all three; a
-  Viewer, and every role template, sees only; and anyone holds those their
-  roles grant. Seeing a product's images takes seeing the catalogue. No
-  permission deletes a product. Another organization's products are never
-  found, and a variant is reached only through its own product.
+  languages, images and categories too.** The Owner and an Admin hold all
+  three; a Viewer, and every role template, sees only; and anyone holds
+  those their roles grant. Seeing a product's images, or the categories,
+  takes seeing the catalogue. No permission deletes a product. Another
+  organization's products and categories are never found, and a variant
+  is reached only through its own product.
   [ADR-062](../adr/0062-product-images.md#decision--adding-removing-reordering) ·
   [ADR-080](../adr/0080-job-roles.md#decision--roles-an-organization-makes-from-a-template-or-a-copy) ·
   [ADR-003](../adr/0003-multi-tenancy.md#decision) ·
@@ -362,14 +405,18 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/product-images.e2e-spec.ts) "keeps each organization to its own products and files" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "never finds another organization's products, items or partners" ·
   [test](../../client/e2e/products.spec.ts) "does not show another organisation's products" ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "lets a Viewer read the tree but not change it" ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "never shows another organization’s categories, nor counts its items" ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "answers 404 for another organization’s category, to rename or delete" ·
   partly tested ·
   [Help](../../client/src/help/guides/en/products.md#variants-images-and-names-variants)
 - **History keeps who added or changed a product, and when, under the
   product's base name at the time: a variant added with its SKU, a SKU
   changed with the old and the new, names in other languages as the new
-  set, an image added by its file, and a new order of images. A change to
-  the product itself, a new name or Discontinue, records who and when, not
-  what changed.** A description is never recorded.
+  set, an image added by its file, a new order of images, and its
+  category, when added and from and to, by the category's name. A change
+  to the product itself, a new name or Discontinue, records who and when,
+  not what changed.** A description is never recorded.
   [ADR-018](../adr/0018-audit-log.md#decision--never-record-the-request-body) ·
   [ADR-038](../adr/0038-an-audit-row-names-its-resource-as-it-was-at-the-time.md#decision--snapshot-a-label-at-write-time-in-audit_logresource_label) ·
   [test](../../server/test/audit.e2e-spec.ts) "records no payload for a route that names no fields" ·
@@ -377,4 +424,11 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/audit.e2e-spec.ts) "records only the fields a route named" ·
   [test](../../server/test/audit.e2e-spec.ts) "filters by action" ·
   [test](../../server/test/languages.e2e-spec.ts) "keeps a product and its variants named in other languages, replaced as a set" ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "records an item’s category from and to, by name, and a rename beside an unchanged one" ·
   partly tested
+- **History keeps each category added, renamed, moved and deleted, by its
+  name, and the category it sits under by that one's name,** the name it
+  had kept once it is deleted. Saved with nothing changed, it records
+  nothing.
+  [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "records each change to a category by its name, and its parent by name"

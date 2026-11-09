@@ -793,6 +793,7 @@ export type AuditLink = {
     | 'lot'
     | 'product'
     | 'partner'
+    | 'product_category'
     | 'tax_code'
     | 'price_list'
     | 'variant'
@@ -1054,6 +1055,37 @@ export type AcceptInvitationDto = {
   timeZone?: string;
 };
 
+export type CategoryItemCount = {
+  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  active: number;
+  discontinued: number;
+};
+
+export type ProductCategory = {
+  id: string;
+  name: string;
+  parentId: string | null;
+  items: Array<CategoryItemCount>;
+};
+
+export type ProductCategoryList = {
+  categories: Array<ProductCategory>;
+};
+
+export type CreateProductCategoryDto = {
+  name: string;
+  parentId?: string | null;
+};
+
+export type ProductCategoryEnvelope = {
+  category: ProductCategory;
+};
+
+export type UpdateProductCategoryDto = {
+  name?: string;
+  parentId?: string | null;
+};
+
 export type ProductSummary = {
   coverFileId: string | null;
   id: string;
@@ -1120,6 +1152,7 @@ export type ProductImage = {
 
 export type ProductDetail = {
   displayName: string;
+  categoryId: string | null;
   translations: Array<ProductTranslation>;
   variants: Array<Variant>;
   images: Array<ProductImage>;
@@ -1146,6 +1179,7 @@ export type CreateProductDto = {
   type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
   name: string;
   description?: string;
+  categoryId?: string | null;
   variant: CreateVariantDto;
 };
 
@@ -1157,6 +1191,7 @@ export type UpdateProductDto = {
   name?: string;
   description?: string;
   isActive?: boolean;
+  categoryId?: string | null;
 };
 
 export type VariantEnvelope = {
@@ -3432,6 +3467,9 @@ export const AuditAction = {
   PRODUCT_UPDATED: 'product.updated',
   PRODUCT_VARIANT_ADDED: 'product.variant_added',
   PRODUCT_VARIANT_UPDATED: 'product.variant_updated',
+  PRODUCT_CATEGORY_CREATED: 'product_category.created',
+  PRODUCT_CATEGORY_UPDATED: 'product_category.updated',
+  PRODUCT_CATEGORY_DELETED: 'product_category.deleted',
   LOCATION_CREATED: 'location.created',
   LOCATION_UPDATED: 'location.updated',
   STOCK_MOVEMENT_RECORDED: 'stock.movement_recorded',
@@ -4088,6 +4126,9 @@ export type AuditControllerListV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product_category.created'
+      | 'product_category.updated'
+      | 'product_category.deleted'
       | 'location.created'
       | 'location.updated'
       | 'stock.movement_recorded'
@@ -4202,6 +4243,9 @@ export type AuditControllerExportAuditV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product_category.created'
+      | 'product_category.updated'
+      | 'product_category.deleted'
       | 'location.created'
       | 'location.updated'
       | 'stock.movement_recorded'
@@ -4531,6 +4575,9 @@ export type WorkControllerActivityV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product_category.created'
+      | 'product_category.updated'
+      | 'product_category.deleted'
       | 'location.created'
       | 'location.updated'
       | 'stock.movement_recorded'
@@ -4645,6 +4692,9 @@ export type WorkControllerExportActivityV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product_category.created'
+      | 'product_category.updated'
+      | 'product_category.deleted'
       | 'location.created'
       | 'location.updated'
       | 'stock.movement_recorded'
@@ -4881,6 +4931,66 @@ export type InvitationsControllerAcceptV1Responses = {
 
 export type InvitationsControllerAcceptV1Response =
   InvitationsControllerAcceptV1Responses[keyof InvitationsControllerAcceptV1Responses];
+
+export type ProductCategoriesControllerListV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/products/categories';
+};
+
+export type ProductCategoriesControllerListV1Responses = {
+  200: ProductCategoryList;
+};
+
+export type ProductCategoriesControllerListV1Response =
+  ProductCategoriesControllerListV1Responses[keyof ProductCategoriesControllerListV1Responses];
+
+export type ProductCategoriesControllerCreateV1Data = {
+  body: CreateProductCategoryDto;
+  path?: never;
+  query?: never;
+  url: '/v1/products/categories';
+};
+
+export type ProductCategoriesControllerCreateV1Responses = {
+  201: ProductCategoryEnvelope;
+};
+
+export type ProductCategoriesControllerCreateV1Response =
+  ProductCategoriesControllerCreateV1Responses[keyof ProductCategoriesControllerCreateV1Responses];
+
+export type ProductCategoriesControllerRemoveV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/products/categories/{id}';
+};
+
+export type ProductCategoriesControllerRemoveV1Responses = {
+  204: void;
+};
+
+export type ProductCategoriesControllerRemoveV1Response =
+  ProductCategoriesControllerRemoveV1Responses[keyof ProductCategoriesControllerRemoveV1Responses];
+
+export type ProductCategoriesControllerUpdateV1Data = {
+  body: UpdateProductCategoryDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/products/categories/{id}';
+};
+
+export type ProductCategoriesControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type ProductCategoriesControllerUpdateV1Response =
+  ProductCategoriesControllerUpdateV1Responses[keyof ProductCategoriesControllerUpdateV1Responses];
 
 export type ProductsControllerListV1Data = {
   body?: never;

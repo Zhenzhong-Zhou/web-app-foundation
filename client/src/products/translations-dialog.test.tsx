@@ -11,6 +11,7 @@ const PRODUCT: ProductDetail = {
   displayName: 'Calm',
   description: null,
   isActive: true,
+  categoryId: null,
   images: [],
   translations: [],
   variants: [

@@ -4,6 +4,7 @@ import {
   IsIn,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
   ValidateNested,
@@ -28,6 +29,11 @@ export class CreateProductDto {
   @IsString()
   @MaxLength(2000)
   description?: string;
+
+  /** Its category (ADR-092); omitted or null for Uncategorised. */
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string | null;
 
   /**
    * Required, and `@IsDefined()` is what makes it so: `@ValidateNested()`

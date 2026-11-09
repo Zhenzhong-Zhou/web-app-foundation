@@ -15,6 +15,7 @@ offers either language (MC-1405).
 | --- | --- | --- | --- |
 | Product | Produit | 产品 | |
 | Variant | Variante | 规格 | The thing counted: "60ct". |
+| Category / Uncategorised | Catégorie / Sans catégorie | 分类 / 未分类 | Items' grouping, one tree per organization; an item is in one or none (ADR-092). |
 | SKU | UGS | SKU | French: unité de gestion des stocks. Chinese keeps the Latin abbreviation, as labels do. |
 | Lot | Lot | 批次 | A traced quantity with a code and an expiry. |
 | Location | Emplacement | 库位 | A shelf, bin or site stock sits in. |

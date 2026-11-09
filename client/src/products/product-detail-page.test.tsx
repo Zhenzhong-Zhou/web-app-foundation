@@ -16,6 +16,7 @@ const PRODUCT: ProductDetail = {
   displayName: '舒缓胶囊 90 粒',
   description: null,
   isActive: true,
+  categoryId: null,
   images: [],
   translations: [
     { locale: 'fr-CA', name: 'Calme 90 capsules', description: null },

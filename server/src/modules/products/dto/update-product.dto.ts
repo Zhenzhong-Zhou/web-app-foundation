@@ -2,6 +2,7 @@ import {
   IsBoolean,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -30,4 +31,9 @@ export class UpdateProductDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  /** Moved to another category (ADR-092); null for Uncategorised. */
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string | null;
 }

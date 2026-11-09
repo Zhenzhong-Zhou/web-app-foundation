@@ -131,6 +131,8 @@ export class ProductsController {
     action: AUDIT_ACTIONS.PRODUCT_CREATED,
     resourceType: 'product',
     resourceId: (response: { product: { id: string } }) => response.product.id,
+    // Its category, by name (ADR-092).
+    fields: ['categoryId'],
   })
   async create(
     @Body() dto: CreateProductDto,
@@ -157,6 +159,9 @@ export class ProductsController {
     action: AUDIT_ACTIONS.PRODUCT_UPDATED,
     resourceType: 'product',
     resourceId: (_response, request) => request.params.id,
+    // A category from and to, by name (ADR-092); a name and Discontinue
+    // record who and when.
+    fields: ['categoryId'],
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,

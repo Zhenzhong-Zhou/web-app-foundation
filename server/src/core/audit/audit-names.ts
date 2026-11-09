@@ -252,6 +252,18 @@ export const ACTION_NAMES: Record<AuditAction, Translatable> = {
     id: 'audit.action.productVariantUpdated',
     defaultMessage: 'Product variant updated',
   }),
+  'product_category.created': t({
+    id: 'audit.action.productCategoryCreated',
+    defaultMessage: 'Category added',
+  }),
+  'product_category.deleted': t({
+    id: 'audit.action.productCategoryDeleted',
+    defaultMessage: 'Category deleted',
+  }),
+  'product_category.updated': t({
+    id: 'audit.action.productCategoryUpdated',
+    defaultMessage: 'Category changed',
+  }),
   'product_licence.created': t({
     id: 'audit.action.productLicenceCreated',
     defaultMessage: 'Licence added',
@@ -372,6 +384,10 @@ export const ACTION_NAMES: Record<AuditAction, Translatable> = {
  */
 export const RESOURCE_TYPE_NAMES: Record<string, Translatable> = {
   product: t({ id: 'audit.type.product', defaultMessage: 'Product' }),
+  product_category: t({
+    id: 'audit.type.productCategory',
+    defaultMessage: 'Category',
+  }),
   partner: t({ id: 'audit.type.partner', defaultMessage: 'Partner' }),
   location: t({ id: 'audit.type.location', defaultMessage: 'Location' }),
   order: t({ id: 'audit.type.order', defaultMessage: 'Order' }),

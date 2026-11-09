@@ -23,6 +23,7 @@ import { ReturnsService } from '../src/modules/orders/returns.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
 import { PartnersService } from '../src/modules/partners/partners.service';
 import { PriceListsService } from '../src/modules/price-lists/price-lists.service';
+import { ProductCategoriesService } from '../src/modules/products/product-categories.service';
 import { ProductsService } from '../src/modules/products/products.service';
 import {
   kindsVisibleWith,
@@ -218,6 +219,7 @@ async function buildProbes(
   const recent = app.get(RecentService);
   const access = app.get(PermissionsService);
   const products = app.get(ProductsService);
+  const categories = app.get(ProductCategoriesService);
   const priceLists = app.get(PriceListsService);
   const partners = app.get(PartnersService);
   const reorder = app.get(ReorderPointsReadsService);
@@ -440,6 +442,9 @@ async function buildProbes(
     // Products as it opens, in Chinese: sorted and named by the name shown,
     // through a translation subquery a product (ADR-056, amended).
     { name: 'products', run: () => products.list('zh-Hans') },
+    // Items' categories (ADR-092): the tree, each with what it holds by
+    // type, counted from products by the organization and the category.
+    { name: 'categories', run: () => categories.list() },
     // Products, Partners and the pickers searched (ADR-056, amended), as a
     // Chinese reader asks, by pinyin, and a partner by part of its name:
     // three characters or more, as the probes above.

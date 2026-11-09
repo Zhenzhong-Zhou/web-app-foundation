@@ -37,7 +37,7 @@ in `server/src/cli/table-diagrams.ts`, named as the ADRs' areas are.
 | [price-lists](price-lists.md) | `price_list_items`, `price_lists` |
 | [product-licences](product-licences.md) | `product_licences` |
 | [production-orders](production-orders.md) | `production_order_lines`, `production_orders` |
-| [products](products.md) | `product_images`, `product_translations`, `product_variants`, `products`, `variant_translations` |
+| [products](products.md) | `product_categories`, `product_images`, `product_translations`, `product_variants`, `products`, `variant_translations` |
 | [recent](recent.md) | `recent_records` |
 | [return-authorizations](return-authorizations.md) | `return_authorization_lines`, `return_authorizations` |
 | [stock](stock.md) | `lots`, `reorder_points`, `stock_levels`, `stock_movements`, `stock_valuations`, `valuation_pools` |

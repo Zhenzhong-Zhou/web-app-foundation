@@ -267,6 +267,10 @@ export const KIND_WORDS: Record<ReferenceKind, Translatable> = {
   partner: t({ id: 'audit.kind.partner', defaultMessage: 'a partner' }),
   variant: t({ id: 'audit.kind.variant', defaultMessage: 'an item' }),
   product: t({ id: 'audit.kind.product', defaultMessage: 'a product' }),
+  product_category: t({
+    id: 'audit.kind.productCategory',
+    defaultMessage: 'a category',
+  }),
   lot: t({ id: 'audit.kind.lot', defaultMessage: 'a lot' }),
   person: t({ id: 'audit.kind.person', defaultMessage: 'one person' }),
   record: t({ id: 'audit.kind.record', defaultMessage: 'a record' }),
@@ -859,6 +863,14 @@ export const AUDIT_FIELDS = {
   },
   productId: {
     name: t({ id: 'audit.field.productId', defaultMessage: 'Product' }),
+    read: 'reference',
+  },
+  categoryId: {
+    name: t({ id: 'audit.field.categoryId', defaultMessage: 'Category' }),
+    read: 'reference',
+  },
+  parentId: {
+    name: t({ id: 'audit.field.parentId', defaultMessage: 'Under' }),
     read: 'reference',
   },
   lotId: {

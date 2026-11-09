@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -11,8 +12,12 @@ import type { Locale } from '../../common/locales';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
 import { type SearchTerms, searchTerms } from '../../common/search';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
-import { isUniqueViolation } from '../../database/errors';
 import {
+  isForeignKeyViolation,
+  isUniqueViolation,
+} from '../../database/errors';
+import {
+  productCategories,
   products,
   productTranslations,
   productVariants,
@@ -21,6 +26,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { namesIn, productNameOrder } from '../stock/item-name';
+import { assertCategoryIn, UNKNOWN_CATEGORY } from './category-tree';
 import type { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import type { ExportProductsDto } from './dto/export-products.dto';
@@ -50,6 +56,12 @@ function describeNames(translations: { locale: string; name: string }[]) {
         .join(' · ')
     : 'none';
 }
+
+/**
+ * Its category's key, refused when the category went between the check and
+ * the write: deleted by someone else in that moment (ADR-092).
+ */
+const CATEGORY_KEY = 'products_category_id_product_categories_id_fk';
 
 /** The outer product's variants, in the organization. */
 function variantsOf(organizationId: string): SQL {
@@ -309,6 +321,7 @@ export class ProductsService {
       displayName: variants[0].productName,
       description: product.description,
       isActive: product.isActive,
+      categoryId: product.categoryId,
       images: publicImages(images),
       translations: translations.map(({ locale, name, description }) => ({
         locale,
@@ -334,6 +347,15 @@ export class ProductsService {
   async create(input: CreateProductDto) {
     try {
       return await this.tenantDb.transaction(async (tx, organizationId) => {
+        if (input.categoryId) {
+          await assertCategoryIn(
+            tx,
+            organizationId,
+            input.categoryId,
+            UNKNOWN_CATEGORY,
+          );
+        }
+
         const [product] = await tx
           .insert(products)
           .values({
@@ -342,6 +364,7 @@ export class ProductsService {
             name: input.name,
             namePinyin: namePinyin(input.name),
             description: input.description,
+            categoryId: input.categoryId ?? null,
           })
           .returning();
 
@@ -363,6 +386,9 @@ export class ProductsService {
         return { ...product, variants: [variant] };
       });
     } catch (error) {
+      if (isForeignKeyViolation(error, CATEGORY_KEY)) {
+        throw new BadRequestException(UNKNOWN_CATEGORY);
+      }
       if (isUniqueViolation(error)) {
         // The only unique constraint on either table. Naming the SKU tells the
         // caller whether they meant the existing item or have a collision in
@@ -392,11 +418,35 @@ export class ProductsService {
         t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
       );
 
-    await this.tenantDb.update(
-      products,
-      { ...input, ...pinyinOf(input.name) },
-      eq(products.id, productId),
-    );
+    if (
+      input.categoryId !== undefined &&
+      input.categoryId !== existing.categoryId
+    ) {
+      if (input.categoryId) {
+        const [category] = await this.tenantDb.select(
+          productCategories,
+          eq(productCategories.id, input.categoryId),
+        );
+        if (!category) throw new BadRequestException(UNKNOWN_CATEGORY);
+      }
+      // From and to, by name (ADR-076). Only when it moves: a previous
+      // equal to the new would mark the whole save unchanged, a rename
+      // sent beside it included, and write no entry.
+      recordPrevious({ categoryId: existing.categoryId });
+    }
+
+    try {
+      await this.tenantDb.update(
+        products,
+        { ...input, ...pinyinOf(input.name) },
+        eq(products.id, productId),
+      );
+    } catch (error) {
+      if (isForeignKeyViolation(error, CATEGORY_KEY)) {
+        throw new BadRequestException(UNKNOWN_CATEGORY);
+      }
+      throw error;
+    }
 
     this.logger.log(`Product ${productId} updated`);
   }

@@ -2,11 +2,11 @@
 paths:
   - "server/src/modules/products/**"
   - "server/src/modules/stock/item-name.ts"
-  - "server/src/database/schema/{products,product-variants,product-translations,variant-translations,product-images}.ts"
+  - "server/src/database/schema/{products,product-categories,product-variants,product-translations,variant-translations,product-images}.ts"
   - "client/src/products/**"
   - "client/src/components/{variant-picker,product-cover}*.tsx"
   - "client/src/lib/{use-variants,use-picker-search}.ts"
-  - "server/test/{products,product-images,item-names,whole-list-search}.e2e-spec.ts"
+  - "server/test/{products,product-categories,product-images,item-names,whole-list-search}.e2e-spec.ts"
   - "client/e2e/{products,product-detail,product-images}.spec.ts"
 ---
 
@@ -31,7 +31,7 @@ commit that changes one of those rules updates it (ADR-087).
   `NAMED_READS` or `KEEP_THE_BASE` in `item-names.e2e-spec.ts`, which
   fails until it does (ADR-056, amended).
 - **Every write of a name writes its pinyin,** `namePinyin()` on an insert
-  and `pinyinOf()` on an update, in all four named tables (ADR-056).
+  and `pinyinOf()` on an update, items' and categories' (ADR-056, ADR-092).
 - **An item is matched and ranked by `itemMatches` and `itemRank`**
   (`item-search.ts`, on `common/search.ts`); nothing matches in the
   browser (ADR-056, amended).
@@ -47,3 +47,4 @@ commit that changes one of those rules updates it (ADR-087).
   amended).
 - **Names in other languages are replaced as a set, by upsert,** recorded
   as one line through `recordContext({ names })` (ADR-054, ADR-018).
+- **Category writes take `lockTree` first** (`category-tree.ts`, ADR-092).

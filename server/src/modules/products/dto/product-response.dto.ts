@@ -84,6 +84,8 @@ export class ProductDetail extends Product {
    * (ADR-056); `name` stays the base, which the edit forms change.
    */
   displayName!: string;
+  /** Its category (ADR-092), or null: Uncategorised. */
+  categoryId!: string | null;
   translations!: ProductTranslation[];
   variants!: Variant[];
   /** Its gallery, the cover first. */

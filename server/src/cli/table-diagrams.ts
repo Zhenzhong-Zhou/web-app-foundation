@@ -49,6 +49,7 @@ const TABLE_AREAS: Record<string, readonly string[]> = {
   'product-licences': ['product_licences'],
   'production-orders': ['production_order_lines', 'production_orders'],
   products: [
+    'product_categories',
     'product_images',
     'product_translations',
     'product_variants',
