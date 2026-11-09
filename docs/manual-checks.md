@@ -3545,6 +3545,14 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R99** *(Back pressed right after Leave held on the next screen,
+  #514)* In Chromium, DevTools → Network on Slow 4G. Open Customise Home,
+  press Up on a tile, choose Orders in the menu, choose Leave, and press
+  Back at once, before Orders draws: back on Home, with no "Leave without
+  saving?". The same from the order form: Raise an order, type a
+  reference, choose Inventory in the menu, Leave, then Back at once: back
+  on the form.
+
 - **MC-R98** *(a control focused under Help in a window under about
   1140 px, #272)* At 1024 px on Orders, open Help and press Tab twenty
   times: every stop is in Help, none on the page under it, and Raise an
@@ -5287,3 +5295,5 @@ first.
   move a tile to the next tile that way: MC-3213 extended.
 - 2026-11-07: Customise Home's reviews, Orders' guide naming the chips a
   link chooses, Oldest first among them: MC-408 extended.
+- 2026-11-08: #514, Back pressed right after Leave, before the next
+  screen draws, returning to the screen left: MC-R99 added.

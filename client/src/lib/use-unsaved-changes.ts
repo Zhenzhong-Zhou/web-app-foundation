@@ -12,7 +12,8 @@ import { markDirty } from './unsaved-registry';
  * then. Nothing asks while the form is untouched.
  *
  * `release()` lets the next navigation through: call it just before
- * navigating away on purpose, after a save or on Cancel. A state change
+ * navigating away on purpose, after a save or on Cancel; the blocker's
+ * Leave (`proceed`) calls it itself. A state change
  * would arrive too late, since the navigation happens in the same tick.
  */
 export function useUnsavedChanges(dirty: boolean): {
@@ -46,6 +47,23 @@ export function useUnsavedChanges(dirty: boolean): {
   const release = useCallback(() => {
     released.current = true;
   }, []);
+
+  // Leave releases too: the screen left stays drawn, with this blocker,
+  // until the next page's code arrives, and a Back pressed in that gap
+  // must not be held again (issue #514).
+  if (blocker.state === 'blocked') {
+    const { proceed } = blocker;
+    return {
+      blocker: {
+        ...blocker,
+        proceed: () => {
+          released.current = true;
+          proceed();
+        },
+      },
+      release,
+    };
+  }
 
   return { blocker, release };
 }

@@ -1,10 +1,11 @@
 import {
   render,
   screen,
+  waitFor,
   waitForElementToBeRemoved,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
+import { lazy, type ReactNode, Suspense, useState } from 'react';
 import {
   createMemoryRouter,
   Link,
@@ -34,6 +35,7 @@ function Form() {
         <input value={name} onChange={(event) => setName(event.target.value)} />
       </label>
       <Link to="/elsewhere">Elsewhere</Link>
+      <Link to="/slow">Slow</Link>
       <button
         type="button"
         onClick={() => {
@@ -47,12 +49,21 @@ function Form() {
   );
 }
 
+/** A page whose code never arrives, as on a slow connection (issue #514). */
+const NeverLoaded = lazy(() => new Promise<never>(() => {}));
+
+/** One boundary for every page, as App's `split` places it. */
+function page(element: ReactNode) {
+  return <Suspense fallback={<p>Loading</p>}>{element}</Suspense>;
+}
+
 function renderForm() {
   const router = createMemoryRouter(
     [
-      { path: '/form', element: <Form /> },
-      { path: '/elsewhere', element: <h1>Elsewhere page</h1> },
-      { path: '/saved', element: <h1>Saved page</h1> },
+      { path: '/form', element: page(<Form />) },
+      { path: '/elsewhere', element: page(<h1>Elsewhere page</h1>) },
+      { path: '/saved', element: page(<h1>Saved page</h1>) },
+      { path: '/slow', element: page(<NeverLoaded />) },
     ],
     { initialEntries: ['/form'] },
   );
@@ -101,5 +112,21 @@ describe('useUnsavedChanges', () => {
 
     expect(await screen.findByText('Saved page')).toBeTruthy();
     expect(screen.queryByText('Leave without saving?')).toBeNull();
+  });
+
+  it('lets Back through after Leave, while the next page is still loading', async () => {
+    const user = userEvent.setup();
+    const router = renderForm();
+
+    await user.type(screen.getByLabelText('Name'), 'Northside');
+    await user.click(screen.getByRole('link', { name: 'Slow' }));
+    await user.click(await screen.findByRole('button', { name: 'Leave' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/slow'));
+    // The form is still drawn, with its blocker, until the code arrives.
+    expect(screen.getByLabelText('Name')).toBeTruthy();
+
+    await router.navigate(-1);
+    expect(router.state.location.pathname).toBe('/form');
+    expect(screen.getByLabelText('Name')).toBeTruthy();
   });
 });
