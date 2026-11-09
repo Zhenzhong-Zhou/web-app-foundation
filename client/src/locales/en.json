@@ -279,6 +279,8 @@
   "common.saving": "Saving…",
   "common.serverUnreachable": "Could not reach the server.",
   "common.status": "Status",
+  "common.tooManyRequests": "Too many requests just now. Try again in a minute.",
+  "common.tooManyRequestsFor": "Too many requests just now. Try again in {seconds, plural, one {# second} other {# seconds}}.",
   "common.tryAgain": "Try again",
   "components.colorMode.dark": "Dark",
   "components.colorMode.label": "Colour mode",

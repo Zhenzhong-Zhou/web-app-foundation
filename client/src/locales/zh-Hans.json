@@ -279,6 +279,8 @@
   "common.saving": "正在保存…",
   "common.serverUnreachable": "无法连接服务器。",
   "common.status": "状态",
+  "common.tooManyRequests": "当前请求过于频繁，请一分钟后重试。",
+  "common.tooManyRequestsFor": "当前请求过于频繁，请在 {seconds, plural, other {# 秒}}后重试。",
   "common.tryAgain": "重试",
   "components.colorMode.dark": "深色",
   "components.colorMode.label": "颜色模式",
