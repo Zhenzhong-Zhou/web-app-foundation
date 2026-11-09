@@ -22,8 +22,9 @@
 # Compared against origin/main after a fetch, so a local main that is behind
 # cannot hide a merge.
 #
-# Never touched: main, every release/* branch, the current branch, and
-# anything in PROTECT (space-separated names or patterns, e.g.
+# Never touched: main, every release/* branch, the current branch, a branch
+# another working folder has checked out (printed as "keep <branch> in
+# <folder>"), and anything in PROTECT (space-separated names or patterns, e.g.
 # PROTECT="spike hotfix/*"). A release branch with no fixes on it yet sits on
 # a commit main already has, so it looks merged; without this rule the first
 # run deleted release branches that were waiting for their fixes.
@@ -71,6 +72,32 @@ fi
 
 CURRENT="$(git symbolic-ref --quiet --short HEAD || true)"
 PROTECTED_PATTERNS="$BASE_NAME release/* ${PROTECT:-}"
+
+# Branches other working folders have checked out, one "branch|folder" a
+# line: git refuses to delete one, and its folder is mid-work. This
+# folder's own branch is CURRENT, which is_protected checks first.
+OTHER_FOLDERS=""
+wt_path=""
+while IFS= read -r line; do
+  case "$line" in
+    "worktree "*) wt_path="${line#worktree }" ;;
+    "branch refs/heads/"*)
+      OTHER_FOLDERS="${OTHER_FOLDERS}${line#branch refs/heads/}|${wt_path}"$'\n'
+      ;;
+  esac
+done < <(git worktree list --porcelain)
+
+# Prints the folder that has the branch checked out, or returns 1.
+in_other_folder() {
+  local name="$1" entry
+  while IFS= read -r entry; do
+    if [ -n "$entry" ] && [ "${entry%%|*}" = "$name" ]; then
+      echo "${entry#*|}"
+      return 0
+    fi
+  done <<<"$OTHER_FOLDERS"
+  return 1
+}
 
 is_protected() {
   local name="$1" pattern
@@ -128,6 +155,10 @@ if [ "$DO_LOCAL" -eq 1 ]; then
   while IFS='|' read -r name track; do
     if is_protected "$name"; then
       printf '  keep    %-40s %s\n' "$name" "protected"
+      continue
+    fi
+    if folder_of="$(in_other_folder "$name")"; then
+      printf '  keep    %-40s in %s\n' "$name" "$folder_of"
       continue
     fi
     if how="$(how_merged "refs/heads/$name")"; then
