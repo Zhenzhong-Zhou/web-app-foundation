@@ -334,6 +334,24 @@ test("--resume last finishes the last fix, a probe after it passed over", (t) =>
   );
 });
 
+test("--resume last refuses a fix that opened its pull request, naming it", (t) => {
+  const rows = rowsOf(
+    t,
+    ["2026-11-09T10:00-07:00", "514", "1.70"],
+    [
+      "2026-11-09T11:00-07:00",
+      "520",
+      "0.90",
+      "https://github.com/o/r/pull/521",
+    ],
+    ["2026-11-09T12:00-07:00", "probe", "0.06", "-"],
+  );
+  refuses(
+    () => lastFix(rows, "runs.tsv"),
+    /^the last fix, #520 of 2026-11-09T11:00-07:00, ended with its pull request, https:\/\/github\.com\/o\/r\/pull\/521, so there is nothing to finish$/,
+  );
+});
+
 test("the credit month runs from the 9th, 00:00 UTC", () => {
   const month = (iso) => {
     const { start, end } = creditMonth(new Date(iso), 9);

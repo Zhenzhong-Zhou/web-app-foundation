@@ -349,10 +349,19 @@ export function readRuns(file) {
     });
 }
 
-/** The last fix in the list, a probe passed over: what --resume last finishes. */
+/**
+ * The last fix in the list, a probe passed over: what --resume last
+ * finishes. Refused when it opened its pull request, since a resume would
+ * pay to finish it again.
+ */
 export function lastFix(rows, file) {
   const row = rows.findLast((one) => one.issue !== "probe");
   if (!row) throw new Stop(`no earlier fix in ${file} to resume`);
+  if (row.pr !== "UNFINISHED") {
+    throw new Stop(
+      `the last fix, #${row.issue} of ${row.time}, ended with its pull request, ${row.pr}, so there is nothing to finish`,
+    );
+  }
   return row;
 }
 
