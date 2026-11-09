@@ -66,7 +66,7 @@ finding for the as-built and one question for him.*
 - Next is the run's next prompt, `from N`, with `/clear` safe once the
   summary is pasted.
 
-## 6. A small issue for a cloud session
+## 6. A small issue, on the API credit or in a cloud session
 
 > Anything else I can run in a cloud session?
 
@@ -82,8 +82,16 @@ finding for the as-built and one question for him.*
 - None offered leaves a choice open or is labelled `later` or
   `decision`, unless its decision is asked first; none needs a sweep or
   the large seed, or names more than about five files.
-- Each prompt is one line, `/fix-issue <N>`, not indented, with
-  `leave <path>` only for a branch not pushed.
+- The exports come from `scripts/cloud-picks.sh`, without numbers and
+  then with the shortlist's.
+- Each pick is offered as one line, `node scripts/fix-issue/run.mjs <N>`,
+  not indented, with `leave <path>` only for a branch not pushed, and
+  while `--spent` shows room, its time and cost on the credit from
+  `tmp/fix-runs/runs.tsv`; `/fix-issue <N>` is for a cloud session or
+  Claude Code on the plan.
+- The merge is the runner's: `git -C <folder> switch --detach`, then
+  `gh pr merge <PR> --squash --delete-branch`; a fix and a build may run
+  at once.
 - Five parts, Decisions needed present.
 
 ## 7. A brief's models

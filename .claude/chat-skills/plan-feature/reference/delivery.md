@@ -54,8 +54,9 @@ Their home is `docs/engineering.md`, "How code is delivered" and
   with `--body-file`, never inside a script's `$( )`, which macOS's bash
   3.2 reads wrongly (ADR-090's as-built).
 - Merging, from the terminal, never the button, which offers the method
-  used last: a cloud session's pull request with `gh pr merge <PR>
-  --squash --delete-branch`; a feature branch's with `gh pr merge <PR>
+  used last: a cloud session's or the runner's pull request with
+  `gh pr merge <PR> --squash --delete-branch`, the runner's after the
+  `git -C <folder> switch --detach` line it prints; a feature branch's with `gh pr merge <PR>
   --merge`, so its commits stay apart; `<PR>` is the pull request's
   number, not the issue's.
 - A commit command, a Claude Code prompt or a slash command is never

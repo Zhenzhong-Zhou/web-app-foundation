@@ -158,19 +158,27 @@ gets:
 [The reply format](reference/reply-format.md) and
 [the delivery rules](reference/delivery.md), every time.
 
-## 8. A small issue for a cloud session
+## 8. A small issue, on the API credit or in a cloud session
 
-The prompt is one line, `/fix-issue <N>`, a new session each, with
-`leave <path>` after it only for a branch not pushed (ADR-089's
-amendment). The candidates come from two exports Bob writes and
-attaches, not from GitHub's pages (ADR-090): first the open `fix-now`
-and `when-touched` issues without their comments, `tmp/cloud-picks.json`;
-then the few the chat shortlists from it, with their comments,
-`tmp/cloud-picks-shortlist.json`, the chat filling in their numbers:
+Each pick is offered as one line, `node scripts/fix-issue/run.mjs <N>`,
+which runs it on the API credit in the second working folder, a build
+going on meanwhile (ADR-089's amendment); `leave <path>` follows it only
+for a branch not pushed. Beside the line, the run's time and cost on the
+credit, read from `tmp/fix-runs/runs.tsv`, while `node
+scripts/fix-issue/run.mjs --spent` shows room. For a cloud session, or
+Claude Code on the plan, the line is `/fix-issue <N>`, a new session
+each. The runner prints the merge: `git -C <folder> switch --detach`,
+and then `gh pr merge <PR> --squash --delete-branch`. The candidates
+come from two exports Bob writes and attaches, not from GitHub's pages
+(ADR-090), both written by `scripts/cloud-picks.sh`: first, without
+numbers, the open `fix-now` and `when-touched` issues without their
+comments, `tmp/cloud-picks.json`; then, with the numbers the chat
+shortlists from it, those issues with their comments,
+`tmp/cloud-picks-shortlist.json`:
 
 ```bash
-gh issue list --state open --limit 500 --json number,title,labels,body --jq '[.[] | select(any(.labels[]; .name == "fix-now" or .name == "when-touched")) | select(all(.labels[]; .name != "later" and .name != "decision"))]' > tmp/cloud-picks.json
-for n in <N> <N> <N>; do gh issue view "$n" --json number,title,labels,body,comments; done | jq -s . > tmp/cloud-picks-shortlist.json
+scripts/cloud-picks.sh
+scripts/cloud-picks.sh <N> <N> <N>
 ```
 
 The chat picks only what the skill would not stop on: read whole,
