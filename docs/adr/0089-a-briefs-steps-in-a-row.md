@@ -952,3 +952,127 @@ working folder, naming the folder, as it keeps the current branch.
   the runner; the lock; the prune; the picks' script; the working
   agreements; the planning skill; the runner's probe and the lock across
   both folders, by hand; dependencies again; the reviews; the as-built.
+
+### As built
+
+Built on 8 November 2026 on `fix-runner`, 29 commits with this
+as-built, pull request #523.
+
+- **Measured against the brief's guesses,** minutes and the tokens the
+  Agent tool counted:
+
+  | Step | Model | Minutes (guess) | Tokens |
+  | --- | --- | --- | --- |
+  | 2 | sonnet | 1 (8), no commit | 49,002 |
+  | 3 | opus | 19 and 7 (20) | 172,715 and 87,296 |
+  | 4 | opus | 20 (25) | 169,501 |
+  | 5 | sonnet | 1 (8) | 52,886 |
+  | 6 | sonnet | 1 (6) | 52,638 |
+  | 7 | sonnet | 1 (6) | 53,870 |
+  | 8 | sonnet | 1 (5) | 44,273 |
+  | 10 | sonnet | 1 (6), no commit | 40,549 |
+  | 11, findings | opus | 11 (30) | not shown |
+  | 11, fixes | opus | 58 and 60 (50) | not shown |
+
+  Sonnet's script and docs steps took about a minute each. The fixes
+  took twice their guess: they carried the dependencies under the
+  maintainer's exception, the fix for `@nestjs/config` 12.1, and two
+  rounds of the full verify.
+- **The runner, `scripts/fix-issue/`:**
+  - the SDK pinned at 0.3.316, 9 days old, under the maintainer's
+    exception to the 14-day rule for a new package, since it had already
+    run #514 and the probe (ded94579); its lock built with `npm install
+    --min-release-age=7`, all 109 versions at least 7 days old, with no
+    minimatch or glob (#446);
+  - after a fix with a pull request, `git -C <folder> switch --detach`,
+    then `gh pr merge <PR> --squash --delete-branch` (007dbc81); the
+    detach let `gh` delete #520's local branch too;
+  - `--resume last` refuses a fix whose pull request is open (da4916a5),
+    resumes in the folder the fix ran in (6f3ac658), and accepts
+    `UNKNOWN`, written when GitHub could not be asked (f242baa5);
+  - a PreToolUse hook checks each whole Bash command for a merge or a
+    force-push, in place of rules that matched a command's start
+    (ed237fc8); its tests refuse merges in 6 spellings and force-pushes
+    in 10, and the next paid fix proves its wiring, since a probe uses
+    no tools;
+  - the key's value is removed from the logs and the printed lines
+    (d6ebd794); Dependabot offers the SDK's patches only, a 0.x minor
+    taken by hand with `--probe` (0d4b15a9).
+- **Its probe from the new path:** paid by `ANTHROPIC_API_KEY`,
+  `/fix-issue` among the session's 58 slash commands, about US$0.11, its
+  line in `tmp/fix-runs/runs.tsv`, and `--spent` counting it. The model's
+  own reply says `/fix-issue` is not available to it, as expected: only a
+  person starts that skill.
+- **The lock, `scripts/one-at-a-time.mjs`:**
+  - key 4802089 on the test database; the holder named `<label> in
+    <folder> since <HH:MM>`; the labels `server-e2e`, `perf`,
+    `browser-suite`, `browser-ui`, `screenshots`, `linux-browsers` and
+    `flake-hunt`;
+  - the flake hunt one hold for its whole loop, and the full verify's
+    Linux browsers one hold, through an internal `--linux-browsers` mode
+    that refuses to run outside the lock (8a6a61d6);
+  - each `test:e2e` takes the lock before its migrate and seed, as the
+    maintainer chose over the step's advice (2b84103d); the client's
+    `pretest:e2e` is now `e2e:prepare`;
+  - the screenshots check their own ports, 3200 and 5373; the browser
+    commands run by hand in conventions.md go through the lock
+    (53158951);
+  - proved twice: a second run in the same folder waited 40 seconds;
+    across the folders, `waf-fix` waited for `proof in
+    web-app-foundation, since 21:30` and ran when it was freed;
+  - it needs both folders' `.env` to name the same test database, which
+    they do, and the screenshots and the timed runs now need that
+    database up, which Docker gives every step.
+- **The prune** keeps a branch another folder has checked out
+  (c41ea77e). **The picks' exports,** `scripts/cloud-picks.sh`
+  (f8d6941e): `gh issue list --search` returned the same 127 issues as
+  the `jq` filter, which stays, since only it can be tested without
+  standing in for GitHub's search.
+- **Dependencies:** steps 2 and 10 took nothing, since the run began on
+  8 November, before anything in range was 7 days old. The maintainer
+  then waived the 7-day rule once, for every update in range, each
+  publisher checked and `npm audit signatures` passing in both folders:
+  - the Sentry packages at 11.11.0 first, as a security fix (5b988d0c),
+    then the rest (40691cde); rimraf 6.1.4 removed the last glob 13.0.6,
+    which closes alert 9 in `server/`;
+  - `@nestjs/config` 12.1 writes `.env` into `process.env` only after
+    the `validate` function has run, so `main.ts` checked the settings
+    before they were there, and `start:dev` failed. `main.ts` and both
+    seeds now await `ConfigModule.envVariablesLoaded` (7821b34e). The
+    server's own tests never start `main.ts`; only the browser suite's
+    server does, so `--quick` cannot catch this, and the full verify can.
+    The range stays `^12.0.1`: on 12.0.1 the await has nothing to wait
+    for;
+  - pdfmake 0.3.14 renamed `virtualfs` to `sharedVirtualfs`, its CVE
+    fix, and the PDF renderer writes the new name (40691cde);
+  - Playwright 1.65.0's Firefox 159 crashed on 7 accessibility pages in
+    its Linux image, twice, while Mozilla's own Firefox 159.0.1, already
+    stable, ran a newcomer's Home 6 times of 6 without a crash. So
+    `@playwright/test` is back at 1.64.1, pinned exactly, under the
+    maintainer's exception to never moving a locked version back, safe
+    since 1.65.0 was never pushed, and Dependabot skips 1.65.0
+    (f68ea60b); #521 holds the next raise, every browser run by hand
+    before its merge;
+  - `raw-body` 4.0.0, a major: ESM only and Node 22 or later;
+    `report-body.ts` unchanged, its tests passing three times
+    (cc2b0bfb). It is now published from GitHub Actions with provenance;
+  - `jsdom` 31.0.0 failed the same 17 of 1103 client unit tests in all 5
+    runs, since its new CSS engine resolves the theme's `var()` colours;
+    it stays pinned at 30.1.3, with #522;
+  - TypeScript 7 (#336) still waits on typescript-eslint, the Nest CLI
+    and `@hey-api/openapi-ts`.
+- **The reviews:** 18 findings. Fixed: 1 to 11, 13, 14 and 17, with 4
+  as b. Left: 12, the screenshots and timed runs needing the test
+  database; 15, CI auditing only `server/` and `client/`, while
+  Dependabot reads the runner's lock; 16, sound; and 18, since
+  `brief-step` keeps its 10 to 15 lines, as the router's review 31
+  decided.
+- **The first fixes on the credit:** #514 (#519), about US$1.70, and
+  #483 (#520), 23 minutes and US$1.23, during this branch's reviews, on
+  `main`'s scripts. Both went in as merge commits, before the runner
+  printed its squash line.
+- **Riders:** #467's 12.
+- **Still open:** whether a resumed run's cost repeats the run before it,
+  checked against the Console at the first resume; and the `jsdom` 30.1.0
+  entry in Dependabot's `/server` block, which never applied, since
+  `jsdom` is the client's; the exact pin covers it.

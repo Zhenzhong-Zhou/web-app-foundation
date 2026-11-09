@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 8 November 2026
+# web-app-foundation — handoff, 9 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,7 +13,7 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 8 November 2026:
+On 9 November 2026:
 
 - **Customise Home,** decided in ADR-091: planned on 6 November and
   built on 6 and 7 November on `customise-home`, 78 commits, merged on 7
@@ -30,11 +30,13 @@ On 8 November 2026:
   (UTC), for the API and the Agent SDK but not Claude Code. A runner in
   the ignored `tmp/sdk-fix/` runs `/fix-issue <N>` through the Agent SDK
   in a second working folder: [#514] first, merged on 8 November as
-  [#519], for about US$1.70. It moves into the repository on
-  `fix-runner`, with one lock for the runs both folders share, as
-  [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md) of 8
-  November decides; until it merges, a fix's full verify or browser run
-  never overlaps one in the first folder.
+  [#519], for about US$1.70, then [#483] as [#520], for US$1.23. It moved
+  into the repository on `fix-runner`, 29 commits, [#523] open with every
+  check green, to merge once the as-built is pushed; the as-built is in
+  [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md). From the
+  main folder, `node scripts/fix-issue/run.mjs <N>`; one lock,
+  `scripts/one-at-a-time.mjs`, lets a build and a fix verify at once,
+  the second waiting at the parts they share.
 - **The router for `/build-from-brief`,** [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md):
   planned on 7 November and built on 7 and 8 November on `build-router`,
   40 commits, merged on 8 November as [#518] (fc6f90d); the as-built is
@@ -155,9 +157,10 @@ On 8 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 8 November, from the terminal as merge
-  commits, [#518] (the router) and [#519] ([#514], from the runner; a
-  runner's pull request is squashed from now on). On 7 November, from
+- **The last merges:** on 8 November, as merge commits, [#518] (the
+  router), [#519] ([#514]) and [#520] ([#483]), the last two from the
+  runner; a runner's pull request is squashed from now on, with the two
+  lines it prints. On 7 November, from
   the terminal as a merge commit, [#515] (Customise Home). On 6 November, from the terminal as merge commits,
   [#477] (ADR-091) and [#506]. On 4 November, from cloud sessions, [#468]
   ([#466]) and [#469] ([#462]), each as a merge commit, since the button
@@ -242,23 +245,18 @@ On 8 November 2026:
   merges once green, one at a time. [#403] makes Claude Code Review skip
   them, since a run Dependabot starts is refused by the action and gets
   none of the repository's secrets.
-- **9 to 15 November:** what Dependabot has not opened comes of age; the
-  next branch's dependency step takes, package by package, the newest
-  version in range that is 7 days old that day (engineering.md, since 6
-  November). The router's branch took the formatjs packages and globals
-  17.14.0. Of age and waiting, in Vancouver time: `@nestjs/swagger`
-  12.1.0, vitest, `@vitejs/plugin-react` and, at 17:10, argon2 0.45.2 on
-  9 November, argon2's `allowScripts` entry in `server/package.json`
-  changed to 0.45.2 with it; rimraf on 10 November; the Nest packages at
-  12.3.3, `@nestjs/config` 12.1.0 and vite on 11 November; the Sentry
-  packages at 11.11.0, which close alert 9, `@playwright/test` 1.65.0,
-  after which `npx playwright install`, and msw on 12 November; the Nest
-  packages at 12.4.0, `@nestjs/cli`, `@nestjs/schematics`, and
-  `@nestjs/config` and `@nestjs/swagger` at 12.1.1 on 13 November;
-  supertest and nodemailer on 14 November; pdfmake 0.3.14 on 15
-  November. `@aws-sdk/client-s3` publishes almost daily, so only its
-  newest version of age is ever taken. Dependabot's alerts 9, 11 and 12
-  wait for their upstreams ([#446]).
+- **Dependencies, from 9 November:** `fix-runner` took every update in
+  range on 8 November, under the maintainer's one-time exception to the
+  7-day rule, Sentry 11.11.0 first as a security fix; rimraf 6.1.4
+  closes alert 9 in `server/`. From Items' branch on, the rule is as
+  before: each branch takes, package by package, the newest version in
+  range that is 7 days old that day. Releases since then come of age
+  from 15 November (`@vitejs/plugin-react` 6.3.0) and 16 November (vite
+  8.3.7 and the Nest packages at 12.4.2). Held: `@playwright/test` at
+  1.64.1, pinned, its Firefox 159 crashing in the Linux image ([#521]);
+  `jsdom` at 30.1.3, pinned, 17 unit tests failing on 31 ([#522]);
+  TypeScript 7 ([#336]). Alerts 11 and 12 wait for their upstreams
+  ([#446]).
 - **The translation review:** done on 2 November with the API credits,
   against the glossary: the catalogues' findings in [#371] to [#397],
   one area each, and the Help guides' in [#398]. A second pass, for how
@@ -304,6 +302,17 @@ On 8 November 2026:
 
 ## Still to do, by hand
 
+- **After [#523]'s merge:** `scripts/prune-branches.sh --yes`;
+  `scripts/clean-local.sh`, then `--yes`; `tmp/sdk-fix/logs/` moved into
+  `tmp/fix-runs/logs/`, and `tmp/sdk-fix/` removed; the planning skill
+  packed from `main` and uploaded; `/triage` on docs and ops, [#521] and
+  [#522] among them; after the deploy, one invoice's PDF opened, since
+  pdfmake 0.3.14 changed a line of the renderer; at the first paid fix,
+  the hook that refuses a merge or force-push seen at work, and at the
+  first resume its cost checked against the Console; and a 30-minute
+  look at [#521] in Claude Code: if the crash is the container's memory,
+  Playwright 1.65.0 comes with a one-line fix, and otherwise it waits for
+  the next release.
 - **After [#518]'s merge,** done on 8 November: Claude Code restarted;
   the planning skill packed from `main` and uploaded; and `/triage` over
   all 155 open issues, with no closes and comments on [#446] and [#467].
@@ -406,7 +415,7 @@ request or a set of them:
       then Customise Home, merged on 7 November ([#515]); then the
       router for `/build-from-brief`, ADR-089's amendment, [#518],
       merged on 8 November; then the runner for small fixes on the API
-      credit, in the repository, ADR-089's amendment, on `fix-runner`;
+      credit, in the repository, ADR-089's amendment, [#523];
       then Items ([#476]),
       ADR-092 with canvas boards first, the page and the menu named Items
       · Articles · 物品, Products · 商品 the goods tab; then Movements
@@ -672,6 +681,7 @@ Not repeated here; each list has one home:
 [#476]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/476
 [#477]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/477
 [#478]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/478
+[#483]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/483
 [#505]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/505
 [#506]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/506
 [#514]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/514
@@ -680,3 +690,7 @@ Not repeated here; each list has one home:
 [#517]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/517
 [#518]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/518
 [#519]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/519
+[#520]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/520
+[#521]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/521
+[#522]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/522
+[#523]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/523
