@@ -472,21 +472,41 @@ How this file is kept is in the [README](README.md).
   [test](../../client/src/products/products-page.test.tsx) "says no items yet for an empty catalogue, and nothing matches for an empty search" ·
   [Help](../../client/src/help/guides/en/items.md#items) ·
   MC-3901
-- **An item picker lists the items its form offers, by SKU, until
-  something is typed. From the first character it asks the server, a
-  moment after typing stops, and lists what it finds in the server's
-  order, a SKU typed whole first.** Typed or not, it offers only what its
-  form does: an item already on the order is not offered again. Each item
-  reads as its SKU, then the product and the variant, named in the
-  reader's language.
+- **An item picker lists the items its form offers, by SKU within each
+  type, until something is typed. From the first character it asks the
+  server, a moment after typing stops, and lists what it finds in the
+  server's order within each type, a SKU typed whole first in its type.**
+  Typed or not, it offers only what its form does: an item already on the
+  order is not offered again. Each item reads as its SKU, then the product
+  and the variant, named in the reader's language, then its type.
   [ADR-056, amended](../adr/0056-search.md#decision--products-partners-and-the-item-pickers-searched-on-the-server) ·
+  [ADR-092](../adr/0092-items.md#decision--pickers-put-the-tasks-types-first) ·
   [test](../../server/test/products.e2e-spec.ts) "lists every variant across products, ordered by SKU" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds an item by SKU, name, another language, pinyin or one character" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "puts a SKU typed whole first, and a translation’s exact name" ·
   [test](../../client/src/components/variant-picker.test.tsx) "lists what it is given before anything is typed, and asks nothing" ·
   [test](../../client/src/components/variant-picker.test.tsx) "asks once typing stops, and lists the answer in its order, within what it was given" ·
+  [test](../../client/src/components/variant-picker.test.tsx) "keeps the server’s order within each group while a search is typed" ·
   [test](../../client/src/components/variant-picker.test.tsx) "drops an answer that comes after a newer one" ·
   MC-3804 · MC-3903
+- **An item picker lists the types its task uses first, each under its
+  name, and every other item after them under Other items, still there
+  to choose.** A sale, on an order's line or a sale's price list:
+  Products, then Samples. A recipe's component: Raw materials, then
+  Packaging. What a run makes: Products. A purchase, on an order's line
+  or a purchase's price list, Receive, a reorder point and Movements'
+  filter put no type first: every type under its name, in Items' tabs'
+  order, since a wholesaler buys products too. Each item says its type at
+  the end of its row, or under it where the field is narrow.
+  [ADR-092](../adr/0092-items.md#decision--pickers-put-the-tasks-types-first) ·
+  [test](../../client/src/components/variant-picker.test.tsx) "lists a sale’s products and samples first, each under its name, and every other item under Other items" ·
+  [test](../../client/src/components/variant-picker.test.tsx) "lists a recipe’s raw materials and packaging first" ·
+  [test](../../client/src/components/variant-picker.test.tsx) "lists products first for what a run makes" ·
+  [test](../../client/src/components/variant-picker.test.tsx) "groups a purchase by every type, none first" ·
+  [test](../../client/src/components/variant-picker.test.tsx) "groups by every type, none first, given no task" ·
+  [test](../../client/src/components/variant-picker.test.tsx) "says each item’s type beside it, under Other items too" ·
+  partly tested ·
+  MC-215
 - **A picker says it is loading while the catalogue or a search is on its
   way, which a screen reader hears. "No matching items" comes only from an
   answer, and Receive says there are no products only once the catalogue

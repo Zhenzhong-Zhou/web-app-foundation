@@ -338,6 +338,7 @@
   "components.textSize.larger": "Très grand texte",
   "components.textSize.standard": "Texte standard",
   "components.variantPicker.noMatches": "Aucun article correspondant",
+  "components.variantPicker.otherItems": "Autres articles",
   "costs.allCosted": "Tout ce qui est en stock a un coût.",
   "costs.batch": "Lot",
   "costs.byItemAndLot": "Par article et par lot",

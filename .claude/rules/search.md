@@ -47,4 +47,5 @@ for people; a commit that changes one of those rules updates it
 - **The browser matches nothing.** A list reads its search through
   `useListSearch`, a picker through `usePickerSearch`; each shows the
   server's answer in its order, asks once typing stops, and drops a late
-  answer (ADR-056, amended).
+  answer (ADR-056, amended). The item picker groups it by type, keeping
+  that order within each group (ADR-092).

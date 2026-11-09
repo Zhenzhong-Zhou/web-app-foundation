@@ -347,7 +347,7 @@ leave how it matches to this file. How this file is kept is in the
   item, New order, Set price, a recipe's component, Plan run and the
   Movements filter; the partner pickers are New order's Partner, a
   sample's Given to and Plan run's Contract manufacturer. A SKU typed whole
-  comes first.
+  comes first, in an item picker first in its type's group.
   [ADR-056, amended](../adr/0056-search.md#decision--products-partners-and-the-item-pickers-searched-on-the-server) ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds an item by SKU, name, another language, pinyin or one character" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "puts a SKU typed whole first, and a translation’s exact name" ·
@@ -357,10 +357,13 @@ leave how it matches to this file. How this file is kept is in the
 - **Before anything is typed, a picker lists what its form offers and
   asks nothing; from the first character, it asks a moment after typing
   stops, lists the server's order, and drops an answer that comes after a
-  newer one.**
+  newer one.** An item picker keeps that order within each type's group,
+  as the products rules file says.
   [ADR-056, amended](../adr/0056-search.md#decision--products-partners-and-the-item-pickers-searched-on-the-server) ·
+  [ADR-092](../adr/0092-items.md#decision--pickers-put-the-tasks-types-first) ·
   [test](../../client/src/components/variant-picker.test.tsx) "lists what it is given before anything is typed, and asks nothing" ·
   [test](../../client/src/components/variant-picker.test.tsx) "asks once typing stops, and lists the answer in its order, within what it was given" ·
+  [test](../../client/src/components/variant-picker.test.tsx) "keeps the server’s order within each group while a search is typed" ·
   [test](../../client/src/components/variant-picker.test.tsx) "drops an answer that comes after a newer one" ·
   [test](../../client/src/components/partner-picker.test.tsx) "lists what it is given before anything is typed, and asks nothing" ·
   MC-3903

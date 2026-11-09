@@ -338,6 +338,7 @@
   "components.textSize.larger": "特大字号",
   "components.textSize.standard": "标准字号",
   "components.variantPicker.noMatches": "没有匹配的项目",
+  "components.variantPicker.otherItems": "其他物品",
   "costs.allCosted": "所有现有库存都有成本。",
   "costs.batch": "批次",
   "costs.byItemAndLot": "按物品和批次",

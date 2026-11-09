@@ -43,9 +43,9 @@ commit that changes one of those rules updates it (ADR-087).
   change locks the product with `lockProduct` and keeps the positions 0
   to n − 1, at most `MAX_PRODUCT_IMAGES` (ADR-062, ADR-066).
 - **Every item picker is `VariantPicker`,** its catalogue from
-  `useVariants`, read when its dialog or page opens, its `loading` the
-  hook's `!answered`; Products' search is `useListSearch` (ADR-056,
-  amended).
+  `useVariants`, read as its dialog or page opens, `loading` the hook's
+  `!answered`, its `task` the types it lists first (`TYPES_FIRST`,
+  ADR-092); Products' search is `useListSearch` (ADR-056, amended).
 - **Other-language names are replaced as a set,** `recordContext({ names })`.
 - **Category writes take `lockTree` first** (`category-tree.ts`, ADR-092);
   `changeMany` writes each item's History row itself, in its transaction.

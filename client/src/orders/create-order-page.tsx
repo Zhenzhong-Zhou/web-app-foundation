@@ -627,6 +627,7 @@ export function CreateOrderPage() {
                     )}
                     loading={!catalogueAnswered}
                     failed={catalogueFailed}
+                    task={direction ?? undefined}
                     value={line.variant?.id ?? ''}
                     onChange={(variantId) =>
                       updateLine(line.key, {

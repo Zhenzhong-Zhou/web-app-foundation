@@ -236,6 +236,19 @@ a second organization.
   follows, Items shows it on its new tab, and History records the type
   and the category from and to. Emptying the name is refused under it.
   As a Viewer there is no Edit.
+- **MC-215** The item pickers, as the demo Owner, put the task's types
+  first, each under its name, and every other item after them under
+  Other items, each item's type at the end of its row. Raise an order,
+  Selling: `focus` in Item lists FOCUS-60CT under Products and
+  BLEND-FOCUS under Other items, still there to choose, and `calm` lists
+  CALM-SAMPLE under Samples, after Products; a draft sale's Add an item
+  and a sale's price list's Add a price do the same. A recipe's Add
+  component lists Raw materials, then Packaging, first; Plan a run's
+  Making, Products first. Buying, Receive, a reorder point's Item and
+  Movements' Item put none first: Products, Raw materials, Packaging,
+  Supplies, Samples, Equipment, each under its name. At 390 px, on Raise
+  an order's line, an item's type sits under it. In French and Chinese
+  the headings are the tabs' names, with Autres articles and 其他物品.
 
 ## 3. Stock
 
@@ -5492,3 +5505,6 @@ first.
   one table with the required languages marked and what is missing, Add
   opening Edit names at it, and the refusal naming the item's or the
   variation's name: MC-1408 and MC-3802 rewritten.
+- 2026-11-09: ADR-092 step 16, the pickers by type: the task's types
+  first, each under its name, the rest under Other items, and each item's
+  type beside it: MC-215 added.

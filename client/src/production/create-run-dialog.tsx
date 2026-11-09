@@ -248,6 +248,7 @@ export function CreateRunDialog({
               options={variants}
               loading={!answered}
               failed={failed}
+              task="run"
               value={form.outputVariantId}
               onChange={(outputVariantId) =>
                 setForm((current) => ({

@@ -338,6 +338,7 @@
   "components.textSize.larger": "Larger text",
   "components.textSize.standard": "Standard text",
   "components.variantPicker.noMatches": "No matching items",
+  "components.variantPicker.otherItems": "Other items",
   "costs.allCosted": "Everything on hand has a cost.",
   "costs.batch": "Batch",
   "costs.byItemAndLot": "By item and lot",

@@ -12,6 +12,7 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
+import type { PriceListDirection } from '../lib/api-names';
 import {
   formatQuantity,
   groupedNumberMessage,
@@ -31,6 +32,7 @@ import { useVariants } from '../lib/use-variants';
 export function SetPriceDialog({
   open,
   priceListId,
+  direction,
   currency,
   item,
   excludeVariantIds,
@@ -39,6 +41,8 @@ export function SetPriceDialog({
 }: {
   open: boolean;
   priceListId: string;
+  /** What the list prices, which orders the picker's types (ADR-092). */
+  direction: PriceListDirection;
   currency: string;
   /** The item being corrected, or null to add one. */
   item: { variantId: string; sku: string; unitPrice: string } | null;
@@ -135,6 +139,7 @@ export function SetPriceDialog({
                 options={choices}
                 loading={!answered}
                 failed={failed}
+                task={direction}
                 value={variantId}
                 onChange={setVariantId}
                 helperText={
