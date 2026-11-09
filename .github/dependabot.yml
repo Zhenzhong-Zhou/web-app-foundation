@@ -74,6 +74,33 @@ updates:
     ignore:
       - dependency-name: '*'
         update-types: [version-update:semver-major]
+      # 1.65.0 bundles Firefox 159, which crashes 7 pages of the accessibility
+      # spec in Playwright's Linux image; Mozilla's own 159.0.1 does not.
+      # #521. Version-pinned, not a blanket ignore, so the next release still
+      # arrives on its own; CI runs Chromium only, so every browser is run by
+      # hand before it merges.
+      - dependency-name: '@playwright/test'
+        versions: ['1.65.0']
+
+  # The fix runner's own package (ADR-089's amendment): the Agent SDK,
+  # pinned exactly, which publishes every one to four days, so monthly,
+  # and each raise proved by the runner's --probe. Nothing the app ships
+  # depends on it, so a branch's dependency step leaves it to this.
+  # Minors are ignored too: the SDK is 0.x, where 0.3 to 0.4 is a minor
+  # that may break, and CI never loads the SDK, so its pull request would
+  # pass whatever it broke. A 0.x minor is taken by hand, with --probe
+  # before the merge.
+  - package-ecosystem: npm
+    directory: /scripts/fix-issue
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: '*'
+        update-types:
+          [version-update:semver-major, version-update:semver-minor]
 
   # Actions pinned by major tag still drift, and a deprecated runner image
   # fails every workflow at once with an error that names nothing useful.

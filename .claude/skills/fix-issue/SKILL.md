@@ -134,6 +134,9 @@ the client's tests fail; then `npm ci` in `server/` and `client/`.
 
 ## 7. The commit, the push and the pull request
 
+- **Staged by path:** `git status`, then `git add <path>` for each file
+  the fix changed; never `git add -A` or `git add .`, which would commit
+  an untracked file the folder holds, a log or a `.flake-hunt/`.
 - **One commit,** authored `Zhenzhong Zhou <bob0823.zhou@gmail.com>`
   (`git commit --author=...`), the session as committer: a subject
   ending `(#<N>)`, a blank line, then why. Then
@@ -153,7 +156,9 @@ Short bullets: what changed, each proof with its command and result,
 the pull request's link, and what it left alone; then, for the
 maintainer, that it merges once green from the terminal, `gh pr merge <PR>
 --squash --delete-branch`, the pull request's number and not the
-issue's, never from the button ([engineering.md][merge]). The last
+issue's, never from the button ([engineering.md][merge]); in a second
+working folder on the Mac, after `git -C <folder> switch --detach`,
+since git deletes no branch another folder has checked out. The last
 line, as every report's ([CLAUDE.md, "How to work"][how-to-work]):
 `DONE: <why>` or `BLOCKED: <what is needed>`.
 

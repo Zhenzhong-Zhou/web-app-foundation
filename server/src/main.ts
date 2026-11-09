@@ -1,4 +1,4 @@
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
 
@@ -17,7 +17,9 @@ import { MailBrand } from './shared/mail/mail-brand';
 async function bootstrap() {
   // The error tracker (ADR-084), before the app is made, so a fault while it
   // boots is reported too: here only, never in the tests or the scripts.
-  // Importing AppModule has read ../.env into process.env.
+  // Importing AppModule starts reading ../.env, which reaches process.env
+  // only once its validate function has run.
+  await ConfigModule.envVariablesLoaded;
   const tracker = startTracker(validateEnv(process.env));
 
   // bufferLogs holds early boot logs until pino replaces the default logger,

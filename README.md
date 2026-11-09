@@ -239,6 +239,8 @@ work under updates it.
 | Before drafting an ADR                 | `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n>`, then attach `tmp/adr-NNN/check.txt` to the chat                                  |
 | Building from a brief                  | `/build-from-brief <brief> from <N>`; paste only the stops into the chat                                                                        |
 | Every feature branch's review step     | `/review-step <brief> <N>` for the findings, then again with Bob's choices after it ([which reviews](docs/engineering.md#the-review-step))      |
+| A small issue, on the API credit       | `node scripts/fix-issue/run.mjs <N>`; then `git -C <folder> switch --detach` and `gh pr merge <PR> --squash --delete-branch`, as it prints      |
+| The picks' exports for the chat        | `scripts/cloud-picks.sh`, then with issue numbers for the shortlist                                                                             |
 | A small issue, in a cloud session      | `/fix-issue <N>`; merge its pull request with `gh pr merge <PR> --squash --delete-branch`, never the button                                     |
 | Every pull request, on GitHub          | Read the Claude Code Review comment before merging                                                                                              |
 | After a merge                          | `scripts/prune-branches.sh --yes`                                                                                                               |

@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { ConsoleLogger } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { and, eq, sql } from 'drizzle-orm';
 
@@ -89,6 +90,9 @@ export interface VolumeManifest {
 async function seedVolume(): Promise<void> {
   const logger = new ConsoleLogger('SeedVolume');
 
+  // ../.env reaches process.env only once AppModule's config has loaded,
+  // so a NODE_ENV set there is read too.
+  await ConfigModule.envVariablesLoaded;
   if (process.env.NODE_ENV === 'production') {
     logger.error('Refusing to write volume data to a production database');
     process.exitCode = 1;

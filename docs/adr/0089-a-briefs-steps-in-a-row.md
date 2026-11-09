@@ -745,3 +745,334 @@ as-built, pull request #518.
 - **The Opus setting lives on the Mac:** a new machine adds
   `"model": "opus"` to `.claude/settings.local.json` and lists that file
   in `.git/info/exclude`.
+
+## Amendment (November 2026) — small fixes on the API credit, by a runner in the repository
+
+Since 8 November the maintainer's API key carries a promotional credit of
+US$100 a month, the current one ending on 9 December 2026 (UTC). It pays
+for the API and the Agent SDK, not for Claude Code: a Claude Code session
+on the key fails with "credit balance too low". A runner kept in the
+ignored `tmp/sdk-fix/` ran `/fix-issue <N>` through the Agent SDK in a
+second working folder, `../waf-fix`, so the credit paid for it. Its first
+fix, #514, merged as #519 the same day, for about US$1.70. A first run
+had ended while its verify ran in the background, since a session ends
+when the agent's turn ends; the runner then turned background tasks off,
+as #252 did for Claude Code Review, and checks the folder after each run.
+
+The runner was kept out of the repository while the credit was thought to
+end on 9 December. It comes every month, so the runner moves in, and a
+fix on the credit can run while a feature is built in the first folder.
+Two working folders share the app's ports and test databases, and a
+second full verify started while one runs clashes in three places:
+
+- the server's end-to-end suite refuses at its start, on the advisory
+  lock its global setup takes (issue #1);
+- the browser suite reuses the servers the first folder's run started on
+  3100 and 5273, since `reuseExistingServer` is on outside CI, so it
+  tests the other folder's code, on the database that run is using;
+- the Linux browsers' container is removed by name, `docker rm --force
+  verify-linux-browsers`, under the first run's tests.
+
+The maintainer chose each decision below on 8 November 2026, asking for
+the practice teams use in each, which the decisions follow.
+
+Checked before drafting, for the areas docs and ops
+(`scripts/adr-check.mjs`, 8 November 2026):
+
+- **Fired, and taken here:** #467's 12 (`when-touched`): the picks'
+  exports in `scripts/cloud-picks.sh`, under ShellCheck, rather than two
+  long lines in the planning skill's section 8, which this changes. The
+  router's check left it for cloud sessions' return; picks are back, each
+  month, on the credit.
+- **Not fired, and left:**
+  - #467's 13, 14, 16, 17, 18, 22's report fields, 25 and 8 November's
+    screenshot line: each changes what a panel does, and only a walk
+    proves it; Items' branch walks one.
+  - #253 (`when-touched`): the review workflow is not changed.
+  - #226 (`when-touched`): it needs a rule for the plan check; the lock
+    wraps the timed runs and changes no plan.
+  - #292 (`when-touched`): its two parts left each wait for their own
+    batch, as its comment says.
+  - #516 and #284: CI's burn-in and browsers are unchanged, and the lock
+    is off in CI.
+  - #446: the runner's lock file is one more that Dependabot reads; the
+    step that writes it says whether the three advisories reach it.
+  - #321: the runner reads this repository's own skill, so it stays
+    here, one more candidate under this ADR's Deferred.
+  - #142, #197, #263, #283, #319, #320, #336 and #517: their files are
+    not changed.
+  - This ADR's Deferred, steps in parallel in worktrees: not fired,
+    since one brief's steps still run one at a time; the lock is what
+    such steps would need first.
+  - The Deferred lines of the docs and ops ADRs, ADR-051's watch list
+    and Open decisions hold nothing on a second folder or on the credit.
+- **Found while checking:**
+  - `scripts/prune-branches.sh --yes` stops at a merged branch still
+    checked out in the second folder: git refuses to delete it, and the
+    script exits there.
+  - #519 went in as a merge commit, where the README's row for a small
+    fix says squash; its one commit is the maintainer's, so nothing is
+    undone, and the runner prints the command after each run.
+  - The SDK's own Claude Code comes as a package per platform, about
+    310 MB on a Mac and 330 MB on Linux.
+
+### Decision — the runner in `scripts/fix-issue/`, a package of its own
+
+- **`scripts/fix-issue/run.mjs`,** with its own `package.json` and
+  lock, as `server/` and `client/` have theirs, never workspaces; `npm
+  ci` in it once on each Mac. It runs from the main working folder, as
+  `node scripts/fix-issue/run.mjs <N>`, with `leave <path>` after the
+  number as `/fix-issue` takes it, and `--probe`, `--resume last`,
+  `--spent`, `--folder`, `--model` and `--budget`.
+- **Its test never loads the SDK:** the parts it checks (the arguments,
+  the guards, the report after a run, the cost list) are a module of
+  their own, and the SDK is imported only when a run starts. The scripts'
+  tests and CI install nothing new.
+- **The SDK pinned exactly.** Dependabot keeps it current, monthly with
+  its 7-day wait, since the SDK publishes every one to four days; a
+  branch's dependency step stays with `server/` and `client/`, since
+  nothing the app ships depends on it. After a raise, `--probe` proves it.
+- **Its guards, kept:** it stops before any work unless the session is
+  paid by `ANTHROPIC_API_KEY` and `/fix-issue` is found; it cannot merge
+  or force-push; it stops at US$15 a fix; it runs headless, with no
+  background tasks, commands up to 90 minutes in the foreground, and the
+  push and pull request before its last message; after each run it
+  prints the folder's branch, last commit, uncommitted files and pull
+  request, `UNFINISHED` when one is missing, and the merge command,
+  `gh pr merge <PR> --squash --delete-branch`.
+- **Its guards, added:** it refuses to start from a second folder, and
+  refuses the main working folder as the folder to fix in, where a build
+  runs; a new fix, not a resume, refuses a folder with uncommitted
+  changes, naming them. The folder is `../waf-fix` beside the main one
+  unless `--folder` names another; when it is missing, the runner prints
+  the commands that make it.
+
+### Decision — one lock for the runs both folders share
+
+- **What takes it:** the server's end-to-end suite; the client's browser
+  suite, `npm run test:e2e:ui` and the screenshots; the Linux browsers in
+  the full verify; and the timed runs, `npm run perf`. Each takes it for
+  its own run, so another folder's format, lint, build and unit tests go
+  on meanwhile.
+- **The lock is Postgres's,** a session-level advisory lock held on a
+  connection of its own by `scripts/one-at-a-time.mjs`, which runs the
+  command under it, as the server's suite already holds one (issue #1).
+  A run that ends or dies frees it, so nothing stale is left, where a
+  file left behind would block the next run.
+- **A second run waits,** printing each minute which folder holds it,
+  for what and since when, read from the holder's connection name; after
+  60 minutes it stops, naming the holder. A command run under the lock
+  that calls another passes straight through.
+- **A browser run reuses only its own folder's servers:** one already on
+  3100 or 5273 from the other folder stops the run, naming it.
+- **Off in CI,** where each job runs alone. The server's own refusal
+  stays, behind it, for a run started without it.
+
+### Decision — Opus for every fix
+
+The runner's model is Opus, `--model` kept for an exception the
+maintainer names. A fix comes with the test that fails before it, which
+engineering.md's table puts on Opus; #514 cost about US$1.70 on it.
+
+### Decision — every run's cost in a list, and the month against the credit
+
+- **`tmp/fix-runs/runs.tsv`,** in the main working folder, which git
+  ignores: one line per run, with its Vancouver time, the issue, the
+  model, minutes, turns, the cost the SDK reports, and the pull request
+  or `UNFINISHED`. The logs go beside it.
+- **`--spent`** prints the credit month's runs and their total against
+  US$100, from the day the credit renews; the amount and the day are
+  constants at the runner's top.
+- **A warning before a run** once the month is past US$80, 80 % of it,
+  the point budget alerts commonly use. The SDK's figure is an estimate;
+  the Console's balance is the real one.
+- The chat's time and cost for a fix rest on this list.
+
+### Decision — the picks offered as the runner's lines
+
+- **The planning skill's section 8** offers `node
+  scripts/fix-issue/run.mjs <N>` while the month's credit has room, with
+  each pick's time and cost on the credit, and `/fix-issue <N>` for a
+  cloud session or Claude Code on the plan.
+- **The exports in `scripts/cloud-picks.sh`** (#467's 12): without
+  numbers it writes `tmp/cloud-picks.json`; with them, the shortlist,
+  `tmp/cloud-picks-shortlist.json`. Section 8 names the script.
+- **A runner's pull request is squashed,** as a cloud session's: one fix,
+  one commit on `main`.
+
+### Decision — the prune keeps a branch another folder has checked out
+
+`scripts/prune-branches.sh` keeps a branch checked out in another
+working folder, naming the folder, as it keeps the current branch.
+
+### Considered and not done
+
+- **The SDK in `server/`'s devDependencies:** about 330 MB of its Claude
+  Code in every `npm ci` of the server, CI's included.
+- **A top folder of its own, `tools/`:** `scripts/verify.sh` and the
+  docs check would each need lines for it, which `scripts/` has.
+- **Each folder on its own ports, databases and container,** both
+  running at once: Playwright's ports read from `.env`, two more
+  databases made and migrated in each folder, and the container named
+  per folder. The volume databases show how a database beside the usual
+  ones is forgotten (7 November), and two browser suites at once on one
+  Mac make the timing tests flaky (5631d0d8).
+- **A lock file in the folder git shares:** a run killed leaves it.
+- **The lock over the whole full verify:** format, lint, build and unit
+  tests share nothing.
+- **Sonnet first, then Opus after a failure,** as the loop does: a fix
+  is small, and a failed first attempt costs more than it saves.
+- **Claude Code itself on the key:** the credit does not pay for it.
+
+### Deferred — each with what brings it in
+
+- **Each folder on its own ports and databases,** so both run at once.
+  Trigger: a wait on the lock past 30 minutes, twice in one week.
+- **Several picks run one after another** from one command. Trigger:
+  three picks waiting at once, twice in a month.
+
+### Consequences
+
+- `scripts/fix-issue/`, a package with its runner, module and test;
+  `scripts/one-at-a-time.mjs` and its test, around the end-to-end,
+  screenshot and timed runs in both packages' scripts and the Linux
+  browsers in `scripts/verify.sh`; `scripts/prune-branches.sh` with a
+  test; `scripts/cloud-picks.sh` with a test; `.prettierignore`, for the
+  runner's lock; and `.github/dependabot.yml`.
+- engineering.md's "How code is delivered" and "Server" and the
+  README's "Which tool, when" say how a fix runs on the credit and that
+  a second run waits.
+- The planning skill's section 8, `reference/delivery.md` and
+  `evals.md`'s prompt 6. It is uploaded again after the merge (ADR-088's
+  amendment).
+- After the merge, `tmp/sdk-fix/` goes: its logs into `tmp/fix-runs/`,
+  by hand.
+- No API change, no migration and nothing a person sees in the app.
+- Built on `fix-runner`, in this order: this amendment; dependencies;
+  the runner; the lock; the prune; the picks' script; the working
+  agreements; the planning skill; the runner's probe and the lock across
+  both folders, by hand; dependencies again; the reviews; the as-built.
+
+### As built
+
+Built on 8 November 2026 on `fix-runner`, 29 commits with this
+as-built, pull request #523.
+
+- **Measured against the brief's guesses,** minutes and the tokens the
+  Agent tool counted:
+
+  | Step | Model | Minutes (guess) | Tokens |
+  | --- | --- | --- | --- |
+  | 2 | sonnet | 1 (8), no commit | 49,002 |
+  | 3 | opus | 19 and 7 (20) | 172,715 and 87,296 |
+  | 4 | opus | 20 (25) | 169,501 |
+  | 5 | sonnet | 1 (8) | 52,886 |
+  | 6 | sonnet | 1 (6) | 52,638 |
+  | 7 | sonnet | 1 (6) | 53,870 |
+  | 8 | sonnet | 1 (5) | 44,273 |
+  | 10 | sonnet | 1 (6), no commit | 40,549 |
+  | 11, findings | opus | 11 (30) | not shown |
+  | 11, fixes | opus | 58 and 60 (50) | not shown |
+
+  Sonnet's script and docs steps took about a minute each. The fixes
+  took twice their guess: they carried the dependencies under the
+  maintainer's exception, the fix for `@nestjs/config` 12.1, and two
+  rounds of the full verify.
+- **The runner, `scripts/fix-issue/`:**
+  - the SDK pinned at 0.3.316, 9 days old, under the maintainer's
+    exception to the 14-day rule for a new package, since it had already
+    run #514 and the probe (ded94579); its lock built with `npm install
+    --min-release-age=7`, all 109 versions at least 7 days old, with no
+    minimatch or glob (#446);
+  - after a fix with a pull request, `git -C <folder> switch --detach`,
+    then `gh pr merge <PR> --squash --delete-branch` (007dbc81); the
+    detach let `gh` delete #520's local branch too;
+  - `--resume last` refuses a fix whose pull request is open (da4916a5),
+    resumes in the folder the fix ran in (6f3ac658), and accepts
+    `UNKNOWN`, written when GitHub could not be asked (f242baa5);
+  - a PreToolUse hook checks each whole Bash command for a merge or a
+    force-push, in place of rules that matched a command's start
+    (ed237fc8); its tests refuse merges in 6 spellings and force-pushes
+    in 10, and the next paid fix proves its wiring, since a probe uses
+    no tools;
+  - the key's value is removed from the logs and the printed lines
+    (d6ebd794); Dependabot offers the SDK's patches only, a 0.x minor
+    taken by hand with `--probe` (0d4b15a9).
+- **Its probe from the new path:** paid by `ANTHROPIC_API_KEY`,
+  `/fix-issue` among the session's 58 slash commands, about US$0.11, its
+  line in `tmp/fix-runs/runs.tsv`, and `--spent` counting it. The model's
+  own reply says `/fix-issue` is not available to it, as expected: only a
+  person starts that skill.
+- **The lock, `scripts/one-at-a-time.mjs`:**
+  - key 4802089 on the test database; the holder named `<label> in
+    <folder> since <HH:MM>`; the labels `server-e2e`, `perf`,
+    `browser-suite`, `browser-ui`, `screenshots`, `linux-browsers` and
+    `flake-hunt`;
+  - the flake hunt one hold for its whole loop, and the full verify's
+    Linux browsers one hold, through an internal `--linux-browsers` mode
+    that refuses to run outside the lock (8a6a61d6);
+  - each `test:e2e` takes the lock before its migrate and seed, as the
+    maintainer chose over the step's advice (2b84103d); the client's
+    `pretest:e2e` is now `e2e:prepare`;
+  - the screenshots check their own ports, 3200 and 5373; the browser
+    commands run by hand in conventions.md go through the lock
+    (53158951);
+  - proved twice: a second run in the same folder waited 40 seconds;
+    across the folders, `waf-fix` waited for `proof in
+    web-app-foundation, since 21:30` and ran when it was freed;
+  - it needs both folders' `.env` to name the same test database, which
+    they do, and the screenshots and the timed runs now need that
+    database up, which Docker gives every step.
+- **The prune** keeps a branch another folder has checked out
+  (c41ea77e). **The picks' exports,** `scripts/cloud-picks.sh`
+  (f8d6941e): `gh issue list --search` returned the same 127 issues as
+  the `jq` filter, which stays, since only it can be tested without
+  standing in for GitHub's search.
+- **Dependencies:** steps 2 and 10 took nothing, since the run began on
+  8 November, before anything in range was 7 days old. The maintainer
+  then waived the 7-day rule once, for every update in range, each
+  publisher checked and `npm audit signatures` passing in both folders:
+  - the Sentry packages at 11.11.0 first, as a security fix (5b988d0c),
+    then the rest (40691cde); rimraf 6.1.4 removed the last glob 13.0.6,
+    which closes alert 9 in `server/`;
+  - `@nestjs/config` 12.1 writes `.env` into `process.env` only after
+    the `validate` function has run, so `main.ts` checked the settings
+    before they were there, and `start:dev` failed. `main.ts` and both
+    seeds now await `ConfigModule.envVariablesLoaded` (7821b34e). The
+    server's own tests never start `main.ts`; only the browser suite's
+    server does, so `--quick` cannot catch this, and the full verify can.
+    The range stays `^12.0.1`: on 12.0.1 the await has nothing to wait
+    for;
+  - pdfmake 0.3.14 renamed `virtualfs` to `sharedVirtualfs`, its CVE
+    fix, and the PDF renderer writes the new name (40691cde);
+  - Playwright 1.65.0's Firefox 159 crashed on 7 accessibility pages in
+    its Linux image, twice, while Mozilla's own Firefox 159.0.1, already
+    stable, ran a newcomer's Home 6 times of 6 without a crash. So
+    `@playwright/test` is back at 1.64.1, pinned exactly, under the
+    maintainer's exception to never moving a locked version back, safe
+    since 1.65.0 was never pushed, and Dependabot skips 1.65.0
+    (f68ea60b); #521 holds the next raise, every browser run by hand
+    before its merge;
+  - `raw-body` 4.0.0, a major: ESM only and Node 22 or later;
+    `report-body.ts` unchanged, its tests passing three times
+    (cc2b0bfb). It is now published from GitHub Actions with provenance;
+  - `jsdom` 31.0.0 failed the same 17 of 1103 client unit tests in all 5
+    runs, since its new CSS engine resolves the theme's `var()` colours;
+    it stays pinned at 30.1.3, with #522;
+  - TypeScript 7 (#336) still waits on typescript-eslint, the Nest CLI
+    and `@hey-api/openapi-ts`.
+- **The reviews:** 18 findings. Fixed: 1 to 11, 13, 14 and 17, with 4
+  as b. Left: 12, the screenshots and timed runs needing the test
+  database; 15, CI auditing only `server/` and `client/`, while
+  Dependabot reads the runner's lock; 16, sound; and 18, since
+  `brief-step` keeps its 10 to 15 lines, as the router's review 31
+  decided.
+- **The first fixes on the credit:** #514 (#519), about US$1.70, and
+  #483 (#520), 23 minutes and US$1.23, during this branch's reviews, on
+  `main`'s scripts. Both went in as merge commits, before the runner
+  printed its squash line.
+- **Riders:** #467's 12.
+- **Still open:** whether a resumed run's cost repeats the run before it,
+  checked against the Console at the first resume; and the `jsdom` 30.1.0
+  entry in Dependabot's `/server` block, which never applied, since
+  `jsdom` is the client's; the exact pin covers it.

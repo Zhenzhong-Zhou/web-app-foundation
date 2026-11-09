@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { and, eq, sql } from 'drizzle-orm';
 
@@ -116,6 +117,9 @@ const WHAT_WE_DO: Record<Locale, string> = {
 async function seedDemo(): Promise<void> {
   const logger = new Logger('SeedDemo');
 
+  // ../.env reaches process.env only once AppModule's config has loaded,
+  // so a NODE_ENV set there is read too.
+  await ConfigModule.envVariablesLoaded;
   if (process.env.NODE_ENV === 'production') {
     logger.error('Refusing to write demo data to a production database');
     process.exitCode = 1;
