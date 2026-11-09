@@ -156,7 +156,9 @@ Short bullets: what changed, each proof with its command and result,
 the pull request's link, and what it left alone; then, for the
 maintainer, that it merges once green from the terminal, `gh pr merge <PR>
 --squash --delete-branch`, the pull request's number and not the
-issue's, never from the button ([engineering.md][merge]). The last
+issue's, never from the button ([engineering.md][merge]); in a second
+working folder on the Mac, after `git -C <folder> switch --detach`,
+since git deletes no branch another folder has checked out. The last
 line, as every report's ([CLAUDE.md, "How to work"][how-to-work]):
 `DONE: <why>` or `BLOCKED: <what is needed>`.
 
