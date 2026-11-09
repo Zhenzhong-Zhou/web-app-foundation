@@ -21,6 +21,11 @@ export const E2E_LOCK_KEY = 4_802_048;
  * run. Tied to the connection, so a crashed or interrupted run releases it by
  * dying; nothing is left behind to clean up.
  *
+ * Before this one, `npm run test:e2e` takes another lock, through
+ * scripts/one-at-a-time.mjs, which every working folder's end-to-end and
+ * browser runs share, so a second run waits there instead (ADR-089's
+ * amendment). This refusal stays for a run started without it.
+ *
  * Returns the teardown, which Vitest runs once the last suite has finished:
  * closing the connection releases the lock.
  */
@@ -46,7 +51,10 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     throw new Error(
       'Another e2e run is using the test database. Two runs truncate each ' +
         "other's tables mid-test, so this one has stopped before starting. " +
-        'Let the other finish (or stop it), then run again.',
+        'Let the other finish (or stop it), then run again. Start a run with ' +
+        '`npm run test:e2e` or scripts/e2e-flake-hunt.sh, which wait for ' +
+        "another's through scripts/one-at-a-time.mjs; one started without " +
+        'it, as `npx vitest run --project e2e`, stops here instead.',
     );
   }
 
