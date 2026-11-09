@@ -14,13 +14,15 @@
  * generates, as openapi-ts does: the folder emptied, then written. npx
  * notes where it runs, the remote browser it is given and its arguments.
  * The container's tests run the full script, with a docker of their own,
- * which notes what it is asked. The script runs through /bin/bash, the
+ * which notes what it is asked, and a one-at-a-time.mjs that notes its
+ * call and runs the command after --, as the lock's script does once it
+ * holds the lock. The script runs through /bin/bash, the
  * Mac's 3.2 where the tests run on a Mac, so anything newer than 3.2 fails
  * here.
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -50,6 +52,25 @@ const STAND_INS = [
 ];
 
 /**
+ * scripts/one-at-a-time.mjs, as verify.sh calls it: it notes its
+ * arguments, then the command's exit, in $ONE_AT_A_TIME_LOG, and runs the
+ * command after --, the lock's variable set.
+ */
+const ONE_AT_A_TIME = `import { spawnSync } from "node:child_process";
+import { appendFileSync } from "node:fs";
+const args = process.argv.slice(2);
+const note = (line) => appendFileSync(process.env.ONE_AT_A_TIME_LOG, line + "\\n");
+note(args.join(" "));
+const at = args.indexOf("--");
+const run = spawnSync(args[at + 1], args.slice(at + 2), {
+  stdio: "inherit",
+  env: { ...process.env, ONE_AT_A_TIME_HELD: args[0] },
+});
+note("exit " + run.status);
+process.exit(run.status ?? 1);
+`;
+
+/**
  * A repository with OLD committed, and a Mac's .DS_Store in
  * client/src/api/, which git ignores and openapi-ts's emptying removes.
  */
@@ -57,6 +78,7 @@ function fixture(t) {
   const root = repository(t, "verify", {
     ".gitignore": ".DS_Store\nnode_modules/\n",
     "scripts/verify.sh": readFileSync(path.join(ROOT, "scripts/verify.sh")),
+    "scripts/one-at-a-time.mjs": ONE_AT_A_TIME,
     ...OLD,
   });
   for (const standIn of STAND_INS) {
@@ -78,8 +100,8 @@ function put(root, files) {
  * `verify.sh --quick` (or with the arguments in `mode`, none for the full
  * run), its npm writing `generated` on `npm run
  * api`, from server/ as the script runs it, and a docker, when `docker` is
- * given, that is this script. The run, with npm's, npx's and docker's
- * calls.
+ * given, that is this script. The run, with npm's, npx's, docker's and
+ * one-at-a-time.mjs's calls.
  */
 function verify(t, root, generated, { mode = ["--quick"], docker } = {}) {
   const bin = folder(t, "verify-bin");
@@ -110,13 +132,19 @@ echo "\${PWD##*/}, \${PW_TEST_CONNECT_WS_ENDPOINT:-no remote} \${PW_TEST_CONNECT
   // Each stand-in notes its calls in its own name's .log beside it.
   const npxLog = path.join(bin, "npx.log");
   const dockerLog = path.join(bin, "docker.log");
+  const lockLog = path.join(bin, "one-at-a-time.log");
   writeFileSync(npxLog, "");
   writeFileSync(dockerLog, "");
+  writeFileSync(lockLog, "");
   if (docker) writeFileSync(path.join(bin, "docker"), docker, { mode: 0o755 });
   const run = spawnSync("/bin/bash", ["scripts/verify.sh", ...mode], {
     cwd: root,
     encoding: "utf8",
-    env: { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}` },
+    env: {
+      ...process.env,
+      PATH: `${bin}${path.delimiter}${process.env.PATH}`,
+      ONE_AT_A_TIME_LOG: lockLog,
+    },
     timeout: 60_000,
   });
   const lines = (file) => readFileSync(file, "utf8").trimEnd().split("\n");
@@ -125,6 +153,7 @@ echo "\${PWD##*/}, \${PW_TEST_CONNECT_WS_ENDPOINT:-no remote} \${PW_TEST_CONNECT
     npm: lines(log),
     npx: lines(npxLog),
     docker: lines(dockerLog),
+    oneAtATime: lines(lockLog),
   };
 }
 
@@ -227,6 +256,10 @@ function withPlaywright(root) {
   );
 }
 
+/** The full run's call of its last part, the Linux browsers, under the lock. */
+const LINUX_UNDER_THE_LOCK =
+  "linux-browsers -- /bin/bash scripts/verify.sh --linux-browsers";
+
 /** The Playwright suites the run started, each as npx noted it. */
 const playwright = (run) =>
   run.npx.filter((call) => call.includes(": playwright "));
@@ -249,6 +282,7 @@ test("the full run stops at once, with the container's logs, when the browsers' 
   assert.doesNotMatch(run.stderr, /did not start in 120 seconds/);
   assert.doesNotMatch(run.stdout, /== All passed/);
   assert.deepEqual(playwright(run), []);
+  assert.deepEqual(run.oneAtATime, [LINUX_UNDER_THE_LOCK, "exit 1"]);
 });
 
 test("the full run, once the container listens, runs the accessibility spec in its Firefox, then in its WebKit", (t) => {
@@ -273,4 +307,49 @@ test("the full run, once the container listens, runs the accessibility spec in i
     run.stdout,
     /accessibility spec in Firefox[^]*accessibility spec in Linux WebKit[^]*^== All passed$/m,
   );
+  // The container and both browsers, under one hold of the lock.
+  assert.deepEqual(run.oneAtATime, [LINUX_UNDER_THE_LOCK, "exit 0"]);
+});
+
+test("--linux-browsers typed by hand, outside the lock, is refused before any container", (t) => {
+  const root = fixture(t);
+  withPlaywright(root);
+  const bin = folder(t, "verify-bin");
+  const dockerLog = path.join(bin, "docker.log");
+  writeFileSync(
+    path.join(bin, "docker"),
+    `#!/bin/sh\necho "$*" >> '${dockerLog}'\n`,
+    { mode: 0o755 },
+  );
+  const env = {
+    ...process.env,
+    PATH: `${bin}${path.delimiter}${process.env.PATH}`,
+  };
+  delete env.ONE_AT_A_TIME_HELD;
+  const run = spawnSync(
+    "/bin/bash",
+    ["scripts/verify.sh", "--linux-browsers"],
+    {
+      cwd: root,
+      encoding: "utf8",
+      env,
+      timeout: 60_000,
+    },
+  );
+
+  assert.equal(run.status, 2, run.stdout + run.stderr);
+  assert.match(run.stderr, /--linux-browsers is the full run's own call/);
+  assert.match(
+    run.stderr,
+    /node scripts\/one-at-a-time\.mjs linux-browsers -- bash scripts\/verify\.sh --linux-browsers/,
+  );
+  assert.equal(existsSync(dockerLog), false, "it called docker");
+});
+
+test("--quick takes no lock: it runs no end-to-end or browser part", (t) => {
+  const root = fixture(t);
+  const run = verify(t, root, OLD);
+
+  assert.equal(run.status, 0, run.stdout + run.stderr);
+  assert.deepEqual(run.oneAtATime, [""]);
 });

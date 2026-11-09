@@ -10,7 +10,16 @@
 # that fails without naming a test — a suite that would not load, a database
 # that was not there — prints the end of its log instead, so it is never
 # reported as clean.
+#
+# The whole hunt runs under the lock the working folders share
+# (scripts/one-at-a-time.mjs, ADR-089's amendment): it starts itself again
+# under it, so another folder's end-to-end or browser run waits for the
+# hunt, not for one of its runs.
 set -uo pipefail
+
+if [ -z "${ONE_AT_A_TIME_HELD:-}" ]; then
+  exec node "$(dirname "$0")/../../scripts/one-at-a-time.mjs" flake-hunt -- "$0" "$@"
+fi
 
 RUNS="${1:-10}"
 PATTERN="${2:-}"

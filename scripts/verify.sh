@@ -18,6 +18,11 @@
 # (docker compose up -d) and ../.env. The two end-to-end suites use their
 # own databases and run one after the other, never together.
 #
+# The end-to-end and browser parts, the Linux browsers' below among them,
+# wait for another working folder's: each runs under the lock both folders
+# share, scripts/one-at-a-time.mjs (ADR-089's amendment), which says each
+# minute what it waits for. Format, lint, build and unit tests do not wait.
+#
 # The API contract runs in full and with --quick, not with --docs
 # (ADR-068): it regenerates server/openapi.json and client/src/api/, and
 # stops if that changed either, committed or not, leaving the fresh files
@@ -60,6 +65,9 @@ case "$#:${1:-}" in
   0:) ;;
   1:--quick) mode=quick ;;
   1:--docs) mode=docs ;;
+  # The full run's own call, for its last part under the lock: below, at
+  # linux_accessibility.
+  1:--linux-browsers) mode=linux ;;
   *)
     echo "Usage: scripts/verify.sh [--quick | --docs], one at most" >&2
     exit 2
@@ -196,6 +204,10 @@ against_main() {
 # is left alone, and the trap removes it however the run ends. Its own
 # logs are printed when it does not start, at once when it has exited and
 # after 120 seconds when it is running and silent.
+# The container and both browsers run under one hold of the lock the
+# working folders share, since another folder's full run removes the
+# container by its name: the full run calls this script again, as
+# --linux-browsers, through scripts/one-at-a-time.mjs, in the same bash.
 BROWSERS_CONTAINER=verify-linux-browsers
 
 linux_accessibility() {
@@ -243,6 +255,18 @@ linux_accessibility() {
       npx playwright test e2e/accessibility.spec.ts --project="$project")
   done
 }
+
+if [[ $mode == linux ]]; then
+  # Only under the lock: typed by hand, it would remove the container by
+  # its name under another folder's run.
+  if [[ -z "${ONE_AT_A_TIME_HELD:-}" ]]; then
+    echo '--linux-browsers is the full run'"'"'s own call, under the lock the working folders share.' >&2
+    echo 'Run scripts/verify.sh in full, or: node scripts/one-at-a-time.mjs linux-browsers -- bash scripts/verify.sh --linux-browsers' >&2
+    exit 2
+  fi
+  linux_accessibility
+  exit 0
+fi
 
 # --docs stands in for --quick only when the docs' checks are all a change
 # needs (ADR-086): every uncommitted change, staged or not, and every new
@@ -299,7 +323,8 @@ else
   step 'Client: format, lint, catalogues, build, unit tests, Playwright'
   (cd client && npm run verify:all)
 
-  linux_accessibility
+  node scripts/one-at-a-time.mjs linux-browsers -- \
+    "$BASH" scripts/verify.sh --linux-browsers
 fi
 
 step 'All passed'

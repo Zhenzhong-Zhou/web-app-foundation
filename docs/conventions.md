@@ -572,8 +572,12 @@ The error tracker hears of real faults only (ADR-084).
   integration tests live in `test/` and end in `.e2e-spec.ts` (`npm run
   test:e2e`, one file at a time). CI's server job runs both.
 - The repository's own scripts test with Node's runner:
-  `scripts/*.test.mjs`, run by `node --test scripts/` from
-  `scripts/verify.sh` and CI's server job (ADR-082).
+  `scripts/*.test.mjs` and `scripts/fix-issue/run.test.mjs`, run by
+  `node --test scripts/` from `scripts/verify.sh` and CI's server job
+  (ADR-082).
+- A suite run by hand waits for another working folder's: `npm run test:e2e`
+  and the browser runs go through `scripts/one-at-a-time.mjs`, one at a
+  time across the folders.
 - Vitest does not type-check. A type error in a spec fails `npm run
   typecheck`, which CI and `scripts/verify.sh` run, not the test run.
 - Every integration test calls `await app.close()` in `afterAll`, or the
@@ -695,9 +699,11 @@ The error tracker hears of real faults only (ADR-084).
 - **A new or changed test runs before its commit** (ADR-089's amendment),
   repeatedly, so a flake shows before CI finds it: a client unit test five times
   (`npx vitest run <file>` in `client/`, five runs); a browser test five
-  times (`npx playwright test <spec> --repeat-each=5` in `client/`, the
-  account spec's password tests as the bullet above says); a server
-  end-to-end test three times (`server/scripts/e2e-flake-hunt.sh 3
+  times (`node ../scripts/one-at-a-time.mjs browser-suite -- npx playwright
+  test <spec> --repeat-each=5` in `client/`, under the lock, so it waits
+  for another folder's browser run rather than test that folder's
+  servers; the account spec's password tests as the bullet above says);
+  a server end-to-end test three times (`server/scripts/e2e-flake-hunt.sh 3
   <suite>`). A test that fails in any of them is not committed, and the
   commit's step gives the command and the result in its summary.
 - **CI burns in the browser specs a pull request changes** (ADR-089's
@@ -1061,6 +1067,7 @@ Internet Explorer, and any browser's IE mode, is not supported.
   # in client/
   E2E_FIREFOX=1 PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3333/ \
   PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
+  node ../scripts/one-at-a-time.mjs browser-suite -- \
   npx playwright test e2e/accessibility.spec.ts --project=firefox
   ```
 

@@ -33,7 +33,7 @@ export async function missingPermissionKeys(url: string): Promise<string[]> {
  * Writes the permission keys the database at `url` lacks, and returns
  * them; when it lacks none, nothing at all, and no seed is started.
  *
- * Only `npm run test:e2e` seeds the e2e database, through pretest:e2e. A
+ * Only `npm run test:e2e` seeds the e2e database, through e2e:prepare. A
  * direct `npx playwright test` does not, so after a branch adds a
  * permission every registration answered 500 (#345). A registration needs
  * only the keys, so this runs the seed's step that writes them, about 6 s

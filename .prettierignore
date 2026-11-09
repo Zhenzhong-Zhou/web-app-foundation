@@ -3,3 +3,6 @@
 # check-docs.mjs reads, headings in __strong__ and *em* among them, which
 # Prettier would rewrite; markdownlint checks it instead.
 scripts/fixtures/
+# The fix runner's lock, as npm writes it: Prettier would reflow its
+# arrays, and npm writes it back its own way at the next install.
+scripts/fix-issue/package-lock.json
