@@ -558,9 +558,17 @@ folder by folder; these check what is already in place.
   saving, saying which language.
 - **MC-1408** With 简体中文 checked under Item names required on
   invoices, on the Organization page, and a customer set to Chinese,
-  issuing an invoice for a product with no Chinese name is refused naming
-  the code; after Edit names adds one, it issues, and its printed lines
-  show the Chinese name.
+  issuing an invoice for an item with no Chinese name is refused naming
+  the item and its code; once it has one, a variation with a name of its
+  own and none in Chinese is refused naming the variation by its code and
+  its name. On the item's page, Names in other languages is one table, the
+  item's row and each named variation's, with 简体中文 marked Required on
+  documents: the missing name reads Missing with Add, and a line at the
+  top names it and says orders and invoices holding the item cannot
+  print. Add opens Edit names with that field focused, 简体中文 marked
+  required, and its intro no longer says a blank prints the base name
+  there. Once added, the invoice issues, and its printed lines show the
+  Chinese names.
 - **MC-1409** On a partner, Document languages: left alone, the first
   reads The organization's default and the second Nothing else, never a
   blank box. The first offers the
@@ -3285,8 +3293,8 @@ refusals keep the base name.
   the language while Items, the item's page or Inventory is open:
   the names change with the screen's words, without leaving it.
 - **MC-3802** In 中文, open 专注胶囊 60 粒: the heading and the gallery's
-  images are named 专注胶囊 60 粒, and 其他语言名称 starts with 基础名称：Focus
-  60ct, the name documents print. Edit a variant's unit and save: in
+  images are named 专注胶囊 60 粒, and 其他语言名称's table starts with the
+  物品 row, Focus 60ct, the name documents print. Edit a variant's unit and save: in
   English the page still reads Focus 60ct and the variant keeps the name
   it had. Edit names shows Focus 60ct as the name being translated.
 - **MC-3803** In 中文, Inventory names FOCUS-60CT's rows 专注胶囊 60 粒, as
@@ -5480,3 +5488,7 @@ first.
   equipment, a code in use refused under Code with its item, the new
   item's page in the form's place, and Edit on the item's page: MC-201,
   MC-202 and MC-203 rewritten, MC-214 added.
+- 2026-11-09: ADR-092 step 15, each variation's names on the item's page:
+  one table with the required languages marked and what is missing, Add
+  opening Edit names at it, and the refusal naming the item's or the
+  variation's name: MC-1408 and MC-3802 rewritten.

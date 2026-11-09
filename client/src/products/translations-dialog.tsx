@@ -14,6 +14,7 @@ import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { LANGUAGE_NAMES, type Locale, SUPPORTED_LOCALES } from '../lib/locales';
 import { useSubmit } from '../lib/use-submit';
+import type { NameAt } from './name-rows';
 import type { ProductDetail } from './product-detail-page';
 
 /** One language's names, as typed. Blank means "no name in it". */
@@ -53,8 +54,10 @@ function formFrom(product: ProductDetail): Form {
  * A product's name, description and variant names in each language
  * (ADR-054). The product's own name stays the base text and the fallback:
  * a language left blank prints the base name, unless the organization
- * requires that language, in which case issuing an invoice in it is
- * refused until the name is here.
+ * requires that language, in which case a document in it is refused until
+ * the name is here. The required languages are marked so, and the intro
+ * says a blank prints the base name only of the others (ADR-092, #306's
+ * 18). Opened from a missing name's Add, its field has focus.
  *
  * Saved whole, as the routes take it: a language cleared here is removed.
  * The product first, then each named variant, so a refusal on one leaves
@@ -63,11 +66,17 @@ function formFrom(product: ProductDetail): Form {
 export function TranslationsDialog({
   open,
   product,
+  required = [],
+  at = null,
   onClose,
   onSaved,
 }: {
   open: boolean;
   product: ProductDetail;
+  /** The languages the organization's documents require. */
+  required?: readonly Locale[];
+  /** The name to start at, from its Add; null for the first field. */
+  at?: NameAt | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
@@ -103,6 +112,12 @@ export function TranslationsDialog({
     reset();
     onClose();
   }
+
+  const others = SUPPORTED_LOCALES.filter(
+    (locale) => !required.includes(locale),
+  );
+  const startsAt = (row: 'product' | string, locale: Locale) =>
+    at !== null && at.row === row && at.locale === locale;
 
   function set(locale: Locale, change: Partial<Entry>) {
     setForm((current) => ({
@@ -186,23 +201,63 @@ export function TranslationsDialog({
 
         <DialogContent>
           <Stack spacing={3} sx={{ pt: 1 }}>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {intl.formatMessage(
-                {
-                  id: 'products.translations.intro',
-                  defaultMessage:
-                    'Where a language is left blank, documents in it print the base name, {name}.',
-                },
-                { name: product.name },
-              )}
-            </Typography>
+            {required.length > 0 && (
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                {intl.formatMessage(
+                  {
+                    id: 'products.translations.introRequired',
+                    defaultMessage:
+                      'Documents require names in {languages}: while one is blank, orders and invoices holding this item cannot print.',
+                  },
+                  {
+                    languages: intl.formatList(
+                      required.map((locale) => LANGUAGE_NAMES[locale]),
+                      { type: 'conjunction' },
+                    ),
+                  },
+                )}
+              </Typography>
+            )}
+            {others.length > 0 && (
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                {required.length > 0
+                  ? intl.formatMessage(
+                      {
+                        id: 'products.translations.introOthers',
+                        defaultMessage:
+                          'Where another language is left blank, documents in it print the base name, {name}.',
+                      },
+                      { name: product.name },
+                    )
+                  : intl.formatMessage(
+                      {
+                        id: 'products.translations.intro',
+                        defaultMessage:
+                          'Where a language is left blank, documents in it print the base name, {name}.',
+                      },
+                      { name: product.name },
+                    )}
+              </Typography>
+            )}
 
             {(problem ?? error) && <FormError message={(problem ?? error)!} />}
 
             {SUPPORTED_LOCALES.map((locale) => (
               <Stack key={locale} spacing={1.5}>
-                <Typography variant="subtitle2" component="h3" lang={locale}>
-                  {LANGUAGE_NAMES[locale]}
+                <Typography variant="subtitle2" component="h3">
+                  <span lang={locale}>{LANGUAGE_NAMES[locale]}</span>
+                  {required.includes(locale) && (
+                    <Typography
+                      variant="caption"
+                      component="span"
+                      sx={{ display: 'block', color: 'text.secondary' }}
+                    >
+                      {intl.formatMessage({
+                        id: 'products.names.required',
+                        defaultMessage: 'Required on documents',
+                      })}
+                    </Typography>
+                  )}
                 </Typography>
 
                 <TextField
@@ -217,6 +272,7 @@ export function TranslationsDialog({
                   onChange={(event) =>
                     set(locale, { name: event.target.value })
                   }
+                  autoFocus={startsAt('product', locale)}
                   fullWidth
                   slotProps={{ htmlInput: { maxLength: 200, lang: locale } }}
                 />
@@ -254,6 +310,7 @@ export function TranslationsDialog({
                       },
                     )}
                     value={form[locale].variants[variant.id] ?? ''}
+                    autoFocus={startsAt(variant.id, locale)}
                     onChange={(event) =>
                       set(locale, {
                         variants: {

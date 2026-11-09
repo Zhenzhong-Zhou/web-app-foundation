@@ -595,7 +595,7 @@
   "invoices.shipmentInvoiceVoidBefore": "此次发货已有发票——请先作废再重新开票",
   "invoices.shipmentWasVoidedNothing": "此次发货已作废——没有货物发出，因此无需开票",
   "invoices.skuCreditedInvoicedPrice": "{sku} 只能按开票价格或更低价格贷项，不能更高",
-  "invoices.skuLanguageNameWhich": "{sku} 没有{language}名称，而本组织要求单据上必须有。请在其物品页面上添加{language}名称。",
+  "invoices.skuLanguageNameWhich": "{which, select, variant {{product} 的规格 {sku}（{variation}）} other {{product}（{sku}）}}没有{language}名称，而本组织要求单据上必须有。请在物品页面的“其他语言名称”中添加。",
   "invoices.skuPriceOrderPrice": "{sku} 在订单上没有价格——开票前请为订单行定价{count, plural, other {}}",
   "invoices.skuRemainingLeftCredit": "{sku} 在 {number} 上只剩 {remaining} 可贷项，少于本次贷项",
   "invoices.skuTaxCodeChoose": "{sku} 没有税码——请选择一个，或选择免税{count, plural, other {}}",

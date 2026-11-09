@@ -422,12 +422,32 @@ How this file is kept is in the [README](README.md).
   [ADR-092](../adr/0092-items.md#decision--sorting-and-the-rule-for-every-list) ·
   [test](../../server/test/items-list.e2e-spec.ts) "sorts by the name the reader sees, a number by its value and Chinese by its pinyin, either way" ·
   MC-3801
-- **Where the organization requires product names in a language, an
-  invoice that prints in it is refused until every product on it has a
-  name in that language.** The organization chooses which, on its page.
+- **Where the organization requires product names in a language, a
+  document that prints in it is refused until every item on it, and each
+  of its variations with a name of its own, has a name in that language.
+  The refusal says whether the item's name or the variation's is missing,
+  the item's first, the variation by its code and its own name.** The
+  organization chooses which languages, on its page.
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
+  [ADR-054, amended](../adr/0054-languages.md#amendment-november-2026--what-documents-will-refuse-shown-before-they-do-adr-092) ·
   [test](../../server/test/languages.e2e-spec.ts) "requires the languages the organization names, as a set of supported tags" ·
   [test](../../server/test/languages.e2e-spec.ts) "refuses to issue in a required language until every product is named in it" ·
+  [test](../../server/test/languages.e2e-spec.ts) "names the variation, by its code and its own name, when its name is the one missing" ·
+  [test](../../server/test/documents.e2e-spec.ts) "names only its own lines, so one not returned refuses nothing" ·
+  MC-1408
+- **The item's page shows its names in other languages as one table: a
+  row for the item and one for each variation with a name of its own, a
+  column for each language, those the organization's documents require
+  marked so. A missing required name reads Missing, with Add opening Edit
+  names at that name, and a line at the page's top names each one missing
+  and says documents holding the item cannot print until it is added.**
+  Edit names marks the required languages too, and says a blank prints
+  the base name only of the others. Add item does not ask for them: the
+  new item's page shows what is missing.
+  [ADR-092](../adr/0092-items.md#decision--each-variations-names-on-the-items-page) ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "shows the item’s and each named variation’s names by language, a missing required one marked" ·
+  [test](../../client/src/products/product-detail-page.test.tsx) "opens Edit names at the missing name’s row, the required languages marked" ·
+  [test](../../client/src/products/translations-dialog.test.tsx) "marks the required languages, saying a blank prints the base name only of the others" ·
   MC-1408
 
 ## Finding a product, and picking an item
