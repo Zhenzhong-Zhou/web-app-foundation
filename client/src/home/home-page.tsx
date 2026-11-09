@@ -301,7 +301,7 @@ function OrganizationHome() {
       icon: <AddIcon />,
     },
     can('stock.move') && {
-      to: '/inventory',
+      to: '/inventory?receive',
       label: intl.formatMessage({
         id: 'inventory.receive',
         defaultMessage: 'Receive stock',
@@ -309,7 +309,7 @@ function OrganizationHome() {
       icon: <MoveToInboxOutlined />,
     },
     can('production.create') && {
-      to: '/production',
+      to: '/production?plan',
       label: intl.formatMessage({
         id: 'production.plan',
         defaultMessage: 'Plan a run',

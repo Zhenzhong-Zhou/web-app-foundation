@@ -510,6 +510,8 @@ describe('HomePage', () => {
 
     const receive = await screen.findByRole('link', { name: 'Receive stock' });
     expect(receive).toHaveClass('MuiButton-contained');
+    // Straight to its dialog, as Invite's ?invite (#502).
+    expect(receive).toHaveAttribute('href', '/inventory?receive');
     expect(screen.queryByRole('link', { name: 'Raise an order' })).toBeNull();
     // Above what is late, beside the greeting.
     const follows = (first: Element, then: Element) =>
@@ -539,9 +541,9 @@ describe('HomePage', () => {
       permissions: ['stock.view', 'production.create'],
     });
 
-    expect(await screen.findByRole('link', { name: 'Plan a run' })).toHaveClass(
-      'MuiButton-contained',
-    );
+    const plan = await screen.findByRole('link', { name: 'Plan a run' });
+    expect(plan).toHaveClass('MuiButton-contained');
+    expect(plan).toHaveAttribute('href', '/production?plan');
     expect(screen.getByRole('button', { name: 'More' })).toBeVisible();
   });
 
