@@ -673,11 +673,15 @@ export function ProductsPage() {
         </Stack>
       </Drawer>
 
-      <CreateProductDialog
-        open={creating}
-        onClose={() => setCreating(false)}
-        onCreated={async () => reload()}
-      />
+      {/* Its type from the open tab, none from All (ADR-092); once added,
+          the new item's page opens in the list's place. */}
+      {creating && (
+        <CreateProductDialog
+          type={tab === 'all' ? null : tab}
+          categories={tree?.categories ?? []}
+          onClose={() => setCreating(false)}
+        />
+      )}
     </Stack>
   );
 }

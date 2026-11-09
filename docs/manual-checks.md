@@ -132,13 +132,22 @@ a second organization.
 ## 2. Catalogue and places
 
 - **MC-201** Items, at `/items` (`/products` and its pages send there, with
-  their query): Add item creates a product, a raw material and packaging. A
-  code must be unique; a duplicate is refused, naming the item that has the code and
-  asking for another, in English, French and Chinese.
+  their query): Add item asks What is it? first, the six types each with
+  a line in everyday words. From the Raw materials tab Raw materials is
+  chosen; from All none is, and Add item then says "Choose what it is."
+  under the types and adds nothing. Add a product, a raw material in a
+  category, and packaging in kg: each time the new item's page opens in
+  the form's place, the message says Added "…", and Back returns to Items
+  as it was. A code already in use is refused under Code, naming the item
+  that has it and asking for another, with a link that opens that item,
+  in English, French and Chinese.
 - **MC-202** A variant's code can be edited inline; leaving the field saves
-  it, and Escape cancels.
-- **MC-203** Turning lot tracking on is offered only while the variant has no
-  stock.
+  it (Escape does not cancel), and a code in use is refused, naming the
+  item that has it.
+- **MC-203** Add item offers Track lot numbers and expiry for every type
+  but Equipment; choosing Equipment takes it away and says instead that
+  equipment is not tracked by lot and is not stock value. Once added, no
+  screen turns lot tracking on or off.
 - **MC-204** Locations: a site with bins under it. Stock goes only into a
   place with nothing under it; a place holding stock cannot take children,
   so moving a location under one that holds stock is refused.
@@ -219,6 +228,14 @@ a second organization.
   Manage categories opens it with Back, which returns to Items as it
   was. As a Viewer the tree has no Actions and no Add category, and a
   line says whom to ask. In French and Chinese every word is translated.
+- **MC-214** An item's page, as the demo Owner: under its name, its type
+  and its category's path ("Packaging · Bottles › Caps"), or
+  Uncategorised. Edit opens with its base name, description, category
+  and type; a new type says it moves the item to that tab. Change the
+  type and the category and save: "Item saved", the line under the name
+  follows, Items shows it on its new tab, and History records the type
+  and the category from and to. Emptying the name is refused under it.
+  As a Viewer there is no Edit.
 
 ## 3. Stock
 
@@ -5458,3 +5475,8 @@ first.
   category's items, add, rename and move, delete refused at its row with
   how many and what to move, read-only for a Viewer, and Manage
   categories opening it with Back: MC-213 added.
+- 2026-11-09: ADR-092 step 15, adding and changing an item by its type:
+  Add item asking what it is first, lot tracking never offered for
+  equipment, a code in use refused under Code with its item, the new
+  item's page in the form's place, and Edit on the item's page: MC-201,
+  MC-202 and MC-203 rewritten, MC-214 added.

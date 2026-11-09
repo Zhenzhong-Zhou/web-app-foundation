@@ -9,18 +9,21 @@ import type { ComponentType } from 'react';
 import { defineMessages, type IntlShape } from 'react-intl';
 
 /**
- * What a product is for (ADR-023), in the order the create dialog offers
- * them. The server's vocabulary; what each is called is the reader's
+ * What a product is for (ADR-023), in the order Items' tabs and Add item
+ * offer them (ADR-092), not the schema's, which puts Samples before
+ * Supplies. The server's vocabulary; what each is called is the reader's
  * language (ADR-054).
  */
 export const PRODUCT_TYPES = [
   'good',
   'material',
   'packaging',
-  'sample',
   'supply',
+  'sample',
   'equipment',
 ] as const;
+
+export type ProductType = (typeof PRODUCT_TYPES)[number];
 
 const LABELS = defineMessages({
   good: { id: 'products.type.good', defaultMessage: 'Products' },
@@ -38,14 +41,48 @@ export function productTypeLabel(type: string, intl: IntlShape): string {
     : type;
 }
 
+/** What each type is, in everyday words, a line under its name (ADR-092). */
+const LINES = defineMessages({
+  good: {
+    id: 'products.type.good.line',
+    defaultMessage: 'What you sell to customers',
+  },
+  material: {
+    id: 'products.type.material.line',
+    defaultMessage: 'Used up in production',
+  },
+  packaging: {
+    id: 'products.type.packaging.line',
+    defaultMessage: 'Bottles, boxes and labels',
+  },
+  supply: {
+    id: 'products.type.supply.line',
+    defaultMessage: 'Used up by the company, such as gloves',
+  },
+  sample: {
+    id: 'products.type.sample.line',
+    defaultMessage: 'Given away, not sold',
+  },
+  equipment: {
+    id: 'products.type.equipment.line',
+    defaultMessage: 'Machines and tools, never sold or used up',
+  },
+});
+
+export function productTypeLine(type: ProductType, intl: IntlShape): string {
+  return intl.formatMessage(LINES[type]);
+}
+
+/** Whether a value is one of the six, as an address or an answer gives it. */
+export function isProductType(value: string): value is ProductType {
+  return (PRODUCT_TYPES as readonly string[]).includes(value);
+}
+
 /**
  * Each type's icon, the tile an item with no image shows in a list
  * (ADR-062, #306's 22); a value this client does not know has the box.
  */
-const ICONS: Record<
-  (typeof PRODUCT_TYPES)[number],
-  ComponentType<SvgIconProps>
-> = {
+const ICONS: Record<ProductType, ComponentType<SvgIconProps>> = {
   good: SellOutlined,
   material: GrainOutlined,
   packaging: Inventory2Outlined,

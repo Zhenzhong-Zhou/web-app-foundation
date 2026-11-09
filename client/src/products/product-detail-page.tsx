@@ -16,7 +16,7 @@ import { useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 
-import type { ProductDetail } from '../api/types.gen';
+import type { ProductCategoryList, ProductDetail } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { RecipePanel } from '../boms/recipe-panel';
@@ -29,7 +29,9 @@ import { useRecordOpened } from '../lib/recent';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { AddVariantDialog } from './add-variant-dialog';
+import { EditItemDialog } from './edit-item-dialog';
 import { EditVariantDialog } from './edit-variant-dialog';
+import { categoryTree } from './item-list';
 import { ProductGallery } from './product-gallery';
 import { productTypeLabel } from './product-types';
 import type { Variant } from './products-page';
@@ -54,8 +56,13 @@ export function ProductDetailPage() {
   } = useResource<ProductDetail>(`/products/${id!}`);
   // Remembered as recently opened, once loaded (ADR-058).
   useRecordOpened('product', id, product !== null && product !== undefined);
+  // Its category's path under its name, and Edit's list (ADR-092).
+  const { data: tree } = useResource<ProductCategoryList>(
+    '/products/categories',
+  );
   const [saving, setSaving] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [editingItem, setEditingItem] = useState(false);
   const [translating, setTranslating] = useState(false);
 
   // The SKU being edited, and its draft value. One at a time: editing several
@@ -148,6 +155,17 @@ export function ProductDetailPage() {
   // the only two ways product stays null.
   if (!product) return null;
 
+  // Its category's path from the top, once the tree is read; Uncategorised
+  // with none (ADR-092).
+  const categoryPath = product.categoryId
+    ? categoryTree(tree?.categories ?? [], 'all', 'include')
+        .find((option) => option.id === product.categoryId)
+        ?.path.join(' › ')
+    : intl.formatMessage({
+        id: 'products.category.none',
+        defaultMessage: 'Uncategorised',
+      });
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -162,13 +180,20 @@ export function ProductDetailPage() {
         ]}
         // The reader's language; the forms edit `name`, the base (ADR-056).
         title={product.displayName}
-        status={{
-          label: productTypeLabel(product.type, intl),
-          color: 'default',
-        }}
         actions={
           <>
             <HistoryButton resourceId={product.id} />
+            {canEdit && (
+              <Button
+                variant="outlined"
+                onClick={openDialog(() => setEditingItem(true))}
+              >
+                {intl.formatMessage({
+                  id: 'common.edit',
+                  defaultMessage: 'Edit',
+                })}
+              </Button>
+            )}
             {canEdit && (
               // Discontinuing, not deleting. The product's flag is never
               // cascaded to its variants: reactivating could not then know
@@ -193,8 +218,15 @@ export function ProductDetailPage() {
             )}
           </>
         }
-        subtitle={product.description ?? undefined}
+        // What it is and where it is filed, under its name (ADR-092).
+        subtitle={[productTypeLabel(product.type, intl), categoryPath]
+          .filter(Boolean)
+          .join(' · ')}
       />
+
+      {product.description && (
+        <Typography variant="body1">{product.description}</Typography>
+      )}
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -399,6 +431,15 @@ export function ProductDetailPage() {
         onClose={() => setTranslating(false)}
         onSaved={reload}
       />
+
+      {editingItem && (
+        <EditItemDialog
+          product={product}
+          categories={tree?.categories ?? []}
+          onClose={() => setEditingItem(false)}
+          onSaved={reload}
+        />
+      )}
 
       <EditVariantDialog
         open={editingVariant !== null}

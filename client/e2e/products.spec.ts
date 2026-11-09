@@ -48,13 +48,18 @@ test('shows a product that already exists in the organisation', async ({
 test('creates a product through the form and shows it in the table', async ({
   page,
 }) => {
-  const name = `E2E Form Widget ${Date.now().toString(36)}`;
-  const sku = `SKU-${Date.now().toString(36).toUpperCase()}`;
+  // Its own each run: two repeats in parallel can share a millisecond, and
+  // the second's code would then be refused as in use.
+  const unique = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const name = `E2E Form Widget ${unique}`;
+  const sku = `SKU-${unique.toUpperCase()}`;
 
   await page.goto('/items');
   await page.getByRole('button', { name: 'Add item', exact: true }).click();
 
   const dialog = page.getByRole('dialog');
+  // What it is first; the Products tab has chosen it already (ADR-092).
+  await expect(dialog.getByRole('radio', { name: /^Products/ })).toBeChecked();
   await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill(name);
   await dialog.getByRole('textbox', { name: 'Code' }).fill(sku);
 
@@ -62,14 +67,17 @@ test('creates a product through the form and shows it in the table', async ({
 
   /**
    * No waitForTimeout, and no waiting on the network response either. Web-first
-   * assertions retry until the row appears, which is both faster than a fixed
+   * assertions retry until the page appears, which is both faster than a fixed
    * sleep and a stronger claim: the data round-tripped *and* rendered.
    *
    * A `waitForTimeout` here is how an e2e suite becomes flaky, gets marked
    * `skip` during a busy week, and is deleted six months later.
    *
-   * Searched for, so it is on the first fifty (ADR-092).
+   * The new item's page takes the form's place, so Back returns to Items,
+   * searched for there, so it is on the first fifty (ADR-092).
    */
+  await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
+  await page.goBack();
   await page
     .getByRole('searchbox', { name: 'Search by name or code' })
     .fill(name);
