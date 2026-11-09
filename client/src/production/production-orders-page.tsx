@@ -12,7 +12,11 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import {
+  Link as RouterLink,
+  useLocation,
+  useSearchParams,
+} from 'react-router-dom';
 
 import type { ProductionRun } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -66,6 +70,11 @@ export function ProductionOrdersPage() {
   const [creating, setCreating] = useState(false);
 
   const canCreate = can('production.create');
+  // Home's Plan a run opens it through the address, ?plan. Closing takes
+  // it off, so Back or a reload does not open it again (#502).
+  const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  const asked = canCreate && params.has('plan');
   const {
     entries: items,
     error,
@@ -269,9 +278,22 @@ export function ProductionOrdersPage() {
       )}
 
       <CreateRunDialog
-        open={creating}
+        open={creating || asked}
         canSeePartners={can('partners.view')}
-        onClose={() => setCreating(false)}
+        onClose={() => {
+          setCreating(false);
+          if (asked) {
+            setParams(
+              (current) => {
+                const next = new URLSearchParams(current);
+                next.delete('plan');
+                return next;
+              },
+              // The link's state kept, so Back stays (#341).
+              { replace: true, state: location.state },
+            );
+          }
+        }}
         onCreated={() => {
           // Back to All so the new run, which is a draft, is certainly in
           // view. Already on All, the rows stay up while the first page is

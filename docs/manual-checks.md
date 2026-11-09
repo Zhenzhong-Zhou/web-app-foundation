@@ -3545,6 +3545,14 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R102** *(Home's Receive stock and Plan a run opened their lists,
+  not their dialogs, #502)* Signed in as a role that may move stock, on
+  Home, press Receive stock: Inventory opens with Receive stock's dialog
+  already open. Cancel: the list stays as it was and the address has no
+  `?receive`; Back returns to Home. The same with Plan a run, under More
+  or as the main action: Production opens with Plan a run's dialog, and
+  Cancel then Back return to Home.
+
 - **MC-R101** *(Search below 900 px opened a full-screen sheet with no
   way to close it, #480)* On a tablet held upright, or the browser's
   device view at 820 × 1180 with touch, open Home, tap Search: Close sits
@@ -5315,3 +5323,5 @@ first.
   wait the server states: MC-R100 added.
 - 2026-11-09: #480, Close on the full-screen search below 900 px:
   MC-R101 added.
+- 2026-11-09: #502, Home's Receive stock and Plan a run opening their
+  dialogs: MC-R102 added.

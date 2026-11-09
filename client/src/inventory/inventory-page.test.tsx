@@ -1,10 +1,17 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { Link, MemoryRouter, Route, Routes } from 'react-router-dom';
+import {
+  Link,
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+} from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { StockRow } from '../api/types.gen';
+import { OFFER_BACK } from '../lib/offer-back';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -183,6 +190,64 @@ describe('InventoryPage', () => {
     expect(
       within(promised).getByRole('columnheader', { name: 'Item' }),
     ).toBeVisible();
+  });
+
+  // Home's Receive stock opens the dialog, not only the list (#502).
+  it('opens Receive stock from ?receive; closing keeps the list, Back returns Home', async () => {
+    server.use(
+      http.get('/api/v1/stock', () =>
+        HttpResponse.json({ entries: [ROW], nextCursor: null }),
+      ),
+      http.get('/api/v1/stock/counts', () =>
+        HttpResponse.json({ expiring: 0, needsCost: 0 }),
+      ),
+      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
+    );
+    function Address() {
+      const { search } = useLocation();
+      return <output aria-label="address">{search}</output>;
+    }
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <Link to="/inventory?receive" state={OFFER_BACK}>
+                Receive
+              </Link>
+            }
+          />
+          <Route
+            path="/inventory"
+            element={
+              <>
+                <InventoryPage />
+                <Address />
+              </>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['stock.view', 'stock.move', 'locations.view'] },
+    );
+
+    await userEvent.click(screen.getByRole('link', { name: 'Receive' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Receive stock' });
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Cancel' }),
+    );
+
+    await expect
+      .poll(() => screen.queryByRole('dialog', { name: 'Receive stock' }))
+      .toBeNull();
+    expect(screen.getByText('VITD-60')).toBeVisible();
+    expect(
+      screen.getByRole('status', { name: 'address' }),
+    ).toBeEmptyDOMElement();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(await screen.findByRole('link', { name: 'Receive' })).toBeVisible();
   });
 
   // Trace a lot is a top-level page: Back returns here (#341).

@@ -26,7 +26,11 @@ import {
   useState,
 } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import {
+  Link as RouterLink,
+  useLocation,
+  useSearchParams,
+} from 'react-router-dom';
 
 import type { Availability, Location, StockRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
@@ -195,6 +199,12 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   const { text: searchText, setText: setSearchText, search } = useListSearch();
   const [setupError, setSetupError] = useState<string | null>(null);
   const [receiving, setReceiving] = useState(false);
+  // Home's Receive stock opens it through the address, ?receive, once
+  // there is a place to receive into. Closing takes it off, so Back or a
+  // reload does not open it again (#502).
+  const [params, setParams] = useSearchParams();
+  const routed = useLocation();
+  const asked = can('stock.move') && params.has('receive');
   const [moving, setMoving] = useState<{
     mode: MoveMode;
     row: StockRow;
@@ -784,10 +794,23 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
       )}
 
       <ReceiveStockDialog
-        open={receiving}
+        open={receiving || (asked && leaves.length > 0)}
         locations={leaves}
         defaultLocationId={locationId}
-        onClose={() => setReceiving(false)}
+        onClose={() => {
+          setReceiving(false);
+          if (asked) {
+            setParams(
+              (current) => {
+                const next = new URLSearchParams(current);
+                next.delete('receive');
+                return next;
+              },
+              // The link's state kept, so Back stays (#341).
+              { replace: true, state: routed.state },
+            );
+          }
+        }}
         onReceived={refresh}
       />
 
