@@ -31,6 +31,7 @@ import {
   promptFor,
   readRuns,
   recordRun,
+  refusedCommand,
   spent,
   spentReport,
   tally,
@@ -562,4 +563,53 @@ test("GitHub not answering is UNKNOWN, with the listing to run before a resume",
 test("--resume last finishes a fix that ended UNKNOWN", (t) => {
   const rows = rowsOf(t, ["2026-11-09T10:00-07:00", "514", "1.70", "UNKNOWN"]);
   assert.equal(lastFix(rows, "runs.tsv").session, "s-514");
+});
+
+test("a merge is refused wherever it stands in the command", () => {
+  for (const command of [
+    "gh pr merge 521 --squash --delete-branch",
+    "cd ../waf-fix && gh pr merge 521 --squash",
+    "gh -R o/r pr merge 521",
+    "gh api -X PUT repos/o/r/pulls/521/merge",
+    "gh api graphql -f query='mutation { mergePullRequest(input: {}) { clientMutationId } }'",
+    `bash -c "gh pr merge 521"`,
+  ]) {
+    assert.match(
+      refusedCommand(command),
+      /never merges a pull request/,
+      command,
+    );
+  }
+});
+
+test("a push that forces is refused wherever it stands, its flag anywhere", () => {
+  for (const command of [
+    "git push --force",
+    "git push origin HEAD --force",
+    "git push origin fix-520 -f",
+    "git push -uf origin fix-520",
+    "git push --force-with-lease origin fix-520",
+    "git push origin +fix-520",
+    "git -C ../waf-fix push origin fix-520 --force",
+    "npm test && git push origin fix-520 --force",
+    "(cd ../waf-fix; git push -f)",
+    `sh -c 'git push origin HEAD --force'`,
+  ]) {
+    assert.match(refusedCommand(command), /never force-pushes/, command);
+  }
+});
+
+test("an ordinary push, the pull request's other commands and git's other subcommands pass", () => {
+  for (const command of [
+    "git push -u origin fix-520-a-typo",
+    "git push origin HEAD",
+    "gh pr create --title 'A typo (#520)' --body-file body.md",
+    "gh pr list --head fix-520 --json number,url",
+    'git commit -m "Never push -f, the runner says"',
+    "git fetch --force origin main",
+    "git merge --ff-only origin/main",
+    undefined,
+  ]) {
+    assert.equal(refusedCommand(command), null, command);
+  }
 });

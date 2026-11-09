@@ -21,8 +21,9 @@
 // Guards: it stops before any work unless the session is paid by
 // ANTHROPIC_API_KEY (never the plan) and /fix-issue is found; it refuses
 // to start from a second working folder, to fix in the main one, and a
-// new fix in a folder with uncommitted changes to tracked files; it
-// cannot merge or force-push; it stops at the budget.
+// new fix in a folder with uncommitted changes to tracked files; a hook
+// refuses a merge or a force-push anywhere in a Bash command (main's
+// protection on GitHub refuses both too); it stops at the budget.
 //
 // Headless: when the agent's turn ends, the session ends, so nothing may
 // run in the background (CLAUDE_CODE_DISABLE_BACKGROUND_TASKS, Bash
@@ -57,6 +58,7 @@ import {
   promptFor,
   readRuns,
   recordRun,
+  refusedCommand,
   runsFile,
   spentReport,
   tally,
@@ -184,11 +186,29 @@ const options = {
           "WebFetch",
           "WebSearch",
         ],
-  disallowedTools: [
-    "Bash(gh pr merge:*)",
-    "Bash(git push --force:*)",
-    "Bash(git push -f:*)",
-  ],
+  // A merge or a force-push refused wherever it stands in a command, which
+  // deny rules, matching a command's start, cannot do.
+  hooks: {
+    PreToolUse: [
+      {
+        matcher: "Bash",
+        hooks: [
+          async (input) => {
+            const reason = refusedCommand(input.tool_input?.command);
+            return reason
+              ? {
+                  hookSpecificOutput: {
+                    hookEventName: "PreToolUse",
+                    permissionDecision: "deny",
+                    permissionDecisionReason: reason,
+                  },
+                }
+              : {};
+          },
+        ],
+      },
+    ],
+  },
   maxBudgetUsd: args.budget,
   maxTurns: args.mode === "probe" ? 2 : 300,
 };

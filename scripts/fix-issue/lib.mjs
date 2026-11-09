@@ -156,6 +156,57 @@ export function checkInit(message, mode) {
   return { found, stop };
 }
 
+const MERGE_REFUSED =
+  "the runner never merges a pull request: Bob merges it, from the terminal, once he has read it. End with the report, which gives the merge command.";
+const FORCE_REFUSED =
+  "the runner never force-pushes: push a new commit on the branch instead.";
+
+/** A git push flag or refspec that forces: --force and its kin, -f alone or among others, or +<ref>. */
+const forces = (word) =>
+  /^--force(-with-lease|-if-includes)?(=|$)/.test(word) ||
+  /^-[a-z]*f[a-z]*$/i.test(word) ||
+  word.startsWith("+");
+
+/**
+ * Why a Bash command is refused, or null: a pull request merged (gh pr
+ * merge, or GitHub's API asked to merge one) or a push that forces,
+ * wherever it stands in the command, not only at its start: after a cd,
+ * an &&, a pipe or in a subshell, with options before git's or gh's
+ * subcommand, a flag after the branch, or a +refspec. Quotes are read
+ * through, so `gh pr merge` quoted in another command is refused too, the
+ * safe side. The run's PreToolUse hook gives the reason to the session.
+ * main's protection on GitHub still refuses both, whatever gets past this.
+ */
+export function refusedCommand(command) {
+  const text = String(command ?? "");
+  if (/mergePullRequest|\/pulls\/[^/\s]+\/merge\b/.test(text)) {
+    return MERGE_REFUSED;
+  }
+  for (const part of text.split(/&&|\|\||[;&|\n()`]/)) {
+    const words = part
+      .trim()
+      .split(/\s+/)
+      .map((word) => word.replace(/^['"]+|['"]+$/g, ""));
+    for (let at = 0; at < words.length; at += 1) {
+      if (words[at] === "gh") {
+        const pr = words.indexOf("pr", at + 1);
+        if (pr !== -1 && words[pr + 1] === "merge") return MERGE_REFUSED;
+      }
+      if (words[at] === "git") {
+        // git's own options first, -C and -c with a value each.
+        let next = at + 1;
+        while (words[next]?.startsWith("-")) {
+          next += /^-[Cc]$/.test(words[next]) ? 2 : 1;
+        }
+        if (words[next] === "push" && words.slice(next + 1).some(forces)) {
+          return FORCE_REFUSED;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 /** A command's output in a folder, its last newline dropped; a failure throws. */
 function output(cwd, command, args) {
   return execFileSync(command, args, {
