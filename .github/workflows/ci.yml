@@ -503,7 +503,7 @@ jobs:
           ENVFILE
 
       # The server tree too: playwright.config.ts starts the API itself with
-      # `npm run start:dev`, and pretest:e2e runs drizzle-kit from there.
+      # `npm run start:dev`, and e2e:prepare runs drizzle-kit from there.
       - run: npm ci
         working-directory: server
 
@@ -561,8 +561,8 @@ jobs:
           exit 1
         working-directory: client
 
-      # One script, not four steps. pretest:e2e already migrates and seeds
-      # against DATABASE_URL_E2E through dotenv-cli, and test:e2e wraps
+      # One script, not four steps. test:e2e already migrates and seeds
+      # against DATABASE_URL_E2E through dotenv-cli (e2e:prepare), then runs
       # playwright in the same loader — reimplementing either here would be a
       # second definition of the setup, free to drift from the one people run.
       - name: Playwright, shard ${{ matrix.shard }} of 3
