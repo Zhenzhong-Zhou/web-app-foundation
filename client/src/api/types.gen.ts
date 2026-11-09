@@ -1086,13 +1086,42 @@ export type UpdateProductCategoryDto = {
   parentId?: string | null;
 };
 
-export type ProductSummary = {
-  coverFileId: string | null;
+export type ProductSummaryCategory = {
   id: string;
-  type: string;
-  name: string;
-  description: string | null;
+  path: Array<string>;
+};
+
+export type ProductSummary = {
+  id: string;
+  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  displayName: string;
+  sku: string;
+  variantCount: number;
+  category: ProductSummaryCategory | null;
+  coverFileId: string | null;
   isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  onHand: string | null;
+  unitOfMeasure: string | null;
+  stockStatus: 'out' | 'low' | null;
+};
+
+export type ProductTypeCount = {
+  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  count: number;
+};
+
+export type ProductCounts = {
+  types: Array<ProductTypeCount>;
+  all: number;
+  discontinued: number;
+};
+
+export type ProductPage = {
+  entries: Array<ProductSummary>;
+  nextCursor: string | null;
+  counts: ProductCounts | null;
 };
 
 export type VariantOption = {
@@ -4999,13 +5028,21 @@ export type ProductsControllerListV1Data = {
   };
   path?: never;
   query?: {
+    type?:
+      'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+    category?: string;
+    discontinued?: 'only' | 'include';
+    sort?: 'name' | 'category' | 'stock' | 'added' | 'changed';
+    order?: 'asc' | 'desc';
+    cursor?: string;
+    limit?: number;
     search?: string;
   };
   url: '/v1/products';
 };
 
 export type ProductsControllerListV1Responses = {
-  200: Array<ProductSummary>;
+  200: ProductPage;
 };
 
 export type ProductsControllerListV1Response =
@@ -5035,8 +5072,8 @@ export type ProductsControllerExportProductsV1Data = {
   };
   path?: never;
   query?: {
-    search?: string;
     discontinued?: string;
+    search?: string;
   };
   url: '/v1/products/export';
 };

@@ -101,9 +101,9 @@ describe('Product images (e2e)', () => {
       [back, 1],
     ]);
 
-    const list = body<{ id: string; coverFileId: string | null }[]>(
-      await alpha.agent.get('/v1/products').expect(200),
-    );
+    const list = body<{
+      entries: { id: string; coverFileId: string | null }[];
+    }>(await alpha.agent.get('/v1/products').expect(200)).entries;
     expect(list.find((row) => row.id === productId)?.coverFileId).toBe(front);
 
     const detail = body<{ images: Image[] }>(

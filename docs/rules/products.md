@@ -125,13 +125,64 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "hides a discontinued variant of an active product" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "leaves out a discontinued item, as it does without a search" ·
   [Help](../../client/src/help/guides/en/products.md#words-youll-meet-words)
-- **Products lists discontinued products too, marked Discontinued. The
-  Discontinued filter shows only them, and its count is of what the list
-  shows,** its search included.
-  [ADR-056, amended](../adr/0056-search.md#decision--products-partners-and-the-item-pickers-searched-on-the-server) ·
-  [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a discontinued product, as the list shows it" ·
+- **The list of items hides discontinued ones unless asked: Discontinued
+  shows them alone, and the top bar's Show all beside the rest; their
+  count follows the search and the category.** Products asks for them
+  beside the rest, marked Discontinued, and its Discontinued filter
+  narrows the first fifty it reads and counts within them.
+  [ADR-092](../adr/0092-items.md#decision--a-row-the-name-first-its-stock-read-from-inventory) ·
+  [test](../../server/test/items-list.e2e-spec.ts) "hides discontinued items unless asked, then alone or beside the rest, and counts them" ·
+  [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a discontinued product when asked to include them, as the top bar does" ·
   partly tested ·
   MC-1546 · MC-3901
+
+## The list of items
+
+- **The list reads fifty items at a time unless asked for fewer, each
+  page after the last by its cursor, every item once however many share
+  a name; the counts come with the first page.** A cursor made for
+  another sort, direction or language is refused.
+  [ADR-092](../adr/0092-items.md#decision--fifty-at-a-time-the-counts-from-the-server) ·
+  [test](../../server/test/items-list.e2e-spec.ts) "pages by its cursor, each row once, the counts with the first page alone" ·
+  [test](../../server/test/items-list.e2e-spec.ts) "keeps two items of one name apart across a page’s edge" ·
+  [test](../../server/test/items-list.e2e-spec.ts) "refuses a cursor made for another order, or not made here"
+- **It narrows to one type, to a category with every category under it,
+  or to the Uncategorised.**
+  [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
+  [test](../../server/test/items-list.e2e-spec.ts) "narrows to a type, to a category with those under it, or to the Uncategorised"
+- **Each type's count, and All's, follows the search, the category and
+  Discontinued as chosen; a type the organization holds an item of keeps
+  its place, with its count, while a search finds none there.**
+  [ADR-092](../adr/0092-items.md#decision--fifty-at-a-time-the-counts-from-the-server) ·
+  [test](../../server/test/items-list.e2e-spec.ts) "counts each tab with the search and the category, a tab kept while a search finds none there"
+- **It sorts by name unless asked, or by category, stock, date added or
+  last changed, either way.** By category, by its path from the top,
+  the Uncategorised last either way; by stock, fewest first, an item
+  whose variants are counted in different units last either way; each
+  then by name. While a search is typed, the closest match comes first,
+  whichever way the sort runs.
+  [ADR-092](../adr/0092-items.md#decision--sorting-and-the-rule-for-every-list) ·
+  [test](../../server/test/items-list.e2e-spec.ts) "sorts by category by its path, the Uncategorised last either way" ·
+  [test](../../server/test/items-list.e2e-spec.ts) "sums the stock on hand of every variant and place in its unit, or counts its variants where units differ" ·
+  [test](../../server/test/items-list.e2e-spec.ts) "sorts by date added and last changed, either way" ·
+  [test](../../server/test/items-list.e2e-spec.ts) "ranks a search before the sort, the closest first either way, and pages on the rank"
+- **A row gives the item's first code and how many variants it has, its
+  category's path from the top, and its stock on hand in every location,
+  summed in its unit, or its number of variants where their units
+  differ.** The stock is read from Inventory's figures for the page's
+  items, never kept on the item.
+  [ADR-092](../adr/0092-items.md#decision--a-row-the-name-first-its-stock-read-from-inventory) ·
+  [test](../../server/test/items-list.e2e-spec.ts) "sums the stock on hand of every variant and place in its unit, or counts its variants where units differ" ·
+  [test](../../server/test/items-list.e2e-spec.ts) "narrows to a type, to a category with those under it, or to the Uncategorised"
+- **A row says Low or Out from the item's reorder points: out where any
+  of its variants is out, else low where any is low; a discontinued item
+  never.**
+  [ADR-092](../adr/0092-items.md#decision--a-row-the-name-first-its-stock-read-from-inventory) ·
+  [test](../../server/test/items-list.e2e-spec.ts) "says low or out from its reorder points, out before low"
+- **Another organization's items, categories and stock are never listed
+  nor counted.**
+  [ADR-003](../adr/0003-multi-tenancy.md#decision) ·
+  [test](../../server/test/items-list.e2e-spec.ts) "never shows another organization’s items, nor counts them"
 
 ## Categories
 
@@ -242,10 +293,12 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/item-names.e2e-spec.ts) "keeps the base name on the packing slip and in CSV, for a reader in Chinese" ·
   partly tested ·
   MC-3803
-- **Products are listed by the name each reader sees: a Chinese name by
-  its pinyin, the others by their letters, accents and case aside.**
+- **Items are listed by the name each reader sees: a Chinese name by its
+  pinyin, the others by their letters, accents and case aside, and a
+  number inside a name by its value, 30 before 120.**
   [ADR-056, amended](../adr/0056-search.md#decision--an-items-name-in-the-readers-language-on-every-screen) ·
-  no test ·
+  [ADR-092](../adr/0092-items.md#decision--sorting-and-the-rule-for-every-list) ·
+  [test](../../server/test/items-list.e2e-spec.ts) "sorts by the name the reader sees, a number by its value and Chinese by its pinyin, either way" ·
   MC-3801
 - **Where the organization requires product names in a language, an
   invoice that prints in it is refused until every product on it has a
@@ -261,7 +314,7 @@ How this file is kept is in the [README](README.md).
   the first character, and lists what it finds, the closest first: a
   product by any of its variants' SKUs, by its own or a variant's name in
   any language, and a Chinese name by its pinyin too.** Discontinued
-  products are found as well. The search stays in the address, so a
+  products are found as well, as Products asks for them. The search stays in the address, so a
   reload, Back, or Show all from the top bar opens the list as it was. An
   empty answer says nothing matches the search; an empty catalogue, that
   there are no products yet.
@@ -270,7 +323,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a product by its name in another language, shown in the reader’s" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a Chinese name by its pinyin, its initials or one character" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "ranks exact, then at the start, then anywhere, before the name’s order" ·
-  [test](../../server/test/whole-list-search.e2e-spec.ts) "answers as before without a search" ·
+  [test](../../server/test/whole-list-search.e2e-spec.ts) "answers every product without a search" ·
   [test](../../client/src/products/products-page.test.tsx) "asks with the address’s search, and lists the answer in its order" ·
   [test](../../client/src/products/products-page.test.tsx) "asks again once typing stops, and drops an answer that comes after a newer one" ·
   [test](../../client/src/products/products-page.test.tsx) "follows the address while open, and writes what is typed there without adding to the history" ·

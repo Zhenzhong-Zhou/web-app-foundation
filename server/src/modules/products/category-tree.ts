@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, type SQL, sql } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
 import { productCategories } from '../../database/schema';
@@ -66,6 +66,36 @@ export async function isWithinBranch(
     select exists (select 1 from branch where id = ${candidateId}) as found
   `);
   return rows[0]?.found === true;
+}
+
+/**
+ * Every category of the organization with its path from the top
+ * (ADR-092), as rows `id, ids, names, sort_key`, a parenthesised
+ * subquery: `ids` and `names` top first and its own last, as a row shows
+ * it and as Items narrows to a branch; `sort_key`, the names in their
+ * order (a Chinese one by its pinyin, the others accent-free) joined by a
+ * tab, which sorts before any character a name keeps there, so a category
+ * comes before those under it, and they before the next beside it.
+ */
+export function categoryPaths(organizationId: string): SQL {
+  const org = sql`${organizationId}::uuid`;
+  const sortName = sql`coalesce(c.name_pinyin, search_text(c.name))`;
+
+  return sql`(
+    with recursive paths as (
+      select c.id, array[c.id] as ids, array[c.name] as names,
+        ${sortName} as sort_key
+      from product_categories c
+      where c.organization_id = ${org} and c.parent_id is null
+      union all
+      select c.id, p.ids || c.id, p.names || c.name,
+        p.sort_key || chr(9) || ${sortName}
+      from product_categories c
+      join paths p on c.parent_id = p.id
+      where c.organization_id = ${org}
+    )
+    select id, ids, names, sort_key from paths
+  )`;
 }
 
 /** The refusal of a category in a body that is not this organization's. */

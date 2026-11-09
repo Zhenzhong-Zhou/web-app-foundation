@@ -5,13 +5,15 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq, inArray, notInArray, type SQL, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 
 import { EXPORT_LIMIT } from '../../common/export';
 import type { Locale } from '../../common/locales';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
-import { type SearchTerms, searchTerms } from '../../common/search';
+import { searchTerms } from '../../common/search';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
+import { todayOf } from '../../core/organizations/time-zone';
+import type { Transaction } from '../../database/database.module';
 import {
   isForeignKeyViolation,
   isUniqueViolation,
@@ -20,18 +22,30 @@ import {
   productCategories,
   products,
   productTranslations,
+  type ProductType,
   productVariants,
   variantTranslations,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { namesIn, productNameOrder } from '../stock/item-name';
-import { assertCategoryIn, UNKNOWN_CATEGORY } from './category-tree';
+import {
+  itemStock,
+  type ItemStockStatus,
+  itemStockStatus,
+} from '../stock/item-stock';
+import {
+  assertCategoryIn,
+  categoryPaths,
+  UNKNOWN_CATEGORY,
+} from './category-tree';
 import type { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import type { ExportProductsDto } from './dto/export-products.dto';
+import type { ListProductsDto } from './dto/list-products.dto';
 import type {
   ProductDetail,
+  ProductPage,
   ProductSummary,
   Variant,
   VariantOption,
@@ -42,7 +56,17 @@ import type {
 } from './dto/set-translations.dto';
 import type { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
-import { itemMatches, itemRank } from './item-search';
+import {
+  afterKeys,
+  countsOf,
+  cursorOf,
+  itemOrder,
+  matchedBy,
+  orderOf,
+  readCursor,
+  shownOf,
+} from './item-list';
+import { foundBy, itemMatches, itemRank } from './item-search';
 import { coverOf, imagesOf, publicImages } from './product-images';
 
 /**
@@ -63,24 +87,28 @@ function describeNames(translations: { locale: string; name: string }[]) {
  */
 const CATEGORY_KEY = 'products_category_id_product_categories_id_fk';
 
-/** The outer product's variants, in the organization. */
-function variantsOf(organizationId: string): SQL {
-  return and(
-    eq(productVariants.organizationId, organizationId),
-    eq(productVariants.productId, products.id),
-  )!;
-}
+/** Items' list a page at a time unless asked for fewer (ADR-092). */
+const ITEMS_PAGE_SIZE = 50;
 
-/**
- * The products a search finds, through any of their variants, as an item
- * is found everywhere (item-search): the list's and its export's.
- */
-function foundBy(terms: SearchTerms, organizationId: string): SQL {
-  return sql`exists (
-    select 1 from ${productVariants}
-    where ${variantsOf(organizationId)} and ${itemMatches(terms, organizationId)}
-  )`;
-}
+/** A place on Items' list: the row, and its order's parts as text. */
+type PlaceRow = {
+  id: string;
+  keys: string[];
+};
+
+/** An item's variants and stock on hand, as itemStock gives them. */
+type StockRow = {
+  product_id: string;
+  variants: number;
+  unit: string | null;
+  on_hand: string | null;
+};
+
+/** An item that is low or out, as itemStockStatus gives it. */
+type StatusRow = {
+  product_id: string;
+  status: ItemStockStatus;
+};
 
 @Injectable()
 export class ProductsService {
@@ -147,51 +175,159 @@ export class ProductsService {
   }
 
   /**
-   * Every product, each with its cover's file (ADR-062), named and sorted
-   * by the name the reader sees (ADR-056).
+   * Items' list (ADR-092): a page of fifty unless asked, narrowed by its
+   * type, its category with every category under it, or Uncategorised, and
+   * its search, discontinued items hidden unless asked; sorted by item-list's
+   * key, the cursor after the last row's. Each row named for the reader,
+   * with its first code, its category's path, and its stock on hand and
+   * status read for the page's items alone; the counts with the first page.
    *
-   * With a search, only the products it finds through any of their
-   * variants, as an item is found everywhere (item-search), each ranked by
-   * its closest variant, then by the name shown. Discontinued ones are
-   * found too, as the list shows them.
+   * With a search, only the items it finds through any of their variants,
+   * as an item is found everywhere (item-search), each ranked by its
+   * closest variant before the sort, as the lookup ranks (ADR-056, amended).
    */
-  list(locale: Locale, search?: string): Promise<ProductSummary[]> {
-    return this.tenantDb.transaction((tx, organizationId) => {
-      const terms = search ? searchTerms(search) : null;
-      const itsVariants = variantsOf(organizationId);
+  list(query: ListProductsDto, locale: Locale): Promise<ProductPage> {
+    const limit = query.limit ?? ITEMS_PAGE_SIZE;
+    const terms = query.search ? searchTerms(query.search) : null;
 
-      return (
-        tx
-          // The fields the API returns (ADR-068): not the organization, nor
-          // the pinyin kept for search.
-          .select({
-            id: products.id,
-            type: products.type,
-            name: namesIn(locale, organizationId).productName,
-            description: products.description,
-            isActive: products.isActive,
-            coverFileId: coverOf(),
-          })
-          .from(products)
-          .where(
-            and(
-              eq(products.organizationId, organizationId),
-              terms ? foundBy(terms, organizationId) : undefined,
-            ),
-          )
-          .orderBy(
-            ...(terms
-              ? [
-                  sql`(
-                    select min(${itemRank(terms, locale, organizationId)})
-                    from ${productVariants} where ${itsVariants}
-                  )`,
-                ]
-              : []),
-            productNameOrder(locale, organizationId),
-            asc(products.id),
-          )
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const { parts, order, joins } = itemOrder(
+        query,
+        locale,
+        organizationId,
+        terms,
       );
+      const matched = matchedBy(query, terms, organizationId);
+      const after = query.cursor
+        ? afterKeys(parts, readCursor(query.cursor, order, parts))
+        : undefined;
+
+      // The page's places, by the order's parts; each row's parts as text
+      // for the cursor, worked out after the LIMIT for the page alone.
+      const { rows: places } = await tx.execute<PlaceRow>(sql`
+        select ${products.id} as id,
+          array[${sql.join(
+            parts.map((part) => sql`(${part.value})::text`),
+            sql`, `,
+          )}] as keys
+        from ${products}
+        ${joins}
+        where ${and(
+          eq(products.organizationId, organizationId),
+          matched,
+          shownOf(query),
+          after,
+        )}
+        order by ${sql.join(orderOf(parts), sql`, `)}
+        limit ${limit + 1}
+      `);
+
+      const page = places.slice(0, limit);
+      const last = page.at(-1);
+      return {
+        entries: await this.rowsOf(
+          tx,
+          organizationId,
+          locale,
+          page.map((place) => place.id),
+        ),
+        nextCursor:
+          places.length > limit && last ? cursorOf(order, last.keys) : null,
+        counts: query.cursor
+          ? null
+          : await countsOf(tx, organizationId, query, matched),
+      };
+    });
+  }
+
+  /**
+   * The rows for the page's items, in the page's order: each named for
+   * the reader, its first code, its category's path, and its variants'
+   * stock on hand and status, read for these items alone.
+   */
+  private async rowsOf(
+    tx: Transaction,
+    organizationId: string,
+    locale: Locale,
+    ids: string[],
+  ): Promise<ProductSummary[]> {
+    if (ids.length === 0) return [];
+
+    const org = sql`${organizationId}::uuid`;
+    const items = sql`(${sql.join(
+      ids.map((id) => sql`${id}::uuid`),
+      sql`, `,
+    )})`;
+
+    const details = await tx
+      .select({
+        id: products.id,
+        type: products.type,
+        displayName: namesIn(locale, organizationId).productName,
+        // Its codes in their order, a number by its value: FOC-30 before
+        // FOC-120.
+        sku: sql<string>`(
+          select pv.sku from product_variants pv
+          where pv.organization_id = ${org}
+            and pv.product_id = products.id
+          order by pv.sku collate numeric_order, pv.id
+          limit 1
+        )`,
+        categoryId: products.categoryId,
+        path: sql<string[] | null>`(
+          select cp.names from ${categoryPaths(organizationId)} cp
+          where cp.id = products.category_id
+        )`,
+        coverFileId: coverOf(),
+        isActive: products.isActive,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+      })
+      .from(products)
+      .where(
+        and(
+          eq(products.organizationId, organizationId),
+          inArray(products.id, ids),
+        ),
+      );
+
+    const { rows: stock } = await tx.execute<StockRow>(sql`
+      select s.product_id, s.variants, s.unit, s.on_hand
+      from ${itemStock(organizationId, items)} s
+    `);
+    const today = await todayOf(tx, organizationId);
+    const { rows: statuses } = await tx.execute<StatusRow>(sql`
+      select s.product_id, s.status
+      from ${itemStockStatus(organizationId, today, items)} s
+    `);
+
+    const byId = new Map(details.map((row) => [row.id, row]));
+    const stockOf = new Map(stock.map((row) => [row.product_id, row]));
+    const statusOf = new Map(
+      statuses.map((row) => [row.product_id, row.status]),
+    );
+
+    return ids.map((id) => {
+      const row = byId.get(id)!;
+      const held = stockOf.get(id)!;
+      return {
+        id,
+        type: row.type as ProductType,
+        displayName: row.displayName,
+        sku: row.sku,
+        variantCount: held.variants,
+        category:
+          row.categoryId && row.path
+            ? { id: row.categoryId, path: row.path }
+            : null,
+        coverFileId: row.coverFileId,
+        isActive: row.isActive,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        onHand: held.on_hand,
+        unitOfMeasure: held.unit,
+        stockStatus: statusOf.get(id) ?? null,
+      };
     });
   }
 

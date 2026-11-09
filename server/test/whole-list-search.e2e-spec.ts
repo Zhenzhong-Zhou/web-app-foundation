@@ -12,7 +12,7 @@ type Org = Awaited<ReturnType<typeof registerOrganization>>;
 type Language = 'en' | 'zh-Hans';
 
 interface ProductRow {
-  name: string;
+  displayName: string;
 }
 interface PartnerRow {
   name: string;
@@ -94,18 +94,32 @@ describe('Whole-list search (e2e)', () => {
     search: string,
     language: Language = 'en',
   ): Promise<T[]> {
-    return body<T[]>(
+    const answer = body<T[] | { entries: T[] }>(
       await org.agent
-        .get(`${path}?search=${encodeURIComponent(search)}`)
+        .get(
+          `${path}${path.includes('?') ? '&' : '?'}search=${encodeURIComponent(search)}`,
+        )
         .set('Accept-Language', language)
         .expect(200),
     );
+    // Items' list is paged (ADR-092); the pickers and Partners load whole.
+    return Array.isArray(answer) ? answer : answer.entries;
   }
 
-  const products = async (org: Org, search: string, language?: Language) =>
-    (await get<ProductRow>(org, '/v1/products', search, language)).map(
-      (row) => row.name,
-    );
+  const products = async (
+    org: Org,
+    search: string,
+    language?: Language,
+    discontinued?: 'include',
+  ) =>
+    (
+      await get<ProductRow>(
+        org,
+        discontinued ? '/v1/products?discontinued=include' : '/v1/products',
+        search,
+        language,
+      )
+    ).map((row) => row.displayName);
 
   const variants = async (org: Org, search: string, language?: Language) =>
     (await get<VariantRow>(org, '/v1/products/variants', search, language)).map(
@@ -176,7 +190,8 @@ describe('Whole-list search (e2e)', () => {
       ]);
     });
 
-    it('finds a discontinued product, as the list shows it', async () => {
+    // As the top bar's Show all asks (ADR-056, amended by ADR-092).
+    it('finds a discontinued product when asked to include them, as the top bar does', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const id = await product(alpha, 'Old Focus', 'OLD-1');
       await alpha.agent
@@ -184,16 +199,19 @@ describe('Whole-list search (e2e)', () => {
         .send({ isActive: false })
         .expect(204);
 
-      expect(await products(alpha, 'old')).toEqual(['Old Focus']);
+      expect(await products(alpha, 'old')).toEqual([]);
+      expect(await products(alpha, 'old', 'en', 'include')).toEqual([
+        'Old Focus',
+      ]);
     });
 
-    it('answers as before without a search', async () => {
+    it('answers every product without a search', async () => {
       const alpha = await catalogue('alpha');
 
-      const all = body<ProductRow[]>(
+      const { entries } = body<{ entries: ProductRow[] }>(
         await alpha.agent.get('/v1/products').expect(200),
       );
-      expect(all).toHaveLength(8);
+      expect(entries).toHaveLength(8);
     });
   });
 

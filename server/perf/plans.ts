@@ -261,6 +261,12 @@ async function buildProbes(
   const [rma] = (await rmas.list({})).entries;
   if (!rma) throw new Error('No return authorization: was this volume-seeded?');
 
+  // Items by a category, the first in name order, or the Uncategorised
+  // until the volume seed writes categories (ADR-092); and the second page
+  // sorted by stock, which compares each row's sum with the cursor's.
+  const [category] = await categories.list();
+  const byStock = await products.list({ sort: 'stock' }, 'zh-Hans');
+
   const probes: Probe[] = [
     { name: 'orders: open', run: () => orders.list({}) },
     { name: 'orders: all', run: () => orders.list({ status: 'all' }) },
@@ -439,9 +445,34 @@ async function buildProbes(
       run: () => priceLists.findById(priceList.id, 'en'),
     },
     { name: 'item pickers', run: () => products.listActiveVariants('en') },
-    // Products as it opens, in Chinese: sorted and named by the name shown,
-    // through a translation subquery a product (ADR-056, amended).
-    { name: 'products', run: () => products.list('zh-Hans') },
+    // Items as it opens, in Chinese: sorted and named by the name shown,
+    // through a translation subquery a product (ADR-056, amended), a page
+    // of fifty with its counts, and its rows' stock and status (ADR-092).
+    { name: 'products', run: () => products.list({}, 'zh-Hans') },
+    // Items' tabs, its category filter, and its sort by stock, which sums
+    // every item's stock to order them (ADR-092); each join and subquery
+    // names the organization (#226).
+    {
+      name: 'products: one type',
+      run: () => products.list({ type: 'material' }, 'zh-Hans'),
+    },
+    {
+      name: 'products: one category',
+      run: () =>
+        products.list({ category: category?.id ?? 'uncategorised' }, 'zh-Hans'),
+    },
+    {
+      name: 'products: by stock',
+      run: () => products.list({ sort: 'stock' }, 'zh-Hans'),
+    },
+    {
+      name: 'products: by stock, page 2',
+      run: () =>
+        products.list(
+          { sort: 'stock', cursor: byStock.nextCursor ?? undefined },
+          'zh-Hans',
+        ),
+    },
     // Items' categories (ADR-092): the tree, each with what it holds by
     // type, counted from products by the organization and the category.
     { name: 'categories', run: () => categories.list() },
@@ -450,13 +481,13 @@ async function buildProbes(
     // three characters or more, as the probes above.
     {
       name: 'products: search',
-      run: () => products.list('zh-Hans', 'zhuanzhu'),
+      run: () => products.list({ search: 'zhuanzhu' }, 'zh-Hans'),
     },
     // One Chinese character, which no trigram index serves: the search
     // reads the translations that hold it, at large about 64 ms.
     {
       name: 'products: one character',
-      run: () => products.list('zh-Hans', '专'),
+      run: () => products.list({ search: '专' }, 'zh-Hans'),
     },
     {
       name: 'item pickers: search',

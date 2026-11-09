@@ -1,12 +1,12 @@
 ---
 paths:
   - "server/src/modules/products/**"
-  - "server/src/modules/stock/item-name.ts"
+  - "server/src/modules/stock/{item-name,item-stock}.ts"
   - "server/src/database/schema/{products,product-categories,product-variants,product-translations,variant-translations,product-images}.ts"
   - "client/src/products/**"
   - "client/src/components/{variant-picker,product-cover}*.tsx"
   - "client/src/lib/{use-variants,use-picker-search}.ts"
-  - "server/test/{products,product-categories,product-images,item-names,whole-list-search}.e2e-spec.ts"
+  - "server/test/{products,product-categories,product-images,item-names,whole-list-search,items-list}.e2e-spec.ts"
   - "client/e2e/{products,product-detail,product-images}.spec.ts"
 ---
 
@@ -33,11 +33,12 @@ commit that changes one of those rules updates it (ADR-087).
 - **Every write of a name writes its pinyin,** `namePinyin()` on an insert
   and `pinyinOf()` on an update, items' and categories' (ADR-056, ADR-092).
 - **An item is matched and ranked by `itemMatches` and `itemRank`**
-  (`item-search.ts`, on `common/search.ts`); nothing matches in the
-  browser (ADR-056, amended).
+  (`item-search.ts`); nothing matches in the browser (ADR-056, amended).
 - **Every join and subquery to products, variants or their translations
-  names the organization,** the correlated ones too (ADR-003; ADR-056,
-  amended).
+  names the organization,** the correlated ones too (ADR-003, ADR-056).
+- **Items' list orders by `itemOrder`'s parts, its cursor holding them**
+  (`item-list.ts`); a row's stock and status are `itemStock` and
+  `itemStockStatus` (`stock/item-stock.ts`), read for its page (ADR-092).
 - **A cover is `coverOf()`,** its product named by its table; a gallery
   change locks the product with `lockProduct` and keeps the positions 0
   to n − 1, at most `MAX_PRODUCT_IMAGES` (ADR-062, ADR-066).

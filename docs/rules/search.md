@@ -82,11 +82,12 @@ leave how it matches to this file. How this file is kept is in the
 
 - **An item: any part of its SKU, of its product's or its variant's name
   in any language, or of their pinyin.** Products finds a product through
-  any of its variants, discontinued ones included; Inventory finds a row
-  by its item or by its lot code. The top bar finds discontinued items too.
+  any of its variants, discontinued ones as it asks for them; Inventory
+  finds a row by its item or by its lot code. The top bar finds
+  discontinued items too.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a product by part of a SKU or a name, case and accents ignored" ·
-  [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a discontinued product, as the list shows it" ·
+  [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a discontinued product when asked to include them, as the top bar does" ·
   [test](../../server/test/lookup.e2e-spec.ts) "finds an item by SKU or name, and a Chinese partner by pinyin" ·
   [test](../../server/test/stock.e2e-spec.ts) "searches the SKU, the product name and the lot code" ·
   partly tested ·
@@ -265,16 +266,20 @@ leave how it matches to this file. How this file is kept is in the
   partly tested
 - **Products and Partners put the closest match first:** exact, then at
   the start, then anywhere, then by name, a product by the name the reader
-  sees. A product ranks by its closest variant.
+  sees. A product ranks by its closest variant, and the list of items then
+  by its sort, whichever way it runs.
   [ADR-056, amended](../adr/0056-search.md#decision--the-lookups-ranking-and-one-minimum-everywhere) ·
+  [test](../../server/test/items-list.e2e-spec.ts) "ranks a search before the sort, the closest first either way, and pages on the rank" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "ranks exact, then at the start, then anywhere, before the name’s order" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "ranks exact, then at the start, then anywhere, then by name" ·
   MC-3902
 - **The paged lists keep their own order when searched:** Orders,
   Invoices, Credit notes, Returns, Production and Inventory are narrowed by
-  a search, not ranked by it, so Load more carries on where it was.
+  a search, not ranked by it, so Load more carries on where it was. The
+  list of items is ranked, and its next page carries on from the rank.
   [ADR-056, amended](../adr/0056-search.md#decision--the-lookups-ranking-and-one-minimum-everywhere) ·
-  no test
+  [test](../../server/test/items-list.e2e-spec.ts) "ranks a search before the sort, the closest first either way, and pages on the rank" ·
+  partly tested
 - **Orders, Invoices, Credit notes, Returns, Production, Products,
   Partners and Inventory keep their search in the page's address.** Show
   all from the top bar opens the list narrowed. What is typed is written

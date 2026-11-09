@@ -179,7 +179,7 @@ describe('Products (e2e)', () => {
       await beta.agent.post('/v1/products').send(product).expect(201);
 
       const res = await alpha.agent.get('/v1/products').expect(200);
-      expect(body<ProductResponse[]>(res)).toHaveLength(0);
+      expect(body<{ entries: unknown[] }>(res).entries).toHaveLength(0);
       expect(await db.select().from(products)).toHaveLength(1);
     });
 
@@ -189,7 +189,7 @@ describe('Products (e2e)', () => {
       const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
       const res = await viewer.get('/v1/products').expect(200);
-      expect(body<ProductResponse[]>(res)).toHaveLength(1);
+      expect(body<{ entries: unknown[] }>(res).entries).toHaveLength(1);
     });
   });
 

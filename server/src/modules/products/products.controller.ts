@@ -27,6 +27,7 @@ import { localeOf } from '../../i18n/translate';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import { ExportProductsDto } from './dto/export-products.dto';
+import { ListProductsDto } from './dto/list-products.dto';
 import {
   AddProductImageDto,
   OrderProductImagesDto,
@@ -35,7 +36,7 @@ import type {
   ProductDetail,
   ProductEnvelope,
   ProductImageList,
-  ProductSummary,
+  ProductPage,
   VariantEnvelope,
   VariantOption,
 } from './dto/product-response.dto';
@@ -56,13 +57,17 @@ export class ProductsController {
     private readonly images: ProductImagesService,
   ) {}
 
+  /**
+   * Items' list (ADR-092): a page, filtered, sorted and counted, with each
+   * row's stock.
+   */
   @Get()
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
   list(
-    @Query() query: SearchQueryDto,
+    @Query() query: ListProductsDto,
     @AcceptLanguage() acceptLanguage?: string,
-  ): Promise<ProductSummary[]> {
-    return this.products.list(localeOf(acceptLanguage), query.search);
+  ): Promise<ProductPage> {
+    return this.products.list(query, localeOf(acceptLanguage));
   }
 
   /**

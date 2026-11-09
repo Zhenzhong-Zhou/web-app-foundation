@@ -10,7 +10,7 @@ import {
 } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { ProductSummary } from '../api/types.gen';
+import type { ProductPage, ProductSummary } from '../api/types.gen';
 import { LicencesPage } from '../licences/licences-page';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -19,12 +19,24 @@ import { ProductsPage } from './products-page';
 function product(name: string): ProductSummary {
   return {
     id: name,
-    coverFileId: null,
     type: 'good',
-    name,
-    description: null,
+    displayName: name,
+    sku: name.toUpperCase(),
+    variantCount: 1,
+    category: null,
+    coverFileId: null,
     isActive: true,
+    createdAt: '2026-11-09T12:00:00.000Z',
+    updatedAt: '2026-11-09T12:00:00.000Z',
+    onHand: '0.0000',
+    unitOfMeasure: 'each',
+    stockStatus: null,
   };
+}
+
+/** The list's first page (ADR-092), holding these rows. */
+function pageOf(rows: ProductSummary[]): ProductPage {
+  return { entries: rows, nextCursor: null, counts: null };
 }
 
 function renderAt(address: string) {
@@ -54,10 +66,9 @@ describe('ProductsPage', () => {
         asked.push(new URL(request.url).searchParams.get('search'));
         // Best match first, not by name, and not containing the query:
         // the server found it by its pinyin.
-        return HttpResponse.json([
-          product('专注胶囊 60 粒'),
-          product('Calm 90ct'),
-        ]);
+        return HttpResponse.json(
+          pageOf([product('专注胶囊 60 粒'), product('Calm 90ct')]),
+        );
       }),
     );
 
@@ -86,10 +97,10 @@ describe('ProductsPage', () => {
         asked.push(search);
         if (search === 'fo') {
           await firstAnswered;
-          return HttpResponse.json([product('Fog lamp')]);
+          return HttpResponse.json(pageOf([product('Fog lamp')]));
         }
         return HttpResponse.json(
-          search === 'foc' ? [product('Focus 60ct')] : [product('Calm 90ct')],
+          pageOf([product(search === 'foc' ? 'Focus 60ct' : 'Calm 90ct')]),
         );
       }),
     );
@@ -122,9 +133,9 @@ describe('ProductsPage', () => {
     server.use(
       http.get('/api/v1/products', async ({ request }) => {
         if (new URL(request.url).searchParams.get('search') === null)
-          return HttpResponse.json([product('Focus 60ct')]);
+          return HttpResponse.json(pageOf([product('Focus 60ct')]));
         await answered;
-        return HttpResponse.json([product('Calm 90ct')]);
+        return HttpResponse.json(pageOf([product('Calm 90ct')]));
       }),
     );
 
@@ -151,7 +162,7 @@ describe('ProductsPage', () => {
     server.use(
       http.get('/api/v1/products', ({ request }) => {
         answered.push(new URL(request.url).searchParams.get('search'));
-        return HttpResponse.json([]);
+        return HttpResponse.json(pageOf([]));
       }),
     );
 
@@ -178,7 +189,9 @@ describe('ProductsPage', () => {
       http.get('/api/v1/products', ({ request }) => {
         const search = new URL(request.url).searchParams.get('search');
         asked.push(search);
-        return HttpResponse.json([product(`Found by ${search ?? 'nothing'}`)]);
+        return HttpResponse.json(
+          pageOf([product(`Found by ${search ?? 'nothing'}`)]),
+        );
       }),
     );
     const router = createMemoryRouter(
@@ -235,7 +248,7 @@ describe('ProductsPage', () => {
     const exported: string[] = [];
     server.use(
       http.get('/api/v1/products', () =>
-        HttpResponse.json([product('Calm 90ct')]),
+        HttpResponse.json(pageOf([product('Calm 90ct')])),
       ),
       http.get('/api/v1/products/export', ({ request }) => {
         exported.push(new URL(request.url).search);
@@ -262,7 +275,7 @@ describe('ProductsPage', () => {
   // Licences reached from here, a link inside the app, offers Back (#341).
   it('opens Licences with Back to Products', async () => {
     server.use(
-      http.get('/api/v1/products', () => HttpResponse.json([])),
+      http.get('/api/v1/products', () => HttpResponse.json(pageOf([]))),
       http.get('/api/v1/product-licences', () => HttpResponse.json([])),
     );
     renderWithAuth(

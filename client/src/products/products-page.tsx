@@ -16,7 +16,7 @@ import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { ProductSummary } from '../api/types.gen';
+import type { ProductPage } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
@@ -51,21 +51,26 @@ export function ProductsPage() {
    */
   const { text, setText, search } = useListSearch();
   const {
-    data: items,
+    data: page,
     error,
     refused,
     loading,
     reload,
-  } = useResource<ProductSummary[]>(withSearch('/products', search));
+  } = useResource<ProductPage>(
+    withSearch('/products?discontinued=include', search),
+  );
+  // The first fifty, discontinued ones among them, until Items' list reads
+  // the rest a page at a time (ADR-092).
+  const items = page?.entries;
   const [creating, setCreating] = useState(false);
   const [discontinuedOnly, setDiscontinuedOnly] = useState(false);
 
   const showSkeleton = useDelayedFlag(loading);
 
   /**
-   * The answer is whole, searched or not (GET /products is not paged), so
-   * Discontinued narrows it here and counts within it. Discontinued ones
-   * stay listed by default; the quick filter shows only them.
+   * Discontinued narrows the rows read here and counts within them.
+   * Discontinued ones stay listed by default; the quick filter shows only
+   * them.
    */
   const discontinued = (items ?? []).filter((item) => !item.isActive).length;
   const shown = useMemo(
@@ -213,13 +218,13 @@ export function ProductsPage() {
                       >
                         <ProductCover
                           fileId={item.coverFileId}
-                          name={item.name}
+                          name={item.displayName}
                         />
                         <Link
                           component={RouterLink}
                           to={`/products/${item.id}`}
                         >
-                          {item.name}
+                          {item.displayName}
                         </Link>
                       </Stack>
                     </TableCell>

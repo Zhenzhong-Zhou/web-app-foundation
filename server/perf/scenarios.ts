@@ -254,6 +254,9 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // Products unsearched, as it opens: sorted and named by the name shown,
     // two correlated subqueries a product.
     read('GET /products', () => '/products', 'zh-Hans'),
+    // Items sorted by stock (ADR-092): every item's stock summed to order
+    // them, where the other sorts read the page's alone.
+    read('GET /products?sort=stock', () => '/products?sort=stock', 'zh-Hans'),
     read(
       'GET /products?search',
       () => `/products?search=${encodeURIComponent('专')}`,

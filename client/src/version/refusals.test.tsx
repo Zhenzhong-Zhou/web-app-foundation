@@ -192,7 +192,11 @@ describe('a page’s read refused', () => {
     await retryArmed();
 
     // The API has deployed.
-    server.use(http.get('/api/v1/products', () => HttpResponse.json([])));
+    server.use(
+      http.get('/api/v1/products', () =>
+        HttpResponse.json({ entries: [], nextCursor: null, counts: null }),
+      ),
+    );
     act(() => vi.advanceTimersByTime(60_000));
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Products' }),
