@@ -257,6 +257,13 @@ linux_accessibility() {
 }
 
 if [[ $mode == linux ]]; then
+  # Only under the lock: typed by hand, it would remove the container by
+  # its name under another folder's run.
+  if [[ -z "${ONE_AT_A_TIME_HELD:-}" ]]; then
+    echo '--linux-browsers is the full run'"'"'s own call, under the lock the working folders share.' >&2
+    echo 'Run scripts/verify.sh in full, or: node scripts/one-at-a-time.mjs linux-browsers -- bash scripts/verify.sh --linux-browsers' >&2
+    exit 2
+  fi
   linux_accessibility
   exit 0
 fi

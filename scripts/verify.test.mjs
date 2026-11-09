@@ -22,7 +22,7 @@
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -309,6 +309,41 @@ test("the full run, once the container listens, runs the accessibility spec in i
   );
   // The container and both browsers, under one hold of the lock.
   assert.deepEqual(run.oneAtATime, [LINUX_UNDER_THE_LOCK, "exit 0"]);
+});
+
+test("--linux-browsers typed by hand, outside the lock, is refused before any container", (t) => {
+  const root = fixture(t);
+  withPlaywright(root);
+  const bin = folder(t, "verify-bin");
+  const dockerLog = path.join(bin, "docker.log");
+  writeFileSync(
+    path.join(bin, "docker"),
+    `#!/bin/sh\necho "$*" >> '${dockerLog}'\n`,
+    { mode: 0o755 },
+  );
+  const env = {
+    ...process.env,
+    PATH: `${bin}${path.delimiter}${process.env.PATH}`,
+  };
+  delete env.ONE_AT_A_TIME_HELD;
+  const run = spawnSync(
+    "/bin/bash",
+    ["scripts/verify.sh", "--linux-browsers"],
+    {
+      cwd: root,
+      encoding: "utf8",
+      env,
+      timeout: 60_000,
+    },
+  );
+
+  assert.equal(run.status, 2, run.stdout + run.stderr);
+  assert.match(run.stderr, /--linux-browsers is the full run's own call/);
+  assert.match(
+    run.stderr,
+    /node scripts\/one-at-a-time\.mjs linux-browsers -- bash scripts\/verify\.sh --linux-browsers/,
+  );
+  assert.equal(existsSync(dockerLog), false, "it called docker");
 });
 
 test("--quick takes no lock: it runs no end-to-end or browser part", (t) => {
