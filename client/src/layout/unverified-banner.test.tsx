@@ -97,7 +97,7 @@ describe('the confirm-your-email banner', () => {
       http.post('/api/v1/auth/verify-email/resend', () => {
         asks += 1;
         return asks === 1
-          ? apiError(429, 'Too many requests. Try again in a minute.')
+          ? apiError(429, 'ThrottlerException: Too Many Requests')
           : HttpResponse.error();
       }),
     );
@@ -110,7 +110,7 @@ describe('the confirm-your-email banner', () => {
     await user.click(within(banner).getByRole('button', { name: 'Resend' }));
     expect(
       await within(banner).findByText(
-        'Too many requests. Try again in a minute.',
+        'Too many requests just now. Try again in a minute.',
       ),
     ).toBeVisible();
     expect(within(banner).queryByText('Sent')).toBeNull();

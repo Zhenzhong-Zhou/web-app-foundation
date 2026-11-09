@@ -279,6 +279,8 @@
   "common.saving": "Enregistrement…",
   "common.serverUnreachable": "Impossible de joindre le serveur.",
   "common.status": "Statut",
+  "common.tooManyRequests": "Trop de demandes pour le moment. Réessayez dans une minute.",
+  "common.tooManyRequestsFor": "Trop de demandes pour le moment. Réessayez dans {seconds, plural, one {# seconde} other {# secondes}}.",
   "common.tryAgain": "Réessayer",
   "components.colorMode.dark": "Sombre",
   "components.colorMode.label": "Mode de couleur",

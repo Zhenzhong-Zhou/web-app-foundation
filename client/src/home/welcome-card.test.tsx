@@ -365,7 +365,7 @@ describe('the welcome card', () => {
     server.use(
       http.post('/api/v1/auth/verify-email/resend', () =>
         HttpResponse.json(
-          { message: 'Too many requests. Try again in a minute.' },
+          { message: 'ThrottlerException: Too Many Requests' },
           { status: 429 },
         ),
       ),
@@ -387,7 +387,7 @@ describe('the welcome card', () => {
     );
     expect(
       await within(region).findByText(
-        'Too many requests. Try again in a minute.',
+        'Too many requests just now. Try again in a minute.',
       ),
     ).toBeVisible();
     expect(

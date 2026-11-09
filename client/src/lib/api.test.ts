@@ -229,3 +229,29 @@ describe('the API revision (ADR-081)', () => {
     expect(newVersionNow().outdated).toBe(false);
   });
 });
+
+/**
+ * The throttler's own message is its class name, in English whatever the
+ * reader's language (#483), so a 429 is worded here, with the wait when
+ * the server states one.
+ */
+describe('messageFor a 429', () => {
+  it('says how long to wait when the throttler says', () => {
+    const limited = new ApiError(
+      'ThrottlerException: Too Many Requests',
+      429,
+      undefined,
+      42,
+    );
+
+    expect(messageFor(limited)).toBe(
+      'Too many requests just now. Try again in 42 seconds.',
+    );
+  });
+
+  it('says a minute when no wait was stated', () => {
+    expect(
+      messageFor(new ApiError('ThrottlerException: Too Many Requests', 429)),
+    ).toBe('Too many requests just now. Try again in a minute.');
+  });
+});

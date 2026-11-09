@@ -3545,6 +3545,13 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R100** *(too many requests shown as "ThrottlerException: Too Many
+  Requests", #483)* Start the API with `RATE_LIMIT_MAX=5 npm run
+  start:dev` in `server/`, sign in, and reload Orders until it is refused:
+  "Too many requests just now. Try again in N seconds." in English, and in
+  Français and 中文 its own words, never the throttler's class name. Start
+  the API again without it afterwards.
+
 - **MC-R99** *(Back pressed right after Leave held on the next screen,
   #514)* In Chromium, DevTools → Network on Slow 4G. Open Customise Home,
   press Up on a tile, choose Orders in the menu, choose Leave, and press
@@ -5297,3 +5304,5 @@ first.
   link chooses, Oldest first among them: MC-408 extended.
 - 2026-11-08: #514, Back pressed right after Leave, before the next
   screen draws, returning to the screen left: MC-R99 added.
+- 2026-11-08: #483, too many requests worded on every screen, with the
+  wait the server states: MC-R100 added.
