@@ -192,6 +192,18 @@ a second organization.
   with Try again; a reload with the network off shows only the list's
   part failing, with Try again, the tabs' counts reading "—". Signed in
   as a Viewer, a line in Add item's place says whom to ask.
+- **MC-212** Items, as the demo Owner: a check box leads each row, and
+  the header's ticks every row loaded; clicking a box does not open the
+  item. Ticking shows a bar, "3 selected", with Set category, Discontinue
+  and Clear. Set category asks which, from the whole tree or None
+  (Uncategorised), starting on the category the ticked share; Move reads
+  the list again and says "Moved 3 items to …" with Undo, focus on Undo.
+  Undo puts each back as it was, and each item's History shows its
+  category from and to. Discontinue runs at once, "Discontinued 3
+  items", with Undo; on the Discontinued chip it is not offered. The
+  message goes about 10 seconds after neither focus nor the pointer is
+  on it. Another tab, a search, a filter or a sort clears the ticks. At
+  390 px each card has its box before it. As a Viewer there are no boxes.
 
 ## 3. Stock
 
@@ -5424,3 +5436,6 @@ first.
   status, the sorts and the date column, Show 50 more, the phone's cards
   and sheet, the five states, and a row's stock opening Inventory for the
   item alone: MC-207 to MC-211 added, MC-1546 rewritten.
+- 2026-11-09: ADR-092 step 13, several at once: check boxes for whoever
+  may change items, the bar with Set category, Discontinue and Clear, and
+  Undo for each: MC-212 added.

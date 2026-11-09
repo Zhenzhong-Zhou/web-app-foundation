@@ -4,6 +4,7 @@ import ErrorOutlined from '@mui/icons-material/ErrorOutlined';
 import WarningAmberOutlined from '@mui/icons-material/WarningAmberOutlined';
 import {
   Box,
+  Checkbox,
   IconButton,
   Link,
   ListItemIcon,
@@ -20,6 +21,7 @@ import {
   TableSortLabel,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { type MouseEvent, type Ref, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
@@ -32,6 +34,7 @@ import { StatusChip } from '../components/status-chip';
 import { formatDate, SEPARATOR } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
+import { TOUCH } from '../theme/media';
 import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
 import type { ItemSort } from './item-list';
@@ -43,6 +46,39 @@ type DateKey = 'changed' | 'added';
 
 /** What a SortHeader needs for one column (useListSort's `header`). */
 type Header = { active: boolean; order: SortOrder; onSort: () => void };
+
+/**
+ * The check boxes, for whoever may change items (ADR-092): which rows are
+ * ticked, one ticked or not, and the header's, every row loaded or none.
+ */
+export interface Ticks {
+  ticked: ReadonlySet<string>;
+  onTick: (id: string, on: boolean) => void;
+  onTickAll: (on: boolean) => void;
+}
+
+/** A fingertip's box on touch (#170); MUI's own is 42 px. */
+const TICK_SX = { [TOUCH]: { width: 44, height: 44 } };
+
+/** A row's check box, named by the item and its code. */
+function Tick({ item, ticks }: { item: ProductSummary; ticks: Ticks }) {
+  const intl = useIntl();
+  return (
+    <Checkbox
+      checked={ticks.ticked.has(item.id)}
+      onChange={(event) => ticks.onTick(item.id, event.target.checked)}
+      sx={TICK_SX}
+      slotProps={{
+        input: {
+          'aria-label': intl.formatMessage(
+            { id: 'products.tick', defaultMessage: 'Select {name}, {code}' },
+            { name: item.displayName, code: item.sku },
+          ),
+        },
+      }}
+    />
+  );
+}
 
 /** A row's code under its name: the code, or how many variants and the first. */
 function useCodes() {
@@ -148,6 +184,9 @@ function stockPath(item: ProductSummary): string {
  *
  * The head stays while the rows are read, a sort's included, so the
  * header pressed keeps its focus (#505's 54).
+ *
+ * With `ticks`, for whoever may change items, a check box leads each row
+ * and the head's ticks every row loaded (ADR-092).
  */
 export function ItemTable({
   items,
@@ -156,6 +195,7 @@ export function ItemTable({
   header,
   onDate,
   firstNew,
+  ticks,
 }: {
   items: ProductSummary[] | null;
   loading: boolean;
@@ -164,6 +204,7 @@ export function ItemTable({
   onDate: (key: DateKey) => void;
   /** The first row Show 50 more added, which takes focus. */
   firstNew: { index: number; ref: Ref<HTMLAnchorElement> } | null;
+  ticks?: Ticks;
 }) {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -172,18 +213,42 @@ export function ItemTable({
   const onHand = useOnHand();
   const dateKey: DateKey = sort.key === 'added' ? 'added' : 'changed';
 
-  // A click anywhere on a row opens the item, but not one on a link or a
-  // button inside it, which does its own.
+  // A click anywhere on a row opens the item, but not one on a link, a
+  // button or a check box inside it, nor beside the box, which do their own.
   const open = (item: ProductSummary) => (event: MouseEvent) => {
-    if ((event.target as Element).closest('a, button, input')) return;
+    if ((event.target as Element).closest('a, button, input, [data-tick]')) {
+      return;
+    }
     void navigate(`/items/${item.id}`);
   };
+
+  const tickedHere = items?.filter((item) => ticks?.ticked.has(item.id));
+  const allTicked = !!items?.length && tickedHere?.length === items.length;
 
   return (
     <TableContainer>
       <Table size="small" aria-busy={loading}>
         <TableHead>
           <TableRow>
+            {ticks && (
+              <TableCell padding="checkbox">
+                <Checkbox
+                  disabled={!items?.length}
+                  checked={allTicked}
+                  indeterminate={!!tickedHere?.length && !allTicked}
+                  onChange={() => ticks.onTickAll(!allTicked)}
+                  sx={TICK_SX}
+                  slotProps={{
+                    input: {
+                      'aria-label': intl.formatMessage({
+                        id: 'products.tickAll',
+                        defaultMessage: 'Select every item shown',
+                      }),
+                    },
+                  }}
+                />
+              </TableCell>
+            )}
             <SortHeader
               label={intl.formatMessage({
                 id: 'common.name',
@@ -214,17 +279,23 @@ export function ItemTable({
           </TableRow>
         </TableHead>
         <TableBody>
-          {loading && <PlaceholderRows columns={4} />}
+          {loading && <PlaceholderRows columns={ticks ? 5 : 4} />}
           {items?.map((item, index) => (
             <TableRow
               key={item.id}
               hover
+              selected={ticks?.ticked.has(item.id)}
               onClick={open(item)}
               sx={{
                 cursor: 'pointer',
                 '@media (pointer: coarse)': { height: rem(44) },
               }}
             >
+              {ticks && (
+                <TableCell padding="checkbox" data-tick>
+                  <Tick item={item} ticks={ticks} />
+                </TableCell>
+              )}
               <TableCell>
                 <Stack
                   direction="row"
@@ -377,15 +448,20 @@ function DateHeader({
  * bold; its code and category on one line; then the stock and its
  * status. The whole card is the item's link, so the stock is not a link
  * of its own here: the item's page shows it by location.
+ *
+ * With `ticks`, a check box sits before each card's link, beside it
+ * rather than in it, since a link holds no control.
  */
 export function ItemCards({
   items,
   loading,
   firstNew,
+  ticks,
 }: {
   items: ProductSummary[] | null;
   loading: boolean;
   firstNew: { index: number; ref: Ref<HTMLAnchorElement> } | null;
+  ticks?: Ticks;
 }) {
   const codes = useCodes();
   const category = useCategory();
@@ -399,9 +475,24 @@ export function ItemCards({
           key={item.id}
           sx={{
             listStyle: 'none',
+            display: 'flex',
+            alignItems: 'center',
             '& + &': { borderTop: 1, borderColor: 'divider' },
+            // As a ticked table row is tinted (MUI's selected row).
+            ...(ticks?.ticked.has(item.id) && {
+              bgcolor: (theme) =>
+                alpha(
+                  theme.palette.primary.main,
+                  theme.palette.action.selectedOpacity,
+                ),
+            }),
           }}
         >
+          {ticks && (
+            <Box sx={{ pl: 1 }}>
+              <Tick item={item} ticks={ticks} />
+            </Box>
+          )}
           <Link
             component={RouterLink}
             to={`/items/${item.id}`}
@@ -410,9 +501,12 @@ export function ItemCards({
             color="inherit"
             sx={{
               display: 'flex',
+              flex: 1,
+              minWidth: 0,
               gap: 1.5,
               alignItems: 'center',
               p: 2,
+              pl: ticks ? 1 : 2,
               minHeight: rem(44),
             }}
           >

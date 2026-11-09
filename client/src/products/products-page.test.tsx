@@ -11,10 +11,13 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
+  ChangeProductsDto,
+  ProductChange,
   ProductCounts,
   ProductPage,
   ProductSummary,
 } from '../api/types.gen';
+import { ToastProvider } from '../components/toast-provider';
 import { LicencesPage } from '../licences/licences-page';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -730,5 +733,385 @@ describe('ProductsPage', () => {
     expect(
       screen.getByRole('button', { name: 'Vitamins › Vitamin C' }),
     ).toBeVisible();
+  });
+
+  /**
+   * Several at once (ADR-092): check boxes for whoever may change items,
+   * a bar with how many, Set category, Discontinue and Clear; each change
+   * at once, its message offering Undo with the values before.
+   */
+  describe('several at once', () => {
+    const CHANGER = { permissions: ['products.view', 'products.update'] };
+    const VITAMIN_C = '00000000-0000-4000-8000-000000000002';
+    const TREE = [
+      {
+        id: '00000000-0000-4000-8000-000000000001',
+        name: 'Vitamins',
+        parentId: null,
+        items: [],
+      },
+      {
+        id: VITAMIN_C,
+        name: 'Vitamin C',
+        parentId: '00000000-0000-4000-8000-000000000001',
+        items: [],
+      },
+    ];
+
+    /** Each PATCH's items, answered with each item's values before. */
+    function changesOf(before: Record<string, ProductChange>) {
+      const sent: ProductChange[][] = [];
+      server.use(
+        http.patch('/api/v1/products', async ({ request }) => {
+          const { items } = (await request.json()) as ChangeProductsDto;
+          sent.push(items);
+          return HttpResponse.json({
+            items: items.map((item) => before[item.id]),
+          });
+        }),
+      );
+      return sent;
+    }
+
+    const bar = () => screen.queryByRole('region', { name: 'Selected items' });
+    const tick = (name: string) =>
+      userEvent.click(
+        screen.getByRole('checkbox', {
+          name: `Select ${name}, ${name.toUpperCase()}`,
+        }),
+      );
+
+    it('ticks rows for whoever may change items, the header’s ticking every row loaded, a bar counting them', async () => {
+      const user = userEvent.setup();
+      readsOf(() =>
+        pageOf(
+          [product('Calm 90ct'), product('Focus 60ct'), product('Sleep 30ct')],
+          countsOf({ good: 3 }),
+        ),
+      );
+      renderWithAuth(
+        <MemoryRouter initialEntries={['/items']}>
+          <Routes>
+            <Route path="/items" element={<ProductsPage />} />
+            <Route path="/items/:id" element={<p>The item’s page</p>} />
+          </Routes>
+        </MemoryRouter>,
+        CHANGER,
+      );
+      await screen.findByRole('link', { name: 'Calm 90ct' });
+      expect(bar()).toBeNull();
+
+      await tick('Calm 90ct');
+      expect(within(bar()!).getByText('1 selected')).toBeVisible();
+      expect(screen.queryByText('The item’s page')).toBeNull();
+      const all = screen.getByRole('checkbox', {
+        name: 'Select every item shown',
+      });
+      expect(all).toBePartiallyChecked();
+
+      await user.click(all);
+      expect(within(bar()!).getByText('3 selected')).toBeVisible();
+      expect(
+        screen
+          .getAllByRole('checkbox')
+          .every((box) => (box as HTMLInputElement).checked),
+      ).toBe(true);
+
+      await user.click(all);
+      expect(bar()).toBeNull();
+
+      await tick('Focus 60ct');
+      await user.click(within(bar()!).getByRole('button', { name: 'Clear' }));
+      expect(bar()).toBeNull();
+      expect(
+        screen.getByRole('checkbox', { name: 'Select Focus 60ct, FOCUS 60CT' }),
+      ).not.toBeChecked();
+    });
+
+    it('shows a Viewer no check boxes', async () => {
+      readsOf(() => pageOf([product('Calm 90ct')], countsOf({ good: 1 })));
+      renderAt('/items');
+      await screen.findByRole('link', { name: 'Calm 90ct' });
+
+      expect(screen.queryAllByRole('checkbox')).toEqual([]);
+    });
+
+    it('clears the ticks on another tab, a new search, a filter or a sort, so nothing unseen changes', async () => {
+      const user = userEvent.setup();
+      const asked = readsOf(() =>
+        pageOf([product('Calm 90ct')], countsOf({ good: 1, packaging: 1 })),
+      );
+      renderWithAuth(
+        <MemoryRouter initialEntries={['/items']}>
+          <ProductsPage />
+        </MemoryRouter>,
+        CHANGER,
+      );
+      await screen.findByRole('link', { name: 'Calm 90ct' });
+
+      const again = async (change: () => Promise<void>) => {
+        await tick('Calm 90ct');
+        expect(bar()).not.toBeNull();
+        const reads = asked.length;
+        await change();
+        await waitFor(() => expect(asked.length).toBeGreaterThan(reads));
+        expect(bar()).toBeNull();
+        await screen.findByRole('link', { name: 'Calm 90ct' });
+      };
+
+      await again(() =>
+        user.click(screen.getByRole('tab', { name: /Packaging/ })),
+      );
+      await again(() =>
+        user.type(
+          screen.getByRole('searchbox', { name: 'Search by name or code' }),
+          'calm',
+        ),
+      );
+      await again(() =>
+        user.click(screen.getByRole('button', { name: /^Discontinued/ })),
+      );
+      await again(() =>
+        user.click(screen.getByRole('button', { name: 'Name' })),
+      );
+    });
+
+    it('moves the ticked to the category chosen, reads the list again, and Undo sends the values before', async () => {
+      const user = userEvent.setup();
+      server.use(
+        http.get('/api/v1/products/categories', () =>
+          HttpResponse.json({ categories: TREE }),
+        ),
+      );
+      const asked = readsOf(() =>
+        pageOf(
+          [
+            product('Calm 90ct'),
+            {
+              ...product('Focus 60ct'),
+              category: { id: VITAMIN_C, path: ['Vitamins', 'Vitamin C'] },
+            },
+          ],
+          countsOf({ good: 2 }),
+        ),
+      );
+      const sent = changesOf({
+        'Calm 90ct': { id: 'Calm 90ct', categoryId: null },
+      });
+      renderWithAuth(
+        <ToastProvider>
+          <MemoryRouter initialEntries={['/items']}>
+            <ProductsPage />
+          </MemoryRouter>
+        </ToastProvider>,
+        CHANGER,
+      );
+      await screen.findByRole('link', { name: 'Calm 90ct' });
+
+      await tick('Calm 90ct');
+      await tick('Focus 60ct');
+      await user.click(
+        within(bar()!).getByRole('button', { name: 'Set category' }),
+      );
+      const dialog = await screen.findByRole('dialog', {
+        name: 'Set the category of 2 items',
+      });
+      // Their categories differ: the box starts on None.
+      const box = within(dialog).getByRole('combobox', { name: 'Category' });
+      expect(box).toHaveTextContent('None (Uncategorised)');
+      await user.click(box);
+      expect(
+        within(await screen.findByRole('listbox'))
+          .getAllByRole('option')
+          .map((option) => option.textContent),
+      ).toEqual(['None (Uncategorised)', 'Vitamins', 'Vitamin C']);
+      await user.click(screen.getByRole('option', { name: 'Vitamin C' }));
+      const reads = asked.length;
+      await user.click(within(dialog).getByRole('button', { name: 'Move' }));
+
+      // Only the one not in it already is sent.
+      const undo = await screen.findByRole('button', { name: 'Undo' });
+      expect(sent).toEqual([[{ id: 'Calm 90ct', categoryId: VITAMIN_C }]]);
+      expect(screen.getByText('Moved 1 item to Vitamin C.')).toBeVisible();
+      await waitFor(() => expect(undo).toHaveFocus());
+      expect(bar()).toBeNull();
+      await waitFor(() => expect(asked.length).toBeGreaterThan(reads));
+
+      await user.click(undo);
+      await waitFor(() =>
+        expect(sent).toEqual([
+          [{ id: 'Calm 90ct', categoryId: VITAMIN_C }],
+          [{ id: 'Calm 90ct', categoryId: null }],
+        ]),
+      );
+      expect(
+        await screen.findByText('1 item is back as before.'),
+      ).toBeVisible();
+    });
+
+    it('starts Set category on the category the ticked share, Move waiting for another', async () => {
+      const user = userEvent.setup();
+      server.use(
+        http.get('/api/v1/products/categories', () =>
+          HttpResponse.json({ categories: TREE }),
+        ),
+      );
+      readsOf(() =>
+        pageOf(
+          [
+            {
+              ...product('Focus 60ct'),
+              category: { id: VITAMIN_C, path: ['Vitamins', 'Vitamin C'] },
+            },
+          ],
+          countsOf({ good: 1 }),
+        ),
+      );
+      renderWithAuth(
+        <MemoryRouter initialEntries={['/items']}>
+          <ProductsPage />
+        </MemoryRouter>,
+        CHANGER,
+      );
+      await screen.findByRole('link', { name: 'Focus 60ct' });
+
+      await tick('Focus 60ct');
+      await user.click(screen.getByRole('button', { name: 'Set category' }));
+      const dialog = await screen.findByRole('dialog');
+
+      expect(
+        within(dialog).getByRole('combobox', { name: 'Category' }),
+      ).toHaveTextContent('Vitamin C');
+      expect(
+        within(dialog).getByRole('button', { name: 'Move' }),
+      ).toBeDisabled();
+      expect(
+        within(dialog).getByText('It is in this category already.'),
+      ).toBeVisible();
+
+      await user.click(within(dialog).getByRole('combobox'));
+      await user.click(
+        screen.getByRole('option', { name: 'None (Uncategorised)' }),
+      );
+      expect(
+        within(dialog).getByRole('button', { name: 'Move' }),
+      ).toBeEnabled();
+    });
+
+    it('discontinues the ticked still in use at once, and Undo brings them back', async () => {
+      const user = userEvent.setup();
+      readsOf(() =>
+        pageOf(
+          [product('Calm 90ct'), { ...product('Old 30ct'), isActive: false }],
+          countsOf({ good: 2 }),
+        ),
+      );
+      const sent = changesOf({
+        'Calm 90ct': { id: 'Calm 90ct', isActive: true },
+      });
+      renderWithAuth(
+        <MemoryRouter initialEntries={['/items?discontinued=include']}>
+          <ProductsPage />
+        </MemoryRouter>,
+        CHANGER,
+      );
+      await screen.findByRole('link', { name: 'Calm 90ct' });
+
+      // Nothing ticked is in use: nothing to discontinue.
+      await tick('Old 30ct');
+      expect(
+        within(bar()!).queryByRole('button', { name: 'Discontinue' }),
+      ).toBeNull();
+
+      await tick('Calm 90ct');
+      await user.click(
+        within(bar()!).getByRole('button', { name: 'Discontinue' }),
+      );
+
+      const undo = await screen.findByRole('button', { name: 'Undo' });
+      expect(sent).toEqual([[{ id: 'Calm 90ct', isActive: false }]]);
+      expect(screen.getByText('Discontinued 1 item.')).toBeVisible();
+      await user.click(undo);
+      await waitFor(() =>
+        expect(sent.at(-1)).toEqual([{ id: 'Calm 90ct', isActive: true }]),
+      );
+    });
+
+    it('says what was refused, keeping the ticks until they are cleared', async () => {
+      const user = userEvent.setup();
+      readsOf(() => pageOf([product('Calm 90ct')], countsOf({ good: 1 })));
+      server.use(
+        http.patch('/api/v1/products', () =>
+          HttpResponse.json(
+            {
+              message:
+                'One of these items was not found. Refresh the list, and try again.',
+            },
+            { status: 400 },
+          ),
+        ),
+      );
+      renderWithAuth(
+        <MemoryRouter initialEntries={['/items']}>
+          <ProductsPage />
+        </MemoryRouter>,
+        CHANGER,
+      );
+      await screen.findByRole('link', { name: 'Calm 90ct' });
+
+      await tick('Calm 90ct');
+      await user.click(screen.getByRole('button', { name: 'Discontinue' }));
+
+      expect(
+        await screen.findByText(
+          'One of these items was not found. Refresh the list, and try again.',
+        ),
+      ).toBeVisible();
+      expect(within(bar()!).getByText('1 selected')).toBeVisible();
+
+      // The refusal goes with the ticks it was for.
+      await user.click(within(bar()!).getByRole('button', { name: 'Clear' }));
+      expect(
+        screen.queryByText(
+          'One of these items was not found. Refresh the list, and try again.',
+        ),
+      ).toBeNull();
+    });
+
+    it('says to untick some past 500, before either runs', async () => {
+      const user = userEvent.setup();
+      readsOf(() =>
+        pageOf(
+          Array.from({ length: 501 }, (_, index) => product(`Item ${index}`)),
+          countsOf({ good: 501 }),
+        ),
+      );
+      renderWithAuth(
+        <MemoryRouter initialEntries={['/items']}>
+          <ProductsPage />
+        </MemoryRouter>,
+        CHANGER,
+      );
+      await screen.findByRole('link', { name: 'Item 0' });
+
+      await user.click(
+        screen.getByRole('checkbox', { name: 'Select every item shown' }),
+      );
+
+      expect(
+        within(bar()!).getByText('Up to 500 at once. Untick some to go on.'),
+      ).toBeVisible();
+      expect(
+        within(bar()!).getByRole('button', { name: 'Set category' }),
+      ).toBeDisabled();
+      expect(
+        within(bar()!).getByRole('button', { name: 'Discontinue' }),
+      ).toBeDisabled();
+
+      await tick('Item 0');
+      expect(
+        within(bar()!).getByRole('button', { name: 'Set category' }),
+      ).toBeEnabled();
+    });
   });
 });

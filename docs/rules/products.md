@@ -168,6 +168,25 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "discontinues several at once, and Undo brings each back as it was" ·
   [test](../../server/test/products.e2e-spec.ts) "refuses the whole request for another organization’s item or category, changing nothing" ·
   [test](../../server/test/products.e2e-spec.ts) "refuses more than 500 items, one twice, and whoever may not change items"
+- **Items shows whoever may change items a check box on each row, and one
+  in its head for every row loaded; a Viewer sees none. Ticking shows how
+  many, with Set category, Discontinue and Clear; neither change asks
+  first, and each says what it did and offers Undo for 10 seconds, which
+  sends the values before back.** Set category offers the whole tree and
+  None, starting on the category the ticked share, and moves only those
+  not in it already; Discontinue changes only those still in use. Another
+  tab, search, filter or sort clears the ticks, so nothing unseen changes;
+  past 500 ticked, neither runs until some are unticked.
+  [ADR-092](../adr/0092-items.md#decision--several-at-once-with-undo) ·
+  [test](../../client/src/products/products-page.test.tsx) "ticks rows for whoever may change items, the header’s ticking every row loaded, a bar counting them" ·
+  [test](../../client/src/products/products-page.test.tsx) "shows a Viewer no check boxes" ·
+  [test](../../client/src/products/products-page.test.tsx) "clears the ticks on another tab, a new search, a filter or a sort, so nothing unseen changes" ·
+  [test](../../client/src/products/products-page.test.tsx) "moves the ticked to the category chosen, reads the list again, and Undo sends the values before" ·
+  [test](../../client/src/products/products-page.test.tsx) "starts Set category on the category the ticked share, Move waiting for another" ·
+  [test](../../client/src/products/products-page.test.tsx) "discontinues the ticked still in use at once, and Undo brings them back" ·
+  [test](../../client/src/products/products-page.test.tsx) "says to untick some past 500, before either runs" ·
+  partly tested ·
+  MC-212
 
 ## The list of items
 

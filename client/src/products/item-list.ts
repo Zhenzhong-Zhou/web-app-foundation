@@ -76,6 +76,21 @@ export function categoryOptions(
   discontinued: DiscontinuedShown,
   chosen: string,
 ): CategoryOption[] {
+  return categoryTree(categories, tab, discontinued).filter(
+    (option) => option.count > 0 || option.id === chosen,
+  );
+}
+
+/**
+ * Every category in the tree's order, each under its parent, with its
+ * count as the filter's: what Set category offers, an empty one too
+ * (ADR-092).
+ */
+export function categoryTree(
+  categories: readonly ProductCategory[],
+  tab: ItemTab,
+  discontinued: DiscontinuedShown,
+): CategoryOption[] {
   const children = new Map<string | null, ProductCategory[]>();
   for (const category of categories) {
     const siblings = children.get(category.parentId) ?? [];
@@ -119,5 +134,11 @@ export function categoryOptions(
   };
   walk(null, 0, []);
 
-  return options.filter((option) => option.count > 0 || option.id === chosen);
+  return options;
 }
+
+/**
+ * At most this many items changed at once, as the server takes them
+ * (`MAX_CHANGED_AT_ONCE`, ADR-092): past it, the bar says to untick some.
+ */
+export const MAX_AT_ONCE = 500;

@@ -59,9 +59,10 @@ import {
   type ItemTab,
   UNCATEGORISED,
 } from './item-list';
-import { ItemCards, ItemTable } from './item-rows';
+import { ItemCards, ItemTable, type Ticks } from './item-rows';
 import { ItemTabs } from './item-tabs';
 import { productTypeLabel } from './product-types';
+import { SeveralAtOnce } from './several-at-once';
 
 /**
  * Products and their variants, generated from the server's OpenAPI document
@@ -193,7 +194,7 @@ export function ProductsPage() {
   const counts = first?.counts ?? null;
   if (counts && counts !== known) setKnown(counts);
 
-  const { data: tree } = useResource<ProductCategoryList>(
+  const { data: tree, reload: reloadTree } = useResource<ProductCategoryList>(
     '/products/categories',
   );
   const options = tree
@@ -212,11 +213,16 @@ export function ProductsPage() {
       firstNewRef.current?.focus();
     }
   }, [firstNew, items?.length]);
-  // A new list starts with no row to focus.
-  const [focusFor, setFocusFor] = useState(path);
-  if (focusFor !== path) {
-    setFocusFor(path);
+  // The rows ticked for several at once, by id (ADR-092).
+  const [ticked, setTicked] = useState<ReadonlySet<string>>(() => new Set());
+
+  // A new list starts with no row to focus, and nothing ticked: another
+  // tab, search, filter or sort clears the ticks, so nothing unseen changes.
+  const [readFor, setReadFor] = useState(path);
+  if (readFor !== path) {
+    setReadFor(path);
     setFirstNew(null);
+    setTicked(new Set());
   }
 
   const showPlaceholders = useDelayedFlag(loading);
@@ -244,6 +250,22 @@ export function ProductsPage() {
 
   const canAdd = can('products.create');
   const total = counts ? countOf(counts, tab) : null;
+
+  // Check boxes for whoever may change items; a Viewer has none (ADR-092).
+  const ticks: Ticks | undefined = can('products.update')
+    ? {
+        ticked,
+        onTick: (id, on) =>
+          setTicked((was) => {
+            const next = new Set(was);
+            if (on) next.add(id);
+            else next.delete(id);
+            return next;
+          }),
+        onTickAll: (on) =>
+          setTicked(new Set(on ? items?.map((item) => item.id) : [])),
+      }
+    : undefined;
   const filtersOn = (category ? 1 : 0) + (discontinued ? 1 : 0);
 
   const categoryFilter = (fullWidth: boolean) => (
@@ -397,6 +419,19 @@ export function ProductsPage() {
         ]}
       />
 
+      {ticks && (
+        <SeveralAtOnce
+          ticked={items?.filter((item) => ticked.has(item.id)) ?? []}
+          categories={tree?.categories ?? []}
+          onClear={() => setTicked(new Set())}
+          onChanged={() => {
+            setTicked(new Set());
+            reload();
+            void reloadTree();
+          }}
+        />
+      )}
+
       {loading && (
         <Box role="status" sx={HIDDEN}>
           {intl.formatMessage({
@@ -425,6 +460,7 @@ export function ProductsPage() {
                 <ItemCards
                   items={items}
                   loading={loading}
+                  ticks={ticks}
                   firstNew={
                     firstNew === null
                       ? null
@@ -439,6 +475,7 @@ export function ProductsPage() {
                 sort={sort}
                 header={header}
                 onDate={(key) => write({ sort: key, order: 'desc' })}
+                ticks={ticks}
                 firstNew={
                   firstNew === null
                     ? null
