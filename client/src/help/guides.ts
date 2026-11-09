@@ -90,7 +90,8 @@ export const GUIDES = {
     sections: ['costs'],
   },
   items: {
-    routes: ['/items', '/items/:id'],
+    // Settings › Categories is Items' own, explained in its guide.
+    routes: ['/items', '/items/:id', '/settings/categories'],
     label: NAV_LABELS.products,
     sections: ['add'],
   },

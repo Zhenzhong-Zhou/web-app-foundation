@@ -142,3 +142,33 @@ export function categoryTree(
  * (`MAX_CHANGED_AT_ONCE`, ADR-092): past it, the bar says to untick some.
  */
 export const MAX_AT_ONCE = 500;
+
+/**
+ * A category and every category under it, at any depth: where it cannot
+ * be moved, since the branch would hang from nothing (ADR-092). The
+ * server refuses it too; Move's list leaves them out, so it is never
+ * offered.
+ */
+export function branchOf(
+  categories: readonly ProductCategory[],
+  id: string,
+): Set<string> {
+  const branch = new Set([id]);
+  let grew = true;
+  // Passes over the flat list until none adds one: a category may come
+  // before its parent in it.
+  while (grew) {
+    grew = false;
+    for (const category of categories) {
+      if (
+        category.parentId &&
+        branch.has(category.parentId) &&
+        !branch.has(category.id)
+      ) {
+        branch.add(category.id);
+        grew = true;
+      }
+    }
+  }
+  return branch;
+}

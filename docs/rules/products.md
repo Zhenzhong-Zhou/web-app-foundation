@@ -307,6 +307,23 @@ How this file is kept is in the [README](README.md).
   [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
   [test](../../server/test/product-categories.e2e-spec.ts) "puts an item in a category when it is added, moves it, and takes it out" ·
   [test](../../server/test/product-categories.e2e-spec.ts) "refuses another organization’s category with a 400, as a parent or on an item"
+- **Settings › Categories shows the tree, each category with its items,
+  those under it counted, the discontinued too. Whoever may change items
+  adds, renames, moves and deletes there; Move never offers the category
+  itself nor any under it, and waits for another place. Delete on a
+  category holding items or categories is refused at its row, saying how
+  many of each and to move them first, with nothing sent; on an empty
+  one it asks first. Whoever may only see items reads the tree, with a
+  line saying whom to ask. Items' Manage categories opens it with Back
+  to Items as it was.**
+  [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
+  [test](../../client/src/products/categories-page.test.tsx) "shows the tree nested, each category with its items and those under it" ·
+  [test](../../client/src/products/categories-page.test.tsx) "moves a category, its list leaving out its own branch, Move waiting for another place" ·
+  [test](../../client/src/products/categories-page.test.tsx) "refuses at its row to delete a category holding items or categories, saying how many and what to do" ·
+  [test](../../client/src/products/categories-page.test.tsx) "asks before deleting an empty category, then deletes it" ·
+  [test](../../client/src/products/categories-page.test.tsx) "reads only for whoever may only see items, a line saying whom to ask" ·
+  [test](../../client/src/products/categories-page.test.tsx) "opens from Items’ Manage categories with Back, which returns to Items as it was" ·
+  MC-213
 
 ## Names in other languages, and the name each reader sees
 

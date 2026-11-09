@@ -496,6 +496,7 @@ const SCREENS: Screen[] = [
     ready: heading,
   },
   { name: 'price lists', path: () => '/settings/price-lists', ready: heading },
+  { name: 'categories', path: () => '/settings/categories', ready: heading },
   { name: 'roles', path: () => '/settings/roles', ready: heading },
   {
     name: 'a made role',

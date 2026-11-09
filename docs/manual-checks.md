@@ -204,6 +204,21 @@ a second organization.
   message goes about 10 seconds after neither focus nor the pointer is
   on it. Another tab, a search, a filter or a sort clears the ticks. At
   390 px each card has its box before it. As a Viewer there are no boxes.
+- **MC-213** Settings › Categories (`/settings/categories`), as the demo
+  Owner, from the menu's Settings group: the tree, each category under
+  its parent with its items, those under it counted ("12 items"), and
+  Actions on each row. Add category asks its name and Under, None (at the
+  top) or any category; a name already used beside it is refused, saying
+  to choose another. Actions › Rename renames it; Actions › Move lists
+  every category but itself and those under it, and Move waits until
+  another place is chosen. Actions › Delete on a category holding items
+  or categories says under its row how many of each and to move them
+  first, and deletes nothing; on an empty one it asks first, then the
+  row goes and focus is on the page's title. History records each
+  change by the category's name. From Items, the category filter's
+  Manage categories opens it with Back, which returns to Items as it
+  was. As a Viewer the tree has no Actions and no Add category, and a
+  line says whom to ask. In French and Chinese every word is translated.
 
 ## 3. Stock
 
@@ -5439,3 +5454,7 @@ first.
 - 2026-11-09: ADR-092 step 13, several at once: check boxes for whoever
   may change items, the bar with Set category, Discontinue and Clear, and
   Undo for each: MC-212 added.
+- 2026-11-09: ADR-092 step 14, Settings › Categories: the tree with each
+  category's items, add, rename and move, delete refused at its row with
+  how many and what to move, read-only for a Viewer, and Manage
+  categories opening it with Back: MC-213 added.

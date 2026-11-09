@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import {
   AccountPage,
   AuditPage,
+  CategoriesPage,
   CreateOrderPage,
   CreditNoteDetailPage,
   CreditNotesPage,
@@ -70,6 +71,7 @@ export const SIGNED_IN_ROUTES: SignedInRoute[] = [
   { path: '/settings/organization', page: OrganizationPage },
   { path: '/settings/tax-codes', page: TaxCodesPage },
   { path: '/settings/exchange-rates', page: ExchangeRatesPage },
+  { path: '/settings/categories', page: CategoriesPage },
   { path: '/settings/price-lists', page: PriceListsPage },
   { path: '/settings/price-lists/:id', page: PriceListDetailPage },
   { path: '/costs', page: StockValuePage },
