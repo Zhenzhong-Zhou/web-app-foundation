@@ -191,3 +191,20 @@ export class VariantOption {
   unitOfMeasure!: string;
   tracksLots!: boolean;
 }
+
+/**
+ * One item's values before several at once changed it (ADR-092): the
+ * fields its change named, as they were, so Undo sends them back.
+ */
+export class ProductChange {
+  id!: string;
+  /** Its category before, null for Uncategorised; absent when not sent. */
+  categoryId?: string | null;
+  /** Whether it was in use; absent when not sent. */
+  isActive?: boolean;
+}
+
+/** PATCH /products: each item's values before, in the order sent. */
+export class ProductChanges {
+  items!: ProductChange[];
+}

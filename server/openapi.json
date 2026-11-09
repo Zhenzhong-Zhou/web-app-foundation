@@ -2390,6 +2390,25 @@
         "operationId": "ProductsController_list_v1",
         "parameters": [
           {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 4096,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
             "name": "type",
             "required": false,
             "in": "query",
@@ -2451,25 +2470,6 @@
                 "asc",
                 "desc"
               ]
-            }
-          },
-          {
-            "name": "cursor",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "maxLength": 4096,
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
             }
           },
           {
@@ -2543,6 +2543,35 @@
         "tags": [
           "Products"
         ]
+      },
+      "patch": {
+        "operationId": "ProductsController_changeMany_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeProductsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductChanges"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
       }
     },
     "/v1/products/export": {
@@ -2550,11 +2579,67 @@
         "operationId": "ProductsController_exportProducts_v1",
         "parameters": [
           {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "good",
+                "material",
+                "packaging",
+                "sample",
+                "supply",
+                "equipment"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "pattern": "^(uncategorised|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$",
+              "type": "string"
+            }
+          },
+          {
             "name": "discontinued",
             "required": false,
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "only",
+                "include"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "category",
+                "stock",
+                "added",
+                "changed"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
             }
           },
           {
@@ -12697,9 +12782,93 @@
           "product"
         ]
       },
+      "ProductChangeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "categoryId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ChangeProductsDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "uniqueItems": true,
+            "minItems": 1,
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductChangeDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ProductChange": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ProductChanges": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductChange"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
       "UpdateProductDto": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment"
+            ]
+          },
           "name": {
             "type": "string",
             "minLength": 1,
@@ -15821,8 +15990,8 @@
             "enum": [
               "out",
               "low",
-              "enough",
-              "discontinued"
+              "discontinued",
+              "enough"
             ]
           },
           "suggestion": {
@@ -16084,8 +16253,8 @@
             "enum": [
               "out",
               "low",
-              "enough",
-              "discontinued"
+              "discontinued",
+              "enough"
             ]
           },
           "suggestion": {
@@ -16108,8 +16277,8 @@
             "enum": [
               "out",
               "low",
-              "enough",
-              "discontinued"
+              "discontinued",
+              "enough"
             ]
           }
         },
@@ -21969,7 +22138,8 @@
           "client_outdated",
           "api_updating",
           "reorder_point_exists",
-          "reorder_maximum_not_above_point"
+          "reorder_maximum_not_above_point",
+          "code_in_use"
         ]
       },
       "ApiVocabulary": {
@@ -22034,6 +22204,10 @@
           "day": {
             "type": "string",
             "format": "date"
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },

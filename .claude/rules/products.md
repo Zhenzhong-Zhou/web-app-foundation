@@ -21,8 +21,8 @@ commit that changes one of those rules updates it (ADR-087).
 - **A product is added with its first variant, in one transaction;** the
   SKU, unit, lot tracking and stock live on the variant (ADR-023).
 - **A SKU is unique by its index,** `product_variants_org_sku_key`: a
-  unique violation becomes a 409 naming the SKU, and a SKU change records
-  the old one with `recordPrevious` (ADR-023, ADR-018).
+  unique violation becomes `codeInUse`'s 409, naming the item that holds
+  it, and a SKU change records the old one with `recordPrevious`.
 - **An item's name for a person comes from `namesIn`** in
   `stock/item-name.ts`, the locale from `@AcceptLanguage()` through
   `localeOf`, a list's order from `productNameOrder`; documents, CSV and
@@ -46,6 +46,6 @@ commit that changes one of those rules updates it (ADR-087).
   `useVariants`, read when its dialog or page opens, its `loading` the
   hook's `!answered`; Products' search is `useListSearch` (ADR-056,
   amended).
-- **Names in other languages are replaced as a set, by upsert,** recorded
-  as one line through `recordContext({ names })` (ADR-054, ADR-018).
-- **Category writes take `lockTree` first** (`category-tree.ts`, ADR-092).
+- **Other-language names are replaced as a set,** `recordContext({ names })`.
+- **Category writes take `lockTree` first** (`category-tree.ts`, ADR-092);
+  `changeMany` writes each item's History row itself, in its transaction.

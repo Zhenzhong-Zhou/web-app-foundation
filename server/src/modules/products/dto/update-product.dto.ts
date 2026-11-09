@@ -1,5 +1,6 @@
 import {
   IsBoolean,
+  IsIn,
   IsOptional,
   IsString,
   IsUUID,
@@ -8,13 +9,20 @@ import {
 } from 'class-validator';
 
 import { trim } from '../../../common/dto/trim';
+import { PRODUCT_TYPES, type ProductType } from '../../../database/schema';
 
 /**
- * Product-level fields only. Type is absent deliberately: changing a good into
- * equipment after it has moved would silently reinterpret every historical
- * movement, and there is no correct answer for what the old rows then mean.
+ * Product-level fields only: the variants' are their own route's.
  */
 export class UpdateProductDto {
+  /**
+   * Its type, changed at any time (ADR-092): the type forks nothing
+   * (ADR-023), so its stock, lots and History stay as they are.
+   */
+  @IsOptional()
+  @IsIn(PRODUCT_TYPES)
+  type?: ProductType;
+
   @IsOptional()
   @trim()
   @IsString()

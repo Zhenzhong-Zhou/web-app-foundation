@@ -15,8 +15,8 @@ import { productNameOrder } from '../stock/item-name';
 import { itemStock } from '../stock/item-stock';
 import { categoryPaths } from './category-tree';
 import {
+  type ItemFiltersDto,
   type ItemSort,
-  type ListProductsDto,
   UNCATEGORISED,
 } from './dto/list-products.dto';
 import type { ProductCounts } from './dto/product-response.dto';
@@ -150,7 +150,7 @@ export function readCursor(
  * whichever way the sort runs (ADR-056, amended).
  */
 export function itemOrder(
-  query: ListProductsDto,
+  query: ItemFiltersDto,
   locale: Locale,
   organizationId: string,
   terms: SearchTerms | null,
@@ -235,7 +235,7 @@ export function itemOrder(
  * Discontinued are shownOf's, which the counts count by instead.
  */
 export function matchedBy(
-  query: ListProductsDto,
+  query: ItemFiltersDto,
   terms: SearchTerms | null,
   organizationId: string,
 ): SQL | undefined {
@@ -253,13 +253,13 @@ export function matchedBy(
 }
 
 /** Discontinued items as asked: hidden, alone, or beside the rest. */
-function discontinuedAs(query: ListProductsDto): SQL | undefined {
+function discontinuedAs(query: ItemFiltersDto): SQL | undefined {
   if (query.discontinued === 'include') return undefined;
   return eq(products.isActive, query.discontinued !== 'only');
 }
 
 /** The open tab's type, and Discontinued as asked. */
-export function shownOf(query: ListProductsDto): SQL | undefined {
+export function shownOf(query: ItemFiltersDto): SQL | undefined {
   return and(
     query.type ? eq(products.type, query.type) : undefined,
     discontinuedAs(query),
@@ -276,7 +276,7 @@ export function shownOf(query: ListProductsDto): SQL | undefined {
 export async function countsOf(
   tx: Transaction,
   organizationId: string,
-  query: ListProductsDto,
+  query: ItemFiltersDto,
   matched: SQL | undefined,
 ): Promise<ProductCounts> {
   const found = matched ?? sql`true`;

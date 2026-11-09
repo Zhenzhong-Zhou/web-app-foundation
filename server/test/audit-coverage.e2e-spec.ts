@@ -37,6 +37,10 @@ const NOT_AUDITED = new Map<string, string>([
   ],
   ['AuthController.logout', 'Account events (ADR-022)'],
   [
+    'ProductsController.changeMany',
+    'Audited by the service: an entry for each item it changed, in its transaction, as the item’s own Save would write it (ADR-092)',
+  ],
+  [
     'AuthController.register',
     'Account events, and the organization does not exist yet (ADR-022)',
   ],

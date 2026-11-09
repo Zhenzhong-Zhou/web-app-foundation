@@ -439,7 +439,10 @@ async function buildProbes(
     // The catalogue's reads that join products (#226), each with the
     // organization on its join: without it, Postgres reads every tenant's
     // products to join one tenant's variants.
-    { name: 'product export', run: () => products.exportRows() },
+    {
+      name: 'product export',
+      run: () => products.exportRows({ discontinued: 'include' }, 'zh-Hans'),
+    },
     {
       name: 'price list',
       run: () => priceLists.findById(priceList.id, 'en'),

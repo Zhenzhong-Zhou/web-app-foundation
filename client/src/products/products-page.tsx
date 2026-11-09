@@ -95,12 +95,11 @@ export function ProductsPage() {
         actions={
           <>
             {/* What the list shows, its search and Discontinued, every
-                language's names (ADR-057). */}
+                language's names (ADR-057), by the list's own query
+                (ADR-092). */}
             <ExportButton
               path={withSearch(
-                discontinuedOnly
-                  ? '/products/export?discontinued=true'
-                  : '/products/export',
+                `/products/export?discontinued=${discontinuedOnly ? 'only' : 'include'}`,
                 search,
               )}
             />

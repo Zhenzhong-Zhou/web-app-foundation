@@ -127,6 +127,54 @@ describe('Products (e2e)', () => {
       expect(await db.select().from(products)).toHaveLength(1);
     });
 
+    // A code in use names the item that has it and asks for another
+    // (#306's 35), adding, adding a variant or renaming one alike; its id
+    // beside, for the form to open it (ADR-092).
+    it('refuses a code in use, naming the item that has it and asking for another', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const holder = body<{ product: ProductResponse }>(
+        await alpha.agent.post('/v1/products').send(product).expect(201),
+      ).product;
+      const other = body<{ product: ProductResponse }>(
+        await alpha.agent
+          .post('/v1/products')
+          .send({ type: 'good', name: 'Calm', variant: { sku: 'CALM-90' } })
+          .expect(201),
+      ).product;
+
+      const refusals = [
+        await alpha.agent
+          .post('/v1/products')
+          .send({ ...product, name: 'Vitamin D3 again' })
+          .expect(409),
+        await alpha.agent
+          .post(`/v1/products/${other.id}/variants`)
+          .send({ sku: 'VD3-60' })
+          .expect(409),
+        await alpha.agent
+          .patch(`/v1/products/${other.id}/variants/${other.variants[0].id}`)
+          .send({ sku: 'VD3-60' })
+          .expect(409),
+      ];
+      for (const refusal of refusals) {
+        expect(refusal.body).toMatchObject({
+          message:
+            'Code VD3-60 is already used by Vitamin D3. Choose another code.',
+          code: 'code_in_use',
+          details: { productId: holder.id },
+        });
+      }
+
+      const chinese = await alpha.agent
+        .post('/v1/products')
+        .set('Accept-Language', 'zh-Hans')
+        .send({ ...product, name: 'Vitamin D3 again' })
+        .expect(409);
+      expect(chinese.body).toMatchObject({
+        message: '编码 VD3-60 已被 Vitamin D3 使用。请换一个编码。',
+      });
+    });
+
     it('allows the same SKU in another organization', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const beta = await registerOrganization(app, 'beta');
@@ -318,23 +366,60 @@ describe('Products (e2e)', () => {
         .expect(404);
     });
 
-    it('ignores a type in the body', async () => {
+    // The type forks nothing (ADR-023), so it may change at any time
+    // (ADR-092, #306's 26 and 39): the item moves to that tab, and History
+    // says from and to, in the reader's words, as it says Discontinue.
+    it('changes its type, which History records from and to, as Discontinue', async () => {
       const alpha = await registerOrganization(app, 'alpha');
 
       const created = body<{ product: ProductResponse }>(
         await alpha.agent.post('/v1/products').send(product).expect(201),
       ).product;
 
-      // Type is absent from UpdateProductDto deliberately: reinterpreting a
-      // good as equipment after it has moved would silently change what every
-      // historical movement meant.
       await alpha.agent
         .patch(`/v1/products/${created.id}`)
-        .send({ type: 'equipment' })
+        .send({ type: 'material' })
+        .expect(204);
+      await alpha.agent
+        .patch(`/v1/products/${created.id}`)
+        .send({ type: 'widget' })
         .expect(400);
 
       const [row] = await db.select().from(products);
-      expect(row.type).toBe('good');
+      expect(row.type).toBe('material');
+      const tab = await alpha.agent
+        .get('/v1/products?type=material')
+        .expect(200);
+      expect(
+        body<{ entries: { id: string }[] }>(tab).entries.map(
+          (entry) => entry.id,
+        ),
+      ).toEqual([created.id]);
+
+      await alpha.agent
+        .patch(`/v1/products/${created.id}`)
+        .send({ isActive: false })
+        .expect(204);
+
+      const history = await alpha.agent
+        .get(`/v1/audit?action=product.updated&resourceId=${created.id}`)
+        .set('Accept-Language', 'zh-Hans')
+        .expect(200);
+      const [discontinued, retyped] = body<{
+        entries: {
+          payload: unknown;
+          details: { field: string; from: { text: string } | null }[];
+        }[];
+      }>(history).entries;
+      expect(retyped.payload).toEqual({
+        type: { from: 'good', to: 'material' },
+      });
+      expect(retyped.details).toMatchObject([
+        { field: '类型', from: { text: '商品' }, value: { text: '原材料' } },
+      ]);
+      expect(discontinued.payload).toEqual({
+        isActive: { from: true, to: false },
+      });
     });
 
     it('refuses a Viewer, which lacks products.update', async () => {
@@ -453,6 +538,208 @@ describe('Products (e2e)', () => {
           .send({ name: 'Hijacked' })
           .expect(404);
       });
+    });
+  });
+
+  /**
+   * Several at once (ADR-092): each item to its own category, or in use or
+   * not, in one transaction, refused whole for another organization's item
+   * or category; the answer each item's values before, so Undo is the same
+   * route with them, and History an entry for each item that changed.
+   */
+  describe('PATCH /v1/products, several at once', () => {
+    type Org = Awaited<ReturnType<typeof registerOrganization>>;
+
+    interface Changes {
+      items: { id: string; categoryId?: string | null; isActive?: boolean }[];
+    }
+
+    async function addCategory(org: Org, name: string): Promise<string> {
+      const res = await org.agent
+        .post('/v1/products/categories')
+        .send({ name })
+        .expect(201);
+      return body<{ category: { id: string } }>(res).category.id;
+    }
+
+    async function addItem(
+      org: Org,
+      sku: string,
+      fields: Record<string, unknown> = {},
+    ): Promise<string> {
+      const res = await org.agent
+        .post('/v1/products')
+        .send({ type: 'good', name: sku, variant: { sku }, ...fields })
+        .expect(201);
+      return body<{ product: ProductResponse }>(res).product.id;
+    }
+
+    async function updates(org: Org) {
+      const res = await org.agent
+        .get('/v1/audit?action=product.updated')
+        .expect(200);
+      return body<{
+        entries: {
+          resourceId: string;
+          resourceLabel: string;
+          payload: unknown;
+        }[];
+      }>(res).entries;
+    }
+
+    async function categoryOf(id: string) {
+      const rows = await db.select().from(products);
+      return rows.find((row) => row.id === id)?.categoryId;
+    }
+
+    it('moves several items to a category, each recorded, and Undo sends the answer back', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const vitamins = await addCategory(alpha, 'Vitamins');
+      const first = await addItem(alpha, 'FOCUS-60');
+      const second = await addItem(alpha, 'CALM-90');
+      const already = await addItem(alpha, 'OMEGA-1', {
+        categoryId: vitamins,
+      });
+
+      const res = await alpha.agent
+        .patch('/v1/products')
+        .send({
+          items: [first, second, already].map((id) => ({
+            id,
+            categoryId: vitamins,
+          })),
+        })
+        .expect(200);
+      const before = body<Changes>(res);
+      expect(before.items).toEqual([
+        { id: first, categoryId: null },
+        { id: second, categoryId: null },
+        { id: already, categoryId: vitamins },
+      ]);
+      for (const id of [first, second, already]) {
+        expect(await categoryOf(id)).toBe(vitamins);
+      }
+
+      // An entry for each item that moved, named as it was; none for the
+      // one already there.
+      const moved = await updates(alpha);
+      expect(moved.map((entry) => entry.resourceLabel).sort()).toEqual([
+        'CALM-90',
+        'FOCUS-60',
+      ]);
+      expect(moved[0].payload).toEqual({
+        categoryId: { from: null, to: { id: vitamins, label: 'Vitamins' } },
+      });
+
+      // Undo: the answer, sent back.
+      const undone = await alpha.agent
+        .patch('/v1/products')
+        .send(before)
+        .expect(200);
+      expect(await categoryOf(first)).toBeNull();
+      expect(await categoryOf(second)).toBeNull();
+      expect(await categoryOf(already)).toBe(vitamins);
+      expect(body<Changes>(undone).items).toEqual(
+        [first, second, already].map((id) => ({ id, categoryId: vitamins })),
+      );
+      expect(await updates(alpha)).toHaveLength(4);
+    });
+
+    it('discontinues several at once, and Undo brings each back as it was', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const first = await addItem(alpha, 'FOCUS-60');
+      const second = await addItem(alpha, 'CALM-90');
+      await alpha.agent
+        .patch(`/v1/products/${second}`)
+        .send({ isActive: false })
+        .expect(204);
+
+      const res = await alpha.agent
+        .patch('/v1/products')
+        .send({
+          items: [first, second].map((id) => ({ id, isActive: false })),
+        })
+        .expect(200);
+      const before = body<Changes>(res);
+      expect(before.items).toEqual([
+        { id: first, isActive: true },
+        { id: second, isActive: false },
+      ]);
+      const [discontinued] = await updates(alpha);
+      expect(discontinued).toMatchObject({
+        resourceId: first,
+        payload: { isActive: { from: true, to: false } },
+      });
+
+      await alpha.agent.patch('/v1/products').send(before).expect(200);
+      const rows = await db.select().from(products);
+      expect(
+        Object.fromEntries(rows.map((row) => [row.id, row.isActive])),
+      ).toEqual({ [first]: true, [second]: false });
+    });
+
+    it('refuses the whole request for another organization’s item or category, changing nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const ours = await addItem(alpha, 'FOCUS-60');
+      const theirs = await addItem(beta, 'CALM-90');
+      const theirCategory = await addCategory(beta, 'Vitamins');
+      const ourCategory = await addCategory(alpha, 'Vitamins');
+
+      await alpha.agent
+        .patch('/v1/products')
+        .send({
+          items: [
+            { id: ours, categoryId: ourCategory },
+            { id: theirs, categoryId: ourCategory },
+          ],
+        })
+        .expect(400);
+      await alpha.agent
+        .patch('/v1/products')
+        .send({
+          items: [{ id: ours, categoryId: theirCategory, isActive: false }],
+        })
+        .expect(400);
+
+      const rows = await db.select().from(products);
+      expect(rows.every((row) => row.categoryId === null)).toBe(true);
+      expect(rows.every((row) => row.isActive)).toBe(true);
+      expect(await updates(alpha)).toHaveLength(0);
+    });
+
+    it('refuses more than 500 items, one twice, and whoever may not change items', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const ours = await addItem(alpha, 'FOCUS-60');
+
+      await alpha.agent
+        .patch('/v1/products')
+        .send({
+          items: Array.from({ length: 501 }, () => ({
+            id: crypto.randomUUID(),
+            isActive: false,
+          })),
+        })
+        .expect(400);
+      await alpha.agent
+        .patch('/v1/products')
+        .send({
+          items: [
+            { id: ours, isActive: false },
+            { id: ours, isActive: true },
+          ],
+        })
+        .expect(400);
+      await alpha.agent.patch('/v1/products').send({ items: [] }).expect(400);
+
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
+      await viewer
+        .patch('/v1/products')
+        .send({ items: [{ id: ours, isActive: false }] })
+        .expect(403);
+
+      const [row] = await db.select().from(products);
+      expect(row.isActive).toBe(true);
     });
   });
 });

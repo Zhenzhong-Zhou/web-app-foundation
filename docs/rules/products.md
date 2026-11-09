@@ -25,12 +25,15 @@ How this file is kept is in the [README](README.md).
   [test](../../client/e2e/products.spec.ts) "creates a product through the form and shows it in the table" ·
   [Help](../../client/src/help/guides/en/products.md#add-a-product-add) ·
   MC-201
-- **A product's type says what it is for, one of six: sellable good, raw
-  material, packaging, sample, office supply or equipment. It is chosen
-  when the product is added and never changes.**
+- **An item's type says what it is for, one of six: products, raw
+  materials, packaging, supplies, samples or equipment. It is chosen when
+  the item is added and may change at any time,** since it changes
+  nothing else: the item moves to that type's tab, and its stock, lots and
+  History stay. History records the type from and to.
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--type-distinguishes-what-a-thing-is-for-and-does-not-fork-the-schema) ·
+  [ADR-092](../adr/0092-items.md#decision--adding-and-changing-an-item-by-its-type) ·
   [test](../../server/test/products.e2e-spec.ts) "rejects an unknown type" ·
-  [test](../../server/test/products.e2e-spec.ts) "ignores a type in the body" ·
+  [test](../../server/test/products.e2e-spec.ts) "changes its type, which History records from and to, as Discontinue" ·
   [test](../../client/e2e/products.spec.ts) "shows a product that already exists in the organisation" ·
   [Help](../../client/src/help/guides/en/products.md#add-a-product-add) ·
   MC-201
@@ -48,10 +51,13 @@ How this file is kept is in the [README](README.md).
   partly tested
 - **A SKU is typed, never made up by the app, up to 64 characters, and is
   unique within the organization: a second variant with the same SKU, on
-  any product, is refused, naming the SKU.** Another organization may use
+  any item, is refused, naming the code and the item that has it, by its
+  base name, and asking for another code.** Another organization may use
   the same SKU, and nothing says so. Spaces around a SKU are dropped.
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--skus-are-unique-per-organization-never-global-never-generated) ·
+  [ADR-092](../adr/0092-items.md#decision--adding-and-changing-an-item-by-its-type) ·
   [test](../../server/test/products.e2e-spec.ts) "rejects a duplicate SKU and leaves no orphaned product" ·
+  [test](../../server/test/products.e2e-spec.ts) "refuses a code in use, naming the item that has it and asking for another" ·
   [test](../../server/test/products.e2e-spec.ts) "refuses a SKU already used elsewhere in the organization" ·
   [test](../../server/test/products.e2e-spec.ts) "allows the same SKU in another organization" ·
   [Help](../../client/src/help/guides/en/products.md#if-something-is-refused-refused)
@@ -90,6 +96,7 @@ How this file is kept is in the [README](README.md).
   as when adding.
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--skus-are-unique-per-organization-never-global-never-generated) ·
   [test](../../server/test/products.e2e-spec.ts) "renames a SKU and frees the old one" ·
+  [test](../../server/test/products.e2e-spec.ts) "refuses a code in use, naming the item that has it and asking for another" ·
   [test](../../server/test/audit.e2e-spec.ts) "records only the fields a route named" ·
   [test](../../server/test/orders.e2e-spec.ts) "creates the order and its lines together, snapshotting the SKU" ·
   [test](../../client/e2e/product-detail.spec.ts) "renames a SKU inline" ·
@@ -135,6 +142,20 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a discontinued product when asked to include them, as the top bar does" ·
   partly tested ·
   MC-1546 · MC-3901
+
+## Several at once
+
+- **Whoever may change items changes up to 500 at once, each to its own
+  category or none, or discontinued or brought back, all or none: an item
+  or a category another organization keeps refuses the whole change, and
+  so does an item sent twice.** The answer is each item's values before,
+  so Undo sends it back. History records each item that changed, from and
+  to, under its name; an item already as asked records nothing.
+  [ADR-092](../adr/0092-items.md#decision--several-at-once-with-undo) ·
+  [test](../../server/test/products.e2e-spec.ts) "moves several items to a category, each recorded, and Undo sends the answer back" ·
+  [test](../../server/test/products.e2e-spec.ts) "discontinues several at once, and Undo brings each back as it was" ·
+  [test](../../server/test/products.e2e-spec.ts) "refuses the whole request for another organization’s item or category, changing nothing" ·
+  [test](../../server/test/products.e2e-spec.ts) "refuses more than 500 items, one twice, and whoever may not change items"
 
 ## The list of items
 
@@ -418,20 +439,25 @@ How this file is kept is in the [README](README.md).
 
 ## Exporting the catalogue
 
-- **Export writes the catalogue the list shows as a CSV file, a row per
-  variant:** its SKU, product, variant, type, unit, whether it tracks
-  lots, whether it or its product is discontinued, and the product's name
-  in French and in Chinese. Names are the base ones, the headers in the
-  reader's language. It holds the products the list's search finds, each
-  with every variant, and only the discontinued ones while Discontinued is
-  pressed, up to 50,000 rows. History records each export with its
-  Discontinued filter, never what was typed.
+- **Export writes the items the list shows as a CSV file, a row per
+  variant, by the list's own type, category, Discontinued, search and
+  sort, each item with every variant by its code:** its SKU, product,
+  variant, its type in the reader's words, its category's path from the
+  top, unit, whether it tracks lots, whether it or its product is
+  discontinued, then the product's and the variant's names in English,
+  French and Chinese where it has them. Names are the base ones, the
+  headers in the reader's language. Past 50,000 rows it is refused,
+  saying to choose a type or a category, or search. History records each
+  export with its type, category and Discontinued, in words, never what
+  was typed.
   [ADR-057](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#decision--csv-export-of-what-the-list-shows) ·
+  [ADR-092](../adr/0092-items.md#decision--fifty-at-a-time-the-counts-from-the-server) ·
   [test](../../server/test/exports.e2e-spec.ts) "writes the catalogue, a row per variant" ·
-  [test](../../server/test/exports.e2e-spec.ts) "writes the products the list shows: its search and Discontinued" ·
+  [test](../../server/test/exports.e2e-spec.ts) "writes the items the list shows, by its own query and in its order" ·
+  [test](../../server/test/exports.e2e-spec.ts) "writes the type and the category in the reader’s words, and every language’s names" ·
+  [test](../../server/test/exports.e2e-spec.ts) "refuses past 50,000 rows, naming what narrows the list" ·
   [test](../../client/src/products/products-page.test.tsx) "exports what the list shows, its search and Discontinued" ·
-  MC-1558 ·
-  partly tested
+  MC-1558
 
 ## Who may do what, and what History keeps
 
@@ -467,9 +493,9 @@ How this file is kept is in the [README](README.md).
   product's base name at the time: a variant added with its SKU, a SKU
   changed with the old and the new, names in other languages as the new
   set, an image added by its file, a new order of images, and its
-  category, when added and from and to, by the category's name. A change
-  to the product itself, a new name or Discontinue, records who and when,
-  not what changed.** A description is never recorded.
+  category, when added and from and to, by the category's name, and its
+  type and Discontinue from and to. A new name records who and when, not
+  what changed.** A description is never recorded.
   [ADR-018](../adr/0018-audit-log.md#decision--never-record-the-request-body) ·
   [ADR-038](../adr/0038-an-audit-row-names-its-resource-as-it-was-at-the-time.md#decision--snapshot-a-label-at-write-time-in-audit_logresource_label) ·
   [test](../../server/test/audit.e2e-spec.ts) "records no payload for a route that names no fields" ·
@@ -478,6 +504,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/audit.e2e-spec.ts) "filters by action" ·
   [test](../../server/test/languages.e2e-spec.ts) "keeps a product and its variants named in other languages, replaced as a set" ·
   [test](../../server/test/product-categories.e2e-spec.ts) "records an item’s category from and to, by name, and a rename beside an unchanged one" ·
+  [test](../../server/test/products.e2e-spec.ts) "changes its type, which History records from and to, as Discontinue" ·
   partly tested
 - **History keeps each category added, renamed, moved and deleted, by its
   name, and the category it sits under by that one's name,** the name it

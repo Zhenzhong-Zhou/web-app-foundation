@@ -266,7 +266,7 @@ describe('ProductsPage', () => {
 
       await expect
         .poll(() => exported)
-        .toEqual(['?discontinued=true&search=calm']);
+        .toEqual(['?discontinued=only&search=calm']);
     } finally {
       clicked.mockRestore();
     }

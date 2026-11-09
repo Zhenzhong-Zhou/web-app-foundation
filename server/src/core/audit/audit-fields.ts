@@ -1,3 +1,4 @@
+import { PRODUCT_TYPE_WORDS } from '../../common/product-types';
 import type {
   IdleSignOutScope,
   LicencePolicy,
@@ -244,6 +245,31 @@ const RESET_WORDS: Record<NumberingReset, Translatable> = {
   yearly: t({ id: 'audit.value.reset.yearly', defaultMessage: 'Each year' }),
   monthly: t({ id: 'audit.value.reset.monthly', defaultMessage: 'Each month' }),
   daily: t({ id: 'audit.value.reset.daily', defaultMessage: 'Each day' }),
+};
+
+/**
+ * discontinued: Items' export's filter (ADR-092), and `true`, which the
+ * Products export recorded for the discontinued alone before it.
+ */
+const DISCONTINUED_ONLY = t({
+  id: 'audit.value.discontinued.only',
+  defaultMessage: 'Discontinued only',
+});
+const DISCONTINUED_WORDS: Record<string, Translatable> = {
+  only: DISCONTINUED_ONLY,
+  true: DISCONTINUED_ONLY,
+  include: t({
+    id: 'audit.value.discontinued.include',
+    defaultMessage: 'Discontinued included',
+  }),
+};
+
+/** category: Items' export's filter on the items in none (ADR-092). */
+const CATEGORY_WORDS: Record<string, Translatable> = {
+  uncategorised: t({
+    id: 'audit.value.category.uncategorised',
+    defaultMessage: 'Uncategorised',
+  }),
 };
 
 /** A system role's name, which the roles table stores in English. */
@@ -513,6 +539,19 @@ export const AUDIT_FIELDS = {
   isActive: {
     name: t({ id: 'audit.field.isActive', defaultMessage: 'In use' }),
     read: 'boolean',
+  },
+  // An item's type, from and to, and Items' export's filter (ADR-092).
+  type: {
+    name: t({ id: 'audit.field.type', defaultMessage: 'Type' }),
+    read: { set: PRODUCT_TYPE_WORDS },
+  },
+  discontinued: {
+    name: t({ id: 'audit.field.discontinued', defaultMessage: 'Discontinued' }),
+    read: { set: DISCONTINUED_WORDS },
+  },
+  category: {
+    name: t({ id: 'audit.field.category', defaultMessage: 'Category' }),
+    read: { set: CATEGORY_WORDS },
   },
   expectsGoods: {
     name: t({

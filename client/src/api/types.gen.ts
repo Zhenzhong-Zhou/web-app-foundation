@@ -1216,7 +1216,28 @@ export type ProductEnvelope = {
   product: ProductDetail;
 };
 
+export type ProductChangeDto = {
+  id: string;
+  categoryId?: string | null;
+  isActive?: boolean;
+};
+
+export type ChangeProductsDto = {
+  items: Array<ProductChangeDto>;
+};
+
+export type ProductChange = {
+  id: string;
+  categoryId?: string | null;
+  isActive?: boolean;
+};
+
+export type ProductChanges = {
+  items: Array<ProductChange>;
+};
+
 export type UpdateProductDto = {
+  type?: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
   name?: string;
   description?: string;
   isActive?: boolean;
@@ -1945,7 +1966,7 @@ export type ReorderPointRow = {
   stillNeeded: string;
   inDraft: string;
   position: string;
-  status: 'out' | 'low' | 'enough' | 'discontinued';
+  status: 'out' | 'low' | 'discontinued' | 'enough';
   suggestion: string;
   suggestedMultiples: string | null;
   drafted: boolean;
@@ -2004,12 +2025,12 @@ export type ReorderPointDetail = {
 
 export type ReorderPointPreview = {
   position: string;
-  status: 'out' | 'low' | 'enough' | 'discontinued';
+  status: 'out' | 'low' | 'discontinued' | 'enough';
   suggestion: string;
   suggestedMultiples: string | null;
   drafted: boolean;
   after: string;
-  afterStatus: 'out' | 'low' | 'enough' | 'discontinued';
+  afterStatus: 'out' | 'low' | 'discontinued' | 'enough';
 };
 
 export type SetReorderPointDto = {
@@ -3602,6 +3623,7 @@ export const ErrorCode = {
   API_UPDATING: 'api_updating',
   REORDER_POINT_EXISTS: 'reorder_point_exists',
   REORDER_MAXIMUM_NOT_ABOVE_POINT: 'reorder_maximum_not_above_point',
+  CODE_IN_USE: 'code_in_use',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -3619,6 +3641,7 @@ export type ErrorDetails = {
   invitationId?: string;
   at?: string;
   day?: string;
+  productId?: string;
 };
 
 export type ErrorBody = {
@@ -5028,14 +5051,14 @@ export type ProductsControllerListV1Data = {
   };
   path?: never;
   query?: {
+    cursor?: string;
+    limit?: number;
     type?:
       'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
     category?: string;
     discontinued?: 'only' | 'include';
     sort?: 'name' | 'category' | 'stock' | 'added' | 'changed';
     order?: 'asc' | 'desc';
-    cursor?: string;
-    limit?: number;
     search?: string;
   };
   url: '/v1/products';
@@ -5047,6 +5070,20 @@ export type ProductsControllerListV1Responses = {
 
 export type ProductsControllerListV1Response =
   ProductsControllerListV1Responses[keyof ProductsControllerListV1Responses];
+
+export type ProductsControllerChangeManyV1Data = {
+  body: ChangeProductsDto;
+  path?: never;
+  query?: never;
+  url: '/v1/products';
+};
+
+export type ProductsControllerChangeManyV1Responses = {
+  200: ProductChanges;
+};
+
+export type ProductsControllerChangeManyV1Response =
+  ProductsControllerChangeManyV1Responses[keyof ProductsControllerChangeManyV1Responses];
 
 export type ProductsControllerCreateV1Data = {
   body: CreateProductDto;
@@ -5072,7 +5109,12 @@ export type ProductsControllerExportProductsV1Data = {
   };
   path?: never;
   query?: {
-    discontinued?: string;
+    type?:
+      'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+    category?: string;
+    discontinued?: 'only' | 'include';
+    sort?: 'name' | 'category' | 'stock' | 'added' | 'changed';
+    order?: 'asc' | 'desc';
     search?: string;
   };
   url: '/v1/products/export';

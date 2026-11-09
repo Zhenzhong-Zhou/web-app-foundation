@@ -34,11 +34,11 @@ export type DiscontinuedShown = (typeof DISCONTINUED_SHOWN)[number];
 export const UNCATEGORISED = 'uncategorised';
 
 /**
- * Items' list (ADR-092): fifty at a time, by keyset, narrowed by its type,
- * its category and its search, discontinued items hidden unless asked,
- * and sorted.
+ * What Items' list shows (ADR-092): narrowed by its type, its category and
+ * its search, discontinued items hidden unless asked, and sorted. Its
+ * export takes the same (ADR-057).
  */
-export class ListProductsDto extends SearchQueryDto {
+export class ItemFiltersDto extends SearchQueryDto {
   /** One type, a tab; every type without it, All. */
   @IsOptional()
   @IsIn(PRODUCT_TYPES)
@@ -69,7 +69,10 @@ export class ListProductsDto extends SearchQueryDto {
   @IsOptional()
   @IsIn(SORT_ORDERS)
   order?: SortOrder;
+}
 
+/** Items' list a page at a time (ADR-092): fifty, by keyset. */
+export class ListProductsDto extends ItemFiltersDto {
   /**
    * The answer's `nextCursor`, for the page after it: the last row's
    * place by the sort's key and its id, never read by the client.

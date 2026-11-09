@@ -120,7 +120,8 @@ a second organization.
 ## 2. Catalogue and places
 
 - **MC-201** Products: create a good, a material and packaging. A SKU must be
-  unique; a duplicate is refused at the field, not after saving.
+  unique; a duplicate is refused, naming the item that has the code and
+  asking for another, in English, French and Chinese.
 - **MC-202** A variant's SKU can be edited inline; leaving the field saves
   it, and Escape cancels.
 - **MC-203** Turning lot tracking on is offered only while the variant has no
@@ -867,8 +868,10 @@ Paper is checked first because it must not change at all.
   their date range; Products, Partners, a price list, Stock value and the
   Audit log each export, and the Audit log shows the export as an entry.
   Products with `focus` typed and Discontinued pressed exports only what
-  the list shows, and so does Partners with `mill` and Retired; the Audit
-  log's entry names the filter, not what was typed.
+  the list shows, each item's type in the screen's language, its
+  category's path, and its names in English, French and Chinese where it
+  has them; and so does Partners with `mill` and Retired; the Audit
+  log's entry names the filter in words, not what was typed.
   Orders' Created, Movements' When and the Audit log's When read like
   `2026-10-15 18:54:11`, in UTC, and open as dates.
 - **MC-1559** *(ADR-058; ADR-091)* Sign in as the demo owner: Home opens,
@@ -5325,3 +5328,6 @@ first.
   MC-R101 added.
 - 2026-11-09: #502, Home's Receive stock and Plan a run opening their
   dialogs: MC-R102 added.
+- 2026-11-09: ADR-092 step 6, a code in use naming the item that has it,
+  and the catalogue export by the list's query, with each type, category
+  and language's names: MC-201 and MC-1558 extended.

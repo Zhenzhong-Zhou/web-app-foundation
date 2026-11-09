@@ -25,6 +25,10 @@ export class ErrorDetails {
   /** A calendar day, YYYY-MM-DD (ADR-052). */
   @ApiPropertyOptional({ format: 'date' })
   day?: string;
+
+  /** The item that holds a code already (ADR-092). */
+  @ApiPropertyOptional({ format: 'uuid' })
+  productId?: string;
 }
 
 /**

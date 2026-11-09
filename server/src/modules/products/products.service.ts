@@ -7,11 +7,14 @@ import {
 } from '@nestjs/common';
 import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 
+import { ERROR_CODES, withCode } from '../../common/error-codes';
 import { EXPORT_LIMIT } from '../../common/export';
 import type { Locale } from '../../common/locales';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
 import { searchTerms } from '../../common/search';
+import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
+import type { RequestContext } from '../../core/auth/request-context';
 import { todayOf } from '../../core/organizations/time-zone';
 import type { Transaction } from '../../database/database.module';
 import {
@@ -19,6 +22,7 @@ import {
   isUniqueViolation,
 } from '../../database/errors';
 import {
+  auditLog,
   productCategories,
   products,
   productTranslations,
@@ -39,11 +43,13 @@ import {
   categoryPaths,
   UNKNOWN_CATEGORY,
 } from './category-tree';
+import type { ProductChangeDto } from './dto/change-products.dto';
 import type { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import type { ExportProductsDto } from './dto/export-products.dto';
 import type { ListProductsDto } from './dto/list-products.dto';
 import type {
+  ProductChange,
   ProductDetail,
   ProductPage,
   ProductSummary,
@@ -66,7 +72,8 @@ import {
   readCursor,
   shownOf,
 } from './item-list';
-import { foundBy, itemMatches, itemRank } from './item-search';
+import { itemMatches, itemRank } from './item-search';
+import type { ProductExportRow } from './product-exports';
 import { coverOf, imagesOf, publicImages } from './product-images';
 
 /**
@@ -333,53 +340,78 @@ export class ProductsService {
 
   /**
    * The catalogue as a spreadsheet (ADR-057): a row per variant, with its
-   * product, and the product's name in each language it has. The products
-   * its list shows: those its search finds, and only the discontinued ones
-   * when asked, each with every variant. One query, at most EXPORT_LIMIT +
-   * 1 rows, for withinLimit to judge.
+   * product, of the items the list shows (ADR-092), by its own filters and
+   * in its order, each with every variant, by code. Names are the base
+   * ones, with the product's and the variant's in each language they have.
+   * One query, at most EXPORT_LIMIT + 1 rows, for withinLimit to judge.
    */
-  exportRows(query: ExportProductsDto = {}) {
+  exportRows(
+    query: ExportProductsDto,
+    locale: Locale,
+  ): Promise<ProductExportRow[]> {
     const terms = query.search ? searchTerms(query.search) : null;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const translated = (locale: string) => sql<string | null>`(
-        select ${productTranslations.name} from ${productTranslations}
-        where ${productTranslations.productId} = ${products.id}
-          and ${productTranslations.locale} = ${locale}
-      )`;
+      const org = sql`${organizationId}::uuid`;
+      const { parts, joins } = itemOrder(query, locale, organizationId, terms);
 
-      return tx
-        .select({
-          id: productVariants.id,
-          sku: productVariants.sku,
-          productName: products.name,
-          variantName: productVariants.name,
-          type: products.type,
-          unitOfMeasure: productVariants.unitOfMeasure,
-          tracksLots: productVariants.tracksLots,
-          discontinued: sql<boolean>`not (${products.isActive} and ${productVariants.isActive})`,
-          nameFrench: translated('fr-CA'),
-          nameChinese: translated('zh-Hans'),
-        })
-        .from(productVariants)
-        .innerJoin(
-          products,
-          and(
-            eq(products.id, productVariants.productId),
-            eq(products.organizationId, organizationId),
-          ),
-        )
-        .where(
-          and(
-            eq(productVariants.organizationId, organizationId),
-            terms ? foundBy(terms, organizationId) : undefined,
-            query.discontinued === 'true'
-              ? eq(products.isActive, false)
-              : undefined,
-          ),
-        )
-        .orderBy(asc(products.name), asc(productVariants.sku))
-        .limit(EXPORT_LIMIT + 1);
+      const { rows } = await tx.execute<{
+        id: string;
+        sku: string;
+        product_name: string;
+        variant_name: string | null;
+        type: ProductType;
+        category: string[] | null;
+        unit_of_measure: string;
+        tracks_lots: boolean;
+        discontinued: boolean;
+        product_names: Record<string, string> | null;
+        variant_names: Record<string, string> | null;
+      }>(sql`
+        select pv.id, pv.sku, ${products.name} as product_name,
+          pv.name as variant_name, ${products.type} as type,
+          shelf.names as category, pv.unit_of_measure, pv.tracks_lots,
+          not (${products.isActive} and pv.is_active) as discontinued,
+          (
+            select jsonb_object_agg(pt.locale, pt.name)
+            from product_translations pt
+            where pt.organization_id = ${org}
+              and pt.product_id = ${products.id}
+          ) as product_names,
+          (
+            select jsonb_object_agg(vt.locale, vt.name)
+            from variant_translations vt
+            where vt.organization_id = ${org} and vt.variant_id = pv.id
+          ) as variant_names
+        from ${products}
+        ${joins}
+        join product_variants pv
+          on pv.product_id = ${products.id} and pv.organization_id = ${org}
+        left join ${categoryPaths(organizationId)} shelf
+          on shelf.id = ${products.categoryId}
+        where ${and(
+          eq(products.organizationId, organizationId),
+          matchedBy(query, terms, organizationId),
+          shownOf(query),
+        )}
+        order by ${sql.join(orderOf(parts), sql`, `)},
+          pv.sku collate numeric_order, pv.id
+        limit ${EXPORT_LIMIT + 1}
+      `);
+
+      return rows.map((row) => ({
+        id: row.id,
+        sku: row.sku,
+        productName: row.product_name,
+        variantName: row.variant_name,
+        type: row.type,
+        category: row.category,
+        unitOfMeasure: row.unit_of_measure,
+        tracksLots: row.tracks_lots,
+        discontinued: row.discontinued,
+        productNames: row.product_names ?? {},
+        variantNames: row.variant_names ?? {},
+      }));
     });
   }
 
@@ -529,15 +561,7 @@ export class ProductsService {
         // The only unique constraint on either table. Naming the SKU tells the
         // caller whether they meant the existing item or have a collision in
         // their own numbering — "already exists" makes them go hunting.
-        throw new ConflictException(
-          t(
-            {
-              id: 'products.skuSkuUse',
-              defaultMessage: 'SKU {sku} is already in use',
-            },
-            { sku: input.variant.sku },
-          ),
-        );
+        throw await this.codeInUse(input.variant.sku);
       }
       throw error;
     }
@@ -570,6 +594,14 @@ export class ProductsService {
       // sent beside it included, and write no entry.
       recordPrevious({ categoryId: existing.categoryId });
     }
+    // Its type and Discontinue, from and to, likewise only when they
+    // change (ADR-092): the item moves tab, or leaves the list.
+    if (input.type !== undefined && input.type !== existing.type) {
+      recordPrevious({ type: existing.type });
+    }
+    if (input.isActive !== undefined && input.isActive !== existing.isActive) {
+      recordPrevious({ isActive: existing.isActive });
+    }
 
     try {
       await this.tenantDb.update(
@@ -585,6 +617,220 @@ export class ProductsService {
     }
 
     this.logger.log(`Product ${productId} updated`);
+  }
+
+  /**
+   * A code already in use, refused naming the item that has it, by its
+   * base name as every refusal names an item, and asking for another
+   * (#306's 35); its id beside, for the form to open it (ADR-092). The
+   * code is unique in the organization alone (ADR-023).
+   */
+  private async codeInUse(sku: string | undefined) {
+    const [holder] = sku
+      ? await this.tenantDb.transaction((tx, organizationId) =>
+          tx
+            .select({ id: products.id, name: products.name })
+            .from(productVariants)
+            .innerJoin(
+              products,
+              and(
+                eq(products.id, productVariants.productId),
+                eq(products.organizationId, organizationId),
+              ),
+            )
+            .where(
+              and(
+                eq(productVariants.organizationId, organizationId),
+                eq(productVariants.sku, sku),
+              ),
+            ),
+        )
+      : [];
+
+    return new ConflictException(
+      holder
+        ? withCode(
+            t(
+              {
+                id: 'products.codeInUse',
+                defaultMessage:
+                  'Code {sku} is already used by {item}. Choose another code.',
+              },
+              { sku: sku ?? '', item: holder.name },
+            ),
+            ERROR_CODES.codeInUse,
+            { productId: holder.id },
+          )
+        : t(
+            {
+              id: 'products.codeTaken',
+              defaultMessage:
+                'Code {sku} is already used by another item. Choose another code.',
+            },
+            { sku: sku ?? '' },
+          ),
+    );
+  }
+
+  /**
+   * Several items changed at once (ADR-092), each to its own category or
+   * in use or not, in one transaction: every item and every category named
+   * is this organization's, or nothing changes (ADR-003). Each item that
+   * changed is recorded in History, as its own Save would record it, in
+   * the same transaction. The answer is each item's values before, in the
+   * order sent, which Undo sends back.
+   */
+  async changeMany(
+    changes: ProductChangeDto[],
+    actor: RequestContext,
+  ): Promise<ProductChange[]> {
+    try {
+      return await this.tenantDb.transaction(async (tx, organizationId) => {
+        const ids = changes.map((change) => change.id);
+        const rows = await tx
+          .select({
+            id: products.id,
+            name: products.name,
+            categoryId: products.categoryId,
+            isActive: products.isActive,
+          })
+          .from(products)
+          .where(
+            and(
+              eq(products.organizationId, organizationId),
+              inArray(products.id, ids),
+            ),
+          )
+          .for('update');
+        if (rows.length !== ids.length) {
+          throw new BadRequestException(
+            t({
+              id: 'products.changeUnknownItem',
+              defaultMessage:
+                'One of these items was not found. Refresh the list, and try again.',
+            }),
+          );
+        }
+        const row = new Map(rows.map((each) => [each.id, each]));
+
+        // Every category named, sent or left, for the check and History.
+        const named = new Set(
+          changes.flatMap((change) =>
+            [change.categoryId, row.get(change.id)!.categoryId].filter(
+              (id): id is string => Boolean(id),
+            ),
+          ),
+        );
+        const categories =
+          named.size > 0
+            ? await tx
+                .select({
+                  id: productCategories.id,
+                  name: productCategories.name,
+                })
+                .from(productCategories)
+                .where(
+                  and(
+                    eq(productCategories.organizationId, organizationId),
+                    inArray(productCategories.id, [...named]),
+                  ),
+                )
+            : [];
+        const categoryName = new Map(
+          categories.map((category) => [category.id, category.name]),
+        );
+        if (
+          changes.some(
+            (change) =>
+              change.categoryId && !categoryName.has(change.categoryId),
+          )
+        ) {
+          throw new BadRequestException(UNKNOWN_CATEGORY);
+        }
+        // A category as History names it (ADR-076): its id and its name.
+        const reference = (id: string | null) =>
+          id ? { id, label: categoryName.get(id) ?? null } : null;
+
+        const moved = changes.flatMap((change) => {
+          const before = row.get(change.id)!;
+          const moves =
+            change.categoryId !== undefined &&
+            change.categoryId !== before.categoryId;
+          const turns =
+            change.isActive !== undefined &&
+            change.isActive !== before.isActive;
+          return moves || turns ? [{ change, before, moves, turns }] : [];
+        });
+
+        if (moved.length > 0) {
+          await tx.execute(sql`
+            update ${products} set
+              category_id = case when v.moves then v.category_id
+                else ${products.categoryId} end,
+              is_active = coalesce(v.is_active, ${products.isActive})
+            from (values ${sql.join(
+              moved.map(
+                ({ change, moves, turns }) =>
+                  sql`(${change.id}::uuid, ${moves}::boolean,
+                    ${moves ? (change.categoryId ?? null) : null}::uuid,
+                    ${turns ? change.isActive! : null}::boolean)`,
+              ),
+              sql`, `,
+            )}) as v(id, moves, category_id, is_active)
+            where ${products.organizationId} = ${organizationId}::uuid
+              and ${products.id} = v.id
+          `);
+
+          await tx.insert(auditLog).values(
+            moved.map(({ change, before, moves, turns }) => ({
+              organizationId,
+              actorId: actor.userId,
+              action: AUDIT_ACTIONS.PRODUCT_UPDATED,
+              resourceType: 'product',
+              resourceId: change.id,
+              resourceLabel: before.name,
+              payload: {
+                ...(moves
+                  ? {
+                      categoryId: {
+                        from: reference(before.categoryId),
+                        to: reference(change.categoryId ?? null),
+                      },
+                    }
+                  : {}),
+                ...(turns
+                  ? {
+                      isActive: { from: before.isActive, to: change.isActive },
+                    }
+                  : {}),
+              },
+              ip: actor.ip,
+              userAgent: actor.userAgent,
+            })),
+          );
+        }
+
+        this.logger.log(`${moved.length} of ${changes.length} items changed`);
+        return changes.map((change) => {
+          const before = row.get(change.id)!;
+          return {
+            id: change.id,
+            ...(change.categoryId !== undefined
+              ? { categoryId: before.categoryId }
+              : {}),
+            ...(change.isActive !== undefined
+              ? { isActive: before.isActive }
+              : {}),
+          };
+        });
+      });
+    } catch (error) {
+      // A category deleted by someone else in the moment between.
+      if (isForeignKeyViolation(error, CATEGORY_KEY)) {
+        throw new BadRequestException(UNKNOWN_CATEGORY);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -619,15 +865,7 @@ export class ProductsService {
       return variant;
     } catch (error) {
       if (isUniqueViolation(error)) {
-        throw new ConflictException(
-          t(
-            {
-              id: 'products.skuSkuUse',
-              defaultMessage: 'SKU {sku} is already in use',
-            },
-            { sku: input.sku },
-          ),
-        );
+        throw await this.codeInUse(input.sku);
       }
       throw error;
     }
@@ -669,15 +907,7 @@ export class ProductsService {
       recordPrevious({ sku: variant.sku });
     } catch (error) {
       if (isUniqueViolation(error)) {
-        throw new ConflictException(
-          t(
-            {
-              id: 'products.skuSkuUse',
-              defaultMessage: 'SKU {sku} is already in use',
-            },
-            { sku: input.sku },
-          ),
-        );
+        throw await this.codeInUse(input.sku);
       }
       throw error;
     }

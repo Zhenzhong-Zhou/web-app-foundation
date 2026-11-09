@@ -141,6 +141,12 @@ export const ERROR_CODES = {
    * quantities (ADR-025).
    */
   reorderMaximumNotAbovePoint: 'reorder_maximum_not_above_point',
+  /**
+   * A code another item's variant already has (ADR-092, #306's 35): the
+   * message names that item, and `details.productId` is it, which the
+   * form's Code field links to.
+   */
+  codeInUse: 'code_in_use',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -162,6 +168,8 @@ export interface ErrorDetails {
   at?: string;
   /** A calendar day, YYYY-MM-DD (ADR-052). */
   day?: string;
+  /** The item that holds a code already (ADR-092). */
+  productId?: string;
 }
 
 /**
