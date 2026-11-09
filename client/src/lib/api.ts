@@ -74,7 +74,8 @@ export function isRevisionRefusal(caught: unknown): caught is ApiError {
 /**
  * What a failed request says to the person who made it: the server's own
  * message, or one fixed line when no answer came back at all. One definition,
- * so a dropped connection reads the same on every screen.
+ * so a dropped connection, or too many requests, reads the same on every
+ * screen.
  *
  * Login and register add rate-limit wording on top (authMessageFor), and
  * forgot-password keeps its own, which must not repeat what the server says.
@@ -102,6 +103,23 @@ export function messageFor(caught: unknown): string {
       defaultMessage:
         'A new version is being installed. Try again in a minute; nothing was saved.',
     });
+  }
+  // The throttler's own message is its class name, in English whatever the
+  // reader's language (#483); the wait comes from its Retry-After.
+  if (caught.status === 429) {
+    return caught.retryAfterSeconds
+      ? intl().formatMessage(
+          {
+            id: 'common.tooManyRequestsFor',
+            defaultMessage:
+              'Too many requests just now. Try again in {seconds, plural, one {# second} other {# seconds}}.',
+          },
+          { seconds: caught.retryAfterSeconds },
+        )
+      : intl().formatMessage({
+          id: 'common.tooManyRequests',
+          defaultMessage: 'Too many requests just now. Try again in a minute.',
+        });
   }
   return caught.message;
 }
