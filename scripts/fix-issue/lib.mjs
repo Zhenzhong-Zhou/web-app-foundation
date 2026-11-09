@@ -353,13 +353,13 @@ export function readRuns(file) {
 
 /**
  * The last fix in the list, a probe passed over: what --resume last
- * finishes. Refused when it opened its pull request, since a resume would
- * pay to finish it again.
+ * finishes, when it ended UNFINISHED or UNKNOWN. Refused when it opened
+ * its pull request, since a resume would pay to finish it again.
  */
 export function lastFix(rows, file) {
   const row = rows.findLast((one) => one.issue !== "probe");
   if (!row) throw new Stop(`no earlier fix in ${file} to resume`);
-  if (row.pr !== "UNFINISHED") {
+  if (row.pr !== "UNFINISHED" && row.pr !== "UNKNOWN") {
     throw new Stop(
       `the last fix, #${row.issue} of ${row.time}, ended with its pull request, ${row.pr}, so there is nothing to finish`,
     );
@@ -452,11 +452,13 @@ export function tally(results) {
 
 /**
  * The folder after a fix: its branch, last commit, uncommitted files and
- * pull request; UNFINISHED with the command that resumes it when changes
- * are left or no pull request is open, with --folder when the fix ran in a
- * folder --folder named, since a resume runs in ../waf-fix otherwise;
- * otherwise the merge command, after the one that detaches the folder,
- * since git deletes no branch another folder has checked out.
+ * pull request, and how it ended, the cost list's column: UNFINISHED with
+ * the command that resumes it when changes are left or no pull request is
+ * open, with --folder when the fix ran in a folder --folder named, since a
+ * resume runs in ../waf-fix otherwise; UNKNOWN when GitHub could not be
+ * asked, which a resume would otherwise pay to find out; or the pull
+ * request's URL, with the merge command, after the one that detaches the
+ * folder, since git deletes no branch another folder has checked out.
  */
 export function afterRun(folder, run = output, { named = false } = {}) {
   // What the folder says, or "" when a command fails: the report is
@@ -471,33 +473,45 @@ export function afterRun(folder, run = output, { named = false } = {}) {
   const changes = ask("git", ["status", "--porcelain"]);
   const branch = ask("git", ["branch", "--show-current"]);
   const last = ask("git", ["log", "-1", "--oneline"]);
+  const listArgs = ["pr", "list", "--head", branch, "--json", "number,url"];
+  const listing = `gh ${listArgs.join(" ")}`;
   let pr;
+  let unknown = false;
   if (branch) {
     try {
-      pr = JSON.parse(
-        ask("gh", ["pr", "list", "--head", branch, "--json", "number,url"]) ||
-          "[]",
-      )[0];
+      pr = JSON.parse(run(folder, "gh", listArgs))[0];
     } catch {
-      pr = undefined;
+      unknown = true;
     }
   }
-  const unfinished = Boolean(changes) || !pr;
+  const outcome = changes
+    ? "UNFINISHED"
+    : unknown
+      ? "UNKNOWN"
+      : (pr?.url ?? "UNFINISHED");
+  const resume = `${RUNNER} --resume last${named ? ` --folder ${folder}` : ""}`;
   const lines = [
     "",
     "— the folder after the run —",
     `branch ${branch || "(none: detached)"} · last commit ${last}`,
-    pr ? `pull request ${pr.url}` : "no pull request open for this branch",
+    pr
+      ? `pull request ${pr.url}`
+      : unknown
+        ? `could not ask GitHub for the pull request: ${listing}`
+        : "no pull request open for this branch",
   ];
   if (changes) lines.push(`uncommitted:\n${changes}`);
   lines.push(
-    unfinished
-      ? `UNFINISHED: run  ${RUNNER} --resume last${named ? ` --folder ${folder}` : ""}  to finish it.`
-      : [
-          "Once its checks pass and you have read it, free its branch from that folder, then merge it squashed:",
-          `  git -C ${folder} switch --detach`,
-          `  gh pr merge ${pr.number} --squash --delete-branch`,
-        ].join("\n"),
+    outcome === "UNFINISHED"
+      ? `UNFINISHED: run  ${resume}  to finish it.`
+      : outcome === "UNKNOWN"
+        ? `UNKNOWN: when  ${listing}  lists no pull request, run  ${resume}  to finish it.`
+        : [
+            "Once its checks pass and you have read it, free its branch from that folder, then merge it squashed:",
+            `  git -C ${folder} switch --detach`,
+            `  gh pr merge ${pr.number} --squash --delete-branch`,
+          ].join("\n"),
   );
-  return { lines, unfinished, pr: pr?.url };
+  const unfinished = outcome === "UNFINISHED" || outcome === "UNKNOWN";
+  return { lines, outcome, unfinished, pr: pr?.url };
 }

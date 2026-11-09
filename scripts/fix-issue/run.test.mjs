@@ -486,6 +486,7 @@ test("after a fix with its pull request, the folder detached, then the merge com
   const report = afterRun("/waf-fix", run);
   assert.equal(report.unfinished, false);
   assert.equal(report.pr, "https://github.com/o/r/pull/521");
+  assert.equal(report.outcome, "https://github.com/o/r/pull/521");
   assert.deepEqual(report.lines.slice(1), [
     "— the folder after the run —",
     "branch fix-520-a-typo · last commit abc1234 A typo in the Help guide (#520)",
@@ -535,4 +536,30 @@ test("no pull request, or no branch, is UNFINISHED", () => {
   assert.equal(alone.unfinished, true);
   assert.match(alone.lines[2], /^branch \(none: detached\)/);
   assert.ok(!detached.calls.some((call) => call.startsWith("gh ")));
+});
+
+test("GitHub not answering is UNKNOWN, with the listing to run before a resume", () => {
+  const { run } = standIn(ON_BRANCH);
+  const failing = (cwd, command, args) => {
+    if (command === "gh") throw new Error("gh: could not connect");
+    return run(cwd, command, args);
+  };
+  const report = afterRun("/waf-fix", failing);
+  assert.equal(report.unfinished, true);
+  assert.equal(report.outcome, "UNKNOWN");
+  assert.equal(report.pr, undefined);
+  assert.ok(
+    report.lines.includes(
+      "could not ask GitHub for the pull request: gh pr list --head fix-520-a-typo --json number,url",
+    ),
+  );
+  assert.equal(
+    report.lines.at(-1),
+    "UNKNOWN: when  gh pr list --head fix-520-a-typo --json number,url  lists no pull request, run  node scripts/fix-issue/run.mjs --resume last  to finish it.",
+  );
+});
+
+test("--resume last finishes a fix that ended UNKNOWN", (t) => {
+  const rows = rowsOf(t, ["2026-11-09T10:00-07:00", "514", "1.70", "UNKNOWN"]);
+  assert.equal(lastFix(rows, "runs.tsv").session, "s-514");
 });

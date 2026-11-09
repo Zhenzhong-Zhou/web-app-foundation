@@ -11,7 +11,7 @@
 //   node scripts/fix-issue/run.mjs --probe          one cheap call: proves the key, the credit and the skill
 //   node scripts/fix-issue/run.mjs 514              /fix-issue 514 in ../waf-fix
 //   node scripts/fix-issue/run.mjs 514 leave a/b.ts leave and its paths go to /fix-issue as they are
-//   node scripts/fix-issue/run.mjs --resume last    finish the last fix, when it ended UNFINISHED
+//   node scripts/fix-issue/run.mjs --resume last    finish the last fix, when it ended UNFINISHED or UNKNOWN
 //   node scripts/fix-issue/run.mjs --spent          this credit month's runs and their total
 //
 // Options: --folder <path> (default ../waf-fix beside the main folder),
@@ -29,8 +29,9 @@
 // commands up to 90 minutes in the foreground, and a line appended to the
 // system prompt). After a fix it reads the folder's git state and says
 // UNFINISHED when changes are left uncommitted or no pull request is open
-// for the branch, otherwise it gives the merge command, after the one
-// that frees the branch from that folder.
+// for the branch, UNKNOWN when GitHub could not be asked, otherwise it
+// gives the merge command, after the one that frees the branch from that
+// folder.
 //
 // Each run's every message is kept in tmp/fix-runs/logs/, and its line,
 // with the SDK's cost, in tmp/fix-runs/runs.tsv, both in the main working
@@ -272,7 +273,7 @@ if (session) {
     minutes: (Date.now() - started.getTime()) / 60000,
     turns: result.turns,
     cost: result.cost,
-    pr: report ? (report.unfinished ? "UNFINISHED" : report.pr) : "-",
+    pr: report ? report.outcome : "-",
     session,
   });
   console.log(`\ncost list: ${runs}`);

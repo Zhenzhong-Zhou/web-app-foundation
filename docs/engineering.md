@@ -210,9 +210,10 @@ steps; this section stays the rule.
   ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY`, and `npm ci` runs once
   in `scripts/fix-issue/`. `--probe` is one cheap call that proves the
   key, the credit and the skill; `--resume last` finishes a fix that
-  ended `UNFINISHED`; `--spent` lists the credit month's runs
-  (`tmp/fix-runs/runs.tsv`) against the credit, and a run warns once the
-  month is past 80 %. It runs on Opus, cannot merge or force-push, and
+  ended `UNFINISHED`, or `UNKNOWN` when GitHub could not be asked for
+  its pull request, and refuses one that opened it; `--spent` lists the
+  credit month's runs (`tmp/fix-runs/runs.tsv`) against the credit, and
+  a run warns once the month is past 80 %. It runs on Opus, cannot merge or force-push, and
   prints the merge for Bob to run: `git -C <folder> switch --detach`,
   then `gh pr merge <PR> --squash --delete-branch`. Claude Code itself
   cannot spend the credit: only this runner, with the key, does.
