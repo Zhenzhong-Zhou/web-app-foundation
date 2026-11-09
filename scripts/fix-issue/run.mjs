@@ -37,7 +37,8 @@
 // Each run's every message is kept in tmp/fix-runs/logs/, and its line,
 // with the SDK's cost, in tmp/fix-runs/runs.tsv, both in the main working
 // folder. Before a run it warns once the credit month is past 80 % of
-// CREDIT_USD. What its test checks is in lib.mjs, which never loads the
+// CREDIT_USD. The key's value is taken out of every line it logs or
+// prints. What its test checks is in lib.mjs, which never loads the
 // SDK; it is imported here only when a run starts.
 import { appendFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
@@ -62,6 +63,7 @@ import {
   runsFile,
   spentReport,
   tally,
+  withoutKey,
 } from "./lib.mjs";
 
 /** The credit: US$100 a month, renewed on the 9th, 00:00 UTC. */
@@ -80,7 +82,7 @@ function stop(message) {
 }
 
 function short(text, size = 160) {
-  const one = String(text ?? "")
+  const one = withoutKey(String(text ?? ""), process.env.ANTHROPIC_API_KEY)
     .replace(/\s+/g, " ")
     .trim();
   return one.length > size ? `${one.slice(0, size - 1)}…` : one;
@@ -240,7 +242,10 @@ let stopped = false;
 let failure;
 try {
   for await (const message of query({ prompt, options })) {
-    appendFileSync(logFile, `${JSON.stringify(message)}\n`);
+    appendFileSync(
+      logFile,
+      `${withoutKey(JSON.stringify(message), process.env.ANTHROPIC_API_KEY)}\n`,
+    );
 
     if (message.type === "system" && message.subtype === "init") {
       session = message.session_id;
@@ -268,7 +273,9 @@ try {
       results.push(message);
       const minutes = Math.round((message.duration_ms ?? 0) / 60000);
       console.log("\n— result —");
-      if (message.result) console.log(message.result);
+      if (message.result) {
+        console.log(withoutKey(message.result, process.env.ANTHROPIC_API_KEY));
+      }
       console.log(
         `${message.subtype} · ${message.num_turns} turns · ${minutes} min · about US$${(message.total_cost_usd ?? 0).toFixed(2)} (an estimate; the Console has the real figure)`,
       );

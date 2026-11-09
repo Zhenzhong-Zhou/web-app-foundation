@@ -129,6 +129,14 @@ export function promptFor(args) {
   return `/fix-issue ${args.words.join(" ")}`;
 }
 
+/**
+ * A log line with the key's value taken out wherever it stands, so a
+ * session that prints its environment leaves no key in tmp/fix-runs/logs/.
+ */
+export function withoutKey(line, key) {
+  return key ? line.split(key).join("[ANTHROPIC_API_KEY]") : line;
+}
+
 /** Without the key, the session would be paid by the plan, or not start. */
 export function checkKey(env) {
   if (!env.ANTHROPIC_API_KEY) {

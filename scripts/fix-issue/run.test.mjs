@@ -36,6 +36,7 @@ import {
   spentReport,
   tally,
   vancouverTime,
+  withoutKey,
 } from "./lib.mjs";
 
 const CREDIT = { usd: 100, day: 9 };
@@ -118,6 +119,18 @@ test("without ANTHROPIC_API_KEY it stops, saying how to set it", () => {
     /read -s ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY/,
   );
   checkKey({ ANTHROPIC_API_KEY: "sk-ant-test" });
+});
+
+test("the key's value is taken out of a log line, wherever and however often it stands", () => {
+  const key = "sk-ant-api03-AbC_d-1";
+  const line = JSON.stringify({
+    type: "user",
+    content: `ANTHROPIC_API_KEY=${key}\nPATH=/bin\nagain ${key}`,
+  });
+  const kept = withoutKey(line, key);
+  assert.ok(!kept.includes(key), kept);
+  assert.equal(kept.split("[ANTHROPIC_API_KEY]").length, 3);
+  assert.equal(withoutKey(line, undefined), line);
 });
 
 test("the session stops unless the key pays and a fix finds /fix-issue", () => {
