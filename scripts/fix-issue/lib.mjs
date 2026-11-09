@@ -56,28 +56,25 @@ export function parseArguments(argv) {
     }
   }
 
+  // Each mode, as it is named in a refusal, and whether the line gives it.
   const modes = [
-    given["--probe"] && "--probe",
-    given["--resume"] && "--resume",
-    given["--spent"] && "--spent",
-    words.length > 0 && "an issue's number",
-  ].filter(Boolean);
+    ["probe", "--probe", Object.hasOwn(given, "--probe")],
+    ["resume", "--resume", Object.hasOwn(given, "--resume")],
+    ["spent", "--spent", Object.hasOwn(given, "--spent")],
+    ["fix", "an issue's number", words.length > 0],
+  ].filter(([, , chosen]) => chosen);
   if (modes.length === 0) {
     throw new Stop(
       `give an issue's number, as in: ${RUNNER} 514; or --probe, --resume last or --spent`,
     );
   }
   if (modes.length > 1) {
-    throw new Stop(`one at a time, not ${modes.join(" with ")}`);
+    throw new Stop(
+      `one at a time, not ${modes.map(([, name]) => name).join(" with ")}`,
+    );
   }
 
-  const mode = given["--probe"]
-    ? "probe"
-    : given["--resume"]
-      ? "resume"
-      : given["--spent"]
-        ? "spent"
-        : "fix";
+  const [[mode]] = modes;
   if (mode === "spent") {
     const others = ["--folder", "--model", "--budget"].filter((flag) =>
       Object.hasOwn(given, flag),
