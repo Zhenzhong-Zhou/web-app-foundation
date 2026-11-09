@@ -76,7 +76,7 @@ test('changes the password and keeps this session', async ({
    * Still signed in here afterwards. A password change revokes other sessions
    * but rotates this one rather than clearing it (ADR-011).
    */
-  await page.goto('/products');
+  await page.goto('/items');
   await expect(page).not.toHaveURL(/\/login/);
 });
 

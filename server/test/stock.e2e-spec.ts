@@ -1054,7 +1054,7 @@ describe('Stock (e2e)', () => {
       expect(header).toEqual([
         'When',
         'Reason',
-        'SKU',
+        'Code',
         'Item',
         'Variant',
         'Lot',

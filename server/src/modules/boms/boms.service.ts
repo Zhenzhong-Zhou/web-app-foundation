@@ -667,7 +667,7 @@ export class BomsService {
         t({
           id: 'boms.componentMadeProductDirectly',
           defaultMessage:
-            'That component is made from this product, directly or through another recipe — adding it would make a cycle',
+            'That component is made from this item, directly or through another recipe — adding it would make a cycle',
         }),
       );
     }

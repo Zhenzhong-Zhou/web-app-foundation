@@ -7,7 +7,7 @@ images and the catalogue export, as the code does it today. Each rule links the 
 decided it, the test that proves it, the Help section where a person
 meets it, and the manual check that walks it by hand. Why a rule is so is
 in its ADR; how to do a task is in the
-[Help guide](../../client/src/help/guides/en/products.md). How a search
+[Help guide](../../client/src/help/guides/en/items.md). How a search
 matches, in every box that searches, is the search area's rules file's.
 How this file is kept is in the [README](README.md).
 
@@ -23,7 +23,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "rejects a product with no variant" ·
   [test](../../server/test/products.e2e-spec.ts) "rejects a duplicate SKU and leaves no orphaned product" ·
   [test](../../client/e2e/products.spec.ts) "creates a product through the form and shows it in the table" ·
-  [Help](../../client/src/help/guides/en/products.md#add-a-product-add) ·
+  [Help](../../client/src/help/guides/en/items.md#add-a-product-add) ·
   MC-201
 - **An item's type says what it is for, one of six: products, raw
   materials, packaging, supplies, samples or equipment. It is chosen when
@@ -36,7 +36,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "rejects an unknown type" ·
   [test](../../server/test/products.e2e-spec.ts) "changes its type, which History records from and to, as Discontinue" ·
   [test](../../client/e2e/products.spec.ts) "shows a product that already exists in the organisation" ·
-  [Help](../../client/src/help/guides/en/products.md#add-a-product-add) ·
+  [Help](../../client/src/help/guides/en/items.md#add-a-product-add) ·
   MC-201
 - **Equipment is received, moved and counted where it stands, as any
   item is, but is not stock value:** Stock value's total, its list by item
@@ -54,7 +54,7 @@ How this file is kept is in the [README](README.md).
   them apart. Spaces around the name are dropped.
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--products-group-variants-carry-stock) ·
   no test ·
-  [Help](../../client/src/help/guides/en/products.md#add-a-product-add)
+  [Help](../../client/src/help/guides/en/items.md#add-a-product-add)
 - **A product's name and description are set when it is added: no screen
   changes them afterwards,** though the API accepts new ones. Its names in
   other languages, and its variants' names, are changed on its page.
@@ -72,14 +72,14 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "refuses a code in use, naming the item that has it and asking for another" ·
   [test](../../server/test/products.e2e-spec.ts) "refuses a SKU already used elsewhere in the organization" ·
   [test](../../server/test/products.e2e-spec.ts) "allows the same SKU in another organization" ·
-  [Help](../../client/src/help/guides/en/products.md#if-something-is-refused-refused)
+  [Help](../../client/src/help/guides/en/items.md#if-something-is-refused-refused)
 - **Lot tracking is chosen when a variant is added, off unless turned on,
   and never changes after.** Turned on or off for a variant that holds
   stock, its stock would be half with lots and half without.
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--batch-tracking-is-a-property-of-the-variant-not-a-global-mode) ·
   [test](../../server/test/products.e2e-spec.ts) "rejects tracksLots in an update" ·
   [test](../../server/test/products.e2e-spec.ts) "creates a variant even when the product has no variation" ·
-  [Help](../../client/src/help/guides/en/products.md#add-a-product-add)
+  [Help](../../client/src/help/guides/en/items.md#add-a-product-add)
 
 ## Variants
 
@@ -89,7 +89,7 @@ How this file is kept is in the [README](README.md).
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--products-group-variants-carry-stock) ·
   [test](../../server/test/products.e2e-spec.ts) "adds a second variant to an existing product" ·
   [test](../../client/e2e/product-detail.spec.ts) "adds a second variant to an existing product" ·
-  [Help](../../client/src/help/guides/en/products.md#variants-images-and-names-variants)
+  [Help](../../client/src/help/guides/en/items.md#variants-images-and-names-variants)
 - **A variant's unit is what its stock is counted in: each, unless
   another is chosen.** The screens offer each, kg, g, litre, ml, case, box
   and pallet, named in the reader's language; a unit stored any other way
@@ -100,7 +100,7 @@ How this file is kept is in the [README](README.md).
   [test](../../client/src/products/units.test.ts) "takes the unit’s plural in English where it has one" ·
   [test](../../client/src/products/units.test.ts) "keeps one form in Chinese" ·
   partly tested ·
-  [Help](../../client/src/help/guides/en/products.md#variants-images-and-names-variants)
+  [Help](../../client/src/help/guides/en/items.md#variants-images-and-names-variants)
 - **A SKU can be corrected at any time, and the old one is free again at
   once.** On the product's page the SKU is changed in its cell and saved on
   leaving the field. Orders and stock movements keep the SKU they were made
@@ -121,7 +121,7 @@ How this file is kept is in the [README](README.md).
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--products-group-variants-carry-stock) ·
   [test](../../client/e2e/product-detail.spec.ts) "edits a variant through the dialog" ·
   partly tested ·
-  [Help](../../client/src/help/guides/en/products.md#variants-images-and-names-variants) ·
+  [Help](../../client/src/help/guides/en/items.md#variants-images-and-names-variants) ·
   MC-2806
 
 ## Discontinuing
@@ -131,19 +131,19 @@ How this file is kept is in the [README](README.md).
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--products-group-variants-carry-stock) ·
   [test](../../server/test/products.e2e-spec.ts) "discontinues without touching its variants" ·
   partly tested ·
-  [Help](../../client/src/help/guides/en/products.md#words-youll-meet-words)
+  [Help](../../client/src/help/guides/en/items.md#words-youll-meet-words)
 - **Discontinuing a product leaves each variant's own status as it was,**
   so reactivating the product brings each variant back as it was.
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--products-group-variants-carry-stock) ·
   [test](../../server/test/products.e2e-spec.ts) "discontinues without touching its variants" ·
-  [Help](../../client/src/help/guides/en/products.md#words-youll-meet-words)
+  [Help](../../client/src/help/guides/en/items.md#words-youll-meet-words)
 - **An item is offered where an item is chosen only while both it and its
   product are active,** in every picker, typed or not.
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--products-group-variants-carry-stock) ·
   [test](../../server/test/products.e2e-spec.ts) "hides a variant whose product was discontinued" ·
   [test](../../server/test/products.e2e-spec.ts) "hides a discontinued variant of an active product" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "leaves out a discontinued item, as it does without a search" ·
-  [Help](../../client/src/help/guides/en/products.md#words-youll-meet-words)
+  [Help](../../client/src/help/guides/en/items.md#words-youll-meet-words)
 - **The list of items hides discontinued ones unless asked: Discontinued
   shows them alone, and the top bar's Show all beside the rest; their
   count follows the search and the category.** Products asks for them
@@ -171,6 +171,14 @@ How this file is kept is in the [README](README.md).
 
 ## The list of items
 
+- **Items is at `/items`, and an address under `/products`, the page's
+  old one, opens the same page under `/items` with its query,** so a
+  bookmark or a link kept elsewhere still works. The API keeps
+  `products`.
+  [ADR-092](../adr/0092-items.md#decision--items-the-page-and-the-menu) ·
+  [test](../../client/src/products/to-items.test.tsx) "sends /products to /items with its query" ·
+  [test](../../client/src/products/to-items.test.tsx) "sends an item’s old address to its new one" ·
+  MC-201
 - **The list reads fifty items at a time unless asked for fewer, each
   page after the last by its cursor, every item once however many share
   a name; the counts come with the first page.** A cursor made for
@@ -268,7 +276,7 @@ How this file is kept is in the [README](README.md).
   each. A variant with no name has none to give in another language.
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
   [test](../../server/test/languages.e2e-spec.ts) "keeps a product and its variants named in other languages, replaced as a set" ·
-  [Help](../../client/src/help/guides/en/products.md#variants-images-and-names-variants) ·
+  [Help](../../client/src/help/guides/en/items.md#variants-images-and-names-variants) ·
   MC-1407
 - **One name per language, never a blank one, and a description in a
   language needs a name in it.** The dialog says so before saving, naming
@@ -360,8 +368,8 @@ How this file is kept is in the [README](README.md).
   [test](../../client/src/products/products-page.test.tsx) "asks with the address’s search, and lists the answer in its order" ·
   [test](../../client/src/products/products-page.test.tsx) "asks again once typing stops, and drops an answer that comes after a newer one" ·
   [test](../../client/src/products/products-page.test.tsx) "follows the address while open, and writes what is typed there without adding to the history" ·
-  [test](../../client/src/products/products-page.test.tsx) "says no products yet for an empty catalogue, and nothing matches for an empty search" ·
-  [Help](../../client/src/help/guides/en/products.md#products) ·
+  [test](../../client/src/products/products-page.test.tsx) "says no items yet for an empty catalogue, and nothing matches for an empty search" ·
+  [Help](../../client/src/help/guides/en/items.md#items) ·
   MC-3901
 - **An item picker lists the items its form offers, by SKU, until
   something is typed. From the first character it asks the server, a
@@ -401,8 +409,8 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/product-images.e2e-spec.ts) "adds images in order, the first the cover in the list" ·
   [test](../../server/test/product-images.e2e-spec.ts) "holds at most eight" ·
   [test](../../client/e2e/product-images.spec.ts) "adds an image that becomes the cover in the list" ·
-  [Help](../../client/src/help/guides/en/products.md#variants-images-and-names-variants) ·
-  [Help](../../client/src/help/guides/en/products.md#if-something-is-refused-refused) ·
+  [Help](../../client/src/help/guides/en/items.md#variants-images-and-names-variants) ·
+  [Help](../../client/src/help/guides/en/items.md#if-something-is-refused-refused) ·
   MC-1801
 - **The cover shows beside the product's name on Products and in
   Inventory, and beside an item in the top bar's lookup. A product with no
@@ -500,7 +508,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/product-categories.e2e-spec.ts) "never shows another organization’s categories, nor counts its items" ·
   [test](../../server/test/product-categories.e2e-spec.ts) "answers 404 for another organization’s category, to rename or delete" ·
   partly tested ·
-  [Help](../../client/src/help/guides/en/products.md#variants-images-and-names-variants)
+  [Help](../../client/src/help/guides/en/items.md#variants-images-and-names-variants)
 - **History keeps who added or changed a product, and when, under the
   product's base name at the time: a variant added with its SKU, a SKU
   changed with the old and the new, names in other languages as the new

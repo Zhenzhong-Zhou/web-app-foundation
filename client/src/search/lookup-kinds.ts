@@ -37,7 +37,7 @@ export function pathOf(kind: LookupKind, result: LookupResult): string {
     case 'lot':
       return `/lots/${result.id}`;
     case 'item':
-      return `/products/${result.productId ?? ''}`;
+      return `/items/${result.productId ?? ''}`;
     case 'partner':
       return `/partners/${result.id}`;
     case 'productionRun':
@@ -59,8 +59,11 @@ export function listOf(kind: LookupKind, query: string): string | null {
     case 'invoice':
       return `/invoices?${search}`;
     case 'lot':
+      return `/inventory?${search}`;
     case 'item':
-      return kind === 'lot' ? `/inventory?${search}` : `/products?${search}`;
+      // On All, discontinued items included, so whatever the top bar found
+      // is on the list (ADR-092, amending ADR-056).
+      return `/items?tab=all&discontinued=include&${search}`;
     case 'partner':
       return `/partners?${search}`;
     case 'productionRun':

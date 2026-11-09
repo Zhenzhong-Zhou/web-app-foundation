@@ -428,7 +428,7 @@ export class ProductsService {
 
     if (!product)
       throw new NotFoundException(
-        t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+        t({ id: 'products.suchProduct', defaultMessage: 'No such item' }),
       );
 
     // Its variants with the names shown, and its gallery, the cover first
@@ -575,7 +575,7 @@ export class ProductsService {
 
     if (!existing)
       throw new NotFoundException(
-        t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+        t({ id: 'products.suchProduct', defaultMessage: 'No such item' }),
       );
 
     if (
@@ -847,7 +847,7 @@ export class ProductsService {
 
     if (!product)
       throw new NotFoundException(
-        t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+        t({ id: 'products.suchProduct', defaultMessage: 'No such item' }),
       );
 
     try {
@@ -935,7 +935,7 @@ export class ProductsService {
 
       if (!product)
         throw new NotFoundException(
-          t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+          t({ id: 'products.suchProduct', defaultMessage: 'No such item' }),
         );
 
       recordContext({ names: describeNames(input.translations) });

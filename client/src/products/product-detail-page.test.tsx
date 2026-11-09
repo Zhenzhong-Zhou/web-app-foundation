@@ -30,9 +30,9 @@ function renderPage(product: ProductDetail) {
     http.get('/api/v1/products/:id', () => HttpResponse.json(product)),
   );
   renderWithAuth(
-    <MemoryRouter initialEntries={['/products/product-1']}>
+    <MemoryRouter initialEntries={['/items/product-1']}>
       <Routes>
-        <Route path="/products/:id" element={<ProductDetailPage />} />
+        <Route path="/items/:id" element={<ProductDetailPage />} />
       </Routes>
     </MemoryRouter>,
     { permissions: ['products.view'] },

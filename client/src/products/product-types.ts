@@ -15,11 +15,11 @@ export const PRODUCT_TYPES = [
 ] as const;
 
 const LABELS = defineMessages({
-  good: { id: 'products.type.good', defaultMessage: 'Sellable good' },
-  material: { id: 'products.type.material', defaultMessage: 'Raw material' },
+  good: { id: 'products.type.good', defaultMessage: 'Products' },
+  material: { id: 'products.type.material', defaultMessage: 'Raw materials' },
   packaging: { id: 'products.type.packaging', defaultMessage: 'Packaging' },
-  sample: { id: 'products.type.sample', defaultMessage: 'Sample' },
-  supply: { id: 'products.type.supply', defaultMessage: 'Office supply' },
+  sample: { id: 'products.type.sample', defaultMessage: 'Samples' },
+  supply: { id: 'products.type.supply', defaultMessage: 'Supplies' },
   equipment: { id: 'products.type.equipment', defaultMessage: 'Equipment' },
 });
 

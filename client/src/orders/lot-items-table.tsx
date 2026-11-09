@@ -36,7 +36,7 @@ export function LotItemsTable({ items }: { items: Shipment['items'] }) {
             <TableCell>
               {intl.formatMessage({
                 id: 'products.sku',
-                defaultMessage: 'SKU',
+                defaultMessage: 'Code',
               })}
             </TableCell>
             <TableCell>

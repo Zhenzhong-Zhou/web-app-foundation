@@ -538,7 +538,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                     <TableCell>
                       {intl.formatMessage({
                         id: 'products.sku',
-                        defaultMessage: 'SKU',
+                        defaultMessage: 'Code',
                       })}
                     </TableCell>
                     <TableCell>
@@ -714,7 +714,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                     <TableCell>
                       {intl.formatMessage({
                         id: 'products.sku',
-                        defaultMessage: 'SKU',
+                        defaultMessage: 'Code',
                       })}
                     </TableCell>
                     <TableCell>

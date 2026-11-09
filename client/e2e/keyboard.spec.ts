@@ -37,8 +37,8 @@ test('the first Tab offers to skip the frame, and Enter lands on the page', asyn
 test('a dialog closed by Cancel or by Escape gives focus back to its button', async ({
   page,
 }) => {
-  await page.goto('/products');
-  const add = page.getByRole('button', { name: 'Add product', exact: true });
+  await page.goto('/items');
+  const add = page.getByRole('button', { name: 'Add item', exact: true });
   const dialog = page.getByRole('dialog');
 
   await add.click();

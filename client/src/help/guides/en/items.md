@@ -1,4 +1,4 @@
-# Products
+# Items
 
 Products are what you buy, make and sell. Each has one or more variants, the things stock is counted in, and each variant has its own SKU: the code on its label.
 

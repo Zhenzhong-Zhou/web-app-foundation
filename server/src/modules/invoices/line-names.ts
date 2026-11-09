@@ -145,7 +145,7 @@ export async function namedLines(
           {
             id: 'invoices.skuLanguageNameWhich',
             defaultMessage:
-              '{sku} has no {language} name, which this organization requires on its documents. Add its {language} name on its product’s page.',
+              '{sku} has no {language} name, which this organization requires on its documents. Add its {language} name on its item’s page.',
           },
           { sku: untranslated.sku, language: LANGUAGE_NAMES[slot.language] },
         ),

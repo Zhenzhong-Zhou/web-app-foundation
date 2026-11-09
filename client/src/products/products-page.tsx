@@ -90,7 +90,7 @@ export function ProductsPage() {
         crumbs={[]}
         title={intl.formatMessage({
           id: 'layout.nav.products',
-          defaultMessage: 'Products',
+          defaultMessage: 'Items',
         })}
         actions={
           <>
@@ -134,7 +134,7 @@ export function ProductsPage() {
               <Button onClick={openDialog(() => setCreating(true))}>
                 {intl.formatMessage({
                   id: 'products.add',
-                  defaultMessage: 'Add product',
+                  defaultMessage: 'Add item',
                 })}
               </Button>
             )}
@@ -219,10 +219,7 @@ export function ProductsPage() {
                           fileId={item.coverFileId}
                           name={item.displayName}
                         />
-                        <Link
-                          component={RouterLink}
-                          to={`/products/${item.id}`}
-                        >
+                        <Link component={RouterLink} to={`/items/${item.id}`}>
                           {item.displayName}
                         </Link>
                       </Stack>
@@ -253,9 +250,9 @@ export function ProductsPage() {
             </Table>
           </TableContainer>
         ) : (
-          // The header offers Add product; the empty state only says why
+          // The header offers Add item; the empty state only says why
           // the list is empty.
-          <EmptyState learnMore={{ guide: 'products', section: 'add' }}>
+          <EmptyState learnMore={{ guide: 'items', section: 'add' }}>
             {search || items?.length
               ? intl.formatMessage({
                   id: 'inventory.noMatch',
@@ -263,7 +260,7 @@ export function ProductsPage() {
                 })
               : intl.formatMessage({
                   id: 'products.empty',
-                  defaultMessage: 'No products yet.',
+                  defaultMessage: 'No items yet.',
                 })}
           </EmptyState>
         )}

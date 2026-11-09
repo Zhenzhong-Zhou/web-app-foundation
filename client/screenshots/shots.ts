@@ -124,10 +124,10 @@ export const SHOTS: Shot[] = [
     name: '10-empty-list',
     path: () => '/production?search=ZZZ-000',
   },
-  { name: '11-products', path: () => '/products' },
+  { name: '11-products', path: () => '/items' },
   {
     name: '12-product-detail',
-    path: (targets) => at(targets.recipeProductId, (id) => `/products/${id}`),
+    path: (targets) => at(targets.recipeProductId, (id) => `/items/${id}`),
   },
   { name: '13-stock-value', path: () => '/costs' },
   { name: '14-sign-in', path: () => '/login', signedOut: true },

@@ -17,7 +17,7 @@ import { accessAreas, type Area } from './access-phrases';
  */
 const AREA_PATHS: Record<Area, readonly string[]> = {
   stock: ['/inventory', '/locations'],
-  products: ['/products', '/licences'],
+  products: ['/items', '/licences'],
   orders: ['/orders'],
   production: ['/production'],
   invoices: ['/invoices', '/return-authorizations'],

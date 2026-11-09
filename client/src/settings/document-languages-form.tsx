@@ -159,7 +159,7 @@ export function RequiredNameLanguages({
     <SettingsSection
       title={intl.formatMessage({
         id: 'settings.org.requiredNames.title',
-        defaultMessage: 'Product names required on invoices',
+        defaultMessage: 'Item names required on invoices',
       })}
       onSubmit={handleSubmit}
       error={error}
@@ -175,7 +175,7 @@ export function RequiredNameLanguages({
           {intl.formatMessage({
             id: 'settings.org.requiredNames.notice',
             defaultMessage:
-              'An invoice printing in a checked language cannot be issued while any of its items has no name in it. Unchecked, a missing name prints as the product’s own.',
+              'An invoice printing in a checked language cannot be issued while any of its items has no name in it. Unchecked, a missing name prints as the item’s own.',
           })}
         </Typography>
       }

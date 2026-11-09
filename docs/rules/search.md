@@ -40,7 +40,7 @@ leave how it matches to this file. How this file is kept is in the
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a product by its name in another language, shown in the reader’s" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds an item by SKU, name, another language, pinyin or one character" ·
-  [Help](../../client/src/help/guides/en/products.md#products) ·
+  [Help](../../client/src/help/guides/en/items.md#items) ·
   MC-3901
 - **A Chinese name is found by its characters, one being enough, and by
   its pinyin, in full or by its initials, its tone marks and spaces set
@@ -91,7 +91,7 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/lookup.e2e-spec.ts) "finds an item by SKU or name, and a Chinese partner by pinyin" ·
   [test](../../server/test/stock.e2e-spec.ts) "searches the SKU, the product name and the lot code" ·
   partly tested ·
-  [Help](../../client/src/help/guides/en/products.md#products) ·
+  [Help](../../client/src/help/guides/en/items.md#items) ·
   MC-3901 · MC-308
 - **A partner: any part of its name or its pinyin, its code or its tax
   ID.** Retired partners are found too.
@@ -207,15 +207,15 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/lookup.e2e-spec.ts) "finds its own records through each join, none of a twin organization's" ·
   [test](../../server/test/lookup.e2e-spec.ts) "ranks an exact match on the reader's name for an item first" ·
   MC-2201 · MC-1556
-- **A result opens its record:** an item opens its product, a lot its
-  trace.
+- **A result opens its record:** an item opens its page under Items, a
+  lot its trace.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
   [test](../../client/e2e/search.spec.ts) "finds a lot from the top bar and opens its trace" ·
   [Help](../../client/src/help/guides/en/lots.md#trace-a-lot-trace) ·
   MC-1556
 - **Each kind ends with Show all in its list, which opens that list with
   the same search:** Orders, Invoices, Credit notes, Inventory for lots,
-  Products for items, Partners, Production and Returns.
+  Items for items, Partners, Production and Returns.
   [ADR-056](../adr/0056-search.md#decision--order-of-results) ·
   [test](../../client/src/products/products-page.test.tsx) "follows the address while open, and writes what is typed there without adding to the history" ·
   [test](../../client/src/products/products-page.test.tsx) "asks with the address’s search, and lists the answer in its order" ·
@@ -227,6 +227,13 @@ leave how it matches to this file. How this file is kept is in the
   only once All, or Show emptied, is pressed.
   [ADR-056](../adr/0056-search.md#decision--two-kinds-of-search-one-way-of-matching) ·
   no test
+- **Show all in Items opens it on All, discontinued items included,**
+  so every item the top bar found is on the list, whatever its type
+  (`/items?tab=all&discontinued=include&search=…`).
+  [ADR-092](../adr/0092-items.md#decision--the-types-as-tabs-opening-on-products) ·
+  [test](../../client/src/search/lookup-kinds.test.ts) "opens Show all in Items on All, discontinued included, with the search (ADR-092)" ·
+  partly tested ·
+  MC-1557
 - **Nothing found says "Nothing found."** and offers no list to open.
   [ADR-056](../adr/0056-search.md#decision--in-the-browser) ·
   [test](../../client/src/search/lookup-box.test.tsx) "says when nothing is found" ·
@@ -307,7 +314,7 @@ leave how it matches to this file. How this file is kept is in the
 - **A search that finds nothing says "Nothing matches that search.",**
   not the empty list's first-time message.
   [ADR-056](../adr/0056-search.md#decision--matching) ·
-  [test](../../client/src/products/products-page.test.tsx) "says no products yet for an empty catalogue, and nothing matches for an empty search" ·
+  [test](../../client/src/products/products-page.test.tsx) "says no items yet for an empty catalogue, and nothing matches for an empty search" ·
   [test](../../client/src/partners/partners-page.test.tsx) "says nothing matches for an empty answer to a search" ·
   MC-1546
 - **An export holds what the search found on Orders, Invoices, Credit

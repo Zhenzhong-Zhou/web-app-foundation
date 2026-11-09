@@ -1,4 +1,4 @@
-# Produits
+# Articles
 
 Les produits sont ce que vous achetez, fabriquez et vendez. Chacun a une ou plusieurs variantes, ce dans quoi le stock est compté, et chaque variante a sa propre UGS : le code inscrit sur son étiquette.
 

@@ -362,7 +362,7 @@ export function ReleaseRunDialog({
                 {intl.formatMessage({
                   id: 'production.release.noRecipe',
                   defaultMessage:
-                    'There is no recipe for this item yet. Create one on the product’s page and make it active, then release.',
+                    'There is no recipe for this item yet. Create one on the item’s page and make it active, then release.',
                 })}
               </Alert>
             )}

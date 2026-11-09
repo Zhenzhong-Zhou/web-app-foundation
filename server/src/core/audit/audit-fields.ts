@@ -180,7 +180,7 @@ const LIST_WORDS: Record<string, Translatable> = {
     defaultMessage: 'Stock value',
   }),
   partners: t({ id: 'audit.value.list.partners', defaultMessage: 'Partners' }),
-  products: t({ id: 'audit.value.list.products', defaultMessage: 'Products' }),
+  products: t({ id: 'audit.value.list.products', defaultMessage: 'Items' }),
   inventory: t({
     id: 'audit.value.list.inventory',
     defaultMessage: 'Inventory',
@@ -292,7 +292,7 @@ export const KIND_WORDS: Record<ReferenceKind, Translatable> = {
   order_line: t({ id: 'audit.kind.orderLine', defaultMessage: 'an item' }),
   partner: t({ id: 'audit.kind.partner', defaultMessage: 'a partner' }),
   variant: t({ id: 'audit.kind.variant', defaultMessage: 'an item' }),
-  product: t({ id: 'audit.kind.product', defaultMessage: 'a product' }),
+  product: t({ id: 'audit.kind.product', defaultMessage: 'an item' }),
   product_category: t({
     id: 'audit.kind.productCategory',
     defaultMessage: 'a category',
@@ -421,7 +421,7 @@ export const AUDIT_FIELDS = {
     read: 'text',
   },
   sku: {
-    name: t({ id: 'audit.field.sku', defaultMessage: 'SKU' }),
+    name: t({ id: 'audit.field.sku', defaultMessage: 'Code' }),
     read: 'text',
   },
   currency: {
@@ -901,7 +901,7 @@ export const AUDIT_FIELDS = {
     read: 'reference',
   },
   productId: {
-    name: t({ id: 'audit.field.productId', defaultMessage: 'Product' }),
+    name: t({ id: 'audit.field.productId', defaultMessage: 'Item' }),
     read: 'reference',
   },
   categoryId: {

@@ -238,19 +238,19 @@ export const ACTION_NAMES: Record<AuditAction, Translatable> = {
   }),
   'product.created': t({
     id: 'audit.action.productCreated',
-    defaultMessage: 'Product created',
+    defaultMessage: 'Item created',
   }),
   'product.updated': t({
     id: 'audit.action.productUpdated',
-    defaultMessage: 'Product updated',
+    defaultMessage: 'Item updated',
   }),
   'product.variant_added': t({
     id: 'audit.action.productVariantAdded',
-    defaultMessage: 'Product variant added',
+    defaultMessage: 'Item variant added',
   }),
   'product.variant_updated': t({
     id: 'audit.action.productVariantUpdated',
-    defaultMessage: 'Product variant updated',
+    defaultMessage: 'Item variant updated',
   }),
   'product_category.created': t({
     id: 'audit.action.productCategoryCreated',
@@ -383,7 +383,7 @@ export const ACTION_NAMES: Record<AuditAction, Translatable> = {
  * words. A type with no entry reads as a record, never as its key.
  */
 export const RESOURCE_TYPE_NAMES: Record<string, Translatable> = {
-  product: t({ id: 'audit.type.product', defaultMessage: 'Product' }),
+  product: t({ id: 'audit.type.product', defaultMessage: 'Item' }),
   product_category: t({
     id: 'audit.type.productCategory',
     defaultMessage: 'Category',
@@ -442,7 +442,7 @@ export const RESOURCE_TYPE_NAMES: Record<string, Translatable> = {
     defaultMessage: 'Credit notes',
   }),
   orders: t({ id: 'audit.type.orders', defaultMessage: 'Orders' }),
-  products: t({ id: 'audit.type.products', defaultMessage: 'Products' }),
+  products: t({ id: 'audit.type.products', defaultMessage: 'Items' }),
   partners: t({ id: 'audit.type.partners', defaultMessage: 'Partners' }),
   movements: t({ id: 'audit.type.movements', defaultMessage: 'Movements' }),
   inventory: t({ id: 'audit.type.inventory', defaultMessage: 'Inventory' }),

@@ -38,4 +38,4 @@ Whoever may change licences or release production runs is told in the bell 60, 3
 - A number already recorded for the same issuer is refused. Edit the one already listed.
 - A licence cannot expire before it was issued. Check the two dates.
 
-See also [Products](/products) and [Production](/production).
+See also [Items](/items) and [Production](/production).

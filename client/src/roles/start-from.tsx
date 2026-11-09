@@ -44,7 +44,7 @@ const TAGLINES = defineMessages<Start>({
   },
   stock_lookup: {
     id: 'roles.start.stockLookup',
-    defaultMessage: 'Find stock and products, nothing else',
+    defaultMessage: 'Find stock and items, nothing else',
   },
   copy: {
     id: 'roles.start.copy',

@@ -56,7 +56,7 @@ const labels = defineMessages({
   production: { id: 'layout.nav.production', defaultMessage: 'Production' },
   people: { id: 'layout.nav.people', defaultMessage: 'People' },
   licences: { id: 'layout.nav.licences', defaultMessage: 'Licences' },
-  products: { id: 'layout.nav.products', defaultMessage: 'Products' },
+  products: { id: 'layout.nav.products', defaultMessage: 'Items' },
   partners: { id: 'layout.nav.partners', defaultMessage: 'Partners' },
   locations: { id: 'layout.nav.locations', defaultMessage: 'Locations' },
   trace: { id: 'layout.nav.trace', defaultMessage: 'Trace a lot' },
@@ -156,7 +156,7 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       {
         label: labels.products,
-        to: '/products',
+        to: '/items',
         icon: CategoryOutlined,
         permission: 'products.view',
       },
@@ -249,8 +249,8 @@ export const ACCOUNT_ITEMS: Pick<NavItem, 'label' | 'to'>[] = [
 ];
 
 /**
- * Exact or a child path, not a bare prefix: "/products".startsWith would also
- * light up a future "/products-archive", and a highlighted wrong tab is worse
+ * Exact or a child path, not a bare prefix: "/items".startsWith would also
+ * light up a future "/items-archive", and a highlighted wrong tab is worse
  * than none.
  */
 export function isActive(pathname: string, to: string): boolean {

@@ -89,8 +89,8 @@ export const GUIDES = {
     label: NAV_LABELS.stockValue,
     sections: ['costs'],
   },
-  products: {
-    routes: ['/products', '/products/:id'],
+  items: {
+    routes: ['/items', '/items/:id'],
     label: NAV_LABELS.products,
     sections: ['add'],
   },

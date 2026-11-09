@@ -72,7 +72,7 @@ describe('ProductsPage', () => {
       }),
     );
 
-    renderAt('/products?search=zzjn');
+    renderAt('/items?search=zzjn');
 
     expect(
       await screen.findByRole('link', { name: 'Calm 90ct' }),
@@ -105,7 +105,7 @@ describe('ProductsPage', () => {
       }),
     );
 
-    renderAt('/products');
+    renderAt('/items');
     await screen.findByRole('link', { name: 'Calm 90ct' });
 
     const box = screen.getByRole('searchbox', { name: 'Search' });
@@ -139,7 +139,7 @@ describe('ProductsPage', () => {
       }),
     );
 
-    renderAt('/products');
+    renderAt('/items');
     await screen.findByRole('link', { name: 'Focus 60ct' });
 
     await user.type(screen.getByRole('searchbox', { name: 'Search' }), 'calm');
@@ -156,7 +156,7 @@ describe('ProductsPage', () => {
     ).toBeVisible();
   });
 
-  it('says no products yet for an empty catalogue, and nothing matches for an empty search', async () => {
+  it('says no items yet for an empty catalogue, and nothing matches for an empty search', async () => {
     const user = userEvent.setup();
     const answered: (string | null)[] = [];
     server.use(
@@ -166,20 +166,20 @@ describe('ProductsPage', () => {
       }),
     );
 
-    renderAt('/products');
-    expect(await screen.findByText('No products yet.')).toBeVisible();
+    renderAt('/items');
+    expect(await screen.findByText('No items yet.')).toBeVisible();
 
     await user.type(screen.getByRole('searchbox', { name: 'Search' }), '鱼');
     await expect.poll(() => answered).toEqual([null, '鱼']);
     expect(
       await screen.findByText('Nothing matches that search.'),
     ).toBeVisible();
-    expect(screen.queryByText('No products yet.')).not.toBeInTheDocument();
+    expect(screen.queryByText('No items yet.')).not.toBeInTheDocument();
   });
 
   /**
    * The search in the address while the page stays open (#260's done
-   * when): "Show all in Items" from the top bar on Products itself, then
+   * when): "Show all in Items" from the top bar on Items itself, then
    * Back and Forward. Every list on useListSearch does the same.
    */
   it('follows the address while open, and writes what is typed there without adding to the history', async () => {
@@ -195,8 +195,8 @@ describe('ProductsPage', () => {
       }),
     );
     const router = createMemoryRouter(
-      [{ path: '/products', element: <ProductsPage /> }],
-      { initialEntries: ['/products?search=calm'] },
+      [{ path: '/items', element: <ProductsPage /> }],
+      { initialEntries: ['/items?search=calm'] },
     );
     renderWithAuth(<RouterProvider router={router} />, {
       permissions: ['products.view'],
@@ -205,7 +205,7 @@ describe('ProductsPage', () => {
     await screen.findByRole('link', { name: 'Found by calm' });
 
     // Show all, from the lookup's box, as the lookup goes there.
-    await act(() => router.navigate('/products?search=zzjn'));
+    await act(() => router.navigate('/items?search=zzjn'));
     expect(
       await screen.findByRole('link', { name: 'Found by zzjn' }),
     ).toBeVisible();
@@ -252,14 +252,14 @@ describe('ProductsPage', () => {
       ),
       http.get('/api/v1/products/export', ({ request }) => {
         exported.push(new URL(request.url).search);
-        return new HttpResponse('\uFEFFSKU\r\n', {
+        return new HttpResponse('\uFEFFCode\r\n', {
           headers: { 'Content-Type': 'text/csv; charset=utf-8' },
         });
       }),
     );
 
     try {
-      renderAt('/products?search=calm');
+      renderAt('/items?search=calm');
       await screen.findByRole('link', { name: 'Calm 90ct' });
       await user.click(screen.getByRole('button', { name: /Discontinued/ }));
       await user.click(screen.getByRole('button', { name: 'Export' }));
@@ -273,15 +273,15 @@ describe('ProductsPage', () => {
   });
 
   // Licences reached from here, a link inside the app, offers Back (#341).
-  it('opens Licences with Back to Products', async () => {
+  it('opens Licences with Back to Items', async () => {
     server.use(
       http.get('/api/v1/products', () => HttpResponse.json(pageOf([]))),
       http.get('/api/v1/product-licences', () => HttpResponse.json([])),
     );
     renderWithAuth(
-      <MemoryRouter initialEntries={['/products']}>
+      <MemoryRouter initialEntries={['/items']}>
         <Routes>
-          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/items" element={<ProductsPage />} />
           <Route path="/licences" element={<LicencesPage />} />
         </Routes>
       </MemoryRouter>,

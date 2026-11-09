@@ -19,9 +19,13 @@ test('shows a product that already exists in the organisation', async ({
   page,
   api,
 }) => {
-  const product = await createProduct(api, { name: 'E2E Seeded Widget' });
+  // Its own name each run, so the suite run again, or --repeat-each, finds
+  // one row rather than every run's.
+  const product = await createProduct(api, {
+    name: `E2E Seeded Widget ${Date.now().toString(36)}`,
+  });
 
-  await page.goto('/products');
+  await page.goto('/items');
 
   /**
    * Scope the assertion to the row, not the page. `getByText(product.name)`
@@ -31,9 +35,10 @@ test('shows a product that already exists in the organisation', async ({
   const row = page.getByRole('row', { name: new RegExp(product.name, 'i') });
 
   await expect(row).toBeVisible();
-  // SKU is a variant attribute, not a product one — the products table lists
-  // products, so asserting on it here would be asserting the wrong screen.
-  await expect(row).toContainText(/good/i);
+  // A code is a variant's, not an item's — the list shows items, so
+  // asserting on it here would be asserting the wrong screen. The type, in
+  // its tab's words (ADR-092).
+  await expect(row).toContainText('Products');
 });
 
 test('creates a product through the form and shows it in the table', async ({
@@ -42,14 +47,14 @@ test('creates a product through the form and shows it in the table', async ({
   const name = `E2E Form Widget ${Date.now().toString(36)}`;
   const sku = `SKU-${Date.now().toString(36).toUpperCase()}`;
 
-  await page.goto('/products');
-  await page.getByRole('button', { name: /new product|add product/i }).click();
+  await page.goto('/items');
+  await page.getByRole('button', { name: 'Add item', exact: true }).click();
 
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill(name);
-  await dialog.getByRole('textbox', { name: 'SKU' }).fill(sku);
+  await dialog.getByRole('textbox', { name: 'Code' }).fill(sku);
 
-  await dialog.getByRole('button', { name: 'Add product' }).click();
+  await dialog.getByRole('button', { name: 'Add item' }).click();
 
   /**
    * No waitForTimeout, and no waiting on the network response either. Web-first
@@ -74,7 +79,7 @@ test("does not show another organisation's products", async ({
 
   // `page` is still the shared owner from global-setup, so this navigates as a
   // different tenant than the one that just created the product.
-  await page.goto('/products');
+  await page.goto('/items');
 
   await expect(page.getByRole('table')).toBeVisible();
   await expect(

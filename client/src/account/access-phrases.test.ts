@@ -76,7 +76,7 @@ describe('what you can do here', () => {
         'See what is on hand, where stock is kept and each lot’s history.',
       ],
       [
-        'Products and licences',
+        'Items and licences',
         'See the catalogue, recipes and product licences.',
       ],
       ['Orders', 'See purchase and sales orders and their prices.'],
@@ -101,8 +101,8 @@ describe('what you can do here', () => {
         'See what is on hand and each lot’s history; receive, ship and move stock; correct a count; add and change locations.',
       ],
       [
-        'Products and licences',
-        'Add and change products, recipes and product licences.',
+        'Items and licences',
+        'Add and change items, recipes and product licences.',
       ],
       [
         'Orders',
@@ -155,7 +155,7 @@ describe('what you can do here', () => {
 
   it('adds without changing, or changes without adding, as held', () => {
     expect(sentences(['products.view', 'products.create'])).toEqual([
-      ['Products and licences', 'Add products.'],
+      ['Items and licences', 'Add items.'],
     ]);
     expect(sentences(['price_lists.view', 'price_lists.update'])).toEqual([
       ['Costs, prices and tax', 'Change price lists.'],

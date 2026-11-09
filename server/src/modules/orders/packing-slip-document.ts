@@ -155,7 +155,7 @@ export function packingSlipDocument(
 
   // On paper a lot is a code to read: no link, as the page had none.
   const header: TableCell[] = [
-    head(doc.label(t({ id: 'documents.sku', defaultMessage: 'SKU' }))),
+    head(doc.label(t({ id: 'documents.sku', defaultMessage: 'Code' }))),
     head(doc.label(t({ id: 'documents.item', defaultMessage: 'Item' }))),
     head(doc.label(t({ id: 'documents.lot', defaultMessage: 'Lot' }))),
     head(doc.label(t({ id: 'documents.expires', defaultMessage: 'Expires' }))),

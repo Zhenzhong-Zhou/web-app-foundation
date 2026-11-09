@@ -93,7 +93,7 @@ const WORDS = defineMessages({
   recentWhat: {
     id: 'home.customise.recentWhat',
     defaultMessage:
-      'Under the tiles, what you opened last: orders, products, lots and more.',
+      'Under the tiles, what you opened last: orders, items, lots and more.',
   },
   resetNow: {
     id: 'home.customise.resetNow',

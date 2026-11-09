@@ -38,4 +38,4 @@ Les personnes qui peuvent modifier les licences ou lancer des ordres de fabricat
 - Un numéro déjà enregistré pour le même organisme est refusé. Modifiez celui qui est déjà dans la liste.
 - Une licence ne peut pas expirer avant d’avoir été délivrée. Vérifiez les deux dates.
 
-Voir aussi [Produits](/products) et [Production](/production).
+Voir aussi [Articles](/items) et [Production](/production).

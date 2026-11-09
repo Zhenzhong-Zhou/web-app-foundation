@@ -105,7 +105,7 @@ export function AddVariantDialog({
               id="variant-sku"
               label={intl.formatMessage({
                 id: 'products.sku',
-                defaultMessage: 'SKU',
+                defaultMessage: 'Code',
               })}
               required
               fullWidth

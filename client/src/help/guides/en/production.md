@@ -41,4 +41,4 @@ A production run consumes components and produces a finished item, made by you o
 - A licence that has expired, is not yet in force or was withdrawn can stop a release, as the [licence policy](/settings/organization#licences) says. Someone who may override it can release with a reason, kept on the run.
 - Cancelling does not carry issued components back: somebody has to move them.
 
-See also [Products](/products) and [Lots](/lots).
+See also [Items](/items) and [Lots](/lots).

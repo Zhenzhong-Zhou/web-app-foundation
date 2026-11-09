@@ -430,10 +430,10 @@ const SCREENS: Screen[] = [
   { name: 'credit notes', path: () => '/credit-notes', ready: heading },
   { name: 'returns', path: () => '/return-authorizations', ready: heading },
   { name: 'production', path: () => '/production', ready: heading },
-  { name: 'products', path: () => '/products', ready: heading },
+  { name: 'items', path: () => '/items', ready: heading },
   {
-    name: 'a product',
-    path: (seed) => `/products/${seed.productId}`,
+    name: 'an item',
+    path: (seed) => `/items/${seed.productId}`,
     ready: heading,
   },
   { name: 'partners', path: () => '/partners', ready: heading },

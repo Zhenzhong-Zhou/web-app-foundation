@@ -55,7 +55,7 @@ export function CreateProductDialog({
     {
       success: intl.formatMessage({
         id: 'products.added',
-        defaultMessage: 'Product added',
+        defaultMessage: 'Item added',
       }),
     },
   );
@@ -105,7 +105,7 @@ export function CreateProductDialog({
         <DialogTitle>
           {intl.formatMessage({
             id: 'products.create.title',
-            defaultMessage: 'Add a product',
+            defaultMessage: 'Add an item',
           })}
         </DialogTitle>
 
@@ -163,7 +163,7 @@ export function CreateProductDialog({
               id="product-sku"
               label={intl.formatMessage({
                 id: 'products.sku',
-                defaultMessage: 'SKU',
+                defaultMessage: 'Code',
               })}
               required
               fullWidth
@@ -217,7 +217,7 @@ export function CreateProductDialog({
           onCancel={close}
           label={intl.formatMessage({
             id: 'products.add',
-            defaultMessage: 'Add product',
+            defaultMessage: 'Add item',
           })}
           pendingLabel={intl.formatMessage({
             id: 'common.adding',

@@ -130,13 +130,13 @@ export function ProductDetailPage() {
         message={error}
         missingTitle={intl.formatMessage({
           id: 'status.missing.product',
-          defaultMessage: 'This product doesn’t exist',
+          defaultMessage: 'This item doesn’t exist',
         })}
         list={{
-          to: '/products',
+          to: '/items',
           label: intl.formatMessage({
             id: 'layout.nav.products',
-            defaultMessage: 'Products',
+            defaultMessage: 'Items',
           }),
         }}
         onRetry={() => void reload()}
@@ -155,9 +155,9 @@ export function ProductDetailPage() {
           {
             label: intl.formatMessage({
               id: 'layout.nav.products',
-              defaultMessage: 'Products',
+              defaultMessage: 'Items',
             }),
-            to: '/products',
+            to: '/items',
           },
         ]}
         // The reader's language; the forms edit `name`, the base (ADR-056).
@@ -212,7 +212,7 @@ export function ProductDetailPage() {
           {intl.formatMessage({
             id: 'products.discontinuedNotice',
             defaultMessage:
-              'This product is discontinued. Its variants keep their own status, so reactivating restores each to what it was.',
+              'This item is discontinued. Its variants keep their own status, so reactivating restores each to what it was.',
           })}
         </Alert>
       )}
@@ -311,7 +311,7 @@ export function ProductDetailPage() {
                 <TableCell>
                   {intl.formatMessage({
                     id: 'products.sku',
-                    defaultMessage: 'SKU',
+                    defaultMessage: 'Code',
                   })}
                 </TableCell>
                 <TableCell>

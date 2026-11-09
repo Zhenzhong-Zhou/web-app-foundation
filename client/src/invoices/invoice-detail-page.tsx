@@ -358,7 +358,7 @@ export function InvoiceDetailPage() {
                 <TableCell>
                   {intl.formatMessage({
                     id: 'products.sku',
-                    defaultMessage: 'SKU',
+                    defaultMessage: 'Code',
                   })}
                 </TableCell>
                 <TableCell>

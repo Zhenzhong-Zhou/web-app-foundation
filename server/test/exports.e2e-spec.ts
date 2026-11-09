@@ -155,7 +155,7 @@ describe('Exports (e2e)', () => {
     const lines = linesOf(
       (await alpha.agent.get('/v1/products/export').expect(200)).text,
     );
-    expect(lines[0].split(',').slice(0, 2)).toEqual(['SKU', 'Item']);
+    expect(lines[0].split(',').slice(0, 2)).toEqual(['Code', 'Item']);
     expect(lines[1]).toMatch(/^FOCUS-60,Focus 60ct,/);
     expect(lines[1]).toContain(',true,false,');
   });
@@ -333,7 +333,7 @@ describe('Exports (e2e)', () => {
     expect(
       Object.fromEntries(header.map((name, at) => [name, row[at]])),
     ).toEqual({
-      SKU: 'ASH-60',
+      编码: 'ASH-60',
       物品: 'Ashwagandha',
       规格: '60ct',
       类型: '原材料',
@@ -406,7 +406,7 @@ describe('Exports (e2e)', () => {
     const res = await alpha.agent
       .get(`/v1/price-lists/${list.priceList.id}/export`)
       .expect(200);
-    expect(linesOf(res.text)[0]).toBe('SKU,Item,Unit,Price,Currency');
+    expect(linesOf(res.text)[0]).toBe('Code,Item,Unit,Price,Currency');
 
     const [entry] = await db
       .select()
@@ -444,13 +444,13 @@ describe('Exports (e2e)', () => {
   it.each([
     ['/v1/invoices/export', 'Number'],
     ['/v1/credit-notes/export', 'Number'],
-    ['/v1/stock/export', 'SKU'],
+    ['/v1/stock/export', 'Code'],
     ['/v1/stock/movements/export', 'When'],
-    ['/v1/stock/reorder-points/export', 'SKU'],
+    ['/v1/stock/reorder-points/export', 'Code'],
     ['/v1/orders/export', 'Number'],
-    ['/v1/products/export', 'SKU'],
+    ['/v1/products/export', 'Code'],
     ['/v1/partners/export', 'Name'],
-    ['/v1/costs/valuation/export', 'SKU'],
+    ['/v1/costs/valuation/export', 'Code'],
   ])('writes %s, a header alone when nothing matches', async (path, first) => {
     const alpha = await registerOrganization(app, 'alpha');
 

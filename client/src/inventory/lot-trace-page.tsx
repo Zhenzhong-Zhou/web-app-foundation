@@ -165,7 +165,7 @@ export function LotSearchPage() {
                   <TableCell>
                     {intl.formatMessage({
                       id: 'products.sku',
-                      defaultMessage: 'SKU',
+                      defaultMessage: 'Code',
                     })}
                   </TableCell>
                   <TableCell>
@@ -545,7 +545,7 @@ function RelatedTable({
     <Grid
       head={[
         intl.formatMessage({ id: 'inventory.lot', defaultMessage: 'Lot' }),
-        intl.formatMessage({ id: 'products.sku', defaultMessage: 'SKU' }),
+        intl.formatMessage({ id: 'products.sku', defaultMessage: 'Code' }),
         intl.formatMessage({
           id: 'inventory.trace.stepsAway',
           defaultMessage: 'Steps away',

@@ -131,10 +131,11 @@ a second organization.
 
 ## 2. Catalogue and places
 
-- **MC-201** Products: create a good, a material and packaging. A SKU must be
-  unique; a duplicate is refused, naming the item that has the code and
+- **MC-201** Items, at `/items` (`/products` and its pages send there, with
+  their query): Add item creates a product, a raw material and packaging. A
+  code must be unique; a duplicate is refused, naming the item that has the code and
   asking for another, in English, French and Chinese.
-- **MC-202** A variant's SKU can be edited inline; leaving the field saves
+- **MC-202** A variant's code can be edited inline; leaving the field saves
   it, and Escape cancels.
 - **MC-203** Turning lot tracking on is offered only while the variant has no
   stock.
@@ -150,11 +151,11 @@ a second organization.
 
 ## 3. Stock
 
-- **MC-301** Inventory shows stock 50 rows at a time, by location, then SKU,
+- **MC-301** Inventory shows stock 50 rows at a time, by location, then code,
   then lot. Load more continues with no row repeated or skipped, and the
   location filter, "Show emptied" and the search apply to the whole list,
   not only the rows on screen (ADR-051).
-- **MC-308** Inventory search finds a row by any part of its SKU, its product
+- **MC-308** Inventory search finds a row by any part of its code, its item's
   name or its lot code; a search with no match says so.
 - **MC-309** "Promised to customers" lists only products something is held or
   backordered for, with on hand, held, free and backordered, and it updates
@@ -262,7 +263,7 @@ a second organization.
   release: *Made under 80012345 (Health Canada), current at release*, the
   number linking to Licences. A run released before migration 0037 reads
   *state at release not recorded*, never current.
-- **MC-507** Products → a variant → Recipe: duplicate the active version to a
+- **MC-507** Items → a variant → Recipe: duplicate the active version to a
   draft, then add, edit and remove a line. The active version is untouched.
 - **MC-508** Licences → Edit the licence on a recipe: set *Valid until* to
   yesterday. Plan a run from that recipe and open Release, then pick a
@@ -279,12 +280,12 @@ a second organization.
   outright. Turn on *A recipe must carry a licence*: a run whose recipe has
   none is refused at release. An Admin or a Viewer sees the section without
   a Save button.
-- **MC-511** Products → a variant → Recipe: the licence the recipe is made
+- **MC-511** Items → a variant → Recipe: the licence the recipe is made
   under carries its status (Current, Expires in N days, Expired, Withdrawn),
   so a lapse is seen before a run is planned. With *Valid until* set to
   today it reads *Expires today*, and release treats it as current.
 - **MC-512** *(ADR-091, #460)* Licences in the menu, and its filters. As
-  the demo Owner, Licences is under Records, before Products, in the rail
+  the demo Owner, Licences is under Records, before Items, in the rail
   and in the drawer; for a role that may not view licences it is not
   there. Open it from the menu: Licences expiring is not pressed, and every
   licence is listed. Press it: the address gains `expiring=1`, and the
@@ -319,7 +320,7 @@ a second organization.
   shipped quantity goes back down, and the shipment shows as voided.
 - **MC-611** The shipment dialog previews the lots before anything moves,
   earliest expiry first. The shipments list and the packing slip name each
-  SKU and lot (demo: SO-DEMO-1).
+  code and lot (demo: SO-DEMO-1).
 - **MC-612** Returns on a sale list each returned unit with its lot (demo: the
   5 units back on SO-DEMO-1).
 - **MC-613** Duplicate a sale: a new draft with the same lines and the same
@@ -382,7 +383,7 @@ A recall arrives as part of a code off a label. Time it from the first
 search to having the list of customers; the target is **under two minutes**.
 
 - **MC-901** Lot search: type `2609`. Both BF-2609 and FOC-2609-01 appear,
-  each with its SKU; codes starting with the text come first.
+  each with its code; codes starting with the text come first.
 - **MC-902** Trace BF-2609: its supplier receipt, the batch it went into
   (FOC-2609-01), and every customer who received that batch, including
   samples and returns.
@@ -464,10 +465,10 @@ folder by folder; these check what is already in place.
   shows all three as saved. Clear the Chinese name and save: it is gone.
   A description typed with no name in that language is refused before
   saving, saying which language.
-- **MC-1408** With 简体中文 checked under Product names required on
+- **MC-1408** With 简体中文 checked under Item names required on
   invoices, on the Organization page, and a customer set to Chinese,
   issuing an invoice for a product with no Chinese name is refused naming
-  the SKU; after Edit names adds one, it issues, and its printed lines
+  the code; after Edit names adds one, it issues, and its printed lines
   show the Chinese name.
 - **MC-1409** On a partner, Document languages: left alone, the first
   reads The organization's default and the second Nothing else, never a
@@ -501,7 +502,7 @@ folder by folder; these check what is already in place.
   has no "default" option and Save stays off without one; the second
   behaves as on a partner. Set Français then English and save; ship to a
   partner with no languages of its own: the shipment carries fr-CA and en.
-  A partner with its own pair is unaffected. Product names required on
+  A partner with its own pair is unaffected. Item names required on
   invoices: checking and unchecking back leaves Save off; checking 简体中文
   and saving survives a reload. A role without organizations.update sees
   both sections but cannot save them.
@@ -650,7 +651,7 @@ Paper is checked first because it must not change at all.
   least a fingertip tall; with a mouse they are compact.
 - **MC-1507** From 1200px wide the navigation is a dark rail beside the page:
   the daily work first (Inventory to Production), then Records (Licences,
-  Products, Partners, Locations, Trace a lot, Stock value, Audit log), then
+  Items, Partners, Locations, Trace a lot, Stock value, Audit log), then
   Settings (Organization, Members, Tax codes, Exchange rates, Price lists).
   The current page is highlighted, and the rail stays put while the page
   scrolls.
@@ -810,11 +811,11 @@ Paper is checked first because it must not change at all.
   right of its row without scrolling; scroll the table sideways and it stays
   put, the columns passing under it. A tab with nothing in it (SO-DEMO-QC's
   Returns) shows no 0, and Returned 0 carries no note.
-- **MC-1546** Products has a page header (Licences, Refresh, Add product),
+- **MC-1546** Items has a page header (Licences, Refresh, Add item),
   then Search and a Discontinued quick filter with its count. Typing part of a
   name narrows the list a moment after typing stops; pressing Discontinued
   shows only those (ZINC-60's product). Discontinued reads as a grey chip; a
-  search that matches nothing says so, and Add product stays in the header
+  search that matches nothing says so, and Add item stays in the header
   only.
 - **MC-1547** Partners has Search and a Retired quick filter with its count.
   The search finds a partner by part of its name, its code or its tax ID.
@@ -863,7 +864,7 @@ Paper is checked first because it must not change at all.
   scrolling sideways, held beside the pinned ⋮, which covers nothing (MC-R96).
   Hovering the chip still says how much is held.
 - **MC-1556** From any page, `/` or ⌘K focuses the top bar's search. Typing
-  `2609` lists BF-2609 and FOC-2609-01 under Lots, each with its SKU and
+  `2609` lists BF-2609 and FOC-2609-01 under Lots, each with its code and
   expiry chip; arrow keys move, Enter opens the lot's trace, Escape closes.
   `fokus` shows Focus 60ct marked close match; `mdyf` or 明德 finds 明德药房; `INV-`
   puts Invoices first. One letter alone asks for more, but one Chinese
@@ -882,9 +883,9 @@ Paper is checked first because it must not change at all.
   the Chinese names read correctly, not as garbled characters. Sort Invoices
   by Total, then export: the file is in the same order. Inventory sorted by
   Expires lists the soonest first; Movements, Production and Returns narrow by
-  their date range; Products, Partners, a price list, Stock value and the
+  their date range; Items, Partners, a price list, Stock value and the
   Audit log each export, and the Audit log shows the export as an entry.
-  Products with `focus` typed and Discontinued pressed exports only what
+  Items with `focus` typed and Discontinued pressed exports only what
   the list shows, each item's type in the screen's language, its
   category's path, and its names in English, French and Chinese where it
   has them; and so does Partners with `mill` and Retired; the Audit
@@ -1012,7 +1013,7 @@ Paper is checked first because it must not change at all.
   Orders · Draft: it comes back in its place, after To receive, the line
   saying Orders · Draft shown, 2 of 9, focus on its handle. Under the switch a
   line says what it shows, Under the tiles, what you opened last: orders,
-  products, lots and more (磁贴下方列出您最近打开的订单、产品、批次等记录。;
+  items, lots and more (磁贴下方列出您最近打开的订单、物品、批次等记录。;
   Sous les tuiles, ce que vous avez ouvert en dernier…), and below, faded,
   the demo owner's Recently opened holds SO-DEMO-1 and Focus 60ct from the
   seed, nothing opened first. Turn off Show
@@ -1221,7 +1222,7 @@ await fetch(`${api}/v1/files/product-image`, {
   Use a thumbnail's menu to Make cover and Move left; drag one to the end.
   Remove one by its menu: focus is on Undo, and the message stays while
   focus or the pointer is on it, well past five seconds, and still once
-  the pointer has passed over it and gone; Enter: it is back. Remove one, Tab away and wait: after a reload it is gone. The Products list and Inventory show each cover; a
+  the pointer has passed over it and gone; Enter: it is back. Remove one, Tab away and wait: after a reload it is gone. The Items list and Inventory show each cover; a
   product without one shows the plain tile. At eight, Add images is
   disabled with the reason. A viewer sees the gallery without the menus.
   In 中文 on a phone, the buttons and the hint read naturally.
@@ -1671,7 +1672,7 @@ Any page, signed in, in a browser at its default font size.
   signing in, and stays so after.
 - **MC-2806** *(ADR-075)* With VoiceOver on (⌘ F5), open a product with a
   weight and Tab to its variant's chevron: it is read as Details of its
-  SKU, collapsed; pressing it reads expanded.
+  code, collapsed; pressing it reads expanded.
 - **MC-2807** *(ADR-075)* Turn on Reduce motion (macOS: System Settings →
   Accessibility → Display). The drawer below 1200px, menus and dialogs
   appear without sliding or fading, and the gallery's zoom jumps rather
@@ -1686,10 +1687,10 @@ Signed in as the demo Owner the seed prints.
   value to the second, as Help does, and each entry's action, record type
   and details read in the language, with no id anywhere. An invoice drafted reads Tax code: GST
   and Shipment: SO-…, the shipment opening its order; an RMA, its lines
-  by SKU, quantity and resolution, and its order and invoice by number;
+  by code, quantity and resolution, and its order and invoice by number;
   Sarah Chen's role change, Viewer → Admin, the role names in the
   language; a price set on a price list, its unit price and then the item
-  by SKU, as FOCUS-60CT, and the same when an item is taken off a list. The order's number opens the order, and the role opens
+  by code, as FOCUS-60CT, and the same when an item is taken off a list. The order's number opens the order, and the role opens
   Members. The last column, where a change came from, is headed 来源 in
   中文 and Provenance in Français, words of its own rather than the date
   filter's 起始 and Depuis.
@@ -2024,7 +2025,7 @@ The pages, in a private window unless a check says otherwise.
   demo Owner, invite an address as a Viewer with a note of two lines, and
   accept it from Mailpit in a private window, at 900 px wide or more.
   Home's card, above the tiles, is open (each of its areas a link named
-  as the menu names the page it opens, Inventory, Products, Orders, not
+  as the menu names the page it opens, Inventory, Items, Orders, not
   Stock and locations; an area whose first page is closed to the reader
   links its next, Tax codes for costs): its head, at the size of Home's
   other headings, reads Welcome to Demo …,
@@ -2033,7 +2034,7 @@ The pages, in a private window unless a check says otherwise.
   and the card stays for your first two weeks, until the day fourteen
   days on; and the note as typed, its line break kept, under the Owner's
   photo or initials, their name opening their page on People. Then the
-  first week: Say who you are, Look up a product or a lot and Open an
+  first week: Say who you are, Look up an item or a lot and Open an
   order, each one link, its whole row, with its hint. Then What you can do
   here, a line per area, each area's name a link to its page (Orders opens
   Orders), ending To do more, ask … with each name opening People. Fold:
@@ -2412,7 +2413,7 @@ The pages, in a private window unless a check says otherwise.
   stock, it opens Inventory as before.
 - **MC-3322** *(ADR-080)* Receiving a lot-tracked line without the
   catalogue. As the demo Owner, edit Warehouse on Settings → Roles: untick
-  See the product catalogue, which unticks Receive, ship or transfer stock
+  See the items, which unticks Receive, ship or transfer stock
   with it, and save. As Tom Becker, with the Network tab open, press
   Receive on PO-DEMO-11's MELATONIN line: Lot number and Expires are asked
   for, Up to 5.0000 kg still outstanding. names the unit, nothing says the
@@ -2577,14 +2578,14 @@ revision back afterwards: `git status` shows nothing changed.
   fields and press Receive: under them, A new version is being installed.
   Try again in a minute; nothing was saved., with no Reload, and
   everything typed stays. In 中文 新版本正在安装。请一分钟后再试；没有保存任何内容。
-  Close it and open Products from the rail: in its place, with the rail
+  Close it and open Items from the rail: in its place, with the rail
   still there, A new version is being installed, This page tries again by
-  itself in a minute., and no button; the Network tab shows Products read
+  itself in a minute., and no button; the Network tab shows Items read
   again each minute, and `version.json` every 30 seconds. Switch to another
   tab for a few minutes and back: nothing was asked meanwhile, and
-  Products and `version.json` are read again at once. Orders → New
+  Items and `version.json` are read again at once. Orders → New
   order says the same in the form's place, never Could not load partners
-  and products. In a private window, Sign in says A new version is being
+  and items. In a private window, Sign in says A new version is being
   installed. Try again in a minute; nothing was saved.; so do Forgot your
   password there, and a photo added on a product, in its row. Nothing signs
   out, and no page says Could not reach the server. The bell asks
@@ -2596,7 +2597,7 @@ revision back afterwards: `git status` shows nothing changed.
   without Keep me signed in, typing on a page asks `auth/me` nothing more
   either.
 - **MC-3413** *(ADR-081)* Then the new version is out. Still outdated, add
-  the override of `/version.json`: within 30 seconds Products becomes A
+  the override of `/version.json`: within 30 seconds Items becomes A
   new version is ready, A new version came out while this tab was open.
   Reload to use it; nothing is lost., with Reload, under the amber banner.
   Open Receive again and press Receive: the amber line tops the dialog,
@@ -2692,7 +2693,7 @@ menu's Colour mode.
   dark red on pale red, and in dark mode light red on a dark tint, its
   buttons as easy to read.
 
-A reference (a document's number, a SKU, a lot code) is kept whole where
+A reference (a document's number, a code, a lot code) is kept whole where
 words sit beside it; one alone, or first in its line, needs nothing.
 
 - **MC-3422** *(ADR-081)* References kept whole. At 390 px, then at 320
@@ -2705,7 +2706,7 @@ words sit beside it; one alone, or first in its line, needs nothing.
   used by another partner, wrapping between words, never inside COOP-BSL;
   Cancel, and its code is still HARBOUR. Inventory → a row's Ship out, for
   more than can be taken while some is held for an order, the same: never
-  inside the SKU or the order's number.
+  inside the code or the order's number.
 
 Home's tiles sit two across on a phone and three from a page 600 px wide,
 a window of about 648, never more (ADR-091), as few rows as that takes,
@@ -3183,11 +3184,11 @@ the base name. The demo's Focus 60ct is 专注胶囊 60 粒 in Chinese and
 Focus, 60 capsules in French. Documents, CSV exports, the audit log and
 refusals keep the base name.
 
-- **MC-3801** In 中文, Products lists 专注胶囊 60 粒 where Focus 60ct was,
+- **MC-3801** In 中文, Items (物品) lists 专注胶囊 60 粒 where Focus 60ct was,
   sorted among the others by its pinyin (zhuanzhu…), and the names with
   no Chinese among them by their letters, accents and case aside. In
   English it is Focus 60ct again, in the same alphabetical order. Switch
-  the language while Products, the product's page or Inventory is open:
+  the language while Items, the item's page or Inventory is open:
   the names change with the screen's words, without leaving it.
 - **MC-3802** In 中文, open 专注胶囊 60 粒: the heading and the gallery's
   images are named 专注胶囊 60 粒, and 其他语言名称 starts with 基础名称：Focus
@@ -3203,21 +3204,22 @@ refusals keep the base name.
   Home's Recently opened, after opening the product, names it 专注胶囊 60
   粒 too.
 
-## 39. Products, Partners and the pickers searched on the server (ADR-056, amended)
+## 39. Items, Partners and the pickers searched on the server (ADR-056, amended)
 
-Products, Partners, every item picker and every partner picker search as
+Items, Partners, every item picker and every partner picker search as
 the top bar's lookup does: a name in any language, accents, case and punctuation aside, a
 Chinese name by its pinyin or by one character, the closest match first.
 The list narrows a moment after typing stops.
 
-- **MC-3901** On Products, `zzjn`, `zhuanzhu` or `zhuānzhù` lists
+- **MC-3901** On Items, `zzjn`, `zhuanzhu` or `zhuānzhù` lists
   专注胶囊 60 粒 in 中文, and Focus 60ct in English; so does `ＦＯＣＵＳ`,
   typed full width with a Chinese input method. `bisglycinate de magnesium`, without
   its accent, finds Magnesium bisglycinate capsules by its French name.
   镁 alone lists the magnesium capsules and their sample bag, nothing
   else. Discontinued counts only what the search found. From the top bar, `zzjn`, then Show
-  all in Items: Products opens with zzjn in its box, listing the same.
-  Do it again on Products showing `calm`: the box and the list change to
+  all in Items: Items opens at `/items` with zzjn in its box, listing
+  the same, discontinued items among them. Do it again on Items showing
+  `calm`: the box and the list change to
   zzjn, Back brings calm back, and Forward zzjn. What is typed is in the
   address: reload, or open a product and come Back, and the list is
   still narrowed. With DevTools' network set to Slow 4G, type `calm`:
@@ -3362,11 +3364,11 @@ site, after a deploy that changes the setting, the route or the relay.
   Reorder points.". As the demo Owner, on Reorder points, give a bought
   item with stock a point above what it has, and restart the server (it
   checks at start, then hourly): the bell gets one notice, "… is low
-  on stock" with the item's SKU, then its name and "Raise a
+  on stock" with the item's code, then its name and "Raise a
   purchase order from Reorder points.", with no quantity anywhere.
   Restart again: no second notice. Give two more items points above what
   they have, one of them made, and restart: one notice, "2 items fell
-  below their reorder point", naming both SKUs, then "Order or plan them
+  below their reorder point", naming both codes, then "Order or plan them
   from Reorder points.". Daniel Okafor (Admin) has the same; Tom Becker
   (Warehouse) and Chloé Tremblay (Viewer), neither. Receive enough of the
   first item to pass its point and restart: nothing. Confirm a sale that
@@ -3377,7 +3379,7 @@ site, after a deploy that changes the setting, the route or the relay.
   points: the address gains `?tab=reorder-points`, the switch reads All 9
   · Low stock 6 · Out 1, and "Position = usable + coming − still needed" sits
   above the list. VITC-100 comes first, every low row before every other,
-  and the rest by SKU. Each row has its SKU in bold, its name beside it
+  and the rest by code. Each row has its code in bold, its name beside it
   and a small line under it: "Bought · 48 at a time" for D3-1000-120,
   "Made · just enough" for SLEEP-60CT, "Bought · up to 192" for
   ELDER-250. Out is red, Low amber, Enough green, each with an icon.
@@ -3409,7 +3411,7 @@ site, after a deploy that changes the setting, the route or the relay.
   D3-1000-120 among them, none on MAGCAP-SAMPLE or SLEEP-60CT, which are
   made, or on the rows with enough. OMEGA3-90's box is greyed, and
   hovering it says it is in a draft already. Choose two: a dark bar
-  floats at the foot of the list, "2 chosen", each SKU with its
+  floats at the foot of the list, "2 chosen", each code with its
   suggestion; Clear empties it. The header's box chooses every row with
   a box, and unticked, none. Choose one, search for another item and
   choose it too: the bar holds both. With VoiceOver on, ticking a box
@@ -3461,7 +3463,7 @@ site, after a deploy that changes the setting, the route or the relay.
   the bell. Its stock and its orders do not change." Keep it changes
   nothing; Remove reorder point takes the row off the list and the counts
   down by one. The menu's Remove asks the same. Stock of the item opens
-  Stock, searched for the SKU. Edit ELDER-250 again, choose A fixed
+  Stock, searched for the code. Edit ELDER-250 again, choose A fixed
   quantity of 48 and Save: the audit log's newest line, Reorder point
   changed, reads How much to order from Up to a maximum to A fixed
   quantity, Maximum from 150 to none and Fixed quantity from none to 48,
@@ -3513,7 +3515,7 @@ site, after a deploy that changes the setting, the route or the relay.
   raises orders but plans no runs: her notice names only the four bought
   items, "VITC-100, ELDER-250 and 2 more. Order them from Reorder
   points.". As the Owner, give two bought items with stock points above
-  what they have, and restart the server: one notice, both SKUs, then
+  what they have, and restart the server: one notice, both codes, then
   "Order them from Reorder points.", though the Owner may plan runs too.
   Two made items: "Plan them from Reorder points."; one of each: "Order
   or plan them from Reorder points.".
@@ -3823,7 +3825,7 @@ first.
 
 - **MC-R71** *(the promised table naming an item by its SKU alone, #296)*
   As the demo Owner in 中文, on Inventory, 已承诺给客户 has 物品 beside
-  SKU: ELDER-250, which SO-DEMO-9 and SO-DEMO-10 wait for, reads
+  编码: ELDER-250, which SO-DEMO-9 and SO-DEMO-10 wait for, reads
   接骨木莓糖浆…, as Stock above it names it. In English the same row
   reads its base name.
 
@@ -3833,7 +3835,7 @@ first.
   bold, then 维生素 D3 1000 IU，120 粒软胶囊, then its lot; its change
   reads 40, not 40.0000; 操作人 reads 王建国 with their email beneath,
   whole on hover. Open D3-1000-120's History on an Inventory row: its
-  title names the item beside the SKU (and the lot, for a lot's row),
+  title names the item beside the code (and the lot, for a lot's row),
   and its rows read their changes and who the same way. A member who has
   since deleted their account shows as 已删除的用户, with no email. In
   English the names are the base names.
@@ -3849,7 +3851,7 @@ first.
   Receive stock and Plan a run; a tile, and a button of what is late; a
   step of Getting started; Look up in a newcomer's first week (a Viewer
   just invited, as MC-3207 sets up); the top bar's Show all in Orders; a licence's notice in the
-  bell; Licences from Products, now under the header every list has;
+  bell; Licences from Items, now under the header every list has;
   Stock of the item from a Reorder points row; a page linked from a Help
   guide, and Your account at Help's foot. Any of these pages opened from the menu, from the trail above a
   record, or by its address in a new tab, shows no Back. Opened by a
@@ -3861,7 +3863,7 @@ first.
 
 - **MC-R68** *(Receive leaving focus on the dialog, not its first field,
   #313)* On Inventory, press Receive stock with the keyboard: the cursor
-  is in Item, and typing a SKU there needs no Tab first.
+  is in Item, and typing a code there needs no Tab first.
 
 - **MC-R67** *(Inventory's search not following the address, #301)* As
   the demo Owner, on Inventory's Stock tab, type `2609` in the top bar and
@@ -3913,13 +3915,13 @@ first.
   has no account. On Invited, Resend says the roles it named have been
   deleted. Found by `/code-review` on #176.
 - **MC-R63** *(no English inside a French or Chinese message, #129)* In
-  Français, then in 简体中文: with 简体中文 checked under Product names
+  Français, then in 简体中文: with 简体中文 checked under Item names
   required on invoices and a customer set to Chinese, issue an invoice for
   a product with no Chinese name. The refusal names the language 简体中文,
   as the product page lists it, never Simplified Chinese, and says to add
-  its 简体中文 name on its product's page. On a sale to a customer with a
+  its 简体中文 name on its item's page. On a sale to a customer with a
   default price list, add a line for an item not on the list: why it is
-  unpriced reads in the app's language, the list's name and the SKU as
+  unpriced reads in the app's language, the list's name and the code as
   typed. Inventory → a row's Ship out, for more than can be taken while
   some is held: the refusal ends in the app's language, des commandes
   confirmées or 已确认的订单, and shipping an order more than it holds
@@ -3970,13 +3972,14 @@ first.
   "links a return that arrived before the RMA".
 
 - **MC-R57** *(Recently opened's kinds in sentence case, #223)* Open
-  SO-DEMO-1 and a product, then Home: in Recently opened, SO-DEMO-1's row
+  SO-DEMO-1 and an item, then Home: in Recently opened, SO-DEMO-1's row
   is named by its partner, SO-DEMO-1 · Order in grey under it, and the
-  product's by its name, Product under it: Order and Product, not ORDER
-  and PRODUCT, each with its icon. In Français, Commande and Produit.
+  item's by its name, Item under it: Order and Item, not ORDER
+  and ITEM, each with its icon. In Français, Commande and Article; in
+  中文, 订单 and 物品.
   Found by `/simplify` on #196.
 
-- **MC-R55** *(quantities read without padding zeros, #213)* Products →
+- **MC-R55** *(quantities read without padding zeros, #213)* Items →
   Calm 90ct → Recipe: Makes 1,000 per batch, not 1000.0000. On SO-DEMO-7,
   Take a return: MAGCAP-60 reads 48 shipped, 0 already back, and its lot
   MC60-0815 reads 48 under Shipped and 0 under Already back. Against RMA,
@@ -4170,7 +4173,7 @@ first.
   they are seen. At 1280 px the tabs and lines come first and the summary
   at the right after them, as before.
 - **MC-R27** *(focus back from a dialog, #155)* With the keyboard alone, at
-  1280 px and at 390 px: on Products, Add product, then Escape; on
+  1280 px and at 390 px: on Items, Add item, then Escape; on
   SO-DEMO-2, Ship, then Cancel; on PO-DEMO-9, a line's Receive, then
   Escape; on Account, Delete my account, then Cancel; on a product, History,
   then Escape; on a role made here, Delete, then Cancel, and Move everyone
@@ -5353,3 +5356,12 @@ first.
 - 2026-11-09: ADR-092 step 8, the demo gains a category tree, a sample
   and its items sorted, and the volume seed categories and every type:
   the demo's introduction extended.
+- 2026-11-09: ADR-092 step 10, Products renamed Items at `/items`, the
+  old addresses sending there, Show all in Items opening on All with
+  discontinued items, the welcome's Look up an item, and SKU named Code:
+  MC-201, MC-1546, MC-3801 and MC-3901 rewritten for the name; MC-202,
+  MC-301, MC-308, MC-507, MC-511, MC-512, MC-611, MC-901, MC-1408,
+  MC-1411, MC-1507, MC-1556, MC-1558, MC-1563, MC-1801, MC-2806, MC-2901,
+  MC-3207, MC-3322, MC-3412, MC-3413, MC-3422, MC-4201, MC-4202,
+  MC-4205, MC-4209, MC-4214, MC-R27, MC-R55, MC-R57, MC-R63, MC-R68,
+  MC-R69, MC-R70 and MC-R71 reworded.

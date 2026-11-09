@@ -13,10 +13,12 @@ offers either language (MC-1405).
 
 | English | Français (Canada) | 简体中文 | Notes |
 | --- | --- | --- | --- |
-| Product | Produit | 产品 | |
+| Item | Article | 物品 | Anything the company keeps, of any type: the page, the menu, the top bar's group (ADR-092). |
+| Product | Produit | 商品 | The goods it sells, and only those: the type, and its tab (ADR-092). Not 产品, which Chinese keeps only in the licences' regulatory terms. |
+| Products / Raw materials / Packaging / Supplies / Samples / Equipment | Produits / Matières premières / Emballages / Fournitures / Échantillons / Équipement | 商品 / 原材料 / 包装材料 / 耗材 / 样品 / 设备 | An item's type, each its tab's name (ADR-092). 耗材 is what the accounts call 低值易耗品. |
 | Variant | Variante | 规格 | The thing counted: "60ct". |
 | Category / Uncategorised | Catégorie / Sans catégorie | 分类 / 未分类 | Items' grouping, one tree per organization; an item is in one or none (ADR-092). |
-| SKU | UGS | SKU | French: unité de gestion des stocks. Chinese keeps the Latin abbreviation, as labels do. |
+| Code | Code | 编码 | A variant's own code, on its label, documents and every CSV; once SKU · UGS · SKU (ADR-092). The organization's export keeps its column's name, `sku`. |
 | Lot | Lot | 批次 | A traced quantity with a code and an expiry. |
 | Location | Emplacement | 库位 | A shelf, bin or site stock sits in. |
 | Site / Zone / Aisle / Shelf / Bin | Site / Zone / Allée / Tablette / Casier | 站点 / 区域 / 通道 / 货架 / 货位 | A location's type by depth, outermost first. |
@@ -33,7 +35,7 @@ offers either language (MC-1405).
 | Invoice | Facture | 发票 | |
 | Credit note | Note de crédit | 贷项通知单 | |
 | Return authorization (RMA) | Autorisation de retour | 退货授权 | |
-| Recipe | Recette | 配方 | A product's bill of materials. |
+| Recipe | Recette | 配方 | An item's bill of materials. |
 | Production run | Ordre de fabrication | 生产订单 | |
 | Batch | Lot | 批次 | What a run makes; the same word as a received lot. |
 | Component | Composant | 物料 | What a recipe consumes. |
@@ -118,7 +120,7 @@ as the catalogues word it.
 | Consumption | Consommation | 消耗 | What a run used. |
 | Sample | Échantillon | 样品 | |
 | Unit of measure | Unité de mesure | 计量单位 | |
-| Discontinue / Discontinued | Abandonner / Abandonné | 停用 / 已停用 | A product no longer offered. |
+| Discontinue / Discontinued | Abandonner / Abandonné | 停用 / 已停用 | An item no longer offered or used. |
 | Retire / Retired | Retirer / Retiré | 停用 / 已停用 | A partner, location or list kept for the records that name it. |
 | In use | En usage | 使用中 | The opposite of retired. |
 

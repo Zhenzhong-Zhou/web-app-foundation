@@ -7,7 +7,7 @@ export const RECENT_KIND_LABELS = defineMessages<RecentKind>({
   order: { id: 'recent.kind.order', defaultMessage: 'Order' },
   invoice: { id: 'recent.kind.invoice', defaultMessage: 'Invoice' },
   lot: { id: 'recent.kind.lot', defaultMessage: 'Lot' },
-  product: { id: 'recent.kind.product', defaultMessage: 'Product' },
+  product: { id: 'recent.kind.product', defaultMessage: 'Item' },
   partner: { id: 'recent.kind.partner', defaultMessage: 'Partner' },
   run: { id: 'recent.kind.run', defaultMessage: 'Production run' },
   return: { id: 'recent.kind.return', defaultMessage: 'Return' },

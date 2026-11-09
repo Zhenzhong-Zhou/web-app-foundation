@@ -15,13 +15,13 @@ import { createProduct } from './support/api';
 test('adds a second variant to an existing product', async ({ page, api }) => {
   const product = await createProduct(api, { name: 'E2E Multi-size Widget' });
 
-  await page.goto(`/products/${product.id}`);
+  await page.goto(`/items/${product.id}`);
   await page.getByRole('button', { name: 'Add variant' }).click();
 
   const dialog = page.getByRole('dialog');
   const sku = `${product.sku}-XL`;
 
-  await dialog.getByLabel('SKU').fill(sku);
+  await dialog.getByLabel('Code').fill(sku);
   await dialog.getByLabel('Size or variation').fill('Extra large');
   await dialog.getByRole('button', { name: 'Add variant' }).click();
 
@@ -38,7 +38,7 @@ test('renames a SKU inline', async ({ page, api }) => {
   const product = await createProduct(api, { name: 'E2E Typo Widget' });
   const corrected = `${product.sku}-FIXED`;
 
-  await page.goto(`/products/${product.id}`);
+  await page.goto(`/items/${product.id}`);
 
   /**
    * The SKU is edited in the cell, not in the Edit dialog — that dialog covers
@@ -73,7 +73,7 @@ test('renames a SKU inline', async ({ page, api }) => {
 test('edits a variant through the dialog', async ({ page, api }) => {
   const product = await createProduct(api, { name: 'E2E Dimensioned Widget' });
 
-  await page.goto(`/products/${product.id}`);
+  await page.goto(`/items/${product.id}`);
   await page
     .getByRole('row', { name: new RegExp(product.sku) })
     .getByRole('button', { name: 'Edit' })

@@ -167,7 +167,7 @@ export function ProductionOrdersPage() {
               : intl.formatMessage({
                   id: 'production.empty',
                   defaultMessage:
-                    'Nothing here. A run consumes components and produces a finished item — it needs a recipe first, which lives on the product.',
+                    'Nothing here. A run consumes components and produces a finished item — it needs a recipe first, which lives on the item’s page.',
                 })}
           </EmptyState>
         </Paper>

@@ -181,8 +181,8 @@ describe('the welcome card', () => {
       }),
     ).toHaveAttribute('href', '/account');
     expect(
-      within(region).getByRole('link', { name: /^Look up a product or a lot/ }),
-    ).toHaveAttribute('href', '/products');
+      within(region).getByRole('link', { name: /^Look up an item or a lot/ }),
+    ).toHaveAttribute('href', '/items');
     expect(
       within(region).getByRole('link', { name: /^Open an order/ }),
     ).toHaveAttribute('href', '/orders');
@@ -210,7 +210,7 @@ describe('the welcome card', () => {
       },
     );
 
-    const lookUp = { name: /^Look up a product or a lot/ };
+    const lookUp = { name: /^Look up an item or a lot/ };
     await userEvent.click(within(await card()).getByRole('link', lookUp));
     await userEvent.click(screen.getByRole('button', { name: 'Back' }));
 
@@ -528,7 +528,7 @@ describe('the welcome card', () => {
 
     const region = await card();
     const item = within(region)
-      .getByText('Look up a product or a lot', { exact: false })
+      .getByText('Look up an item or a lot', { exact: false })
       .closest('li');
     if (!item) throw new Error('No item for the lookup');
     expect(within(item).getByText('Done')).toBeVisible();
