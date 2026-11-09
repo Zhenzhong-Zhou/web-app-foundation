@@ -143,6 +143,29 @@ export function checkKey(env) {
   }
 }
 
+/** The SDK's own names for what pays a session: its ApiKeySource type. */
+const PAYERS = [
+  "ANTHROPIC_API_KEY",
+  "apiKeyHelper",
+  "/login managed key",
+  "none",
+  "user",
+  "project",
+  "org",
+  "temporary",
+  "oauth",
+];
+
+/**
+ * Names what pays a session from that list, never the value the session
+ * handed over: a value the list lacks prints as "another source". The
+ * field names a source, not a key, but only a name from the list ever
+ * reaches a line the runner prints or logs.
+ */
+export function payerOf(source) {
+  return PAYERS.find((name) => name === source) ?? "another source";
+}
+
 /**
  * The session's first message: paid by the key, and /fix-issue loaded in
  * the folder for a fix. Gives what was found, and why it stops, if it does.
@@ -153,7 +176,7 @@ export function checkInit(message, mode) {
   );
   let stop;
   if (message.apiKeySource !== "ANTHROPIC_API_KEY") {
-    stop = `this session would be paid by "${message.apiKeySource}", not the API key, so it stops before any work.`;
+    stop = `this session would be paid by "${payerOf(message.apiKeySource)}", not the API key, so it stops before any work.`;
   } else if (!found && mode === "fix") {
     stop =
       "/fix-issue is not loaded in that folder, so it stops before any work.";

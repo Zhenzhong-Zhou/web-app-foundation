@@ -28,6 +28,7 @@ import {
   lastFix,
   mainFolder,
   parseArguments,
+  payerOf,
   promptFor,
   readRuns,
   recordRun,
@@ -157,6 +158,19 @@ test("the session stops unless the key pays and a fix finds /fix-issue", () => {
     checkInit(init("ANTHROPIC_API_KEY", []), "probe").stop,
     undefined,
   );
+});
+
+test("what pays a session is named from the SDK's own list only", () => {
+  assert.equal(payerOf("ANTHROPIC_API_KEY"), "ANTHROPIC_API_KEY");
+  assert.equal(payerOf("/login managed key"), "/login managed key");
+  assert.equal(payerOf("sk-ant-api03-not-a-name"), "another source");
+  assert.equal(payerOf(undefined), "another source");
+  const stop = checkInit(
+    { apiKeySource: "sk-ant-api03-not-a-name", slash_commands: [] },
+    "probe",
+  ).stop;
+  assert.match(stop, /paid by "another source"/);
+  assert.ok(!stop.includes("sk-ant"), stop);
 });
 
 /**

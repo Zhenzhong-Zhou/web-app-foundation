@@ -56,6 +56,7 @@ import {
   logsFolder,
   mainFolder,
   parseArguments,
+  payerOf,
   promptFor,
   readRuns,
   recordRun,
@@ -251,7 +252,7 @@ try {
       session = message.session_id;
       model = message.model ?? model;
       console.log(
-        `session ${message.session_id}: model ${message.model}, paid by ${message.apiKeySource}, Claude Code ${message.claude_code_version}`,
+        `session ${message.session_id}: model ${message.model}, paid by ${payerOf(message.apiKeySource)}, Claude Code ${message.claude_code_version}`,
       );
       const check = checkInit(message, args.mode);
       console.log(
