@@ -1042,6 +1042,7 @@
   "stock.transferNeedsBothSource": "移库需要来源库位和目标库位",
   "stock.unknownLocation": "该库位不属于本组织。请从列表中选择。",
   "stock.unknownLotVariant": "此规格没有该批次",
+  "stock.unknownProduct": "该物品不属于本组织。请从筛选中移除它，查看所有物品。",
   "stock.unknownRecipient": "未知的收货方",
   "stock.unknownVariant": "该物品不属于本组织。请从列表中选择。",
   "taxCodes.nameListedTwiceCode": "{name} 出现了两次——一个税码对每种税只征收一次",

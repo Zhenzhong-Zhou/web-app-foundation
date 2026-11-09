@@ -224,6 +224,28 @@ How this file is kept is in the [README](README.md).
   nor counted.**
   [ADR-003](../adr/0003-multi-tenancy.md#decision) ·
   [test](../../server/test/items-list.e2e-spec.ts) "never shows another organization’s items, nor counts them"
+- **Items opens on Products, or on the first type the organization holds
+  an item of; a type with none has no tab, and the tab chosen, the
+  search, the category, Discontinued and the sort stay in the address.**
+  [ADR-092](../adr/0092-items.md#decision--the-types-as-tabs-opening-on-products) ·
+  [test](../../client/src/products/products-page.test.tsx) "opens on Products, or on the first type with items, with each tab’s count" ·
+  [test](../../client/src/products/products-page.test.tsx) "reads a tab’s type when chosen, keeping the search, and writes it in the address" ·
+  MC-207
+- **The category filter offers the categories holding items on the open
+  tab, each counting those in the categories under it, as Discontinued
+  leaves the list, and the one chosen.**
+  [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
+  [test](../../client/src/products/item-list.test.ts) "counts each category with those under it, on the open tab alone" ·
+  [test](../../client/src/products/item-list.test.ts) "counts the discontinued alone, or beside the rest, as the list shows them" ·
+  MC-210
+- **A row's stock opens Inventory for that item alone, every variant in
+  every location, its counts and its export too; another organization's
+  item there is refused, saying to remove it from the filter.**
+  [ADR-092](../adr/0092-items.md#decision--a-row-the-name-first-its-stock-read-from-inventory) ·
+  [test](../../server/test/stock.e2e-spec.ts) "lists one item alone, every variant in every location, its counts and export following" ·
+  [test](../../server/test/stock.e2e-spec.ts) "refuses another organization item with a 400, on the list, its counts and its export" ·
+  [test](../../client/src/inventory/inventory-page.test.tsx) "lists one item alone when the address names it, named on a chip that removes it" ·
+  MC-208
 
 ## Categories
 
@@ -476,7 +498,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/exports.e2e-spec.ts) "writes the items the list shows, by its own query and in its order" ·
   [test](../../server/test/exports.e2e-spec.ts) "writes the type and the category in the reader’s words, and every language’s names" ·
   [test](../../server/test/exports.e2e-spec.ts) "refuses past 50,000 rows, naming what narrows the list" ·
-  [test](../../client/src/products/products-page.test.tsx) "exports what the list shows, its search and Discontinued" ·
+  [test](../../client/src/products/products-page.test.tsx) "exports what the list shows, its tab, search, Discontinued and sort" ·
   MC-1558
 
 ## Who may do what, and what History keeps

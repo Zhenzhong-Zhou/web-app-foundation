@@ -1,36 +1,66 @@
+import Tune from '@mui/icons-material/Tune';
 import {
-  Alert,
+  Box,
   Button,
-  Link,
+  Drawer,
+  MenuItem,
   Paper,
   Skeleton,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  TextField,
+  ToggleButton,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
-import { useMemo, useState } from 'react';
-import { useIntl } from 'react-intl';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { ProductPage } from '../api/types.gen';
+import { WhomToAskRead } from '../account/whom-to-ask';
+import type {
+  ProductCategoryList,
+  ProductCounts,
+  ProductPage,
+  ProductSummary,
+} from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
+import { FilterChips } from '../components/filter-chips';
 import { FilterRow } from '../components/filter-row';
+import { ListError } from '../components/list-error';
 import { PageHeader } from '../components/page-header';
-import { ProductCover } from '../components/product-cover';
-import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import { HIDDEN } from '../lib/hidden';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useKeysetList } from '../lib/use-keyset-list';
+import {
+  oneOf,
+  useAddressWrite,
+  useListFilters,
+} from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
+import { type ListSort, useListSort, withSort } from '../lib/use-list-sort';
 import { useResource } from '../lib/use-resource';
+import { useTab } from '../lib/use-tab';
+import { rem } from '../theme/rem';
+import { CategoryFilter } from './category-filter';
 import { CreateProductDialog } from './create-product-dialog';
+import {
+  categoryOptions,
+  countOf,
+  type DiscontinuedShown,
+  ITEM_SORTS,
+  ITEM_TABS,
+  type ItemSort,
+  type ItemTab,
+  UNCATEGORISED,
+} from './item-list';
+import { ItemCards, ItemTable } from './item-rows';
+import { ItemTabs } from './item-tabs';
 import { productTypeLabel } from './product-types';
 
 /**
@@ -39,50 +69,196 @@ import { productTypeLabel } from './product-types';
  */
 export type { Variant, VariantTranslation } from '../api/types.gen';
 
+/** The six types alone, in the tabs' order: which one Items opens on. */
+const TYPE_TABS = ITEM_TABS.filter(
+  (tab): tab is Exclude<ItemTab, 'all'> => tab !== 'all',
+);
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Items' filters in the address (ADR-091, ADR-092), beside its tab, search
+ * and sort: a category's id, which holds those under it, or
+ * `uncategorised`; and the discontinued items, hidden unless `only`, the
+ * Discontinued chip, or `include`, which the top bar's Show all opens.
+ */
+const ADDRESS_FILTERS = {
+  category: {
+    read: (value: string | null) =>
+      value !== null && (value === UNCATEGORISED || UUID.test(value))
+        ? value
+        : '',
+    write: (value: string) => value || null,
+  },
+  discontinued: oneOf<DiscontinuedShown>(['', 'only', 'include'], ''),
+};
+
+/** Name, A to Z, unless a header is chosen (ADR-092). */
+const BY_NAME: ListSort<ItemSort> = { key: 'name', order: 'asc' };
+
+/**
+ * The phone's Sort list (ADR-092): each column's own way first, the stock
+ * fewest first, a date newest first.
+ */
+const PHONE_SORTS = defineMessages({
+  'name:asc': { id: 'products.sort.name', defaultMessage: 'Name' },
+  'category:asc': { id: 'products.category', defaultMessage: 'Category' },
+  'stock:asc': {
+    id: 'products.sort.stock',
+    defaultMessage: 'In stock, fewest first',
+  },
+  'changed:desc': {
+    id: 'products.sort.changed',
+    defaultMessage: 'Last changed, newest first',
+  },
+  'added:desc': {
+    id: 'products.sort.added',
+    defaultMessage: 'Date added, newest first',
+  },
+});
+
+/** Where Add item would be, for a role that cannot add one (ADR-091). */
+const NO_ADD = defineMessages({
+  ask: {
+    id: 'products.add.ask',
+    defaultMessage:
+      'Your role does not include adding items. To do more, ask {names}.',
+  },
+  none: {
+    id: 'products.add.none',
+    defaultMessage: 'Your role does not include adding items.',
+  },
+});
+
+/**
+ * Items (ADR-092): everything the company keeps, by type and category.
+ * Tabs for the types with their counts, the search, the category and
+ * Discontinued; fifty rows at a time, each with its stock and status;
+ * sorted by its headers. Every choice is in the address, so Back from an
+ * item, a bookmark or a link lands on the list as it was.
+ */
 export function ProductsPage() {
   const intl = useIntl();
   const can = useCan();
+  const theme = useTheme();
+  const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
+  const write = useAddressWrite();
 
   /**
-   * Searched on the server (ADR-056, amended), as the lookup finds an
-   * item: by any variant's SKU, its and its variants' names in every
-   * language, and their pinyin, best match first. From the address too:
-   * the lookup's "Show all" opens it narrowed.
+   * The last counts read, kept while another tab's or search's first page
+   * is on its way, so the tabs stay where they are; each count shows grey
+   * until its own answer comes.
    */
+  const [known, setKnown] = useState<ProductCounts | null>(null);
+
+  // Products, or the first type the organization holds an item of.
+  const opening: ItemTab = known
+    ? (TYPE_TABS.find((tab) =>
+        known.types.some((entry) => entry.type === tab),
+      ) ?? 'good')
+    : 'good';
+  const [tab, setTab] = useTab<ItemTab>([
+    opening,
+    ...ITEM_TABS.filter((other) => other !== opening),
+  ]);
+
+  const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
+  const { category, discontinued } = filters;
   const { text, setText, search } = useListSearch();
+  const { sort: chosen, header } = useListSort(ITEM_SORTS, BY_NAME);
+  const sort = chosen ?? BY_NAME;
+
+  const query = new URLSearchParams();
+  if (tab !== 'all') query.set('type', tab);
+  if (category) query.set('category', category);
+  if (discontinued) query.set('discontinued', discontinued);
+  const filtered = query.toString();
+  const path = withSort(
+    withSearch(filtered ? `/products?${filtered}` : '/products', search),
+    sort,
+  );
+
   const {
-    data: page,
+    entries: items,
+    first,
     error,
     refused,
+    failed,
     loading,
+    hasMore,
+    loadingMore,
+    loadMore,
     reload,
-  } = useResource<ProductPage>(
-    withSearch('/products?discontinued=include', search),
+  } = useKeysetList<ProductSummary, ProductPage>(path, { cursor: 'cursor' });
+  const counts = first?.counts ?? null;
+  if (counts && counts !== known) setKnown(counts);
+
+  const { data: tree } = useResource<ProductCategoryList>(
+    '/products/categories',
   );
-  // The first fifty, discontinued ones among them, until Items' list reads
-  // the rest a page at a time (ADR-092).
-  const items = page?.entries;
+  const options = tree
+    ? categoryOptions(tree.categories, tab, discontinued, category)
+    : [];
+  const chosenCategory = options.find((option) => option.id === category);
+
   const [creating, setCreating] = useState(false);
-  const [discontinuedOnly, setDiscontinuedOnly] = useState(false);
+  const [sheet, setSheet] = useState(false);
 
-  const showSkeleton = useDelayedFlag(loading);
+  // Show 50 more: focus on the first new row once it is there.
+  const firstNewRef = useRef<HTMLAnchorElement>(null);
+  const [firstNew, setFirstNew] = useState<number | null>(null);
+  useEffect(() => {
+    if (firstNew !== null && (items?.length ?? 0) > firstNew) {
+      firstNewRef.current?.focus();
+    }
+  }, [firstNew, items?.length]);
+  // A new list starts with no row to focus.
+  const [focusFor, setFocusFor] = useState(path);
+  if (focusFor !== path) {
+    setFocusFor(path);
+    setFirstNew(null);
+  }
 
-  /**
-   * Discontinued narrows the rows read here and counts within them.
-   * Discontinued ones stay listed by default; the quick filter shows only
-   * them.
-   */
-  const discontinued = (items ?? []).filter((item) => !item.isActive).length;
-  const shown = useMemo(
-    () => (items ?? []).filter((item) => !discontinuedOnly || !item.isActive),
-    [items, discontinuedOnly],
+  const showPlaceholders = useDelayedFlag(loading);
+
+  /** Each tab's count: this answer's, grey while it is read, "—" failed. */
+  const count = (of: ItemTab) =>
+    counts ? countOf(counts, of) : failed ? 'failed' : 'loading';
+
+  // The types the organization holds, and the open one; All last.
+  const tabs = ITEM_TABS.filter(
+    (each) =>
+      each === 'all' ||
+      each === tab ||
+      known?.types.some((entry) => entry.type === each),
   );
+
+  const nameOf = (of: ItemTab) =>
+    of === 'all'
+      ? intl.formatMessage({ id: 'products.tab.all', defaultMessage: 'All' })
+      : productTypeLabel(of, intl);
 
   if (refused) {
-    return (
-      <RevisionRefusalPage failure={refused} onRetry={() => void reload()} />
-    );
+    return <RevisionRefusalPage failure={refused} onRetry={reload} />;
   }
+
+  const canAdd = can('products.create');
+  const total = counts ? countOf(counts, tab) : null;
+  const filtersOn = (category ? 1 : 0) + (discontinued ? 1 : 0);
+
+  const categoryFilter = (fullWidth: boolean) => (
+    <CategoryFilter
+      options={options}
+      value={category && (tree || category === UNCATEGORISED) ? category : ''}
+      onChange={(next) => setFilters({ category: next })}
+      fullWidth={fullWidth}
+    />
+  );
+
+  const discontinuedLabel = intl.formatMessage({
+    id: 'products.discontinued',
+    defaultMessage: 'Discontinued',
+  });
 
   return (
     <Stack spacing={3}>
@@ -92,16 +268,16 @@ export function ProductsPage() {
           id: 'layout.nav.products',
           defaultMessage: 'Items',
         })}
+        subtitle={intl.formatMessage({
+          id: 'products.subtitle',
+          defaultMessage: 'Everything the company buys, sells, makes and uses',
+        })}
         actions={
           <>
-            {/* What the list shows, its search and Discontinued, every
-                language's names (ADR-057), by the list's own query
-                (ADR-092). */}
+            {/* Every row the list's query matches, not the rows loaded
+                (ADR-057, ADR-092). */}
             <ExportButton
-              path={withSearch(
-                `/products/export?discontinued=${discontinuedOnly ? 'only' : 'include'}`,
-                search,
-              )}
+              path={path.replace('/products', '/products/export')}
             />
             {/* Reference data for recipes, so it hangs off the catalogue
                 as well as the menu's records (ADR-091). */}
@@ -118,159 +294,458 @@ export function ProductsPage() {
                 })}
               </Button>
             )}
-            <Button
-              variant="text"
-              disabled={loading}
-              onClick={() => void reload()}
-            >
-              {intl.formatMessage({
-                id: 'common.refresh',
-                defaultMessage: 'Refresh',
-              })}
-            </Button>
             {/* Hidden without products.create — display only, since the
-                403 is the actual control (ADR-016). */}
-            {can('products.create') && (
+                403 is the actual control (ADR-016); one quiet line in its
+                place says whom to ask (ADR-091). */}
+            {canAdd ? (
               <Button onClick={openDialog(() => setCreating(true))}>
                 {intl.formatMessage({
                   id: 'products.add',
                   defaultMessage: 'Add item',
                 })}
               </Button>
+            ) : (
+              <Box sx={{ maxWidth: rem(480) }}>
+                <WhomToAskRead {...NO_ADD} />
+              </Box>
             )}
           </>
         }
       />
 
+      <ItemTabs tabs={tabs} current={tab} onChoose={setTab} count={count} />
+
       <FilterRow
         search={{
           label: intl.formatMessage({
-            id: 'inventory.search',
-            defaultMessage: 'Search',
+            id: 'products.search',
+            defaultMessage: 'Search by name or code',
           }),
           value: text,
           onChange: setText,
         }}
-        quick={[
-          {
-            id: 'discontinued',
-            label: intl.formatMessage({
-              id: 'products.discontinued',
-              defaultMessage: 'Discontinued',
-            }),
-            count: discontinued,
-            pressed: discontinuedOnly,
-            onToggle: () => setDiscontinuedOnly((on) => !on),
+        quick={
+          phone
+            ? []
+            : [
+                {
+                  id: 'discontinued',
+                  label: discontinuedLabel,
+                  count: counts?.discontinued,
+                  pressed: discontinued === 'only',
+                  onToggle: () =>
+                    setFilters({
+                      discontinued: discontinued === 'only' ? '' : 'only',
+                    }),
+                },
+              ]
+        }
+      >
+        {phone ? (
+          <Button
+            variant="outlined"
+            startIcon={<Tune />}
+            onClick={() => setSheet(true)}
+          >
+            {intl.formatMessage(
+              {
+                id: 'products.filters',
+                defaultMessage:
+                  '{count, plural, =0 {Filters} other {Filters · #}}',
+              },
+              { count: filtersOn },
+            )}
+          </Button>
+        ) : (
+          categoryFilter(false)
+        )}
+      </FilterRow>
+
+      {/* What the list holds that no button shows, each removable: the
+          category chosen, and the discontinued items Show all included. */}
+      <FilterChips
+        chips={[
+          category !== '' && {
+            id: 'category',
+            label:
+              category === UNCATEGORISED
+                ? intl.formatMessage({
+                    id: 'products.category.none',
+                    defaultMessage: 'Uncategorised',
+                  })
+                : (chosenCategory?.path.join(' › ') ??
+                  intl.formatMessage({
+                    id: 'products.category',
+                    defaultMessage: 'Category',
+                  })),
+            onRemove: () => setFilters({ category: '' }),
           },
+          discontinued === 'include' && {
+            id: 'discontinued-included',
+            label: intl.formatMessage({
+              id: 'products.discontinuedIncluded',
+              defaultMessage: 'Discontinued included',
+            }),
+            onRemove: () => setFilters({ discontinued: '' }),
+          },
+          phone &&
+            discontinued === 'only' && {
+              id: 'discontinued-only',
+              label: discontinuedLabel,
+              onRemove: () => setFilters({ discontinued: '' }),
+            },
         ]}
       />
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {loading && (
+        <Box role="status" sx={HIDDEN}>
+          {intl.formatMessage({
+            id: 'products.loading',
+            defaultMessage: 'Loading items…',
+          })}
+        </Box>
+      )}
 
-      <Paper variant="outlined">
-        {loading ? (
-          <Stack sx={{ p: 2 }} spacing={1}>
-            {showSkeleton ? (
-              <>
-                <Skeleton height={48} />
-                <Skeleton height={48} />
-              </>
-            ) : null}
-          </Stack>
-        ) : shown.length ? (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'common.name',
-                      defaultMessage: 'Name',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'products.typeLabel',
-                      defaultMessage: 'Type',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'common.status',
-                      defaultMessage: 'Status',
-                    })}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
+      {/* The list's part alone says it could not be read, with Try again;
+          the tabs, the search and the filters stay. */}
+      {failed && <ListError error={error} onRetry={reload} />}
 
-              <TableBody>
-                {shown.map((item) => (
-                  <TableRow key={item.id} hover>
-                    <TableCell>
-                      {/* The detail page is where variants live. The list shows
-                        products because that is the grouping a person scans;
-                        the variant is what they act on once they are there. */}
-                      <Stack
-                        direction="row"
-                        spacing={1.5}
-                        sx={{ alignItems: 'center' }}
-                      >
-                        <ProductCover
-                          fileId={item.coverFileId}
-                          name={item.displayName}
-                        />
-                        <Link component={RouterLink} to={`/items/${item.id}`}>
-                          {item.displayName}
-                        </Link>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>{productTypeLabel(item.type, intl)}</TableCell>
-                    <TableCell>
-                      {item.isActive ? (
-                        intl.formatMessage({
-                          id: 'common.active',
-                          defaultMessage: 'Active',
-                        })
-                      ) : (
-                        // Discontinued rather than deleted: a product whose
-                        // variants have movement history cannot be removed
-                        // (ADR-023).
-                        <StatusChip
-                          tone="neutral"
-                          label={intl.formatMessage({
-                            id: 'products.discontinued',
-                            defaultMessage: 'Discontinued',
-                          })}
-                        />
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          // The header offers Add item; the empty state only says why
-          // the list is empty.
-          <EmptyState learnMore={{ guide: 'items', section: 'add' }}>
-            {search || items?.length
-              ? intl.formatMessage({
-                  id: 'inventory.noMatch',
-                  defaultMessage: 'Nothing matches that search.',
-                })
-              : intl.formatMessage({
-                  id: 'products.empty',
-                  defaultMessage: 'No items yet.',
+      {!failed && (
+        <Paper variant="outlined">
+          {loading || items?.length ? (
+            phone ? (
+              loading ? (
+                showPlaceholders && (
+                  <Stack sx={{ p: 2 }} spacing={1} aria-hidden>
+                    <Skeleton height={64} />
+                    <Skeleton height={64} />
+                  </Stack>
+                )
+              ) : (
+                <ItemCards
+                  items={items}
+                  loading={loading}
+                  firstNew={
+                    firstNew === null
+                      ? null
+                      : { index: firstNew, ref: firstNewRef }
+                  }
+                />
+              )
+            ) : (
+              <ItemTable
+                items={items}
+                loading={loading}
+                sort={sort}
+                header={header}
+                onDate={(key) => write({ sort: key, order: 'desc' })}
+                firstNew={
+                  firstNew === null
+                    ? null
+                    : { index: firstNew, ref: firstNewRef }
+                }
+              />
+            )
+          ) : (
+            <ItemsEmpty
+              search={search}
+              filtered={filtersOn > 0}
+              tab={tab}
+              counts={counts}
+              nameOf={nameOf}
+              onTab={setTab}
+              onClearSearch={() => setText('')}
+              add={
+                canAdd && !search && filtersOn === 0 && known?.all === 0 ? (
+                  <Button onClick={openDialog(() => setCreating(true))}>
+                    {intl.formatMessage({
+                      id: 'products.add',
+                      defaultMessage: 'Add item',
+                    })}
+                  </Button>
+                ) : undefined
+              }
+            />
+          )}
+        </Paper>
+      )}
+
+      {/* Show 50 more, and how many of the tab's are shown; failing, the
+          rows stay, with a line saying so and Try again. */}
+      {!failed && items && (hasMore || error) && (
+        <Stack
+          direction="row"
+          useFlexGap
+          sx={{
+            flexWrap: 'wrap',
+            gap: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {total !== null && (
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {intl.formatMessage(
+                {
+                  id: 'products.showing',
+                  defaultMessage: 'Showing {shown} of {total}',
+                },
+                { shown: items.length, total },
+              )}
+            </Typography>
+          )}
+          {error ? (
+            <>
+              <Typography variant="body2" sx={{ color: 'error.main' }}>
+                {intl.formatMessage({
+                  id: 'products.moreFailed',
+                  defaultMessage: 'The next 50 could not be loaded.',
                 })}
-          </EmptyState>
-        )}
-      </Paper>
+              </Typography>
+              <Button
+                variant="text"
+                disabled={loadingMore}
+                onClick={() => {
+                  setFirstNew(items.length);
+                  void loadMore();
+                }}
+              >
+                {intl.formatMessage({
+                  id: 'common.tryAgain',
+                  defaultMessage: 'Try again',
+                })}
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="text"
+              disabled={loadingMore}
+              onClick={() => {
+                setFirstNew(items.length);
+                void loadMore();
+              }}
+            >
+              {loadingMore
+                ? intl.formatMessage({
+                    id: 'common.loading',
+                    defaultMessage: 'Loading…',
+                  })
+                : intl.formatMessage({
+                    id: 'products.showMore',
+                    defaultMessage: 'Show 50 more',
+                  })}
+            </Button>
+          )}
+        </Stack>
+      )}
+
+      {/* On a phone the category, the sort and Discontinued rise in a
+          sheet from the bottom, scrolling inside so its buttons stay in
+          reach (ADR-090, #481). */}
+      <Drawer
+        anchor="bottom"
+        open={sheet}
+        onClose={() => setSheet(false)}
+        slotProps={{ paper: { sx: { maxHeight: '80vh' } } }}
+      >
+        <Stack spacing={2} sx={{ p: 2 }}>
+          <Typography variant="h6" component="h2">
+            {intl.formatMessage({
+              id: 'products.filtersAndSort',
+              defaultMessage: 'Filters and sort',
+            })}
+          </Typography>
+          {categoryFilter(true)}
+          <TextField
+            select
+            size="small"
+            id="items-sort"
+            label={intl.formatMessage({
+              id: 'products.sort',
+              defaultMessage: 'Sort',
+            })}
+            // A header's other way, Name Z to A, shows as its column.
+            value={
+              `${sort.key}:${sort.order}` in PHONE_SORTS
+                ? `${sort.key}:${sort.order}`
+                : (Object.keys(PHONE_SORTS).find((value) =>
+                    value.startsWith(`${sort.key}:`),
+                  ) ?? 'name:asc')
+            }
+            onChange={(event) => {
+              const [key, order] = event.target.value.split(':');
+              write({ sort: key, order });
+            }}
+          >
+            {Object.entries(PHONE_SORTS).map(([value, label]) => (
+              <MenuItem key={value} value={value}>
+                {intl.formatMessage(label)}
+              </MenuItem>
+            ))}
+          </TextField>
+          <ToggleButton
+            value="discontinued"
+            size="small"
+            selected={discontinued === 'only'}
+            onChange={() =>
+              setFilters({
+                discontinued: discontinued === 'only' ? '' : 'only',
+              })
+            }
+            sx={{ borderRadius: 999, alignSelf: 'flex-start', gap: 0.75 }}
+          >
+            {discontinuedLabel}
+            {counts && (
+              <Box component="span" sx={{ color: 'text.secondary' }}>
+                {counts.discontinued}
+              </Box>
+            )}
+          </ToggleButton>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ justifyContent: 'flex-end' }}
+          >
+            <Button
+              variant="text"
+              onClick={() => {
+                setFilters({ category: '', discontinued: '' });
+                write({ sort: null, order: null });
+              }}
+            >
+              {intl.formatMessage({
+                id: 'products.filters.clear',
+                defaultMessage: 'Clear',
+              })}
+            </Button>
+            <Button onClick={() => setSheet(false)}>
+              {total === null
+                ? intl.formatMessage({
+                    id: 'products.filters.done',
+                    defaultMessage: 'Done',
+                  })
+                : intl.formatMessage(
+                    {
+                      id: 'products.filters.show',
+                      defaultMessage: 'Show {count}',
+                    },
+                    { count: total },
+                  )}
+            </Button>
+          </Stack>
+        </Stack>
+      </Drawer>
 
       <CreateProductDialog
         open={creating}
         onClose={() => setCreating(false)}
-        onCreated={reload}
+        onCreated={async () => reload()}
       />
     </Stack>
+  );
+}
+
+/**
+ * The list with nothing to show (ADR-092): no items yet, with Add item;
+ * a search with no match on this tab, saying where the matches are with
+ * a button there; or nothing matching, speaking of a search only when
+ * there is one (#306's 34).
+ */
+function ItemsEmpty({
+  search,
+  filtered,
+  tab,
+  counts,
+  nameOf,
+  onTab,
+  onClearSearch,
+  add,
+}: {
+  search: string;
+  filtered: boolean;
+  tab: ItemTab;
+  counts: ProductCounts | null;
+  nameOf: (tab: ItemTab) => string;
+  onTab: (tab: ItemTab) => void;
+  onClearSearch: () => void;
+  add: ReactNode;
+}) {
+  const intl = useIntl();
+  const elsewhere =
+    search && counts
+      ? TYPE_TABS.find((other) => other !== tab && countOf(counts, other) > 0)
+      : undefined;
+
+  if (search) {
+    return (
+      <EmptyState
+        action={
+          <>
+            {elsewhere && (
+              <Button variant="outlined" onClick={() => onTab(elsewhere)}>
+                {intl.formatMessage(
+                  {
+                    id: 'products.empty.seeIn',
+                    defaultMessage: 'See in {tab}',
+                  },
+                  { tab: nameOf(elsewhere) },
+                )}
+              </Button>
+            )}
+            <Button variant="text" onClick={onClearSearch}>
+              {intl.formatMessage({
+                id: 'products.empty.clearSearch',
+                defaultMessage: 'Clear search',
+              })}
+            </Button>
+          </>
+        }
+      >
+        {elsewhere && counts
+          ? intl.formatMessage(
+              {
+                id: 'products.empty.elsewhere',
+                defaultMessage:
+                  'Nothing in {tab} matches “{search}”. {count, plural, one {# item} other {# items}} in {other} {count, plural, one {matches} other {match}}.',
+              },
+              {
+                tab: nameOf(tab),
+                search,
+                count: countOf(counts, elsewhere),
+                other: nameOf(elsewhere),
+              },
+            )
+          : intl.formatMessage({
+              id: 'inventory.noMatch',
+              defaultMessage: 'Nothing matches that search.',
+            })}
+      </EmptyState>
+    );
+  }
+
+  if (filtered) {
+    return (
+      <EmptyState>
+        {intl.formatMessage({
+          id: 'products.empty.filtered',
+          defaultMessage: 'No items match these filters.',
+        })}
+      </EmptyState>
+    );
+  }
+
+  return (
+    <EmptyState action={add} learnMore={{ guide: 'items', section: 'add' }}>
+      {counts?.all === 0 || !counts
+        ? intl.formatMessage({
+            id: 'products.empty',
+            defaultMessage:
+              'No items yet. Add what you sell first, or the raw materials you make it from.',
+          })
+        : intl.formatMessage({
+            id: 'products.empty.tab',
+            defaultMessage: 'Nothing on this tab yet.',
+          })}
+    </EmptyState>
   );
 }

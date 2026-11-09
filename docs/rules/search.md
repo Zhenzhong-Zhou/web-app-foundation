@@ -232,8 +232,8 @@ leave how it matches to this file. How this file is kept is in the
   (`/items?tab=all&discontinued=include&search=…`).
   [ADR-092](../adr/0092-items.md#decision--the-types-as-tabs-opening-on-products) ·
   [test](../../client/src/search/lookup-kinds.test.ts) "opens Show all in Items on All, discontinued included, with the search (ADR-092)" ·
-  partly tested ·
-  MC-1557
+  [test](../../client/src/products/products-page.test.tsx) "opens Show all’s address on All with discontinued items, a chip removing them" ·
+  MC-1557 · MC-207
 - **Nothing found says "Nothing found."** and offers no list to open.
   [ADR-056](../adr/0056-search.md#decision--in-the-browser) ·
   [test](../../client/src/search/lookup-box.test.tsx) "says when nothing is found" ·

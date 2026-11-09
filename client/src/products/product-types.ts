@@ -1,3 +1,11 @@
+import CleaningServicesOutlined from '@mui/icons-material/CleaningServicesOutlined';
+import GrainOutlined from '@mui/icons-material/GrainOutlined';
+import HandymanOutlined from '@mui/icons-material/HandymanOutlined';
+import Inventory2Outlined from '@mui/icons-material/Inventory2Outlined';
+import RedeemOutlined from '@mui/icons-material/RedeemOutlined';
+import SellOutlined from '@mui/icons-material/SellOutlined';
+import type { SvgIconProps } from '@mui/material';
+import type { ComponentType } from 'react';
 import { defineMessages, type IntlShape } from 'react-intl';
 
 /**
@@ -28,4 +36,24 @@ export function productTypeLabel(type: string, intl: IntlShape): string {
   return type in LABELS
     ? intl.formatMessage(LABELS[type as keyof typeof LABELS])
     : type;
+}
+
+/**
+ * Each type's icon, the tile an item with no image shows in a list
+ * (ADR-062, #306's 22); a value this client does not know has the box.
+ */
+const ICONS: Record<
+  (typeof PRODUCT_TYPES)[number],
+  ComponentType<SvgIconProps>
+> = {
+  good: SellOutlined,
+  material: GrainOutlined,
+  packaging: Inventory2Outlined,
+  sample: RedeemOutlined,
+  supply: CleaningServicesOutlined,
+  equipment: HandymanOutlined,
+};
+
+export function productTypeIcon(type: string): ComponentType<SvgIconProps> {
+  return type in ICONS ? ICONS[type as keyof typeof ICONS] : Inventory2Outlined;
 }

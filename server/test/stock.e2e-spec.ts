@@ -924,6 +924,83 @@ describe('Stock (e2e)', () => {
       expect(row.productName).toBe('Product WIDGET');
       expect(row.variantName).toBeNull();
     });
+
+    it('lists one item alone, every variant in every location, its counts and export following', async () => {
+      const ctx = await setup('alpha');
+      const shelf = await createLocation(ctx.agent, { name: 'Back room' });
+      const item = body<ProductResponse>(
+        await ctx.agent
+          .post('/v1/products')
+          .send({ type: 'good', name: 'Fish oil', variant: { sku: 'OIL-90' } })
+          .expect(201),
+      ).product;
+      const second = body<{ variant: { id: string } }>(
+        await ctx.agent
+          .post(`/v1/products/${item.id}/variants`)
+          .send({ sku: 'OIL-180' })
+          .expect(201),
+      ).variant;
+
+      for (const movement of [
+        receipt(item.variants[0].id, ctx.locationId, '10'),
+        receipt(second.id, shelf, '5'),
+        receipt(ctx.variant.id, ctx.locationId, '40'),
+      ]) {
+        await ctx.agent.post('/v1/stock/movements').send(movement).expect(201);
+      }
+
+      const rows = await stockRows(ctx.agent, `?productId=${item.id}`);
+      expect(rows.map((row) => [row.sku, row.locationName]).sort()).toEqual([
+        ['OIL-180', 'Back room'],
+        ['OIL-90', 'Main'],
+      ]);
+
+      // Received with no cost, so each waits for one (ADR-048): the item's
+      // two rows, and not the widget's.
+      const counts = async (filters: string) =>
+        body<{ needsCost: number }>(
+          await ctx.agent.get(`/v1/stock/counts${filters}`).expect(200),
+        );
+      expect(await counts('')).toMatchObject({ needsCost: 3 });
+      expect(await counts(`?productId=${item.id}`)).toMatchObject({
+        needsCost: 2,
+      });
+
+      const file = await ctx.agent
+        .get(`/v1/stock/export?productId=${item.id}`)
+        .expect(200);
+      expect(file.text).toContain('OIL-90');
+      expect(file.text).not.toContain('WIDGET-1');
+    });
+
+    it('refuses another organization item with a 400, on the list, its counts and its export', async () => {
+      const alpha = await setup('alpha');
+      const beta = await setup('beta');
+      const betaItem = body<ProductResponse>(
+        await beta.agent
+          .post('/v1/products')
+          .send({ type: 'good', name: 'Beta oil', variant: { sku: 'BETA-1' } })
+          .expect(201),
+      ).product;
+
+      await beta.agent
+        .post('/v1/stock/movements')
+        .send(receipt(betaItem.variants[0].id, beta.locationId, '40'))
+        .expect(201);
+
+      for (const path of [
+        '/v1/stock',
+        '/v1/stock/counts',
+        '/v1/stock/export',
+      ]) {
+        const refused = await alpha.agent
+          .get(`${path}?productId=${betaItem.id}`)
+          .expect(400);
+        expect(body<{ message: string }>(refused).message).toBe(
+          'That item is not in this organization. Remove it from the filter to see every item.',
+        );
+      }
+    });
   });
 
   describe('GET /v1/stock/movements', () => {

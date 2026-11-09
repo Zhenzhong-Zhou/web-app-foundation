@@ -4086,6 +4086,15 @@
             }
           },
           {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
             "name": "includeEmpty",
             "required": false,
             "in": "query",
@@ -4211,6 +4220,15 @@
           },
           {
             "name": "variantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -4483,6 +4501,15 @@
           },
           {
             "name": "variantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {

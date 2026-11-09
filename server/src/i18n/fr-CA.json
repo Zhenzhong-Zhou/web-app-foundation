@@ -1042,6 +1042,7 @@
   "stock.transferNeedsBothSource": "Un transfert exige un emplacement source et un emplacement de destination",
   "stock.unknownLocation": "Cet emplacement ne fait pas partie de cette organisation. Choisissez-en un dans la liste.",
   "stock.unknownLotVariant": "Lot inconnu pour cette variante",
+  "stock.unknownProduct": "Cet article ne fait pas partie de cette organisation. Retirez-le du filtre pour voir tous les articles.",
   "stock.unknownRecipient": "Destinataire inconnu",
   "stock.unknownVariant": "Cet article ne fait pas partie de cette organisation. Choisissez-en un dans la liste.",
   "taxCodes.nameListedTwiceCode": "{name} figure deux fois — un code perçoit chaque taxe une seule fois",

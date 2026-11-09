@@ -148,6 +148,50 @@ a second organization.
 - **MC-206** Partners: a partner with two addresses. Setting one as the
   default billing address unsets the other; the primary contact behaves the
   same way.
+- **MC-207** Items from the menu opens on Products, its tabs in order
+  with their counts: Products, Raw materials, Packaging, Supplies,
+  Samples, Equipment, All. A tab reads that type, keeping the search, the
+  category and the sort, and the address says which (`?tab=material`);
+  Back from an item returns to the same tab. In an organization with no
+  products but raw materials, Items opens on Raw materials, and a type
+  with no items has no tab. At 820 px the first three show, with the open
+  one, and the rest are under More with their counts, never a sideways
+  scroll; at 390 px the tabs are one select, "Type", reading "Products
+  (…)". Show all in Items from the top bar opens All with a chip,
+  Discontinued included, whose × hides them again.
+- **MC-208** Items' rows: the cover, or the type's icon with no image;
+  the name in bold with its code in grey under it, "3 variants · …"
+  where there are several; the category's path (Vitamins and minerals ›
+  …), or Uncategorised for BOTTLE-60; the stock on hand, right-aligned,
+  VITC-100 reading Out and another product Low stock in Home's words and
+  colours; and Last changed. Clicking anywhere on a row opens the item;
+  clicking its stock opens Inventory for that item alone, every variant
+  in every location, with a chip "Item: …" whose × shows all stock again,
+  and Back returns to Items as it was. At 390 px each row is a card: the
+  name, its code and category on one line, then the stock and its status;
+  the whole card opens the item.
+- **MC-209** Items sorts by Name (A to Z first), Category, In stock
+  (fewest first) and the date: a header again reverses it, and focus
+  stays on the header pressed from the keyboard. The date column's menu
+  switches it to Date added, newest first, and the column shows the date
+  sorted by. The sort stays in the address. At 390 px Filters opens a
+  sheet from the bottom with the category, Sort (In stock, fewest first;
+  Last changed, newest first; Date added, newest first) and Discontinued
+  with its count; Clear resets them and Show closes it.
+- **MC-210** Items' category filter reads All categories, then the tree
+  with each category's count on the open tab, Uncategorised, and Manage
+  categories at its foot. Choosing Vitamins and minerals lists its items
+  and those of the categories under it, a chip names it, and its × shows
+  every category again. A search reads each tab's count again; with none
+  on the open tab, the list says how many match on another tab, with
+  "See in …" opening it and Clear search.
+- **MC-211** Items' list, past fifty (the volume database's): Showing 50
+  of …, then Show 50 more adds the next fifty below with focus on the
+  first new row. With the network turned off in the browser's tools, Show
+  50 more keeps the rows shown and says the next 50 could not be loaded,
+  with Try again; a reload with the network off shows only the list's
+  part failing, with Try again, the tabs' counts reading "—". Signed in
+  as a Viewer, a line in Add item's place says whom to ask.
 
 ## 3. Stock
 
@@ -814,12 +858,15 @@ Paper is checked first because it must not change at all.
   right of its row without scrolling; scroll the table sideways and it stays
   put, the columns passing under it. A tab with nothing in it (SO-DEMO-QC's
   Returns) shows no 0, and Returned 0 carries no note.
-- **MC-1546** Items has a page header (Licences, Refresh, Add item),
-  then Search and a Discontinued quick filter with its count. Typing part of a
-  name narrows the list a moment after typing stops; pressing Discontinued
-  shows only those (ZINC-60's product). Discontinued reads as a grey chip; a
-  search that matches nothing says so, and Add item stays in the header
-  only.
+- **MC-1546** Items has a page header (Export, Licences, Add item) under
+  its title's line, then the type tabs, then Search by name or code, the
+  category and a Discontinued quick filter with the open tab's count.
+  Typing part of a name narrows the list a moment after typing stops;
+  discontinued items are hidden until Discontinued is pressed, which
+  shows only those (ZINC-60's product), each reading Discontinued as a
+  grey chip. A search that matches nothing says so, with Clear search,
+  and an organization with no items says what to add first, with Add
+  item.
 - **MC-1547** Partners has Search and a Retired quick filter with its count.
   The search finds a partner by part of its name, its code or its tax ID.
   Pressing Retired shows only Old Mill Herbs. Retired reads as a grey chip.
@@ -5372,3 +5419,8 @@ first.
   choice named in words, Inventory's Location the first, and a sorted
   list keeping its table's head while it reads: MC-301 and MC-406
   extended.
+- 2026-11-09: ADR-092 step 12, Items' list: the type tabs with their
+  counts and More, the category tree, the rows with their stock and
+  status, the sorts and the date column, Show 50 more, the phone's cards
+  and sheet, the five states, and a row's stock opening Inventory for the
+  item alone: MC-207 to MC-211 added, MC-1546 rewritten.

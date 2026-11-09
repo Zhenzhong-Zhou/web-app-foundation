@@ -368,6 +368,49 @@ describe('InventoryPage', () => {
     expect(asked.at(-1)?.get('sort')).toBe('expiry');
   });
 
+  // A row's stock on Items (ADR-092): the item alone, every variant in
+  // every location, its counts too, named on a chip whose × removes it.
+  it('lists one item alone when the address names it, named on a chip that removes it', async () => {
+    const user = userEvent.setup();
+    const ITEM = '00000000-0000-4000-8000-000000000001';
+    const asked: { stock: URLSearchParams[]; counts: URLSearchParams[] } = {
+      stock: [],
+      counts: [],
+    };
+    server.use(
+      http.get('/api/v1/stock', ({ request }) => {
+        asked.stock.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ entries: [ROW], nextCursor: null });
+      }),
+      http.get('/api/v1/stock/counts', ({ request }) => {
+        asked.counts.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ expiring: 0, needsCost: 0 });
+      }),
+      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
+      http.get(`/api/v1/products/${ITEM}`, () =>
+        HttpResponse.json({ product: { displayName: 'Vitamin D' } }),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={[`/inventory?productId=${ITEM}`]}>
+        <InventoryPage />
+      </MemoryRouter>,
+      { permissions: ['stock.view', 'products.view'] },
+    );
+
+    const chip = await screen.findByRole('button', {
+      name: 'Item: Vitamin D',
+    });
+    expect(asked.stock[0].get('productId')).toBe(ITEM);
+    await expect.poll(() => asked.counts[0]?.get('productId')).toBe(ITEM);
+
+    await user.click(within(chip).getByTestId('CancelIcon'));
+    await expect.poll(() => asked.stock.at(-1)?.has('productId')).toBe(false);
+    expect(
+      screen.queryByRole('button', { name: 'Item: Vitamin D' }),
+    ).not.toBeInTheDocument();
+  });
+
   describe('the search', () => {
     function answer() {
       const asked: Record<'stock' | 'points', (string | null)[]> = {

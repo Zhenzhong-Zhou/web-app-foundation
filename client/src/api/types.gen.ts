@@ -5761,6 +5761,7 @@ export type StockControllerListV1Data = {
   query?: {
     locationId?: string;
     variantId?: string;
+    productId?: string;
     includeEmpty?: string;
     search?: string;
     expiringWithin?: number;
@@ -5790,6 +5791,7 @@ export type StockControllerExportInventoryV1Data = {
   query?: {
     locationId?: string;
     variantId?: string;
+    productId?: string;
     includeEmpty?: string;
     search?: string;
     expiringWithin?: number;
@@ -5864,6 +5866,7 @@ export type StockControllerCountsV1Data = {
   query?: {
     locationId?: string;
     variantId?: string;
+    productId?: string;
     includeEmpty?: string;
     search?: string;
     expiringWithin?: number;

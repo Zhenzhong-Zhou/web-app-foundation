@@ -30,7 +30,12 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
-import type { Availability, Location, StockRow } from '../api/types.gen';
+import type {
+  Availability,
+  Location,
+  ProductEnvelope,
+  StockRow,
+} from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExpiryChip } from '../components/expiry-chip';
@@ -148,7 +153,8 @@ export function InventoryPage() {
  * there. "Expiring soon" is lots within the amber threshold, the expired
  * included; "Expired" is those past their day alone, which Home's late
  * button adds; "Waiting for a cost" is stock whose value is still provisional
- * (ADR-048).
+ * (ADR-048); `productId` is one item alone, every variant in every
+ * location, which a row's stock on Items opens (ADR-092).
  */
 const ADDRESS_FILTERS = {
   expiring: flag,
@@ -156,6 +162,7 @@ const ADDRESS_FILTERS = {
   needsCost: flag,
   includeEmpty: flag,
   locationId: id,
+  productId: id,
 };
 
 /** Expiring soon's and Expired's order: the soonest first, the expired leading. */
@@ -177,7 +184,26 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
 
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
-  const { expiring, expired, needsCost, includeEmpty } = filters;
+  const { expiring, expired, needsCost, includeEmpty, productId } = filters;
+  // The item a row's stock on Items opened, named on its chip; a reader
+  // who may not see items, or a name not read yet, has the chip's plain
+  // words.
+  const canSeeItems = can('products.view');
+  const [named, setNamed] = useState<{ id: string; name: string } | null>(null);
+  useEffect(() => {
+    if (!productId || !canSeeItems) return;
+    let ignore = false;
+    void api<ProductEnvelope>(`/products/${productId}`)
+      .then(({ product }) => {
+        if (!ignore) setNamed({ id: productId, name: product.displayName });
+      })
+      // Silent: the chip still says one item, and its × still works.
+      .catch(() => undefined);
+    return () => {
+      ignore = true;
+    };
+  }, [productId, canSeeItems]);
+  const namedItem = named?.id === productId ? named.name : null;
   // Sales sees stock but not locations (ADR-080): the page asks only for
   // what its reader may read, and leaves the Location filter out.
   const canSeeLocations = can('locations.view');
@@ -239,6 +265,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   const stockPath = useMemo(() => {
     const params = new URLSearchParams({ limit: String(PAGE_SIZE) });
     if (locationId) params.set('locationId', locationId);
+    if (productId) params.set('productId', productId);
     if (includeEmpty) params.set('includeEmpty', 'true');
     if (search) params.set('search', search);
     if (expiring) params.set('expiringWithin', String(expiringWithin));
@@ -251,6 +278,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     return `/stock?${params.toString()}`;
   }, [
     locationId,
+    productId,
     includeEmpty,
     search,
     expiring,
@@ -270,6 +298,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
       expiringWithin: String(expiringWithin),
     });
     if (locationId) params.set('locationId', locationId);
+    if (productId) params.set('productId', productId);
     if (includeEmpty) params.set('includeEmpty', 'true');
     if (search) params.set('search', search);
 
@@ -287,7 +316,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     return () => {
       ignore = true;
     };
-  }, [locationId, includeEmpty, search, expiringWithin, changes]);
+  }, [locationId, productId, includeEmpty, search, expiringWithin, changes]);
 
   const {
     entries: rows,
@@ -495,9 +524,26 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
       </FilterRow>
 
       {/* What a link narrowed that no button shows, removable: Home's
-          late button, the expired lots alone. */}
+          late button, the expired lots alone; a row's stock on Items, the
+          item alone. */}
       <FilterChips
         chips={[
+          productId !== '' && {
+            id: 'item',
+            label: namedItem
+              ? intl.formatMessage(
+                  {
+                    id: 'inventory.filter.item',
+                    defaultMessage: 'Item: {name}',
+                  },
+                  { name: namedItem },
+                )
+              : intl.formatMessage({
+                  id: 'inventory.filter.oneItem',
+                  defaultMessage: 'One item',
+                }),
+            onRemove: () => setFilters({ productId: '' }),
+          },
           expired && {
             id: 'expired',
             label: intl.formatMessage({

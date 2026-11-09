@@ -1042,6 +1042,7 @@
   "stock.transferNeedsBothSource": "A transfer needs both a source and a destination location",
   "stock.unknownLocation": "That location is not in this organization. Choose one from the list.",
   "stock.unknownLotVariant": "Unknown lot for this variant",
+  "stock.unknownProduct": "That item is not in this organization. Remove it from the filter to see every item.",
   "stock.unknownRecipient": "Unknown recipient",
   "stock.unknownVariant": "That item is not in this organization. Choose one from the list.",
   "taxCodes.nameListedTwiceCode": "{name} is listed twice — a code charges each tax once",

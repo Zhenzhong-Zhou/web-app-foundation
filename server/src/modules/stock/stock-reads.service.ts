@@ -83,6 +83,10 @@ function filtersOf(
     scope.push(eq(stockLevels.variantId, query.variantId));
   }
 
+  if (query.productId) {
+    scope.push(eq(productVariants.productId, query.productId));
+  }
+
   /**
    * Zero rows are kept, not deleted — a shelf that emptied yesterday is a
    * fact worth having, and `LocationsService` depends on the row surviving
@@ -138,6 +142,40 @@ function filtersOf(
   }
 
   return scope;
+}
+
+/**
+ * The item a list's filter names, in this organization, or a 400: an id
+ * from the address, so unknown rather than forbidden, as one in a body is
+ * (ADR-003). Without it another organization's item would read as an item
+ * with no stock, and the chip naming it would say so.
+ */
+async function assertOwnItem(
+  tx: Tx,
+  organizationId: string,
+  productId: string | undefined,
+): Promise<void> {
+  if (!productId) return;
+
+  const [found] = await tx
+    .select({ id: products.id })
+    .from(products)
+    .where(
+      and(
+        eq(products.id, productId),
+        eq(products.organizationId, organizationId),
+      ),
+    );
+
+  if (!found) {
+    throw new BadRequestException(
+      t({
+        id: 'stock.unknownProduct',
+        defaultMessage:
+          'That item is not in this organization. Remove it from the filter to see every item.',
+      }),
+    );
+  }
 }
 
 /** A stock row's lot, in the same organization. Left-joined by callers. */
@@ -210,6 +248,7 @@ export class StockReadsService {
     const limit = query.limit ?? STOCK_PAGE_SIZE;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
+      await assertOwnItem(tx, organizationId, query.productId);
       const today = await todayOf(tx, organizationId);
       const scope = filtersOf(query, organizationId, today);
       const lotOf = lotJoin(organizationId);
@@ -337,6 +376,7 @@ export class StockReadsService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const { expiringWithin, ...rest } = query;
       const unfiltered = { ...rest, needsCost: undefined, expired: undefined };
+      await assertOwnItem(tx, organizationId, query.productId);
       const today = await todayOf(tx, organizationId);
 
       const count = async (filters: ListStockDto) => {

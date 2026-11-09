@@ -25,7 +25,9 @@ test('shows a product that already exists in the organisation', async ({
     name: `E2E Seeded Widget ${Date.now().toString(36)}`,
   });
 
-  await page.goto('/items');
+  // Searched, so it is on the first fifty however many runs have added
+  // before it (ADR-092).
+  await page.goto(`/items?search=${encodeURIComponent(product.name)}`);
 
   /**
    * Scope the assertion to the row, not the page. `getByText(product.name)`
@@ -35,10 +37,12 @@ test('shows a product that already exists in the organisation', async ({
   const row = page.getByRole('row', { name: new RegExp(product.name, 'i') });
 
   await expect(row).toBeVisible();
-  // A code is a variant's, not an item's — the list shows items, so
-  // asserting on it here would be asserting the wrong screen. The type, in
-  // its tab's words (ADR-092).
-  await expect(row).toContainText('Products');
+  // Its code in grey under its name, and on the Products tab, its type's
+  // (ADR-092).
+  await expect(row).toContainText(product.sku);
+  await expect(
+    page.getByRole('tab', { name: /^Products/, selected: true }),
+  ).toBeVisible();
 });
 
 test('creates a product through the form and shows it in the table', async ({
@@ -63,7 +67,12 @@ test('creates a product through the form and shows it in the table', async ({
    *
    * A `waitForTimeout` here is how an e2e suite becomes flaky, gets marked
    * `skip` during a busy week, and is deleted six months later.
+   *
+   * Searched for, so it is on the first fifty (ADR-092).
    */
+  await page
+    .getByRole('searchbox', { name: 'Search by name or code' })
+    .fill(name);
   await expect(
     page.getByRole('row', { name: new RegExp(name, 'i') }),
   ).toBeVisible();

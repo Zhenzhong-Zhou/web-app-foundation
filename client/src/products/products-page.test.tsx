@@ -8,9 +8,13 @@ import {
   RouterProvider,
   Routes,
 } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ProductPage, ProductSummary } from '../api/types.gen';
+import type {
+  ProductCounts,
+  ProductPage,
+  ProductSummary,
+} from '../api/types.gen';
 import { LicencesPage } from '../licences/licences-page';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -35,8 +39,25 @@ function product(name: string): ProductSummary {
 }
 
 /** The list's first page (ADR-092), holding these rows. */
-function pageOf(rows: ProductSummary[]): ProductPage {
-  return { entries: rows, nextCursor: null, counts: null };
+function pageOf(
+  rows: ProductSummary[],
+  counts: ProductCounts | null = null,
+  nextCursor: string | null = null,
+): ProductPage {
+  return { entries: rows, nextCursor, counts };
+}
+
+/** Each tab's count, as the server sends them with a first page. */
+function countsOf(
+  types: Partial<Record<ProductSummary['type'], number>>,
+  discontinued = 0,
+): ProductCounts {
+  const entries = Object.entries(types) as [ProductSummary['type'], number][];
+  return {
+    types: entries.map(([type, count]) => ({ type, count })),
+    all: entries.reduce((sum, [, count]) => sum + count, 0),
+    discontinued,
+  };
 }
 
 function renderAt(address: string) {
@@ -48,9 +69,11 @@ function renderAt(address: string) {
   );
 }
 
+/** The rows' names, in order: each row's link to its item. */
 const names = () =>
   within(screen.getAllByRole('rowgroup')[1])
     .getAllByRole('link')
+    .filter((link) => link.getAttribute('href')?.startsWith('/items/'))
     .map((link) => link.textContent);
 
 /**
@@ -59,6 +82,23 @@ const names = () =>
  * itself.
  */
 describe('ProductsPage', () => {
+  // What every render reads beside the list: the category tree, and whom
+  // to ask, for a reader who cannot add.
+  beforeEach(() => {
+    server.use(
+      http.get('/api/v1/products/categories', () =>
+        HttpResponse.json({ categories: [] }),
+      ),
+      http.get('/api/v1/account/membership', () =>
+        HttpResponse.json({
+          roles: [{ name: 'Viewer', description: null }],
+          holdsEverything: false,
+          whomToAsk: [],
+        }),
+      ),
+    );
+  });
+
   it('asks with the address’s search, and lists the answer in its order', async () => {
     const asked: (string | null)[] = [];
     server.use(
@@ -78,9 +118,9 @@ describe('ProductsPage', () => {
       await screen.findByRole('link', { name: 'Calm 90ct' }),
     ).toBeVisible();
     expect(asked).toEqual(['zzjn']);
-    expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveValue(
-      'zzjn',
-    );
+    expect(
+      screen.getByRole('searchbox', { name: 'Search by name or code' }),
+    ).toHaveValue('zzjn');
     expect(names()).toEqual(['专注胶囊 60 粒', 'Calm 90ct']);
   });
 
@@ -108,7 +148,9 @@ describe('ProductsPage', () => {
     renderAt('/items');
     await screen.findByRole('link', { name: 'Calm 90ct' });
 
-    const box = screen.getByRole('searchbox', { name: 'Search' });
+    const box = screen.getByRole('searchbox', {
+      name: 'Search by name or code',
+    });
     await user.type(box, 'fo');
     await expect.poll(() => asked).toEqual([null, 'fo']);
     await user.type(box, 'c');
@@ -142,7 +184,10 @@ describe('ProductsPage', () => {
     renderAt('/items');
     await screen.findByRole('link', { name: 'Focus 60ct' });
 
-    await user.type(screen.getByRole('searchbox', { name: 'Search' }), 'calm');
+    await user.type(
+      screen.getByRole('searchbox', { name: 'Search by name or code' }),
+      'calm',
+    );
     await waitFor(() =>
       expect(
         screen.queryByRole('link', { name: 'Focus 60ct' }),
@@ -167,14 +212,21 @@ describe('ProductsPage', () => {
     );
 
     renderAt('/items');
-    expect(await screen.findByText('No items yet.')).toBeVisible();
+    expect(
+      await screen.findByText(
+        'No items yet. Add what you sell first, or the raw materials you make it from.',
+      ),
+    ).toBeVisible();
 
-    await user.type(screen.getByRole('searchbox', { name: 'Search' }), '鱼');
+    await user.type(
+      screen.getByRole('searchbox', { name: 'Search by name or code' }),
+      '鱼',
+    );
     await expect.poll(() => answered).toEqual([null, '鱼']);
     expect(
       await screen.findByText('Nothing matches that search.'),
     ).toBeVisible();
-    expect(screen.queryByText('No items yet.')).not.toBeInTheDocument();
+    expect(screen.queryByText(/No items yet/)).not.toBeInTheDocument();
   });
 
   /**
@@ -201,7 +253,9 @@ describe('ProductsPage', () => {
     renderWithAuth(<RouterProvider router={router} />, {
       permissions: ['products.view'],
     });
-    const box = screen.getByRole('searchbox', { name: 'Search' });
+    const box = screen.getByRole('searchbox', {
+      name: 'Search by name or code',
+    });
     await screen.findByRole('link', { name: 'Found by calm' });
 
     // Show all, from the lookup's box, as the lookup goes there.
@@ -235,10 +289,10 @@ describe('ProductsPage', () => {
   });
 
   /**
-   * The export writes what the list shows (ADR-057): its search, and
-   * Discontinued, which the list applies itself.
+   * The export writes what the list shows (ADR-057, ADR-092): its tab, its
+   * search, Discontinued and its sort, every row of them.
    */
-  it('exports what the list shows, its search and Discontinued', async () => {
+  it('exports what the list shows, its tab, search, Discontinued and sort', async () => {
     const user = userEvent.setup();
     URL.createObjectURL = vi.fn(() => 'blob:export');
     URL.revokeObjectURL = vi.fn();
@@ -266,7 +320,9 @@ describe('ProductsPage', () => {
 
       await expect
         .poll(() => exported)
-        .toEqual(['?discontinued=only&search=calm']);
+        .toEqual([
+          '?type=good&discontinued=only&search=calm&sort=name&order=asc',
+        ]);
     } finally {
       clicked.mockRestore();
     }
@@ -297,5 +353,382 @@ describe('ProductsPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Back' }));
 
     expect(await screen.findByRole('link', { name: 'Licences' })).toBeVisible();
+  });
+
+  /** What the list asked for, each read's query as it came. */
+  function readsOf(answer: (query: URLSearchParams) => ProductPage) {
+    const asked: string[] = [];
+    server.use(
+      http.get('/api/v1/products', ({ request }) => {
+        const query = new URL(request.url).searchParams;
+        asked.push(query.toString());
+        return HttpResponse.json(answer(query));
+      }),
+    );
+    return asked;
+  }
+
+  // The interaction table's first row (ADR-092): Products, or the first
+  // type the organization holds; a type with none has no tab.
+  it('opens on Products, or on the first type with items, with each tab’s count', async () => {
+    const asked = readsOf((query) =>
+      pageOf(
+        [product(`A ${query.get('type') ?? 'all'}`)],
+        countsOf({ material: 46, packaging: 22 }),
+      ),
+    );
+
+    renderAt('/items');
+
+    expect(
+      await screen.findByRole('link', { name: 'A material' }),
+    ).toBeVisible();
+    expect(asked).toEqual([
+      'type=good&sort=name&order=asc',
+      'type=material&sort=name&order=asc',
+    ]);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+      'Raw materials 46',
+      'Packaging 22',
+      'All 68',
+    ]);
+    expect(screen.getByRole('tab', { name: /Raw materials/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+  });
+
+  it('reads a tab’s type when chosen, keeping the search, and writes it in the address', async () => {
+    const user = userEvent.setup();
+    const asked = readsOf(() =>
+      pageOf([product('Calm 90ct')], countsOf({ good: 3, packaging: 1 })),
+    );
+    const router = createMemoryRouter(
+      [{ path: '/items', element: <ProductsPage /> }],
+      { initialEntries: ['/items?search=calm'] },
+    );
+    renderWithAuth(<RouterProvider router={router} />, {
+      permissions: ['products.view'],
+    });
+    await screen.findByRole('link', { name: 'Calm 90ct' });
+
+    await user.click(screen.getByRole('tab', { name: /Packaging/ }));
+
+    await expect
+      .poll(() => asked.at(-1))
+      .toBe('type=packaging&search=calm&sort=name&order=asc');
+    expect(router.state.location.search).toBe('?search=calm&tab=packaging');
+  });
+
+  // The top bar's Show all (ADR-056, amended): All, discontinued included,
+  // a chip saying so whose × hides them again.
+  it('opens Show all’s address on All with discontinued items, a chip removing them', async () => {
+    const user = userEvent.setup();
+    const asked = readsOf(() =>
+      pageOf([product('Calm 90ct')], countsOf({ good: 1 })),
+    );
+
+    renderAt('/items?tab=all&discontinued=include&search=calm');
+    await screen.findByRole('link', { name: 'Calm 90ct' });
+    expect(asked[0]).toBe(
+      'discontinued=include&search=calm&sort=name&order=asc',
+    );
+
+    await user.click(
+      within(
+        screen.getByRole('button', { name: 'Discontinued included' }),
+      ).getByTestId('CancelIcon'),
+    );
+    await expect
+      .poll(() => asked.at(-1))
+      .toBe('search=calm&sort=name&order=asc');
+  });
+
+  it('shows a row’s code, its category’s path, its stock linking to Inventory for it alone, and Low or Out', async () => {
+    readsOf(() =>
+      pageOf(
+        [
+          {
+            ...product('Fish oil'),
+            id: 'fish',
+            sku: 'FISH-1000',
+            category: { id: 'c1', path: ['Vitamins', 'Fish oil'] },
+            onHand: '1240.0000',
+            unitOfMeasure: 'each',
+            stockStatus: 'low',
+          },
+          {
+            ...product('Focus'),
+            id: 'focus',
+            sku: 'FOC-30',
+            variantCount: 3,
+            onHand: null,
+            unitOfMeasure: null,
+            stockStatus: 'out',
+          },
+        ],
+        countsOf({ good: 2 }),
+      ),
+    );
+
+    renderAt('/items');
+
+    const fish = (
+      await screen.findByRole('link', { name: 'Fish oil' })
+    ).closest('tr')!;
+    expect(within(fish).getByText('FISH-1000')).toBeVisible();
+    expect(within(fish).getByText('Vitamins › Fish oil')).toBeVisible();
+    expect(
+      within(fish).getByRole('link', { name: '1,240 each, stock of Fish oil' }),
+    ).toHaveAttribute('href', '/inventory?productId=fish');
+    expect(within(fish).getByText('Low stock')).toBeVisible();
+
+    const focus = screen.getByRole('link', { name: 'Focus' }).closest('tr')!;
+    expect(within(focus).getByText('3 variants · FOC-30, …')).toBeVisible();
+    expect(within(focus).getByText('Uncategorised')).toBeVisible();
+    expect(
+      within(focus).getByRole('link', { name: '3 variants, stock of Focus' }),
+    ).toBeVisible();
+    expect(within(focus).getByText('Out')).toBeVisible();
+  });
+
+  it('opens the item from anywhere on its row', async () => {
+    const user = userEvent.setup();
+    readsOf(() => pageOf([product('Calm 90ct')], countsOf({ good: 1 })));
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/items']}>
+        <Routes>
+          <Route path="/items" element={<ProductsPage />} />
+          <Route path="/items/:id" element={<p>The item’s page</p>} />
+        </Routes>
+      </MemoryRouter>,
+      { permissions: ['products.view'] },
+    );
+
+    await user.click(await screen.findByText('CALM 90CT'));
+
+    expect(await screen.findByText('The item’s page')).toBeVisible();
+  });
+
+  // A header sorts, again reverses; the date column shows the date sorted
+  // by, its menu switching to Date added, newest first.
+  it('sorts by a header, and switches the date column from its menu', async () => {
+    const user = userEvent.setup();
+    const asked = readsOf(() =>
+      pageOf([product('Calm 90ct')], countsOf({ good: 1 })),
+    );
+    renderAt('/items');
+    await screen.findByRole('link', { name: 'Calm 90ct' });
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute(
+      'aria-sort',
+      'ascending',
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Category' }));
+    await expect
+      .poll(() => asked.at(-1))
+      .toBe('type=good&sort=category&order=asc');
+    await user.click(screen.getByRole('button', { name: 'Category' }));
+    await expect
+      .poll(() => asked.at(-1))
+      .toBe('type=good&sort=category&order=desc');
+    expect(screen.getByRole('button', { name: 'Category' })).toHaveFocus();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Which date to show' }),
+    );
+    await user.click(screen.getByRole('menuitem', { name: 'Date added' }));
+    await expect
+      .poll(() => asked.at(-1))
+      .toBe('type=good&sort=added&order=desc');
+    expect(
+      screen.getByRole('columnheader', { name: /Date added/ }),
+    ).toHaveAttribute('aria-sort', 'descending');
+  });
+
+  // Show 50 more: the next page below, focus on its first row; failing,
+  // the rows shown stay, with a line saying so and Try again.
+  it('shows fifty more below with focus on the first new row, and keeps the rows when that fails', async () => {
+    const user = userEvent.setup();
+    let fail = true;
+    const asked = readsOf((query) => {
+      if (!query.get('cursor'))
+        return pageOf([product('Calm 90ct')], countsOf({ good: 2 }), 'next');
+      if (fail) throw new Error('down');
+      return pageOf([product('Focus 60ct')]);
+    });
+    server.use(
+      http.get('/api/v1/products', ({ request }) => {
+        const query = new URL(request.url).searchParams;
+        if (query.get('cursor') && fail) {
+          asked.push(query.toString());
+          return HttpResponse.json(
+            { message: 'Something went wrong' },
+            { status: 500 },
+          );
+        }
+        return undefined;
+      }),
+    );
+    renderAt('/items');
+    await screen.findByRole('link', { name: 'Calm 90ct' });
+    expect(screen.getByText('Showing 1 of 2')).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Show 50 more' }));
+    expect(
+      await screen.findByText('The next 50 could not be loaded.'),
+    ).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Calm 90ct' })).toBeVisible();
+
+    fail = false;
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    const added = await screen.findByRole('link', { name: 'Focus 60ct' });
+    await waitFor(() => expect(added).toHaveFocus());
+    expect(names()).toEqual(['Calm 90ct', 'Focus 60ct']);
+  });
+
+  // Failed: the list's part alone says so, with Try again; the tabs'
+  // counts read "—", since nothing is known.
+  it('says the list could not be read, with Try again, the tabs’ counts unknown', async () => {
+    const user = userEvent.setup();
+    let fail = true;
+    server.use(
+      http.get('/api/v1/products', () =>
+        fail
+          ? HttpResponse.json(
+              { message: 'Something went wrong' },
+              { status: 500 },
+            )
+          : HttpResponse.json(
+              pageOf([product('Calm 90ct')], countsOf({ good: 1 })),
+            ),
+      ),
+    );
+    renderAt('/items');
+
+    const retry = await screen.findByRole('button', { name: 'Try again' });
+    expect(screen.getByRole('tab', { name: 'Products —' })).toBeVisible();
+    expect(screen.getByRole('searchbox')).toBeVisible();
+
+    fail = false;
+    await user.click(retry);
+    expect(
+      await screen.findByRole('link', { name: 'Calm 90ct' }),
+    ).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Products 1' })).toBeVisible();
+  });
+
+  // Partial (#306's 34): a search with no match on this tab says where
+  // the matches are, with a button there.
+  it('says where a search’s matches are when this tab has none, with a button there', async () => {
+    const user = userEvent.setup();
+    const asked = readsOf((query) =>
+      pageOf(
+        query.get('type') === 'material' ? [product('Vitamin C powder')] : [],
+        countsOf({ good: 0, material: 1 }),
+      ),
+    );
+    renderAt('/items?search=vitamin');
+
+    expect(
+      await screen.findByText(
+        'Nothing in Products matches “vitamin”. 1 item in Raw materials matches.',
+      ),
+    ).toBeVisible();
+    await user.click(
+      screen.getByRole('button', { name: 'See in Raw materials' }),
+    );
+
+    expect(
+      await screen.findByRole('link', { name: 'Vitamin C powder' }),
+    ).toBeVisible();
+    expect(asked.at(-1)).toBe(
+      'type=material&search=vitamin&sort=name&order=asc',
+    );
+  });
+
+  // A Viewer: one line in Add item's place, saying whom to ask.
+  it('says whom to ask where Add item would be, for a role that cannot add', async () => {
+    readsOf(() => pageOf([product('Calm 90ct')], countsOf({ good: 1 })));
+    server.use(
+      http.get('/api/v1/account/membership', () =>
+        HttpResponse.json({
+          roles: [{ name: 'Viewer', description: null }],
+          holdsEverything: false,
+          whomToAsk: [{ id: 'user-1', name: 'Demo Owner' }],
+        }),
+      ),
+    );
+    renderAt('/items');
+
+    expect(
+      await screen.findByText(
+        'Your role does not include adding items. To do more, ask Demo Owner.',
+      ),
+    ).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Add item' })).toBeNull();
+  });
+
+  // The category filter: a tree with the open tab's counts; choosing one
+  // reads it with those under it, and a chip shows it.
+  it('narrows to a category from its tree, a chip showing it', async () => {
+    const user = userEvent.setup();
+    const asked = readsOf(() =>
+      pageOf([product('Calm 90ct')], countsOf({ good: 3 })),
+    );
+    server.use(
+      http.get('/api/v1/products/categories', () =>
+        HttpResponse.json({
+          categories: [
+            {
+              id: '00000000-0000-4000-8000-000000000001',
+              name: 'Vitamins',
+              parentId: null,
+              items: [],
+            },
+            {
+              id: '00000000-0000-4000-8000-000000000002',
+              name: 'Vitamin C',
+              parentId: '00000000-0000-4000-8000-000000000001',
+              items: [{ type: 'good', active: 2, discontinued: 1 }],
+            },
+            {
+              id: '00000000-0000-4000-8000-000000000003',
+              name: 'Powders',
+              parentId: null,
+              items: [{ type: 'material', active: 4, discontinued: 0 }],
+            },
+          ],
+        }),
+      ),
+    );
+    renderAt('/items');
+    await screen.findByRole('link', { name: 'Calm 90ct' });
+
+    await user.click(screen.getByRole('combobox', { name: 'Category' }));
+    const listbox = await screen.findByRole('listbox');
+    expect(
+      within(listbox)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual([
+      'All categories',
+      'Vitamins2',
+      'Vitamin C2',
+      'Uncategorised',
+      'Manage categories',
+    ]);
+    await user.click(
+      within(listbox).getByRole('option', { name: 'Vitamin C2' }),
+    );
+
+    await expect
+      .poll(() => asked.at(-1))
+      .toBe(
+        'type=good&category=00000000-0000-4000-8000-000000000002&sort=name&order=asc',
+      );
+    expect(
+      screen.getByRole('button', { name: 'Vitamins › Vitamin C' }),
+    ).toBeVisible();
   });
 });
