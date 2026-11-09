@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+
+import { useAddressWrite } from './use-list-filters';
 
 /**
  * The open tab, kept in the address as `?tab=` (ADR-055), so a refresh, a
@@ -19,36 +21,19 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 export function useTab<T extends string>(
   tabs: readonly T[],
 ): [T, (tab: T) => void] {
-  const [params, setParams] = useSearchParams();
-  // Kept by each write, so a page a link inside the app opened still
-  // offers Back after a tab is chosen (#341).
-  const { state } = useLocation();
+  const [params] = useSearchParams();
+  // Written as every list's address is, keeping the link's state, so a
+  // page a link inside the app opened still offers Back after a tab is
+  // chosen (#341).
+  const write = useAddressWrite();
   const asked = params.get('tab');
   const current = tabs.find((tab) => tab === asked) ?? tabs[0];
 
   useEffect(() => {
-    if (asked !== null && asked !== current) {
-      setParams(
-        (previous) => {
-          const next = new URLSearchParams(previous);
-          next.delete('tab');
-          return next;
-        },
-        { replace: true, state },
-      );
-    }
-  }, [asked, current, setParams, state]);
+    if (asked !== null && asked !== current) write({ tab: null });
+  }, [asked, current, write]);
 
-  const choose = (tab: T) =>
-    setParams(
-      (previous) => {
-        const next = new URLSearchParams(previous);
-        if (tab === tabs[0]) next.delete('tab');
-        else next.set('tab', tab);
-        return next;
-      },
-      { replace: true, state },
-    );
+  const choose = (tab: T) => write({ tab: tab === tabs[0] ? null : tab });
 
   return [current, choose];
 }

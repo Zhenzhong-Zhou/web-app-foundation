@@ -106,6 +106,86 @@ describe('useKeysetList', () => {
     expect(before).toBe('a+b/c=');
   });
 
+  // Items' cursor holds the sort's key with the id, named for it (ADR-092).
+  it('sends the cursor under the name the list gives', async () => {
+    let seen = '';
+    server.use(
+      http.get(`${BASE}/things`, ({ request }) => {
+        const url = new URL(request.url);
+        seen = url.search;
+        return url.searchParams.get('cursor')
+          ? HttpResponse.json({ entries: rows('a2'), nextCursor: null })
+          : HttpResponse.json({ entries: rows('a1'), nextCursor: 'k1' });
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      useKeysetList<Row>('/things?sort=name', { cursor: 'cursor' }),
+    );
+    await waitFor(() => expect(result.current.hasMore).toBe(true));
+
+    await act(async () => {
+      await result.current.loadMore();
+    });
+
+    expect(seen).toBe('?sort=name&cursor=k1');
+    expect(ids(result.current.entries)).toEqual(['a1', 'a2']);
+  });
+
+  /**
+   * What the first page carries beside its rows, as Items' counts: kept
+   * while Load more appends, up with the rows while a reload is on its
+   * way, and gone at once with a new path.
+   */
+  it('keeps what the first page carries beside its rows', async () => {
+    type Counted = { entries: Row[]; nextCursor: string | null; total: number };
+    let total = 3;
+    const reply = held();
+    server.use(
+      http.get(`${BASE}/things`, async ({ request }) => {
+        const url = new URL(request.url);
+        if (url.searchParams.get('before')) {
+          return HttpResponse.json({ entries: rows('a3'), nextCursor: null });
+        }
+        if (url.searchParams.get('status') === 'closed') {
+          await reply.answered;
+          return HttpResponse.json({
+            entries: rows('x1'),
+            nextCursor: null,
+            total: 1,
+          });
+        }
+        return HttpResponse.json({
+          entries: rows('a1', 'a2'),
+          nextCursor: 'c1',
+          total,
+        });
+      }),
+    );
+
+    const { result, rerender } = renderHook(
+      ({ path }) => useKeysetList<Row, Counted>(path),
+      { initialProps: { path: '/things?status=open' } },
+    );
+    await waitFor(() => expect(result.current.first).toEqual({ total: 3 }));
+
+    await act(async () => {
+      await result.current.loadMore();
+    });
+    expect(ids(result.current.entries)).toEqual(['a1', 'a2', 'a3']);
+    expect(result.current.first).toEqual({ total: 3 });
+
+    total = 4;
+    act(() => result.current.reload());
+    expect(result.current.first).toEqual({ total: 3 });
+    await waitFor(() => expect(result.current.first).toEqual({ total: 4 }));
+
+    rerender({ path: '/things?status=closed' });
+    expect(result.current.first).toBeNull();
+    reply.answer();
+    await waitFor(() => expect(result.current.first).toEqual({ total: 1 }));
+  });
+
   it('starts clean when the path changes, error included', async () => {
     let fail = true;
     server.use(

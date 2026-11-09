@@ -7,13 +7,17 @@ import { useFailureWords } from './use-failure-words';
 /** What every keyset endpoint returns (ADR-018). */
 export type KeysetPage<T> = { entries: T[]; nextCursor: string | null };
 
-type Read<T> = {
+/** What a first page carries beside its rows, such as Items' counts. */
+type Beside<P> = Omit<P, keyof KeysetPage<unknown>>;
+
+type Read<T, P> = {
   /** Which list these rows belong to, which reload of it, in which language. */
   path: string | null;
   reloads: number;
   locale: string | null;
   entries: T[] | null;
   cursor: string | null;
+  first: Beside<P> | null;
   /** The last read's failure as it came, worded as the page renders. */
   failure: unknown;
 };
@@ -24,16 +28,24 @@ const NOTHING_READ = {
   locale: null,
   entries: null,
   cursor: null,
+  first: null,
   failure: null,
 } as const;
 
-/** `before` added to a path that may already carry a query. */
-function withBefore(path: string, cursor: string): string {
+/** The cursor added to a path that may already carry a query. */
+function withCursor(path: string, name: CursorName, cursor: string): string {
   const [base, query = ''] = path.split('?');
   const params = new URLSearchParams(query);
-  params.set('before', cursor);
+  params.set(name, cursor);
   return `${base}?${params.toString()}`;
 }
+
+/**
+ * The query's name for the cursor: `before` where it is a row's id, as on
+ * every list ADR-018 paged; `cursor` on Items', which holds the sort's key
+ * with the id (ADR-092).
+ */
+type CursorName = 'before' | 'cursor';
 
 /**
  * A list read a page at a time, newest first, with Load more.
@@ -80,10 +92,19 @@ function withBefore(path: string, cursor: string): string {
  * `failed` is a first page that failed, so there are no rows: the page
  * shows the error, with Try again, and no empty state, which would say
  * there is nothing when nothing was read (#195).
+ *
+ * `first` is what the first page carries beside its rows, `P`'s other
+ * fields, such as Items' counts (ADR-092): kept while Load more appends,
+ * since a next page carries none, and up with the rows while a reload is
+ * on its way; a new path has none until it answers. One hook for every
+ * list's Load more (#33).
  */
-export function useKeysetList<T>(path: string | null) {
+export function useKeysetList<T, P extends KeysetPage<T> = KeysetPage<T>>(
+  path: string | null,
+  { cursor: cursorName = 'before' }: { cursor?: CursorName } = {},
+) {
   const [reloads, setReloads] = useState(0);
-  const [read, setRead] = useState<Read<T>>(NOTHING_READ);
+  const [read, setRead] = useState<Read<T, P>>(NOTHING_READ);
   const [loadingMore, setLoadingMore] = useState(false);
   // A change of language reads the first page again, as a reload does, so
   // the names the server gives follow the screen's words (#297).
@@ -94,7 +115,7 @@ export function useKeysetList<T>(path: string | null) {
 
   // A reload in flight shows the rows it will replace, but not their cursor:
   // a page read after the old head would be appended to the new one.
-  const current: Read<T> = fresh
+  const current: Read<T, P> = fresh
     ? read
     : samePath
       ? { ...read, cursor: null }
@@ -105,15 +126,16 @@ export function useKeysetList<T>(path: string | null) {
 
     let ignore = false;
 
-    void api<KeysetPage<T>>(path)
-      .then((page) => {
+    void api<P>(path)
+      .then(({ entries, nextCursor, ...first }) => {
         if (ignore) return;
         setRead({
           path,
           reloads,
           locale,
-          entries: page.entries,
-          cursor: page.nextCursor,
+          entries,
+          cursor: nextCursor,
+          first,
           failure: null,
         });
       })
@@ -134,7 +156,7 @@ export function useKeysetList<T>(path: string | null) {
 
     // Whether an answer still belongs: the list it was asked for is the one
     // on screen, not a newer filter or a reload that has replaced it.
-    const stillCurrent = (latest: Read<T>) =>
+    const stillCurrent = (latest: Read<T, P>) =>
       latest.path === path &&
       latest.reloads === reloads &&
       latest.locale === locale;
@@ -142,7 +164,9 @@ export function useKeysetList<T>(path: string | null) {
     setLoadingMore(true);
 
     try {
-      const page = await api<KeysetPage<T>>(withBefore(path, cursor));
+      const page = await api<KeysetPage<T>>(
+        withCursor(path, cursorName, cursor),
+      );
 
       setRead((latest) =>
         stillCurrent(latest)
@@ -161,7 +185,7 @@ export function useKeysetList<T>(path: string | null) {
     } finally {
       setLoadingMore(false);
     }
-  }, [path, reloads, locale, cursor]);
+  }, [path, reloads, locale, cursor, cursorName]);
 
   /**
    * Reads the first page again after a write that adds a row, keeping the
@@ -175,6 +199,7 @@ export function useKeysetList<T>(path: string | null) {
 
   return {
     entries: current.entries,
+    first: current.first,
     error,
     refused:
       current.entries === null && isRevisionRefusal(current.failure)

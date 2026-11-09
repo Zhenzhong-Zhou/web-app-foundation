@@ -5,7 +5,6 @@ import {
   Chip,
   MenuItem,
   Paper,
-  Skeleton,
   Stack,
   Tab,
   Table,
@@ -15,7 +14,6 @@ import {
   TableHead,
   TableRow,
   Tabs,
-  TextField,
   Typography,
 } from '@mui/material';
 import {
@@ -37,12 +35,15 @@ import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ExportButton } from '../components/export-button';
+import { FilterChips } from '../components/filter-chips';
 import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { PlaceholderRows } from '../components/placeholder-rows';
 import { ProductCover } from '../components/product-cover';
 import { Reference } from '../components/reference';
+import { SelectField } from '../components/select-field';
 import { SortHeader } from '../components/sort-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api, messageFor } from '../lib/api';
@@ -54,9 +55,7 @@ import {
 } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
-import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
-import { useFocusAfterRemove } from '../lib/use-focus-after-remove';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { flag, id, useListFilters } from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
@@ -178,9 +177,6 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
 
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
-  // Focus to the chip in a removed one's place, or the heading (ADR-091's
-  // review).
-  const { row: chipRow, removed } = useFocusAfterRemove();
   const { expiring, expired, needsCost, includeEmpty } = filters;
   // Sales sees stock but not locations (ADR-080): the page asks only for
   // what its reader may read, and leaves the Location filter out.
@@ -306,7 +302,6 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   } = useKeysetList<StockRow>(stockPath);
 
   const error = listError ?? setupError;
-  const showSkeleton = useDelayedFlag(loading);
 
   const canAdjust = can('stock.adjust');
 
@@ -475,62 +470,50 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
         ]}
       >
         {canSeeLocations && (
-          <TextField
+          <SelectField
             id="stock-location"
             size="small"
             label={intl.formatMessage({
               id: 'inventory.location',
               defaultMessage: 'Location',
             })}
-            select
+            emptyLabel={intl.formatMessage({
+              id: 'inventory.everywhere',
+              defaultMessage: 'Everywhere',
+            })}
             value={locations === null ? '' : locationId}
             onChange={(event) => setFilters({ locationId: event.target.value })}
             sx={{ minWidth: rem(200) }}
           >
-            <MenuItem value="">
-              {intl.formatMessage({
-                id: 'inventory.everywhere',
-                defaultMessage: 'Everywhere',
-              })}
-            </MenuItem>
             {leaves.map((location) => (
               <MenuItem key={location.id} value={location.id}>
                 {nameAndCode(location.name, location.code)}
               </MenuItem>
             ))}
-          </TextField>
+          </SelectField>
         )}
       </FilterRow>
 
       {/* What a link narrowed that no button shows, removable: Home's
           late button, the expired lots alone. */}
-      {expired && (
-        <Stack ref={chipRow} direction="row" spacing={1}>
-          <Chip
-            label={intl.formatMessage({
+      <FilterChips
+        chips={[
+          expired && {
+            id: 'expired',
+            label: intl.formatMessage({
               id: 'inventory.filter.expired',
               defaultMessage: 'Expired',
-            })}
-            onDelete={(event) => {
-              removed(event);
-              setFilters({ expired: false });
-            }}
-          />
-        </Stack>
-      )}
+            }),
+            onRemove: () => setFilters({ expired: false }),
+          },
+        ]}
+      />
 
       {!failed && (
         <Paper variant="outlined">
-          {loading ? (
-            <Stack sx={{ p: 2 }} spacing={1}>
-              {showSkeleton ? (
-                <>
-                  <Skeleton height={48} />
-                  <Skeleton height={48} />
-                </>
-              ) : null}
-            </Stack>
-          ) : rows?.length ? (
+          {/* The table's head stays while the rows are read, a sort's
+              included, so the header pressed keeps its focus (#505's 54). */}
+          {loading || rows?.length ? (
             <TableContainer>
               <Table size="small">
                 <TableHead>
@@ -579,7 +562,8 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                 </TableHead>
 
                 <TableBody>
-                  {rows.map((row) => (
+                  {loading && <PlaceholderRows columns={7} />}
+                  {rows?.map((row) => (
                     <TableRow key={row.id} hover>
                       <TableCell>
                         <Reference>{row.sku}</Reference>

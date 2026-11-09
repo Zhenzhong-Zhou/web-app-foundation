@@ -13,13 +13,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   defineMessages,
   FormattedMessage,
@@ -38,7 +32,6 @@ import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { LearnMore } from '../help/learn-more';
 import { MAIN_CONTENT_ID } from '../layout/skip-link';
-import { api, isRevisionRefusal } from '../lib/api';
 import {
   displayQuantity,
   formatDate,
@@ -49,7 +42,8 @@ import {
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
-import { useFailureWords } from '../lib/use-failure-words';
+import { useKeysetList } from '../lib/use-keyset-list';
+import { useResource } from '../lib/use-resource';
 import { SetCostDialog } from './set-cost-dialog';
 
 /**
@@ -58,11 +52,6 @@ import { SetCostDialog } from './set-cost-dialog';
  * cost tile does (ADR-091; #505's 8).
  */
 const WAITING_HASH = '#costs';
-
-interface NeedsCostPage {
-  entries: NeedsCostEntry[];
-  nextCursor: string | null;
-}
 
 /**
  * Only an acquisition takes a cost; the server refuses the rest (ADR-048).
@@ -125,20 +114,19 @@ function whyWaiting(entry: NeedsCostEntry, intl: IntlShape): string {
 export function StockValuePage() {
   const intl = useIntl();
   const can = useCan();
-  const [valuation, setValuation] = useState<StockValuation | null>(null);
-  const [waiting, setWaiting] = useState<NeedsCostPage | null>(null);
-  // A read's failure as it came, worded as the page renders (ADR-081), or
-  // the page's own words.
-  const [error, setError] = useState<unknown>(null);
-  const errorWords = useFailureWords(error);
+  const read = useResource<{ valuation: StockValuation }>('/costs/valuation');
+  const valuation = read.data?.valuation ?? null;
+  // A page at a time, with Load more, by the hook every list shares (#33).
+  const waiting = useKeysetList<NeedsCostEntry>('/costs/needs-cost');
+  const refused = read.refused ?? waiting.refused;
+  const errorWords = read.error ?? waiting.error;
   const [costing, setCosting] = useState<NeedsCostEntry | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
   const location = useLocation();
   const waitingSection = useRef<HTMLDivElement>(null);
   const waitingHeading = useRef<HTMLHeadingElement>(null);
   const openedAt = useRef<string | null>(null);
 
-  const loading = (valuation === null || waiting === null) && error === null;
+  const loading = (read.loading || waiting.loading) && errorWords === null;
   const showSkeleton = useDelayedFlag(loading);
   const canUpdate = can('costs.update');
 
@@ -162,68 +150,18 @@ export function StockValuePage() {
     waitingHeading.current?.focus({ preventScroll: true });
   }, [loading, location.hash, location.key]);
 
-  const fetchAll = useCallback(
-    () =>
-      Promise.all([
-        api<{ valuation: StockValuation }>('/costs/valuation'),
-        api<NeedsCostPage>('/costs/needs-cost'),
-      ]),
-    [],
-  );
-
-  const load = useCallback(async () => {
-    try {
-      const [value, page] = await fetchAll();
-      setValuation(value.valuation);
-      setWaiting(page);
-      setError(null);
-    } catch (caught) {
-      setError(caught);
-    }
-  }, [fetchAll]);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void fetchAll()
-      .then(([value, page]) => {
-        if (ignore) return;
-        setValuation(value.valuation);
-        setWaiting(page);
-      })
-      .catch((caught: unknown) => {
-        if (ignore) return;
-        setError(caught);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [fetchAll]);
-
-  async function loadMore() {
-    if (!waiting?.nextCursor) return;
-    setLoadingMore(true);
-
-    try {
-      const next = await api<NeedsCostPage>(
-        `/costs/needs-cost?before=${waiting.nextCursor}`,
-      );
-      setWaiting({
-        entries: [...waiting.entries, ...next.entries],
-        nextCursor: next.nextCursor,
-      });
-    } catch (caught) {
-      setError(caught);
-    } finally {
-      setLoadingMore(false);
-    }
+  /** Both read again, after a cost is set or a refusal's Try again. */
+  async function load() {
+    waiting.reload();
+    await read.reload();
   }
 
   const currency = valuation?.currency ?? null;
 
-  if (!valuation && isRevisionRefusal(error)) {
-    return <RevisionRefusalPage failure={error} onRetry={() => void load()} />;
+  if (refused) {
+    return (
+      <RevisionRefusalPage failure={refused} onRetry={() => void load()} />
+    );
   }
 
   return (
@@ -314,7 +252,7 @@ export function StockValuePage() {
               })}
             </Typography>
 
-            {waiting?.entries.length === 0 ? (
+            {waiting.entries?.length === 0 ? (
               <Alert severity="success">
                 {intl.formatMessage({
                   id: 'costs.allCosted',
@@ -367,7 +305,7 @@ export function StockValuePage() {
                   </TableHead>
 
                   <TableBody>
-                    {waiting?.entries.map((entry) => (
+                    {waiting.entries?.map((entry) => (
                       <TableRow key={entry.id}>
                         <TableCell>
                           <Reference>{entry.sku}</Reference>
@@ -417,9 +355,9 @@ export function StockValuePage() {
             )}
 
             <LoadMoreButton
-              hasMore={Boolean(waiting?.nextCursor)}
-              loading={loadingMore}
-              onLoadMore={loadMore}
+              hasMore={waiting.hasMore}
+              loading={waiting.loadingMore}
+              onLoadMore={waiting.loadMore}
               sx={{ p: 2 }}
             />
           </Paper>

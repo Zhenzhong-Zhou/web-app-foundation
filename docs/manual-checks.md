@@ -154,7 +154,9 @@ a second organization.
 - **MC-301** Inventory shows stock 50 rows at a time, by location, then code,
   then lot. Load more continues with no row repeated or skipped, and the
   location filter, "Show emptied" and the search apply to the whole list,
-  not only the rows on screen (ADR-051).
+  not only the rows on screen (ADR-051). The Location filter reads
+  Everywhere in its box, its label above, until a place is chosen, never a
+  blank box (#274); Partout in Français, 全部库位 in 中文.
 - **MC-308** Inventory search finds a row by any part of its code, its item's
   name or its lot code; a search with no match says so.
 - **MC-309** "Promised to customers" lists only products something is held or
@@ -213,8 +215,9 @@ a second organization.
 - **MC-406** *(ADR-091)* The lists keep what is chosen in the address. On
   Orders press All, set Expected from to the 1st of this month, then Tab to
   Expected's header and press Enter: the address gains `status=all`,
-  `from=…`, `sort=expectedAt&order=asc`, and once the list is back the
-  focus ring is still on Expected. Open an order and press Back: All
+  `from=…`, `sort=expectedAt&order=asc`; while the list reads again its
+  table's head stays, grey bars under it past a moment, and the focus ring
+  never leaves Expected. Open an order and press Back: All
   pressed, the day and the sort as they were. Press Orders in the menu:
   the plain list, Open pressed, the address `/orders`. Do the same on
   Invoices (To issue, a day, Total), Credit notes (a day, Amount), Returns (Closed, a day), Production (a
@@ -5365,3 +5368,7 @@ first.
   MC-3207, MC-3322, MC-3412, MC-3413, MC-3422, MC-4201, MC-4202,
   MC-4205, MC-4209, MC-4214, MC-R27, MC-R55, MC-R57, MC-R63, MC-R68,
   MC-R69, MC-R70 and MC-R71 reworded.
+- 2026-11-09: ADR-092 step 11, the shared pieces: a select's empty
+  choice named in words, Inventory's Location the first, and a sorted
+  list keeping its table's head while it reads: MC-301 and MC-406
+  extended.

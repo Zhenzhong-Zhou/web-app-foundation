@@ -240,6 +240,53 @@ describe('OrdersPage', () => {
   });
 
   /**
+   * #505's 54: a sort reads the list again with the table's head kept on
+   * the page, the placeholder in its body, so the header pressed from the
+   * keyboard keeps its focus while the rows are read, not only after.
+   */
+  it('keeps the header and its focus while a sort reads the list again', async () => {
+    const user = userEvent.setup();
+    let release: () => void = () => undefined;
+    const sorted = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    server.use(
+      http.get('/api/v1/orders', async ({ request }) => {
+        if (new URL(request.url).searchParams.has('sort')) await sorted;
+        return HttpResponse.json({
+          entries: [toShip('SO-1', dayFromToday(3))],
+          nextCursor: null,
+        });
+      }),
+    );
+
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/orders']}>
+        <OrdersPage />
+      </MemoryRouter>,
+      { permissions: ['orders.view'] },
+    );
+
+    const expected = await screen.findByRole('button', { name: 'Expected' });
+    expected.focus();
+    await user.keyboard('{Enter}');
+
+    // The read is held: no rows yet, and the header is the one pressed.
+    await expect
+      .poll(() => screen.queryByRole('link', { name: 'SO-1' }))
+      .toBeNull();
+    expect(expected).toBeInTheDocument();
+    expect(expected).toHaveFocus();
+
+    release();
+    expect(await screen.findByRole('link', { name: 'SO-1' })).toBeVisible();
+    expect(
+      screen.getByRole('columnheader', { name: 'Expected' }),
+    ).toHaveAttribute('aria-sort', 'ascending');
+    expect(expected).toHaveFocus();
+  });
+
+  /**
    * Home's chip on the list it opens (ADR-091): a row expected before the
    * organization's today says how late it is; one due later says nothing.
    */

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { withQuery } from './api';
@@ -25,8 +24,9 @@ export interface ListSort<K extends string> {
  * not in `keys`, or an order neither way, is ignored.
  *
  * `header(key)` is what a SortHeader needs. The list is read again after
- * a sort and its table drawn anew, so the header pressed takes back the
- * focus it had (ADR-091).
+ * a sort with its table's head kept on the page, the placeholder in its
+ * body alone (PlaceholderRows), so the header pressed keeps its focus
+ * throughout (#505's 54), with nothing to put back.
  */
 export function useListSort<K extends string>(
   keys: readonly K[],
@@ -34,7 +34,6 @@ export function useListSort<K extends string>(
 ) {
   const [params] = useSearchParams();
   const write = useAddressWrite();
-  const [pressed, setPressed] = useState<K | null>(null);
 
   const key = params.get('sort');
   const order = params.get('order');
@@ -46,7 +45,6 @@ export function useListSort<K extends string>(
   const sort = chosen ?? byFilter;
 
   function toggle(column: K) {
-    setPressed(column);
     write({
       sort: column,
       order: sort?.key === column && sort.order === 'asc' ? 'desc' : 'asc',
@@ -58,7 +56,6 @@ export function useListSort<K extends string>(
       active: sort?.key === column,
       order: sort?.order ?? 'asc',
       onSort: () => toggle(column),
-      refocus: pressed === column,
     };
   }
 

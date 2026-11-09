@@ -308,18 +308,17 @@ code around it changes.
 - The login and forgot-password email field, the two order-line price
   fields, and the "Into" location select in the receive dialogs: two
   copies each, with different help text.
-- List pages' loading and empty frames: they vary in skeleton rows and
-  wording; a component would need a prop for each difference.
+- List pages' empty frames: they vary in wording; a component would need
+  a prop for each difference. A sorted list's loading rows are
+  `PlaceholderRows`, in its table's body.
 - Dialog plumbing (imports, `useSubmit`, `close`, `handleSubmit`, the
   `update(field)` helper): sharing it would mean a form framework.
 - `products/variant-row.tsx` keeps its own `Detail` (label beside value,
   a spec sheet); `LabelledValue` is caption above value.
 - The cost panels' top (the `useResource` guard and a six-line heading)
   and the run cost panel's two tables (different columns).
-- Stock value's needs-cost list stays off `useKeysetList`: it is read with
-  the valuation under one banner. The multi-read pages (order detail,
-  members, inventory, exchange rates) stay off `useResource` for the same
-  reason.
+- The multi-read pages (order detail, members, inventory, exchange rates)
+  stay off `useResource`: each reads several things under one banner.
 - Two order lookups stay outside `loadOrder`: one joins the partner for
   its columns, one runs outside a transaction through `TenantDb`.
 - Repeats inside a single spec: each test should read on its own.
@@ -828,9 +827,9 @@ knows from the link, not from a guess.
   carry no state, so no Back, as before.
 - **Kept while the page writes its own address:** a list's search, a tab,
   its filters and its sort replace the address with the location's state,
-  as `useListSearch`, `useTab`, `useListFilters` and `useListSort` do, so
-  Back stays after the first letter typed, the first tab or the first
-  filter chosen.
+  through `useAddressWrite`, which `useListSearch`, `useTab`,
+  `useListFilters` and `useListSort` share (#505's 58), so Back stays
+  after the first letter typed, the first tab or the first filter chosen.
 - MC-R69 checks each such link by hand.
 
 ## Status pages
@@ -977,6 +976,17 @@ Use these rather than writing the thing again on a page:
   sections stay one page.
 - **`FilterRow`** above a list: search, the list's selects, quick filters with
   counts. Never a column of full-width fields.
+- **`FilterChips`** under it: what a link narrowed or ordered that no button
+  shows, each chip's × undoing it, focus then on the chip left or the page's
+  heading (#505's 57).
+- **`SelectField`** for a select with an empty choice: the choice named in
+  words ("Everywhere", "All categories") and shown in the box, never a blank
+  box (#274). The other selects move to it as their screens are next changed.
+- **`useKeysetList`** with **`LoadMoreButton`** for a list read a page at a
+  time: one hook for every list's Load more (#33), the cursor's name and what
+  the first page carries beside its rows, such as Items' counts, its options.
+- **`PlaceholderRows`** in a list's table body while it reads, its head kept on
+  the page, so a header pressed to sort keeps its focus (#505's 54).
 - **`EmptyState`** inside the list's panel when it is empty: the first-time
   message with no filter, "nothing matches" with one.
 - **`ListError`** above a list whose read failed. When the first page failed
