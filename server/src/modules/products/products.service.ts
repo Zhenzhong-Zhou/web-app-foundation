@@ -582,12 +582,11 @@ export class ProductsService {
       input.categoryId !== undefined &&
       input.categoryId !== existing.categoryId
     ) {
-      if (input.categoryId) {
-        const [category] = await this.tenantDb.select(
-          productCategories,
-          eq(productCategories.id, input.categoryId),
+      const categoryId = input.categoryId;
+      if (categoryId) {
+        await this.tenantDb.transaction((tx, organizationId) =>
+          assertCategoryIn(tx, organizationId, categoryId, UNKNOWN_CATEGORY),
         );
-        if (!category) throw new BadRequestException(UNKNOWN_CATEGORY);
       }
       // From and to, by name (ADR-076). Only when it moves: a previous
       // equal to the new would mark the whole save unchanged, a rename
