@@ -26,7 +26,8 @@
  * naming that folder, the database and the command that gives the second
  * folder its own, scripts/folder-databases.mjs, since the main folder keeps
  * its names: the lock keeps two runs apart in time, not two folders'
- * tables.
+ * tables. The fix runner makes the same check before a fix starts
+ * (scripts/fix-issue/lib.mjs).
  *
  * When another folder holds it, it tries again every 5 seconds and says,
  * at once and then each minute, what it waits for: the holder's label,

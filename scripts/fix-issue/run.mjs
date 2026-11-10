@@ -20,8 +20,10 @@
 //
 // Guards: it stops before any work unless the session is paid by
 // ANTHROPIC_API_KEY (never the plan) and /fix-issue is found; it refuses
-// to start from a second working folder, to fix in the main one, and a
-// new fix in a folder with uncommitted changes to tracked files; a hook
+// to start from a second working folder, to fix in the main one, a fix or
+// a resume in a folder whose test or e2e database another working folder
+// names too (the lock's check, scripts/one-at-a-time.mjs), and a new fix
+// in a folder with uncommitted changes to tracked files; a hook
 // refuses a merge or a force-push anywhere in a Bash command (main's
 // protection on GitHub refuses both too); it stops at the budget.
 //
@@ -30,9 +32,11 @@
 // commands up to 90 minutes in the foreground, and a line appended to the
 // system prompt). After a fix it reads the folder's git state and says
 // UNFINISHED when changes are left uncommitted or no pull request is open
-// for the branch, UNKNOWN when GitHub could not be asked, otherwise it
-// gives the merge command, after the one that frees the branch from that
-// folder.
+// for the branch, UNKNOWN when GitHub could not be asked, and already
+// fixed, with the gh issue close line, when the session ends
+// "DONE: already fixed by <commit> in #<PR>" and the folder is detached
+// with a clean tree; otherwise it gives the merge command, after the one
+// that frees the branch from that folder.
 //
 // Each run's every message is kept in tmp/fix-runs/logs/, and its line,
 // with the SDK's cost, in tmp/fix-runs/runs.tsv, both in the main working
@@ -50,6 +54,7 @@ import {
   checkClean,
   checkInit,
   checkKey,
+  checkShared,
   creditWarning,
   fixFolder,
   lastFix,
@@ -118,6 +123,7 @@ try {
   }
   checkKey(process.env);
   folder = fixFolder(main, args.folder);
+  if (args.mode !== "probe") checkShared(folder, process.env);
   if (args.mode === "fix") checkClean(folder);
   if (args.mode === "resume") resumed = lastFix(rows, runs);
 } catch (error) {
@@ -291,7 +297,11 @@ const result = tally(results);
 const report =
   args.mode === "probe"
     ? undefined
-    : afterRun(folder, undefined, { named: args.folder !== undefined });
+    : afterRun(folder, undefined, {
+        named: args.folder !== undefined,
+        issue,
+        result: results.at(-1)?.result,
+      });
 if (report) console.log(report.lines.join("\n"));
 if (session) {
   recordRun(runs, {
