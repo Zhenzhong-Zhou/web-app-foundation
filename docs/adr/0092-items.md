@@ -2,10 +2,10 @@
 status: accepted
 date: 2026-11-09
 areas: [products, i18n, ui]
-amends: [ADR-048, ADR-054, ADR-056, ADR-090, ADR-091]
+amends: [ADR-048, ADR-051, ADR-054, ADR-056, ADR-068, ADR-090, ADR-091]
 ---
 
-# ADR-092 — Items: everything the company keeps, by type and category (amends ADR-048, ADR-054, ADR-056, ADR-090 and ADR-091)
+# ADR-092 — Items: everything the company keeps, by type and category (amends ADR-048, ADR-051, ADR-054, ADR-056, ADR-068, ADR-090 and ADR-091)
 
 ## Context
 
@@ -453,3 +453,117 @@ Categories have the same five, by the same words.
   again → the reviews and the panel → the pull request, closing #476,
   #305 and #33, and part of #274, #306, #308, #473, #485, #505, #526,
   #149, #226 and #467.
+
+## Amendment (November 2026) — as built (#532)
+
+Built on `adr-092-items` on 9 November 2026, 73 commits, from its brief
+in `tmp/adr-092/`. Where building settled or changed what is above:
+
+### Decided while building
+
+- **A row's stock opens Inventory for that item alone** through a
+  `productId` filter on `GET /v1/stock`, its counts, its export and
+  `GET /v1/stock/availability`; another organization's item is a 400.
+  Inventory shows the item as a chip, named by its rows, so it follows
+  the reader's language.
+- **Back after a tab, a search, a category or a sort leaves Items,** as
+  every list does under #341's rule: each replaces the address rather
+  than adding a step, and Forward brings Items back as it was. The
+  interaction table's Back column for those four rows reads "the page
+  before; Forward, as it was", and their tests say so.
+- **Uncategorised has its count:** `GET /v1/products/categories` answers
+  `uncategorised`, by type, beside the tree.
+- **Categories go at most 10 levels deep,** as locations do: an add or a
+  move deeper is refused with a 409 (`productCategories.tooDeep`). This
+  replaces "nested, as locations are" above, which set no depth.
+- **Set category opens with nothing chosen,** not on the category the
+  ticked items share, so Move never starts on a place they already are.
+- **A change to several answers each item's values before,** which Undo
+  sends back to the same route: ADR-068, amended.
+- **The figure beside Low or Out stays the stock on hand,** the status
+  explaining itself where it links. The rule for a figure beside a
+  status, on every screen, goes to the design language with the flows
+  and states pull request.
+- **The Code field says what a code is,** with an example by the type
+  chosen (VITC-100, RM-VITC, PK-BTL90, SUP-GLV100, VITC-S10, EQ-CAP-01):
+  "Your own code for this item, unique in your organization, such as
+  RM-VITC. Not a barcode." Code is "what other systems call a SKU" once
+  in each language's Items guide; the organization export's README
+  calls its `sku` column the variant's Code.
+- **The names table's base row** reads "the name it was added with, used
+  in any language without its own name". Making the base name the name
+  in the organization's language, so that a required language is not
+  typed twice, is #531, planned with the translations.
+- **Settings › Categories is explained in the Items guide,** where Help
+  on that page opens it; there is no Settings guide.
+- **One product for two markets:** the Items guide says how (one item, a
+  variant per market with its own code, recipe, licence and names; a
+  formula changed over time is a new recipe version on the same code),
+  and `seed:demo` holds both cases: FOCUS-60-CA under Health Canada and
+  FOCUS-60-CN under SAMR, 专注胶囊 60 粒; VITD-30-CA and VITD-30-EXP, two
+  recipes under one licence, the same bottle, a different label each.
+- **Inventory's rows, the name before the code,** are ADR-093's, with
+  Inventory's other findings.
+
+### Built differently from the text above
+
+- **`product_categories.name_pinyin`,** a column the brief did not list,
+  so a Chinese category sorts by its pinyin.
+- **A category counts its own items;** the client adds up a branch, and a
+  refused delete counts what sits directly in it.
+- **The export hides discontinued items by default,** as the list does,
+  and holds six name columns: the item's and the variant's in each
+  language. Its old `?discontinued=true` is now a 400.
+- **Discontinuing is recorded from and to in History,** so an Undo reads
+  as one.
+- **The types' words on the server are the tabs' plural names,** in the
+  CSV and History; a singular name for one item waits for its issue.
+- **An equipment lot's cost, or a run that used equipment,** is no longer
+  marked Provisional because of equipment, since equipment waits for no
+  cost.
+- **"Code" replaced "SKU" on every screen, printed document, CSV header
+  and History field.**
+- **Show all in Items** opens `/items?tab=all&discontinued=include` with
+  the search.
+- **One hook for Load more:** every paged list uses it, Stock value's
+  Waiting for a cost the last copy moved.
+- **Items' heading has Export, Licences and Add item;** Refresh went, as
+  the boards draw it. The Licences link waits for its issue.
+- **On a phone,** a card's stock and status are a link of their own, and
+  the cards carry check boxes; a sort clears the ticks, as a tab, a
+  search and a filter do.
+- **The width switches use `useMediaQuery`,** as Members does, where
+  `.claude/rules/ui.md` asks for CSS `display`: drawn twice, every row
+  would be read twice. For the design language's pull request.
+- **Add item asks the Unit,** as the boards draw it, and keeps Size or
+  variation and the description.
+- **The names table has a column for each of the three languages,** and
+  the item's page reads the organization and the categories besides
+  itself.
+- **The pickers:** a price list's follows its direction; a reorder
+  point's and Movements' group like a receipt; an exact code leads only
+  within its type's group; a row stays "CODE — name", with its type.
+- **Variant, not Variation,** in the names table, its refusal and the
+  guide.
+- **An organization with no items reads the list twice on opening,** to
+  learn which types it holds. Left for its issue.
+
+### Measured
+
+- **`GET /v1/products` p95 at small:** 22 ms before the branch, 26 ms
+  after; by stock 31; with a search 16 before, 34 and 35 in two runs
+  after. At large, on the 22 October seed migrated forward: 40 plain,
+  36 by type, 67 by stock, 128 with a search, all inside 300 ms. A
+  search now counts every tab and reads each row's stock, which passed
+  ADR-051's watch on a large catalogue's search (ADR-051, amended).
+- **Time against the brief:** steps 1 to 8 took 144 minutes of 200;
+  steps 10 to 21, 227 of 400; the reviews, 269 of 210 (86 and 183). In
+  all about 10 hours 40 minutes of the 13 planned. Opus steps used 100
+  to 376 thousand tokens, two to three times the router's. No Sonnet or
+  Haiku step was run again on Opus, so the model table holds.
+
+### Deferred, added
+
+- **A market on a variant,** Items' stock split by market, and a
+  customer's market limiting the picker. Trigger: a customer selling one
+  product in two markets asking for them.

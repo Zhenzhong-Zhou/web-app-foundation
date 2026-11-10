@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-01
 areas: [database, ops]
-amended-by: [ADR-081, ADR-082, ADR-091]
+amended-by: [ADR-081, ADR-082, ADR-091, ADR-092]
 ---
 
 # ADR-051 — Performance: a volume seed, response-time budgets, plan checks
@@ -170,6 +170,12 @@ so the timing is the evidence for the name lookup.
   migration 0077 its plan rechecks only the organization's 3,750
   translations, where it rechecked every organization's 18,750. Trigger:
   a large organization's search past 100 ms. Then its plans first.
+  *Fired on 9 November 2026 (ADR-092):* 128 ms p95, inside 300, once
+  Items' list counted every tab and read each row's stock beside the
+  search; 3.7 times its small figure, where a plain read grows 1.6. Its
+  plans are next: a search reads the variants about three times on a
+  first page, the match, the rank and the counts (ADR-092's review,
+  finding 67).
 - **The low list** (ADR-085) works out every point's position on each
   page: 6.3× from small to large, 22 to 138 ms at p95 (1 November 2026,
   #361). Trigger: p95 over budget at small scale. Then the open lines

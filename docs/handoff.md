@@ -15,11 +15,16 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 9 November 2026:
 
-- **Items, ADR-092** ([#476]): planned on 8 and 9 November, its decisions
-  in [ADR-092](adr/0092-items.md) and its boards the canvas's rows
-  "Items v1", "Items v2" and "Items v2: flows and states", the build
-  following v2. Built on `adr-092-items` from its brief, in
-  `tmp/adr-092/`.
+- **Items, ADR-092** ([#476]): planned on 8 and 9 November, its boards
+  the canvas's rows "Items v1", "Items v2" and "Items v2: flows and
+  states"; built on 9 November on `adr-092-items`, 73 commits, pull
+  request [#532] open; the as-built is in [ADR-092's amendment](adr/0092-items.md).
+  Items holds everything the company keeps, by type and category, with
+  its stock read from Inventory and several items changed at once; the
+  item's page shows each variant's names and what documents will refuse
+  ([#526]'s second half). Its reviews found 105 and fixed 53; their 25
+  issues and 3 comments wait in `tmp/adr-092/issues/`, and the design
+  language's items in `tmp/adr-092/dl-items.md`.
 - **Customise Home,** decided in ADR-091: planned on 6 November and
   built on 6 and 7 November on `customise-home`, 78 commits, merged on 7
   November as [#515] (807fa43) and deployed the same day; the as-built
@@ -256,9 +261,10 @@ On 9 November 2026:
   7-day rule, Sentry 11.11.0 first as a security fix; rimraf 6.1.4
   closes alert 9 in `server/`. From Items' branch on, the rule is as
   before: each branch takes, package by package, the newest version in
-  range that is 7 days old that day. Releases since then come of age
-  from 15 November (`@vitejs/plugin-react` 6.3.0) and 16 November (vite
-  8.3.7 and the Nest packages at 12.4.2). Held: `@playwright/test` at
+  range that is 7 days old that day. Releases since then come of age on
+  16 November: `@vitejs/plugin-react` 6.3.0, vite 8.3.7, the Nest
+  packages at 12.4.2, `typescript-eslint` 8.72.2 and `@aws-sdk/client-s3`
+  3.1165.0. Held: `@playwright/test` at
   1.64.1, pinned, its Firefox 159 crashing in the Linux image ([#521]);
   `jsdom` at 30.1.3, pinned, 17 unit tests failing on 31 ([#522]);
   TypeScript 7 ([#336]). Alerts 11 and 12 wait for their upstreams
@@ -308,6 +314,18 @@ On 9 November 2026:
 
 ## Still to do, by hand
 
+- **After [#532]'s merge:** `npm run migrate:all`; the deploy's check
+  that `/api/health` says `apiRevision: 4`; `tmp/adr-092/from-adr-091/`
+  moved into `tmp/adr-093/` and `tmp/adr-092/dl-items.md` kept for the
+  flows and states pull request, before `scripts/prune-branches.sh --yes`
+  and `scripts/clean-local.sh`, then `--yes`; `foundation_perf_large`
+  seeded again with Items' seed and timed, its category filter
+  included; the issues in `tmp/adr-092/issues/` posted if not yet;
+  `/auto-mode-setup` on `main`, kept in the maintainer's own settings,
+  since auto mode blocked a few of the build's actions; and Project
+  knowledge re-synced. `git stash list`: `stash@{0}`, from `fix-ups-ci`,
+  was touched by a failed command in step 23 and left as it was; drop it
+  if it is no longer needed.
 - **After [#523]'s merge:** `scripts/prune-branches.sh --yes`;
   `scripts/clean-local.sh`, then `--yes`; `tmp/sdk-fix/logs/` moved into
   `tmp/fix-runs/logs/`, and `tmp/sdk-fix/` removed; the planning skill
@@ -424,7 +442,10 @@ request or a set of them:
       merged on 8 November; then the runner for small fixes on the API
       credit, in the repository, ADR-089's amendment, [#523];
       then Items ([#476]),
-      ADR-092, planned on 8 and 9 November, built on `adr-092-items`;
+      ADR-092: [#532]; then [#529], the test databases both working
+      folders share, a small pull request planned in a chat; then the
+      list search's plans, since ADR-051's watch on a large catalogue's
+      search fired at 128 ms (ADR-092's review, finding 67);
       then a docs pull request for flows and states, ADR-092's decision:
       the pieces every screen shares, their states drawn once in the
       design language and one canvas row, and the planning skill asking
@@ -439,7 +460,8 @@ request or a set of them:
       only Chinese checking the Chinese before `import`; a pseudo-locale
       and a browser check for cut text in French and Chinese; then [#371]
       to [#398] and [#419] to [#423], each with the natural-wording pass's
-      comment, the style
+      comment, and [#531], a base name in the organization's language;
+      the style
       rules into the glossary, the corrections of the reviewer who reads
       only Chinese, ADR-090's rule for Chinese beside Latin letters, and
       [#148], [#149] and [#249]; then Orders, built to the design
@@ -704,3 +726,7 @@ Not repeated here; each list has one home:
 [#521]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/521
 [#522]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/522
 [#523]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/523
+[#526]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/526
+[#529]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/529
+[#531]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/531
+[#532]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/532
