@@ -214,7 +214,13 @@ describe('ProductsPage', () => {
       }),
     );
 
-    renderAt('/items');
+    // As whoever may add items: a Viewer is not told to (below).
+    renderWithAuth(
+      <MemoryRouter initialEntries={['/items']}>
+        <ProductsPage />
+      </MemoryRouter>,
+      { permissions: ['products.view', 'products.create'] },
+    );
     expect(
       await screen.findByText(
         'No items yet. Add what you sell first, or the raw materials you make it from.',
@@ -669,6 +675,17 @@ describe('ProductsPage', () => {
 
     expect(await screen.findByRole('link', { name: 'Focus' })).toBeVisible();
     expect(asked.at(-1)).toBe('type=good&sort=name&order=asc');
+  });
+
+  // A Viewer was told to add items, with no way to (ADR-092's review, 81).
+  it('tells a role that cannot add only that there are no items yet', async () => {
+    readsOf(() => pageOf([], countsOf({})));
+    renderAt('/items');
+
+    expect(await screen.findByText('No items yet.')).toBeVisible();
+    expect(
+      screen.queryByText(/Add what you sell first/),
+    ).not.toBeInTheDocument();
   });
 
   it('says whom to ask where Add item would be, for a role that cannot add', async () => {

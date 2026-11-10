@@ -1681,6 +1681,7 @@
   "products.empty.seeIn": "Voir dans {tab}",
   "products.empty.showAll": "Afficher tous les articles",
   "products.empty.tab": "Rien dans cet onglet pour l’instant.",
+  "products.emptyRead": "Aucun article pour l’instant.",
   "products.filters": "{count, plural, =0 {Filtres} other {Filtres · #}}",
   "products.filters.clear": "Effacer",
   "products.filters.done": "Terminé",

@@ -1681,6 +1681,7 @@
   "products.empty.seeIn": "在{tab}里查看",
   "products.empty.showAll": "显示所有物品",
   "products.empty.tab": "这个标签页里还没有物品。",
+  "products.emptyRead": "还没有物品。",
   "products.filters": "{count, plural, =0 {筛选} other {筛选 · #}}",
   "products.filters.clear": "清除",
   "products.filters.done": "完成",

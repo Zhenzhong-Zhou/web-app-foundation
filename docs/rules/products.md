@@ -337,7 +337,7 @@ How this file is kept is in the [README](README.md).
   MC-208
 - **Items' list is always in one of five states, and says which.** Empty,
   it says there are no items yet and what to add first, with Add item, or
-  for whoever may not add, whom to ask; a search with no match on the open
+  for whoever may not add, only that there are none, and whom to ask; a search with no match on the open
   tab says so, and where the matches are when another tab holds them;
   filters matching nothing offer Show all items, and Uncategorised once
   emptied says every item has a category. Loading, its rows are placeholders after 250 ms, the head, tabs and
@@ -349,6 +349,7 @@ How this file is kept is in the [README](README.md).
   [test](../../client/src/products/products-page.test.tsx) "says where a search’s matches are when this tab has none, with a button there" ·
   [test](../../client/src/products/products-page.test.tsx) "says every item has a category once Uncategorised is empty, with Show all items" ·
   [test](../../client/src/products/products-page.test.tsx) "says whom to ask where Add item would be, for a role that cannot add" ·
+  [test](../../client/src/products/products-page.test.tsx) "tells a role that cannot add only that there are no items yet" ·
   [test](../../client/src/products/products-page.test.tsx) "says the list could not be read, with Try again, the tabs’ counts unknown" ·
   [test](../../client/src/products/products-page.test.tsx) "shows fifty more below with focus on the first new row, and keeps the rows when that fails" ·
   [test](../../client/e2e/items.spec.ts) "as it should be: each row its type’s icon, name, code, category, stock and status" ·

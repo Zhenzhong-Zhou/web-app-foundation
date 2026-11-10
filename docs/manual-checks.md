@@ -214,7 +214,9 @@ a second organization.
   50 more keeps the rows shown and says the next 50 could not be loaded,
   with Try again; a reload with the network off shows only the list's
   part failing, with Try again, the tabs' counts reading "—". Signed in
-  as a Viewer, a line in Add item's place says whom to ask.
+  as a Viewer, a line in Add item's place says whom to ask, and in an
+  organization with no items the list says only "No items yet.", never
+  to add some.
 - **MC-212** Items, as the demo Owner: a check box leads each row, and
   the header's ticks every row loaded; clicking a box does not open the
   item. Ticking shows a bar, "3 selected", with Set category, Discontinue
@@ -5586,3 +5588,5 @@ first.
   no stock says so by the item's name: MC-208 extended.
 - 2026-11-09: ADR-092's reviews, 80: the phone's sheet of filters and
   sort is a dialog named by its heading: MC-209 extended.
+- 2026-11-09: ADR-092's reviews, 81: a Viewer in an organization with no
+  items is told only that there are none yet: MC-211 extended.

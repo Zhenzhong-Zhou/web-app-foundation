@@ -488,6 +488,7 @@ export function ProductsPage() {
               counts={counts}
               onTab={setTab}
               onClearSearch={() => setText('')}
+              canAdd={canAdd}
               add={
                 canAdd && !search && filtersOn === 0 && known?.all === 0 ? (
                   <Button onClick={openDialog(() => setCreating(true))}>
@@ -678,6 +679,7 @@ function ItemsEmpty({
   counts,
   onTab,
   onClearSearch,
+  canAdd,
   add,
 }: {
   search: string;
@@ -688,6 +690,8 @@ function ItemsEmpty({
   counts: ProductCounts | null;
   onTab: (tab: ItemTab) => void;
   onClearSearch: () => void;
+  /** Whether the reader may add items: a Viewer is not told to. */
+  canAdd: boolean;
   add: ReactNode;
 }) {
   const intl = useIntl();
@@ -768,9 +772,29 @@ function ItemsEmpty({
     );
   }
 
+  const none = counts?.all === 0 || !counts;
+
+  // Whoever may only read is told what is there, not to add; the line in
+  // Add item's place says whom to ask (ADR-092).
+  if (!canAdd) {
+    return (
+      <EmptyState>
+        {none
+          ? intl.formatMessage({
+              id: 'products.emptyRead',
+              defaultMessage: 'No items yet.',
+            })
+          : intl.formatMessage({
+              id: 'products.empty.tab',
+              defaultMessage: 'Nothing on this tab yet.',
+            })}
+      </EmptyState>
+    );
+  }
+
   return (
     <EmptyState action={add} learnMore={{ guide: 'items', section: 'add' }}>
-      {counts?.all === 0 || !counts
+      {none
         ? intl.formatMessage({
             id: 'products.empty',
             defaultMessage:
