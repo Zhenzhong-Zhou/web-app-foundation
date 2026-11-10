@@ -101,6 +101,20 @@ An active recipe cannot be edited: **New version** copies it to a new draft.
 
 > Only someone who may create recipes sees **New recipe** and **New version**, and only someone who may change them sees **Add component** and **Promote**.
 
+## One product for two markets {#markets}
+
+A product sold in two markets is one item, with a variant for each market:
+
+- Each variant has its own **Code**, such as FOCUS-60-CA and FOCUS-60-CN.
+- Each has its own recipe, made under that market’s licence: Health Canada’s for one, SAMR’s for the other.
+- Each has its own names, so the variant for China can print as 专注胶囊 60 粒.
+
+Two markets can also share a licence and a bottle, each recipe with its own label.
+
+When a formula changes over time, it keeps its item and its code: press **New version** on its recipe, change what it uses, and press **Promote**.
+
+Barcodes come later. The Code is your own, not a barcode.
+
 ## Words you’ll meet {#words}
 
 - **Code**: the code on a variant’s label. Every variant has its own.

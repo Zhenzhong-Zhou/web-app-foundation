@@ -101,6 +101,20 @@ Une recette active ne peut pas être modifiée : **Nouvelle version** la copie d
 
 > Seule une personne qui peut créer des recettes voit **Nouvelle recette** et **Nouvelle version**, et seule une personne qui peut les modifier voit **Ajouter un composant** et **Mettre en vigueur**.
 
+## Un produit pour deux marchés {#markets}
+
+Un produit vendu sur deux marchés est un seul article, avec une variante par marché :
+
+- Chaque variante a son propre **Code**, par exemple FOCUS-60-CA et FOCUS-60-CN.
+- Chacune a sa propre recette, fabriquée sous la licence de son marché : celle de Santé Canada pour l’une, celle de la SAMR pour l’autre.
+- Chacune a ses propres noms, pour que la variante destinée à la Chine s’imprime sous le nom 专注胶囊 60 粒.
+
+Deux marchés peuvent aussi partager une licence et un flacon, chaque recette avec sa propre étiquette.
+
+Quand une formule change avec le temps, elle garde son article et son code : appuyez sur **Nouvelle version** dans sa recette, changez ce qu’elle utilise, puis appuyez sur **Mettre en vigueur**.
+
+Les codes-barres viendront plus tard. Le Code est le vôtre, ce n’est pas un code-barres.
+
 ## Les mots que vous verrez {#words}
 
 - **Code** : le code sur l’étiquette d’une variante. Chaque variante a le sien.

@@ -279,7 +279,11 @@ a second organization.
 - **MC-216** The Items guide, as the demo Owner, on Items: Help opens
   Items' guide, its sections The types, Find items, What a row shows,
   Categories, Add an item, Change several at once, Variants, images and
-  names, Write its recipe, Words you'll meet and If something is refused.
+  names, Write its recipe, One product for two markets, Words you'll
+  meet and If something is refused. One product for two markets says one
+  item with a variant per market, each with its own code, recipe,
+  licence and names; a formula changed over time is a new recipe version
+  on the same code; barcodes come later.
   Its first paragraph says once that Code is what other systems call a
   SKU. The six types are named as the tabs are, and Supplies says Chinese
   accounts call them 低值易耗品. Each button it names is on the screen
@@ -5624,3 +5628,5 @@ first.
 - 2026-11-09: ADR-092's reviews, the chat's 33a: the demo holds one
   product for two markets, Focus, and two recipes under one licence,
   Vitamin D3: MC-217 added.
+- 2026-11-09: ADR-092's reviews, the chat's 32a: the Items guide gains
+  One product for two markets, in three languages: MC-216 extended.
