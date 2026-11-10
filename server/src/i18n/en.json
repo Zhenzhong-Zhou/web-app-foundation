@@ -804,7 +804,7 @@
   "organization.export.glossary.quantity": "quantity_ordered, quantity_fulfilled, quantity_returned — how many were ordered, shipped or received, and returned.",
   "organization.export.glossary.reference": "reference — on an order, the customer’s or supplier’s own number for it.",
   "organization.export.glossary.roles": "In roles.csv, each role: name, as the organization named it, the three built in under their English names, Owner, Admin and Viewer; description, what it is for, a built-in role’s in the language of this README; updated_by, who saved a role the organization made last, a user_id. What each role may do is in role_permissions.csv.",
-  "organization.export.glossary.sku": "sku — the code of an item’s variant, as on its label.",
+  "organization.export.glossary.sku": "sku — a variant’s Code, as the app names it: the organization’s own code for it, unique in the organization, not a barcode.",
   "organization.export.glossary.status": "status — where the record stands, such as draft, confirmed, issued or voided.",
   "organization.export.glossary.title": "Glossary: what the columns mean",
   "organization.export.glossary.who": "created_by, issued_by, voided_by, actor_id — who did it: a user_id in members.csv.",

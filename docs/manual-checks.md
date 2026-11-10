@@ -1575,7 +1575,8 @@ await fetch(`${api}/v1/files/product-image`, {
   and `documents/credit-notes/` with the credit note, each named by its
   number and the same as Download PDF gives it; the draft is not there.
   README.txt ends with a glossary, a line per column, in the language
-  the app shows, even on an English browser: switch the app to 简体中文 and
+  the app shows (its `sku` line calling it the variant's Code, the
+  organization's own, not a barcode), even on an English browser: switch the app to 简体中文 and
   download again, and the README is Chinese. Open
   `organization.csv` in Excel or Numbers: `created_at` reads like
   `2026-10-16 03:31:59` and is taken as a date.
@@ -5609,3 +5610,6 @@ first.
   name is the one it was added with, used in any language without its
   own, and the Items guide that a name in its own language is only for
   printing something different: MC-214 extended.
+- 2026-11-09: ADR-092's reviews: the organization export's README calls
+  its sku column the variant's Code, the organization's own, not a
+  barcode: MC-2502 extended.

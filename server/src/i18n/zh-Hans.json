@@ -804,7 +804,7 @@
   "organization.export.glossary.quantity": "quantity_ordered、quantity_fulfilled、quantity_returned —— 订购数量、已发货或已收货数量，以及退货数量。",
   "organization.export.glossary.reference": "reference —— 订单上客户或供应商自己的单号。",
   "organization.export.glossary.roles": "在 roles.csv 中，每一个角色：name，组织所起的名称，三个内置角色使用英文名称 Owner、Admin 和 Viewer；description，角色的用途，内置角色的用途使用本 README 的语言；updated_by，最后保存组织所建角色的人，为 user_id。每个角色可以做什么见 role_permissions.csv。",
-  "organization.export.glossary.sku": "sku —— 物品规格的编码，与其标签上的一致。",
+  "organization.export.glossary.sku": "sku —— 规格的编码（应用里叫“编码”），即组织自己的编码，在组织内唯一，不是条码。",
   "organization.export.glossary.status": "status —— 记录所处的状态，例如 draft（草稿）、confirmed（已确认）、issued（已开具）或 voided（已作废）。",
   "organization.export.glossary.title": "术语表：各列的含义",
   "organization.export.glossary.who": "created_by、issued_by、voided_by、actor_id —— 操作人：members.csv 中的 user_id。",

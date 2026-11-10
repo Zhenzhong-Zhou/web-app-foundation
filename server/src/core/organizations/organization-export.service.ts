@@ -531,7 +531,8 @@ const GLOSSARY = [
   }),
   t({
     id: 'organization.export.glossary.sku',
-    defaultMessage: 'sku — the code of an item’s variant, as on its label.',
+    defaultMessage:
+      'sku — a variant’s Code, as the app names it: the organization’s own code for it, unique in the organization, not a barcode.',
   }),
   t({
     id: 'organization.export.glossary.quantity',
