@@ -210,6 +210,12 @@ export function ProductsPage() {
       firstNewRef.current?.focus();
     }
   }, [firstNew, items?.length]);
+  const showMore = () => {
+    setFirstNew(items?.length ?? 0);
+    void loadMore();
+  };
+  const newRow =
+    firstNew === null ? null : { index: firstNew, ref: firstNewRef };
   // The rows ticked for several at once, by id (ADR-092).
   const [ticked, setTicked] = useState<ReadonlySet<string>>(() => new Set());
 
@@ -458,11 +464,7 @@ export function ProductsPage() {
                   items={items}
                   ticks={ticks}
                   withType={tab === 'all'}
-                  firstNew={
-                    firstNew === null
-                      ? null
-                      : { index: firstNew, ref: firstNewRef }
-                  }
+                  firstNew={newRow}
                 />
               )
             ) : (
@@ -474,11 +476,7 @@ export function ProductsPage() {
                 header={header}
                 onDate={(key) => write({ sort: key, order: 'desc' })}
                 ticks={ticks}
-                firstNew={
-                  firstNew === null
-                    ? null
-                    : { index: firstNew, ref: firstNewRef }
-                }
+                firstNew={newRow}
               />
             )
           ) : (
@@ -530,48 +528,30 @@ export function ProductsPage() {
               )}
             </Typography>
           )}
-          {error ? (
-            <>
-              <Typography variant="body2" sx={{ color: 'error.main' }}>
-                {intl.formatMessage({
-                  id: 'products.moreFailed',
-                  defaultMessage: 'The next 50 could not be loaded.',
-                })}
-              </Typography>
-              <Button
-                variant="text"
-                disabled={loadingMore}
-                onClick={() => {
-                  setFirstNew(items.length);
-                  void loadMore();
-                }}
-              >
-                {intl.formatMessage({
-                  id: 'common.tryAgain',
-                  defaultMessage: 'Try again',
-                })}
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="text"
-              disabled={loadingMore}
-              onClick={() => {
-                setFirstNew(items.length);
-                void loadMore();
-              }}
-            >
-              {loadingMore
+          {error && (
+            <Typography variant="body2" sx={{ color: 'error.main' }}>
+              {intl.formatMessage({
+                id: 'products.moreFailed',
+                defaultMessage: 'The next 50 could not be loaded.',
+              })}
+            </Typography>
+          )}
+          <Button variant="text" disabled={loadingMore} onClick={showMore}>
+            {loadingMore
+              ? intl.formatMessage({
+                  id: 'common.loading',
+                  defaultMessage: 'Loading…',
+                })
+              : error
                 ? intl.formatMessage({
-                    id: 'common.loading',
-                    defaultMessage: 'Loading…',
+                    id: 'common.tryAgain',
+                    defaultMessage: 'Try again',
                   })
                 : intl.formatMessage({
                     id: 'products.showMore',
                     defaultMessage: 'Show 50 more',
                   })}
-            </Button>
-          )}
+          </Button>
         </Stack>
       )}
 
