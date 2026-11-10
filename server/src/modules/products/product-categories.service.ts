@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq, isNotNull, type SQL, sql } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, sql } from 'drizzle-orm';
 
 import { namePinyin, pinyinOf } from '../../common/pinyin';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
@@ -56,30 +56,49 @@ export class ProductCategoriesService {
     return this.read();
   }
 
+  /**
+   * Added under its parent, or at the top. Its answer is the category as
+   * the tree shows it, holding nothing yet, so nothing is counted for it.
+   */
   async create(input: CreateProductCategoryDto): Promise<ProductCategory> {
     const parentId = input.parentId ?? null;
     try {
-      const id = await this.tenantDb.transaction(async (tx, organizationId) => {
-        await lockTree(tx, organizationId);
-        if (parentId) {
-          await assertCategoryIn(tx, organizationId, parentId, UNKNOWN_PARENT);
-        }
+      const created = await this.tenantDb.transaction(
+        async (tx, organizationId) => {
+          await lockTree(tx, organizationId);
+          if (parentId) {
+            await assertCategoryIn(
+              tx,
+              organizationId,
+              parentId,
+              UNKNOWN_PARENT,
+            );
+          }
 
-        const [created] = await tx
-          .insert(productCategories)
-          .values({
-            organizationId,
-            name: input.name,
-            namePinyin: namePinyin(input.name),
-            parentId,
-          })
-          .returning({ id: productCategories.id });
-        return created.id;
-      });
+          const [row] = await tx
+            .insert(productCategories)
+            .values({
+              organizationId,
+              name: input.name,
+              namePinyin: namePinyin(input.name),
+              parentId,
+            })
+            .returning({
+              id: productCategories.id,
+              name: productCategories.name,
+              parentId: productCategories.parentId,
+            });
+          return row;
+        },
+      );
 
-      this.logger.log(`Category ${id} created`);
-      const [category] = await this.read(eq(productCategories.id, id));
-      return category;
+      this.logger.log(`Category ${created.id} created`);
+      return {
+        id: created.id,
+        name: created.name,
+        parentId: created.parentId,
+        items: [],
+      };
     } catch (error) {
       throw nameTakenOr(error, input.name);
     }
@@ -238,8 +257,8 @@ export class ProductCategoriesService {
     return category;
   }
 
-  /** The categories as the API returns them (ADR-068), all or one. */
-  private read(where?: SQL): Promise<ProductCategory[]> {
+  /** The categories as the API returns them (ADR-068). */
+  private read(): Promise<ProductCategory[]> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const categories = await tx
         .select({
@@ -248,7 +267,7 @@ export class ProductCategoriesService {
           parentId: productCategories.parentId,
         })
         .from(productCategories)
-        .where(and(eq(productCategories.organizationId, organizationId), where))
+        .where(eq(productCategories.organizationId, organizationId))
         .orderBy(
           sql`coalesce(${productCategories.namePinyin}, search_text(${productCategories.name})) collate numeric_order`,
           asc(productCategories.id),
