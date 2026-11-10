@@ -18,7 +18,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TableSortLabel,
   Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
@@ -428,53 +427,46 @@ function DateHeader({
         });
 
   return (
-    <TableCell
-      sortDirection={header.active ? header.order : false}
-      aria-sort={
-        header.active
-          ? header.order === 'asc'
-            ? 'ascending'
-            : 'descending'
-          : undefined
-      }
-      sx={{ whiteSpace: 'nowrap' }}
-    >
-      <TableSortLabel
-        active={header.active}
-        direction={header.active ? header.order : 'asc'}
-        onClick={header.onSort}
-      >
-        {label(dateKey)}
-      </TableSortLabel>
-      <IconButton
-        size="small"
-        aria-label={intl.formatMessage({
-          id: 'products.whichDate',
-          defaultMessage: 'Which date to show',
-        })}
-        aria-haspopup="menu"
-        onClick={(event) => setMenu(event.currentTarget)}
-      >
-        <ArrowDropDown fontSize="small" />
-      </IconButton>
-      <Menu anchorEl={menu} open={menu !== null} onClose={() => setMenu(null)}>
-        {(['changed', 'added'] as const).map((key) => (
-          <MenuItem
-            key={key}
-            selected={key === dateKey}
-            onClick={() => {
-              setMenu(null);
-              onDate(key);
-            }}
+    <SortHeader
+      label={label(dateKey)}
+      {...header}
+      after={
+        <>
+          <IconButton
+            size="small"
+            aria-label={intl.formatMessage({
+              id: 'products.whichDate',
+              defaultMessage: 'Which date to show',
+            })}
+            aria-haspopup="menu"
+            onClick={(event) => setMenu(event.currentTarget)}
           >
-            <ListItemIcon>
-              {key === dateKey && <Check fontSize="small" />}
-            </ListItemIcon>
-            <ListItemText>{label(key)}</ListItemText>
-          </MenuItem>
-        ))}
-      </Menu>
-    </TableCell>
+            <ArrowDropDown fontSize="small" />
+          </IconButton>
+          <Menu
+            anchorEl={menu}
+            open={menu !== null}
+            onClose={() => setMenu(null)}
+          >
+            {(['changed', 'added'] as const).map((key) => (
+              <MenuItem
+                key={key}
+                selected={key === dateKey}
+                onClick={() => {
+                  setMenu(null);
+                  onDate(key);
+                }}
+              >
+                <ListItemIcon>
+                  {key === dateKey && <Check fontSize="small" />}
+                </ListItemIcon>
+                <ListItemText>{label(key)}</ListItemText>
+              </MenuItem>
+            ))}
+          </Menu>
+        </>
+      }
+    />
   );
 }
 
