@@ -27,9 +27,13 @@ nothing, here or in production.
 ## 1. Scope
 
 - `/production-readiness` reviews every section.
-- `/production-readiness <section>` reviews one, by its heading below
-  (`deploys`, `backups`, `monitoring`, `security`, `performance`, `email`,
-  `support`, `browsers`).
+- `/production-readiness <section> …` reviews those named, by their
+  headings below (`deploys`, `backups`, `monitoring`, `security`,
+  `performance`, `email`, `support`, `browsers`), as a review step names
+  the sections its change touches. A name that is none of them, such as
+  accessibility or the three languages, is said so at the top of the
+  report and not reviewed here: `/code-review` and the walkthrough panel
+  check those.
 
 The live site's address comes from `PRODUCTION_URL` if it is set;
 otherwise ask for it. The API answers under it at `/api/…`, so its health
