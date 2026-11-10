@@ -170,7 +170,8 @@ a second organization.
   Discontinued included, whose × hides them again.
 - **MC-208** Items' rows: the cover, or the type's icon with no image;
   the name in bold with its code in grey under it, "3 variants · …"
-  where there are several; the category's path (Vitamins and minerals ›
+  where there are several, and the code alone where there is one, in
+  Chinese too; the category's path (Vitamins and minerals ›
   …), or Uncategorised for BOTTLE-60; the stock on hand, right-aligned,
   VITC-100 reading Out and another product Low stock in Home's words and
   colours; and Last changed. Clicking anywhere on a row opens the item;
@@ -5529,3 +5530,5 @@ first.
   several at once, each variation's names, Code beside SKU), and the
   Home, Inventory, Orders, Licences and Production guides saying item:
   MC-216 added.
+- 2026-11-09: ADR-092's reviews, 75: a row of one variant reads its code
+  alone in Chinese, not "1 个规格": MC-208 extended.
