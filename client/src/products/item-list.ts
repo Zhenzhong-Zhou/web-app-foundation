@@ -50,6 +50,13 @@ export type ItemSort = (typeof ITEM_SORTS)[number];
 /** The category filter's word for the items in none, as the API takes it. */
 export const UNCATEGORISED = 'uncategorised';
 
+/**
+ * A category select's value before anything is chosen, where the empty
+ * value is a choice of its own, None (Uncategorised): Set category opens
+ * on it (ADR-092's review, 13).
+ */
+export const NOT_CHOSEN = 'not-chosen';
+
 /** Which of a category's items the list shows: as the Discontinued chip. */
 export type DiscontinuedShown = '' | 'only' | 'include';
 

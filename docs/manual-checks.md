@@ -214,7 +214,8 @@ a second organization.
   the header's ticks every row loaded; clicking a box does not open the
   item. Ticking shows a bar, "3 selected", with Set category, Discontinue
   and Clear. Set category asks which, from the whole tree or None
-  (Uncategorised), starting on the category the ticked share; Move reads
+  (Uncategorised), with nothing chosen at first; choosing the category
+  they are all in says so, and Move waits for another; Move reads
   the list again and says "Moved 3 items to …" with Undo, focus on Undo.
   Undo puts each back as it was, and each item's History shows its
   category from and to. Discontinue runs at once, "Discontinued 3
@@ -5564,3 +5565,6 @@ first.
   MC-214 extended.
 - 2026-11-09: ADR-092's reviews, 12: on a phone the bar offers Select
   all shown once a card is ticked: MC-212 extended.
+- 2026-11-09: ADR-092's reviews, 13: Set category opens with nothing
+  chosen, and says they are in it already only of the category chosen:
+  MC-212 rewritten.

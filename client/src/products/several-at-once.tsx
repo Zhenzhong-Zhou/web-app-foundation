@@ -26,7 +26,7 @@ import { HIDDEN } from '../lib/hidden';
 import { openDialog } from '../lib/open-dialog';
 import { useSubmit } from '../lib/use-submit';
 import { CategorySelect } from './category-select';
-import { MAX_AT_ONCE } from './item-list';
+import { MAX_AT_ONCE, NOT_CHOSEN } from './item-list';
 
 /**
  * How long a change's message offers Undo (ADR-092), while neither focus
@@ -308,8 +308,9 @@ export function SeveralAtOnce({
 
 /**
  * Set category (ADR-092): which, from the whole tree or None, then Move,
- * sending only the ticked items not in it already. It starts on their
- * category when they share one, so Move waits for another.
+ * sending only the ticked items not in it already. It opens with nothing
+ * chosen; the one chosen holding them all already says so, and Move waits
+ * for another.
  */
 function SetCategoryDialog({
   ticked,
@@ -325,13 +326,12 @@ function SetCategoryDialog({
 }) {
   const intl = useIntl();
   const categoryOf = (item: ProductSummary) => item.category?.id ?? '';
-  const [value, setValue] = useState(() =>
-    ticked.every((item) => categoryOf(item) === categoryOf(ticked[0]))
-      ? categoryOf(ticked[0])
-      : '',
-  );
+  const [value, setValue] = useState(NOT_CHOSEN);
 
-  const moving = ticked.filter((item) => categoryOf(item) !== value);
+  const chosen = value !== NOT_CHOSEN;
+  const moving = chosen
+    ? ticked.filter((item) => categoryOf(item) !== value)
+    : [];
   const name =
     categories.find((category) => category.id === value)?.name ??
     intl.formatMessage({
@@ -386,8 +386,12 @@ function SetCategoryDialog({
               })}
               value={value}
               onChange={(event) => setValue(event.target.value)}
+              unchosen={intl.formatMessage({
+                id: 'products.bulk.chooseCategory',
+                defaultMessage: 'Choose a category',
+              })}
               helperText={
-                moving.length === 0
+                chosen && moving.length === 0
                   ? intl.formatMessage(
                       {
                         id: 'products.bulk.alreadyThere',

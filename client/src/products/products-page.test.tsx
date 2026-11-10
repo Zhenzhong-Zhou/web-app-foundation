@@ -1009,9 +1009,9 @@ describe('ProductsPage', () => {
       const dialog = await screen.findByRole('dialog', {
         name: 'Set the category of 2 items',
       });
-      // Their categories differ: the box starts on None.
+      // Nothing chosen yet (ADR-092's review, 13).
       const box = within(dialog).getByRole('combobox', { name: 'Category' });
-      expect(box).toHaveTextContent('None (Uncategorised)');
+      expect(box).toHaveTextContent('Choose a category');
       await user.click(box);
       expect(
         within(await screen.findByRole('listbox'))
@@ -1044,7 +1044,9 @@ describe('ProductsPage', () => {
       ).toBeVisible();
     });
 
-    it('starts Set category on the category the ticked share, Move waiting for another', async () => {
+    // It opened on "It is in this category already." (ADR-092's review,
+    // 13): now on nothing, the line only for the one chosen.
+    it('opens Set category with nothing chosen, saying so only of the category they are in, Move waiting for another', async () => {
       const user = userEvent.setup();
       server.use(
         http.get('/api/v1/products/categories', () =>
@@ -1076,13 +1078,24 @@ describe('ProductsPage', () => {
 
       expect(
         within(dialog).getByRole('combobox', { name: 'Category' }),
-      ).toHaveTextContent('Vitamin C');
+      ).toHaveTextContent('Choose a category');
       expect(
         within(dialog).getByRole('button', { name: 'Move' }),
       ).toBeDisabled();
       expect(
+        within(dialog).queryByText('It is in this category already.'),
+      ).not.toBeInTheDocument();
+
+      await user.click(within(dialog).getByRole('combobox'));
+      await user.click(
+        screen.getByRole('option', { name: 'Vitamins › Vitamin C' }),
+      );
+      expect(
         within(dialog).getByText('It is in this category already.'),
       ).toBeVisible();
+      expect(
+        within(dialog).getByRole('button', { name: 'Move' }),
+      ).toBeDisabled();
 
       await user.click(within(dialog).getByRole('combobox'));
       await user.click(

@@ -1634,6 +1634,7 @@
   "products.add.none": "Votre rôle ne comprend pas l’ajout d’articles.",
   "products.added": "« {name} » ajouté.",
   "products.bulk.alreadyThere": "{count, plural, one {Il est} other {Ils sont tous}} déjà dans cette catégorie.",
+  "products.bulk.chooseCategory": "Choisir une catégorie",
   "products.bulk.clear": "Tout désélectionner",
   "products.bulk.discontinued": "{count, plural, one {# article abandonné} other {# articles abandonnés}}.",
   "products.bulk.discontinuing": "Abandon en cours…",

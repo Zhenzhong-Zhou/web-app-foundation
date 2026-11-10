@@ -207,8 +207,8 @@ How this file is kept is in the [README](README.md).
   many, with Set category, Discontinue and Clear; neither change asks
   first, and each says what it did and offers Undo for 10 seconds, which
   sends the values before back.** Set category offers the whole tree and
-  None, starting on the category the ticked share, and moves only those
-  not in it already; Discontinue changes only those still in use. Another
+  None, opening with nothing chosen, and moves only those not in the one
+  chosen already, saying so when that is all of them; Discontinue changes only those still in use. Another
   tab, search, filter or sort clears the ticks, so nothing unseen changes;
   past 500 ticked, neither runs until some are unticked.
   [ADR-092](../adr/0092-items.md#decision--several-at-once-with-undo) ·
@@ -217,7 +217,7 @@ How this file is kept is in the [README](README.md).
   [test](../../client/src/products/products-page.test.tsx) "ticks every card from the bar’s Select all" ·
   [test](../../client/src/products/products-page.test.tsx) "clears the ticks on another tab, a new search, a filter or a sort, so nothing unseen changes" ·
   [test](../../client/src/products/products-page.test.tsx) "moves the ticked to the category chosen, reads the list again, and Undo sends the values before" ·
-  [test](../../client/src/products/products-page.test.tsx) "starts Set category on the category the ticked share, Move waiting for another" ·
+  [test](../../client/src/products/products-page.test.tsx) "opens Set category with nothing chosen, saying so only of the category they are in, Move waiting for another" ·
   [test](../../client/src/products/products-page.test.tsx) "discontinues the ticked still in use at once, and Undo brings them back" ·
   [test](../../client/src/products/products-page.test.tsx) "says to untick some past 500, before either runs" ·
   [test](../../client/e2e/items.spec.ts) "Items, ticks rows: the bar, how many, Set category, Discontinue, Clear" ·

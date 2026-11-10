@@ -1634,6 +1634,7 @@
   "products.add.none": "您的角色不包括添加物品。",
   "products.added": "已添加“{name}”。",
   "products.bulk.alreadyThere": "{count, plural, =1 {它已经在这个分类里了。} other {这 # 个物品已经都在这个分类里了。}}",
+  "products.bulk.chooseCategory": "选择分类",
   "products.bulk.clear": "取消选择",
   "products.bulk.discontinued": "已停用 {count} 个物品。",
   "products.bulk.discontinuing": "正在停用…",

@@ -1634,6 +1634,7 @@
   "products.add.none": "Your role does not include adding items.",
   "products.added": "Added “{name}”.",
   "products.bulk.alreadyThere": "{count, plural, one {It is} other {They are all}} in this category already.",
+  "products.bulk.chooseCategory": "Choose a category",
   "products.bulk.clear": "Clear",
   "products.bulk.discontinued": "Discontinued {count, plural, one {# item} other {# items}}.",
   "products.bulk.discontinuing": "Discontinuing…",
