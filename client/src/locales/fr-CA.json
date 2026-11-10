@@ -1748,6 +1748,7 @@
   "products.tickAll": "Sélectionner tous les articles affichés",
   "products.tracksLots": "Suivre les numéros de lot et les dates de péremption",
   "products.tracksLots.fixed": "Le suivi des lots ne peut pas être modifié par la suite.",
+  "products.tracksLots.help": "Chaque réception et chaque ordre de fabrication enregistrent alors le numéro de lot et la date de péremption, pour qu’un lot puisse être retracé. Ce choix ne peut pas être modifié par la suite.",
   "products.translations.description": "Description en {language}",
   "products.translations.descriptionNeedsName": "Une description en {language} nécessite aussi un nom en {language}.",
   "products.translations.edit": "Modifier les noms",

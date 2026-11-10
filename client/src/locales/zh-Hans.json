@@ -1748,6 +1748,7 @@
   "products.tickAll": "选择显示的所有物品",
   "products.tracksLots": "跟踪批号和有效期",
   "products.tracksLots.fixed": "批次跟踪设置后无法更改。",
+  "products.tracksLots.help": "此后每次收货和每个生产订单都会记录批号和有效期，以便追溯批次。设置后无法更改。",
   "products.translations.description": "描述（{language}）",
   "products.translations.descriptionNeedsName": "填写{language}描述时，也需要填写{language}名称。",
   "products.translations.edit": "编辑名称",

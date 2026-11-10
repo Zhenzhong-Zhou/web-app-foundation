@@ -1748,6 +1748,7 @@
   "products.tickAll": "Select every item shown",
   "products.tracksLots": "Track lot numbers and expiry",
   "products.tracksLots.fixed": "Lot tracking cannot be changed later.",
+  "products.tracksLots.help": "Each delivery and each run then records its lot number and expiry, so a lot can be traced. It cannot be changed later.",
   "products.translations.description": "Description in {language}",
   "products.translations.descriptionNeedsName": "A description in {language} needs a name in {language} too.",
   "products.translations.edit": "Edit names",

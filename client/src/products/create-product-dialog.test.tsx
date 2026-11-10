@@ -112,6 +112,17 @@ describe('CreateProductDialog', () => {
     expect(screen.getByRole('radio', { name: /^Raw materials/ })).toBeChecked();
   });
 
+  // Only Help said it could not be changed later (ADR-092's review, 5).
+  it('says under the lot switch what it records, and that it is set once', () => {
+    renderDialog('material');
+
+    expect(
+      screen.getByRole('switch', { name: 'Track lot numbers and expiry' }),
+    ).toHaveAccessibleDescription(
+      'Each delivery and each run then records its lot number and expiry, so a lot can be traced. It cannot be changed later.',
+    );
+  });
+
   /** Equipment is never offered lot tracking; a line says how it counts. */
   it('never offers lot tracking for equipment, saying how equipment counts', async () => {
     let body: CreateProductDto | null = null;

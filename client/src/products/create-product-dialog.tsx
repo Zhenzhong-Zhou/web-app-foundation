@@ -379,21 +379,33 @@ export function CreateProductDialog({
                 })}
               </Typography>
             ) : (
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={tracksLots}
-                    onChange={(event) => setTracksLots(event.target.checked)}
-                  />
-                }
-                // Cannot be changed later: flipping it on a variant with
-                // stock leaves every row violating the invariant in one
-                // direction or the other (ADR-023).
-                label={intl.formatMessage({
-                  id: 'products.tracksLots',
-                  defaultMessage: 'Track lot numbers and expiry',
-                })}
-              />
+              <Box>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={tracksLots}
+                      onChange={(event) => setTracksLots(event.target.checked)}
+                      slotProps={{
+                        input: { 'aria-describedby': 'product-lots-help' },
+                      }}
+                    />
+                  }
+                  label={intl.formatMessage({
+                    id: 'products.tracksLots',
+                    defaultMessage: 'Track lot numbers and expiry',
+                  })}
+                />
+                {/* What it means, and that it is set once: flipping it on a
+                    variant with stock leaves every row violating the
+                    invariant in one direction or the other (ADR-023). */}
+                <FormHelperText id="product-lots-help" sx={{ mt: 0 }}>
+                  {intl.formatMessage({
+                    id: 'products.tracksLots.help',
+                    defaultMessage:
+                      'Each delivery and each run then records its lot number and expiry, so a lot can be traced. It cannot be changed later.',
+                  })}
+                </FormHelperText>
+              </Box>
             )}
           </Stack>
         </DialogContent>

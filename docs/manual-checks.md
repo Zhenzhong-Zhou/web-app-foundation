@@ -145,7 +145,8 @@ a second organization.
   it (Escape does not cancel), and a code in use is refused, naming the
   item that has it.
 - **MC-203** Add item offers Track lot numbers and expiry for every type
-  but Equipment; choosing Equipment takes it away and says instead that
+  but Equipment, a line under it saying each delivery and run then
+  records its lot and expiry, and that it cannot be changed later; choosing Equipment takes it away and says instead that
   equipment is not tracked by lot and is not stock value. Once added, no
   screen turns lot tracking on or off.
 - **MC-204** Locations: a site with bins under it. Stock goes only into a
@@ -5539,3 +5540,6 @@ first.
   extended.
 - 2026-11-09: ADR-092's reviews, 3: on a touch screen a row's stock is a
   link 44 px tall: MC-208 extended.
+- 2026-11-09: ADR-092's reviews, 5: a line under Add item's lot switch
+  says what it records and that it cannot be changed later, in three
+  languages: MC-203 extended.
