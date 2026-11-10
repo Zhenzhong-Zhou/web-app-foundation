@@ -9,12 +9,17 @@
  *
  *     node scripts/one-at-a-time.mjs <label> -- <command> [args…]
  *
- * It takes a session-level advisory lock on a connection of its own to
- * DATABASE_URL_TEST, from the root .env, runs the command under it, and
- * closes the connection when the command ends, which frees the lock. A run
- * that dies frees it too, so nothing stale is left. The key is fixed, and
- * not the server's E2E_LOCK_KEY, which the e2e suite's global setup takes
- * behind this one (server/test/global-setup.ts).
+ * It takes a session-level advisory lock on a connection of its own, runs
+ * the command under it, and closes the connection when the command ends,
+ * which frees the lock. A run that dies frees it too, so nothing stale is
+ * left. The key is fixed, and not the server's E2E_LOCK_KEY, which the e2e
+ * suite's global setup takes behind this one (server/test/global-setup.ts).
+ *
+ * The lock is in the postgres database, which every Postgres has, on the
+ * server DATABASE_URL_TEST names, from the root .env (ADR-089's amendment
+ * for #529). Advisory locks meet only inside one database, and each
+ * working folder has its own test database, so in a database of their own
+ * two folders' runs would never wait for each other.
  *
  * When another folder holds it, it tries again every 5 seconds and says,
  * at once and then each minute, what it waits for: the holder's label,
@@ -104,6 +109,20 @@ export function describe(holder) {
   return match
     ? `${match[1]} in ${match[2]}, since ${match[3]}`
     : `a connection named "${holder.name}", pid ${holder.pid}`;
+}
+
+/**
+ * The address of the postgres database on the server `url` names: the same
+ * user, password, host, port and query, the database replaced. Null when
+ * `url` is not a postgresql:// or postgres:// address.
+ */
+export function postgresAddress(url) {
+  if (!/^postgres(?:ql)?:\/\//.test(url ?? "") || !URL.canParse(url)) {
+    return null;
+  }
+  const address = new URL(url);
+  address.pathname = "/postgres";
+  return address.href;
 }
 
 /** The connection holding the lock in this database, or null. */
@@ -248,7 +267,10 @@ export function run(command, args, env, say) {
   });
 }
 
-/** The connection the lock is held on, to DATABASE_URL_TEST. */
+/**
+ * The connection the lock is held on, to the postgres database on the
+ * server DATABASE_URL_TEST names.
+ */
 async function connect(root, env, say) {
   const require = createRequire(path.join(root, "server/package.json"));
   let pg;
@@ -273,13 +295,20 @@ async function connect(root, env, say) {
       "DATABASE_URL_TEST is not set. Add it to the root .env (see .env.example).",
     );
   }
+  const address = postgresAddress(url);
+  if (!address) {
+    throw new Stop(
+      "DATABASE_URL_TEST is not a postgresql:// address. Correct it in the " +
+        "root .env (see .env.example).",
+    );
+  }
   const client = new pg.Client({
-    connectionString: url,
+    connectionString: address,
     application_name: "one-at-a-time",
   });
   client.on("error", (error) =>
     say(
-      `The lock's connection to the test database ended (${error.message}); ` +
+      `The lock's connection to Postgres ended (${error.message}); ` +
         "the run goes on without it.",
     ),
   );
@@ -287,7 +316,8 @@ async function connect(root, env, say) {
     await client.connect();
   } catch (error) {
     throw new Stop(
-      `Could not reach the test database, where the lock is (${error.message}). ` +
+      "Could not reach the postgres database on the server " +
+        `DATABASE_URL_TEST names, where the lock is (${error.message}). ` +
         "Is it up? docker compose up -d",
     );
   }

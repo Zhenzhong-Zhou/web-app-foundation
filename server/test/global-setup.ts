@@ -24,7 +24,10 @@ export const E2E_LOCK_KEY = 4_802_048;
  * Before this one, `npm run test:e2e` takes another lock, through
  * scripts/one-at-a-time.mjs, which every working folder's end-to-end and
  * browser runs share, so a second run waits there instead (ADR-089's
- * amendment). This refusal stays for a run started without it.
+ * amendments). That one is in Postgres's own `postgres` database, since
+ * advisory locks meet only inside one database and each working folder has
+ * its own test database (#529). This one stays on the test database, a
+ * refusal for a run started without the other.
  *
  * Returns the teardown, which Vitest runs once the last suite has finished:
  * closing the connection releases the lock.

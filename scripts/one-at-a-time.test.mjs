@@ -33,6 +33,7 @@ import {
   oneAtATime,
   othersServers,
   parse,
+  postgresAddress,
 } from "./one-at-a-time.mjs";
 
 const SCRIPT = path.join(
@@ -147,6 +148,40 @@ test("the arguments: a label, --, then the command and its own arguments as they
     ["Server E2E", "--", "sleep", "1"],
   ]) {
     assert.equal(parse(wrong), null, wrong.join(" "));
+  }
+});
+
+test("the lock is in the postgres database on the test database's server, the same whatever a folder's test database is called", () => {
+  const main = postgresAddress(
+    "postgresql://app:change_me_locally@localhost:5432/foundation_test",
+  );
+  assert.equal(
+    main,
+    "postgresql://app:change_me_locally@localhost:5432/postgres",
+  );
+  assert.equal(
+    postgresAddress(
+      "postgresql://app:change_me_locally@localhost:5432/foundation_waf_fix_test",
+    ),
+    main,
+  );
+});
+
+test("the lock's address keeps the user, an encoded password, the host, the port and the query", () => {
+  assert.equal(
+    postgresAddress(
+      "postgres://ci%40corp:p%40ss%2Fw%3Ard%25@db.internal:6543/foundation_test?sslmode=require&application_name=ci",
+    ),
+    "postgres://ci%40corp:p%40ss%2Fw%3Ard%25@db.internal:6543/postgres?sslmode=require&application_name=ci",
+  );
+  for (const wrong of [
+    undefined,
+    "foundation_test",
+    "localhost:5432/foundation_test",
+    "postgresql:foundation_test",
+    "mysql://app@localhost/foundation_test",
+  ]) {
+    assert.equal(postgresAddress(wrong), null, String(wrong));
   }
 });
 
