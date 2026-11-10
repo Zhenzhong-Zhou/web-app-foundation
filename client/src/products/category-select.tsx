@@ -10,6 +10,10 @@ import { categoryPlaces } from './item-list';
  * an empty one too, after the empty choice named in words. Add item,
  * Edit, Set category and a category's Under choose with it; `leaveOut`
  * drops what may not be chosen, as Move drops the category's own branch.
+ *
+ * Each option is named by its path, "Packaging › Bottles", since its
+ * indent alone says nothing to a screen reader, and two categories of one
+ * name under different parents would sound alike (WCAG 1.3.1).
  */
 export function CategorySelect({
   categories,
@@ -27,6 +31,7 @@ export function CategorySelect({
           <MenuItem
             key={place.id}
             value={place.id}
+            aria-label={place.path.join(' › ')}
             sx={{ pl: 2 + place.depth * 2 }}
           >
             {place.name}

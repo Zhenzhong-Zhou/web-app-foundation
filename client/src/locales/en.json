@@ -1652,6 +1652,7 @@
   "products.category.manage": "Manage categories",
   "products.category.none": "Uncategorised",
   "products.category.noneChoice": "None (Uncategorised)",
+  "products.category.option": "{path}, {count, plural, one {# item} other {# items}}",
   "products.codeInUse.open": "Open the item that has it",
   "products.create.chooseType": "Choose what it is.",
   "products.create.equipmentLine": "Equipment is not tracked by lot. It has a place, and is moved and counted, but is not stock value.",

@@ -740,7 +740,9 @@ describe('ProductsPage', () => {
       'Manage categories',
     ]);
     await user.click(
-      within(listbox).getByRole('option', { name: 'Vitamin C2' }),
+      within(listbox).getByRole('option', {
+        name: 'Vitamins › Vitamin C, 2 items',
+      }),
     );
 
     await expect
@@ -986,7 +988,9 @@ describe('ProductsPage', () => {
           .getAllByRole('option')
           .map((option) => option.textContent),
       ).toEqual(['None (Uncategorised)', 'Vitamins', 'Vitamin C']);
-      await user.click(screen.getByRole('option', { name: 'Vitamin C' }));
+      await user.click(
+        screen.getByRole('option', { name: 'Vitamins › Vitamin C' }),
+      );
       const reads = asked.length;
       await user.click(within(dialog).getByRole('button', { name: 'Move' }));
 

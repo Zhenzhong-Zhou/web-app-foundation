@@ -254,7 +254,9 @@ describe('ProductDetailPage', () => {
     await user.click(screen.getByRole('combobox', { name: 'Type' }));
     await user.click(screen.getByRole('option', { name: 'Packaging' }));
     await user.click(screen.getByRole('combobox', { name: 'Category' }));
-    await user.click(screen.getByRole('option', { name: 'Bottles and caps' }));
+    await user.click(
+      screen.getByRole('option', { name: 'Bottles › Bottles and caps' }),
+    );
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(dialog).not.toBeInTheDocument());

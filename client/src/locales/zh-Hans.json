@@ -1652,6 +1652,7 @@
   "products.category.manage": "管理分类",
   "products.category.none": "未分类",
   "products.category.noneChoice": "无（未分类）",
+  "products.category.option": "{path}，{count} 个物品",
   "products.codeInUse.open": "打开用这个编码的物品",
   "products.create.chooseType": "请选择这是什么。",
   "products.create.equipmentLine": "设备不按批次管理。它有位置，可以移动和盘点，但不算库存价值。",

@@ -194,7 +194,10 @@ a second organization.
   with its count; Clear resets them and Show closes it.
 - **MC-210** Items' category filter reads All categories, then the tree
   with each category's count on the open tab, Uncategorised, and Manage
-  categories at its foot. Choosing Vitamins and minerals lists its items
+  categories at its foot; once one is chosen, its box shows the name
+  alone, without the count. With a screen reader, each category is read
+  by its path and count ("Packaging › Bottles, 2 items"), as each form's
+  Category reads it by its path. Choosing Vitamins and minerals lists its items
   and those of the categories under it, a chip names it, and its × shows
   every category again. Once the last uncategorised item is moved,
   Uncategorised says every item has a category, with Show all items. A search reads each tab's count again; with none
@@ -5550,3 +5553,6 @@ first.
 - 2026-11-09: ADR-092's reviews, 7: Items with filters matching nothing
   offers Show all items, and Uncategorised once emptied says every item
   has a category: MC-210 extended.
+- 2026-11-09: ADR-092's reviews, 8 with 79: Items' category filter shows
+  the chosen name alone, and every category select names each option by
+  its path for a screen reader: MC-210 extended.

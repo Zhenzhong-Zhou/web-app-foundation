@@ -214,7 +214,7 @@ describe('CreateProductDialog', () => {
       'Capsule filling machine',
     );
     await user.click(screen.getByRole('combobox', { name: 'Category' }));
-    await user.click(screen.getByRole('option', { name: 'Vitamins' }));
+    await user.click(screen.getByRole('option', { name: 'Raw › Vitamins' }));
     await user.type(
       screen.getByRole('textbox', { name: /^Code/ }),
       'EQ-CAP-01',

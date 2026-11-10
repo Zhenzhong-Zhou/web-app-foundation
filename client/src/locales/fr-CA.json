@@ -1652,6 +1652,7 @@
   "products.category.manage": "Gérer les catégories",
   "products.category.none": "Sans catégorie",
   "products.category.noneChoice": "Aucune (Sans catégorie)",
+  "products.category.option": "{path}, {count, plural, one {# article} other {# articles}}",
   "products.codeInUse.open": "Ouvrir l’article qui l’a",
   "products.create.chooseType": "Choisissez ce que c’est.",
   "products.create.equipmentLine": "L’équipement n’est pas suivi par lot. Il a un emplacement, il est déplacé et compté, mais il ne fait pas partie de la valeur du stock.",

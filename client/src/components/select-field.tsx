@@ -17,11 +17,17 @@ import type { ReactNode } from 'react';
  */
 export function SelectField({
   emptyLabel,
+  renderValue,
   children,
   ...field
 }: Omit<TextFieldProps, 'select' | 'children' | 'slotProps'> & {
   /** The empty choice, in words. */
   emptyLabel: string;
+  /**
+   * What the box shows for a value, where the chosen option holds more
+   * than its name, as a count beside it; the empty one is `emptyLabel`.
+   */
+  renderValue?: (value: string) => ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -29,7 +35,13 @@ export function SelectField({
       {...field}
       select
       slotProps={{
-        select: { displayEmpty: true },
+        select: {
+          displayEmpty: true,
+          ...(renderValue && {
+            renderValue: (value: unknown) =>
+              value === '' ? emptyLabel : renderValue(String(value)),
+          }),
+        },
         inputLabel: { shrink: true },
       }}
     >

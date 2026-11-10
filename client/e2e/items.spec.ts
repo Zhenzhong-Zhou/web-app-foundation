@@ -329,8 +329,12 @@ test('Items, a category: the list holds it and those under it; a chip shows it, 
   await expect(rowNames(page)).toHaveCount(3);
 
   await page.getByRole('combobox', { name: 'Category' }).click();
-  // Each category with its count on the open tab, those under it included.
-  await page.getByRole('option', { name: /^Vitamins\s*2$/ }).click();
+  // Each category with its count on the open tab, those under it included,
+  // named by its path and its count (ADR-092's review, 79).
+  await page.getByRole('option', { name: 'Vitamins, 2 items' }).click();
+  await expect(page.getByRole('combobox', { name: 'Category' })).toHaveText(
+    'Vitamins',
+  );
 
   const chip = page.getByRole('button', { name: 'Vitamins', exact: true });
   const asItWas = async () => {

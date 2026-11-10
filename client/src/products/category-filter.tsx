@@ -11,6 +11,10 @@ import { type CategoryOption, UNCATEGORISED } from './item-list';
  * Items' category filter (ADR-092): All categories, the tree with each
  * one's count on the open tab, Uncategorised, and Manage categories at
  * its foot, which opens Settings › Categories with Back to Items.
+ *
+ * The box shows the chosen category's name alone, not its count beside
+ * it; each option is named by its path and its count, as CategorySelect's
+ * are by their path (WCAG 1.3.1).
  */
 export function CategoryFilter({
   options,
@@ -25,6 +29,10 @@ export function CategoryFilter({
 }) {
   const intl = useIntl();
   const navigate = useNavigate();
+  const uncategorised = intl.formatMessage({
+    id: 'products.category.none',
+    defaultMessage: 'Uncategorised',
+  });
 
   return (
     <SelectField
@@ -39,6 +47,11 @@ export function CategoryFilter({
         defaultMessage: 'All categories',
       })}
       value={value}
+      renderValue={(chosen) =>
+        chosen === UNCATEGORISED
+          ? uncategorised
+          : (options.find((option) => option.id === chosen)?.name ?? '')
+      }
       // Manage categories has no value: it opens a page, not a choice.
       onChange={(event) => {
         const next: unknown = event.target.value;
@@ -51,6 +64,14 @@ export function CategoryFilter({
         <MenuItem
           key={option.id}
           value={option.id}
+          aria-label={intl.formatMessage(
+            {
+              id: 'products.category.option',
+              defaultMessage:
+                '{path}, {count, plural, one {# item} other {# items}}',
+            },
+            { path: option.path.join(' › '), count: option.count },
+          )}
           sx={{ pl: 2 + option.depth * 2, gap: 2 }}
         >
           <Box component="span" sx={{ flex: 1 }}>
@@ -61,12 +82,7 @@ export function CategoryFilter({
           </Box>
         </MenuItem>
       ))}
-      <MenuItem value={UNCATEGORISED}>
-        {intl.formatMessage({
-          id: 'products.category.none',
-          defaultMessage: 'Uncategorised',
-        })}
-      </MenuItem>
+      <MenuItem value={UNCATEGORISED}>{uncategorised}</MenuItem>
       <MenuItem
         onClick={() =>
           void navigate('/settings/categories', { state: OFFER_BACK })
