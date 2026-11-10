@@ -13,9 +13,9 @@
  * set. The database's migrations are the rows of
  * drizzle.__drizzle_migrations in the order they ran, none when it does
  * not exist; the folder's are server/src/database/migrations/meta/
- * _journal.json's entries, each SQL file hashed as Drizzle's migrator
- * hashes it (readMigrationFiles, in drizzle-orm/migrator.js): sha256 of
- * the whole file.
+ * _journal.json's entries, each one's time and hash read by Drizzle's own
+ * migrator (readMigrationFiles, from drizzle-orm/migrator), so an upgrade
+ * that hashes another way is read the same way here.
  *
  * Ahead: the database's rows, in order, are not the start of the folder's
  * list, entry by entry, by created_at and hash. It holds a migration the
@@ -41,12 +41,11 @@
  * in migrate: Render's build runs migrate from server/, where ../scripts
  * is not there.
  *
- * In step or behind, it says nothing. pg and dotenv come from
- * server/node_modules, as one-at-a-time.mjs reaches them. Its tests, in
+ * In step or behind, it says nothing. pg, dotenv and drizzle-orm come
+ * from server/node_modules, as one-at-a-time.mjs reaches them. Its tests, in
  * database-ahead.test.mjs, stand in for the database: `node --test
  * scripts/`.
  */
-import { createHash } from "node:crypto";
 import { readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -79,20 +78,19 @@ const USAGE =
 export class Stop extends Error {}
 
 /**
- * The folder's migrations, in the journal's order: each entry's tag, its
- * time and its file's hash, as Drizzle's migrator reads and hashes them.
+ * The folder's migrations, in the journal's order: each entry's tag, with
+ * its time and its file's hash as Drizzle's migrator reads them.
  */
 export function folderMigrations(root) {
-  const folder = path.join(root, MIGRATIONS);
-  const journal = JSON.parse(
-    readFileSync(path.join(folder, "meta/_journal.json"), "utf8"),
+  const migrationsFolder = path.join(root, MIGRATIONS);
+  const { entries } = JSON.parse(
+    readFileSync(path.join(migrationsFolder, "meta/_journal.json"), "utf8"),
   );
-  return journal.entries.map(({ tag, when }) => ({
-    tag,
-    when,
-    hash: createHash("sha256")
-      .update(readFileSync(path.join(folder, `${tag}.sql`)).toString())
-      .digest("hex"),
+  const read = packages().migrator.readMigrationFiles({ migrationsFolder });
+  return read.map(({ folderMillis, hash }, index) => ({
+    tag: entries[index].tag,
+    when: folderMillis,
+    hash,
   }));
 }
 
@@ -234,14 +232,18 @@ export async function check(which, system) {
   );
 }
 
-/** pg and dotenv, from this folder's server/node_modules. */
+/** pg, dotenv and Drizzle's migrator, from this folder's server/node_modules. */
 function packages() {
   const require = createRequire(path.join(ROOT, "server/package.json"));
   try {
-    return { pg: require("pg"), dotenv: require("dotenv") };
+    return {
+      pg: require("pg"),
+      dotenv: require("dotenv"),
+      migrator: require("drizzle-orm/migrator"),
+    };
   } catch {
     throw new Stop(
-      "pg and dotenv come from server/node_modules: run npm ci in server/ first.",
+      "pg, dotenv and drizzle-orm come from server/node_modules: run npm ci in server/ first.",
     );
   }
 }

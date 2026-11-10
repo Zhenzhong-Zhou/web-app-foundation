@@ -90,7 +90,7 @@ test("ahead: a later migration ran without an earlier one of the folder's", () =
   });
 });
 
-test("the folder's list is Drizzle's own: each file's time and hash as its migrator reads them", async () => {
+test("the folder's list is Drizzle's own: each journal entry's tag, with its time and hash as the migrator reads them", async () => {
   const migrator = path.join(
     ROOT,
     "server/node_modules/drizzle-orm/migrator.js",
@@ -104,6 +104,16 @@ test("the folder's list is Drizzle's own: each file's time and hash as its migra
   assert.deepEqual(
     ours.map(({ when, hash }) => ({ when, hash })),
     drizzle.map(({ folderMillis, hash }) => ({ when: folderMillis, hash })),
+  );
+  const { entries } = JSON.parse(
+    readFileSync(
+      path.join(ROOT, "server/src/database/migrations/meta/_journal.json"),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(
+    ours.map(({ tag, when }) => ({ tag, when })),
+    entries.map(({ tag, when }) => ({ tag, when })),
   );
 });
 
