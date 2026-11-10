@@ -123,6 +123,18 @@ describe('CreateProductDialog', () => {
     );
   });
 
+  // Code's line, by the type's own example (ADR-092's review).
+  it('says under Code that it is the organization’s own, with the type’s example, not a barcode', async () => {
+    const user = renderDialog('material');
+    const code = screen.getByRole('textbox', { name: /^Code/ });
+
+    expect(code).toHaveAccessibleDescription(
+      'Your own code for this item, unique in your organization, such as RM-VITC. Not a barcode.',
+    );
+    await user.click(screen.getByRole('radio', { name: /^Equipment/ }));
+    expect(code).toHaveAccessibleDescription(/such as EQ-CAP-01\./);
+  });
+
   /** Equipment is never offered lot tracking; a line says how it counts. */
   it('never offers lot tracking for equipment, saying how equipment counts', async () => {
     let body: CreateProductDto | null = null;

@@ -54,7 +54,7 @@ L’arbre, avec les articles de chaque catégorie, est sous **Paramètres › Ca
 1. Appuyez sur **Ajouter un article**.
 2. Sous **Qu’est-ce que c’est ?**, choisissez son type. Depuis l’onglet d’un type, ce type est déjà choisi; depuis **Tous**, aucun ne l’est.
 3. Saisissez son nom, et choisissez sa **Catégorie**, ou **Aucune**.
-4. Saisissez le **Code**, le code inscrit sur l’étiquette.
+4. Saisissez le **Code** : votre propre code pour cet article, unique dans l’organisation, par exemple RM-VITC pour une matière première. Ce n’est pas un code-barres.
 5. Choisissez son unité, ce dans quoi son stock est compté.
 6. S’il existe en plusieurs formats, indiquez le format ou la variante de celui-ci, comme 60 unités.
 7. Activez **Suivre les numéros de lot et les dates de péremption** si chaque livraison porte un code de lot. Ce choix ne peut pas être modifié par la suite, et l’équipement ne l’offre jamais.

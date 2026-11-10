@@ -38,6 +38,19 @@ import { unitLabel, UNITS } from './units';
 type Missing = 'type' | 'name' | 'sku';
 
 /**
+ * A code of each type's kind, for Code's line: the organization's own,
+ * read by people, never a barcode. Products' while no type is chosen.
+ */
+const CODE_EXAMPLES: Record<ProductType, string> = {
+  good: 'VITC-100',
+  material: 'RM-VITC',
+  packaging: 'PK-BTL90',
+  supply: 'SUP-GLV100',
+  sample: 'VITC-S10',
+  equipment: 'EQ-CAP-01',
+};
+
+/**
  * Add item (ADR-092): what it is first, the six types with a line each in
  * everyday words, chosen already from a type's tab and none from All, so
  * no default can be wrong (the design language's principle 8). Then its
@@ -295,11 +308,14 @@ export function CreateProductDialog({
                       'Give it a code, such as the one on its label.',
                   })
                 ) : (
-                  intl.formatMessage({
-                    id: 'products.sku.help',
-                    defaultMessage:
-                      'Typed, not generated — this is the code on the label.',
-                  })
+                  intl.formatMessage(
+                    {
+                      id: 'products.sku.help',
+                      defaultMessage:
+                        'Your own code for this item, unique in your organization, such as {example}. Not a barcode.',
+                    },
+                    { example: CODE_EXAMPLES[type || 'good'] },
+                  )
                 )
               }
               slotProps={{ htmlInput: { maxLength: 64 } }}

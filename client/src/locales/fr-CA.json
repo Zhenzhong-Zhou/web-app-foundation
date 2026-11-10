@@ -1742,7 +1742,7 @@
   "products.showMore": "Afficher 50 de plus",
   "products.showing": "{shown} sur {total} affichés",
   "products.sku": "Code",
-  "products.sku.help": "Saisi, non généré — c’est le code inscrit sur l’étiquette.",
+  "products.sku.help": "Votre propre code pour cet article, unique dans l’organisation, par exemple {example}. Ce n’est pas un code-barres.",
   "products.sort": "Tri",
   "products.sort.added": "Date d’ajout, les plus récents d’abord",
   "products.sort.changed": "Dernière modification, les plus récents d’abord",

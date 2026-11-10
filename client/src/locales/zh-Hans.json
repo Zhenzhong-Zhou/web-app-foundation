@@ -1742,7 +1742,7 @@
   "products.showMore": "再显示 50 个",
   "products.showing": "已显示 {shown} 个，共 {total} 个",
   "products.sku": "编码",
-  "products.sku.help": "手动输入，不自动生成——即标签上的编码。",
+  "products.sku.help": "你们自己给这个物品的编码，在组织里不能重复，比如 {example}。不是条码。",
   "products.sort": "排序",
   "products.sort.added": "添加日期，新的在前",
   "products.sort.changed": "最近修改，新的在前",

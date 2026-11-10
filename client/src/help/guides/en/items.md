@@ -54,7 +54,7 @@ The tree, with each category’s items, is under **Settings › Categories**, or
 1. Press **Add item**.
 2. Under **What is it?**, choose its type. From a type’s tab that type is chosen already; from **All**, none is.
 3. Type its name, and choose its **Category**, or **None**.
-4. Type the **Code**, the code on the label.
+4. Type the **Code**: your own code for this item, unique in your organization, such as RM-VITC for a raw material. It is not a barcode.
 5. Choose its unit, what its stock is counted in.
 6. If it comes in more than one size, give this one’s size or variation, such as 60ct.
 7. Turn on **Track lot numbers and expiry** if each delivery has a lot code. This cannot be changed later, and equipment never offers it.

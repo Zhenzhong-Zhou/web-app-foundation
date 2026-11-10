@@ -135,7 +135,10 @@ a second organization.
   their query): Add item asks What is it? first, the six types each with
   a line in everyday words. From the Raw materials tab Raw materials is
   chosen; from All none is, and Add item then says "Choose what it is."
-  under the types and adds nothing. Add a product, a raw material in a
+  under the types and adds nothing. Under Code a line says it is the
+  organization's own code, unique in it, not a barcode, its example the
+  chosen type's: VITC-100, RM-VITC, PK-BTL90, SUP-GLV100, VITC-S10 or
+  EQ-CAP-01. Add a product, a raw material in a
   category, and packaging in kg: each time the new item's page opens in
   the form's place, the message says Added "…", and Back returns to Items
   as it was. A code already in use is refused under Code, naming the item
@@ -5597,3 +5600,6 @@ first.
 - 2026-11-09: ADR-092's reviews, 85 (a): a category added or moved more
   than 10 levels deep is refused, saying to choose a place higher up:
   MC-213 extended.
+- 2026-11-09: ADR-092's reviews: Add item's Code says it is the
+  organization's own code, unique in it, not a barcode, with the chosen
+  type's example: MC-201 extended.

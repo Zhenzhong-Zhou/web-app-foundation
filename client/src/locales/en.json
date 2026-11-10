@@ -1742,7 +1742,7 @@
   "products.showMore": "Show 50 more",
   "products.showing": "Showing {shown} of {total}",
   "products.sku": "Code",
-  "products.sku.help": "Typed, not generated — this is the code on the label.",
+  "products.sku.help": "Your own code for this item, unique in your organization, such as {example}. Not a barcode.",
   "products.sort": "Sort",
   "products.sort.added": "Date added, newest first",
   "products.sort.changed": "Last changed, newest first",
