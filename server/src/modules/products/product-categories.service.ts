@@ -19,7 +19,15 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { nameSortKey } from '../stock/item-name';
-import { assertCategoryIn, isWithinBranch, lockTree } from './category-tree';
+import {
+  assertCategoryIn,
+  isWithinBranch,
+  levelOf,
+  levelsIn,
+  lockTree,
+  MAX_CATEGORY_LEVELS,
+  TOO_DEEP,
+} from './category-tree';
 import type {
   CreateProductCategoryDto,
   UpdateProductCategoryDto,
@@ -76,6 +84,12 @@ export class ProductCategoriesService {
               parentId,
               UNKNOWN_PARENT,
             );
+            if (
+              (await levelOf(tx, organizationId, parentId)) >=
+              MAX_CATEGORY_LEVELS
+            ) {
+              throw new ConflictException(TOO_DEEP);
+            }
           }
 
           const [row] = await tx
@@ -143,6 +157,14 @@ export class ProductCategoriesService {
                   'A category cannot go under itself, or under a category inside it. Choose another place.',
               }),
             );
+          }
+          // Its own levels and those under it, hung below the new parent.
+          if (
+            (await levelOf(tx, organizationId, input.parentId)) +
+              (await levelsIn(tx, organizationId, categoryId)) >
+            MAX_CATEGORY_LEVELS
+          ) {
+            throw new ConflictException(TOO_DEEP);
           }
         }
 

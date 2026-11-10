@@ -905,6 +905,7 @@
   "productCategories.movedInsideItself": "分类不能放在它自己或它的下级分类下面。请另选位置。",
   "productCategories.nameTaken": "同一位置已有名为 {name} 的分类。请换一个名称。",
   "productCategories.notFound": "未找到该分类",
+  "productCategories.tooDeep": "分类最多只能有 {max} 级。请选择更高一级的位置。",
   "productCategories.unknown": "未找到该分类。请另选一个，或不选。",
   "productCategories.unknownParent": "未找到要放入的上级分类。请另选一个，或不选。",
   "production.actualRunVerbRequired": "{actual, select, draft {已计划} released {已下达} completed {已完成} cancelled {已取消} other {{actual}}}的生产订单不能{verb, select, creditedWithOutput {记录产出} released {下达} edited {编辑} closed {关闭} other {{verb}}}——必须为{required, select, draft {已计划} released {已下达} completed {已完成} cancelled {已取消} other {{required}}}",

@@ -238,7 +238,8 @@ a second organization.
   top) or any category; a name already used beside it is refused, saying
   to choose another. Actions › Rename renames it; Actions › Move lists
   every category but itself and those under it, and Move waits until
-  another place is chosen. Actions › Delete on a category holding items
+  another place is chosen; a category added or moved more than 10
+  levels deep is refused, saying to choose a place higher up. Actions › Delete on a category holding items
   or categories says under its row how many of each and to move them
   first, and deletes nothing; on an empty one it asks first, then the
   row goes and focus is on the page's title. History records each
@@ -5593,3 +5594,6 @@ first.
   items is told only that there are none yet: MC-211 extended.
 - 2026-11-09: ADR-092's reviews, 82: the names table and its refusal say
   Variant, as the glossary does, not Variation: MC-1408 extended.
+- 2026-11-09: ADR-092's reviews, 85 (a): a category added or moved more
+  than 10 levels deep is refused, saying to choose a place higher up:
+  MC-213 extended.

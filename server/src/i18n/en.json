@@ -905,6 +905,7 @@
   "productCategories.movedInsideItself": "A category cannot go under itself, or under a category inside it. Choose another place.",
   "productCategories.nameTaken": "There is already a category named {name} in the same place. Choose another name.",
   "productCategories.notFound": "No such category",
+  "productCategories.tooDeep": "Categories go at most {max} levels deep. Choose a place higher up.",
   "productCategories.unknown": "That category was not found. Choose another, or none.",
   "productCategories.unknownParent": "The category to put it under was not found. Choose another, or none.",
   "production.actualRunVerbRequired": "A {actual} run cannot be {verb, select, creditedWithOutput {credited with output} other {{verb}}} — it must be {required}",

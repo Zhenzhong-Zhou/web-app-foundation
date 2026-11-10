@@ -99,6 +99,68 @@ export function categoryPaths(organizationId: string): SQL {
   )`;
 }
 
+/**
+ * How deep the tree goes (ADR-092's review, 85), as locations do: deeper
+ * is a mistake in typing, not a catalogue, and every path is read whole.
+ */
+export const MAX_CATEGORY_LEVELS = 10;
+
+/**
+ * The level a category sits at, 1 at the top, walked up its parents in
+ * the database, under lockTree.
+ */
+export async function levelOf(
+  tx: Transaction,
+  organizationId: string,
+  categoryId: string,
+): Promise<number> {
+  const { rows } = await tx.execute<{ level: number }>(sql`
+    with recursive up as (
+      select id, parent_id from product_categories
+      where id = ${categoryId} and organization_id = ${organizationId}
+      union all
+      select parent.id, parent.parent_id from product_categories parent
+      join up on parent.id = up.parent_id
+        and parent.organization_id = ${organizationId}
+    )
+    select count(*)::int as level from up
+  `);
+  return rows[0]?.level ?? 0;
+}
+
+/**
+ * How many levels a category and those under it take, 1 for one with
+ * none under it, walked down in the database, under lockTree.
+ */
+export async function levelsIn(
+  tx: Transaction,
+  organizationId: string,
+  categoryId: string,
+): Promise<number> {
+  const { rows } = await tx.execute<{ levels: number }>(sql`
+    with recursive branch as (
+      select id, 1 as level from product_categories
+      where id = ${categoryId} and organization_id = ${organizationId}
+      union all
+      select child.id, branch.level + 1 from product_categories child
+      join branch on child.parent_id = branch.id
+        and child.organization_id = ${organizationId}
+    )
+    select coalesce(max(level), 0)::int as levels from branch
+  `);
+  return rows[0]?.levels ?? 0;
+}
+
+/** Refused where a category would sit deeper than the tree goes. */
+export const TOO_DEEP = t(
+  {
+    id: 'productCategories.tooDeep',
+    defaultMessage:
+      'Categories go at most {max} levels deep. Choose a place higher up.',
+  },
+  { max: MAX_CATEGORY_LEVELS },
+);
+
 /** The refusal of a category in a body that is not this organization's. */
 export const UNKNOWN_CATEGORY = t({
   id: 'productCategories.unknown',

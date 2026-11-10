@@ -364,14 +364,15 @@ How this file is kept is in the [README](README.md).
 ## Categories
 
 - **An organization keeps its items' categories as one tree: a category
-  at the top or under another, at any depth, named in up to 100
-  characters. Two categories beside each other, under one parent or both
+  at the top or under another, at most 10 levels deep, named in up to
+  100 characters. Two categories beside each other, under one parent or both
   at the top, never share a name;** the same name under another parent is
   another category. Spaces around a name are dropped.
   [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
   [test](../../server/test/product-categories.e2e-spec.ts) "adds a category at the top and one under it, and answers it as the tree shows it" ·
   [test](../../server/test/product-categories.e2e-spec.ts) "refuses a name already used under the same parent, at the top too, and allows it under another" ·
-  [test](../../server/test/product-categories.e2e-spec.ts) "refuses a blank name or one past 100 characters"
+  [test](../../server/test/product-categories.e2e-spec.ts) "refuses a blank name or one past 100 characters" ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "refuses a category deeper than 10 levels, added or moved there"
 - **Categories are listed by name: a Chinese name by its pinyin, the
   others by their letters, accents and case aside, and a number inside a
   name by its value,** so Size 2 comes before Size 10.
@@ -386,7 +387,8 @@ How this file is kept is in the [README](README.md).
 - **A category can be renamed and moved at any time, to the top or under
   another. A move under itself, or under any category inside it, is
   refused, saying to choose another place;** so is a move to where its
-  name is already taken.
+  name is already taken, or one that would put it or a category under it
+  more than 10 levels deep.
   [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
   [test](../../server/test/product-categories.e2e-spec.ts) "renames a category, and moves it under another and back to the top" ·
   [test](../../server/test/product-categories.e2e-spec.ts) "refuses a move under itself or under any category inside it" ·

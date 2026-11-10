@@ -905,6 +905,7 @@
   "productCategories.movedInsideItself": "Une catégorie ne peut pas aller sous elle-même, ni sous une catégorie qu’elle contient. Choisissez un autre endroit.",
   "productCategories.nameTaken": "Il existe déjà une catégorie nommée {name} au même endroit. Choisissez un autre nom.",
   "productCategories.notFound": "Catégorie introuvable",
+  "productCategories.tooDeep": "Les catégories descendent d’au plus {max} niveaux. Choisissez un emplacement plus haut.",
   "productCategories.unknown": "Cette catégorie est introuvable. Choisissez-en une autre, ou aucune.",
   "productCategories.unknownParent": "La catégorie où la placer est introuvable. Choisissez-en une autre, ou aucune.",
   "production.actualRunVerbRequired": "Un ordre {actual, select, draft {planifié} released {lancé} completed {terminé} cancelled {annulé} other {{actual}}} ne peut pas être {verb, select, creditedWithOutput {crédité d’une production} released {lancé} edited {modifié} closed {clos} other {{verb}}} — il doit être {required, select, draft {planifié} released {lancé} completed {terminé} cancelled {annulé} other {{required}}}",

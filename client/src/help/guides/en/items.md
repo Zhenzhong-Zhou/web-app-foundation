@@ -39,7 +39,7 @@ Press the row to open the item. Press its stock to open Inventory for that item 
 
 ## Categories {#categories}
 
-An item is in one category, or none. Categories form one tree: a category can sit at the top or under another, as deep as you need, such as **Packaging › Bottles**.
+An item is in one category, or none. Categories form one tree: a category can sit at the top or under another, up to 10 levels deep, such as **Packaging › Bottles**.
 
 The tree, with each category’s items, is under **Settings › Categories**, or under **Manage categories** at the foot of the Category list.
 
@@ -115,6 +115,7 @@ An active recipe cannot be edited: **New version** copies it to a new draft.
 - A code already in use is refused under **Code**, with a link to the item that has it. Each variant needs its own.
 - A category that holds items or other categories cannot be deleted. The refusal says how many of each: move them to another category first.
 - A category cannot move under itself, and two categories side by side cannot share a name.
+- Categories go at most 10 levels deep. A category added or moved deeper is refused: choose a place higher up.
 - Orders and invoices cannot print in a language your organization requires while an item on them has no name in it. The refusal says whether the item’s name or a variant’s is missing.
 - A recipe with no components cannot be promoted. Add what it uses first.
 - An item has at most 8 images. Remove one to add another.

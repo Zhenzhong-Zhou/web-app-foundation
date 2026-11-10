@@ -289,6 +289,36 @@ describe('Product categories (e2e)', () => {
       ).toBe('Vitamins');
     });
 
+    // At most 10 levels, as locations (ADR-092's review, 85).
+    it('refuses a category deeper than 10 levels, added or moved there', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const levels: string[] = [];
+      for (let level = 1; level <= 10; level += 1) {
+        levels.push(await add(alpha.agent, `Level ${level}`, levels.at(-1)));
+      }
+
+      const res = await alpha.agent
+        .post('/v1/products/categories')
+        .send({ name: 'Level 11', parentId: levels[9] })
+        .expect(409);
+      expect(body<{ message: string }>(res).message).toBe(
+        'Categories go at most 10 levels deep. Choose a place higher up.',
+      );
+
+      // A branch two levels deep fits under the eighth, not the ninth.
+      const loose = await add(alpha.agent, 'Loose');
+      await add(alpha.agent, 'Leaf', loose);
+      await alpha.agent
+        .patch(`/v1/products/categories/${loose}`)
+        .send({ parentId: levels[8] })
+        .expect(409);
+      await alpha.agent
+        .patch(`/v1/products/categories/${loose}`)
+        .send({ parentId: levels[7] })
+        .expect(204);
+      expect((await tree(alpha.agent)).length).toBe(12);
+    });
+
     it('answers 404 for a category that is not there', async () => {
       const alpha = await registerOrganization(app, 'alpha');
 

@@ -39,7 +39,7 @@ Appuyez sur la ligne pour ouvrir l’article. Appuyez sur son stock pour ouvrir 
 
 ## Catégories {#categories}
 
-Un article est dans une catégorie, ou dans aucune. Les catégories forment un seul arbre : une catégorie peut être au premier niveau ou sous une autre, aussi profond qu’il le faut, comme **Emballages › Flacons**.
+Un article est dans une catégorie, ou dans aucune. Les catégories forment un seul arbre : une catégorie peut être au premier niveau ou sous une autre, jusqu’à 10 niveaux, comme **Emballages › Flacons**.
 
 L’arbre, avec les articles de chaque catégorie, est sous **Paramètres › Catégories**, ou sous **Gérer les catégories** au bas de la liste Catégorie.
 
@@ -115,6 +115,7 @@ Une recette active ne peut pas être modifiée : **Nouvelle version** la copie d
 - Un code déjà utilisé est refusé sous **Code**, avec un lien vers l’article qui l’a. Chaque variante a besoin du sien.
 - Une catégorie qui contient des articles ou d’autres catégories ne peut pas être supprimée. Le refus dit combien de chaque : déplacez-les d’abord dans une autre catégorie.
 - Une catégorie ne peut pas aller sous elle-même, et deux catégories côte à côte ne peuvent pas porter le même nom.
+- Les catégories descendent d’au plus 10 niveaux. Une catégorie ajoutée ou déplacée plus bas est refusée : choisissez un emplacement plus haut.
 - Les commandes et les factures ne peuvent pas s’imprimer dans une langue que votre organisation exige tant qu’un article qui s’y trouve n’a pas de nom dans cette langue. Le refus dit si c’est le nom de l’article ou celui d’une variante qui manque.
 - Une recette sans composants ne peut pas être mise en vigueur. Ajoutez d’abord ce qu’elle utilise.
 - Un article a au plus 8 images. Retirez-en une pour en ajouter une autre.
