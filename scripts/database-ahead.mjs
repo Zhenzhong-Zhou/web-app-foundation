@@ -30,8 +30,10 @@
  * address's user, with one line saying why; the migration that follows
  * applies every one from the start. Every run empties them anyway. It
  * runs under the lock the working folders share (one-at-a-time.mjs), so
- * no run uses the database meanwhile; a test or e2e name that is the dev
- * database's is refused, whatever its state.
+ * no run uses the database meanwhile. A test or e2e name that is the dev
+ * database's is refused only there, ahead and about to be dropped: CI's
+ * browser job names all three foundation_e2e on purpose, and its database
+ * starts empty, so it is never ahead.
  *
  * The dev database holds a person's own rows, so it is never made again:
  * ahead, one line says so, and the migration goes on, exit 0. Its check
@@ -185,14 +187,6 @@ export async function check(which, system) {
         "in the root .env (see .env.example).",
     );
   }
-  const dev = databaseOf(address(KEYS.dev));
-  if (which !== "dev" && name === dev) {
-    throw new Stop(
-      `${key} names the dev database, ${name}, which a test run empties. ` +
-        "Give it its own name in the root .env (see .env.example).",
-    );
-  }
-
   const db = await open(url, name, system);
   let rows;
   try {
@@ -209,6 +203,13 @@ export async function check(which, system) {
       `${what}. It holds your own rows, so it is left as it is; nothing changed.`,
     );
     return;
+  }
+  if (name === databaseOf(address(KEYS.dev))) {
+    throw new Stop(
+      `${what}, and ${key} names the dev database, which holds your own ` +
+        "rows, so it is not made again; nothing changed. Give it its own " +
+        "name in the root .env (see .env.example), then run again.",
+    );
   }
   if (!NAME.test(name)) {
     throw new Stop(

@@ -199,24 +199,39 @@ for (const [which, name] of [
     }
   });
 
-  test(`${which}: a name that is the dev database's is refused, whatever its state`, async () => {
-    const server = postgres({ foundation: [] });
-    const run = system(server, {
-      env: {
-        ...ADDRESSES,
-        [`DATABASE_URL_${which.toUpperCase()}`]: ADDRESSES.DATABASE_URL,
-      },
-    });
+  const asDev = {
+    ...ADDRESSES,
+    [`DATABASE_URL_${which.toUpperCase()}`]: ADDRESSES.DATABASE_URL,
+  };
+
+  test(`${which}, named as the dev database and in step or empty: passes, as in CI's browser job`, async () => {
+    for (const rows of [rowsFor(ENTRIES), null]) {
+      const server = postgres({ foundation: rows });
+      const run = system(server, { env: asDev });
+      await check(which, run);
+      assert.deepEqual(server.done, ["connect foundation"]);
+      assert.deepEqual(run.said, []);
+    }
+  });
+
+  test(`${which}, named as the dev database and ahead: refused, nothing dropped`, async () => {
+    const rows = [...rowsFor(ENTRIES), BRANCH_ROW];
+    const server = postgres({ foundation: rows });
+    const run = system(server, { env: asDev });
     await assert.rejects(
       check(which, run),
       (error) =>
         error instanceof Stop &&
         error.message ===
-          `DATABASE_URL_${which.toUpperCase()} names the dev database, foundation, ` +
-            "which a test run empties. Give it its own name in the root .env " +
-            "(see .env.example).",
+          `The ${which} database, foundation, holds a migration this folder ` +
+            `lacks, made 2026-11-09 18:04 UTC (hash ${"d".repeat(12)}), and ` +
+            `DATABASE_URL_${which.toUpperCase()} names the dev database, which ` +
+            "holds your own rows, so it is not made again; nothing changed. " +
+            "Give it its own name in the root .env (see .env.example), then " +
+            "run again.",
     );
-    assert.deepEqual(server.done, []);
+    assert.deepEqual(server.done, ["connect foundation"]);
+    assert.equal(server.databases.get("foundation"), rows);
   });
 }
 
