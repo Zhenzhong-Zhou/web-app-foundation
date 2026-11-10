@@ -801,6 +801,36 @@ describe('ProductsPage', () => {
         await screen.findByRole('button', { name: 'Filters' }),
       ).toBeVisible();
     });
+
+    // The cards have no head to tick every row (ADR-092's review, 12).
+    it('ticks every card from the bar’s Select all', async () => {
+      const user = userEvent.setup();
+      readsOf(() =>
+        pageOf(
+          [product('Focus'), product('Calm'), product('Sleep')],
+          countsOf({ good: 3 }),
+        ),
+      );
+      renderWithAuth(
+        <MemoryRouter initialEntries={['/items']}>
+          <ProductsPage />
+        </MemoryRouter>,
+        { permissions: ['products.view', 'products.update'] },
+      );
+
+      await user.click(
+        await screen.findByRole('checkbox', { name: 'Select Focus, FOCUS' }),
+      );
+      const bar = screen.getByRole('region', { name: 'Selected items' });
+      await user.click(
+        within(bar).getByRole('button', { name: 'Select all shown' }),
+      );
+
+      expect(within(bar).getByText('3 selected')).toBeVisible();
+      expect(
+        within(bar).queryByRole('button', { name: 'Select all shown' }),
+      ).not.toBeInTheDocument();
+    });
   });
 
   describe('several at once', () => {

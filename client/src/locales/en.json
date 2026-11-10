@@ -1642,6 +1642,7 @@
   "products.bulk.moved": "Moved {count, plural, one {# item} other {# items}} to {category}.",
   "products.bulk.moving": "Moving…",
   "products.bulk.region": "Selected items",
+  "products.bulk.selectAll": "Select all shown",
   "products.bulk.selected": "{count, plural, other {# selected}}",
   "products.bulk.setCategory": "Set category",
   "products.bulk.tooMany": "Up to {max} at once. Untick some to go on.",

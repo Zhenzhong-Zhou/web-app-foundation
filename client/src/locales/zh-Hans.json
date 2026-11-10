@@ -1642,6 +1642,7 @@
   "products.bulk.moved": "已把 {count} 个物品移到“{category}”。",
   "products.bulk.moving": "正在移动…",
   "products.bulk.region": "已选的物品",
+  "products.bulk.selectAll": "全选",
   "products.bulk.selected": "已选 {count} 个",
   "products.bulk.setCategory": "设分类",
   "products.bulk.tooMany": "一次最多 {max} 个。取消勾选一些再继续。",

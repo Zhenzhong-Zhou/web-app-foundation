@@ -1642,6 +1642,7 @@
   "products.bulk.moved": "{count, plural, one {# article déplacé} other {# articles déplacés}} vers {category}.",
   "products.bulk.moving": "Déplacement…",
   "products.bulk.region": "Articles sélectionnés",
+  "products.bulk.selectAll": "Tout sélectionner",
   "products.bulk.selected": "{count, plural, one {# sélectionné} other {# sélectionnés}}",
   "products.bulk.setCategory": "Définir la catégorie",
   "products.bulk.tooMany": "Jusqu’à {max} à la fois. Décochez-en quelques-uns pour continuer.",

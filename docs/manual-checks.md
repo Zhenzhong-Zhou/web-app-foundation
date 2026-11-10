@@ -221,7 +221,8 @@ a second organization.
   items", with Undo; on the Discontinued chip it is not offered. The
   message goes about 10 seconds after neither focus nor the pointer is
   on it. Another tab, a search, a filter or a sort clears the ticks. At
-  390 px each card has its box before it. As a Viewer there are no boxes.
+  390 px each card has its box before it, and once one is ticked the bar
+  offers Select all shown, which ticks every card loaded. As a Viewer there are no boxes.
 - **MC-213** Settings › Categories (`/settings/categories`), as the demo
   Owner, from the menu's Settings group: the tree, each category under
   its parent with its items, those under it counted ("12 items"), and
@@ -5561,3 +5562,5 @@ first.
 - 2026-11-09: ADR-092's reviews, 9: Edit's types each carry Add item's
   line, and the type's hint says the item then shows under its new type:
   MC-214 extended.
+- 2026-11-09: ADR-092's reviews, 12: on a phone the bar offers Select
+  all shown once a card is ticked: MC-212 extended.

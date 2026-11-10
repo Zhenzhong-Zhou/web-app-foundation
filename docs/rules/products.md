@@ -202,7 +202,8 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "refuses the whole request for another organization’s item or category, changing nothing" ·
   [test](../../server/test/products.e2e-spec.ts) "refuses more than 500 items, one twice, and whoever may not change items"
 - **Items shows whoever may change items a check box on each row, and one
-  in its head for every row loaded; a Viewer sees none. Ticking shows how
+  in its head for every row loaded, or on a phone Select all shown in the
+  bar once one is ticked; a Viewer sees none. Ticking shows how
   many, with Set category, Discontinue and Clear; neither change asks
   first, and each says what it did and offers Undo for 10 seconds, which
   sends the values before back.** Set category offers the whole tree and
@@ -213,6 +214,7 @@ How this file is kept is in the [README](README.md).
   [ADR-092](../adr/0092-items.md#decision--several-at-once-with-undo) ·
   [test](../../client/src/products/products-page.test.tsx) "ticks rows for whoever may change items, the header’s ticking every row loaded, a bar counting them" ·
   [test](../../client/src/products/products-page.test.tsx) "shows a Viewer no check boxes" ·
+  [test](../../client/src/products/products-page.test.tsx) "ticks every card from the bar’s Select all" ·
   [test](../../client/src/products/products-page.test.tsx) "clears the ticks on another tab, a new search, a filter or a sort, so nothing unseen changes" ·
   [test](../../client/src/products/products-page.test.tsx) "moves the ticked to the category chosen, reads the list again, and Undo sends the values before" ·
   [test](../../client/src/products/products-page.test.tsx) "starts Set category on the category the ticked share, Move waiting for another" ·

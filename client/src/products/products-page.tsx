@@ -422,7 +422,9 @@ export function ProductsPage() {
       {ticks && (
         <SeveralAtOnce
           ticked={items?.filter((item) => ticked.has(item.id)) ?? []}
+          shown={items?.length ?? 0}
           categories={tree?.categories ?? []}
+          onTickAll={() => ticks.onTickAll(true)}
           onClear={() => setTicked(new Set())}
           onChanged={() => {
             setTicked(new Set());

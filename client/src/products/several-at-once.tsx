@@ -59,15 +59,23 @@ function changeMany(items: ProductChange[]): Promise<ProductChanges> {
  *
  * `onChanged` runs after a change or its Undo: the page clears the ticks
  * and reads the list and the categories again.
+ *
+ * Below 600 px, where the cards have no head to tick them all, the bar
+ * offers Select all while some loaded are not ticked; `shown` is how many
+ * are loaded, and `onTickAll` ticks them.
  */
 export function SeveralAtOnce({
   ticked,
+  shown,
   categories,
+  onTickAll,
   onClear,
   onChanged,
 }: {
   ticked: ProductSummary[];
+  shown: number;
   categories: readonly ProductCategory[];
+  onTickAll: () => void;
   onClear: () => void;
   onChanged: () => void;
 }) {
@@ -217,6 +225,19 @@ export function SeveralAtOnce({
                       id: 'products.discontinue',
                       defaultMessage: 'Discontinue',
                     })}
+              </Button>
+            )}
+            {ticked.length < shown && (
+              <Button
+                variant="text"
+                disabled={busy}
+                onClick={onTickAll}
+                sx={{ display: { xs: 'inline-flex', sm: 'none' } }}
+              >
+                {intl.formatMessage({
+                  id: 'products.bulk.selectAll',
+                  defaultMessage: 'Select all shown',
+                })}
               </Button>
             )}
             <Button variant="text" disabled={busy} onClick={onClear}>
