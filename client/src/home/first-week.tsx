@@ -29,7 +29,7 @@ const TITLES = defineMessages<Key>({
   },
   lookUp: {
     id: 'home.welcome.lookUp',
-    defaultMessage: 'Look up a product or a lot',
+    defaultMessage: 'Look up an item or a lot',
   },
   openOrder: { id: 'home.welcome.openOrder', defaultMessage: 'Open an order' },
   receiveStock: { id: 'inventory.receive', defaultMessage: 'Receive stock' },
@@ -54,7 +54,7 @@ const HINTS = defineMessages({
   lookUp: {
     id: 'home.welcome.lookUp.hint',
     defaultMessage:
-      '{products, select, true {Type a name or a lot code in Search at the top, or open Products.} other {Type a lot code in Search at the top, or open Trace a lot.}}',
+      '{products, select, true {Type a name or a lot code in Search at the top, or open an item on Items.} other {Type a lot code in Search at the top, or open Trace a lot.}}',
   },
   openOrder: {
     id: 'home.welcome.openOrder.hint',
@@ -140,7 +140,7 @@ function whereOf(
     case 'sayWhoYouAre':
       return '/account';
     case 'lookUp':
-      return canSeeProducts ? '/products' : '/lots';
+      return canSeeProducts ? '/items' : '/lots';
     case 'openOrder':
       return '/orders';
     case 'receiveStock':

@@ -807,9 +807,11 @@ describe('Languages (e2e)', () => {
           .post(`/v1/invoices/${draft.invoiceId}/issue`)
           .send({ invoiceDate: TODAY });
 
+      // The product's name is the one missing: named, with the code
+      // (ADR-054, amended by ADR-092). The fixture names it by its code.
       const refused = await issue().expect(409);
       expect(body<{ message: string }>(refused).message).toBe(
-        'FOCUS-60CT has no 简体中文 name, which this organization requires on its documents. Add its 简体中文 name on its product’s page.',
+        'FOCUS-60CT (FOCUS-60CT) has no 简体中文 name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
       );
 
       // The language in its own name, as the product page lists it, and the
@@ -819,10 +821,10 @@ describe('Languages (e2e)', () => {
           await issue().set('Accept-Language', language).expect(409),
         ).message;
       expect(await refusedIn('fr-CA')).toBe(
-        'FOCUS-60CT n’a pas de nom en 简体中文, ce que cette organisation exige sur ses documents. Ajoutez son nom en 简体中文 sur la page de son produit.',
+        'FOCUS-60CT (FOCUS-60CT) n’a pas de nom en 简体中文, ce que cette organisation exige sur ses documents. Ajoutez-le sur la page de l’article, sous Noms dans d’autres langues.',
       );
       expect(await refusedIn('zh-Hans')).toBe(
-        'FOCUS-60CT 没有简体中文名称，而本组织要求单据上必须有。请在其产品页面上添加简体中文名称。',
+        'FOCUS-60CT（FOCUS-60CT）没有简体中文名称，而本组织要求单据上必须有。请在物品页面的“其他语言名称”中添加。',
       );
 
       await alpha.agent
@@ -840,6 +842,65 @@ describe('Languages (e2e)', () => {
         { sku: 'FOCUS-60CT', first: '专注胶囊', second: 'FOCUS-60CT' },
         { sku: 'SCOOP', first: '量勺', second: 'SCOOP' },
       ]);
+    });
+
+    it('names the variation, by its code and its own name, when its name is the one missing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await alpha.agent
+        .patch('/v1/organization')
+        .send({ requiredNameLanguages: ['zh-Hans'] })
+        .expect(204);
+
+      const draft = await draftInvoice(alpha);
+      await alpha.agent
+        .patch(`/v1/partners/${draft.partnerId}`)
+        .send({ documentLanguage: 'zh-Hans', documentSecondLanguage: 'en' })
+        .expect(204);
+
+      // Both products named in Chinese; the capsules' variation then gains
+      // a name of its own, with none in Chinese (#526).
+      for (const [sku, name] of [
+        ['FOCUS-60CT', '专注胶囊'],
+        ['SCOOP', '量勺'],
+      ]) {
+        await alpha.agent
+          .put(`/v1/products/${await productOf(sku)}/translations`)
+          .send({ translations: [{ locale: 'zh-Hans', name }] })
+          .expect(204);
+      }
+      const [capsules] = await db
+        .select({ id: productVariants.id })
+        .from(productVariants)
+        .where(eq(productVariants.sku, 'FOCUS-60CT'));
+      const productId = await productOf('FOCUS-60CT');
+      await alpha.agent
+        .patch(`/v1/products/${productId}/variants/${capsules.id}`)
+        .send({ name: '60ct' })
+        .expect(204);
+
+      const issue = (language = 'en') =>
+        alpha.agent
+          .post(`/v1/invoices/${draft.invoiceId}/issue`)
+          .set('Accept-Language', language)
+          .send({ invoiceDate: TODAY });
+      const refusedIn = async (language: string) =>
+        body<{ message: string }>(await issue(language).expect(409)).message;
+
+      expect(await refusedIn('en')).toBe(
+        'The variant FOCUS-60CT (60ct) of FOCUS-60CT has no 简体中文 name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
+      );
+      expect(await refusedIn('fr-CA')).toBe(
+        'La variante FOCUS-60CT (60ct) de FOCUS-60CT n’a pas de nom en 简体中文, ce que cette organisation exige sur ses documents. Ajoutez-le sur la page de l’article, sous Noms dans d’autres langues.',
+      );
+      expect(await refusedIn('zh-Hans')).toBe(
+        'FOCUS-60CT 的规格 FOCUS-60CT（60ct）没有简体中文名称，而本组织要求单据上必须有。请在物品页面的“其他语言名称”中添加。',
+      );
+
+      await alpha.agent
+        .put(`/v1/products/${productId}/variants/${capsules.id}/translations`)
+        .send({ translations: [{ locale: 'zh-Hans', name: '60粒' }] })
+        .expect(204);
+      await issue().expect(200);
     });
 
     it('prints a name once when both languages agree, and a credit copies both', async () => {

@@ -52,8 +52,10 @@ const LANGUAGE_NAMES: Record<Locale, string> = {
  *
  * A language the organization requires (required_name_languages) has no
  * fallback: a line whose product, or named variant, lacks a translation in
- * it is a 409 naming the SKU, before anything is written, as a missing
- * billing address is. Shipping never waits for this; issuing can, because
+ * it is a 409 before anything is written, as a missing billing address is,
+ * naming whether the product's name or the variation's is missing, the
+ * variation by its code and its own name (ADR-054, amended by ADR-092);
+ * the product's first, since every variation prints it. Shipping never waits for this; issuing can, because
  * nothing has left the building on the strength of an invoice.
  */
 export async function namedLines(
@@ -145,9 +147,15 @@ export async function namedLines(
           {
             id: 'invoices.skuLanguageNameWhich',
             defaultMessage:
-              '{sku} has no {language} name, which this organization requires on its documents. Add its {language} name on its product’s page.',
+              '{which, select, variant {The variant {sku} ({variation}) of {product}} other {{product} ({sku})}} has no {language} name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
           },
-          { sku: untranslated.sku, language: LANGUAGE_NAMES[slot.language] },
+          {
+            which: untranslated[slot.product] === null ? 'product' : 'variant',
+            sku: untranslated.sku,
+            product: untranslated.product_name,
+            variation: untranslated.variant_name ?? '',
+            language: LANGUAGE_NAMES[slot.language],
+          },
         ),
       );
     }

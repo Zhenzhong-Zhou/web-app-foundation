@@ -173,13 +173,13 @@ for (const size of [
       'Start with the orders to ship.',
     );
     const lookUp = card.getByRole('link', {
-      name: /^Look up a product or a lot/,
+      name: /^Look up an item or a lot/,
     });
-    await expect(lookUp).toHaveAttribute('href', '/products');
+    await expect(lookUp).toHaveAttribute('href', '/items');
     expect((await lookUp.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     await expect(
-      card.getByRole('link', { name: 'Products', exact: true }),
-    ).toHaveAttribute('href', '/products');
+      card.getByRole('link', { name: 'Items', exact: true }),
+    ).toHaveAttribute('href', '/items');
 
     await fold.click();
     await expect(card.getByRole('figure')).toBeHidden();

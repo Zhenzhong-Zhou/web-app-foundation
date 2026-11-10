@@ -15,22 +15,27 @@ import { createProduct } from './support/api';
 test('adds a second variant to an existing product', async ({ page, api }) => {
   const product = await createProduct(api, { name: 'E2E Multi-size Widget' });
 
-  await page.goto(`/products/${product.id}`);
+  await page.goto(`/items/${product.id}`);
   await page.getByRole('button', { name: 'Add variant' }).click();
 
   const dialog = page.getByRole('dialog');
   const sku = `${product.sku}-XL`;
 
-  await dialog.getByLabel('SKU').fill(sku);
+  await dialog.getByLabel('Code').fill(sku);
   await dialog.getByLabel('Size or variation').fill('Extra large');
   await dialog.getByRole('button', { name: 'Add variant' }).click();
 
-  await expect(page.getByRole('row', { name: new RegExp(sku) })).toBeVisible();
+  // In the variants' table: Names in other languages lists a named
+  // variation by its code too (ADR-092).
+  const variants = page.getByRole('table', { name: 'Variants' });
+  await expect(
+    variants.getByRole('row', { name: new RegExp(sku) }),
+  ).toBeVisible();
 
   // The original survives. ADR-023's whole point is that these are two rows
   // under one product, not a replacement.
   await expect(
-    page.getByRole('row', { name: new RegExp(`${product.sku}(?!-XL)`) }),
+    variants.getByRole('row', { name: new RegExp(`${product.sku}(?!-XL)`) }),
   ).toBeVisible();
 });
 
@@ -38,7 +43,7 @@ test('renames a SKU inline', async ({ page, api }) => {
   const product = await createProduct(api, { name: 'E2E Typo Widget' });
   const corrected = `${product.sku}-FIXED`;
 
-  await page.goto(`/products/${product.id}`);
+  await page.goto(`/items/${product.id}`);
 
   /**
    * The SKU is edited in the cell, not in the Edit dialog — that dialog covers
@@ -73,8 +78,11 @@ test('renames a SKU inline', async ({ page, api }) => {
 test('edits a variant through the dialog', async ({ page, api }) => {
   const product = await createProduct(api, { name: 'E2E Dimensioned Widget' });
 
-  await page.goto(`/products/${product.id}`);
-  await page
+  await page.goto(`/items/${product.id}`);
+  // In the variants' table: once named, Names in other languages lists
+  // the variation by its code too (ADR-092).
+  const variants = page.getByRole('table', { name: 'Variants' });
+  await variants
     .getByRole('row', { name: new RegExp(product.sku) })
     .getByRole('button', { name: 'Edit' })
     .click();
@@ -84,6 +92,6 @@ test('edits a variant through the dialog', async ({ page, api }) => {
   await dialog.getByRole('button', { name: 'Save' }).click();
 
   await expect(
-    page.getByRole('row', { name: new RegExp(product.sku) }),
+    variants.getByRole('row', { name: new RegExp(product.sku) }),
   ).toContainText('Large');
 });

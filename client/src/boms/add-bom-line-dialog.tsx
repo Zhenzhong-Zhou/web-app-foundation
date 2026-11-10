@@ -139,6 +139,7 @@ export function AddBomLineDialog({
               required
               options={choices}
               loading={catalogueLoading}
+              task="recipe"
               value={form.componentVariantId}
               onChange={(componentVariantId) =>
                 setForm((current) => ({ ...current, componentVariantId }))

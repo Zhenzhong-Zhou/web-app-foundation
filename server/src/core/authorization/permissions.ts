@@ -189,15 +189,15 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, Translatable> = {
   }),
   'products.view': t({
     id: 'permissions.products.view',
-    defaultMessage: 'See the product catalogue',
+    defaultMessage: 'See the items',
   }),
   'products.create': t({
     id: 'permissions.products.create',
-    defaultMessage: 'Add a product',
+    defaultMessage: 'Add an item',
   }),
   'products.update': t({
     id: 'permissions.products.update',
-    defaultMessage: 'Edit or discontinue a product',
+    defaultMessage: 'Edit or discontinue an item',
   }),
   'product_licences.view': t({
     id: 'permissions.productLicences.view',

@@ -157,6 +157,7 @@ export function AddOrderLineDialog({
               options={choices}
               loading={!answered}
               failed={failed}
+              task={order.direction}
               value={variantId}
               onChange={setVariantId}
               helperText={

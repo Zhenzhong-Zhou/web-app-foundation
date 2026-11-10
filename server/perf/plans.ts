@@ -23,6 +23,7 @@ import { ReturnsService } from '../src/modules/orders/returns.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
 import { PartnersService } from '../src/modules/partners/partners.service';
 import { PriceListsService } from '../src/modules/price-lists/price-lists.service';
+import { ProductCategoriesService } from '../src/modules/products/product-categories.service';
 import { ProductsService } from '../src/modules/products/products.service';
 import {
   kindsVisibleWith,
@@ -218,6 +219,7 @@ async function buildProbes(
   const recent = app.get(RecentService);
   const access = app.get(PermissionsService);
   const products = app.get(ProductsService);
+  const categories = app.get(ProductCategoriesService);
   const priceLists = app.get(PriceListsService);
   const partners = app.get(PartnersService);
   const reorder = app.get(ReorderPointsReadsService);
@@ -258,6 +260,23 @@ async function buildProbes(
   // shipments and the returns: the volume seed receives each against an RMA.
   const [rma] = (await rmas.list({})).entries;
   if (!rma) throw new Error('No return authorization: was this volume-seeded?');
+
+  // Items by a category, the top-level one with the most items beneath it,
+  // so the filter reads its whole branch (ADR-092); and the second page
+  // sorted by stock, which compares each row's sum with the cursor's.
+  const { categories: tree } = await categories.list();
+  const branch = (id: string): number =>
+    tree
+      .filter((each) => each.parentId === id)
+      .reduce((sum, child) => sum + branch(child.id), 0) +
+    tree
+      .filter((each) => each.id === id)
+      .flatMap((each) => each.items)
+      .reduce((sum, kept) => sum + kept.active + kept.discontinued, 0);
+  const [category] = tree
+    .filter((each) => !each.parentId)
+    .sort((a, b) => branch(b.id) - branch(a.id));
+  const byStock = await products.list({ sort: 'stock' }, 'zh-Hans');
 
   const probes: Probe[] = [
     { name: 'orders: open', run: () => orders.list({}) },
@@ -431,27 +450,58 @@ async function buildProbes(
     // The catalogue's reads that join products (#226), each with the
     // organization on its join: without it, Postgres reads every tenant's
     // products to join one tenant's variants.
-    { name: 'product export', run: () => products.exportRows() },
+    {
+      name: 'product export',
+      run: () => products.exportRows({ discontinued: 'include' }, 'zh-Hans'),
+    },
     {
       name: 'price list',
       run: () => priceLists.findById(priceList.id, 'en'),
     },
     { name: 'item pickers', run: () => products.listActiveVariants('en') },
-    // Products as it opens, in Chinese: sorted and named by the name shown,
-    // through a translation subquery a product (ADR-056, amended).
-    { name: 'products', run: () => products.list('zh-Hans') },
+    // Items as it opens, in Chinese: sorted and named by the name shown,
+    // through a translation subquery a product (ADR-056, amended), a page
+    // of fifty with its counts, and its rows' stock and status (ADR-092).
+    { name: 'products', run: () => products.list({}, 'zh-Hans') },
+    // Items' tabs, its category filter, and its sort by stock, which sums
+    // every item's stock to order them (ADR-092); each join and subquery
+    // names the organization (#226).
+    {
+      name: 'products: one type',
+      run: () => products.list({ type: 'material' }, 'zh-Hans'),
+    },
+    {
+      name: 'products: one category',
+      run: () =>
+        products.list({ category: category?.id ?? 'uncategorised' }, 'zh-Hans'),
+    },
+    {
+      name: 'products: by stock',
+      run: () => products.list({ sort: 'stock' }, 'zh-Hans'),
+    },
+    {
+      name: 'products: by stock, page 2',
+      run: () =>
+        products.list(
+          { sort: 'stock', cursor: byStock.nextCursor ?? undefined },
+          'zh-Hans',
+        ),
+    },
+    // Items' categories (ADR-092): the tree, each with what it holds by
+    // type, counted from products by the organization and the category.
+    { name: 'categories', run: () => categories.list() },
     // Products, Partners and the pickers searched (ADR-056, amended), as a
     // Chinese reader asks, by pinyin, and a partner by part of its name:
     // three characters or more, as the probes above.
     {
       name: 'products: search',
-      run: () => products.list('zh-Hans', 'zhuanzhu'),
+      run: () => products.list({ search: 'zhuanzhu' }, 'zh-Hans'),
     },
     // One Chinese character, which no trigram index serves: the search
     // reads the translations that hold it, at large about 64 ms.
     {
       name: 'products: one character',
-      run: () => products.list('zh-Hans', '专'),
+      run: () => products.list({ search: '专' }, 'zh-Hans'),
     },
     {
       name: 'item pickers: search',

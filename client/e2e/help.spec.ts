@@ -273,7 +273,7 @@ test('every page keeps its width beside Help at 1280 × 800', async ({
   const urls: Record<string, string> = {
     '/people/:userId': `/people/${ids.userId}`,
     '/settings/price-lists/:id': `/settings/price-lists/${ids.priceListId}`,
-    '/products/:id': `/products/${ids.productId}`,
+    '/items/:id': `/items/${ids.productId}`,
     '/lots/:id': `/lots/${ids.lotId}`,
     '/partners/:id': `/partners/${ids.partnerId}`,
     '/orders/:id': `/orders/${ids.orderId}`,

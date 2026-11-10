@@ -133,9 +133,9 @@ describe('Lookup (e2e)', () => {
   // ADR-066: an item's result carries its product's cover; others none.
   it("shows an item's cover, and none for other kinds", async () => {
     const alpha = await stocked('alpha');
-    const [product] = body<{ id: string; name: string }[]>(
+    const [product] = body<{ entries: { id: string; displayName: string }[] }>(
       await alpha.agent.get('/v1/products').expect(200),
-    ).filter((row) => row.name === 'Focus 60ct');
+    ).entries.filter((row) => row.displayName === 'Focus 60ct');
     const photo = await sharp({
       create: { width: 400, height: 400, channels: 3, background: '#2a6' },
     })

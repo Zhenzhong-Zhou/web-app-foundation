@@ -1,31 +1,57 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq, inArray, notInArray, type SQL, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 
+import { ERROR_CODES, withCode } from '../../common/error-codes';
 import { EXPORT_LIMIT } from '../../common/export';
 import type { Locale } from '../../common/locales';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
-import { type SearchTerms, searchTerms } from '../../common/search';
+import { searchTerms } from '../../common/search';
+import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
-import { isUniqueViolation } from '../../database/errors';
+import type { RequestContext } from '../../core/auth/request-context';
+import { todayOf } from '../../core/organizations/time-zone';
+import type { Transaction } from '../../database/database.module';
 import {
+  isForeignKeyViolation,
+  isUniqueViolation,
+} from '../../database/errors';
+import {
+  auditLog,
+  productCategories,
   products,
   productTranslations,
+  type ProductType,
   productVariants,
   variantTranslations,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { namesIn, productNameOrder } from '../stock/item-name';
+import {
+  itemStock,
+  type ItemStockStatus,
+  itemStockStatus,
+} from '../stock/item-stock';
+import {
+  assertCategoryIn,
+  categoryPaths,
+  UNKNOWN_CATEGORY,
+} from './category-tree';
+import type { ProductChangeDto } from './dto/change-products.dto';
 import type { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import type { ExportProductsDto } from './dto/export-products.dto';
+import type { ListProductsDto } from './dto/list-products.dto';
 import type {
+  ProductChange,
   ProductDetail,
+  ProductPage,
   ProductSummary,
   Variant,
   VariantOption,
@@ -36,7 +62,18 @@ import type {
 } from './dto/set-translations.dto';
 import type { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
+import {
+  afterKeys,
+  countsOf,
+  cursorOf,
+  itemOrder,
+  matchedBy,
+  orderOf,
+  readCursor,
+  shownOf,
+} from './item-list';
 import { itemMatches, itemRank } from './item-search';
+import type { ProductExportRow } from './product-exports';
 import { coverOf, imagesOf, publicImages } from './product-images';
 
 /**
@@ -51,24 +88,34 @@ function describeNames(translations: { locale: string; name: string }[]) {
     : 'none';
 }
 
-/** The outer product's variants, in the organization. */
-function variantsOf(organizationId: string): SQL {
-  return and(
-    eq(productVariants.organizationId, organizationId),
-    eq(productVariants.productId, products.id),
-  )!;
-}
-
 /**
- * The products a search finds, through any of their variants, as an item
- * is found everywhere (item-search): the list's and its export's.
+ * Its category's key, refused when the category went between the check and
+ * the write: deleted by someone else in that moment (ADR-092).
  */
-function foundBy(terms: SearchTerms, organizationId: string): SQL {
-  return sql`exists (
-    select 1 from ${productVariants}
-    where ${variantsOf(organizationId)} and ${itemMatches(terms, organizationId)}
-  )`;
-}
+const CATEGORY_KEY = 'products_category_id_product_categories_id_fk';
+
+/** Items' list a page at a time unless asked for fewer (ADR-092). */
+const ITEMS_PAGE_SIZE = 50;
+
+/** A place on Items' list: the row, and its order's parts as text. */
+type PlaceRow = {
+  id: string;
+  keys: string[];
+};
+
+/** An item's variants and stock on hand, as itemStock gives them. */
+type StockRow = {
+  product_id: string;
+  variants: number;
+  unit: string | null;
+  on_hand: string | null;
+};
+
+/** An item that is low or out, as itemStockStatus gives it. */
+type StatusRow = {
+  product_id: string;
+  status: ItemStockStatus;
+};
 
 @Injectable()
 export class ProductsService {
@@ -135,103 +182,236 @@ export class ProductsService {
   }
 
   /**
-   * Every product, each with its cover's file (ADR-062), named and sorted
-   * by the name the reader sees (ADR-056).
+   * Items' list (ADR-092): a page of fifty unless asked, narrowed by its
+   * type, its category with every category under it, or Uncategorised, and
+   * its search, discontinued items hidden unless asked; sorted by item-list's
+   * key, the cursor after the last row's. Each row named for the reader,
+   * with its first code, its category's path, and its stock on hand and
+   * status read for the page's items alone; the counts with the first page.
    *
-   * With a search, only the products it finds through any of their
-   * variants, as an item is found everywhere (item-search), each ranked by
-   * its closest variant, then by the name shown. Discontinued ones are
-   * found too, as the list shows them.
+   * With a search, only the items it finds through any of their variants,
+   * as an item is found everywhere (item-search), each ranked by its
+   * closest variant before the sort, as the lookup ranks (ADR-056, amended).
    */
-  list(locale: Locale, search?: string): Promise<ProductSummary[]> {
-    return this.tenantDb.transaction((tx, organizationId) => {
-      const terms = search ? searchTerms(search) : null;
-      const itsVariants = variantsOf(organizationId);
+  list(query: ListProductsDto, locale: Locale): Promise<ProductPage> {
+    const limit = query.limit ?? ITEMS_PAGE_SIZE;
+    const terms = query.search ? searchTerms(query.search) : null;
 
-      return (
-        tx
-          // The fields the API returns (ADR-068): not the organization, nor
-          // the pinyin kept for search.
-          .select({
-            id: products.id,
-            type: products.type,
-            name: namesIn(locale, organizationId).productName,
-            description: products.description,
-            isActive: products.isActive,
-            coverFileId: coverOf(),
-          })
-          .from(products)
-          .where(
-            and(
-              eq(products.organizationId, organizationId),
-              terms ? foundBy(terms, organizationId) : undefined,
-            ),
-          )
-          .orderBy(
-            ...(terms
-              ? [
-                  sql`(
-                    select min(${itemRank(terms, locale, organizationId)})
-                    from ${productVariants} where ${itsVariants}
-                  )`,
-                ]
-              : []),
-            productNameOrder(locale, organizationId),
-            asc(products.id),
-          )
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const { parts, order, joins } = itemOrder(
+        query,
+        locale,
+        organizationId,
+        terms,
       );
+      const matched = matchedBy(query, terms, organizationId);
+      const after = query.cursor
+        ? afterKeys(parts, readCursor(query.cursor, order, parts))
+        : undefined;
+
+      // The page's places, by the order's parts; each row's parts as text
+      // for the cursor, worked out after the LIMIT for the page alone.
+      const { rows: places } = await tx.execute<PlaceRow>(sql`
+        select ${products.id} as id,
+          array[${sql.join(
+            parts.map((part) => sql`(${part.value})::text`),
+            sql`, `,
+          )}] as keys
+        from ${products}
+        ${joins}
+        where ${and(
+          eq(products.organizationId, organizationId),
+          matched,
+          shownOf(query),
+          after,
+        )}
+        order by ${sql.join(orderOf(parts), sql`, `)}
+        limit ${limit + 1}
+      `);
+
+      const page = places.slice(0, limit);
+      const last = page.at(-1);
+      return {
+        entries: await this.rowsOf(
+          tx,
+          organizationId,
+          locale,
+          page.map((place) => place.id),
+        ),
+        nextCursor:
+          places.length > limit && last ? cursorOf(order, last.keys) : null,
+        counts: query.cursor
+          ? null
+          : await countsOf(tx, organizationId, query, matched),
+      };
+    });
+  }
+
+  /**
+   * The rows for the page's items, in the page's order: each named for
+   * the reader, its first code, its category's path, and its variants'
+   * stock on hand and status, read for these items alone.
+   */
+  private async rowsOf(
+    tx: Transaction,
+    organizationId: string,
+    locale: Locale,
+    ids: string[],
+  ): Promise<ProductSummary[]> {
+    if (ids.length === 0) return [];
+
+    const org = sql`${organizationId}::uuid`;
+    const items = sql`(${sql.join(
+      ids.map((id) => sql`${id}::uuid`),
+      sql`, `,
+    )})`;
+
+    const details = await tx
+      .select({
+        id: products.id,
+        type: products.type,
+        displayName: namesIn(locale, organizationId).productName,
+        // Its codes in their order, a number by its value: FOC-30 before
+        // FOC-120.
+        sku: sql<string>`(
+          select pv.sku from product_variants pv
+          where pv.organization_id = ${org}
+            and pv.product_id = products.id
+          order by pv.sku collate numeric_order, pv.id
+          limit 1
+        )`,
+        categoryId: products.categoryId,
+        path: sql<string[] | null>`(
+          select cp.names from ${categoryPaths(organizationId)} cp
+          where cp.id = products.category_id
+        )`,
+        coverFileId: coverOf(),
+        isActive: products.isActive,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+      })
+      .from(products)
+      .where(
+        and(
+          eq(products.organizationId, organizationId),
+          inArray(products.id, ids),
+        ),
+      );
+
+    const { rows: stock } = await tx.execute<StockRow>(sql`
+      select s.product_id, s.variants, s.unit, s.on_hand
+      from ${itemStock(organizationId, items)} s
+    `);
+    const today = await todayOf(tx, organizationId);
+    const { rows: statuses } = await tx.execute<StatusRow>(sql`
+      select s.product_id, s.status
+      from ${itemStockStatus(organizationId, today, items)} s
+    `);
+
+    const byId = new Map(details.map((row) => [row.id, row]));
+    const stockOf = new Map(stock.map((row) => [row.product_id, row]));
+    const statusOf = new Map(
+      statuses.map((row) => [row.product_id, row.status]),
+    );
+
+    return ids.map((id) => {
+      const row = byId.get(id)!;
+      const held = stockOf.get(id)!;
+      return {
+        id,
+        type: row.type as ProductType,
+        displayName: row.displayName,
+        sku: row.sku,
+        variantCount: held.variants,
+        category:
+          row.categoryId && row.path
+            ? { id: row.categoryId, path: row.path }
+            : null,
+        coverFileId: row.coverFileId,
+        isActive: row.isActive,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        onHand: held.on_hand,
+        unitOfMeasure: held.unit,
+        stockStatus: statusOf.get(id) ?? null,
+      };
     });
   }
 
   /**
    * The catalogue as a spreadsheet (ADR-057): a row per variant, with its
-   * product, and the product's name in each language it has. The products
-   * its list shows: those its search finds, and only the discontinued ones
-   * when asked, each with every variant. One query, at most EXPORT_LIMIT +
-   * 1 rows, for withinLimit to judge.
+   * product, of the items the list shows (ADR-092), by its own filters and
+   * in its order, each with every variant, by code. Names are the base
+   * ones, with the product's and the variant's in each language they have.
+   * One query, at most EXPORT_LIMIT + 1 rows, for withinLimit to judge.
    */
-  exportRows(query: ExportProductsDto = {}) {
+  exportRows(
+    query: ExportProductsDto,
+    locale: Locale,
+  ): Promise<ProductExportRow[]> {
     const terms = query.search ? searchTerms(query.search) : null;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const translated = (locale: string) => sql<string | null>`(
-        select ${productTranslations.name} from ${productTranslations}
-        where ${productTranslations.productId} = ${products.id}
-          and ${productTranslations.locale} = ${locale}
-      )`;
+      const org = sql`${organizationId}::uuid`;
+      const { parts, joins } = itemOrder(query, locale, organizationId, terms);
 
-      return tx
-        .select({
-          id: productVariants.id,
-          sku: productVariants.sku,
-          productName: products.name,
-          variantName: productVariants.name,
-          type: products.type,
-          unitOfMeasure: productVariants.unitOfMeasure,
-          tracksLots: productVariants.tracksLots,
-          discontinued: sql<boolean>`not (${products.isActive} and ${productVariants.isActive})`,
-          nameFrench: translated('fr-CA'),
-          nameChinese: translated('zh-Hans'),
-        })
-        .from(productVariants)
-        .innerJoin(
-          products,
-          and(
-            eq(products.id, productVariants.productId),
-            eq(products.organizationId, organizationId),
-          ),
-        )
-        .where(
-          and(
-            eq(productVariants.organizationId, organizationId),
-            terms ? foundBy(terms, organizationId) : undefined,
-            query.discontinued === 'true'
-              ? eq(products.isActive, false)
-              : undefined,
-          ),
-        )
-        .orderBy(asc(products.name), asc(productVariants.sku))
-        .limit(EXPORT_LIMIT + 1);
+      const { rows } = await tx.execute<{
+        id: string;
+        sku: string;
+        product_name: string;
+        variant_name: string | null;
+        type: ProductType;
+        category: string[] | null;
+        unit_of_measure: string;
+        tracks_lots: boolean;
+        discontinued: boolean;
+        product_names: Record<string, string> | null;
+        variant_names: Record<string, string> | null;
+      }>(sql`
+        select pv.id, pv.sku, ${products.name} as product_name,
+          pv.name as variant_name, ${products.type} as type,
+          shelf.names as category, pv.unit_of_measure, pv.tracks_lots,
+          not (${products.isActive} and pv.is_active) as discontinued,
+          (
+            select jsonb_object_agg(pt.locale, pt.name)
+            from product_translations pt
+            where pt.organization_id = ${org}
+              and pt.product_id = ${products.id}
+          ) as product_names,
+          (
+            select jsonb_object_agg(vt.locale, vt.name)
+            from variant_translations vt
+            where vt.organization_id = ${org} and vt.variant_id = pv.id
+          ) as variant_names
+        from ${products}
+        ${joins}
+        join product_variants pv
+          on pv.product_id = ${products.id} and pv.organization_id = ${org}
+        left join ${categoryPaths(organizationId)} shelf
+          on shelf.id = ${products.categoryId}
+        where ${and(
+          eq(products.organizationId, organizationId),
+          matchedBy(query, terms, organizationId),
+          shownOf(query),
+        )}
+        order by ${sql.join(orderOf(parts), sql`, `)},
+          pv.sku collate numeric_order, pv.id
+        limit ${EXPORT_LIMIT + 1}
+      `);
+
+      return rows.map((row) => ({
+        id: row.id,
+        sku: row.sku,
+        productName: row.product_name,
+        variantName: row.variant_name,
+        type: row.type,
+        category: row.category,
+        unitOfMeasure: row.unit_of_measure,
+        tracksLots: row.tracks_lots,
+        discontinued: row.discontinued,
+        productNames: row.product_names ?? {},
+        variantNames: row.variant_names ?? {},
+      }));
     });
   }
 
@@ -248,7 +428,7 @@ export class ProductsService {
 
     if (!product)
       throw new NotFoundException(
-        t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+        t({ id: 'products.suchProduct', defaultMessage: 'No such item' }),
       );
 
     // Its variants with the names shown, and its gallery, the cover first
@@ -309,6 +489,7 @@ export class ProductsService {
       displayName: variants[0].productName,
       description: product.description,
       isActive: product.isActive,
+      categoryId: product.categoryId,
       images: publicImages(images),
       translations: translations.map(({ locale, name, description }) => ({
         locale,
@@ -334,6 +515,15 @@ export class ProductsService {
   async create(input: CreateProductDto) {
     try {
       return await this.tenantDb.transaction(async (tx, organizationId) => {
+        if (input.categoryId) {
+          await assertCategoryIn(
+            tx,
+            organizationId,
+            input.categoryId,
+            UNKNOWN_CATEGORY,
+          );
+        }
+
         const [product] = await tx
           .insert(products)
           .values({
@@ -342,6 +532,7 @@ export class ProductsService {
             name: input.name,
             namePinyin: namePinyin(input.name),
             description: input.description,
+            categoryId: input.categoryId ?? null,
           })
           .returning();
 
@@ -363,19 +554,14 @@ export class ProductsService {
         return { ...product, variants: [variant] };
       });
     } catch (error) {
+      if (isForeignKeyViolation(error, CATEGORY_KEY)) {
+        throw new BadRequestException(UNKNOWN_CATEGORY);
+      }
       if (isUniqueViolation(error)) {
         // The only unique constraint on either table. Naming the SKU tells the
         // caller whether they meant the existing item or have a collision in
         // their own numbering — "already exists" makes them go hunting.
-        throw new ConflictException(
-          t(
-            {
-              id: 'products.skuSkuUse',
-              defaultMessage: 'SKU {sku} is already in use',
-            },
-            { sku: input.variant.sku },
-          ),
-        );
+        throw await this.codeInUse(input.variant.sku);
       }
       throw error;
     }
@@ -389,16 +575,261 @@ export class ProductsService {
 
     if (!existing)
       throw new NotFoundException(
-        t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+        t({ id: 'products.suchProduct', defaultMessage: 'No such item' }),
       );
 
-    await this.tenantDb.update(
-      products,
-      { ...input, ...pinyinOf(input.name) },
-      eq(products.id, productId),
-    );
+    if (
+      input.categoryId !== undefined &&
+      input.categoryId !== existing.categoryId
+    ) {
+      const categoryId = input.categoryId;
+      if (categoryId) {
+        await this.tenantDb.transaction((tx, organizationId) =>
+          assertCategoryIn(tx, organizationId, categoryId, UNKNOWN_CATEGORY),
+        );
+      }
+      // From and to, by name (ADR-076). Only when it moves: a previous
+      // equal to the new would mark the whole save unchanged, a rename
+      // sent beside it included, and write no entry.
+      recordPrevious({ categoryId: existing.categoryId });
+    }
+    // Its type and Discontinue, from and to, likewise only when they
+    // change (ADR-092): the item moves tab, or leaves the list.
+    if (input.type !== undefined && input.type !== existing.type) {
+      recordPrevious({ type: existing.type });
+    }
+    if (input.isActive !== undefined && input.isActive !== existing.isActive) {
+      recordPrevious({ isActive: existing.isActive });
+    }
+
+    try {
+      await this.tenantDb.update(
+        products,
+        { ...input, ...pinyinOf(input.name) },
+        eq(products.id, productId),
+      );
+    } catch (error) {
+      if (isForeignKeyViolation(error, CATEGORY_KEY)) {
+        throw new BadRequestException(UNKNOWN_CATEGORY);
+      }
+      throw error;
+    }
 
     this.logger.log(`Product ${productId} updated`);
+  }
+
+  /**
+   * A code already in use, refused naming the item that has it, by its
+   * base name as every refusal names an item, and asking for another
+   * (#306's 35); its id beside, for the form to open it (ADR-092). The
+   * code is unique in the organization alone (ADR-023).
+   */
+  private async codeInUse(sku: string | undefined) {
+    const [holder] = sku
+      ? await this.tenantDb.transaction((tx, organizationId) =>
+          tx
+            .select({ id: products.id, name: products.name })
+            .from(productVariants)
+            .innerJoin(
+              products,
+              and(
+                eq(products.id, productVariants.productId),
+                eq(products.organizationId, organizationId),
+              ),
+            )
+            .where(
+              and(
+                eq(productVariants.organizationId, organizationId),
+                eq(productVariants.sku, sku),
+              ),
+            ),
+        )
+      : [];
+
+    return new ConflictException(
+      holder
+        ? withCode(
+            t(
+              {
+                id: 'products.codeInUse',
+                defaultMessage:
+                  'Code {sku} is already used by {item}. Choose another code.',
+              },
+              { sku: sku ?? '', item: holder.name },
+            ),
+            ERROR_CODES.codeInUse,
+            { productId: holder.id },
+          )
+        : t(
+            {
+              id: 'products.codeTaken',
+              defaultMessage:
+                'Code {sku} is already used by another item. Choose another code.',
+            },
+            { sku: sku ?? '' },
+          ),
+    );
+  }
+
+  /**
+   * Several items changed at once (ADR-092), each to its own category or
+   * in use or not, in one transaction: every item and every category named
+   * is this organization's, or nothing changes (ADR-003). Each item that
+   * changed is recorded in History, as its own Save would record it, in
+   * the same transaction. The answer is each item's values before, in the
+   * order sent, which Undo sends back.
+   */
+  async changeMany(
+    changes: ProductChangeDto[],
+    actor: RequestContext,
+  ): Promise<ProductChange[]> {
+    try {
+      return await this.tenantDb.transaction(async (tx, organizationId) => {
+        const ids = changes.map((change) => change.id);
+        const rows = await tx
+          .select({
+            id: products.id,
+            name: products.name,
+            categoryId: products.categoryId,
+            isActive: products.isActive,
+          })
+          .from(products)
+          .where(
+            and(
+              eq(products.organizationId, organizationId),
+              inArray(products.id, ids),
+            ),
+          )
+          .for('update');
+        if (rows.length !== ids.length) {
+          throw new BadRequestException(
+            t({
+              id: 'products.changeUnknownItem',
+              defaultMessage:
+                'One of these items was not found. Refresh the list, and try again.',
+            }),
+          );
+        }
+        const row = new Map(rows.map((each) => [each.id, each]));
+
+        // Every category named, sent or left, for the check and History.
+        const named = new Set(
+          changes.flatMap((change) =>
+            [change.categoryId, row.get(change.id)!.categoryId].filter(
+              (id): id is string => Boolean(id),
+            ),
+          ),
+        );
+        const categories =
+          named.size > 0
+            ? await tx
+                .select({
+                  id: productCategories.id,
+                  name: productCategories.name,
+                })
+                .from(productCategories)
+                .where(
+                  and(
+                    eq(productCategories.organizationId, organizationId),
+                    inArray(productCategories.id, [...named]),
+                  ),
+                )
+            : [];
+        const categoryName = new Map(
+          categories.map((category) => [category.id, category.name]),
+        );
+        if (
+          changes.some(
+            (change) =>
+              change.categoryId && !categoryName.has(change.categoryId),
+          )
+        ) {
+          throw new BadRequestException(UNKNOWN_CATEGORY);
+        }
+        // A category as History names it (ADR-076): its id and its name.
+        const reference = (id: string | null) =>
+          id ? { id, label: categoryName.get(id) ?? null } : null;
+
+        const moved = changes.flatMap((change) => {
+          const before = row.get(change.id)!;
+          const moves =
+            change.categoryId !== undefined &&
+            change.categoryId !== before.categoryId;
+          const turns =
+            change.isActive !== undefined &&
+            change.isActive !== before.isActive;
+          return moves || turns ? [{ change, before, moves, turns }] : [];
+        });
+
+        if (moved.length > 0) {
+          await tx.execute(sql`
+            update ${products} set
+              category_id = case when v.moves then v.category_id
+                else ${products.categoryId} end,
+              is_active = coalesce(v.is_active, ${products.isActive})
+            from (values ${sql.join(
+              moved.map(
+                ({ change, moves, turns }) =>
+                  sql`(${change.id}::uuid, ${moves}::boolean,
+                    ${moves ? (change.categoryId ?? null) : null}::uuid,
+                    ${turns ? change.isActive! : null}::boolean)`,
+              ),
+              sql`, `,
+            )}) as v(id, moves, category_id, is_active)
+            where ${products.organizationId} = ${organizationId}::uuid
+              and ${products.id} = v.id
+          `);
+
+          await tx.insert(auditLog).values(
+            moved.map(({ change, before, moves, turns }) => ({
+              organizationId,
+              actorId: actor.userId,
+              action: AUDIT_ACTIONS.PRODUCT_UPDATED,
+              resourceType: 'product',
+              resourceId: change.id,
+              resourceLabel: before.name,
+              payload: {
+                ...(moves
+                  ? {
+                      categoryId: {
+                        from: reference(before.categoryId),
+                        to: reference(change.categoryId ?? null),
+                      },
+                    }
+                  : {}),
+                ...(turns
+                  ? {
+                      isActive: { from: before.isActive, to: change.isActive },
+                    }
+                  : {}),
+              },
+              ip: actor.ip,
+              userAgent: actor.userAgent,
+            })),
+          );
+        }
+
+        this.logger.log(`${moved.length} of ${changes.length} items changed`);
+        return changes.map((change) => {
+          const before = row.get(change.id)!;
+          return {
+            id: change.id,
+            ...(change.categoryId !== undefined
+              ? { categoryId: before.categoryId }
+              : {}),
+            ...(change.isActive !== undefined
+              ? { isActive: before.isActive }
+              : {}),
+          };
+        });
+      });
+    } catch (error) {
+      // A category deleted by someone else in the moment between.
+      if (isForeignKeyViolation(error, CATEGORY_KEY)) {
+        throw new BadRequestException(UNKNOWN_CATEGORY);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -415,7 +846,7 @@ export class ProductsService {
 
     if (!product)
       throw new NotFoundException(
-        t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+        t({ id: 'products.suchProduct', defaultMessage: 'No such item' }),
       );
 
     try {
@@ -433,15 +864,7 @@ export class ProductsService {
       return variant;
     } catch (error) {
       if (isUniqueViolation(error)) {
-        throw new ConflictException(
-          t(
-            {
-              id: 'products.skuSkuUse',
-              defaultMessage: 'SKU {sku} is already in use',
-            },
-            { sku: input.sku },
-          ),
-        );
+        throw await this.codeInUse(input.sku);
       }
       throw error;
     }
@@ -483,15 +906,7 @@ export class ProductsService {
       recordPrevious({ sku: variant.sku });
     } catch (error) {
       if (isUniqueViolation(error)) {
-        throw new ConflictException(
-          t(
-            {
-              id: 'products.skuSkuUse',
-              defaultMessage: 'SKU {sku} is already in use',
-            },
-            { sku: input.sku },
-          ),
-        );
+        throw await this.codeInUse(input.sku);
       }
       throw error;
     }
@@ -519,7 +934,7 @@ export class ProductsService {
 
       if (!product)
         throw new NotFoundException(
-          t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+          t({ id: 'products.suchProduct', defaultMessage: 'No such item' }),
         );
 
       recordContext({ names: describeNames(input.translations) });

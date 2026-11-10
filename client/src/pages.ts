@@ -89,6 +89,11 @@ export const TaxCodesPage = lazyNamed(
   'TaxCodesPage',
 );
 
+export const CategoriesPage = lazyNamed(
+  () => import('./products/categories-page'),
+  'CategoriesPage',
+);
+
 export const ExchangeRatesPage = lazyNamed(
   () => import('./settings/exchange-rates-page'),
   'ExchangeRatesPage',

@@ -13,6 +13,7 @@ import {
   organizations,
   partners,
   priceLists,
+  productCategories,
   productionOrders,
   productLicences,
   products,
@@ -50,6 +51,14 @@ type Resolver = (db: TenantDb, id: string) => Promise<string | undefined>;
 const RESOLVERS: Record<string, Resolver> = {
   product: async (db, id) => {
     const [row] = await db.select(products, eq(products.id, id));
+    return row?.name;
+  },
+
+  product_category: async (db, id) => {
+    const [row] = await db.select(
+      productCategories,
+      eq(productCategories.id, id),
+    );
     return row?.name;
   },
 

@@ -6,6 +6,14 @@ how to read the diagram.
 
 ```mermaid
 erDiagram
+  product_categories {
+    uuid id PK
+    uuid parent_id FK
+    text name
+    text name_pinyin
+    timestamptz created_at
+    timestamptz updated_at
+  }
   product_images {
     uuid id PK
     uuid product_id FK
@@ -49,6 +57,7 @@ erDiagram
     text name
     text description
     boolean is_active
+    uuid category_id FK
     timestamptz created_at
     timestamptz updated_at
     text name_pinyin
@@ -62,10 +71,12 @@ erDiagram
     timestamptz updated_at
     text name_pinyin
   }
+  product_categories }o--o| product_categories : "parent_id"
   product_images }o--|| products : "product_id"
   product_images }o--|| files : "file_id"
   product_translations }o--|| products : "product_id"
   product_variants }o--|| products : "product_id"
+  products }o--o| product_categories : "category_id"
   variant_translations }o--|| product_variants : "variant_id"
 ```
 

@@ -1,4 +1,4 @@
-import { or, type SQL, sql } from 'drizzle-orm';
+import { and, eq, or, type SQL, sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
 import {
@@ -86,4 +86,23 @@ export function itemRank(
     pinyinRank(shownPinyin, terms),
     pinyinRank(products.namePinyin, terms),
   );
+}
+
+/** The outer product's variants, in the organization. */
+export function variantsOf(organizationId: string): SQL {
+  return and(
+    eq(productVariants.organizationId, organizationId),
+    eq(productVariants.productId, products.id),
+  )!;
+}
+
+/**
+ * The products a search finds, through any of their variants, as an item
+ * is found everywhere: Items' list, its counts and its export.
+ */
+export function foundBy(terms: SearchTerms, organizationId: string): SQL {
+  return sql`exists (
+    select 1 from ${productVariants}
+    where ${variantsOf(organizationId)} and ${itemMatches(terms, organizationId)}
+  )`;
 }

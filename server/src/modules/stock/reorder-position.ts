@@ -200,6 +200,10 @@ export function usableByLocation(
  * as a share of it first (`low_first`, `share`), then the rest, by SKU,
  * which the caller joins.
  *
+ * `variants` is the one item asked for, by its id, or a set of them, a
+ * parenthesised list or subquery of ids: Items' rows, a page at a time
+ * (ADR-092).
+ *
  * With `typed`, the one item asked for is worked out against the values
  * given instead of its kept point, whether it has one or not: the
  * dialog's preview, before anything is saved. Its row's id is null.
@@ -207,11 +211,17 @@ export function usableByLocation(
 export function positionsOf(
   organizationId: string,
   today: string,
-  variantId?: string,
+  variants?: string | SQL,
   typed?: TypedPoint,
 ): SQL {
   const org = sql`${organizationId}::uuid`;
-  const only = variantId ? sql`and rp.variant_id = ${variantId}::uuid` : sql``;
+  const variantId = typeof variants === 'string' ? variants : undefined;
+  const only =
+    variants === undefined
+      ? sql``
+      : variantId
+        ? sql`and rp.variant_id = ${variantId}::uuid`
+        : sql`and rp.variant_id in ${variants}`;
   const asked = sql`(select pt.variant_id from points pt)`;
 
   const figures: PositionFigures = {

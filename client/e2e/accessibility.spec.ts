@@ -8,6 +8,7 @@ import type {
 
 import { expect, test } from './fixtures';
 import {
+  createCategory,
   created,
   createLocation,
   createPartner,
@@ -430,11 +431,53 @@ const SCREENS: Screen[] = [
   { name: 'credit notes', path: () => '/credit-notes', ready: heading },
   { name: 'returns', path: () => '/return-authorizations', ready: heading },
   { name: 'production', path: () => '/production', ready: heading },
-  { name: 'products', path: () => '/products', ready: heading },
+  { name: 'items', path: () => '/items', ready: heading },
   {
-    name: 'a product',
-    path: (seed) => `/products/${seed.productId}`,
+    name: 'items, a row ticked and the bar over it',
+    path: () => '/items',
+    open: async (page) => {
+      await page.getByRole('checkbox', { name: /^Select (?!every)/ }).check();
+    },
+    ready: (page) => page.getByRole('region', { name: 'Selected items' }),
+  },
+  {
+    name: 'items, Set category',
+    path: () => '/items',
+    open: async (page) => {
+      await page.getByRole('checkbox', { name: /^Select (?!every)/ }).check();
+      await page.getByRole('button', { name: 'Set category' }).click();
+    },
+    ready: (page) =>
+      page.getByRole('dialog', { name: 'Set the category of 1 item' }),
+  },
+  {
+    name: 'items, Add item',
+    path: () => '/items',
+    open: (page) =>
+      page.getByRole('button', { name: 'Add item', exact: true }).click(),
+    ready: (page) => page.getByRole('dialog', { name: 'Add an item' }),
+  },
+  {
+    name: 'items at 390 px, the filters and sort in their sheet',
+    path: () => '/items',
+    open: async (page) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.getByRole('button', { name: 'Filters' }).click();
+    },
+    ready: (page) => page.getByRole('heading', { name: 'Filters and sort' }),
+  },
+  {
+    name: 'an item',
+    path: (seed) => `/items/${seed.productId}`,
     ready: heading,
+  },
+  {
+    name: 'an item, Edit',
+    path: (seed) => `/items/${seed.productId}`,
+    // The item's Edit, in its header, before each variant's.
+    open: (page) =>
+      page.getByRole('button', { name: 'Edit', exact: true }).first().click(),
+    ready: (page) => page.getByRole('dialog', { name: 'Edit the item' }),
   },
   { name: 'partners', path: () => '/partners', ready: heading },
   { name: 'locations', path: () => '/locations', ready: heading },
@@ -496,6 +539,16 @@ const SCREENS: Screen[] = [
     ready: heading,
   },
   { name: 'price lists', path: () => '/settings/price-lists', ready: heading },
+  { name: 'categories', path: () => '/settings/categories', ready: heading },
+  {
+    name: 'categories, a delete refused at its row',
+    path: () => '/settings/categories',
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Actions for Vitamins' }).click();
+      await page.getByRole('menuitem', { name: 'Delete' }).click();
+    },
+    ready: (page) => page.getByRole('alert').filter({ hasText: 'still holds' }),
+  },
   { name: 'roles', path: () => '/settings/roles', ready: heading },
   {
     name: 'a made role',
@@ -533,7 +586,12 @@ async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
   const { token } = await inviteByLink(api, uniqueEmail('a11y-joined'));
   await (await joinByLink(token, 'E2E Joiner')).dispose();
 
-  const product = await createProduct(api, { tracksLots: true });
+  // In a category, so Items' rows show its path and Settings › Categories
+  // has one that holds an item (ADR-092).
+  const product = await createProduct(api, {
+    tracksLots: true,
+    categoryId: await createCategory(api, 'Vitamins'),
+  });
   // A weight, so the variant's chevron is drawn and axe checks that it is
   // named (ADR-075): without one, the product page has no chevron at all.
   const weighed = await api.patch(

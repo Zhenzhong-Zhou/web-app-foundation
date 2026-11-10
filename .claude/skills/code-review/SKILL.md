@@ -152,10 +152,11 @@ findings.
 
 ## 5. Post, when asked
 
-Write the report to a file and post it as a comment review:
+Write the report to `review/code-review-<number>.md`, which git and the
+docs checks ignore, and post it as a comment review:
 
 ```bash
-gh pr review <number> --comment --body-file review.md
+gh pr review <number> --comment --body-file review/code-review-<number>.md
 ```
 
 GitHub does not let an author approve their own pull request, so a

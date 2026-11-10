@@ -39,6 +39,8 @@ const PAGES: Record<AuditLinkKind, Page | null> = {
   // Its page (ADR-080), which every member may read.
   role: { path: (id) => `/settings/roles/${id}`, may: 'roles.view' },
   location: null,
+  // Settings › Categories lists them all, with no page for one.
+  product_category: null,
   tax_code: null,
   variant: null,
   order_line: null,

@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 
 /**
@@ -62,6 +63,11 @@ export const id: AddressFilter<string> = {
  * leaves the list rather than stepping back through each filter pressed;
  * `null` removes a key. The link's state is kept, so a page a link inside
  * the app opened still offers Back (#341).
+ *
+ * The one writer of a list's address: its filters, its sort (useListSort),
+ * its search (useListSearch) and its tab (useTab), so the rule lives here
+ * alone (#505's 58). The same function until the address or its state
+ * changes, so an effect may depend on it.
  */
 export function useAddressWrite(): (
   changes: Record<string, string | null>,
@@ -69,18 +75,21 @@ export function useAddressWrite(): (
   const [, setParams] = useSearchParams();
   const { state } = useLocation();
 
-  return (changes) =>
-    setParams(
-      (previous) => {
-        const next = new URLSearchParams(previous);
-        for (const [key, value] of Object.entries(changes)) {
-          if (value === null) next.delete(key);
-          else next.set(key, value);
-        }
-        return next;
-      },
-      { replace: true, state },
-    );
+  return useCallback(
+    (changes) =>
+      setParams(
+        (previous) => {
+          const next = new URLSearchParams(previous);
+          for (const [key, value] of Object.entries(changes)) {
+            if (value === null) next.delete(key);
+            else next.set(key, value);
+          }
+          return next;
+        },
+        { replace: true, state },
+      ),
+    [setParams, state],
+  );
 }
 
 /** Any filter, whatever its value: what `useListFilters` is given. */

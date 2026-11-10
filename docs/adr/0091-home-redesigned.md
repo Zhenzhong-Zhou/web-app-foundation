@@ -3,6 +3,7 @@ status: accepted
 date: 2026-11-04
 areas: [home, organizations, ui]
 amends: [ADR-051, ADR-055, ADR-057, ADR-058, ADR-069, ADR-079, ADR-090]
+amended-by: [ADR-092]
 ---
 
 # ADR-091 — Home, redesigned: a few large tiles that open their lists (amends ADR-051, ADR-055, ADR-057, ADR-058, ADR-069, ADR-079 and ADR-090)
@@ -473,7 +474,8 @@ translations, before 30 November, then Orders.
 - **An organization's default Home per role,** set by an Owner. Trigger:
   an Owner asking to set Home for the people in a role.
 - **Which lists sort, and by what,** a rule for the design language.
-  Trigger: each list's own turn, the rule written with the first.
+  Trigger: each list's own turn, the rule written with the first. Taken
+  in November 2026 by ADR-092, Items being the first.
 - **A drafts tile.** Trigger: Customise Home's planning, or a draft
   someone forgot because nothing showed it. Taken in November 2026, by
   Customise Home: this ADR's amendment of that month.
@@ -765,3 +767,10 @@ found (5631d0d8, 3cdebcd7). The canvas keeps every look drawn, a row each.
   16.7, with no Popover API), Android WeChat in 中文, a phone held
   sideways and an old tab across the deploy; then the router's pull
   request, then Items (#476) and Movements (#470).
+
+## Amendment (November 2026) — which lists sort, taken by Items (ADR-092)
+
+Its Deferred "Which lists sort, and by what" fired with Items, the first
+list built to the design language after Home. ADR-092 writes the rule
+into `docs/design-language.md`, with ADR-090's amendment of the same
+month.

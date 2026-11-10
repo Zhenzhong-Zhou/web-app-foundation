@@ -12,9 +12,9 @@ import { HistoryButton } from './history-button';
 const ENTRY: AuditRecord = {
   id: 'audit-1',
   action: 'product.variant_updated',
-  actionName: 'Product variant updated',
+  actionName: 'Item variant updated',
   resourceType: 'product',
-  resourceTypeName: 'Product',
+  resourceTypeName: 'Item',
   resourceId: 'product-1',
   resourceLabel: 'Widget',
   actorId: 'user-1',
@@ -24,7 +24,7 @@ const ENTRY: AuditRecord = {
   payload: { sku: { from: 'WIDGET-1', to: 'RENAMED-1' } },
   details: [
     {
-      field: 'SKU',
+      field: 'Code',
       changed: true,
       from: { text: 'WIDGET-1' },
       value: { text: 'RENAMED-1' },
@@ -58,12 +58,10 @@ describe('HistoryButton', () => {
     renderButton(['audit.view']);
     await userEvent.click(screen.getByRole('button', { name: 'History' }));
 
-    expect(
-      await screen.findByText('Product variant updated'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Item variant updated')).toBeInTheDocument();
     // Each code in an element of its own, kept whole (ADR-081).
-    expect(screen.getByText(/^SKU:/)).toHaveTextContent(
-      'SKU: WIDGET-1 → RENAMED-1',
+    expect(screen.getByText(/^Code:/)).toHaveTextContent(
+      'Code: WIDGET-1 → RENAMED-1',
     );
 
     // Scoped to this record, or the drawer is the whole organization's log.

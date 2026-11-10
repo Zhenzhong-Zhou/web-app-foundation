@@ -1,6 +1,6 @@
 # Production
 
-Un ordre de fabrication consomme des composants et produit un article fini, fabriqué par vous ou par un fabricant à façon. Il lui faut une recette, qui se trouve sur la page du produit.
+Un ordre de fabrication consomme des composants et produit un article fini, fabriqué par vous ou par un fabricant à façon. Il lui faut une recette, qui se trouve sur la page de l’article.
 
 ## Planifier un ordre {#plan}
 
@@ -29,16 +29,16 @@ Un ordre de fabrication consomme des composants et produit un article fini, fabr
 
 ## Les mots que vous verrez {#words}
 
-- **Recette** : ce dont un produit est fait. La version qu’utilisent les ordres est celle mise en vigueur sur la page du produit.
+- **Recette** : ce dont un article est fait. La version qu’utilisent les ordres est celle mise en vigueur sur la page de l’article.
 - **Composant** : ce qu’une recette consomme.
 - **Lot** : ce qu’un ordre fabrique, tracé comme un lot reçu.
 - **Planifié**, **En cours**, **Terminé** : un ordre avant son lancement, après, et une fois clos.
 
 ## Si quelque chose est refusé {#refused}
 
-- Un ordre sans recette peut être planifié mais pas lancé. Créez une recette sur la page du produit et mettez-la en vigueur, puis lancez.
+- Un ordre sans recette peut être planifié mais pas lancé. Créez une recette sur la page de l’article et mettez-la en vigueur, puis lancez.
 - Un emplacement à court d’un composant ne peut pas lancer l’ordre. Déplacez-y d’abord le stock, ou prenez-le à un autre emplacement. Le stock réservé pour des ventes confirmées n’est pas pris.
 - Une licence expirée, pas encore en vigueur ou retirée peut empêcher un lancement, selon la [politique de licences](/settings/organization#licences). Une personne qui peut passer outre peut lancer avec un motif, conservé sur l’ordre.
 - L’annulation ne remet pas les composants sortis en place : quelqu’un doit les déplacer.
 
-Voir aussi [Produits](/products) et [Lots](/lots).
+Voir aussi [Articles](/items) et [Lots](/lots).

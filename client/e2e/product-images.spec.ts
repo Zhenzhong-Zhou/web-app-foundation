@@ -9,7 +9,7 @@ const PNG = Buffer.from(
 
 /**
  * A product's gallery (ADR-062): an image added from the product page is
- * its cover, shown beside its name in the Products list.
+ * its cover, shown beside its name in the Items list.
  */
 test('adds an image that becomes the cover in the list', async ({
   page,
@@ -17,7 +17,7 @@ test('adds an image that becomes the cover in the list', async ({
 }) => {
   const product = await createProduct(api);
 
-  await page.goto(`/products/${product.id}`);
+  await page.goto(`/items/${product.id}`);
   await expect(
     page.getByText('Drag photos here', { exact: true }),
   ).toBeVisible();
@@ -35,7 +35,7 @@ test('adds an image that becomes the cover in the list', async ({
     }),
   ).toBeVisible();
 
-  await page.goto('/products');
+  await page.goto('/items');
   await expect(page.getByRole('img', { name: product.name })).toBeVisible();
 });
 
@@ -49,7 +49,7 @@ test('keeps Undo while it has focus, and brings the image back', async ({
   api,
 }) => {
   const product = await createProduct(api);
-  await page.goto(`/products/${product.id}`);
+  await page.goto(`/items/${product.id}`);
   await page.locator('input[type="file"]').setInputFiles({
     name: 'front.png',
     mimeType: 'image/png',

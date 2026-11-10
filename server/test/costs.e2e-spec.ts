@@ -121,7 +121,7 @@ describe('Costs (e2e)', () => {
   async function variant(
     s: Setup,
     sku: string,
-    type: 'good' | 'material' | 'packaging' = 'material',
+    type: 'good' | 'material' | 'packaging' | 'equipment' = 'material',
     tracksLots = false,
   ) {
     return await createVariant(s.agent, {
@@ -598,6 +598,80 @@ describe('Costs (e2e)', () => {
         { sku: 'LID', value: '0.000000', provisional: true },
         { sku: 'SCOOP', value: '20.000000', provisional: false },
       ]);
+    });
+
+    /**
+     * Equipment is a fixed asset, not stock value (ADR-048, amended by
+     * ADR-092): received, held and valued in the ledger as any item is, but
+     * left out of the total, the pools, their export and everything that
+     * waits for a cost, Inventory's filter included.
+     */
+    it('leaves equipment out of stock value and of what waits for a cost, though Inventory holds it', async () => {
+      const s = await setup('alpha');
+      const scoop = await variant(s, 'SCOOP');
+      const filler = await variant(s, 'FILLER', 'equipment');
+      const press = await variant(s, 'PRESS', 'equipment');
+
+      await buy(s, scoop, '10', cad('2'));
+      await buy(s, filler, '1', cad('18500'));
+      // Received with no price: the ledger marks it, but nothing waits on it.
+      await move(s, {
+        variantId: press,
+        toLocationId: s.shelf,
+        quantity: '1',
+        reason: 'receipt',
+      });
+
+      // The ledger values equipment as it values any item.
+      expect(await poolOf(db, filler)).toMatchObject({
+        quantity: '1.0000',
+        value: '18500.000000',
+      });
+
+      // Inventory holds it where it stands.
+      const stock = body<{ entries: { sku: string; quantity: string }[] }>(
+        await s.agent.get('/v1/stock').expect(200),
+      ).entries;
+      expect(
+        stock
+          .map(({ sku, quantity }) => ({ sku, quantity }))
+          .sort((a, b) => a.sku.localeCompare(b.sku)),
+      ).toEqual([
+        { sku: 'FILLER', quantity: '1.0000' },
+        { sku: 'PRESS', quantity: '1.0000' },
+        { sku: 'SCOOP', quantity: '10.0000' },
+      ]);
+
+      const valuation = body<{
+        valuation: {
+          total: string;
+          provisional: boolean;
+          pools: { sku: string }[];
+        };
+      }>(await s.agent.get('/v1/costs/valuation').expect(200)).valuation;
+      expect(valuation).toMatchObject({
+        total: '20.000000',
+        provisional: false,
+      });
+      expect(valuation.pools.map((pool) => pool.sku)).toEqual(['SCOOP']);
+
+      const exported = (
+        await s.agent.get('/v1/costs/valuation/export').expect(200)
+      ).text;
+      expect(exported).toContain('SCOOP');
+      expect(exported).not.toMatch(/FILLER|PRESS/);
+
+      expect(await needsCost(s)).toEqual([]);
+      expect(
+        body<{ entries: unknown[] }>(
+          await s.agent.get('/v1/stock?needsCost=true').expect(200),
+        ).entries,
+      ).toEqual([]);
+      expect(
+        body<{ needsCost: number }>(
+          await s.agent.get('/v1/stock/counts').expect(200),
+        ),
+      ).toMatchObject({ needsCost: 0 });
     });
   });
 

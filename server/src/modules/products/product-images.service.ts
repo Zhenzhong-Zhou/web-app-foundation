@@ -40,7 +40,7 @@ export class ProductImagesService {
             {
               id: 'products.images.full',
               defaultMessage:
-                'A product has at most {max} images. Remove one to add another.',
+                'An item has at most {max} images. Remove one to add another.',
             },
             { max: MAX_PRODUCT_IMAGES },
           ),
@@ -59,7 +59,7 @@ export class ProductImagesService {
         throw new ConflictException(
           t({
             id: 'products.images.duplicate',
-            defaultMessage: 'That image is already on this product.',
+            defaultMessage: 'That image is already on this item.',
           }),
         );
       }
@@ -96,7 +96,7 @@ export class ProductImagesService {
         throw new NotFoundException(
           t({
             id: 'products.images.notFound',
-            defaultMessage: 'No such image on this product',
+            defaultMessage: 'No such image on this item',
           }),
         );
       }
@@ -132,7 +132,7 @@ export class ProductImagesService {
           t({
             id: 'products.images.order',
             defaultMessage:
-              'The new order must list each of this product’s images once.',
+              'The new order must list each of this item’s images once.',
           }),
         );
       }
@@ -172,7 +172,7 @@ async function lockProduct(
     .for('update');
   if (!product) {
     throw new NotFoundException(
-      t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+      t({ id: 'products.suchProduct', defaultMessage: 'No such item' }),
     );
   }
 }

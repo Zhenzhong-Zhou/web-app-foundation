@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-13
 areas: [api]
-amended-by: [ADR-081]
+amended-by: [ADR-081, ADR-092]
 ---
 
 # ADR-068 — OpenAPI from the server, the client's types generated (#19)
@@ -188,3 +188,12 @@ document written to `server/openapi.json`, `package.json`, the fonts)
 lands where it does in the app; its incremental state is kept inside it,
 and it emits no declarations, which `npm run typecheck` would read.
 `api-spec-build.spec.ts` holds the configuration to that.
+
+## Amendment (November 2026) — a change to several answers what its Undo needs (ADR-092)
+
+`PATCH /v1/products` changes up to 500 items at once and answers each
+item's values before the change, for the fields it sent. Its Undo sends
+that answer back to the same route, so the client keeps nothing of its
+own and an Undo after a reload still holds. Such an answer is declared
+and checked like any other: a change to several answers what its Undo
+needs, and nothing more.

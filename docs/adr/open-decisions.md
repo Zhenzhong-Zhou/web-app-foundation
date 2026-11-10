@@ -268,8 +268,9 @@ which filters people actually reach for.
 ## Catalogue attributes deferred with their modules
 
 `products` and
-`product_variants` carry only intrinsic facts today. Category and brand are
-product-level foreign keys and arrive with the catalogue module. Tax class
+`product_variants` carry only intrinsic facts today. Category is a
+product-level foreign key since ADR-092; brand will be one too, when its
+trigger comes ("Category and brand", below). Tax class
 and supplier are *variant*-level — tax bands can differ by size, and a
 supplier quotes a specific pack — and arrive with selling and purchasing
 respectively, supplier as a many-to-many with lead time and pack size.
@@ -290,12 +291,10 @@ each table that needs it.
 
 ## Product list pagination
 
-`GET /v1/products` returns everything, unsorted
-beyond name. Fine at ten products, wrong at two thousand. Keyset pagination
-is the pattern (ADR-018), but products sort by name rather than by a unique
-time-ordered id, so the cursor has to be `(name, id)` compared as a row —
-`name >= last and id > lastId` silently skips rows sharing a name. Build it
-with the filters, once the client shows which filters matter.
+It was decided in ADR-092: Items reads fifty rows
+at a time by keyset paging, its cursor the sort's key and the id compared
+as a row, with the type tabs, the categories and the sorts as its
+filters.
 
 ## Routing and operations
 
@@ -537,17 +536,14 @@ which is receiving or picking, so it arrives with stock movements.
 
 ## Category and brand
 
-Tables, not text columns: "Supplements" typed twelve
-ways is twelve categories and nothing filters. Categories nest — Supplements
-→ Vitamins → Vitamin D — which is the same self-referencing shape as
-`locations`. Both nullable foreign keys on `products`. Build it when a list
-is long enough that scrolling is annoying, which is also when the categories
-will be known rather than guessed. "Series" is deliberately not on this list:
-it means a product line, a collection, or a numbering scheme depending on who
-says it, and a field that vague gets used for all three. The trigger
-fired on 6 November 2026, from a reviewer's feedback on the Products
-page: #476, its own ADR right after ADR-091, which also names the list
-Items.
+Categories were decided in ADR-092: a table and
+not a text column, nested as `locations` are, one tree per organization,
+each item in one category or none, managed in Settings › Categories.
+Brand stays here: a table too, flat, and a nullable foreign key on
+`products`, built when someone asks to find, filter or price by brand.
+"Series" is deliberately not on this list: it means a product line, a
+collection, or a numbering scheme depending on who says it, and a field
+that vague gets used for all three.
 
 ## Bulk create and CSV import
 

@@ -44,7 +44,7 @@ export const AREA_LABELS = defineMessages<Area>({
   },
   products: {
     id: 'account.access.area.products',
-    defaultMessage: 'Products and licences',
+    defaultMessage: 'Items and licences',
   },
   orders: { id: 'account.access.area.orders', defaultMessage: 'Orders' },
   production: {
@@ -80,7 +80,7 @@ const THINGS = defineMessages({
     id: 'account.access.thing.lotHistory',
     defaultMessage: 'each lot’s history',
   },
-  products: { id: 'account.access.thing.products', defaultMessage: 'products' },
+  products: { id: 'account.access.thing.products', defaultMessage: 'items' },
   recipes: { id: 'account.access.thing.recipes', defaultMessage: 'recipes' },
   licences: {
     id: 'account.access.thing.licences',

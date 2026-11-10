@@ -89,6 +89,15 @@ export function namesIn(
 }
 
 /**
+ * A name's sort key (ADR-056): a Chinese name by its pinyin, any other
+ * accent-free, as search_text() reads it. An item's names and its
+ * categories' sort by it.
+ */
+export function nameSortKey(pinyin: SQL, name: SQL): SQL {
+  return sql`coalesce(${pinyin}, search_text(${name}))`;
+}
+
+/**
  * Products in the order of the name shown (ADR-056): a Chinese name by its
  * pinyin, as a Chinese reader expects, and any other accent-free, as
  * search_text() reads it, so a name with no Chinese still sorts among them.
@@ -106,7 +115,7 @@ export function productNameOrder(
     product,
     locale,
     organizationId,
-    sql`coalesce(tr.name_pinyin, search_text(tr.name))`,
+    nameSortKey(sql`tr.name_pinyin`, sql`tr.name`),
   );
 
   return sql`coalesce(${shown}, ${outer}.name_pinyin, search_text(${outer}.name))`;

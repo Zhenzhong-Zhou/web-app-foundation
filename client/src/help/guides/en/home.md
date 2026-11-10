@@ -76,7 +76,7 @@ A new organization gets seven steps instead of a page of zeros, each ticked by w
 
 1. **Your organization**: the address, tax number and currency that invoices need.
 2. **Add a location**, where stock is kept.
-3. **Add a product**: what you buy, make or sell.
+3. **Add an item**: what you buy, make or sell.
 4. **Add a partner**: a customer or a supplier.
 5. **Receive stock**, so there is something to ship.
 6. **Ship and invoice an order**, the whole flow once.

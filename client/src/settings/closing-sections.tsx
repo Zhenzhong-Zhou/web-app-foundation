@@ -112,7 +112,7 @@ function DownloadEverything({
           {intl.formatMessage({
             id: 'settings.export.what',
             defaultMessage:
-              'One ZIP with a spreadsheet file for every kind of record: orders, stock and lots, production, invoices and credit notes with their lines and tax, partners, price lists, the audit log. Every uploaded file comes with it, such as the logo and product images.',
+              'One ZIP with a spreadsheet file for every kind of record: orders, stock and lots, production, invoices and credit notes with their lines and tax, partners, price lists, the audit log. Every uploaded file comes with it, such as the logo and item images.',
           })}
         </Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>

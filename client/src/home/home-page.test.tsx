@@ -759,7 +759,7 @@ describe('HomePage', () => {
     // The next: its button the one filled (Learn more beside it, which
     // needs Help's frame, is help.spec's).
     expect(
-      within(start).getByRole('link', { name: 'Add a product' }),
+      within(start).getByRole('link', { name: 'Add an item' }),
     ).toHaveClass('MuiButton-contained');
     // Every other step one link, its whole row, title and hint.
     expect(

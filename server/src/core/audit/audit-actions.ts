@@ -58,6 +58,14 @@ export const AUDIT_ACTIONS = {
   PRODUCT_VARIANT_ADDED: 'product.variant_added',
   PRODUCT_VARIANT_UPDATED: 'product.variant_updated',
 
+  /**
+   * Items' categories (ADR-092), each by its name: added under its parent,
+   * renamed or moved from and to, and deleted with the name it had.
+   */
+  PRODUCT_CATEGORY_CREATED: 'product_category.created',
+  PRODUCT_CATEGORY_UPDATED: 'product_category.updated',
+  PRODUCT_CATEGORY_DELETED: 'product_category.deleted',
+
   LOCATION_CREATED: 'location.created',
   LOCATION_UPDATED: 'location.updated',
 

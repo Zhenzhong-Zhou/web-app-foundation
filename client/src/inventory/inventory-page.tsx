@@ -5,7 +5,6 @@ import {
   Chip,
   MenuItem,
   Paper,
-  Skeleton,
   Stack,
   Tab,
   Table,
@@ -15,7 +14,6 @@ import {
   TableHead,
   TableRow,
   Tabs,
-  TextField,
   Typography,
 } from '@mui/material';
 import {
@@ -32,17 +30,25 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
-import type { Availability, Location, StockRow } from '../api/types.gen';
+import type {
+  Availability,
+  Location,
+  ProductDetail,
+  StockRow,
+} from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ExportButton } from '../components/export-button';
+import { FilterChips } from '../components/filter-chips';
 import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { PlaceholderRows } from '../components/placeholder-rows';
 import { ProductCover } from '../components/product-cover';
 import { Reference } from '../components/reference';
+import { SelectField } from '../components/select-field';
 import { SortHeader } from '../components/sort-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { api, messageFor } from '../lib/api';
@@ -54,9 +60,7 @@ import {
 } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
-import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useExpiryDays } from '../lib/use-expiry-days';
-import { useFocusAfterRemove } from '../lib/use-focus-after-remove';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { flag, id, useListFilters } from '../lib/use-list-filters';
 import { useListSearch } from '../lib/use-list-search';
@@ -149,7 +153,8 @@ export function InventoryPage() {
  * there. "Expiring soon" is lots within the amber threshold, the expired
  * included; "Expired" is those past their day alone, which Home's late
  * button adds; "Waiting for a cost" is stock whose value is still provisional
- * (ADR-048).
+ * (ADR-048); `productId` is one item alone, every variant in every
+ * location, which a row's stock on Items opens (ADR-092).
  */
 const ADDRESS_FILTERS = {
   expiring: flag,
@@ -157,6 +162,7 @@ const ADDRESS_FILTERS = {
   needsCost: flag,
   includeEmpty: flag,
   locationId: id,
+  productId: id,
 };
 
 /** Expiring soon's and Expired's order: the soonest first, the expired leading. */
@@ -178,10 +184,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
 
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
-  // Focus to the chip in a removed one's place, or the heading (ADR-091's
-  // review).
-  const { row: chipRow, removed } = useFocusAfterRemove();
-  const { expiring, expired, needsCost, includeEmpty } = filters;
+  const { expiring, expired, needsCost, includeEmpty, productId } = filters;
   // Sales sees stock but not locations (ADR-080): the page asks only for
   // what its reader may read, and leaves the Location filter out.
   const canSeeLocations = can('locations.view');
@@ -243,6 +246,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   const stockPath = useMemo(() => {
     const params = new URLSearchParams({ limit: String(PAGE_SIZE) });
     if (locationId) params.set('locationId', locationId);
+    if (productId) params.set('productId', productId);
     if (includeEmpty) params.set('includeEmpty', 'true');
     if (search) params.set('search', search);
     if (expiring) params.set('expiringWithin', String(expiringWithin));
@@ -255,6 +259,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     return `/stock?${params.toString()}`;
   }, [
     locationId,
+    productId,
     includeEmpty,
     search,
     expiring,
@@ -274,6 +279,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
       expiringWithin: String(expiringWithin),
     });
     if (locationId) params.set('locationId', locationId);
+    if (productId) params.set('productId', productId);
     if (includeEmpty) params.set('includeEmpty', 'true');
     if (search) params.set('search', search);
 
@@ -291,7 +297,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     return () => {
       ignore = true;
     };
-  }, [locationId, includeEmpty, search, expiringWithin, changes]);
+  }, [locationId, productId, includeEmpty, search, expiringWithin, changes]);
 
   const {
     entries: rows,
@@ -305,20 +311,51 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     reload,
   } = useKeysetList<StockRow>(stockPath);
 
+  // The item a row's stock on Items opened, named on its chip (ADR-092):
+  // by its rows, in the reader's language, read again with them; with no
+  // rows, by the item's own read, in the language it was asked in. A
+  // reader who may not see items, or a name not read yet, has the chip's
+  // plain words.
+  const fromRows = productId && rows?.length ? rows[0].productName : null;
+  const askItem =
+    productId !== '' && can('products.view') && rows?.length === 0;
+  const itemKey = `${intl.locale} ${productId}`;
+  const [named, setNamed] = useState<{ key: string; name: string } | null>(
+    null,
+  );
+  useEffect(() => {
+    if (!askItem) return;
+    let ignore = false;
+    // The item's read answers with the item itself, not an envelope.
+    void api<ProductDetail>(`/products/${productId}`)
+      .then((product) => {
+        if (!ignore) setNamed({ key: itemKey, name: product.displayName });
+      })
+      // Silent: the chip still says one item, and its × still works.
+      .catch(() => undefined);
+    return () => {
+      ignore = true;
+    };
+  }, [askItem, productId, itemKey]);
+  const namedItem = fromRows ?? (named?.key === itemKey ? named.name : null);
+
   const error = listError ?? setupError;
-  const showSkeleton = useDelayedFlag(loading);
 
   const canAdjust = can('stock.adjust');
 
+  // What is promised: the item's alone while the address names one, as
+  // the stock above it (ADR-092).
+  const availabilityPath = productId
+    ? `/stock/availability?promised=true&productId=${productId}`
+    : '/stock/availability?promised=true';
+
   const loadAvailability = useCallback(async () => {
     try {
-      setAvailability(
-        await api<Availability[]>('/stock/availability?promised=true'),
-      );
+      setAvailability(await api<Availability[]>(availabilityPath));
     } catch (caught) {
       setSetupError(messageFor(caught));
     }
-  }, []);
+  }, [availabilityPath]);
 
   /**
    * After anything that changes a row: the list from its first page, and
@@ -334,14 +371,11 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   useEffect(() => {
     let ignore = false;
 
-    void Promise.all([
-      canSeeLocations ? api<Location[]>('/locations') : Promise.resolve(null),
-      api<Availability[]>('/stock/availability?promised=true'),
-    ])
-      .then(([all, promised]) => {
-        if (ignore) return;
-        setLocations(all);
-        setAvailability(promised);
+    void (
+      canSeeLocations ? api<Location[]>('/locations') : Promise.resolve(null)
+    )
+      .then((all) => {
+        if (!ignore) setLocations(all);
       })
       .catch((caught: unknown) => {
         if (!ignore) setSetupError(messageFor(caught));
@@ -351,6 +385,22 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
       ignore = true;
     };
   }, [canSeeLocations]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    void api<Availability[]>(availabilityPath)
+      .then((promised) => {
+        if (!ignore) setAvailability(promised);
+      })
+      .catch((caught: unknown) => {
+        if (!ignore) setSetupError(messageFor(caught));
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [availabilityPath]);
 
   if (refused) {
     return <RevisionRefusalPage failure={refused} onRetry={reload} />;
@@ -475,62 +525,67 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
         ]}
       >
         {canSeeLocations && (
-          <TextField
+          <SelectField
             id="stock-location"
             size="small"
             label={intl.formatMessage({
               id: 'inventory.location',
               defaultMessage: 'Location',
             })}
-            select
+            emptyLabel={intl.formatMessage({
+              id: 'inventory.everywhere',
+              defaultMessage: 'Everywhere',
+            })}
             value={locations === null ? '' : locationId}
             onChange={(event) => setFilters({ locationId: event.target.value })}
             sx={{ minWidth: rem(200) }}
           >
-            <MenuItem value="">
-              {intl.formatMessage({
-                id: 'inventory.everywhere',
-                defaultMessage: 'Everywhere',
-              })}
-            </MenuItem>
             {leaves.map((location) => (
               <MenuItem key={location.id} value={location.id}>
                 {nameAndCode(location.name, location.code)}
               </MenuItem>
             ))}
-          </TextField>
+          </SelectField>
         )}
       </FilterRow>
 
       {/* What a link narrowed that no button shows, removable: Home's
-          late button, the expired lots alone. */}
-      {expired && (
-        <Stack ref={chipRow} direction="row" spacing={1}>
-          <Chip
-            label={intl.formatMessage({
+          late button, the expired lots alone; a row's stock on Items, the
+          item alone. */}
+      <FilterChips
+        chips={[
+          productId !== '' && {
+            id: 'item',
+            label: namedItem
+              ? intl.formatMessage(
+                  {
+                    id: 'inventory.filter.item',
+                    defaultMessage: 'Item: {name}',
+                  },
+                  { name: namedItem },
+                )
+              : intl.formatMessage({
+                  id: 'inventory.filter.oneItem',
+                  defaultMessage: 'One item',
+                }),
+            onRemove: () => setFilters({ productId: '' }),
+          },
+          expired && {
+            id: 'expired',
+            label: intl.formatMessage({
               id: 'inventory.filter.expired',
               defaultMessage: 'Expired',
-            })}
-            onDelete={(event) => {
-              removed(event);
-              setFilters({ expired: false });
-            }}
-          />
-        </Stack>
-      )}
+            }),
+            onRemove: () => setFilters({ expired: false }),
+          },
+        ]}
+      />
 
       {!failed && (
         <Paper variant="outlined">
-          {loading ? (
-            <Stack sx={{ p: 2 }} spacing={1}>
-              {showSkeleton ? (
-                <>
-                  <Skeleton height={48} />
-                  <Skeleton height={48} />
-                </>
-              ) : null}
-            </Stack>
-          ) : rows?.length ? (
+          {/* The table's head stays while the rows are read, a sort's
+              included, so the header pressed keeps its focus (#505's 54). */}
+          {loading || rows?.length ? (
             <TableContainer>
               <Table size="small">
                 <TableHead>
@@ -538,7 +593,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                     <TableCell>
                       {intl.formatMessage({
                         id: 'products.sku',
-                        defaultMessage: 'SKU',
+                        defaultMessage: 'Code',
                       })}
                     </TableCell>
                     <TableCell>
@@ -579,7 +634,8 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                 </TableHead>
 
                 <TableBody>
-                  {rows.map((row) => (
+                  {loading && <PlaceholderRows columns={7} />}
+                  {rows?.map((row) => (
                     <TableRow key={row.id} hover>
                       <TableCell>
                         <Reference>{row.sku}</Reference>
@@ -669,10 +725,20 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                           id: 'inventory.noMatch',
                           defaultMessage: 'Nothing matches that search.',
                         })
-                      : intl.formatMessage({
-                          id: 'inventory.empty',
-                          defaultMessage: 'Nothing here yet.',
-                        })}
+                      : namedItem
+                        ? // The item a row's stock on Items opened, by name
+                          // (ADR-092's review, 90).
+                          intl.formatMessage(
+                            {
+                              id: 'inventory.emptyItem',
+                              defaultMessage: '{name} has no stock yet.',
+                            },
+                            { name: namedItem },
+                          )
+                        : intl.formatMessage({
+                            id: 'inventory.empty',
+                            defaultMessage: 'Nothing here yet.',
+                          })}
             </EmptyState>
           )}
         </Paper>
@@ -714,7 +780,7 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                     <TableCell>
                       {intl.formatMessage({
                         id: 'products.sku',
-                        defaultMessage: 'SKU',
+                        defaultMessage: 'Code',
                       })}
                     </TableCell>
                     <TableCell>

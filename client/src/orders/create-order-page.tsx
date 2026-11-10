@@ -383,7 +383,7 @@ export function CreateOrderPage() {
           <Alert severity="error">
             {intl.formatMessage({
               id: 'orders.create.loadFailed',
-              defaultMessage: 'Could not load partners and products.',
+              defaultMessage: 'Could not load partners and items.',
             })}
           </Alert>
         )}
@@ -627,6 +627,7 @@ export function CreateOrderPage() {
                     )}
                     loading={!catalogueAnswered}
                     failed={catalogueFailed}
+                    task={direction ?? undefined}
                     value={line.variant?.id ?? ''}
                     onChange={(variantId) =>
                       updateLine(line.key, {

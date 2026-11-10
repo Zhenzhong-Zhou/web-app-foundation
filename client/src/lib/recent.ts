@@ -18,7 +18,7 @@ export const RECENT_PATHS: Record<RecentKind, (id: string) => string> = {
   order: (id) => `/orders/${id}`,
   invoice: (id) => `/invoices/${id}`,
   lot: (id) => `/lots/${id}`,
-  product: (id) => `/products/${id}`,
+  product: (id) => `/items/${id}`,
   partner: (id) => `/partners/${id}`,
   run: (id) => `/production/${id}`,
   return: (id) => `/return-authorizations/${id}`,

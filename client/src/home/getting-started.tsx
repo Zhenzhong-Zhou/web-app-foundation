@@ -48,7 +48,7 @@ const M = defineMessages({
     id: 'home.start.location.hint',
     defaultMessage: 'Where stock is kept: a warehouse, a shelf',
   },
-  productTitle: { id: 'home.start.product', defaultMessage: 'Add a product' },
+  productTitle: { id: 'home.start.product', defaultMessage: 'Add an item' },
   productHint: {
     id: 'home.start.product.hint',
     defaultMessage: 'What you buy, make or sell',
@@ -112,8 +112,8 @@ const STEPS: { key: GettingStartedStep; meta: StepMeta }[] = [
       title: M.productTitle,
       hint: M.productHint,
       action: M.productTitle,
-      to: '/products',
-      learnMore: { guide: 'products', section: 'add' },
+      to: '/items',
+      learnMore: { guide: 'items', section: 'add' },
     },
   },
   {

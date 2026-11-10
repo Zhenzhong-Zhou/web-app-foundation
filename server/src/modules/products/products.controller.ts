@@ -16,26 +16,31 @@ import {
 import type { Response } from 'express';
 
 import { SearchQueryDto } from '../../common/dto/search-query.dto';
-import { csvFile, withinLimit } from '../../common/export';
+import { csvFile, EXPORT_LIMIT, withinLimit } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
+import { CurrentUser } from '../../core/auth/current-user.decorator';
+import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { AcceptLanguage } from '../../i18n/accept-language.decorator';
-import { localeOf } from '../../i18n/translate';
+import { localeOf, t } from '../../i18n/translate';
+import { ChangeProductsDto } from './dto/change-products.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import { ExportProductsDto } from './dto/export-products.dto';
+import { ListProductsDto, UNCATEGORISED } from './dto/list-products.dto';
 import {
   AddProductImageDto,
   OrderProductImagesDto,
 } from './dto/product-images.dto';
 import type {
+  ProductChanges,
   ProductDetail,
   ProductEnvelope,
   ProductImageList,
-  ProductSummary,
+  ProductPage,
   VariantEnvelope,
   VariantOption,
 } from './dto/product-response.dto';
@@ -45,7 +50,7 @@ import {
 } from './dto/set-translations.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
-import { PRODUCT_COLUMNS } from './product-exports';
+import { productColumns } from './product-exports';
 import { ProductImagesService } from './product-images.service';
 import { ProductsService } from './products.service';
 
@@ -56,18 +61,22 @@ export class ProductsController {
     private readonly images: ProductImagesService,
   ) {}
 
+  /**
+   * Items' list (ADR-092): a page, filtered, sorted and counted, with each
+   * row's stock.
+   */
   @Get()
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
   list(
-    @Query() query: SearchQueryDto,
+    @Query() query: ListProductsDto,
     @AcceptLanguage() acceptLanguage?: string,
-  ): Promise<ProductSummary[]> {
-    return this.products.list(localeOf(acceptLanguage), query.search);
+  ): Promise<ProductPage> {
+    return this.products.list(query, localeOf(acceptLanguage));
   }
 
   /**
-   * The catalogue as CSV (ADR-057), a row per variant, of the products its
-   * list shows. Above ':id'.
+   * The catalogue as CSV (ADR-057), a row per variant, of the items its
+   * list shows, by the list's own query (ADR-092). Above ':id'.
    */
   @Get('export')
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
@@ -77,21 +86,35 @@ export class ProductsController {
     @Res({ passthrough: true }) res: Response,
     @AcceptLanguage() acceptLanguage?: string,
   ) {
-    const rows = withinLimit(await this.products.exportRows(query));
-    // The quick filter, not the search: a search is text a person typed,
-    // which stays out of History (ADR-018).
+    const locale = localeOf(acceptLanguage);
+    const rows = withinLimit(
+      await this.products.exportRows(query, locale),
+      // What narrows this list (#306's 38): it has no dates.
+      t(
+        {
+          id: 'products.exportTooMany',
+          defaultMessage:
+            'More than {limit, number} rows match. Choose a type or a category, or search, and export again.',
+        },
+        { limit: EXPORT_LIMIT },
+      ),
+    );
+    // The filters, not the search: a search is text a person typed, which
+    // stays out of History (ADR-018); nor the sort, which narrows nothing.
     recordContext({
       list: 'products',
-      filters: query.discontinued ? { discontinued: query.discontinued } : {},
+      filters: {
+        ...(query.type ? { type: query.type } : {}),
+        ...(query.category === UNCATEGORISED
+          ? { category: query.category }
+          : query.category
+            ? { categoryId: query.category }
+            : {}),
+        ...(query.discontinued ? { discontinued: query.discontinued } : {}),
+      },
       rows: rows.length,
     });
-    return csvFile(
-      res,
-      'products',
-      PRODUCT_COLUMNS,
-      rows,
-      localeOf(acceptLanguage),
-    );
+    return csvFile(res, 'products', productColumns(locale), rows, locale);
   }
 
   /**
@@ -131,6 +154,8 @@ export class ProductsController {
     action: AUDIT_ACTIONS.PRODUCT_CREATED,
     resourceType: 'product',
     resourceId: (response: { product: { id: string } }) => response.product.id,
+    // Its category, by name (ADR-092).
+    fields: ['categoryId'],
   })
   async create(
     @Body() dto: CreateProductDto,
@@ -146,6 +171,22 @@ export class ProductsController {
   }
 
   /**
+   * Several items at once (ADR-092), up to 500: each to its own category,
+   * or in use or not, in one transaction, refused whole when any item or
+   * category is not this organization's. Recorded in History by the
+   * service, an entry for each item that changed, as its own Save would
+   * be. The answer is each item's values before, which Undo sends back.
+   */
+  @Patch()
+  @RequirePermissions(PERMISSIONS.PRODUCTS_UPDATE)
+  async changeMany(
+    @Body() dto: ChangeProductsDto,
+    @CurrentUser() context: RequestContext,
+  ): Promise<ProductChanges> {
+    return { items: await this.products.changeMany(dto.items, context) };
+  }
+
+  /**
    * Discontinuing is an update, not a delete: a product whose variants have
    * movement history cannot be removed without inventing gaps in the ledger.
    * There is no products.delete permission for the same reason.
@@ -157,6 +198,9 @@ export class ProductsController {
     action: AUDIT_ACTIONS.PRODUCT_UPDATED,
     resourceType: 'product',
     resourceId: (_response, request) => request.params.id,
+    // A category from and to, by name, its type and Discontinue from and
+    // to (ADR-092); a name records who and when.
+    fields: ['categoryId', 'type', 'isActive'],
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,

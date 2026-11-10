@@ -78,7 +78,7 @@ const SCREENS = [
   '/credit-notes',
   '/return-authorizations',
   '/production',
-  '/products',
+  '/items',
   '/partners',
   '/account',
   '/settings/organization',

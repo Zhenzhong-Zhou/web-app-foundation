@@ -449,7 +449,7 @@ function readme(organization: string, date: string, locale: Locale): string {
     t({
       id: 'organization.export.readme.files',
       defaultMessage:
-        'The files folder holds every file in use, such as the logo and product images, named by its id in files.csv and its original name.',
+        'The files folder holds every file in use, such as the logo and item images, named by its id in files.csv and its original name.',
     }),
     t({
       id: 'organization.export.readme.documents',
@@ -531,7 +531,8 @@ const GLOSSARY = [
   }),
   t({
     id: 'organization.export.glossary.sku',
-    defaultMessage: 'sku — the code of a product variant, as on its label.',
+    defaultMessage:
+      'sku — a variant’s Code, as the app names it: the organization’s own code for it, unique in the organization, not a barcode.',
   }),
   t({
     id: 'organization.export.glossary.quantity',

@@ -12,24 +12,32 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
-import { FormattedMessage, useIntl } from 'react-intl';
+import { useId, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 
-import type { ProductDetail } from '../api/types.gen';
+import type {
+  OrganizationEnvelope,
+  ProductCategoryList,
+  ProductDetail,
+} from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { RecipePanel } from '../boms/recipe-panel';
 import { PageHeader } from '../components/page-header';
 import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
-import { LANGUAGE_NAMES } from '../lib/locales';
+import { SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { AddVariantDialog } from './add-variant-dialog';
+import { EditItemDialog } from './edit-item-dialog';
 import { EditVariantDialog } from './edit-variant-dialog';
+import { categoryPlaces, pathName } from './item-list';
+import { ItemNames } from './item-names';
+import type { NameAt } from './name-rows';
 import { ProductGallery } from './product-gallery';
 import { productTypeLabel } from './product-types';
 import type { Variant } from './products-page';
@@ -54,9 +62,23 @@ export function ProductDetailPage() {
   } = useResource<ProductDetail>(`/products/${id!}`);
   // Remembered as recently opened, once loaded (ADR-058).
   useRecordOpened('product', id, product !== null && product !== undefined);
+  // Its category's path under its name, and Edit's list (ADR-092).
+  const { data: tree } = useResource<ProductCategoryList>(
+    '/products/categories',
+  );
   const [saving, setSaving] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [editingItem, setEditingItem] = useState(false);
   const [translating, setTranslating] = useState(false);
+  const [namesAt, setNamesAt] = useState<NameAt | null>(null);
+  // The variants' table is named by its heading, as the names' is: two
+  // tables on one page, each told apart by what it holds.
+  const variantsTitleId = useId();
+  // The languages its documents require, every role's to read (ADR-080):
+  // what the names' table marks, and what it says is missing (ADR-092).
+  const { data: organization } =
+    useResource<OrganizationEnvelope>('/organization');
+  const required = organization?.organization.requiredNameLanguages ?? [];
 
   // The SKU being edited, and its draft value. One at a time: editing several
   // rows before saving any would need a dirty-state map and a way to discard,
@@ -130,13 +152,13 @@ export function ProductDetailPage() {
         message={error}
         missingTitle={intl.formatMessage({
           id: 'status.missing.product',
-          defaultMessage: 'This product doesn’t exist',
+          defaultMessage: 'This item doesn’t exist',
         })}
         list={{
-          to: '/products',
+          to: '/items',
           label: intl.formatMessage({
             id: 'layout.nav.products',
-            defaultMessage: 'Products',
+            defaultMessage: 'Items',
           }),
         }}
         onRetry={() => void reload()}
@@ -148,6 +170,18 @@ export function ProductDetailPage() {
   // the only two ways product stays null.
   if (!product) return null;
 
+  // Its category's path from the top, once the tree is read; Uncategorised
+  // with none (ADR-092).
+  const place = categoryPlaces(tree?.categories ?? []).find(
+    (each) => each.id === product.categoryId,
+  );
+  const categoryPath = product.categoryId
+    ? place && pathName(place.path)
+    : intl.formatMessage({
+        id: 'products.category.none',
+        defaultMessage: 'Uncategorised',
+      });
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -155,20 +189,27 @@ export function ProductDetailPage() {
           {
             label: intl.formatMessage({
               id: 'layout.nav.products',
-              defaultMessage: 'Products',
+              defaultMessage: 'Items',
             }),
-            to: '/products',
+            to: '/items',
           },
         ]}
         // The reader's language; the forms edit `name`, the base (ADR-056).
         title={product.displayName}
-        status={{
-          label: productTypeLabel(product.type, intl),
-          color: 'default',
-        }}
         actions={
           <>
             <HistoryButton resourceId={product.id} />
+            {canEdit && (
+              <Button
+                variant="outlined"
+                onClick={openDialog(() => setEditingItem(true))}
+              >
+                {intl.formatMessage({
+                  id: 'common.edit',
+                  defaultMessage: 'Edit',
+                })}
+              </Button>
+            )}
             {canEdit && (
               // Discontinuing, not deleting. The product's flag is never
               // cascaded to its variants: reactivating could not then know
@@ -193,8 +234,15 @@ export function ProductDetailPage() {
             )}
           </>
         }
-        subtitle={product.description ?? undefined}
+        // What it is and where it is filed, under its name (ADR-092).
+        subtitle={[productTypeLabel(product.type, intl), categoryPath]
+          .filter(Boolean)
+          .join(SEPARATOR)}
       />
+
+      {product.description && (
+        <Typography variant="body1">{product.description}</Typography>
+      )}
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -212,80 +260,38 @@ export function ProductDetailPage() {
           {intl.formatMessage({
             id: 'products.discontinuedNotice',
             defaultMessage:
-              'This product is discontinued. Its variants keep their own status, so reactivating restores each to what it was.',
+              'This item is discontinued. Its variants keep their own status, so reactivating restores each to what it was.',
           })}
         </Alert>
       )}
 
-      {/* What documents print in each language (ADR-054). Shown when there
-          is something to show, or someone who could add it. */}
-      {(product.translations.length > 0 || canEdit) && (
-        <Stack spacing={1}>
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-            <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
-              {intl.formatMessage({
-                id: 'products.translations.title',
-                defaultMessage: 'Names in other languages',
-              })}
-            </Typography>
-
-            {canEdit && (
-              <Button
-                variant="text"
-                onClick={openDialog(() => setTranslating(true))}
-              >
-                {intl.formatMessage({
-                  id: 'products.translations.edit',
-                  defaultMessage: 'Edit names',
-                })}
-              </Button>
-            )}
-          </Stack>
-
-          {product.translations.length > 0 ? (
-            <>
-              {/* The name the edit form fills from, and documents print in
-                  a language with none of its own, which the heading above
-                  hides from a reader in another language (ADR-056). */}
-              <Typography variant="body2">
-                {intl.formatMessage(
-                  {
-                    id: 'products.translations.base',
-                    defaultMessage: 'Base name: {name}',
-                  },
-                  { name: product.name },
-                )}
-              </Typography>
-              {product.translations.map((row) => (
-                <Typography key={row.locale} variant="body2">
-                  {/* The component, not intl.formatMessage: a value that is an
-                    element comes back as a list, which React would want keys
-                    for. */}
-                  <FormattedMessage
-                    id="products.translations.line"
-                    defaultMessage="{language}: {name}"
-                    values={{
-                      language: LANGUAGE_NAMES[row.locale] ?? row.locale,
-                      name: <span lang={row.locale}>{row.name}</span>,
-                    }}
-                  />
-                </Typography>
-              ))}
-            </>
-          ) : (
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {intl.formatMessage({
-                id: 'products.translations.none',
-                defaultMessage:
-                  'None yet: every document prints the name above.',
-              })}
-            </Typography>
-          )}
-        </Stack>
+      {/* What documents print in each language (ADR-054), the item's and
+          each named variation's, and what they will refuse (ADR-092). Shown
+          when there is something to show, or someone who could add it. */}
+      {(canEdit ||
+        required.length > 0 ||
+        product.translations.length > 0 ||
+        product.variants.some(
+          (variant) => (variant.translations ?? []).length > 0,
+        )) && (
+        <ItemNames
+          product={product}
+          required={required}
+          canEdit={canEdit}
+          onEdit={(at) => {
+            setNamesAt(at);
+            setTranslating(true);
+          }}
+        />
       )}
 
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
+        <Typography
+          id={variantsTitleId}
+          variant="h6"
+          component="h2"
+          sx={{ flexGrow: 1 }}
+        >
           {intl.formatMessage({
             id: 'products.variants',
             defaultMessage: 'Variants',
@@ -304,14 +310,14 @@ export function ProductDetailPage() {
 
       <Paper variant="outlined">
         <TableContainer>
-          <Table size="small">
+          <Table size="small" aria-labelledby={variantsTitleId}>
             <TableHead>
               <TableRow>
                 <TableCell padding="checkbox" />
                 <TableCell>
                   {intl.formatMessage({
                     id: 'products.sku',
-                    defaultMessage: 'SKU',
+                    defaultMessage: 'Code',
                   })}
                 </TableCell>
                 <TableCell>
@@ -396,9 +402,20 @@ export function ProductDetailPage() {
       <TranslationsDialog
         open={translating}
         product={product}
+        required={required}
+        at={namesAt}
         onClose={() => setTranslating(false)}
         onSaved={reload}
       />
+
+      {editingItem && (
+        <EditItemDialog
+          product={product}
+          categories={tree?.categories ?? []}
+          onClose={() => setEditingItem(false)}
+          onSaved={reload}
+        />
+      )}
 
       <EditVariantDialog
         open={editingVariant !== null}

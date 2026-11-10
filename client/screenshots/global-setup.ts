@@ -287,10 +287,10 @@ async function globalSetup(config: FullConfig): Promise<void> {
       api,
       '/stock/lots/search?code=FOC-2609-01',
     );
-    const products = await read<{ id: string; name: string }[]>(
-      api,
-      '/products',
-    );
+    // Items' list is paged (ADR-092): the one product, found by its name.
+    const products = await read<
+      KeysetPage<{ id: string; displayName: string }>
+    >(api, '/products?search=Calm%2090ct&discontinued=include');
 
     const orderId = (reference: string) =>
       orders.entries.find((order) => order.reference === reference)?.id;
@@ -305,7 +305,9 @@ async function globalSetup(config: FullConfig): Promise<void> {
 
     const run = runs.entries.find((each) => each.reference === 'CALM-RUN-01');
     const batch = lots.find((lot) => lot.code === 'FOC-2609-01');
-    const calm = products.find((product) => product.name === 'Calm 90ct');
+    const calm = products.entries.find(
+      (product) => product.displayName === 'Calm 90ct',
+    );
 
     const targets: Targets = {
       saleOrderId: orderId('SO-DEMO-1') ?? null,

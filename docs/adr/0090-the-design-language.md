@@ -3,7 +3,7 @@ status: accepted
 date: 2026-11-04
 areas: [docs, i18n, ui]
 amends: [ADR-055, ADR-089]
-amended-by: [ADR-091]
+amended-by: [ADR-091, ADR-092]
 ---
 
 # ADR-090 — The design language: eight principles and their patterns, at every screen size (amends ADR-055 and ADR-089)
@@ -402,3 +402,19 @@ found the design language did not say:
 - **The canvas keeps every version:** a changed design is a new row,
   titled with its version, never drawn over the old one, and the version
   the build follows is named in its ADR.
+
+## Amendment (November 2026) — which lists sort, and by what (ADR-092)
+
+ADR-091 deferred the rule to the first list's turn, and Items is it.
+`docs/design-language.md`'s Sorting and filters gains two lines:
+
+- **A list sorts on the few columns a person decides by;** its default
+  is the one most asked for, named in that list's own ADR.
+- **A date column shows the date the list is sorted by;** where a list
+  keeps two dates, the column's header switches between them.
+
+ADR-092 also decides that each feature carries a wireflow board, an
+interaction table in its ADR and each screen's five states, and that
+the pieces every screen shares draw their states once. That States
+section, with its canvas row, comes in a docs pull request of its own
+after Items, which amends this ADR again.

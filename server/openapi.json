@@ -907,6 +907,9 @@
                 "product.updated",
                 "product.variant_added",
                 "product.variant_updated",
+                "product_category.created",
+                "product_category.updated",
+                "product_category.deleted",
                 "location.created",
                 "location.updated",
                 "stock.movement_recorded",
@@ -1091,6 +1094,9 @@
                 "product.updated",
                 "product.variant_added",
                 "product.variant_updated",
+                "product_category.created",
+                "product_category.updated",
+                "product_category.deleted",
                 "location.created",
                 "location.updated",
                 "stock.movement_recorded",
@@ -1663,6 +1669,9 @@
                 "product.updated",
                 "product.variant_added",
                 "product.variant_updated",
+                "product_category.created",
+                "product_category.updated",
+                "product_category.deleted",
                 "location.created",
                 "location.updated",
                 "stock.movement_recorded",
@@ -1847,6 +1856,9 @@
                 "product.updated",
                 "product.variant_added",
                 "product.variant_updated",
+                "product_category.created",
+                "product_category.updated",
+                "product_category.deleted",
                 "location.created",
                 "location.updated",
                 "stock.movement_recorded",
@@ -2269,10 +2281,197 @@
         ]
       }
     },
+    "/v1/products/categories": {
+      "get": {
+        "operationId": "ProductCategoriesController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductCategoryList"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProductCategories"
+        ]
+      },
+      "post": {
+        "operationId": "ProductCategoriesController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductCategoryEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProductCategories"
+        ]
+      }
+    },
+    "/v1/products/categories/{id}": {
+      "patch": {
+        "operationId": "ProductCategoriesController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ProductCategories"
+        ]
+      },
+      "delete": {
+        "operationId": "ProductCategoriesController_remove_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ProductCategories"
+        ]
+      }
+    },
     "/v1/products": {
       "get": {
         "operationId": "ProductsController_list_v1",
         "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 4096,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "good",
+                "material",
+                "packaging",
+                "sample",
+                "supply",
+                "equipment"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "pattern": "^(uncategorised|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "discontinued",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "only",
+                "include"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "category",
+                "stock",
+                "added",
+                "changed"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
           {
             "name": "search",
             "required": false,
@@ -2297,10 +2496,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProductSummary"
-                  }
+                  "$ref": "#/components/schemas/ProductPage"
                 }
               }
             }
@@ -2347,6 +2543,35 @@
         "tags": [
           "Products"
         ]
+      },
+      "patch": {
+        "operationId": "ProductsController_changeMany_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeProductsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductChanges"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Products"
+        ]
       }
     },
     "/v1/products/export": {
@@ -2354,11 +2579,27 @@
         "operationId": "ProductsController_exportProducts_v1",
         "parameters": [
           {
-            "name": "search",
+            "name": "type",
             "required": false,
             "in": "query",
             "schema": {
-              "maxLength": 100,
+              "type": "string",
+              "enum": [
+                "good",
+                "material",
+                "packaging",
+                "sample",
+                "supply",
+                "equipment"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "pattern": "^(uncategorised|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$",
               "type": "string"
             }
           },
@@ -2367,6 +2608,46 @@
             "required": false,
             "in": "query",
             "schema": {
+              "type": "string",
+              "enum": [
+                "only",
+                "include"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "category",
+                "stock",
+                "added",
+                "changed"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
               "type": "string"
             }
           },
@@ -3805,6 +4086,15 @@
             }
           },
           {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
             "name": "includeEmpty",
             "required": false,
             "in": "query",
@@ -3930,6 +4220,15 @@
           },
           {
             "name": "variantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -4202,6 +4501,15 @@
           },
           {
             "name": "variantId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
             "required": false,
             "in": "query",
             "schema": {
@@ -4570,6 +4878,15 @@
             "required": false,
             "in": "query",
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
               "type": "string"
             }
           },
@@ -8897,7 +9214,7 @@
   "info": {
     "title": "web-app-foundation API",
     "description": "",
-    "version": "1.3",
+    "version": "1.4",
     "contact": {}
   },
   "tags": [],
@@ -10661,6 +10978,7 @@
               "lot",
               "product",
               "partner",
+              "product_category",
               "tax_code",
               "price_list",
               "variant",
@@ -11818,25 +12136,186 @@
           "token"
         ]
       },
-      "ProductSummary": {
+      "CategoryItemCount": {
         "type": "object",
         "properties": {
-          "coverFileId": {
-            "type": [
-              "string",
-              "null"
+          "type": {
+            "type": "string",
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment"
             ]
           },
-          "id": {
-            "type": "string"
+          "active": {
+            "type": "number"
           },
-          "type": {
+          "discontinued": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "type",
+          "active",
+          "discontinued"
+        ]
+      },
+      "ProductCategory": {
+        "type": "object",
+        "properties": {
+          "id": {
             "type": "string"
           },
           "name": {
             "type": "string"
           },
-          "description": {
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryItemCount"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "parentId",
+          "items"
+        ]
+      },
+      "ProductCategoryList": {
+        "type": "object",
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductCategory"
+            }
+          },
+          "uncategorised": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryItemCount"
+            }
+          }
+        },
+        "required": [
+          "categories",
+          "uncategorised"
+        ]
+      },
+      "CreateProductCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ProductCategoryEnvelope": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/ProductCategory"
+          }
+        },
+        "required": [
+          "category"
+        ]
+      },
+      "UpdateProductCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "ProductSummaryCategory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "path": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "path"
+        ]
+      },
+      "ProductSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment"
+            ]
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "variantCount": {
+            "type": "number"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductSummaryCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverFileId": {
             "type": [
               "string",
               "null"
@@ -11844,15 +12323,130 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "onHand": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "stockStatus": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "out",
+              "low",
+              null
+            ]
           }
         },
         "required": [
-          "coverFileId",
           "id",
           "type",
-          "name",
-          "description",
-          "isActive"
+          "displayName",
+          "sku",
+          "variantCount",
+          "category",
+          "coverFileId",
+          "isActive",
+          "createdAt",
+          "updatedAt",
+          "onHand",
+          "unitOfMeasure",
+          "stockStatus"
+        ]
+      },
+      "ProductTypeCount": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment"
+            ]
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "type",
+          "count"
+        ]
+      },
+      "ProductCounts": {
+        "type": "object",
+        "properties": {
+          "types": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductTypeCount"
+            }
+          },
+          "all": {
+            "type": "number"
+          },
+          "discontinued": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "types",
+          "all",
+          "discontinued"
+        ]
+      },
+      "ProductPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductSummary"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "counts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductCounts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor",
+          "counts"
         ]
       },
       "VariantOption": {
@@ -12080,6 +12674,12 @@
           "displayName": {
             "type": "string"
           },
+          "categoryId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "translations": {
             "type": "array",
             "items": {
@@ -12119,6 +12719,7 @@
         },
         "required": [
           "displayName",
+          "categoryId",
           "translations",
           "variants",
           "images",
@@ -12196,6 +12797,13 @@
             "type": "string",
             "maxLength": 2000
           },
+          "categoryId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
           "variant": {
             "$ref": "#/components/schemas/CreateVariantDto"
           }
@@ -12217,9 +12825,93 @@
           "product"
         ]
       },
+      "ProductChangeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "categoryId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ChangeProductsDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "uniqueItems": true,
+            "minItems": 1,
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductChangeDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ProductChange": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ProductChanges": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductChange"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
       "UpdateProductDto": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "good",
+              "material",
+              "packaging",
+              "sample",
+              "supply",
+              "equipment"
+            ]
+          },
           "name": {
             "type": "string",
             "minLength": 1,
@@ -12231,6 +12923,13 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "categoryId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -15334,8 +16033,8 @@
             "enum": [
               "out",
               "low",
-              "enough",
-              "discontinued"
+              "discontinued",
+              "enough"
             ]
           },
           "suggestion": {
@@ -15597,8 +16296,8 @@
             "enum": [
               "out",
               "low",
-              "enough",
-              "discontinued"
+              "discontinued",
+              "enough"
             ]
           },
           "suggestion": {
@@ -15621,8 +16320,8 @@
             "enum": [
               "out",
               "low",
-              "enough",
-              "discontinued"
+              "discontinued",
+              "enough"
             ]
           }
         },
@@ -21378,6 +22077,9 @@
           "product.updated",
           "product.variant_added",
           "product.variant_updated",
+          "product_category.created",
+          "product_category.updated",
+          "product_category.deleted",
           "location.created",
           "location.updated",
           "stock.movement_recorded",
@@ -21479,7 +22181,8 @@
           "client_outdated",
           "api_updating",
           "reorder_point_exists",
-          "reorder_maximum_not_above_point"
+          "reorder_maximum_not_above_point",
+          "code_in_use"
         ]
       },
       "ApiVocabulary": {
@@ -21544,6 +22247,10 @@
           "day": {
             "type": "string",
             "format": "date"
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },

@@ -224,7 +224,7 @@ export function ReceiveStockDialog({
                 {intl.formatMessage({
                   id: 'inventory.receive.noProducts',
                   defaultMessage:
-                    'No products yet. Add one on the Products screen — stock is counted against a variant, so there has to be something to count.',
+                    'No items yet. Add one on the Items screen — stock is counted against a variant, so there has to be something to count.',
                 })}
               </Alert>
             )}

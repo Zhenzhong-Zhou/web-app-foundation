@@ -1,6 +1,6 @@
 # Licences
 
-Les licences sont les numéros sous lesquels vos formulations sont enregistrées, comme le NPN d’un produit de santé naturel au Canada. Les recettes sont fabriquées sous ces licences : un lot remonte donc jusqu’à sa licence. Vous l’ouvrez par **Licences**, dans le menu ou dans Produits.
+Les licences sont les numéros sous lesquels vos formulations sont enregistrées, comme le NPN d’un produit de santé naturel au Canada. Les recettes sont fabriquées sous ces licences : un lot remonte donc jusqu’à sa licence. Vous l’ouvrez par **Licences**, dans le menu ou dans Articles.
 
 ## Ajouter une licence {#add}
 
@@ -38,4 +38,4 @@ Les personnes qui peuvent modifier les licences ou lancer des ordres de fabricat
 - Un numéro déjà enregistré pour le même organisme est refusé. Modifiez celui qui est déjà dans la liste.
 - Une licence ne peut pas expirer avant d’avoir été délivrée. Vérifiez les deux dates.
 
-Voir aussi [Produits](/products) et [Production](/production).
+Voir aussi [Articles](/items) et [Production](/production).

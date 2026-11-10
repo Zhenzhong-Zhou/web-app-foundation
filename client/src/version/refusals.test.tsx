@@ -147,7 +147,7 @@ describe('a page’s read refused', () => {
       }),
     ).toBeVisible();
     expect(screen.getByRole('button', { name: 'Reload' })).toBeVisible();
-    expect(screen.queryByRole('heading', { name: 'Products' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Items' })).toBeNull();
     expect(screen.queryByText(OUTDATED)).toBeNull();
   });
 
@@ -192,10 +192,14 @@ describe('a page’s read refused', () => {
     await retryArmed();
 
     // The API has deployed.
-    server.use(http.get('/api/v1/products', () => HttpResponse.json([])));
+    server.use(
+      http.get('/api/v1/products', () =>
+        HttpResponse.json({ entries: [], nextCursor: null, counts: null }),
+      ),
+    );
     act(() => vi.advanceTimersByTime(60_000));
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Products' }),
+      await screen.findByRole('heading', { level: 1, name: 'Items' }),
     ).toBeVisible();
   });
 

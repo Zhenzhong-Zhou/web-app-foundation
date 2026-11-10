@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import {
   type Database,
@@ -155,7 +155,7 @@ describe('Exports (e2e)', () => {
     const lines = linesOf(
       (await alpha.agent.get('/v1/products/export').expect(200)).text,
     );
-    expect(lines[0].split(',').slice(0, 2)).toEqual(['SKU', 'Item']);
+    expect(lines[0].split(',').slice(0, 2)).toEqual(['Code', 'Item']);
     expect(lines[1]).toMatch(/^FOCUS-60,Focus 60ct,/);
     expect(lines[1]).toContain(',true,false,');
   });
@@ -184,19 +184,34 @@ describe('Exports (e2e)', () => {
     );
   });
 
-  // What the list shows, its search and its quick filter, and History
-  // keeps the filter but not the search, text a person typed (ADR-018).
-  it('writes the products the list shows: its search and Discontinued', async () => {
+  // What the list shows, by its own query and in its order (ADR-092,
+  // #306's 20), and History keeps the filters but not the search, text a
+  // person typed (ADR-018).
+  it('writes the items the list shows, by its own query and in its order', async () => {
     const alpha = await registerOrganization(app, 'alpha');
-    const added = async (name: string, sku: string) =>
+    const herbs = body<{ category: { id: string } }>(
+      await alpha.agent
+        .post('/v1/products/categories')
+        .send({ name: 'Herbs' })
+        .expect(201),
+    ).category.id;
+    const added = async (
+      name: string,
+      sku: string,
+      fields: Record<string, unknown> = {},
+    ) =>
       body<{ product: { id: string } }>(
         await alpha.agent
           .post('/v1/products')
-          .send({ type: 'good', name, variant: { sku } })
+          .send({ type: 'good', name, variant: { sku }, ...fields })
           .expect(201),
       ).product.id;
     await added('Focus 60ct', 'FOCUS-60');
     const calm = await added('Calm 90ct', 'CALM-90');
+    await added('Ashwagandha', 'ASH-1', {
+      type: 'material',
+      categoryId: herbs,
+    });
     await alpha.agent
       .patch(`/v1/products/${calm}`)
       .send({ isActive: false })
@@ -209,10 +224,19 @@ describe('Exports (e2e)', () => {
         .slice(1)
         .map((line) => line.split(',')[0]);
 
-    expect(await skus('')).toEqual(['CALM-90', 'FOCUS-60']);
+    expect(await skus('')).toEqual(['ASH-1', 'FOCUS-60']);
     expect(await skus('?search=focus')).toEqual(['FOCUS-60']);
-    expect(await skus('?discontinued=true')).toEqual(['CALM-90']);
-    expect(await skus('?search=focus&discontinued=true')).toEqual([]);
+    expect(await skus('?discontinued=only')).toEqual(['CALM-90']);
+    expect(await skus('?discontinued=include&order=desc')).toEqual([
+      'FOCUS-60',
+      'CALM-90',
+      'ASH-1',
+    ]);
+    expect(await skus('?type=material')).toEqual(['ASH-1']);
+    expect(await skus(`?category=${herbs}`)).toEqual(['ASH-1']);
+    expect(await skus('?category=uncategorised')).toEqual(['FOCUS-60']);
+    // The quick filter's old word, before the list hid the discontinued.
+    await alpha.agent.get('/v1/products/export?discontinued=true').expect(400);
 
     const entries = await db
       .select()
@@ -227,9 +251,126 @@ describe('Exports (e2e)', () => {
       (entry) => (entry.payload as { filters: object }).filters,
     );
     expect(filters).toEqual(
-      expect.arrayContaining([{}, { discontinued: 'true' }]),
+      expect.arrayContaining([
+        {},
+        { discontinued: 'only' },
+        { type: 'material' },
+        { categoryId: { id: herbs, label: 'Herbs' } },
+        { category: 'uncategorised' },
+      ]),
     );
     expect(JSON.stringify(filters)).not.toContain('focus');
+
+    // In words in History: the filters as the list names them.
+    const history = await alpha.agent
+      .get('/v1/audit?action=list.exported')
+      .expect(200);
+    const texts = body<{
+      entries: { details: { value: { text: string } | null }[] }[];
+    }>(history).entries.flatMap((entry) =>
+      entry.details.map((detail) => detail.value?.text),
+    );
+    expect(texts).toEqual(
+      expect.arrayContaining([
+        'Discontinued Discontinued only',
+        'Type Raw materials',
+        'Category Herbs',
+        'Category Uncategorised',
+      ]),
+    );
+  });
+
+  // The type and the category in the reader's words (ADR-092), and the
+  // product's and the variant's names in every language they have one in
+  // (#306's 21).
+  it('writes the type and the category in the reader’s words, and every language’s names', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const category = async (name: string, parentId?: string) =>
+      body<{ category: { id: string } }>(
+        await alpha.agent
+          .post('/v1/products/categories')
+          .send({ name, parentId })
+          .expect(201),
+      ).category.id;
+    const adaptogens = await category('Adaptogens', await category('Herbs'));
+    const created = body<{
+      product: { id: string; variants: { id: string }[] };
+    }>(
+      await alpha.agent
+        .post('/v1/products')
+        .send({
+          type: 'material',
+          name: 'Ashwagandha',
+          categoryId: adaptogens,
+          variant: { sku: 'ASH-60', name: '60ct' },
+        })
+        .expect(201),
+    ).product;
+    await alpha.agent
+      .put(`/v1/products/${created.id}/translations`)
+      .send({
+        translations: [
+          { locale: 'en', name: 'Ashwagandha root' },
+          { locale: 'zh-Hans', name: '南非醉茄' },
+        ],
+      })
+      .expect(204);
+    await alpha.agent
+      .put(
+        `/v1/products/${created.id}/variants/${created.variants[0].id}/translations`,
+      )
+      .send({ translations: [{ locale: 'zh-Hans', name: '60粒' }] })
+      .expect(204);
+
+    const [header, row] = linesOf(
+      (
+        await alpha.agent
+          .get('/v1/products/export')
+          .set('Accept-Language', 'zh-Hans')
+          .expect(200)
+      ).text,
+    ).map((line) => line.split(','));
+    expect(
+      Object.fromEntries(header.map((name, at) => [name, row[at]])),
+    ).toEqual({
+      编码: 'ASH-60',
+      物品: 'Ashwagandha',
+      规格: '60ct',
+      类型: '原材料',
+      分类: 'Herbs › Adaptogens',
+      单位: 'each',
+      批次管理: 'false',
+      已停用: 'false',
+      英文名称: 'Ashwagandha root',
+      法文名称: '',
+      中文名称: '南非醉茄',
+      英文规格名称: '',
+      法文规格名称: '',
+      中文规格名称: '60粒',
+    });
+  });
+
+  // Past 50,000 rows the refusal names what narrows this list, which has
+  // no dates (#306's 38).
+  it('refuses past 50,000 rows, naming what narrows the list', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const created = body<{ product: { id: string } }>(
+      await alpha.agent
+        .post('/v1/products')
+        .send({ type: 'good', name: 'Bulk', variant: { sku: 'BULK-0' } })
+        .expect(201),
+    ).product;
+    await db.execute(sql`
+      insert into product_variants (organization_id, product_id, sku)
+      select ${alpha.organizationId}::uuid, ${created.id}::uuid, 'BULK-' || n
+      from generate_series(1, 50000) n
+    `);
+
+    const res = await alpha.agent.get('/v1/products/export').expect(400);
+    expect(body<{ message: string }>(res).message).toBe(
+      'More than 50,000 rows match. Choose a type or a category, or search, and export again.',
+    );
+    await alpha.agent.get('/v1/products/export?type=material').expect(200);
   });
 
   it('writes the partners the list shows: its search and Retired', async () => {
@@ -265,7 +406,7 @@ describe('Exports (e2e)', () => {
     const res = await alpha.agent
       .get(`/v1/price-lists/${list.priceList.id}/export`)
       .expect(200);
-    expect(linesOf(res.text)[0]).toBe('SKU,Item,Unit,Price,Currency');
+    expect(linesOf(res.text)[0]).toBe('Code,Item,Unit,Price,Currency');
 
     const [entry] = await db
       .select()
@@ -303,13 +444,13 @@ describe('Exports (e2e)', () => {
   it.each([
     ['/v1/invoices/export', 'Number'],
     ['/v1/credit-notes/export', 'Number'],
-    ['/v1/stock/export', 'SKU'],
+    ['/v1/stock/export', 'Code'],
     ['/v1/stock/movements/export', 'When'],
-    ['/v1/stock/reorder-points/export', 'SKU'],
+    ['/v1/stock/reorder-points/export', 'Code'],
     ['/v1/orders/export', 'Number'],
-    ['/v1/products/export', 'SKU'],
+    ['/v1/products/export', 'Code'],
     ['/v1/partners/export', 'Name'],
-    ['/v1/costs/valuation/export', 'SKU'],
+    ['/v1/costs/valuation/export', 'Code'],
   ])('writes %s, a header alone when nothing matches', async (path, first) => {
     const alpha = await registerOrganization(app, 'alpha');
 

@@ -48,20 +48,22 @@ export async function everyRow<T extends { id: string }>(
 
 /**
  * The rows as they are, or a refusal past EXPORT_LIMIT with a message to
- * narrow them. An export read in one query asks for EXPORT_LIMIT + 1 rows
- * and passes them here.
+ * narrow them: the list's own, naming what narrows it, where it has no
+ * dates. An export read in one query asks for EXPORT_LIMIT + 1 rows and
+ * passes them here.
  */
-export function withinLimit<T>(rows: T[]): T[] {
+export function withinLimit<T>(rows: T[], refusal?: Translatable): T[] {
   if (rows.length > EXPORT_LIMIT) {
     throw new BadRequestException(
-      t(
-        {
-          id: 'exports.tooMany',
-          defaultMessage:
-            'More than {limit, number} rows match. Narrow the dates or filters, and export again.',
-        },
-        { limit: EXPORT_LIMIT },
-      ),
+      refusal ??
+        t(
+          {
+            id: 'exports.tooMany',
+            defaultMessage:
+              'More than {limit, number} rows match. Narrow the dates or filters, and export again.',
+          },
+          { limit: EXPORT_LIMIT },
+        ),
     );
   }
   return rows;

@@ -2,7 +2,6 @@ import {
   Button,
   Link,
   Paper,
-  Skeleton,
   Stack,
   Table,
   TableBody,
@@ -22,12 +21,12 @@ import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { PlaceholderRows } from '../components/placeholder-rows';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
 import { withDays } from '../lib/date-range';
 import { formatCredit, formatDay, NO_VALUE } from '../lib/format';
-import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { day, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
@@ -72,7 +71,6 @@ export function CreditNotesPage() {
     loadMore,
     reload,
   } = useKeysetList<CreditNoteSummary>(path);
-  const showSkeleton = useDelayedFlag(loading);
 
   if (refused) {
     return <RevisionRefusalPage failure={refused} onRetry={reload} />;
@@ -127,11 +125,9 @@ export function CreditNotesPage() {
 
       {!failed && (
         <Paper variant="outlined">
-          {loading ? (
-            <Stack sx={{ p: 2 }} spacing={1}>
-              {showSkeleton ? <Skeleton height={48} /> : null}
-            </Stack>
-          ) : rows?.length === 0 ? (
+          {/* The table's head stays while the rows are read, a sort's
+              included, so the header pressed keeps its focus (#505's 54). */}
+          {!loading && rows?.length === 0 ? (
             <EmptyState learnMore={{ guide: 'invoices', section: 'credit' }}>
               {search || range.from || range.to
                 ? intl.formatMessage({
@@ -178,6 +174,7 @@ export function CreditNotesPage() {
                 </TableHead>
 
                 <TableBody>
+                  {loading && <PlaceholderRows columns={6} />}
                   {rows?.map((row) => (
                     <TableRow key={row.id} hover>
                       <TableCell>

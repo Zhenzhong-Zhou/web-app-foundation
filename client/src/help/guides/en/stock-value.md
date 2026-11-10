@@ -2,6 +2,8 @@
 
 What the stock on hand is worth, in the base currency. Each lot carries what it cost; stock without lots carries a running average. Values are material cost only: what was bought, and what went into a batch.
 
+Equipment is left out, here and under **Waiting for a cost**: machines and tools are kept, not sold or used up. [Inventory](/inventory) still shows where each one stands.
+
 ## Give stock its cost {#costs}
 
 Stock that arrived with nothing to value it by is listed under **Waiting for a cost**, and **Why** says what is missing: received with no price, priced in a currency with no rate on file, counted in, or on hand when valuation began. Until it has a cost, the value on hand is **Provisional**.

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, renderHook, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   Link,
@@ -9,7 +9,14 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { OFFER_BACK } from './offer-back';
-import { day, flag, id, oneOf, useListFilters } from './use-list-filters';
+import {
+  day,
+  flag,
+  id,
+  oneOf,
+  useAddressWrite,
+  useListFilters,
+} from './use-list-filters';
 import { useListSort } from './use-list-sort';
 
 const FILTERS = {
@@ -139,6 +146,25 @@ describe('useListFilters', () => {
     expect(
       screen.getByText(`state ${JSON.stringify(OFFER_BACK)}`),
     ).toBeInTheDocument();
+  });
+});
+
+describe('useAddressWrite', () => {
+  // The search and the tab write from an effect that depends on it, which
+  // a new function each render would start again on every render.
+  it('is the same function until the address changes', () => {
+    const { result, rerender } = renderHook(() => useAddressWrite(), {
+      wrapper: ({ children }) => (
+        <MemoryRouter initialEntries={['/list?status=low']}>
+          {children}
+        </MemoryRouter>
+      ),
+    });
+    const first = result.current;
+
+    rerender();
+
+    expect(result.current).toBe(first);
   });
 });
 

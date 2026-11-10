@@ -179,6 +179,50 @@ describe('Reservations (e2e)', () => {
       expect(await skus('?promised=true')).toEqual(['FOCUS']);
     });
 
+    // Inventory for one item, opened by a row's stock on Items, listed
+    // every item's promises below it (ADR-092's review, 6).
+    it('lists one item alone when asked, refusing another organization’s', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const s = await scenario(alpha);
+      const calm = body<{
+        product: { id: string; variants: { id: string }[] };
+      }>(
+        await alpha.agent
+          .post('/v1/products')
+          .send({ type: 'good', name: 'Calm', variant: { sku: 'CALM' } })
+          .expect(201),
+      ).product;
+      await alpha.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: calm.variants[0].id,
+          toLocationId: s.shelf,
+          quantity: '10',
+          reason: 'receipt',
+        })
+        .expect(201);
+      const [focus] = body<{ entries: { id: string }[] }>(
+        await alpha.agent.get('/v1/products?search=FOCUS').expect(200),
+      ).entries;
+
+      const skus = async (query: string) => {
+        const res = await alpha.agent
+          .get(`/v1/stock/availability${query}`)
+          .expect(200);
+        return body<Availability[]>(res).map((row) => row.sku);
+      };
+
+      expect(await skus(`?productId=${calm.id}`)).toEqual(['CALM']);
+      expect(await skus(`?promised=true&productId=${calm.id}`)).toEqual([]);
+      expect(await skus(`?promised=true&productId=${focus.id}`)).toEqual([
+        'FOCUS',
+      ]);
+      await beta.agent
+        .get(`/v1/stock/availability?productId=${calm.id}`)
+        .expect(400);
+    });
+
     // Confirming never refuses for lack of stock: a real order is real.
     it('confirms an order there is no stock for', async () => {
       const alpha = await registerOrganization(app, 'alpha');

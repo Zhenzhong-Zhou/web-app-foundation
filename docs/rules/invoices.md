@@ -124,10 +124,13 @@ is kept is in the [README](README.md).
   [test](../../client/src/invoices/issue-invoice-dialog.test.tsx) "links a missing tax number to Organization → Profile" ·
   [Help](../../client/src/help/guides/en/invoices.md#if-something-is-refused-refused) ·
   MC-711
-- **Every product on it must be named in each language the organization
-  requires, if the invoice prints in that language.**
+- **Every item on it must be named in each language the organization
+  requires, if the invoice prints in that language,** and each of its
+  variants with a name of its own; the refusal names the variant by its
+  code and its own name when its name is the one missing.
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
-  [test](../../server/test/languages.e2e-spec.ts) "refuses to issue in a required language until every product is named in it"
+  [test](../../server/test/languages.e2e-spec.ts) "refuses to issue in a required language until every product is named in it" ·
+  [test](../../server/test/languages.e2e-spec.ts) "names the variation, by its code and its own name, when its name is the one missing"
 - **Tax is worked out per component on the lines that carry it, and
   rounded once for the invoice,** not line by line. A component two codes
   share, such as GST, is one tax line.

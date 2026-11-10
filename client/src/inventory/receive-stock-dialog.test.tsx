@@ -254,9 +254,9 @@ describe('ReceiveStockDialog', () => {
 
     open();
 
-    // While it loads, an empty list says nothing about the products (#250).
+    // While it loads, an empty list says nothing about the items (#250).
     await expect.poll(() => asked).toBe(true);
-    expect(screen.queryByText(/no products yet/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/no items yet/i)).not.toBeInTheDocument();
 
     answer();
 
@@ -264,6 +264,6 @@ describe('ReceiveStockDialog', () => {
      * An empty picker with no explanation looks like a broken dropdown, which
      * is exactly how it was first reported.
      */
-    expect(await screen.findByText(/no products yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no items yet/i)).toBeInTheDocument();
   });
 });

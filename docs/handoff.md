@@ -15,6 +15,16 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 9 November 2026:
 
+- **Items, ADR-092** ([#476]): planned on 8 and 9 November, its boards
+  the canvas's rows "Items v1", "Items v2" and "Items v2: flows and
+  states"; built on 9 November on `adr-092-items`, 73 commits, pull
+  request [#532] open; the as-built is in [ADR-092's amendment](adr/0092-items.md).
+  Items holds everything the company keeps, by type and category, with
+  its stock read from Inventory and several items changed at once; the
+  item's page shows each variant's names and what documents will refuse
+  ([#526]'s second half). Its reviews found 105 and fixed 53; their 25
+  issues and 3 comments wait in `tmp/adr-092/issues/`, and the design
+  language's items in `tmp/adr-092/dl-items.md`.
 - **Customise Home,** decided in ADR-091: planned on 6 November and
   built on 6 and 7 November on `customise-home`, 78 commits, merged on 7
   November as [#515] (807fa43) and deployed the same day; the as-built
@@ -31,8 +41,8 @@ On 9 November 2026:
   the ignored `tmp/sdk-fix/` runs `/fix-issue <N>` through the Agent SDK
   in a second working folder: [#514] first, merged on 8 November as
   [#519], for about US$1.70, then [#483] as [#520], for US$1.23. It moved
-  into the repository on `fix-runner`, 29 commits, [#523] open with every
-  check green, to merge once the as-built is pushed; the as-built is in
+  into the repository on `fix-runner`, merged on 9 November as [#523]
+  (ad3680ac); the as-built is in
   [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md). From the
   main folder, `node scripts/fix-issue/run.mjs <N>`; one lock,
   `scripts/one-at-a-time.mjs`, lets a build and a fix verify at once,
@@ -157,7 +167,8 @@ On 9 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 8 November, as merge commits, [#518] (the
+- **The last merges:** on 9 November, as a merge commit, [#523] (the
+  runner in the repository). On 8 November, as merge commits, [#518] (the
   router), [#519] ([#514]) and [#520] ([#483]), the last two from the
   runner; a runner's pull request is squashed from now on, with the two
   lines it prints. On 7 November, from
@@ -250,9 +261,10 @@ On 9 November 2026:
   7-day rule, Sentry 11.11.0 first as a security fix; rimraf 6.1.4
   closes alert 9 in `server/`. From Items' branch on, the rule is as
   before: each branch takes, package by package, the newest version in
-  range that is 7 days old that day. Releases since then come of age
-  from 15 November (`@vitejs/plugin-react` 6.3.0) and 16 November (vite
-  8.3.7 and the Nest packages at 12.4.2). Held: `@playwright/test` at
+  range that is 7 days old that day. Releases since then come of age on
+  16 November: `@vitejs/plugin-react` 6.3.0, vite 8.3.7, the Nest
+  packages at 12.4.2, `typescript-eslint` 8.72.2 and `@aws-sdk/client-s3`
+  3.1165.0. Held: `@playwright/test` at
   1.64.1, pinned, its Firefox 159 crashing in the Linux image ([#521]);
   `jsdom` at 30.1.3, pinned, 17 unit tests failing on 31 ([#522]);
   TypeScript 7 ([#336]). Alerts 11 and 12 wait for their upstreams
@@ -302,6 +314,18 @@ On 9 November 2026:
 
 ## Still to do, by hand
 
+- **After [#532]'s merge:** `npm run migrate:all`; the deploy's check
+  that `/api/health` says `apiRevision: 4`; `tmp/adr-092/from-adr-091/`
+  moved into `tmp/adr-093/` and `tmp/adr-092/dl-items.md` kept for the
+  flows and states pull request, before `scripts/prune-branches.sh --yes`
+  and `scripts/clean-local.sh`, then `--yes`; `foundation_perf_large`
+  seeded again with Items' seed and timed, its category filter
+  included; the issues in `tmp/adr-092/issues/` posted if not yet;
+  `/auto-mode-setup` on `main`, kept in the maintainer's own settings,
+  since auto mode blocked a few of the build's actions; and Project
+  knowledge re-synced. `git stash list`: `stash@{0}`, from `fix-ups-ci`,
+  was touched by a failed command in step 23 and left as it was; drop it
+  if it is no longer needed.
 - **After [#523]'s merge:** `scripts/prune-branches.sh --yes`;
   `scripts/clean-local.sh`, then `--yes`; `tmp/sdk-fix/logs/` moved into
   `tmp/fix-runs/logs/`, and `tmp/sdk-fix/` removed; the planning skill
@@ -317,7 +341,7 @@ On 9 November 2026:
   the planning skill packed from `main` and uploaded; and `/triage` over
   all 155 open issues, with no closes and comments on [#446] and [#467].
   Still to do: `evals.md`'s prompt 6, walked when picking the runner's
-  fixes, and 7, checked on Items' brief. On any new
+  fixes; 7 was checked on Items' brief on 9 November. On any new
   machine: `"model": "opus"` in settings.local.json in `.claude/`, that
   file listed in the clone's own exclude file (`.git/info/exclude`), so
   the loop runs on Opus.
@@ -348,7 +372,8 @@ On 9 November 2026:
     database of 5 November: one notice in the bell within the hour while
     the service is awake; then remove the point.
 - **The planning skill's `evals.md`:** prompt 6 when picking the
-  runner's fixes, and 7 on Items' brief; 4 still waits for a patch that is refused.
+  runner's fixes; 7 checked on Items' brief on 9 November; 4 still waits
+  for a patch that is refused.
 - **[#245] in Safari and Edge, once deployed:** the page asked to translate
   into Chinese stays as written, a typed field included; WebKit and
   Firefox have known gaps with fields. What changes is filed.
@@ -417,10 +442,16 @@ request or a set of them:
       merged on 8 November; then the runner for small fixes on the API
       credit, in the repository, ADR-089's amendment, [#523];
       then Items ([#476]),
-      ADR-092 with canvas boards first, the page and the menu named Items
-      · Articles · 物品, Products · 商品 the goods tab; then Movements
-      ([#470]), ADR-093, right after, with Inventory's findings from
-      ADR-091's panel, the two branches back to back; each person
+      ADR-092: [#532]; then [#529], the test databases both working
+      folders share, a small pull request planned in a chat; then the
+      list search's plans, since ADR-051's watch on a large catalogue's
+      search fired at 128 ms (ADR-092's review, finding 67);
+      then a docs pull request for flows and states, ADR-092's decision:
+      the pieces every screen shares, their states drawn once in the
+      design language and one canvas row, and the planning skill asking
+      each feature for a wireflow, an interaction table and five states,
+      ADR-090 amended; then Movements ([#470]), ADR-093, with
+      Inventory's findings from ADR-091's panel; each person
       choosing their main action and More's order, later; then [#310]'s
       nine dialogs with [#295], one shared hook, on the Mac;
    5. the translations, before 30 November: first a second review by
@@ -429,7 +460,8 @@ request or a set of them:
       only Chinese checking the Chinese before `import`; a pseudo-locale
       and a browser check for cut text in French and Chinese; then [#371]
       to [#398] and [#419] to [#423], each with the natural-wording pass's
-      comment, the style
+      comment, and [#531], a base name in the organization's language;
+      the style
       rules into the glossary, the corrections of the reviewer who reads
       only Chinese, ADR-090's rule for Chinese beside Latin letters, and
       [#148], [#149] and [#249]; then Orders, built to the design
@@ -694,3 +726,7 @@ Not repeated here; each list has one home:
 [#521]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/521
 [#522]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/522
 [#523]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/523
+[#526]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/526
+[#529]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/529
+[#531]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/531
+[#532]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/532

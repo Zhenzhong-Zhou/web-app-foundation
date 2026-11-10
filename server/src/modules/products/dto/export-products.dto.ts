@@ -1,15 +1,8 @@
-import { IsBooleanString, IsOptional } from 'class-validator';
-
-import { SearchQueryDto } from '../../../common/dto/search-query.dto';
+import { ItemFiltersDto } from './list-products.dto';
 
 /**
- * The catalogue's export takes what its list shows (ADR-057): the list's
- * search, and its Discontinued quick filter, which the list itself applies
- * to the whole answer in the browser.
+ * The catalogue's export takes the list's own query, without its page
+ * (ADR-057, ADR-092): its type, its category, Discontinued, its search
+ * and its sort.
  */
-export class ExportProductsDto extends SearchQueryDto {
-  /** Only the discontinued products, as the list's Discontinued shows them. */
-  @IsOptional()
-  @IsBooleanString()
-  discontinued?: string;
-}
+export class ExportProductsDto extends ItemFiltersDto {}

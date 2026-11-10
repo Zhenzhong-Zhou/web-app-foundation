@@ -24,6 +24,14 @@ export class ListStockDto extends KeysetQueryDto {
   @IsUUID()
   variantId?: string;
 
+  /**
+   * One item's variants, in every location: Items' row opens Inventory
+   * for that item alone (ADR-092). Another organization's is refused.
+   */
+  @IsOptional()
+  @IsUUID()
+  productId?: string;
+
   @IsOptional()
   @IsBooleanString()
   includeEmpty?: string;

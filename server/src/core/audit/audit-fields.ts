@@ -1,3 +1,4 @@
+import { PRODUCT_TYPE_WORDS } from '../../common/product-types';
 import type {
   IdleSignOutScope,
   LicencePolicy,
@@ -179,7 +180,7 @@ const LIST_WORDS: Record<string, Translatable> = {
     defaultMessage: 'Stock value',
   }),
   partners: t({ id: 'audit.value.list.partners', defaultMessage: 'Partners' }),
-  products: t({ id: 'audit.value.list.products', defaultMessage: 'Products' }),
+  products: t({ id: 'audit.value.list.products', defaultMessage: 'Items' }),
   inventory: t({
     id: 'audit.value.list.inventory',
     defaultMessage: 'Inventory',
@@ -246,6 +247,31 @@ const RESET_WORDS: Record<NumberingReset, Translatable> = {
   daily: t({ id: 'audit.value.reset.daily', defaultMessage: 'Each day' }),
 };
 
+/**
+ * discontinued: Items' export's filter (ADR-092), and `true`, which the
+ * Products export recorded for the discontinued alone before it.
+ */
+const DISCONTINUED_ONLY = t({
+  id: 'audit.value.discontinued.only',
+  defaultMessage: 'Discontinued only',
+});
+const DISCONTINUED_WORDS: Record<string, Translatable> = {
+  only: DISCONTINUED_ONLY,
+  true: DISCONTINUED_ONLY,
+  include: t({
+    id: 'audit.value.discontinued.include',
+    defaultMessage: 'Discontinued included',
+  }),
+};
+
+/** category: Items' export's filter on the items in none (ADR-092). */
+const CATEGORY_WORDS: Record<string, Translatable> = {
+  uncategorised: t({
+    id: 'audit.value.category.uncategorised',
+    defaultMessage: 'Uncategorised',
+  }),
+};
+
 /** A system role's name, which the roles table stores in English. */
 export const ROLE_NAMES: Record<SystemRole, Translatable> = {
   Owner: t({ id: 'audit.value.role.owner', defaultMessage: 'Owner' }),
@@ -266,7 +292,11 @@ export const KIND_WORDS: Record<ReferenceKind, Translatable> = {
   order_line: t({ id: 'audit.kind.orderLine', defaultMessage: 'an item' }),
   partner: t({ id: 'audit.kind.partner', defaultMessage: 'a partner' }),
   variant: t({ id: 'audit.kind.variant', defaultMessage: 'an item' }),
-  product: t({ id: 'audit.kind.product', defaultMessage: 'a product' }),
+  product: t({ id: 'audit.kind.product', defaultMessage: 'an item' }),
+  product_category: t({
+    id: 'audit.kind.productCategory',
+    defaultMessage: 'a category',
+  }),
   lot: t({ id: 'audit.kind.lot', defaultMessage: 'a lot' }),
   person: t({ id: 'audit.kind.person', defaultMessage: 'one person' }),
   record: t({ id: 'audit.kind.record', defaultMessage: 'a record' }),
@@ -391,7 +421,7 @@ export const AUDIT_FIELDS = {
     read: 'text',
   },
   sku: {
-    name: t({ id: 'audit.field.sku', defaultMessage: 'SKU' }),
+    name: t({ id: 'audit.field.sku', defaultMessage: 'Code' }),
     read: 'text',
   },
   currency: {
@@ -509,6 +539,19 @@ export const AUDIT_FIELDS = {
   isActive: {
     name: t({ id: 'audit.field.isActive', defaultMessage: 'In use' }),
     read: 'boolean',
+  },
+  // An item's type, from and to, and Items' export's filter (ADR-092).
+  type: {
+    name: t({ id: 'audit.field.type', defaultMessage: 'Type' }),
+    read: { set: PRODUCT_TYPE_WORDS },
+  },
+  discontinued: {
+    name: t({ id: 'audit.field.discontinued', defaultMessage: 'Discontinued' }),
+    read: { set: DISCONTINUED_WORDS },
+  },
+  category: {
+    name: t({ id: 'audit.field.category', defaultMessage: 'Category' }),
+    read: { set: CATEGORY_WORDS },
   },
   expectsGoods: {
     name: t({
@@ -858,7 +901,15 @@ export const AUDIT_FIELDS = {
     read: 'reference',
   },
   productId: {
-    name: t({ id: 'audit.field.productId', defaultMessage: 'Product' }),
+    name: t({ id: 'audit.field.productId', defaultMessage: 'Item' }),
+    read: 'reference',
+  },
+  categoryId: {
+    name: t({ id: 'audit.field.categoryId', defaultMessage: 'Category' }),
+    read: 'reference',
+  },
+  parentId: {
+    name: t({ id: 'audit.field.parentId', defaultMessage: 'Under' }),
     read: 'reference',
   },
   lotId: {

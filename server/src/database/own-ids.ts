@@ -3,10 +3,11 @@ import { and, eq, inArray } from 'drizzle-orm';
 
 import type { Translatable } from '../i18n/translate';
 import type { Transaction } from './database.module';
-import { locations, partners, productVariants } from './schema';
+import { locations, partners, products, productVariants } from './schema';
 
-/** The tables a body's ids are checked against so far. */
-type OwnedTable = typeof productVariants | typeof locations | typeof partners;
+/** The tables a body's or an address's ids are checked against so far. */
+type OwnedTable =
+  typeof products | typeof productVariants | typeof locations | typeof partners;
 
 /**
  * A foreign key takes a row of any organization, so each id a body names is

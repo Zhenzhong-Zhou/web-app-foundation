@@ -11,6 +11,7 @@ const PRODUCT: ProductDetail = {
   displayName: 'Calm',
   description: null,
   isActive: true,
+  categoryId: null,
   images: [],
   translations: [],
   variants: [
@@ -61,5 +62,40 @@ describe('TranslationsDialog', () => {
       ).toBeInTheDocument();
     }
     expect(screen.getAllByRole('textbox')).toHaveLength(9);
+  });
+
+  /**
+   * The languages the organization's documents require are marked, and the
+   * intro says a blank prints the base name only of the others, which a
+   * required language does not (ADR-092, #306's 18).
+   */
+  it('marks the required languages, saying a blank prints the base name only of the others', () => {
+    render(
+      <TranslationsDialog
+        open
+        product={PRODUCT}
+        required={['en']}
+        onClose={() => undefined}
+        onSaved={async () => undefined}
+      />,
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'English Required on documents' }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('heading', { name: 'Français (Canada)' }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        'Documents require names in English: while one is blank, orders and invoices holding this item cannot print.',
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        'Where another language is left blank, documents in it print the base name, Calm.',
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText(/Where a language is left blank/)).toBeNull();
   });
 });

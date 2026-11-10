@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-03
 areas: [documents, mail, i18n]
-amended-by: [ADR-071, ADR-076, ADR-081]
+amended-by: [ADR-071, ADR-076, ADR-081, ADR-092]
 ---
 
 # ADR-054 — Languages: the person's language for the app, the customer's for documents
@@ -403,3 +403,15 @@ them away.
 Considered and not done: rewriting old rows into messages. Their sentences
 cannot be parsed back into ids and values reliably, and they age out under
 retention (ADR-036) within weeks.
+
+## Amendment (November 2026) — what documents will refuse, shown before they do (ADR-092)
+
+A line refused for a missing name was found only when its document was
+refused (#526): the product's page listed the product's names and not
+its variations'. From ADR-092 the item's page shows the product and
+each variation with a name of its own, by language, marks the languages
+the organization requires, and says when one is missing; Edit names
+marks them too. The 409 names whether the product's name or the
+variation's is missing. "The product form asks for the required
+languages" becomes this: Add item does not ask for them, and the new
+item's page, opening right after, shows what is missing.

@@ -25,6 +25,7 @@ export class AvailabilityController {
     return this.availability.list(
       localeOf(acceptLanguage),
       query.promised === 'true',
+      query.productId,
     );
   }
 

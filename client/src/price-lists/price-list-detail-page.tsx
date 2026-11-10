@@ -182,7 +182,7 @@ export function PriceListDetailPage() {
                   <TableCell>
                     {intl.formatMessage({
                       id: 'products.sku',
-                      defaultMessage: 'SKU',
+                      defaultMessage: 'Code',
                     })}
                   </TableCell>
                   <TableCell>
@@ -277,6 +277,7 @@ export function PriceListDetailPage() {
         key={correcting?.variantId ?? (adding ? 'new' : 'price-closed')}
         open={adding || correcting !== null}
         priceListId={list.id}
+        direction={list.direction}
         currency={list.currency}
         item={
           correcting && {

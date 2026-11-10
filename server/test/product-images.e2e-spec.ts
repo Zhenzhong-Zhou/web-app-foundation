@@ -101,9 +101,9 @@ describe('Product images (e2e)', () => {
       [back, 1],
     ]);
 
-    const list = body<{ id: string; coverFileId: string | null }[]>(
-      await alpha.agent.get('/v1/products').expect(200),
-    );
+    const list = body<{
+      entries: { id: string; coverFileId: string | null }[];
+    }>(await alpha.agent.get('/v1/products').expect(200)).entries;
     expect(list.find((row) => row.id === productId)?.coverFileId).toBe(front);
 
     const detail = body<{ images: Image[] }>(
@@ -238,7 +238,7 @@ describe('Product images (e2e)', () => {
       .get(`/v1/files/${fileId}?size=thumb`)
       .expect(403);
     expect((refused.body as { message: string }).message).toBe(
-      'Your role, Office, doesn’t include “See the product catalogue”. Owner can change your roles.',
+      'Your role, Office, doesn’t include “See the items”. Owner can change your roles.',
     );
   });
 });

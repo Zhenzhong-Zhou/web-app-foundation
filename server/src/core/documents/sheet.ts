@@ -314,7 +314,7 @@ export function linesTable(
     formatMoney(amount, currency, doc.locale);
 
   const header: TableCell[] = [
-    head(doc.label(t({ id: 'documents.sku', defaultMessage: 'SKU' }))),
+    head(doc.label(t({ id: 'documents.sku', defaultMessage: 'Code' }))),
     head(doc.label(t({ id: 'documents.item', defaultMessage: 'Item' }))),
     head(
       doc.label(t({ id: 'documents.quantity', defaultMessage: 'Quantity' })),

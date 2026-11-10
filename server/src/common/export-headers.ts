@@ -17,7 +17,7 @@ export const HEADERS = {
   tax: t({ id: 'exports.column.tax', defaultMessage: 'Tax' }),
   total: t({ id: 'exports.column.total', defaultMessage: 'Total' }),
   date: t({ id: 'exports.column.date', defaultMessage: 'Date' }),
-  sku: t({ id: 'exports.column.sku', defaultMessage: 'SKU' }),
+  sku: t({ id: 'exports.column.sku', defaultMessage: 'Code' }),
   item: t({ id: 'exports.column.item', defaultMessage: 'Item' }),
   lot: t({ id: 'exports.column.lot', defaultMessage: 'Lot' }),
   expiry: t({ id: 'exports.column.expiry', defaultMessage: 'Expiry' }),

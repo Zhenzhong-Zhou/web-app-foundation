@@ -17,6 +17,7 @@ import { AppLayout } from './layout/app-layout';
 import { isRevisionRefusal } from './lib/api';
 import { ScreenShown } from './lib/loading-mark';
 import { useDelayedFlag } from './lib/use-delayed-flag';
+import { ToItems } from './products/to-items';
 import { SIGNED_IN_ROUTES } from './routes';
 
 /** Needs a session. Remembers where the caller was headed. */
@@ -184,6 +185,10 @@ export default function App() {
             is readable in the bundle, and access is enforced server-side. */}
         <Route path="*" element={<NotFoundRoute />} />
       </Route>
+
+      {/* Products' old addresses, outside both guards: signed out, the
+          new address is the one sign-in returns to (ADR-092). */}
+      <Route path="/products/*" element={<ToItems />} />
 
       {/* Protected wraps the layout, not each child: one guard, and the
           header does not re-mount on navigation. */}

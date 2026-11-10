@@ -40,7 +40,7 @@ leave how it matches to this file. How this file is kept is in the
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a product by its name in another language, shown in the reader’s" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds an item by SKU, name, another language, pinyin or one character" ·
-  [Help](../../client/src/help/guides/en/products.md#products) ·
+  [Help](../../client/src/help/guides/en/items.md#items) ·
   MC-3901
 - **A Chinese name is found by its characters, one being enough, and by
   its pinyin, in full or by its initials, its tone marks and spaces set
@@ -81,16 +81,17 @@ leave how it matches to this file. How this file is kept is in the
 ## What each kind of record is found by
 
 - **An item: any part of its SKU, of its product's or its variant's name
-  in any language, or of their pinyin.** Products finds a product through
-  any of its variants, discontinued ones included; Inventory finds a row
-  by its item or by its lot code. The top bar finds discontinued items too.
+  in any language, or of their pinyin.** Items finds an item through any of
+  its variants, discontinued ones only when asked for them; Inventory
+  finds a row by its item or by its lot code. The top bar finds
+  discontinued items too.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a product by part of a SKU or a name, case and accents ignored" ·
-  [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a discontinued product, as the list shows it" ·
+  [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a discontinued product when asked to include them, as the top bar does" ·
   [test](../../server/test/lookup.e2e-spec.ts) "finds an item by SKU or name, and a Chinese partner by pinyin" ·
   [test](../../server/test/stock.e2e-spec.ts) "searches the SKU, the product name and the lot code" ·
   partly tested ·
-  [Help](../../client/src/help/guides/en/products.md#products) ·
+  [Help](../../client/src/help/guides/en/items.md#items) ·
   MC-3901 · MC-308
 - **A partner: any part of its name or its pinyin, its code or its tax
   ID.** Retired partners are found too.
@@ -206,15 +207,15 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/lookup.e2e-spec.ts) "finds its own records through each join, none of a twin organization's" ·
   [test](../../server/test/lookup.e2e-spec.ts) "ranks an exact match on the reader's name for an item first" ·
   MC-2201 · MC-1556
-- **A result opens its record:** an item opens its product, a lot its
-  trace.
+- **A result opens its record:** an item opens its page under Items, a
+  lot its trace.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
   [test](../../client/e2e/search.spec.ts) "finds a lot from the top bar and opens its trace" ·
   [Help](../../client/src/help/guides/en/lots.md#trace-a-lot-trace) ·
   MC-1556
 - **Each kind ends with Show all in its list, which opens that list with
   the same search:** Orders, Invoices, Credit notes, Inventory for lots,
-  Products for items, Partners, Production and Returns.
+  Items for items, Partners, Production and Returns.
   [ADR-056](../adr/0056-search.md#decision--order-of-results) ·
   [test](../../client/src/products/products-page.test.tsx) "follows the address while open, and writes what is typed there without adding to the history" ·
   [test](../../client/src/products/products-page.test.tsx) "asks with the address’s search, and lists the answer in its order" ·
@@ -226,6 +227,14 @@ leave how it matches to this file. How this file is kept is in the
   only once All, or Show emptied, is pressed.
   [ADR-056](../adr/0056-search.md#decision--two-kinds-of-search-one-way-of-matching) ·
   no test
+- **Show all in Items opens it on All, discontinued items included,**
+  so every item the top bar found is on the list, whatever its type
+  (`/items?tab=all&discontinued=include&search=…`).
+  [ADR-092](../adr/0092-items.md#decision--the-types-as-tabs-opening-on-products) ·
+  [test](../../client/src/search/lookup-kinds.test.ts) "opens Show all in Items on All, discontinued included, with the search (ADR-092)" ·
+  [test](../../client/src/products/products-page.test.tsx) "opens Show all’s address on All with discontinued items, a chip removing them" ·
+  [test](../../client/e2e/items.spec.ts) "the top bar, Show all in Items: the list opens on All with the search, discontinued included, a chip saying so" ·
+  MC-1557 · MC-207
 - **Nothing found says "Nothing found."** and offers no list to open.
   [ADR-056](../adr/0056-search.md#decision--in-the-browser) ·
   [test](../../client/src/search/lookup-box.test.tsx) "says when nothing is found" ·
@@ -247,7 +256,7 @@ leave how it matches to this file. How this file is kept is in the
 
 ## Searching a list
 
-- **Products, Partners, Orders, Invoices, Credit notes, Returns,
+- **Items, Partners, Orders, Invoices, Credit notes, Returns,
   Production and Inventory search on the server:** the whole list, not
   only the rows on screen, together with the list's other filters.
   [ADR-056, amended](../adr/0056-search.md#decision--products-partners-and-the-item-pickers-searched-on-the-server) ·
@@ -263,19 +272,23 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/stock.e2e-spec.ts) "finds names without accents, Chinese by pinyin, and % as itself" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a Chinese name by its pinyin, its initials or one character" ·
   partly tested
-- **Products and Partners put the closest match first:** exact, then at
-  the start, then anywhere, then by name, a product by the name the reader
-  sees. A product ranks by its closest variant.
+- **Items and Partners put the closest match first:** exact, then at
+  the start, then anywhere, then by name, an item by the name the reader
+  sees. An item ranks by its closest variant, and the list of items then
+  by its sort, whichever way it runs.
   [ADR-056, amended](../adr/0056-search.md#decision--the-lookups-ranking-and-one-minimum-everywhere) ·
+  [test](../../server/test/items-list.e2e-spec.ts) "ranks a search before the sort, the closest first either way, and pages on the rank" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "ranks exact, then at the start, then anywhere, before the name’s order" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "ranks exact, then at the start, then anywhere, then by name" ·
   MC-3902
 - **The paged lists keep their own order when searched:** Orders,
   Invoices, Credit notes, Returns, Production and Inventory are narrowed by
-  a search, not ranked by it, so Load more carries on where it was.
+  a search, not ranked by it, so Load more carries on where it was. The
+  list of items is ranked, and its next page carries on from the rank.
   [ADR-056, amended](../adr/0056-search.md#decision--the-lookups-ranking-and-one-minimum-everywhere) ·
-  no test
-- **Orders, Invoices, Credit notes, Returns, Production, Products,
+  [test](../../server/test/items-list.e2e-spec.ts) "ranks a search before the sort, the closest first either way, and pages on the rank" ·
+  partly tested
+- **Orders, Invoices, Credit notes, Returns, Production, Items,
   Partners and Inventory keep their search in the page's address.** Show
   all from the top bar opens the list narrowed. What is typed is written
   there a moment after typing stops, in place of the page in the history,
@@ -288,6 +301,7 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../client/src/partners/partners-page.test.tsx) "asks with the address’s search, and lists the answer in its order" ·
   [test](../../client/src/inventory/inventory-page.test.tsx) "follows the address while open, as Show all in the lookup changes it" ·
   [test](../../client/src/inventory/inventory-page.test.tsx) "is one search on Stock and Reorder points, either way" ·
+  [test](../../client/e2e/items.spec.ts) "Items, a search then a pause: the list and every tab’s count follow; with none on this tab, it says where the matches are, with a button there; Back, the page before; Forward, as it was" ·
   partly tested ·
   MC-3901 · MC-3902 · MC-R67
 - **A list asks a moment after typing stops, waits for the answer
@@ -302,14 +316,17 @@ leave how it matches to this file. How this file is kept is in the
 - **A search that finds nothing says "Nothing matches that search.",**
   not the empty list's first-time message.
   [ADR-056](../adr/0056-search.md#decision--matching) ·
-  [test](../../client/src/products/products-page.test.tsx) "says no products yet for an empty catalogue, and nothing matches for an empty search" ·
+  [test](../../client/src/products/products-page.test.tsx) "says no items yet for an empty catalogue, and nothing matches for an empty search" ·
   [test](../../client/src/partners/partners-page.test.tsx) "says nothing matches for an empty answer to a search" ·
   MC-1546
 - **An export holds what the search found on Orders, Invoices, Credit
-  notes and Inventory; Products' and Partners' exports hold everything,
-  whatever is typed.**
+  notes, Inventory and Items; Partners' export holds everything, whatever
+  is typed.**
   [ADR-057](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#decision--csv-export-of-what-the-list-shows) ·
-  no test ·
+  [ADR-092](../adr/0092-items.md#decision--fifty-at-a-time-the-counts-from-the-server) ·
+  [test](../../server/test/exports.e2e-spec.ts) "writes the items the list shows, by its own query and in its order" ·
+  [test](../../client/src/products/products-page.test.tsx) "exports what the list shows, its tab, search, Discontinued and sort" ·
+  partly tested ·
   MC-1558
 - **People narrows what it has loaded, in the browser,** by part of a
   name, job title, department or email, capitals aside but not accents,
@@ -331,11 +348,11 @@ leave how it matches to this file. How this file is kept is in the
 ## Picking an item or a partner
 
 - **Every item picker and every partner picker searches the server, as
-  Products and Partners do.** The item pickers are in Receive, Add an
+  Items and Partners do.** The item pickers are in Receive, Add an
   item, New order, Set price, a recipe's component, Plan run and the
   Movements filter; the partner pickers are New order's Partner, a
   sample's Given to and Plan run's Contract manufacturer. A SKU typed whole
-  comes first.
+  comes first, in an item picker first in its type's group.
   [ADR-056, amended](../adr/0056-search.md#decision--products-partners-and-the-item-pickers-searched-on-the-server) ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds an item by SKU, name, another language, pinyin or one character" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "puts a SKU typed whole first, and a translation’s exact name" ·
@@ -345,10 +362,13 @@ leave how it matches to this file. How this file is kept is in the
 - **Before anything is typed, a picker lists what its form offers and
   asks nothing; from the first character, it asks a moment after typing
   stops, lists the server's order, and drops an answer that comes after a
-  newer one.**
+  newer one.** An item picker keeps that order within each type's group,
+  as the products rules file says.
   [ADR-056, amended](../adr/0056-search.md#decision--products-partners-and-the-item-pickers-searched-on-the-server) ·
+  [ADR-092](../adr/0092-items.md#decision--pickers-put-the-tasks-types-first) ·
   [test](../../client/src/components/variant-picker.test.tsx) "lists what it is given before anything is typed, and asks nothing" ·
   [test](../../client/src/components/variant-picker.test.tsx) "asks once typing stops, and lists the answer in its order, within what it was given" ·
+  [test](../../client/src/components/variant-picker.test.tsx) "keeps the server’s order within each group while a search is typed" ·
   [test](../../client/src/components/variant-picker.test.tsx) "drops an answer that comes after a newer one" ·
   [test](../../client/src/components/partner-picker.test.tsx) "lists what it is given before anything is typed, and asks nothing" ·
   MC-3903

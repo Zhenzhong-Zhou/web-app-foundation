@@ -2,7 +2,7 @@
 status: accepted
 date: 2026-10-07
 areas: [partners, products, search, database, i18n, ui]
-amended-by: [ADR-073]
+amended-by: [ADR-073, ADR-092]
 ---
 
 # ADR-056 — Search: one lookup in the top bar, and a search on every list
@@ -445,3 +445,13 @@ above, this holds.
   slower on 29 October, main as much as this branch.
 - **Found and fixed on the way:** three tenancy checks, production runs,
   recipes and a run's release, through one `assertOwnIds` (ADR-003).
+
+## Amendment (November 2026) — Show all opens Items on All (ADR-092)
+
+The lookup's group for items is Items · Articles · 物品, the page's name
+since ADR-092. Its Show all opens Items on All, with the search and with
+discontinued items included, a chip saying so: Items opens on Products
+and hides what is discontinued, and a record the lookup finds, its list
+finds too (#308's 22, Items' part). The other lists' Show all stay as
+issue #308 found them. Items still ranks as the lookup ranks while a search is
+typed, and its paging keys on that rank.

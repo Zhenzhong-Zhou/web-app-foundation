@@ -4,7 +4,6 @@ import {
   Chip,
   Link,
   Paper,
-  Skeleton,
   Stack,
   Table,
   TableBody,
@@ -22,10 +21,12 @@ import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
+import { FilterChips } from '../components/filter-chips';
 import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { PlaceholderRows } from '../components/placeholder-rows';
 import { Reference } from '../components/reference';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
@@ -35,8 +36,6 @@ import { withDays } from '../lib/date-range';
 import { daysUntil } from '../lib/expiry';
 import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
-import { useDelayedFlag } from '../lib/use-delayed-flag';
-import { useFocusAfterRemove } from '../lib/use-focus-after-remove';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { day, flag, oneOf, useListFilters } from '../lib/use-list-filters';
 import { useListSearch, withSearch } from '../lib/use-list-search';
@@ -122,9 +121,6 @@ export function OrdersPage() {
   const can = useCan();
 
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
-  // Focus to the chip in a removed one's place, or the heading (ADR-091's
-  // review).
-  const { row: chipRow, removed } = useFocusAfterRemove();
   const { status: filter, direction, outstanding, late } = filters;
   const range = { from: filters.from, to: filters.to };
   const { text, setText, search } = useListSearch();
@@ -171,7 +167,6 @@ export function OrdersPage() {
     loadMore,
     reload,
   } = useKeysetList<OrderSummary>(path);
-  const showSkeleton = useDelayedFlag(loading);
   // Every row of these is outstanding, as the server counts it, so one
   // expected before the organization's today is late, as Home says
   // (ADR-091). Elsewhere a row's own sums cannot tell: a line closed short
@@ -237,106 +232,72 @@ export function OrdersPage() {
 
       {/* What a link narrowed or ordered that no button shows, each
           removable. */}
-      {(direction ||
-        outstanding ||
-        late ||
-        oldestFirst ||
-        filter === 'draft' ||
-        filter === 'confirmed') && (
-        <Stack ref={chipRow} direction="row" spacing={1}>
-          {direction && (
-            <Chip
-              label={
-                direction === 'sale'
+      <FilterChips
+        chips={[
+          direction !== '' && {
+            id: 'direction',
+            label:
+              direction === 'sale'
+                ? intl.formatMessage({
+                    id: 'orders.filter.sales',
+                    defaultMessage: 'Sales only',
+                  })
+                : intl.formatMessage({
+                    id: 'orders.filter.purchases',
+                    defaultMessage: 'Purchases only',
+                  }),
+            onRemove: () => setFilters({ direction: '' }),
+          },
+          (filter === 'draft' || filter === 'confirmed') && {
+            id: 'status',
+            label: orderStatusLabel(filter, direction || 'sale'),
+            onRemove: () => setFilters({ status: 'open' }),
+          },
+          outstanding && {
+            id: 'outstanding',
+            label:
+              direction === 'sale'
+                ? intl.formatMessage({
+                    id: 'orders.filter.toShip',
+                    defaultMessage: 'Still to ship',
+                  })
+                : direction === 'purchase'
                   ? intl.formatMessage({
-                      id: 'orders.filter.sales',
-                      defaultMessage: 'Sales only',
+                      id: 'orders.filter.toReceive',
+                      defaultMessage: 'Still to receive',
                     })
                   : intl.formatMessage({
-                      id: 'orders.filter.purchases',
-                      defaultMessage: 'Purchases only',
-                    })
-              }
-              onDelete={(event) => {
-                removed(event);
-                setFilters({ direction: '' });
-              }}
-            />
-          )}
-          {(filter === 'draft' || filter === 'confirmed') && (
-            <Chip
-              label={orderStatusLabel(filter, direction || 'sale')}
-              onDelete={(event) => {
-                removed(event);
-                setFilters({ status: 'open' });
-              }}
-            />
-          )}
-          {outstanding && (
-            <Chip
-              label={
-                direction === 'sale'
-                  ? intl.formatMessage({
-                      id: 'orders.filter.toShip',
-                      defaultMessage: 'Still to ship',
-                    })
-                  : direction === 'purchase'
-                    ? intl.formatMessage({
-                        id: 'orders.filter.toReceive',
-                        defaultMessage: 'Still to receive',
-                      })
-                    : intl.formatMessage({
-                        id: 'orders.filter.outstanding',
-                        defaultMessage: 'Still to ship or receive',
-                      })
-              }
-              onDelete={(event) => {
-                removed(event);
-                setFilters({ outstanding: false });
-              }}
-            />
-          )}
-          {late && (
-            <Chip
-              label={intl.formatMessage({
-                id: 'orders.filter.late',
-                defaultMessage: 'Late',
-              })}
-              onDelete={(event) => {
-                removed(event);
-                setFilters({ late: false });
-              }}
-            />
-          )}
-          {oldestFirst && (
-            <Chip
-              label={intl.formatMessage({
-                id: 'orders.oldestFirst',
-                defaultMessage: 'Oldest first',
-              })}
-              onDelete={(event) => {
-                removed(event);
-                setFilters({ order: '' });
-              }}
-            />
-          )}
-        </Stack>
-      )}
+                      id: 'orders.filter.outstanding',
+                      defaultMessage: 'Still to ship or receive',
+                    }),
+            onRemove: () => setFilters({ outstanding: false }),
+          },
+          late && {
+            id: 'late',
+            label: intl.formatMessage({
+              id: 'orders.filter.late',
+              defaultMessage: 'Late',
+            }),
+            onRemove: () => setFilters({ late: false }),
+          },
+          oldestFirst && {
+            id: 'oldest-first',
+            label: intl.formatMessage({
+              id: 'orders.oldestFirst',
+              defaultMessage: 'Oldest first',
+            }),
+            onRemove: () => setFilters({ order: '' }),
+          },
+        ]}
+      />
 
       <ListError error={error} onRetry={failed ? reload : undefined} />
 
       {!failed && (
         <Paper variant="outlined">
-          {loading ? (
-            <Stack sx={{ p: 2 }} spacing={1}>
-              {showSkeleton ? (
-                <>
-                  <Skeleton height={48} />
-                  <Skeleton height={48} />
-                </>
-              ) : null}
-            </Stack>
-          ) : items?.length ? (
+          {/* The table's head stays while the rows are read, a sort's
+              included, so the header pressed keeps its focus (#505's 54). */}
+          {loading || items?.length ? (
             <TableContainer>
               <Table size="small">
                 <TableHead>
@@ -382,7 +343,8 @@ export function OrdersPage() {
                 </TableHead>
 
                 <TableBody>
-                  {items.map((order) => (
+                  {loading && <PlaceholderRows columns={7} />}
+                  {items?.map((order) => (
                     <TableRow key={order.id} hover>
                       {/* Ours, which every order has (ADR-071): the link. */}
                       <TableCell>

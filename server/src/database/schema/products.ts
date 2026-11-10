@@ -10,6 +10,7 @@ import {
 
 import { primaryKey, timestamps, trigramIndex } from './columns';
 import { organizations } from './organizations';
+import { productCategories } from './product-categories';
 
 /**
  * What a thing is *for*, not what it is made of. Sellable goods, raw material,
@@ -63,6 +64,15 @@ export const products = pgTable(
      */
     isActive: boolean('is_active').notNull().default(true),
 
+    /**
+     * Its category, or none: Uncategorised (ADR-092). RESTRICT: a category
+     * holding items is refused deletion until they move, and the service
+     * says how many first.
+     */
+    categoryId: uuid('category_id').references(() => productCategories.id, {
+      onDelete: 'restrict',
+    }),
+
     ...timestamps,
 
     /**
@@ -93,5 +103,8 @@ export const products = pgTable(
     // catalogue for no gain.
     index('products_org_name_idx').on(t.organizationId, t.name),
     index('products_organization_id_idx').on(t.organizationId),
+    // Items by category, and Uncategorised, which the list filters on: led
+    // by the organization, as every list's read is.
+    index('products_org_category_idx').on(t.organizationId, t.categoryId),
   ],
 );

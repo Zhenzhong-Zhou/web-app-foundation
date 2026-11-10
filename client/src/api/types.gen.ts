@@ -793,6 +793,7 @@ export type AuditLink = {
     | 'lot'
     | 'product'
     | 'partner'
+    | 'product_category'
     | 'tax_code'
     | 'price_list'
     | 'variant'
@@ -1054,13 +1055,74 @@ export type AcceptInvitationDto = {
   timeZone?: string;
 };
 
-export type ProductSummary = {
-  coverFileId: string | null;
+export type CategoryItemCount = {
+  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  active: number;
+  discontinued: number;
+};
+
+export type ProductCategory = {
   id: string;
-  type: string;
   name: string;
-  description: string | null;
+  parentId: string | null;
+  items: Array<CategoryItemCount>;
+};
+
+export type ProductCategoryList = {
+  categories: Array<ProductCategory>;
+  uncategorised: Array<CategoryItemCount>;
+};
+
+export type CreateProductCategoryDto = {
+  name: string;
+  parentId?: string | null;
+};
+
+export type ProductCategoryEnvelope = {
+  category: ProductCategory;
+};
+
+export type UpdateProductCategoryDto = {
+  name?: string;
+  parentId?: string | null;
+};
+
+export type ProductSummaryCategory = {
+  id: string;
+  path: Array<string>;
+};
+
+export type ProductSummary = {
+  id: string;
+  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  displayName: string;
+  sku: string;
+  variantCount: number;
+  category: ProductSummaryCategory | null;
+  coverFileId: string | null;
   isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  onHand: string | null;
+  unitOfMeasure: string | null;
+  stockStatus: 'out' | 'low' | null;
+};
+
+export type ProductTypeCount = {
+  type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+  count: number;
+};
+
+export type ProductCounts = {
+  types: Array<ProductTypeCount>;
+  all: number;
+  discontinued: number;
+};
+
+export type ProductPage = {
+  entries: Array<ProductSummary>;
+  nextCursor: string | null;
+  counts: ProductCounts | null;
 };
 
 export type VariantOption = {
@@ -1120,6 +1182,7 @@ export type ProductImage = {
 
 export type ProductDetail = {
   displayName: string;
+  categoryId: string | null;
   translations: Array<ProductTranslation>;
   variants: Array<Variant>;
   images: Array<ProductImage>;
@@ -1146,6 +1209,7 @@ export type CreateProductDto = {
   type: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
   name: string;
   description?: string;
+  categoryId?: string | null;
   variant: CreateVariantDto;
 };
 
@@ -1153,10 +1217,32 @@ export type ProductEnvelope = {
   product: ProductDetail;
 };
 
+export type ProductChangeDto = {
+  id: string;
+  categoryId?: string | null;
+  isActive?: boolean;
+};
+
+export type ChangeProductsDto = {
+  items: Array<ProductChangeDto>;
+};
+
+export type ProductChange = {
+  id: string;
+  categoryId?: string | null;
+  isActive?: boolean;
+};
+
+export type ProductChanges = {
+  items: Array<ProductChange>;
+};
+
 export type UpdateProductDto = {
+  type?: 'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
   name?: string;
   description?: string;
   isActive?: boolean;
+  categoryId?: string | null;
 };
 
 export type VariantEnvelope = {
@@ -1881,7 +1967,7 @@ export type ReorderPointRow = {
   stillNeeded: string;
   inDraft: string;
   position: string;
-  status: 'out' | 'low' | 'enough' | 'discontinued';
+  status: 'out' | 'low' | 'discontinued' | 'enough';
   suggestion: string;
   suggestedMultiples: string | null;
   drafted: boolean;
@@ -1940,12 +2026,12 @@ export type ReorderPointDetail = {
 
 export type ReorderPointPreview = {
   position: string;
-  status: 'out' | 'low' | 'enough' | 'discontinued';
+  status: 'out' | 'low' | 'discontinued' | 'enough';
   suggestion: string;
   suggestedMultiples: string | null;
   drafted: boolean;
   after: string;
-  afterStatus: 'out' | 'low' | 'enough' | 'discontinued';
+  afterStatus: 'out' | 'low' | 'discontinued' | 'enough';
 };
 
 export type SetReorderPointDto = {
@@ -3432,6 +3518,9 @@ export const AuditAction = {
   PRODUCT_UPDATED: 'product.updated',
   PRODUCT_VARIANT_ADDED: 'product.variant_added',
   PRODUCT_VARIANT_UPDATED: 'product.variant_updated',
+  PRODUCT_CATEGORY_CREATED: 'product_category.created',
+  PRODUCT_CATEGORY_UPDATED: 'product_category.updated',
+  PRODUCT_CATEGORY_DELETED: 'product_category.deleted',
   LOCATION_CREATED: 'location.created',
   LOCATION_UPDATED: 'location.updated',
   STOCK_MOVEMENT_RECORDED: 'stock.movement_recorded',
@@ -3535,6 +3624,7 @@ export const ErrorCode = {
   API_UPDATING: 'api_updating',
   REORDER_POINT_EXISTS: 'reorder_point_exists',
   REORDER_MAXIMUM_NOT_ABOVE_POINT: 'reorder_maximum_not_above_point',
+  CODE_IN_USE: 'code_in_use',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -3552,6 +3642,7 @@ export type ErrorDetails = {
   invitationId?: string;
   at?: string;
   day?: string;
+  productId?: string;
 };
 
 export type ErrorBody = {
@@ -4088,6 +4179,9 @@ export type AuditControllerListV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product_category.created'
+      | 'product_category.updated'
+      | 'product_category.deleted'
       | 'location.created'
       | 'location.updated'
       | 'stock.movement_recorded'
@@ -4202,6 +4296,9 @@ export type AuditControllerExportAuditV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product_category.created'
+      | 'product_category.updated'
+      | 'product_category.deleted'
       | 'location.created'
       | 'location.updated'
       | 'stock.movement_recorded'
@@ -4531,6 +4628,9 @@ export type WorkControllerActivityV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product_category.created'
+      | 'product_category.updated'
+      | 'product_category.deleted'
       | 'location.created'
       | 'location.updated'
       | 'stock.movement_recorded'
@@ -4645,6 +4745,9 @@ export type WorkControllerExportActivityV1Data = {
       | 'product.updated'
       | 'product.variant_added'
       | 'product.variant_updated'
+      | 'product_category.created'
+      | 'product_category.updated'
+      | 'product_category.deleted'
       | 'location.created'
       | 'location.updated'
       | 'stock.movement_recorded'
@@ -4882,6 +4985,66 @@ export type InvitationsControllerAcceptV1Responses = {
 export type InvitationsControllerAcceptV1Response =
   InvitationsControllerAcceptV1Responses[keyof InvitationsControllerAcceptV1Responses];
 
+export type ProductCategoriesControllerListV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/products/categories';
+};
+
+export type ProductCategoriesControllerListV1Responses = {
+  200: ProductCategoryList;
+};
+
+export type ProductCategoriesControllerListV1Response =
+  ProductCategoriesControllerListV1Responses[keyof ProductCategoriesControllerListV1Responses];
+
+export type ProductCategoriesControllerCreateV1Data = {
+  body: CreateProductCategoryDto;
+  path?: never;
+  query?: never;
+  url: '/v1/products/categories';
+};
+
+export type ProductCategoriesControllerCreateV1Responses = {
+  201: ProductCategoryEnvelope;
+};
+
+export type ProductCategoriesControllerCreateV1Response =
+  ProductCategoriesControllerCreateV1Responses[keyof ProductCategoriesControllerCreateV1Responses];
+
+export type ProductCategoriesControllerRemoveV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/products/categories/{id}';
+};
+
+export type ProductCategoriesControllerRemoveV1Responses = {
+  204: void;
+};
+
+export type ProductCategoriesControllerRemoveV1Response =
+  ProductCategoriesControllerRemoveV1Responses[keyof ProductCategoriesControllerRemoveV1Responses];
+
+export type ProductCategoriesControllerUpdateV1Data = {
+  body: UpdateProductCategoryDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/products/categories/{id}';
+};
+
+export type ProductCategoriesControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type ProductCategoriesControllerUpdateV1Response =
+  ProductCategoriesControllerUpdateV1Responses[keyof ProductCategoriesControllerUpdateV1Responses];
+
 export type ProductsControllerListV1Data = {
   body?: never;
   headers?: {
@@ -4889,17 +5052,39 @@ export type ProductsControllerListV1Data = {
   };
   path?: never;
   query?: {
+    cursor?: string;
+    limit?: number;
+    type?:
+      'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+    category?: string;
+    discontinued?: 'only' | 'include';
+    sort?: 'name' | 'category' | 'stock' | 'added' | 'changed';
+    order?: 'asc' | 'desc';
     search?: string;
   };
   url: '/v1/products';
 };
 
 export type ProductsControllerListV1Responses = {
-  200: Array<ProductSummary>;
+  200: ProductPage;
 };
 
 export type ProductsControllerListV1Response =
   ProductsControllerListV1Responses[keyof ProductsControllerListV1Responses];
+
+export type ProductsControllerChangeManyV1Data = {
+  body: ChangeProductsDto;
+  path?: never;
+  query?: never;
+  url: '/v1/products';
+};
+
+export type ProductsControllerChangeManyV1Responses = {
+  200: ProductChanges;
+};
+
+export type ProductsControllerChangeManyV1Response =
+  ProductsControllerChangeManyV1Responses[keyof ProductsControllerChangeManyV1Responses];
 
 export type ProductsControllerCreateV1Data = {
   body: CreateProductDto;
@@ -4925,8 +5110,13 @@ export type ProductsControllerExportProductsV1Data = {
   };
   path?: never;
   query?: {
+    type?:
+      'good' | 'material' | 'packaging' | 'sample' | 'supply' | 'equipment';
+    category?: string;
+    discontinued?: 'only' | 'include';
+    sort?: 'name' | 'category' | 'stock' | 'added' | 'changed';
+    order?: 'asc' | 'desc';
     search?: string;
-    discontinued?: string;
   };
   url: '/v1/products/export';
 };
@@ -5572,6 +5762,7 @@ export type StockControllerListV1Data = {
   query?: {
     locationId?: string;
     variantId?: string;
+    productId?: string;
     includeEmpty?: string;
     search?: string;
     expiringWithin?: number;
@@ -5601,6 +5792,7 @@ export type StockControllerExportInventoryV1Data = {
   query?: {
     locationId?: string;
     variantId?: string;
+    productId?: string;
     includeEmpty?: string;
     search?: string;
     expiringWithin?: number;
@@ -5675,6 +5867,7 @@ export type StockControllerCountsV1Data = {
   query?: {
     locationId?: string;
     variantId?: string;
+    productId?: string;
     includeEmpty?: string;
     search?: string;
     expiringWithin?: number;
@@ -5804,6 +5997,7 @@ export type AvailabilityControllerListV1Data = {
   path?: never;
   query?: {
     promised?: string;
+    productId?: string;
   };
   url: '/v1/stock/availability';
 };

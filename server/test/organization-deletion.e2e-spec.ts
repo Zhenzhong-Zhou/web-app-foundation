@@ -137,6 +137,29 @@ describe('Organization deletion (e2e)', () => {
       .post(`/v1/stock/reorder-points/${vitamin}`)
       .send({ source: 'bought', reorderPoint: '2000', rule: 'just_enough' })
       .expect(204);
+    // A category under another, holding an item (ADR-092): the keys among
+    // them refuse a delete, so closing must still take them all.
+    const vitamins = body<{ category: { id: string } }>(
+      await org.agent
+        .post('/v1/products/categories')
+        .send({ name: 'Vitamins' })
+        .expect(201),
+    ).category.id;
+    const vitaminD = body<{ category: { id: string } }>(
+      await org.agent
+        .post('/v1/products/categories')
+        .send({ name: 'Vitamin D', parentId: vitamins })
+        .expect(201),
+    ).category.id;
+    await org.agent
+      .post('/v1/products')
+      .send({
+        type: 'good',
+        name: 'Vitamin D3 drops',
+        variant: { sku: 'D3-DROPS' },
+        categoryId: vitaminD,
+      })
+      .expect(201);
     await org.agent
       .post('/v1/files/logo')
       .attach('file', SVG, 'logo.svg')
@@ -199,6 +222,17 @@ describe('Organization deletion (e2e)', () => {
           rule: 'just_enough',
         }),
       ]);
+      // The categories, and each item's (ADR-092).
+      const categories = readCsv(zip.get('product_categories.csv')!);
+      const vitamins = categories.find((row) => row.name === 'Vitamins')!;
+      const vitaminD = categories.find((row) => row.name === 'Vitamin D')!;
+      expect(vitamins.parent_id).toBe('');
+      expect(vitaminD.parent_id).toBe(vitamins.id);
+      expect(
+        readCsv(zip.get('products.csv')!).find(
+          (row) => row.name === 'Vitamin D3 drops',
+        )?.category_id,
+      ).toBe(vitaminD.id);
 
       const [member] = readCsv(zip.get('members.csv')!);
       expect(member).toMatchObject({
@@ -800,6 +834,9 @@ describe('Organization deletion (e2e)', () => {
       expect((await rowsOf(alpha.organizationId)).get('reorder_points')).toBe(
         1,
       );
+      expect(
+        (await rowsOf(alpha.organizationId)).get('product_categories'),
+      ).toBe(2);
 
       await setDay(alpha.organizationId, LONG_AGO);
       expect(await service().completeDue()).toEqual({

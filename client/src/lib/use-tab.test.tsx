@@ -8,8 +8,14 @@ import { useTab } from './use-tab';
 
 const TABS = ['items', 'shipments', 'returns'] as const;
 
-function Probe({ tabs = TABS }: { tabs?: readonly (typeof TABS)[number][] }) {
-  const [tab, choose] = useTab(tabs);
+function Probe({
+  tabs = TABS,
+  fallback,
+}: {
+  tabs?: readonly (typeof TABS)[number][];
+  fallback?: (typeof TABS)[number];
+}) {
+  const [tab, choose] = useTab(tabs, { fallback });
   const location = useLocation();
   const navigation = useNavigationType();
 
@@ -37,6 +43,21 @@ function renderAt(
 }
 
 describe('useTab', () => {
+  // Items opens on the first type it holds, not the first tab (ADR-092).
+  it('opens on the fallback with no parameter, and writes none for it', async () => {
+    render(
+      <MemoryRouter initialEntries={['/orders/1']}>
+        <Probe fallback="shipments" />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('tab shipments')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'items' }));
+    expect(screen.getByText('search ?tab=items')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'shipments' }));
+    expect(screen.getByText('search none')).toBeInTheDocument();
+  });
+
   // Opened by a link that offered Back, choosing a tab keeps it (#341).
   it('keeps the state the page was opened with', async () => {
     renderAt({ pathname: '/orders/1', state: OFFER_BACK });

@@ -1,6 +1,6 @@
 # Production
 
-A production run consumes components and produces a finished item, made by you or by a contract manufacturer. A run needs a recipe, which lives on the product’s page.
+A production run consumes components and produces a finished item, made by you or by a contract manufacturer. A run needs a recipe, which lives on the item’s page.
 
 ## Plan a run {#plan}
 
@@ -29,16 +29,16 @@ A production run consumes components and produces a finished item, made by you o
 
 ## Words you’ll meet {#words}
 
-- **Recipe**: what a product is made from. The version runs use is the one promoted on the product’s page.
+- **Recipe**: what an item is made from. The version runs use is the one promoted on the item’s page.
 - **Component**: what a recipe consumes.
 - **Batch**: what a run makes, traced as a received lot is.
 - **Planned**, **In progress**, **Finished**: a run before release, after it, and once closed.
 
 ## If something is refused {#refused}
 
-- A run with no recipe can be planned but not released. Create a recipe on the product’s page and promote it, then release.
+- A run with no recipe can be planned but not released. Create a recipe on the item’s page and promote it, then release.
 - A location short of a component cannot release the run. Move the stock there first, or pick from another location. Stock held for confirmed sales is not taken.
 - A licence that has expired, is not yet in force or was withdrawn can stop a release, as the [licence policy](/settings/organization#licences) says. Someone who may override it can release with a reason, kept on the run.
 - Cancelling does not carry issued components back: somebody has to move them.
 
-See also [Products](/products) and [Lots](/lots).
+See also [Items](/items) and [Lots](/lots).

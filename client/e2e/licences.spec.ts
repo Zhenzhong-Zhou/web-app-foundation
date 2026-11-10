@@ -17,7 +17,7 @@ test('adds a licence, corrects its number, and shows the correction in History',
   await signInAs(page, freshOrg.api);
 
   // In the menu's records (ADR-091, #460).
-  await page.goto('/products');
+  await page.goto('/items');
   await page
     .getByRole('navigation', { name: 'Records' })
     .getByRole('link', { name: 'Licences' })

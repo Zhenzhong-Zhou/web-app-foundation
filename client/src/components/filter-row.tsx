@@ -3,7 +3,9 @@ import {
   Box,
   InputAdornment,
   Stack,
+  type SxProps,
   TextField,
+  type Theme,
   ToggleButton,
 } from '@mui/material';
 import type { ReactNode } from 'react';
@@ -64,22 +66,40 @@ export function FilterRow({
       {children}
 
       {quick.map((filter) => (
-        <ToggleButton
-          key={filter.id}
-          value={filter.id}
-          size="small"
-          selected={filter.pressed}
-          onChange={filter.onToggle}
-          sx={{ borderRadius: 999, px: 1.5, gap: 0.75 }}
-        >
-          {filter.label}
-          {filter.count !== undefined && (
-            <Box component="span" sx={{ color: 'text.secondary' }}>
-              {filter.count}
-            </Box>
-          )}
-        </ToggleButton>
+        <QuickFilterPill key={filter.id} filter={filter} />
       ))}
     </Stack>
+  );
+}
+
+/**
+ * One quick filter, a pill with its count: the row's, and wherever else
+ * the same filter is pressed, as Items' sheet on a phone (ADR-092).
+ */
+export function QuickFilterPill({
+  filter,
+  sx,
+}: {
+  filter: QuickFilter;
+  sx?: SxProps<Theme>;
+}) {
+  return (
+    <ToggleButton
+      value={filter.id}
+      size="small"
+      selected={filter.pressed}
+      onChange={filter.onToggle}
+      sx={[
+        { borderRadius: 999, px: 1.5, gap: 0.75 },
+        ...(Array.isArray(sx) ? sx : [sx]),
+      ]}
+    >
+      {filter.label}
+      {filter.count !== undefined && (
+        <Box component="span" sx={{ color: 'text.secondary' }}>
+          {filter.count}
+        </Box>
+      )}
+    </ToggleButton>
   );
 }

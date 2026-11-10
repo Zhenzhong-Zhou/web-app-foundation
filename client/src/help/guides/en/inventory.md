@@ -7,7 +7,7 @@ Inventory shows what you have and where: each item, at each location, by lot. Fr
 1. Press **Receive stock**.
 2. Choose the item, and the location it goes **Into**. Only locations that hold stock directly are listed.
 3. Type the quantity, in the item’s unit.
-4. For a product tracked by lot, type the lot number and expiry as printed on the box. Receiving the same lot again adds to it.
+4. For an item tracked by lot, type the lot number and expiry as printed on the box. Receiving the same lot again adds to it.
 5. Press **Receive**.
 
 Goods a supplier sends against a purchase are received on the order instead, on [Orders](/orders). Stock received here has no cost until one is set on [Stock value](/costs); **Waiting for a cost** lists it.

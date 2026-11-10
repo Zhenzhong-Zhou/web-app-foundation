@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+
+import { useAddressWrite } from './use-list-filters';
 
 /** How long a list or a picker waits after typing stops before it asks. */
 export const SEARCH_WAIT_MS = 300;
@@ -19,15 +21,16 @@ export const SEARCH_WAIT_MS = 300;
  *   typed. The box's own write arrives as what is typed, so it changes
  *   nothing and starts nothing again.
  * - The write keeps the link's state, so a page a link inside the app
- *   opened still offers Back after a search (#341).
+ *   opened still offers Back after a search (#341), as every write to a
+ *   list's address does (useAddressWrite).
  */
 export function useListSearch(): {
   text: string;
   setText: (text: string) => void;
   search: string;
 } {
-  const [params, setParams] = useSearchParams();
-  const { state } = useLocation();
+  const [params] = useSearchParams();
+  const write = useAddressWrite();
   const address = params.get('search') ?? '';
   const search = address.trim();
   const [text, setText] = useState(address);
@@ -44,20 +47,11 @@ export function useListSearch(): {
     if (typed === search) return;
 
     const timer = setTimeout(
-      () =>
-        setParams(
-          (previous) => {
-            const next = new URLSearchParams(previous);
-            if (typed) next.set('search', typed);
-            else next.delete('search');
-            return next;
-          },
-          { replace: true, state },
-        ),
+      () => write({ search: typed || null }),
       SEARCH_WAIT_MS,
     );
     return () => clearTimeout(timer);
-  }, [text, search, setParams, state]);
+  }, [text, search, write]);
 
   return { text, setText, search };
 }

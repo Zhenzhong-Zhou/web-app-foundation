@@ -1,6 +1,6 @@
 # Licences
 
-Licences are the numbers your formulations are registered under, such as a natural health product’s NPN in Canada. Recipes are made under them, so a batch traces back to its licence. Open it from **Licences** in the menu, or on Products.
+Licences are the numbers your formulations are registered under, such as a natural health product’s NPN in Canada. Recipes are made under them, so a batch traces back to its licence. Open it from **Licences** in the menu, or on Items.
 
 ## Add a licence {#add}
 
@@ -38,4 +38,4 @@ Whoever may change licences or release production runs is told in the bell 60, 3
 - A number already recorded for the same issuer is refused. Edit the one already listed.
 - A licence cannot expire before it was issued. Check the two dates.
 
-See also [Products](/products) and [Production](/production).
+See also [Items](/items) and [Production](/production).

@@ -368,6 +368,96 @@ describe('InventoryPage', () => {
     expect(asked.at(-1)?.get('sort')).toBe('expiry');
   });
 
+  // A row's stock on Items (ADR-092): the item alone, every variant in
+  // every location, its counts too, named on a chip whose × removes it.
+  it('lists one item alone when the address names it, named on a chip that removes it', async () => {
+    const user = userEvent.setup();
+    const ITEM = '00000000-0000-4000-8000-000000000001';
+    const asked = {
+      stock: [] as URLSearchParams[],
+      counts: [] as URLSearchParams[],
+      promised: [] as URLSearchParams[],
+      item: 0,
+    };
+    server.use(
+      http.get('/api/v1/stock', ({ request }) => {
+        asked.stock.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ entries: [ROW], nextCursor: null });
+      }),
+      http.get('/api/v1/stock/counts', ({ request }) => {
+        asked.counts.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ expiring: 0, needsCost: 0 });
+      }),
+      http.get('/api/v1/stock/availability', ({ request }) => {
+        asked.promised.push(new URL(request.url).searchParams);
+        return HttpResponse.json([]);
+      }),
+      http.get(`/api/v1/products/${ITEM}`, () => {
+        asked.item += 1;
+        // The item itself, as GET /v1/products/:id answers.
+        return HttpResponse.json({ displayName: 'Vitamine D' });
+      }),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={[`/inventory?productId=${ITEM}`]}>
+        <InventoryPage />
+      </MemoryRouter>,
+      { permissions: ['stock.view', 'products.view'] },
+    );
+
+    // Named by its rows, in the reader's language, with no read of the
+    // item's own (ADR-092's review, 58).
+    const chip = await screen.findByRole('button', {
+      name: 'Item: Vitamin D',
+    });
+    expect(asked.item).toBe(0);
+    expect(asked.stock[0].get('productId')).toBe(ITEM);
+    await expect.poll(() => asked.counts[0]?.get('productId')).toBe(ITEM);
+    // Promised to customers, the item's alone too (ADR-092's review, 6).
+    expect(asked.promised.map((query) => query.get('productId'))).toEqual([
+      ITEM,
+    ]);
+
+    await user.click(within(chip).getByTestId('CancelIcon'));
+    await expect.poll(() => asked.stock.at(-1)?.has('productId')).toBe(false);
+    await expect
+      .poll(() => asked.promised.at(-1)?.has('productId'))
+      .toBe(false);
+    expect(
+      screen.queryByRole('button', { name: 'Item: Vitamin D' }),
+    ).not.toBeInTheDocument();
+  });
+
+  // It said only "Nothing here yet." (ADR-092's review, 90).
+  it('says the item a row’s stock opened has no stock yet, by its name', async () => {
+    const ITEM = '00000000-0000-4000-8000-000000000001';
+    server.use(
+      http.get('/api/v1/stock', () =>
+        HttpResponse.json({ entries: [], nextCursor: null }),
+      ),
+      http.get('/api/v1/stock/counts', () =>
+        HttpResponse.json({ expiring: 0, needsCost: 0 }),
+      ),
+      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
+      http.get(`/api/v1/products/${ITEM}`, () =>
+        HttpResponse.json({ displayName: 'Vitamin D' }),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={[`/inventory?productId=${ITEM}`]}>
+        <InventoryPage />
+      </MemoryRouter>,
+      { permissions: ['stock.view', 'products.view'] },
+    );
+
+    expect(
+      await screen.findByText('Vitamin D has no stock yet.'),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Item: Vitamin D' }),
+    ).toBeVisible();
+  });
+
   describe('the search', () => {
     function answer() {
       const asked: Record<'stock' | 'points', (string | null)[]> = {

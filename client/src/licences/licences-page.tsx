@@ -20,6 +20,7 @@ import type { ProductLicence } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
+import { FilterChips } from '../components/filter-chips';
 import { FilterRow } from '../components/filter-row';
 import { PageHeader } from '../components/page-header';
 import { Reference } from '../components/reference';
@@ -28,7 +29,6 @@ import { withQuery } from '../lib/api';
 import { formatDay, NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
-import { useFocusAfterRemove } from '../lib/use-focus-after-remove';
 import { flag, useListFilters } from '../lib/use-list-filters';
 import { useResource } from '../lib/use-resource';
 import { EditLicenceDialog } from './edit-licence-dialog';
@@ -57,9 +57,6 @@ export function LicencesPage() {
   const intl = useIntl();
   const can = useCan();
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
-  // Focus to the chip in a removed one's place, or the heading (ADR-091's
-  // review).
-  const { row: chipRow, removed } = useFocusAfterRemove();
   const { expiring, expired } = filters;
   // Soonest first with either on, the server's order.
   const {
@@ -134,20 +131,18 @@ export function LicencesPage() {
 
       {/* What a link narrowed that no button shows, removable: Home's
           late button, the expired alone. */}
-      {expired && (
-        <Stack ref={chipRow} direction="row" spacing={1}>
-          <Chip
-            label={intl.formatMessage({
+      <FilterChips
+        chips={[
+          expired && {
+            id: 'expired',
+            label: intl.formatMessage({
               id: 'licences.filter.expired',
               defaultMessage: 'Expired',
-            })}
-            onDelete={(event) => {
-              removed(event);
-              setFilters({ expired: false });
-            }}
-          />
-        </Stack>
-      )}
+            }),
+            onRemove: () => setFilters({ expired: false }),
+          },
+        ]}
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 

@@ -89,8 +89,9 @@ export const GUIDES = {
     label: NAV_LABELS.stockValue,
     sections: ['costs'],
   },
-  products: {
-    routes: ['/products', '/products/:id'],
+  items: {
+    // Settings › Categories is Items' own, explained in its guide.
+    routes: ['/items', '/items/:id', '/settings/categories'],
     label: NAV_LABELS.products,
     sections: ['add'],
   },

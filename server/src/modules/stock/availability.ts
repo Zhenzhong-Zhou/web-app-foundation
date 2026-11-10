@@ -149,17 +149,20 @@ export async function holdsFor(
  * only those with open demand: what the Inventory page's "Promised to
  * customers" table shows. That list grows with open orders, not with the
  * catalogue, where the full one was 5,000 rows at ADR-051's large scale.
- * Each item named in the reader's language (ADR-056).
+ * With `productId`, that item's variants alone (ADR-092). Each item named
+ * in the reader's language (ADR-056).
  */
 export async function availability(
   tx: Tx,
   organizationId: string,
   locale: Locale,
   promisedOnly = false,
+  productId?: string,
 ) {
   const listed = promisedOnly
     ? sql`h.variant_id is not null`
     : sql`(s.variant_id is not null or h.variant_id is not null)`;
+  const ofItem = productId ? sql`and pr.id = ${productId}::uuid` : sql``;
   const shown = namesIn(locale, organizationId, {
     product: 'pr',
     variant: 'pv',
@@ -200,6 +203,7 @@ export async function availability(
       left join holds h on h.variant_id = pv.id
       where pv.organization_id = ${organizationId}::uuid
         and ${listed}
+        ${ofItem}
       order by pv.sku
     `)
   ).rows as {

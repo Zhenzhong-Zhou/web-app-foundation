@@ -36,8 +36,16 @@ times what a person loads, not the development build.
 Drive the real interface through its accessibility tree, the roles and
 names of what is on screen: a browser tool if one is available, or a
 throwaway Playwright script using the client's `@playwright/test` and
-`getByRole`. Screenshots are a last resort, unless the persona's Set up
-asks for them.
+`getByRole`. Take a screenshot for what the tree cannot show, such as
+whether the persona would notice a control, and where the persona's Set
+up asks for one.
+
+Sign in once for each size, and let the scripts after it reuse that
+session (Playwright's `storageState`), as the browser suite does: every
+sign-in counts, and sign-in allows 10 for one email from one address in
+15 minutes, then refuses that pair for 15 more (`LOGIN_ATTEMPT_LIMIT` in
+`server/src/core/auth/login-throttle.ts`), which neither
+`RATE_LIMIT_MAX` nor `THROTTLE_FACTOR` raises.
 
 Stay in the persona:
 
@@ -78,6 +86,10 @@ each finding:
 - **What happened**, as the persona experienced it.
 - **Why it matters**: the principle, heuristic or WCAG criterion.
 - **Suggestion**: the smallest change that would help.
+- **Scope**: "every screen" when it would hold wherever the same pattern
+  appears, or "this journey" when it concerns the screens walked alone.
+- **Design language**: the principle of `docs/design-language.md` it
+  breaks, or "none of them".
 
 Then what worked well; the last line is `DONE: <why>` or
 `BLOCKED: <what is needed>`, as `CLAUDE.md`'s "Report for a quick
@@ -99,17 +111,27 @@ given, which git ignores.
    production build when any persona's Set up slows the network, kept
    running, its API started with `RATE_LIMIT_MAX=10000` and
    `THROTTLE_FACTOR=1000`, as the screenshots' API is, since the walkers
-   share one address and the dev limit of 100 a minute showed one a 429;
-   then `npm run seed:demo` in `server/` once per persona, one after
-   another, keeping each account's email. A journey that starts on a new
-   organization takes no seed: one account per persona and size it walks
-   instead, since a second size would meet a Getting started the first
-   had done, each made through `POST /v1/auth/register` as the sign-up
-   form makes one, with an address new to this run, the demo's password
-   and a company name of its own. A journey that starts on an invitation,
-   as `join` does, gets one invitation for each persona and size it
-   walks, since an invitation is accepted once: each sent from that
-   persona's demo account, as the outsider's Set up sends one, to an
+   share one address and the dev limit of 100 a minute showed one a 429.
+   Beside an app already on 3000 or 5173, which step 6 leaves as it is,
+   the panel's own takes ports neither the browser suite (3100, 5273)
+   nor the screenshots (3200, 5373) use: its API also with `PORT=3300`
+   and `CLIENT_URL=http://localhost:5473`, so the mail's links open the
+   panel's client; its client with `VITE_API_TARGET=http://localhost:3300`,
+   as `npm run dev -- --port 5473 --strictPort`, or for the production
+   build `npm run preview -- --port 5473 --strictPort`.
+   Then `npm run seed:demo` in `server/` once per persona, one after
+   another, keeping each account's email; or once for the panel when the
+   journey's tasks only read, as `trace`'s do, each persona then signing
+   in as a member of its own from the team the seed prints, an Owner or
+   an Admin unless its Set up names another role. A journey that starts
+   on a new organization takes no seed: one account per persona and size
+   it walks instead, since a second size would meet a Getting started the
+   first had done, each made through `POST /v1/auth/register` as the
+   sign-up form makes one, with an address new to this run, the demo's
+   password and a company name of its own. A journey that starts on an
+   invitation, as `join` does, gets one invitation for each persona and
+   size it walks, since an invitation is accepted once: each sent from
+   that persona's demo account, as the outsider's Set up sends one, to an
    address new to this run.
 2. **Give out the sizes,** so every journey is walked at each of the
    design language's five
@@ -133,15 +155,15 @@ given, which git ignores.
    persona; its account, or one for each size where step 1 made one per
    size; its invitations, one for each size, where step 1 sent them, in
    place of any its Set up would send; the journey's tasks as written
-   for it; its screen sizes; and its report's path,
+   for it; its screen sizes; the app's address, where step 1 started one
+   of its own; and its report's path,
    `<folder>/<journey>-<persona>.md`, as in
    `home-senior-who-reads-only-chinese.md`.
 4. **Wait for all of them.** One that ends BLOCKED is named in the
    merge, and the others still count.
 5. **Merge** into `<folder>/<journey>.md`: each finding once, the
-   personas who hit it, its worst severity, "every screen" or "this
-   journey", and the principle of the design language it breaks
-   (`docs/design-language.md`), or none; sorted by severity, then by how
+   personas who hit it, its worst severity, and its scope and design
+   language as section 5 gives them; sorted by severity, then by how
    many personas hit it. A finding that two personas or more hit, or that
    is marked every screen, is the design language's to settle; the rest
    belong to the journey's screens.

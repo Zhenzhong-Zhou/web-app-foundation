@@ -29,6 +29,10 @@ export const REFERENCE_KINDS = {
   locationId: 'location',
   variantId: 'variant',
   productId: 'product',
+  // An item's category, and a category's parent (ADR-092): the one record
+  // with a parent whose change is recorded.
+  categoryId: 'product_category',
+  parentId: 'product_category',
   lotId: 'lot',
   actorId: 'person',
   resourceId: 'record',

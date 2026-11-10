@@ -86,12 +86,12 @@ const NAMED_READS: NamedRead[] = [
     of: 'product',
     ask: async (world, language) =>
       (
-        await read<{ id: string; name: string }[]>(
+        await read<{ entries: { id: string; displayName: string }[] }>(
           world,
           language,
           '/v1/products',
         )
-      ).find((product) => product.id === world.productId)!.name,
+      ).entries.find((product) => product.id === world.productId)!.displayName,
   },
   {
     operation: 'GET /v1/products/{id}',

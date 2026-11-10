@@ -31,14 +31,14 @@ describe('the menu', () => {
   });
 
   // A record, which Home's Licences tile opens (ADR-091, #460).
-  it('offers Licences among the records, before Products, to whoever may view them', () => {
+  it('offers Licences among the records, before Items, to whoever may view them', () => {
     renderNav(['product_licences.view', 'products.view', 'partners.view']);
 
     const records = screen.getByRole('navigation', { name: 'Records' });
     const links = [...records.querySelectorAll('a')].map(
       (link) => link.textContent,
     );
-    expect(links).toEqual(['Licences', 'Products', 'Partners']);
+    expect(links).toEqual(['Licences', 'Items', 'Partners']);
     expect(screen.getByRole('link', { name: 'Licences' })).toHaveAttribute(
       'href',
       '/licences',

@@ -126,8 +126,10 @@ lead.
 - **Gives up when:** the second time is no quicker than the first, or a
   figure has to be hunted for again.
 - **Set up:** a laptop, 1280 × 800, then a phone, 390 × 844. Each task
-  walked twice, the second as if the next morning: what was quicker,
-  what had to be found again, and what they wish they had been shown.
+  walked twice, the first time at the first size and the second, as if
+  the next morning, at the second size, or both at the one size given:
+  what was quicker, what had to be found again, and what they wish they
+  had been shown.
 
 ## The operations lead
 
