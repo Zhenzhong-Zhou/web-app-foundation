@@ -595,7 +595,7 @@
   "invoices.shipmentInvoiceVoidBefore": "That shipment already has an invoice — void it before billing the shipment again",
   "invoices.shipmentWasVoidedNothing": "That shipment was voided — nothing left, so there is nothing to bill",
   "invoices.skuCreditedInvoicedPrice": "{sku} can be credited at its invoiced price or less, never more",
-  "invoices.skuLanguageNameWhich": "{which, select, variant {The variation {sku} ({variation}) of {product}} other {{product} ({sku})}} has no {language} name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.",
+  "invoices.skuLanguageNameWhich": "{which, select, variant {The variant {sku} ({variation}) of {product}} other {{product} ({sku})}} has no {language} name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.",
   "invoices.skuPriceOrderPrice": "{sku} {count, plural, one {has} other {have}} no price on the order — price the order line before invoicing",
   "invoices.skuRemainingLeftCredit": "{sku} has {remaining} left to credit on {number}, less than this credit",
   "invoices.skuTaxCodeChoose": "{sku} {count, plural, one {has} other {have}} no tax code — choose one, or Exempt",

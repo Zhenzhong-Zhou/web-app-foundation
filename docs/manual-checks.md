@@ -609,10 +609,11 @@ folder by folder; these check what is already in place.
 - **MC-1408** With 简体中文 checked under Item names required on
   invoices, on the Organization page, and a customer set to Chinese,
   issuing an invoice for an item with no Chinese name is refused naming
-  the item and its code; once it has one, a variation with a name of its
-  own and none in Chinese is refused naming the variation by its code and
-  its name. On the item's page, Names in other languages is one table, the
-  item's row and each named variation's, with 简体中文 marked Required on
+  the item and its code; once it has one, a variant with a name of its
+  own and none in Chinese is refused naming the variant by its code and
+  its name ("The variant …"). On the item's page, Names in other
+  languages is one table, the item's row and each named variant's
+  ("Variant FOC-30"), with 简体中文 marked Required on
   documents: the missing name reads Missing with Add, and a line at the
   top names it and says orders and invoices holding the item cannot
   print. Add opens Edit names with that field focused, 简体中文 marked
@@ -5590,3 +5591,5 @@ first.
   sort is a dialog named by its heading: MC-209 extended.
 - 2026-11-09: ADR-092's reviews, 81: a Viewer in an organization with no
   items is told only that there are none yet: MC-211 extended.
+- 2026-11-09: ADR-092's reviews, 82: the names table and its refusal say
+  Variant, as the glossary does, not Variation: MC-1408 extended.

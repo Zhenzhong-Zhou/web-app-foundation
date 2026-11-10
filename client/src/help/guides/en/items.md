@@ -84,7 +84,7 @@ On an item’s page, its type and category are under the name.
 - **Add images** takes up to 8 photos. The first is the cover, shown beside the name in lists.
 - **Edit names** gives its name in other languages, for documents printed in them.
 
-The **Names in other languages** table has a row for the item, and one for each variation with a name of its own, with a column for each language. The languages your documents require are marked. A required name that is missing reads **Missing**, and **Add** opens **Edit names** at that row. A line at the top of the page says that orders and invoices holding the item cannot print until it is added.
+The **Names in other languages** table has a row for the item, and one for each variant with a name of its own, with a column for each language. The languages your documents require are marked. A required name that is missing reads **Missing**, and **Add** opens **Edit names** at that row. A line at the top of the page says that orders and invoices holding the item cannot print until it is added.
 
 > Only someone who may add items sees **Add item**, and only someone who may change them sees **Add variant**, **Edit**, **Edit names** and **Discontinue**.
 
@@ -115,7 +115,7 @@ An active recipe cannot be edited: **New version** copies it to a new draft.
 - A code already in use is refused under **Code**, with a link to the item that has it. Each variant needs its own.
 - A category that holds items or other categories cannot be deleted. The refusal says how many of each: move them to another category first.
 - A category cannot move under itself, and two categories side by side cannot share a name.
-- Orders and invoices cannot print in a language your organization requires while an item on them has no name in it. The refusal says whether the item’s name or a variation’s is missing.
+- Orders and invoices cannot print in a language your organization requires while an item on them has no name in it. The refusal says whether the item’s name or a variant’s is missing.
 - A recipe with no components cannot be promoted. Add what it uses first.
 - An item has at most 8 images. Remove one to add another.
 - An export of more than 50,000 rows is refused. Choose a type or a category, or search, to narrow it.

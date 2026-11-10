@@ -58,7 +58,7 @@ export function ItemNames({
       : intl.formatMessage(
           {
             id: 'products.names.row.variant',
-            defaultMessage: 'variation {sku}',
+            defaultMessage: 'variant {sku}',
           },
           { sku },
         );
@@ -140,7 +140,7 @@ export function ItemNames({
                   <Box component="span" sx={HIDDEN}>
                     {intl.formatMessage({
                       id: 'products.names.of',
-                      defaultMessage: 'Item or variation',
+                      defaultMessage: 'Item or variant',
                     })}
                   </Box>
                 </TableCell>
@@ -181,7 +181,7 @@ export function ItemNames({
                         : intl.formatMessage(
                             {
                               id: 'products.names.kind.variant',
-                              defaultMessage: 'Variation {sku}',
+                              defaultMessage: 'Variant {sku}',
                             },
                             { sku: row.sku },
                           )}
@@ -247,7 +247,7 @@ export function ItemNames({
           {intl.formatMessage({
             id: 'products.names.unnamed',
             defaultMessage:
-              'A variation with no name of its own prints the item’s, so it has no row here.',
+              'A variant with no name of its own prints the item’s, so it has no row here.',
           })}
         </Typography>
       )}

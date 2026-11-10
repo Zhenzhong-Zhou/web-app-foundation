@@ -501,9 +501,9 @@ How this file is kept is in the [README](README.md).
   MC-3801
 - **Where the organization requires product names in a language, a
   document that prints in it is refused until every item on it, and each
-  of its variations with a name of its own, has a name in that language.
-  The refusal says whether the item's name or the variation's is missing,
-  the item's first, the variation by its code and its own name.** The
+  of its variants with a name of its own, has a name in that language.
+  The refusal says whether the item's name or the variant's is missing,
+  the item's first, the variant by its code and its own name.** The
   organization chooses which languages, on its page.
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
   [ADR-054, amended](../adr/0054-languages.md#amendment-november-2026--what-documents-will-refuse-shown-before-they-do-adr-092) ·

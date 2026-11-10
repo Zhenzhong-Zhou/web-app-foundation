@@ -887,7 +887,7 @@ describe('Languages (e2e)', () => {
         body<{ message: string }>(await issue(language).expect(409)).message;
 
       expect(await refusedIn('en')).toBe(
-        'The variation FOCUS-60CT (60ct) of FOCUS-60CT has no 简体中文 name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
+        'The variant FOCUS-60CT (60ct) of FOCUS-60CT has no 简体中文 name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
       );
       expect(await refusedIn('fr-CA')).toBe(
         'La variante FOCUS-60CT (60ct) de FOCUS-60CT n’a pas de nom en 简体中文, ce que cette organisation exige sur ses documents. Ajoutez-le sur la page de l’article, sous Noms dans d’autres langues.',

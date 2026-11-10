@@ -147,7 +147,7 @@ export async function namedLines(
           {
             id: 'invoices.skuLanguageNameWhich',
             defaultMessage:
-              '{which, select, variant {The variation {sku} ({variation}) of {product}} other {{product} ({sku})}} has no {language} name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
+              '{which, select, variant {The variant {sku} ({variation}) of {product}} other {{product} ({sku})}} has no {language} name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
           },
           {
             which: untranslated[slot.product] === null ? 'product' : 'variant',

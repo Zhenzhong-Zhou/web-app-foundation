@@ -160,22 +160,22 @@ describe('ProductDetailPage', () => {
     const rows = within(table).getAllByRole('rowheader');
     expect(rows.map((row) => row.textContent)).toEqual([
       'ItemFocus',
-      'Variation FOC-3030 capsules',
-      'Variation adasd213123',
+      'Variant FOC-3030 capsules',
+      'Variant adasd213123',
     ]);
     const adasd = within(table).getByRole('row', { name: /adasd/ });
     expect(within(adasd).getByText('Missing')).toBeVisible();
     expect(
       within(adasd).getByRole('button', {
-        name: 'Add the English name of variation adasd',
+        name: 'Add the English name of variant adasd',
       }),
     ).toBeVisible();
     expect(
-      screen.getByText(/A variation with no name of its own prints the item’s/),
+      screen.getByText(/A variant with no name of its own prints the item’s/),
     ).toBeVisible();
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'A name documents require is missing: the English name of variation adasd. Orders and invoices holding this item cannot print until it is added.',
+      'A name documents require is missing: the English name of variant adasd. Orders and invoices holding this item cannot print until it is added.',
     );
   });
 
@@ -193,7 +193,7 @@ describe('ProductDetailPage', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: 'Add the English name of variation adasd',
+        name: 'Add the English name of variant adasd',
       }),
     );
 
