@@ -42,40 +42,40 @@
  * is not there.
  *
  * In step or behind, it says nothing. pg, dotenv and drizzle-orm come
- * from server/node_modules, as one-at-a-time.mjs reaches them. Its tests, in
+ * from server/node_modules, through databases.mjs, which the other
+ * database scripts share. Its tests, in
  * database-ahead.test.mjs, stand in for the database: `node --test
  * scripts/`.
  */
 import { readFileSync, realpathSync } from "node:fs";
-import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { databaseOf } from "./folder-databases.mjs";
-import { postgresAddress } from "./one-at-a-time.mjs";
+import {
+  KEYS,
+  NAME,
+  Stop,
+  addresses,
+  connect,
+  databaseOf,
+  fromServer,
+  open,
+  postgresAddress,
+  readEnv,
+  recorded,
+} from "./databases.mjs";
+
+export { KEYS, Stop };
 
 /** This working folder: the one this copy of the script is in. */
 const ROOT = realpathSync(
   path.join(path.dirname(fileURLToPath(import.meta.url)), ".."),
 );
 
-/** The three databases, by the line that names each, as drizzle.config.ts reads them. */
-export const KEYS = {
-  dev: "DATABASE_URL",
-  test: "DATABASE_URL_TEST",
-  e2e: "DATABASE_URL_E2E",
-};
-
-/** A name that may reach SQL, in its double quotes. */
-const NAME = /^[a-z0-9_]+$/;
-
 const MIGRATIONS = "server/src/database/migrations";
 
 const USAGE =
   "Usage, from server/: node ../scripts/database-ahead.mjs <dev|test|e2e>";
-
-/** A stop the person reads: its message, exit 1. */
-export class Stop extends Error {}
 
 /**
  * The folder's migrations, in the journal's order: each entry's tag, with
@@ -86,7 +86,9 @@ export function folderMigrations(root) {
   const { entries } = JSON.parse(
     readFileSync(path.join(migrationsFolder, "meta/_journal.json"), "utf8"),
   );
-  const read = packages().migrator.readMigrationFiles({ migrationsFolder });
+  const read = fromServer(root, "drizzle-orm/migrator").readMigrationFiles({
+    migrationsFolder,
+  });
   return read.map(({ folderMillis, hash }, index) => ({
     tag: entries[index].tag,
     when: folderMillis,
@@ -123,37 +125,6 @@ export function compare(rows, entries) {
   return null;
 }
 
-/** The migrations Drizzle records as run in the database, in that order. */
-async function recorded(db) {
-  const { rows } = await db.query(
-    "select to_regclass('drizzle.__drizzle_migrations') is not null as present",
-  );
-  if (!rows[0]?.present) return [];
-  const ran = await db.query(
-    "select hash, created_at from drizzle.__drizzle_migrations order by id",
-  );
-  return ran.rows;
-}
-
-/** Where an address points, for a message: never its password. */
-const serverOf = (url) => {
-  const { hostname, port } = new URL(url);
-  return `${hostname || "localhost"}:${port || 5432}`;
-};
-
-/** A connection to the database at the address, refused with what to do. */
-async function open(url, name, system) {
-  try {
-    return await system.connect(url);
-  } catch (error) {
-    if (error instanceof Stop) throw error;
-    throw new Stop(
-      `Could not reach ${name} on ${serverOf(url)} (${error.message}). ` +
-        "Is Postgres up? docker compose up -d",
-    );
-  }
-}
-
 /**
  * The check for one target, before its migration: nothing when in step or
  * behind; ahead, a test or e2e database made again, a dev one left, each
@@ -161,8 +132,7 @@ async function open(url, name, system) {
  */
 export async function check(which, system) {
   const key = KEYS[which];
-  const file = system.fileEnv();
-  const address = (one) => system.env[one] || file[one];
+  const address = addresses(system.env, system.fileEnv());
   const url = address(key);
   if (!url) {
     throw new Stop(
@@ -176,7 +146,7 @@ export async function check(which, system) {
         "in the root .env (see .env.example).",
     );
   }
-  const db = await open(url, name, system);
+  const db = await open(url, name, system.connect);
   let rows;
   try {
     rows = await recorded(db);
@@ -209,7 +179,7 @@ export async function check(which, system) {
   const server = await open(
     postgresAddress(url),
     "the postgres database",
-    system,
+    system.connect,
   );
   try {
     // The connection's user owns what it makes: the address's own.
@@ -223,44 +193,13 @@ export async function check(which, system) {
   );
 }
 
-/** pg, dotenv and Drizzle's migrator, from this folder's server/node_modules. */
-function packages() {
-  const require = createRequire(path.join(ROOT, "server/package.json"));
-  try {
-    return {
-      pg: require("pg"),
-      dotenv: require("dotenv"),
-      migrator: require("drizzle-orm/migrator"),
-    };
-  } catch {
-    throw new Stop(
-      "pg, dotenv and drizzle-orm come from server/node_modules: run npm ci in server/ first.",
-    );
-  }
-}
-
 /** What a run uses outside itself; the tests give their own. */
 export const SYSTEM = {
   env: process.env,
-  fileEnv: () => {
-    let text;
-    try {
-      text = readFileSync(path.join(ROOT, ".env"));
-    } catch {
-      // No .env, as on a platform or in CI: the variables are in the process.
-      return {};
-    }
-    return packages().dotenv.parse(text);
-  },
+  // No .env, as on a platform or in CI: the variables are in the process.
+  fileEnv: () => readEnv(ROOT) ?? {},
   migrations: () => folderMigrations(ROOT),
-  connect: async (url) => {
-    const client = new (packages().pg.Client)({
-      connectionString: url,
-      application_name: "database-ahead",
-    });
-    await client.connect();
-    return client;
-  },
+  connect: (url) => connect(ROOT, url, "database-ahead"),
   say: (line) => process.stderr.write(`${line}\n`),
 };
 

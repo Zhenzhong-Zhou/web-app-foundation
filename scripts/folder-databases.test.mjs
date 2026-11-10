@@ -145,8 +145,13 @@ function postgres(databases = MAIN) {
         if (sql.includes("to_regclass('drizzle.__drizzle_migrations')")) {
           return { rows: [{ present: server.databases.get(name) > 0 }] };
         }
-        if (sql.includes("from drizzle.__drizzle_migrations")) {
-          return { rows: [{ applied: server.databases.get(name) }] };
+        if (sql.startsWith("select hash, created_at")) {
+          return {
+            rows: Array.from(
+              { length: server.databases.get(name) },
+              () => ({}),
+            ),
+          };
         }
         throw new Error(`Not a call the script makes: ${sql}`);
       },
@@ -464,7 +469,7 @@ test("run from a second working folder, it says to run it from the main one", as
   refuses(
     () => mainFolder(second),
     new RegExp(
-      `^${second} is a second working folder; run this from the main working folder: cd ${main} && node scripts/folder-databases.mjs`,
+      `^${second} is a second working folder; run it from the main working folder: cd ${main} && node scripts/folder-databases.mjs`,
     ),
   );
   await refusedRun(

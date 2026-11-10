@@ -48,16 +48,30 @@
  * folder's own run has stopped the servers it started.
  *
  * pg and dotenv come from server/node_modules, as i18n-review.mjs reaches
- * the client's packages, so `npm ci` in server/ first. Its tests, in
+ * the client's packages, so `npm ci` in server/ first; the addresses, the
+ * .env and the connection are databases.mjs's, which the other database
+ * scripts share. Its tests, in
  * one-at-a-time.test.mjs, stand in for the database and lsof:
  * `node --test scripts/`.
  */
 import { execFileSync, spawn } from "node:child_process";
-import { readFileSync, realpathSync } from "node:fs";
-import { createRequire } from "node:module";
+import { realpathSync } from "node:fs";
 import { constants } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import {
+  KEYS,
+  Stop,
+  addresses,
+  connect as connectTo,
+  databaseAt,
+  postgresAddress,
+  readEnv,
+  worktrees,
+} from "./databases.mjs";
+
+export { Stop, postgresAddress };
 
 /** This working folder: the one this copy of the script is in. */
 const ROOT = realpathSync(
@@ -86,9 +100,6 @@ export const SERVERS = {
 const USAGE =
   "Usage: node scripts/one-at-a-time.mjs <label> -- <command> [args…]\n" +
   "The label is lowercase letters, digits and hyphens, such as server-e2e.";
-
-/** A stop the person reads: its message, exit 1. */
-export class Stop extends Error {}
 
 /** The label and the command, or null when they are not as USAGE says. */
 export function parse(argv) {
@@ -119,87 +130,8 @@ export function describe(holder) {
     : `a connection named "${holder.name}", pid ${holder.pid}`;
 }
 
-/**
- * The address of the postgres database on the server `url` names: the same
- * user, password, host, port and query, the database replaced. Null when
- * `url` is not a postgresql:// or postgres:// address.
- */
-export function postgresAddress(url) {
-  if (!/^postgres(?:ql)?:\/\//.test(url ?? "") || !URL.canParse(url)) {
-    return null;
-  }
-  const address = new URL(url);
-  address.pathname = "/postgres";
-  return address.href;
-}
-
-/**
- * Where an address points, as two folders' addresses are compared: its
- * server and its database, whatever its user, password and query; null
- * when it is not a postgresql:// address.
- */
-function databaseAt(url) {
-  if (!postgresAddress(url)) return null;
-  const { hostname, port, pathname } = new URL(url);
-  const name = decodeURIComponent(pathname.slice(1));
-  return name
-    ? { server: `${hostname.toLowerCase()}:${port || 5432}`, name }
-    : null;
-}
-
-/** The working folders, the main one first, as git lists them; none when it cannot. */
-function worktrees(root) {
-  let listed;
-  try {
-    listed = execFileSync(
-      "git",
-      ["-C", root, "worktree", "list", "--porcelain"],
-      {
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "ignore"],
-      },
-    );
-  } catch {
-    return [];
-  }
-  return listed
-    .split("\n")
-    .filter((line) => line.startsWith("worktree "))
-    .map((line) => {
-      const folder = line.slice("worktree ".length);
-      try {
-        return realpathSync(folder);
-      } catch {
-        return folder;
-      }
-    });
-}
-
-/** pg and dotenv, from this folder's server/node_modules. */
-function serverPackages(root) {
-  const require = createRequire(path.join(root, "server/package.json"));
-  try {
-    return { pg: require("pg"), dotenv: require("dotenv") };
-  } catch {
-    throw new Stop(
-      "pg and dotenv come from server/node_modules: run npm ci in server/ first.",
-    );
-  }
-}
-
-/** A folder's .env, read as dotenv reads it, or null when it has none. */
-function envOf(folder) {
-  let text;
-  try {
-    text = readFileSync(path.join(folder, ".env"));
-  } catch {
-    return null;
-  }
-  return serverPackages(ROOT).dotenv.parse(text);
-}
-
 /** This folder's databases a run empties, by the line that names each. */
-const SHARED = { test: "DATABASE_URL_TEST", e2e: "DATABASE_URL_E2E" };
+const SHARED = { test: KEYS.test, e2e: KEYS.e2e };
 
 /**
  * What refuses a run in `root` when another working folder's .env names
@@ -208,19 +140,20 @@ const SHARED = { test: "DATABASE_URL_TEST", e2e: "DATABASE_URL_E2E" };
  * its own, run from the main working folder, whose names stay. None when
  * no folder shares. Its address is the environment's before its .env's,
  * as dotenv leaves a variable already set; a folder without a .env names
- * nothing.
+ * nothing. `own` is root's .env, when already read.
  */
-export function sharedDatabases(root, env) {
-  const [main, ...rest] = worktrees(root);
+export function sharedDatabases(root, env, own = readEnv(root, ROOT)) {
+  const folders = worktrees(root);
+  const main = folders[0];
   if (!main) return [];
-  const own = envOf(root) ?? {};
+  const address = addresses(env, own);
   const mine = Object.entries(SHARED)
-    .map(([which, key]) => ({ which, at: databaseAt(env[key] || own[key]) }))
+    .map(([which, key]) => ({ which, at: databaseAt(address(key)) }))
     .filter(({ at }) => at);
   const lines = [];
-  for (const folder of [main, ...rest]) {
+  for (const folder of folders) {
     if (folder === root) continue;
-    const theirs = envOf(folder);
+    const theirs = readEnv(folder, ROOT);
     if (!theirs) continue;
     const named = Object.values(SHARED)
       .map((key) => databaseAt(theirs[key]))
@@ -388,57 +321,50 @@ export function run(command, args, env, say) {
 
 /**
  * The connection the lock is held on, to the postgres database on the
- * server DATABASE_URL_TEST names.
+ * server DATABASE_URL_TEST names. With no .env, the variable may still be
+ * set, as the global setup reads it.
  */
-async function connect(root, env, say) {
-  const { pg, dotenv } = serverPackages(root);
-  let file = {};
-  try {
-    file = dotenv.parse(readFileSync(path.join(root, ".env")));
-  } catch {
-    // No .env: the variable may still be set, as the global setup reads it.
-  }
-  const url = env.DATABASE_URL_TEST || file.DATABASE_URL_TEST;
+async function connect(address, say) {
+  const url = address(KEYS.test);
   if (!url) {
     throw new Stop(
       "DATABASE_URL_TEST is not set. Add it to the root .env (see .env.example).",
     );
   }
-  const address = postgresAddress(url);
-  if (!address) {
+  const server = postgresAddress(url);
+  if (!server) {
     throw new Stop(
       "DATABASE_URL_TEST is not a postgresql:// address. Correct it in the " +
         "root .env (see .env.example).",
     );
   }
-  const client = new pg.Client({
-    connectionString: address,
-    application_name: "one-at-a-time",
-  });
-  client.on("error", (error) =>
-    say(
-      `The lock's connection to Postgres ended (${error.message}); ` +
-        "the run goes on without it.",
-    ),
-  );
   try {
-    await client.connect();
+    return await connectTo(ROOT, server, "one-at-a-time", (error) =>
+      say(
+        `The lock's connection to Postgres ended (${error.message}); ` +
+          "the run goes on without it.",
+      ),
+    );
   } catch (error) {
+    if (error instanceof Stop) throw error;
     throw new Stop(
       "Could not reach the postgres database on the server " +
         `DATABASE_URL_TEST names, where the lock is (${error.message}). ` +
         "Is it up? docker compose up -d",
     );
   }
-  return client;
 }
+
+/** This folder's .env, read once for the check and the lock; {} when it has none. */
+let ownEnv;
+const own = () => (ownEnv ??= readEnv(ROOT) ?? {});
 
 /** What a run uses outside itself; the tests give their own. */
 export const SYSTEM = {
   root: ROOT,
   env: process.env,
-  shared: () => sharedDatabases(ROOT, process.env),
-  connect: () => connect(ROOT, process.env, SYSTEM.say),
+  shared: () => sharedDatabases(ROOT, process.env, own()),
+  connect: () => connect(addresses(process.env, own()), SYSTEM.say),
   lsof,
   folderOf,
   now: () => Date.now(),

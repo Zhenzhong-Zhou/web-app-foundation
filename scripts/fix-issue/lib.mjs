@@ -6,7 +6,8 @@
  * nothing installed in this folder; run.mjs imports it only when a run
  * starts. The check of a folder that shares another's databases is the
  * lock's, from scripts/one-at-a-time.mjs, whose dotenv is the main
- * folder's server/node_modules'.
+ * folder's server/node_modules'; the working-folder checks and Stop are
+ * scripts/databases.mjs's, which the database scripts share.
  */
 import { execFileSync } from "node:child_process";
 import {
@@ -14,15 +15,15 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
-  realpathSync,
   statSync,
 } from "node:fs";
 import path from "node:path";
 
-import { Stop as LockStop, sharedDatabases } from "../one-at-a-time.mjs";
+import { Stop, mainFolder as mainOf, secondFolder } from "../databases.mjs";
+import { sharedDatabases } from "../one-at-a-time.mjs";
 
 /** A refusal before any work: run.mjs prints it and exits 1. */
-export class Stop extends Error {}
+export { Stop };
 
 const RUNNER = "node scripts/fix-issue/run.mjs";
 
@@ -251,34 +252,10 @@ function output(cwd, command, args) {
 const git = (cwd, ...args) => output(cwd, "git", args);
 
 /**
- * The main working folder, the parent of the folder git shares, found
- * from the one the runner sits in. Refused from a second working folder,
- * whose own git folder is not the shared one.
+ * The main working folder, found from the one the runner sits in; refused
+ * from a second one.
  */
-export function mainFolder(from) {
-  let top;
-  let gitDir;
-  let common;
-  try {
-    [top, gitDir, common] = git(
-      from,
-      "rev-parse",
-      "--path-format=absolute",
-      "--show-toplevel",
-      "--git-dir",
-      "--git-common-dir",
-    ).split("\n");
-  } catch {
-    throw new Stop(`${from} is not in a git repository`);
-  }
-  const main = path.dirname(realpathSync(common));
-  if (realpathSync(gitDir) !== realpathSync(common)) {
-    throw new Stop(
-      `${top} is a second working folder; run it from the main working folder: cd ${main} && ${RUNNER} …`,
-    );
-  }
-  return main;
-}
+export const mainFolder = (from) => mainOf(from, RUNNER);
 
 /**
  * The folder the fix runs in: ../waf-fix beside the main folder, or the
@@ -303,31 +280,11 @@ export function fixFolder(main, given, cwd = process.cwd()) {
       ].join("\n"),
     );
   }
-  let top;
-  let common;
-  try {
-    [top, common] = git(
-      folder,
-      "rev-parse",
-      "--path-format=absolute",
-      "--show-toplevel",
-      "--git-common-dir",
-    ).split("\n");
-  } catch {
-    throw new Stop(`${folder} is not a working folder of this repository`);
-  }
-  if (path.dirname(realpathSync(common)) !== main) {
-    throw new Stop(`${folder} is not a working folder of this repository`);
-  }
-  if (realpathSync(top) === main) {
-    throw new Stop(
-      `${folder} is in the main working folder, where a build runs; a fix runs in a second one, ../waf-fix unless --folder names another`,
-    );
-  }
-  if (realpathSync(top) !== realpathSync(folder)) {
-    throw new Stop(`${folder} is inside a working folder; give it, ${top}`);
-  }
-  return realpathSync(top);
+  return secondFolder(
+    main,
+    folder,
+    "where a build runs; a fix runs in a second one, ../waf-fix unless --folder names another",
+  );
 }
 
 /**
@@ -338,13 +295,7 @@ export function fixFolder(main, given, cwd = process.cwd()) {
  * to reach them.
  */
 export function checkShared(folder, env) {
-  let lines;
-  try {
-    lines = sharedDatabases(folder, env);
-  } catch (error) {
-    if (error instanceof LockStop) throw new Stop(error.message);
-    throw error;
-  }
+  const lines = sharedDatabases(folder, env);
   if (lines.length) {
     throw new Stop(
       [

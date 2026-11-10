@@ -33,12 +33,13 @@
  * is the main folder's, linked; and the folder's server/node_modules
  * missing, since its own code migrates.
  *
- * pg and dotenv come from server/node_modules, as one-at-a-time.mjs
- * reaches them. Its tests, in folder-databases.test.mjs, stand in for the
+ * pg and dotenv come from server/node_modules, and the addresses, the
+ * connection and the working-folder checks are databases.mjs's, which the
+ * other database scripts share. Its tests, in folder-databases.test.mjs, stand in for the
  * database and npm, in a temporary repository with a second working
  * folder: `node --test scripts/`.
  */
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import {
   copyFileSync,
   existsSync,
@@ -47,11 +48,25 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { postgresAddress } from "./one-at-a-time.mjs";
+import {
+  KEYS,
+  NAME,
+  Stop,
+  connect,
+  databaseOf,
+  fromServer,
+  mainFolder as mainOf,
+  open,
+  postgresAddress,
+  recorded,
+  secondFolder as secondOf,
+  withDatabase,
+} from "./databases.mjs";
+
+export { KEYS, Stop, databaseOf, withDatabase };
 
 /** This working folder: the one this copy of the script is in. */
 const ROOT = realpathSync(
@@ -60,27 +75,14 @@ const ROOT = realpathSync(
 
 const SCRIPT = "node scripts/folder-databases.mjs";
 
-/** The three databases, by the .env line that names each. */
-export const KEYS = {
-  dev: "DATABASE_URL",
-  test: "DATABASE_URL_TEST",
-  e2e: "DATABASE_URL_E2E",
-};
-
 /** Postgres keeps 63 bytes of a name, and cuts a longer one without a word. */
 export const MAX_NAME_BYTES = 63;
-
-/** A name that may reach SQL, in its double quotes. */
-const NAME = /^[a-z0-9_]+$/;
 
 const USAGE = [
   "Usage, from the main working folder:",
   `  ${SCRIPT} <folder>          its own dev, test and e2e databases`,
   `  ${SCRIPT} --drop <folder>   drops them, before git worktree remove`,
 ].join("\n");
-
-/** A stop the person reads: its message, exit 1. */
-export class Stop extends Error {}
 
 /** The folder and whether to drop, or null when not as USAGE says. */
 export function parse(argv) {
@@ -92,74 +94,25 @@ export function parse(argv) {
   return { drop, folder: words[0] };
 }
 
-const git = (cwd, ...args) =>
-  execFileSync("git", ["-C", cwd, ...args], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "ignore"],
-  }).trimEnd();
-
 /**
- * The main working folder, the parent of the folder git shares, from the
- * one this script is in. Refused from a second working folder, whose own
- * git folder is not the shared one.
+ * The main working folder, from the one this script is in; refused from a
+ * second one.
  */
-export function mainFolder(root) {
-  let gitDir;
-  let common;
-  try {
-    [gitDir, common] = git(
-      root,
-      "rev-parse",
-      "--path-format=absolute",
-      "--git-dir",
-      "--git-common-dir",
-    ).split("\n");
-  } catch {
-    throw new Stop(`${root} is not in a git repository`);
-  }
-  const main = path.dirname(realpathSync(common));
-  if (realpathSync(gitDir) !== realpathSync(common)) {
-    throw new Stop(
-      `${root} is a second working folder; run this from the main working folder: cd ${main} && ${SCRIPT} …`,
-    );
-  }
-  return main;
-}
+export const mainFolder = (root) => mainOf(root, SCRIPT);
 
 /**
  * The second working folder given, from the folder the script was started
- * in: refused when it is the main folder, whose databases keep their
- * names, or not a working folder of this repository, by
- * git rev-parse --git-common-dir as scripts/fix-issue/lib.mjs checks it.
+ * in: refused when it is missing, the main folder, whose databases keep
+ * their names, or not a working folder of this repository.
  */
 export function secondFolder(main, given, cwd) {
   const folder = path.resolve(cwd, given);
   if (!existsSync(folder)) throw new Stop(`no folder at ${folder}`);
-  let top;
-  let common;
-  try {
-    [top, common] = git(
-      folder,
-      "rev-parse",
-      "--path-format=absolute",
-      "--show-toplevel",
-      "--git-common-dir",
-    ).split("\n");
-  } catch {
-    throw new Stop(`${folder} is not a working folder of this repository`);
-  }
-  if (path.dirname(realpathSync(common)) !== main) {
-    throw new Stop(`${folder} is not a working folder of this repository`);
-  }
-  if (realpathSync(top) === main) {
-    throw new Stop(
-      `${folder} is in the main working folder, whose databases keep their names; give a second one, such as ../waf-fix`,
-    );
-  }
-  if (realpathSync(top) !== realpathSync(folder)) {
-    throw new Stop(`${folder} is inside a working folder; give it, ${top}`);
-  }
-  return realpathSync(top);
+  return secondOf(
+    main,
+    folder,
+    "whose databases keep their names; give a second one, such as ../waf-fix",
+  );
 }
 
 /** The folder's name as it goes in a database's: a-z, 0-9 and _. */
@@ -168,20 +121,6 @@ export const nameOf = (folder) =>
     .basename(folder)
     .toLowerCase()
     .replace(/[^a-z0-9]/gu, "_");
-
-/** The database an address names, or null when it is not a Postgres one. */
-export function databaseOf(url) {
-  if (!postgresAddress(url)) return null;
-  const name = decodeURIComponent(new URL(url).pathname.slice(1));
-  return name || null;
-}
-
-/** The same address, its user, password, host, port and query kept, another database. */
-export function withDatabase(url, name) {
-  const address = new URL(url);
-  address.pathname = `/${name}`;
-  return address.href;
-}
 
 /**
  * The folder's three names, from the main folder's: `_<name>` after the
@@ -279,24 +218,6 @@ function mainDatabases(main, system) {
   return { addresses, names };
 }
 
-/** Where an address points, for a message: never its password. */
-const serverOf = (url) => {
-  const { hostname, port } = new URL(url);
-  return `${hostname || "localhost"}:${port || 5432}`;
-};
-
-/** A connection to the database at the address, refused with what to do. */
-async function open(url, system) {
-  try {
-    return await system.connect(url);
-  } catch (error) {
-    if (error instanceof Stop) throw error;
-    throw new Stop(
-      `could not reach ${databaseOf(url)} on ${serverOf(url)} (${error.message}). Is Postgres up? docker compose up -d`,
-    );
-  }
-}
-
 /** Whether the database is there, asked of the postgres database on its server. */
 async function exists(db, name) {
   const { rows } = await db.query(
@@ -306,18 +227,11 @@ async function exists(db, name) {
   return rows.length > 0;
 }
 
-/** The migrations Drizzle records as applied to the database at the address. */
+/** How many migrations Drizzle records as run in the database at the address. */
 async function applied(url, system) {
-  const db = await open(url, system);
+  const db = await open(url, databaseOf(url), system.connect);
   try {
-    const { rows } = await db.query(
-      "select to_regclass('drizzle.__drizzle_migrations') is not null as present",
-    );
-    if (!rows[0]?.present) return 0;
-    const counted = await db.query(
-      "select count(*)::int as applied from drizzle.__drizzle_migrations",
-    );
-    return counted.rows[0].applied;
+    return (await recorded(db)).length;
   } finally {
     await db.end().catch(() => {});
   }
@@ -406,7 +320,11 @@ export async function give(given, system) {
     const made = {};
     const counts = {};
     for (const [which, url] of Object.entries(urls)) {
-      const db = await open(postgresAddress(url), system);
+      const db = await open(
+        postgresAddress(url),
+        "the postgres database",
+        system.connect,
+      );
       try {
         made[which] = !(await exists(db, names[which]));
         // The connection's user owns what it makes: the address's own.
@@ -490,7 +408,11 @@ export async function drop(given, system) {
       rows.push([name, "not a-z, 0-9 and _; refused, left as it is"]);
       refused = true;
     } else {
-      const db = await open(postgresAddress(env[key]), system);
+      const db = await open(
+        postgresAddress(env[key]),
+        "the postgres database",
+        system.connect,
+      );
       try {
         if (await exists(db, name)) {
           await db.query(`drop database "${name}" with (force)`);
@@ -509,32 +431,13 @@ export async function drop(given, system) {
   return !refused;
 }
 
-/** pg and dotenv, from this folder's server/node_modules. */
-function packages() {
-  const require = createRequire(path.join(ROOT, "server/package.json"));
-  try {
-    return { pg: require("pg"), dotenv: require("dotenv") };
-  } catch {
-    throw new Stop(
-      "pg and dotenv come from server/node_modules: run npm ci in server/ first.",
-    );
-  }
-}
-
 /** What a run uses outside itself; the tests give their own database and npm. */
 export const SYSTEM = {
   root: ROOT,
   cwd: process.cwd(),
   env: process.env,
-  parseEnv: (text) => packages().dotenv.parse(text),
-  connect: async (url) => {
-    const client = new (packages().pg.Client)({
-      connectionString: url,
-      application_name: "folder-databases",
-    });
-    await client.connect();
-    return client;
-  },
+  parseEnv: (text) => fromServer(ROOT, "dotenv").parse(text),
+  connect: (url) => connect(ROOT, url, "folder-databases"),
   npm: (dir, args, env) =>
     spawnSync("npm", args, { cwd: dir, stdio: "inherit", env }).status ?? 1,
   say: (line) => process.stdout.write(`${line}\n`),
