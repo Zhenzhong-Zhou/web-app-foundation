@@ -1112,6 +1112,8 @@ describe('ProductsPage', () => {
       expect(
         within(bar()!).getByRole('button', { name: 'Set category' }),
       ).toBeEnabled();
-    });
+      // 501 rows drawn and ticked take most of the 5 seconds alone, and
+      // more with the other suites running beside it.
+    }, 15_000);
   });
 });
