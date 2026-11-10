@@ -483,13 +483,11 @@ function DateHeader({
  */
 export function ItemCards({
   items,
-  loading,
   firstNew,
   ticks,
   withType,
 }: {
   items: ProductSummary[] | null;
-  loading: boolean;
   firstNew: { index: number; ref: Ref<HTMLAnchorElement> } | null;
   ticks?: Ticks;
   /** On All: each card's type said after its name. */
@@ -501,7 +499,7 @@ export function ItemCards({
   const onHand = useOnHand();
 
   return (
-    <Stack component="ul" aria-busy={loading} sx={{ m: 0, p: 0 }}>
+    <Stack component="ul" sx={{ m: 0, p: 0 }}>
       {items?.map((item, index) => (
         <Box
           component="li"

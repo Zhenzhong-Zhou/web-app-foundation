@@ -456,7 +456,6 @@ export function ProductsPage() {
               ) : (
                 <ItemCards
                   items={items}
-                  loading={loading}
                   ticks={ticks}
                   withType={tab === 'all'}
                   firstNew={

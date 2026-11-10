@@ -36,7 +36,6 @@ describe('a row’s codes', () => {
         <MemoryRouter>
           <ItemCards
             items={[item('FOCUS-60CT', 1), item('CALM-90', 3)]}
-            loading={false}
             firstNew={null}
           />
         </MemoryRouter>
@@ -58,7 +57,6 @@ describe('a card on a phone', () => {
       <MemoryRouter>
         <ItemCards
           items={[{ ...item('FOCUS-60CT', 1), stockStatus: 'low' }]}
-          loading={false}
           firstNew={null}
         />
       </MemoryRouter>,
