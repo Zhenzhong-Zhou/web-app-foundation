@@ -39,6 +39,7 @@ import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import {
+  id,
   oneOf,
   useAddressWrite,
   useListFilters,
@@ -75,8 +76,6 @@ const TYPE_TABS = ITEM_TABS.filter(
   (tab): tab is Exclude<ItemTab, 'all'> => tab !== 'all',
 );
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /**
  * Items' filters in the address (ADR-091, ADR-092), beside its tab, search
  * and sort: a category's id, which holds those under it, or
@@ -86,10 +85,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ADDRESS_FILTERS = {
   category: {
     read: (value: string | null) =>
-      value !== null && (value === UNCATEGORISED || UUID.test(value))
-        ? value
-        : '',
-    write: (value: string) => value || null,
+      value === UNCATEGORISED ? value : id.read(value),
+    write: id.write,
   },
   discontinued: oneOf<DiscontinuedShown>(['', 'only', 'include'], ''),
 };
