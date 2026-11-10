@@ -99,9 +99,9 @@ const timeOf = (ms) =>
   `${new Date(ms).toISOString().slice(0, 16).replace("T", " ")} UTC`;
 
 /**
- * The database's rows against the folder's list, entry by entry: ahead,
- * with why, when the rows are not the list's start; otherwise how many
- * of the folder's the database has yet to run, 0 when in step.
+ * The database's rows against the folder's list, entry by entry: why it
+ * is ahead, when the rows are not the list's start; otherwise null, in
+ * step or behind.
  */
 export function compare(rows, entries) {
   for (const [index, row] of rows.entries()) {
@@ -109,27 +109,18 @@ export function compare(rows, entries) {
     const entry = entries[index];
     if (entry?.when === when) {
       if (entry.hash === row.hash) continue;
-      return {
-        ahead: true,
-        why: `ran ${entry.tag}.sql before the file changed`,
-      };
+      return `ran ${entry.tag}.sql before the file changed`;
     }
     const at = entries.findIndex((one) => one.when === when);
     if (at > index) {
-      return {
-        ahead: true,
-        why: `ran ${entries[at].tag} without ${entry.tag} before it, which Drizzle would never apply`,
-      };
+      return `ran ${entries[at].tag} without ${entry.tag} before it, which Drizzle would never apply`;
     }
     if (at >= 0) {
-      return { ahead: true, why: `ran ${entries[at].tag} a second time` };
+      return `ran ${entries[at].tag} a second time`;
     }
-    return {
-      ahead: true,
-      why: `holds a migration this folder lacks, made ${timeOf(when)} (hash ${String(row.hash).slice(0, 12)})`,
-    };
+    return `holds a migration this folder lacks, made ${timeOf(when)} (hash ${String(row.hash).slice(0, 12)})`;
   }
-  return { ahead: false, behind: entries.length - rows.length };
+  return null;
 }
 
 /** The migrations Drizzle records as run in the database, in that order. */
@@ -192,10 +183,10 @@ export async function check(which, system) {
   } finally {
     await db.end().catch(() => {});
   }
-  const found = compare(rows, system.migrations());
-  if (!found.ahead) return;
+  const why = compare(rows, system.migrations());
+  if (!why) return;
 
-  const what = `The ${which} database, ${name}, ${found.why}`;
+  const what = `The ${which} database, ${name}, ${why}`;
   if (which === "dev") {
     system.say(
       `${what}. It holds your own rows, so it is left as it is; nothing changed.`,

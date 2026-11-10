@@ -40,54 +40,44 @@ const rowsFor = (entries, count = entries.length) =>
 const BRANCH_ROW = { hash: "d".repeat(64), created_at: "1794247440000" };
 
 test("in step: the database's rows are the folder's list", () => {
-  assert.deepEqual(compare(rowsFor(ENTRIES), ENTRIES), {
-    ahead: false,
-    behind: 0,
-  });
+  assert.equal(compare(rowsFor(ENTRIES), ENTRIES), null);
 });
 
 test("behind: the database has the start of the folder's list, the rest to run", () => {
-  assert.deepEqual(compare(rowsFor(ENTRIES, 1), ENTRIES), {
-    ahead: false,
-    behind: 2,
-  });
+  assert.equal(compare(rowsFor(ENTRIES, 1), ENTRIES), null);
 });
 
 test("empty: a database with no rows is behind by the whole list", () => {
-  assert.deepEqual(compare([], ENTRIES), { ahead: false, behind: 3 });
+  assert.equal(compare([], ENTRIES), null);
 });
 
 test("ahead by a row: one the folder does not have, after its list", () => {
-  assert.deepEqual(compare([...rowsFor(ENTRIES), BRANCH_ROW], ENTRIES), {
-    ahead: true,
-    why: `holds a migration this folder lacks, made 2026-11-09 18:04 UTC (hash ${"d".repeat(12)})`,
-  });
+  assert.equal(
+    compare([...rowsFor(ENTRIES), BRANCH_ROW], ENTRIES),
+    `holds a migration this folder lacks, made 2026-11-09 18:04 UTC (hash ${"d".repeat(12)})`,
+  );
 });
 
 test("ahead by a row: one the folder does not have, where the folder has another", () => {
   const rows = [...rowsFor(ENTRIES, 2), BRANCH_ROW];
-  assert.equal(compare(rows, ENTRIES).ahead, true);
-  assert.match(
-    compare(rows, ENTRIES).why,
-    /^holds a migration this folder lacks/,
-  );
+  assert.match(compare(rows, ENTRIES), /^holds a migration this folder lacks/);
 });
 
 test("ahead by a changed file: the same time, another hash", () => {
   const rows = rowsFor(ENTRIES);
   rows[1] = { ...rows[1], hash: "e".repeat(64) };
-  assert.deepEqual(compare(rows, ENTRIES), {
-    ahead: true,
-    why: "ran 0001_orders.sql before the file changed",
-  });
+  assert.equal(
+    compare(rows, ENTRIES),
+    "ran 0001_orders.sql before the file changed",
+  );
 });
 
 test("ahead: a later migration ran without an earlier one of the folder's", () => {
   const rows = [rowsFor(ENTRIES)[0], rowsFor(ENTRIES)[2]];
-  assert.deepEqual(compare(rows, ENTRIES), {
-    ahead: true,
-    why: "ran 0002_items without 0001_orders before it, which Drizzle would never apply",
-  });
+  assert.equal(
+    compare(rows, ENTRIES),
+    "ran 0002_items without 0001_orders before it, which Drizzle would never apply",
+  );
 });
 
 test("the folder's list is Drizzle's own: each journal entry's tag, with its time and hash as the migrator reads them", async () => {
