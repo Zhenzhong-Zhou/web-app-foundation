@@ -185,26 +185,6 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
   const { expiring, expired, needsCost, includeEmpty, productId } = filters;
-  // The item a row's stock on Items opened, named on its chip; a reader
-  // who may not see items, or a name not read yet, has the chip's plain
-  // words.
-  const canSeeItems = can('products.view');
-  const [named, setNamed] = useState<{ id: string; name: string } | null>(null);
-  useEffect(() => {
-    if (!productId || !canSeeItems) return;
-    let ignore = false;
-    // The item's read answers with the item itself, not an envelope.
-    void api<ProductDetail>(`/products/${productId}`)
-      .then((product) => {
-        if (!ignore) setNamed({ id: productId, name: product.displayName });
-      })
-      // Silent: the chip still says one item, and its × still works.
-      .catch(() => undefined);
-    return () => {
-      ignore = true;
-    };
-  }, [productId, canSeeItems]);
-  const namedItem = named?.id === productId ? named.name : null;
   // Sales sees stock but not locations (ADR-080): the page asks only for
   // what its reader may read, and leaves the Location filter out.
   const canSeeLocations = can('locations.view');
@@ -330,6 +310,34 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
     loadMore,
     reload,
   } = useKeysetList<StockRow>(stockPath);
+
+  // The item a row's stock on Items opened, named on its chip (ADR-092):
+  // by its rows, in the reader's language, read again with them; with no
+  // rows, by the item's own read, in the language it was asked in. A
+  // reader who may not see items, or a name not read yet, has the chip's
+  // plain words.
+  const fromRows = productId && rows?.length ? rows[0].productName : null;
+  const askItem =
+    productId !== '' && can('products.view') && rows?.length === 0;
+  const itemKey = `${intl.locale} ${productId}`;
+  const [named, setNamed] = useState<{ key: string; name: string } | null>(
+    null,
+  );
+  useEffect(() => {
+    if (!askItem) return;
+    let ignore = false;
+    // The item's read answers with the item itself, not an envelope.
+    void api<ProductDetail>(`/products/${productId}`)
+      .then((product) => {
+        if (!ignore) setNamed({ key: itemKey, name: product.displayName });
+      })
+      // Silent: the chip still says one item, and its × still works.
+      .catch(() => undefined);
+    return () => {
+      ignore = true;
+    };
+  }, [askItem, productId, itemKey]);
+  const namedItem = fromRows ?? (named?.key === itemKey ? named.name : null);
 
   const error = listError ?? setupError;
 

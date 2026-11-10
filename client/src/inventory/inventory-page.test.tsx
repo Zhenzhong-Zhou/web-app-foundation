@@ -373,10 +373,11 @@ describe('InventoryPage', () => {
   it('lists one item alone when the address names it, named on a chip that removes it', async () => {
     const user = userEvent.setup();
     const ITEM = '00000000-0000-4000-8000-000000000001';
-    const asked: Record<'stock' | 'counts' | 'promised', URLSearchParams[]> = {
-      stock: [],
-      counts: [],
-      promised: [],
+    const asked = {
+      stock: [] as URLSearchParams[],
+      counts: [] as URLSearchParams[],
+      promised: [] as URLSearchParams[],
+      item: 0,
     };
     server.use(
       http.get('/api/v1/stock', ({ request }) => {
@@ -391,10 +392,11 @@ describe('InventoryPage', () => {
         asked.promised.push(new URL(request.url).searchParams);
         return HttpResponse.json([]);
       }),
-      http.get(`/api/v1/products/${ITEM}`, () =>
+      http.get(`/api/v1/products/${ITEM}`, () => {
+        asked.item += 1;
         // The item itself, as GET /v1/products/:id answers.
-        HttpResponse.json({ displayName: 'Vitamin D' }),
-      ),
+        return HttpResponse.json({ displayName: 'Vitamine D' });
+      }),
     );
     renderWithAuth(
       <MemoryRouter initialEntries={[`/inventory?productId=${ITEM}`]}>
@@ -403,9 +405,12 @@ describe('InventoryPage', () => {
       { permissions: ['stock.view', 'products.view'] },
     );
 
+    // Named by its rows, in the reader's language, with no read of the
+    // item's own (ADR-092's review, 58).
     const chip = await screen.findByRole('button', {
       name: 'Item: Vitamin D',
     });
+    expect(asked.item).toBe(0);
     expect(asked.stock[0].get('productId')).toBe(ITEM);
     await expect.poll(() => asked.counts[0]?.get('productId')).toBe(ITEM);
     // Promised to customers, the item's alone too (ADR-092's review, 6).
