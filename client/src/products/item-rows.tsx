@@ -32,13 +32,14 @@ import { ProductCover } from '../components/product-cover';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { formatDate, SEPARATOR } from '../lib/format';
+import { HIDDEN } from '../lib/hidden';
 import { OFFER_BACK } from '../lib/offer-back';
 import type { SortOrder } from '../lib/use-list-sort';
 import { TOUCH } from '../theme/media';
 import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
 import type { ItemSort } from './item-list';
-import { productTypeIcon } from './product-types';
+import { productTypeIcon, productTypeLabel } from './product-types';
 import { displayWithUnit } from './units';
 
 /** The date column's two dates: which it shows follows the sort. */
@@ -170,6 +171,24 @@ function RowStatus({ item }: { item: ProductSummary }) {
   return null;
 }
 
+/**
+ * On All, where rows of every type sit together and the type shows only
+ * as the tile's icon, the type said after the name to a screen reader, as
+ * part of the item's link (ADR-092's review, 17); on a type's tab every
+ * row is that type, so nothing.
+ */
+function TypeAfterName({ item }: { item: ProductSummary }) {
+  const intl = useIntl();
+  return (
+    <Box component="span" sx={HIDDEN}>
+      {intl.formatMessage(
+        { id: 'products.row.type', defaultMessage: ', {type}' },
+        { type: productTypeLabel(item.type, intl) },
+      )}
+    </Box>
+  );
+}
+
 /** Inventory for the item alone, with Back to Items as it was (ADR-092). */
 function stockPath(item: ProductSummary): string {
   return `/inventory?productId=${item.id}`;
@@ -196,6 +215,7 @@ export function ItemTable({
   onDate,
   firstNew,
   ticks,
+  withType,
 }: {
   items: ProductSummary[] | null;
   loading: boolean;
@@ -205,6 +225,8 @@ export function ItemTable({
   /** The first row Show 50 more added, which takes focus. */
   firstNew: { index: number; ref: Ref<HTMLAnchorElement> } | null;
   ticks?: Ticks;
+  /** On All: each row's type said after its name. */
+  withType?: boolean;
 }) {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -317,6 +339,7 @@ export function ItemTable({
                       sx={{ fontWeight: 600 }}
                     >
                       {item.displayName}
+                      {withType && <TypeAfterName item={item} />}
                     </Link>
                     <Typography
                       variant="body2"
@@ -468,11 +491,14 @@ export function ItemCards({
   loading,
   firstNew,
   ticks,
+  withType,
 }: {
   items: ProductSummary[] | null;
   loading: boolean;
   firstNew: { index: number; ref: Ref<HTMLAnchorElement> } | null;
   ticks?: Ticks;
+  /** On All: each card's type said after its name. */
+  withType?: boolean;
 }) {
   const intl = useIntl();
   const codes = useCodes();
@@ -530,6 +556,7 @@ export function ItemCards({
             <Stack sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontWeight: 600 }}>
                 {item.displayName}
+                {withType && <TypeAfterName item={item} />}
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {codes(item)}

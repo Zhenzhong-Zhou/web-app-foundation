@@ -1732,6 +1732,7 @@
   "products.reactivate": "Réactiver",
   "products.row.codes": "{count, plural, one {{code}} other {# variantes · {code}, …}}",
   "products.row.stockOf": "{quantity}, stock de {name}",
+  "products.row.type": ", {type}",
   "products.row.variantsStock": "{count, plural, one {# variante} other {# variantes}}",
   "products.search": "Rechercher par nom ou code",
   "products.showMore": "Afficher 50 de plus",

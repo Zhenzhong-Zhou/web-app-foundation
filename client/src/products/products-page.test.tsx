@@ -432,7 +432,9 @@ describe('ProductsPage', () => {
     );
 
     renderAt('/items?tab=all&discontinued=include&search=calm');
-    await screen.findByRole('link', { name: 'Calm 90ct' });
+    // On All a row's type follows its name, which the tile's icon alone
+    // showed (ADR-092's review, 17).
+    await screen.findByRole('link', { name: 'Calm 90ct, Products' });
     expect(asked[0]).toBe(
       'discontinued=include&search=calm&sort=name&order=asc',
     );

@@ -175,7 +175,8 @@ a second organization.
   Chinese too; the category's path (Vitamins and minerals ›
   …), or Uncategorised for BOTTLE-60; the stock on hand, right-aligned,
   VITC-100 reading Out and another product Low stock in Home's words and
-  colours; and Last changed. Clicking anywhere on a row opens the item;
+  colours; and Last changed. On All, a screen reader says each row's
+  type after its name. Clicking anywhere on a row opens the item;
   clicking its stock opens Inventory for that item alone, every variant
   in every location (on a touch screen its link is a fingertip tall, so
   a near miss does not open the item), with a chip "Item: …" whose × shows all stock again
@@ -5571,3 +5572,5 @@ first.
   MC-212 rewritten.
 - 2026-11-09: ADR-092's reviews, 16: Uncategorised has its count in
   Items' category filter, as each category: MC-210 extended.
+- 2026-11-09: ADR-092's reviews, 17: on All a screen reader says each
+  row's type after its name: MC-208 extended.

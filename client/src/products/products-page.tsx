@@ -467,6 +467,7 @@ export function ProductsPage() {
                   items={items}
                   loading={loading}
                   ticks={ticks}
+                  withType={tab === 'all'}
                   firstNew={
                     firstNew === null
                       ? null
@@ -478,6 +479,7 @@ export function ProductsPage() {
               <ItemTable
                 items={items}
                 loading={loading}
+                withType={tab === 'all'}
                 sort={sort}
                 header={header}
                 onDate={(key) => write({ sort: key, order: 'desc' })}

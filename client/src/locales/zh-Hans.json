@@ -1732,6 +1732,7 @@
   "products.reactivate": "重新启用",
   "products.row.codes": "{count, plural, =1 {{code}} other {{count} 个规格 · {code}，…}}",
   "products.row.stockOf": "{quantity}，{name}的库存",
+  "products.row.type": "，{type}",
   "products.row.variantsStock": "{count, plural, other {# 个规格}}",
   "products.search": "按名称或编码搜索",
   "products.showMore": "再显示 50 个",
