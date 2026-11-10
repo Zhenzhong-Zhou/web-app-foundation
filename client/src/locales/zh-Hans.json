@@ -591,6 +591,7 @@
   "inventory.detail.lost": "丢失",
   "inventory.detail.miscount": "计数错误",
   "inventory.empty": "暂无内容。",
+  "inventory.emptyItem": "{name}还没有库存。",
   "inventory.everywhere": "全部库位",
   "inventory.filter.expired": "已过期",
   "inventory.filter.item": "物品：{name}",

@@ -591,6 +591,7 @@
   "inventory.detail.lost": "lost",
   "inventory.detail.miscount": "miscount",
   "inventory.empty": "Nothing here yet.",
+  "inventory.emptyItem": "{name} has no stock yet.",
   "inventory.everywhere": "Everywhere",
   "inventory.filter.expired": "Expired",
   "inventory.filter.item": "Item: {name}",

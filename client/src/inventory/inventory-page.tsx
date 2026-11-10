@@ -725,10 +725,20 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
                           id: 'inventory.noMatch',
                           defaultMessage: 'Nothing matches that search.',
                         })
-                      : intl.formatMessage({
-                          id: 'inventory.empty',
-                          defaultMessage: 'Nothing here yet.',
-                        })}
+                      : namedItem
+                        ? // The item a row's stock on Items opened, by name
+                          // (ADR-092's review, 90).
+                          intl.formatMessage(
+                            {
+                              id: 'inventory.emptyItem',
+                              defaultMessage: '{name} has no stock yet.',
+                            },
+                            { name: namedItem },
+                          )
+                        : intl.formatMessage({
+                            id: 'inventory.empty',
+                            defaultMessage: 'Nothing here yet.',
+                          })}
             </EmptyState>
           )}
         </Paper>

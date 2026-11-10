@@ -591,6 +591,7 @@
   "inventory.detail.lost": "perdu",
   "inventory.detail.miscount": "erreur de comptage",
   "inventory.empty": "Rien ici pour l’instant.",
+  "inventory.emptyItem": "{name} n’a pas encore de stock.",
   "inventory.everywhere": "Partout",
   "inventory.filter.expired": "Périmés",
   "inventory.filter.item": "Article : {name}",

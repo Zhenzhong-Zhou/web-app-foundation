@@ -182,7 +182,8 @@ a second organization.
   in every location (on a touch screen its link is a fingertip tall, so
   a near miss does not open the item), with a chip "Item: …" whose × shows all stock again
   and Promised to customers below it listing that item alone,
-  and Back returns to Items as it was. At 390 px each row is a card: the
+  and Back returns to Items as it was; for an item with no stock, it says
+  "… has no stock yet." by the item's name. At 390 px each row is a card: the
   name, its code and category on one line, then the stock and its status;
   the stock and its status open Inventory for the item alone, as the
   wider row's number does, and the rest of the card opens the item.
@@ -5580,3 +5581,5 @@ first.
   link: MC-208 extended.
 - 2026-11-09: ADR-092's reviews, 24: saving a new type says "Moved to …"
   with the type: MC-214 extended.
+- 2026-11-09: ADR-092's reviews, 90: Inventory opened for an item with
+  no stock says so by the item's name: MC-208 extended.

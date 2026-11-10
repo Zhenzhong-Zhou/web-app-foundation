@@ -428,6 +428,36 @@ describe('InventoryPage', () => {
     ).not.toBeInTheDocument();
   });
 
+  // It said only "Nothing here yet." (ADR-092's review, 90).
+  it('says the item a row’s stock opened has no stock yet, by its name', async () => {
+    const ITEM = '00000000-0000-4000-8000-000000000001';
+    server.use(
+      http.get('/api/v1/stock', () =>
+        HttpResponse.json({ entries: [], nextCursor: null }),
+      ),
+      http.get('/api/v1/stock/counts', () =>
+        HttpResponse.json({ expiring: 0, needsCost: 0 }),
+      ),
+      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
+      http.get(`/api/v1/products/${ITEM}`, () =>
+        HttpResponse.json({ displayName: 'Vitamin D' }),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter initialEntries={[`/inventory?productId=${ITEM}`]}>
+        <InventoryPage />
+      </MemoryRouter>,
+      { permissions: ['stock.view', 'products.view'] },
+    );
+
+    expect(
+      await screen.findByText('Vitamin D has no stock yet.'),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Item: Vitamin D' }),
+    ).toBeVisible();
+  });
+
   describe('the search', () => {
     function answer() {
       const asked: Record<'stock' | 'points', (string | null)[]> = {
