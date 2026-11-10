@@ -7,14 +7,15 @@
  * The lock's tests run its function with stand-ins for what it uses: a
  * database answering the calls it makes from a list of answers, lsof
  * answering from the listeners the test gives, and a clock whose sleep
- * moves time on, so an hour's wait takes no time. The folder checks use
- * real git, in a temporary repository with a worktree. The rest run the
- * script itself with CI set, where it needs no database: the exit code,
- * the output and Ctrl-C passed on.
+ * moves time on, so an hour's wait takes no time. The folder checks, and
+ * the check of a folder that shares this one's databases, use real git
+ * and real .env files, in a temporary repository with worktrees. The rest
+ * run the script itself with CI set, where it needs no database: the exit
+ * code, the output and Ctrl-C passed on.
  */
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { mkdirSync, realpathSync } from "node:fs";
+import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -34,6 +35,7 @@ import {
   othersServers,
   parse,
   postgresAddress,
+  sharedDatabases,
 } from "./one-at-a-time.mjs";
 
 const SCRIPT = path.join(
@@ -103,6 +105,7 @@ function system(db, overrides = {}) {
     ran,
     root: "/Users/bob/web-app-foundation",
     env: {},
+    shared: () => [],
     connect: async () => db,
     lsof: lsofFor([]),
     folderOf: (dir) => dir.replace(/\/(server|client)$/, ""),
@@ -277,6 +280,7 @@ for (const [why, env] of [
   test(`${why}, the command runs alone: no database, no port check, the lock's variable set for it`, async () => {
     const sys = system(null, {
       env,
+      shared: () => assert.fail("read the other folders' .env"),
       connect: async () => assert.fail("connected"),
       lsof: () => assert.fail("asked lsof"),
     });
@@ -415,6 +419,144 @@ test("a server's folder is its git top level, so a worktree is another folder, e
   assert.deepEqual(servers(path.join(beside, "server")), [
     { port: 3100, pid: 9, command: "node", folder: beside },
   ]);
+});
+
+test("a folder that shares another's database is refused before the lock is taken, exit 1, saying what to run", async () => {
+  const lines = [
+    "../waf-fix names the same test database as this folder, foundation_test.",
+    "Give it its own, from the main working folder:",
+    "  node scripts/folder-databases.mjs ../waf-fix",
+  ];
+  const sys = system(null, {
+    shared: () => lines,
+    connect: async () => assert.fail("connected"),
+  });
+  const status = await oneAtATime(SLEEP, sys);
+
+  assert.equal(status, 1);
+  assert.deepEqual(sys.said, lines);
+  assert.equal(sys.ran.length, 0);
+});
+
+/** The main folder's three addresses, as its .env names them. */
+const MAIN_ENV = [
+  "DATABASE_URL=postgresql://app:pw@localhost:5432/foundation",
+  "DATABASE_URL_TEST=postgresql://app:pw@localhost:5432/foundation_test",
+  "DATABASE_URL_E2E=postgresql://app:pw@localhost:5432/foundation_e2e",
+  "",
+].join("\n");
+
+/** ../waf-fix's own, as scripts/folder-databases.mjs writes them. */
+const WAF_FIX_ENV = MAIN_ENV.replaceAll("foundation", "foundation_waf_fix");
+
+/**
+ * A main working folder and, beside it, ../waf-fix and ../spare, with
+ * the .env given for each; ../spare has none unless given.
+ */
+function sharing(t, envs) {
+  const parent = realpathSync(tempFolder(t, "one-at-a-time-sharing"));
+  const main = path.join(parent, "main");
+  mkdirSync(main);
+  git(main, "init", "--quiet");
+  git(main, "commit", "--quiet", "--allow-empty", "-m", "Start");
+  for (const name of ["waf-fix", "spare"]) {
+    git(
+      main,
+      "worktree",
+      "add",
+      "--quiet",
+      "--detach",
+      path.join(parent, name),
+    );
+  }
+  const at = {
+    main,
+    wafFix: path.join(parent, "waf-fix"),
+    spare: path.join(parent, "spare"),
+  };
+  for (const [name, env] of Object.entries(envs)) {
+    writeFileSync(path.join(at[name], ".env"), env);
+  }
+  return at;
+}
+
+test("another folder naming this folder's test database is named, with the command that gives it its own", (t) => {
+  const { main } = sharing(t, {
+    main: MAIN_ENV,
+    wafFix: WAF_FIX_ENV.replace("foundation_waf_fix_test", "foundation_test"),
+  });
+
+  assert.deepEqual(sharedDatabases(main, {}), [
+    "../waf-fix names the same test database as this folder, foundation_test.",
+    "Give it its own, from the main working folder:",
+    "  node scripts/folder-databases.mjs ../waf-fix",
+  ]);
+});
+
+test("another folder naming this folder's e2e database is named too, whatever its password and query", (t) => {
+  const { main } = sharing(t, {
+    main: MAIN_ENV,
+    wafFix: WAF_FIX_ENV.replace(
+      "pw@localhost:5432/foundation_waf_fix_e2e",
+      "other@LOCALHOST:5432/foundation_e2e?sslmode=disable",
+    ),
+  });
+
+  assert.deepEqual(sharedDatabases(main, {}), [
+    "../waf-fix names the same e2e database as this folder, foundation_e2e.",
+    "Give it its own, from the main working folder:",
+    "  node scripts/folder-databases.mjs ../waf-fix",
+  ]);
+});
+
+test("from either side, the command names the second folder, since the main one keeps its names", (t) => {
+  const { main, wafFix } = sharing(t, { main: MAIN_ENV, wafFix: MAIN_ENV });
+  const give = [
+    "Give it its own, from the main working folder:",
+    "  node scripts/folder-databases.mjs ../waf-fix",
+  ];
+
+  assert.deepEqual(sharedDatabases(main, {}), [
+    "../waf-fix names the same test database as this folder, foundation_test.",
+    "../waf-fix names the same e2e database as this folder, foundation_e2e.",
+    ...give,
+  ]);
+  assert.deepEqual(sharedDatabases(wafFix, {}), [
+    "../main names the same test database as this folder, foundation_test.",
+    "../main names the same e2e database as this folder, foundation_e2e.",
+    "Give this folder its own, from the main working folder:",
+    give[1],
+  ]);
+});
+
+test("an address in the environment counts before the folder's .env, as dotenv leaves it", (t) => {
+  const { wafFix } = sharing(t, { main: MAIN_ENV, wafFix: WAF_FIX_ENV });
+
+  assert.deepEqual(
+    sharedDatabases(wafFix, {
+      DATABASE_URL_TEST: "postgresql://app:pw@localhost:5432/foundation_test",
+    }),
+    [
+      "../main names the same test database as this folder, foundation_test.",
+      "Give this folder its own, from the main working folder:",
+      "  node scripts/folder-databases.mjs ../waf-fix",
+    ],
+  );
+});
+
+test("none shared: each folder's own names, the same name on another server, a folder with no .env", (t) => {
+  const { main, wafFix, spare } = sharing(t, {
+    main: MAIN_ENV,
+    wafFix: WAF_FIX_ENV.replace(
+      "localhost:5432/foundation_waf_fix_test",
+      "localhost:5433/foundation_test",
+    ),
+  });
+
+  assert.deepEqual(sharedDatabases(main, {}), []);
+  assert.deepEqual(sharedDatabases(wafFix, {}), []);
+  // ../spare has no .env, so names nothing, and is passed over.
+  assert.deepEqual(sharedDatabases(spare, {}), []);
 });
 
 /** The script itself, with CI set: it runs the command alone. */

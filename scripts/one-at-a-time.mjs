@@ -21,6 +21,13 @@
  * working folder has its own test database, so in a database of their own
  * two folders' runs would never wait for each other.
  *
+ * Before it takes the lock, it refuses a folder whose test or e2e database
+ * another working folder's .env names too (git worktree list), exit 1,
+ * naming that folder, the database and the command that gives the second
+ * folder its own, scripts/folder-databases.mjs, since the main folder keeps
+ * its names: the lock keeps two runs apart in time, not two folders'
+ * tables.
+ *
  * When another folder holds it, it tries again every 5 seconds and says,
  * at once and then each minute, what it waits for: the holder's label,
  * folder and time, read from the name of the holder's connection in
@@ -36,7 +43,7 @@
  * already listening on its ports from another working folder (lsof) stops
  * the run, naming the folder and the process, since Playwright would reuse
  * it and test that folder's code. One from this folder is reused, as
- * Playwright does. The check comes once the lock is taken, when another
+ * Playwright does. That check comes once the lock is taken, when another
  * folder's own run has stopped the servers it started.
  *
  * pg and dotenv come from server/node_modules, as i18n-review.mjs reaches
@@ -80,7 +87,7 @@ const USAGE =
   "The label is lowercase letters, digits and hyphens, such as server-e2e.";
 
 /** A stop the person reads: its message, exit 1. */
-class Stop extends Error {}
+export class Stop extends Error {}
 
 /** The label and the command, or null when they are not as USAGE says. */
 export function parse(argv) {
@@ -123,6 +130,117 @@ export function postgresAddress(url) {
   const address = new URL(url);
   address.pathname = "/postgres";
   return address.href;
+}
+
+/**
+ * Where an address points, as two folders' addresses are compared: its
+ * server and its database, whatever its user, password and query; null
+ * when it is not a postgresql:// address.
+ */
+function databaseAt(url) {
+  if (!postgresAddress(url)) return null;
+  const { hostname, port, pathname } = new URL(url);
+  const name = decodeURIComponent(pathname.slice(1));
+  return name
+    ? { server: `${hostname.toLowerCase()}:${port || 5432}`, name }
+    : null;
+}
+
+/** The working folders, the main one first, as git lists them; none when it cannot. */
+function worktrees(root) {
+  let listed;
+  try {
+    listed = execFileSync(
+      "git",
+      ["-C", root, "worktree", "list", "--porcelain"],
+      {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      },
+    );
+  } catch {
+    return [];
+  }
+  return listed
+    .split("\n")
+    .filter((line) => line.startsWith("worktree "))
+    .map((line) => {
+      const folder = line.slice("worktree ".length);
+      try {
+        return realpathSync(folder);
+      } catch {
+        return folder;
+      }
+    });
+}
+
+/** pg and dotenv, from this folder's server/node_modules. */
+function serverPackages(root) {
+  const require = createRequire(path.join(root, "server/package.json"));
+  try {
+    return { pg: require("pg"), dotenv: require("dotenv") };
+  } catch {
+    throw new Stop(
+      "pg and dotenv come from server/node_modules: run npm ci in server/ first.",
+    );
+  }
+}
+
+/** A folder's .env, read as dotenv reads it, or null when it has none. */
+function envOf(folder) {
+  let text;
+  try {
+    text = readFileSync(path.join(folder, ".env"));
+  } catch {
+    return null;
+  }
+  return serverPackages(ROOT).dotenv.parse(text);
+}
+
+/** This folder's databases a run empties, by the line that names each. */
+const SHARED = { test: "DATABASE_URL_TEST", e2e: "DATABASE_URL_E2E" };
+
+/**
+ * What refuses a run in `root` when another working folder's .env names
+ * its test or e2e database, on the same server: for each such folder, a
+ * line for each database, then the command that gives the second folder
+ * its own, run from the main working folder, whose names stay. None when
+ * no folder shares. Its address is the environment's before its .env's,
+ * as dotenv leaves a variable already set; a folder without a .env names
+ * nothing.
+ */
+export function sharedDatabases(root, env) {
+  const [main, ...rest] = worktrees(root);
+  if (!main) return [];
+  const own = envOf(root) ?? {};
+  const mine = Object.entries(SHARED)
+    .map(([which, key]) => ({ which, at: databaseAt(env[key] || own[key]) }))
+    .filter(({ at }) => at);
+  const lines = [];
+  for (const folder of [main, ...rest]) {
+    if (folder === root) continue;
+    const theirs = envOf(folder);
+    if (!theirs) continue;
+    const named = Object.values(SHARED)
+      .map((key) => databaseAt(theirs[key]))
+      .filter(Boolean);
+    const shared = mine.filter(({ at }) =>
+      named.some((one) => one.server === at.server && one.name === at.name),
+    );
+    if (!shared.length) continue;
+    const there = path.relative(root, folder);
+    for (const { which, at } of shared) {
+      lines.push(
+        `${there} names the same ${which} database as this folder, ${at.name}.`,
+      );
+    }
+    const second = folder === main ? root : folder;
+    lines.push(
+      `Give ${second === root ? "this folder" : "it"} its own, from the main working folder:`,
+      `  node scripts/folder-databases.mjs ${path.relative(main, second)}`,
+    );
+  }
+  return lines;
 }
 
 /** The connection holding the lock in this database, or null. */
@@ -272,17 +390,7 @@ export function run(command, args, env, say) {
  * server DATABASE_URL_TEST names.
  */
 async function connect(root, env, say) {
-  const require = createRequire(path.join(root, "server/package.json"));
-  let pg;
-  let dotenv;
-  try {
-    pg = require("pg");
-    dotenv = require("dotenv");
-  } catch {
-    throw new Stop(
-      "pg and dotenv come from server/node_modules: run npm ci in server/ first.",
-    );
-  }
+  const { pg, dotenv } = serverPackages(root);
   let file = {};
   try {
     file = dotenv.parse(readFileSync(path.join(root, ".env")));
@@ -328,6 +436,7 @@ async function connect(root, env, say) {
 export const SYSTEM = {
   root: ROOT,
   env: process.env,
+  shared: () => sharedDatabases(ROOT, process.env),
   connect: () => connect(ROOT, process.env, SYSTEM.say),
   lsof,
   folderOf,
@@ -348,6 +457,11 @@ export async function oneAtATime({ label, command, args }, system) {
 
   let db;
   try {
+    const shared = system.shared();
+    if (shared.length) {
+      for (const line of shared) say(line);
+      return 1;
+    }
     db = await system.connect();
   } catch (error) {
     if (!(error instanceof Stop)) throw error;
