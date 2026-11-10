@@ -260,7 +260,9 @@ a second organization.
   keeps the type says "Item saved"), the line under the name
   follows, Items shows it on its new tab, and History records the type
   and the category from and to. Emptying the name is refused under it.
-  As a Viewer there is no Edit.
+  As a Viewer there is no Edit. Its Names in other languages table's
+  item row reads the name it was added with, then "the name it was added
+  with, used in any language without its own name", in three languages.
 - **MC-215** The item pickers, as the demo Owner, put the task's types
   first, each under its name, and every other item after them under
   Other items, each item's type at the end of its row. Raise an order,
@@ -5603,3 +5605,7 @@ first.
 - 2026-11-09: ADR-092's reviews: Add item's Code says it is the
   organization's own code, unique in it, not a barcode, with the chosen
   type's example: MC-201 extended.
+- 2026-11-09: ADR-092's reviews: the names table's item row says its
+  name is the one it was added with, used in any language without its
+  own, and the Items guide that a name in its own language is only for
+  printing something different: MC-214 extended.

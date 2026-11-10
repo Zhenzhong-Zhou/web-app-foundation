@@ -1722,6 +1722,7 @@
   "products.moreFailed": "后面 50 个没能加载。",
   "products.names.add": "添加",
   "products.names.addLabel": "添加{name}",
+  "products.names.base": "添加时填写的名称，没有自己名称的语言都用它",
   "products.names.kind.item": "物品",
   "products.names.kind.variant": "规格 {sku}",
   "products.names.missing": "缺少",

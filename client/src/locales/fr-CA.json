@@ -1722,6 +1722,7 @@
   "products.moreFailed": "Les 50 suivants n’ont pas pu être chargés.",
   "products.names.add": "Ajouter",
   "products.names.addLabel": "Ajouter {name}",
+  "products.names.base": "le nom donné à l’ajout, utilisé dans toute langue qui n’a pas le sien",
   "products.names.kind.item": "Article",
   "products.names.kind.variant": "Variante {sku}",
   "products.names.missing": "Manquant",

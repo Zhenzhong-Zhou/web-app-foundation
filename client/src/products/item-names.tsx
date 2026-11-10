@@ -16,7 +16,7 @@ import { useId } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { ProductDetail } from '../api/types.gen';
-import { NO_VALUE } from '../lib/format';
+import { NO_VALUE, SEPARATOR } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
 import { LANGUAGE_NAMES, type Locale, SUPPORTED_LOCALES } from '../lib/locales';
 import { openDialog } from '../lib/open-dialog';
@@ -187,6 +187,19 @@ export function ItemNames({
                           )}
                     </Typography>
                     {row.name}
+                    {/* The base name has no language of its own until
+                        #531: said here, so a name in its language is
+                        not typed twice without reason. */}
+                    {row.sku === null && (
+                      <Box component="span" sx={{ color: 'text.secondary' }}>
+                        {SEPARATOR}
+                        {intl.formatMessage({
+                          id: 'products.names.base',
+                          defaultMessage:
+                            'the name it was added with, used in any language without its own name',
+                        })}
+                      </Box>
+                    )}
                   </TableCell>
                   {SUPPORTED_LOCALES.map((locale) => (
                     <TableCell key={locale}>

@@ -84,7 +84,7 @@ Sur la page d’un article, son type et sa catégorie sont sous le nom.
 - **Ajouter des images** accepte jusqu’à 8 photos. La première est la couverture, affichée à côté du nom dans les listes.
 - **Modifier les noms** donne son nom dans d’autres langues, pour les documents imprimés dans ces langues.
 
-Le tableau **Noms dans d’autres langues** a une ligne pour l’article, et une pour chaque variante qui a un nom à elle, avec une colonne par langue. Les langues que vos documents exigent sont marquées. Un nom exigé qui manque affiche **Manquant**, et **Ajouter** ouvre **Modifier les noms** à cette ligne. Une ligne en haut de la page dit que les commandes et les factures contenant l’article ne peuvent pas s’imprimer tant que le nom n’est pas ajouté.
+Le tableau **Noms dans d’autres langues** a une ligne pour l’article, et une pour chaque variante qui a un nom à elle, avec une colonne par langue. La ligne de l’article commence par le nom donné à l’ajout, utilisé dans toute langue qui n’a pas le sien ; un nom dans la langue de ce nom ne sert qu’à imprimer autre chose. Les langues que vos documents exigent sont marquées. Un nom exigé qui manque affiche **Manquant**, et **Ajouter** ouvre **Modifier les noms** à cette ligne. Une ligne en haut de la page dit que les commandes et les factures contenant l’article ne peuvent pas s’imprimer tant que le nom n’est pas ajouté.
 
 > Seule une personne qui peut ajouter des articles voit **Ajouter un article**, et seule une personne qui peut les modifier voit **Ajouter une variante**, **Modifier**, **Modifier les noms** et **Abandonner**.
 

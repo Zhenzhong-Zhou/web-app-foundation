@@ -1722,6 +1722,7 @@
   "products.moreFailed": "The next 50 could not be loaded.",
   "products.names.add": "Add",
   "products.names.addLabel": "Add {name}",
+  "products.names.base": "the name it was added with, used in any language without its own name",
   "products.names.kind.item": "Item",
   "products.names.kind.variant": "Variant {sku}",
   "products.names.missing": "Missing",

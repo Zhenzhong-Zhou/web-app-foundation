@@ -84,7 +84,7 @@ On an item’s page, its type and category are under the name.
 - **Add images** takes up to 8 photos. The first is the cover, shown beside the name in lists.
 - **Edit names** gives its name in other languages, for documents printed in them.
 
-The **Names in other languages** table has a row for the item, and one for each variant with a name of its own, with a column for each language. The languages your documents require are marked. A required name that is missing reads **Missing**, and **Add** opens **Edit names** at that row. A line at the top of the page says that orders and invoices holding the item cannot print until it is added.
+The **Names in other languages** table has a row for the item, and one for each variant with a name of its own, with a column for each language. The item’s row starts with the name it was added with, which is used in any language without its own name; a name in that name’s own language is only for printing something different. The languages your documents require are marked. A required name that is missing reads **Missing**, and **Add** opens **Edit names** at that row. A line at the top of the page says that orders and invoices holding the item cannot print until it is added.
 
 > Only someone who may add items sees **Add item**, and only someone who may change them sees **Add variant**, **Edit**, **Edit names** and **Discontinue**.
 

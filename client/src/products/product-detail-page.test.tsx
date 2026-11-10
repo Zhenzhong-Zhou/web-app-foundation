@@ -102,8 +102,12 @@ describe('ProductDetailPage', () => {
     expect(
       await screen.findByRole('heading', { name: '舒缓胶囊 90 粒' }),
     ).toBeVisible();
+    // The base name says what it is until it has a language of its own
+    // (#531).
     expect(
-      screen.getByRole('rowheader', { name: 'Item Calm 90ct' }),
+      screen.getByRole('rowheader', {
+        name: /^Item Calm 90ct\s*·\s*the name it was added with, used in any language without its own name$/,
+      }),
     ).toBeVisible();
     expect(screen.getByRole('cell', { name: '舒缓胶囊 90 粒' })).toBeVisible();
   });
@@ -159,7 +163,7 @@ describe('ProductDetailPage', () => {
 
     const rows = within(table).getAllByRole('rowheader');
     expect(rows.map((row) => row.textContent)).toEqual([
-      'ItemFocus',
+      'ItemFocus · the name it was added with, used in any language without its own name',
       'Variant FOC-3030 capsules',
       'Variant adasd213123',
     ]);
