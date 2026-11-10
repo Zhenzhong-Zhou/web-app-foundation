@@ -176,7 +176,8 @@ a second organization.
   VITC-100 reading Out and another product Low stock in Home's words and
   colours; and Last changed. Clicking anywhere on a row opens the item;
   clicking its stock opens Inventory for that item alone, every variant
-  in every location, with a chip "Item: …" whose × shows all stock again,
+  in every location (on a touch screen its link is a fingertip tall, so
+  a near miss does not open the item), with a chip "Item: …" whose × shows all stock again,
   and Back returns to Items as it was. At 390 px each row is a card: the
   name, its code and category on one line, then the stock and its status;
   the stock and its status open Inventory for the item alone, as the
@@ -5536,3 +5537,5 @@ first.
 - 2026-11-09: ADR-092's reviews, 2: on a phone a card's stock and status
   open Inventory for the item alone, beside the item's link: MC-208
   extended.
+- 2026-11-09: ADR-092's reviews, 3: on a touch screen a row's stock is a
+  link 44 px tall: MC-208 extended.

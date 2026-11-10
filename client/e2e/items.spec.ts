@@ -503,6 +503,30 @@ test('Items, a row’s stock: Inventory, that item alone; Back, Items as it was'
   await expect(rowNames(page)).toHaveCount(2);
 });
 
+// On touch the stock's link was about 20 px tall, so a near miss opened
+// the item (ADR-092's review, 3).
+test.describe('on a touch tablet', () => {
+  test.use({ viewport: { width: 820, height: 1180 }, hasTouch: true });
+
+  test('Items, a row’s stock: a link 44 px tall', async ({
+    page,
+    freshOrg,
+  }) => {
+    const tonic = await createProduct(freshOrg.api, {
+      name: 'E2E Touch Tonic',
+    });
+    await receive(freshOrg.api, tonic, '5');
+    await signInAs(page, freshOrg.api);
+    await page.goto('/items');
+
+    const stock = page.getByRole('link', {
+      name: /, stock of E2E Touch Tonic$/,
+    });
+    await expect(stock).toBeVisible();
+    expect((await stock.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  });
+});
+
 test('Items, Add item: the dialog, its type chosen from the tab, none from All', async ({
   page,
   freshOrg,

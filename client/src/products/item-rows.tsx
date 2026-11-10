@@ -345,7 +345,16 @@ export function ItemTable({
                       },
                       { quantity: onHand(item), name: item.displayName },
                     )}
-                    sx={{ whiteSpace: 'nowrap' }}
+                    // A fingertip's height on touch, so a near miss does not
+                    // open the item instead (ADR-092).
+                    sx={{
+                      whiteSpace: 'nowrap',
+                      [TOUCH]: {
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        minHeight: rem(44),
+                      },
+                    }}
                   >
                     {onHand(item)}
                   </Link>
