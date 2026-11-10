@@ -3,6 +3,7 @@ name: walkthrough
 description: Walks one journey through the running application as one persona and writes its report, given the persona, its account, the tasks and the report's path. Started only by /usability-walkthrough's panel, never chosen on its own.
 model: sonnet
 effort: high
+tools: Read, Write, Bash
 ---
 
 # One persona's walk, in a panel
@@ -38,10 +39,6 @@ Walk the one persona and journey given, and nothing else.
 - **Your own files only:** the report, and any throwaway scripts and
   screenshots in a folder beside it named after it.
 - **Report only:** nothing filed and nothing fixed.
-- **Each finding marked** "every screen" when it would hold wherever the
-  same pattern appears, or "this journey" when it concerns these screens
-  alone; and named by the principle of the design language it breaks
-  (`docs/design-language.md`), or "none of them".
 
 ## 3. End
 

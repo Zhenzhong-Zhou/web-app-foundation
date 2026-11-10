@@ -76,6 +76,17 @@ An owner making the application their company's.
 - **Tasks:** put the company's name and logo on its documents; set its
   time zone; invite a colleague.
 
+## items
+
+Finding, adding and sorting what the company keeps, from Items.
+
+- **Starts on:** Items.
+- **Personas:** the novice bookkeeper, the owner who learns fast, the
+  warehouse worker, the operations lead.
+- **Tasks:** find a raw material in a category; add a packaging item;
+  put the uncategorised items into categories; see which products are
+  low and open one's stock; change an item's type.
+
 ## buy
 
 - **Starts on:** Home.
