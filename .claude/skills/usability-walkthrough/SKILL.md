@@ -40,6 +40,13 @@ throwaway Playwright script using the client's `@playwright/test` and
 whether the persona would notice a control, and where the persona's Set
 up asks for one.
 
+Sign in once for each size, and let the scripts after it reuse that
+session (Playwright's `storageState`), as the browser suite does: every
+sign-in counts, and sign-in allows 10 for one email from one address in
+15 minutes, then refuses that pair for 15 more (`LOGIN_ATTEMPT_LIMIT` in
+`server/src/core/auth/login-throttle.ts`), which neither
+`RATE_LIMIT_MAX` nor `THROTTLE_FACTOR` raises.
+
 Stay in the persona:
 
 - Use only what the persona knows. Do not read the source to find the
