@@ -807,6 +807,19 @@ describe('ProductsPage', () => {
       ).toBeVisible();
     });
 
+    // The sheet was a dialog with no name (ADR-092's review, 80).
+    it('names the sheet of filters and sort by its heading', async () => {
+      const user = userEvent.setup();
+      readsOf(() => pageOf([product('Focus')], countsOf({ good: 1 })));
+      renderAt('/items');
+
+      await user.click(await screen.findByRole('button', { name: 'Filters' }));
+
+      expect(
+        screen.getByRole('dialog', { name: 'Filters and sort' }),
+      ).toBeVisible();
+    });
+
     // The cards have no head to tick every row (ADR-092's review, 12).
     it('ticks every card from the bar’s Select all', async () => {
       const user = userEvent.setup();

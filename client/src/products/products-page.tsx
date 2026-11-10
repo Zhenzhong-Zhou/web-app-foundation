@@ -95,6 +95,9 @@ const ADDRESS_FILTERS = {
   discontinued: oneOf<DiscontinuedShown>(['', 'only', 'include'], ''),
 };
 
+/** The phone sheet's heading, which names it. */
+const SHEET_TITLE_ID = 'items-sheet-title';
+
 /** Name, A to Z, unless a header is chosen (ADR-092). */
 const BY_NAME: ListSort<ItemSort> = { key: 'name', order: 'asc' };
 
@@ -553,15 +556,21 @@ export function ProductsPage() {
 
       {/* On a phone the category, the sort and Discontinued rise in a
           sheet from the bottom, scrolling inside so its buttons stay in
-          reach (ADR-090, #481). */}
+          reach (ADR-090, #481): a dialog, named by its heading, as Help's
+          sheet is (WCAG 4.1.2). */}
       <Drawer
         anchor="bottom"
         open={sheet}
         onClose={() => setSheet(false)}
-        slotProps={{ paper: { sx: { maxHeight: '80vh' } } }}
+        slotProps={{
+          paper: {
+            'aria-labelledby': SHEET_TITLE_ID,
+            sx: { maxHeight: '80vh' },
+          },
+        }}
       >
         <Stack spacing={2} sx={{ p: 2 }}>
-          <Typography variant="h6" component="h2">
+          <Typography variant="h6" component="h2" id={SHEET_TITLE_ID}>
             {intl.formatMessage({
               id: 'products.filtersAndSort',
               defaultMessage: 'Filters and sort',

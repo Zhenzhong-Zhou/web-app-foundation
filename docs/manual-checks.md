@@ -192,7 +192,8 @@ a second organization.
   stays on the header pressed from the keyboard. The date column's menu
   switches it to Date added, newest first, and the column shows the date
   sorted by. The sort stays in the address. At 390 px Filters opens a
-  sheet from the bottom with the category, Sort (In stock, fewest first;
+  sheet from the bottom, which a screen reader names Filters and sort,
+  with the category, Sort (In stock, fewest first;
   Last changed, newest first; Date added, newest first) and Discontinued
   with its count; Clear resets them and Show closes it.
 - **MC-210** Items' category filter reads All categories, then the tree
@@ -5583,3 +5584,5 @@ first.
   with the type: MC-214 extended.
 - 2026-11-09: ADR-092's reviews, 90: Inventory opened for an item with
   no stock says so by the item's name: MC-208 extended.
+- 2026-11-09: ADR-092's reviews, 80: the phone's sheet of filters and
+  sort is a dialog named by its heading: MC-209 extended.
