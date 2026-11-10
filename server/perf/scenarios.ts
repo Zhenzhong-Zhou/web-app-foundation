@@ -254,6 +254,10 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // Products unsearched, as it opens: sorted and named by the name shown,
     // two correlated subqueries a product.
     read('GET /products', () => '/products', 'zh-Hans'),
+    // Items on one type's tab (ADR-092), as it opens on Raw materials
+    // where an organization keeps no products: the type's count beside
+    // every tab's, its page by the type's index.
+    read('GET /products?type', () => '/products?type=material', 'zh-Hans'),
     // Items sorted by stock (ADR-092): every item's stock summed to order
     // them, where the other sorts read the page's alone.
     read('GET /products?sort=stock', () => '/products?sort=stock', 'zh-Hans'),
