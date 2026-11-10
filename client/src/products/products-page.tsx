@@ -159,10 +159,7 @@ export function ProductsPage() {
         known.types.some((entry) => entry.type === tab),
       ) ?? 'good')
     : 'good';
-  const [tab, setTab] = useTab<ItemTab>([
-    opening,
-    ...ITEM_TABS.filter((other) => other !== opening),
-  ]);
+  const [tab, setTab] = useTab<ItemTab>(ITEM_TABS, { fallback: opening });
 
   const [filters, setFilters] = useListFilters(ADDRESS_FILTERS);
   const { category, discontinued } = filters;
