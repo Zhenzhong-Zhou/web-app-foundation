@@ -373,9 +373,10 @@ describe('InventoryPage', () => {
   it('lists one item alone when the address names it, named on a chip that removes it', async () => {
     const user = userEvent.setup();
     const ITEM = '00000000-0000-4000-8000-000000000001';
-    const asked: { stock: URLSearchParams[]; counts: URLSearchParams[] } = {
+    const asked: Record<'stock' | 'counts' | 'promised', URLSearchParams[]> = {
       stock: [],
       counts: [],
+      promised: [],
     };
     server.use(
       http.get('/api/v1/stock', ({ request }) => {
@@ -386,7 +387,10 @@ describe('InventoryPage', () => {
         asked.counts.push(new URL(request.url).searchParams);
         return HttpResponse.json({ expiring: 0, needsCost: 0 });
       }),
-      http.get('/api/v1/stock/availability', () => HttpResponse.json([])),
+      http.get('/api/v1/stock/availability', ({ request }) => {
+        asked.promised.push(new URL(request.url).searchParams);
+        return HttpResponse.json([]);
+      }),
       http.get(`/api/v1/products/${ITEM}`, () =>
         // The item itself, as GET /v1/products/:id answers.
         HttpResponse.json({ displayName: 'Vitamin D' }),
@@ -404,9 +408,16 @@ describe('InventoryPage', () => {
     });
     expect(asked.stock[0].get('productId')).toBe(ITEM);
     await expect.poll(() => asked.counts[0]?.get('productId')).toBe(ITEM);
+    // Promised to customers, the item's alone too (ADR-092's review, 6).
+    expect(asked.promised.map((query) => query.get('productId'))).toEqual([
+      ITEM,
+    ]);
 
     await user.click(within(chip).getByTestId('CancelIcon'));
     await expect.poll(() => asked.stock.at(-1)?.has('productId')).toBe(false);
+    await expect
+      .poll(() => asked.promised.at(-1)?.has('productId'))
+      .toBe(false);
     expect(
       screen.queryByRole('button', { name: 'Item: Vitamin D' }),
     ).not.toBeInTheDocument();

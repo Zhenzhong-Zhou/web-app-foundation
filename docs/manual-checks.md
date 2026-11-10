@@ -178,7 +178,8 @@ a second organization.
   colours; and Last changed. Clicking anywhere on a row opens the item;
   clicking its stock opens Inventory for that item alone, every variant
   in every location (on a touch screen its link is a fingertip tall, so
-  a near miss does not open the item), with a chip "Item: …" whose × shows all stock again,
+  a near miss does not open the item), with a chip "Item: …" whose × shows all stock again
+  and Promised to customers below it listing that item alone,
   and Back returns to Items as it was. At 390 px each row is a card: the
   name, its code and category on one line, then the stock and its status;
   the stock and its status open Inventory for the item alone, as the
@@ -5543,3 +5544,5 @@ first.
 - 2026-11-09: ADR-092's reviews, 5: a line under Add item's lot switch
   says what it records and that it cannot be changed later, in three
   languages: MC-203 extended.
+- 2026-11-09: ADR-092's reviews, 6: Inventory for one item lists only
+  that item under Promised to customers: MC-208 extended.

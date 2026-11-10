@@ -5996,6 +5996,7 @@ export type AvailabilityControllerListV1Data = {
   path?: never;
   query?: {
     promised?: string;
+    productId?: string;
   };
   url: '/v1/stock/availability';
 };

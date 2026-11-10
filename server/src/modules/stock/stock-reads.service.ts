@@ -152,7 +152,7 @@ function filtersOf(
  * organization's item would read as an item with no stock, and the chip
  * naming it would say so.
  */
-const UNKNOWN_ITEM = t({
+export const UNKNOWN_ITEM = t({
   id: 'stock.unknownProduct',
   defaultMessage:
     'That item is not in this organization. Remove it from the filter to see every item.',

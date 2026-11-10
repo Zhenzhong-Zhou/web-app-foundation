@@ -2,21 +2,33 @@ import { Injectable } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
-import { orderLines } from '../../database/schema';
+import { assertOwnIds } from '../../database/own-ids';
+import { orderLines, products } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { loadOrder } from '../orders/load-order';
 import { availability, holdsFor, type LineHold } from './availability';
+import { UNKNOWN_ITEM } from './stock-reads.service';
 
 /** Reads over what open orders hold (ADR-045). Nothing here writes. */
 @Injectable()
 export class AvailabilityService {
   constructor(private readonly tenantDb: TenantDb) {}
 
-  /** Per product: on hand where promisable, held, free, backordered. */
-  async list(locale: Locale, promisedOnly = false) {
-    return this.tenantDb.transaction((tx, organizationId) =>
-      availability(tx, organizationId, locale, promisedOnly),
-    );
+  /**
+   * Per product: on hand where promisable, held, free, backordered; one
+   * item's alone with `productId`, which is this organization's or a 400.
+   */
+  async list(locale: Locale, promisedOnly = false, productId?: string) {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      await assertOwnIds(
+        tx,
+        products,
+        organizationId,
+        [productId],
+        UNKNOWN_ITEM,
+      );
+      return availability(tx, organizationId, locale, promisedOnly, productId);
+    });
   }
 
   /**

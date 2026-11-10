@@ -335,15 +335,19 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
 
   const canAdjust = can('stock.adjust');
 
+  // What is promised: the item's alone while the address names one, as
+  // the stock above it (ADR-092).
+  const availabilityPath = productId
+    ? `/stock/availability?promised=true&productId=${productId}`
+    : '/stock/availability?promised=true';
+
   const loadAvailability = useCallback(async () => {
     try {
-      setAvailability(
-        await api<Availability[]>('/stock/availability?promised=true'),
-      );
+      setAvailability(await api<Availability[]>(availabilityPath));
     } catch (caught) {
       setSetupError(messageFor(caught));
     }
-  }, []);
+  }, [availabilityPath]);
 
   /**
    * After anything that changes a row: the list from its first page, and
@@ -359,14 +363,11 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
   useEffect(() => {
     let ignore = false;
 
-    void Promise.all([
-      canSeeLocations ? api<Location[]>('/locations') : Promise.resolve(null),
-      api<Availability[]>('/stock/availability?promised=true'),
-    ])
-      .then(([all, promised]) => {
-        if (ignore) return;
-        setLocations(all);
-        setAvailability(promised);
+    void (
+      canSeeLocations ? api<Location[]>('/locations') : Promise.resolve(null)
+    )
+      .then((all) => {
+        if (!ignore) setLocations(all);
       })
       .catch((caught: unknown) => {
         if (!ignore) setSetupError(messageFor(caught));
@@ -376,6 +377,22 @@ function StockTab({ tabs }: { tabs: ReactNode }) {
       ignore = true;
     };
   }, [canSeeLocations]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    void api<Availability[]>(availabilityPath)
+      .then((promised) => {
+        if (!ignore) setAvailability(promised);
+      })
+      .catch((caught: unknown) => {
+        if (!ignore) setSetupError(messageFor(caught));
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [availabilityPath]);
 
   if (refused) {
     return <RevisionRefusalPage failure={refused} onRetry={reload} />;

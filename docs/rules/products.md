@@ -322,11 +322,13 @@ How this file is kept is in the [README](README.md).
   [test](../../client/e2e/items.spec.ts) "Items, a category: the list holds it and those under it; a chip shows it, its × removes it; Back, the page before; Forward, as it was" ·
   MC-210
 - **A row's stock opens Inventory for that item alone, every variant in
-  every location, its counts and its export too; another organization's
-  item there is refused, saying to remove it from the filter.**
+  every location, its counts, its export and what is promised from it
+  too; another organization's item there is refused, saying to remove it
+  from the filter.**
   [ADR-092](../adr/0092-items.md#decision--a-row-the-name-first-its-stock-read-from-inventory) ·
   [test](../../server/test/stock.e2e-spec.ts) "lists one item alone, every variant in every location, its counts and export following" ·
   [test](../../server/test/stock.e2e-spec.ts) "refuses another organization item with a 400, on the list, its counts and its export" ·
+  [test](../../server/test/reservations.e2e-spec.ts) "lists one item alone when asked, refusing another organization’s" ·
   [test](../../client/src/inventory/inventory-page.test.tsx) "lists one item alone when the address names it, named on a chip that removes it" ·
   [test](../../client/e2e/items.spec.ts) "Items, a row’s stock: Inventory, that item alone; Back, Items as it was" ·
   [test](../../client/e2e/items.spec.ts) "Items, a row, anywhere: the item’s page; Back, Items as it was" ·

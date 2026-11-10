@@ -4882,6 +4882,15 @@
             }
           },
           {
+            "name": "productId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
             "name": "accept-language",
             "in": "header",
             "required": false,
