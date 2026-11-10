@@ -440,6 +440,33 @@ describe('Products (e2e)', () => {
       expect(row.type).toBe('good');
     });
 
+    // The same gap as the type's: a null name or in use reached the NOT
+    // NULL column as a 500 (ADR-092's review, 92).
+    it('refuses a null name, description or in use with a 400, changing nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+
+      const created = body<{ product: ProductResponse }>(
+        await alpha.agent
+          .post('/v1/products')
+          .send({ ...product, description: 'Daily' })
+          .expect(201),
+      ).product;
+
+      for (const field of ['name', 'description', 'isActive']) {
+        await alpha.agent
+          .patch(`/v1/products/${created.id}`)
+          .send({ [field]: null })
+          .expect(400);
+      }
+
+      const [row] = await db.select().from(products);
+      expect(row).toMatchObject({
+        name: 'Vitamin D3',
+        description: 'Daily',
+        isActive: true,
+      });
+    });
+
     it('refuses a Viewer, which lacks products.update', async () => {
       const alpha = await registerOrganization(app, 'alpha');
 

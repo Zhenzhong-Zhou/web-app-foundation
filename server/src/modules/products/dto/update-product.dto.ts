@@ -26,20 +26,25 @@ export class UpdateProductDto {
   @IsIn(PRODUCT_TYPES)
   type?: ProductType;
 
-  @IsOptional()
+  /** Left out to keep it; never null, as `type`. */
+  @ValidateIf((_object, value: unknown) => value !== undefined)
   @trim()
   @IsString()
   @MinLength(1)
   @MaxLength(200)
   name?: string;
 
-  @IsOptional()
+  /** Emptied with "", as the form sends it; never null, as `type`. */
+  @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsString()
   @MaxLength(2000)
   description?: string;
 
-  /** Discontinuing. Never cascaded to variants — see the service. */
-  @IsOptional()
+  /**
+   * Discontinuing. Never cascaded to variants — see the service. Never
+   * null, as `type`.
+   */
+  @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsBoolean()
   isActive?: boolean;
 
