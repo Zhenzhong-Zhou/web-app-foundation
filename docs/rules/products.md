@@ -411,7 +411,9 @@ How this file is kept is in the [README](README.md).
   many of each and to move them first, with nothing sent; on an empty
   one it asks first. Whoever may only see items reads the tree, with a
   line saying whom to ask. Items' Manage categories opens it with Back
-  to Items as it was.**
+  to Items as it was. Loading, its placeholder rows wait 250 ms; a read
+  again that fails keeps the tree, saying so above it, and a first read
+  that fails says so with Try again.**
   [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
   [test](../../client/src/products/categories-page.test.tsx) "shows the tree nested, each category with its items and those under it" ·
   [test](../../client/src/products/categories-page.test.tsx) "moves a category, its list leaving out its own branch, Move waiting for another place" ·
@@ -419,6 +421,9 @@ How this file is kept is in the [README](README.md).
   [test](../../client/src/products/categories-page.test.tsx) "asks before deleting an empty category, then deletes it" ·
   [test](../../client/src/products/categories-page.test.tsx) "reads only for whoever may only see items, a line saying whom to ask" ·
   [test](../../client/src/products/categories-page.test.tsx) "opens from Items’ Manage categories with Back, which returns to Items as it was" ·
+  [test](../../client/src/products/categories-page.test.tsx) "says it is loading, its placeholder rows only once the read takes a while" ·
+  [test](../../client/src/products/categories-page.test.tsx) "keeps the tree shown when it cannot be read again, saying so above it" ·
+  [test](../../client/src/products/categories-page.test.tsx) "says the tree could not be read, with Try again, which reads it again" ·
   [test](../../client/e2e/items.spec.ts) "the filter, Manage categories: Settings › Categories; Back, Items" ·
   [test](../../client/e2e/categories.spec.ts) "Settings › Categories, Delete with items under it: refused, how many, and to move them first" ·
   [test](../../client/e2e/categories.spec.ts) "Settings › Categories for a Viewer: the tree to read, with no Actions" ·

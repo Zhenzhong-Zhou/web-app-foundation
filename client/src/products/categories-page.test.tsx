@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -297,6 +297,56 @@ describe('CategoriesPage', () => {
     expect(
       screen.getAllByRole('button', { name: 'Add category' }),
     ).toHaveLength(2);
+  });
+
+  // ADR-092's five states, two of them untested (ADR-092's review, 83).
+  it('says it is loading, its placeholder rows only once the read takes a while', async () => {
+    server.use(
+      http.get('/api/v1/products/categories', async () => {
+        await delay(400);
+        return HttpResponse.json({ categories: TREE, uncategorised: [] });
+      }),
+    );
+    renderPage();
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading categories…');
+    expect(document.querySelector('.MuiSkeleton-root')).toBeNull();
+    await waitFor(() =>
+      expect(document.querySelector('.MuiSkeleton-root')).not.toBeNull(),
+    );
+    expect(await rowOf('Vitamins')).toBeVisible();
+    expect(document.querySelector('.MuiSkeleton-root')).toBeNull();
+  });
+
+  it('keeps the tree shown when it cannot be read again, saying so above it', async () => {
+    server.use(
+      http.patch(
+        '/api/v1/products/categories/:id',
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+    renderPage();
+
+    const user = await act('Labels', 'Rename');
+    // The tree read after the rename fails.
+    server.use(
+      http.get('/api/v1/products/categories', () =>
+        HttpResponse.json(
+          { statusCode: 500, message: 'Something went wrong' },
+          { status: 500 },
+        ),
+      ),
+    );
+    const name = within(screen.getByRole('dialog')).getByLabelText(/Name/);
+    await user.clear(name);
+    await user.type(name, 'Stickers');
+    await user.click(screen.getByRole('button', { name: 'Rename' }));
+
+    expect(await screen.findByRole('alert')).toBeVisible();
+    expect(await rowOf('Vitamins')).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Try again' }),
+    ).not.toBeInTheDocument();
   });
 
   it('says the tree could not be read, with Try again, which reads it again', async () => {
