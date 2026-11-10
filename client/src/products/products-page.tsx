@@ -643,12 +643,18 @@ export function ProductsPage() {
             spacing={1}
             sx={{ justifyContent: 'flex-end' }}
           >
+            {/* One write: two would each start from the address as it
+                was, and the second would put back what the first cleared. */}
             <Button
               variant="text"
-              onClick={() => {
-                setFilters({ category: '', discontinued: '' });
-                write({ sort: null, order: null });
-              }}
+              onClick={() =>
+                write({
+                  category: null,
+                  discontinued: null,
+                  sort: null,
+                  order: null,
+                })
+              }
             >
               {intl.formatMessage({
                 id: 'products.filters.clear',

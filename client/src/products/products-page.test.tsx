@@ -740,6 +740,49 @@ describe('ProductsPage', () => {
    * a bar with how many, Set category, Discontinue and Clear; each change
    * at once, its message offering Undo with the values before.
    */
+  describe('on a phone', () => {
+    beforeEach(() => {
+      // A phone's width, for the page's and the tabs' width queries.
+      vi.stubGlobal('matchMedia', (query: string) => {
+        const min = /min-width:\s*([\d.]+)px/.exec(query);
+        const max = /max-width:\s*([\d.]+)px/.exec(query);
+        return {
+          matches:
+            (!min || 390 >= Number(min[1])) && (!max || 390 <= Number(max[1])),
+          media: query,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+        };
+      });
+      return () => vi.unstubAllGlobals();
+    });
+
+    // The sheet's Clear wrote the filters, then the sort, each from the
+    // address as it was, so the second put the filters back (MC-209).
+    it('clears the category, Discontinued and the sort in the sheet at once', async () => {
+      const user = userEvent.setup();
+      const asked = readsOf(() =>
+        pageOf([product('Focus')], countsOf({ good: 1 }, 1)),
+      );
+      renderAt(
+        '/items?category=uncategorised&discontinued=only&sort=stock&order=asc',
+      );
+
+      await user.click(
+        await screen.findByRole('button', { name: 'Filters · 2' }),
+      );
+      await user.click(screen.getByRole('button', { name: 'Clear' }));
+
+      await waitFor(() =>
+        expect(asked.at(-1)).toBe('type=good&sort=name&order=asc'),
+      );
+      await user.click(screen.getByRole('button', { name: 'Show 1' }));
+      expect(
+        await screen.findByRole('button', { name: 'Filters' }),
+      ).toBeVisible();
+    });
+  });
+
   describe('several at once', () => {
     const CHANGER = { permissions: ['products.view', 'products.update'] };
     const VITAMIN_C = '00000000-0000-4000-8000-000000000002';
