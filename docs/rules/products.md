@@ -1,9 +1,12 @@
 # Products
 
-What the app allows, refuses and works out for products and their
+What the app allows, refuses and works out for items, which are products,
+raw materials, packaging, supplies, samples and equipment, and for their
 variants, their categories, their names in other languages, the name each
-reader sees, the Products list's search and the item pickers, product
-images and the catalogue export, as the code does it today. Each rule links the ADR that
+reader sees, Items' list with its search and its sorts, the item pickers,
+images and the catalogue export, as the code does it today. A variant's
+Code on screens, in documents and in exports is the SKU these rules name,
+and the `sku` of the API: ADR-092 renamed it for readers only. Each rule links the ADR that
 decided it, the test that proves it, the Help section where a person
 meets it, and the manual check that walks it by hand. Why a rule is so is
 in its ADR; how to do a task is in the
@@ -23,7 +26,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "rejects a product with no variant" ·
   [test](../../server/test/products.e2e-spec.ts) "rejects a duplicate SKU and leaves no orphaned product" ·
   [test](../../client/e2e/items.spec.ts) "Add an item, Add item: saved, “Added …”; the new item’s page in the form’s place; Back, Items" ·
-  [Help](../../client/src/help/guides/en/items.md#add-a-product-add) ·
+  [Help](../../client/src/help/guides/en/items.md#add-an-item-add) ·
   MC-201
 - **Add item asks what it is first, the six types each with a line in
   everyday words: from a type's tab that type is chosen, from All none
@@ -49,7 +52,8 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "changes its type, which History records from and to, as Discontinue" ·
   [test](../../client/e2e/items.spec.ts) "shows a product that already exists in the organisation" ·
   [test](../../client/src/products/product-detail-page.test.tsx) "edits its name, description, category and type, sending only what changed" ·
-  [Help](../../client/src/help/guides/en/items.md#add-a-product-add) ·
+  [test](../../client/e2e/items.spec.ts) "the item’s page, Edit then Save: saved; a new type moves it to that tab" ·
+  [Help](../../client/src/help/guides/en/items.md#the-types-types) ·
   MC-201
 - **Equipment is received, moved and counted where it stands, as any
   item is, but is not stock value:** Stock value's total, its list by item
@@ -67,7 +71,7 @@ How this file is kept is in the [README](README.md).
   them apart. Spaces around the name are dropped.
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--products-group-variants-carry-stock) ·
   no test ·
-  [Help](../../client/src/help/guides/en/items.md#add-a-product-add)
+  [Help](../../client/src/help/guides/en/items.md#add-an-item-add)
 - **Edit on the item's page changes its name, description, category and
   type, starting from the base name, and sends only what changed;** its
   type and its category's path, or Uncategorised, show under its name.
@@ -77,6 +81,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/audit.e2e-spec.ts) "names the resource as it was at the time" ·
   [test](../../client/src/products/product-detail-page.test.tsx) "edits its name, description, category and type, sending only what changed" ·
   [test](../../client/src/products/product-detail-page.test.tsx) "shows its type and category under its name" ·
+  [test](../../client/e2e/items.spec.ts) "the item’s page, Edit then Save: saved; a new type moves it to that tab" ·
   MC-214
 - **A SKU is typed, never made up by the app, up to 64 characters, and is
   unique within the organization: a second variant with the same SKU, on
@@ -90,6 +95,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "refuses a SKU already used elsewhere in the organization" ·
   [test](../../server/test/products.e2e-spec.ts) "allows the same SKU in another organization" ·
   [test](../../client/src/products/create-product-dialog.test.tsx) "refuses a code in use under Code, opening the item that has it" ·
+  [test](../../client/e2e/items.spec.ts) "Add an item, Add item with the code in use: refused under Code, with the item that has it" ·
   [Help](../../client/src/help/guides/en/items.md#if-something-is-refused-refused) ·
   MC-201
 - **Lot tracking is chosen when a variant is added, off unless turned on,
@@ -101,7 +107,7 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "rejects tracksLots in an update" ·
   [test](../../server/test/products.e2e-spec.ts) "creates a variant even when the product has no variation" ·
   [test](../../client/src/products/create-product-dialog.test.tsx) "never offers lot tracking for equipment, saying how equipment counts" ·
-  [Help](../../client/src/help/guides/en/items.md#add-a-product-add) ·
+  [Help](../../client/src/help/guides/en/items.md#add-an-item-add) ·
   MC-203
 
 ## Variants
@@ -167,15 +173,19 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/products.e2e-spec.ts) "hides a discontinued variant of an active product" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "leaves out a discontinued item, as it does without a search" ·
   [Help](../../client/src/help/guides/en/items.md#words-youll-meet-words)
-- **The list of items hides discontinued ones unless asked: Discontinued
-  shows them alone, and the top bar's Show all beside the rest; their
-  count follows the search and the category.** Products asks for them
-  beside the rest, marked Discontinued, and its Discontinued filter
-  narrows the first fifty it reads and counts within them.
+- **The list of items hides discontinued ones unless asked: the
+  Discontinued chip shows them alone, with their count, and the top bar's
+  Show all shows them beside the rest, marked Discontinued, under a chip
+  saying so.** The server does the choosing, so the count and the tabs
+  follow it.
   [ADR-092](../adr/0092-items.md#decision--a-row-the-name-first-its-stock-read-from-inventory) ·
   [test](../../server/test/items-list.e2e-spec.ts) "hides discontinued items unless asked, then alone or beside the rest, and counts them" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a discontinued product when asked to include them, as the top bar does" ·
+  [test](../../client/src/products/products-page.test.tsx) "opens Show all’s address on All with discontinued items, a chip removing them" ·
+  [test](../../client/src/products/products-page.test.tsx) "exports what the list shows, its tab, search, Discontinued and sort" ·
+  [test](../../client/e2e/items.spec.ts) "the top bar, Show all in Items: the list opens on All with the search, discontinued included, a chip saying so" ·
   partly tested ·
+  [Help](../../client/src/help/guides/en/items.md#find-items-find) ·
   MC-1546 · MC-3901
 
 ## Several at once
@@ -208,7 +218,14 @@ How this file is kept is in the [README](README.md).
   [test](../../client/src/products/products-page.test.tsx) "starts Set category on the category the ticked share, Move waiting for another" ·
   [test](../../client/src/products/products-page.test.tsx) "discontinues the ticked still in use at once, and Undo brings them back" ·
   [test](../../client/src/products/products-page.test.tsx) "says to untick some past 500, before either runs" ·
+  [test](../../client/e2e/items.spec.ts) "Items, ticks rows: the bar, how many, Set category, Discontinue, Clear" ·
+  [test](../../client/e2e/items.spec.ts) "the bar, Set category then Move: the list reads again; “Moved 3 items to …”, with Undo" ·
+  [test](../../client/e2e/items.spec.ts) "the bar, Discontinue: at once; “Discontinued 3 items”, with Undo" ·
+  [test](../../client/e2e/items.spec.ts) "a message, Undo: back as they were, recorded in History" ·
+  [test](../../client/e2e/items.spec.ts) "Items, another tab or search with ticks: the ticks clear" ·
+  [test](../../client/e2e/items.spec.ts) "for a Viewer: a line in Add item’s place, and no check boxes" ·
   partly tested ·
+  [Help](../../client/src/help/guides/en/items.md#change-several-at-once-several) ·
   MC-212
 
 ## The list of items
@@ -228,7 +245,9 @@ How this file is kept is in the [README](README.md).
   [ADR-092](../adr/0092-items.md#decision--fifty-at-a-time-the-counts-from-the-server) ·
   [test](../../server/test/items-list.e2e-spec.ts) "pages by its cursor, each row once, the counts with the first page alone" ·
   [test](../../server/test/items-list.e2e-spec.ts) "keeps two items of one name apart across a page’s edge" ·
-  [test](../../server/test/items-list.e2e-spec.ts) "refuses a cursor made for another order, or not made here"
+  [test](../../server/test/items-list.e2e-spec.ts) "refuses a cursor made for another order, or not made here" ·
+  [test](../../client/src/products/products-page.test.tsx) "shows fifty more below with focus on the first new row, and keeps the rows when that fails" ·
+  [test](../../client/e2e/items.spec.ts) "Items, Show 50 more: the next fifty below; focus on the first new row"
 - **It narrows to one type, to a category with every category under it,
   or to the Uncategorised.**
   [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
@@ -248,7 +267,11 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/items-list.e2e-spec.ts) "sorts by category by its path, the Uncategorised last either way" ·
   [test](../../server/test/items-list.e2e-spec.ts) "sums the stock on hand of every variant and place in its unit, or counts its variants where units differ" ·
   [test](../../server/test/items-list.e2e-spec.ts) "sorts by date added and last changed, either way" ·
-  [test](../../server/test/items-list.e2e-spec.ts) "ranks a search before the sort, the closest first either way, and pages on the rank"
+  [test](../../server/test/items-list.e2e-spec.ts) "ranks a search before the sort, the closest first either way, and pages on the rank" ·
+  [test](../../client/src/products/products-page.test.tsx) "sorts by a header, and switches the date column from its menu" ·
+  [test](../../client/e2e/items.spec.ts) "Items, a header: sorts by it, again reverses; focus stays on the header; the date column shows what it sorts; Back, the page before; Forward, as it was" ·
+  [Help](../../client/src/help/guides/en/items.md#find-items-find) ·
+  MC-209
 - **A row gives the item's first code and how many variants it has, its
   category's path from the top, and its stock on hand in every location,
   summed in its unit, or its number of variants where their units
@@ -256,12 +279,18 @@ How this file is kept is in the [README](README.md).
   items, never kept on the item.
   [ADR-092](../adr/0092-items.md#decision--a-row-the-name-first-its-stock-read-from-inventory) ·
   [test](../../server/test/items-list.e2e-spec.ts) "sums the stock on hand of every variant and place in its unit, or counts its variants where units differ" ·
-  [test](../../server/test/items-list.e2e-spec.ts) "narrows to a type, to a category with those under it, or to the Uncategorised"
+  [test](../../server/test/items-list.e2e-spec.ts) "narrows to a type, to a category with those under it, or to the Uncategorised" ·
+  [test](../../client/src/products/products-page.test.tsx) "shows a row’s code, its category’s path, its stock linking to Inventory for it alone, and Low or Out" ·
+  [test](../../client/e2e/items.spec.ts) "as it should be: each row its type’s icon, name, code, category, stock and status" ·
+  [Help](../../client/src/help/guides/en/items.md#what-a-row-shows-rows) ·
+  MC-208
 - **A row says Low or Out from the item's reorder points: out where any
   of its variants is out, else low where any is low; a discontinued item
   never.**
   [ADR-092](../adr/0092-items.md#decision--a-row-the-name-first-its-stock-read-from-inventory) ·
-  [test](../../server/test/items-list.e2e-spec.ts) "says low or out from its reorder points, out before low"
+  [test](../../server/test/items-list.e2e-spec.ts) "says low or out from its reorder points, out before low" ·
+  [test](../../client/src/products/products-page.test.tsx) "shows a row’s code, its category’s path, its stock linking to Inventory for it alone, and Low or Out" ·
+  MC-208
 - **Another organization's items, categories and stock are never listed
   nor counted.**
   [ADR-003](../adr/0003-multi-tenancy.md#decision) ·
@@ -269,9 +298,19 @@ How this file is kept is in the [README](README.md).
 - **Items opens on Products, or on the first type the organization holds
   an item of; a type with none has no tab, and the tab chosen, the
   search, the category, Discontinued and the sort stay in the address.**
+  Each replaces the page in the history instead of adding to it, as on
+  every list, so Back leaves Items for the page before and Forward brings
+  it back as it was.
   [ADR-092](../adr/0092-items.md#decision--the-types-as-tabs-opening-on-products) ·
   [test](../../client/src/products/products-page.test.tsx) "opens on Products, or on the first type with items, with each tab’s count" ·
   [test](../../client/src/products/products-page.test.tsx) "reads a tab’s type when chosen, keeping the search, and writes it in the address" ·
+  [test](../../client/e2e/items.spec.ts) "the menu, Items: the list opens on Products, or the first type with items" ·
+  [test](../../client/e2e/items.spec.ts) "Items, a tab: the list reads that type; the search, category and sort stay; Back, the page before; Forward, as it was" ·
+  [test](../../client/e2e/items.spec.ts) "Items, a search then a pause: the list and every tab’s count follow; with none on this tab, it says where the matches are, with a button there; Back, the page before; Forward, as it was" ·
+  [test](../../client/e2e/items.spec.ts) "Items, a category: the list holds it and those under it; a chip shows it, its × removes it; Back, the page before; Forward, as it was" ·
+  [test](../../client/e2e/items.spec.ts) "Items, a header: sorts by it, again reverses; focus stays on the header; the date column shows what it sorts; Back, the page before; Forward, as it was" ·
+  [test](../../client/e2e/items.spec.ts) "the keyboard on the tabs: the arrows move between them, Enter opens one" ·
+  [Help](../../client/src/help/guides/en/items.md#the-types-types) ·
   MC-207
 - **The category filter offers the categories holding items on the open
   tab, each counting those in the categories under it, as Discontinued
@@ -279,6 +318,8 @@ How this file is kept is in the [README](README.md).
   [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
   [test](../../client/src/products/item-list.test.ts) "counts each category with those under it, on the open tab alone" ·
   [test](../../client/src/products/item-list.test.ts) "counts the discontinued alone, or beside the rest, as the list shows them" ·
+  [test](../../client/src/products/products-page.test.tsx) "narrows to a category from its tree, a chip showing it" ·
+  [test](../../client/e2e/items.spec.ts) "Items, a category: the list holds it and those under it; a chip shows it, its × removes it; Back, the page before; Forward, as it was" ·
   MC-210
 - **A row's stock opens Inventory for that item alone, every variant in
   every location, its counts and its export too; another organization's
@@ -287,7 +328,31 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/stock.e2e-spec.ts) "lists one item alone, every variant in every location, its counts and export following" ·
   [test](../../server/test/stock.e2e-spec.ts) "refuses another organization item with a 400, on the list, its counts and its export" ·
   [test](../../client/src/inventory/inventory-page.test.tsx) "lists one item alone when the address names it, named on a chip that removes it" ·
+  [test](../../client/e2e/items.spec.ts) "Items, a row’s stock: Inventory, that item alone; Back, Items as it was" ·
+  [test](../../client/e2e/items.spec.ts) "Items, a row, anywhere: the item’s page; Back, Items as it was" ·
   MC-208
+- **Items' list is always in one of five states, and says which.** Empty,
+  it says there are no items yet and what to add first, with Add item, or
+  for whoever may not add, whom to ask; a search with no match on the open
+  tab says so, and where the matches are when another tab holds them.
+  Loading, its rows are placeholders after 250 ms, the head, tabs and
+  filters kept. Failed, only the list's part says it could not be read,
+  with Try again, the tabs' counts reading "—". Show 50 more failing keeps
+  the rows shown and says the next 50 could not be loaded, with Try again.
+  [ADR-092](../adr/0092-items.md#decision--how-it-behaves) ·
+  [test](../../client/src/products/products-page.test.tsx) "says no items yet for an empty catalogue, and nothing matches for an empty search" ·
+  [test](../../client/src/products/products-page.test.tsx) "says where a search’s matches are when this tab has none, with a button there" ·
+  [test](../../client/src/products/products-page.test.tsx) "says whom to ask where Add item would be, for a role that cannot add" ·
+  [test](../../client/src/products/products-page.test.tsx) "says the list could not be read, with Try again, the tabs’ counts unknown" ·
+  [test](../../client/src/products/products-page.test.tsx) "shows fifty more below with focus on the first new row, and keeps the rows when that fails" ·
+  [test](../../client/e2e/items.spec.ts) "as it should be: each row its type’s icon, name, code, category, stock and status" ·
+  [test](../../client/e2e/items.spec.ts) "empty: no items yet, saying what to add first, with Add item" ·
+  [test](../../client/e2e/items.spec.ts) "for a Viewer: a line in Add item’s place, and no check boxes" ·
+  [test](../../client/e2e/items.spec.ts) "loading: placeholder rows past 250 ms, the header, tabs and filters kept" ·
+  [test](../../client/e2e/items.spec.ts) "failed: the list’s part alone says so, with Try again, the tabs’ counts “—”" ·
+  [test](../../client/e2e/items.spec.ts) "partial: Show 50 more failing keeps the rows shown, with Try again" ·
+  [test](../../client/e2e/items.spec.ts) "on a phone: cards with the stock and its status, the type as one select, and the filters and sort in a sheet" ·
+  MC-211
 
 ## Categories
 
@@ -346,6 +411,10 @@ How this file is kept is in the [README](README.md).
   [test](../../client/src/products/categories-page.test.tsx) "asks before deleting an empty category, then deletes it" ·
   [test](../../client/src/products/categories-page.test.tsx) "reads only for whoever may only see items, a line saying whom to ask" ·
   [test](../../client/src/products/categories-page.test.tsx) "opens from Items’ Manage categories with Back, which returns to Items as it was" ·
+  [test](../../client/e2e/items.spec.ts) "the filter, Manage categories: Settings › Categories; Back, Items" ·
+  [test](../../client/e2e/categories.spec.ts) "Settings › Categories, Delete with items under it: refused, how many, and to move them first" ·
+  [test](../../client/e2e/categories.spec.ts) "Settings › Categories for a Viewer: the tree to read, with no Actions" ·
+  [Help](../../client/src/help/guides/en/items.md#categories-categories) ·
   MC-213
 
 ## Names in other languages, and the name each reader sees
@@ -452,14 +521,15 @@ How this file is kept is in the [README](README.md).
 
 ## Finding a product, and picking an item
 
-- **Products' Search asks the server a moment after typing stops, from
-  the first character, and lists what it finds, the closest first: a
-  product by any of its variants' SKUs, by its own or a variant's name in
-  any language, and a Chinese name by its pinyin too.** Discontinued
-  products are found as well, as Products asks for them. The search stays in the address, so a
-  reload, Back, or Show all from the top bar opens the list as it was. An
-  empty answer says nothing matches the search; an empty catalogue, that
-  there are no products yet.
+- **Items' Search asks the server a moment after typing stops, from
+  the first character, and lists what it finds, the closest first: an
+  item by any of its variants' SKUs, by its own or a variant's name in
+  any language, and a Chinese name by its pinyin too.** A discontinued
+  item is found only when the list is asked for them, by Discontinued or
+  the top bar's Show all. The search stays in the address, so a reload,
+  Back from an item, or Show all from the top bar opens the list as it
+  was. An empty answer says nothing matches the search; an empty
+  catalogue, that there are no items yet.
   [ADR-056, amended](../adr/0056-search.md#decision--products-partners-and-the-item-pickers-searched-on-the-server) ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a product by part of a SKU or a name, case and accents ignored" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a product by its name in another language, shown in the reader’s" ·
@@ -470,7 +540,8 @@ How this file is kept is in the [README](README.md).
   [test](../../client/src/products/products-page.test.tsx) "asks again once typing stops, and drops an answer that comes after a newer one" ·
   [test](../../client/src/products/products-page.test.tsx) "follows the address while open, and writes what is typed there without adding to the history" ·
   [test](../../client/src/products/products-page.test.tsx) "says no items yet for an empty catalogue, and nothing matches for an empty search" ·
-  [Help](../../client/src/help/guides/en/items.md#items) ·
+  [test](../../client/e2e/items.spec.ts) "Items, a search then a pause: the list and every tab’s count follow; with none on this tab, it says where the matches are, with a button there; Back, the page before; Forward, as it was" ·
+  [Help](../../client/src/help/guides/en/items.md#find-items-find) ·
   MC-3901
 - **An item picker lists the items its form offers, by SKU within each
   type, until something is typed. From the first character it asks the
@@ -628,6 +699,8 @@ How this file is kept is in the [README](README.md).
   [test](../../server/test/product-categories.e2e-spec.ts) "lets a Viewer read the tree but not change it" ·
   [test](../../server/test/product-categories.e2e-spec.ts) "never shows another organization’s categories, nor counts its items" ·
   [test](../../server/test/product-categories.e2e-spec.ts) "answers 404 for another organization’s category, to rename or delete" ·
+  [test](../../client/e2e/items.spec.ts) "for a Viewer: a line in Add item’s place, and no check boxes" ·
+  [test](../../client/e2e/categories.spec.ts) "Settings › Categories for a Viewer: the tree to read, with no Actions" ·
   partly tested ·
   [Help](../../client/src/help/guides/en/items.md#variants-images-and-names-variants)
 - **History keeps who added or changed a product, and when, under the

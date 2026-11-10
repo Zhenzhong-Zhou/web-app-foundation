@@ -81,8 +81,8 @@ leave how it matches to this file. How this file is kept is in the
 ## What each kind of record is found by
 
 - **An item: any part of its SKU, of its product's or its variant's name
-  in any language, or of their pinyin.** Products finds a product through
-  any of its variants, discontinued ones as it asks for them; Inventory
+  in any language, or of their pinyin.** Items finds an item through any of
+  its variants, discontinued ones only when asked for them; Inventory
   finds a row by its item or by its lot code. The top bar finds
   discontinued items too.
   [ADR-056](../adr/0056-search.md#decision--what-is-searched-by-what) ·
@@ -233,6 +233,7 @@ leave how it matches to this file. How this file is kept is in the
   [ADR-092](../adr/0092-items.md#decision--the-types-as-tabs-opening-on-products) ·
   [test](../../client/src/search/lookup-kinds.test.ts) "opens Show all in Items on All, discontinued included, with the search (ADR-092)" ·
   [test](../../client/src/products/products-page.test.tsx) "opens Show all’s address on All with discontinued items, a chip removing them" ·
+  [test](../../client/e2e/items.spec.ts) "the top bar, Show all in Items: the list opens on All with the search, discontinued included, a chip saying so" ·
   MC-1557 · MC-207
 - **Nothing found says "Nothing found."** and offers no list to open.
   [ADR-056](../adr/0056-search.md#decision--in-the-browser) ·
@@ -255,7 +256,7 @@ leave how it matches to this file. How this file is kept is in the
 
 ## Searching a list
 
-- **Products, Partners, Orders, Invoices, Credit notes, Returns,
+- **Items, Partners, Orders, Invoices, Credit notes, Returns,
   Production and Inventory search on the server:** the whole list, not
   only the rows on screen, together with the list's other filters.
   [ADR-056, amended](../adr/0056-search.md#decision--products-partners-and-the-item-pickers-searched-on-the-server) ·
@@ -271,9 +272,9 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../server/test/stock.e2e-spec.ts) "finds names without accents, Chinese by pinyin, and % as itself" ·
   [test](../../server/test/whole-list-search.e2e-spec.ts) "finds a Chinese name by its pinyin, its initials or one character" ·
   partly tested
-- **Products and Partners put the closest match first:** exact, then at
-  the start, then anywhere, then by name, a product by the name the reader
-  sees. A product ranks by its closest variant, and the list of items then
+- **Items and Partners put the closest match first:** exact, then at
+  the start, then anywhere, then by name, an item by the name the reader
+  sees. An item ranks by its closest variant, and the list of items then
   by its sort, whichever way it runs.
   [ADR-056, amended](../adr/0056-search.md#decision--the-lookups-ranking-and-one-minimum-everywhere) ·
   [test](../../server/test/items-list.e2e-spec.ts) "ranks a search before the sort, the closest first either way, and pages on the rank" ·
@@ -287,7 +288,7 @@ leave how it matches to this file. How this file is kept is in the
   [ADR-056, amended](../adr/0056-search.md#decision--the-lookups-ranking-and-one-minimum-everywhere) ·
   [test](../../server/test/items-list.e2e-spec.ts) "ranks a search before the sort, the closest first either way, and pages on the rank" ·
   partly tested
-- **Orders, Invoices, Credit notes, Returns, Production, Products,
+- **Orders, Invoices, Credit notes, Returns, Production, Items,
   Partners and Inventory keep their search in the page's address.** Show
   all from the top bar opens the list narrowed. What is typed is written
   there a moment after typing stops, in place of the page in the history,
@@ -300,6 +301,7 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../client/src/partners/partners-page.test.tsx) "asks with the address’s search, and lists the answer in its order" ·
   [test](../../client/src/inventory/inventory-page.test.tsx) "follows the address while open, as Show all in the lookup changes it" ·
   [test](../../client/src/inventory/inventory-page.test.tsx) "is one search on Stock and Reorder points, either way" ·
+  [test](../../client/e2e/items.spec.ts) "Items, a search then a pause: the list and every tab’s count follow; with none on this tab, it says where the matches are, with a button there; Back, the page before; Forward, as it was" ·
   partly tested ·
   MC-3901 · MC-3902 · MC-R67
 - **A list asks a moment after typing stops, waits for the answer
@@ -318,10 +320,13 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../client/src/partners/partners-page.test.tsx) "says nothing matches for an empty answer to a search" ·
   MC-1546
 - **An export holds what the search found on Orders, Invoices, Credit
-  notes and Inventory; Products' and Partners' exports hold everything,
-  whatever is typed.**
+  notes, Inventory and Items; Partners' export holds everything, whatever
+  is typed.**
   [ADR-057](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#decision--csv-export-of-what-the-list-shows) ·
-  no test ·
+  [ADR-092](../adr/0092-items.md#decision--fifty-at-a-time-the-counts-from-the-server) ·
+  [test](../../server/test/exports.e2e-spec.ts) "writes the items the list shows, by its own query and in its order" ·
+  [test](../../client/src/products/products-page.test.tsx) "exports what the list shows, its tab, search, Discontinued and sort" ·
+  partly tested ·
   MC-1558
 - **People narrows what it has loaded, in the browser,** by part of a
   name, job title, department or email, capitals aside but not accents,
@@ -343,7 +348,7 @@ leave how it matches to this file. How this file is kept is in the
 ## Picking an item or a partner
 
 - **Every item picker and every partner picker searches the server, as
-  Products and Partners do.** The item pickers are in Receive, Add an
+  Items and Partners do.** The item pickers are in Receive, Add an
   item, New order, Set price, a recipe's component, Plan run and the
   Movements filter; the partner pickers are New order's Partner, a
   sample's Given to and Plan run's Contract manufacturer. A SKU typed whole

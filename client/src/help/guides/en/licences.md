@@ -1,6 +1,6 @@
 # Licences
 
-Licences are the numbers your formulations are registered under, such as a natural health product’s NPN in Canada. Recipes are made under them, so a batch traces back to its licence. Open it from **Licences** in the menu, or on Products.
+Licences are the numbers your formulations are registered under, such as a natural health product’s NPN in Canada. Recipes are made under them, so a batch traces back to its licence. Open it from **Licences** in the menu, or on Items.
 
 ## Add a licence {#add}
 

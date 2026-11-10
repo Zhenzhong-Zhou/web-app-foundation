@@ -249,6 +249,22 @@ a second organization.
   Supplies, Samples, Equipment, each under its name. At 390 px, on Raise
   an order's line, an item's type sits under it. In French and Chinese
   the headings are the tabs' names, with Autres articles and 其他物品.
+- **MC-216** The Items guide, as the demo Owner, on Items: Help opens
+  Items' guide, its sections The types, Find items, What a row shows,
+  Categories, Add an item, Change several at once, Variants, images and
+  names, Write its recipe, Words you'll meet and If something is refused.
+  Its first paragraph says once that Code is what other systems call a
+  SKU. The six types are named as the tabs are, and Supplies says Chinese
+  accounts call them 低值易耗品. Each button it names is on the screen
+  under that name: Add item, What is it?, Set category, Discontinue,
+  Undo, Manage categories, Add category, Edit names. Settings › Categories
+  and an item's page open the same guide, and the empty list's Learn more
+  opens Add an item. In Français the title is Articles, the first
+  paragraph says UGS ou SKU and Supplies is Fournitures; in 中文 the title
+  is 物品, the first paragraph says SKU and 耗材 is 账上的低值易耗品.
+  Home's Getting started, Inventory's and Orders' lot steps, Licences' and
+  Production's guides say item, article and 物品, never product, produit
+  or 产品.
 
 ## 3. Stock
 
@@ -5508,3 +5524,8 @@ first.
 - 2026-11-09: ADR-092 step 16, the pickers by type: the task's types
   first, each under its name, the rest under Other items, and each item's
   type beside it: MC-215 added.
+- 2026-11-09: ADR-092 step 18, the Items guide caught up in three
+  languages (the types, finding items, a row, categories, Add an item,
+  several at once, each variation's names, Code beside SKU), and the
+  Home, Inventory, Orders, Licences and Production guides saying item:
+  MC-216 added.

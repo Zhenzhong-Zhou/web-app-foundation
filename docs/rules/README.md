@@ -87,13 +87,16 @@ rule, so the review judges each notice.
   and cancelling it, with the licence checked at release, the lots and
   stock it takes, its variance and cost, and who may do each step,
   written from the code and the tests on 2 November 2026.
-- [Products](products.md): products and their variants, names in other
-  languages and the name each reader sees, the Products search and the
-  item pickers, images, the catalogue export, and who may change them,
-  written from the code and the tests on 28 October 2026.
+- [Products](products.md): items and their variants and categories,
+  names in other languages and the name each reader sees, Items' list
+  with its search, sorts, several at once and five states, the item
+  pickers, images, the catalogue export, and who may change them,
+  written from the code and the tests on 28 October 2026, and brought up
+  to ADR-092 on 9 November 2026.
 - [Search](search.md): the top bar's search, a list's search box and the
   item and partner pickers, how each matches, ranks and refuses, written
-  from the code and the tests on 28 October 2026.
+  from the code and the tests on 28 October 2026, and brought up to
+  ADR-092 on 9 November 2026.
 
 The other areas, stock, orders, return authorizations and the rest of
 the ADRs' [areas](../adr/README.md#by-area), follow, each written by

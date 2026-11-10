@@ -76,7 +76,7 @@ Une nouvelle organisation reçoit sept étapes plutôt qu’une page de zéros, 
 
 1. **Votre organisation** : l’adresse, le numéro de taxe et la devise, nécessaires aux factures.
 2. **Ajouter un emplacement**, là où vous gardez le stock.
-3. **Ajouter un produit** : ce que vous achetez, fabriquez ou vendez.
+3. **Ajouter un article** : ce que vous achetez, fabriquez ou vendez.
 4. **Ajouter un partenaire** : un client ou un fournisseur.
 5. **Recevoir du stock**, pour avoir quelque chose à expédier.
 6. **Expédier et facturer une commande**, pour faire le parcours complet une première fois.

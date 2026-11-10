@@ -20,7 +20,7 @@ A confirmed sale holds the stock it needs, so nobody promises the same units twi
 
 1. Open the confirmed purchase.
 2. On the item’s line, choose **Receive**.
-3. Choose where it goes and how much came. For a product tracked by lot, type the lot number and expiry as printed on the box.
+3. Choose where it goes and how much came. For an item tracked by lot, type the lot number and expiry as printed on the box.
 
 If the rest of a line is never coming, choose **Close short** on the line: the shortfall stays in sight.
 

@@ -7,7 +7,7 @@ L’inventaire montre ce que vous avez et où : chaque article, à chaque empla
 1. Appuyez sur **Recevoir du stock**.
 2. Choisissez l’article, et l’emplacement où il va, sous **Vers**. Seuls les emplacements qui contiennent directement du stock sont proposés.
 3. Saisissez la quantité, dans l’unité de l’article.
-4. Pour un produit suivi par lot, saisissez le numéro de lot et la date de péremption tels qu’imprimés sur la boîte. Recevoir le même lot à nouveau s’y ajoute.
+4. Pour un article suivi par lot, saisissez le numéro de lot et la date de péremption tels qu’imprimés sur la boîte. Recevoir le même lot à nouveau s’y ajoute.
 5. Appuyez sur **Recevoir**.
 
 Les marchandises qu’un fournisseur envoie pour un achat se reçoivent plutôt sur la commande, dans [Commandes](/orders). Le stock reçu ici n’a pas de coût tant qu’on ne lui en donne pas un dans [Valeur du stock](/costs); **En attente d’un coût** le liste.
