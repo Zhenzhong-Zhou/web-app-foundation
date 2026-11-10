@@ -41,7 +41,7 @@ Appuyez sur la ligne pour ouvrir l’article. Appuyez sur son stock pour ouvrir 
 
 Un article est dans une catégorie, ou dans aucune. Les catégories forment un seul arbre : une catégorie peut être au premier niveau ou sous une autre, jusqu’à 10 niveaux, comme **Emballages › Flacons**.
 
-L’arbre, avec les articles de chaque catégorie, est sous **Paramètres › Catégories**, ou sous **Gérer les catégories** au bas de la liste Catégorie.
+L’arbre, avec les articles de chaque catégorie, s’ouvre avec **Gérer les catégories** au bas de la liste Catégorie.
 
 1. Appuyez sur **Ajouter une catégorie**, saisissez son nom et choisissez ce sous quoi elle se trouve (**Sous**), ou aucune pour la mettre au premier niveau.
 2. **Actions** sur une ligne propose **Renommer**, **Déplacer** et **Supprimer**. Une catégorie ne peut pas aller sous elle-même : sa propre branche n’est donc pas proposée.

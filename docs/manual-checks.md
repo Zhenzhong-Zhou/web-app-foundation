@@ -235,7 +235,8 @@ a second organization.
   390 px each card has its box before it, and once one is ticked the bar
   offers Select all shown, which ticks every card loaded. As a Viewer there are no boxes.
 - **MC-213** Settings › Categories (`/settings/categories`), as the demo
-  Owner, from the menu's Settings group: the tree, each category under
+  Owner, from Items' category filter, Manage categories; the rail's
+  Settings group has no Categories link: the tree, each category under
   its parent with its items, those under it counted ("12 items"), and
   Actions on each row. Add category asks its name and Under, None (at the
   top) or any category; a name already used beside it is refused, saying
@@ -246,9 +247,8 @@ a second organization.
   or categories says under its row how many of each and to move them
   first, and deletes nothing; on an empty one it asks first, then the
   row goes and focus is on the page's title. History records each
-  change by the category's name. From Items, the category filter's
-  Manage categories opens it with Back, which returns to Items as it
-  was. As a Viewer the tree has no Actions and no Add category, and a
+  change by the category's name. Back returns to Items as it was. As a
+  Viewer the tree has no Actions and no Add category, and a
   line says whom to ask. In French and Chinese every word is translated.
 - **MC-214** An item's page, as the demo Owner: under its name, its type
   and its category's path ("Packaging · Bottles › Caps"), or
@@ -5632,3 +5632,7 @@ first.
   One product for two markets, in three languages: MC-216 extended.
 - 2026-11-09: ADR-092's reviews, 84: MC-R75 quotes "Could not load
   partners and items." as the screen says it: MC-R75 corrected.
+- 2026-11-10: ADR-092's reviews, the chat's 37a: Settings › Categories
+  leaves the rail, opened from Items' category filter, Manage
+  categories, so every Settings link stays above the rail's foot at
+  1440 × 900 under CI's two-line foot: MC-213 rewritten.

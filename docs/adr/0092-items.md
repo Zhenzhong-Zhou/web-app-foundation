@@ -547,6 +547,11 @@ in `tmp/adr-092/`. Where building settled or changed what is above:
   guide.
 - **An organization with no items reads the list twice on opening,** to
   learn which types it holds. Left for its issue.
+- **Settings › Categories is reached from Items' category filter,**
+  Manage categories, not from the rail, which at 1440 × 900 has no room
+  for an eighth Settings link under CI's two-line foot (ADR-082); one
+  Settings page for the setup links is the design language's pull
+  request's, with #513.
 
 ### Measured
 

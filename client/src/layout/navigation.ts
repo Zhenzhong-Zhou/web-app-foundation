@@ -8,7 +8,6 @@ import CategoryOutlined from '@mui/icons-material/CategoryOutlined';
 import ContactsOutlined from '@mui/icons-material/ContactsOutlined';
 import CurrencyExchangeOutlined from '@mui/icons-material/CurrencyExchangeOutlined';
 import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
-import FolderOutlined from '@mui/icons-material/FolderOutlined';
 import GroupOutlined from '@mui/icons-material/GroupOutlined';
 import HandshakeOutlined from '@mui/icons-material/HandshakeOutlined';
 import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
@@ -75,7 +74,6 @@ const labels = defineMessages({
     defaultMessage: 'Exchange rates',
   },
   priceLists: { id: 'layout.menu.priceLists', defaultMessage: 'Price lists' },
-  categories: { id: 'layout.menu.categories', defaultMessage: 'Categories' },
   account: { id: 'layout.menu.account', defaultMessage: 'Your account' },
 });
 
@@ -237,14 +235,9 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: SellOutlined,
         permission: 'price_lists.view',
       },
-      // Items' categories (ADR-092): read by whoever sees items, changed
-      // by whoever may change them.
-      {
-        label: labels.categories,
-        to: '/settings/categories',
-        icon: FolderOutlined,
-        permission: 'products.view',
-      },
+      // Items' categories (ADR-092) open from Items' category filter,
+      // Manage categories, not from here: at 1440 × 900 an eighth link
+      // would sit under the foot when it takes two lines (ADR-082, #513).
     ],
   },
 ];

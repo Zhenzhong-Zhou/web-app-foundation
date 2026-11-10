@@ -41,7 +41,7 @@ Press the row to open the item. Press its stock to open Inventory for that item 
 
 An item is in one category, or none. Categories form one tree: a category can sit at the top or under another, up to 10 levels deep, such as **Packaging › Bottles**.
 
-The tree, with each category’s items, is under **Settings › Categories**, or under **Manage categories** at the foot of the Category list.
+The tree, with each category’s items, opens from **Manage categories** at the foot of the Category list.
 
 1. Press **Add category**, type its name, and choose what it sits **Under**, or none to put it at the top.
 2. **Actions** on a row has **Rename**, **Move** and **Delete**. A category cannot move under itself, so its own branch is not offered.
