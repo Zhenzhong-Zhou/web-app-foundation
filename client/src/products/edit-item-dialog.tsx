@@ -12,10 +12,9 @@ import { useIntl } from 'react-intl';
 import type { ProductCategory, ProductDetail } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
-import { SelectField } from '../components/select-field';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
-import { categoryTree } from './item-list';
+import { CategorySelect } from './category-select';
 import {
   isProductType,
   PRODUCT_TYPES,
@@ -105,8 +104,6 @@ export function EditItemDialog({
     );
   }
 
-  const choices = categoryTree(categories, 'all', 'include');
-
   return (
     <Dialog
       open
@@ -163,7 +160,7 @@ export function EditItemDialog({
               slotProps={{ htmlInput: { maxLength: 2000 } }}
             />
 
-            <SelectField
+            <CategorySelect
               id="item-category"
               label={intl.formatMessage({
                 id: 'products.category',
@@ -176,17 +173,8 @@ export function EditItemDialog({
               value={form.categoryId}
               onChange={update('categoryId')}
               fullWidth
-            >
-              {choices.map((choice) => (
-                <MenuItem
-                  key={choice.id}
-                  value={choice.id}
-                  sx={{ pl: 2 + choice.depth * 2 }}
-                >
-                  {choice.name}
-                </MenuItem>
-              ))}
-            </SelectField>
+              categories={categories}
+            />
 
             <TextField
               id="item-type"

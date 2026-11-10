@@ -23,10 +23,9 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import type { ProductCategory, ProductEnvelope } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
-import { SelectField } from '../components/select-field';
 import { api, hasCode } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
-import { categoryTree } from './item-list';
+import { CategorySelect } from './category-select';
 import {
   PRODUCT_TYPES,
   type ProductType,
@@ -151,8 +150,6 @@ export function CreateProductDialog({
     );
   }
 
-  const choices = categoryTree(categories, 'all', 'include');
-
   return (
     <Dialog open onClose={submitting ? undefined : onClose} fullWidth>
       <form onSubmit={handleSubmit} noValidate>
@@ -244,7 +241,7 @@ export function CreateProductDialog({
               slotProps={{ htmlInput: { maxLength: 200 } }}
             />
 
-            <SelectField
+            <CategorySelect
               id="product-category"
               label={intl.formatMessage({
                 id: 'products.category',
@@ -257,17 +254,8 @@ export function CreateProductDialog({
               value={form.categoryId}
               onChange={update('categoryId')}
               fullWidth
-            >
-              {choices.map((choice) => (
-                <MenuItem
-                  key={choice.id}
-                  value={choice.id}
-                  sx={{ pl: 2 + choice.depth * 2 }}
-                >
-                  {choice.name}
-                </MenuItem>
-              ))}
-            </SelectField>
+              categories={categories}
+            />
 
             <TextField
               id="product-sku"

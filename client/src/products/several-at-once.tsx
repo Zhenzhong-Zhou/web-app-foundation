@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  MenuItem,
   Paper,
   Stack,
   Typography,
@@ -21,13 +20,13 @@ import type {
 } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
-import { SelectField } from '../components/select-field';
 import { UndoSnackbar } from '../components/undo-snackbar';
 import { api } from '../lib/api';
 import { HIDDEN } from '../lib/hidden';
 import { openDialog } from '../lib/open-dialog';
 import { useSubmit } from '../lib/use-submit';
-import { categoryTree, MAX_AT_ONCE } from './item-list';
+import { CategorySelect } from './category-select';
+import { MAX_AT_ONCE } from './item-list';
 
 /**
  * How long a change's message offers Undo (ADR-092), while neither focus
@@ -311,10 +310,9 @@ function SetCategoryDialog({
       : '',
   );
 
-  const choices = categoryTree(categories, 'all', 'include');
   const moving = ticked.filter((item) => categoryOf(item) !== value);
   const name =
-    choices.find((choice) => choice.id === value)?.name ??
+    categories.find((category) => category.id === value)?.name ??
     intl.formatMessage({
       id: 'products.category.none',
       defaultMessage: 'Uncategorised',
@@ -355,7 +353,7 @@ function SetCategoryDialog({
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <FormError message={error} />}
-            <SelectField
+            <CategorySelect
               id="items-set-category"
               label={intl.formatMessage({
                 id: 'products.category',
@@ -380,17 +378,8 @@ function SetCategoryDialog({
                   : undefined
               }
               fullWidth
-            >
-              {choices.map((choice) => (
-                <MenuItem
-                  key={choice.id}
-                  value={choice.id}
-                  sx={{ pl: 2 + choice.depth * 2 }}
-                >
-                  {choice.name}
-                </MenuItem>
-              ))}
-            </SelectField>
+              categories={categories}
+            />
           </Stack>
         </DialogContent>
         <DialogFooter

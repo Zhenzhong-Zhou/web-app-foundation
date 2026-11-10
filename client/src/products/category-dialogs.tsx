@@ -3,7 +3,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  MenuItem,
   Stack,
   TextField,
 } from '@mui/material';
@@ -16,11 +15,11 @@ import type {
 } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
-import { SelectField } from '../components/select-field';
 import { api, ApiError } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import { NAME_MAX_LENGTH } from '../lib/validation';
-import { branchOf, categoryTree } from './item-list';
+import { CategorySelect } from './category-select';
+import { branchOf, categoryPlaces } from './item-list';
 
 /** What Settings › Categories' one dialog does: add, rename or move. */
 export type CategoryChange =
@@ -54,11 +53,10 @@ export function CategoryDialog({
   // Under: the whole tree to add; to move, all but its own branch.
   const banned =
     change.kind === 'move' ? branchOf(categories, change.category.id) : null;
-  const places = categoryTree(categories, 'all', 'include').filter(
-    (option) => !banned?.has(option.id),
-  );
   const placeName = (id: string) =>
-    places.find((option) => option.id === id)?.path.join(' › ') ?? '';
+    categoryPlaces(categories)
+      .find((place) => place.id === id)
+      ?.path.join(' › ') ?? '';
   const unmoved =
     change.kind === 'move' && parentId === (change.category.parentId ?? '');
 
@@ -162,7 +160,7 @@ export function CategoryDialog({
             )}
 
             {change.kind !== 'rename' && (
-              <SelectField
+              <CategorySelect
                 id="category-parent"
                 label={intl.formatMessage({
                   id: 'categories.under',
@@ -190,17 +188,9 @@ export function CategoryDialog({
                       : undefined
                 }
                 fullWidth
-              >
-                {places.map((option) => (
-                  <MenuItem
-                    key={option.id}
-                    value={option.id}
-                    sx={{ pl: 2 + option.depth * 2 }}
-                  >
-                    {option.name}
-                  </MenuItem>
-                ))}
-              </SelectField>
+                categories={categories}
+                leaveOut={banned}
+              />
             )}
           </Stack>
         </DialogContent>

@@ -53,15 +53,54 @@ export const UNCATEGORISED = 'uncategorised';
 /** Which of a category's items the list shows: as the Discontinued chip. */
 export type DiscontinuedShown = '' | 'only' | 'include';
 
-/** A category in the filter: its depth in the tree, and what it holds. */
-export interface CategoryOption {
+/** A category in the tree's order: how deep, and its path from the top. */
+export interface CategoryPlace {
   id: string;
   name: string;
+  parentId: string | null;
   depth: number;
-  /** Its items on the open tab, those in the categories under it too. */
-  count: number;
   /** Its names from the top, its own last. */
   path: string[];
+}
+
+/** A category in the filter, with what it holds. */
+export interface CategoryOption extends CategoryPlace {
+  /** Its items on the open tab, those in the categories under it too. */
+  count: number;
+}
+
+/**
+ * Every category in the tree's order (ADR-092), each under its parent, by
+ * name as the server sends them: what a form's Category offers, an empty
+ * one too, and where a path is read from.
+ */
+export function categoryPlaces(
+  categories: readonly ProductCategory[],
+): CategoryPlace[] {
+  const children = new Map<string | null, ProductCategory[]>();
+  for (const category of categories) {
+    const siblings = children.get(category.parentId) ?? [];
+    siblings.push(category);
+    children.set(category.parentId, siblings);
+  }
+
+  const places: CategoryPlace[] = [];
+  const walk = (parentId: string | null, depth: number, above: string[]) => {
+    for (const category of children.get(parentId) ?? []) {
+      const path = [...above, category.name];
+      places.push({
+        id: category.id,
+        name: category.name,
+        parentId: category.parentId,
+        depth,
+        path,
+      });
+      walk(category.id, depth + 1, path);
+    }
+  };
+  walk(null, 0, []);
+
+  return places;
 }
 
 /**
@@ -82,24 +121,21 @@ export function categoryOptions(
 }
 
 /**
- * Every category in the tree's order, each under its parent, with its
- * count as the filter's: what Set category offers, an empty one too
- * (ADR-092).
+ * Every category in the tree's order with its count as the filter's: the
+ * items the open tab shows in it and in every category under it.
  */
 export function categoryTree(
   categories: readonly ProductCategory[],
   tab: ItemTab,
   discontinued: DiscontinuedShown,
 ): CategoryOption[] {
-  const children = new Map<string | null, ProductCategory[]>();
-  for (const category of categories) {
-    const siblings = children.get(category.parentId) ?? [];
-    siblings.push(category);
-    children.set(category.parentId, siblings);
-  }
+  const places = categoryPlaces(categories);
+  const items = new Map(
+    categories.map((category) => [category.id, category.items]),
+  );
 
-  const own = (category: ProductCategory) =>
-    category.items
+  const own = (entries: ProductCategory['items']) =>
+    entries
       .filter((entry) => tab === 'all' || entry.type === tab)
       .reduce(
         (sum, entry) =>
@@ -109,32 +145,18 @@ export function categoryTree(
         0,
       );
 
-  const options: CategoryOption[] = [];
-  const walk = (
-    parentId: string | null,
-    depth: number,
-    above: string[],
-  ): number => {
-    let total = 0;
-    for (const category of children.get(parentId) ?? []) {
-      const path = [...above, category.name];
-      const at = options.length;
-      options.push({
-        id: category.id,
-        name: category.name,
-        depth,
-        count: 0,
-        path,
-      });
-      const count = own(category) + walk(category.id, depth + 1, path);
-      options[at].count = count;
-      total += count;
+  // Each place comes after those above it, so from the last back each
+  // one's own items are added to what those under it already gave it.
+  const counts = new Map<string, number>();
+  for (const place of [...places].reverse()) {
+    const total = (counts.get(place.id) ?? 0) + own(items.get(place.id)!);
+    counts.set(place.id, total);
+    if (place.parentId) {
+      counts.set(place.parentId, (counts.get(place.parentId) ?? 0) + total);
     }
-    return total;
-  };
-  walk(null, 0, []);
+  }
 
-  return options;
+  return places.map((place) => ({ ...place, count: counts.get(place.id)! }));
 }
 
 /**

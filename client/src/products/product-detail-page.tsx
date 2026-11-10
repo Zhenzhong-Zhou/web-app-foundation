@@ -34,7 +34,7 @@ import { useResource } from '../lib/use-resource';
 import { AddVariantDialog } from './add-variant-dialog';
 import { EditItemDialog } from './edit-item-dialog';
 import { EditVariantDialog } from './edit-variant-dialog';
-import { categoryTree } from './item-list';
+import { categoryPlaces } from './item-list';
 import { ItemNames } from './item-names';
 import type { NameAt } from './name-rows';
 import { ProductGallery } from './product-gallery';
@@ -172,8 +172,8 @@ export function ProductDetailPage() {
   // Its category's path from the top, once the tree is read; Uncategorised
   // with none (ADR-092).
   const categoryPath = product.categoryId
-    ? categoryTree(tree?.categories ?? [], 'all', 'include')
-        .find((option) => option.id === product.categoryId)
+    ? categoryPlaces(tree?.categories ?? [])
+        .find((place) => place.id === product.categoryId)
         ?.path.join(' › ')
     : intl.formatMessage({
         id: 'products.category.none',
