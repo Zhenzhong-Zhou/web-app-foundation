@@ -4,7 +4,10 @@
  * arguments, the folder guards, the cost list and the report after a run.
  * Nothing here imports the Agent SDK, so the scripts' tests and CI need
  * nothing installed in this folder; run.mjs imports it only when a run
- * starts.
+ * starts. The check of a folder that shares another's databases is the
+ * lock's, from scripts/one-at-a-time.mjs, whose dotenv is the main
+ * folder's server/node_modules'; the working-folder checks and Stop are
+ * scripts/databases.mjs's, which the database scripts share.
  */
 import { execFileSync } from "node:child_process";
 import {
@@ -12,13 +15,15 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
-  realpathSync,
   statSync,
 } from "node:fs";
 import path from "node:path";
 
+import { Stop, mainFolder as mainOf, secondFolder } from "../databases.mjs";
+import { sharedDatabases } from "../one-at-a-time.mjs";
+
 /** A refusal before any work: run.mjs prints it and exits 1. */
-export class Stop extends Error {}
+export { Stop };
 
 const RUNNER = "node scripts/fix-issue/run.mjs";
 
@@ -247,34 +252,10 @@ function output(cwd, command, args) {
 const git = (cwd, ...args) => output(cwd, "git", args);
 
 /**
- * The main working folder, the parent of the folder git shares, found
- * from the one the runner sits in. Refused from a second working folder,
- * whose own git folder is not the shared one.
+ * The main working folder, found from the one the runner sits in; refused
+ * from a second one.
  */
-export function mainFolder(from) {
-  let top;
-  let gitDir;
-  let common;
-  try {
-    [top, gitDir, common] = git(
-      from,
-      "rev-parse",
-      "--path-format=absolute",
-      "--show-toplevel",
-      "--git-dir",
-      "--git-common-dir",
-    ).split("\n");
-  } catch {
-    throw new Stop(`${from} is not in a git repository`);
-  }
-  const main = path.dirname(realpathSync(common));
-  if (realpathSync(gitDir) !== realpathSync(common)) {
-    throw new Stop(
-      `${top} is a second working folder; run it from the main working folder: cd ${main} && ${RUNNER} …`,
-    );
-  }
-  return main;
-}
+export const mainFolder = (from) => mainOf(from, RUNNER);
 
 /**
  * The folder the fix runs in: ../waf-fix beside the main folder, or the
@@ -295,34 +276,34 @@ export function fixFolder(main, given, cwd = process.cwd()) {
         `no folder at ${folder}. Make it, from the main working folder:`,
         `  git worktree add --detach ${there} origin/main`,
         `  (cd ${there}/server && npm ci) && (cd ${there}/client && npm ci)`,
+        `  node scripts/folder-databases.mjs ${there}`,
       ].join("\n"),
     );
   }
-  let top;
-  let common;
-  try {
-    [top, common] = git(
-      folder,
-      "rev-parse",
-      "--path-format=absolute",
-      "--show-toplevel",
-      "--git-common-dir",
-    ).split("\n");
-  } catch {
-    throw new Stop(`${folder} is not a working folder of this repository`);
-  }
-  if (path.dirname(realpathSync(common)) !== main) {
-    throw new Stop(`${folder} is not a working folder of this repository`);
-  }
-  if (realpathSync(top) === main) {
+  return secondFolder(
+    main,
+    folder,
+    "where a build runs; a fix runs in a second one, ../waf-fix unless --folder names another",
+  );
+}
+
+/**
+ * A fix or a resume refuses a folder whose test or e2e database another
+ * working folder names too, as the lock does before a test run there
+ * (ADR-089's amendment for #529): its tests would run on that folder's
+ * tables, and the lock would refuse them only once the session has paid
+ * to reach them.
+ */
+export function checkShared(folder, env) {
+  const lines = sharedDatabases(folder, env);
+  if (lines.length) {
     throw new Stop(
-      `${folder} is in the main working folder, where a build runs; a fix runs in a second one, ../waf-fix unless --folder names another`,
+      [
+        `${folder}, where the fix would run, shares databases with another working folder:`,
+        ...lines,
+      ].join("\n"),
     );
   }
-  if (realpathSync(top) !== realpathSync(folder)) {
-    throw new Stop(`${folder} is inside a working folder; give it, ${top}`);
-  }
-  return realpathSync(top);
 }
 
 /** A new fix starts from a folder with no uncommitted changes to tracked files. */
@@ -430,14 +411,23 @@ export function readRuns(file) {
     });
 }
 
+/** The cost list's column for a stop that found the issue already fixed. */
+export const ALREADY_FIXED = "already fixed";
+
 /**
  * The last fix in the list, a probe passed over: what --resume last
  * finishes, when it ended UNFINISHED or UNKNOWN. Refused when it opened
- * its pull request, since a resume would pay to finish it again.
+ * its pull request, or found the issue already fixed, since a resume
+ * would pay to finish nothing.
  */
 export function lastFix(rows, file) {
   const row = rows.findLast((one) => one.issue !== "probe");
   if (!row) throw new Stop(`no earlier fix in ${file} to resume`);
+  if (row.pr === ALREADY_FIXED) {
+    throw new Stop(
+      `the last fix, #${row.issue} of ${row.time}, found the issue already fixed, so there is nothing to finish`,
+    );
+  }
   if (row.pr !== "UNFINISHED" && row.pr !== "UNKNOWN") {
     throw new Stop(
       `the last fix, #${row.issue} of ${row.time}, ended with its pull request, ${row.pr}, so there is nothing to finish`,
@@ -529,17 +519,45 @@ export function tally(results) {
   };
 }
 
+/** /fix-issue's last line when section 3 finds the issue fixed already. */
+const FIXED = /^DONE: already fixed by ([0-9a-f]{7,40}) in #([1-9]\d*)$/;
+
+/** The commit and pull request a result's last line names, or null. */
+function alreadyFixed(result) {
+  const last = String(result ?? "")
+    .trimEnd()
+    .split("\n")
+    .at(-1)
+    .trim();
+  const match = FIXED.exec(last);
+  return match ? { commit: match[1], pr: match[2] } : null;
+}
+
+/**
+ * Text as one shell word: in double quotes, as /fix-issue's section 3
+ * writes it, unless it holds what they would expand; then in single ones.
+ */
+const shellWord = (text) =>
+  /["$`\\!]/.test(text) ? `'${text.replaceAll("'", "'\\''")}'` : `"${text}"`;
+
 /**
  * The folder after a fix: its branch, last commit, uncommitted files and
  * pull request, and how it ended, the cost list's column: UNFINISHED with
  * the command that resumes it when changes are left or no pull request is
  * open, with --folder when the fix ran in a folder --folder named, since a
  * resume runs in ../waf-fix otherwise; UNKNOWN when GitHub could not be
- * asked, which a resume would otherwise pay to find out; or the pull
- * request's URL, with the merge command, after the one that detaches the
- * folder, since git deletes no branch another folder has checked out.
+ * asked, which a resume would otherwise pay to find out; ALREADY_FIXED
+ * when the result's last line says so and the folder is detached with a
+ * clean tree, with the gh issue close line /fix-issue's section 3 gives,
+ * filled in from the commit's subject; or the pull request's URL, with
+ * the merge command, after the one that detaches the folder, since git
+ * deletes no branch another folder has checked out.
  */
-export function afterRun(folder, run = output, { named = false } = {}) {
+export function afterRun(
+  folder,
+  run = output,
+  { named = false, issue, result } = {},
+) {
   // What the folder says, or "" when a command fails: the report is
   // written, and the run's line kept, whatever fails.
   const ask = (command, args) => {
@@ -563,23 +581,48 @@ export function afterRun(folder, run = output, { named = false } = {}) {
       unknown = true;
     }
   }
-  const outcome = changes
-    ? "UNFINISHED"
-    : unknown
-      ? "UNKNOWN"
-      : (pr?.url ?? "UNFINISHED");
+  const fixed = alreadyFixed(result);
+  // Detached asked again: a git that failed reads as "" above.
+  const finished =
+    Boolean(fixed) &&
+    !changes &&
+    !branch &&
+    ask("git", ["rev-parse", "--abbrev-ref", "HEAD"]) === "HEAD";
+  const outcome = finished
+    ? ALREADY_FIXED
+    : changes
+      ? "UNFINISHED"
+      : unknown
+        ? "UNKNOWN"
+        : (pr?.url ?? "UNFINISHED");
   const resume = `${RUNNER} --resume last${named ? ` --folder ${folder}` : ""}`;
   const lines = [
     "",
     "— the folder after the run —",
     `branch ${branch || "(none: detached)"} · last commit ${last}`,
-    pr
-      ? `pull request ${pr.url}`
-      : unknown
-        ? `could not ask GitHub for the pull request: ${listing}`
-        : "no pull request open for this branch",
+    finished
+      ? `already fixed by ${fixed.commit} in #${fixed.pr}, so no pull request of its own`
+      : pr
+        ? `pull request ${pr.url}`
+        : unknown
+          ? `could not ask GitHub for the pull request: ${listing}`
+          : "no pull request open for this branch",
   ];
   if (changes) lines.push(`uncommitted:\n${changes}`);
+  if (fixed && !finished) {
+    lines.push(
+      `the session says already fixed by ${fixed.commit} in #${fixed.pr}, but the folder is not detached with a clean tree, so it is not taken as already fixed`,
+    );
+  }
+  if (finished) {
+    const subject = ask("git", ["log", "-1", "--format=%s", fixed.commit]);
+    const comment = `Fixed in #${fixed.pr}: ${fixed.commit}${subject ? ` ${subject.replace(/\.$/, "")}` : ""}.`;
+    lines.push(
+      "Already fixed, so there is nothing to resume. Once you have read the report, close the issue:",
+      `  gh issue close ${issue} --reason completed --comment ${shellWord(comment)}`,
+    );
+    return { lines, outcome, unfinished: false, pr: undefined };
+  }
   lines.push(
     outcome === "UNFINISHED"
       ? `UNFINISHED: run  ${resume}  to finish it.`

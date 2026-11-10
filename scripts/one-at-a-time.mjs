@@ -9,12 +9,25 @@
  *
  *     node scripts/one-at-a-time.mjs <label> -- <command> [args…]
  *
- * It takes a session-level advisory lock on a connection of its own to
- * DATABASE_URL_TEST, from the root .env, runs the command under it, and
- * closes the connection when the command ends, which frees the lock. A run
- * that dies frees it too, so nothing stale is left. The key is fixed, and
- * not the server's E2E_LOCK_KEY, which the e2e suite's global setup takes
- * behind this one (server/test/global-setup.ts).
+ * It takes a session-level advisory lock on a connection of its own, runs
+ * the command under it, and closes the connection when the command ends,
+ * which frees the lock. A run that dies frees it too, so nothing stale is
+ * left. The key is fixed, and not the server's E2E_LOCK_KEY, which the e2e
+ * suite's global setup takes behind this one (server/test/global-setup.ts).
+ *
+ * The lock is in the postgres database, which every Postgres has, on the
+ * server DATABASE_URL_TEST names, from the root .env (ADR-089's amendment
+ * for #529). Advisory locks meet only inside one database, and each
+ * working folder has its own test database, so in a database of their own
+ * two folders' runs would never wait for each other.
+ *
+ * Before it takes the lock, it refuses a folder whose test or e2e database
+ * another working folder's .env names too (git worktree list), exit 1,
+ * naming that folder, the database and the command that gives the second
+ * folder its own, scripts/folder-databases.mjs, since the main folder keeps
+ * its names: the lock keeps two runs apart in time, not two folders'
+ * tables. The fix runner makes the same check before a fix starts
+ * (scripts/fix-issue/lib.mjs).
  *
  * When another folder holds it, it tries again every 5 seconds and says,
  * at once and then each minute, what it waits for: the holder's label,
@@ -31,20 +44,34 @@
  * already listening on its ports from another working folder (lsof) stops
  * the run, naming the folder and the process, since Playwright would reuse
  * it and test that folder's code. One from this folder is reused, as
- * Playwright does. The check comes once the lock is taken, when another
+ * Playwright does. That check comes once the lock is taken, when another
  * folder's own run has stopped the servers it started.
  *
  * pg and dotenv come from server/node_modules, as i18n-review.mjs reaches
- * the client's packages, so `npm ci` in server/ first. Its tests, in
+ * the client's packages, so `npm ci` in server/ first; the addresses, the
+ * .env and the connection are databases.mjs's, which the other database
+ * scripts share. Its tests, in
  * one-at-a-time.test.mjs, stand in for the database and lsof:
  * `node --test scripts/`.
  */
 import { execFileSync, spawn } from "node:child_process";
-import { readFileSync, realpathSync } from "node:fs";
-import { createRequire } from "node:module";
+import { realpathSync } from "node:fs";
 import { constants } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import {
+  KEYS,
+  Stop,
+  addresses,
+  connect as connectTo,
+  databaseAt,
+  postgresAddress,
+  readEnv,
+  worktrees,
+} from "./databases.mjs";
+
+export { Stop, postgresAddress };
 
 /** This working folder: the one this copy of the script is in. */
 const ROOT = realpathSync(
@@ -74,9 +101,6 @@ const USAGE =
   "Usage: node scripts/one-at-a-time.mjs <label> -- <command> [args…]\n" +
   "The label is lowercase letters, digits and hyphens, such as server-e2e.";
 
-/** A stop the person reads: its message, exit 1. */
-class Stop extends Error {}
-
 /** The label and the command, or null when they are not as USAGE says. */
 export function parse(argv) {
   const [label, dashes, command, ...args] = argv;
@@ -104,6 +128,53 @@ export function describe(holder) {
   return match
     ? `${match[1]} in ${match[2]}, since ${match[3]}`
     : `a connection named "${holder.name}", pid ${holder.pid}`;
+}
+
+/** This folder's databases a run empties, by the line that names each. */
+const SHARED = { test: KEYS.test, e2e: KEYS.e2e };
+
+/**
+ * What refuses a run in `root` when another working folder's .env names
+ * its test or e2e database, on the same server: for each such folder, a
+ * line for each database, then the command that gives the second folder
+ * its own, run from the main working folder, whose names stay. None when
+ * no folder shares. Its address is the environment's before its .env's,
+ * as dotenv leaves a variable already set; a folder without a .env names
+ * nothing. `own` is root's .env, when already read.
+ */
+export function sharedDatabases(root, env, own = readEnv(root, ROOT)) {
+  const folders = worktrees(root);
+  const main = folders[0];
+  if (!main) return [];
+  const address = addresses(env, own);
+  const mine = Object.entries(SHARED)
+    .map(([which, key]) => ({ which, at: databaseAt(address(key)) }))
+    .filter(({ at }) => at);
+  const lines = [];
+  for (const folder of folders) {
+    if (folder === root) continue;
+    const theirs = readEnv(folder, ROOT);
+    if (!theirs) continue;
+    const named = Object.values(SHARED)
+      .map((key) => databaseAt(theirs[key]))
+      .filter(Boolean);
+    const shared = mine.filter(({ at }) =>
+      named.some((one) => one.server === at.server && one.name === at.name),
+    );
+    if (!shared.length) continue;
+    const there = path.relative(root, folder);
+    for (const { which, at } of shared) {
+      lines.push(
+        `${there} names the same ${which} database as this folder, ${at.name}.`,
+      );
+    }
+    const second = folder === main ? root : folder;
+    lines.push(
+      `Give ${second === root ? "this folder" : "it"} its own, from the main working folder:`,
+      `  node scripts/folder-databases.mjs ${path.relative(main, second)}`,
+    );
+  }
+  return lines;
 }
 
 /** The connection holding the lock in this database, or null. */
@@ -248,57 +319,52 @@ export function run(command, args, env, say) {
   });
 }
 
-/** The connection the lock is held on, to DATABASE_URL_TEST. */
-async function connect(root, env, say) {
-  const require = createRequire(path.join(root, "server/package.json"));
-  let pg;
-  let dotenv;
-  try {
-    pg = require("pg");
-    dotenv = require("dotenv");
-  } catch {
-    throw new Stop(
-      "pg and dotenv come from server/node_modules: run npm ci in server/ first.",
-    );
-  }
-  let file = {};
-  try {
-    file = dotenv.parse(readFileSync(path.join(root, ".env")));
-  } catch {
-    // No .env: the variable may still be set, as the global setup reads it.
-  }
-  const url = env.DATABASE_URL_TEST || file.DATABASE_URL_TEST;
+/**
+ * The connection the lock is held on, to the postgres database on the
+ * server DATABASE_URL_TEST names. With no .env, the variable may still be
+ * set, as the global setup reads it.
+ */
+async function connect(address, say) {
+  const url = address(KEYS.test);
   if (!url) {
     throw new Stop(
       "DATABASE_URL_TEST is not set. Add it to the root .env (see .env.example).",
     );
   }
-  const client = new pg.Client({
-    connectionString: url,
-    application_name: "one-at-a-time",
-  });
-  client.on("error", (error) =>
-    say(
-      `The lock's connection to the test database ended (${error.message}); ` +
-        "the run goes on without it.",
-    ),
-  );
-  try {
-    await client.connect();
-  } catch (error) {
+  const server = postgresAddress(url);
+  if (!server) {
     throw new Stop(
-      `Could not reach the test database, where the lock is (${error.message}). ` +
+      "DATABASE_URL_TEST is not a postgresql:// address. Correct it in the " +
+        "root .env (see .env.example).",
+    );
+  }
+  try {
+    return await connectTo(ROOT, server, "one-at-a-time", (error) =>
+      say(
+        `The lock's connection to Postgres ended (${error.message}); ` +
+          "the run goes on without it.",
+      ),
+    );
+  } catch (error) {
+    if (error instanceof Stop) throw error;
+    throw new Stop(
+      "Could not reach the postgres database on the server " +
+        `DATABASE_URL_TEST names, where the lock is (${error.message}). ` +
         "Is it up? docker compose up -d",
     );
   }
-  return client;
 }
+
+/** This folder's .env, read once for the check and the lock; {} when it has none. */
+let ownEnv;
+const own = () => (ownEnv ??= readEnv(ROOT) ?? {});
 
 /** What a run uses outside itself; the tests give their own. */
 export const SYSTEM = {
   root: ROOT,
   env: process.env,
-  connect: () => connect(ROOT, process.env, SYSTEM.say),
+  shared: () => sharedDatabases(ROOT, process.env, own()),
+  connect: () => connect(addresses(process.env, own()), SYSTEM.say),
   lsof,
   folderOf,
   now: () => Date.now(),
@@ -318,6 +384,11 @@ export async function oneAtATime({ label, command, args }, system) {
 
   let db;
   try {
+    const shared = system.shared();
+    if (shared.length) {
+      for (const line of shared) say(line);
+      return 1;
+    }
     db = await system.connect();
   } catch (error) {
     if (!(error instanceof Stop)) throw error;

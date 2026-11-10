@@ -45,7 +45,11 @@ web-app-foundation/
 One `.env` at the root, read by both Docker Compose and Nest
 (`envFilePath: '../.env'`). Duplicating it per folder invites drift between
 `POSTGRES_PASSWORD` and `DATABASE_URL`. Note that `start:dev` does **not** watch
-`.env` — restart the server after editing it.
+`.env` — restart the server after editing it. A second working folder (a
+`git worktree`) has an `.env` of its own, written by `node
+scripts/folder-databases.mjs ../<folder>`, run from the main folder: a copy of
+the main one with its three database names changed to the folder's own, so its
+migrations and tests never run on another folder's tables.
 
 Inside the server, the same Core → Shared → Features layering applies one level down:
 
@@ -239,6 +243,7 @@ work under updates it.
 | Before drafting an ADR                 | `node scripts/adr-check.mjs <NNN> --areas <a,b> --issues <n>`, then attach `tmp/adr-NNN/check.txt` to the chat                                  |
 | Building from a brief                  | `/build-from-brief <brief> from <N>`; paste only the stops into the chat                                                                        |
 | Every feature branch's review step     | `/review-step <brief> <N>` for the findings, then again with Bob's choices after it ([which reviews](docs/engineering.md#the-review-step))      |
+| A second working folder's databases    | From the main folder, after `npm ci` in the new folder: `node scripts/folder-databases.mjs ../<folder>`; `--drop` before `git worktree remove`  |
 | A small issue, on the API credit       | `node scripts/fix-issue/run.mjs <N>`; then `git -C <folder> switch --detach` and `gh pr merge <PR> --squash --delete-branch`, as it prints      |
 | The picks' exports for the chat        | `scripts/cloud-picks.sh`, then with issue numbers for the shortlist                                                                             |
 | A small issue, in a cloud session      | `/fix-issue <N>`; merge its pull request with `gh pr merge <PR> --squash --delete-branch`, never the button                                     |

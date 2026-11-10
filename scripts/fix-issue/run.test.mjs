@@ -6,8 +6,8 @@
  * They import lib.mjs alone, never run.mjs, which loads the Agent SDK:
  * so nothing is installed in this folder for them, and no call is paid.
  * The folder guards run real git in a temporary repository with a second
- * working folder beside it, as git-fixture.mjs makes them; the report
- * after a run has a stand-in for git and gh.
+ * working folder beside it, as git-fixture.mjs makes them, and real .env
+ * files; the report after a run has a stand-in for git and gh.
  */
 import assert from "node:assert/strict";
 import { mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
@@ -16,12 +16,14 @@ import { test } from "node:test";
 
 import { folder, git, write } from "../git-fixture.mjs";
 import {
+  ALREADY_FIXED,
   RUNS_HEADER,
   Stop,
   afterRun,
   checkClean,
   checkInit,
   checkKey,
+  checkShared,
   creditMonth,
   creditWarning,
   fixFolder,
@@ -245,7 +247,7 @@ test("a folder missing is refused, with the commands that make it", (t) => {
         "git worktree add --detach ../waf-fix origin/main",
       ) &&
       error.message.includes(
-        "(cd ../waf-fix/server && npm ci) && (cd ../waf-fix/client && npm ci)",
+        "(cd ../waf-fix/server && npm ci) && (cd ../waf-fix/client && npm ci)\n  node scripts/folder-databases.mjs ../waf-fix",
       ),
   );
 });
@@ -269,6 +271,37 @@ test("a folder of no repository, or another one, is refused", (t) => {
     () => fixFolder(main, path.join(parent, "waf-fix", "server")),
     /is inside a working folder/,
   );
+});
+
+/** A .env naming the dev, test and e2e databases, from the dev database's name. */
+const envFor = (dev) =>
+  [
+    `DATABASE_URL=postgresql://app:pw@localhost:5432/${dev}`,
+    `DATABASE_URL_TEST=postgresql://app:pw@localhost:5432/${dev}_test`,
+    `DATABASE_URL_E2E=postgresql://app:pw@localhost:5432/${dev}_e2e`,
+    "",
+  ].join("\n");
+
+test("a fix or a resume refuses a folder that shares the main folder's test databases, with the command that gives it its own", (t) => {
+  const { main, second } = folders(t);
+  writeFileSync(path.join(main, ".env"), envFor("foundation"));
+  writeFileSync(path.join(second, ".env"), envFor("foundation"));
+  assert.throws(
+    () => checkShared(second, {}),
+    (error) =>
+      error instanceof Stop &&
+      error.message ===
+        [
+          `${second}, where the fix would run, shares databases with another working folder:`,
+          "../main names the same test database as this folder, foundation_test.",
+          "../main names the same e2e database as this folder, foundation_e2e.",
+          "Give this folder its own, from the main working folder:",
+          "  node scripts/folder-databases.mjs ../waf-fix",
+        ].join("\n"),
+  );
+
+  writeFileSync(path.join(second, ".env"), envFor("foundation_waf_fix"));
+  checkShared(second, {});
 });
 
 test("a new fix refuses a folder with uncommitted tracked changes, naming them", (t) => {
@@ -584,6 +617,128 @@ test("GitHub not answering is UNKNOWN, with the listing to run before a resume",
   assert.equal(
     report.lines.at(-1),
     "UNKNOWN: when  gh pr list --head fix-520-a-typo --json number,url  lists no pull request, run  node scripts/fix-issue/run.mjs --resume last  to finish it.",
+  );
+});
+
+/** A detached folder, its tree clean, after a session that found the issue fixed. */
+const DETACHED = {
+  "git status --porcelain": "",
+  "git branch --show-current": "",
+  "git log -1 --oneline": "3d2eb4a6 Items: everything the company keeps",
+  "git rev-parse --abbrev-ref HEAD": "HEAD",
+  "git log -1 --format=%s d110a8dc":
+    "Every table frame that scrolls sideways has the theme's scroll shades (#492)",
+};
+
+const FIXED_RESULT = [
+  "**For you to run:**",
+  "",
+  "DONE: already fixed by d110a8dc in #477",
+].join("\n");
+
+test("a stop that finds the issue already fixed, the folder detached and clean, is finished, with the line that closes it", () => {
+  const { run } = standIn(DETACHED);
+  const report = afterRun("/waf-fix", run, {
+    issue: "492",
+    result: `${FIXED_RESULT}\n`,
+  });
+  assert.equal(report.unfinished, false);
+  assert.equal(report.outcome, ALREADY_FIXED);
+  assert.equal(ALREADY_FIXED, "already fixed");
+  assert.equal(report.pr, undefined);
+  assert.deepEqual(report.lines.slice(1), [
+    "— the folder after the run —",
+    "branch (none: detached) · last commit 3d2eb4a6 Items: everything the company keeps",
+    "already fixed by d110a8dc in #477, so no pull request of its own",
+    "Already fixed, so there is nothing to resume. Once you have read the report, close the issue:",
+    `  gh issue close 492 --reason completed --comment "Fixed in #477: d110a8dc Every table frame that scrolls sideways has the theme's scroll shades (#492)."`,
+  ]);
+});
+
+test("the close line is quoted so the shell keeps the commit's subject as it is", () => {
+  const { run } = standIn({
+    ...DETACHED,
+    "git log -1 --format=%s d110a8dc": `What is late is headed "things need you now", at $5!`,
+  });
+  const report = afterRun("/waf-fix", run, {
+    issue: "492",
+    result: FIXED_RESULT,
+  });
+  assert.equal(
+    report.lines.at(-1),
+    `  gh issue close 492 --reason completed --comment 'Fixed in #477: d110a8dc What is late is headed "things need you now", at $5!.'`,
+  );
+  const { run: apostrophe } = standIn({
+    ...DETACHED,
+    "git log -1 --format=%s d110a8dc": `It's "late".`,
+  });
+  assert.equal(
+    afterRun("/waf-fix", apostrophe, {
+      issue: "492",
+      result: FIXED_RESULT,
+    }).lines.at(-1),
+    `  gh issue close 492 --reason completed --comment 'Fixed in #477: d110a8dc It'\\''s "late".'`,
+  );
+});
+
+test("already fixed, but changes left or a branch checked out, is still UNFINISHED, saying why", () => {
+  const changed = standIn({
+    ...DETACHED,
+    "git status --porcelain": " M client/src/a.ts",
+  });
+  const report = afterRun("/waf-fix", changed.run, {
+    issue: "492",
+    result: FIXED_RESULT,
+  });
+  assert.equal(report.unfinished, true);
+  assert.equal(report.outcome, "UNFINISHED");
+  assert.ok(
+    report.lines.includes(
+      "the session says already fixed by d110a8dc in #477, but the folder is not detached with a clean tree, so it is not taken as already fixed",
+    ),
+    report.lines.join("\n"),
+  );
+  assert.ok(!report.lines.some((line) => line.includes("gh issue close")));
+  assert.equal(
+    report.lines.at(-1),
+    "UNFINISHED: run  node scripts/fix-issue/run.mjs --resume last  to finish it.",
+  );
+
+  const branch = standIn({
+    ...ON_BRANCH,
+    "gh pr list --head fix-520-a-typo --json number,url": "[]",
+  });
+  const onBranch = afterRun("/waf-fix", branch.run, {
+    issue: "492",
+    result: FIXED_RESULT,
+  });
+  assert.equal(onBranch.outcome, "UNFINISHED");
+  assert.ok(!branch.calls.includes("git rev-parse --abbrev-ref HEAD"));
+});
+
+test("only the result's last line says already fixed, in its own words", () => {
+  for (const result of [
+    undefined,
+    "DONE: fixed in #530",
+    "DONE: already fixed by d110a8dc in #477\nThen one more line.",
+    "DONE: already fixed by d110a8dc",
+    "Said earlier: DONE: already fixed by d110a8dc in #477",
+  ]) {
+    const { run } = standIn(DETACHED);
+    const report = afterRun("/waf-fix", run, { issue: "492", result });
+    assert.equal(report.outcome, "UNFINISHED", String(result));
+  }
+});
+
+test("--resume last refuses a fix that found the issue already fixed", (t) => {
+  const rows = rowsOf(
+    t,
+    ["2026-11-09T12:36-07:00", "492", "0.77", "already fixed"],
+    ["2026-11-09T13:00-07:00", "probe", "0.06", "-"],
+  );
+  refuses(
+    () => lastFix(rows, "runs.tsv"),
+    /^the last fix, #492 of 2026-11-09T12:36-07:00, found the issue already fixed, so there is nothing to finish$/,
   );
 });
 
