@@ -193,11 +193,20 @@ steps; this section stays the rule.
   `npm ci` in its `server/` and `client/` before any verify. Even
   `scripts/verify.sh --docs` needs both: its scripts' check formats with
   the server's prettier, and their tests read the client's FormatJS
-  (2 November 2026). Removed after the merge with `git worktree remove
-  ../<folder>`. A build and a fix verify at once there: the end-to-end and
-  browser runs share one lock across the folders
-  (`scripts/one-at-a-time.mjs`), so the second waits at those parts and
-  goes on when the first is done.
+  (2 November 2026). Then, from the main folder, `node
+  scripts/folder-databases.mjs ../<folder>` (10 November 2026, ADR-089's
+  amendment): it gives the folder its own dev, test and e2e databases,
+  writes their three addresses into its `.env` and migrates them with its
+  own code. A folder that kept the main folder's ran its migrations and
+  tests on another branch's tables (#528). A test or browser run refuses
+  a folder that still shares a test or e2e database with another, naming
+  the command. Removed after the merge with `node
+  scripts/folder-databases.mjs --drop ../<folder>`, then `git worktree
+  remove ../<folder>`, so no database is left behind. A build and a fix
+  verify at once there: the end-to-end and browser runs share one lock
+  across the folders (`scripts/one-at-a-time.mjs`, in Postgres's own
+  `postgres` database, which every folder reaches), so the second waits
+  at those parts and goes on when the first is done.
 - **Never switch branches in a folder a Claude Code session is working
   in** (6 November 2026): a `git switch main` there, while a session
   committed, put its commit on the local `main`. A job on `main` waits for
@@ -208,10 +217,16 @@ steps; this section stays the rule.
   the SDK, in a second working folder (`../waf-fix`), started from the
   main one. The key is set in the terminal only, `read -s
   ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY`, and `npm ci` runs once
-  in `scripts/fix-issue/`. `--probe` is one cheap call that proves the
-  key, the credit and the skill; `--resume last` finishes a fix that
-  ended `UNFINISHED`, or `UNKNOWN` when GitHub could not be asked for
-  its pull request, and refuses one that opened it; `--spent` lists the
+  in `scripts/fix-issue/`. The folder has its own databases, made once
+  from the main folder with `node scripts/folder-databases.mjs
+  ../waf-fix` after `npm ci` in its `server/` and `client/`; a fix or a
+  resume whose folder shares a test or e2e database refuses before it
+  costs anything, and the message for a missing folder gives the command.
+  `--probe` is one cheap call that proves the key, the credit and the
+  skill; `--resume last` finishes a fix that ended `UNFINISHED`, or
+  `UNKNOWN` when GitHub could not be asked for its pull request, and
+  refuses one that opened it or found the issue already fixed (that stop
+  prints the `gh issue close` line and exits 0); `--spent` lists the
   credit month's runs (`tmp/fix-runs/runs.tsv`) against the credit, and
   a run warns once the month is past 80 %. It runs on Opus, cannot merge or force-push, and
   prints the merge for Bob to run: `git -C <folder> switch --detach`,
@@ -458,7 +473,17 @@ Each command in `server/`:
 2. run `npm run migrate:new -- --name <name>`;
 3. append the hand-written parts (triggers, backfills) after a
    `--> statement-breakpoint`;
-4. run `npm run migrate:all`, for the dev, test and e2e databases;
+4. run `npm run migrate:all`, for the dev, test and e2e databases: each
+   folder's own, since a second working folder has its own
+   (`scripts/folder-databases.mjs`). A test or e2e database ahead of its
+   folder, holding a migration the folder lacks or one whose file has
+   changed since it ran, is dropped and made again from the start, and
+   the run says so; Drizzle alone would apply nothing and report success
+   (10 November 2026, ADR-089's amendment). The dev database holds a
+   person's own rows, so it is never made again: `migrate:all` prints a
+   line saying it is ahead, and goes on. That line comes from `npm run
+   migrate:all` only, never from `npm run migrate`, which Render's build
+   runs, where `../scripts/` is not there;
 5. on each volume database that exists, which `migrate:all` does not
    reach, `DATABASE_URL=<its URL> npm run migrate`: `foundation_perf_large`,
    at `PERF_DB_LARGE` as
