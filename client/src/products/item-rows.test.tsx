@@ -47,3 +47,26 @@ describe('a row’s codes', () => {
     expect(three).toHaveTextContent('3 个规格 · CALM-90，…');
   });
 });
+
+describe('a card on a phone', () => {
+  // Nothing on a phone opened an item's stock (ADR-092's review, 2): the
+  // card's stock is a link of its own, beside the item's.
+  it('opens Inventory for the item alone from its stock, and the item from the rest', () => {
+    render(
+      <MemoryRouter>
+        <ItemCards
+          items={[{ ...item('FOCUS-60CT', 1), stockStatus: 'low' }]}
+          loading={false}
+          firstNew={null}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByRole('link', { name: '0 each, stock of FOCUS-60CT' }),
+    ).toHaveAttribute('href', '/inventory?productId=FOCUS-60CT');
+    expect(
+      screen.getAllByRole('link').map((link) => link.getAttribute('href')),
+    ).toEqual(['/items/FOCUS-60CT', '/inventory?productId=FOCUS-60CT']);
+  });
+});

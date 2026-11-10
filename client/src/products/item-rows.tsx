@@ -446,11 +446,13 @@ function DateHeader({
 /**
  * Items' rows below 600 px, as cards (ADR-090, ADR-092): the name in
  * bold; its code and category on one line; then the stock and its
- * status. The whole card is the item's link, so the stock is not a link
- * of its own here: the item's page shows it by location.
+ * status. The card is two links side by side, since a link holds no
+ * other: the item's, from the cover to the category, and the stock's,
+ * which opens Inventory for the item alone, as the wider row's number
+ * does.
  *
- * With `ticks`, a check box sits before each card's link, beside it
- * rather than in it, since a link holds no control.
+ * With `ticks`, a check box sits before each card's links, beside them
+ * rather than in one, since a link holds no control.
  */
 export function ItemCards({
   items,
@@ -463,6 +465,7 @@ export function ItemCards({
   firstNew: { index: number; ref: Ref<HTMLAnchorElement> } | null;
   ticks?: Ticks;
 }) {
+  const intl = useIntl();
   const codes = useCodes();
   const category = useCategory();
   const onHand = useOnHand();
@@ -525,12 +528,41 @@ export function ItemCards({
                 {category(item)}
               </Typography>
             </Stack>
-            <Stack spacing={0.5} sx={{ alignItems: 'flex-end' }}>
-              <Typography sx={{ whiteSpace: 'nowrap' }}>
-                {onHand(item)}
-              </Typography>
-              <RowStatus item={item} />
-            </Stack>
+          </Link>
+          <Link
+            component={RouterLink}
+            to={stockPath(item)}
+            state={OFFER_BACK}
+            underline="none"
+            aria-label={intl.formatMessage(
+              {
+                id: 'products.row.stockOf',
+                defaultMessage: '{quantity}, stock of {name}',
+              },
+              { quantity: onHand(item), name: item.displayName },
+            )}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              justifyContent: 'center',
+              gap: 0.5,
+              alignSelf: 'stretch',
+              py: 2,
+              pr: 2,
+              pl: 1,
+              minHeight: rem(44),
+            }}
+          >
+            {/* The number underlined, a link by more than its colour
+                (WCAG 1.4.1); the status under it, as the wider row's. */}
+            <Box
+              component="span"
+              sx={{ whiteSpace: 'nowrap', textDecoration: 'underline' }}
+            >
+              {onHand(item)}
+            </Box>
+            <RowStatus item={item} />
           </Link>
         </Box>
       ))}

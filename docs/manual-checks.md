@@ -179,7 +179,8 @@ a second organization.
   in every location, with a chip "Item: …" whose × shows all stock again,
   and Back returns to Items as it was. At 390 px each row is a card: the
   name, its code and category on one line, then the stock and its status;
-  the whole card opens the item.
+  the stock and its status open Inventory for the item alone, as the
+  wider row's number does, and the rest of the card opens the item.
 - **MC-209** Items sorts by Name (A to Z first), Category, In stock
   (fewest first) and the date: a header again reverses it, and focus
   stays on the header pressed from the keyboard. The date column's menu
@@ -5532,3 +5533,6 @@ first.
   MC-216 added.
 - 2026-11-09: ADR-092's reviews, 75: a row of one variant reads its code
   alone in Chinese, not "1 个规格": MC-208 extended.
+- 2026-11-09: ADR-092's reviews, 2: on a phone a card's stock and status
+  open Inventory for the item alone, beside the item's link: MC-208
+  extended.

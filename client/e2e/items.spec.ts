@@ -982,13 +982,14 @@ test('on a phone: cards with the stock and its status, the type as one select, a
   await signInAs(page, freshOrg.api);
   await page.goto('/items');
 
-  const cards = page.getByRole('list').getByRole('link', { name: /^E2E / });
+  const cards = page.getByRole('list').getByRole('listitem');
   await expect(cards).toHaveCount(2);
   await expect(page.getByRole('table')).toHaveCount(0);
   await expect(cards.first()).toContainText('E2E Alpha');
   await expect(cards.nth(1)).toContainText('Low stock');
-  for (const card of await cards.all()) {
-    expect((await card.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  // Each card's two links, the item's and its stock's, a fingertip tall.
+  for (const link of await page.getByRole('list').getByRole('link').all()) {
+    expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   }
 
   // The tabs as one select, with their counts.
@@ -1012,6 +1013,33 @@ test('on a phone: cards with the stock and its status, the type as one select, a
   await page.getByRole('option', { name: 'Raw materials (1)' }).click();
   await expect(cards).toHaveCount(1);
   await expect(cards.first()).toContainText('E2E Kelp');
+});
+
+// Nothing on a phone opened an item's stock (ADR-092's review, 2).
+test('on a phone, a card’s stock: Inventory, that item alone; Back, Items as it was', async ({
+  page,
+  freshOrg,
+}) => {
+  const tonic = await createProduct(freshOrg.api, { name: 'E2E Card Tonic' });
+  await receive(freshOrg.api, tonic, '12');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInAs(page, freshOrg.api);
+  await page.goto('/items?search=Card');
+
+  await page
+    .getByRole('link', { name: /^12\b.*, stock of E2E Card Tonic$/ })
+    .click();
+
+  await expect(page).toHaveURL(
+    new RegExp(`/inventory\\?productId=${tonic.id}`),
+  );
+  await expect(
+    page.getByRole('button', { name: 'Item: E2E Card Tonic' }),
+  ).toBeVisible();
+
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page).toHaveURL(/\/items\?search=Card$/);
+  await expect(page.getByRole('list').getByRole('listitem')).toHaveCount(1);
 });
 
 test('the keyboard on the tabs: the arrows move between them, Enter opens one', async ({
