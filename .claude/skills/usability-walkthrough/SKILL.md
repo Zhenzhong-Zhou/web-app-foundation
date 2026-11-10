@@ -111,8 +111,15 @@ given, which git ignores.
    production build when any persona's Set up slows the network, kept
    running, its API started with `RATE_LIMIT_MAX=10000` and
    `THROTTLE_FACTOR=1000`, as the screenshots' API is, since the walkers
-   share one address and the dev limit of 100 a minute showed one a 429;
-   then `npm run seed:demo` in `server/` once per persona, one after
+   share one address and the dev limit of 100 a minute showed one a 429.
+   Beside an app already on 3000 or 5173, which step 6 leaves as it is,
+   the panel's own takes ports neither the browser suite (3100, 5273)
+   nor the screenshots (3200, 5373) use: its API also with `PORT=3300`
+   and `CLIENT_URL=http://localhost:5473`, so the mail's links open the
+   panel's client; its client with `VITE_API_TARGET=http://localhost:3300`,
+   as `npm run dev -- --port 5473 --strictPort`, or for the production
+   build `npm run preview -- --port 5473 --strictPort`.
+   Then `npm run seed:demo` in `server/` once per persona, one after
    another, keeping each account's email; or once for the panel when the
    journey's tasks only read, as `trace`'s do, each persona then signing
    in as a member of its own from the team the seed prints, an Owner or
@@ -148,7 +155,8 @@ given, which git ignores.
    persona; its account, or one for each size where step 1 made one per
    size; its invitations, one for each size, where step 1 sent them, in
    place of any its Set up would send; the journey's tasks as written
-   for it; its screen sizes; and its report's path,
+   for it; its screen sizes; the app's address, where step 1 started one
+   of its own; and its report's path,
    `<folder>/<journey>-<persona>.md`, as in
    `home-senior-who-reads-only-chinese.md`.
 4. **Wait for all of them.** One that ends BLOCKED is named in the

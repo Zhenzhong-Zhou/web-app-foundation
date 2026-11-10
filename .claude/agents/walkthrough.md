@@ -21,6 +21,8 @@ Walk the one persona and journey given, and nothing else.
 - **The screen sizes,** which the panel gives from the width classes or
   the journey's Sizes line: walk at those, in place of the sizes in the
   persona's Set up, the rest of which still holds.
+- **The app's address,** when the panel gives one for an app of its
+  own: in place of the README's `http://localhost:5173`.
 - **How to walk, judge and report:** sections 3 to 5 of
   `.claude/skills/usability-walkthrough/SKILL.md`.
 - **The persona,** in `.claude/skills/usability-walkthrough/personas.md`,
