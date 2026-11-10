@@ -487,6 +487,8 @@ export function ProductsPage() {
             <ItemsEmpty
               search={search}
               filtered={filtersOn > 0}
+              uncategorised={category === UNCATEGORISED}
+              onShowAll={() => setFilters({ category: '', discontinued: '' })}
               tab={tab}
               counts={counts}
               nameOf={nameOf}
@@ -695,12 +697,15 @@ export function ProductsPage() {
 /**
  * The list with nothing to show (ADR-092): no items yet, with Add item;
  * a search with no match on this tab, saying where the matches are with
- * a button there; or nothing matching, speaking of a search only when
- * there is one (#306's 34).
+ * a button there; or nothing matching the filters, speaking of a search
+ * only when there is one (#306's 34), with Show all items as its way
+ * out. Uncategorised emptied by the last item moved says so.
  */
 function ItemsEmpty({
   search,
   filtered,
+  uncategorised,
+  onShowAll,
   tab,
   counts,
   nameOf,
@@ -710,6 +715,8 @@ function ItemsEmpty({
 }: {
   search: string;
   filtered: boolean;
+  uncategorised: boolean;
+  onShowAll: () => void;
   tab: ItemTab;
   counts: ProductCounts | null;
   nameOf: (tab: ItemTab) => string;
@@ -772,11 +779,25 @@ function ItemsEmpty({
 
   if (filtered) {
     return (
-      <EmptyState>
-        {intl.formatMessage({
-          id: 'products.empty.filtered',
-          defaultMessage: 'No items match these filters.',
-        })}
+      <EmptyState
+        action={
+          <Button variant="outlined" onClick={onShowAll}>
+            {intl.formatMessage({
+              id: 'products.empty.showAll',
+              defaultMessage: 'Show all items',
+            })}
+          </Button>
+        }
+      >
+        {uncategorised
+          ? intl.formatMessage({
+              id: 'products.empty.allCategorised',
+              defaultMessage: 'Every item has a category.',
+            })
+          : intl.formatMessage({
+              id: 'products.empty.filtered',
+              defaultMessage: 'No items match these filters.',
+            })}
       </EmptyState>
     );
   }

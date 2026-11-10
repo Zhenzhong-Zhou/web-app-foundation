@@ -196,7 +196,8 @@ a second organization.
   with each category's count on the open tab, Uncategorised, and Manage
   categories at its foot. Choosing Vitamins and minerals lists its items
   and those of the categories under it, a chip names it, and its × shows
-  every category again. A search reads each tab's count again; with none
+  every category again. Once the last uncategorised item is moved,
+  Uncategorised says every item has a category, with Show all items. A search reads each tab's count again; with none
   on the open tab, the list says how many match on another tab, with
   "See in …" opening it and Clear search.
 - **MC-211** Items' list, past fifty (the volume database's): Showing 50
@@ -5546,3 +5547,6 @@ first.
   languages: MC-203 extended.
 - 2026-11-09: ADR-092's reviews, 6: Inventory for one item lists only
   that item under Promised to customers: MC-208 extended.
+- 2026-11-09: ADR-092's reviews, 7: Items with filters matching nothing
+  offers Show all items, and Uncategorised once emptied says every item
+  has a category: MC-210 extended.

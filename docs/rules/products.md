@@ -336,14 +336,16 @@ How this file is kept is in the [README](README.md).
 - **Items' list is always in one of five states, and says which.** Empty,
   it says there are no items yet and what to add first, with Add item, or
   for whoever may not add, whom to ask; a search with no match on the open
-  tab says so, and where the matches are when another tab holds them.
-  Loading, its rows are placeholders after 250 ms, the head, tabs and
+  tab says so, and where the matches are when another tab holds them;
+  filters matching nothing offer Show all items, and Uncategorised once
+  emptied says every item has a category. Loading, its rows are placeholders after 250 ms, the head, tabs and
   filters kept. Failed, only the list's part says it could not be read,
   with Try again, the tabs' counts reading "—". Show 50 more failing keeps
   the rows shown and says the next 50 could not be loaded, with Try again.
   [ADR-092](../adr/0092-items.md#decision--how-it-behaves) ·
   [test](../../client/src/products/products-page.test.tsx) "says no items yet for an empty catalogue, and nothing matches for an empty search" ·
   [test](../../client/src/products/products-page.test.tsx) "says where a search’s matches are when this tab has none, with a button there" ·
+  [test](../../client/src/products/products-page.test.tsx) "says every item has a category once Uncategorised is empty, with Show all items" ·
   [test](../../client/src/products/products-page.test.tsx) "says whom to ask where Add item would be, for a role that cannot add" ·
   [test](../../client/src/products/products-page.test.tsx) "says the list could not be read, with Try again, the tabs’ counts unknown" ·
   [test](../../client/src/products/products-page.test.tsx) "shows fifty more below with focus on the first new row, and keeps the rows when that fails" ·

@@ -651,6 +651,24 @@ describe('ProductsPage', () => {
   });
 
   // A Viewer: one line in Add item's place, saying whom to ask.
+  // The last uncategorised item moved left a list with no way out
+  // (ADR-092's review, 7).
+  it('says every item has a category once Uncategorised is empty, with Show all items', async () => {
+    const user = userEvent.setup();
+    const asked = readsOf((query) =>
+      query.has('category')
+        ? pageOf([], countsOf({ good: 0 }))
+        : pageOf([product('Focus')], countsOf({ good: 1 })),
+    );
+    renderAt('/items?category=uncategorised');
+
+    expect(await screen.findByText('Every item has a category.')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Show all items' }));
+
+    expect(await screen.findByRole('link', { name: 'Focus' })).toBeVisible();
+    expect(asked.at(-1)).toBe('type=good&sort=name&order=asc');
+  });
+
   it('says whom to ask where Add item would be, for a role that cannot add', async () => {
     readsOf(() => pageOf([product('Calm 90ct')], countsOf({ good: 1 })));
     server.use(
