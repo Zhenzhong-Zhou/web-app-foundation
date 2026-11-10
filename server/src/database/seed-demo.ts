@@ -39,6 +39,7 @@ import {
 } from './schema';
 import { auditor, recordOpeningHistory } from './seed-demo-audit';
 import { addCategories } from './seed-demo-categories';
+import { addMarkets } from './seed-demo-markets';
 import { orderSteps } from './seed-demo-orders';
 import {
   addTeam,
@@ -897,9 +898,17 @@ async function seedDemo(): Promise<void> {
           documentLanguage,
         );
 
+        // One product for two markets (ADR-092's review), on items of its
+        // own, after every figure above.
+        const markets = await addMarkets(app, db, {
+          userId: actor,
+          organizationId: account.organizationId,
+        });
+
         logger.log(`History opened with ${opened} records, by the Owner`);
         logger.log(teamWork);
         logger.log(sorted);
+        logger.log(markets);
         logger.log(describeTeam(team, DEMO_PASSWORD));
       },
     );

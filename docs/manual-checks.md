@@ -292,6 +292,14 @@ a second organization.
   Home's Getting started, Inventory's and Orders' lot steps, Licences' and
   Production's guides say item, article and 物品, never product, produit
   or 产品.
+- **MC-217** One product for two markets, as the demo Owner: Items
+  lists Focus with two variants, FOCUS-60-CA and FOCUS-60-CN. Its page
+  names FOCUS-60-CN 专注胶囊 60 粒 in Chinese, and each variant has its
+  own recipe: FOCUS-60-CA under Health Canada's 80045678, FOCUS-60-CN
+  under SAMR's 国食健注G20260123. Vitamin D3 1000 IU, 30 softgels has
+  VITD-30-CA and VITD-30-EXP, each with a recipe under the one licence
+  80076543, both using BOTTLE-30, the first LABEL-VITD-CA and the second
+  LABEL-VITD-EXP.
 
 ## 3. Stock
 
@@ -5613,3 +5621,6 @@ first.
 - 2026-11-09: ADR-092's reviews: the organization export's README calls
   its sku column the variant's Code, the organization's own, not a
   barcode: MC-2502 extended.
+- 2026-11-09: ADR-092's reviews, the chat's 33a: the demo holds one
+  product for two markets, Focus, and two recipes under one licence,
+  Vitamin D3: MC-217 added.
