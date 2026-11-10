@@ -32,6 +32,7 @@ import { FilterRow } from '../components/filter-row';
 import { ListError } from '../components/list-error';
 import { PageHeader } from '../components/page-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
+import type { DiscontinuedShown, ItemSort } from '../lib/api-names';
 import { HIDDEN } from '../lib/hidden';
 import { OFFER_BACK } from '../lib/offer-back';
 import { openDialog } from '../lib/open-dialog';
@@ -52,10 +53,8 @@ import { CreateProductDialog } from './create-product-dialog';
 import {
   categoryOptions,
   countOf,
-  type DiscontinuedShown,
   ITEM_SORTS,
   ITEM_TABS,
-  type ItemSort,
   itemsShown,
   type ItemTab,
   UNCATEGORISED,

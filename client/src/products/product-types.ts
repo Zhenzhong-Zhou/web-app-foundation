@@ -8,6 +8,8 @@ import type { SvgIconProps } from '@mui/material';
 import type { ComponentType } from 'react';
 import { defineMessages, type IntlShape } from 'react-intl';
 
+import type { ProductType } from '../lib/api-names';
+
 /**
  * What a product is for (ADR-023), in the order Items' tabs and Add item
  * offer them (ADR-092), not the schema's, which puts Samples before
@@ -21,9 +23,7 @@ export const PRODUCT_TYPES = [
   'supply',
   'sample',
   'equipment',
-] as const;
-
-export type ProductType = (typeof PRODUCT_TYPES)[number];
+] as const satisfies readonly ProductType[];
 
 const LABELS = defineMessages({
   good: { id: 'products.type.good', defaultMessage: 'Products' },

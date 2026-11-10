@@ -12,6 +12,8 @@ import type {
   OrganizationProfile,
   PriceList,
   ProductionRun,
+  ProductsControllerListV1Data,
+  ProductSummary,
   RegistrationSetting,
   ReorderPointRow,
   ReturnAuthorizationLine,
@@ -89,6 +91,21 @@ export type PaperSize = NonNullable<OrganizationProfile['paperSize']>;
  * "Received" on a purchase and "Shipped" on a sale.
  */
 export type OrderStatus = OrderSummary['status'];
+
+/** What an item is for (ADR-023): one of the six types (ADR-092). */
+export type ProductType = ProductSummary['type'];
+
+/** What Items' list asks GET /products for (ADR-092). */
+type ItemListQuery = NonNullable<ProductsControllerListV1Data['query']>;
+
+/** What Items' list sorts by (ADR-092). */
+export type ItemSort = NonNullable<ItemListQuery['sort']>;
+
+/**
+ * Which discontinued items Items shows (ADR-092): them alone, or them
+ * beside the rest; '' hides them, the list's default.
+ */
+export type DiscontinuedShown = NonNullable<ItemListQuery['discontinued']> | '';
 
 /** Which side of a sale a list prices (ADR-049). */
 export type PriceListDirection = PriceList['direction'];

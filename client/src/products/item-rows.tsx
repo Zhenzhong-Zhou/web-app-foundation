@@ -31,6 +31,7 @@ import { PlaceholderRows } from '../components/placeholder-rows';
 import { ProductCover } from '../components/product-cover';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
+import type { ItemSort } from '../lib/api-names';
 import { formatDate, SEPARATOR } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -38,7 +39,6 @@ import type { SortOrder } from '../lib/use-list-sort';
 import { TOUCH } from '../theme/media';
 import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
-import type { ItemSort } from './item-list';
 import { productTypeIcon, productTypeLabel } from './product-types';
 import { displayWithUnit } from './units';
 

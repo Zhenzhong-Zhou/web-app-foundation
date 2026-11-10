@@ -3,6 +3,8 @@ import type {
   ProductCategory,
   ProductCounts,
 } from '../api/types.gen';
+import type { DiscontinuedShown, ItemSort } from '../lib/api-names';
+import { PRODUCT_TYPES } from './product-types';
 
 /**
  * What Items' list (ADR-092) knows apart from its screen: its tabs, its
@@ -11,19 +13,10 @@ import type {
  */
 
 /**
- * Items' tabs in the order they show (ADR-092): the six types, Products
- * first, then All. Not the schema's order, which puts Samples before
- * Supplies.
+ * Items' tabs in the order they show (ADR-092): the six types in Add
+ * item's order, Products first, then All.
  */
-export const ITEM_TABS = [
-  'good',
-  'material',
-  'packaging',
-  'supply',
-  'sample',
-  'equipment',
-  'all',
-] as const;
+export const ITEM_TABS = [...PRODUCT_TYPES, 'all'] as const;
 
 export type ItemTab = (typeof ITEM_TABS)[number];
 
@@ -47,9 +40,7 @@ export const ITEM_SORTS = [
   'stock',
   'added',
   'changed',
-] as const;
-
-export type ItemSort = (typeof ITEM_SORTS)[number];
+] as const satisfies readonly ItemSort[];
 
 /** The category filter's word for the items in none, as the API takes it. */
 export const UNCATEGORISED = 'uncategorised';
@@ -60,9 +51,6 @@ export const UNCATEGORISED = 'uncategorised';
  * on it (ADR-092's review, 13).
  */
 export const NOT_CHOSEN = 'not-chosen';
-
-/** Which of a category's items the list shows: as the Discontinued chip. */
-export type DiscontinuedShown = '' | 'only' | 'include';
 
 /** A category in the tree's order: how deep, and its path from the top. */
 export interface CategoryPlace {

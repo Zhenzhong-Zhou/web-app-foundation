@@ -3,13 +3,10 @@ import type { ReactNode } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { VariantOption } from '../api/types.gen';
+import type { ProductType } from '../lib/api-names';
 import { itemName } from '../lib/format';
 import { usePickerSearch } from '../lib/use-picker-search';
-import {
-  PRODUCT_TYPES,
-  type ProductType,
-  productTypeLabel,
-} from '../products/product-types';
+import { PRODUCT_TYPES, productTypeLabel } from '../products/product-types';
 
 /** "WIDGET-1 — Widget (Large)": the SKU first, because it is what people type. */
 function labelFor(option: VariantOption): string {

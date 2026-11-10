@@ -10,10 +10,10 @@ import type {
   ProductDetail,
 } from '../api/types.gen';
 import { ToastProvider } from '../components/toast-provider';
+import type { ProductType } from '../lib/api-names';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { CreateProductDialog } from './create-product-dialog';
-import type { ProductType } from './product-types';
 
 const TREE: ProductCategory[] = [
   { id: 'raw', name: 'Raw', parentId: null, items: [] },

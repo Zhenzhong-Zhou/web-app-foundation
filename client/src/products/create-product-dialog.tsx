@@ -24,11 +24,11 @@ import type { ProductCategory, ProductEnvelope } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, hasCode } from '../lib/api';
+import type { ProductType } from '../lib/api-names';
 import { useSubmit } from '../lib/use-submit';
 import { CategorySelect } from './category-select';
 import {
   PRODUCT_TYPES,
-  type ProductType,
   productTypeLabel,
   productTypeLine,
 } from './product-types';
