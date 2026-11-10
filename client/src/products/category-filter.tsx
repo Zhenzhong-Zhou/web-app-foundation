@@ -9,8 +9,9 @@ import { type CategoryOption, UNCATEGORISED } from './item-list';
 
 /**
  * Items' category filter (ADR-092): All categories, the tree with each
- * one's count on the open tab, Uncategorised, and Manage categories at
- * its foot, which opens Settings › Categories with Back to Items.
+ * one's count on the open tab, Uncategorised with its own, and Manage
+ * categories at its foot, which opens Settings › Categories with Back to
+ * Items.
  *
  * The box shows the chosen category's name alone, not its count beside
  * it; each option is named by its path and its count, as CategorySelect's
@@ -18,11 +19,14 @@ import { type CategoryOption, UNCATEGORISED } from './item-list';
  */
 export function CategoryFilter({
   options,
+  uncategorisedCount,
   value,
   onChange,
   fullWidth,
 }: {
   options: CategoryOption[];
+  /** The items in no category the open tab shows, once the tree is read. */
+  uncategorisedCount?: number;
   value: string;
   onChange: (category: string) => void;
   fullWidth?: boolean;
@@ -82,7 +86,31 @@ export function CategoryFilter({
           </Box>
         </MenuItem>
       ))}
-      <MenuItem value={UNCATEGORISED}>{uncategorised}</MenuItem>
+      <MenuItem
+        value={UNCATEGORISED}
+        aria-label={
+          uncategorisedCount === undefined
+            ? uncategorised
+            : intl.formatMessage(
+                {
+                  id: 'products.category.option',
+                  defaultMessage:
+                    '{path}, {count, plural, one {# item} other {# items}}',
+                },
+                { path: uncategorised, count: uncategorisedCount },
+              )
+        }
+        sx={{ gap: 2 }}
+      >
+        <Box component="span" sx={{ flex: 1 }}>
+          {uncategorised}
+        </Box>
+        {uncategorisedCount !== undefined && (
+          <Box component="span" sx={{ color: 'text.secondary' }}>
+            {uncategorisedCount}
+          </Box>
+        )}
+      </MenuItem>
       <MenuItem
         onClick={() =>
           void navigate('/settings/categories', { state: OFFER_BACK })

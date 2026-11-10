@@ -56,6 +56,7 @@ import {
   ITEM_SORTS,
   ITEM_TABS,
   type ItemSort,
+  itemsShown,
   type ItemTab,
   UNCATEGORISED,
 } from './item-list';
@@ -271,6 +272,9 @@ export function ProductsPage() {
   const categoryFilter = (fullWidth: boolean) => (
     <CategoryFilter
       options={options}
+      uncategorisedCount={
+        tree ? itemsShown(tree.uncategorised, tab, discontinued) : undefined
+      }
       value={category && (tree || category === UNCATEGORISED) ? category : ''}
       onChange={(next) => setFilters({ category: next })}
       fullWidth={fullWidth}

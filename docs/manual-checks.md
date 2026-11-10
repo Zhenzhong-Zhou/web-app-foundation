@@ -193,7 +193,8 @@ a second organization.
   Last changed, newest first; Date added, newest first) and Discontinued
   with its count; Clear resets them and Show closes it.
 - **MC-210** Items' category filter reads All categories, then the tree
-  with each category's count on the open tab, Uncategorised, and Manage
+  with each category's count on the open tab, Uncategorised with its own
+  count (BOTTLE-60 among them on Packaging), and Manage
   categories at its foot; once one is chosen, its box shows the name
   alone, without the count. With a screen reader, each category is read
   by its path and count ("Packaging › Bottles, 2 items"), as each form's
@@ -5568,3 +5569,5 @@ first.
 - 2026-11-09: ADR-092's reviews, 13: Set category opens with nothing
   chosen, and says they are in it already only of the category chosen:
   MC-212 rewritten.
+- 2026-11-09: ADR-092's reviews, 16: Uncategorised has its count in
+  Items' category filter, as each category: MC-210 extended.

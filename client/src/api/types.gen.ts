@@ -1070,6 +1070,7 @@ export type ProductCategory = {
 
 export type ProductCategoryList = {
   categories: Array<ProductCategory>;
+  uncategorised: Array<CategoryItemCount>;
 };
 
 export type CreateProductCategoryDto = {

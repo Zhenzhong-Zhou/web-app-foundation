@@ -40,8 +40,8 @@ export class ProductCategoriesController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
-  async list(): Promise<ProductCategoryList> {
-    return { categories: await this.categories.list() };
+  list(): Promise<ProductCategoryList> {
+    return this.categories.list();
   }
 
   @Post()

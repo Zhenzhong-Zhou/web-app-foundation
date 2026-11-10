@@ -1,4 +1,8 @@
-import type { ProductCategory, ProductCounts } from '../api/types.gen';
+import type {
+  CategoryItemCount,
+  ProductCategory,
+  ProductCounts,
+} from '../api/types.gen';
 
 /**
  * What Items' list (ADR-092) knows apart from its screen: its tabs, its
@@ -128,6 +132,26 @@ export function categoryOptions(
 }
 
 /**
+ * How many of a category's own items, or Uncategorised's, the open tab
+ * shows, as Discontinued says.
+ */
+export function itemsShown(
+  entries: readonly CategoryItemCount[],
+  tab: ItemTab,
+  discontinued: DiscontinuedShown,
+): number {
+  return entries
+    .filter((entry) => tab === 'all' || entry.type === tab)
+    .reduce(
+      (sum, entry) =>
+        sum +
+        (discontinued === 'only' ? 0 : entry.active) +
+        (discontinued === '' ? 0 : entry.discontinued),
+      0,
+    );
+}
+
+/**
  * Every category in the tree's order with its count as the filter's: the
  * items the open tab shows in it and in every category under it.
  */
@@ -141,16 +165,8 @@ export function categoryTree(
     categories.map((category) => [category.id, category.items]),
   );
 
-  const own = (entries: ProductCategory['items']) =>
-    entries
-      .filter((entry) => tab === 'all' || entry.type === tab)
-      .reduce(
-        (sum, entry) =>
-          sum +
-          (discontinued === 'only' ? 0 : entry.active) +
-          (discontinued === '' ? 0 : entry.discontinued),
-        0,
-      );
+  const own = (entries: CategoryItemCount[]) =>
+    itemsShown(entries, tab, discontinued);
 
   // Each place comes after those above it, so from the last back each
   // one's own items are added to what those under it already gave it.

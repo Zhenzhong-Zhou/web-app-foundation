@@ -12200,10 +12200,17 @@
             "items": {
               "$ref": "#/components/schemas/ProductCategory"
             }
+          },
+          "uncategorised": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryItemCount"
+            }
           }
         },
         "required": [
-          "categories"
+          "categories",
+          "uncategorised"
         ]
       },
       "CreateProductCategoryDto": {

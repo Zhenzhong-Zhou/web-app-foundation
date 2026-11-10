@@ -377,10 +377,11 @@ How this file is kept is in the [README](README.md).
   [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
   [test](../../server/test/product-categories.e2e-spec.ts) "lists the categories by name: a number by its value, a Chinese name by its pinyin"
 - **Each category counts the items it holds itself, by type, the
-  discontinued apart;** an item in a category under it is that
-  category's.
+  discontinued apart, and the items in none are counted the same way
+  beside them;** an item in a category under it is that category's.
   [ADR-092](../adr/0092-items.md#decision--categories-one-tree-one-per-item) ·
-  [test](../../server/test/product-categories.e2e-spec.ts) "counts the items each category holds itself, by type, the discontinued apart"
+  [test](../../server/test/product-categories.e2e-spec.ts) "counts the items each category holds itself, by type, the discontinued apart" ·
+  [test](../../server/test/product-categories.e2e-spec.ts) "counts the items in no category by type, the discontinued apart"
 - **A category can be renamed and moved at any time, to the top or under
   another. A move under itself, or under any category inside it, is
   refused, saying to choose another place;** so is a move to where its

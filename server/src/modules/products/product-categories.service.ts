@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 
 import { namePinyin, pinyinOf } from '../../common/pinyin';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
@@ -26,6 +26,7 @@ import type {
 import type {
   CategoryItemCount,
   ProductCategory,
+  ProductCategoryList,
 } from './dto/product-category-response.dto';
 
 const NAME_TAKEN = 'product_categories_org_parent_name_key';
@@ -49,10 +50,11 @@ export class ProductCategoriesService {
 
   /**
    * Every category, flat and in name order, each with the items it holds
-   * itself by type. A name sorts as an item's does: a Chinese one by its
-   * pinyin, the others accent-free, and a number inside it by its value.
+   * itself by type, and the items in none by type beside them. A name
+   * sorts as an item's does: a Chinese one by its pinyin, the others
+   * accent-free, and a number inside it by its value.
    */
-  list(): Promise<ProductCategory[]> {
+  list(): Promise<ProductCategoryList> {
     return this.read();
   }
 
@@ -258,7 +260,7 @@ export class ProductCategoriesService {
   }
 
   /** The categories as the API returns them (ADR-068). */
-  private read(): Promise<ProductCategory[]> {
+  private read(): Promise<ProductCategoryList> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const categories = await tx
         .select({
@@ -273,8 +275,8 @@ export class ProductCategoriesService {
           asc(productCategories.id),
         );
 
-      // What each holds itself, by type, read by the products' index led by
-      // the organization and the category.
+      // What each holds itself, by type, and what none holds, read by the
+      // products' index led by the organization and the category.
       const counts = await tx
         .select({
           categoryId: products.categoryId,
@@ -283,34 +285,35 @@ export class ProductCategoriesService {
           discontinued: sql<number>`(count(*) filter (where not ${products.isActive}))::int`,
         })
         .from(products)
-        .where(
-          and(
-            eq(products.organizationId, organizationId),
-            isNotNull(products.categoryId),
-          ),
-        )
+        .where(eq(products.organizationId, organizationId))
         .groupBy(products.categoryId, products.type);
 
-      const itemsOf = new Map<string, CategoryItemCount[]>();
+      // By category, Uncategorised under null.
+      const itemsOf = new Map<string | null, CategoryItemCount[]>();
       for (const row of counts) {
-        const items = itemsOf.get(row.categoryId!) ?? [];
+        const items = itemsOf.get(row.categoryId) ?? [];
         items.push({
           type: row.type as ProductType,
           active: row.active,
           discontinued: row.discontinued,
         });
-        itemsOf.set(row.categoryId!, items);
+        itemsOf.set(row.categoryId, items);
       }
-
-      return categories.map((category) => ({
-        id: category.id,
-        name: category.name,
-        parentId: category.parentId,
-        items: (itemsOf.get(category.id) ?? []).sort(
+      const inTypeOrder = (items: CategoryItemCount[] = []) =>
+        items.sort(
           (a, b) =>
             PRODUCT_TYPES.indexOf(a.type) - PRODUCT_TYPES.indexOf(b.type),
-        ),
-      }));
+        );
+
+      return {
+        categories: categories.map((category) => ({
+          id: category.id,
+          name: category.name,
+          parentId: category.parentId,
+          items: inTypeOrder(itemsOf.get(category.id)),
+        })),
+        uncategorised: inTypeOrder(itemsOf.get(null)),
+      };
     });
   }
 }

@@ -158,6 +158,26 @@ describe('Product categories (e2e)', () => {
       expect(byId.get(supplies)!.items).toEqual([]);
     });
 
+    // Uncategorised had no count beside it on Items (ADR-092's review, 16).
+    it('counts the items in no category by type, the discontinued apart', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const vitamins = await add(alpha.agent, 'Vitamins');
+      await addProduct(alpha.agent, 'FOCUS-60', { categoryId: vitamins });
+      await addProduct(alpha.agent, 'CALM-90');
+      await addProduct(alpha.agent, 'KELP-1', { type: 'material' });
+      const old = await addProduct(alpha.agent, 'OLD-1');
+      await alpha.agent
+        .patch(`/v1/products/${old}`)
+        .send({ isActive: false })
+        .expect(204);
+
+      const res = await alpha.agent.get('/v1/products/categories').expect(200);
+      expect(body<ProductCategoryList>(res).uncategorised).toEqual([
+        { type: 'good', active: 1, discontinued: 1 },
+        { type: 'material', active: 1, discontinued: 0 },
+      ]);
+    });
+
     it('refuses a name already used under the same parent, at the top too, and allows it under another', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const vitamins = await add(alpha.agent, 'Vitamins');

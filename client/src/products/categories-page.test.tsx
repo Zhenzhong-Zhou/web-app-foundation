@@ -46,7 +46,7 @@ const TREE = [
 function answer(categories: ProductCategory[]) {
   server.use(
     http.get('/api/v1/products/categories', () =>
-      HttpResponse.json({ categories }),
+      HttpResponse.json({ categories, uncategorised: [] }),
     ),
   );
 }

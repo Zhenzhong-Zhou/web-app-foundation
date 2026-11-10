@@ -90,7 +90,7 @@ describe('ProductsPage', () => {
   beforeEach(() => {
     server.use(
       http.get('/api/v1/products/categories', () =>
-        HttpResponse.json({ categories: [] }),
+        HttpResponse.json({ categories: [], uncategorised: [] }),
       ),
       http.get('/api/v1/account/membership', () =>
         HttpResponse.json({
@@ -720,6 +720,9 @@ describe('ProductsPage', () => {
               items: [{ type: 'material', active: 4, discontinued: 0 }],
             },
           ],
+          // Uncategorised counts as each category does (ADR-092's review,
+          // 16): two on Products, one of them discontinued.
+          uncategorised: [{ type: 'good', active: 1, discontinued: 1 }],
         }),
       ),
     );
@@ -736,7 +739,7 @@ describe('ProductsPage', () => {
       'All categories',
       'Vitamins2',
       'Vitamin C2',
-      'Uncategorised',
+      'Uncategorised1',
       'Manage categories',
     ]);
     await user.click(
@@ -973,7 +976,7 @@ describe('ProductsPage', () => {
       const user = userEvent.setup();
       server.use(
         http.get('/api/v1/products/categories', () =>
-          HttpResponse.json({ categories: TREE }),
+          HttpResponse.json({ categories: TREE, uncategorised: [] }),
         ),
       );
       const asked = readsOf(() =>
@@ -1050,7 +1053,7 @@ describe('ProductsPage', () => {
       const user = userEvent.setup();
       server.use(
         http.get('/api/v1/products/categories', () =>
-          HttpResponse.json({ categories: TREE }),
+          HttpResponse.json({ categories: TREE, uncategorised: [] }),
         ),
       );
       readsOf(() =>

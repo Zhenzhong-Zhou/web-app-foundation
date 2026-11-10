@@ -32,6 +32,11 @@ export class ProductCategory {
 /** GET /products/categories: the tree, in name order. */
 export class ProductCategoryList {
   categories!: ProductCategory[];
+  /**
+   * The items in no category, by type, as each category counts its own:
+   * Items' filter counts Uncategorised from it.
+   */
+  uncategorised!: CategoryItemCount[];
 }
 
 /** POST /products/categories: the category as the tree shows it. */

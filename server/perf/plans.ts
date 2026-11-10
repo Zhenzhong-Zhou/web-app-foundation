@@ -264,7 +264,7 @@ async function buildProbes(
   // Items by a category, the top-level one with the most items beneath it,
   // so the filter reads its whole branch (ADR-092); and the second page
   // sorted by stock, which compares each row's sum with the cursor's.
-  const tree = await categories.list();
+  const { categories: tree } = await categories.list();
   const branch = (id: string): number =>
     tree
       .filter((each) => each.parentId === id)

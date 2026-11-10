@@ -74,7 +74,7 @@ function renderPage(
       }),
     ),
     http.get('/api/v1/products/categories', () =>
-      HttpResponse.json({ categories: TREE }),
+      HttpResponse.json({ categories: TREE, uncategorised: [] }),
     ),
     http.get('/api/v1/products/:id', () => HttpResponse.json(product)),
   );
