@@ -102,11 +102,14 @@ How this file is kept is in the [README](README.md).
   and never changes after; Add item never offers it for equipment,** and
   says in its place how equipment counts. Turned on or off for a variant
   that holds stock, its stock would be half with lots and half without.
+  Only the form keeps it from equipment: the server adds an equipment
+  item tracked by lot when a request asks for one.
   [ADR-023](../adr/0023-stock-lives-on-variants-and-quantity-is-a-ledger.md#decision--batch-tracking-is-a-property-of-the-variant-not-a-global-mode) ·
   [ADR-092](../adr/0092-items.md#decision--adding-and-changing-an-item-by-its-type) ·
   [test](../../server/test/products.e2e-spec.ts) "rejects tracksLots in an update" ·
   [test](../../server/test/products.e2e-spec.ts) "creates a variant even when the product has no variation" ·
   [test](../../client/src/products/create-product-dialog.test.tsx) "never offers lot tracking for equipment, saying how equipment counts" ·
+  partly tested ·
   [Help](../../client/src/help/guides/en/items.md#add-an-item-add) ·
   MC-203
 
