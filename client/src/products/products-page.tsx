@@ -8,7 +8,6 @@ import {
   Skeleton,
   Stack,
   TextField,
-  ToggleButton,
   Typography,
   useMediaQuery,
   useTheme,
@@ -28,7 +27,11 @@ import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { FilterChips } from '../components/filter-chips';
-import { FilterRow } from '../components/filter-row';
+import {
+  FilterRow,
+  type QuickFilter,
+  QuickFilterPill,
+} from '../components/filter-row';
 import { ListError } from '../components/list-error';
 import { PageHeader } from '../components/page-header';
 import { RevisionRefusalPage } from '../errors/revision-refusal-page';
@@ -282,6 +285,15 @@ export function ProductsPage() {
     id: 'products.discontinued',
     defaultMessage: 'Discontinued',
   });
+  // The row's pill above a wider list, and the sheet's on a phone.
+  const discontinuedFilter: QuickFilter = {
+    id: 'discontinued',
+    label: discontinuedLabel,
+    count: counts?.discontinued,
+    pressed: discontinued === 'only',
+    onToggle: () =>
+      setFilters({ discontinued: discontinued === 'only' ? '' : 'only' }),
+  };
 
   return (
     <Stack spacing={3}>
@@ -347,22 +359,7 @@ export function ProductsPage() {
           value: text,
           onChange: setText,
         }}
-        quick={
-          phone
-            ? []
-            : [
-                {
-                  id: 'discontinued',
-                  label: discontinuedLabel,
-                  count: counts?.discontinued,
-                  pressed: discontinued === 'only',
-                  onToggle: () =>
-                    setFilters({
-                      discontinued: discontinued === 'only' ? '' : 'only',
-                    }),
-                },
-              ]
-        }
+        quick={phone ? [] : [discontinuedFilter]}
       >
         {phone ? (
           <Button
@@ -599,24 +596,10 @@ export function ProductsPage() {
               </MenuItem>
             ))}
           </TextField>
-          <ToggleButton
-            value="discontinued"
-            size="small"
-            selected={discontinued === 'only'}
-            onChange={() =>
-              setFilters({
-                discontinued: discontinued === 'only' ? '' : 'only',
-              })
-            }
-            sx={{ borderRadius: 999, alignSelf: 'flex-start', gap: 0.75 }}
-          >
-            {discontinuedLabel}
-            {counts && (
-              <Box component="span" sx={{ color: 'text.secondary' }}>
-                {counts.discontinued}
-              </Box>
-            )}
-          </ToggleButton>
+          <QuickFilterPill
+            filter={discontinuedFilter}
+            sx={{ alignSelf: 'flex-start' }}
+          />
           <Stack
             direction="row"
             spacing={1}
