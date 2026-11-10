@@ -4,6 +4,7 @@ import { and, eq, type SQL, sql } from 'drizzle-orm';
 import type { Transaction } from '../../database/database.module';
 import { productCategories } from '../../database/schema';
 import { t, type Translatable } from '../../i18n/translate';
+import { nameSortKey } from '../stock/item-name';
 
 /**
  * One change to an organization's categories at a time (ADR-092): a move
@@ -79,7 +80,7 @@ export async function isWithinBranch(
  */
 export function categoryPaths(organizationId: string): SQL {
   const org = sql`${organizationId}::uuid`;
-  const sortName = sql`coalesce(c.name_pinyin, search_text(c.name))`;
+  const sortName = nameSortKey(sql`c.name_pinyin`, sql`c.name`);
 
   return sql`(
     with recursive paths as (

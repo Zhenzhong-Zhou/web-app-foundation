@@ -27,6 +27,7 @@ import { RecipePanel } from '../boms/recipe-panel';
 import { PageHeader } from '../components/page-header';
 import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
+import { SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -34,7 +35,7 @@ import { useResource } from '../lib/use-resource';
 import { AddVariantDialog } from './add-variant-dialog';
 import { EditItemDialog } from './edit-item-dialog';
 import { EditVariantDialog } from './edit-variant-dialog';
-import { categoryPlaces } from './item-list';
+import { categoryPlaces, pathName } from './item-list';
 import { ItemNames } from './item-names';
 import type { NameAt } from './name-rows';
 import { ProductGallery } from './product-gallery';
@@ -171,10 +172,11 @@ export function ProductDetailPage() {
 
   // Its category's path from the top, once the tree is read; Uncategorised
   // with none (ADR-092).
+  const place = categoryPlaces(tree?.categories ?? []).find(
+    (each) => each.id === product.categoryId,
+  );
   const categoryPath = product.categoryId
-    ? categoryPlaces(tree?.categories ?? [])
-        .find((place) => place.id === product.categoryId)
-        ?.path.join(' › ')
+    ? place && pathName(place.path)
     : intl.formatMessage({
         id: 'products.category.none',
         defaultMessage: 'Uncategorised',
@@ -235,7 +237,7 @@ export function ProductDetailPage() {
         // What it is and where it is filed, under its name (ADR-092).
         subtitle={[productTypeLabel(product.type, intl), categoryPath]
           .filter(Boolean)
-          .join(' · ')}
+          .join(SEPARATOR)}
       />
 
       {product.description && (

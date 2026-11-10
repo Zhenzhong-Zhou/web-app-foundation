@@ -61,6 +61,7 @@ import {
   ITEM_TABS,
   itemsShown,
   type ItemTab,
+  pathName,
   UNCATEGORISED,
 } from './item-list';
 import { ItemCards, ItemTable, type Ticks } from './item-rows';
@@ -393,11 +394,12 @@ export function ProductsPage() {
                     id: 'products.category.none',
                     defaultMessage: 'Uncategorised',
                   })
-                : (chosenCategory?.path.join(' › ') ??
-                  intl.formatMessage({
-                    id: 'products.category',
-                    defaultMessage: 'Category',
-                  })),
+                : chosenCategory
+                  ? pathName(chosenCategory.path)
+                  : intl.formatMessage({
+                      id: 'products.category',
+                      defaultMessage: 'Category',
+                    }),
             onRemove: () => setFilters({ category: '' }),
           },
           discontinued === 'include' && {

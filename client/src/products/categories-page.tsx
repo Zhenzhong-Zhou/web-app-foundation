@@ -95,6 +95,16 @@ export function CategoriesPage() {
    * refused at once, at its row, saying what to move, with no request:
    * asking first for what would be refused is a question with no answer.
    */
+  /** Rename's or Move's dialog for a category, from its row's menu. */
+  const openChange =
+    (kind: 'rename' | 'move') =>
+    (category: ProductCategory, opener: HTMLElement) => {
+      setRefusal(null);
+      openDialog(() => setChange({ kind, category }))({
+        currentTarget: opener,
+      });
+    };
+
   function askToDelete(category: ProductCategory, opener: HTMLElement) {
     setRefusal(null);
     const items = category.items.reduce(
@@ -228,18 +238,8 @@ export function CategoriesPage() {
               actions={
                 canChange
                   ? {
-                      onRename: (category, opener) => {
-                        setRefusal(null);
-                        openDialog(() =>
-                          setChange({ kind: 'rename', category }),
-                        )({ currentTarget: opener });
-                      },
-                      onMove: (category, opener) => {
-                        setRefusal(null);
-                        openDialog(() => setChange({ kind: 'move', category }))(
-                          { currentTarget: opener },
-                        );
-                      },
+                      onRename: openChange('rename'),
+                      onMove: openChange('move'),
                       onDelete: askToDelete,
                     }
                   : undefined

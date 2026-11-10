@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react';
 
 import type { ProductCategory } from '../api/types.gen';
 import { SelectField } from '../components/select-field';
-import { categoryPlaces, NOT_CHOSEN } from './item-list';
+import { categoryPlaces, NOT_CHOSEN, pathName } from './item-list';
 
 /**
  * A category to choose (ADR-092): the whole tree, each under its parent,
@@ -45,7 +45,7 @@ export function CategorySelect({
           <MenuItem
             key={place.id}
             value={place.id}
-            aria-label={place.path.join(' › ')}
+            aria-label={pathName(place.path)}
             sx={{ pl: 2 + place.depth * 2 }}
           >
             {place.name}

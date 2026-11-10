@@ -1,6 +1,6 @@
 import type { ExportColumn } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
-import type { Locale } from '../../common/locales';
+import { type Locale, SUPPORTED_LOCALES } from '../../common/locales';
 import { PRODUCT_TYPE_WORDS } from '../../common/product-types';
 import type { ProductType } from '../../database/schema';
 import { t, type Translatable, translate } from '../../i18n/translate';
@@ -66,7 +66,7 @@ const NAMES: Record<Locale, { product: Translatable; variant: Translatable }> =
 export function productColumns(
   locale: Locale,
 ): ExportColumn<ProductExportRow>[] {
-  const languages = Object.keys(NAMES) as Locale[];
+  const languages = SUPPORTED_LOCALES;
   return [
     { header: HEADERS.sku, value: (row) => row.sku },
     { header: HEADERS.item, value: (row) => row.productName },

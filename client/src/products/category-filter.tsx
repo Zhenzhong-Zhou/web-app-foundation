@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { SelectField } from '../components/select-field';
 import { OFFER_BACK } from '../lib/offer-back';
 import { rem } from '../theme/rem';
-import { type CategoryOption, UNCATEGORISED } from './item-list';
+import { type CategoryOption, pathName, UNCATEGORISED } from './item-list';
 
 /**
  * Items' category filter (ADR-092): All categories, the tree with each
@@ -74,7 +74,7 @@ export function CategoryFilter({
               defaultMessage:
                 '{path}, {count, plural, one {# item} other {# items}}',
             },
-            { path: option.path.join(' › '), count: option.count },
+            { path: pathName(option.path), count: option.count },
           )}
           sx={{ pl: 2 + option.depth * 2, gap: 2 }}
         >

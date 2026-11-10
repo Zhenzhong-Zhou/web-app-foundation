@@ -19,7 +19,7 @@ import { api, ApiError } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import { NAME_MAX_LENGTH } from '../lib/validation';
 import { CategorySelect } from './category-select';
-import { branchOf, categoryPlaces } from './item-list';
+import { branchOf, categoryPlaces, pathName } from './item-list';
 
 /** What Settings › Categories' one dialog does: add, rename or move. */
 export type CategoryChange =
@@ -53,10 +53,10 @@ export function CategoryDialog({
   // Under: the whole tree to add; to move, all but its own branch.
   const banned =
     change.kind === 'move' ? branchOf(categories, change.category.id) : null;
-  const placeName = (id: string) =>
-    categoryPlaces(categories)
-      .find((place) => place.id === id)
-      ?.path.join(' › ') ?? '';
+  const placeName = (id: string) => {
+    const place = categoryPlaces(categories).find((each) => each.id === id);
+    return place ? pathName(place.path) : '';
+  };
   const unmoved =
     change.kind === 'move' && parentId === (change.category.parentId ?? '');
 

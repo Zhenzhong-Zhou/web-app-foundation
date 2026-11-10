@@ -52,6 +52,11 @@ export const UNCATEGORISED = 'uncategorised';
  */
 export const NOT_CHOSEN = 'not-chosen';
 
+/** A category's path as a person reads it: Packaging › Bottles. */
+export function pathName(path: readonly string[]): string {
+  return path.join(' › ');
+}
+
 /** A category in the tree's order: how deep, and its path from the top. */
 export interface CategoryPlace {
   id: string;

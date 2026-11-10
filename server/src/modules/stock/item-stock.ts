@@ -6,9 +6,7 @@ import { positionsOf } from './reorder-position';
  * What a row of Items' list says of its stock (ADR-092): low, or out, from
  * its reorder points; nothing otherwise.
  */
-export const ITEM_STOCK_STATUSES = ['out', 'low'] as const;
-
-export type ItemStockStatus = (typeof ITEM_STOCK_STATUSES)[number];
+export type ItemStockStatus = 'out' | 'low';
 
 /**
  * Each item's variants and its stock on hand (ADR-092), as rows
@@ -25,7 +23,8 @@ export type ItemStockStatus = (typeof ITEM_STOCK_STATUSES)[number];
  */
 export function itemStock(organizationId: string, products?: SQL): SQL {
   const org = sql`${organizationId}::uuid`;
-  const only = products ? sql`and pv.product_id in ${products}` : sql``;
+  const only = (productId: SQL) =>
+    products ? sql`and ${productId} in ${products}` : sql``;
 
   return sql`(
     select
@@ -43,11 +42,11 @@ export function itemStock(organizationId: string, products?: SQL): SQL {
         on v.id = sl.variant_id
         and v.organization_id = ${org}
       where sl.organization_id = ${org}
-        ${products ? sql`and v.product_id in ${products}` : sql``}
+        ${only(sql`v.product_id`)}
       group by sl.variant_id
     ) st on st.variant_id = pv.id
     where pv.organization_id = ${org}
-      ${only}
+      ${only(sql`pv.product_id`)}
     group by pv.product_id
   )`;
 }

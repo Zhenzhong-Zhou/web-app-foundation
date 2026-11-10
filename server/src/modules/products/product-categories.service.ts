@@ -18,6 +18,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { nameSortKey } from '../stock/item-name';
 import { assertCategoryIn, isWithinBranch, lockTree } from './category-tree';
 import type {
   CreateProductCategoryDto,
@@ -271,7 +272,7 @@ export class ProductCategoriesService {
         .from(productCategories)
         .where(eq(productCategories.organizationId, organizationId))
         .orderBy(
-          sql`coalesce(${productCategories.namePinyin}, search_text(${productCategories.name})) collate numeric_order`,
+          sql`${nameSortKey(sql`${productCategories.namePinyin}`, sql`${productCategories.name}`)} collate numeric_order`,
           asc(productCategories.id),
         );
 

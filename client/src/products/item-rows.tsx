@@ -38,6 +38,7 @@ import type { SortOrder } from '../lib/use-list-sort';
 import { TOUCH } from '../theme/media';
 import { rem } from '../theme/rem';
 import { STATUS_TONES } from '../theme/status';
+import { pathName } from './item-list';
 import { productTypeIcon, productTypeLabel } from './product-types';
 import { displayWithUnit } from './units';
 
@@ -99,7 +100,7 @@ function useCategory() {
   const intl = useIntl();
   return (item: ProductSummary) =>
     item.category
-      ? item.category.path.join(' › ')
+      ? pathName(item.category.path)
       : intl.formatMessage({
           id: 'products.category.none',
           defaultMessage: 'Uncategorised',
@@ -309,7 +310,7 @@ export function ItemTable({
               onClick={open(item)}
               sx={{
                 cursor: 'pointer',
-                '@media (pointer: coarse)': { height: rem(44) },
+                [TOUCH]: { height: rem(44) },
               }}
             >
               {ticks && (

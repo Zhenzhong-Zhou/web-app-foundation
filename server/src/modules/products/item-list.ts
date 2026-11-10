@@ -32,10 +32,10 @@ import { foundBy, itemRank, variantsOf } from './item-search';
  */
 
 /** What a part compares as: its cursor's text is cast back to it. */
-export type KeyType = 'text' | 'int' | 'numeric' | 'uuid';
+type KeyType = 'text' | 'int' | 'numeric' | 'uuid';
 
 /** One part of the order: never null, so a row comparison holds. */
-export interface KeyPart {
+interface KeyPart {
   value: SQL;
   type: KeyType;
   order: SortOrder;
