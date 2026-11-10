@@ -92,6 +92,30 @@ async function discontinue(api: APIRequestContext, product: SeededProduct) {
   expect(response.ok(), await response.text()).toBeTruthy();
 }
 
+/** Items opened from the menu, with Locations the page before it. */
+async function itemsFromTheMenu(page: Page) {
+  await page.goto('/locations');
+  await page
+    .getByRole('navigation', { name: 'Records' })
+    .getByRole('link', { name: 'Items', exact: true })
+    .click();
+}
+
+/**
+ * Back after a tab, a search, a category or a sort: each replaces Items'
+ * address rather than adding to the history, as on every list (#341's
+ * rule; ADR-055, ADR-056, ADR-091), so Back leaves Items for the page
+ * before it, Locations here, and Forward opens Items again from the
+ * address, which kept them. The caller then checks the list is as it was.
+ */
+async function backThenForward(page: Page) {
+  const items = page.url();
+  await page.goBack();
+  await expect(page).toHaveURL(/\/locations$/);
+  await page.goForward();
+  await expect(page).toHaveURL(items);
+}
+
 /** Fifty-two products, one more page's worth than the first fifty. */
 async function fiftyTwo(api: APIRequestContext): Promise<void> {
   for (let start = 1; start <= 52; start += 13) {
@@ -181,7 +205,7 @@ test('the top bar, Show all in Items: the list opens on All with the search, dis
   await expect(page).toHaveURL(/\/locations$/);
 });
 
-test('Items, a tab: the list reads that type; the search, category and sort stay', async ({
+test('Items, a tab: the list reads that type; the search, category and sort stay; Back, the page before; Forward, as it was', async ({
   page,
   freshOrg,
 }) => {
@@ -210,6 +234,7 @@ test('Items, a tab: the list reads that type; the search, category and sort stay
     name: 'E2E Alpha Loose',
   });
   await signInAs(page, freshOrg.api);
+  await page.goto('/locations');
   await page.goto(
     `/items?category=${vitamins}&search=Alpha&sort=name&order=desc`,
   );
@@ -217,25 +242,31 @@ test('Items, a tab: the list reads that type; the search, category and sort stay
 
   await page.getByRole('tab', { name: /^Raw materials/ }).click();
 
-  await expect(
-    page.getByRole('tab', { name: /^Raw materials/, selected: true }),
-  ).toBeVisible();
-  await expect(page).toHaveURL(/tab=material/);
-  // Searched, in Vitamins, Z to A: neither Beta nor the uncategorised one.
-  await expect(searchBox(page)).toHaveValue('Alpha');
-  await expect(
-    page.getByRole('button', { name: 'Vitamins', exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('columnheader', { name: 'Name' }),
-  ).toHaveAttribute('aria-sort', 'descending');
-  await expect(rowNames(page)).toHaveText([
-    'E2E Alpha Powder',
-    'E2E Alpha Kelp',
-  ]);
+  const asItWas = async () => {
+    await expect(
+      page.getByRole('tab', { name: /^Raw materials/, selected: true }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/tab=material/);
+    // Searched, in Vitamins, Z to A: neither Beta nor the uncategorised one.
+    await expect(searchBox(page)).toHaveValue('Alpha');
+    await expect(
+      page.getByRole('button', { name: 'Vitamins', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('columnheader', { name: 'Name' }),
+    ).toHaveAttribute('aria-sort', 'descending');
+    await expect(rowNames(page)).toHaveText([
+      'E2E Alpha Powder',
+      'E2E Alpha Kelp',
+    ]);
+  };
+  await asItWas();
+
+  await backThenForward(page);
+  await asItWas();
 });
 
-test('Items, a search then a pause: the list and every tab’s count follow; with none on this tab, it says where the matches are, with a button there', async ({
+test('Items, a search then a pause: the list and every tab’s count follow; with none on this tab, it says where the matches are, with a button there; Back, the page before; Forward, as it was', async ({
   page,
   freshOrg,
 }) => {
@@ -243,25 +274,33 @@ test('Items, a search then a pause: the list and every tab’s count follow; wit
   await createProduct(freshOrg.api, { name: 'E2E Tonic B' });
   await createProduct(freshOrg.api, { type: 'material', name: 'E2E Kelp' });
   await signInAs(page, freshOrg.api);
-  await page.goto('/items');
+  await itemsFromTheMenu(page);
   await expect(page.getByRole('tab', { name: 'Products 2' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'All 3' })).toBeVisible();
 
   await searchBox(page).fill('Kelp');
 
-  // Every tab keeps its place, its count following the search.
-  await expect(
-    page.getByRole('tab', { name: 'Products 0', selected: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('tab', { name: 'Raw materials 1' }),
-  ).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'All 1' })).toBeVisible();
-  await expect(
-    page.getByText(
-      'Nothing in Products matches “Kelp”. 1 item in Raw materials matches.',
-    ),
-  ).toBeVisible();
+  const asItWas = async () => {
+    await expect(page).toHaveURL(/\/items\?search=Kelp$/);
+    await expect(searchBox(page)).toHaveValue('Kelp');
+    // Every tab keeps its place, its count following the search.
+    await expect(
+      page.getByRole('tab', { name: 'Products 0', selected: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('tab', { name: 'Raw materials 1' }),
+    ).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'All 1' })).toBeVisible();
+    await expect(
+      page.getByText(
+        'Nothing in Products matches “Kelp”. 1 item in Raw materials matches.',
+      ),
+    ).toBeVisible();
+  };
+  await asItWas();
+
+  await backThenForward(page);
+  await asItWas();
 
   await page.getByRole('button', { name: 'See in Raw materials' }).click();
   await expect(
@@ -270,7 +309,7 @@ test('Items, a search then a pause: the list and every tab’s count follow; wit
   await expect(rowNames(page)).toHaveText(['E2E Kelp']);
 });
 
-test('Items, a category: the list holds it and those under it; a chip shows it, its × removes it', async ({
+test('Items, a category: the list holds it and those under it; a chip shows it, its × removes it; Back, the page before; Forward, as it was', async ({
   page,
   freshOrg,
 }) => {
@@ -286,19 +325,26 @@ test('Items, a category: the list holds it and those under it; a chip shows it, 
   });
   await createProduct(freshOrg.api, { name: 'E2E Loose' });
   await signInAs(page, freshOrg.api);
-  await page.goto('/items');
+  await itemsFromTheMenu(page);
   await expect(rowNames(page)).toHaveCount(3);
 
   await page.getByRole('combobox', { name: 'Category' }).click();
   // Each category with its count on the open tab, those under it included.
   await page.getByRole('option', { name: /^Vitamins\s*2$/ }).click();
 
-  await expect(rowNames(page)).toHaveText(['E2E Chewable C', 'E2E Multi']);
-  await expect(row(page, 'E2E Chewable C')).toContainText(
-    'Vitamins › Vitamin C',
-  );
   const chip = page.getByRole('button', { name: 'Vitamins', exact: true });
-  await expect(chip).toBeVisible();
+  const asItWas = async () => {
+    await expect(page).toHaveURL(new RegExp(`/items\\?category=${vitamins}$`));
+    await expect(rowNames(page)).toHaveText(['E2E Chewable C', 'E2E Multi']);
+    await expect(row(page, 'E2E Chewable C')).toContainText(
+      'Vitamins › Vitamin C',
+    );
+    await expect(chip).toBeVisible();
+  };
+  await asItWas();
+
+  await backThenForward(page);
+  await asItWas();
 
   await chip.locator('.MuiChip-deleteIcon').click();
   await expect(chip).toBeHidden();
@@ -306,7 +352,7 @@ test('Items, a category: the list holds it and those under it; a chip shows it, 
   await expect(page).not.toHaveURL(/category=/);
 });
 
-test('Items, a header: sorts by it, again reverses; focus stays on the header; the date column shows what it sorts', async ({
+test('Items, a header: sorts by it, again reverses; focus stays on the header; the date column shows what it sorts; Back, the page before; Forward, as it was', async ({
   page,
   freshOrg,
 }) => {
@@ -316,7 +362,7 @@ test('Items, a header: sorts by it, again reverses; focus stays on the header; t
   await receive(freshOrg.api, few, '3');
   await receive(freshOrg.api, many, '30');
   await signInAs(page, freshOrg.api);
-  await page.goto('/items');
+  await itemsFromTheMenu(page);
   await expect(rowNames(page)).toHaveText([
     'E2E Alpha',
     'E2E Bravo',
@@ -348,18 +394,24 @@ test('Items, a header: sorts by it, again reverses; focus stays on the header; t
   // The date column switches to Date added, sorted by it, newest first.
   await page.getByRole('button', { name: 'Which date to show' }).click();
   await page.getByRole('menuitem', { name: 'Date added' }).click();
-  await expect(
-    page.getByRole('columnheader', { name: /^Date added/ }),
-  ).toHaveAttribute('aria-sort', 'descending');
-  await expect(
-    page.getByRole('columnheader', { name: /^Last changed/ }),
-  ).toHaveCount(0);
-  await expect(page).toHaveURL(/sort=added&order=desc/);
-  await expect(rowNames(page)).toHaveText([
-    'E2E Charlie',
-    'E2E Alpha',
-    'E2E Bravo',
-  ]);
+  const asItWas = async () => {
+    await expect(
+      page.getByRole('columnheader', { name: /^Date added/ }),
+    ).toHaveAttribute('aria-sort', 'descending');
+    await expect(
+      page.getByRole('columnheader', { name: /^Last changed/ }),
+    ).toHaveCount(0);
+    await expect(page).toHaveURL(/\/items\?sort=added&order=desc$/);
+    await expect(rowNames(page)).toHaveText([
+      'E2E Charlie',
+      'E2E Alpha',
+      'E2E Bravo',
+    ]);
+  };
+  await asItWas();
+
+  await backThenForward(page);
+  await asItWas();
 });
 
 test('Items, Show 50 more: the next fifty below; focus on the first new row', async ({
