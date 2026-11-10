@@ -1668,6 +1668,7 @@
   "products.discontinued": "Abandonné",
   "products.discontinuedIncluded": "Abandonnés inclus",
   "products.discontinuedNotice": "Cet article est abandonné. Ses variantes conservent leur propre statut : le réactiver rétablit chacune comme elle était.",
+  "products.edit.movedTo": "Déplacé dans {type}.",
   "products.edit.saved": "Article enregistré",
   "products.edit.title": "Modifier l’article",
   "products.edit.typeHelp": "Il s’affiche alors sous son nouveau type. Son stock, ses lots et son historique restent tels quels.",

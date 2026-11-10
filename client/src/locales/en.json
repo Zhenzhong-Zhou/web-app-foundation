@@ -1668,6 +1668,7 @@
   "products.discontinued": "Discontinued",
   "products.discontinuedIncluded": "Discontinued included",
   "products.discontinuedNotice": "This item is discontinued. Its variants keep their own status, so reactivating restores each to what it was.",
+  "products.edit.movedTo": "Moved to {type}.",
   "products.edit.saved": "Item saved",
   "products.edit.title": "Edit the item",
   "products.edit.typeHelp": "It then shows under its new type. Its stock, lots and History stay as they are.",

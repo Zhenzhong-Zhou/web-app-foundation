@@ -804,7 +804,8 @@ test('the item’s page, Edit then Save: saved; a new type moves it to that tab'
   await dialog.getByRole('button', { name: 'Save' }).click();
 
   await expect(dialog).toBeHidden();
-  await expect(page.getByText('Item saved')).toBeVisible();
+  // Where it went (ADR-092's review, 24).
+  await expect(page.getByText('Moved to Raw materials.')).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`/items/${tonic.id}$`));
   // Its type and category under its name.
   await expect(page.getByText(/^Raw materials · /)).toBeVisible();

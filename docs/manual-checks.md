@@ -248,7 +248,8 @@ a second organization.
   and type; each type has Add item's line under it, and the type says
   the item then shows under its new type, its stock, lots and History as
   they are. Change the
-  type and the category and save: "Item saved", the line under the name
+  type and the category and save: "Moved to Packaging." (a save that
+  keeps the type says "Item saved"), the line under the name
   follows, Items shows it on its new tab, and History records the type
   and the category from and to. Emptying the name is refused under it.
   As a Viewer there is no Edit.
@@ -5577,3 +5578,5 @@ first.
   row's type after its name: MC-208 extended.
 - 2026-11-09: ADR-092's reviews, 23: a row's stock is underlined as a
   link: MC-208 extended.
+- 2026-11-09: ADR-092's reviews, 24: saving a new type says "Moved to …"
+  with the type: MC-214 extended.

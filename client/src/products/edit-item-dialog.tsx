@@ -62,10 +62,20 @@ export function EditItemDialog({
       await onSaved();
     },
     {
-      success: intl.formatMessage({
-        id: 'products.edit.saved',
-        defaultMessage: 'Item saved',
-      }),
+      // A new type says where the item went, since it leaves this tab.
+      success: () =>
+        form.type !== product.type
+          ? intl.formatMessage(
+              {
+                id: 'products.edit.movedTo',
+                defaultMessage: 'Moved to {type}.',
+              },
+              { type: productTypeLabel(form.type, intl) },
+            )
+          : intl.formatMessage({
+              id: 'products.edit.saved',
+              defaultMessage: 'Item saved',
+            }),
     },
   );
 

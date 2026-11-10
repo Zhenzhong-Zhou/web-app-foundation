@@ -274,6 +274,7 @@ describe('ProductDetailPage', () => {
 
     await waitFor(() => expect(dialog).not.toBeInTheDocument());
     expect(sent).toEqual([{ type: 'packaging', categoryId: 'caps' }]);
-    expect(await screen.findByText('Item saved')).toBeVisible();
+    // Where it went, not only "Item saved" (ADR-092's review, 24).
+    expect(await screen.findByText('Moved to Packaging.')).toBeVisible();
   });
 });
