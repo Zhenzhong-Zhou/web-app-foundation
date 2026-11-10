@@ -1678,6 +1678,7 @@
   "products.empty.clearSearch": "清除搜索",
   "products.empty.elsewhere": "{tab}里没有“{search}”。{other}里有 {count} 个。",
   "products.empty.filtered": "没有符合这些筛选条件的物品。",
+  "products.empty.noMatch": "没有符合搜索条件的物品。",
   "products.empty.seeIn": "在{tab}里查看",
   "products.empty.showAll": "显示所有物品",
   "products.empty.tab": "这个标签页里还没有物品。",

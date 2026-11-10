@@ -1678,6 +1678,7 @@
   "products.empty.clearSearch": "Effacer la recherche",
   "products.empty.elsewhere": "Rien dans {tab} ne correspond à « {search} ». {count, plural, one {# article correspond} other {# articles correspondent}} dans {other}.",
   "products.empty.filtered": "Aucun article ne correspond à ces filtres.",
+  "products.empty.noMatch": "Rien ne correspond à cette recherche.",
   "products.empty.seeIn": "Voir dans {tab}",
   "products.empty.showAll": "Afficher tous les articles",
   "products.empty.tab": "Rien dans cet onglet pour l’instant.",

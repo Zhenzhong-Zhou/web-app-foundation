@@ -740,7 +740,7 @@ function ItemsEmpty({
               },
             )
           : intl.formatMessage({
-              id: 'inventory.noMatch',
+              id: 'products.empty.noMatch',
               defaultMessage: 'Nothing matches that search.',
             })}
       </EmptyState>

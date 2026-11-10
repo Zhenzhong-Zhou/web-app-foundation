@@ -1678,6 +1678,7 @@
   "products.empty.clearSearch": "Clear search",
   "products.empty.elsewhere": "Nothing in {tab} matches “{search}”. {count, plural, one {# item} other {# items}} in {other} {count, plural, one {matches} other {match}}.",
   "products.empty.filtered": "No items match these filters.",
+  "products.empty.noMatch": "Nothing matches that search.",
   "products.empty.seeIn": "See in {tab}",
   "products.empty.showAll": "Show all items",
   "products.empty.tab": "Nothing on this tab yet.",
