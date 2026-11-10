@@ -3965,7 +3965,7 @@ first.
   134, under the note "Filled from Reorder points: 2 lines at their
   suggested quantities. …". With `*products/variants*` blocked
   (DevTools → Network request blocking), raise it again: Could not load
-  partners and products., one empty line, and no note.
+  partners and items., one empty line, and no note.
 
 - **MC-R74** *(a full IPv6 address pushing Recent activity's time off
   screen on a phone, #323)* On an iPhone SE, signed in on the deployed
@@ -5630,3 +5630,5 @@ first.
   Vitamin D3: MC-217 added.
 - 2026-11-09: ADR-092's reviews, the chat's 32a: the Items guide gains
   One product for two markets, in three languages: MC-216 extended.
+- 2026-11-09: ADR-092's reviews, 84: MC-R75 quotes "Could not load
+  partners and items." as the screen says it: MC-R75 corrected.
