@@ -89,6 +89,10 @@ not have: stop and say so.
      line added, written beside the script;
    - **a close:** the home's command as written, with its reason and its
      one-line comment.
+   - **a comment on an issue a merged pull request did in part,** as
+     [Issues and labels][labels] asks after a merge, saying what is
+     left: `gh issue comment <N> --body-file tmp/triage-comment-<N>.md`,
+     the comment written beside the script.
 
    An area label GitHub lacks comes first, as `gh label create
    area:<area>`, as [Issues and labels][labels] says. Then `bash -n
