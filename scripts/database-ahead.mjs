@@ -34,7 +34,10 @@
  * database's is refused, whatever its state.
  *
  * The dev database holds a person's own rows, so it is never made again:
- * ahead, one line says so, and the migration goes on, exit 0.
+ * ahead, one line says so, and the migration goes on, exit 0. Its check
+ * runs in the server's migrate:all, before the three migrations, and not
+ * in migrate: Render's build runs migrate from server/, where ../scripts
+ * is not there.
  *
  * In step or behind, it says nothing. pg and dotenv come from
  * server/node_modules, as one-at-a-time.mjs reaches them. Its tests, in

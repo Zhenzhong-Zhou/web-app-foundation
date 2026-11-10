@@ -12,7 +12,7 @@
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { realpathSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -297,4 +297,21 @@ test("the script refuses a target that is not dev, test or e2e, exit 2", () => {
     result.stderr,
     /^Usage, from server\/: node \.\.\/scripts\/database-ahead\.mjs <dev\|test\|e2e>$/m,
   );
+});
+
+test("the server's scripts: migrate:all checks dev before its three migrations; migrate, which Render's build runs from server/, stays as it was", () => {
+  const { scripts } = JSON.parse(
+    readFileSync(path.join(ROOT, "server/package.json"), "utf8"),
+  );
+  assert.equal(scripts.migrate, "drizzle-kit migrate");
+  assert.equal(
+    scripts["migrate:all"],
+    "node ../scripts/database-ahead.mjs dev && npm run migrate && npm run migrate:test && npm run migrate:e2e",
+  );
+  for (const which of ["test", "e2e"]) {
+    assert.equal(
+      scripts[`migrate:${which}`],
+      `node ../scripts/one-at-a-time.mjs migrate-${which} -- sh -c 'node ../scripts/database-ahead.mjs ${which} && MIGRATE_TARGET=${which} exec drizzle-kit migrate'`,
+    );
+  }
 });
