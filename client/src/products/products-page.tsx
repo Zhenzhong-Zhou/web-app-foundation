@@ -61,7 +61,7 @@ import {
 } from './item-list';
 import { ItemCards, ItemTable, type Ticks } from './item-rows';
 import { ItemTabs } from './item-tabs';
-import { productTypeLabel } from './product-types';
+import { itemTabLabel } from './product-types';
 import { SeveralAtOnce } from './several-at-once';
 
 /**
@@ -238,11 +238,6 @@ export function ProductsPage() {
       each === tab ||
       known?.types.some((entry) => entry.type === each),
   );
-
-  const nameOf = (of: ItemTab) =>
-    of === 'all'
-      ? intl.formatMessage({ id: 'products.tab.all', defaultMessage: 'All' })
-      : productTypeLabel(of, intl);
 
   if (refused) {
     return <RevisionRefusalPage failure={refused} onRetry={reload} />;
@@ -498,7 +493,6 @@ export function ProductsPage() {
               onShowAll={() => setFilters({ category: '', discontinued: '' })}
               tab={tab}
               counts={counts}
-              nameOf={nameOf}
               onTab={setTab}
               onClearSearch={() => setText('')}
               add={
@@ -715,7 +709,6 @@ function ItemsEmpty({
   onShowAll,
   tab,
   counts,
-  nameOf,
   onTab,
   onClearSearch,
   add,
@@ -726,7 +719,6 @@ function ItemsEmpty({
   onShowAll: () => void;
   tab: ItemTab;
   counts: ProductCounts | null;
-  nameOf: (tab: ItemTab) => string;
   onTab: (tab: ItemTab) => void;
   onClearSearch: () => void;
   add: ReactNode;
@@ -749,7 +741,7 @@ function ItemsEmpty({
                     id: 'products.empty.seeIn',
                     defaultMessage: 'See in {tab}',
                   },
-                  { tab: nameOf(elsewhere) },
+                  { tab: itemTabLabel(elsewhere, intl) },
                 )}
               </Button>
             )}
@@ -770,10 +762,10 @@ function ItemsEmpty({
                   'Nothing in {tab} matches “{search}”. {count, plural, one {# item} other {# items}} in {other} {count, plural, one {matches} other {match}}.',
               },
               {
-                tab: nameOf(tab),
+                tab: itemTabLabel(tab, intl),
                 search,
                 count: countOf(counts, elsewhere),
-                other: nameOf(elsewhere),
+                other: itemTabLabel(elsewhere, intl),
               },
             )
           : intl.formatMessage({

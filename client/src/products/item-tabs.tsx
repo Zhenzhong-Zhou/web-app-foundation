@@ -16,7 +16,7 @@ import { SelectField } from '../components/select-field';
 import { NO_VALUE } from '../lib/format';
 import { rem } from '../theme/rem';
 import type { ItemTab, TabCount } from './item-list';
-import { productTypeLabel } from './product-types';
+import { itemTabLabel } from './product-types';
 
 /** How many tabs a narrow bar shows before More (ADR-092). */
 const SHOWN_BEFORE_MORE = 3;
@@ -48,10 +48,7 @@ export function ItemTabs({
   const narrow = useMediaQuery(theme.breakpoints.down('lg'), { noSsr: true });
   const [more, setMore] = useState<HTMLElement | null>(null);
 
-  const nameOf = (tab: ItemTab) =>
-    tab === 'all'
-      ? intl.formatMessage({ id: 'products.tab.all', defaultMessage: 'All' })
-      : productTypeLabel(tab, intl);
+  const nameOf = (tab: ItemTab) => itemTabLabel(tab, intl);
 
   /** A count in words, for the select and the More menu. */
   const counted = (tab: ItemTab) => {

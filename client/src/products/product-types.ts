@@ -9,6 +9,7 @@ import type { ComponentType } from 'react';
 import { defineMessages, type IntlShape } from 'react-intl';
 
 import type { ProductType } from '../lib/api-names';
+import type { ItemTab } from './item-list';
 
 /**
  * What a product is for (ADR-023), in the order Items' tabs and Add item
@@ -39,6 +40,13 @@ export function productTypeLabel(type: string, intl: IntlShape): string {
   return type in LABELS
     ? intl.formatMessage(LABELS[type as keyof typeof LABELS])
     : type;
+}
+
+/** An Items tab's name: a type's, or All (ADR-092). */
+export function itemTabLabel(tab: ItemTab, intl: IntlShape): string {
+  return tab === 'all'
+    ? intl.formatMessage({ id: 'products.tab.all', defaultMessage: 'All' })
+    : productTypeLabel(tab, intl);
 }
 
 /** What each type is, in everyday words, a line under its name (ADR-092). */
