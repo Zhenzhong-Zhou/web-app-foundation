@@ -16,12 +16,15 @@ as-built amendments, [the working agreements](engineering.md),
 On 10 November 2026:
 
 - **[#529], each working folder's own databases,**
-  [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md): planned on
-  10 November, built on `fix-529-folder-databases`. Each second folder
-  gets its own dev, test and e2e databases from one command; the lock
-  moves to Postgres's own database; a test database ahead of its folder
-  is made again; a folder that shares is refused. While it is built,
-  nothing in `../waf-fix` runs tests.
+  [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md): planned and
+  built on 10 November on `fix-529-folder-databases`, 14 commits, pull
+  request [#554]; the as-built is in the amendment. Each second folder
+  gets its own dev, test and e2e databases from
+  `node scripts/folder-databases.mjs <folder>`, and `../waf-fix` has
+  them; the lock is in Postgres's own database; a test database ahead of
+  its folder is made again; a folder that shares is refused. Until the
+  merge, `../waf-fix` runs no tests: its lock, on `main`'s code, is
+  still in its own test database.
 - **Items, ADR-092** ([#476]): planned on 8 and 9 November, its boards
   the canvas's rows "Items v1", "Items v2" and "Items v2: flows and
   states"; built on 9 November on `adr-092-items`, 73 commits, merged on
@@ -230,8 +233,8 @@ On 10 November 2026:
   amended, 26 October) and [#247] (the brand, ADR-082, 25 October).
 - **The release:** v0.7.0, tagged on 16 October 2026; both packages'
   versions are 0.7.0.
-- **Migrations** through 0079 (each person's arrangement of Home, in
-  [#515]), 80 files in `server/src/database/migrations/`.
+- **Migrations** through 0080 (Items' categories, in [#532]), 81 files
+  in `server/src/database/migrations/`.
 - **Render:** a free database (`foundation-db`, created 5 November 2026,
   replacing the first, whose rows all went with it)
   and a free web service, with the static site. Deploy runs from the
@@ -274,10 +277,11 @@ On 10 November 2026:
   7-day rule, Sentry 11.11.0 first as a security fix; rimraf 6.1.4
   closes alert 9 in `server/`. From Items' branch on, the rule is as
   before: each branch takes, package by package, the newest version in
-  range that is 7 days old that day. Releases since then come of age on
-  16 November: `@vitejs/plugin-react` 6.3.0, vite 8.3.7, the Nest
-  packages at 12.4.2, `typescript-eslint` 8.72.2 and `@aws-sdk/client-s3`
-  3.1165.0. Held: `@playwright/test` at
+  range that is 7 days old that day. Twenty releases since then come of
+  age on 16 November (`@vitejs/plugin-react` 6.3.0, vite 8.3.7, the Nest
+  packages at 12.4.2, `typescript-eslint` 8.72.2) and 17 November
+  (`@aws-sdk/client-s3` 3.1166.0, Sentry 11.12.0, nodemailer 10.5.0,
+  `user-event` 14.6.9), for the next branch's dependencies. Held: `@playwright/test` at
   1.64.1, pinned, its Firefox 159 crashing in the Linux image ([#521]);
   `jsdom` at 30.1.3, pinned, 17 unit tests failing on 31 ([#522]);
   TypeScript 7 ([#336]). Alerts 11 and 12 wait for their upstreams
@@ -327,30 +331,40 @@ On 10 November 2026:
 
 ## Still to do, by hand
 
-- **After [#532]'s merge,** still to do: `foundation_perf_large` timed
-  with Items' seed, its category filter included (seeded again on 10
-  November; its figures go to [#547]); `/triage` over every open issue,
-  for this merge and [#523]'s; and `git stash list`: `stash@{0}`, from
-  `fix-ups-ci`, was touched by a failed command in step 23 and left as
-  it was; drop it if it is no longer needed. Done on 10 November:
+- **After [#554]'s merge:** `gh pr merge 554 --merge`, never squashed;
+  `scripts/prune-branches.sh --yes`; `scripts/clean-local.sh`, then
+  `--yes`; `git -C ../waf-fix switch --detach origin/main` and `npm ci`
+  in its `server/` and `client/`, after which its runs meet the main
+  folder's at the lock again, and the runner's next pick proves its own
+  databases in use; Project knowledge re-synced.
+- **After [#532]'s merge,** still to do: `git stash list`: `stash@{0}`,
+  from `fix-ups-ci`, was touched by a failed command in step 23 and left
+  as it was; drop it if it is no longer needed. Done on 10 November:
   `npm run migrate:all`, `apiRevision: 4` on `/api/health`,
   `tmp/adr-092/from-adr-091/` moved into `tmp/adr-093/` and
   `dl-items.md` into `tmp/flows-and-states/`, the prune and the
   clean-up, the issues posted ([#533] to [#551]), `/auto-mode-setup`
   kept in the maintainer's own settings, Project knowledge re-synced,
-  and the variation's PDF on the live site.
+  the variation's PDF on the live site; `foundation_perf_large` seeded
+  again and timed, all 38 budgets passing, the search at 141 ms on
+  [#547] and the category filter 28 to 38 ms; a budgets run on GitHub
+  after Items, passing; and `/triage` over every open issue, for this
+  merge and [#523]'s: [#128] closed as a duplicate of [#526], 18
+  comments, and [#526], [#529], [#531], [#539] and [#547] in the
+  Fix-ups milestone.
 - **After [#523]'s merge:** `scripts/prune-branches.sh --yes`;
   `scripts/clean-local.sh`, then `--yes`; `tmp/sdk-fix/logs/` moved into
   `tmp/fix-runs/logs/`, and `tmp/sdk-fix/` removed; the planning skill
   packed from `main` and uploaded; `/triage` on docs and ops, [#521] and
-  [#522] among them, now the run over every open issue after [#532];
+  [#522] among them, done in the run over every open issue after [#532];
   after the deploy, one invoice's PDF opened, since pdfmake 0.3.14
   changed a line of the renderer; at the first paid fix, the hook that
   refuses a merge or force-push seen at work, and at the first resume
-  its cost checked against the Console; and, after [#529]'s merge, a
-  30-minute look at [#521] in Claude Code in `../waf-fix`: if the crash
-  is the container's memory, Playwright 1.65.0 comes with a one-line
-  fix, and otherwise it waits for the next release.
+  its cost checked against the Console; and, after [#554]'s merge, a
+  30-minute look at [#521] in Claude Code in `../waf-fix`, widened to
+  Linux WebKit's accessibility screens not ready within 5 seconds
+  (ADR-089's #529 as-built): the container's memory and CPU measured
+  first, then the fix the cause asks for, Playwright 1.65.0 among them.
 - **After [#518]'s merge,** done on 8 November: Claude Code restarted;
   the planning skill packed from `main` and uploaded; and `/triage` over
   all 155 open issues, with no closes and comments on [#446] and [#467].
@@ -457,7 +471,7 @@ request or a set of them:
       credit, in the repository, ADR-089's amendment, [#523];
       then Items ([#476]),
       ADR-092: [#532], merged on 10 November; then [#529], each working
-      folder's own databases, ADR-089 amended, a small pull request; then
+      folder's own databases, ADR-089 amended: [#554]; then
       [#526]'s first half, a small branch on the Mac: a refused document
       opened from a link answers with a readable page in the person's
       language, the links staying plain, as ADR-071 chose (decided on 10
@@ -468,7 +482,13 @@ request or a set of them:
       the pieces every screen shares, their states drawn once in the
       design language and one canvas row, and the planning skill asking
       each feature for a wireflow, an interaction table and five states,
-      ADR-090 amended; then Movements ([#470]), ADR-093, with
+      ADR-090 amended; with it, two commits of their own: the README's
+      roadmap since v0.7.0, Items' name and CSV import moved to [#552],
+      with a line in engineering.md's release routine that the README's
+      status and roadmap change at every tag; and the code's names for
+      Items written down, `product` for any item and `good` for the
+      Products type, in the glossary and `.claude/rules/products.md`,
+      no file renamed ([#553] holds the full rename); then Movements ([#470]), ADR-093, with
       Inventory's findings from ADR-091's panel; each person
       choosing their main action and More's order, later; then [#310]'s
       nine dialogs with [#295], one shared hook, on the Mac;
@@ -557,6 +577,7 @@ Not repeated here; each list has one home:
   and [Open decisions, "A security review before real customers"](adr/open-decisions.md#a-security-review-before-real-customers).
 
 [#125]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/125
+[#128]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/128
 [#133]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/133
 [#148]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/148
 [#149]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/149
@@ -757,3 +778,5 @@ Not repeated here; each list has one home:
 [#547]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/547
 [#551]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/551
 [#552]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/552
+[#553]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/553
+[#554]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/554

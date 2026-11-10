@@ -1244,3 +1244,117 @@ the folder is detached with a clean tree, the runner prints the skill's
   runner's two changes; a database ahead made again; the working
   agreements; the proof across both folders, by hand; dependencies
   again; the reviews; the as-built.
+
+### As built
+
+Built on 10 November 2026 on `fix-529-folder-databases`, 14 commits with
+this as-built, pull request #554.
+
+- **Measured against the brief's guesses,** minutes and the tokens the
+  Agent tool counted:
+
+  | Step | Model | Minutes (guess) | Tokens |
+  | --- | --- | --- | --- |
+  | 2 | sonnet | 1 (2), no commit | 48,876 |
+  | 3 | opus | 5 (20) | 81,975 |
+  | 4 | opus | 10 (30) | 158,911 |
+  | 6 | opus | 9 (30) | 166,848 |
+  | 7 | opus | 12 and 5 (30) | 139,301 and 79,715 |
+  | 8 | sonnet | 4 (3) | 87,211 |
+  | 10 | sonnet | 3 (2), no commit | 77,579 |
+  | 11, findings | opus | 7 (15) | not shown |
+  | 11, fixes | opus | 25 (45) | not shown |
+
+  Opus's script steps took about a third of their guess, and the whole
+  run about an hour and a half of Claude Code against three hours.
+- **The dev check is in `migrate:all`, not `migrate`,** the maintainer's
+  choice in step 7, where the decision above says `npm run migrate`
+  prints the line. Render builds the API from `server/`, and files
+  outside a service's root directory are not there at build time, so a
+  check in `../scripts/` would have failed every deploy. `migrate` stays
+  `drizzle-kit migrate` (4f3ebed7), and a test holds the four scripts as
+  they are. CI runs the three migrations one by one, so it never runs the
+  dev check; `folder-databases.mjs` does, through `migrate:all`.
+- **The lock** (0baa670d, ea985cdf):
+  - `postgresAddress(url)` keeps the user, password, host, port and
+    query, and names the `postgres` database; an address that is not
+    `postgresql://` is refused in one line, the empty-host socket form
+    `postgresql://u:p@/db?host=/tmp` among them;
+  - the refusal of a folder that shares compares host and port, reads
+    this folder's address from the environment first, then its `.env`,
+    skips a folder with no `.env`, Claude Code's own worktrees among
+    them, and reads `localhost` and `127.0.0.1` as two servers;
+  - from step 3 to the merge, the two folders' locks were in different
+    databases; nothing ran in `../waf-fix` but the proof.
+- **`folder-databases.mjs`** (c5b9c782), beyond the brief: it refuses a
+  `.env` that is a link to the main one's, and main test or e2e names
+  that do not start with the dev name; it runs npm without the shell's
+  `DATABASE_URL*` and `MIGRATE_TARGET`, since dotenv never overrides a
+  variable already set; it counts the migrations each database gained;
+  `--drop` refuses each name that is the main folder's, drops the
+  others and exits 1; a failed `migrate:all` after a new dev database
+  prints `npm run migrate:all && npm run seed`. Folders named `waf-fix`
+  and `waf_fix` would get the same names, which the refusal of a folder
+  that shares catches.
+- **`database-ahead.mjs`** (0bffb7b3): besides a migration the folder
+  lacks and a file changed since it ran, a migration that ran without an
+  earlier one, and one that ran twice, each get their line. The line
+  goes to stderr, so `scripts/e2e-flake-hunt.sh`, which hides the
+  migration's output, still shows it.
+- **The runner** (dbbbb92f): the check runs before a fix or a resume,
+  not a probe; an already-fixed stop's `gh issue close` line takes its
+  comment from the commit's subject, quoted for the shell (single quotes
+  for the 17 of `main`'s 2,413 subjects holding a quote, `$`, a
+  backtick, `\` or `!`); a result that says already fixed in a folder
+  with changes or a branch says why it is still `UNFINISHED`. #492's real
+  result, replayed, ends `already fixed`.
+- **The main folder's 0068:** its three databases had run an unsaved
+  draft of `0068_invitations.sql`, the only one committed being
+  097a1c54. `pg_dump --schema-only` of the dev database and of
+  `../waf-fix`'s, made from the final file, differed only in the dump's
+  random `\restrict` keys, so the dev row's hash was put right by hand;
+  the test and e2e databases were made again by their first run.
+- **The proof across both folders,** by hand on the Mac:
+  - both server suites at once: `../waf-fix`'s waited for `server-e2e in
+    web-app-foundation, since 14:52`, ran at 14:57:25, a second after
+    the first ended, and both passed 1,303 tests;
+  - a made-up migration of the year 2286 in `foundation_waf_fix_test`:
+    made again, and the suite passed;
+  - `../waf-fix`'s `.env` naming `foundation_test`: refused with the
+    command, which then set that one line back, its `migrate:test`
+    waiting for the run above to free the lock.
+- **Dependencies:** steps 2 and 10 took nothing. Twenty updates in range
+  come of age on 16 and 17 November: the Nest packages, vite and its
+  React plugin, `typescript-eslint`, the AWS SDK, Sentry, nodemailer and
+  `user-event`.
+- **The reviews:** 14 findings, with `/doctor prompt-audit` typed by the
+  maintainer. Fixed:
+  - 11, CI's browser job, which gives its three databases the one name
+    `foundation_e2e` on purpose: a test or e2e name that is the dev one
+    is refused only when the database is ahead and about to be dropped
+    (73dc3317). Nothing local could catch it, since every `.env` here
+    names three databases; a change to a script CI runs is read against
+    `ci.yml`'s own settings before the push;
+  - 3, each migration's time and hash from Drizzle's own
+    `readMigrationFiles` (0253d70a); 6, `compare` returns why, or `null`
+    (8c6c2988);
+  - 1, 2 and 8, one `scripts/databases.mjs` for what the four scripts
+    shared: one `Stop`, the addresses, `.env` reading, the connection,
+    the migrations' record and one working-folder check (3ff4b4c2);
+  - 13, the review step gives `/simplify` "report only, change nothing",
+    since its own instructions apply what it finds (3e2c0473).
+
+  Left: 4, the dev check inside `migrate`, which reverses step 7's
+  choice; 5, about 110 ms a run; 7 and 9, code that runs once; 10, the
+  three tests' own worktree setups, which read better whole; 14, two
+  code-rules files repeating `CLAUDE.md`, until `/rules-file` rewrites
+  them. 12 is the line above on `migrate:all`.
+- **Linux WebKit:** the full verify's accessibility spec failed 1 of 116
+  in both of the branch's runs, each time a different screen not
+  visible within 5 seconds (an order with a voided shipment, dark;
+  Movements, light), and passed 116 of 116 in one run on `main`. The
+  branch changes no file in `client/`. Followed with Firefox's crash in
+  #521, the container's memory measured first.
+- **CI on #554:** the three Playwright shards passed, the path finding 11
+  repaired. Claude Code Review found no issues in a run of 40 seconds,
+  #253's pattern.
