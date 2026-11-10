@@ -4,6 +4,7 @@ import {
   IsUUID,
   MaxLength,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 
 import { trim } from '../../../common/dto/trim';
@@ -24,7 +25,8 @@ export class CreateProductCategoryDto {
 
 /** Renamed, moved, or both: null moves it to the top. */
 export class UpdateProductCategoryDto {
-  @IsOptional()
+  /** Left out to keep it; never null, which IsOptional would let through. */
+  @ValidateIf((_object, value: unknown) => value !== undefined)
   @trim()
   @IsString()
   @MinLength(1)

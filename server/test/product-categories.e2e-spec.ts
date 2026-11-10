@@ -253,6 +253,22 @@ describe('Product categories (e2e)', () => {
       ).toBeNull();
     });
 
+    // IsOptional let a null name through to the NOT NULL column, a 500
+    // (ADR-092's review, 77).
+    it('refuses a null name with a 400, keeping the one it has', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const vitamins = await add(alpha.agent, 'Vitamins');
+
+      await alpha.agent
+        .patch(`/v1/products/categories/${vitamins}`)
+        .send({ name: null })
+        .expect(400);
+
+      expect(
+        (await tree(alpha.agent)).find((each) => each.id === vitamins)!.name,
+      ).toBe('Vitamins');
+    });
+
     it('answers 404 for a category that is not there', async () => {
       const alpha = await registerOrganization(app, 'alpha');
 

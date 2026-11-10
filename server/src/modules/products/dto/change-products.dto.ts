@@ -7,6 +7,7 @@ import {
   IsBoolean,
   IsOptional,
   IsUUID,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -28,7 +29,11 @@ export class ProductChangeDto {
   @IsUUID()
   categoryId?: string | null;
 
-  @IsOptional()
+  /**
+   * Left out to keep it; never null, which IsOptional would let through
+   * to be recorded in History as a change.
+   */
+  @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsBoolean()
   isActive?: boolean;
 }

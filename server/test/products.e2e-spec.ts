@@ -422,6 +422,24 @@ describe('Products (e2e)', () => {
       });
     });
 
+    // IsOptional lets a null through, and the NOT NULL column refused it
+    // as a 500 (ADR-092's review, 77).
+    it('refuses a null type with a 400, changing nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+
+      const created = body<{ product: ProductResponse }>(
+        await alpha.agent.post('/v1/products').send(product).expect(201),
+      ).product;
+
+      await alpha.agent
+        .patch(`/v1/products/${created.id}`)
+        .send({ type: null })
+        .expect(400);
+
+      const [row] = await db.select().from(products);
+      expect(row.type).toBe('good');
+    });
+
     it('refuses a Viewer, which lacks products.update', async () => {
       const alpha = await registerOrganization(app, 'alpha');
 
@@ -705,6 +723,22 @@ describe('Products (e2e)', () => {
       const rows = await db.select().from(products);
       expect(rows.every((row) => row.categoryId === null)).toBe(true);
       expect(rows.every((row) => row.isActive)).toBe(true);
+      expect(await updates(alpha)).toHaveLength(0);
+    });
+
+    // A null went through IsOptional, and History recorded the item as
+    // changed from true to null (ADR-092's review, 77).
+    it('refuses a null in use or not, changing nothing and recording nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const ours = await addItem(alpha, 'FOCUS-60');
+
+      await alpha.agent
+        .patch('/v1/products')
+        .send({ items: [{ id: ours, isActive: null }] })
+        .expect(400);
+
+      const [row] = await db.select().from(products);
+      expect(row.isActive).toBe(true);
       expect(await updates(alpha)).toHaveLength(0);
     });
 
