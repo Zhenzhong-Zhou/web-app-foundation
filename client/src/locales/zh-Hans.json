@@ -1668,7 +1668,7 @@
   "products.discontinuedNotice": "此物品已停用。其各规格保留各自的状态，重新启用后会恢复为原来的状态。",
   "products.edit.saved": "物品已保存",
   "products.edit.title": "编辑物品",
-  "products.edit.typeHelp": "改类型：它会换到别的标签页，选择列表里的位置也会变。库存、批次和历史记录都不变。",
+  "products.edit.typeHelp": "之后它会显示在新类型下。库存、批次和历史记录都不变。",
   "products.empty": "还没有物品。先添加你卖的商品，或者生产用的原材料。",
   "products.empty.allCategorised": "每个物品都已分类。",
   "products.empty.clearSearch": "清除搜索",

@@ -2,6 +2,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  ListItemText,
   MenuItem,
   Stack,
   TextField,
@@ -19,6 +20,7 @@ import {
   isProductType,
   PRODUCT_TYPES,
   productTypeLabel,
+  productTypeLine,
 } from './product-types';
 
 /**
@@ -26,8 +28,9 @@ import {
  * category and type. The name and description are the base ones, which
  * documents print where a language has none of its own (ADR-056). The
  * type may change at any time, since it forks nothing (ADR-023): the item
- * moves to that tab and in the pickers' order, its stock, lots and History
- * stay, and History records the change.
+ * shows under its new type, its stock, lots and History stay, and History
+ * records the change. Each type has Add item's line under it, so the
+ * choice reads the same in both.
  *
  * Only what changed is sent, so History records what the person changed.
  * Rendered only while open, so each opening starts from the item as saved.
@@ -189,8 +192,14 @@ export function EditItemDialog({
               helperText={intl.formatMessage({
                 id: 'products.edit.typeHelp',
                 defaultMessage:
-                  'A new type moves it to that tab, and in the pickers’ order. Its stock, lots and History stay as they are.',
+                  'It then shows under its new type. Its stock, lots and History stay as they are.',
               })}
+              // The box shows the type's name; its line is in the list.
+              slotProps={{
+                select: {
+                  renderValue: (value) => productTypeLabel(String(value), intl),
+                },
+              }}
             >
               {/* A type this client does not know stays offered as it is. */}
               {!isProductType(product.type) && (
@@ -198,7 +207,10 @@ export function EditItemDialog({
               )}
               {PRODUCT_TYPES.map((type) => (
                 <MenuItem key={type} value={type}>
-                  {productTypeLabel(type, intl)}
+                  <ListItemText
+                    primary={productTypeLabel(type, intl)}
+                    secondary={productTypeLine(type, intl)}
+                  />
                 </MenuItem>
               ))}
             </TextField>

@@ -1668,7 +1668,7 @@
   "products.discontinuedNotice": "This item is discontinued. Its variants keep their own status, so reactivating restores each to what it was.",
   "products.edit.saved": "Item saved",
   "products.edit.title": "Edit the item",
-  "products.edit.typeHelp": "A new type moves it to that tab, and in the pickers’ order. Its stock, lots and History stay as they are.",
+  "products.edit.typeHelp": "It then shows under its new type. Its stock, lots and History stay as they are.",
   "products.empty": "No items yet. Add what you sell first, or the raw materials you make it from.",
   "products.empty.allCategorised": "Every item has a category.",
   "products.empty.clearSearch": "Clear search",

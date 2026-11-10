@@ -249,10 +249,23 @@ describe('ProductDetailPage', () => {
     expect(screen.getByRole('textbox', { name: /^Name/ })).toHaveValue(
       'Calm 90ct',
     );
-    expect(screen.getByText(/A new type moves it to that tab/)).toBeVisible();
+    expect(
+      screen.getByText(
+        'It then shows under its new type. Its stock, lots and History stay as they are.',
+      ),
+    ).toBeVisible();
 
     await user.click(screen.getByRole('combobox', { name: 'Type' }));
-    await user.click(screen.getByRole('option', { name: 'Packaging' }));
+    // Each type with Add item's line under it (ADR-092's review, 9).
+    expect(
+      screen.getByRole('option', {
+        name: 'Packaging Bottles, boxes and labels',
+      }),
+    ).toBeVisible();
+    await user.click(screen.getByRole('option', { name: /^Packaging/ }));
+    expect(screen.getByRole('combobox', { name: 'Type' })).toHaveTextContent(
+      /^Packaging$/,
+    );
     await user.click(screen.getByRole('combobox', { name: 'Category' }));
     await user.click(
       screen.getByRole('option', { name: 'Bottles › Bottles and caps' }),

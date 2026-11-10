@@ -1668,7 +1668,7 @@
   "products.discontinuedNotice": "Cet article est abandonné. Ses variantes conservent leur propre statut : le réactiver rétablit chacune comme elle était.",
   "products.edit.saved": "Article enregistré",
   "products.edit.title": "Modifier l’article",
-  "products.edit.typeHelp": "Un nouveau type le place dans cet onglet et change sa place dans les listes de choix. Son stock, ses lots et son historique restent tels quels.",
+  "products.edit.typeHelp": "Il s’affiche alors sous son nouveau type. Son stock, ses lots et son historique restent tels quels.",
   "products.empty": "Aucun article pour l’instant. Ajoutez d’abord ce que vous vendez, ou les matières premières dont vous le fabriquez.",
   "products.empty.allCategorised": "Chaque article a une catégorie.",
   "products.empty.clearSearch": "Effacer la recherche",

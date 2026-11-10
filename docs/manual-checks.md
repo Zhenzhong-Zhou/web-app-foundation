@@ -240,7 +240,9 @@ a second organization.
 - **MC-214** An item's page, as the demo Owner: under its name, its type
   and its category's path ("Packaging · Bottles › Caps"), or
   Uncategorised. Edit opens with its base name, description, category
-  and type; a new type says it moves the item to that tab. Change the
+  and type; each type has Add item's line under it, and the type says
+  the item then shows under its new type, its stock, lots and History as
+  they are. Change the
   type and the category and save: "Item saved", the line under the name
   follows, Items shows it on its new tab, and History records the type
   and the category from and to. Emptying the name is refused under it.
@@ -5556,3 +5558,6 @@ first.
 - 2026-11-09: ADR-092's reviews, 8 with 79: Items' category filter shows
   the chosen name alone, and every category select names each option by
   its path for a screen reader: MC-210 extended.
+- 2026-11-09: ADR-092's reviews, 9: Edit's types each carry Add item's
+  line, and the type's hint says the item then shows under its new type:
+  MC-214 extended.
