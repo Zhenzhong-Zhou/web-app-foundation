@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-11-02
-areas: [docs, ops]
+areas: [database, docs, ops]
 amends: [ADR-083, ADR-088]
 amended-by: [ADR-090]
 ---
@@ -1076,3 +1076,171 @@ as-built, pull request #523.
   checked against the Console at the first resume; and the `jsdom` 30.1.0
   entry in Dependabot's `/server` block, which never applied, since
   `jsdom` is the client's; the exact pin covers it.
+
+## Amendment (November 2026) — each working folder's own databases (#529)
+
+On 9 November 2026 the runner fixed #502 in `../waf-fix`, on `main`,
+while Items' branch (ADR-092) was built in the main folder. Both
+folders' `.env` named the same dev, test and e2e databases. Items' branch
+had applied its migration 0080 to them, so `waf-fix`'s `migrate:test`
+applied nothing, and `main`'s server tests ran on Items' tables: two
+failed, where CI, on a fresh database, passed the same commit (#528).
+The lock above keeps two runs apart in time; it does not keep two
+folders' schemas apart. Until this is built, a pick's local server
+failures that CI passes are noted in its pull request, not blockers.
+
+The same happens in one folder: back on `main` before a branch with a
+migration merges, `main`'s tests run on the branch's tables. And Drizzle
+applies a migration only when its time is later than the last one
+applied, so a migration whose file changed after it ran is never applied
+again, and the run still reports success.
+
+The maintainer chose each decision below on 10 November 2026, asking
+for the practice production teams use, and for the better version of
+each where one exists.
+
+Checked before drafting, for the areas database and ops
+(`scripts/adr-check.mjs`, 10 November 2026):
+
+- **Fired, and taken here:**
+  - #529 (`fix-now`), with its comment of 9 November: the runner says
+    `UNFINISHED` after a stop that found the issue already fixed, and
+    exits 1, so `--resume last` would pay to finish nothing.
+  - The runner's Deferred "each folder on its own ports and databases":
+    its databases half, fired by wrong results rather than by a wait.
+  - `.env.example` gives `DATABASE_URL_E2E` the password `password`,
+    where the others give `change_me_locally`, so a fresh copy cannot
+    reach the e2e database.
+- **Not fired, and left:**
+  - The same Deferred item's ports half: no wait on the lock past 30
+    minutes.
+  - #226 and #314 (`when-touched`): a rule for the plan check, and a
+    test of the writes that take an id from their body; this changes no
+    query and no write.
+  - #253 (`when-touched`): the review workflow is not changed.
+  - #551 (`when-touched`): its items are in Items' files.
+  - #547: the list search's plans, its own pull request next.
+  - #142, #197, #233, #263, #277, #284, #320, #336, #446, #516, #521 and
+    #530: their files are not changed.
+  - The Deferred lines of the database and ops ADRs, ADR-051's watch
+    list and Open decisions hold nothing else on a second folder.
+- **Found while checking:**
+  - The runner's amendment left each folder's databases out because a
+    database beside the usual ones is forgotten, as the volume databases
+    were on 7 November. Here one command makes them and drops them, and
+    a run refuses a folder that shares them.
+  - #532 went in squashed, as one commit, where a feature branch keeps a
+    merge commit. No document cites one of its commits, and its message
+    keeps each commit's, so nothing is undone.
+
+### Decision — each working folder's own databases
+
+- **`node scripts/folder-databases.mjs <folder>`,** run from the main
+  working folder, gives a second one its own dev, test and e2e
+  databases, named from the main folder's with the folder's name:
+  `foundation_waf_fix`, `foundation_waf_fix_test` and
+  `foundation_waf_fix_e2e` for `../waf-fix`.
+- It writes the three addresses into that folder's `.env`, copied from
+  the main folder's when it has none, and changes no other line; makes
+  each database that is missing; migrates them with that folder's own
+  code; and seeds a new dev database as `npm run seed` does. Run again,
+  it changes nothing that is already right.
+- **`--drop <folder>`** removes them, before `git worktree remove`, so
+  none is left behind.
+- It refuses the main folder, whose databases keep their names, and a
+  folder that is not a working folder of this repository.
+- One Postgres, Docker's, still holds them all, and Docker Compose stays
+  the main folder's.
+
+### Decision — the lock in Postgres's own database
+
+- `scripts/one-at-a-time.mjs` takes its advisory lock in the `postgres`
+  database, on the server `DATABASE_URL_TEST` names, which every
+  Postgres has. Advisory locks meet only inside one database, so every
+  folder's runs still wait for each other, whatever their test databases
+  are called, with no new setting.
+- The browser suite's servers on 3100 and 5273, the Linux browsers'
+  container and the timed runs stay shared and under it. The server
+  suite's own lock (issue #1) stays on each test database, behind it.
+
+### Decision — a test database ahead of its folder is made again
+
+- Before `migrate:test` and `migrate:e2e` apply anything, a check
+  compares the migrations the database records with the folder's own,
+  by the hash Drizzle records for each. When the database holds one the
+  folder does not have, or one whose file has changed since, it is
+  dropped, made again and migrated from the start, and the run says so.
+  Every run empties both anyway, and Rails and Django make their test
+  databases again the same way.
+- It runs under the lock, so no run is using the database meanwhile;
+  inside `test:e2e` and the browser suite's `e2e:prepare` the lock is
+  already held.
+- The dev database holds the person's own rows, so it is never made
+  again: `npm run migrate` prints a line saying it is ahead, and goes
+  on.
+
+### Decision — a folder that shares another's databases is refused
+
+- **At the lock, the door every test run passes:** before taking it, a
+  run reads the other working folders' `.env` (`git worktree list`) and
+  refuses when one names the same test or e2e database as this folder,
+  naming that folder and the command that gives it its own. A branch
+  built by hand in a second folder is covered, not only the runner.
+- **The runner calls the same check before a fix starts,** so a folder
+  that shares costs no credit, and its message for a missing folder
+  adds the command after `npm ci`.
+
+### Decision — a stop that finds the issue already fixed is finished
+
+When `/fix-issue` ends `DONE: already fixed by <commit> in #<PR>` and
+the folder is detached with a clean tree, the runner prints the skill's
+`gh issue close` line, records the run as already fixed, and exits 0;
+`--resume last` refuses it, as it refuses a fix with a pull request.
+
+### Considered and not done
+
+- **The databases made by hand,** three `createdb` and three lines of
+  `.env`: what is made by hand is forgotten.
+- **A second file beside `.env` for each folder:** Docker Compose, the
+  server, Drizzle's config and Playwright, through dotenv-cli, each read
+  the one `.env`, and each would need the second.
+- **A setting for the lock's database,** or the main folder's test
+  database named in every other folder: one more line each `.env` could
+  get wrong.
+- **A database ahead refused, rather than made again:** a person would
+  then make again by hand a database every run empties.
+- **Drizzle's own rule, the newest time alone:** it misses a migration
+  whose file changed after it ran.
+- **The check in the runner alone:** a second folder used by hand would
+  not have it.
+
+### Deferred — each with what brings it in
+
+- **Each folder on its own ports and Linux browsers' container,** so
+  two browser runs go at once. Trigger: a wait on the lock past 30
+  minutes, twice in one week, as before.
+- **`scripts/clean-local.sh` listing databases whose folder is gone.**
+  Trigger: one found left behind.
+
+### Consequences
+
+- `scripts/folder-databases.mjs`, the check before the migrations and
+  `scripts/one-at-a-time.mjs`, each with its test; the server's
+  `migrate`, `migrate:test` and `migrate:e2e`; the runner's check before
+  a fix, its message for a missing folder and its already-fixed stop,
+  with its test.
+- engineering.md's "A second working folder", "Small fixes on the API
+  credit" and "Adding a migration", the README's "Which tool, when" and
+  "Repository layout", and `.env.example`, its e2e address corrected.
+- While this is built in the main folder, nothing in `../waf-fix` runs
+  tests but the proof by hand: from the lock's step until the merge, the
+  two folders' locks are in different databases.
+- After the merge, `../waf-fix` goes back to `main`, with `npm ci` in its
+  `server/` and `client/`, and the runner's next pick proves it.
+- No API change, no migration and nothing a person sees in the app.
+- Built on `fix-529-folder-databases`, in this order: this amendment;
+  dependencies; the lock in Postgres's own database; each folder's
+  databases; `../waf-fix` given its own, by hand; the refusal and the
+  runner's two changes; a database ahead made again; the working
+  agreements; the proof across both folders, by hand; dependencies
+  again; the reviews; the as-built.

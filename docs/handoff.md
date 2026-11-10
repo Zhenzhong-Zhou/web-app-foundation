@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 9 November 2026
+# web-app-foundation — handoff, 10 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,18 +13,30 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 9 November 2026:
+On 10 November 2026:
 
+- **[#529], each working folder's own databases,**
+  [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md): planned on
+  10 November, built on `fix-529-folder-databases`. Each second folder
+  gets its own dev, test and e2e databases from one command; the lock
+  moves to Postgres's own database; a test database ahead of its folder
+  is made again; a folder that shares is refused. While it is built,
+  nothing in `../waf-fix` runs tests.
 - **Items, ADR-092** ([#476]): planned on 8 and 9 November, its boards
   the canvas's rows "Items v1", "Items v2" and "Items v2: flows and
-  states"; built on 9 November on `adr-092-items`, 73 commits, pull
-  request [#532] open; the as-built is in [ADR-092's amendment](adr/0092-items.md).
-  Items holds everything the company keeps, by type and category, with
-  its stock read from Inventory and several items changed at once; the
-  item's page shows each variant's names and what documents will refuse
-  ([#526]'s second half). Its reviews found 105 and fixed 53; their 25
-  issues and 3 comments wait in `tmp/adr-092/issues/`, and the design
-  language's items in `tmp/adr-092/dl-items.md`.
+  states"; built on 9 November on `adr-092-items`, 73 commits, merged on
+  10 November as [#532] (3d2eb4a) and deployed, `/api/health` saying
+  `apiRevision: 4`; the as-built is in [ADR-092's amendment](adr/0092-items.md).
+  It went in squashed, as one commit, by mistake: a feature branch's
+  pull request is merged from the terminal with `--merge`. Items holds
+  everything the company keeps, by type and category, with its stock
+  read from Inventory and several items changed at once; the item's
+  page shows each variant's names and what documents will refuse
+  ([#526]'s second half, checked on the live site on 10 November: a
+  variation's English name added, the order's Print opened the PDF).
+  Its reviews found 105 and fixed 53; their issues are [#533] to
+  [#551], [#539] and [#547] `fix-now`, and the design language's items
+  wait in `tmp/flows-and-states/dl-items.md`.
 - **Customise Home,** decided in ADR-091: planned on 6 November and
   built on 6 and 7 November on `customise-home`, 78 commits, merged on 7
   November as [#515] (807fa43) and deployed the same day; the as-built
@@ -167,7 +179,8 @@ On 9 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 9 November, as a merge commit, [#523] (the
+- **The last merges:** on 10 November, [#532] (Items), squashed by
+  mistake. On 9 November, as a merge commit, [#523] (the
   runner in the repository). On 8 November, as merge commits, [#518] (the
   router), [#519] ([#514]) and [#520] ([#483]), the last two from the
   runner; a runner's pull request is squashed from now on, with the two
@@ -314,29 +327,30 @@ On 9 November 2026:
 
 ## Still to do, by hand
 
-- **After [#532]'s merge:** `npm run migrate:all`; the deploy's check
-  that `/api/health` says `apiRevision: 4`; `tmp/adr-092/from-adr-091/`
-  moved into `tmp/adr-093/` and `tmp/adr-092/dl-items.md` kept for the
-  flows and states pull request, before `scripts/prune-branches.sh --yes`
-  and `scripts/clean-local.sh`, then `--yes`; `foundation_perf_large`
-  seeded again with Items' seed and timed, its category filter
-  included; the issues in `tmp/adr-092/issues/` posted if not yet;
-  `/auto-mode-setup` on `main`, kept in the maintainer's own settings,
-  since auto mode blocked a few of the build's actions; and Project
-  knowledge re-synced. `git stash list`: `stash@{0}`, from `fix-ups-ci`,
-  was touched by a failed command in step 23 and left as it was; drop it
-  if it is no longer needed.
+- **After [#532]'s merge,** still to do: `foundation_perf_large` timed
+  with Items' seed, its category filter included (seeded again on 10
+  November; its figures go to [#547]); `/triage` over every open issue,
+  for this merge and [#523]'s; and `git stash list`: `stash@{0}`, from
+  `fix-ups-ci`, was touched by a failed command in step 23 and left as
+  it was; drop it if it is no longer needed. Done on 10 November:
+  `npm run migrate:all`, `apiRevision: 4` on `/api/health`,
+  `tmp/adr-092/from-adr-091/` moved into `tmp/adr-093/` and
+  `dl-items.md` into `tmp/flows-and-states/`, the prune and the
+  clean-up, the issues posted ([#533] to [#551]), `/auto-mode-setup`
+  kept in the maintainer's own settings, Project knowledge re-synced,
+  and the variation's PDF on the live site.
 - **After [#523]'s merge:** `scripts/prune-branches.sh --yes`;
   `scripts/clean-local.sh`, then `--yes`; `tmp/sdk-fix/logs/` moved into
   `tmp/fix-runs/logs/`, and `tmp/sdk-fix/` removed; the planning skill
   packed from `main` and uploaded; `/triage` on docs and ops, [#521] and
-  [#522] among them; after the deploy, one invoice's PDF opened, since
-  pdfmake 0.3.14 changed a line of the renderer; at the first paid fix,
-  the hook that refuses a merge or force-push seen at work, and at the
-  first resume its cost checked against the Console; and a 30-minute
-  look at [#521] in Claude Code: if the crash is the container's memory,
-  Playwright 1.65.0 comes with a one-line fix, and otherwise it waits for
-  the next release.
+  [#522] among them, now the run over every open issue after [#532];
+  after the deploy, one invoice's PDF opened, since pdfmake 0.3.14
+  changed a line of the renderer; at the first paid fix, the hook that
+  refuses a merge or force-push seen at work, and at the first resume
+  its cost checked against the Console; and, after [#529]'s merge, a
+  30-minute look at [#521] in Claude Code in `../waf-fix`: if the crash
+  is the container's memory, Playwright 1.65.0 comes with a one-line
+  fix, and otherwise it waits for the next release.
 - **After [#518]'s merge,** done on 8 November: Claude Code restarted;
   the planning skill packed from `main` and uploaded; and `/triage` over
   all 155 open issues, with no closes and comments on [#446] and [#467].
@@ -442,10 +456,14 @@ request or a set of them:
       merged on 8 November; then the runner for small fixes on the API
       credit, in the repository, ADR-089's amendment, [#523];
       then Items ([#476]),
-      ADR-092: [#532]; then [#529], the test databases both working
-      folders share, a small pull request planned in a chat; then the
-      list search's plans, since ADR-051's watch on a large catalogue's
-      search fired at 128 ms (ADR-092's review, finding 67);
+      ADR-092: [#532], merged on 10 November; then [#529], each working
+      folder's own databases, ADR-089 amended, a small pull request; then
+      [#526]'s first half, a small branch on the Mac: a refused document
+      opened from a link answers with a readable page in the person's
+      language, the links staying plain, as ADR-071 chose (decided on 10
+      November); with it, the 30-minute look at [#521]; then the
+      list search's plans ([#547]), since ADR-051's watch on a large
+      catalogue's search fired at 128 ms (ADR-092's review, finding 67);
       then a docs pull request for flows and states, ADR-092's decision:
       the pieces every screen shares, their states drawn once in the
       design language and one canvas row, and the planning skill asking
@@ -468,7 +486,11 @@ request or a set of them:
       language, its findings from ADR-091's panel, [#159] among them;
    6. expired lots: [#333] with [#331] and [#442], a new lot's expiry
       and its batch code; lot labels ([#441], `later`) after it. First
-      instead, if real stock goes into the app sooner;
+      instead, if real stock goes into the app sooner. Then, decided on
+      10 November, demo data from an earlier inventory project through
+      the app's own CSV import ([#552]), its own ADR: items, partners,
+      locations, then opening stock by lot, the data anonymized and kept
+      out of the repository;
    7. the audit log: [#133] with [#168] ([#339] was fixed on 2
       November);
    8. then TypeScript 7 ([#336]).
@@ -730,3 +752,8 @@ Not repeated here; each list has one home:
 [#529]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/529
 [#531]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/531
 [#532]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/532
+[#533]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/533
+[#539]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/539
+[#547]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/547
+[#551]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/551
+[#552]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/552

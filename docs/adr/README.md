@@ -265,7 +265,7 @@ same names. An area no ADR names has no line.
 - `users`: [ADR-012], [ADR-069]
 - `mail`: [ADR-005], [ADR-017], [ADR-037], [ADR-054], [ADR-069], [ADR-070], [ADR-077], [ADR-078], [ADR-082], [ADR-083]
 - `api`: [ADR-001], [ADR-013], [ADR-014], [ADR-052], [ADR-057], [ADR-068], [ADR-081], [ADR-084]
-- `database`: [ADR-002], [ADR-003], [ADR-009], [ADR-010], [ADR-012], [ADR-025], [ADR-028], [ADR-051], [ADR-052], [ADR-056], [ADR-081]
+- `database`: [ADR-002], [ADR-003], [ADR-009], [ADR-010], [ADR-012], [ADR-025], [ADR-028], [ADR-051], [ADR-052], [ADR-056], [ADR-081], [ADR-089]
 - `docs`: [ADR-086], [ADR-087], [ADR-088], [ADR-089], [ADR-090]
 - `help`: [ADR-079]
 - `i18n`: [ADR-054], [ADR-056], [ADR-072], [ADR-076], [ADR-090], [ADR-092]
