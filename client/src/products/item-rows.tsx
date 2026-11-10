@@ -357,10 +357,13 @@ export function ItemTable({
               </TableCell>
               <TableCell align="right">
                 <Stack spacing={0.5} sx={{ alignItems: 'flex-end' }}>
+                  {/* Underlined, so it reads as a link by more than its
+                      colour (WCAG 1.4.1). */}
                   <Link
                     component={RouterLink}
                     to={stockPath(item)}
                     state={OFFER_BACK}
+                    underline="always"
                     aria-label={intl.formatMessage(
                       {
                         id: 'products.row.stockOf',

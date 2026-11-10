@@ -1,3 +1,4 @@
+import { ThemeProvider } from '@mui/material/styles';
 import { render, screen } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { MemoryRouter } from 'react-router-dom';
@@ -5,7 +6,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { ProductSummary } from '../api/types.gen';
 import zh from '../locales/zh-Hans.json';
-import { ItemCards } from './item-rows';
+import { themeFor } from '../theme';
+import { ItemCards, ItemTable } from './item-rows';
 
 function item(sku: string, variantCount: number): ProductSummary {
   return {
@@ -68,5 +70,34 @@ describe('a card on a phone', () => {
     expect(
       screen.getAllByRole('link').map((link) => link.getAttribute('href')),
     ).toEqual(['/items/FOCUS-60CT', '/inventory?productId=FOCUS-60CT']);
+  });
+});
+
+describe('a row in the table', () => {
+  // A link by its colour alone (ADR-092's review, 23; WCAG 1.4.1).
+  it('underlines its stock, a link to Inventory for the item', () => {
+    // The app's theme, whose links underline on hover unless told.
+    render(
+      <ThemeProvider theme={themeFor('en')}>
+        <MemoryRouter>
+          <ItemTable
+            items={[item('FOCUS-60CT', 1)]}
+            loading={false}
+            sort={{ key: 'name', order: 'asc' }}
+            header={() => ({
+              active: false,
+              order: 'asc',
+              onSort: () => undefined,
+            })}
+            onDate={() => undefined}
+            firstNew={null}
+          />
+        </MemoryRouter>
+      </ThemeProvider>,
+    );
+
+    expect(
+      screen.getByRole('link', { name: '0 each, stock of FOCUS-60CT' }),
+    ).toHaveClass('MuiLink-underlineAlways');
   });
 });

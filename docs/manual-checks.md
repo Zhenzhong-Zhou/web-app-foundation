@@ -173,7 +173,8 @@ a second organization.
   the name in bold with its code in grey under it, "3 variants · …"
   where there are several, and the code alone where there is one, in
   Chinese too; the category's path (Vitamins and minerals ›
-  …), or Uncategorised for BOTTLE-60; the stock on hand, right-aligned,
+  …), or Uncategorised for BOTTLE-60; the stock on hand, right-aligned
+  and underlined as a link,
   VITC-100 reading Out and another product Low stock in Home's words and
   colours; and Last changed. On All, a screen reader says each row's
   type after its name. Clicking anywhere on a row opens the item;
@@ -5574,3 +5575,5 @@ first.
   Items' category filter, as each category: MC-210 extended.
 - 2026-11-09: ADR-092's reviews, 17: on All a screen reader says each
   row's type after its name: MC-208 extended.
+- 2026-11-09: ADR-092's reviews, 23: a row's stock is underlined as a
+  link: MC-208 extended.
