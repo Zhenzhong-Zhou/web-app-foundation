@@ -17,9 +17,10 @@ import {
   type ErrorDetails,
 } from '../error-codes';
 import { reportFault } from '../faults/tracker';
+import type { Locale } from '../locales';
 import { ApiRevisionMiddleware } from '../middleware/api-revision.middleware';
 
-interface ErrorBody {
+export interface ErrorBody {
   statusCode: number;
   error: string;
   message: string | string[];
@@ -34,6 +35,9 @@ interface ErrorBody {
   timestamp: string;
   requestId?: string;
 }
+
+/** A request as pino-http leaves it, with the id it gave. */
+type IdentifiedRequest = Request & { id?: string };
 
 /**
  * A body Express's parser refused (http-errors): too large, not JSON, cut
@@ -56,6 +60,72 @@ export function isBodyRefusal(
 }
 
 /**
+ * The body every refusal and failure answers with, its message in
+ * `locale`: what AllExceptionsFilter sends, and what the PDF routes' page
+ * reads its status, message, code, details and reference from (ADR-071,
+ * amended), so the two never disagree.
+ */
+export function errorBodyOf(
+  exception: unknown,
+  req: IdentifiedRequest,
+  locale: Locale,
+): ErrorBody {
+  const isHttp = exception instanceof HttpException;
+  const status: HttpStatus = isHttp
+    ? exception.getStatus()
+    : isBodyRefusal(exception)
+      ? exception.status
+      : HttpStatus.INTERNAL_SERVER_ERROR;
+  const code = isHttp ? codeOf(exception.getResponse()) : undefined;
+  const details = isHttp ? detailsOf(exception.getResponse()) : undefined;
+
+  return {
+    statusCode: status,
+    error: HttpStatus[status] ?? 'INTERNAL_SERVER_ERROR',
+    message: messageFor(exception, isHttp, locale),
+    ...(code ? { code } : {}),
+    ...(details ? { details } : {}),
+    // As Express's adapter reads it (getRequestUrl).
+    path: req.originalUrl,
+    timestamp: new Date().toISOString(),
+    requestId: req.id,
+  };
+}
+
+const logger = new Logger('AllExceptionsFilter');
+
+/**
+ * 5xx means a bug — log the full error with its stack, and report it
+ * (ADR-084). 4xx is the client being told no, which is normal traffic
+ * and not worth an error log. So is a client newer than the API told to
+ * wait, whose 503 is logged where it was refused (ADR-081). The path
+ * without its query, which can hold a search term: that lands in the
+ * request's own log line only (#193). The report names the route's
+ * pattern, which a fault in a middleware, before routing, has none of.
+ */
+export function noteFault(
+  exception: unknown,
+  req: IdentifiedRequest,
+  body: ErrorBody,
+): void {
+  const status: HttpStatus = body.statusCode;
+  if (
+    status < HttpStatus.INTERNAL_SERVER_ERROR ||
+    ApiRevisionMiddleware.refused(req)
+  ) {
+    return;
+  }
+  logger.error(
+    `${req.method} ${body.path.split('?')[0]} -> ${status}`,
+    exception instanceof Error ? exception.stack : String(exception),
+  );
+  reportFault(exception, {
+    reference: req.id,
+    route: (req.route as { path?: string } | undefined)?.path,
+  });
+}
+
+/**
  * One error shape for the whole API. Clients parse a single contract instead of
  * guessing whether a failure came from a controller, a pipe, or an unhandled
  * throw somewhere in a service.
@@ -67,115 +137,77 @@ export function isBodyRefusal(
  */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  private readonly logger = new Logger(AllExceptionsFilter.name);
-
   constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();
-    const req = ctx.getRequest<Request & { id?: string }>();
+    const req = ctx.getRequest<IdentifiedRequest>();
 
-    const isHttp = exception instanceof HttpException;
-    const status: HttpStatus = isHttp
-      ? exception.getStatus()
-      : isBodyRefusal(exception)
-        ? exception.status
-        : HttpStatus.INTERNAL_SERVER_ERROR;
-    const code = isHttp ? codeOf(exception.getResponse()) : undefined;
-    const details = isHttp ? detailsOf(exception.getResponse()) : undefined;
+    const body = errorBodyOf(
+      exception,
+      req,
+      localeOf(req.headers['accept-language']),
+    );
+    noteFault(exception, req, body);
 
-    const body: ErrorBody = {
-      statusCode: status,
-      error: HttpStatus[status] ?? 'INTERNAL_SERVER_ERROR',
-      message: this.messageFor(exception, isHttp, req),
-      ...(code ? { code } : {}),
-      ...(details ? { details } : {}),
-      path: httpAdapter.getRequestUrl(req) as string,
-      timestamp: new Date().toISOString(),
-      requestId: req.id,
-    };
+    httpAdapter.reply(ctx.getResponse(), body, body.statusCode);
+  }
+}
 
-    // 5xx means a bug — log the full error with its stack, and report it
-    // (ADR-084). 4xx is the client being told no, which is normal traffic
-    // and not worth an error log. So is a client newer than the API told to
-    // wait, whose 503 is logged where it was refused (ADR-081). The path
-    // without its query, which can hold a search term: that lands in the
-    // request's own log line only (#193). The report names the route's
-    // pattern, which a fault in a middleware, before routing, has none of.
-    if (
-      status >= HttpStatus.INTERNAL_SERVER_ERROR &&
-      !ApiRevisionMiddleware.refused(req)
-    ) {
-      this.logger.error(
-        `${req.method} ${body.path.split('?')[0]} -> ${status}`,
-        exception instanceof Error ? exception.stack : String(exception),
-      );
-      reportFault(exception, {
-        reference: req.id,
-        route: (req.route as { path?: string } | undefined)?.path,
-      });
-    }
-
-    httpAdapter.reply(ctx.getResponse(), body, status);
+/**
+ * The message in the request's language (ADR-054). A service threw an id
+ * with its English and values; it is rendered here in whatever the
+ * request's Accept-Language asks for. No header, or one asking for
+ * English, gets the English it was thrown with, word for word.
+ */
+function messageFor(
+  exception: unknown,
+  isHttp: boolean,
+  locale: Locale,
+): string | string[] {
+  // A refused body: never the parser's own words, which can quote it.
+  if (isBodyRefusal(exception)) {
+    return translate(
+      exception.status === HttpStatus.PAYLOAD_TOO_LARGE
+        ? t({
+            id: 'common.bodyTooLarge',
+            defaultMessage:
+              'That is too much to send at once. Shorten it, then try again.',
+          })
+        : t({
+            id: 'common.bodyUnreadable',
+            defaultMessage:
+              'The app could not read what was sent. Reload the page, then try again.',
+          }),
+      locale,
+    );
   }
 
-  /**
-   * The message in the request's language (ADR-054). A service threw an id
-   * with its English and values; it is rendered here in whatever the
-   * request's Accept-Language asks for. No header, or one asking for
-   * English, gets the English it was thrown with, word for word.
-   */
-  private messageFor(
-    exception: unknown,
-    isHttp: boolean,
-    req: Request,
-  ): string | string[] {
-    const locale = localeOf(req.headers['accept-language']);
-
-    // A refused body: never the parser's own words, which can quote it.
-    if (isBodyRefusal(exception)) {
-      return translate(
-        exception.status === HttpStatus.PAYLOAD_TOO_LARGE
-          ? t({
-              id: 'common.bodyTooLarge',
-              defaultMessage:
-                'That is too much to send at once. Shorten it, then try again.',
-            })
-          : t({
-              id: 'common.bodyUnreadable',
-              defaultMessage:
-                'The app could not read what was sent. Reload the page, then try again.',
-            }),
-        locale,
-      );
-    }
-
-    // Never surface an unexpected error's text: it leaks table names,
-    // file paths, and driver internals to whoever triggered it.
-    if (!isHttp) {
-      return translate(
-        t({
-          id: 'common.internalError',
-          defaultMessage: 'Internal server error',
-        }),
-        locale,
-      );
-    }
-
-    const res = (exception as HttpException).getResponse();
-
-    if (typeof res === 'string') return res;
-    if (isTranslatable(res)) return translate(res, locale);
-
-    // Validation: one message per failed rule, each with its id.
-    const { messages } = res as { messages?: unknown[] };
-    if (Array.isArray(messages) && messages.every(isTranslatable)) {
-      return messages.map((message) => translate(message, locale));
-    }
-
-    // ValidationPipe returns { message: string[], error, statusCode }
-    const { message } = res as { message?: string | string[] };
-    return message ?? (exception as HttpException).message;
+  // Never surface an unexpected error's text: it leaks table names,
+  // file paths, and driver internals to whoever triggered it.
+  if (!isHttp) {
+    return translate(
+      t({
+        id: 'common.internalError',
+        defaultMessage: 'Internal server error',
+      }),
+      locale,
+    );
   }
+
+  const res = (exception as HttpException).getResponse();
+
+  if (typeof res === 'string') return res;
+  if (isTranslatable(res)) return translate(res, locale);
+
+  // Validation: one message per failed rule, each with its id.
+  const { messages } = res as { messages?: unknown[] };
+  if (Array.isArray(messages) && messages.every(isTranslatable)) {
+    return messages.map((message) => translate(message, locale));
+  }
+
+  // ValidationPipe returns { message: string[], error, statusCode }
+  const { message } = res as { message?: string | string[] };
+  return message ?? (exception as HttpException).message;
 }
