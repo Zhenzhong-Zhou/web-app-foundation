@@ -4,12 +4,7 @@ import { and, eq, isNull, type SQL, sql } from 'drizzle-orm';
 import type { Locale } from '../../common/locales';
 import type { SearchTerms } from '../../common/search';
 import type { SortOrder } from '../../common/sorted-page';
-import type { Transaction } from '../../database/database.module';
-import {
-  PRODUCT_TYPES,
-  products,
-  productVariants,
-} from '../../database/schema';
+import { PRODUCT_TYPES, products } from '../../database/schema';
 import { t } from '../../i18n/translate';
 import { productNameOrder } from '../stock/item-name';
 import { itemStock } from '../stock/item-stock';
@@ -20,7 +15,7 @@ import {
   UNCATEGORISED,
 } from './dto/list-products.dto';
 import type { ProductCounts } from './dto/product-response.dto';
-import { foundBy, itemRank, variantsOf } from './item-search';
+import { foundBy } from './item-search';
 
 /**
  * Items' order and its cursor (ADR-092): the list is sorted by a key of
@@ -134,7 +129,7 @@ export function readCursor(
 
 /**
  * Items' order (ADR-092): its parts, the order's name for its cursor, and
- * what the query joins to sort by.
+ * what the query joins to sort by, each a left join.
  *
  * - **Name,** the default: the name the reader sees, a Chinese one by its
  *   pinyin, the others accent-free (ADR-056), a number in it by its value
@@ -147,7 +142,8 @@ export function readCursor(
  * - **Added and changed,** by when, then the id.
  *
  * While a search is typed, its rank comes first, the closest first
- * whichever way the sort runs (ADR-056, amended).
+ * whichever way the sort runs (ADR-056, amended), read from withMatching's
+ * result, which the statement starts with.
  */
 export function itemOrder(
   query: ItemFiltersDto,
@@ -172,18 +168,15 @@ export function itemOrder(
     { ...id, order: way },
   ];
 
+  // The rank withMatching worked out, joined rather than read again
+  // (#547); a left join, as every join here, so a first page that finds
+  // nothing still brings its counts.
   const rank: KeyPart[] = terms
-    ? [
-        {
-          value: sql`(
-            select min(${itemRank(terms, locale, organizationId)})
-            from ${productVariants} where ${variantsOf(organizationId)}
-          )`,
-          type: 'int',
-          order: 'asc',
-        },
-      ]
+    ? [{ value: sql`matching.rank`, type: 'int', order: 'asc' }]
     : [];
+  const ranked = terms
+    ? sql`left join matching on matching.product_id = ${products.id}`
+    : sql``;
 
   const byKey: Record<ItemSort, () => { parts: KeyPart[]; joins: SQL }> = {
     name: () => ({
@@ -225,14 +218,15 @@ export function itemOrder(
   return {
     parts: [...rank, ...parts],
     order: [sort, way, locale, terms ? 'ranked' : 'unranked'].join(' '),
-    joins,
+    joins: sql`${ranked} ${joins}`,
   };
 }
 
 /**
- * What the list and its counts narrow to alike: its search, and its
- * category with every category under it, or Uncategorised. The type and
- * Discontinued are shownOf's, which the counts count by instead.
+ * What the list and its counts narrow to alike: its search, as
+ * withMatching found it, and its category with every category under it,
+ * or Uncategorised. The type and Discontinued are shownOf's, which the
+ * counts count by instead.
  */
 export function matchedBy(
   query: ItemFiltersDto,
@@ -249,7 +243,7 @@ export function matchedBy(
           )`
         : undefined;
 
-  return and(terms ? foundBy(terms, organizationId) : undefined, category);
+  return and(terms ? foundBy : undefined, category);
 }
 
 /** Discontinued items as asked: hidden, alone, or beside the rest. */
@@ -266,37 +260,51 @@ export function shownOf(query: ItemFiltersDto): SQL | undefined {
   );
 }
 
+/** A type's counts, as countedOf counts them. */
+export interface TypeCount {
+  type: string;
+  count: number;
+  discontinued: number;
+}
+
 /**
  * The counts beside the list (ADR-092), each with its search and its
- * category: every type's tab, as Discontinued leaves it; All's; and the
- * Discontinued chip's, on the open tab. A type is listed while the
- * organization holds any item of it, so a tab keeps its place while a
- * search finds none there.
+ * category: every type's tab, as Discontinued leaves it, and its
+ * discontinued items, as one value for the first page's statement, which
+ * reads withMatching's result once for the page and its counts (#547).
+ * A type is counted while the organization holds any item of it, so a
+ * tab keeps its place while a search finds none there.
  */
-export async function countsOf(
-  tx: Transaction,
+export function countedOf(
   organizationId: string,
   query: ItemFiltersDto,
   matched: SQL | undefined,
-): Promise<ProductCounts> {
+): SQL {
   const found = matched ?? sql`true`;
-  const { rows } = await tx.execute<{
-    type: string;
-    count: number;
-    discontinued: number;
-  }>(sql`
-    select ${products.type} as type,
-      (count(*) filter (
-        where ${found} and ${discontinuedAs(query) ?? sql`true`}
-      ))::int as count,
-      (count(*) filter (
-        where ${found} and not ${products.isActive}
-      ))::int as discontinued
-    from ${products}
-    where ${products.organizationId} = ${organizationId}::uuid
-    group by ${products.type}
-  `);
+  return sql`
+    select coalesce(json_agg(c), '[]'::json) as counts from (
+      select ${products.type} as type,
+        (count(*) filter (
+          where ${found} and ${discontinuedAs(query) ?? sql`true`}
+        ))::int as count,
+        (count(*) filter (
+          where ${found} and not ${products.isActive}
+        ))::int as discontinued
+      from ${products}
+      where ${products.organizationId} = ${organizationId}::uuid
+      group by ${products.type}
+    ) c
+  `;
+}
 
+/**
+ * The counts from countedOf's: every type's tab, All's, and the
+ * Discontinued chip's, on the open tab.
+ */
+export function countsOf(
+  rows: TypeCount[],
+  query: ItemFiltersDto,
+): ProductCounts {
   const types = PRODUCT_TYPES.flatMap((type) => {
     const row = rows.find((each) => each.type === type);
     return row ? [{ type, count: row.count }] : [];

@@ -3,6 +3,7 @@ import type { INestApplication } from '@nestjs/common';
 import { body, createE2eApp, registerOrganization } from './utils/fixtures';
 import { point, receive, site } from './utils/reorder-world';
 import { resetDatabase } from './utils/reset-db';
+import { captureStatements } from './utils/statements';
 
 type Org = Awaited<ReturnType<typeof registerOrganization>>;
 type Agent = Org['agent'];
@@ -499,6 +500,40 @@ describe('Items’ list (e2e)', () => {
     expect(
       await every(alpha, { search: 'focus', order: 'desc', limit: '1' }),
     ).toEqual(['Focus', 'Focus Night', 'Deep Focus']);
+  });
+
+  // #547: a search's first page read the variants for the match, again
+  // for the rank, and twice more for the counts.
+  it('matches and ranks a searched page’s variants once, its counts read from the same statement', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await item(alpha.agent, 'Deep Focus');
+    await item(alpha.agent, 'Focus');
+    await item(alpha.agent, 'Focus powder', { type: 'material' });
+    await item(alpha.agent, 'Calm');
+
+    const { result: page, statements } = await captureStatements(() =>
+      list(alpha, { type: 'good', search: 'focus' }),
+    );
+
+    expect(names(page)).toEqual(['Focus', 'Deep Focus']);
+    expect(page.counts).toEqual({
+      types: [
+        { type: 'good', count: 2 },
+        { type: 'material', count: 1 },
+      ],
+      all: 3,
+      discontinued: 0,
+    });
+    // The match's own test, a variant's name, and the rank's, a code
+    // exactly: each once, in one statement, which the counts ride in.
+    const times = (text: string, part: string) => text.split(part).length - 1;
+    const match = 'search_text("product_variants"."name")';
+    const rank = 'lower("product_variants"."sku") =';
+    const reads = statements.filter(({ text }) => text.includes(match));
+    expect(reads).toHaveLength(1);
+    expect(times(reads[0].text, match)).toBe(1);
+    expect(times(reads[0].text, rank)).toBe(1);
+    expect(reads[0].text).toContain('count(*) filter');
   });
 
   it('refuses a cursor made for another order, or not made here', async () => {

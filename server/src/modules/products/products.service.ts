@@ -64,6 +64,7 @@ import type { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
 import {
   afterKeys,
+  countedOf,
   countsOf,
   cursorOf,
   itemOrder,
@@ -71,8 +72,9 @@ import {
   orderOf,
   readCursor,
   shownOf,
+  type TypeCount,
 } from './item-list';
-import { itemMatches, itemRank } from './item-search';
+import { itemMatches, itemRank, withMatching } from './item-search';
 import type { ProductExportRow } from './product-exports';
 import { coverOf, imagesOf, publicImages } from './product-images';
 
@@ -97,10 +99,15 @@ const CATEGORY_KEY = 'products_category_id_product_categories_id_fk';
 /** Items' list a page at a time unless asked for fewer (ADR-092). */
 const ITEMS_PAGE_SIZE = 50;
 
-/** A place on Items' list: the row, and its order's parts as text. */
+/**
+ * A place on Items' list: the row, and its order's parts as text; on a
+ * first page, its counts beside it, and a row with no place when the page
+ * is empty.
+ */
 type PlaceRow = {
-  id: string;
+  id: string | null;
   keys: string[];
+  counts?: TypeCount[];
 };
 
 /** An item's variants and stock on hand, as itemStock gives them. */
@@ -208,27 +215,45 @@ export class ProductsService {
       const after = query.cursor
         ? afterKeys(parts, readCursor(query.cursor, order, parts))
         : undefined;
+      const shown = and(
+        eq(products.organizationId, organizationId),
+        matched,
+        shownOf(query),
+        after,
+      );
+      const place = sql`${products.id} as id,
+        array[${sql.join(
+          parts.map((part) => sql`(${part.value})::text`),
+          sql`, `,
+        )}] as keys`;
+      const ordered = sql`order by ${sql.join(orderOf(parts), sql`, `)}
+        limit ${limit + 1}`;
 
       // The page's places, by the order's parts; each row's parts as text
-      // for the cursor, worked out after the LIMIT for the page alone.
-      const { rows: places } = await tx.execute<PlaceRow>(sql`
-        select ${products.id} as id,
-          array[${sql.join(
-            parts.map((part) => sql`(${part.value})::text`),
-            sql`, `,
-          )}] as keys
-        from ${products}
-        ${joins}
-        where ${and(
-          eq(products.organizationId, organizationId),
-          matched,
-          shownOf(query),
-          after,
-        )}
-        order by ${sql.join(orderOf(parts), sql`, `)}
-        limit ${limit + 1}
-      `);
+      // for the cursor, worked out after the LIMIT for the page alone. A
+      // first page's counts come in the same statement, so a search's
+      // matching items are worked out once for both (#547): the counts are
+      // one row and the places are joined to it, so a page that finds
+      // nothing still brings them.
+      const { rows } = await tx.execute<PlaceRow>(
+        query.cursor
+          ? sql`${withMatching(terms, locale, organizationId)}
+              select ${place}
+              from ${products}
+              ${joins}
+              where ${shown}
+              ${ordered}`
+          : sql`${withMatching(terms, locale, organizationId)}
+              select ${place}, counted.counts
+              from (${countedOf(organizationId, query, matched)}) counted
+              left join ${products} on ${shown}
+              ${joins}
+              ${ordered}`,
+      );
 
+      const places = rows.filter(
+        (row): row is PlaceRow & { id: string } => row.id !== null,
+      );
       const page = places.slice(0, limit);
       const last = page.at(-1);
       return {
@@ -240,9 +265,7 @@ export class ProductsService {
         ),
         nextCursor:
           places.length > limit && last ? cursorOf(order, last.keys) : null,
-        counts: query.cursor
-          ? null
-          : await countsOf(tx, organizationId, query, matched),
+        counts: query.cursor ? null : countsOf(rows[0].counts!, query),
       };
     });
   }
@@ -355,6 +378,8 @@ export class ProductsService {
       const org = sql`${organizationId}::uuid`;
       const { parts, joins } = itemOrder(query, locale, organizationId, terms);
 
+      // A search's matching items worked out once, for the match and the
+      // order alike (#547).
       const { rows } = await tx.execute<{
         id: string;
         sku: string;
@@ -368,6 +393,7 @@ export class ProductsService {
         product_names: Record<string, string> | null;
         variant_names: Record<string, string> | null;
       }>(sql`
+        ${withMatching(terms, locale, organizationId)}
         select pv.id, pv.sku, ${products.name} as product_name,
           pv.name as variant_name, ${products.type} as type,
           shelf.names as category, pv.unit_of_measure, pv.tracks_lots,

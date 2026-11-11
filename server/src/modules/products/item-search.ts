@@ -88,21 +88,39 @@ export function itemRank(
   );
 }
 
-/** The outer product's variants, in the organization. */
-export function variantsOf(organizationId: string): SQL {
-  return and(
-    eq(productVariants.organizationId, organizationId),
-    eq(productVariants.productId, products.id),
-  )!;
+/**
+ * The items a search finds, worked out once for the statement that reads
+ * them (#547): each of the organization's items with a variant that
+ * matches (itemMatches), and its closest variant's rank (itemRank).
+ * Postgres works a `materialized` result out once and keeps it for its
+ * statement, so the match (foundBy), the rank (itemOrder) and the counts
+ * read it rather than the variants again. A statement that reads
+ * `matching` starts with this; with no search there is nothing to read.
+ */
+export function withMatching(
+  terms: SearchTerms | null,
+  locale: Locale,
+  organizationId: string,
+): SQL {
+  if (!terms) return sql``;
+  return sql`with matching as materialized (
+    select ${productVariants.productId} as product_id,
+      min(${itemRank(terms, locale, organizationId)}) as rank
+    from ${productVariants}
+    join ${products} on ${and(
+      eq(products.id, productVariants.productId),
+      eq(products.organizationId, organizationId),
+    )}
+    where ${and(
+      eq(productVariants.organizationId, organizationId),
+      itemMatches(terms, organizationId),
+    )}
+    group by ${productVariants.productId}
+  )`;
 }
 
 /**
- * The products a search finds, through any of their variants, as an item
- * is found everywhere: Items' list, its counts and its export.
+ * The products a search finds, as withMatching holds them: Items' list,
+ * its counts and its export, as an item is found everywhere.
  */
-export function foundBy(terms: SearchTerms, organizationId: string): SQL {
-  return sql`exists (
-    select 1 from ${productVariants}
-    where ${variantsOf(organizationId)} and ${itemMatches(terms, organizationId)}
-  )`;
-}
+export const foundBy = sql`${products.id} in (select product_id from matching)`;
