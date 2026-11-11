@@ -1350,11 +1350,12 @@ this as-built, pull request #554.
   code-rules files repeating `CLAUDE.md`, until `/rules-file` rewrites
   them. 12 is the line above on `migrate:all`.
 - **Linux WebKit:** the full verify's accessibility spec failed 1 of 116
-  in both of the branch's runs, each time a different screen not
+  in the branch's first two runs, each time a different screen not
   visible within 5 seconds (an order with a voided shipment, dark;
-  Movements, light), and passed 116 of 116 in one run on `main`. The
-  branch changes no file in `client/`. Followed with Firefox's crash in
-  #521, the container's memory measured first.
+  Movements, light). It passed 116 of 116 in a third run on the branch,
+  that order included, and in one run on `main`: a timing flake, not
+  this branch, which changes no file in `client/`. Followed with
+  Firefox's crash in #521, the container's memory measured first.
 - **CI on #554:** the three Playwright shards passed, the path finding 11
   repaired. Claude Code Review found no issues in a run of 40 seconds,
   #253's pattern.
