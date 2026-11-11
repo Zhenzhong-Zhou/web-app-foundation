@@ -17,13 +17,20 @@ On 10 November 2026:
 
 - **[#526]'s first half, a refused document's page,**
   [ADR-071's amendment](adr/0071-documents-as-pdf-drawn-on-the-server.md):
-  planned on 10 November, built on `fix-526-refused-document-page`, a
-  small branch on the Mac. A PDF link a route refuses answers with a
+  planned and built on 10 November on `fix-526-refused-document-page`,
+  16 commits, pull request [#556]; the as-built is in the amendment,
+  each requirement marked. A PDF link a route refuses answers with a
   short page in the app's language, its status kept, the document's own
   page as the way back and, for a missing name, the item's page as the
-  way out. With it, [#551]'s item 91 and the fix the 30-minute look at
-  [#521] asks for. Its requirements, confirmed before drafting, are in
-  the amendment, each with its step in the brief.
+  way out; MC-2513 was walked by hand and every browser's run passed.
+  With it, [#551]'s item 91, every join of two reads naming the
+  organization; and, from the 30-minute look at [#521], which found
+  neither memory nor CPU behind Linux WebKit's rare miss, a failed Linux
+  run that keeps what Playwright left, which caught its first Linux
+  WebKit miss the same evening, a screen still on the boot screen. MC-2513
+  found that signing in, from any page of the app, landed on Home, older
+  than this branch; sign-in now returns to the page asked for, with a
+  browser test. The reviews' tidy-ups are [#555].
 - **[#529], each working folder's own databases,**
   [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md): planned and
   built on 10 November on `fix-529-folder-databases`, 14 commits, merged
@@ -271,6 +278,10 @@ On 10 November 2026:
   corrections go into the translations' fix-up. The first round's export
   was at `b933b912` (22 October 2026). For the same reviewer: 头像 for the profile
   picture everywhere, since Your account says 照片 while Home says 头像.
+  And the refused document's page (ADR-071's amendment): its French and
+  Chinese words are drafts; its signed-out title, 您已退出登录, wants
+  您尚未登录, which fits someone who never signed in; and the missing-name
+  message's 没有English名称 wants a space beside the Latin name.
   With them, ADR-083's two questions: whether Panivo in a Chinese email
   reads out of place beside 品桥 in the app (ADR-082's trigger for the
   name by language in emails), and the invitation email's
@@ -287,11 +298,12 @@ On 10 November 2026:
   7-day rule, Sentry 11.11.0 first as a security fix; rimraf 6.1.4
   closes alert 9 in `server/`. From Items' branch on, the rule is as
   before: each branch takes, package by package, the newest version in
-  range that is 7 days old that day. Twenty releases since then come of
-  age on 16 November (`@vitejs/plugin-react` 6.3.0, vite 8.3.7, the Nest
-  packages at 12.4.2, `typescript-eslint` 8.72.2) and 17 November
-  (`@aws-sdk/client-s3` 3.1166.0, Sentry 11.12.0, nodemailer 10.5.0,
-  `user-event` 14.6.9), for the next branch's dependencies. Held: `@playwright/test` at
+  range that is 7 days old that day. Seventeen releases since then come
+  of age from 15 November, 23:12 (`@vitejs/plugin-react` 6.3.0), to 17
+  November, 19:49 (vite 8.3.8): the Nest packages at 12.4.2,
+  `typescript-eslint` 8.72.2, `@aws-sdk/client-s3` 3.1166.0, Sentry
+  11.12.0, nodemailer 10.5.0, `user-event` 14.6.9 and msw 3.0.5 between,
+  for the next branch's dependencies. Held: `@playwright/test` at
   1.64.1, pinned, its Firefox 159 crashing in the Linux image ([#521]);
   `jsdom` at 30.1.3, pinned, 17 unit tests failing on 31 ([#522]);
   TypeScript 7 ([#336]). Alerts 11 and 12 wait for their upstreams
@@ -346,14 +358,22 @@ On 10 November 2026:
 
 ## Still to do, by hand
 
+- **After [#556]'s merge:** `gh pr merge 556 --merge`, never squashed;
+  `scripts/prune-branches.sh --yes`; `scripts/clean-local.sh`, then
+  `--yes`, which removes the branch's `tmp/` folder, its pictures and
+  brief among them, which nothing later reads; after the deploy, on the
+  live site, an order whose item lacks a required name: its Print shows
+  the page in the app's language, with the way to the item; Project
+  knowledge re-synced; and `/triage` over the areas it touched,
+  documents, invoices, stock, api, i18n and ops, [#521] and [#551] among
+  them, each issue's kind kept beside its group.
 - **After [#554]'s merge,** done on 10 November: the merge, as a merge
   commit; the prune and the clean-up; `../waf-fix` back on `main`, with
   `npm ci` in its `server/` and `client/`; and Project knowledge
   re-synced. Still to do: the runner's next pick proves `../waf-fix`'s
   own databases in use.
-- **After [#532]'s merge,** still to do: `git stash list`: `stash@{0}`,
-  from `fix-ups-ci`, was touched by a failed command in step 23 and left
-  as it was; drop it if it is no longer needed. Done on 10 November:
+- **After [#532]'s merge,** done on 10 November: `stash@{0}`, from
+  `fix-ups-ci`, dropped, its one change already on `main`;
   `npm run migrate:all`, `apiRevision: 4` on `/api/health`,
   `tmp/adr-092/from-adr-091/` moved into `tmp/adr-093/` and
   `dl-items.md` into `tmp/flows-and-states/`, the prune and the
@@ -374,11 +394,9 @@ On 10 November 2026:
   after the deploy, one invoice's PDF opened, since pdfmake 0.3.14
   changed a line of the renderer; at the first paid fix, the hook that
   refuses a merge or force-push seen at work, and at the first resume
-  its cost checked against the Console; and the 30-minute look at [#521]
-  in Claude Code in `../waf-fix`, beside [#526]'s branch, widened to
-  Linux WebKit's accessibility screens not ready within 5 seconds
-  (ADR-089's #529 as-built): the container's memory and CPU measured
-  first, then the fix the cause asks for, Playwright 1.65.0 among them.
+  its cost checked against the Console. The 30-minute look at [#521] was
+  done on 10 November, its figures in its comment and in ADR-071's
+  as-built.
 - **After [#518]'s merge,** done on 8 November: Claude Code restarted;
   the planning skill packed from `main` and uploaded; and `/triage` over
   all 155 open issues, with no closes and comments on [#446] and [#467].
@@ -490,7 +508,8 @@ request or a set of them:
       [ADR-071's amendment](adr/0071-documents-as-pdf-drawn-on-the-server.md):
       a refused document opened from a link answers with a readable page
       in the app's language, the links staying plain; with it, [#551]'s
-      item 91 and the fix the 30-minute look at [#521] asks for; then the
+      item 91 and what the 30-minute look at [#521] asked for: [#556];
+      then the
       list search's plans ([#547]), since ADR-051's watch on a large
       catalogue's search fired at 128 ms (ADR-092's review, finding 67),
       with a timed scenario for the category filter, the budget for a PDF
@@ -498,7 +517,9 @@ request or a set of them:
       missed, one invoice's PDF timed at both scales, and the two rules
       lines out of date that [#306]'s and [#308]'s comments of 10
       November name; its watch closes only when the search is back under
-      100 ms; then a docs pull request for
+      100 ms, and it gains Home's Expiring-soon count, whose two plans of
+      nearly equal cost at large a fresh `ANALYZE` chooses between
+      (ADR-071's as-built); then a docs pull request for
       flows and states, ADR-092's decision: the pieces every screen
       shares, their states drawn once in the design language and one
       canvas row, and the planning skill asking each feature for a
@@ -834,3 +855,5 @@ Not repeated here; each list has one home:
 [#552]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/552
 [#553]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/553
 [#554]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/554
+[#555]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/555
+[#556]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/556

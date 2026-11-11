@@ -458,3 +458,124 @@ GitHub's API had no requests left for the chat's container:
   agreements; dependencies; #551's item 91; the code; the page; the
   links; #521's fix, as its look finds; dependencies again; the reviews;
   the as-built.
+
+### As built
+
+Built on 10 November 2026 on `fix-526-refused-document-page`, 16 commits
+with this as-built, pull request #556.
+
+- **The requirements,** each marked:
+
+  | R | Now |
+  | --- | --- |
+  | R1 | Met, c737a3ab |
+  | R2 | Met, 20661140 |
+  | R3 | Met, 66a2abe1 |
+  | R4 | Met: a page visit by `Sec-Fetch-Mode: navigate`, and by `Accept: text/html` alone, each gets the page |
+  | R5 | Met: without those headers the JSON as before, its keys, code and details tested |
+  | R6 | Met: 409, 401, 403 and 404 tested as pages, 500 in the unit spec; a code typed with `<b>` comes back escaped; `no-store`; no script |
+  | R7 | Met: the server's, the client's and the browser's tests, and MC-2513 walked by hand with the browser in English |
+  | R8 | Met: each of the six routes' way back tested; MC-2513 found that signing in landed on Home, which a11bffa6 fixed, `client/e2e/sign-in-return.spec.ts` proving the return |
+  | R9 | Met: the code and the item's id for the item's and a variant's missing name; the page's link to the item |
+  | R10 | Met: `PdfResponse`'s required argument, typed as the union of the four pages; the packing slip's links tested |
+  | R11 | Met: the browser test, 5 of 5 in Chromium, Mac WebKit, Linux Firefox and Linux WebKit |
+  | R12 | Met: the four pictures in #556's description, light and dark, in English and in 中文 |
+  | R13 | Met: MC-2513, conventions.md's "Status pages" and "Supported browsers", the invoices and products rules files |
+  | R14 | Met: the plans at large the same before and after (e1fc385f) |
+  | R15 | Met: no update in range was 7 days old at either step, so no commit; the two pins kept |
+  | R16 | Met: the look's report gives the limits and the peaks; no run failed, so no failure could be read against them |
+  | R17 | Changed: the look found neither memory nor CPU behind Linux WebKit's rare miss, so nothing is tuned; a failed Linux run now keeps what Playwright left (f6edebc2, 6a53bf90) |
+
+- **Measured against the brief's guesses,** minutes and the tokens the
+  Agent tool counted:
+
+  | Step | Model | Minutes (guess) | Tokens |
+  | --- | --- | --- | --- |
+  | 4 | sonnet | 3 (3), no commit | 54,627 |
+  | 5 | opus | 16 (15) | 141,555 |
+  | 6 | opus | 7 (15) | 100,649 |
+  | 7 | opus | 24 (40) | 259,958 |
+  | 8 | opus | 17 (30) | 200,075 |
+  | 10 | sonnet | 1 (3), no commit | 56,038 |
+  | 11, findings | opus | 9 (20) | not shown |
+  | 11, fixes | opus | 30 (45) | not shown |
+
+  Opus's steps took about two thirds of their guess, against a third on
+  #554, whose steps were scripts.
+- **Built differently:**
+  - The links read `useLanguage().locale`, not `useIntl().locale`, which
+    is the formatting tag with the browser's region (`en-US`), a tag the
+    page does not accept.
+  - A3 was false on the Mac: the browser tests' API read `CLIENT_URL` at
+    port 5173 from the root `.env`. `client/playwright.config.ts` now
+    gives it the test client's address, 5273, as CI already did.
+  - The page sends its own Content-Security-Policy, stricter than
+    helmet's: helmet's `upgrade-insecure-requests` sent WebKit's way back
+    at `http://localhost` to https, where nothing answers.
+  - A 5xx shows the page's own sentence and the reference, not the
+    body's message, which is either "Internal server error" or a
+    developer's sentence.
+  - No `text/html` response in the API document: the suite's check of
+    every response reads only successful ones.
+  - `productId` was already in `ErrorDetails`, for `code_in_use`
+    (ADR-092); only its comment was widened.
+  - The browser test runs in every engine, so `EVERY_ENGINE` in
+    `client/playwright.config.ts` names the specs WebKit and Firefox run,
+    and the full verify's Linux browsers run by project, 117 tests each.
+  - The six routes' way back is one named test, since `check-docs.mjs`
+    cannot cite an `it.each` name (#306, item 40).
+  - **Sign-in did not return to the page asked for,** found by MC-2513
+    and older than this branch: signed out, any page of the app opened
+    Home after signing in. Setting the session made `AuthOnly`, around
+    the sign-in page, send the now signed-in visitor to `/`, and that
+    move landed after the form's own move to the page remembered, so `/`
+    won. `AuthOnly` now goes to the page remembered too (a11bffa6). Its
+    browser test, in every engine, failed on `/` in Chromium and Mac
+    WebKit before the fix, and passed 5 of 5 in each after, a list's
+    search in the address kept too. MC-2101 already said it.
+- **#551's item 91** (e1fc385f): `perf:plans` at large ran before, after,
+  and before again; every plan and its buffers stayed the same, and
+  `namedLines` and the stock count, read by hand with `EXPLAIN`, kept
+  theirs. The stock list's own query and its cursor read join the same
+  way: a new item of #551, from its comment of 10 November. Home's
+  Expiring-soon count has two plans of nearly equal cost at large, 0.03
+  ms or about 24 ms, and a fresh `ANALYZE` picks one; so before this too,
+  and inside its budget: for ADR-051's watch, with #547.
+- **#521's look,** 10 November, 18:36 to 18:56, on 1.64.1: the container
+  peaked at 5.03 GiB of Docker's 7.65 GiB at 6 workers and 5.88 GiB at 9;
+  the slowest screen waited 2.75 s against 5 s with the Mac about 98%
+  busy; none of 696 tests failed. The miss, about 1 in 500, reads as a
+  stall, so a longer wait would hide it; #521's comment of 10 November
+  has the figures and the next look's plan. Firefox's crash keeps its
+  trigger, a Playwright release after 1.65.0, 7 days old. The full
+  verify on a11bffa6 then missed once in Linux WebKit, Credit notes
+  still on the boot screen past 5 s, the first miss whose output a
+  failed run now keeps (f6edebc2): a stall at boot, before the screen,
+  recorded on #521. The Linux browsers' part, run again, passed 119 of
+  119.
+- **The reviews:** 11 findings, none must-fix; security sound; `/doctor
+  prompt-audit` clean. Fixed: 1, the page's language through
+  `recipientLocale`; 2, its kind worked out once; 3, tidy-ups, `verify.sh`'s
+  `linux_browsers` among them; 8, the 403 page tested; and, from step 9,
+  the copy only when Playwright left something. Filed: 4 and 5 as #555.
+  Left: 6, the filter made per route outside Nest's injection, the test
+  "JSON as before" holding its reply to the global filter's; 7, four
+  small notes; 10, a hand-typed id that is not a UUID answering 400 in
+  Nest's English, which no link of the app reaches.
+- **Checks:** `scripts/verify.sh` in full on 6a53bf90: the server's 534
+  unit and 1,311 end-to-end tests, the client's 1,195 unit and 486
+  Playwright tests, and 117 in each of Linux Firefox and Linux WebKit;
+  every browser by hand, run 42957074056, passed. On a11bffa6, the full
+  verify again, its one Linux WebKit miss above and the part run again
+  passing, 119 of 119; and every browser by hand once more, passed.
+  MC-2513 walked by hand on 10 November, its four parts, its sign-in's
+  return after the fix.
+- **Found, for later:**
+  - The missing-name message in Chinese reads 没有English名称, no space
+    beside the Latin name (ADR-090's rule), from before this branch; and
+    the page's signed-out title, 您已退出登录, reads oddly to someone who
+    never signed in, where 您尚未登录 fits both. The page's French and
+    Chinese words are drafts for the fluent review (MC-1405); all three
+    go with the translations' batch.
+  - `gh` cannot put pictures into a pull request; the maintainer drags
+    them in from Finder (engineering.md, "The review step").

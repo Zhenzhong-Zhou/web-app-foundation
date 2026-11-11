@@ -417,7 +417,11 @@ twice:
    finding left is filed as an issue ([Issues and
    labels](#issues-and-labels)) or said in the PR. Then
    `scripts/verify.sh` in full, the push and the PR, whose description
-   names the journeys walked and their personas.
+   names the journeys walked and their personas. Pictures the brief asks
+   for are left in `tmp/<branch>/pictures/`, the description naming each
+   in a table: `gh` cannot upload an image, so the maintainer drags each
+   into its cell from Finder, never from the editor's file tree, which
+   pastes the file's path instead (10 November 2026, #556).
 
 ## Process
 
