@@ -3625,6 +3625,7 @@ export const ErrorCode = {
   REORDER_POINT_EXISTS: 'reorder_point_exists',
   REORDER_MAXIMUM_NOT_ABOVE_POINT: 'reorder_maximum_not_above_point',
   CODE_IN_USE: 'code_in_use',
+  ITEM_NAME_MISSING: 'item_name_missing',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -7232,6 +7233,7 @@ export type ShipmentsControllerPdfV1Data = {
   };
   query?: {
     download?: '1';
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
   };
   url: '/v1/orders/{id}/shipments/{shipmentId}/pdf';
 };
@@ -7337,6 +7339,7 @@ export type OrderDocumentsControllerPdfV1Data = {
   };
   query?: {
     download?: '1';
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
   };
   url: '/v1/orders/{id}/pdf';
 };
@@ -7487,6 +7490,7 @@ export type ReturnAuthorizationDocumentsControllerPdfV1Data = {
   };
   query?: {
     download?: '1';
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
   };
   url: '/v1/return-authorizations/{id}/pdf';
 };
@@ -7620,6 +7624,7 @@ export type InvoicesControllerPdfV1Data = {
   };
   query?: {
     download?: '1';
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
   };
   url: '/v1/invoices/{id}/pdf';
 };
@@ -7786,6 +7791,7 @@ export type CreditNotesControllerPdfV1Data = {
   };
   query?: {
     download?: '1';
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
   };
   url: '/v1/credit-notes/{id}/pdf';
 };
@@ -7805,6 +7811,7 @@ export type ProFormaControllerPdfV1Data = {
   query?: {
     taxCodeId?: string;
     download?: '1';
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
   };
   url: '/v1/orders/{id}/pro-forma';
 };

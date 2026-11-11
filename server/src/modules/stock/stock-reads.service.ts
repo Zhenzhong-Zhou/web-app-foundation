@@ -181,10 +181,13 @@ export function stockRowsOf(
   return sql`${stockLevels}
     inner join ${productVariants}
       on ${productVariants.id} = ${stockLevels.variantId}
+      and ${productVariants.organizationId} = ${organizationId}::uuid
     inner join ${products}
       on ${products.id} = ${productVariants.productId}
       and ${products.organizationId} = ${organizationId}::uuid
-    inner join ${locations} on ${locations.id} = ${stockLevels.locationId}
+    inner join ${locations}
+      on ${locations.id} = ${stockLevels.locationId}
+      and ${locations.organizationId} = ${organizationId}::uuid
     left join ${lots} on ${lotJoin(organizationId)}
     where ${and(...filtersOf(query, organizationId, today))}`;
 }

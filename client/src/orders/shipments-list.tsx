@@ -13,8 +13,9 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import type { InvoicePage, InvoiceSummary, Shipment } from '../api/types.gen';
+import { usePdfLinks } from '../components/pdf-links';
 import { Reference } from '../components/reference';
-import { api, ApiError, apiUrl, messageFor } from '../lib/api';
+import { api, ApiError, messageFor } from '../lib/api';
 import { formatDate, formatDay, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { organizationDayOf } from '../lib/time-zone';
@@ -65,6 +66,7 @@ export function ShipmentsList({
 }) {
   const intl = useIntl();
   const navigate = useNavigate();
+  const pdfLinks = usePdfLinks();
   const [shipments, setShipments] = useState<Shipment[] | null>(null);
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -163,6 +165,9 @@ export function ShipmentsList({
         const invoice = invoices.find(
           (row) => row.shipmentId === shipment.id && row.status !== 'voided',
         );
+        const slip = pdfLinks(
+          `/orders/${orderId}/shipments/${shipment.id}/pdf`,
+        );
 
         return (
           <Paper key={shipment.id} variant="outlined" sx={{ p: 2 }}>
@@ -255,7 +260,7 @@ export function ShipmentsList({
                   printing is a detour from the order, not a step away from
                   it. Download PDF saves the same file. */}
               <Link
-                href={apiUrl(`/orders/${orderId}/shipments/${shipment.id}/pdf`)}
+                href={slip.print}
                 target="_blank"
                 rel="noopener"
                 variant="body2"
@@ -265,12 +270,7 @@ export function ShipmentsList({
                   defaultMessage: 'Packing slip',
                 })}
               </Link>
-              <Link
-                href={apiUrl(
-                  `/orders/${orderId}/shipments/${shipment.id}/pdf?download=1`,
-                )}
-                variant="body2"
-              >
+              <Link href={slip.download} variant="body2">
                 {intl.formatMessage({
                   id: 'documents.downloadPdf',
                   defaultMessage: 'Download PDF',

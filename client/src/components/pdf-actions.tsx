@@ -1,7 +1,7 @@
 import { Button } from '@mui/material';
 import { useIntl } from 'react-intl';
 
-import { apiUrl, withQuery } from '../lib/api';
+import { usePdfLinks } from './pdf-links';
 
 /**
  * Print and Download PDF for a document (ADR-071): one PDF, drawn by the
@@ -10,24 +10,24 @@ import { apiUrl, withQuery } from '../lib/api';
  * Download PDF saves the same file, named by the document.
  *
  * Plain links the browser follows itself: the file never passes through
- * the page, and the session's cookie goes with them.
+ * the page, and the session's cookie goes with them. Each says the app's
+ * language, for the page a refusal answers with (usePdfLinks).
  */
 export function PdfActions({ path }: { path: string }) {
   const intl = useIntl();
-  // A path may ask its own question already: the pro forma's tax code.
-  const download = withQuery(path, { download: '1' });
+  const links = usePdfLinks()(path);
 
   return (
     <>
       <Button
         variant="outlined"
-        href={apiUrl(path)}
+        href={links.print}
         target="_blank"
         rel="noopener"
       >
         {intl.formatMessage({ id: 'invoices.print', defaultMessage: 'Print' })}
       </Button>
-      <Button variant="text" href={apiUrl(download)}>
+      <Button variant="text" href={links.download}>
         {intl.formatMessage({
           id: 'documents.downloadPdf',
           defaultMessage: 'Download PDF',

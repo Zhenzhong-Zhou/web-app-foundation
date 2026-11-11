@@ -147,6 +147,13 @@ export const ERROR_CODES = {
    * form's Code field links to.
    */
   codeInUse: 'code_in_use',
+  /**
+   * A document needs a name in a language the organization requires, and an
+   * item on it, or one of its variants, has none (ADR-054): the message
+   * says which, and `details.productId` is the item either way, whose page
+   * holds its names, for a page to link to (ADR-071's amendment, #526).
+   */
+  itemNameMissing: 'item_name_missing',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -168,7 +175,10 @@ export interface ErrorDetails {
   at?: string;
   /** A calendar day, YYYY-MM-DD (ADR-052). */
   day?: string;
-  /** The item that holds a code already (ADR-092). */
+  /**
+   * The item a refusal is about: the one that holds a code already
+   * (ADR-092), or the one whose name is missing (ADR-071, amended).
+   */
   productId?: string;
 }
 

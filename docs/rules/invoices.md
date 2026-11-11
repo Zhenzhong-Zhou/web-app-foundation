@@ -127,10 +127,14 @@ is kept is in the [README](README.md).
 - **Every item on it must be named in each language the organization
   requires, if the invoice prints in that language,** and each of its
   variants with a name of its own; the refusal names the variant by its
-  code and its own name when its name is the one missing.
+  code and its own name when its name is the one missing. It carries the
+  code `item_name_missing` with the item's id, the item's own for a
+  variant's name too, for a way to the item's page, where its names are.
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
+  [ADR-071, amended](../adr/0071-documents-as-pdf-drawn-on-the-server.md#decision--the-way-back-and-the-way-out) ·
   [test](../../server/test/languages.e2e-spec.ts) "refuses to issue in a required language until every product is named in it" ·
-  [test](../../server/test/languages.e2e-spec.ts) "names the variation, by its code and its own name, when its name is the one missing"
+  [test](../../server/test/languages.e2e-spec.ts) "names the variation, by its code and its own name, when its name is the one missing" ·
+  [test](../../server/test/languages.e2e-spec.ts) "carries item_name_missing and the item’s id, for the item’s name and a variant’s alike"
 - **Tax is worked out per component on the lines that carry it, and
   rounded once for the invoice,** not line by line. A component two codes
   share, such as GST, is one tax line.
@@ -333,6 +337,24 @@ is the organization's, on Organization → Documents.
   [ADR-071](../adr/0071-documents-as-pdf-drawn-on-the-server.md#amendment-october-2026--two-things-the-build-settled) ·
   [test](../../server/test/invoices.e2e-spec.ts) "draws on the paper the organization chose, else its country’s (ADR-071)" ·
   MC-2504
+- **A PDF refused from its link shows a page, not the API's words,** on
+  every document's Print and Download PDF, the order's four included: the
+  refusal's status and message, in the app's language, which every link
+  carries, else the browser's; the way back to the document's page, which
+  reads Sign in when signed out; and the item's page when a name is
+  missing. The app's own requests get the refusal as before. The page is
+  never cached and runs no script.
+  [ADR-071, amended](../adr/0071-documents-as-pdf-drawn-on-the-server.md#decision--a-readable-page-for-a-refused-document-opened-from-a-link) ·
+  [test](../../server/test/document-refusals.e2e-spec.ts) "answers a page visit with a page in the app’s language, its message escaped, with the item and the way back" ·
+  [test](../../server/test/document-refusals.e2e-spec.ts) "answers the same request without a visit’s headers with the JSON as before" ·
+  [test](../../server/test/document-refusals.e2e-spec.ts) "reads Sign in when signed out, back to the document’s page, in the browser’s language without ?locale=" ·
+  [test](../../server/test/document-refusals.e2e-spec.ts) "says a member has no access when their roles do not reach the document, with the way back" ·
+  [test](../../server/test/document-refusals.e2e-spec.ts) "answers an unknown id with a 404 page back to its own document, on each of the six routes" ·
+  [test](../../server/src/core/documents/refusal-page.spec.ts) "escapes the message, which can hold typed text" ·
+  [test](../../client/src/components/pdf-actions.test.tsx) "says 中文 when the app is in it, whatever the browser’s language" ·
+  [test](../../client/src/orders/order-detail-page.test.tsx) "links each shipment to its packing slip, to print and to download, saying the app’s language" ·
+  [test](../../client/e2e/document-refusals.spec.ts) "a refused PDF shows a page in the app’s language, with the item and the way back to the order" ·
+  MC-2513
 - **Download everything holds every issued invoice and credit note as its
   PDF, and no draft.**
   [ADR-071](../adr/0071-documents-as-pdf-drawn-on-the-server.md#decision--the-export-118-amends-adr-070) ·

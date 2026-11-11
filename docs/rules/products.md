@@ -514,12 +514,16 @@ How this file is kept is in the [README](README.md).
   of its variants with a name of its own, has a name in that language.
   The refusal says whether the item's name or the variant's is missing,
   the item's first, the variant by its code and its own name.** The
-  organization chooses which languages, on its page.
+  organization chooses which languages, on its page. The refusal carries
+  the code `item_name_missing` with the item's id, the item's own for a
+  variant's name too, for a way to the item's page, where its names are.
   [ADR-054](../adr/0054-languages.md#decision--a-products-name-and-description-may-be-kept-in-other-languages-which-are-required-is-the-organizations-setting) ·
   [ADR-054, amended](../adr/0054-languages.md#amendment-november-2026--what-documents-will-refuse-shown-before-they-do-adr-092) ·
+  [ADR-071, amended](../adr/0071-documents-as-pdf-drawn-on-the-server.md#decision--the-way-back-and-the-way-out) ·
   [test](../../server/test/languages.e2e-spec.ts) "requires the languages the organization names, as a set of supported tags" ·
   [test](../../server/test/languages.e2e-spec.ts) "refuses to issue in a required language until every product is named in it" ·
   [test](../../server/test/languages.e2e-spec.ts) "names the variation, by its code and its own name, when its name is the one missing" ·
+  [test](../../server/test/languages.e2e-spec.ts) "carries item_name_missing and the item’s id, for the item’s name and a variant’s alike" ·
   [test](../../server/test/documents.e2e-spec.ts) "names only its own lines, so one not returned refuses nothing" ·
   MC-1408
 - **The item's page shows its names in other languages as one table: a

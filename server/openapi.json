@@ -7612,6 +7612,19 @@
               ],
               "type": "string"
             }
+          },
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "en",
+                "fr-CA",
+                "zh-Hans"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -7852,6 +7865,19 @@
             "schema": {
               "enum": [
                 "1"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "en",
+                "fr-CA",
+                "zh-Hans"
               ],
               "type": "string"
             }
@@ -8181,6 +8207,19 @@
             "schema": {
               "enum": [
                 "1"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "en",
+                "fr-CA",
+                "zh-Hans"
               ],
               "type": "string"
             }
@@ -8584,6 +8623,19 @@
             "schema": {
               "enum": [
                 "1"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "en",
+                "fr-CA",
+                "zh-Hans"
               ],
               "type": "string"
             }
@@ -9084,6 +9136,19 @@
               ],
               "type": "string"
             }
+          },
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "en",
+                "fr-CA",
+                "zh-Hans"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -9131,6 +9196,19 @@
             "schema": {
               "enum": [
                 "1"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "en",
+                "fr-CA",
+                "zh-Hans"
               ],
               "type": "string"
             }
@@ -22182,7 +22260,8 @@
           "api_updating",
           "reorder_point_exists",
           "reorder_maximum_not_above_point",
-          "code_in_use"
+          "code_in_use",
+          "item_name_missing"
         ]
       },
       "ApiVocabulary": {

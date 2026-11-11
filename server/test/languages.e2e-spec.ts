@@ -903,6 +903,64 @@ describe('Languages (e2e)', () => {
       await issue().expect(200);
     });
 
+    it('carries item_name_missing and the item’s id, for the item’s name and a variant’s alike', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await alpha.agent
+        .patch('/v1/organization')
+        .send({ requiredNameLanguages: ['zh-Hans'] })
+        .expect(204);
+
+      const draft = await draftInvoice(alpha);
+      await alpha.agent
+        .patch(`/v1/partners/${draft.partnerId}`)
+        .send({ documentLanguage: 'zh-Hans', documentSecondLanguage: 'en' })
+        .expect(204);
+
+      const issue = () =>
+        alpha.agent
+          .post(`/v1/invoices/${draft.invoiceId}/issue`)
+          .send({ invoiceDate: TODAY });
+      const capsules = await productOf('FOCUS-60CT');
+      const scoop = await productOf('SCOOP');
+
+      // The capsules named in Chinese, the scoop not: the scoop's item, by
+      // its id, for a page to open where its names are (ADR-071, amended).
+      await alpha.agent
+        .put(`/v1/products/${capsules}/translations`)
+        .send({ translations: [{ locale: 'zh-Hans', name: '专注胶囊' }] })
+        .expect(204);
+      const item = body<{ message: string; code: string; details: object }>(
+        await issue().expect(409),
+      );
+      expect(item.message).toMatch(/^SCOOP \(SCOOP\) has no/);
+      expect(item.code).toBe('item_name_missing');
+      expect(item.details).toEqual({ productId: scoop });
+
+      // The scoop named; the capsules' variation then gains a name of its
+      // own, with none in Chinese: still the item's id, not the variant's.
+      await alpha.agent
+        .put(`/v1/products/${scoop}/translations`)
+        .send({ translations: [{ locale: 'zh-Hans', name: '量勺' }] })
+        .expect(204);
+      const [variant] = await db
+        .select({ id: productVariants.id })
+        .from(productVariants)
+        .where(eq(productVariants.sku, 'FOCUS-60CT'));
+      await alpha.agent
+        .patch(`/v1/products/${capsules}/variants/${variant.id}`)
+        .send({ name: '60ct' })
+        .expect(204);
+
+      const variation = body<{
+        message: string;
+        code: string;
+        details: object;
+      }>(await issue().expect(409));
+      expect(variation.message).toMatch(/^The variant FOCUS-60CT \(60ct\)/);
+      expect(variation.code).toBe('item_name_missing');
+      expect(variation.details).toEqual({ productId: capsules });
+    });
+
     it('prints a name once when both languages agree, and a credit copies both', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const draft = await draftInvoice(alpha);

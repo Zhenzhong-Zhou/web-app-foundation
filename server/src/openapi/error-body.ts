@@ -26,7 +26,10 @@ export class ErrorDetails {
   @ApiPropertyOptional({ format: 'date' })
   day?: string;
 
-  /** The item that holds a code already (ADR-092). */
+  /**
+   * The item a refusal is about: the one that holds a code already
+   * (ADR-092), or the one whose name is missing (ADR-071, amended).
+   */
   @ApiPropertyOptional({ format: 'uuid' })
   productId?: string;
 }

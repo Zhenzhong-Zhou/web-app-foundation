@@ -39,6 +39,10 @@
   the folders of `server/src/modules/`, `core/` and `shared/`. A new
   module folder needs its `area:` label on GitHub,
   `gh label create area:<name>`, until labels are kept as code.
+- **And one kind label** (10 November 2026): `bug`, `enhancement` or
+  `accessibility`, beside its group, so the open issues read by what
+  they are as well as by when they are fixed. A triage proposes one
+  where an issue has none, and keeps the one it has.
 - **A close gives GitHub's reason and a one-line comment** (28 October
   2026): `completed` when a PR or a commit fixed it, named in the
   comment; `not planned` when it is dropped or overtaken, or is a
@@ -101,7 +105,8 @@ steps; this section stays the rule.
    a small bug against `main`. One already fixed is proposed for
    closing, not labelled.
 3. **Write the proposal to `tmp/triage.md`:** for each issue its group,
-   or a close with its reason, its areas and a few words why; then the
+   its kind where it has none, or a close with its reason, its areas and
+   a few words why; then the
    counts by group and by area, the issues that look like duplicates,
    and the present labels that disagree.
 4. **Apply what Bob decides,** and the three checks above print nothing.
@@ -412,7 +417,11 @@ twice:
    finding left is filed as an issue ([Issues and
    labels](#issues-and-labels)) or said in the PR. Then
    `scripts/verify.sh` in full, the push and the PR, whose description
-   names the journeys walked and their personas.
+   names the journeys walked and their personas. Pictures the brief asks
+   for are left in `tmp/<branch>/pictures/`, the description naming each
+   in a table: `gh` cannot upload an image, so the maintainer drags each
+   into its cell from Finder, never from the editor's file tree, which
+   pastes the file's path instead (10 November 2026, #556).
 
 ## Process
 
@@ -542,13 +551,21 @@ reports success.
   root (both sides, CI's order, stops at the first failure; `--quick`
   skips the end-to-end suites). Editor auto-imports in the wrong quote
   style fail CI.
-  The full run also checks `e2e/accessibility.spec.ts` in Firefox and in
-  Linux WebKit, from one container of Playwright's Linux image in Docker
+  The full run also checks the specs every browser runs, `EVERY_ENGINE` in
+  `client/playwright.config.ts`, in Firefox and in Linux WebKit:
+  `e2e/accessibility.spec.ts` and `e2e/document-refusals.spec.ts`, from
+  one container of Playwright's Linux image in Docker
   ([conventions.md, Supported browsers](conventions.md#supported-browsers)),
   which a pull request's CI, Chromium alone, does not; Linux WebKit's
   timing differs from the Mac's ([conventions.md, Tests](conventions.md#tests)).
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
+- **A change to a script CI runs is read against
+  `.github/workflows/ci.yml`'s own settings before the push** (10
+  November 2026, #554's review, finding 11): CI's jobs set their own
+  environment, as the browser job names its three databases
+  `foundation_e2e` alike, which no `.env` here does, so nothing run on
+  the Mac catches what only CI's settings break.
 - Before each commit, `scripts/verify.sh --quick`; or `--docs`, in
   seconds, for a commit that changes only Markdown outside `client/` and
   `docs/tables/`, and `scripts/`: the Markdown step and the scripts'

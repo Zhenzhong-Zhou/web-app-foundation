@@ -93,7 +93,7 @@ export class CreditNotesController {
    */
   @Get(':id/pdf')
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
-  @PdfResponse()
+  @PdfResponse('/credit-notes/:id')
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,
     @DownloadAsked() download: boolean,

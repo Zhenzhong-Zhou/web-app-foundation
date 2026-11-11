@@ -15,16 +15,33 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 10 November 2026:
 
+- **[#526]'s first half, a refused document's page,**
+  [ADR-071's amendment](adr/0071-documents-as-pdf-drawn-on-the-server.md):
+  planned and built on 10 November on `fix-526-refused-document-page`,
+  16 commits, pull request [#556]; the as-built is in the amendment,
+  each requirement marked. A PDF link a route refuses answers with a
+  short page in the app's language, its status kept, the document's own
+  page as the way back and, for a missing name, the item's page as the
+  way out; MC-2513 was walked by hand and every browser's run passed.
+  With it, [#551]'s item 91, every join of two reads naming the
+  organization; and, from the 30-minute look at [#521], which found
+  neither memory nor CPU behind Linux WebKit's rare miss, a failed Linux
+  run that keeps what Playwright left, which caught its first Linux
+  WebKit miss the same evening, a screen still on the boot screen. MC-2513
+  found that signing in, from any page of the app, landed on Home, older
+  than this branch; sign-in now returns to the page asked for, with a
+  browser test. The reviews' tidy-ups are [#555].
 - **[#529], each working folder's own databases,**
   [ADR-089's amendment](adr/0089-a-briefs-steps-in-a-row.md): planned and
-  built on 10 November on `fix-529-folder-databases`, 14 commits, pull
-  request [#554]; the as-built is in the amendment. Each second folder
-  gets its own dev, test and e2e databases from
-  `node scripts/folder-databases.mjs <folder>`, and `../waf-fix` has
-  them; the lock is in Postgres's own database; a test database ahead of
-  its folder is made again; a folder that shares is refused. Until the
-  merge, `../waf-fix` runs no tests: its lock, on `main`'s code, is
-  still in its own test database.
+  built on 10 November on `fix-529-folder-databases`, 14 commits, merged
+  the same day as [#554] (3d4fcdb1), a merge commit; the as-built is in
+  the amendment, its Linux WebKit line with the third run added on
+  [#526]'s branch. Each second folder gets its own dev, test and e2e
+  databases from `node scripts/folder-databases.mjs <folder>`, and
+  `../waf-fix` has them; the lock is in Postgres's own database; a test
+  database ahead of its folder is made again; a folder that shares is
+  refused. `../waf-fix` is back on `main`, its runs meeting the main
+  folder's at the lock again.
 - **Items, ADR-092** ([#476]): planned on 8 and 9 November, its boards
   the canvas's rows "Items v1", "Items v2" and "Items v2: flows and
   states"; built on 9 November on `adr-092-items`, 73 commits, merged on
@@ -183,8 +200,8 @@ On 10 November 2026:
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
 - **The last merges:** on 10 November, [#532] (Items), squashed by
-  mistake. On 9 November, as a merge commit, [#523] (the
-  runner in the repository). On 8 November, as merge commits, [#518] (the
+  mistake, then [#554] ([#529]) as a merge commit. On 9 November, as a
+  merge commit, [#523] (the runner in the repository). On 8 November, as merge commits, [#518] (the
   router), [#519] ([#514]) and [#520] ([#483]), the last two from the
   runner; a runner's pull request is squashed from now on, with the two
   lines it prints. On 7 November, from
@@ -261,6 +278,10 @@ On 10 November 2026:
   corrections go into the translations' fix-up. The first round's export
   was at `b933b912` (22 October 2026). For the same reviewer: 头像 for the profile
   picture everywhere, since Your account says 照片 while Home says 头像.
+  And the refused document's page (ADR-071's amendment): its French and
+  Chinese words are drafts; its signed-out title, 您已退出登录, wants
+  您尚未登录, which fits someone who never signed in; and the missing-name
+  message's 没有English名称 wants a space beside the Latin name.
   With them, ADR-083's two questions: whether Panivo in a Chinese email
   reads out of place beside 品桥 in the app (ADR-082's trigger for the
   name by language in emails), and the invitation email's
@@ -277,11 +298,12 @@ On 10 November 2026:
   7-day rule, Sentry 11.11.0 first as a security fix; rimraf 6.1.4
   closes alert 9 in `server/`. From Items' branch on, the rule is as
   before: each branch takes, package by package, the newest version in
-  range that is 7 days old that day. Twenty releases since then come of
-  age on 16 November (`@vitejs/plugin-react` 6.3.0, vite 8.3.7, the Nest
-  packages at 12.4.2, `typescript-eslint` 8.72.2) and 17 November
-  (`@aws-sdk/client-s3` 3.1166.0, Sentry 11.12.0, nodemailer 10.5.0,
-  `user-event` 14.6.9), for the next branch's dependencies. Held: `@playwright/test` at
+  range that is 7 days old that day. Seventeen releases since then come
+  of age from 15 November, 23:12 (`@vitejs/plugin-react` 6.3.0), to 17
+  November, 19:49 (vite 8.3.8): the Nest packages at 12.4.2,
+  `typescript-eslint` 8.72.2, `@aws-sdk/client-s3` 3.1166.0, Sentry
+  11.12.0, nodemailer 10.5.0, `user-event` 14.6.9 and msw 3.0.5 between,
+  for the next branch's dependencies. Held: `@playwright/test` at
   1.64.1, pinned, its Firefox 159 crashing in the Linux image ([#521]);
   `jsdom` at 30.1.3, pinned, 17 unit tests failing on 31 ([#522]);
   TypeScript 7 ([#336]). Alerts 11 and 12 wait for their upstreams
@@ -303,7 +325,12 @@ On 10 November 2026:
   the maintainer to clear any rejected; [#148], [#149] and [#249] riding
   along. The guides' natural-wording pass ran the same evening, for
   US$4.77: 436 findings, in two comments on [#398]. The rest goes into
-  ADR-054's amendment, `fix-ups-i18n`'s first commit.
+  ADR-054's amendment, `fix-ups-i18n`'s first commit. One exception to
+  every suggestion applied, decided on 10 November: the glossary's words
+  from ADR-092 win over a suggestion written before them, Item as
+  article and 物品, Product as produit and 商品, and 产品 only in the
+  licences' terms, as the comments on [#375], [#382], [#386], [#390],
+  [#391], [#395] and [#398] say.
 - **31 January 2027:** Home's known miss ([#276]) ends, moved from 30
   November for its redesign: ADR-091 ([#335]) must bring Home within its
   budget, with the same headroom, and remove it.
@@ -331,15 +358,22 @@ On 10 November 2026:
 
 ## Still to do, by hand
 
-- **After [#554]'s merge:** `gh pr merge 554 --merge`, never squashed;
+- **After [#556]'s merge:** `gh pr merge 556 --merge`, never squashed;
   `scripts/prune-branches.sh --yes`; `scripts/clean-local.sh`, then
-  `--yes`; `git -C ../waf-fix switch --detach origin/main` and `npm ci`
-  in its `server/` and `client/`, after which its runs meet the main
-  folder's at the lock again, and the runner's next pick proves its own
-  databases in use; Project knowledge re-synced.
-- **After [#532]'s merge,** still to do: `git stash list`: `stash@{0}`,
-  from `fix-ups-ci`, was touched by a failed command in step 23 and left
-  as it was; drop it if it is no longer needed. Done on 10 November:
+  `--yes`, which removes the branch's `tmp/` folder, its pictures and
+  brief among them, which nothing later reads; after the deploy, on the
+  live site, an order whose item lacks a required name: its Print shows
+  the page in the app's language, with the way to the item; Project
+  knowledge re-synced; and `/triage` over the areas it touched,
+  documents, invoices, stock, api, i18n and ops, [#521] and [#551] among
+  them, each issue's kind kept beside its group.
+- **After [#554]'s merge,** done on 10 November: the merge, as a merge
+  commit; the prune and the clean-up; `../waf-fix` back on `main`, with
+  `npm ci` in its `server/` and `client/`; and Project knowledge
+  re-synced. Still to do: the runner's next pick proves `../waf-fix`'s
+  own databases in use.
+- **After [#532]'s merge,** done on 10 November: `stash@{0}`, from
+  `fix-ups-ci`, dropped, its one change already on `main`;
   `npm run migrate:all`, `apiRevision: 4` on `/api/health`,
   `tmp/adr-092/from-adr-091/` moved into `tmp/adr-093/` and
   `dl-items.md` into `tmp/flows-and-states/`, the prune and the
@@ -360,11 +394,9 @@ On 10 November 2026:
   after the deploy, one invoice's PDF opened, since pdfmake 0.3.14
   changed a line of the renderer; at the first paid fix, the hook that
   refuses a merge or force-push seen at work, and at the first resume
-  its cost checked against the Console; and, after [#554]'s merge, a
-  30-minute look at [#521] in Claude Code in `../waf-fix`, widened to
-  Linux WebKit's accessibility screens not ready within 5 seconds
-  (ADR-089's #529 as-built): the container's memory and CPU measured
-  first, then the fix the cause asks for, Playwright 1.65.0 among them.
+  its cost checked against the Console. The 30-minute look at [#521] was
+  done on 10 November, its figures in its comment and in ADR-071's
+  as-built.
 - **After [#518]'s merge,** done on 8 November: Claude Code restarted;
   the planning skill packed from `main` and uploaded; and `/triage` over
   all 155 open issues, with no closes and comments on [#446] and [#467].
@@ -471,28 +503,52 @@ request or a set of them:
       credit, in the repository, ADR-089's amendment, [#523];
       then Items ([#476]),
       ADR-092: [#532], merged on 10 November; then [#529], each working
-      folder's own databases, ADR-089 amended: [#554]; then
-      [#526]'s first half, a small branch on the Mac: a refused document
-      opened from a link answers with a readable page in the person's
-      language, the links staying plain, as ADR-071 chose (decided on 10
-      November); with it, the 30-minute look at [#521]; then the
+      folder's own databases, ADR-089 amended: [#554], merged on 10
+      November; then [#526]'s first half, a small branch on the Mac,
+      [ADR-071's amendment](adr/0071-documents-as-pdf-drawn-on-the-server.md):
+      a refused document opened from a link answers with a readable page
+      in the app's language, the links staying plain; with it, [#551]'s
+      item 91 and what the 30-minute look at [#521] asked for: [#556];
+      then the
       list search's plans ([#547]), since ADR-051's watch on a large
-      catalogue's search fired at 128 ms (ADR-092's review, finding 67);
-      then a docs pull request for flows and states, ADR-092's decision:
-      the pieces every screen shares, their states drawn once in the
-      design language and one canvas row, and the planning skill asking
-      each feature for a wireflow, an interaction table and five states,
-      ADR-090 amended; with it, two commits of their own: the README's
-      roadmap since v0.7.0, Items' name and CSV import moved to [#552],
-      with a line in engineering.md's release routine that the README's
-      status and roadmap change at every tag; and the code's names for
-      Items written down, `product` for any item and `good` for the
-      Products type, in the glossary and `.claude/rules/products.md`,
-      no file renamed ([#553] holds the full rename); then Movements ([#470]), ADR-093, with
-      Inventory's findings from ADR-091's panel; each person
-      choosing their main action and More's order, later; then [#310]'s
-      nine dialogs with [#295], one shared hook, on the Mac;
-   5. the translations, before 30 November: first a second review by
+      catalogue's search fired at 128 ms (ADR-092's review, finding 67),
+      with a timed scenario for the category filter, the budget for a PDF
+      that ADR-071 deferred, whose trigger fired in October and was
+      missed, one invoice's PDF timed at both scales, and the two rules
+      lines out of date that [#306]'s and [#308]'s comments of 10
+      November name; its watch closes only when the search is back under
+      100 ms, and it gains Home's Expiring-soon count, whose two plans of
+      nearly equal cost at large a fresh `ANALYZE` chooses between
+      (ADR-071's as-built); then a docs pull request for
+      flows and states, ADR-092's decision: the pieces every screen
+      shares, their states drawn once in the design language and one
+      canvas row, and the planning skill asking each feature for a
+      wireflow, an interaction table and five states, ADR-090 amended.
+      Its inputs: ADR-092's decision 17a, and the ignored
+      `tmp/flows-and-states/dl-items.md`, attached to the chat that plans
+      it, which holds ADR-092's review items 4, 7, 10, 15, 17, 18, 21,
+      22, 28, 30, 35, 39 and 43; the figure beside a status (finding 1);
+      the width switched by `useMediaQuery`, against
+      `.claude/rules/ui.md`; one Settings page for the setup links, with
+      [#513]; and no rail highlight on Settings › Categories. With it,
+      three commits of their own: the README's roadmap since v0.7.0,
+      Items' name and CSV import moved to [#552], with a line in
+      engineering.md's release routine that the README's status and
+      roadmap change at every tag; the code's names for Items written
+      down, `product` for any item and `good` for the Products type, in
+      the glossary and `.claude/rules/products.md`, no file renamed
+      ([#553] holds the full rename); and the playback, decided on 10
+      November, a step of the planning skill and of
+      `.claude/chat-skills/plan-feature/reference/brief.md`: before
+      planning a feature or a long request, the chat restates it as
+      numbered requirements, each with how it is shown done, then its
+      assumptions, what is not included and its questions, and waits
+      for the maintainer's confirmation; the list is kept in the ADR,
+      each requirement mapped to its step in the brief and marked met,
+      changed or deferred in the as-built. After its merge, the planning
+      skill packed from `main` and uploaded;
+   5. the translations, before 30 November, moved ahead of Movements on
+      10 November to keep the date: first a second review by
       ChatGPT on the website, one chat per language, on the workbooks
       `node scripts/i18n-review.mjs export` writes, the reviewer who reads
       only Chinese checking the Chinese before `import`; a pseudo-locale
@@ -502,18 +558,25 @@ request or a set of them:
       the style
       rules into the glossary, the corrections of the reviewer who reads
       only Chinese, ADR-090's rule for Chinese beside Latin letters, and
-      [#148], [#149] and [#249]; then Orders, built to the design
-      language, its findings from ADR-091's panel, [#159] among them;
-   6. expired lots: [#333] with [#331] and [#442], a new lot's expiry
+      [#148], [#149] and [#249];
+   6. Movements ([#470]), ADR-093, drawn on the canvas first, from the
+      ignored `tmp/adr-093/from-adr-091/`, ADR-091's panel's reports, and
+      Inventory's findings: [#472]'s 6 (the name first, its code grey
+      under it), 18, 25 and 37, with [#459]'s and [#471]'s; each person
+      choosing their main action and More's order, later; then [#310]'s
+      nine dialogs with [#295], one shared hook, on the Mac; then Orders,
+      built to the design language, its findings from ADR-091's panel,
+      [#159] among them;
+   7. expired lots: [#333] with [#331] and [#442], a new lot's expiry
       and its batch code; lot labels ([#441], `later`) after it. First
       instead, if real stock goes into the app sooner. Then, decided on
       10 November, demo data from an earlier inventory project through
       the app's own CSV import ([#552]), its own ADR: items, partners,
       locations, then opening stock by lot, the data anonymized and kept
       out of the repository;
-   7. the audit log: [#133] with [#168] ([#339] was fixed on 2
+   8. the audit log: [#133] with [#168] ([#339] was fixed on 2
       November);
-   8. then TypeScript 7 ([#336]).
+   9. then TypeScript 7 ([#336]).
 
    Then [#261] with [#154] and [#150]; [#263]'s rest with [#198];
    [#264]; [#426], production orders' rules file's findings; and [#255]
@@ -643,6 +706,8 @@ Not repeated here; each list has one home:
 [#302]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/302
 [#303]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/303
 [#304]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/304
+[#306]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/306
+[#308]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/308
 [#309]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/309
 [#310]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/310
 [#311]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/311
@@ -691,6 +756,12 @@ Not repeated here; each list has one home:
 [#367]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/367
 [#370]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/370
 [#371]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/371
+[#375]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/375
+[#382]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/382
+[#386]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/386
+[#390]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/390
+[#391]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/391
+[#395]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/395
 [#397]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/397
 [#398]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/398
 [#399]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/399
@@ -744,6 +815,7 @@ Not repeated here; each list has one home:
 [#455]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/455
 [#456]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/456
 [#457]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/457
+[#459]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/459
 [#462]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/462
 [#463]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/463
 [#464]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/464
@@ -753,12 +825,15 @@ Not repeated here; each list has one home:
 [#468]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/468
 [#469]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/469
 [#470]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/470
+[#471]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/471
+[#472]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/472
 [#476]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/476
 [#477]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/477
 [#478]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/478
 [#483]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/483
 [#505]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/505
 [#506]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/506
+[#513]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/513
 [#514]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/514
 [#515]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/515
 [#516]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/516
@@ -780,3 +855,5 @@ Not repeated here; each list has one home:
 [#552]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/552
 [#553]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/553
 [#554]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/554
+[#555]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/555
+[#556]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/556

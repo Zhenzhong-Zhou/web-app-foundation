@@ -25,7 +25,7 @@ export class ReturnAuthorizationDocumentsController {
    */
   @Get()
   @RequirePermissions(PERMISSIONS.RETURN_AUTHORIZATIONS_VIEW)
-  @PdfResponse()
+  @PdfResponse('/return-authorizations/:id')
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,
     @DownloadAsked() download: boolean,
