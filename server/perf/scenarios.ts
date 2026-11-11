@@ -44,6 +44,8 @@ export interface Org {
   categoryTop: string;
   /** The bottom-level category under it with the most items. */
   categoryBottom: string;
+  /** The first page of the invoices issued, which the PDF read takes in turn. */
+  issuedInvoiceIds: string[];
 }
 
 export interface Scenario {
@@ -149,6 +151,15 @@ export async function discover(
     );
   }
 
+  // The invoices issued, on the list's first page: the PDF read takes each
+  // request the next, as the order read does (ADR-071, ADR-051).
+  const issued = await session.json<Page>('GET', '/invoices?status=issued');
+  if (issued.entries.length === 0) {
+    throw new Error(
+      `${session.label} has no issued invoices. Was it seeded with seed:volume?`,
+    );
+  }
+
   // Two weeks after seeding, the newcomer's Home is anyone's: still timed,
   // but no longer what its name says.
   const { welcome } = await newcomer.json<{ welcome: unknown }>('GET', '/home');
@@ -169,6 +180,7 @@ export async function discover(
     deepStock: deep,
     categoryTop: picked.top,
     categoryBottom: picked.bottom,
+    issuedInvoiceIds: issued.entries.map((entry) => entry.id),
   };
 }
 
@@ -257,6 +269,15 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       (org) => `/stock/movements?variantId=${org.hot[0].variantId}`,
     ),
     read('GET /invoices', () => '/invoices'),
+    // One invoice drawn as a PDF (ADR-071), each request the next of the
+    // issued ones: drawing is the server's own work, so ten at once is the
+    // load to see. It stands for the six PDF routes, which share the
+    // renderer.
+    read(
+      'GET /invoices/:id/pdf',
+      (org, n) =>
+        `/invoices/${org.issuedInvoiceIds[n % org.issuedInvoiceIds.length]}/pdf`,
+    ),
     // Search (ADR-056): the lookup as people type it, a code in part, a
     // name, and a typo that falls through to close matches; and a list
     // narrowed by its search.
