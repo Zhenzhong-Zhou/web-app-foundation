@@ -337,6 +337,20 @@ is the organization's, on Organization → Documents.
   [ADR-071](../adr/0071-documents-as-pdf-drawn-on-the-server.md#amendment-october-2026--two-things-the-build-settled) ·
   [test](../../server/test/invoices.e2e-spec.ts) "draws on the paper the organization chose, else its country’s (ADR-071)" ·
   MC-2504
+- **A PDF refused from its link shows a page, not the API's words,** on
+  every document's Print and Download PDF, the order's four included: the
+  refusal's status and message, in the language the link asks for, else
+  the browser's; the way back to the document's page, which reads Sign
+  in when signed out; and the item's page when a name is missing. The
+  app's own requests get the refusal as before. The page is never cached
+  and runs no script.
+  [ADR-071, amended](../adr/0071-documents-as-pdf-drawn-on-the-server.md#decision--a-readable-page-for-a-refused-document-opened-from-a-link) ·
+  [test](../../server/test/document-refusals.e2e-spec.ts) "answers a page visit with a page in the app’s language, its message escaped, with the item and the way back" ·
+  [test](../../server/test/document-refusals.e2e-spec.ts) "answers the same request without a visit’s headers with the JSON as before" ·
+  [test](../../server/test/document-refusals.e2e-spec.ts) "reads Sign in when signed out, back to the document’s page, in the browser’s language without ?locale=" ·
+  [test](../../server/test/document-refusals.e2e-spec.ts) "answers an unknown id with a 404 page back to its own document, on each of the six routes" ·
+  [test](../../server/src/core/documents/refusal-page.spec.ts) "escapes the message, which can hold typed text" ·
+  MC-2513
 - **Download everything holds every issued invoice and credit note as its
   PDF, and no draft.**
   [ADR-071](../adr/0071-documents-as-pdf-drawn-on-the-server.md#decision--the-export-118-amends-adr-070) ·

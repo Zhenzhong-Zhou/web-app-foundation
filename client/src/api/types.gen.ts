@@ -7233,6 +7233,7 @@ export type ShipmentsControllerPdfV1Data = {
   };
   query?: {
     download?: '1';
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
   };
   url: '/v1/orders/{id}/shipments/{shipmentId}/pdf';
 };
@@ -7338,6 +7339,7 @@ export type OrderDocumentsControllerPdfV1Data = {
   };
   query?: {
     download?: '1';
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
   };
   url: '/v1/orders/{id}/pdf';
 };
@@ -7488,6 +7490,7 @@ export type ReturnAuthorizationDocumentsControllerPdfV1Data = {
   };
   query?: {
     download?: '1';
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
   };
   url: '/v1/return-authorizations/{id}/pdf';
 };
@@ -7621,6 +7624,7 @@ export type InvoicesControllerPdfV1Data = {
   };
   query?: {
     download?: '1';
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
   };
   url: '/v1/invoices/{id}/pdf';
 };
@@ -7787,6 +7791,7 @@ export type CreditNotesControllerPdfV1Data = {
   };
   query?: {
     download?: '1';
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
   };
   url: '/v1/credit-notes/{id}/pdf';
 };
@@ -7806,6 +7811,7 @@ export type ProFormaControllerPdfV1Data = {
   query?: {
     taxCodeId?: string;
     download?: '1';
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
   };
   url: '/v1/orders/{id}/pro-forma';
 };

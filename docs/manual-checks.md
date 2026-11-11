@@ -1669,6 +1669,19 @@ await fetch(`${api}/v1/files/product-image`, {
   slip and the export's PDFs are all A4, an invoice issued before the
   change included. Back to Automatic: Letter again. The audit log shows
   each change. A member without organizations.update sees it read only.
+- **MC-2513** *(ADR-071, amended for #526)* A refused PDF opened from a
+  link. With the app in 中文 and the browser's language set to Chinese,
+  check English under Item names required on invoices, on the
+  Organization page, and raise a purchase from a supplier whose
+  documents are in English, for an item with a named variant that has
+  no English name. Press Print: a new tab shows a page, not the API's
+  words: 无法生成此 PDF, a sentence naming the variant by its code and
+  its name, 打开物品, which opens the item where its names are, and 返回订单,
+  which opens the order. It is light or dark as the browser is, and on
+  a phone its links are easy to tap. Download PDF shows the same page in
+  place of the app, and 返回订单 brings the order back. Sign out in
+  another tab, then press Print on the order: the page says 您已退出登录
+  with 登录, which signs you in and opens the order.
 
 ## 26. Each organization's time zone (ADR-072)
 

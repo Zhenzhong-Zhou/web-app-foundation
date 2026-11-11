@@ -113,12 +113,15 @@ Every document is a PDF the server draws (ADR-071), in the same few pieces.
   `printableThing(detail)` beside the builder, in `thing-document.ts`,
   makes one from the data its own page reads.
 - **Its route** sits beside the document's read, under the same
-  permission, with `@PdfResponse()` for the API document and
+  permission, with `@PdfResponse('/things/:id')` for the API document and
   `@DownloadAsked()` for `?download=1`, and is one call:
   `documents.send(res, download, read.then(printableThing))`. `send` reads
   the letterhead beside the document, puts the logo above the drawing and
   the foot on every page, and answers inline for Print or as an attachment
   for Download PDF. A builder draws neither the logo nor the foot.
+  `PdfResponse`'s argument is the document's own page in the app, filled
+  from the route's parameters: a refusal opened from the link answers
+  with a page whose way back it is (*Status pages*).
 - **Its parts** come from `core/documents/sheet.ts`: `masthead`, `banner`,
   `notice`, `party` and `sellerParty`, `linesTable` or `linesOf` with
   `head`, `cell` and `itemNames`, `totals`, `paragraph`, and `run` for any
@@ -867,6 +870,19 @@ failure needs reporting) and the cases built on it.
   session's read, the new-version check, the frame), the page stands alone
   with Reload only, since Go home could lead back to what broke (#244).
   Every crash is reported with its reference (ADR-084).
+- **A refused PDF opened from a link** (ADR-071, amended for #526):
+  Print and Download PDF are plain links, so the app is not there to
+  word the refusal. The PDF routes answer a page visit,
+  `Sec-Fetch-Mode: navigate` or else an Accept preferring HTML, with a
+  page of the same shape drawn by the server
+  (`core/documents/refusal-page.ts`, bound by `PdfResponse`): its kind's
+  icon, a title, the refusal's message, the way out where its code has
+  one (`item_name_missing` opens the item) and the way back to the
+  document's page, which reads Sign in after a 401; a failure says what
+  to do and gives its reference. In the language `?locale=` asks for,
+  else the browser's; never cached, no script, styled from ADR-055's
+  tokens, light or dark as the browser is. The app's own requests keep
+  the JSON.
 - Tones: calm (info) for what is not there, amber for what is not yours,
   red only for a real failure.
 

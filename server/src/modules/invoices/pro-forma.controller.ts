@@ -46,7 +46,7 @@ export class ProFormaController {
    */
   @Get()
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW, PERMISSIONS.ORDERS_VIEW_PRICES)
-  @PdfResponse()
+  @PdfResponse('/orders/:id')
   @ApiQuery({ name: 'taxCodeId', required: false, type: String })
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,

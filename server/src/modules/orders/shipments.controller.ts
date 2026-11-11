@@ -79,7 +79,7 @@ export class ShipmentsController {
    */
   @Get(':shipmentId/pdf')
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
-  @PdfResponse()
+  @PdfResponse('/orders/:id')
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('shipmentId', ParseUUIDPipe) shipmentId: string,

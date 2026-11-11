@@ -108,7 +108,7 @@ export class InvoicesController {
    */
   @Get(':id/pdf')
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
-  @PdfResponse()
+  @PdfResponse('/invoices/:id')
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,
     @DownloadAsked() download: boolean,
