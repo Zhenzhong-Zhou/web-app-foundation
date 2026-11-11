@@ -96,16 +96,28 @@ export async function namedLines(
         pt2.name as second_product,
         vt2.name as second_variant
       from ${lines} l
-      join product_variants v on v.id = l.variant_id
-      join products p on p.id = v.product_id
+      join product_variants v
+        on v.id = l.variant_id
+        and v.organization_id = ${organizationId}::uuid
+      join products p
+        on p.id = v.product_id
+        and p.organization_id = ${organizationId}::uuid
       left join product_translations pt1
-        on pt1.product_id = p.id and pt1.locale = ${languages.language}
+        on pt1.product_id = p.id
+        and pt1.organization_id = ${organizationId}::uuid
+        and pt1.locale = ${languages.language}
       left join variant_translations vt1
-        on vt1.variant_id = v.id and vt1.locale = ${languages.language}
+        on vt1.variant_id = v.id
+        and vt1.organization_id = ${organizationId}::uuid
+        and vt1.locale = ${languages.language}
       left join product_translations pt2
-        on pt2.product_id = p.id and pt2.locale = ${languages.secondLanguage}
+        on pt2.product_id = p.id
+        and pt2.organization_id = ${organizationId}::uuid
+        and pt2.locale = ${languages.secondLanguage}
       left join variant_translations vt2
-        on vt2.variant_id = v.id and vt2.locale = ${languages.secondLanguage}
+        on vt2.variant_id = v.id
+        and vt2.organization_id = ${organizationId}::uuid
+        and vt2.locale = ${languages.secondLanguage}
       where l.organization_id = ${organizationId}::uuid
         and l.${parent} = ${parentId}::uuid
         ${just}
