@@ -12,7 +12,8 @@
  * take every other step's place: npm and npx come first on the PATH and
  * pass, but for `npm run api`, which writes what the test says it
  * generates, as openapi-ts does: the folder emptied, then written. npx
- * notes where it runs, the remote browser it is given and its arguments.
+ * notes where it runs, the remote browser it is given and its arguments,
+ * then does what a test gives it, such as failing for one browser.
  * The container's tests run the full script, with a docker of their own,
  * which notes what it is asked, and a one-at-a-time.mjs that notes its
  * call and runs the command after --, as the lock's script does once it
@@ -22,7 +23,13 @@
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -99,11 +106,17 @@ function put(root, files) {
 /**
  * `verify.sh --quick` (or with the arguments in `mode`, none for the full
  * run), its npm writing `generated` on `npm run
- * api`, from server/ as the script runs it, and a docker, when `docker` is
- * given, that is this script. The run, with npm's, npx's, docker's and
+ * api`, from server/ as the script runs it, a docker, when `docker` is
+ * given, that is this script, and an npx that runs `npx`'s lines after
+ * noting its call. The run, with npm's, npx's, docker's and
  * one-at-a-time.mjs's calls.
  */
-function verify(t, root, generated, { mode = ["--quick"], docker } = {}) {
+function verify(
+  t,
+  root,
+  generated,
+  { mode = ["--quick"], docker, npx = "" } = {},
+) {
   const bin = folder(t, "verify-bin");
   const made = path.join(bin, "generated");
   for (const [file, text] of Object.entries(generated)) {
@@ -126,7 +139,7 @@ fi
     path.join(bin, "npx"),
     `#!/bin/sh
 echo "\${PWD##*/}, \${PW_TEST_CONNECT_WS_ENDPOINT:-no remote} \${PW_TEST_CONNECT_EXPOSE_NETWORK:-}: $*" >> "$0.log"
-`,
+${npx}`,
     { mode: 0o755 },
   );
   // Each stand-in notes its calls in its own name's .log beside it.
@@ -309,6 +322,61 @@ test("the full run, once the container listens, runs the specs every browser run
   );
   // The container and both browsers, under one hold of the lock.
   assert.deepEqual(run.oneAtATime, [LINUX_UNDER_THE_LOCK, "exit 0"]);
+});
+
+/**
+ * An npx whose Playwright runs leave a test's page snapshot where
+ * Playwright does, in client/e2e/.output/, and fail when `fails` is the
+ * browser.
+ */
+const leavesOutput = (fails) => `case "$*" in
+  "playwright test "*)
+    mkdir -p e2e/.output/home
+    echo 'The page as it was.' > e2e/.output/home/error-context.md
+    if [ "$*" = "playwright test --project=${fails}" ]; then exit 1; fi ;;
+esac
+`;
+
+test("the full run keeps what a failed Linux browser run left in tmp/linux-browsers/, prints where, and fails (#521)", (t) => {
+  const root = fixture(t);
+  withPlaywright(root);
+  const run = verify(t, root, OLD, {
+    mode: [],
+    docker: container("Listening on ws://0.0.0.0:3333/", "true"),
+    npx: leavesOutput("webkit"),
+  });
+
+  assert.equal(run.status, 1, run.stdout + run.stderr);
+  assert.equal(playwright(run).length, 2, run.npx.join("\n"));
+  const kept = readdirSync(path.join(root, "tmp/linux-browsers"));
+  assert.equal(kept.length, 1, kept.join("\n"));
+  assert.match(kept[0], /^\d{4}-\d{2}-\d{2}-\d{6}-webkit$/);
+  assert.equal(
+    read(root, `tmp/linux-browsers/${kept[0]}/home/error-context.md`),
+    "The page as it was.\n",
+  );
+  assert.ok(
+    run.stderr.includes(`Kept in tmp/linux-browsers/${kept[0]}/: `),
+    run.stderr,
+  );
+  assert.doesNotMatch(run.stdout, /== All passed/);
+  // The trap still removes the container.
+  assert.equal(run.docker.at(-1), "rm --force verify-linux-browsers");
+  assert.deepEqual(run.oneAtATime, [LINUX_UNDER_THE_LOCK, "exit 1"]);
+});
+
+test("the full run keeps nothing when the Linux browsers pass", (t) => {
+  const root = fixture(t);
+  withPlaywright(root);
+  const run = verify(t, root, OLD, {
+    mode: [],
+    docker: container("Listening on ws://0.0.0.0:3333/", "true"),
+    npx: leavesOutput("none"),
+  });
+
+  assert.equal(run.status, 0, run.stdout + run.stderr);
+  assert.equal(existsSync(path.join(root, "tmp/linux-browsers")), false);
+  assert.doesNotMatch(run.stderr, /Kept in/);
 });
 
 test("--linux-browsers typed by hand, outside the lock, is refused before any container", (t) => {

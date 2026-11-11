@@ -210,6 +210,11 @@ against_main() {
 # working folders share, since another folder's full run removes the
 # container by its name: the full run calls this script again, as
 # --linux-browsers, through scripts/one-at-a-time.mjs, in the same bash.
+# When a browser's run fails, what Playwright left in client/e2e/.output/
+# is copied to tmp/linux-browsers/<date-time>-<browser>/ before the next
+# run clears it, and its path printed, then the run stops as before: Linux
+# WebKit misses about 1 test in 500, a stall that neither memory nor CPU
+# explains (#521), so the next miss is read from what its page showed.
 BROWSERS_CONTAINER=verify-linux-browsers
 
 linux_accessibility() {
@@ -247,14 +252,22 @@ linux_accessibility() {
   done
   address="$(docker port "$BROWSERS_CONTAINER" 3333/tcp)"
 
-  local project
+  local project status kept
   for project in firefox webkit; do
     if [[ "$project" == webkit ]]; then
       step 'Client: the specs every browser runs, in Linux WebKit, from the same container'
     fi
+    status=0
     (cd client && E2E_FIREFOX=1 PW_TEST_CONNECT_WS_ENDPOINT="ws://$address/" \
       PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
-      npx playwright test --project="$project")
+      npx playwright test --project="$project") || status=$?
+    if ((status != 0)); then
+      kept="tmp/linux-browsers/$(date +%Y-%m-%d-%H%M%S)-$project"
+      mkdir -p tmp/linux-browsers
+      cp -R client/e2e/.output "$kept"
+      echo "Kept in $kept/: the failed test's page snapshot, error-context.md, and its video (#521)." >&2
+      return "$status"
+    fi
   done
 }
 
