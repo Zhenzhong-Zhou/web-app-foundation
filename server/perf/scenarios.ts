@@ -1,4 +1,5 @@
 import type { VolumeManifest } from '../src/database/seed-volume';
+import { type PickableCategory, pickCategories } from './categories';
 import { calendarDay, type Session } from './client';
 import {
   inParallel,
@@ -39,6 +40,10 @@ export interface Org {
   deepMovements: string;
   /** About a thousand rows into the stock list. */
   deepStock: string;
+  /** The top-level category with the most items beneath it (ADR-092). */
+  categoryTop: string;
+  /** The bottom-level category under it with the most items. */
+  categoryBottom: string;
 }
 
 export interface Scenario {
@@ -134,6 +139,16 @@ export async function discover(
   const orders = await walk(session, '/orders?status=all');
   const movements = await walk(session, '/stock/movements');
 
+  const { categories } = await session.json<{
+    categories: PickableCategory[];
+  }>('GET', '/products/categories');
+  const picked = pickCategories(categories);
+  if (!picked?.bottom) {
+    throw new Error(
+      `${session.label} has no category under a top-level one. Was it seeded with seed:volume?`,
+    );
+  }
+
   // Two weeks after seeding, the newcomer's Home is anyone's: still timed,
   // but no longer what its name says.
   const { welcome } = await newcomer.json<{ welcome: unknown }>('GET', '/home');
@@ -152,6 +167,8 @@ export async function discover(
     deepOrders: orders.cursor,
     deepMovements: movements.cursor,
     deepStock: deep,
+    categoryTop: picked.top,
+    categoryBottom: picked.bottom,
   };
 }
 
@@ -264,6 +281,19 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // The category tree (ADR-092): every category with its items by type,
     // read each time Items opens, for its filter's counts.
     read('GET /products/categories', () => '/products/categories', 'zh-Hans'),
+    // Items' category filter (ADR-092), at the top-level category with the
+    // most items beneath it, which reads its whole branch, and at the
+    // bottom-level one under it, which reads that category alone.
+    read(
+      'GET /products?category, top',
+      (org) => `/products?category=${org.categoryTop}`,
+      'zh-Hans',
+    ),
+    read(
+      'GET /products?category, bottom',
+      (org) => `/products?category=${org.categoryBottom}`,
+      'zh-Hans',
+    ),
     read(
       'GET /products?search',
       () => `/products?search=${encodeURIComponent('专')}`,
