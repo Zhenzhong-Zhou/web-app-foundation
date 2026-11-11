@@ -739,6 +739,10 @@ business.
   anything.
 - **The release checks walked once** on the paid deployment, against the
   real address, before the first customer signs in.
+- **One organization export timed** at the large scale, before the first
+  customer relies on it: the export's budget, which ADR-071 defers until
+  then, or until a person reports an export slow (ADR-051's amendment
+  for #547).
 - **Terms and a privacy policy,** written, and linked in the signed-out
   footer above the © line: the one item here that needs code (ADR-082,
   Deferred). The app keeps personal details (names,

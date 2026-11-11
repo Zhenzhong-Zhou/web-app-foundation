@@ -88,7 +88,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-048] | Cost: value is a ledger, like quantity | accepted | 2026-09-28 | | [ADR-092] |
 | [ADR-049] | Price lists: a default that becomes the line's price | accepted | 2026-09-28 | | |
 | [ADR-050] | Licence status at release | accepted | 2026-09-30 | [ADR-040] | |
-| [ADR-051] | Performance: a volume seed, response-time budgets, plan checks | accepted | 2026-10-01 | | [ADR-081], [ADR-082], [ADR-091], [ADR-092] |
+| [ADR-051] | Performance: a volume seed, response-time budgets, plan checks | accepted | 2026-10-01 | [ADR-071] | [ADR-081], [ADR-082], [ADR-091], [ADR-092] |
 | [ADR-052] | Calendar days are `date`, sent as YYYY-MM-DD | accepted | 2026-10-02 | [ADR-040] | [ADR-072], [ADR-081] |
 | [ADR-053] | Backups: an encrypted nightly dump we own, at another provider, restored monthly | accepted | 2026-10-02 | | |
 | [ADR-054] | Languages: the person's language for the app, the customer's for documents | accepted | 2026-10-03 | | [ADR-071], [ADR-076], [ADR-081], [ADR-092] |
@@ -108,7 +108,7 @@ decided is in [Open decisions](open-decisions.md).
 | [ADR-068] | OpenAPI from the server, the client's types generated (#19) | accepted | 2026-10-13 | | [ADR-081], [ADR-092] |
 | [ADR-069] | Deleting your account, and leaving an organization | accepted | 2026-10-14 | [ADR-012] | [ADR-070], [ADR-077], [ADR-079], [ADR-091] |
 | [ADR-070] | Deleting an organization | accepted | 2026-10-15 | [ADR-012], [ADR-059], [ADR-069] | [ADR-071], [ADR-078], [ADR-080] |
-| [ADR-071] | Documents as PDF, drawn on the server | accepted | 2026-10-16 | [ADR-046], [ADR-054], [ADR-055], [ADR-070] | [ADR-072], [ADR-073], [ADR-080] |
+| [ADR-071] | Documents as PDF, drawn on the server | accepted | 2026-10-16 | [ADR-046], [ADR-054], [ADR-055], [ADR-070] | [ADR-051], [ADR-072], [ADR-073], [ADR-080] |
 | [ADR-072] | Each organization's time zone | accepted | 2026-10-16 | [ADR-052], [ADR-057], [ADR-058], [ADR-071] | |
 | [ADR-073] | Each organization's document numbering | accepted | 2026-10-17 | [ADR-046], [ADR-047], [ADR-056], [ADR-071] | |
 | [ADR-074] | Run numbers, and batch codes from them (deferred) | deferred | 2026-10-17 | | |
