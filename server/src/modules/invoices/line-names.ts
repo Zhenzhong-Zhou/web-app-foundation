@@ -1,6 +1,7 @@
 import { ConflictException } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 
+import { ERROR_CODES, withCode } from '../../common/error-codes';
 import type { Locale } from '../../common/locales';
 import type { DocumentLanguages } from '../../core/organizations/document-languages';
 import type { Transaction } from '../../database/database.module';
@@ -22,6 +23,7 @@ export interface LineNames {
 type NameRow = {
   id: string;
   sku: string;
+  product_id: string;
   product_name: string;
   variant_name: string | null;
   first_product: string | null;
@@ -55,8 +57,11 @@ const LANGUAGE_NAMES: Record<Locale, string> = {
  * it is a 409 before anything is written, as a missing billing address is,
  * naming whether the product's name or the variation's is missing, the
  * variation by its code and its own name (ADR-054, amended by ADR-092);
- * the product's first, since every variation prints it. Shipping never waits for this; issuing can, because
- * nothing has left the building on the strength of an invoice.
+ * the product's first, since every variation prints it. The refusal carries
+ * item_name_missing and the item's id either way, for a page to open the
+ * item, where its names are (ADR-071, amended). Shipping never waits for
+ * this; issuing can, because nothing has left the building on the strength
+ * of an invoice.
  */
 export async function namedLines(
   tx: Transaction,
@@ -89,6 +94,7 @@ export async function namedLines(
       select
         l.id,
         l.sku,
+        p.id as product_id,
         p.name as product_name,
         v.name as variant_name,
         pt1.name as first_product,
@@ -155,19 +161,24 @@ export async function namedLines(
 
     if (untranslated) {
       throw new ConflictException(
-        t(
-          {
-            id: 'invoices.skuLanguageNameWhich',
-            defaultMessage:
-              '{which, select, variant {The variant {sku} ({variation}) of {product}} other {{product} ({sku})}} has no {language} name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
-          },
-          {
-            which: untranslated[slot.product] === null ? 'product' : 'variant',
-            sku: untranslated.sku,
-            product: untranslated.product_name,
-            variation: untranslated.variant_name ?? '',
-            language: LANGUAGE_NAMES[slot.language],
-          },
+        withCode(
+          t(
+            {
+              id: 'invoices.skuLanguageNameWhich',
+              defaultMessage:
+                '{which, select, variant {The variant {sku} ({variation}) of {product}} other {{product} ({sku})}} has no {language} name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
+            },
+            {
+              which:
+                untranslated[slot.product] === null ? 'product' : 'variant',
+              sku: untranslated.sku,
+              product: untranslated.product_name,
+              variation: untranslated.variant_name ?? '',
+              language: LANGUAGE_NAMES[slot.language],
+            },
+          ),
+          ERROR_CODES.itemNameMissing,
+          { productId: untranslated.product_id },
         ),
       );
     }

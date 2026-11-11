@@ -3625,6 +3625,7 @@ export const ErrorCode = {
   REORDER_POINT_EXISTS: 'reorder_point_exists',
   REORDER_MAXIMUM_NOT_ABOVE_POINT: 'reorder_maximum_not_above_point',
   CODE_IN_USE: 'code_in_use',
+  ITEM_NAME_MISSING: 'item_name_missing',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

@@ -22182,7 +22182,8 @@
           "api_updating",
           "reorder_point_exists",
           "reorder_maximum_not_above_point",
-          "code_in_use"
+          "code_in_use",
+          "item_name_missing"
         ]
       },
       "ApiVocabulary": {
