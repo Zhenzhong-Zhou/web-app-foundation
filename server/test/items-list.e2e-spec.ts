@@ -536,6 +536,28 @@ describe('Items’ list (e2e)', () => {
     expect(reads[0].text).toContain('count(*) filter');
   });
 
+  // The page and its counts are one row whatever the page holds, so a
+  // sort's join cannot lose the counts of a search that finds nothing.
+  it('brings a first page’s counts when its search finds nothing, whatever the sort', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await item(alpha.agent, 'Focus');
+    await item(alpha.agent, 'Calm', { type: 'material' });
+
+    for (const sort of ['name', 'category', 'stock', 'added', 'changed']) {
+      const page = await list(alpha, { search: 'nowhere', sort });
+      expect(page.entries).toEqual([]);
+      expect(page.nextCursor).toBeNull();
+      expect(page.counts).toEqual({
+        types: [
+          { type: 'good', count: 0 },
+          { type: 'material', count: 0 },
+        ],
+        all: 0,
+        discontinued: 0,
+      });
+    }
+  });
+
   it('refuses a cursor made for another order, or not made here', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     await item(alpha.agent, 'Alpha');

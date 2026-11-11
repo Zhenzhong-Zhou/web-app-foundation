@@ -168,8 +168,7 @@ export function itemOrder(
   ];
 
   // The rank itemSearch worked out, joined rather than read again
-  // (#547); a left join, as every join here, so a first page that finds
-  // nothing still brings its counts.
+  // (#547).
   const rank: KeyPart[] = search
     ? [{ value: search.rank, type: 'int', order: 'asc' }]
     : [];

@@ -99,15 +99,16 @@ const CATEGORY_KEY = 'products_category_id_product_categories_id_fk';
 /** Items' list a page at a time unless asked for fewer (ADR-092). */
 const ITEMS_PAGE_SIZE = 50;
 
-/**
- * A place on Items' list: the row, and its order's parts as text; on a
- * first page, its counts beside it, and a row with no place when the page
- * is empty.
- */
-type PlaceRow = {
-  id: string | null;
+/** A place on Items' list: the row, and its order's parts as text. */
+type Place = {
+  id: string;
   keys: string[];
-  counts?: TypeCount[];
+};
+
+/** A page of Items' list as one row: its places, and a first page's counts. */
+type PageRow = {
+  places: Place[];
+  counts: TypeCount[] | null;
 };
 
 /** An item's variants and stock on hand, as itemStock gives them. */
@@ -222,39 +223,38 @@ export class ProductsService {
         shownOf(query),
         after,
       );
-      const place = sql`${products.id} as id,
-        array[${sql.join(
-          parts.map((part) => sql`(${part.value})::text`),
-          sql`, `,
-        )}] as keys`;
-      const ordered = sql`order by ${sql.join(orderOf(parts), sql`, `)}
-        limit ${limit + 1}`;
+      const placed = sql`page as (
+        select ${products.id} as id,
+          array[${sql.join(
+            parts.map((part) => sql`(${part.value})::text`),
+            sql`, `,
+          )}] as keys
+        from ${products}
+        ${joins}
+        where ${shown}
+        order by ${sql.join(orderOf(parts), sql`, `)}
+        limit ${limit + 1}
+      )`;
 
       // The page's places, by the order's parts; each row's parts as text
-      // for the cursor, worked out after the LIMIT for the page alone. A
-      // first page's counts come in the same statement, so a search's
-      // matching items are worked out once for both (#547): the counts are
-      // one row and the places are joined to it, so a page that finds
-      // nothing still brings them.
-      const { rows } = await tx.execute<PlaceRow>(
-        query.cursor
-          ? sql`${withOf(search?.cte)}
-              select ${place}
-              from ${products}
-              ${joins}
-              where ${shown}
-              ${ordered}`
-          : sql`${withOf(search?.cte)}
-              select ${place}, counted.counts
-              from (${countedOf(organizationId, query, matched)}) counted
-              left join ${products} on ${shown}
-              ${joins}
-              ${ordered}`,
-      );
+      // for the cursor, worked out after the LIMIT for the page alone. One
+      // row whatever the page holds: its places, aggregated straight from
+      // the page in its order, and a first page's counts, in the same
+      // statement, so a search's matching items are worked out once for
+      // both (#547).
+      const {
+        rows: [{ places, counts }],
+      } = await tx.execute<PageRow>(sql`
+        ${withOf(search?.cte, placed)}
+        select (select coalesce(json_agg(page), '[]'::json) from page)
+            as places,
+          ${
+            query.cursor
+              ? sql`null`
+              : sql`(${countedOf(organizationId, query, matched)})`
+          } as counts
+      `);
 
-      const places = rows.filter(
-        (row): row is PlaceRow & { id: string } => row.id !== null,
-      );
       const page = places.slice(0, limit);
       const last = page.at(-1);
       return {
@@ -266,7 +266,7 @@ export class ProductsService {
         ),
         nextCursor:
           places.length > limit && last ? cursorOf(order, last.keys) : null,
-        counts: query.cursor ? null : countsOf(rows[0].counts!, query),
+        counts: counts ? countsOf(counts, query) : null,
       };
     });
   }
