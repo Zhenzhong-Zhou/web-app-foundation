@@ -59,8 +59,8 @@ With no arguments.
    - **A check that cannot be made,** as a run past its artifact's 30
      days or no run since, is said in its row, never guessed.
 3. **The proposal, `tmp/triage.md`,** the home's step 3, as a table with a
-   row per issue by number, which adds its title, and the check made and
-   what it found; built to scan as [CLAUDE.md's "Report for a quick
+   row per issue by number, which adds its title, its kind as it has it
+   or as proposed, and the check made and what it found; built to scan as [CLAUDE.md's "Report for a quick
    read"][report] says. Besides:
    - **a `later` issue's line,** `Trigger: …` or `Needs: …`, proposed
      under the table where its body has none;
@@ -80,9 +80,10 @@ not have: stop and say so.
 1. **`tmp/triage-apply.sh`,** under `#!/usr/bin/env bash` and
    `set -euo pipefail`, one `gh` command per choice in issue order, each
    under a comment naming the issue and the choice:
-   - **a group and areas:** `gh issue edit <N> --add-label
-     <group>,area:<area>`, with `--remove-label` for `needs-triage` where
-     the issue has it and for each label the choice replaces, and
+   - **a group, a kind and areas:** `gh issue edit <N> --add-label
+     <group>,area:<area>`, the kind among them where the issue has none,
+     with `--remove-label` for `needs-triage` where the issue has it and
+     for each label the choice replaces, never the kind it keeps, and
      `--milestone "Fix-ups"` where the choice names the fix-up stage;
    - **a `later` issue's missing line:** in the same command,
      `--body-file tmp/triage-body-<N>.md`, its body as exported with the

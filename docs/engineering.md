@@ -39,6 +39,10 @@
   the folders of `server/src/modules/`, `core/` and `shared/`. A new
   module folder needs its `area:` label on GitHub,
   `gh label create area:<name>`, until labels are kept as code.
+- **And one kind label** (10 November 2026): `bug`, `enhancement` or
+  `accessibility`, beside its group, so the open issues read by what
+  they are as well as by when they are fixed. A triage proposes one
+  where an issue has none, and keeps the one it has.
 - **A close gives GitHub's reason and a one-line comment** (28 October
   2026): `completed` when a PR or a commit fixed it, named in the
   comment; `not planned` when it is dropped or overtaken, or is a
@@ -101,7 +105,8 @@ steps; this section stays the rule.
    a small bug against `main`. One already fixed is proposed for
    closing, not labelled.
 3. **Write the proposal to `tmp/triage.md`:** for each issue its group,
-   or a close with its reason, its areas and a few words why; then the
+   its kind where it has none, or a close with its reason, its areas and
+   a few words why; then the
    counts by group and by area, the issues that look like duplicates,
    and the present labels that disagree.
 4. **Apply what Bob decides,** and the three checks above print nothing.
@@ -549,6 +554,12 @@ reports success.
   timing differs from the Mac's ([conventions.md, Tests](conventions.md#tests)).
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
+- **A change to a script CI runs is read against
+  `.github/workflows/ci.yml`'s own settings before the push** (10
+  November 2026, #554's review, finding 11): CI's jobs set their own
+  environment, as the browser job names its three databases
+  `foundation_e2e` alike, which no `.env` here does, so nothing run on
+  the Mac catches what only CI's settings break.
 - Before each commit, `scripts/verify.sh --quick`; or `--docs`, in
   seconds, for a commit that changes only Markdown outside `client/` and
   `docs/tables/`, and `scripts/`: the Markdown step and the scripts'
