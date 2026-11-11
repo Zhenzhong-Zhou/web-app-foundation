@@ -5,10 +5,12 @@ import request from 'supertest';
 
 import { httpServer } from './utils/create-test-app';
 import {
+  addMember,
   body,
   createE2eApp,
   createLocation,
   createPartner,
+  customRole,
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
@@ -211,6 +213,31 @@ describe('A refused document opened from a link (e2e)', () => {
           .expect(401),
       ),
     ).toContain('<html lang="en">');
+  });
+
+  it('says a member has no access when their roles do not reach the document, with the way back', async () => {
+    const { org, orderId } = await unnamedPurchase();
+    // Orders, but not their prices, which a purchase order's PDF shows.
+    await customRole(app, org.organizationId, 'Warehouse', ['orders.view']);
+    const member = await addMember(
+      app,
+      org,
+      'warehouse@alpha.example.com',
+      'Warehouse',
+    );
+
+    const html = isPage(
+      await member
+        .get(`/v1/orders/${orderId}/pdf?locale=en`)
+        .set(VISIT)
+        .expect(403),
+    );
+
+    expect(html).toContain('<h1>You don’t have access to this</h1>');
+    expect(html).toContain('<div class="icon warning"');
+    expect(links(html)).toEqual([
+      `Back to the order -> ${client}/orders/${orderId}`,
+    ]);
   });
 
   // Every PDF route, its own document's page as the way back (R10).

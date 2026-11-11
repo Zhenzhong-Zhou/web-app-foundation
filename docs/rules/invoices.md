@@ -348,6 +348,7 @@ is the organization's, on Organization → Documents.
   [test](../../server/test/document-refusals.e2e-spec.ts) "answers a page visit with a page in the app’s language, its message escaped, with the item and the way back" ·
   [test](../../server/test/document-refusals.e2e-spec.ts) "answers the same request without a visit’s headers with the JSON as before" ·
   [test](../../server/test/document-refusals.e2e-spec.ts) "reads Sign in when signed out, back to the document’s page, in the browser’s language without ?locale=" ·
+  [test](../../server/test/document-refusals.e2e-spec.ts) "says a member has no access when their roles do not reach the document, with the way back" ·
   [test](../../server/test/document-refusals.e2e-spec.ts) "answers an unknown id with a 404 page back to its own document, on each of the six routes" ·
   [test](../../server/src/core/documents/refusal-page.spec.ts) "escapes the message, which can hold typed text" ·
   [test](../../client/src/components/pdf-actions.test.tsx) "says 中文 when the app is in it, whatever the browser’s language" ·
