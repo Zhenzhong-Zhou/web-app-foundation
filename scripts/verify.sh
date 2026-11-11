@@ -262,10 +262,16 @@ linux_browsers() {
       PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
       npx playwright test --project="$project") || status=$?
     if ((status != 0)); then
-      kept="tmp/linux-browsers/$(date +%Y-%m-%d-%H%M%S)-$project"
-      mkdir -p tmp/linux-browsers
-      cp -R client/e2e/.output "$kept"
-      echo "Kept in $kept/: the failed test's page snapshot, error-context.md, and its video (#521)." >&2
+      # A run that failed before any test, such as one that could not
+      # reach the container, leaves no folder: nothing to copy.
+      if [[ -d client/e2e/.output ]]; then
+        kept="tmp/linux-browsers/$(date +%Y-%m-%d-%H%M%S)-$project"
+        mkdir -p tmp/linux-browsers
+        cp -R client/e2e/.output "$kept"
+        echo "Kept in $kept/: the failed test's page snapshot, error-context.md, and its video (#521)." >&2
+      else
+        echo 'Playwright left nothing in client/e2e/.output/ to keep (#521).' >&2
+      fi
       return "$status"
     fi
   done

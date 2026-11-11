@@ -365,6 +365,28 @@ test("the full run keeps what a failed Linux browser run left in tmp/linux-brows
   assert.deepEqual(run.oneAtATime, [LINUX_UNDER_THE_LOCK, "exit 1"]);
 });
 
+test("a failed Linux browser run that left no client/e2e/.output/ says so in one line, keeps nothing, and fails as Playwright did", (t) => {
+  const root = fixture(t);
+  withPlaywright(root);
+  const run = verify(t, root, OLD, {
+    mode: [],
+    docker: container("Listening on ws://0.0.0.0:3333/", "true"),
+    npx: `case "$*" in
+  "playwright test --project=webkit") exit 3 ;;
+esac
+`,
+  });
+
+  assert.equal(run.status, 3, run.stdout + run.stderr);
+  assert.equal(existsSync(path.join(root, "tmp/linux-browsers")), false);
+  assert.match(
+    run.stderr,
+    /^Playwright left nothing in client\/e2e\/\.output\/ to keep \(#521\)\.$/m,
+  );
+  assert.doesNotMatch(run.stderr, /Kept in|cp: /);
+  assert.equal(run.docker.at(-1), "rm --force verify-linux-browsers");
+});
+
 test("the full run keeps nothing when the Linux browsers pass", (t) => {
   const root = fixture(t);
   withPlaywright(root);
