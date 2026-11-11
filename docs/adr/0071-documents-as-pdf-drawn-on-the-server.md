@@ -258,3 +258,203 @@ day each is made in the organization's zone. A `/` in a number is written
 The purchase
 order's and the pro forma invoice's PDFs need `orders.view_prices` beside
 `orders.view`. The packing slip, which shows no prices, does not.
+
+## Amendment (November 2026) — a refused document opened from a link (#526)
+
+Print and Download PDF are plain links, as this ADR chose, so the browser
+follows them itself. When a PDF route refuses, the browser shows the
+API's JSON as it is: on 9 November 2026 an order's Print opened a tab
+reading `{"statusCode": 409, …}`, its message inside in Chinese, about a
+variation's missing English name (#526). A newcomer cannot read it, and
+Download PDF, which opens in the same tab, leaves nothing to click. Every
+document's PDF does the same, and so do the packing slip's two links.
+ADR-092 (#532) took the issue's second half: the refusal says whether
+the item's name or the variant's is missing, and the item's page shows
+each variant's names.
+
+The maintainer chose the page on 10 November 2026, in #526's comment,
+and the decisions below the same day, as recommended.
+
+### Requirements, as confirmed
+
+The maintainer confirmed these on 10 November 2026, before drafting,
+with the assumptions, what is not included and the questions' answers.
+Each names its step in the brief, and the as-built marks each met,
+changed or deferred. The 30-minute look at #521 rides here, so its two
+are here too; #547's are in ADR-051's amendment, its own branch's first
+commit.
+
+| R | What | Done when | Step |
+| --- | --- | --- | --- |
+| R1 | The handoff records #554's merge, this branch, the translations' exception to every suggestion applied, Movements' and flows and states' inputs, and the playback's commit in that docs pull request | `scripts/verify.sh --docs` passes, and the handoff says each | 1 |
+| R2 | ADR-089's as-built line for Linux WebKit, with its third run | Committed on its own | 2 |
+| R3 | The working agreements: CI's own settings read before a push, and each issue's kind label | engineering.md and the triage skill say both | 3 |
+| R4 | A PDF route that refuses a page visit answers with a readable page, not JSON | A server test with `Sec-Fetch-Mode: navigate`, and one with `Accept: text/html` alone, each gets the page | 7 |
+| R5 | The app's own requests keep their JSON | The same request without those headers gets the JSON as before; the suite's check of every response passes | 7 |
+| R6 | The page keeps the refusal's status, escapes the message, is never cached and holds no script | Tests: 409, 401 and 404; a code typed with `<b>`; `no-store`; no `<script>` | 7 |
+| R7 | The page is in the app's language, from `?locale=` on the four links | A server test with `?locale=zh-Hans`; the client's test of the links; MC-2513 with a browser set to English | 7, 8 |
+| R8 | The way back is the document's page in the app, reading Sign in after a 401 and returning there | Tests of each document's link; MC-2513's sign-in and return | 7 |
+| R9 | The way out: the missing-name refusal carries `item_name_missing` with the item's id, and the page links to the item | A server test for the item's and a variant's missing name; the page's link tested | 6, 7 |
+| R10 | Every one of the six PDF routes, and the packing slip's links | `PdfResponse` takes the document's page as a required argument, so the type check proves each route names one | 7, 8 |
+| R11 | Download PDF, which opens in the same tab, shows the page with its way back | The browser test | 8 |
+| R12 | The page has the status pages' shape, light and dark | Pictures in the pull request, light and dark, in English and in 中文 | 7, 11 |
+| R13 | The docs: MC-2513, conventions.md's "Status pages", the invoices and products rules files | In the same commits; `scripts/check-docs.mjs` passes | 6, 7, 8 |
+| R14 | #551's item 91: the joins name the organization | The plans at large before and after, in the step's summary; the tests stay green | 5 |
+| R15 | Dependencies in range and 7 days old, the pins on Playwright 1.64.1 and jsdom 30.1.3 kept | Steps 4 and 10 say what they took | 4, 10 |
+| R16 | #521: the container and the Mac measured before any fix is chosen | The look's report gives the limits, the peaks, and each failure against the samples | the look |
+| R17 | #521: the fix its cause asks for | The full verify's Linux browsers pass 116 of 116, in Firefox and in WebKit, three runs in a row | 9 |
+
+- **Assumptions:**
+  - A1: the decisions below are the ones recommended on 10 November,
+    and ADR-071's missed budget rides with #547.
+  - A2: a page visit is `Sec-Fetch-Mode: navigate`, or an `Accept` that
+    prefers HTML where that header is missing; every current browser,
+    Safari from 16.4, sends the first.
+  - A3: `CLIENT_URL` names the app on every environment, CI and the
+    browser tests' servers included.
+  - A4: #547's check before drafting is read from github.com's issue
+    pages, and ADR-051's amendment is its branch's first commit.
+  - A5: `foundation_perf_large` is current, seeded on 10 November and
+    migrated through 0080; this branch adds no migration.
+  - A6: the look runs on Playwright 1.64.1, and Docker Desktop's
+    settings are the maintainer's to change.
+- **Not included:**
+  - N1: the issue dialog's link to the item, and N2: a way out for a
+    document's other refusals, each deferred below.
+  - N3: #161, what the document actions are called and what the packing
+    slip prints, and #162, tagged PDFs.
+  - N4: #551's other items, 65 among them.
+  - N5: a Playwright raise before 12 November, and any on this branch
+    unless the look finds the crash comes from resources.
+  - N6: the Help guides: the page explains itself.
+  - N7: #547's own riders, the category filter's counts that ignore the
+    search and #546's icons.
+- **The questions' answers:** Q1a, the bar in R17: one run cannot tell
+  a fix from luck, after two runs failed and two passed. Q2a and Q3a are
+  #547's, in ADR-051's amendment: the watch closes only when the search
+  is back under 100 ms, and the missed budget is one invoice's PDF,
+  timed at both scales.
+
+Checked before drafting, for the areas invoices, documents, api, i18n
+and ops, on 10 November 2026, from github.com's issue pages, since
+GitHub's API had no requests left for the chat's container:
+
+- **Fired, and taken here:**
+  - #526, its first half, as its comment of 10 November decided.
+  - #551's item 91 (`when-touched`): `line-names.ts`, which this branch
+    changes, joins the variants, the products and both translations
+    tables without naming the organization, as `stockRowsOf` does, the
+    item's other half; one fix for both.
+  - #521: the 30-minute look the handoff owed after #554's merge, run
+    beside this branch. The fix its cause asks for rides here, as a
+    commit of its own, when it is code.
+- **Not fired, and left:**
+  - #551's item 65, the missing-names rule copied on the client: its fix
+    moves the rule into the item's detail, an API change in Items' area.
+  - #161: what the document actions are called and what the packing
+    slip prints, a design of its own; this changes only what a refusal
+    shows.
+  - #328: the new code reaches the API document through `ERROR_CODES`'
+    own list, not a union, so its order cannot move.
+  - #164, #264, #278, #282 and #487 (invoices and documents), #177, #314,
+    #504 and #546 (api), #149, #150, #324, #486, #501, #512, #541, #543
+    and #548 (i18n), and #226 and #253 (ops), each `when-touched`: their
+    files are not changed. #278 waits for a new document, which this is
+    not; the i18n ones go with the translations' batch.
+  - #142, #162, #197, #263, #284, #320, #336, #446, #516, #522, #530 and
+    #531: their files are not changed. #142 is the client's policy; the
+    page is the API's, under helmet's.
+  - This ADR's Deferred lines, but one below; those of ADR-054, ADR-068,
+    ADR-081 and ADR-084; ADR-051's watch list; and Open decisions: none
+    bears on a refusal met outside the app.
+- **Found while checking:**
+  - This ADR's Deferred "budgets for the PDF routes and the export"
+    fired at the first `npm run perf` after its merge, in October, and
+    was not taken: no scenario times a PDF. The branch for #547, which
+    adds a scenario, takes it.
+  - The missing-name refusal carried no code, so a page could not offer
+    the item's names as the way out.
+  - A plain link sends the browser's Accept-Language, not the app's: a
+    person who chose 中文 in a browser set to English would read the
+    page in English.
+  - The API's helmet allows inline styles and no script, so the page is
+    styled inline and needs none.
+
+### Decision — a readable page for a refused document opened from a link
+
+- When a PDF route refuses a page visit, `Sec-Fetch-Mode: navigate` or,
+  from a browser that sends no such header, an `Accept` preferring
+  `text/html`, it answers with a short page instead of the JSON: a
+  title, the refusal's message, the way back, and the way out when the
+  refusal carries one.
+- The app's own requests keep the JSON, the API's one error shape, and
+  Print and Download PDF stay plain links.
+- The page keeps the refusal's status code; escapes the message, which
+  can hold typed text such as a code; is sent `Cache-Control: no-store`;
+  and carries no script. A failure (500) shows its reference, as the
+  app's own crash page does.
+- It has the shape of the app's status pages (conventions.md, "Status
+  pages"): a short title as its one heading, one sentence of what to
+  do, one or two links; in ADR-055's colours, light or dark as the
+  browser is set. No new board on the canvas: it repeats a design
+  already built.
+
+### Decision — the page's language, from the link
+
+- Print and Download PDF, and the packing slip's two links, carry
+  `?locale=` with the app's language, as the export's link does
+  (*Decision — the export*). The page reads it; without it, the
+  request's Accept-Language; then English.
+- The PDF itself does not change with it: a document prints in its
+  customer's languages.
+
+### Decision — the way back, and the way out
+
+- **The way back** is the document's own page in the app: the order,
+  for an order's, a pro forma's, a purchase order's and a packing slip's
+  PDF; the invoice, the credit note or the return authorization, for
+  theirs. After a 401 the same link reads Sign in: the app signs the
+  person in and returns there, as it does for any page.
+- **The way out** comes from the refusal's code. The missing-name
+  refusal gains one, `item_name_missing`, with the item's id in its
+  details, and the page links to the item's page, where its names are.
+  Every other refusal offers the way back alone.
+
+### Considered and not done
+
+- **The PDF fetched by the app,** then shown from memory: the file would
+  pass through the page, which this ADR chose against, and a large
+  document would wait in the tab's memory.
+- **A redirect to a page of the app:** the status code is lost, and a
+  redirect after a refusal reads as success to the browser and to any
+  tool that follows it.
+- **The person's saved language:** there is none after a 401, nor for a
+  person who never chose one.
+- **The browser's Back:** Print opens a tab with no history.
+- **A code for every refusal a PDF can meet:** more than #526 asks; codes
+  are added one at a time, where a page has something to offer.
+
+### Deferred — each with what brings it in
+
+- **The issue dialog's link to the item,** from the same code. Trigger:
+  a person who cannot find the item from that refusal in the app.
+- **A way out for a document's other refusals,** an address or a tax
+  number missing. Trigger: one met through a PDF link.
+
+### Consequences
+
+- The PDF routes' own exception filter, bound by `PdfResponse`, with the
+  page beside it, and their server tests; the page's words in the three
+  catalogues.
+- `item_name_missing` in `error-codes.ts`, thrown by `line-names.ts`;
+  `npm run api`.
+- The client's four PDF links carry `?locale=`.
+- A manual check walks the page; the invoices rules file and
+  conventions.md's "Status pages" gain it.
+- No migration, and no seed: nothing new is stored, and the manual check
+  reaches the refusal by clearing a required name.
+- Built on `fix-526-refused-document-page`, in this order: this
+  amendment, with the handoff; ADR-089's as-built line; the working
+  agreements; dependencies; #551's item 91; the code; the page; the
+  links; #521's fix, as its look finds; dependencies again; the reviews;
+  the as-built.
