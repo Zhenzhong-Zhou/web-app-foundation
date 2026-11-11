@@ -205,6 +205,21 @@ const OPEN_ITEM = t({
   defaultMessage: 'Open the item',
 });
 
+/**
+ * Which status page a refusal is, worked out once from its status: the
+ * look, the title, the message, the way back's words and the reference
+ * each follow from it.
+ */
+type Kind = 'signedOut' | 'forbidden' | 'missing' | 'refused' | 'crash';
+
+function kindOf(status: number): Kind {
+  if (status >= 500) return 'crash';
+  if (status === 401) return 'signedOut';
+  if (status === 403) return 'forbidden';
+  if (status === 404) return 'missing';
+  return 'refused';
+}
+
 /** What the page is made from. */
 export interface Refusal {
   /** The refusal as the API's JSON carries it, its message in `locale`. */
@@ -233,28 +248,20 @@ export function refusalPage({
   back,
   app,
 }: Refusal): string {
-  const status = body.statusCode;
   const document = DOCUMENT_PAGES[page];
   const words = (message: Translatable) => translate(message, locale);
 
-  const look =
-    status === 401 || status === 403
-      ? LOOKS.forbidden
-      : status >= 500
-        ? LOOKS.crash
-        : LOOKS.missing;
-  const title = words(
-    status === 401
-      ? SIGNED_OUT
-      : status === 403
-        ? FORBIDDEN
-        : status === 404
-          ? document.missing
-          : status >= 500
-            ? CRASH
-            : REFUSED,
-  );
-  const messages = status >= 500 ? [words(CRASH_MESSAGE)] : [body.message];
+  const kind = kindOf(body.statusCode);
+  const { look, title } = {
+    signedOut: { look: LOOKS.forbidden, title: SIGNED_OUT },
+    forbidden: { look: LOOKS.forbidden, title: FORBIDDEN },
+    missing: { look: LOOKS.missing, title: document.missing },
+    refused: { look: LOOKS.missing, title: REFUSED },
+    crash: { look: LOOKS.crash, title: CRASH },
+  }[kind];
+  const heading = words(title);
+  const messages =
+    kind === 'crash' ? [words(CRASH_MESSAGE)] : [body.message].flat();
 
   // The way out first, as the main link, where the refusal has one.
   const item =
@@ -266,11 +273,11 @@ export function refusalPage({
       ? [{ href: `${app}/items/${encodeURIComponent(item)}`, label: OPEN_ITEM }]
       : []),
     // After a 401 the app signs the person in and returns there.
-    { href: app + back, label: status === 401 ? SIGN_IN : document.back },
+    { href: app + back, label: kind === 'signedOut' ? SIGN_IN : document.back },
   ];
 
   const reference =
-    status >= 500 && body.requestId
+    kind === 'crash' && body.requestId
       ? translateParts(
           t(
             {
@@ -297,16 +304,16 @@ export function refusalPage({
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     '<meta name="color-scheme" content="light dark">',
-    `<title>${escapeHtml(title)}</title>`,
+    `<title>${escapeHtml(heading)}</title>`,
     `<style>${styles(locale)}</style>`,
     '</head>',
     '<body>',
     '<main>',
     `<div class="icon ${look.tone}" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="${look.icon}"/></svg></div>`,
-    `<h1>${escapeHtml(title)}</h1>`,
-    ...messages
-      .flat()
-      .map((message) => `<p class="message">${escapeHtml(message)}</p>`),
+    `<h1>${escapeHtml(heading)}</h1>`,
+    ...messages.map(
+      (message) => `<p class="message">${escapeHtml(message)}</p>`,
+    ),
     '<div class="links">',
     ...links.map(
       ({ href, label }, index) =>
