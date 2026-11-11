@@ -43,7 +43,8 @@ const API_URL = process.env.E2E_API_URL ?? 'http://localhost:3100';
 const FIREFOX = Boolean(process.env.CI || process.env.E2E_FIREFOX);
 
 /** The specs WebKit and Firefox run besides Chromium (projects, below). */
-const EVERY_ENGINE = /(?:accessibility|document-refusals)\.spec\.ts/;
+const EVERY_ENGINE =
+  /(?:accessibility|document-refusals|sign-in-return)\.spec\.ts/;
 
 const E2E_DATABASE_URL = process.env.DATABASE_URL_E2E;
 
@@ -121,8 +122,9 @@ export default defineConfig({
    * screens rendered and checked, in both modes, which is where an engine's
    * difference in layout, focus or contrast shows; and the refused PDF's
    * page, which each browser reaches by its own navigation, from a plain
-   * link (ADR-071, amended for #526). On an iPhone's screen and engine,
-   * mobile.spec.
+   * link (ADR-071, amended for #526), and signing in from its link, where
+   * two navigations at once land in each engine's order. On an iPhone's
+   * screen and engine, mobile.spec.
    *
    * Only specs that make their own organization, or change nothing, run in
    * more than one project: the rest share the owner's organization and fixed

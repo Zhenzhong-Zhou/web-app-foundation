@@ -42,10 +42,15 @@ function Protected({ children }: { children: ReactNode }) {
 /**
  * Redirects away when a session already exists. Without this a signed-in user
  * can submit the login form again, rotating a session for no reason (ADR-015).
+ * To where Protected remembered, as the login form does: signing in sets the
+ * session before the form moves on, and this move lands after the form's, so
+ * a different place would win over the page asked for (#526).
  */
 function AuthOnly({ children }: { children: ReactNode }) {
   const { session } = useAuth();
-  return session ? <Navigate to="/" replace /> : children;
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? '/';
+  return session ? <Navigate to={from} replace /> : children;
 }
 
 /**
