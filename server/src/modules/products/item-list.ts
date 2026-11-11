@@ -2,7 +2,6 @@ import { BadRequestException } from '@nestjs/common';
 import { and, eq, isNull, type SQL, sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
-import type { SearchTerms } from '../../common/search';
 import type { SortOrder } from '../../common/sorted-page';
 import { PRODUCT_TYPES, products } from '../../database/schema';
 import { t } from '../../i18n/translate';
@@ -15,7 +14,7 @@ import {
   UNCATEGORISED,
 } from './dto/list-products.dto';
 import type { ProductCounts } from './dto/product-response.dto';
-import { foundBy } from './item-search';
+import type { ItemSearch } from './item-search';
 
 /**
  * Items' order and its cursor (ADR-092): the list is sorted by a key of
@@ -142,14 +141,14 @@ export function readCursor(
  * - **Added and changed,** by when, then the id.
  *
  * While a search is typed, its rank comes first, the closest first
- * whichever way the sort runs (ADR-056, amended), read from withMatching's
+ * whichever way the sort runs (ADR-056, amended), read from itemSearch's
  * result, which the statement starts with.
  */
 export function itemOrder(
   query: ItemFiltersDto,
   locale: Locale,
   organizationId: string,
-  terms: SearchTerms | null,
+  search: ItemSearch | null,
 ): { parts: KeyPart[]; order: string; joins: SQL } {
   const sort = query.sort ?? 'name';
   const way = query.order ?? 'asc';
@@ -168,15 +167,12 @@ export function itemOrder(
     { ...id, order: way },
   ];
 
-  // The rank withMatching worked out, joined rather than read again
+  // The rank itemSearch worked out, joined rather than read again
   // (#547); a left join, as every join here, so a first page that finds
   // nothing still brings its counts.
-  const rank: KeyPart[] = terms
-    ? [{ value: sql`matching.rank`, type: 'int', order: 'asc' }]
+  const rank: KeyPart[] = search
+    ? [{ value: search.rank, type: 'int', order: 'asc' }]
     : [];
-  const ranked = terms
-    ? sql`left join matching on matching.product_id = ${products.id}`
-    : sql``;
 
   const byKey: Record<ItemSort, () => { parts: KeyPart[]; joins: SQL }> = {
     name: () => ({
@@ -217,20 +213,20 @@ export function itemOrder(
   const { parts, joins } = byKey[sort]();
   return {
     parts: [...rank, ...parts],
-    order: [sort, way, locale, terms ? 'ranked' : 'unranked'].join(' '),
-    joins: sql`${ranked} ${joins}`,
+    order: [sort, way, locale, search ? 'ranked' : 'unranked'].join(' '),
+    joins: sql`${search?.join ?? sql``} ${joins}`,
   };
 }
 
 /**
  * What the list and its counts narrow to alike: its search, as
- * withMatching found it, and its category with every category under it,
+ * itemSearch found it, and its category with every category under it,
  * or Uncategorised. The type and Discontinued are shownOf's, which the
  * counts count by instead.
  */
 export function matchedBy(
   query: ItemFiltersDto,
-  terms: SearchTerms | null,
+  search: ItemSearch | null,
   organizationId: string,
 ): SQL | undefined {
   const category =
@@ -243,7 +239,7 @@ export function matchedBy(
           )`
         : undefined;
 
-  return and(terms ? foundBy : undefined, category);
+  return and(search?.found, category);
 }
 
 /** Discontinued items as asked: hidden, alone, or beside the rest. */
@@ -271,7 +267,7 @@ export interface TypeCount {
  * The counts beside the list (ADR-092), each with its search and its
  * category: every type's tab, as Discontinued leaves it, and its
  * discontinued items, as one value for the first page's statement, which
- * reads withMatching's result once for the page and its counts (#547).
+ * reads itemSearch's result once for the page and its counts (#547).
  * A type is counted while the organization holds any item of it, so a
  * tab keeps its place while a search finds none there.
  */

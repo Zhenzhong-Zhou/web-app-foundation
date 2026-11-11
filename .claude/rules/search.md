@@ -27,7 +27,7 @@ for people; a commit that changes one of those rules updates it
   item through `itemMatches`, a partner through `partnerRecordMatches`, a
   document by its partner through `partnerMatches`. Never an `ILIKE` of
   its own, so what the lookup finds, its list finds too (ADR-056). Items'
-  list, counts and export read `withMatching`'s, once a statement (#547).
+  list, counts and export read `itemSearch`'s, once a statement (#547).
 - **Ranked by the same helpers:** `itemRank`, `partnerRank`, or
   `matchRank` and `pinyinRank` under `bestRank`, in the lookup and the
   lists that load whole. A keyset-paged list is never ordered by match,

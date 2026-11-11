@@ -74,7 +74,7 @@ import {
   shownOf,
   type TypeCount,
 } from './item-list';
-import { itemMatches, itemRank, withMatching } from './item-search';
+import { itemMatches, itemRank, itemSearch, withOf } from './item-search';
 import type { ProductExportRow } from './product-exports';
 import { coverOf, imagesOf, publicImages } from './product-images';
 
@@ -205,13 +205,14 @@ export class ProductsService {
     const terms = query.search ? searchTerms(query.search) : null;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
+      const search = itemSearch(terms, locale, organizationId);
       const { parts, order, joins } = itemOrder(
         query,
         locale,
         organizationId,
-        terms,
+        search,
       );
-      const matched = matchedBy(query, terms, organizationId);
+      const matched = matchedBy(query, search, organizationId);
       const after = query.cursor
         ? afterKeys(parts, readCursor(query.cursor, order, parts))
         : undefined;
@@ -237,13 +238,13 @@ export class ProductsService {
       // nothing still brings them.
       const { rows } = await tx.execute<PlaceRow>(
         query.cursor
-          ? sql`${withMatching(terms, locale, organizationId)}
+          ? sql`${withOf(search?.cte)}
               select ${place}
               from ${products}
               ${joins}
               where ${shown}
               ${ordered}`
-          : sql`${withMatching(terms, locale, organizationId)}
+          : sql`${withOf(search?.cte)}
               select ${place}, counted.counts
               from (${countedOf(organizationId, query, matched)}) counted
               left join ${products} on ${shown}
@@ -376,7 +377,8 @@ export class ProductsService {
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const org = sql`${organizationId}::uuid`;
-      const { parts, joins } = itemOrder(query, locale, organizationId, terms);
+      const search = itemSearch(terms, locale, organizationId);
+      const { parts, joins } = itemOrder(query, locale, organizationId, search);
 
       // A search's matching items worked out once, for the match and the
       // order alike (#547).
@@ -393,7 +395,7 @@ export class ProductsService {
         product_names: Record<string, string> | null;
         variant_names: Record<string, string> | null;
       }>(sql`
-        ${withMatching(terms, locale, organizationId)}
+        ${withOf(search?.cte)}
         select pv.id, pv.sku, ${products.name} as product_name,
           pv.name as variant_name, ${products.type} as type,
           shelf.names as category, pv.unit_of_measure, pv.tracks_lots,
@@ -417,7 +419,7 @@ export class ProductsService {
           on shelf.id = ${products.categoryId}
         where ${and(
           eq(products.organizationId, organizationId),
-          matchedBy(query, terms, organizationId),
+          matchedBy(query, search, organizationId),
           shownOf(query),
         )}
         order by ${sql.join(orderOf(parts), sql`, `)},
