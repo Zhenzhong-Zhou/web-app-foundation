@@ -7,6 +7,7 @@ import type { Request, Response } from 'express';
 
 import {
   errorBodyOf,
+  type IdentifiedRequest,
   noteFault,
 } from '../../common/filters/all-exceptions.filter';
 import type { Locale } from '../../common/locales';
@@ -19,7 +20,7 @@ import { type DocumentPage, refusalPage } from './refusal-page';
  * from one that sends no such header, an Accept that prefers HTML. The
  * app's own requests are neither, and keep the JSON.
  */
-export function isPageVisit(req: Request): boolean {
+function isPageVisit(req: Request): boolean {
   const mode = req.headers['sec-fetch-mode'];
   if (mode !== undefined) return mode === 'navigate';
   // JSON first: a tie, such as */* or no Accept at all, is not a visit.
@@ -31,7 +32,7 @@ export function isPageVisit(req: Request): boolean {
  * since a plain link cannot otherwise say it; else the browser's; else
  * English.
  */
-export function pageLocale(req: Request): Locale {
+function pageLocale(req: Request): Locale {
   const { locale } = req.query;
   return recipientLocale(
     typeof locale === 'string' ? locale : undefined,
@@ -57,7 +58,7 @@ export class RefusalPageFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
-    const req = ctx.getRequest<Request & { id?: string }>();
+    const req = ctx.getRequest<IdentifiedRequest>();
     const res = ctx.getResponse<Response>();
 
     // Once the PDF has started, there is no page to send in its place.

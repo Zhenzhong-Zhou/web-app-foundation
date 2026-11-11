@@ -67,7 +67,7 @@ case "$#:${1:-}" in
   1:--quick) mode=quick ;;
   1:--docs) mode=docs ;;
   # The full run's own call, for its last part under the lock: below, at
-  # linux_accessibility.
+  # linux_browsers.
   1:--linux-browsers) mode=linux ;;
   *)
     echo "Usage: scripts/verify.sh [--quick | --docs], one at most" >&2
@@ -217,7 +217,7 @@ against_main() {
 # explains (#521), so the next miss is read from what its page showed.
 BROWSERS_CONTAINER=verify-linux-browsers
 
-linux_accessibility() {
+linux_browsers() {
   step "Client: the specs every browser runs, in Firefox, from Playwright's Linux image"
   local version address waited=0
   version="$(node -p "require('./client/node_modules/@playwright/test/package.json').version")"
@@ -279,7 +279,7 @@ if [[ $mode == linux ]]; then
     echo 'Run scripts/verify.sh in full, or: node scripts/one-at-a-time.mjs linux-browsers -- bash scripts/verify.sh --linux-browsers' >&2
     exit 2
   fi
-  linux_accessibility
+  linux_browsers
   exit 0
 fi
 

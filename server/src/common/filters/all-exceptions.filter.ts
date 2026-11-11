@@ -37,7 +37,7 @@ export interface ErrorBody {
 }
 
 /** A request as pino-http leaves it, with the id it gave. */
-type IdentifiedRequest = Request & { id?: string };
+export type IdentifiedRequest = Request & { id?: string };
 
 /**
  * A body Express's parser refused (http-errors): too large, not JSON, cut
