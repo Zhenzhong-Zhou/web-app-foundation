@@ -243,7 +243,9 @@ export function localeOf(header: string | undefined): Locale {
 /**
  * The language to write to someone in where no browser is asking (ADR-054):
  * an email, a notification. Their own choice, else the language of the
- * request that caused it, else English.
+ * request that caused it, else English. The same for a page a plain link
+ * opens, its own choice being the app's language the link carries
+ * (ADR-071, amended for #526).
  */
 export function recipientLocale(
   chosen: string | null | undefined,

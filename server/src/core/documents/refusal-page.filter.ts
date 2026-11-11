@@ -9,8 +9,8 @@ import {
   errorBodyOf,
   noteFault,
 } from '../../common/filters/all-exceptions.filter';
-import { type Locale, SUPPORTED_LOCALES } from '../../common/locales';
-import { localeOf } from '../../i18n/translate';
+import type { Locale } from '../../common/locales';
+import { localeOf, recipientLocale } from '../../i18n/translate';
 import { type DocumentPage, refusalPage } from './refusal-page';
 
 /**
@@ -32,8 +32,11 @@ export function isPageVisit(req: Request): boolean {
  * English.
  */
 export function pageLocale(req: Request): Locale {
-  const asked = SUPPORTED_LOCALES.find((each) => each === req.query.locale);
-  return asked ?? localeOf(req.headers['accept-language']);
+  const { locale } = req.query;
+  return recipientLocale(
+    typeof locale === 'string' ? locale : undefined,
+    req.headers['accept-language'],
+  );
 }
 
 /**
