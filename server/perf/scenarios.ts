@@ -14,6 +14,15 @@ import type { ConcurrencyResult, KnownMiss } from './report';
 export const READ_BUDGET_MS = 300;
 export const WRITE_BUDGET_MS = 500;
 
+/**
+ * One invoice's PDF (ADR-071), which the renderer draws one at a time, so ten
+ * connections queue behind each other. Its first median p95 at small on
+ * GitHub's runners was 931 ms (run 43089449940, rounds of 809, 1285 and 931
+ * ms): that median divided by 0.8, rounded up to the next 100 ms (ADR-051,
+ * amended for #547).
+ */
+const PDF_BUDGET_MS = 1200;
+
 /** Products with the most lots on one shelf, where FEFO has most to sort. */
 const HOT_VARIANTS = 10;
 
@@ -273,11 +282,14 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // issued ones: drawing is the server's own work, so ten at once is the
     // load to see. It stands for the six PDF routes, which share the
     // renderer.
-    read(
-      'GET /invoices/:id/pdf',
-      (org, n) =>
-        `/invoices/${org.issuedInvoiceIds[n % org.issuedInvoiceIds.length]}/pdf`,
-    ),
+    {
+      ...read(
+        'GET /invoices/:id/pdf',
+        (org, n) =>
+          `/invoices/${org.issuedInvoiceIds[n % org.issuedInvoiceIds.length]}/pdf`,
+      ),
+      budgetMs: PDF_BUDGET_MS,
+    },
     // Search (ADR-056): the lookup as people type it, a code in part, a
     // name, and a typo that falls through to close matches; and a list
     // narrowed by its search.
