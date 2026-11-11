@@ -261,11 +261,12 @@ test('prints and downloads an invoice as its PDF (ADR-071)', async ({
   await signInAs(page, api);
   await page.goto(`/invoices/${invoiceId}`);
 
-  // Print opens the PDF in a new tab, in the browser's own viewer.
+  // Print opens the PDF in a new tab, in the browser's own viewer, saying
+  // the app's language for the page a refusal answers with (#526).
   const print = page.getByRole('link', { name: 'Print' });
   await expect(print).toHaveAttribute(
     'href',
-    `/api/v1/invoices/${invoiceId}/pdf`,
+    `/api/v1/invoices/${invoiceId}/pdf?locale=en`,
   );
   await expect(print).toHaveAttribute('target', '_blank');
 

@@ -285,7 +285,7 @@ test("the full run stops at once, with the container's logs, when the browsers' 
   assert.deepEqual(run.oneAtATime, [LINUX_UNDER_THE_LOCK, "exit 1"]);
 });
 
-test("the full run, once the container listens, runs the accessibility spec in its Firefox, then in its WebKit", (t) => {
+test("the full run, once the container listens, runs the specs every browser runs in its Firefox, then in its WebKit", (t) => {
   const root = fixture(t);
   withPlaywright(root);
   const run = verify(t, root, OLD, {
@@ -295,8 +295,8 @@ test("the full run, once the container listens, runs the accessibility spec in i
 
   assert.equal(run.status, 0, run.stdout + run.stderr);
   assert.deepEqual(playwright(run), [
-    "client, ws://127.0.0.1:49152/ <loopback>: playwright test e2e/accessibility.spec.ts --project=firefox",
-    "client, ws://127.0.0.1:49152/ <loopback>: playwright test e2e/accessibility.spec.ts --project=webkit",
+    "client, ws://127.0.0.1:49152/ <loopback>: playwright test --project=firefox",
+    "client, ws://127.0.0.1:49152/ <loopback>: playwright test --project=webkit",
   ]);
   assert.equal(
     run.docker.filter((call) => call.startsWith("run ")).length,
@@ -305,7 +305,7 @@ test("the full run, once the container listens, runs the accessibility spec in i
   );
   assert.match(
     run.stdout,
-    /accessibility spec in Firefox[^]*accessibility spec in Linux WebKit[^]*^== All passed$/m,
+    /every browser runs, in Firefox[^]*every browser runs, in Linux WebKit[^]*^== All passed$/m,
   );
   // The container and both browsers, under one hold of the lock.
   assert.deepEqual(run.oneAtATime, [LINUX_UNDER_THE_LOCK, "exit 0"]);

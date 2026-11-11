@@ -547,8 +547,10 @@ reports success.
   root (both sides, CI's order, stops at the first failure; `--quick`
   skips the end-to-end suites). Editor auto-imports in the wrong quote
   style fail CI.
-  The full run also checks `e2e/accessibility.spec.ts` in Firefox and in
-  Linux WebKit, from one container of Playwright's Linux image in Docker
+  The full run also checks the specs every browser runs, `EVERY_ENGINE` in
+  `client/playwright.config.ts`, in Firefox and in Linux WebKit:
+  `e2e/accessibility.spec.ts` and `e2e/document-refusals.spec.ts`, from
+  one container of Playwright's Linux image in Docker
   ([conventions.md, Supported browsers](conventions.md#supported-browsers)),
   which a pull request's CI, Chromium alone, does not; Linux WebKit's
   timing differs from the Mac's ([conventions.md, Tests](conventions.md#tests)).

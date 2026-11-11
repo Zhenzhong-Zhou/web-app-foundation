@@ -2,8 +2,8 @@
 # What CI runs, on this machine and in CI's order: the Markdown check, the
 # server's checks and both its suites, the tests of scripts/ itself, then
 # the client's checks, unit tests and the Playwright suite, and in full
-# the accessibility spec in Firefox and Linux WebKit, below. Stops at the
-# first failure, so the last heading printed is what failed.
+# the specs every browser runs, in Firefox and Linux WebKit, below. Stops
+# at the first failure, so the last heading printed is what failed.
 #
 #   scripts/verify.sh            everything, about as long as CI takes
 #   scripts/verify.sh --quick    format, lint, types, checks, build and unit
@@ -38,13 +38,14 @@
 # carries a placeholder identity (ADR-082). Each says why when it cannot
 # run.
 #
-# The full run ends with e2e/accessibility.spec.ts in Firefox, then in
-# Linux WebKit, neither of which a pull request's CI runs, since it runs
-# Chromium alone: a failure in Firefox first met main (#506). Playwright's
-# Firefox cannot start on some Macs, so it runs from Playwright's Linux
-# image in Docker, as conventions.md's "Firefox on such a Mac" does by
-# hand, at the client's Playwright version, and WebKit from the same
-# container. The client's suite runs the Mac's WebKit, whose timing
+# The full run ends with the specs every browser runs, the accessibility
+# spec and the refused PDF's page (playwright.config.ts's EVERY_ENGINE),
+# in Firefox, then in Linux WebKit, neither of which a pull request's CI
+# runs, since it runs Chromium alone: a failure in Firefox first met main
+# (#506). Playwright's Firefox cannot start on some Macs, so it runs from
+# Playwright's Linux image in Docker, as conventions.md's "Firefox on such
+# a Mac" does by hand, at the client's Playwright version, and WebKit from
+# the same container. The client's suite runs the Mac's WebKit, whose timing
 # differs from Linux WebKit's (#232, and 5631d0d8 in conventions.md's
 # "Tests").
 # It needs the network, and stops the run when the container cannot start.
@@ -191,10 +192,11 @@ against_main() {
   fi
 }
 
-# The accessibility spec in Firefox, then in WebKit, each browser in
-# Playwright's Linux image and the tests on this machine, connected to it
-# as a remote browser; '<loopback>' lets that browser reach this machine's
-# localhost:5273 and :3100, so the session cookies stay on localhost.
+# The specs every browser runs, as each project's testMatch names them,
+# in Firefox, then in WebKit, each browser in Playwright's Linux image and
+# the tests on this machine, connected to it as a remote browser;
+# '<loopback>' lets that browser reach this machine's localhost:5273 and
+# :3100, so the session cookies stay on localhost.
 # E2E_FIREFOX=1 gives the config its firefox project, which it leaves out
 # on a Mac; --project=webkit leaves that project unused. One container
 # serves both browsers, one run after the other, each the same call.
@@ -211,7 +213,7 @@ against_main() {
 BROWSERS_CONTAINER=verify-linux-browsers
 
 linux_accessibility() {
-  step "Client: the accessibility spec in Firefox, from Playwright's Linux image"
+  step "Client: the specs every browser runs, in Firefox, from Playwright's Linux image"
   local version address waited=0
   version="$(node -p "require('./client/node_modules/@playwright/test/package.json').version")"
 
@@ -248,11 +250,11 @@ linux_accessibility() {
   local project
   for project in firefox webkit; do
     if [[ "$project" == webkit ]]; then
-      step 'Client: the accessibility spec in Linux WebKit, from the same container'
+      step 'Client: the specs every browser runs, in Linux WebKit, from the same container'
     fi
     (cd client && E2E_FIREFOX=1 PW_TEST_CONNECT_WS_ENDPOINT="ws://$address/" \
       PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
-      npx playwright test e2e/accessibility.spec.ts --project="$project")
+      npx playwright test --project="$project")
   done
 }
 

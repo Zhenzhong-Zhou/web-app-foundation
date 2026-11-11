@@ -880,9 +880,9 @@ failure needs reporting) and the cases built on it.
   one (`item_name_missing` opens the item) and the way back to the
   document's page, which reads Sign in after a 401; a failure says what
   to do and gives its reference. In the language `?locale=` asks for,
-  else the browser's; never cached, no script, styled from ADR-055's
-  tokens, light or dark as the browser is. The app's own requests keep
-  the JSON.
+  which the app's links carry with its own (`usePdfLinks`), else the
+  browser's; never cached, no script, styled from ADR-055's tokens, light
+  or dark as the browser is. The app's own requests keep the JSON.
 - Tones: calm (info) for what is not there, amber for what is not yours,
   red only for a real failure.
 
@@ -1070,12 +1070,14 @@ Internet Explorer, and any browser's IE mode, is not supported.
   system's, and no analytics, CDN or Google service is called. A page that
   needs one would fail in mainland China; keep it that way, or make it
   optional.
-- Playwright runs every spec in Chromium, accessibility.spec in WebKit and
-  Firefox, and mobile.spec on an iPhone's screen and engine. A spec that
-  shares the owner's organization runs in Chromium only. Firefox runs in CI
-  and with E2E_FIREFOX=1; Playwright's build of it cannot start on some
-  macOS versions. In CI a pull request runs Chromium only, in three shards;
-  every browser runs on main, nightly, and in a run by hand,
+- Playwright runs every spec in Chromium, accessibility.spec and
+  document-refusals.spec in WebKit and Firefox (`EVERY_ENGINE` in
+  `playwright.config.ts`), and mobile.spec on an iPhone's screen and
+  engine. A spec that shares the owner's organization runs in Chromium
+  only. Firefox runs in CI and with E2E_FIREFOX=1; Playwright's build of
+  it cannot start on some macOS versions. In CI a pull request runs
+  Chromium only, in three shards; every browser runs on main, nightly,
+  and in a run by hand,
   `gh workflow run ci.yml --ref <branch>` (Actions → CI → Run workflow),
   for a branch that changes layout, mobile or sign-in. A label starts no
   run (#334).

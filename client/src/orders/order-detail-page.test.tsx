@@ -543,6 +543,29 @@ describe('OrderDetailPage lines', () => {
     });
 
     /**
+     * The packing slip's two links say the app's language, as every
+     * document's do, for the page a refused PDF answers with (ADR-071,
+     * amended for #526).
+     */
+    it('links each shipment to its packing slip, to print and to download, saying the app’s language', async () => {
+      serveSale();
+      renderPage(SALE_PERMISSIONS, SHIPMENTS_TAB);
+
+      const slip = await screen.findByRole('link', { name: 'Packing slip' });
+      expect(slip).toHaveAttribute(
+        'href',
+        '/api/v1/orders/order-1/shipments/shipment-1/pdf?locale=en',
+      );
+      expect(slip).toHaveAttribute('target', '_blank');
+      expect(
+        screen.getByRole('link', { name: 'Download PDF' }),
+      ).toHaveAttribute(
+        'href',
+        '/api/v1/orders/order-1/shipments/shipment-1/pdf?download=1&locale=en',
+      );
+    });
+
+    /**
      * The server refuses to void a billed shipment (ADR-046), so the page
      * does not offer it: the link to the invoice is where the answer is.
      */
