@@ -1090,6 +1090,7 @@
   "validation.creditLineTwice": "同一张贷项中某个发票行出现了两次——请只发送一次合计数量",
   "validation.currencyCode": "请用三个字母填写币种，例如 CAD 或 USD。",
   "validation.exchangeRate": "请输入大于零、最多 8 位小数的汇率。",
+  "validation.extension": "请只用数字填写分机，例如 214。",
   "validation.hiddenNotPlaced": "隐藏的磁贴也必须保留它在顺序中的位置。",
   "validation.isArray": "{property} 必须是数组",
   "validation.isBoolean": "{property} 必须是布尔值",
@@ -1122,5 +1123,6 @@
   "validation.shipmentLineTwice": "同一次发货中某一行出现了两次——请只发送一次合计数量",
   "validation.taxRate": "请以百分比输入税率，在 0 到 100 之间，最多 4 位小数。",
   "validation.timeZone": "请按名称选择时区，例如 America/Vancouver。",
-  "validation.whitelist": "不应存在属性 {property}"
+  "validation.whitelist": "不应存在属性 {property}",
+  "validation.workPhone": "请用数字填写工作电话，例如 +1 604-555-0100；分机号请填在“分机”中。"
 }

@@ -214,6 +214,69 @@ describe('People (e2e)', () => {
     ).toBeNull();
   });
 
+  /**
+   * The form holds each field's length but not its characters, so Work
+   * phone and Extension refuse in words that name the field, never
+   * "workPhone is not in the expected form" (#148), in each language; and
+   * nothing is kept.
+   */
+  it('refuses a work phone with letters in words naming it, in each language', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const refusals: [string, string][] = [
+      [
+        'en',
+        'Enter the work phone in digits, such as +1 604-555-0100, and put an extension in Extension.',
+      ],
+      [
+        'fr-CA',
+        'Saisissez le numéro de téléphone professionnel en chiffres, comme +1 604 555-0100, et indiquez le poste dans Poste téléphonique.',
+      ],
+      [
+        'zh-Hans',
+        '请用数字填写工作电话，例如 +1 604-555-0100；分机号请填在“分机”中。',
+      ],
+    ];
+
+    for (const [language, message] of refusals) {
+      const refused = await alpha.agent
+        .patch('/v1/account/details')
+        .set('Accept-Language', language)
+        .send({ jobTitle: 'Buyer', workPhone: '604-555-0100 ext 12' })
+        .expect(400);
+      expect(body<{ message: string[] }>(refused).message).toEqual([message]);
+    }
+
+    expect(
+      body<{ jobTitle: string | null; workPhone: string | null }>(
+        await alpha.agent.get('/v1/account/details').expect(200),
+      ),
+    ).toMatchObject({ jobTitle: null, workPhone: null });
+  });
+
+  it('refuses an extension with letters in words naming it, in each language', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const refusals: [string, string][] = [
+      ['en', 'Enter the extension in digits only, such as 214.'],
+      ['fr-CA', 'Saisissez le poste en chiffres seulement, comme 214.'],
+      ['zh-Hans', '请只用数字填写分机，例如 214。'],
+    ];
+
+    for (const [language, message] of refusals) {
+      const refused = await alpha.agent
+        .patch('/v1/account/details')
+        .set('Accept-Language', language)
+        .send({ jobTitle: 'Buyer', extension: 'ext 12' })
+        .expect(400);
+      expect(body<{ message: string[] }>(refused).message).toEqual([message]);
+    }
+
+    expect(
+      body<{ jobTitle: string | null; extension: string | null }>(
+        await alpha.agent.get('/v1/account/details').expect(200),
+      ),
+    ).toMatchObject({ jobTitle: null, extension: null });
+  });
+
   it('says when each member joined: their membership’s start, for New on People (ADR-079)', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const viewer = await addViewer(app, alpha, 'viewer@example.com');

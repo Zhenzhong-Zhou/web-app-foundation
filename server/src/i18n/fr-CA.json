@@ -1090,6 +1090,7 @@
   "validation.creditLineTwice": "Une ligne de facture apparaît deux fois dans un même crédit — envoyez son total une seule fois",
   "validation.currencyCode": "Saisissez la devise en trois lettres, comme CAD ou USD.",
   "validation.exchangeRate": "Saisissez un taux de change supérieur à zéro, d’au plus 8 décimales.",
+  "validation.extension": "Saisissez le poste en chiffres seulement, comme 214.",
   "validation.hiddenNotPlaced": "Une tuile masquée doit aussi garder sa place dans l’ordre.",
   "validation.isArray": "{property} doit être un tableau",
   "validation.isBoolean": "{property} doit être une valeur booléenne",
@@ -1122,5 +1123,6 @@
   "validation.shipmentLineTwice": "Une ligne apparaît deux fois dans une même expédition — envoyez son total une seule fois",
   "validation.taxRate": "Saisissez un taux en pourcentage, de 0 à 100, d’au plus 4 décimales.",
   "validation.timeZone": "Choisissez un fuseau horaire par son nom, comme America/Vancouver.",
-  "validation.whitelist": "la propriété {property} ne doit pas exister"
+  "validation.whitelist": "la propriété {property} ne doit pas exister",
+  "validation.workPhone": "Saisissez le numéro de téléphone professionnel en chiffres, comme +1 604 555-0100, et indiquez le poste dans Poste téléphonique."
 }

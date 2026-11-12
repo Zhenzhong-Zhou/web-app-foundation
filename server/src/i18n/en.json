@@ -1090,6 +1090,7 @@
   "validation.creditLineTwice": "An invoice line appears twice on one credit — send its total once",
   "validation.currencyCode": "Enter the currency as three letters, such as CAD or USD.",
   "validation.exchangeRate": "Enter an exchange rate greater than zero, with up to 8 decimal places.",
+  "validation.extension": "Enter the extension in digits only, such as 214.",
   "validation.hiddenNotPlaced": "A hidden tile must keep its place in the order too.",
   "validation.isArray": "{property} must be an array",
   "validation.isBoolean": "{property} must be a boolean value",
@@ -1122,5 +1123,6 @@
   "validation.shipmentLineTwice": "A line appears twice in one shipment — send its total once",
   "validation.taxRate": "Enter a rate as a percentage from 0 to 100, with up to 4 decimal places.",
   "validation.timeZone": "Choose a time zone by its name, such as America/Vancouver.",
-  "validation.whitelist": "property {property} should not exist"
+  "validation.whitelist": "property {property} should not exist",
+  "validation.workPhone": "Enter the work phone in digits, such as +1 604-555-0100, and put an extension in Extension."
 }

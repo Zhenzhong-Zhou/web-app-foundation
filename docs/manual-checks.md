@@ -779,8 +779,11 @@ folder by folder; these check what is already in place.
   never components.0.rate; Settings → Organization → a base currency of
   C4D: "Enter the currency as three letters, such as CAD or USD."; an
   address's Country of C: "Enter the country as two letters, such as CA
-  or US.". Each in Français and 中文 too, with no field name, index or
-  "sent as a string" in any.
+  or US.". Account → Your details → a Work phone of 604-555-0100 ext 12:
+  "Enter the work phone in digits, such as +1 604-555-0100, and put an
+  extension in Extension."; an Extension of ext 12: "Enter the extension
+  in digits only, such as 214.", and neither is saved. Each in Français
+  and 中文 too, with no field name, index or "sent as a string" in any.
 - **MC-1419** *(ADR-054's November 2026 amendment, R11; #501)* Latin
   names in a Chinese list keep a space from 和 and 或 (ADR-090). On a
   freshly seeded demo, in 中文, as Chloé Tremblay (Viewer): Account → 权限
@@ -5916,3 +5919,6 @@ first.
   names and in the refusal, it says 英文, 法文 and 中文, as the exports'
   columns do, not Intl's 英语 and 法语: MC-1408 extended, MC-2513 and
   MC-R79 updated.
+- 2026-11-12: ADR-054's November amendment, R11 (#148): Work details'
+  Work phone and Extension refuse letters in words naming the field, not
+  class-validator's "is not in the expected form": MC-1418 extended.
