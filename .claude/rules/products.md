@@ -18,6 +18,8 @@ What products allow, refuse and work out is in
 [`docs/rules/products.md`](../../docs/rules/products.md), for people; a
 commit that changes one of those rules updates it (ADR-087).
 
+- **`product` means any item, a row of `products`; `good` is the Products
+  type.** New names use `product`; no file is renamed (#553).
 - **A product is added with its first variant, in one transaction;** the
   SKU, unit, lot tracking and stock live on the variant (ADR-023).
 - **A SKU is unique by its index,** `product_variants_org_sku_key`: a

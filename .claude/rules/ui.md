@@ -12,8 +12,9 @@ what to keep true when a component styles itself (ADR-055;
 [conventions.md, The look](../../docs/conventions.md#the-look-adr-055)).
 
 - **A screen follows `docs/design-language.md`** (ADR-090): a change to
-  it reads "The principles", its patterns in "The patterns", and "Screen
-  sizes"; a pattern missing there is added first, by an ADR-090 amendment.
+  it reads "The principles", its patterns in "The patterns", "States" for a
+  piece's states, and "Screen sizes"; a pattern missing there is added
+  first, by an ADR-090 amendment.
 - **Colours, sizes and corners are tokens,** `client/src/theme/tokens.ts`,
   by name through the theme, never a hex value, font size or radius; a
   value they lack becomes one first, its pair in `tokens.test.ts`.
@@ -28,7 +29,10 @@ what to keep true when a component styles itself (ADR-055;
   outline removed.
 - **Breakpoint props where a layout breaks,** CSS `display` deciding what
   shows, not a `useMediaQuery` branch
-  ([conventions.md](../../docs/conventions.md#responsive-layout)).
+  ([conventions.md](../../docs/conventions.md#responsive-layout)); the one
+  exception is a list whose table and cards would each draw every row,
+  which switches with `useMediaQuery` and `noSsr: true`, as Items and
+  Members do.
 - **The shared pieces first:** `ExpiryChip`, `displayQuantity`,
   `DetailLayout`, `FilterRow`, `EmptyState`, `ListError`, `Reference`,
   `UndoSnackbar`, `PasswordField`, `IconBadge`
