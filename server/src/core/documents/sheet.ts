@@ -180,6 +180,7 @@ export function addressLines([
   return [
     line1,
     line2,
+    // eslint-disable-next-line no-restricted-syntax -- an address's parts on one line, not names in a list (ADR-071)
     present([city, region, postalCode]).join(', '),
     country,
   ];

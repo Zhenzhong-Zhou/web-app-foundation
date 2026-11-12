@@ -408,9 +408,11 @@ three:
   or kind as an ICU select over its stored value; a list as a list,
   joined per language by the server's `joinList` or the screens'
   `intl.formatList`, which in Chinese space a Latin name from 和 and 或
-  (ADR-090); lint refuses any other join on the screens, and names given
-  as elements, which `listNameParts` draws instead; a nested sentence as
-  a message of its own. A number for a person is formatted for them
+  (ADR-090): on the server an array passed to `t()`, or put in an audit
+  payload, which History joins; lint refuses any other join on both
+  sides, and on the screens names given as elements, which
+  `listNameParts` draws instead; a nested sentence as a message of its
+  own. A number for a person is formatted for them
   (`formatQuantity`, `formatMoney`), a calendar day stays YYYY-MM-DD in
   a server message.
 - **Then** `npm run i18n:extract` in that package, and add the same id to

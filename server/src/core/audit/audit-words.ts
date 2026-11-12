@@ -302,6 +302,7 @@ function objectText(value: Record<string, unknown>, reading: Reading): string {
   const { locale } = reading;
   const say = (message: Translatable) => translate(message, locale);
   return (
+    // eslint-disable-next-line no-restricted-syntax -- a record's fields, each named, "From 2026-10-01, To 2026-10-07", not names in a list
     Object.entries(value)
       // A filter on a list is shown by what it filters, never as the list's
       // own id, which the row already names.
