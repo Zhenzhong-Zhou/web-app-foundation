@@ -11,9 +11,8 @@ rules, [`.claude/rules/ui.md`](../.claude/rules/ui.md); the mark,
 [engineering.md](engineering.md#how-code-is-delivered) names has a row
 for it: the type at each text size, on a laptop and on a phone, and the
 rules for Chinese beside Latin letters and digits. ADR-091's boards add
-each pattern as Home uses it, and the row "状态 第一版 · States v1"
-draws [States](#states): a screen's five states, and each shared piece's
-own.
+each pattern as Home uses it, and a row of its own draws
+[States](#states): a screen's five states, and each shared piece's own.
 
 It came from a first-time viewer's look at Home (#335) and from two
 walkthrough panels of personas, on 4 November 2026: who they are is in
@@ -91,8 +90,8 @@ Each with what holds it in the code today, or the issue that will.
   the name, not the whole row (Items' rows, `item-rows.tsx`; #473 for
   every list).
 - A row's own controls, a check box, a figure with its status and its
-  actions, are targets of their own, never inside the link, each
-  44 × 44 px on touch ([Text and targets](#text-and-targets)).
+  actions, are targets of their own, never inside the link
+  ([Text and targets](#text-and-targets)).
 - The name first, then the code: "Omega-3 fish oil · OMG-120". A second
   code says what it is ("their ref. SO-DEMO-1").
 - A table's Code column comes after its name, each table moved when its
@@ -132,9 +131,8 @@ Each with what holds it in the code today, or the issue that will.
 - A date column shows the date the list is sorted by; where a list keeps
   two dates, the column's header switches between them.
 - After sorting from the keyboard, focus stays on the column's header.
-- A list its filters made empty names them, with one button that clears
-  them all, as [the five states](#the-five-states) say under No results
-  (Items' Show all items).
+- A list its filters made empty is No results, as
+  [the five states](#the-five-states) say.
 
 ### Lists on a phone
 
@@ -339,8 +337,6 @@ and the places #337 names, each when its trigger comes.
   chip that does something have it (`TOUCH`, `client/src/theme/media.ts`),
   and a select, a field, a toggle, a switch, a check box, a radio and a
   menu entry gain it, an inline link by its padding (#170).
-- A disabled control keeps its enabled size (#170), as
-  [their look](#their-look) says.
 - A touch check in the accessibility suite measures every target on the
   screens it walks, beside axe's 24 px (#170).
 
@@ -398,7 +394,7 @@ refused.
 | A link (`MuiLink`) | ✓ | ✓ | ✓ | — | — | — | — | — | — | — |
 | A field | ✓ | ✓ | ✓ | — | — | ✓ | — | ✓ | — | #566: its floated label at 14 px |
 | A select, or a picker | ✓ | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — | #566: its floated label at 14 px |
-| A check box and a radio | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | #170: 44 px on touch, disabled at its enabled size |
+| A check box and a radio | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | #170: 44 px on touch |
 | A switch (`MuiSwitch`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | #170: 44 px on touch |
 | A chip: a status, a filter's with its ×, a quick filter | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | #566 and #170: a quick filter at 14 px and 44 px on touch |
 | A tab | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
@@ -516,7 +512,7 @@ measured on the device.
   before its code. A changed design is a new row, titled with its
   version, never drawn over the old one: every earlier row stays as the
   design's history, and the version the build follows is named in its
-  ADR. [States](#states) follows the row "状态 第一版 · States v1".
+  ADR. [States](#states) names the row it follows.
 
 ## Not yet
 
