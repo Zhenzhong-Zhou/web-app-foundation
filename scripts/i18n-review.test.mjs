@@ -5,8 +5,8 @@
  *     node --test scripts/
  *
  * Each test copies the script into a temporary folder laid out as the
- * repository is, with a small catalogue in each package, and runs it
- * there, since the script reads the catalogues beside it. Both packages'
+ * repository is, with a small catalogue in each package and two small
+ * guides, and runs it there, since the script reads the files beside it. Both packages'
  * node_modules are linked in for their FormatJS, so run `npm install` in
  * client/ and server/ first.
  */
@@ -14,6 +14,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
   copyFileSync,
+  existsSync,
   mkdirSync,
   readFileSync,
   symlinkSync,
@@ -45,6 +46,64 @@ const CATALOGUES = {
   "server/src/i18n/en.json": { "mail.subject": "Invoice {number}" },
   "server/src/i18n/fr-CA.json": { "mail.subject": "Facture {number}" },
   "server/src/i18n/zh-Hans.json": { "mail.subject": "发票 {number}" },
+};
+
+/** Two small guides, each with its opening and sections, in every language. */
+const GUIDES = {
+  "client/src/help/guides/en/home.md": `# Home
+
+Home is the first page you see.
+
+## Every day {#today}
+
+Press **Refresh** to read the counts again. Late orders are on [Orders](/orders#late).
+
+## Words you’ll meet {#words}
+
+- **Late**: past its day.
+`,
+  "client/src/help/guides/fr-CA/home.md": `# Accueil
+
+L’accueil est la première page que vous voyez.
+
+## Chaque jour {#today}
+
+Appuyez sur **Actualiser** pour relire les totaux. Les commandes en retard sont dans [Commandes](/orders#late).
+
+## Les mots que vous verrez {#words}
+
+- **En retard** : après son jour.
+`,
+  "client/src/help/guides/zh-Hans/home.md": `# 首页
+
+首页是您看到的第一个页面。
+
+## 每天 {#today}
+
+点**刷新**重新读取数量。逾期的订单在[订单](/orders#late)里。
+
+## 常见词 {#words}
+
+- **逾期**：已过了它的日期。
+`,
+  "client/src/help/guides/en/orders.md": `# Orders
+
+## Raise an order {#raise}
+
+Press **Raise an order**.
+`,
+  "client/src/help/guides/fr-CA/orders.md": `# Commandes
+
+## Créer une commande {#raise}
+
+Appuyez sur **Créer une commande**.
+`,
+  "client/src/help/guides/zh-Hans/orders.md": `# 订单
+
+## 创建订单 {#raise}
+
+点**创建订单**。
+`,
 };
 
 /** Where each message is defined, which export's Where column names. */
@@ -92,7 +151,9 @@ function fixture(t) {
   for (const [file, messages] of Object.entries(CATALOGUES)) {
     writeJson(root, file, messages);
   }
-  for (const [file, text] of Object.entries(SOURCES)) write(root, file, text);
+  for (const [file, text] of Object.entries({ ...SOURCES, ...GUIDES })) {
+    write(root, file, text);
+  }
   return root;
 }
 
@@ -377,4 +438,258 @@ test("import refuses a workbook without the English or Translation title, naming
   const run = review(root, "import", path.join(root, file));
   assert.equal(run.status, 1);
   assert.match(run.stderr, /^The first row has no Translation title\./);
+});
+
+// ------------------------------------------------------------------ guides
+
+const GUIDE_FILES = Object.keys(GUIDES);
+
+/** Every catalogue's and guide's text, to show what an import changed. */
+const allFiles = (root) =>
+  Object.fromEntries(
+    [...Object.keys(CATALOGUES), ...GUIDE_FILES].map((file) => [
+      file,
+      readText(root, file),
+    ]),
+  );
+
+test("export --only guides writes a row per section, each guide's opening first", (t) => {
+  const root = fixture(t);
+
+  const run = review(root, "export", "--only", "guides");
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(
+    run.stdout,
+    /review\/fr-CA\.guides\.xlsx: 5 sections to review\./,
+  );
+  assert.equal(existsSync(path.join(root, "review/fr-CA.xlsx")), false);
+
+  const french = sheet(root, "review/fr-CA.guides.xlsx");
+  assert.equal(french.sheetName, "fr-CA");
+  const at = (title) => HEADER.indexOf(title);
+  assert.deepEqual(
+    french.rows.map((row) => [
+      row[at("Area")],
+      row[at("Id")],
+      row[at("Where")],
+      row[at("Placeholders to keep")],
+    ]),
+    [
+      ["Area", "Id", "Where", "Placeholders to keep"],
+      ["Guides", "home", "client/src/help/guides/fr-CA/home.md", ""],
+      [
+        "Guides",
+        "home#today",
+        "client/src/help/guides/fr-CA/home.md",
+        "{#today} (/orders#late)",
+      ],
+      [
+        "Guides",
+        "home#words",
+        "client/src/help/guides/fr-CA/home.md",
+        "{#words}",
+      ],
+      ["Guides", "orders", "client/src/help/guides/fr-CA/orders.md", ""],
+      [
+        "Guides",
+        "orders#raise",
+        "client/src/help/guides/fr-CA/orders.md",
+        "{#raise}",
+      ],
+    ],
+  );
+  assert.deepEqual(
+    [french.rows[1][at("English")], french.rows[1][at("Translation")]],
+    [
+      "# Home\n\nHome is the first page you see.",
+      "# Accueil\n\nL’accueil est la première page que vous voyez.",
+    ],
+  );
+  assert.equal(
+    french.rows[2][at("English")],
+    "## Every day {#today}\n\nPress **Refresh** to read the counts again. Late orders are on [Orders](/orders#late).",
+  );
+});
+
+test("export --only catalogues writes no guides' workbook, and --only takes nothing else", (t) => {
+  const root = fixture(t);
+
+  const run = review(root, "export", "--only", "catalogues");
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(existsSync(path.join(root, "review/fr-CA.xlsx")), true);
+  assert.equal(existsSync(path.join(root, "review/fr-CA.guides.xlsx")), false);
+
+  const wrong = review(root, "export", "--only", "emails");
+  assert.equal(wrong.status, 1);
+  assert.match(wrong.stderr, /^Usage:/);
+});
+
+test("export --since lists the sections new or changed since, not those changed only in their quotes", (t) => {
+  const root = fixture(t);
+  git(root, "add", ".");
+  git(root, "commit", "--quiet", "--message", "The guides last exported");
+  const baseline = git(root, "rev-parse", "--short", "HEAD").trim();
+
+  const home = GUIDES["client/src/help/guides/en/home.md"]
+    .replace("read the counts again", "read the counts now")
+    .replace("Words you’ll meet", "Words you'll meet")
+    .concat("\n## Customise Home {#customise}\n\nPress **Customise Home**.\n");
+  write(root, "client/src/help/guides/en/home.md", home);
+  write(
+    root,
+    "client/src/help/guides/fr-CA/orders.md",
+    GUIDES["client/src/help/guides/fr-CA/orders.md"].replace(
+      "Appuyez sur",
+      "Touchez",
+    ),
+  );
+
+  const run = review(root, "export", "--since", baseline, "--only", "guides");
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(
+    run.stdout,
+    new RegExp(
+      `fr-CA\\.guides\\.since-${baseline}\\.xlsx: 3 sections new or changed since ${baseline}; ` +
+        "1 left out, their English changed only in its apostrophes",
+    ),
+  );
+
+  const { rows } = sheet(root, `review/fr-CA.guides.since-${baseline}.xlsx`);
+  assert.deepEqual(
+    rows.map((row) => [row[HEADER.indexOf("Id")], row.at(-1)]),
+    [
+      ["Id", `Since ${baseline}`],
+      ["home#today", "English changed"],
+      ["home#customise", "New"],
+      ["orders#raise", "Translation changed"],
+    ],
+  );
+});
+
+test("import writes a corrected section over its own in the guide, and nothing else", (t) => {
+  const root = fixture(t);
+  assert.equal(review(root, "export", "--only", "guides").status, 0);
+  const before = allFiles(root);
+
+  correct(root, "review/fr-CA.guides.xlsx", {
+    "home#today":
+      "## Chaque jour {#today}\n\nAppuyez sur **Actualiser** pour relire les totaux tout de suite.\nLes commandes en retard sont dans [Commandes](/orders#late).\n",
+    orders: "# Les commandes",
+  });
+
+  const run = review(
+    root,
+    "import",
+    path.join(root, "review/fr-CA.guides.xlsx"),
+  );
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /guides\/fr-CA\/home\.md: 1 corrected\./);
+  assert.match(run.stdout, /guides\/fr-CA\/orders\.md: 1 corrected\./);
+  assert.match(
+    run.stdout,
+    /Now run `npx vitest run src\/help\/guides\.test\.ts` in client\/, then look at `git diff`\./,
+  );
+
+  const after = allFiles(root);
+  assert.equal(
+    after["client/src/help/guides/fr-CA/home.md"],
+    before["client/src/help/guides/fr-CA/home.md"].replace(
+      "pour relire les totaux. Les commandes",
+      "pour relire les totaux tout de suite.\nLes commandes",
+    ),
+  );
+  assert.equal(
+    after["client/src/help/guides/fr-CA/orders.md"],
+    before["client/src/help/guides/fr-CA/orders.md"].replace(
+      "# Commandes",
+      "# Les commandes",
+    ),
+  );
+  for (const file of Object.keys(before).filter(
+    (file) => !file.startsWith("client/src/help/guides/fr-CA/"),
+  )) {
+    assert.equal(after[file], before[file], file);
+  }
+});
+
+test("import refuses a section whose English or translation changed since the export, writing nothing", (t) => {
+  const root = fixture(t);
+  assert.equal(review(root, "export", "--only", "guides").status, 0);
+  correct(root, "review/fr-CA.guides.xlsx", {
+    "home#today":
+      "## Chaque jour {#today}\n\nAppuyez sur **Actualiser**. Les commandes en retard sont dans [Commandes](/orders#late).",
+    "home#words":
+      "## Les mots que vous verrez {#words}\n\n- **En retard** : passé son jour.",
+  });
+
+  write(
+    root,
+    "client/src/help/guides/en/home.md",
+    GUIDES["client/src/help/guides/en/home.md"].replace("again", "now"),
+  );
+  write(
+    root,
+    "client/src/help/guides/fr-CA/home.md",
+    GUIDES["client/src/help/guides/fr-CA/home.md"].replace(
+      "après son jour",
+      "passé sa date",
+    ),
+  );
+  const before = allFiles(root);
+
+  const run = review(
+    root,
+    "import",
+    path.join(root, "review/fr-CA.guides.xlsx"),
+  );
+  assert.equal(run.status, 1);
+  assert.match(run.stderr, /^Nothing written\./);
+  assert.match(
+    run.stderr,
+    /row 3 home#today: its English changed since the export, so clear its Correction; the next round reads it/,
+  );
+  assert.match(
+    run.stderr,
+    /row 4 home#words: its translation changed since the export, so clear its Correction; the next round reads it/,
+  );
+  assert.deepEqual(allFiles(root), before);
+});
+
+test("import refuses a section's correction that loses its heading or its links, or adds a heading", (t) => {
+  const root = fixture(t);
+  assert.equal(review(root, "export", "--only", "guides").status, 0);
+  correct(root, "review/fr-CA.guides.xlsx", {
+    home: "Accueil\n\nLa première page.",
+    "home#today":
+      "## Chaque jour {#jour}\n\nAppuyez sur **Actualiser**. Voir [Commandes](/orders#late).",
+    "home#words":
+      "## Les mots que vous verrez {#words}\n\n- **En retard** : voir [Commandes](/orders).",
+    "orders#raise":
+      "## Créer une commande {#raise}\n\nAppuyez sur **Créer une commande**.\n\n## Ensuite {#next}",
+  });
+  const before = allFiles(root);
+
+  const run = review(
+    root,
+    "import",
+    path.join(root, "review/fr-CA.guides.xlsx"),
+  );
+  assert.equal(run.status, 1);
+  assert.match(
+    run.stderr,
+    /row 2 home: its first line is not the guide's title, # …/,
+  );
+  assert.match(
+    run.stderr,
+    /row 3 home#today: its first line is not its heading, ## … \{#today\}/,
+  );
+  assert.match(
+    run.stderr,
+    /row 4 home#words: links to \/orders; the English links to nothing/,
+  );
+  assert.match(
+    run.stderr,
+    /row 6 orders#raise: another of its lines is a heading; a section has one/,
+  );
+  assert.deepEqual(allFiles(root), before);
 });

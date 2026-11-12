@@ -711,10 +711,11 @@ folder by folder; these check what is already in place.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
-  message, screens and server both, and `docs/glossary.md`, and their
-  corrections are in the catalogues:
+  message, screens and server both, Help's guides, and `docs/glossary.md`,
+  and their corrections are in the catalogues and the guides:
   `node scripts/i18n-review.mjs export` writes `review/fr-CA.xlsx` and
-  `review/zh-Hans.xlsx`; each reviewer fills in the Correction column;
+  `review/zh-Hans.xlsx`, and the guides' `review/fr-CA.guides.xlsx` and
+  `review/zh-Hans.guides.xlsx`; each reviewer fills in the Correction column;
   `node scripts/i18n-review.mjs import review/fr-CA.xlsx` writes them
   back, refusing the whole file if any correction loses a placeholder;
   then `npm run i18n:check` in client/ and server/, and one commit. A
@@ -730,7 +731,17 @@ folder by folder; these check what is already in place.
   its apostrophes or quotation marks aside, writing nothing until that
   row's Correction is cleared; the next round reads that message at its
   new text. A workbook without the English or Translation title is
-  refused, naming it.
+  refused, naming it. The guides' workbook (#150) has a row per section,
+  Id `home#today`, and the guide's title and opening as `home`, each the
+  Markdown as written, its heading line included, its id and links listed
+  as what to keep; with `--since`, the sections new or changed since, in
+  `review/fr-CA.guides.since-<commit>.xlsx`. `export --only catalogues` or
+  `--only guides` writes one kind alone. Import writes a corrected section
+  over its own in the guide and nothing else, refused as a message is when
+  its English or translation changed since, and when its first line is
+  not its heading with the same id (the opening's, the guide's title),
+  another line is a heading, or it links elsewhere than the English; then
+  `npx vitest run src/help/guides.test.ts` in client/, as import says.
 - **MC-1406** In Français and in 简体中文, every area converted so far
   reads entirely in that language, with no English left on it:
   - signed out: sign-in, register, forgot-password, reset and verify,
@@ -5670,3 +5681,6 @@ first.
 - 2026-11-12: ADR-054's November amendment, R3: the review's import
   refuses a correction whose English or translation changed since its
   export: MC-1405 extended.
+- 2026-11-12: ADR-054's November amendment, R6 (#150): the review
+  exports Help's guides to a workbook of their own, a row per section,
+  and its import writes a corrected section back: MC-1405 extended.
