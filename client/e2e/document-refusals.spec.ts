@@ -112,7 +112,7 @@ test('a refused PDF shows a page in the app’s language, with the item and the 
     '无法生成此 PDF',
   );
   await expect(
-    tab.getByText('Focus 的规格 FOCUS-60CT（60ct）没有简体中文名称', {
+    tab.getByText('Focus 的规格 FOCUS-60CT（60ct）没有中文名称', {
       exact: false,
     }),
   ).toBeVisible();

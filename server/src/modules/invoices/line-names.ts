@@ -6,7 +6,7 @@ import type { Locale } from '../../common/locales';
 import type { DocumentLanguages } from '../../core/organizations/document-languages';
 import type { Transaction } from '../../database/database.module';
 import { organizations } from '../../database/schema';
-import { t } from '../../i18n/translate';
+import { t, type Translatable } from '../../i18n/translate';
 import { itemName } from '../stock/item-name';
 
 /** What an issued line prints, in the invoice's one or two languages. */
@@ -33,14 +33,15 @@ type NameRow = {
 };
 
 /**
- * A language in its own name, never translated, as the product page names
- * it (the client's LANGUAGE_NAMES): whoever adds the name finds 简体中文
- * there as the refusal wrote it, in whichever language they read.
+ * A language named in the reader's language, as the exports' columns name
+ * it: 没有英文名称, n’a pas de nom en anglais (ADR-054's November 2026
+ * amendment). Its own name, as the product page's columns write it, ran
+ * Latin into a Chinese sentence and 简体中文 into a French one.
  */
-const LANGUAGE_NAMES: Record<Locale, string> = {
-  en: 'English',
-  'fr-CA': 'Français (Canada)',
-  'zh-Hans': '简体中文',
+const LANGUAGE_WORDS: Record<Locale, Translatable> = {
+  en: t({ id: 'invoices.language.english', defaultMessage: 'English' }),
+  'fr-CA': t({ id: 'invoices.language.french', defaultMessage: 'French' }),
+  'zh-Hans': t({ id: 'invoices.language.chinese', defaultMessage: 'Chinese' }),
 };
 
 /**
@@ -174,7 +175,7 @@ export async function namedLines(
               sku: untranslated.sku,
               product: untranslated.product_name,
               variation: untranslated.variant_name ?? '',
-              language: LANGUAGE_NAMES[slot.language],
+              language: LANGUAGE_WORDS[slot.language],
             },
           ),
           ERROR_CODES.itemNameMissing,

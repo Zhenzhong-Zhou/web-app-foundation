@@ -1717,7 +1717,8 @@ await fetch(`${api}/v1/files/product-image`, {
   variant has no English name. Press Print: a new tab shows a page, not
   the API's words, and in Chinese as the app is, not in the browser's
   English: 无法生成此 PDF, a sentence naming the variant by its code and
-  its name, 打开物品, which opens the item where its names are, and
+  its name and the language in Chinese, 没有英文名称, never 没有English名称,
+  打开物品, which opens the item where its names are, and
   返回订单, which opens the order. It is light or dark as the browser is,
   and on a phone its links are easy to tap. Download PDF shows the same
   page in place of the app, and 返回订单 brings the order back. Sign out
