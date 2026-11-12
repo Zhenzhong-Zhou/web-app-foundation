@@ -791,6 +791,19 @@ folder by folder; these check what is already in place.
   same for every date field left empty, such as Invoices', the audit
   log's and a new licence's; in Safari, an empty one shows no grey date
   of today.
+- **MC-1422** *(ADR-054's November 2026 amendment, R11; #505)* The
+  welcome's trade words, said in plain words where they are first met.
+  On a freshly seeded demo, as Chloé Tremblay (Viewer), Account → What
+  you can do here: Stock and locations ends the history of each lot (one
+  batch of an item, with its own code); Items and licences names recipes
+  (what goes into each item made here); Production, production runs
+  (each makes one batch from a recipe); Invoices and returns, credit
+  notes (each gives back part or all of an invoice) and return
+  authorizations (agreeing what a customer may send back). Each is
+  explained once: an Admin's Production goes on to plan and release
+  runs, plainly. Home's welcome card (MC-3207) and a role's page say the
+  same, in Français and 中文 alike, such as
+  每个批次（一个物品的一批货，有自己的编码）的历史记录.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -5812,3 +5825,6 @@ first.
 - 2026-11-12: ADR-054's November amendment, R11 (#512): an empty date
   field shows none of the browser's format until it is typed in:
   MC-1421 added.
+- 2026-11-12: ADR-054's November amendment, R11 (#505): What you can do
+  here explains a lot, recipes, production runs, credit notes and return
+  authorizations the first time it names them: MC-1422 added.

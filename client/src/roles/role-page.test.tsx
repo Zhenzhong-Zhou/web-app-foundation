@@ -161,14 +161,18 @@ describe('a role’s page', () => {
     });
     expect(within(gains).getByText('Stock and locations')).toBeVisible();
     expect(
-      within(gains).getByText('See what is on hand and each lot’s history.'),
+      within(gains).getByText(
+        'See what is on hand and the history of each lot (one batch of an item, with its own code).',
+      ),
     ).toBeVisible();
     const loses = within(dialog).getByRole('region', {
       name: 'They can no longer',
     });
     expect(within(loses).getByText('Invoices and returns')).toBeVisible();
     expect(
-      within(loses).getByText('See invoices and credit notes.'),
+      within(loses).getByText(
+        'See invoices and credit notes (each gives back part or all of an invoice).',
+      ),
     ).toBeVisible();
     expect(within(loses).queryByText('Stock and locations')).toBeNull();
 
