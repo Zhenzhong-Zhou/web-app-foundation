@@ -157,6 +157,19 @@ export function towardWhite(hex: string, weight: number): string {
 export const DARK_ACCENT_WEIGHT = 0.45;
 
 /**
+ * A main button's fill under the pointer: the accent moved 30% away from
+ * its text, darker in light mode, as MUI's own hover, and lighter in dark,
+ * where MUI's darkening would bring it toward the dark text, under AA
+ * (#557). Moving away from the text can only raise the contrast, whatever
+ * the accent.
+ */
+export function accentHover(accent: string, mode: 'light' | 'dark'): string {
+  return mode === 'dark'
+    ? towardWhite(accent, 0.3)
+    : mix(accent, '#000000', 0.7);
+}
+
+/**
  * A colour laid over another at `weight` (0 to 1), as an opaque colour:
  * what the eye sees of a tint on its ground, so its contrast can be
  * checked.

@@ -1,12 +1,17 @@
 import { Autocomplete, Menu, MenuItem, Switch, TextField } from '@mui/material';
-import { ThemeProvider } from '@mui/material/styles';
+import {
+  type CssVarsTheme,
+  rgbToHex,
+  type Theme,
+  ThemeProvider,
+} from '@mui/material/styles';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import { drawnIn } from '../test/drawn-colour';
 import { themeFor } from '.';
-import { contrast } from './accent';
+import { contrast, safeAccent } from './accent';
 import { DARK, LIGHT } from './tokens';
 
 /** The colour muted text takes inside an element. */
@@ -162,4 +167,34 @@ describe('a switch', () => {
       'var(--mui-palette-primary-main)',
     );
   });
+});
+
+// A main button under the pointer takes primary.dark: darker in light mode,
+// lighter in dark, away from its text, for ADR-060's presets and for a
+// chosen accent accent.ts had to adjust (#557).
+describe('a main button under the pointer', () => {
+  const accents = [
+    '#5546B8',
+    '#1F5FBF',
+    '#0F6E6E',
+    '#2F5D50',
+    '#7A3B69',
+    '#3A4150',
+    safeAccent('#FFFF00').accent,
+  ];
+
+  it.each(['light', 'dark'] as const)(
+    'keeps its text readable in %s',
+    (mode) => {
+      for (const accent of accents) {
+        // The theme has CSS variables, so it carries both modes' palettes.
+        const theme = themeFor('en', { accent, rail: 'dark' }) as Theme &
+          Pick<CssVarsTheme, 'colorSchemes'>;
+        const { primary } = theme.colorSchemes[mode]!.palette;
+        expect(
+          contrast(rgbToHex(primary.dark), primary.contrastText),
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    },
+  );
 });
