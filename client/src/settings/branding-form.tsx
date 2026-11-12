@@ -99,7 +99,7 @@ const LOGO_ROWS = {
       hint: {
         id: 'settings.branding.logo.hint',
         defaultMessage:
-          'PNG, JPEG, WebP or SVG, at least 256 pixels wide, up to 2 MB.',
+          'A picture at least 256 pixels wide, up to 2\u00a0MB (PNG, JPEG, WebP or SVG).',
       },
     }),
   },
@@ -120,7 +120,7 @@ const LOGO_ROWS = {
       hint: {
         id: 'settings.branding.squareLogo.hint',
         defaultMessage:
-          'About square, at least 128 pixels on each side. PNG, JPEG, WebP or SVG, up to 2 MB.',
+          'A picture about square, at least 128 pixels on each side, up to 2\u00a0MB (PNG, JPEG, WebP or SVG).',
       },
     }),
   },

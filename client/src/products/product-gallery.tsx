@@ -360,7 +360,7 @@ export function ProductGallery({
             {
               id: 'products.gallery.hint',
               defaultMessage:
-                'PNG, JPEG or WebP, up to 20 MB each, up to {max}. Drag photos here, paste one, or on a phone use the camera. Drag a thumbnail, or use its menu, to change the order.',
+                'Up to {max} photos, each up to 20\u00a0MB (PNG, JPEG or WebP). Drag photos here, paste one, or on a phone use the camera. Drag a thumbnail, or use its menu, to change the order.',
             },
             { max: MAX_IMAGES },
           )}

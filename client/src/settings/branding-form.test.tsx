@@ -108,11 +108,12 @@ describe('BrandingForm, the two logos', () => {
     expect(
       within(logo).getByRole('button', { name: 'Upload a logo' }),
     ).toBeVisible();
-    expect(
-      within(logo).getByText(
-        'PNG, JPEG, WebP or SVG, at least 256 pixels wide, up to 2 MB.',
-      ),
-    ).toBeVisible();
+    // Plain words first, the size never broken from its unit (#486).
+    const logoHint = within(logo).getByText(
+      'A picture at least 256 pixels wide, up to 2 MB (PNG, JPEG, WebP or SVG).',
+    );
+    expect(logoHint).toBeVisible();
+    expect(logoHint.textContent).toContain('2\u00a0MB');
 
     const square = row('Square logo');
     expect(
@@ -122,11 +123,11 @@ describe('BrandingForm, the two logos', () => {
     expect(
       within(square).getByRole('button', { name: 'Upload a square logo' }),
     ).toBeVisible();
-    expect(
-      within(square).getByText(
-        'About square, at least 128 pixels on each side. PNG, JPEG, WebP or SVG, up to 2 MB.',
-      ),
-    ).toBeVisible();
+    const squareHint = within(square).getByText(
+      'A picture about square, at least 128 pixels on each side, up to 2 MB (PNG, JPEG, WebP or SVG).',
+    );
+    expect(squareHint).toBeVisible();
+    expect(squareHint.textContent).toContain('2\u00a0MB');
     expect(within(logo).queryByText('Optional')).toBeNull();
   });
 

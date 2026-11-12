@@ -773,6 +773,15 @@ folder by folder; these check what is already in place.
   same way. As the demo Owner, invite someone as Warehouse and Sales:
   Members' Invited lists the invitation's roles as Warehouse 和 Sales,
   while one as Admin and Viewer reads 管理员和查看者, with no space.
+- **MC-1420** *(ADR-054's November 2026 amendment, R11; #486)* What a
+  file may be, in plain words first, its size never broken from its
+  unit. On the Account page, under your photo: A photo or picture, up to
+  5 MB (PNG, JPEG or WebP). In Branding, each logo's line starts A
+  picture …, and an item's Images, while it has room, Up to 8 photos,
+  each up to 20 MB (…). In 中文 the photo's line reads
+  一张图片，最大 5 MB（PNG、JPEG 或 WebP）。 In each language, on a phone
+  (390 px) and on the laptop at Larger text, 5 MB, 2 MB and 20 MB (5 Mo
+  in Français) each stay on one line. The rail's foot in 中文 is MC-3511.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -3215,7 +3224,9 @@ private window.
   drawer opens, with the links scrolling above it. Hold the phone
   sideways (or DevTools at 844 × 340): the drawer scrolls as one, Home at
   its top and the foot after the last link, with no fade. In Français, Propulsé par; in 中文 with its setting, 由, the
-  P, 品桥, 提供支持, on one line.
+  P, then 品桥提供支持 with no gap after 品桥, on one line (#486); with
+  no Chinese name set, 由, the P, Panivo and 提供支持, a gap each side
+  of Panivo.
 - **MC-3512** Help's foot. Open Help and scroll to its end: Panivo ·
   Version 0.7.0 · build … · the day, and under it the © line, small and
   grey. In 中文 with its setting, 品桥 · 版本 … ; with no holder set, the
@@ -5785,3 +5796,7 @@ first.
   the limit and what to do: MC-1603 added.
 - 2026-11-12: ADR-054's November amendment, R11 (#501): Latin names in a
   Chinese list keep a space from 和 and 或: MC-1419 added.
+- 2026-11-12: ADR-054's November amendment, R11 (#486): a file's help
+  in plain words first, its size kept whole by a no-break space, and no
+  gap after a Chinese name in the rail's foot: MC-1420 added, MC-3511
+  extended.

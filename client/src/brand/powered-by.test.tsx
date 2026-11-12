@@ -79,4 +79,31 @@ describe('PoweredBy', () => {
 
     expect(await screen.findByText(/^由/)).toHaveTextContent('由品桥提供支持');
   });
+
+  // ADR-090: a space beside Latin letters, none between Chinese (#486).
+  it('leaves no gap after a Chinese name, and one after a Latin name', async () => {
+    localStorage.setItem('language', 'zh-Hans');
+    stubNames({ 'zh-Hans': '品桥' });
+    const { unmount } = renderFoot();
+    expect(gapAfter(await screen.findByText('品桥'))).toBe(0);
+    unmount();
+
+    stubNames({ 'zh-Hans': 'Panivo' });
+    renderFoot();
+    expect(gapAfter(await screen.findByText('Panivo'))).toBe(0.75);
+  });
 });
+
+/**
+ * The room after the name, in the theme's spacing units: the foot's gap,
+ * less what the lockup's margin takes back. The theme writes each as
+ * calc(n * var(--mui-spacing)).
+ */
+function gapAfter(lockup: HTMLElement): number {
+  const units = (length: string) =>
+    Number(/^calc\((-?[\d.]+) \*/.exec(length)?.[1] ?? parseFloat(length));
+  return (
+    units(getComputedStyle(lockup.parentElement!).columnGap) +
+    units(getComputedStyle(lockup).marginRight)
+  );
+}
