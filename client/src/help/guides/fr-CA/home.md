@@ -2,9 +2,9 @@
 
 L’accueil est la première page que vous voyez : ce qui vous attend aujourd’hui, et les actions que vous faites le plus souvent. Ce qu’il montre suit ce que vous pouvez faire ici, et où vous en êtes :
 
-- **Chaque jour** : les tuiles.
-- **Dans vos deux premières semaines**, après votre arrivée sur invitation : votre carte de bienvenue en plus.
-- **Pendant la mise en place d’une nouvelle organisation** : Premiers pas en plus.
+- Chaque jour : les tuiles.
+- Dans vos deux premières semaines, après votre arrivée sur invitation : votre carte de bienvenue en plus.
+- Pendant la mise en place d’une nouvelle organisation : Premiers pas en plus.
 
 ## Chaque jour {#today}
 

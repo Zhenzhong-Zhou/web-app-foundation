@@ -708,6 +708,14 @@ folder by folder; these check what is already in place.
   (`update users set locale = null`), the browser's language set to
   Français: change the password, then delete the account and keep it.
   The three emails are in French.
+- **MC-1415** *(ADR-054's November 2026 amendment, R12)* A guide's bold
+  words are the screen's. In English, Français and 中文, open Help on
+  Home, Items and People: every word in bold is a button, heading, tab,
+  column, filter or status the page shows, as the page words it, such as
+  Customise Home, Show all in Items and Active this week (Actif cette
+  semaine, 本周活跃). Home's three moments (every day, the first two weeks,
+  a new organization), Items' example paths such as Packaging › Bottles,
+  and a row's stock on hand read as plain words, not bold.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -5684,3 +5692,7 @@ first.
 - 2026-11-12: ADR-054's November amendment, R6 (#150): the review
   exports Help's guides to a workbook of their own, a row per section,
   and its import writes a corrected section back: MC-1405 extended.
+- 2026-11-12: ADR-054's November amendment, R12: a guide's bold words
+  are the screen's; Home's three moments, Items' example paths and stock,
+  and People's Active this week and this month, in each language that
+  had them bold or cut short: MC-1415 added.

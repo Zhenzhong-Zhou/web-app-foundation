@@ -2,9 +2,9 @@
 
 Home is the first page you see: what needs you today, and the actions you take most. What it shows follows what you may do here, and where you stand:
 
-- **Every day**: the tiles.
-- **In your first two weeks**, after joining by invitation: your welcome card too.
-- **While a new organization is set up**: Getting started too.
+- Every day: the tiles.
+- In your first two weeks, after joining by invitation: your welcome card too.
+- While a new organization is set up: Getting started too.
 
 ## Every day {#today}
 

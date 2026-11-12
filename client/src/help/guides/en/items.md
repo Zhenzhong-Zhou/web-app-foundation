@@ -31,15 +31,15 @@ On a phone, each item is a card, and **Filters** opens the category, the sort an
 ## What a row shows {#rows}
 
 - The cover photo, or an icon for its type, then the name with its code under it. An item with several variants shows how many, and their codes.
-- Its category, as a path from the top, such as **Bottles › Caps**.
-- The **stock** on hand in every location, added up in the item’s unit. Where its variants are counted in different units, the row says how many variants instead.
+- Its category, as a path from the top, such as Bottles › Caps.
+- The stock on hand in every location, added up in the item’s unit. Where its variants are counted in different units, the row says how many variants instead.
 - **Low stock** or **Out** beside the stock, from the item’s reorder points. The same words and colours are on Home and Inventory.
 
 Press the row to open the item. Press its stock to open Inventory for that item alone; **×** on the chip there shows all stock again, and Back returns to Items as it was.
 
 ## Categories {#categories}
 
-An item is in one category, or none. Categories form one tree: a category can sit at the top or under another, up to 10 levels deep, such as **Packaging › Bottles**.
+An item is in one category, or none. Categories form one tree: a category can sit at the top or under another, up to 10 levels deep, such as Packaging › Bottles.
 
 The tree, with each category’s items, opens from **Manage categories** at the foot of the Category list.
 

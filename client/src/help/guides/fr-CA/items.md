@@ -31,15 +31,15 @@ Sur un téléphone, chaque article est une carte, et **Filtres** ouvre la catég
 ## Ce que montre une ligne {#rows}
 
 - La photo de couverture, ou une icône du type, puis le nom avec son code dessous. Un article à plusieurs variantes en indique le nombre et les codes.
-- Sa catégorie, comme chemin depuis le haut, par exemple **Flacons › Bouchons**.
-- Le **stock** en main dans tous les emplacements, additionné dans l’unité de l’article. Quand ses variantes sont comptées en unités différentes, la ligne indique plutôt le nombre de variantes.
+- Sa catégorie, comme chemin depuis le haut, par exemple Flacons › Bouchons.
+- Le stock en main dans tous les emplacements, additionné dans l’unité de l’article. Quand ses variantes sont comptées en unités différentes, la ligne indique plutôt le nombre de variantes.
 - **Stock bas** ou **Épuisé** à côté du stock, d’après les points de commande de l’article. Ce sont les mêmes mots et les mêmes couleurs que sur l’accueil et dans Inventaire.
 
 Appuyez sur la ligne pour ouvrir l’article. Appuyez sur son stock pour ouvrir Inventaire pour cet article seul; le **×** de la pastille y montre de nouveau tout le stock, et Retour ramène aux Articles tels qu’ils étaient.
 
 ## Catégories {#categories}
 
-Un article est dans une catégorie, ou dans aucune. Les catégories forment un seul arbre : une catégorie peut être au premier niveau ou sous une autre, jusqu’à 10 niveaux, comme **Emballages › Flacons**.
+Un article est dans une catégorie, ou dans aucune. Les catégories forment un seul arbre : une catégorie peut être au premier niveau ou sous une autre, jusqu’à 10 niveaux, comme Emballages › Flacons.
 
 L’arbre, avec les articles de chaque catégorie, s’ouvre avec **Gérer les catégories** au bas de la liste Catégorie.
 

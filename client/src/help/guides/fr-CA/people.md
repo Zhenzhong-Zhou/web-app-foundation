@@ -22,7 +22,7 @@ Ce que vos collègues voient de vous, c’est vous qui le choisissez, dans [Votr
 ## Les mots que vous verrez {#words}
 
 - **Rôle** : ce que la personne peut faire ici, comme Propriétaire, Administrateur ou Lecteur.
-- **Actif aujourd’hui**, **cette semaine** ou **ce mois-ci** : à peu près quand la personne a utilisé l’application pour la dernière fois.
+- **Actif aujourd’hui**, **Actif cette semaine** ou **Actif ce mois-ci** : à peu près quand la personne a utilisé l’application pour la dernière fois.
 - **Jamais connecté** : un membre qui ne s’est pas encore connecté.
 - **Nouveau** : arrivé dans les deux dernières semaines.
 
