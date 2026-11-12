@@ -58,13 +58,15 @@ allows, refuses and works out there.
 - A client type change fixes the test fixtures that build that type in
   the same commit.
 - **Duplication,** as `docs/conventions.md`'s
-  [Duplication](../../../docs/conventions.md#duplication) says. From the
-  repository's root, run
-  `npx --yes jscpd@5.4.2 --absolute --reporters json --output tmp/jscpd`,
-  and read only the clones that touch a file in
-  `git diff --name-only origin/main...HEAD` (`--absolute`, since the
-  report otherwise names each file from its folder in `.jscpd.json`, not
-  from the root):
+  [Duplication](../../../docs/conventions.md#duplication) says, when the
+  branch changes a file under `.jscpd.json`'s `path`. From the
+  repository's root,
+  `npx --yes jscpd@5.4.2 --absolute --reporters json --output tmp/jscpd`
+  (`--absolute`, so its paths match git's), then
+  `node scripts/new-clones.mjs`, which prints a line for each clone the
+  branch's changed lines reach, its size and both places; never the
+  report itself. A clone outside the changed lines is pre-existing, under
+  Noticed, not this PR's. The branch's own:
   - a rule or a fact defined twice is Should fix;
   - a third copy of the same shape is Worth considering;
   - a copied block of 20 lines or more is Should fix even at its second
