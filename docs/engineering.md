@@ -83,7 +83,7 @@
 ### Triaging the open issues
 
 When `needs-triage` builds up, and before a fix-up stage (28 October
-2026). Nothing is labelled, closed or milestoned until Bob decides. It
+2026). Nothing is labelled, closed, milestoned or filed until Bob decides. It
 runs as `/triage` (29 October 2026, #322), whose
 [skill](../.claude/skills/triage/SKILL.md) holds what a run does in these
 steps; this section stays the rule.
@@ -108,8 +108,15 @@ steps; this section stays the rule.
    its kind where it has none, or a close with its reason, its areas and
    a few words why; then the
    counts by group and by area, the issues that look like duplicates,
-   and the present labels that disagree.
+   and the present labels that disagree. The proposal may also hold a
+   finding the checks made that has no issue, such as a flaky test
+   failing on `main`, once a search of all issues, open and closed, finds
+   none (11 November 2026, as #560 was): a new issue, with its title,
+   group, kind and areas and the evidence its body is written from.
 4. **Apply what Bob decides,** and the three checks above print nothing.
+   A new issue is filed by `gh issue create --body-file`, the body
+   written beside the script, with its group, kind and area labels from
+   the start, since Bob's choice has decided it, not `needs-triage`.
 
 ## How code is delivered
 
