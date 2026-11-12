@@ -36,6 +36,7 @@ import { LotTraceService } from '../src/modules/stock/lot-trace.service';
 import { ReorderPointsReadsService } from '../src/modules/stock/reorder-points-reads.service';
 import { StockReadsService } from '../src/modules/stock/stock-reads.service';
 import { type Captured, QueryCapture } from './capture';
+import { pickCategories } from './categories';
 import { readManifest } from './manifest';
 import { toUnits } from './quantity';
 import { PLANS_SUFFIX, REPORTS } from './report';
@@ -262,20 +263,16 @@ async function buildProbes(
   if (!rma) throw new Error('No return authorization: was this volume-seeded?');
 
   // Items by a category, the top-level one with the most items beneath it,
-  // so the filter reads its whole branch (ADR-092); and the second page
-  // sorted by stock, which compares each row's sum with the cursor's.
+  // so the filter reads its whole branch, and the bottom-level one under
+  // it, as `npm run perf` picks them (ADR-092); and the second page sorted
+  // by stock, which compares each row's sum with the cursor's.
   const { categories: tree } = await categories.list();
-  const branch = (id: string): number =>
-    tree
-      .filter((each) => each.parentId === id)
-      .reduce((sum, child) => sum + branch(child.id), 0) +
-    tree
-      .filter((each) => each.id === id)
-      .flatMap((each) => each.items)
-      .reduce((sum, kept) => sum + kept.active + kept.discontinued, 0);
-  const [category] = tree
-    .filter((each) => !each.parentId)
-    .sort((a, b) => branch(b.id) - branch(a.id));
+  const picked = pickCategories(tree);
+  if (!picked?.bottom) {
+    throw new Error(
+      'No category under a top-level one: was this volume-seeded?',
+    );
+  }
   const byStock = await products.list({ sort: 'stock' }, 'zh-Hans');
 
   const probes: Probe[] = [
@@ -472,8 +469,11 @@ async function buildProbes(
     },
     {
       name: 'products: one category',
-      run: () =>
-        products.list({ category: category?.id ?? 'uncategorised' }, 'zh-Hans'),
+      run: () => products.list({ category: picked.top }, 'zh-Hans'),
+    },
+    {
+      name: 'products: one bottom category',
+      run: () => products.list({ category: picked.bottom }, 'zh-Hans'),
     },
     {
       name: 'products: by stock',

@@ -626,9 +626,10 @@ How this file is kept is in the [README](README.md).
   [Help](../../client/src/help/guides/en/items.md#variants-images-and-names-variants) ·
   [Help](../../client/src/help/guides/en/items.md#if-something-is-refused-refused) ·
   MC-1801
-- **The cover shows beside the product's name on Products and in
-  Inventory, and beside an item in the top bar's lookup. A product with no
-  image shows a plain tile, the same for every type.**
+- **The cover shows beside the item's name on Items and in Inventory,
+  and beside an item in the top bar's lookup. With no image, Items shows
+  the icon of the item's type; Inventory and the lookup show the same
+  plain tile for every type.**
   [ADR-062](../adr/0062-product-images.md#decision--where-they-show) ·
   [ADR-066](../adr/0066-covers-in-the-lookup.md#decision--an-items-result-shows-its-products-cover) ·
   [test](../../server/test/product-images.e2e-spec.ts) "adds images in order, the first the cover in the list" ·

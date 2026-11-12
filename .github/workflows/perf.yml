@@ -95,11 +95,14 @@ jobs:
           POSTGRES_DB: foundation
         ports:
           - 5432:5432
+        # Shared memory as docker-compose gives it: Postgres's parallel
+        # workers outgrew Docker's default 64 MB at the large seed (#547).
         options: >-
           --health-cmd "pg_isready -U app -d foundation"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+          --shm-size 256m
 
       # Catches the emails a run sends, as docker-compose's Mailpit does in
       # development, and with the same image. Without it each send failed

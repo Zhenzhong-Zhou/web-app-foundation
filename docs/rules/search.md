@@ -320,11 +320,11 @@ leave how it matches to this file. How this file is kept is in the
   [test](../../client/src/partners/partners-page.test.tsx) "says nothing matches for an empty answer to a search" ·
   MC-1546
 - **An export holds what the search found on Orders, Invoices, Credit
-  notes, Inventory and Items; Partners' export holds everything, whatever
-  is typed.**
+  notes, Inventory, Items and Partners.**
   [ADR-057](../adr/0057-lists-by-date-range-sorted-where-it-helps-exported-as-csv.md#decision--csv-export-of-what-the-list-shows) ·
   [ADR-092](../adr/0092-items.md#decision--fifty-at-a-time-the-counts-from-the-server) ·
   [test](../../server/test/exports.e2e-spec.ts) "writes the items the list shows, by its own query and in its order" ·
+  [test](../../server/test/exports.e2e-spec.ts) "writes the partners the list shows: its search and Retired" ·
   [test](../../client/src/products/products-page.test.tsx) "exports what the list shows, its tab, search, Discontinued and sort" ·
   partly tested ·
   MC-1558

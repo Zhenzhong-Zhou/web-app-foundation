@@ -298,7 +298,7 @@ test("the full run stops at once, with the container's logs, when the browsers' 
   assert.deepEqual(run.oneAtATime, [LINUX_UNDER_THE_LOCK, "exit 1"]);
 });
 
-test("the full run, once the container listens, runs the specs every browser runs in its Firefox, then in its WebKit", (t) => {
+test("the full run, once the container listens, runs the specs every browser runs in its Firefox, then in its WebKit, keeping a failed test's trace (#521)", (t) => {
   const root = fixture(t);
   withPlaywright(root);
   const run = verify(t, root, OLD, {
@@ -309,7 +309,7 @@ test("the full run, once the container listens, runs the specs every browser run
   assert.equal(run.status, 0, run.stdout + run.stderr);
   assert.deepEqual(playwright(run), [
     "client, ws://127.0.0.1:49152/ <loopback>: playwright test --project=firefox",
-    "client, ws://127.0.0.1:49152/ <loopback>: playwright test --project=webkit",
+    "client, ws://127.0.0.1:49152/ <loopback>: playwright test --project=webkit --trace=retain-on-failure",
   ]);
   assert.equal(
     run.docker.filter((call) => call.startsWith("run ")).length,
@@ -327,13 +327,15 @@ test("the full run, once the container listens, runs the specs every browser run
 /**
  * An npx whose Playwright runs leave a test's page snapshot where
  * Playwright does, in client/e2e/.output/, and fail when `fails` is the
- * browser.
+ * browser, whatever flags follow its project.
  */
 const leavesOutput = (fails) => `case "$*" in
   "playwright test "*)
     mkdir -p e2e/.output/home
     echo 'The page as it was.' > e2e/.output/home/error-context.md
-    if [ "$*" = "playwright test --project=${fails}" ]; then exit 1; fi ;;
+    case "$*" in
+      "playwright test --project=${fails}" | "playwright test --project=${fails} "*) exit 1 ;;
+    esac ;;
 esac
 `;
 
@@ -372,7 +374,7 @@ test("a failed Linux browser run that left no client/e2e/.output/ says so in one
     mode: [],
     docker: container("Listening on ws://0.0.0.0:3333/", "true"),
     npx: `case "$*" in
-  "playwright test --project=webkit") exit 3 ;;
+  "playwright test --project=webkit" | "playwright test --project=webkit "*) exit 3 ;;
 esac
 `,
   });

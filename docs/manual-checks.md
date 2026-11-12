@@ -1393,8 +1393,9 @@ await fetch(`${api}/v1/files/product-image`, {
   Use a thumbnail's menu to Make cover and Move left; drag one to the end.
   Remove one by its menu: focus is on Undo, and the message stays while
   focus or the pointer is on it, well past five seconds, and still once
-  the pointer has passed over it and gone; Enter: it is back. Remove one, Tab away and wait: after a reload it is gone. The Items list and Inventory show each cover; a
-  product without one shows the plain tile. At eight, Add images is
+  the pointer has passed over it and gone; Enter: it is back. Remove one, Tab away and wait: after a reload it is gone. The Items list and Inventory show each cover; an
+  item without one shows its type's icon on Items, and the plain tile in
+  Inventory. At eight, Add images is
   disabled with the reason. A viewer sees the gallery without the menus.
   In 中文 on a phone, the buttons and the hint read naturally.
 
@@ -5650,3 +5651,6 @@ first.
   leaves the rail, opened from Items' category filter, Manage
   categories, so every Settings link stays above the rail's foot at
   1440 × 900 under CI's two-line foot: MC-213 rewritten.
+- 2026-11-10: #306's comment of 10 November: an item with no photo shows
+  its type's icon on Items and the plain tile in Inventory: MC-1801
+  corrected.

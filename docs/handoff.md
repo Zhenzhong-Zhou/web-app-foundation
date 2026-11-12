@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 10 November 2026
+# web-app-foundation — handoff, 11 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,12 +13,30 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 10 November 2026:
+On 11 November 2026:
 
+- **[#547], the list search's plans,**
+  [ADR-051's amendment](adr/0051-performance.md): planned on 10
+  November and built on 10 and 11 November on `fix-547-search-plans`,
+  19 commits with the as-built, pull request [#558]; its requirements
+  were confirmed before drafting, the playback's first use, and the
+  as-built marks each met. A search reads Items' matching variants once,
+  for the match, the rank and the counts, where it read them five times:
+  141 to 58 ms at large on the Mac, 174 to 111 ms at small on GitHub's
+  runners, and the Watch's line closed. The category filter and one
+  invoice's PDF join the timed reads, the PDF with a budget of its own,
+  1,200 ms, since ten requests queue on the server's one thread, which
+  the Watch now keeps. No API change and no migration: [#533], [#546]
+  and [#551]'s neighbours do not ride along. With it, Linux WebKit's run
+  keeps a failed test's trace ([#521]), and Postgres in Docker gets 256 MB
+  of shared memory, on the Mac and on GitHub's runners. The full verify's
+  one WebKit miss was the theme's: [#557], a main button's hover in dark
+  mode at about 3.7 : 1, `fix-now`, through the fix runner.
 - **[#526]'s first half, a refused document's page,**
   [ADR-071's amendment](adr/0071-documents-as-pdf-drawn-on-the-server.md):
   planned and built on 10 November on `fix-526-refused-document-page`,
-  16 commits, pull request [#556]; the as-built is in the amendment,
+  16 commits, merged the same day as [#556] (749cf944), a merge commit;
+  the as-built is in the amendment,
   each requirement marked. A PDF link a route refuses answers with a
   short page in the app's language, its status kept, the document's own
   page as the way back and, for a missing name, the item's page as the
@@ -200,7 +218,8 @@ On 10 November 2026:
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
 - **The last merges:** on 10 November, [#532] (Items), squashed by
-  mistake, then [#554] ([#529]) as a merge commit. On 9 November, as a
+  mistake, then [#554] ([#529]) and [#556] ([#526]'s first half), each
+  as a merge commit. On 9 November, as a
   merge commit, [#523] (the runner in the repository). On 8 November, as merge commits, [#518] (the
   router), [#519] ([#514]) and [#520] ([#483]), the last two from the
   runner; a runner's pull request is squashed from now on, with the two
@@ -298,12 +317,13 @@ On 10 November 2026:
   7-day rule, Sentry 11.11.0 first as a security fix; rimraf 6.1.4
   closes alert 9 in `server/`. From Items' branch on, the rule is as
   before: each branch takes, package by package, the newest version in
-  range that is 7 days old that day. Seventeen releases since then come
-  of age from 15 November, 23:12 (`@vitejs/plugin-react` 6.3.0), to 17
-  November, 19:49 (vite 8.3.8): the Nest packages at 12.4.2,
-  `typescript-eslint` 8.72.2, `@aws-sdk/client-s3` 3.1166.0, Sentry
-  11.12.0, nodemailer 10.5.0, `user-event` 14.6.9 and msw 3.0.5 between,
-  for the next branch's dependencies. Held: `@playwright/test` at
+  range that is 7 days old that day. The releases since then come of age
+  from 15 November, 23:12 (`@vitejs/plugin-react` 6.3.0), to 18
+  November, 13:10 (`@aws-sdk/client-s3` 3.1167.0): the Nest packages at
+  12.4.2, `typescript-eslint` 8.72.2, Sentry 11.12.0, nodemailer 10.5.0,
+  `user-event` 14.6.9, msw 3.0.5, vite 8.3.8 and prettier 3.10.0
+  between, for the next branch's dependencies; [#558]'s branch found none
+  old enough on 10 and 11 November. Held: `@playwright/test` at
   1.64.1, pinned, its Firefox 159 crashing in the Linux image ([#521]);
   `jsdom` at 30.1.3, pinned, 17 unit tests failing on 31 ([#522]);
   TypeScript 7 ([#336]). Alerts 11 and 12 wait for their upstreams
@@ -358,15 +378,23 @@ On 10 November 2026:
 
 ## Still to do, by hand
 
-- **After [#556]'s merge:** `gh pr merge 556 --merge`, never squashed;
+- **After [#558]'s merge:** `gh pr merge 558 --merge`, never squashed;
   `scripts/prune-branches.sh --yes`; `scripts/clean-local.sh`, then
-  `--yes`, which removes the branch's `tmp/` folder, its pictures and
-  brief among them, which nothing later reads; after the deploy, on the
-  live site, an order whose item lacks a required name: its Print shows
-  the page in the app's language, with the way to the item; Project
-  knowledge re-synced; and `/triage` over the areas it touched,
-  documents, invoices, stock, api, i18n and ops, [#521] and [#551] among
-  them, each issue's kind kept beside its group.
+  `--yes`, which removes the branch's `tmp/` folder, its reports and
+  brief among them; Project knowledge re-synced; `/triage` over the areas
+  it touched, products, search, documents, invoices, database and ops,
+  with a comment on [#521] that a failed Linux WebKit test now keeps its
+  trace; and the first weekly Performance run on `main` after it, which
+  judges the PDF's 1,200 ms budget.
+- **After [#556]'s merge,** done on 10 November: the merge, as a merge
+  commit; the prune and the clean-up; Project knowledge re-synced; and
+  `/triage` over every open issue, its choices applied the same day: a
+  kind label on each of the 142 that had none, so every open issue has
+  one, one kind each for [#162], [#170] and [#310], [#551]'s list brought
+  up to date, and comments on [#226] and [#547]. Still to do: after the
+  deploy, on the live site, an order whose item lacks a required name:
+  its Print shows the page in the app's language, with the way to the
+  item.
 - **After [#554]'s merge,** done on 10 November: the merge, as a merge
   commit; the prune and the clean-up; `../waf-fix` back on `main`, with
   `npm ci` in its `server/` and `client/`; and Project knowledge
@@ -510,7 +538,8 @@ request or a set of them:
       in the app's language, the links staying plain; with it, [#551]'s
       item 91 and what the 30-minute look at [#521] asked for: [#556];
       then the
-      list search's plans ([#547]), since ADR-051's watch on a large
+      list search's plans ([#547]), planned on 10 November as
+      [ADR-051's amendment](adr/0051-performance.md) and built as [#558], since its watch on a large
       catalogue's search fired at 128 ms (ADR-092's review, finding 67),
       with a timed scenario for the category filter, the budget for a PDF
       that ADR-071 deferred, whose trigger fired in October and was
@@ -545,8 +574,11 @@ request or a set of them:
       assumptions, what is not included and its questions, and waits
       for the maintainer's confirmation; the list is kept in the ADR,
       each requirement mapped to its step in the brief and marked met,
-      changed or deferred in the as-built. After its merge, the planning
-      skill packed from `main` and uploaded;
+      changed or deferred in the as-built. With it, in the skill's
+      delivery reference: markdownlint reads text between two dollar
+      signs as maths, so a link reference inside such a span, as between
+      two amounts in US dollars on one line, counts as unused. After its
+      merge, the planning skill packed from `main` and uploaded;
    5. the translations, before 30 November, moved ahead of Movements on
       10 November to keep the date: first a second review by
       ChatGPT on the website, one chat per language, on the workbooks
@@ -648,8 +680,10 @@ Not repeated here; each list has one home:
 [#154]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/154
 [#155]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/155
 [#159]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/159
+[#162]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/162
 [#165]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/165
 [#168]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/168
+[#170]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/170
 [#178]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/178
 [#179]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/179
 [#183]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/183
@@ -850,6 +884,7 @@ Not repeated here; each list has one home:
 [#532]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/532
 [#533]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/533
 [#539]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/539
+[#546]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/546
 [#547]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/547
 [#551]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/551
 [#552]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/552
@@ -857,3 +892,5 @@ Not repeated here; each list has one home:
 [#554]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/554
 [#555]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/555
 [#556]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/556
+[#557]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/557
+[#558]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/558

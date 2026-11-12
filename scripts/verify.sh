@@ -215,6 +215,8 @@ against_main() {
 # run clears it, and its path printed, then the run stops as before: Linux
 # WebKit misses about 1 test in 500, a stall that neither memory nor CPU
 # explains (#521), so the next miss is read from what its page showed.
+# Linux WebKit also records a trace of each test and keeps a failed one's,
+# which says what the page was still waiting for when the test gave up.
 BROWSERS_CONTAINER=verify-linux-browsers
 
 linux_browsers() {
@@ -252,15 +254,17 @@ linux_browsers() {
   done
   address="$(docker port "$BROWSERS_CONTAINER" 3333/tcp)"
 
-  local project status kept
+  local project status kept trace
   for project in firefox webkit; do
+    trace=''
     if [[ "$project" == webkit ]]; then
       step 'Client: the specs every browser runs, in Linux WebKit, from the same container'
+      trace='--trace=retain-on-failure'
     fi
     status=0
     (cd client && E2E_FIREFOX=1 PW_TEST_CONNECT_WS_ENDPOINT="ws://$address/" \
       PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
-      npx playwright test --project="$project") || status=$?
+      npx playwright test --project="$project" ${trace:+"$trace"}) || status=$?
     if ((status != 0)); then
       # A run that failed before any test, such as one that could not
       # reach the container, leaves no folder: nothing to copy.
@@ -268,7 +272,7 @@ linux_browsers() {
         kept="tmp/linux-browsers/$(date +%Y-%m-%d-%H%M%S)-$project"
         mkdir -p tmp/linux-browsers
         cp -R client/e2e/.output "$kept"
-        echo "Kept in $kept/: the failed test's page snapshot, error-context.md, and its video (#521)." >&2
+        echo "Kept in $kept/: the failed test's page snapshot, error-context.md, its video and, in WebKit, its trace (#521)." >&2
       else
         echo 'Playwright left nothing in client/e2e/.output/ to keep (#521).' >&2
       fi

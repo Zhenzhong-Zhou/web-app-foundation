@@ -1107,7 +1107,10 @@ Internet Explorer, and any browser's IE mode, is not supported.
   `scripts/verify.sh` in full runs both itself, after the client's
   Playwright suite: the spec in Firefox, then in Linux WebKit, from one
   container of its own on a free port, stopped whatever the result; the
-  commands above are for a run by hand.
+  commands above are for a run by hand. A failed run's
+  `client/e2e/.output/` is kept in `tmp/linux-browsers/`, and Linux
+  WebKit's holds the failed test's trace, opened with
+  `npx playwright show-trace` (#521).
 - The product's name is VITE_APP_NAME in the repository's .env, with one
   per language as `VITE_APP_NAME_<TAG>` (`VITE_APP_NAME_ZH_HANS`,
   `VITE_APP_NAME_FR_CA`), each falling back to it. A tab's title comes

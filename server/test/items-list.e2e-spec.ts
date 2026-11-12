@@ -3,6 +3,7 @@ import type { INestApplication } from '@nestjs/common';
 import { body, createE2eApp, registerOrganization } from './utils/fixtures';
 import { point, receive, site } from './utils/reorder-world';
 import { resetDatabase } from './utils/reset-db';
+import { captureStatements } from './utils/statements';
 
 type Org = Awaited<ReturnType<typeof registerOrganization>>;
 type Agent = Org['agent'];
@@ -499,6 +500,93 @@ describe('Items’ list (e2e)', () => {
     expect(
       await every(alpha, { search: 'focus', order: 'desc', limit: '1' }),
     ).toEqual(['Focus', 'Focus Night', 'Deep Focus']);
+  });
+
+  // #547: a search's first page read the variants for the match, again
+  // for the rank, and twice more for the counts.
+  it('matches and ranks a searched page’s variants once, its counts read from the same statement', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await item(alpha.agent, 'Deep Focus');
+    await item(alpha.agent, 'Focus');
+    await item(alpha.agent, 'Focus powder', { type: 'material' });
+    await item(alpha.agent, 'Calm');
+
+    const { result: page, statements } = await captureStatements(() =>
+      list(alpha, { type: 'good', search: 'focus' }),
+    );
+
+    expect(names(page)).toEqual(['Focus', 'Deep Focus']);
+    expect(page.counts).toEqual({
+      types: [
+        { type: 'good', count: 2 },
+        { type: 'material', count: 1 },
+      ],
+      all: 3,
+      discontinued: 0,
+    });
+    // The match's own test, a variant's name, and the rank's, a code
+    // exactly: each once, in one statement, which the counts ride in.
+    const times = (text: string, part: string) => text.split(part).length - 1;
+    const match = 'search_text("product_variants"."name")';
+    const rank = 'lower("product_variants"."sku") =';
+    const reads = statements.filter(({ text }) => text.includes(match));
+    expect(reads).toHaveLength(1);
+    expect(times(reads[0].text, match)).toBe(1);
+    expect(times(reads[0].text, rank)).toBe(1);
+    expect(reads[0].text).toContain('count(*) filter');
+  });
+
+  // #547: the export read the variants for the match and again for the
+  // rank; it reads the list's match and rank as the page does.
+  it('matches and ranks a searched export’s variants once', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await item(alpha.agent, 'Deep Focus');
+    await item(alpha.agent, 'Focus');
+    await item(alpha.agent, 'Calm');
+
+    const { result: csv, statements } = await captureStatements(
+      async () =>
+        (await alpha.agent.get('/v1/products/export?search=focus').expect(200))
+          .text,
+    );
+
+    expect(
+      csv
+        .trim()
+        .split(/\r?\n/)
+        .slice(1)
+        .map((line) => line.split(',')[0]),
+    ).toEqual(['FOCUS', 'DEEP-FOCUS']);
+    const times = (text: string, part: string) => text.split(part).length - 1;
+    const match = 'search_text("product_variants"."name")';
+    const rank = 'lower("product_variants"."sku") =';
+    const reads = statements.filter(({ text }) => text.includes(match));
+    expect(reads).toHaveLength(1);
+    expect(times(reads[0].text, match)).toBe(1);
+    expect(times(reads[0].text, rank)).toBe(1);
+    expect(times(reads[0].text, 'from "product_variants"')).toBe(1);
+  });
+
+  // The page and its counts are one row whatever the page holds, so a
+  // sort's join cannot lose the counts of a search that finds nothing.
+  it('brings a first page’s counts when its search finds nothing, whatever the sort', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await item(alpha.agent, 'Focus');
+    await item(alpha.agent, 'Calm', { type: 'material' });
+
+    for (const sort of ['name', 'category', 'stock', 'added', 'changed']) {
+      const page = await list(alpha, { search: 'nowhere', sort });
+      expect(page.entries).toEqual([]);
+      expect(page.nextCursor).toBeNull();
+      expect(page.counts).toEqual({
+        types: [
+          { type: 'good', count: 0 },
+          { type: 'material', count: 0 },
+        ],
+        all: 0,
+        discontinued: 0,
+      });
+    }
   });
 
   it('refuses a cursor made for another order, or not made here', async () => {
