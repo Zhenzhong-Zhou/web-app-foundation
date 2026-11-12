@@ -76,6 +76,3 @@ Their home is `docs/engineering.md`, "How code is delivered" and
   Help guide's Markdown included; in full before a push.
 - An alert is "Dependabot alert 4" or "code scanning alert 9", never
   "#4", which GitHub links to an issue.
-- A timed run's figures come from its rounds' reports, as
-  `server/perf/README.md` says in "Reading a timed run on CI", never from
-  a job's log by a step's name.
