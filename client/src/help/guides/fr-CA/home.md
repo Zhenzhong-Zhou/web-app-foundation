@@ -22,7 +22,7 @@ L’accueil relit ses nombres quand vous y revenez après une minute d’absence
 Une tuile ouvre sa liste avec seulement ce qu’elle compte, le plus urgent d’abord :
 
 - **À expédier** et **À recevoir** : Commandes, les ventes qui restent à expédier ou les achats qui restent à recevoir, les commandes en retard d’abord.
-- **Commandes · Brouillon** : Commandes, les commandes en brouillon, la plus ancienne d’abord, avec **Brouillon** et **Les plus anciennes d’abord** choisis. Elle reste masquée tant que vous ne l’affichez pas dans Personnaliser l’accueil.
+- **Commandes · Brouillon** : Commandes, les commandes en brouillon, la plus ancienne d’abord, avec **Brouillon** et **Les plus anciennes d’abord** choisis. Elle reste masquée tant que vous ne l’affichez pas dans Personnaliser l’accueil.
 - **Stock bas** : Points de commande, dans [Inventaire](/inventory#reorder-points), les plus loin sous leur point d’abord.
 - **Expire bientôt** : Inventaire, les lots qui périment dans le nombre de jours fixé par l’organisation, le plus proche d’abord.
 - **Valeur du stock · En attente d’un coût** : Valeur du stock, où vous fixez le coût du stock arrivé sans coût.
@@ -49,15 +49,15 @@ Sans rien en retard, une ligne dit **Rien n’est en retard aujourd’hui**; san
 4. Désactivez **Afficher Ouverts récemment sur l’accueil** si vous ne vous en servez pas.
 5. Appuyez sur **Terminé**. L’accueil montre vos tuiles dans leur nouvel ordre.
 
-Au clavier : Tab jusqu’à la poignée d’une tuile, Espace pour la prendre, les flèches pour la porter jusqu’à la tuile voisine dans ce sens, gauche et droite le long de sa rangée, haut et bas d’une rangée, puis Espace pour la déposer; Échap la remet à sa place. Quand les tuiles sont sur une seule colonne, comme sur un téléphone, seules les flèches haut et bas la déplacent. Un lecteur d’écran annonce la nouvelle place de chaque tuile.
+Au clavier : Tab jusqu’à la poignée d’une tuile, Espace pour la prendre, les flèches pour la porter jusqu’à la tuile voisine dans ce sens, gauche et droite le long de sa rangée, haut et bas d’une rangée, puis Espace pour la déposer; Échap la remet à sa place. Quand les tuiles sont sur une seule colonne, comme sur un téléphone, seules les flèches haut et bas la déplacent. Un lecteur d’écran annonce la nouvelle place de chaque tuile.
 
-Appuyez sur **Rétablir l’ordre par défaut** pour remettre l’ordre de départ de l’accueil : les tuiles du travail que fait votre rôle d’abord, **Commandes · Brouillon** masquée et **Ouverts récemment** affiché. Appuyez sur **Terminé** pour le garder, et l’accueil suit de nouveau votre rôle, si votre rôle change.
+Appuyez sur **Rétablir l’ordre par défaut** pour remettre l’ordre de départ de l’accueil : les tuiles du travail que fait votre rôle d’abord, **Commandes · Brouillon** masquée et **Ouverts récemment** affiché. Appuyez sur **Terminé** pour le garder, et l’accueil suit de nouveau votre rôle, si votre rôle change.
 
-Rien n’est gardé avant que vous appuyiez sur **Terminé**. Quitter l’accueil avant demande d’abord : **Rester** garde vos changements, **Quitter** les abandonne.
+Rien n’est gardé avant que vous appuyiez sur **Terminé**. Quitter l’accueil avant demande d’abord : **Rester** garde vos changements, **Quitter** les abandonne.
 
 Pendant que vous personnalisez, la salutation avec votre action principale, ce qui est en retard, et votre carte de bienvenue ou Premiers pas quand l’accueil les a, restent à leur place, estompés et marqués **Fixe, ne se déplace pas**.
 
-Une tuile masquée ne cache rien de ce qui est en retard : son bouton pour ce qui est en retard, comme **2 commandes en retard à expédier**, s’affiche toujours, et une ligne sous le panneau dit de quelle tuile masquée il vient.
+Une tuile masquée ne cache rien de ce qui est en retard : son bouton pour ce qui est en retard, comme **2 commandes en retard à expédier**, s’affiche toujours, et une ligne sous le panneau dit de quelle tuile masquée il vient.
 
 ## Vos deux premières semaines {#welcome}
 

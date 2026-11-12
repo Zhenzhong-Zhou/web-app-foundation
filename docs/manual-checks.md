@@ -721,6 +721,13 @@ folder by folder; these check what is already in place.
   kept on purpose: a chip's ×, Numbering's {YYYY}, the permissions' and
   templates' names the server sends, and the glossary's words that Words
   you’ll meet explains; by hand, that each is on the page the guide names.
+- **MC-1416** *(ADR-054's November 2026 amendment, R4 and R8)* The
+  glossary's Words not to use and Quebec typography. In 中文, the Account
+  page's button for a person's picture reads 添加头像, and Help on Account
+  and on People says 头像 for it, never 照片; an item's photos still say
+  照片. Help on Items says 一个商品，两个市场, not 产品. In Français, Add
+  item asks « Qu’est-ce que c’est? » with no space before the ?, and on a
+  phone (390 px) no line of Help on Home or Items starts with a colon.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -5703,3 +5710,7 @@ first.
   had them bold or cut short: MC-1415 added.
 - 2026-11-12: ADR-054's November amendment, R12: the guides' check
   holds that each bold phrase is a message's text: MC-1415 extended.
+- 2026-11-12: ADR-054's November amendment, R4 and R8: 头像 for a
+  person's picture in Account and People, 商品 in Items' guide, and
+  Quebec spacing in two French messages and Help on Home and Items, by
+  the glossary's new Words not to use: MC-1416 added.

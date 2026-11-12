@@ -5,7 +5,7 @@
   "account.leave.noOrganization": "您当前不在任何组织中，因此没有可离开的组织。",
   "account.password.noneSet": "此账户未设置密码。请改用重置链接。",
   "account.password.wrong": "密码不正确。请检查后重试。",
-  "account.photo.missing": "请选择要上传的照片",
+  "account.photo.missing": "请选择要上传的头像",
   "account.sessions.notFound": "未找到该会话",
   "account.sessions.useSignOut": "请使用“退出登录”结束当前会话。",
   "audit.action.bomArchived": "配方已归档",
