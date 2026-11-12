@@ -16,6 +16,7 @@ offers either language (MC-1405).
 | Item | Article | 物品 | Anything the company keeps, of any type: the page, the menu, the top bar's group (ADR-092). In the code, API and database it is `product`, a row of `products`; new names use `product`, and no file is renamed (#553). |
 | Product | Produit | 商品 | The goods it sells, and only those: the type, and its tab (ADR-092). Not 产品, which Chinese keeps only in the licences' regulatory terms. In the code that type is `good`; `product` there means any item (#553). |
 | Products / Raw materials / Packaging / Supplies / Samples / Equipment | Produits / Matières premières / Emballages / Fournitures / Échantillons / Équipement | 商品 / 原材料 / 包装材料 / 耗材 / 样品 / 设备 | An item's type, each its tab's name (ADR-092). 耗材 is what the accounts call 低值易耗品. |
+| Product / Raw material / Packaging / Supply / Sample / Equipment | Produit / Matière première / Emballage / Fourniture / Échantillon / Équipement | 商品 / 原材料 / 包装材料 / 耗材 / 样品 / 设备 | One item's type, in the singular: under the item's name on its page, Edit's Type and Add's choice (#548). The tabs and the pickers' groups keep the plural; Chinese has one word for both. |
 | Variant | Variante | 规格 | The thing counted: "60ct". |
 | Category / Uncategorised | Catégorie / Sans catégorie | 分类 / 未分类 | Items' grouping, one tree per organization; an item is in one or none (ADR-092). |
 | Code | Code | 编码 | A variant's own code, on its label, documents and every CSV; once SKU · UGS · SKU (ADR-092). The organization's export keeps its column's name, `sku`. |
@@ -113,15 +114,16 @@ as the catalogues word it.
 | Held | Réservé | 已预留 | Kept for a confirmed sale (ADR-045). |
 | Free | Libre | 可用 | What can still be promised. |
 | Backordered | En rupture | 缺货待发 | |
-| Not available | Non disponible | 不可用 | A location whose stock is not for sending (ADR-042). |
+| Not available | Non disponible | 不可发货 | A location whose stock is not for sending (ADR-042). Not 不可用, which reads as the opposite of Free's 可用. |
 | Correct the count | Corriger le compte | 更正库存数量 | Records an adjustment. |
+| Ship out | Sortie de stock | 出库 | Inventory's action that sends stock out with no order; an order's Ship stays Expédier / 发货. |
 | Adjustment | Ajustement | 调整 | A movement's reason, as are the four below. |
 | Transfer | Transfert | 移库 | |
 | Consumption | Consommation | 消耗 | What a run used. |
 | Sample | Échantillon | 样品 | |
 | Unit of measure | Unité de mesure | 计量单位 | |
 | Discontinue / Discontinued | Abandonner / Abandonné | 停用 / 已停用 | An item no longer offered or used. |
-| Retire / Retired | Retirer / Retiré | 停用 / 已停用 | A partner, location or list kept for the records that name it. |
+| Retire / Retired | Retirer / Retiré | 归档 / 已归档 | A partner, location, list or tax code kept for the records that name it. Not 停用, which is Discontinue's. |
 | In use | En usage | 使用中 | The opposite of retired. |
 
 ### Reorder points
@@ -195,7 +197,8 @@ as the catalogues word it.
 | Waiting for a cost | En attente d’un coût | 等待成本 | |
 | Registered address | Adresse du siège | 注册地址 | The seller's address on every invoice. |
 | What we do | Ce que nous faisons | 业务简介 | One line on the organization's Profile, at most 200 characters, shown on Home under the date (ADR-091). |
-| Billing address | Adresse de facturation | 账单地址 | A partner's address marked Invoices go here / Les factures sont envoyées ici / 发票寄往此处. |
+| Billing address | Adresse de facturation | 开票地址 | A partner's address marked Invoices go here / Les factures sont envoyées ici / 发票寄往此处; 开票地址 in every place, beside 开票. |
+| Tax number | Numéro de taxe | 税号 | The organization's or a partner's number for sales tax, 税号 on every screen and on the PDF alike. The Organization page's field and the PDF name it in full, Tax registration number, Numéro d’inscription aux taxes. |
 | Time zone | Fuseau horaire | 时区 | |
 | Prefix | Préfixe | 前缀 | A document number's start (ADR-073). |
 | Exempt | Exonéré | 免税 | A tax code that charges nothing. |
