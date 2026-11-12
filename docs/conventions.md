@@ -405,10 +405,14 @@ three:
   where the meaning is the same, not merely the words.
 - **Values, not sentences.** Data goes in as a value, `{sku}`, `{number}`;
   a count as an ICU plural, never "has"/"have" chosen in code; a status
-  or kind as an ICU select over its stored value; a list as a list (the
-  server joins it per language); a nested sentence as a message of its
-  own. A number for a person is formatted for them (`formatQuantity`,
-  `formatMoney`), a calendar day stays YYYY-MM-DD in a server message.
+  or kind as an ICU select over its stored value; a list as a list,
+  joined per language by the server's `joinList` or the screens'
+  `intl.formatList`, which in Chinese space a Latin name from 和 and 或
+  (ADR-090); lint refuses any other join on the screens, and names given
+  as elements, which `listNameParts` draws instead; a nested sentence as
+  a message of its own. A number for a person is formatted for them
+  (`formatQuantity`, `formatMoney`), a calendar day stays YYYY-MM-DD in
+  a server message.
 - **Then** `npm run i18n:extract` in that package, and add the same id to
   `fr-CA.json` and `zh-Hans.json`, using `docs/glossary.md`'s words and a
   typographic apostrophe (’), which ICU leaves alone where ' starts a

@@ -41,6 +41,10 @@ what to keep true when a component styles itself (ADR-055;
   its violations fixed, never excluded; a sentence's link `underline="always"`.
 - **No words typed into JSX:** they come from the catalogues, which lint
   holds (ADR-054; [conventions.md](../../docs/conventions.md#adding-text)).
+- **A list a person reads is `intl.formatList`,** its names as text, or
+  `listNameParts` to draw each as a link or a code: the join spaces a
+  Latin name from 和 and 或 in Chinese, and lint refuses any other
+  (ADR-090; [conventions.md](../../docs/conventions.md#adding-text)).
 - **A link or `navigate()` to a top-level page passes `OFFER_BACK`**
   (`client/src/lib/offer-back.ts`) as its router state, so the page offers
   Back; the menu, the trail, an "up" link and a move after an action pass

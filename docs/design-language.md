@@ -499,8 +499,9 @@ measured on the device.
 - A space between Chinese and Latin letters or digits: "D3-1000-120
   已有库存下限", "另外 4 个".
 - A list joins with 、 and its last item with 和, the joiner adding the
-  space beside Latin text, once on each side (`joinList` on the server,
-  its copy in the client).
+  space beside Latin text, once on each side (`joinList` on the server;
+  `makeIntl`'s `intl.formatList` on the screens, the only join lint
+  allows there).
 - A list item that holds 和 itself is worded so the join does not double
   it: 采购订单、销售订单及其价格, not 采购订单和销售订单和订单价格 (#150).
 

@@ -28,6 +28,74 @@ const FLOOR = {
   lintAllEsApis: true,
 };
 
+/** Refused in every file, as no-restricted-syntax selectors. */
+const RESTRICTED = [
+  /**
+   * A colour given as a path goes in sx (ADR-055). MUI 9 ignores a path
+   * in a color prop, and TypeScript still takes it as a string, so from
+   * MUI 9's first commit color="text.secondary" drew the primary text
+   * colour, in over 200 places, until #196. Refused however it is
+   * written (a literal, or a string inside a conditional, a logical or
+   * a template) and on any component, not only Typography.
+   */
+  ...[
+    "JSXAttribute[name.name='color'] > Literal[value=/\\./]",
+    "JSXAttribute[name.name='color'] > JSXExpressionContainer Literal[value=/\\./]",
+    "JSXAttribute[name.name='color'] > JSXExpressionContainer TemplateElement[value.raw=/\\./]",
+  ].map((selector) => ({
+    selector,
+    message:
+      'A colour path goes in sx: MUI 9 ignores a path in a color prop and draws the primary text colour (#196). The prop takes only a name, such as primary, error or inherit.',
+  })),
+  /**
+   * A dialog's key goes on the component the page renders, never on
+   * MUI's Dialog inside it: the fields are that component's state,
+   * which a key on the Dialog leaves as it was (conventions.md, Keys
+   * that rebuild a component; #265).
+   */
+  {
+    selector:
+      "JSXOpeningElement[name.name='Dialog'] > JSXAttribute[name.name='key']",
+    message:
+      "A dialog's key goes on the component the page renders, never on MUI's Dialog inside it, which leaves the fields as they were (#265).",
+  },
+];
+
+/**
+ * A list a person reads has one join, intl.formatList, which makeIntl
+ * (src/i18n/intl.ts) makes for the screens: it lists in the reader's
+ * language and, in Chinese, spaces a Latin name from 和 and 或 (ADR-090,
+ * #501). Refused, outside that file: JavaScript's own list join, an intl
+ * made anywhere else, a list's names given as elements, which hide their
+ * text from the join, and a list joined by hand.
+ */
+const LISTS = [
+  {
+    selector:
+      "MemberExpression[object.name='Intl'][property.name='ListFormat']",
+    message:
+      'A list a person reads is joined by intl.formatList, whose join (makeIntl, src/i18n/intl.ts) spaces a Latin name from 和 and 或 in Chinese (ADR-090, #501); Intl.ListFormat skips it.',
+  },
+  {
+    selector:
+      "ImportDeclaration[source.value='react-intl'] > ImportSpecifier[imported.name=/^(createIntl|IntlProvider)$/]",
+    message:
+      "The screens' intl is makeIntl's (src/i18n/intl.ts), whose lists keep ADR-090's space beside a Latin name in Chinese (#501); one made here would join its lists without it.",
+  },
+  {
+    selector:
+      'CallExpression[callee.property.name=/^formatList(ToParts)?$/] :matches(JSXElement, JSXFragment)',
+    message:
+      "A list's names go to the join as text, which an element hides from its spacing in Chinese (ADR-090, #501): pass the text to listNameParts (src/i18n/list-names.ts) and draw each name there.",
+  },
+  {
+    selector:
+      "CallExpression[callee.property.name='join'][arguments.0.value=/^\\s*(,|、|，|and|or|et|ou|和|或)\\s*$/]",
+    message:
+      "A list a person reads is joined by intl.formatList, in the reader's language and, in Chinese, with a space between a Latin name and 和 or 或 (ADR-090, #501), never by hand.",
+  },
+];
+
 export default defineConfig([
   // src/api/ is generated from the server's OpenAPI document (ADR-068).
   globalIgnores([
@@ -73,38 +141,7 @@ export default defineConfig([
       'formatjs/enforce-default-message': ['error', 'literal'],
       'formatjs/enforce-placeholders': 'error',
 
-      /**
-       * A colour given as a path goes in sx (ADR-055). MUI 9 ignores a path
-       * in a color prop, and TypeScript still takes it as a string, so from
-       * MUI 9's first commit color="text.secondary" drew the primary text
-       * colour, in over 200 places, until #196. Refused however it is
-       * written (a literal, or a string inside a conditional, a logical or
-       * a template) and on any component, not only Typography.
-       */
-      'no-restricted-syntax': [
-        'error',
-        ...[
-          "JSXAttribute[name.name='color'] > Literal[value=/\\./]",
-          "JSXAttribute[name.name='color'] > JSXExpressionContainer Literal[value=/\\./]",
-          "JSXAttribute[name.name='color'] > JSXExpressionContainer TemplateElement[value.raw=/\\./]",
-        ].map((selector) => ({
-          selector,
-          message:
-            'A colour path goes in sx: MUI 9 ignores a path in a color prop and draws the primary text colour (#196). The prop takes only a name, such as primary, error or inherit.',
-        })),
-        /**
-         * A dialog's key goes on the component the page renders, never on
-         * MUI's Dialog inside it: the fields are that component's state,
-         * which a key on the Dialog leaves as it was (conventions.md, Keys
-         * that rebuild a component; #265).
-         */
-        {
-          selector:
-            "JSXOpeningElement[name.name='Dialog'] > JSXAttribute[name.name='key']",
-          message:
-            "A dialog's key goes on the component the page renders, never on MUI's Dialog inside it, which leaves the fields as they were (#265).",
-        },
-      ],
+      'no-restricted-syntax': ['error', ...RESTRICTED],
     },
   },
   {
@@ -138,6 +175,29 @@ export default defineConfig([
           },
         },
       ],
+    },
+  },
+  {
+    /**
+     * LISTS, in the app's own code. A file left out joins no list a person
+     * reads, each with why; a line that does, in a file that may, says why
+     * in its own eslint-disable comment.
+     */
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: [
+      '**/*.test.{ts,tsx}',
+      'src/test/**',
+      // The one join.
+      'src/i18n/intl.ts',
+      // CSS lists: a font stack, a background's layers.
+      'src/theme/tokens.ts',
+      'src/theme/cut-edge.ts',
+      // An address's parts on one line, not names in a list (ADR-071).
+      'src/invoices/one-line.ts',
+      'src/locations/address-line.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': ['error', ...RESTRICTED, ...LISTS],
     },
   },
   {
