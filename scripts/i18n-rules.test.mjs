@@ -69,6 +69,22 @@ test("再订货点 is refused everywhere", () => {
   }
 });
 
+test("账单地址 and 税务登记号 are refused everywhere, for the words settled", () => {
+  for (const id of ["invoices.billToMissing", "partners#addresses"]) {
+    assert.deepEqual(problemsOf("请添加账单地址", id, "zh-Hans"), [
+      "账单地址, for 开票地址, as Billing address says: 账单地址 sat beside 开票, one address under two names (Words not to use)",
+    ]);
+    assert.deepEqual(problemsOf("填写税务登记号", id, "zh-Hans"), [
+      "税务登记号, for 税号, as Tax number says: the PDF said 税务登记号 where the screens say 税号, one number under two names (Words not to use)",
+    ]);
+  }
+  // The Organization page's section keeps 税务登记; only the number is 税号.
+  assert.deepEqual(
+    problemsOf("税务登记", "organization.tax.title", "zh-Hans"),
+    [],
+  );
+});
+
 test("Chinese: a half-width , ? : ; or ! beside Chinese is refused, each once", () => {
   assert.deepEqual(problemsOf("邮箱:请检查,然后重试,好吗?", "a.b", "zh-Hans"), [
     "half-width : , ? beside Chinese, for ： ， ？",

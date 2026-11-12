@@ -240,6 +240,8 @@ fails on each word a translation uses where its row holds.
 | 简体中文 | 产品 | 商品 for the goods sold, 物品 for any item | Everywhere but the licences' regulatory terms: `licences.*`, `permissions.productLicences.*`, `account.access.thing.licences` and `licences.md` |
 | 简体中文 | 再订货点 | 库存下限 | Everywhere |
 | 简体中文 | 照片 | 头像 | Only where it means a person's picture, not an item's photos: `account.*`, `people.*`, `account.md` and `people.md` |
+| 简体中文 | 账单地址 | 开票地址, as Billing address says: 账单地址 sat beside 开票, one address under two names | Everywhere |
+| 简体中文 | 税务登记号 | 税号, as Tax number says: the PDF said 税务登记号 where the screens say 税号, one number under two names | Everywhere |
 
 ## Writing conventions
 

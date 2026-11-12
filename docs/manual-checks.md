@@ -748,7 +748,10 @@ folder by folder; these check what is already in place.
   button 归档, while a discontinued item keeps 已停用; Inventory → a row's
   Ship out opens 出库 (Sortie de stock in Français), and an order's Ship
   still reads 发货 (Expédier); the Organization page's tax field and an
-  invoice's PDF both say 税号. In every language, the top bar's lookup
+  invoice's PDF both say 税号. `node scripts/i18n-rules.mjs` refuses
+  账单地址 and 税务登记号 in any message or guide, by the glossary's Words
+  not to use, so a later round cannot bring them back. In every
+  language, the top bar's lookup
   for a lot ends with Show all in Inventory (Tout afficher dans
   Inventaire, 在库存中查看全部), the page it opens, and Help's list of
   guides names the page at `/lots` Trace a lot (Tracer un lot, 追溯批次),
@@ -5871,3 +5874,6 @@ first.
   Edit names name a language inside a sentence in the reader's language,
   by Intl's names as the server's refusal now does too, 没有英语名称 for
   没有英文名称: MC-1408 extended, MC-2513 and MC-R79 updated.
+- 2026-11-12: ADR-054's November amendment, R8: the glossary's Words not
+  to use gains 账单地址 and 税务登记号, which the rules check refuses in
+  every message and guide: MC-1417 extended.
