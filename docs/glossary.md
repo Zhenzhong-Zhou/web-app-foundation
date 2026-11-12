@@ -221,19 +221,71 @@ as the catalogues word it.
 | Undo | Annuler | 撤销 | |
 | New (on People) | Nouveau | 新加入 | Someone who joined in the last two weeks. |
 
+## Words not to use
+
+A word a translation does not use, and the word it uses instead: one the
+terms above replaced, or one that reads as something else. Where says
+where a row holds: Everywhere; Everywhere but, then what it leaves out;
+or Only, then all it holds for. A message is named by its id, in either
+package's catalogue, `licences.*` for every id under `licences.`; a
+guide by its file in `client/src/help/guides/`, in the row's language,
+such as `licences.md`.
+
+| Language | Not | Instead | Where |
+| --- | --- | --- | --- |
+| 简体中文 | 产品 | 商品 for the goods sold, 物品 for any item | Everywhere but the licences' regulatory terms: `licences.*`, `permissions.productLicences.*`, `account.access.thing.licences` and `licences.md` |
+| 简体中文 | 再订货点 | 库存下限 | Everywhere |
+| 简体中文 | 照片 | 头像 | Only where it means a person's picture, not an item's photos: `account.*`, `people.*`, `account.md` and `people.md` |
+
 ## Writing conventions
 
 - **Apostrophes:** use ’ (U+2019) in translations, never '. An ASCII
   apostrophe is ICU's escape character and can swallow a placeholder.
 - **French (Canada):** Quebec typography, as the Office québécois de la
-  langue française recommends: no space before ?, ! or ;, a non-breaking
-  space before : and inside « ». Vouvoiement throughout. This holds in the
-  client's and the server's catalogues alike.
-- **Simplified Chinese:** full-width punctuation (，。？：), a space between
-  Chinese and a Latin word or a number only where it reads better, none
-  around full-width punctuation.
+  langue française recommends: no space before ?, ! or ;, a no-break
+  space (U+00A0) before : and inside « ». Vouvoiement throughout. This
+  holds in the client's and the server's catalogues and the guides alike.
+- **Simplified Chinese:** full-width punctuation (，。？：；！), never a
+  half-width , ? : ; or ! beside Chinese. A space between Chinese and
+  Latin letters or digits, as in 逾期 2 天, 批次 VC-0301 and 我在
+  {organization} 的权限 (ADR-090), and none beside full-width punctuation
+  or inside a date as the reader's calendar writes it, 2026年11月30日. A
+  list joins with 、 and its last item with 和, a space beside a Latin
+  name.
 - **Ellipsis:** the single character … in every language, as the English
-  uses for "Saving…".
+  uses for "Saving…", never three full stops.
 - **Placeholders:** `{name}` and tags like `<link>` are kept exactly, in
   whatever position the sentence needs; `npm run i18n:check` fails
   otherwise.
+
+### How it reads
+
+The style round 1's second pass held the wording to (ADR-054's November
+2026 amendment), for whoever writes or reviews a translation. It judges
+how a sentence reads, never its terms: the tables above win.
+
+- **In both languages:** polite and plain, as a careful colleague
+  writes, neither stiff nor chatty. In a guide, a word in bold is the
+  screen's own and a link's text names the page it opens, so both stay
+  as the screen words them.
+- **French:**
+  - A button or a menu item is an infinitive, Enregistrer, not
+    Enregistrez; a title or a column heading, a noun or an infinitive.
+  - French word order, never the English's: no stacked nouns (la liste
+    de prix du fournisseur, not la liste prix fournisseur), and no
+    English turn of phrase translated word for word.
+  - A short status says it once: Enregistré., not A été enregistré avec
+    succès.
+  - Vouvoiement, without a Veuillez before every request.
+  - Quebec usage where it differs from France's, as the terms above are.
+- **Chinese:**
+  - A short status is 已 and the verb: 已保存, not 保存了 or 保存成功了.
+  - No 了 after a verb with its object joined to it: 收货入库：批次
+    VC-0301, not 您收货入库了批次 VC-0301. 了 where natural speech has it
+    (出错了, 物品快不够了, 有了配方), never only to mark the past.
+  - A list of one's own actions is the verb and its object, without 您:
+    创建了订单 SO-1, not 您创建了订单 SO-1.
+  - No 进行 before a verb: 审核, not 进行审核; nor 对……进行.
+  - 您 where a sentence speaks to the person, not in every line.
+  - A button, a title or a column heading is as short as its meaning
+    allows, with no chain of 的.
