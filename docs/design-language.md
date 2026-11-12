@@ -11,7 +11,9 @@ rules, [`.claude/rules/ui.md`](../.claude/rules/ui.md); the mark,
 [engineering.md](engineering.md#how-code-is-delivered) names has a row
 for it: the type at each text size, on a laptop and on a phone, and the
 rules for Chinese beside Latin letters and digits. ADR-091's boards add
-each pattern as Home uses it.
+each pattern as Home uses it, and the row "状态 第一版 · States v1"
+draws [States](#states): a screen's five states, and each shared piece's
+own.
 
 It came from a first-time viewer's look at Home (#335) and from two
 walkthrough panels of personas, on 4 November 2026: who they are is in
@@ -232,6 +234,98 @@ and the places #337 names, each when its trigger comes.
 - On touch every target is at least 44 × 44 px (#170); with a mouse,
   WCAG's 24 px minimum.
 
+## States
+
+What a screen shows while it reads, and how each piece it is built from
+looks in each state it has
+([ADR-090, amended](adr/0090-the-design-language.md#decision--the-five-states-and-each-pieces)).
+The canvas row "状态 第一版 · States v1" draws them, in English, French
+and 中文, light and dark. Each with what holds it in the code today, or
+the issue that will.
+
+### The five states
+
+Every screen, and each part of one that reads on its own, is in one of
+five; Items drew them first (ADR-092), and its words are the examples.
+
+- **As it should be:** what it read, whole: Items' rows, with "Showing
+  50 of 312" under them while there are more.
+- **Empty,** in one of three kinds, each in its own words:
+  - **First use** says what to add first, with the action: "No items
+    yet. Add what you sell first, or the raw materials you make it
+    from.", with Add item; where the action is not the role's, its line
+    instead ([A main action the role cannot use](#a-main-action-the-role-cannot-use)).
+  - **No results** names the filters that are on, with one button that
+    clears them all, as Items' Show all items does; each chip's × still
+    clears one.
+  - **Done** is the goal reached, and says so: "Every item has a
+    category."
+- **Loading:** as [Loading](#loading) says, a table's head kept above
+  its placeholder rows, so a header pressed to sort keeps its focus
+  (`PlaceholderRows`).
+- **Failed:** the part alone says it could not be read, with Try again
+  (`ListError`), never an empty state, which would say there is
+  nothing.
+- **Partial:** what came is kept, and what did not is said beside it:
+  - Items' Show 50 more, failing, keeps the rows and says "The next 50
+    could not be loaded.", with Try again (#544 for every list).
+  - A search with no match on this tab says where the matches are:
+    "Nothing in Products matches “vit”. 3 items in Supplies match.",
+    with See in Supplies.
+
+### Each piece's states
+
+Each piece draws its states once, here and on the canvas; a feature
+draws a piece again only where it differs. The nine states are Material
+3's set: selected is chosen, ticked or on; busy, while it works; invalid,
+refused.
+
+| Piece | Rest | Hover | Focus | Pressed | Selected | Disabled | Busy | Invalid | Dragged | To build |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| The main button (`MuiButton`) | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | — | — | — |
+| A plain button, text or outlined | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | — | — | — |
+| The tonal button (`TONAL`) | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | — | — | #507's 48: a variant in the theme, not three props by hand |
+| A link (`MuiLink`) | ✓ | ✓ | ✓ | — | — | — | — | — | — | — |
+| A field | ✓ | ✓ | ✓ | — | — | ✓ | — | ✓ | — | #566: its floated label at 14 px |
+| A select, or a picker | ✓ | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — | #566: its floated label at 14 px |
+| A check box and a radio | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | #170: 44 px on touch, disabled at its enabled size |
+| A switch (`MuiSwitch`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | #170: 44 px on touch |
+| A chip: a status, a filter's with its ×, a quick filter | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | #566 and #170: a quick filter at 14 px and 44 px on touch |
+| A tab | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
+| A row | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | #170: touch density, each control in it 44 px |
+| A tile | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
+| A dialog | ✓ | — | ✓ | — | — | — | ✓ | ✓ | — | #564: its buttons pinned, full screen on a phone |
+| The message with Undo (`UndoSnackbar`) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — | #545: one Undo, its colours and ring in every message |
+| Load more (`LoadMoreButton`) | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — | — | #544: a failed page, with Try again, as Items' has |
+| A drag handle (Customise Home's) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
+
+- **✓ marks a state the piece has,** and — one it has not; in To
+  build, — means nothing is left to build.
+- **Pressed looks as hover does:** the theme turns MUI's ripple off, the
+  hover and the focus ring showing what it did (`MuiButtonBase` in
+  `client/src/theme/index.ts`).
+- **Busy says what it is doing,** a button's word changing ("Add item",
+  then "Adding…") and the dialog holding still while it saves
+  (`DialogFooter`); Load more says "Loading…".
+- **Focus is one ring** for everything that takes it, 2 px in the
+  accent (`MuiButtonBase`); a dialog takes focus in, and gives it back
+  to what opened it when it closes.
+- **Dragged lifts** with the lift's shadow and an accent edge, where it
+  would drop a dashed box (`DraggableTile` in Customise Home).
+
+### Their look
+
+- **Each state's look is a token** in `client/src/theme/tokens.ts`, as
+  Material 3's state layers are, read through the theme.
+- **Every state keeps its text at 4.5 : 1 and its edge and focus ring
+  at 3 : 1,** in light and dark, a disabled control's included, which
+  WCAG exempts.
+- **A disabled control keeps its enabled size** (#170).
+- **Held today in part:** `tokens.test.ts` holds an entry hovered,
+  focused or chosen and the tonal button, and `index.test.tsx` a
+  switch's track and #557's hover; #561 holds every piece in every
+  state.
+
 ## Screen sizes
 
 By width, as Material 3's window size classes do, on the theme's
@@ -299,7 +393,7 @@ measured on the device.
   before its code. A changed design is a new row, titled with its
   version, never drawn over the old one: every earlier row stays as the
   design's history, and the version the build follows is named in its
-  ADR.
+  ADR. [States](#states) follows the row "状态 第一版 · States v1".
 
 ## Not yet
 
