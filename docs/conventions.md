@@ -915,6 +915,15 @@ breakpoint, not a `useMediaQuery` branch, so the first paint is right; the hook
 is used only to close an open drawer when the window widens past `lg`. A new
 destination goes into a group in `navigation.ts`, never into the bar.
 
+A screen's layout follows the same rule: CSS `display` at the breakpoint decides
+what shows. The exception is a list whose table and cards would each draw every
+row: CSS `display` would draw every row twice, one copy hidden, so it switches
+with `useMediaQuery` and `noSsr: true`, which gives the first draw the width, as
+Items and Members do
+([ADR-090, The width switch](adr/0090-the-design-language.md#decision--the-width-switch)).
+Help's switch is a fix (#505); the other screens that branch on the width wait
+in #567, each judged when next touched.
+
 Rows that mix a label with actions (page headers, the recipe status row) are two
 flex groups that wrap as wholes: the text group takes the remaining space down
 to a floor, and below it the action group drops to its own line, right-aligned,
