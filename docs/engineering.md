@@ -54,7 +54,10 @@
   gh issue close <N> --reason "not planned" --comment "Duplicate of #<M>"
   ```
 
-- **A new issue carries `needs-triage`** until it is decided.
+- **A new issue carries `needs-triage`** until it is decided; one that
+  `/triage` files from Bob's choice is decided already, and carries its
+  group, kind and areas from the start
+  ([Triaging the open issues](#triaging-the-open-issues)).
 - **The fix-up stage is the "Fix-ups" milestone.**
 - **Every pull request says "Closes #N" for each issue it fixes,** a
   rider included: the issues its commits name are the list checked before
