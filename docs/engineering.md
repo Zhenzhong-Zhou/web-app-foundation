@@ -477,7 +477,10 @@ twice:
   for ADR-081, every chunk, request and failure path) before building.
 - **At each release,** before tagging it, set both packages' version to
   it: `npm version <x.y.z> --no-git-tag-version` in `server/` and in
-  `client/`; and run `/doctor prompt-audit`
+  `client/`; change the README's status (the version and its date) and
+  its roadmap (the "Since" list restarted from the new version, and
+  "Next" brought up to the handoff's "Still to do, in code"); and run
+  `/doctor prompt-audit`
   ([The review step](#the-review-step)). Release notes are
   release notes only: they say nothing of manual checks or the
   walkthrough.
