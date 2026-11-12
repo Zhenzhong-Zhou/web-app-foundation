@@ -81,4 +81,4 @@ Nothing is saved until you create it, and what you create shows on the row at on
 - An item has one reorder point at most. Edit the one it has: the refusal links to it.
 - A reorder point and its quantities are above zero, and a maximum is above the point.
 
-See also [Movements](/movements), [Lots](/lots#trace), [Orders](/orders#raise) and [Production](/production#plan).
+See also [Movements](/movements), [Trace a lot](/lots#trace), [Orders](/orders#raise) and [Production](/production#plan).

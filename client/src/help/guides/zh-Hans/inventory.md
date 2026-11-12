@@ -81,4 +81,4 @@
 - 一个物品最多只有一个库存下限。请编辑已有的那个：拒绝提示中有它的链接。
 - 库存下限和订货数量都必须大于零，最高库存必须高于库存下限。
 
-另见[库存变动](/movements)、[批次](/lots#trace)、[订单](/orders#raise)和[生产](/production#plan)。
+另见[库存变动](/movements)、[追溯批次](/lots#trace)、[订单](/orders#raise)和[生产](/production#plan)。

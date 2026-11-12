@@ -748,9 +748,11 @@ folder by folder; these check what is already in place.
   for a lot ends with Show all in Inventory (Tout afficher dans
   Inventaire, 在库存中查看全部), the page it opens, and Help's list of
   guides names the page at `/lots` Trace a lot (Tracer un lot, 追溯批次),
-  as the menu does. Help in 中文 on Inventory, Locations, Lots, Partners,
-  Price lists, Tax codes, Invoices, Returns and Organization uses the
-  same words.
+  as the menu does. That guide's own title says it too, and so do the
+  links to it at the foot of the Inventory, Movements and Production
+  guides, in each language. Help in 中文 on Inventory, Locations, Trace a
+  lot, Partners, Price lists, Tax codes, Invoices, Returns and
+  Organization uses the same words.
 - **MC-1418** *(ADR-054's November 2026 amendment, R11; #148)* A refusal
   says what to do next, in words the screens use, in English, Français
   and 中文. Locations → a shelf that holds stock → Add inside: the dialog
@@ -5842,3 +5844,6 @@ first.
 - 2026-11-12: ADR-054's November amendment, R11 (#511): Help on Home
   starts with Words you’ll meet, which now explains a lot and Out, and
   keeps each tile to a short line: MC-1423 added, MC-3213 updated.
+- 2026-11-12: ADR-054's November amendment, R11 (#149): the page at
+  `/lots` is Trace a lot in its guide's title and in the links to it
+  from the Inventory, Movements and Production guides: MC-1417 extended.

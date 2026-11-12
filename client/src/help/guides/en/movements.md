@@ -29,4 +29,4 @@ A movement cannot be changed. To put a quantity right, use **Correct the count**
 - **return**: stock a customer sent back.
 - **Deleted user**: someone whose account was deleted. Their movements stay.
 
-See also [Inventory](/inventory) and [Lots](/lots).
+See also [Inventory](/inventory) and [Trace a lot](/lots).

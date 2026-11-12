@@ -81,4 +81,4 @@ Rien n’est enregistré tant que vous ne le créez pas, et ce que vous créez s
 - Un article a un seul point de commande. Modifiez celui qu’il a : le refus y mène.
 - Un point de commande et ses quantités sont supérieurs à zéro, et un maximum est supérieur au point.
 
-Voir aussi [Mouvements](/movements), [Lots](/lots#trace), [Commandes](/orders#raise) et [Production](/production#plan).
+Voir aussi [Mouvements](/movements), [Tracer un lot](/lots#trace), [Commandes](/orders#raise) et [Production](/production#plan).

@@ -41,4 +41,4 @@ Un ordre de fabrication consomme des composants et produit un article fini, fabr
 - Une licence expirée, pas encore en vigueur ou retirée peut empêcher un lancement, selon la [politique de licences](/settings/organization#licences). Une personne qui peut passer outre peut lancer avec un motif, conservé sur l’ordre.
 - L’annulation ne remet pas les composants sortis en place : quelqu’un doit les déplacer.
 
-Voir aussi [Articles](/items) et [Lots](/lots).
+Voir aussi [Articles](/items) et [Tracer un lot](/lots).

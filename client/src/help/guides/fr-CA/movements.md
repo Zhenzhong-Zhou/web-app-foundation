@@ -29,4 +29,4 @@ Un mouvement ne peut pas être modifié. Pour rétablir une quantité, utilisez 
 - **retour** : du stock renvoyé par un client.
 - **Utilisateur supprimé** : une personne dont le compte a été supprimé. Ses mouvements restent.
 
-Voir aussi [Inventaire](/inventory) et [Lots](/lots).
+Voir aussi [Inventaire](/inventory) et [Tracer un lot](/lots).
