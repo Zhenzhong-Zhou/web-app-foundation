@@ -229,7 +229,8 @@ where a row holds: Everywhere; Everywhere but, then what it leaves out;
 or Only, then all it holds for. A message is named by its id, in either
 package's catalogue, `licences.*` for every id under `licences.`; a
 guide by its file in `client/src/help/guides/`, in the row's language,
-such as `licences.md`.
+such as `licences.md`. `scripts/i18n-rules.mjs` reads the table and
+fails on each word a translation uses where its row holds.
 
 | Language | Not | Instead | Where |
 | --- | --- | --- | --- |
@@ -257,6 +258,12 @@ such as `licences.md`.
 - **Placeholders:** `{name}` and tags like `<link>` are kept exactly, in
   whatever position the sentence needs; `npm run i18n:check` fails
   otherwise.
+- **The check:** `scripts/i18n-rules.mjs`, which `scripts/verify.sh` and
+  the Docs workflow run, fails on the apostrophes, the ellipsis, Quebec
+  typography and the half-width punctuation beside Chinese above, in
+  both packages' French and Chinese catalogues and the guides. The space
+  beside Latin letters and digits, and how a sentence reads, are left to
+  whoever writes and reviews it.
 
 ### How it reads
 

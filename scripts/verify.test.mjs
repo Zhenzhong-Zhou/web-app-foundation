@@ -54,6 +54,7 @@ const NEW = {
 /** The steps' stand-ins in the repository: they pass. */
 const STAND_INS = [
   "scripts/check-docs.mjs",
+  "scripts/i18n-rules.mjs",
   "scripts/check-shell.sh",
   "server/node_modules/.bin/prettier",
 ];

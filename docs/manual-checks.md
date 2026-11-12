@@ -728,6 +728,9 @@ folder by folder; these check what is already in place.
   照片. Help on Items says 一个商品，两个市场, not 产品. In Français, Add
   item asks « Qu’est-ce que c’est? » with no space before the ?, and on a
   phone (390 px) no line of Help on Home or Items starts with a colon.
+  `node scripts/i18n-rules.mjs` holds each, in both packages'
+  catalogues and every guide; by hand, that 头像 reads as the person's
+  picture where it stands.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -5714,3 +5717,6 @@ first.
   person's picture in Account and People, 商品 in Items' guide, and
   Quebec spacing in two French messages and Help on Home and Items, by
   the glossary's new Words not to use: MC-1416 added.
+- 2026-11-12: ADR-054's November amendment, R4: scripts/i18n-rules.mjs
+  holds the glossary's words and punctuation, the French guillemets and
+  colons among them, moved from the catalogue checks: MC-1416 extended.

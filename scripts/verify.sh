@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# What CI runs, on this machine and in CI's order: the Markdown check, the
-# server's checks and both its suites, the tests of scripts/ itself, then
+# What CI runs, on this machine and in CI's order: the Markdown check and
+# the translations' words and punctuation, the server's checks and both
+# its suites, the tests of scripts/ itself, then
 # the client's checks, unit tests and the Playwright suite, and in full
 # the specs every browser runs, in Firefox and Linux WebKit, below. Stops
 # at the first failure, so the last heading printed is what failed.
@@ -9,10 +10,10 @@
 #   scripts/verify.sh --quick    format, lint, types, checks, build and unit
 #                                tests; no end-to-end suites
 #   scripts/verify.sh --docs     the docs' checks alone, in seconds: the
-#                                Markdown step and the scripts' format,
-#                                tests and ShellCheck, for a change of docs
-#                                and scripts/ alone; what it refuses is
-#                                where it runs, below
+#                                Markdown and translations steps and the
+#                                scripts' format, tests and ShellCheck,
+#                                for a change of docs and scripts/ alone;
+#                                what it refuses is where it runs, below
 #
 # Needs what each suite needs on its own: the database up
 # (docker compose up -d) and ../.env. The two end-to-end suites use their
@@ -85,6 +86,15 @@ markdown() {
   step 'Markdown: every .md file, as the docs workflow checks it'
   npx --yes markdownlint-cli2@0.23.3
   node scripts/check-docs.mjs
+}
+
+# The glossary's words and punctuation in the French and Chinese
+# catalogues and guides (ADR-054's November 2026 amendment, R4), as the
+# docs workflow checks them too: Node alone, so with --docs as well, where
+# a row added to the glossary's Words not to use can fail it.
+translations() {
+  step "Translations: the glossary's words and punctuation"
+  node scripts/i18n-rules.mjs
 }
 
 # What the regenerated files hold in the working tree, staged or not and
@@ -321,6 +331,7 @@ if [[ $mode == docs ]]; then
 fi
 
 markdown
+translations
 
 if [[ $mode == docs ]]; then
   scripts_tests

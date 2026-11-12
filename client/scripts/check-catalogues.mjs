@@ -13,12 +13,14 @@
  *    the same placeholders as its English: a `{name}` dropped or renamed is
  *    a sentence that prints with a hole in it.
  * 4. Every message parses as ICU.
- * 5. French guillemets and colons hold their words with a no-break space,
- *    « like this » and ainsi : comme ceci, so a narrow screen never leaves
- *    « at the end of a line or starts one with a colon.
- * 6. English writes a typographic apostrophe (’), as the copy asks (#184).
+ * 5. English writes a typographic apostrophe (’), as the copy asks (#184).
  *    ICU reads ' as the start of a quote before a brace, and consumes it
  *    there, so one left in the text a message prints is prose.
+ *
+ * The French and Chinese words and punctuation docs/glossary.md sets,
+ * French guillemets and colons held with a no-break space among them, are
+ * scripts/i18n-rules.mjs's, which holds the guides to them too and
+ * scripts/verify.sh runs.
  *
  * What it cannot see is a translation gone stale after its English changed;
  * ADR-054 has that commit list the keys in the handoff instead.
@@ -143,7 +145,7 @@ const englishPlaceholders = Object.fromEntries(
   ]),
 );
 
-// 3 to 5. Every other catalogue against English, and French's own rule.
+// 3 and 4. Every other catalogue against English.
 for (const locale of OTHERS) {
   const catalogue = read(path.join(LOCALES, `${locale}.json`));
 
@@ -171,21 +173,9 @@ for (const locale of OTHERS) {
       );
     }
   }
-
-  // 5. French guillemets and colons, held to their words.
-  if (locale === 'fr-CA') {
-    const loose = Object.keys(catalogue).filter((id) =>
-      /« | »| :/.test(catalogue[id]),
-    );
-    if (loose.length > 0) {
-      problems.push(
-        `fr-CA guillemets and colons take a no-break space (U+00A0), not a space: ${loose.join(', ')}`,
-      );
-    }
-  }
 }
 
-// 6. English apostrophes, typographic. A message that does not parse is
+// 5. English apostrophes, typographic. A message that does not parse is
 // reported above.
 const straight = Object.keys(english).filter(
   (id) => englishPlaceholders[id] && printed(english[id]).includes("'"),
