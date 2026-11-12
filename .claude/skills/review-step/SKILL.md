@@ -34,9 +34,9 @@ Before it, `TZ=America/Vancouver date '+%Y-%m-%d %H:%M'` and `date +%s`,
 kept for its summary. Then the prompt the arguments name, in this
 session, as engineering.md's "The review step" says, by the rules in
 [`.claude/agents/brief-step.md`][step], read from the file: its sections
-1 and 2 throughout. `/simplify` is given `report only, change nothing`
-as its argument, since its own instructions apply what it finds. The
-findings stop there, for Bob's choices in the chat.
+1 and 2 throughout. `/simplify` runs with no argument, which it would
+read as what to review, and its fixes are not applied, though its own
+steps would. The findings stop there, for Bob's choices in the chat.
 
 ## 3. The summary
 
