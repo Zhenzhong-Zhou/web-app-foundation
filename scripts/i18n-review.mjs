@@ -51,6 +51,10 @@
  * the guides, which checks their Markdown and bold labels, and look at
  * `git diff`.
  *
+ * With no fluent reader, scripts/i18n-decide.mjs stands between the two:
+ * it decides one text for each row from the machine reviews of a workbook
+ * and writes a workbook import reads (ADR-054's November 2026 amendment).
+ *
  * No dependencies of its own: a workbook is a zip of XML, and Node has
  * zlib. It uses the FormatJS CLI and ICU parser each package already has,
  * so run `npm install` in client/ and server/ first.
@@ -613,6 +617,17 @@ function guideTarget(language) {
   };
 }
 
+/**
+ * Where a workbook's rows go in a language, by their Area: what import
+ * writes through, and what the decide step (i18n-decide.mjs) reads today's
+ * text and import's checks from, writing nothing.
+ */
+export const targetsFor = (language) =>
+  new Map([
+    ...AREAS.map((area) => [area.name, catalogueTarget(area, language)]),
+    [GUIDE_AREA, guideTarget(language)],
+  ]);
+
 function importWorkbook(file) {
   const { sheetName, rows } = readWorkbook(readFileSync(file));
   const language = sheetName;
@@ -639,10 +654,7 @@ function importWorkbook(file) {
     (title) => header.indexOf(title),
   );
 
-  const targets = new Map([
-    ...AREAS.map((area) => [area.name, catalogueTarget(area, language)]),
-    [GUIDE_AREA, guideTarget(language)],
-  ]);
+  const targets = targetsFor(language);
 
   const problems = [];
 
@@ -981,7 +993,8 @@ function exportOptions(args) {
   return options;
 }
 
-// Run, not imported: its tests import the workbook's writer and reader.
+// Run, not imported: its tests import the workbook's writer and reader,
+// and the decide step the reader and targetsFor.
 if (import.meta.main) {
   const [command, ...args] = process.argv.slice(2);
   const options = command === "export" && exportOptions(args);

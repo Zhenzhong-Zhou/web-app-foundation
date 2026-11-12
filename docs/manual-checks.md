@@ -850,6 +850,18 @@ folder by folder; these check what is already in place.
   not its heading with the same id (the opening's, the guide's title),
   another line is a heading, or it links elsewhere than the English; then
   `npx vitest run src/help/guides.test.ts` in client/, as import says.
+  With no fluent reader, `node scripts/i18n-decide.mjs --chatgpt <file>
+  [--claude <file>] --out <file> --meaning` decides each row from
+  ChatGPT's review and Claude's, ChatGPT leading, and writes a workbook
+  import takes whole: a row a review changed whose English or translation
+  changed since the export is set aside, its Correction cleared; each text
+  must pass `scripts/i18n-rules.mjs` and import's own checks, and, with
+  `--meaning`, Claude's meaning check through the API, or it falls back to
+  the other review's text, else today's; Reason and Fallback say why beside
+  each row, and the counts are printed. Without `ANTHROPIC_API_KEY`,
+  `--meaning` is refused, naming `read -s ANTHROPIC_API_KEY && export
+  ANTHROPIC_API_KEY`; its answers are kept in
+  `review/<language>.meaning.json`, so a second run asks only what is new.
 - **MC-1406** In Français and in 简体中文, every area converted so far
   reads entirely in that language, with no English left on it:
   - signed out: sign-in, register, forgot-password, reset and verify,
@@ -5847,3 +5859,7 @@ first.
 - 2026-11-12: ADR-054's November amendment, R11 (#149): the page at
   `/lots` is Trace a lot in its guide's title and in the links to it
   from the Inventory, Movements and Production guides: MC-1417 extended.
+- 2026-11-12: ADR-054's November amendment, R2 and R5: the decide step
+  writes one text for each row from ChatGPT's and Claude's reviews, set
+  aside where the text changed since the export, each checked by the
+  rules check and the meaning check before it goes in: MC-1405 extended.
