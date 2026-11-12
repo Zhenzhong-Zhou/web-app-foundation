@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 11 November 2026
+# web-app-foundation — handoff, 12 November 2026
 
 Paste this into a new chat of the claude.ai project where features are
 planned ([engineering.md, How code is delivered](engineering.md#how-code-is-delivered)).
@@ -13,12 +13,25 @@ as-built amendments, [the working agreements](engineering.md),
 
 ## Where things stand
 
-On 11 November 2026:
+On 12 November 2026:
 
+- **The translations,** [ADR-054's amendment](adr/0054-languages.md):
+  planned on 12 November on `fix-ups-i18n`, its requirements confirmed
+  before drafting. Round 2 is done: ChatGPT and Claude each reviewed the
+  full export at `19e1b7aa` on 6 and 7 November, before this week's
+  merges; their workbooks are in the ignored `review/` at the
+  repository's root, where
+  `scripts/i18n-review.mjs` reads and writes, and round 1's data stays in
+  the ignored `tmp/i18n-review/`. The reviewer who reads only Chinese
+  stopped on 12 November, so ChatGPT's wording leads, and two checks, the
+  glossary's words and the meaning against the English, stand in for a
+  fluent reader; both languages stay beta. [#531] moves to a branch of
+  its own, next.
 - **Flows and states,**
   [ADR-090's amendment](adr/0090-the-design-language.md), with short ones
   in ADR-087 and ADR-088: planned and built on 11 November on
-  `flows-and-states`, 23 commits with the as-built, pull request [#568];
+  `flows-and-states`, 23 commits with the as-built, merged the same day
+  as [#568] (cc0beaf8), a merge commit;
   its requirements confirmed before drafting, its decisions chosen as
   recommended, and the as-built marks each. The five
   states and each shared piece's own states drawn once, in the design
@@ -31,7 +44,6 @@ On 11 November 2026:
   code, API or migration: each screen's build has its issue, [#561] to
   [#567] filed on the branch. With it, `/code-review` checks a branch's
   new clones and its simplicity, and the planning skill closes a session.
-  Then the translations, before 30 November.
 - **[#547], the list search's plans,**
   [ADR-051's amendment](adr/0051-performance.md): planned on 10
   November and built on 10 and 11 November on `fix-547-search-plans`,
@@ -236,7 +248,8 @@ On 11 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 11 November, [#558] ([#547]) as a merge
+- **The last merges:** on 11 November, last, [#568] (flows and states)
+  as a merge commit (cc0beaf8); before it, [#558] ([#547]) as a merge
   commit, then [#559] ([#557]), the runner's, as a merge commit too
   (c1f7b6d0), by mistake: its branch took `main` in GitHub's conflict
   editor, and a runner's pull request is squashed, with the two lines it
@@ -310,26 +323,18 @@ On 11 November 2026:
 
 ## Dates
 
-- **The second translation review,** in ChatGPT, one chat per language:
-  on the workbooks `node scripts/i18n-review.mjs export` wrote at
-  `19e1b7aa` (6 November 2026, 08:38), the Chinese done on 7 November
-  and saved beside the export as `zh-Hans.reviewed.xlsx`, the French in a
-  chat of its own next. The reviewer who reads only Chinese checks
-  the Chinese corrections before `import`; the next round is only what
-  changed, `node scripts/i18n-review.mjs export --since 19e1b7aa`, and the
-  corrections go into the translations' fix-up. The first round's export
-  was at `b933b912` (22 October 2026). For the same reviewer: 头像 for the profile
-  picture everywhere, since Your account says 照片 while Home says 头像.
-  And the refused document's page (ADR-071's amendment): its French and
-  Chinese words are drafts; its signed-out title, 您已退出登录, wants
-  您尚未登录, which fits someone who never signed in; and the missing-name
-  message's 没有English名称 wants a space beside the Latin name.
-  With them, ADR-083's two questions: whether Panivo in a Chinese email
-  reads out of place beside 品桥 in the app (ADR-082's trigger for the
-  name by language in emails), and the invitation email's
-  有效期到2026年11月3日结束, with no space where the page writes 到 2026年.
-  And, on a phone: the close dialog (MC-2406), Roles and the role editor
-  in 中文, 品牌, product photos, 同事, and 编号 (MC-2710).
+- **The second translation review,** done: ChatGPT on its website and
+  Claude each reviewed the full export at `19e1b7aa` (6 November 2026,
+  08:38), both languages by 7 November, the French merge written on 12
+  November; each language's two reviews and their merge are in the
+  ignored `review/`.
+  The reviewer who reads only Chinese stopped on 12 November, before
+  checking any of it. What was set aside for that reviewer, 头像, the
+  refused document's page, ADR-083's two questions and the phone checks
+  in 中文, is settled in [ADR-054's amendment](adr/0054-languages.md), the
+  phone checks staying owed. What `main` changed since `19e1b7aa`, and
+  the guides, go through ChatGPT in an extra round on `fix-ups-i18n`. The
+  first round's export was at `b933b912` (22 October 2026).
 - **Dependabot, from 2 November:** with its 7-day cooldown ([#366]), it
   opens a pull request only for releases already 7 days old, so each
   merges once green, one at a time. [#403] makes Claude Code Review skip
@@ -359,21 +364,23 @@ On 11 November 2026:
   [#423], for areas the first pass had none in. All are `fix-now`, one
   batch of the Fix-ups milestone, before 30 November, with the style
   rules the second pass used going into the glossary's Writing
-  conventions; the reviewer who reads only Chinese checks only the first
-  screens a newcomer sees. Their data stays in the ignored
+  conventions. Their data stays in the ignored
   `tmp/i18n-review/` on the maintainer's Mac. The cloud credit ended on 4
   November; the API key's credit is US$100 a month (Where things stand).
   Decided on 3 November: every suggestion applied, the natural pass's
-  where both passes have one, with a workbook of the Chinese changes for
-  the maintainer to clear any rejected; [#148], [#149] and [#249] riding
-  along. The guides' natural-wording pass ran the same evening, for
+  where both passes have one; [#148], [#149] and [#249] riding along.
+  The guides' natural-wording pass ran the same evening, for
   US$4.77: 436 findings, in two comments on [#398]. The rest goes into
   ADR-054's amendment, `fix-ups-i18n`'s first commit. One exception to
   every suggestion applied, decided on 10 November: the glossary's words
   from ADR-092 win over a suggestion written before them, Item as
   article and 物品, Product as produit and 商品, and 产品 only in the
   licences' terms, as the comments on [#375], [#382], [#386], [#390],
-  [#391], [#395] and [#398] say.
+  [#391], [#395] and [#398] say. On 12 November ADR-054's amendment
+  replaced every suggestion applied: the later rounds lead, round 1's
+  glossary findings go in only where no later round changed a message,
+  and its natural-wording suggestions, the guides' 436 among them, are
+  overtaken; the 10 November rule holds for every round.
 - **31 January 2027:** Home's known miss ([#276]) ends, moved from 30
   November for its redesign: ADR-091 ([#335]) must bring Home within its
   budget, with the same headroom, and remove it.
@@ -401,22 +408,14 @@ On 11 November 2026:
 
 ## Still to do, by hand
 
-- **After [#568]'s merge:** `gh pr merge 568 --merge`, never squashed;
-  `scripts/prune-branches.sh --yes`; `scripts/clean-local.sh`, then
-  `--yes`, which removes `tmp/flows-and-states/`, `dl-items.md` with it;
-  Project knowledge re-synced; the planning skill packed from `main` and
-  uploaded, and `evals.md`'s prompts 8 and 9 walked; `/triage` over `docs`
-  and `ui`: comments naming the patterns on [#159], [#170], [#473],
-  [#507], [#509], [#513], [#536], [#544], [#545] and [#548], [#513]'s
-  saying Settings holds 6 links and Members sits outside `/settings`;
-  comments on [#566] (the 13 px "chip" is the quick filter) and [#310]
-  (the label brought into view and the long form's summary); [#561]
-  widened so pressed gets a token of its own, a disabled control exempt;
-  issues so Items' Low and Out open "Where it stands", and so Items'
-  empty search clears its category too; and the one home for filing an
-  issue noted on [#319]. Then one reading pass over the clones of 20 lines or more in
-  the client's and the server's code, each marked extract or keep on
-  [#282].
+- **After [#568]'s merge,** done on 11 and 12 November: the merge, as a
+  merge commit; the prune and the clean-up, `tmp/flows-and-states/` with
+  it; Project knowledge re-synced; the planning skill packed from `main`
+  and uploaded, its prompt 8 walked by `fix-ups-i18n`'s planning and 9
+  at that session's close;
+  `/triage` over every open issue, 16 comments, and [#569] and [#570]
+  filed; and the reading pass over the clones of 20 lines or more, 10
+  extracts into 9 homes and 49 kept, in a comment on [#282].
 - **After [#558]'s and [#559]'s merges,** done on 11 November: the
   merges; the prune and the clean-up; Project knowledge re-synced;
   MC-R103 on the live site; and `/triage` over every open issue, its
@@ -583,20 +582,17 @@ request or a set of them:
       11 November on `flows-and-states`, with the README's roadmap
       since v0.7.0 (CSV import moved to [#552]), the code's names for
       Items ([#553]'s first part), the playback in the planning skill and
-      [#517]; after its merge, the planning skill packed from `main` and
-      uploaded;
-   5. the translations, before 30 November, moved ahead of Movements on
-      10 November to keep the date: first a second review by
-      ChatGPT on the website, one chat per language, on the workbooks
-      `node scripts/i18n-review.mjs export` writes, the reviewer who reads
-      only Chinese checking the Chinese before `import`; a pseudo-locale
-      and a browser check for cut text in French and Chinese; then [#371]
-      to [#398] and [#419] to [#423], each with the natural-wording pass's
-      comment, and [#531], a base name in the organization's language;
-      the style
-      rules into the glossary, the corrections of the reviewer who reads
-      only Chinese, ADR-090's rule for Chinese beside Latin letters, and
-      [#148], [#149] and [#249];
+      [#517], merged on 11 November as [#568];
+   5. the translations, before 30 November, on `fix-ups-i18n`, as
+      [ADR-054's amendment](adr/0054-languages.md) of 12 November says:
+      round 2 decided with ChatGPT's wording leading and two checks; an
+      extra round through ChatGPT for what changed since `19e1b7aa` and
+      for the guides ([#150]); round 1's [#371] to [#398] and [#419] to
+      [#423] closed; a pseudo-language and a test for cut text; the
+      glossary's writing rules and ADR-090's rule for Chinese beside
+      Latin letters; and [#148], [#149], [#249], [#501] and [#511], with
+      parts of [#486], [#505], [#512] and [#548]. Then [#531], a base
+      name in the organization's language, on a branch of its own;
    6. Movements ([#470]), ADR-093, drawn on the canvas first, from the
       ignored `tmp/adr-093/from-adr-091/`, ADR-091's panel's reports, and
       Inventory's findings: [#472]'s 6 (the name first, its code grey
@@ -868,15 +864,16 @@ Not repeated here; each list has one home:
 [#470]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/470
 [#471]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/471
 [#472]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/472
-[#473]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/473
 [#476]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/476
 [#477]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/477
 [#478]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/478
 [#483]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/483
+[#486]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/486
+[#501]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/501
 [#505]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/505
 [#506]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/506
-[#507]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/507
-[#509]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/509
+[#511]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/511
+[#512]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/512
 [#513]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/513
 [#514]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/514
 [#515]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/515
@@ -895,8 +892,6 @@ Not repeated here; each list has one home:
 [#533]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/533
 [#536]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/536
 [#539]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/539
-[#544]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/544
-[#545]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/545
 [#546]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/546
 [#547]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/547
 [#548]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/548
@@ -911,6 +906,7 @@ Not repeated here; each list has one home:
 [#559]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/559
 [#560]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/560
 [#561]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/561
-[#566]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/566
 [#567]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/567
 [#568]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/568
+[#569]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/569
+[#570]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/570
