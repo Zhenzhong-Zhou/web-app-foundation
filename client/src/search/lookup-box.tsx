@@ -27,7 +27,7 @@ import { openDialog } from '../lib/open-dialog';
 import { RECENT_PATHS, type RecentEntry } from '../lib/recent';
 import { RECENT_KIND_LABELS, recentTitle } from '../lib/recent-labels';
 import { rem } from '../theme/rem';
-import { KIND_LABELS, listOf, pathOf } from './lookup-kinds';
+import { KIND_LABELS, LIST_LABELS, listOf, pathOf } from './lookup-kinds';
 import { lookupLongEnough } from './lookup-minimum';
 
 /** Waits this long after the last key before asking. */
@@ -320,7 +320,7 @@ function LookupField({
                   id: 'search.showAll',
                   defaultMessage: 'Show all in {list}',
                 },
-                { list: intl.formatMessage(KIND_LABELS[option.kind]) },
+                { list: intl.formatMessage(LIST_LABELS[option.kind]) },
               )}
             </Typography>
           ) : (

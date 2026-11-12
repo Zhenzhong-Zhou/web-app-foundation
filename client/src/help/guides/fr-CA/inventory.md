@@ -12,12 +12,12 @@ L’inventaire montre ce que vous avez et où : chaque article, à chaque empla
 
 Les marchandises qu’un fournisseur envoie pour un achat se reçoivent plutôt sur la commande, dans [Commandes](/orders). Le stock reçu ici n’a pas de coût tant qu’on ne lui en donne pas un dans [Valeur du stock](/costs); **En attente d’un coût** le liste.
 
-## Déplacer, expédier ou corriger {#move}
+## Déplacer, sortir du stock ou corriger {#move}
 
 Les actions de chaque ligne proposent :
 
 - **Déplacer** : vers un autre emplacement, comme du quai vers une tablette.
-- **Expédier** : du stock qui part sans commande. Les marchandises d’un client partent de sa vente, dans Commandes.
+- **Sortie de stock** : du stock qui part sans commande. Les marchandises d’un client partent de sa vente, dans Commandes.
 - **Envoyer un échantillon** : un don, avec la personne à qui il a été remis, pour qu’un rappel puisse le retrouver.
 - **Corriger le compte** : combien la tablette contient de plus ou de moins que ce qui est enregistré, pourquoi, et ce qui s’est passé.
 - **Modifier le lot**, **Tracer le lot** et **Historique** : le lot de la ligne, où il est allé, et ses mouvements.

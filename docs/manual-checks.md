@@ -732,6 +732,22 @@ folder by folder; these check what is already in place.
   `node scripts/i18n-rules.mjs` holds each, in both packages'
   catalogues and every guide; by hand, that 头像 reads as the person's
   picture where it stands.
+- **MC-1417** *(ADR-054's November 2026 amendment, R10 and R11; #149)*
+  The words settled for the reviewer who reads only Chinese. In 中文: a
+  shipment's Create invoice reads 创建发票, and the draft's Issue still
+  开具; issuing for a customer with no billing address is refused naming
+  its 开票地址; a location's Not available chip reads 不可发货; a retired
+  partner, address, location, price list or tax code reads 已归档 and its
+  button 归档, while a discontinued item keeps 已停用; Inventory → a row's
+  Ship out opens 出库 (Sortie de stock in Français), and an order's Ship
+  still reads 发货 (Expédier); the Organization page's tax field and an
+  invoice's PDF both say 税号. In every language, the top bar's lookup
+  for a lot ends with Show all in Inventory (Tout afficher dans
+  Inventaire, 在库存中查看全部), the page it opens, and Help's list of
+  guides names the page at `/lots` Trace a lot (Tracer un lot, 追溯批次),
+  as the menu does. Help in 中文 on Inventory, Locations, Lots, Partners,
+  Price lists, Tax codes, Invoices, Returns and Organization uses the
+  same words.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -1502,7 +1518,9 @@ await fetch(`${api}/v1/files/product-image`, {
   why, and signing in returns you to the page. With two tabs open, use
   one and the other does not warn; sign out from the warning in one and
   the other signs out too. A ticked laptop is not signed out. Set
-  Everyone: it is. In 中文 the sign-in page reads 保持登录.
+  Everyone: it is. In 中文 the sign-in page reads 保持登录 and the
+  warning's button 继续使用; in Français, Garder ma session ouverte and
+  Rester connecté, two names for two controls.
 
 ## 22. Covers in the lookup (ADR-066)
 
@@ -4102,7 +4120,7 @@ first.
 
 - **MC-R67** *(Inventory's search not following the address, #301)* As
   the demo Owner, on Inventory's Stock tab, type `2609` in the top bar and
-  choose Show all in Lots: the search box reads 2609 and the list narrows
+  choose Show all in Inventory: the search box reads 2609 and the list narrows
   to BF-2609 and FOC-2609-01, with no reload. Type `D3` in the search
   instead and open Reorder points: the same search is in its box and its
   list is narrowed by it. Change it there to `ELDER` and go back to Stock:

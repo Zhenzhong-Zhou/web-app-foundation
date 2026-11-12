@@ -46,7 +46,7 @@ Sous **Image de marque**, choisissez l’apparence de l’application pour tout 
 Sous **Sécurité**, pour les ordinateurs que plusieurs personnes partagent.
 
 1. Sous **Après**, choisissez la durée sans utilisation, de 15 minutes à 4 heures, ou **Désactivé**.
-2. Sous **S’applique à**, choisissez seulement les connexions sans **Rester connecté**, ou tout le monde, puis appuyez sur **Enregistrer**.
+2. Sous **S’applique à**, choisissez seulement les connexions sans **Garder ma session ouverte**, ou tout le monde, puis appuyez sur **Enregistrer**.
 
 Une minute avant, un avertissement propose **Rester connecté**. Le réglage ne peut que raccourcir une session, jamais l’allonger.
 

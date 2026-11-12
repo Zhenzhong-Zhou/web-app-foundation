@@ -141,7 +141,7 @@ describe('LookupBox', () => {
     );
 
     await user.type(await openLookup(user), 'bf');
-    await user.click(await screen.findByText('Show all in Lots'));
+    await user.click(await screen.findByText('Show all in Inventory'));
     // Once the lookup's dialog has closed, unhiding the page.
     await user.click(await screen.findByRole('button', { name: 'Back' }));
 
@@ -160,7 +160,8 @@ describe('LookupBox', () => {
 
     box = await openLookup(user);
     await user.type(box, 'bf');
-    await user.click(await screen.findByText('Show all in Lots'));
+    // Named after the page it opens, Inventory, not the group (#149).
+    await user.click(await screen.findByText('Show all in Inventory'));
     expect(screen.getByTestId('where').textContent).toBe(
       '/inventory?search=bf',
     );
@@ -173,7 +174,7 @@ describe('LookupBox', () => {
     renderBox();
 
     await user.type(await openLookup(user), 'bf');
-    expect(await screen.findByText('Show all in Lots')).toBeTruthy();
+    expect(await screen.findByText('Show all in Inventory')).toBeTruthy();
     // Items' one result is a close match: shown, with no Show all (#311).
     expect(screen.getByText('Focus 60ct')).toBeTruthy();
     expect(screen.queryByText('Show all in Items')).toBeNull();

@@ -1,6 +1,7 @@
 import { defineMessages, type MessageDescriptor } from 'react-intl';
 
 import type { LookupResult } from '../api/types.gen';
+import { NAV_LABELS } from '../layout/navigation';
 import type { LookupKind } from '../lib/api-names';
 
 /** Each kind's heading in the results (ADR-056). */
@@ -24,6 +25,15 @@ export const KIND_LABELS: Record<LookupKind, MessageDescriptor> =
       defaultMessage: 'Returns',
     },
   });
+
+/**
+ * What each kind's "Show all" names: the page it opens, as the menu names
+ * it (#149). A lot's opens Inventory, so it says Inventory, not Lots.
+ */
+export const LIST_LABELS: Record<LookupKind, MessageDescriptor> = {
+  ...KIND_LABELS,
+  lot: NAV_LABELS.inventory,
+};
 
 /** Where a result opens. */
 export function pathOf(kind: LookupKind, result: LookupResult): string {

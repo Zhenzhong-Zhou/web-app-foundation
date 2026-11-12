@@ -421,7 +421,8 @@ describe('Help', () => {
     const names = within(all)
       .getAllByRole('button')
       .map((guide) => guide.textContent);
-    // Work, Settings and You: no stock, so no Inventory, Movements or Lots.
+    // Work, Settings and You: no stock, so no Inventory, Movements or Trace
+    // a lot.
     expect(names).toEqual([
       'Home',
       'Orders',
