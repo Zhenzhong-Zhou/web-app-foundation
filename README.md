@@ -422,24 +422,12 @@ The README's status and this list change at every tag.
 
 ### Next
 
-The order, from the handoff's
-[Still to do, in code](docs/handoff.md#still-to-do-in-code):
-
-1. The translations, before 30 November: French and Chinese reviewed again and
-   the open translation issues fixed.
-2. Movements, then Orders, both built to the design language.
-3. Expired lots (#333, #331, #442); then demo data from an earlier inventory
-   project through the app's own CSV import (#552), items first.
-4. The audit log (#133, #168); then TypeScript 7 (#336).
-5. The remaining rules files, then one review of the whole app.
-6. New features: one person in two organizations, a practice organization, a
-   public demo, plans and billing, returns to suppliers, stock by site, a
-   partner's history and special prices with a quantity limit.
+What is still to build, in its order, is in the handoff's
+[Still to do, in code](docs/handoff.md#still-to-do-in-code).
 
 **Deliberately deferred** (all additive): background jobs and queues, admin UI,
 billing, API docs, scheduled notifications, payments against invoices, and
-licences beyond the product's own — site, wholesale and business licences. CSV
-import is no longer on this list: #552 plans it, for the demo data above.
+licences beyond the product's own — site, wholesale and business licences.
 
 ---
 
