@@ -30,6 +30,10 @@ repeat; a brief holds only its decisions and its steps.
    refuses a run whose Claude Code step has none. A run stops at every
    step not Claude Code's, so a restart or a pull by hand is a step of
    Bob's.
+   - Each step names the requirements it meets, from the ADR's
+     "Requirements, as confirmed", and each requirement has a step.
+   - Each row of a feature's interaction table is a browser test, in a
+     step on Opus.
    - Dependencies first, and again before the reviews.
    - An inventory first for a change across many screens.
    - The seeds where a feature adds a table or a screen.

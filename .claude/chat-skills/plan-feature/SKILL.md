@@ -42,10 +42,19 @@ copies only what every reply acts on.
 4. **The handoff's dates:** any due today or already past, raised once,
    in New findings.
 
-## 1. The check before an ADR
+## 1. The playback, then the check before an ADR
 
-As `docs/engineering.md`, "Process", asks, before anything is drafted.
-For each area the change touches, by its name in `AREAS`
+**The playback first** (ADR-088's amendment): before planning a feature
+or a long request, restate it as numbered requirements, R1, R2 and on,
+each with how it is shown done; then its assumptions (A), what is not
+included (N) and its questions (Q), each question with its options and
+one recommended. Nothing is drafted until Bob confirms. The list goes
+into the ADR as "Requirements, as confirmed", a table of R, What, Done
+when and Step.
+
+**Then the check,** as `docs/engineering.md`, "Process", asks, before
+anything is drafted. For each area the change touches, by its name in
+`AREAS`
 (`scripts/adr-index.mjs`):
 
 - the Deferred lines of the area's ADRs, found through
@@ -85,9 +94,14 @@ checking**. Each item names its issue or ADR.
   slug from the title before its first colon. Front matter: `status`,
   `date`, `areas` (one to three, in `AREAS`' order) and `amends`; each
   amended ADR gains `amended-by` and a dated amendment at its end.
-- Its Context ends with the check; then a Decision heading per
-  decision, Considered and not done, Deferred with each trigger, and
+- Its Context ends with the requirements as confirmed and the check;
+  then a Decision heading per decision, Considered and not done, Deferred with each trigger, and
   Consequences ending in the build order.
+- **A feature's flows and states** (ADR-092; ADR-090's amendment): its
+  ADR holds an interaction table (Where, You do, What happens, You land,
+  Back), and names its wireflow board on the canvas and each screen's
+  five states, each drawn only where it differs from the States section
+  of `docs/design-language.md`.
 - The same commit tidies the handoff, as a patch. Bob runs `node
   scripts/adr-index.mjs` and stages the index with the ADR.
 - Outside the numbered ADRs, a path in backticks that starts with a
@@ -101,7 +115,8 @@ checking**. Each item names its issue or ADR.
 ## 4. The brief
 
 `tmp/adr-NNN/brief.md`, in [the brief's shape](reference/brief.md): a
-step per commit, its table saying who runs each and, for a Claude Code
+step per commit, each naming the requirements it meets, each row of the
+interaction table a browser test, its table saying who runs each and, for a Claude Code
 step, on which model. Claude Code's steps run in a row,
 `/build-from-brief tmp/adr-NNN/brief.md from N`, each in a fresh
 `brief-step` subagent on the model its row names, until one needs a
@@ -137,7 +152,8 @@ gets:
 
 - From the notes kept in the chat and `tmp/adr-NNN/summaries.md`, which
   Bob attaches: the ADR's amendment, "## Amendment (Month YYYY) — as
-  built (#PR)", where building differed from the decisions; the handoff; any manual check or runbook line still owed.
+  built (#PR)", where building differed from the decisions, each
+  requirement marked met, changed or deferred; the handoff; any manual check or runbook line still owed.
   As patches.
 - When work ends in a pull request: its title, and its description as
   plain Markdown, unasked, with `Closes #N` for each issue the branch

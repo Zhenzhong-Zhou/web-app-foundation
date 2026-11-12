@@ -321,7 +321,10 @@ steps; this section stays the rule.
   --index`, which stages what it changed. A patch that does not match
   Bob's copy is refused whole, and is made again from a fresh clone,
   never mended by hand; `git diff --cached` shows every change before
-  the commit. New files, and Bob's own working files in `tmp/`, come whole,
+  the commit. A patch to a script in `scripts/` updates the script's
+  test beside it in the same patch (11 November 2026, ADR-088's
+  amendment): #558's first patch to `verify.sh` missed its test and
+  broke three of them. New files, and Bob's own working files in `tmp/`, come whole,
   as downloadable files; only a single small change stays inline as a
   snippet.
 - **Every answer that changes files opens with a roadmap,** before the
@@ -341,6 +344,9 @@ steps; this section stays the rule.
   time and cost** (6 November 2026): the minutes or hours, the cost on
   API credits, what it takes of his plan's usage, and what the figures
   rest on. A build brief holds the same for each of its steps.
+- **Commands the chat gives run as pasted,** each line even after one
+  fails (11 November 2026, ADR-088's amendment): a verify before a push
+  is chained to it with `&&`, so a red verify stops the push.
 - State the exact path of every file:
   - `server/src/modules/…`;
   - `server/src/core/…` (organizations, audit, authorization);
@@ -427,6 +433,14 @@ twice:
 
 - ADR before code for each new area. Server first with e2e tests, then the
   client screens. Each step its own commit.
+- **Before planning a feature or a long request, the playback** (10
+  November 2026, ADR-088's amendment): the chat restates it as numbered
+  requirements, each with how it is shown done, then its assumptions,
+  what is not included and its questions, and drafts nothing until the
+  maintainer confirms. The list stays in the ADR, each requirement
+  naming its step in the brief, and the as-built marks each met, changed
+  or deferred. A feature's ADR also holds its interaction table, and
+  names its wireflow board and each screen's five states (ADR-092).
 - **At the start of every ADR,** before drafting it: check the ADRs'
   Deferred lines, the watch lists and the open issues for
   anything in the same area, and say which triggers have fired. The
