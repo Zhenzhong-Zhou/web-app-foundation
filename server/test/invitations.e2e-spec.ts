@@ -572,7 +572,7 @@ describe('Invitations (e2e)', () => {
       expect(email.text).toContain(
         '来自 Owner 的留言\n<b>Dock 3</b>\nbring boots',
       );
-      expect(email.text).toContain(`有效期到${date}结束，`);
+      expect(email.text).toContain(`有效期到 ${date}结束，`);
       expect(email.text).toContain(`${clientUrl}/invitation?token=`);
       // Signed by the app's name, from MAIL_FROM.
       expect(email.text).toMatch(/由 .+ 代 alpha Co 发送。$/);

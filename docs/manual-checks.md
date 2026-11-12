@@ -1961,7 +1961,8 @@ Mailpit open.
   role as 管理员 with its line saying what an Admin does, and the note
   under 来自 … 的留言 as typed (the tags shown as text, the line break
   kept). The link works until the end of its seventh day, named with the
-  organization's time zone, and opens `/invitation?token=…` on the app's
+  organization's time zone, written 有效期到 2026年…日结束 with a space
+  before the date (ADR-090), and opens `/invitation?token=…` on the app's
   address, never the API's; the same address is written out for when the
   button does not open, under 接受邀请 with no colon (the plain text, in
   Mailpit's Text tab). It ends 由 … 代 … 发送, naming the app as
