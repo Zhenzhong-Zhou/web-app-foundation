@@ -591,4 +591,8 @@ it stands for the six routes, which share the renderer. The export stays
 deferred, now until a person reports an export slow, or `render.md`'s
 "Before real customers' data" times one at large first. The same
 amendment corrects the as-built's N7: neither #533 nor #546 rides with
-the branch for #547, since each changes the API.
+the branch for #547, since each changes the API. As built (#558): the
+budget is 1,200 ms, from a first median of 931 ms at small on GitHub's
+runners, the line ten requests make on the server's one thread, where
+one alone takes 43 to 48 ms on the Mac; ADR-051's Watch keeps that
+thread.

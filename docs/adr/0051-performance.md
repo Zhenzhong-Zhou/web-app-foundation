@@ -186,6 +186,9 @@ so the timing is the evidence for the name lookup.
   fresh seed: 141 ms; plain 41, by type 28, by stock 63 and the
   categories 10. Taken by the amendment for #547, below: the matching
   variants read once.
+  *Closed on 11 November 2026 (#558):* 58 ms at large on the Mac, one
+  run, the variants read once; 111 ms, the median at small on GitHub's
+  runners (run 43089449940, on 075ab8bf).
 - **The low list** (ADR-085) works out every point's position on each
   page: 6.3× from small to large, 22 to 138 ms at p95 (1 November 2026,
   #361). Trigger: p95 over budget at small scale. Then the open lines
@@ -201,6 +204,8 @@ so the timing is the evidence for the name lookup.
   rather than counted each time, which needs an ADR.
   *10 November 2026:* 146 ms median p95 at small on GitHub's runners
   (137 for a newcomer), and 215 and 210 at large on the Mac. Not fired.
+  *11 November 2026:* 147 and 135 ms at small on GitHub's runners, and
+  196 and 191 at large on the Mac. Not fired.
 - **Home's Expiring-soon count has two plans of nearly equal cost at
   large** (ADR-071's as-built, 10 November 2026): 0.03 ms or about 24
   ms, and a fresh `ANALYZE` picks one, so the same rows can take either.
@@ -215,6 +220,20 @@ so the timing is the evidence for the name lookup.
   Trigger: the weekly run of 16 November, or a later timed run, still
   over 150 ms. Then its plans, `shipping preview (FEFO)`, and its
   writes, read before anything changes.
+  *Closed on 11 November 2026:* 99 ms, the median at small (rounds of
+  99, 135 and 86, run 43089449940), under its trigger: the 180 ms of 10
+  November read as the runners'.
+- **An invoice's PDF is drawn on the server's one thread** (the
+  amendment for #547, its review 13): 43 to 48 ms alone at large on the
+  Mac, while every other request waits. Ten at once queue: 438 ms p95 at
+  large on the Mac, and 931 ms, the median at small on GitHub's runners,
+  inside its 1,200 ms budget. The API runs on Render's Free web service,
+  with a part of one processor. Trigger: a person reports the app slow
+  while documents print or an export runs; one PDF on its own past 100
+  ms on the Mac; or, before the move to Render's paid plan, a read timed
+  while PDFs draw (`render.md`'s "Before real customers' data"). Then
+  drawing off the event loop, in a worker thread, and the reads timed
+  beside it.
 - **Valuation** reads every pool by definition. Trigger: an organization
   whose valuation no longer fits a screen. Then an export.
 - **Migrations on large live tables.** 0036 builds its index inside the
@@ -753,3 +772,97 @@ invoices, documents, database and ops, on 10 November 2026, from
   filter's reads; the PDF's read; the timings at large; a timed run on
   GitHub; the PDF's budget; dependencies again; the reviews; the
   as-built.
+
+### As built
+
+Built on 10 and 11 November 2026 on `fix-547-search-plans`, 19 commits
+with this as-built, pull request #558.
+
+- **The requirements,** each marked:
+
+  | R | Now |
+  | --- | --- |
+  | R1 | Met: the variants read once for the match in both search probes, at large (76 buffers) and at small (10), from 5 reads; the probe 85.3 to 19.6 ms at large, one character 83.9 to 25.4; the search 141 to 58 ms at large on the Mac and 174 to 111 ms at small on GitHub's runners; the tests unchanged, three new (c9e63b03, f5ec407a, b4826188); the Watch's line closed |
+  | R2 | Met: the top category 39 ms at large on the Mac and 106 at small on GitHub's runners, the bottom 29 and 97 (dbd229bb) |
+  | R3 | Met: 1,200 ms, from a first median of 931 ms (04fb0371, 8662ed7a); ADR-071 amended (1d12181d). The first weekly run on `main` after the merge judges it |
+  | R4 | Met, 1d12181d |
+  | R5 | Met, 9333ef8c, with MC-1801 |
+  | R6 | Met, 1d12181d |
+  | R7 | Met, 1d12181d and this as-built |
+
+- **Measured against the brief's guesses,** minutes and the tokens the
+  Agent tool counted:
+
+  | Step | Model | Minutes (guess) | Tokens |
+  | --- | --- | --- | --- |
+  | 3 | sonnet | 2 (5), no commit | 55,718 |
+  | 4 | opus | 12 (40) | 155,100 |
+  | 5 | sonnet | 8 (20) | 101,643 |
+  | 6 | sonnet | 6 (15) | 92,307 |
+  | 7 | sonnet | 19 (45), no commit | 96,339 |
+  | 9 | sonnet | 5 (5) | 82,894 |
+  | 10 | sonnet | 1 (10), no commit | 67,276 |
+  | 11, findings | opus | 15 (60, both prompts) | not shown |
+  | 11, fixes | opus | 40 | not shown |
+
+  The run took about half its guess, 108 minutes against 200, as on the
+  router's branch; step 4 a third of its own.
+- **Built differently:**
+  - `matching` holds one row per item, its rank the lowest of its
+    matching variants', where the decision said each matching variant.
+    The rank means what it did: only the code differs between variants,
+    and a variant whose code ranks also matches.
+  - One builder, `itemSearch` in `item-search.ts`, gives the result and
+    everything that reads it, the match, the rank and its join (6c56080e,
+    review 2), where each caller first wrote `withMatching` by hand.
+  - A first page's places are a result of their own, aggregated beside
+    its counts, so the statement answers one row whatever is found and
+    whatever a sort joins (f5ec407a, review 1). As first built, the
+    places were left-joined to the counts, and a sort's inner join would
+    have made a search that finds nothing a 500.
+  - The code rule's line is in `.claude/rules/search.md`, citing this
+    amendment, since `products.md` is at its 40-line limit.
+  - A bottom-level category is one with no category beneath it, at any
+    depth: the third level in the volume seed. `pickCategories`
+    (`server/perf/categories.ts`) is the one rule for the timed reads
+    and the plan check, with its spec, and the plan check stops when
+    there is none (a9d06c58).
+  - The PDF read sends no language: a document is drawn in its
+    customer's.
+  - The timed run on GitHub lost round 2's report to GitHub's store for
+    a job's files. Round 2 ran again two hours later, on a runner 30 to
+    40% slower, and the median took it, as the amendment for #342 meant.
+- **Riders, each its own commit:**
+  - Linux WebKit's run in the full verify keeps a failed test's trace
+    (7a5a7f35, part of #521). The chat's first patch missed
+    `scripts/verify.test.mjs`, which holds the run's exact command, and
+    the commit was amended with it before the push.
+  - Postgres in Docker gets 256 MB of shared memory, on the Mac
+    (075ab8bf) and on GitHub's runners (fedf5347): at the large seed's
+    stress pass, its parallel workers outgrew Docker's 64 MB and
+    answered 500s on `/stock/availability`, 349 and 330.
+  - `/review-step` runs `/simplify` with no argument, which it read as
+    what to review (360f5869, review 16). ADR-089's account of its own
+    reviews keeps the old words, as history.
+  - `server/perf/README.md` lists the category reads and the PDF's
+    budget (1d870f1b, review 10).
+- **The reviews:** no walkthrough panel, since nothing a person sees
+  changes; `/simplify`, `/code-review`, `/production-readiness` on
+  performance and `/doctor prompt-audit`, 17 findings. Fixed: 1, 2, 4, 5,
+  6, 9, 10, 11, 12, 15 and 16. Left: 3, the result hashed twice a
+  statement, about 0.03 ms; 7, the category pick's setup, once a run; 8,
+  the PDF's budget given beside `read()` until a third budget of its
+  own; 14, the 1,200 ms judged by the weekly run; and 17, `brief-step`'s
+  ten to fifteen lines, which ADR-089 chose. 13 is the Watch's line on
+  the PDF's thread.
+- **Found:**
+  - The full verify's one miss, in the Mac's WebKit, dark mode, "items,
+    Add item": axe measured the page's Add item button, hovered after its
+    click, before WebKit drew the dialog's backdrop. A main button's
+    hover in dark mode is about 3.7 : 1 under its dark text: #557,
+    `fix-now`, the theme's and not this branch's. Alone, the test passed
+    10 times in 10.
+  - Shipping's 180 ms of 10 November read as the runners': 99 ms here.
+  - Two releases newer than the handoff's Dates, prettier 3.10.0 and
+    `@aws-sdk/client-s3` 3.1167.0; the last now comes of age on 18
+    November, 13:10.
