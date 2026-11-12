@@ -268,6 +268,11 @@ async function buildProbes(
   // by stock, which compares each row's sum with the cursor's.
   const { categories: tree } = await categories.list();
   const picked = pickCategories(tree);
+  if (!picked?.bottom) {
+    throw new Error(
+      'No category under a top-level one: was this volume-seeded?',
+    );
+  }
   const byStock = await products.list({ sort: 'stock' }, 'zh-Hans');
 
   const probes: Probe[] = [
@@ -464,16 +469,11 @@ async function buildProbes(
     },
     {
       name: 'products: one category',
-      run: () =>
-        products.list({ category: picked?.top ?? 'uncategorised' }, 'zh-Hans'),
+      run: () => products.list({ category: picked.top }, 'zh-Hans'),
     },
     {
       name: 'products: one bottom category',
-      run: () =>
-        products.list(
-          { category: picked?.bottom ?? 'uncategorised' },
-          'zh-Hans',
-        ),
+      run: () => products.list({ category: picked.bottom }, 'zh-Hans'),
     },
     {
       name: 'products: by stock',
