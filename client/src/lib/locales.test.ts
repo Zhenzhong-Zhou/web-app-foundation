@@ -59,13 +59,13 @@ describe('languageWord', () => {
     ).toEqual([
       ['English', 'French', 'Chinese'],
       ['anglais', 'français', 'chinois'],
-      ['英语', '法语', '中文'],
+      ['英文', '法文', '中文'],
     ]);
   });
 
   it('reads a browser’s region as the app’s language', () => {
     expect(languageWord('zh-Hans', 'en-US')).toBe('Chinese');
     expect(languageWord('en', 'fr-FR')).toBe('anglais');
-    expect(languageWord('fr-CA', 'zh-CN')).toBe('法语');
+    expect(languageWord('fr-CA', 'zh-CN')).toBe('法文');
   });
 });

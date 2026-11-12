@@ -642,9 +642,11 @@ folder by folder; these check what is already in place.
   there. The line, the intro and the refusal name the language in the
   reader's language, alike: the Chinese name and has no Chinese name, le
   nom en chinois and n’a pas de nom en chinois, 物品的中文名称 and
-  没有中文名称; never 简体中文 inside an English or French sentence. Once
-  added, the invoice issues, and its printed lines show the Chinese
-  names.
+  没有中文名称; never 简体中文 inside an English or French sentence. With
+  English checked too and the app in 中文, the line says 物品的英文名称 and
+  Edit names' fields 名称（英文）, as the exports' columns say, never 英语
+  or 法语. Once added, the invoice issues, and its printed lines show the
+  Chinese names.
 - **MC-1409** On a partner, Document languages: left alone, the first
   reads The organization's default and the second Nothing else, never a
   blank box. The first offers the
@@ -1851,7 +1853,7 @@ await fetch(`${api}/v1/files/product-image`, {
   variant has no English name. Press Print: a new tab shows a page, not
   the API's words, and in Chinese as the app is, not in the browser's
   English: 无法生成此 PDF, a sentence naming the variant by its code and
-  its name and the language in Chinese, 没有英语名称, never 没有English名称,
+  its name and the language in Chinese, 没有英文名称, never 没有English名称,
   打开物品, which opens the item where its names are, and
   返回订单, which opens the order. It is light or dark as the browser is,
   and on a phone its links are easy to tap. Download PDF shows the same
@@ -4126,8 +4128,8 @@ first.
   描述, #315)* As the demo Owner in 中文, on 专注胶囊 60 粒, 添加规格
   FOCUS-120CT named 120ct, then 编辑名称. With VoiceOver on (⌘ F5), Tab
   through the dialog: each field is read with its language in Chinese,
-  名称（英语）, 描述（英语） and FOCUS-120CT：120ct（英语）, then the same for
-  法语 and 中文, no two alike, under headings that keep each language's
+  名称（英文）, 描述（英文） and FOCUS-120CT：120ct（英文）, then the same for
+  法文 and 中文, no two alike, under headings that keep each language's
   own name. In English they read Name in English, Description in English
   and FOCUS-120CT: 120ct, in English; in Français, Nom en anglais.
 
@@ -5909,3 +5911,8 @@ first.
   changed a message, the decide step asks the meaning check about
   today's text too, and `--calibrate` tries the meaning check on 20
   planted errors before a run spends on it: MC-1405 extended.
+- 2026-11-12: ADR-054's November amendment, R11: where Chinese names the
+  language a name or a text is written in, on the item's page, in Edit
+  names and in the refusal, it says 英文, 法文 and 中文, as the exports'
+  columns do, not Intl's 英语 and 法语: MC-1408 extended, MC-2513 and
+  MC-R79 updated.

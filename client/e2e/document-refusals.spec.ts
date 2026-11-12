@@ -144,13 +144,15 @@ const LANGUAGES = ['en', 'fr-CA', 'zh-Hans'] as const;
 type Language = (typeof LANGUAGES)[number];
 
 /**
- * Each language named in each, by its language alone, as Intl names it:
- * the words both the page and the refusal must use.
+ * Each language named in each, by its language alone, as Intl names it,
+ * and in Chinese as a name's language is written, 英文 as the exports'
+ * columns say, never Intl's 英语: the words both the page and the refusal
+ * must use.
  */
 const WORDS: Record<Language, Record<Language, string>> = {
   en: { en: 'English', 'fr-CA': 'French', 'zh-Hans': 'Chinese' },
   'fr-CA': { en: 'anglais', 'fr-CA': 'français', 'zh-Hans': 'chinois' },
-  'zh-Hans': { en: '英语', 'fr-CA': '法语', 'zh-Hans': '中文' },
+  'zh-Hans': { en: '英文', 'fr-CA': '法文', 'zh-Hans': '中文' },
 };
 
 /** Where each says it: the item's page's line, and the refusal. */
@@ -173,8 +175,8 @@ const SAID: Record<
 };
 
 /**
- * A missing name's language, named in the reader's language by Intl on
- * both sides (ADR-054's November 2026 amendment): the item's page, which
+ * A missing name's language, named in the reader's language on both sides
+ * (ADR-054's November 2026 amendment): the item's page, which
  * this browser draws, and the refusal of a document printing in it, which
  * the server writes, name it alike, each language in each. Every language
  * required, the item named in none, and a purchase printing in each.

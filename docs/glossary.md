@@ -20,6 +20,7 @@ offers either language (MC-1405).
 | Variant | Variante | 规格 | The thing counted: "60ct". |
 | Category / Uncategorised | Catégorie / Sans catégorie | 分类 / 未分类 | Items' grouping, one tree per organization; an item is in one or none (ADR-092). |
 | Code | Code | 编码 | A variant's own code, on its label, documents and every CSV; once SKU · UGS · SKU (ADR-092). The organization's export keeps its column's name, `sku`. |
+| English / French / Chinese (a name's language) | anglais / français / chinois | 英文 / 法文 / 中文 | The language a name or a text is written in, inside a sentence: has no English name, n’a pas de nom en anglais, 没有英文名称, and Edit names' 名称（英文）. Chinese says 英文 and 法文, as the exports' columns do (英文名称), never 英语 and 法语, which name the language as spoken or learned; a table beside `languageWord` holds the three, in the server's `translate.ts` and the client's `locales.ts`. Every other reader keeps Intl's names (ADR-054's November 2026 amendment). |
 | Lot | Lot | 批次 | A traced quantity with a code and an expiry. |
 | Location | Emplacement | 库位 | A shelf, bin or site stock sits in. |
 | Site / Zone / Aisle / Shelf / Bin | Site / Zone / Allée / Tablette / Casier | 站点 / 区域 / 通道 / 货架 / 货位 | A location's type by depth, outermost first. |

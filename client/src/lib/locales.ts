@@ -46,21 +46,37 @@ export function pickerName(locale: Locale): string {
 }
 
 /**
+ * Chinese names the language a name or a text is written in 英文, 法文 and
+ * 中文, as the exports' columns do (英文名称) and ADR-054's November 2026
+ * amendment says; Intl's 英语 and 法语 name the language as spoken or
+ * learned. The glossary says so; the server's `languageWord` holds the
+ * same three.
+ */
+const WRITTEN_IN_CHINESE: Record<Locale, string> = {
+  en: '英文',
+  'fr-CA': '法文',
+  'zh-Hans': '中文',
+};
+
+/**
  * A language named in the reader's language inside a sentence, from its
- * language alone, by Intl's names: Chinese, chinois, 中文 for zh-Hans
- * (ADR-054's November 2026 amendment). Its own name there ran English into
- * Chinese and 简体中文 into French; a heading or a choice of language keeps
- * LANGUAGE_NAMES. The server names it from the same source in a refusal
+ * language alone: Chinese, chinois, 中文 for zh-Hans (ADR-054's November
+ * 2026 amendment). Intl's names, but in Chinese, which names a name's or a
+ * text's language from WRITTEN_IN_CHINESE. Its own name there ran English
+ * into Chinese and 简体中文 into French; a heading or a choice of language
+ * keeps LANGUAGE_NAMES. The server names it the same way in a refusal
  * (`languageWord` in server/src/i18n/translate.ts), so the refusal and the
  * item's page it sends a person to say it alike, as
  * e2e/document-refusals.spec.ts holds in a browser. `reader` is
  * `intl.locale`, read as the language the app is in.
  */
 export function languageWord(language: Locale, reader: string): string {
+  const app = matchLocale(reader) ?? DEFAULT_LOCALE;
+  if (app === 'zh-Hans') return WRITTEN_IN_CHINESE[language];
   return (
-    new Intl.DisplayNames([matchLocale(reader) ?? DEFAULT_LOCALE], {
-      type: 'language',
-    }).of(new Intl.Locale(language).language) ?? language
+    new Intl.DisplayNames([app], { type: 'language' }).of(
+      new Intl.Locale(language).language,
+    ) ?? language
   );
 }
 

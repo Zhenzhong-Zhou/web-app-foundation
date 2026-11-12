@@ -58,23 +58,38 @@ export interface LanguageName {
 
 /**
  * A language for a message to name in the reader's language, as
- * `languageWord` names it: has no Chinese name, n’a pas de nom en chinois,
- * 没有中文名称.
+ * `languageWord` names it: has no English name, n’a pas de nom en anglais,
+ * 没有英文名称.
  */
 export function languageName(language: Locale): LanguageName {
   return { languageName: language };
 }
 
 /**
- * A language named in a reader's, from its language alone, by Intl's
- * names: Chinese, chinois, 中文 for zh-Hans, never Simplified Chinese
- * (ADR-054's November 2026 amendment). Never its own name inside a
+ * Chinese names the language a name or a text is written in 英文, 法文 and
+ * 中文, as the exports' columns do (英文名称) and ADR-054's November 2026
+ * amendment says; Intl's 英语 and 法语 name the language as spoken or
+ * learned. The glossary says so; the client's `languageWord` holds the
+ * same three.
+ */
+const WRITTEN_IN_CHINESE: Record<Locale, string> = {
+  en: '英文',
+  'fr-CA': '法文',
+  'zh-Hans': '中文',
+};
+
+/**
+ * A language named in a reader's, from its language alone: Chinese,
+ * chinois, 中文 for zh-Hans, never Simplified Chinese (ADR-054's November
+ * 2026 amendment). Intl's names, but in Chinese, which names a name's or a
+ * text's language from WRITTEN_IN_CHINESE. Never its own name inside a
  * sentence, which ran English into Chinese and 简体中文 into French. The
- * item's page names it from the same source (`languageWord` in the
- * client's lib/locales.ts), so a refusal and the page it sends a person to
- * say it alike, as client/e2e/document-refusals.spec.ts holds in a browser.
+ * item's page names it the same way (`languageWord` in the client's
+ * lib/locales.ts), so a refusal and the page it sends a person to say it
+ * alike, as client/e2e/document-refusals.spec.ts holds in a browser.
  */
 export function languageWord(language: Locale, reader: Locale): string {
+  if (reader === 'zh-Hans') return WRITTEN_IN_CHINESE[language];
   return (
     new Intl.DisplayNames([reader], { type: 'language' }).of(
       new Intl.Locale(language).language,

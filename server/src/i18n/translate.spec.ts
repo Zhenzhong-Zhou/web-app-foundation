@@ -257,9 +257,11 @@ describe('values', () => {
 
     expect(refused.message).toContain('Focus (FOCUS-60CT) has no English name');
     expect(translate(refused, 'fr-CA')).toContain('n’a pas de nom en anglais');
-    expect(translate(refused, 'zh-Hans')).toContain('没有英语名称');
+    expect(translate(refused, 'zh-Hans')).toContain('没有英文名称');
   });
 
+  // Chinese says the language a name is written in, 英文, as the exports'
+  // columns do, not Intl's 英语.
   it('names each language by its language alone, in each', () => {
     expect(
       SUPPORTED_LOCALES.map((reader) =>
@@ -268,7 +270,7 @@ describe('values', () => {
     ).toEqual([
       ['English', 'French', 'Chinese'],
       ['anglais', 'français', 'chinois'],
-      ['英语', '法语', '中文'],
+      ['英文', '法文', '中文'],
     ]);
   });
 
