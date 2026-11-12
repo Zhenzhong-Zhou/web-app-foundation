@@ -1,6 +1,7 @@
 import { defineMessages } from 'react-intl';
 
 import { intl } from '../i18n/intl';
+import { listNames } from '../i18n/list-names';
 
 /**
  * The built-in roles every organization starts with, stored under their
@@ -69,12 +70,14 @@ export function roleLabel(name: string): string {
 /**
  * A member's or an invitation's roles as the reader's language lists
  * them (ADR-080): "Warehouse and Sales", "Entrepôt et Ventes", "仓库和销售",
- * a built-in one in that language.
+ * a built-in one in that language, and a Latin name spaced from 和:
+ * "管理员和 Warehouse lead" (#501).
  */
 export function roleList(roles: readonly { name: string }[]): string {
-  return intl().formatList(
+  return listNames(
+    intl(),
     roles.map((role) => roleLabel(role.name)),
-    { type: 'conjunction' },
+    'conjunction',
   );
 }
 

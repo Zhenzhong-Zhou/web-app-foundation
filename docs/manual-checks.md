@@ -764,6 +764,15 @@ folder by folder; these check what is already in place.
   of 0 in Set cost. Release a run whose item has no recipe: the dialog
   says to create one and promote it (mettez-la en vigueur, 启用), the
   recipe's own button.
+- **MC-1419** *(ADR-054's November 2026 amendment, R11; #501)* Latin
+  names in a Chinese list keep a space from 和 and 或 (ADR-090). On a
+  freshly seeded demo, in 中文, as Chloé Tremblay (Viewer): Account → 权限
+  ends 需要做更多，请联系 Demo Owner、Anika Sharma 或 Daniel Okafor。, a
+  space each side of 或 and none beside 、; Home's line where its main
+  action would be, and Orders' where a new order would be, name them the
+  same way. As the demo Owner, invite someone as Warehouse and Sales:
+  Members' Invited lists the invitation's roles as Warehouse 和 Sales,
+  while one as Admin and Viewer reads 管理员和查看者, with no space.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -5774,3 +5783,5 @@ first.
 - 2026-11-12: ADR-054's November amendment, R11 (#249): a file past its
   limit on any upload route is refused in the reader's language, naming
   the limit and what to do: MC-1603 added.
+- 2026-11-12: ADR-054's November amendment, R11 (#501): Latin names in a
+  Chinese list keep a space from 和 and 或: MC-1419 added.

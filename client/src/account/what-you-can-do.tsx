@@ -6,6 +6,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import type { MemberAccess } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
+import { listNameParts } from '../i18n/list-names';
 import { AccessList } from './access-list';
 
 /**
@@ -60,22 +61,25 @@ export function WhatYouCanDo({
               defaultMessage: 'To do more, ask {names}.',
             },
             {
-              names: intl.formatList(
-                access.whomToAsk.map((person) =>
-                  can('users.view') ? (
+              names: listNameParts(
+                intl,
+                access.whomToAsk.map((person) => person.name),
+                'disjunction',
+                (name, index) => {
+                  const person = access.whomToAsk[index];
+                  return can('users.view') ? (
                     <Link
                       key={person.id}
                       component={RouterLink}
                       to={`/people/${person.id}`}
                       underline="always"
                     >
-                      {person.name}
+                      {name}
                     </Link>
                   ) : (
-                    <span key={person.id}>{person.name}</span>
-                  ),
-                ),
-                { type: 'disjunction' },
+                    <span key={person.id}>{name}</span>
+                  );
+                },
               ),
             },
           )}
