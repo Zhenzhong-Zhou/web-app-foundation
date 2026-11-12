@@ -13,8 +13,8 @@ offers either language (MC-1405).
 
 | English | Français (Canada) | 简体中文 | Notes |
 | --- | --- | --- | --- |
-| Item | Article | 物品 | Anything the company keeps, of any type: the page, the menu, the top bar's group (ADR-092). |
-| Product | Produit | 商品 | The goods it sells, and only those: the type, and its tab (ADR-092). Not 产品, which Chinese keeps only in the licences' regulatory terms. |
+| Item | Article | 物品 | Anything the company keeps, of any type: the page, the menu, the top bar's group (ADR-092). In the code, API and database it is `product`, a row of `products`; new names use `product`, and no file is renamed (#553). |
+| Product | Produit | 商品 | The goods it sells, and only those: the type, and its tab (ADR-092). Not 产品, which Chinese keeps only in the licences' regulatory terms. In the code that type is `good`; `product` there means any item (#553). |
 | Products / Raw materials / Packaging / Supplies / Samples / Equipment | Produits / Matières premières / Emballages / Fournitures / Échantillons / Équipement | 商品 / 原材料 / 包装材料 / 耗材 / 样品 / 设备 | An item's type, each its tab's name (ADR-092). 耗材 is what the accounts call 低值易耗品. |
 | Variant | Variante | 规格 | The thing counted: "60ct". |
 | Category / Uncategorised | Catégorie / Sans catégorie | 分类 / 未分类 | Items' grouping, one tree per organization; an item is in one or none (ADR-092). |

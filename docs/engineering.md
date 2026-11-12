@@ -54,7 +54,10 @@
   gh issue close <N> --reason "not planned" --comment "Duplicate of #<M>"
   ```
 
-- **A new issue carries `needs-triage`** until it is decided.
+- **A new issue carries `needs-triage`** until it is decided; one that
+  `/triage` files from Bob's choice is decided already, and carries its
+  group, kind and areas from the start
+  ([Triaging the open issues](#triaging-the-open-issues)).
 - **The fix-up stage is the "Fix-ups" milestone.**
 - **Every pull request says "Closes #N" for each issue it fixes,** a
   rider included: the issues its commits name are the list checked before
@@ -83,7 +86,7 @@
 ### Triaging the open issues
 
 When `needs-triage` builds up, and before a fix-up stage (28 October
-2026). Nothing is labelled, closed or milestoned until Bob decides. It
+2026). Nothing is labelled, closed, milestoned or filed until Bob decides. It
 runs as `/triage` (29 October 2026, #322), whose
 [skill](../.claude/skills/triage/SKILL.md) holds what a run does in these
 steps; this section stays the rule.
@@ -108,8 +111,15 @@ steps; this section stays the rule.
    its kind where it has none, or a close with its reason, its areas and
    a few words why; then the
    counts by group and by area, the issues that look like duplicates,
-   and the present labels that disagree.
+   and the present labels that disagree. The proposal may also hold a
+   finding the checks made that has no issue, such as a flaky test
+   failing on `main`, once a search of all issues, open and closed, finds
+   none (11 November 2026, as #560 was): a new issue, with its title,
+   group, kind and areas and the evidence its body is written from.
 4. **Apply what Bob decides,** and the three checks above print nothing.
+   A new issue is filed by `gh issue create --body-file`, the body
+   written beside the script, with its group, kind and area labels from
+   the start, since Bob's choice has decided it, not `needs-triage`.
 
 ## How code is delivered
 
@@ -321,7 +331,10 @@ steps; this section stays the rule.
   --index`, which stages what it changed. A patch that does not match
   Bob's copy is refused whole, and is made again from a fresh clone,
   never mended by hand; `git diff --cached` shows every change before
-  the commit. New files, and Bob's own working files in `tmp/`, come whole,
+  the commit. A patch to a script in `scripts/` updates the script's
+  test beside it in the same patch (11 November 2026, ADR-088's
+  amendment): #558's first patch to `verify.sh` missed its test and
+  broke three of them. New files, and Bob's own working files in `tmp/`, come whole,
   as downloadable files; only a single small change stays inline as a
   snippet.
 - **Every answer that changes files opens with a roadmap,** before the
@@ -341,6 +354,9 @@ steps; this section stays the rule.
   time and cost** (6 November 2026): the minutes or hours, the cost on
   API credits, what it takes of his plan's usage, and what the figures
   rest on. A build brief holds the same for each of its steps.
+- **Commands the chat gives run as pasted,** each line even after one
+  fails (11 November 2026, ADR-088's amendment): a verify before a push
+  is chained to it with `&&`, so a red verify stops the push.
 - State the exact path of every file:
   - `server/src/modules/…`;
   - `server/src/core/…` (organizations, audit, authorization);
@@ -427,6 +443,14 @@ twice:
 
 - ADR before code for each new area. Server first with e2e tests, then the
   client screens. Each step its own commit.
+- **Before planning a feature or a long request, the playback** (10
+  November 2026, ADR-088's amendment): the chat restates it as numbered
+  requirements, each with how it is shown done, then its assumptions,
+  what is not included and its questions, and drafts nothing until the
+  maintainer confirms. The list stays in the ADR, each requirement
+  naming its step in the brief, and the as-built marks each met, changed
+  or deferred. A feature's ADR also holds its interaction table, and
+  names its wireflow board and each screen's five states (ADR-092).
 - **At the start of every ADR,** before drafting it: check the ADRs'
   Deferred lines, the watch lists and the open issues for
   anything in the same area, and say which triggers have fired. The
@@ -456,7 +480,9 @@ twice:
   for ADR-081, every chunk, request and failure path) before building.
 - **At each release,** before tagging it, set both packages' version to
   it: `npm version <x.y.z> --no-git-tag-version` in `server/` and in
-  `client/`; and run `/doctor prompt-audit`
+  `client/`; change the README's status (the version and its date) and
+  its roadmap (the "Since" list restarted from the new version); and run
+  `/doctor prompt-audit`
   ([The review step](#the-review-step)). Release notes are
   release notes only: they say nothing of manual checks or the
   walkthrough.

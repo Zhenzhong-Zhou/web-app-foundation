@@ -107,3 +107,32 @@ finding for the as-built and one question for him.*
 - The reviews are the row `Claude Code, main session`, run by
   `/review-step`.
 - The time-and-cost table names each step's model.
+
+## 8. A feature planned
+
+> Plan Movements (#470).
+
+- Before any check or draft, the playback: numbered requirements, each
+  with how it is shown done; then the assumptions, what is not included
+  and the questions, each question with its options and one
+  recommended. It waits for Bob's confirmation.
+- Once confirmed and decided, the ADR holds "Requirements, as
+  confirmed", each with its step; an interaction table; its wireflow
+  board named; and each screen's five states where they differ from the
+  design language's States.
+- Each step of the brief names the requirements it meets, and each row
+  of the interaction table is a browser test in a step on Opus.
+
+## 9. A session closed
+
+> That's all for this branch; I need the next session's prompt.
+
+- Each decision and finding the session holds that no file has is filed
+  first, in the as-built, the handoff, an issue or a line for `/triage`,
+  and the reply says where.
+- The checklist is walked: decisions, findings, changes from the brief,
+  issues filed and to file, steps owed, dates, corrections to earlier
+  advice.
+- The prompt is whole, carries only what no file could hold yet, and
+  marks each blank Bob fills with `<…>`.
+- Five parts, Decisions needed present.

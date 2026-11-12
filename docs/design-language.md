@@ -11,7 +11,8 @@ rules, [`.claude/rules/ui.md`](../.claude/rules/ui.md); the mark,
 [engineering.md](engineering.md#how-code-is-delivered) names has a row
 for it: the type at each text size, on a laptop and on a phone, and the
 rules for Chinese beside Latin letters and digits. ADR-091's boards add
-each pattern as Home uses it.
+each pattern as Home uses it, and a row of its own draws
+[States](#states): a screen's five states, and each shared piece's own.
 
 It came from a first-time viewer's look at Home (#335) and from two
 walkthrough panels of personas, on 4 November 2026: who they are is in
@@ -84,12 +85,31 @@ Each with what holds it in the code today, or the issue that will.
 
 ### Rows
 
-- One link per row, the whole row, at least 44 px tall on touch.
+- A list's row with controls of its own has one link, its name; a click
+  or tap elsewhere in the row opens it too, without being a second link,
+  so a screen reader hears the name, not the whole row (Items' rows,
+  `item-rows.tsx`; #473 for every list).
+- A row with nothing in it but what it opens, as Home's Recently opened
+  and Getting started's steps are, is one link, its whole row.
+- A row's own controls, a check box, a figure with its status and its
+  actions, are targets of their own, never inside the link
+  ([Text and targets](#text-and-targets)).
 - The name first, then the code: "Omega-3 fish oil · OMG-120". A second
   code says what it is ("their ref. SO-DEMO-1").
+- A table's Code column comes after its name, each table moved when its
+  list is next changed, Inventory's in Movements' turn (ADR-093).
+- A picker's option reads "Vitamin C 500 mg · VITC-100", the code grey
+  after the name, a typed code still finding it and an exact one still
+  leading its group (#563; `VariantPicker` puts the code first today).
 - A code with a page of its own is a link wherever it appears, a lot's
   code included.
 - A row's actions have words, not icons alone.
+- A kind is a word: an item's type in a mixed list is a word on the
+  row's second line beside its icon, and on the record the line under
+  its title (#548, which gives each type its singular).
+- An icon that tells a kind is never alone, and a kind takes no status's
+  colour, since a kind is not a state (on All, Items' type is an icon
+  today, said only to a screen reader).
 
 ### Numbers
 
@@ -100,6 +120,11 @@ Each with what holds it in the code today, or the issue that will.
   takes.
 - Numbers are right-aligned in tabular figures, and nothing covers them:
   a pinned column never sits over a cell.
+- The figure beside a status is the figure it judges, or links to where
+  it is worked out. Items' Low and Out are to open "Where it stands", the
+  figure they judge; today only the stock on hand beside them links, to
+  Inventory for that item alone (`item-rows.tsx`), as ADR-090's as-built
+  for flows and states says.
 
 ### Sorting and filters
 
@@ -110,14 +135,29 @@ Each with what holds it in the code today, or the issue that will.
 - A date column shows the date the list is sorted by; where a list keeps
   two dates, the column's header switches between them.
 - After sorting from the keyboard, focus stays on the column's header.
+- A list its filters made empty is No results, as
+  [the five states](#the-five-states) say.
 
 ### Lists on a phone
 
 - Below 600 px a list's rows become cards: the name, its status, and the
-  one or two numbers that matter, the row's link the whole card (#159).
-  Each list names its card's fields, built list by list as each is next
-  changed.
-- Above it, a table scrolls inside its own container, as ADR-055 set.
+  one or two numbers that matter, the card opening as its row does
+  (#159). Each list names its card's fields, built list by list as each
+  is next changed.
+- Above it, a table scrolls inside its own container, as ADR-055 set,
+  and shows where it is cut (`scrollShades`, `client/src/theme/cut-edge.ts`).
+- Until its cards come, a table that stays a table on a phone owes four
+  things (#159):
+  - its key columns first, and its name column fixed while the rest
+    scrolls;
+  - a visible edge where it scrolls;
+  - its scrolling part taking keyboard focus, with a name;
+  - a detail opened from a row opening below it, the scroll kept, never
+    sliding the table sideways.
+- The next cards are Inventory's two tabs, Stock and Reorder points, in
+  Movements' turn (ADR-093), and the item's names table in Items' next.
+- Reorder points' card holds the name, the status, "12 left · reorder at
+  36" and the main action; at `sm`, the suggested order too.
 
 ### A main action the role cannot use
 
@@ -131,6 +171,18 @@ Each with what holds it in the code today, or the issue that will.
   it needs, focus on the first one's visible control, through one shared
   hook (#310). Every refusal says what to do next
   ([principles.md](principles.md)).
+- A field brought into view brings its label, in a dialog and on a page,
+  so a refused Name never sits under the dialog's top edge (#310's hook).
+- A refusal from the server is put at its field by name, scrolled to and
+  focused, and one that matches no field comes into view with focus
+  (#310, #148); today it is one line above the form (`FormError`).
+- A refusal from the server shows no field path or code, and says what
+  to type, with an example: a currency such as CAD, never
+  `lines.0.currency must be a 3-letter ISO code` (#148).
+- A long form, an order, a run or an invoice, shows a summary at its
+  top, each refusal a link to its field and focus on the summary, as
+  GOV.UK's error summary does (#310).
+- A dialog or a short form focuses its first refused field instead.
 
 ### Loading
 
@@ -148,6 +200,13 @@ Each with what holds it in the code today, or the issue that will.
   that says what happens: "Close SO-000003? It can't be reopened."
 - An action that can be undone runs at once and offers Undo
   (`UndoSnackbar`).
+- On a phone the message with Undo sits above any pinned bar, and the
+  list gains room at its foot while it shows, so the last row can scroll
+  clear of it (#545).
+- Focus goes to Undo only when the control that started the action is
+  gone, as after Move in Items.
+- Its timer waits while focus or the pointer is on it, and runs again
+  once both have left (`UndoSnackbar`).
 
 ### Unsaved work
 
@@ -178,6 +237,12 @@ Each with what holds it in the code today, or the issue that will.
   open an empty form.
 - The message says what happened: "Draft saved. Confirm it to send.",
   not "Order raised" for a draft.
+- A form that adds a record has a second, text button, "Add and add
+  another", the main button still opening the new record (#562 for
+  Items' Add item).
+- It saves, says what was added with Open ("Added “Vitamin C 500 mg”."),
+  and clears the form, keeping what repeats: the type, the category and
+  the unit, so nothing is typed twice (WCAG 3.3.7).
 
 ### Headings and their actions
 
@@ -198,6 +263,33 @@ Each with what holds it in the code today, or the issue that will.
   ([conventions.md, Back from a link inside the app](conventions.md#back-from-a-link-inside-the-app)).
 - A breadcrumb shows the way the person came, not a page they never
   visited.
+- Back returns a list as it was: its loaded rows, its scroll, and focus
+  on the row the person opened (#473, #509); today its filters and sort
+  come back from the address, the rest does not.
+- Back to Home focuses the tile the person left from (#473, #509).
+- A page reached by a link puts focus on its title, so a screen reader
+  hears where it is, as GOV.UK and React Router advise for an app that
+  changes pages without reloading (#565).
+- Today only a page whose action took away the focused button does, by
+  `PageHeader`'s `headingRef`, such as after Remove a member, Delete a
+  role or a category, and Issue an invoice.
+- Nothing pinned covers the focused control (WCAG 2.4.11): the top bar,
+  a sticky header, a dialog's buttons and a message leave room by one
+  scroll margin from the top bar's height (#507's 41).
+
+### One Settings page
+
+The rail's Settings opens one page of the setup links, as Shopify's and
+GitHub's do, built with #513. Today the menu holds a Settings group of
+six links (`client/src/layout/navigation.ts`), and Categories opens from
+Items' category filter, Manage categories.
+
+- Its links are grouped by what they set up: the organization, people
+  and access, the catalogue, money, and documents.
+- Each link has a line under it saying what that page is for.
+- Settings stays highlighted on every page under it, Categories
+  included.
+- The lookup then finds each page it links to (#154).
 
 ### Arranging your own screen
 
@@ -219,10 +311,19 @@ and the places #337 names, each when its trigger comes.
 
 ### Text and targets
 
-- Text a person reads to decide (a tile's label, a status, a name, a
-  field's label) is 16 px at the Standard text size; secondary detail 14
-  px; a caption only for footnotes. Nothing else a person reads is under
-  14 px.
+- Text by its role, at the Standard text size:
+  - a name, a figure, a status, a tile's label and a field's label at
+    rest are 16 px, the text a person decides by;
+  - a label floated above its value, a code, a filter chip and a line
+    that explains a figure ("Bought · 48 at a time") are 14 px;
+  - a caption is only for footnotes, and nothing else a person reads is
+    under 14 px, stricter than Material's 12 px labels, for older eyes
+    and for Chinese.
+- Three places are under it today, each brought to 14 px in the theme
+  by #566: a floated label at 12 px, the line under a reorder point's
+  item at 12.5 (`caption`), and a quick filter at 13 (MUI's small
+  `ToggleButton`, `QuickFilterPill`); a status chip is 14 already
+  (`MuiChip`).
 - The scale steps by 1.25: a section heading at 20 px and a page's title
   at 25 px, so a heading is told apart by size, not weight alone. Line
   heights sit on a 4 px grid: 16 on 24, 14 on 20, 20 on 28, 25 on 32; in
@@ -230,7 +331,112 @@ and the places #337 names, each when its trigger comes.
 - The text size is named in words where a person looks for it, not only
   behind their initials.
 - On touch every target is at least 44 × 44 px (#170); with a mouse,
-  WCAG's 24 px minimum.
+  WCAG's 24 px minimum, which axe checks on every screen in `SCREENS`
+  (`wcag22aa`).
+- On touch a row keeps ADR-055's touch density: the row at least 44 px
+  tall, and each control in it a 44 × 44 target by its padding, not a
+  bigger glyph; with a mouse, compact rows (Items' rows; #170 for the
+  rest).
+- The 44 px is the theme's touch density, held once
+  ([conventions.md, The look](conventions.md#the-look-adr-055)): a
+  select, a field, a toggle, a switch, a check box, a radio and a menu
+  entry gain it, an inline link by its padding (#170).
+- A touch check in the accessibility suite measures every target on the
+  screens it walks, beside axe's 24 px (#170).
+
+## States
+
+What a screen shows while it reads, and how each piece it is built from
+looks in each state it has
+([ADR-090, amended](adr/0090-the-design-language.md#decision--the-five-states-and-each-pieces)).
+The canvas row "状态 第一版 · States v1" draws them, in English, French
+and 中文, light and dark. Each with what holds it in the code today, or
+the issue that will.
+
+### The five states
+
+Every screen, and each part of one that reads on its own, is in one of
+five; Items drew them first (ADR-092), and its words are the examples.
+
+- **As it should be:** what it read, whole: Items' rows, with "Showing
+  50 of 312" under them while there are more.
+- **Empty,** in one of three kinds, each in its own words:
+  - **First use** says what to add first, with the action: "No items
+    yet. Add what you sell first, or the raw materials you make it
+    from.", with Add item; where the action is not the role's, its line
+    instead ([A main action the role cannot use](#a-main-action-the-role-cannot-use)).
+  - **No results** names the filters that are on, with one button that
+    clears them all, as Items' Show all items does; each chip's × still
+    clears one.
+  - **Done** is the goal reached, and says so: "Every item has a
+    category."
+- **Loading:** as [Loading](#loading) says, a table's head kept above
+  its placeholder rows, so a header pressed to sort keeps its focus
+  (`PlaceholderRows`).
+- **Failed:** the part alone says it could not be read, with Try again
+  (`ListError`), never an empty state, which would say there is
+  nothing.
+- **Partial:** what came is kept, and what did not is said beside it:
+  - Items' Show 50 more, failing, keeps the rows and says "The next 50
+    could not be loaded.", with Try again (#544 for every list).
+  - A search with no match on this tab says where the matches are:
+    "Nothing in Products matches “vit”. 3 items in Supplies match.",
+    with See in Supplies.
+
+### Each piece's states
+
+Each piece draws its states once, here and on the canvas; a feature
+draws a piece again only where it differs. The nine states are Material
+3's set: selected is chosen, ticked or on; busy, while it works; invalid,
+refused.
+
+| Piece | Rest | Hover | Focus | Pressed | Selected | Disabled | Busy | Invalid | Dragged | To build |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| The main button (`MuiButton`) | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | — | — | — |
+| A plain button, text or outlined | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | — | — | — |
+| The tonal button (`TONAL`) | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | — | — | #507's 48: a variant in the theme, not three props by hand |
+| A link (`MuiLink`) | ✓ | ✓ | ✓ | — | — | — | — | — | — | — |
+| A field | ✓ | ✓ | ✓ | — | — | ✓ | — | ✓ | — | #566: its floated label at 14 px |
+| A select, or a picker | ✓ | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — | #566: its floated label at 14 px |
+| A check box and a radio | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | #170: 44 px on touch |
+| A switch (`MuiSwitch`) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | #170: 44 px on touch |
+| A chip: a status, a filter's with its ×, a quick filter | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | #566 and #170: a quick filter at 14 px and 44 px on touch |
+| A tab | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
+| A row | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | — | — | #170: touch density, each control in it 44 px |
+| A tile | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
+| A dialog | ✓ | — | ✓ | — | — | — | ✓ | ✓ | — | #564: its buttons pinned, full screen on a phone |
+| The message with Undo (`UndoSnackbar`) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — | #545: one Undo, its colours and ring in every message |
+| Load more (`LoadMoreButton`) | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | — | — | #544: a failed page, with Try again, as Items' has |
+| A drag handle (Customise Home's) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ | — |
+
+- **✓ marks a state the piece has,** and — one it has not; in To
+  build, — means nothing is left to build.
+- **Pressed looks as hover does:** the theme turns MUI's ripple off, the
+  hover and the focus ring showing what it did (`MuiButtonBase` in
+  `client/src/theme/index.ts`).
+- **Busy says what it is doing,** a button's word changing ("Add item",
+  then "Adding…") and the dialog holding still while it saves
+  (`DialogFooter`); Load more says "Loading…".
+- **Focus is one ring,** as
+  [conventions.md, The look](conventions.md#the-look-adr-055) says; a
+  dialog takes focus in, and gives it back to what opened it when it
+  closes.
+- **Dragged lifts** with the lift's shadow and an accent edge, where it
+  would drop a dashed box (`DraggableTile` in Customise Home).
+
+### Their look
+
+- **Each state's look is a token,** as Material 3's state layers are,
+  read through the theme as
+  [conventions.md, The look](conventions.md#the-look-adr-055) says.
+- **Every state keeps its text at 4.5 : 1 and its edge and focus ring
+  at 3 : 1,** in light and dark. A disabled control is exempt, as WCAG's
+  1.4.3 and 1.4.11 say; the line beside it saying why stays at 4.5 : 1.
+- **A disabled control keeps its enabled size** (#170).
+- **Held today in part:** `tokens.test.ts` holds an entry hovered,
+  focused or chosen and the tonal button, and `index.test.tsx` a
+  switch's track and #557's hover; #561 holds every piece in every
+  state.
 
 ## Screen sizes
 
@@ -249,8 +455,18 @@ breakpoints:
   does.
 - **Height counts:** on a screen under about 700 px tall (a phone held
   sideways, the Duo open, about 626, or closed, about 678), nothing fixed
-  takes more than the top bar, and a dialog scrolls inside itself so its
-  buttons stay reachable.
+  takes more than the top bar.
+  - A dialog's buttons stay pinned at its foot at every height, only its
+    body scrolling, since a form taller than the dialog hides them at any
+    height (#564).
+  - Below 600 px a form dialog fills the screen, its height the visible
+    screen's (`dvh`), so the phone's keyboard does not hide its buttons
+    (#564).
+  - Today only Members' Invite and Change roles do both, their form a
+    flex column inside the dialog (`invite-dialog.tsx`,
+    `change-roles-dialog.tsx`); every other form dialog puts a `<form>`
+    between the dialog and its parts, so its buttons scroll away with the
+    form.
 - **Both sides of a breakpoint:** a layout is checked just below and
   just above each one, since a slightly different scale or Split View
   tips a device over; the Duo open sits about 10 px below 900.
@@ -260,6 +476,9 @@ breakpoints:
   screens.
 - **The menu** is a rail from `lg`, and below it ADR-055's drawer, with
   its words, not a rail of icons.
+- **Settings is one entry in the menu,** opening
+  [One Settings page](#one-settings-page), so the rail no longer hides
+  Settings links at 1366 × 768, as it does today (#513).
 - **The top bar** below `lg` has a short word under each icon, as a
   phone's tab bar has, the app's own names (Notifications under the
   bell); on a narrow phone the organization's name shortens first.
@@ -299,7 +518,7 @@ measured on the device.
   before its code. A changed design is a new row, titled with its
   version, never drawn over the old one: every earlier row stays as the
   design's history, and the version the build follows is named in its
-  ADR.
+  ADR. [States](#states) names the row it follows.
 
 ## Not yet
 

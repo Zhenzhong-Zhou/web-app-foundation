@@ -1,6 +1,6 @@
 ---
 name: triage
-description: Triage the open issues as engineering.md's "Triaging the open issues" says, in two runs. /triage exports them with their comments, checks each still holds against what it names, writes the proposal to tmp/triage.md and stops. /triage <choices>, after Bob's choices, writes tmp/triage-apply.sh, one gh command per choice, for Bob to run, then the three label checks. Labels, closes and milestones nothing itself. Runs only when typed.
+description: Triage the open issues as engineering.md's "Triaging the open issues" says, in two runs. /triage exports them with their comments, checks each still holds against what it names, writes the proposal to tmp/triage.md, with any finding that has no issue as a new one, and stops. /triage <choices>, after Bob's choices, writes tmp/triage-apply.sh, one gh command per choice, gh issue create for a new issue, for Bob to run, then the three label checks. Labels, closes, milestones and creates nothing itself. Runs only when typed.
 argument-hint: "[choices]"
 disable-model-invocation: true
 ---
@@ -15,9 +15,9 @@ for him to run. Where the two differ, the home holds.
 ## Rules
 
 - **Nothing changed on GitHub by the skill.** No label, close, comment,
-  milestone or body: only `gh issue list`, `gh issue view`, `gh label
-  list`, `gh run list`, `gh run view` and `gh run download`. Every change
-  is a command in the script, which Bob runs.
+  milestone, body or new issue: only `gh issue list`, `gh issue view`,
+  `gh label list`, `gh run list`, `gh run view` and `gh run download`.
+  Every change is a command in the script, which Bob runs.
 - **Files in `tmp/` only,** which git ignores: no commit, and no file
   outside it changed.
 - **Labels and closes as [Issues and labels][labels] gives them.**
@@ -66,16 +66,22 @@ With no arguments.
      under the table where its body has none;
    - **each issue that looks like a duplicate** named with the one it
      duplicates;
+   - **a finding that has no issue,** one the checks turned up on the
+     way, such as a flaky test failing on `main` (#560): after `gh issue
+     list --state all --search "<words>"` finds none, open or closed, a
+     second table, "New issues", with a row for it: a slug, a title, its
+     group, kind and areas, and the evidence its body is written from,
+     such as a run's link or a file and line. Proposed, never filed;
    - **a last line** saying how to answer: `/triage` with the choices, as
-     proposed or by issue number, as `/triage as proposed, except #301
-     when-touched`.
+     proposed or by issue number or a new issue's slug, as `/triage as
+     proposed, except #301 when-touched`.
 4. **Stop,** with the summary (§3). Bob chooses, in the chat or here.
 
 ## 2. The commands: `/triage <choices>`
 
 Bob's choices are the arguments, `$ARGUMENTS`, read against
-`tmp/triage.md`. No proposal there, or a choice naming an issue it does
-not have: stop and say so.
+`tmp/triage.md`. No proposal there, or a choice naming an issue or a new
+issue's slug it does not have: stop and say so.
 
 1. **`tmp/triage-apply.sh`,** under `#!/usr/bin/env bash` and
    `set -euo pipefail`, one `gh` command per choice in issue order, each
@@ -93,7 +99,18 @@ not have: stop and say so.
    - **a comment on an issue a merged pull request did in part,** as
      [Issues and labels][labels] asks after a merge, saying what is
      left: `gh issue comment <N> --body-file tmp/triage-comment-<N>.md`,
-     the comment written beside the script.
+     the comment written beside the script;
+   - **a new issue,** for a finding the proposal's "New issues" holds:
+     `gh issue create --title "…" --label "<group>,<kind>,area:<area>"
+     --body-file tmp/triage-new-<slug>.md`, the body written beside the
+     script from the proposal's evidence, with `--milestone "Fix-ups"`
+     where the choice names the fix-up stage. It carries its group, kind
+     and areas from the start, never `needs-triage`, since the choice
+     decides it. The body says what was seen and where, what is known and
+     what is only a lead, and names no one, "the maintainer" for Bob
+     ([engineering.md, "Public text names no one"][public]). These
+     commands come last, in slug order and after the others, so a script
+     that stopped earlier has filed none.
 
    An area label GitHub lacks comes first, as `gh label create
    area:<area>`, as [Issues and labels][labels] says. Then `bash -n
@@ -104,6 +121,7 @@ not have: stop and say so.
 3. **The three checks,** [Issues and labels][labels]' commands as
    written, each printing nothing. Any issue one prints is named in the
    summary, with why: opened since the export, or a command that failed.
+   Each new issue's number, from the script's output, is named there too.
 4. **The summary** (§3).
 
 ## 3. The summary
@@ -111,8 +129,9 @@ not have: stop and say so.
 In the five parts of a brief step's summary ([`brief-step.md`,
 §4][summary]), for Bob to paste into the chat:
 
-1. **Done:** the first run, the counts by group and the closes proposed;
-   the second, what the script changed. No commit in either.
+1. **Done:** the first run, the counts by group, the closes proposed and
+   the new issues proposed; the second, what the script changed and each
+   new issue filed. No commit in either.
 2. **Verify:** each kind of check made and how many; any that could not
    be made, and why. The second run: what the three checks printed.
 3. **Found:** what the run found beyond the proposal, such as a label
@@ -127,6 +146,7 @@ The last line: `DONE: <why>`, or `BLOCKED: <what is needed>`.
 
 [home]: ../../../docs/engineering.md#triaging-the-open-issues
 [labels]: ../../../docs/engineering.md#issues-and-labels
+[public]: ../../../docs/engineering.md#commits
 [report]: ../../../CLAUDE.md#how-to-work
 [summary]: ../../agents/brief-step.md#4-the-summary-for-the-chat
 [perf-ci]: ../../../server/perf/README.md#reading-a-timed-run-on-ci

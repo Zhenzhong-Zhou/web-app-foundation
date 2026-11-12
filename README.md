@@ -14,8 +14,9 @@ never the other way round.
 > tenancy, permissions and auditing work end to end, and so does the whole cycle
 > for a maker of natural health products: buying, receiving, making under a
 > licence, selling, shipping, invoicing, returns and credit — with every lot
-> traceable in both directions and every movement valued. See
-> [Roadmap](#roadmap).
+> traceable in both directions and every movement valued. `main` has gone on
+> since: what it holds that no release does is under
+> [Since v0.7.0](#since-v070). See [Roadmap](#roadmap).
 
 ---
 
@@ -28,7 +29,7 @@ Core  →  Shared Services  →  Application Features
 - **Core** — auth, users, organizations, authorization, audit, notifications,
   invitations, people, files and documents — in `server/src/core`
 - **Shared Services** — email (background jobs deferred, see ADR-005)
-- **Application Features** — products, licences, locations, stock, partners,
+- **Application Features** — items, licences, locations, stock, partners,
   orders and shipments, recipes, production, invoices and credit notes, returns,
   costs, price lists, tax codes — in `server/src/modules`
 
@@ -345,7 +346,9 @@ Build order:
 The foundation is done. Everything below is the inventory domain built on it, and
 each step is server-first then the screen that uses it (ADR-019):
 
-- [x] **10. Products** — products, variants, SKUs, lot tracking flags
+- [x] **10. Items** — items, variants, SKUs, lot tracking flags (the screens say
+  Items since ADR-092; the code, the API and the database still say `products`,
+  until #553)
 - [x] **11. Locations** — a tree of sites, zones and bins; only leaves hold stock
 - [x] **12. Stock** — lots, balances, and one ledger every movement goes through
 - [x] **13. Partners and orders** — customers and suppliers, purchase and sales
@@ -390,13 +393,41 @@ each step is server-first then the screen that uses it (ADR-019):
   by whoever may, and the state recorded on the run and in the lot trace
   (ADR-050)
 
-**Next:** what is still to build, in its order, is in
-[the handoff](docs/handoff.md#still-to-do-in-code).
+### Since v0.7.0
+
+On `main`, in no release yet, each an ADR; the handoff has the pull requests.
+The README's status and this list change at every tag.
+
+- [x] **29. Each organization's time zone and document numbers** — days and
+  times in its own zone, and numbering of its own for its documents (ADR-072,
+  ADR-073)
+- [x] **30. People joining and roles** — invitations, registration open or by
+  invitation, a welcome on Home and help on every page, and job roles an
+  organization makes, several to a member (ADR-077, ADR-078, ADR-079, ADR-080)
+- [x] **31. Text size and the audit log in words** — the person's choice of
+  text size, and an audit log with no ids, references named and every field
+  translated (ADR-075, ADR-076)
+- [x] **32. Deploys, brand and emails** — an old tab told when a newer build is
+  out, the product's brand before sign-in and the organization's after, and one
+  layout for every email (ADR-081, ADR-082, ADR-083)
+- [x] **33. An error tracker** — real faults reported through the app's own API,
+  scrubbed of personal details (ADR-084)
+- [x] **34. Low stock** — a reorder point per item, against usable stock and what
+  is on its way (ADR-085)
+- [x] **35. The design language and Home** — eight principles and their patterns
+  at every screen size, Home redesigned as a few large tiles that open their
+  lists, and Customise Home to move and hide them (ADR-090, ADR-091)
+- [x] **36. Items** — everything the company keeps, by type and category, with
+  its stock read from Inventory and several items changed at once (ADR-092)
+
+### Next
+
+What is still to build, in its order, is in the handoff's
+[Still to do, in code](docs/handoff.md#still-to-do-in-code).
 
 **Deliberately deferred** (all additive): background jobs and queues, admin UI,
-billing, API docs, scheduled notifications, payments against invoices, CSV
-import, and licences beyond the product's own — site, wholesale and business
-licences.
+billing, API docs, scheduled notifications, payments against invoices, and
+licences beyond the product's own — site, wholesale and business licences.
 
 ---
 

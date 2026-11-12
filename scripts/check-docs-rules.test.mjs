@@ -267,30 +267,30 @@ paths:
 });
 
 /**
- * A file of Claude Code's rules with `count` lines after its front matter,
- * opening as each does: a blank line, its heading, a blank line, its rules.
+ * A file of Claude Code's rules with `count` characters after its front
+ * matter, line breaks included: a blank line, its heading, a blank line,
+ * and one long line of rules, since the cap counts characters, not lines.
  */
-const rulesOf = (area, count) => `---
+const rulesOf = (area, count) => {
+  const head = `\n# ${area}: the code rules, for Claude\n\n`;
+  const rules = "x".repeat(count - head.length - 1);
+  return `---
 paths:
   - "server/src/modules/invoices/**"
 ---
-${[
-  "",
-  `# ${area}: the code rules, for Claude`,
-  "",
-  ...Array.from({ length: count - 3 }, (_, i) => `- Rule ${i + 1}.`),
-].join("\n")}
+${head}${rules}
 `;
+};
 
-test("Claude Code's rules: 40 lines after the front matter pass, and 41 fail, naming the file and its count", (t) => {
+test("Claude Code's rules: 3,000 characters after the front matter pass, and 3,001 fail, naming the file and its count", (t) => {
   const root = fixture(t, {
     ...AREA,
-    ".claude/rules/invoices.md": rulesOf("Invoices", 40),
-    ".claude/rules/stock.md": rulesOf("Stock", 41),
+    ".claude/rules/invoices.md": rulesOf("Invoices", 3000),
+    ".claude/rules/stock.md": rulesOf("Stock", 3001),
   });
 
   assert.deepEqual(failures(check(root)), [
-    ".claude/rules/stock.md:1: 41 lines after the front matter — more than 40 (ADR-087): keep code rules only, each naming its home, and nothing CLAUDE.md or another area's file says",
+    ".claude/rules/stock.md:1: 3001 characters after the front matter — more than 3000 (ADR-087): keep code rules only, each naming its home, and nothing CLAUDE.md or another area's file says",
   ]);
 });
 

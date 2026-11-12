@@ -221,6 +221,11 @@ Two near-identical shapes are fine; three is a signal. Extracting at two usually
 costs more than it saves — the abstraction has to guess which parts are shared,
 and one of the two then needs an escape hatch.
 
+- A copied block of 20 lines or more is extracted at its second copy, or kept
+  with a comment saying why.
+- Each branch's new clones are checked by `/code-review`; the whole
+  repository's report stays a by-hand `npx jscpd`.
+
 Pairs currently being watched rather than extracted:
 
 - `AuthenticatedUser` and `CurrentSession.user` share four fields and differ in
@@ -910,6 +915,15 @@ breakpoint, not a `useMediaQuery` branch, so the first paint is right; the hook
 is used only to close an open drawer when the window widens past `lg`. A new
 destination goes into a group in `navigation.ts`, never into the bar.
 
+A screen's layout follows the same rule: CSS `display` at the breakpoint decides
+what shows. The exception is a list whose table and cards would each draw every
+row: CSS `display` would draw every row twice, one copy hidden, so it switches
+with `useMediaQuery` and `noSsr: true`, which gives the first draw the width, as
+Items and Members do
+([ADR-090, The width switch](adr/0090-the-design-language.md#decision--the-width-switch)).
+Help's switch is a fix (#505); the other screens that branch on the width wait
+in #567, each judged when next touched.
+
 Rows that mix a label with actions (page headers, the recipe status row) are two
 flex groups that wrap as wholes: the text group takes the remaining space down
 to a floor, and below it the action group drops to its own line, right-aligned,
@@ -966,9 +980,10 @@ and the tokens lack becomes a token first.
   colour of the text around it is always underlined. **Buttons**: one filled per
   group, as above; the rest text weight.
 - **Density** is the theme's: compact with a mouse, 44px targets under a finger
-  (`pointer: coarse`). Don't set a control's height on the page.
-- **Focus** is one ring, drawn by the theme on everything that takes focus.
-  Never remove an outline.
+  (`pointer: coarse`, `TOUCH` in `theme/media.ts`), a button, an icon button and
+  a chip that does something today. Don't set a control's height on the page.
+- **Focus** is one ring, 2 px in the accent, drawn by the theme on everything
+  that takes focus (`MuiButtonBase`). Never remove an outline.
 - **Contrast.** `tokens.test.ts` checks WCAG AA for every pair a reader reads,
   in both modes; a new token adds its pair there.
 - **Paper** is a PDF the server draws (ADR-071), from its own sheet in

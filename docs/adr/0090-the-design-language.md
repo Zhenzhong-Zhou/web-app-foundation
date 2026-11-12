@@ -418,3 +418,461 @@ interaction table in its ADR and each screen's five states, and that
 the pieces every screen shares draw their states once. That States
 section, with its canvas row, comes in a docs pull request of its own
 after Items, which amends this ADR again.
+
+## Amendment (November 2026) — flows and states: what each feature draws, and the shared pieces' states drawn once
+
+ADR-092 decided that each feature carries a wireflow board, an
+interaction table in its ADR and each screen's five states, and that the
+pieces every screen shares draw their states once, in a docs pull
+request of their own. Items' reviews handed it the patterns two
+walkers or more had met (review items 1, 4, 7, 10, 15, 17, 18, 21, 22,
+28, 30, 35, 39 and 43), and Items' as-built two more: the width switch,
+and Settings › Categories out of the rail. #170 and #536 asked it a
+question each. It was planned on 11 November 2026 on
+`flows-and-states`, the maintainer confirming the requirements first and
+choosing each decision as recommended. No code changes with it, no API
+and no migration; the builds go to the issues each decision names.
+
+### Requirements, as confirmed
+
+The maintainer confirmed these on 11 November 2026, before drafting,
+with the assumptions, what is not included and the questions' answers;
+R15 was added the same day, with the check's decisions. Each names
+its step in the brief, and the as-built marks each met, changed or
+deferred.
+
+| R | What | Done when | Step |
+| --- | --- | --- | --- |
+| R1 | This ADR amended: each feature's ADR carries a wireflow board, an interaction table and each screen's five states | This amendment, with its requirements, its check and its decisions; `scripts/check-docs.mjs` passes | 1 |
+| R2 | The design language gains a States section: the five states once, and each shared piece's own states | Each piece *Decision — the five states, and each piece's* names has its states, in Items' words where Items has them; markdownlint and the docs check pass | 5 |
+| R3 | One canvas row draws the States section, in three languages and both colour modes | The row "状态 第一版 · States v1" is on the canvas; this amendment and the States section name it | 11 |
+| R4 | The planning skill asks each feature for the three, and its brief turns the interaction table into browser tests | `SKILL.md` and `reference/brief.md` say so; `evals.md` gains a prompt | 2 |
+| R5 | The playback, a step of the skill: requirements with how each is shown done, then assumptions, what is not included and questions; the maintainer's confirmation before drafting; kept in the ADR; each mapped to its step; marked in the as-built | ADR-088 amended; `SKILL.md`, `reference/brief.md` and the skill's as-built section say so; `evals.md` gains a prompt | 1, 2 |
+| R6 | The design language's items from Items' reviews, and the two from its as-built | Each item's fate is below: a pattern, a code rule or an issue | 1, 4, 6, 8 |
+| R7 | The README's roadmap since v0.7.0, Items' name and CSV import moved to #552; the release routine changes the README's status and roadmap at every tag | Both say so; `scripts/verify.sh --docs` passes | 10 |
+| R8 | The code's names for Items: `product` for any item, `good` for the Products type, in the glossary and `.claude/rules/products.md`; no file renamed (#553 holds that) | Both say so; the rules file passes its cap | 8 |
+| R9 | The chat's notes: a script's test changed with it; commands chained with `&&` where a failure must stop; markdownlint reads text between two dollar signs as maths | ADR-088 amended; `engineering.md` holds the first two; the skill's delivery reference copies what every reply acts on | 1, 2 |
+| R10 | A timed run read from its rounds' reports; `gh run watch` with the id `gh workflow run` prints; `gh run rerun <id> --failed` when a round's report is lost | `server/perf/README.md`, "Reading a timed run on CI", says each | 10 |
+| R11 | The handoff: #558 and #559 merged, #559 as a merge commit, the steps after them, the triage of 11 November applied, this branch | `scripts/verify.sh --docs` passes, and the handoff says each | 1, 14 |
+| R12 | After the merge: the skill packed from `main` and uploaded, and `evals.md`'s new prompts walked | The next session's comparison with `main` is clean | 15 |
+| R13 | `/triage` files a finding that has no issue, by `gh issue create --body-file` | Its `SKILL.md` and its home in `engineering.md` say so | 9 |
+| R14 | A code rules file held to 3,000 characters, not 40 lines (#517) | ADR-087 amended; the check and its test, a file of 3,000 passing and one of 3,001 failing; `/rules-file`'s line | 1, 7 |
+| R15 | The check's decisions: adding several records, dense rows on touch, what Back restores, and what sharpens them | Each in its pattern, below; the six new builds filed, each pattern citing its issue | 4, 6 |
+
+- **Assumptions:**
+  - A1: docs only, but for `scripts/check-docs.mjs` and its test (R14):
+    each commit verified with `--docs`, the full verify before the push.
+  - A2: no new ADR number: this amendment, with short ones in ADR-087
+    and ADR-088; the check ran as ADR 090.
+  - A3: the canvas row is drawn in Claude Design from the prompt in the
+    brief, a new row titled with its version.
+  - A4: the items from Items' reviews are decided one by one below.
+  - A5: nothing a person sees changes, so the reviews are `/simplify`,
+    `/code-review` and `/doctor prompt-audit`, with no walkthrough panel.
+  - A6: small enough to merge by about 14 November, leaving the
+    translations two weeks before 30 November.
+- **Not included:**
+  - N1: no screen is built here: the Settings page, the width switch in
+    code and every screen a pattern changes are built by the branch that
+    next touches that screen, through the issues below.
+  - N2: the rename to items in the code, the API and the database
+    (#553).
+  - N3: the CSV import (#552).
+  - N4: the WebKit flake found by the triage of 11 November (#560).
+- **The questions' answers:** Q1a, the pieces a screen is built from,
+  each with its states, widened by *Decision — the five states, and each
+  piece's* (D18); Q2a, #517 taken here; Q3a, one Settings page designed
+  here and built later.
+
+### Checked before drafting
+
+On 11 November 2026, from `scripts/adr-check.mjs 090`: the areas
+`products`, `docs`, `i18n` and `ui`, and the issues it was given, the
+numbers 467, 513, 517, 552 and 553, 54 issues read whole; with them,
+ADR-090's and ADR-092's Deferred lines, ADR-051's watch list and Open
+decisions.
+
+- **Fired, and taken here:**
+  - #517's trigger, the next code rules file grown: this grows
+    `products.md` and `ui.md`, both at 40 lines (R14).
+  - #513: one Settings page for the setup links, designed here (Q3a).
+  - #553's "Until then": the code's names written down (R8).
+  - #170's comment of 9 November asks how a dense table row meets
+    44 px on touch: *Decision — targets and text*.
+  - #536 leaves a note for this pull request: after Add, the new item's
+    page takes the form's place, so adding several in a row needs Back
+    each time: *Decision — after an action*.
+  - #544 and #545: Load more's failed state and the message with Undo
+    are among the pieces whose states are drawn; their code stays in
+    those issues.
+- **Not fired, and left:**
+  - #467's 14, 17 and 25: their files, `journeys.md` and
+    `personas.md`, are not changed.
+  - #292's two left: manual checks' anchors wait for #283, and "partly
+    tested" for the invoice tests.
+  - #306's 40, the docs check reading a test named through `it.each`:
+    in the file R14 changes, but another function, and it widens what a
+    rules file may cite.
+  - #548 and #149: glossary words that change with their catalogues, in
+    the translations' batch next.
+  - The screens' own issues, #159, #160, #473 to #490, #501, #505, #507
+    to #512, #533 to #543, #546, #549 to #551 and #555: their patterns
+    are in the design language, each built at its screen's turn.
+  - ADR-090's Deferred (a list beside its record, a hinge, real people,
+    density per person) and ADR-092's: none fired. No `later` trigger in
+    these areas but #517's.
+- **Found while checking:**
+  - #473 and #509 ask that Back keep the place, its scroll, its loaded
+    rows and its focus; *The way back* said only who gets Back.
+  - #505's 56 and 92 call Help's `useMediaQuery` a fix, so the width
+    switch's exception stays narrow.
+  - #507's 48 plans a tonal button variant; its states are drawn with
+    the buttons'.
+  - Add item's buttons scroll away because a `<form>` sits between the
+    dialog and its parts: in 53 dialogs, as step 4 counted them on the
+    branch. The 2 that keep their buttons pinned put a flex-column form
+    inside the dialog, and are the only ones full screen on a phone.
+  - A link to a new page leaves focus nowhere: the layout moves focus
+    only after Remove or Delete.
+  - Items' rows already make the name the link and open the item on a
+    click elsewhere in the row.
+  - axe already runs `wcag22aa`, so WCAG's 24 px target check runs on
+    every screen in `SCREENS`; Items and Members pass `noSsr: true`, so
+    the first draw knows the width.
+
+### Decision — the five states, and each piece's
+
+- **Every screen, and each part of one that reads on its own, is in one
+  of five states,** the "UI stack" many teams use: as it should be;
+  empty; loading, after 250 ms, its placeholders in the place of what
+  will come, a table's head kept; failed, the part alone saying it could
+  not be read, with Try again; and partial, what came kept and what did
+  not said beside it (Show 50 more failed, no match on this tab). Items
+  drew them first (ADR-092).
+- **Empty is one of three, each in its own words:** first use, saying
+  what to add first, with the action, or the role's line where the
+  action is not theirs; no results, naming the filters that are on, with
+  one button that clears them all ("Show all items"), each chip's ×
+  still clearing one (D8); and done, where empty is the goal reached
+  ("Every item has a category.").
+- **Each piece draws its states once,** where it has them (D18): rest,
+  hover, focus, pressed, selected, disabled, busy, invalid and dragged,
+  Material 3's set. The pieces: a button (the main one, a plain one and
+  the tonal one), a link, a field, a select, a check box and a radio, a
+  switch, a chip, a tab, a row, a tile, a dialog, the message with Undo,
+  Load more and a drag handle. A feature draws a piece's states again
+  only where they differ.
+- **Each state's look is a token** in `tokens.ts`, as Material 3's state
+  layers are, and every state keeps its text at 4.5 : 1 and its edge and
+  focus ring at 3 : 1, in light and dark (D19): #557's hover, at about
+  3.7 : 1, is what this catches. A test that holds each pair is filed
+  on the branch.
+- **The canvas row** "状态 第一版 · States v1" draws them, in English,
+  French and 中文 and both colour modes, the Settings page at its end.
+
+### Decision — each feature's flows and states, asked for when it is planned
+
+ADR-092's decision, written into the planning skill (ADR-088 amended):
+each feature's plan asks for a wireflow board on the canvas, an
+interaction table in its ADR (Where, You do, What happens, You land,
+Back) and each screen's five states, drawn only where they differ from
+the States section; its brief turns each row of the table into a
+browser test.
+
+### Decision — rows, numbers and tables
+
+- **A row's one link is its name** (D6, D22): a click or tap elsewhere
+  in the row opens it too, without being a second link, so a screen
+  reader hears the name, not the whole row. A row's own controls, a
+  check box, a figure with its status and its actions, are targets of
+  their own, never inside the link.
+- **The figure beside a status is the figure it judges, or links to
+  where it is worked out** (item 1): Items keeps its stock on hand beside
+  Low or Out, and the status opens "Where it stands", the figure it
+  judges.
+- **The name before the code everywhere a person reads** (D15, item 43):
+  a table's Code column after its name; a picker's option "Vitamin C 500
+  mg · VITC-100", the code grey after the name, a typed code still
+  finding it and an exact one still leading. This changes Items'
+  as-built "CODE — name"; the picker is filed on the branch.
+- **A kind is a word** (D11, item 17): an item's type in a mixed list is
+  a word on the row's second line beside its icon, and on the record the
+  line under its title; an icon that tells a kind is never alone, and a
+  kind takes no status's colour. Built with #548, which gives each type
+  its singular.
+- **A table that stays a table on a phone** (D7, D23, items 4 and 30),
+  until its cards come: its key columns first, its name column fixed
+  while the rest scrolls, a visible edge where it scrolls, and the
+  scrolling part taking keyboard focus, with a name; a detail opened
+  from a row opens below it, the scroll kept. The next cards: Inventory's
+  two tabs and Reorder points in Movements' turn (ADR-093), the item's
+  names table in Items' next. Reorder points' card: the name, the
+  status, "12 left · reorder at 36" and the main action; at `sm`, the
+  suggested order too.
+
+### Decision — targets and text
+
+- **On touch, ADR-055's touch density** (D4, #170): a row is one link at
+  least 44 px tall, and each control in it a 44 × 44 target by its
+  padding, not a bigger glyph; with a mouse, compact rows and WCAG's
+  24 px.
+- **Held once** (D9, items 10 and 35): the 44 px minimum set in the
+  theme for a select, a field, a chip, a toggle, a switch, a check box,
+  a radio and a menu entry; padding for an inline link; a disabled
+  control at its enabled size; and a touch check in the accessibility
+  suite that measures every target on the screens it walks, beside axe's
+  24 px. Built with #170.
+- **Text by its role** (D10, items 15 and 39): a name, a figure, a
+  status and a field's label at rest at 16 px; a label floated above its
+  value, a code, a filter chip and a line that explains a figure
+  ("Bought · 48 at a time") at 14 px; nothing at 12 or 13 px. Stricter
+  than Material's 12 px labels, for older eyes and for Chinese.
+
+### Decision — after an action
+
+- **Adding several records in a row** (D3, D26, #536's note): a form
+  that adds a record has a second, text button, "Add and add another".
+  It saves, says what was added with Open, and clears the form keeping
+  what repeats, the type, the category and the unit (WCAG 3.3.7); the
+  main button still opens the new record, as After saving says. Items'
+  is filed on the branch.
+- **The message with Undo** (D13, item 21): on a phone it sits above any
+  pinned bar, and the list gains room at its foot while it shows, so the
+  last row can scroll clear. Focus goes to Undo only when the control
+  that started the action is gone, as after Move; its timer waits while
+  focus or the pointer is on it, as built. Built with #545.
+
+### Decision — refusals at their field
+
+- **A field brought into view brings its label** (item 22), in a dialog
+  and on a page.
+- **A refusal from the server is put at its field** (D14, item 28), by
+  the field's name, scrolled to and focused; one that matches no field
+  comes into view with focus. Neither shows a field path or a code, and
+  each says what to type, with an example ("CAD"). Built with #310 and
+  #148.
+- **A long form shows a summary at its top** (D24): an order, a run or
+  an invoice lists each refusal as a link to its field, focus on the
+  summary, as GOV.UK's error summary does; a dialog or a short form
+  focuses its first refused field.
+
+### Decision — dialogs
+
+- **A dialog's buttons stay pinned at its foot at every height,** only
+  its body scrolling (D12, item 18). Filed on the branch, with the
+  `<form>` found while checking.
+- **Below 600 px a form dialog fills the screen** (D25), its height the
+  visible screen's (`dvh`), so the phone's keyboard does not hide its
+  buttons.
+
+### Decision — the way back, and focus
+
+- **Back returns a list as it was** (D5): its loaded rows, its scroll,
+  and focus on the row the person opened; Back to Home focuses the tile
+  they left from. Built with #473 and #509.
+- **A page reached by a link puts focus on its title** (D21), so a
+  screen reader hears where it is, as GOV.UK and React Router advise for
+  an app that changes pages without reloading. Filed on the branch.
+- **Nothing pinned covers the focused control** (D20, WCAG 2.4.11): the
+  top bar, a sticky header, a dialog's buttons and a message leave room
+  by one scroll margin from the top bar's height. Built with #507's 41.
+
+### Decision — one Settings page
+
+The rail's Settings opens one page of the setup links (Q3a), grouped by
+what they set up, the organization, people and access, the catalogue,
+money and documents, each with a line saying what it is for (D27), as
+Shopify's and GitHub's are. Settings stays highlighted on every page
+under it, Categories included (D17). Its board ends the canvas row; it
+is built with #513, and #154 then lets the lookup find each page.
+
+### Decision — the width switch
+
+`.claude/rules/ui.md` names one exception to CSS `display` (D16): a list
+whose table and cards would each draw every row switches between them
+with `useMediaQuery`, `noSsr: true`, as Items and Members do. Help's
+switch stays a fix (#505's 56 and 92).
+
+### Decision — what rides along
+
+- **The playback and a feature's flows and states** in the planning
+  skill, and the chat's notes: [ADR-088's amendment](0088-planning-in-the-chat-as-a-skill.md).
+- **A code rules file held to 3,000 characters** (#517):
+  [ADR-087's amendment](0087-the-rules-written-down.md).
+- **The README's roadmap since v0.7.0,** and the release routine's line
+  that the README's status and roadmap change at every tag (R7).
+- **The code's names for Items** in the glossary and
+  `.claude/rules/products.md` (R8), part of #553.
+- **A timed run read from its rounds' reports,** in
+  `server/perf/README.md` (R10).
+- **`/triage` files a finding that has no issue** (R13), as #560 was.
+
+### Considered and not done
+
+- **Each feature drawing every piece's states.** ADR-092 chose against
+  it: it repeats the shared states and drifts from them.
+- **A "Create another" check box beside the one main button,** Jira's
+  way. A button says what it does where a box changes what the main
+  button does.
+- **The empty list's button clearing the last filter set.** A person
+  does not always know which was last; the chips clear one at a time.
+- **A type as a chip,** like a status. A kind is not a state, and a
+  chip's colour would read as one.
+- **The code first in a picker,** where a code is typed or scanned.
+  Typing finds it either way, and one look per row serves the reader who
+  knows the name.
+- **Buttons pinned only under about 700 px tall.** A form taller than
+  the dialog hides them at any height.
+- **Items and Members on CSS `display`.** Every row would be drawn
+  twice, one copy hidden.
+- **Both rules files cut to 40 lines.** That joins lines without
+  shortening them (#517).
+- **The Settings page built here.** It would end the pull request's
+  being docs only, ahead of the translations' date.
+
+### Deferred — each with what brings it in
+
+- **A state machine for a flow,** its states and moves as code (as
+  XState's statecharts are). Trigger: a flow whose interaction table
+  passes about fifteen rows, or a bug from a move the table missed.
+- **The touch check on every screen,** not only those
+  `accessibility.spec.ts` walks. Trigger: a target under 44 px found on
+  touch outside them.
+- **Density per person:** ADR-055's, its trigger unchanged.
+
+### Consequences
+
+- **Amended:** ADR-087 (the cap in characters) and ADR-088 (the
+  playback, a feature's flows and states, the chat's notes).
+- **Docs:** the design language's States section and its patterns;
+  `.claude/rules/ui.md` and `products.md`; the glossary; the planning
+  skill, its references and `evals.md`; `/triage`'s skill and
+  `/rules-file`'s; `engineering.md`; the README; the perf README; the
+  handoff. With them `scripts/check-docs.mjs` and its test (R14).
+- **The canvas:** the row "状态 第一版 · States v1", the Settings page at
+  its end.
+- **Filed on the branch,** before the design language's steps, so each
+  pattern cites its issue: the state pairs' contrast test (D19); Items'
+  "Add and add another" (D26); the picker's name first (D15); the
+  dialogs' pinned buttons and full screen on a phone (D12, D25); focus
+  on a new page's title (D21); the theme's text floors (D10).
+- **After the merge,** `/triage` comments with the pattern on #159,
+  #170, #473, #507, #509, #513, #536, #544, #545 and #548.
+- **Build order:** this amendment, with ADR-087's and ADR-088's and the
+  handoff → the planning skill and `engineering.md`'s lines → the
+  dependencies → the six new issues → the States section → the patterns → the cap (#517) →
+  the code rules and names → `/triage`'s new issue → the perf README
+  and the README → the canvas row → the dependencies again → the reviews
+  → the as-built and the pull request, closing #517 and part of #553.
+
+### As built (#568)
+
+Built on 11 November 2026 on `flows-and-states`, 23 commits with this
+one and the next, from its brief in `tmp/flows-and-states/`; pull request #568.
+
+**The requirements:**
+
+| R | Marked | How |
+| --- | --- | --- |
+| R1 | met | This amendment, 12b2a73 |
+| R2 | met | The States section, 89330aa; four rules said once and The look linked after the reviews, f44e976 and 03636de |
+| R3 | changed | The row "状态 第一版 · States v1", eight boards, drawn by the chat with its Artifact tool, not by the maintainer in Claude Design |
+| R4 | met | bed2643 |
+| R5 | met | ADR-088's amendment, 12b2a73; the skill, bed2643 |
+| R6 | met | Each item's fate above; the patterns, f62db64; the width switch, 20d154a, its exception written in `conventions.md`, dd4e5c6 |
+| R7 | changed | The README since v0.7.0 and the release routine's line, 53d9e5a; its Next a link to the handoff's order, not a copy of it, b4f424c |
+| R8 | met | 20d154a; the names' rule naming its decision, fe2063a |
+| R9 | met | bed2643; the timed run's line left to its README, ed17374 |
+| R10 | met | 3f6fb60 |
+| R11 | met | 12b2a73 and this commit |
+| R12 | deferred | After the merge, as the handoff says |
+| R13 | met | 9bacdb3; `engineering.md`'s new-issue line, 3364bfa |
+| R14 | met | d739148, closing #517 |
+| R15 | met | f62db64; #561 to #566 filed in step 4 |
+
+**Added, beyond R1 to R15:**
+
+- **`/code-review` checks a branch's new clones and its simplicity**
+  (0fe2aa1, a fix between steps 10 and 11): jscpd 5.4.2, pinned and run
+  with `--absolute`; `scripts/new-clones.mjs` and its test print only the
+  clones in the lines the branch changed (966e20c); `.jscpd.json` leaves
+  out `client/src/api/`, which `npm run api` writes (460c8c3);
+  `conventions.md` extracts a copied block of 20 lines or more at its
+  second copy. On 11 November the repository held 667 clones once the
+  generated types were left out, 4.1% of its lines, about 1.3% in the
+  client's and the server's own code.
+- **The planning skill closes a session** (the next commit): what no file
+  holds is filed first, only the rest carried into the next session's
+  prompt, from a fixed checklist; ADR-088's amendment says so.
+
+**Decided while building:**
+
+- **No gate in CI for duplication:** judged at review, since jscpd counts
+  the declarations `conventions.md` keeps on purpose.
+- **The clones already there:** one reading pass after the merge over
+  those of 20 lines or more in the client's and the server's code, 29 and
+  5, each marked extract or keep on #282, then fixed when its file is next
+  touched.
+- **A pressed state that looks like hover** (step 5): #561 is widened, at
+  `/triage` after the merge, so pressed gets a token of its own, tested
+  with the others.
+- **The reviews' fixes:** 11 of 20 findings, each a commit, 966e20c to
+  35a3f7b; one older finding filed as #567, the screens that switch with
+  `useMediaQuery` outside the exception.
+- **The one home for filing an issue** is a comment on #319 at `/triage`,
+  not a new issue.
+- **A disabled control is exempt from the contrast pairs,** as WCAG's
+  1.4.3 and 1.4.11 say and as Material, Carbon and Polaris do; the line
+  saying why stays at 4.5 : 1. Step 5 had held it to them, which would
+  have made every disabled control #561's first fix.
+- **A footnote's caption stays at 12.5 px,** as ADR-091's amendment
+  allows: "nothing at 12 or 13 px" in *Decision — targets and text* is
+  for text a person reads to decide.
+- **#562's three small points go to its build:** whether the lot switch
+  is kept, where focus goes once the form clears, and how the list behind
+  learns of the items added; its pull request says each.
+
+**Built differently from the text above:**
+
+- **Items' Low and Out do not yet open "Where it stands":** the status is
+  a plain chip, and only the stock beside it links, to Inventory for that
+  item alone. `/triage` files the issue after the merge; the design
+  language says so at Numbers.
+- **A row's one link is its name where the row has controls of its own;**
+  Home's Recently opened and Getting started rows stay one link, their
+  whole row (da775eb).
+- **The design language links `conventions.md`'s The look** for the
+  theme's density, focus ring and tokens, rather than saying them again
+  (03636de).
+- **A new issue `/triage` files is decided already,** so it carries its
+  labels and no `needs-triage` (3364bfa).
+
+**Measured:** steps 3 to 10 took 36 minutes against the brief's 205, on
+58,625 to 181,403 tokens a step; no Sonnet step ran again on Opus, so the
+model table holds. Steps 3 to 13 took about 76 minutes in all against the
+brief's 305, the reviews 9 minutes for the findings and 25 for the fixes;
+the full verify ran 490 browser tests in Chromium and 119 each in Linux
+Firefox and WebKit. Steps 3 and 12 found no dependency 7 days old; step
+12's summary advised waiting for 15 November, where the rule takes what
+is old enough on the day.
+
+**Found:**
+
+- Dependabot alerts 11 and 12 are #446's, waiting for their upstreams.
+- The 13 px "chip" the walkers measured is the quick filter, MUI's small
+  toggle button, which the theme gives its colour alone; a status chip is
+  already 14 px. For #566, at `/triage`.
+- Items' empty search offers "Clear search" and leaves a category on,
+  against *The five states*' no results; `/triage` files it.
+- The label brought into view and the long form's summary have no issue
+  of their own, so the design language cites #310, the shared hook; a
+  comment there at `/triage`.
+- Settings holds 6 links, and Members sits outside `/settings`, which
+  #513's highlight must count; a comment there at `/triage`.
+- #517's table counted bytes, 2,972 for `database.md`; the check counts
+  characters, 2,968.
+- `CLAUDE.md`'s line for `/triage` does not mention a new issue; it stays
+  true, and is left.
+
+**Deferred, added:** a gate in CI for duplication. Trigger: a clone that
+reaches `main` unread.

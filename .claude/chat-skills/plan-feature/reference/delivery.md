@@ -18,11 +18,16 @@ Their home is `docs/engineering.md`, "How code is delivered" and
   branch's once he has pushed it and named the commit (`git rev-parse
   --short HEAD`).
 - Made with `git diff` after editing the clone, never typed by hand.
+- A patch to a script in `scripts/` reads and updates the script's test
+  beside it, named for it with `.test.mjs`, in the same patch.
 - The first line names the base, `base: <sha> (<branch>), <step>`; `git
   apply` passes over it.
 - Checked before sending: on a fresh clone at that base, `git apply
   --check` passes, and so does each later patch on top; then, with every
   patch applied, `npx --yes markdownlint-cli2@0.23.3` finds no issue.
+  It reads text between two dollar signs as maths, so a link reference
+  between two amounts in US dollars on one line counts as unused: one
+  amount to a line.
 - Bob runs `git apply --check <patch> && git apply --index <patch>`,
   which stages what it changed.
 - A patch Bob's copy refuses is made again from a fresh clone, under a
@@ -47,6 +52,9 @@ Their home is `docs/engineering.md`, "How code is delivered" and
 - Authored as Bob, `Zhenzhong Zhou <bob0823.zhou@gmail.com>`, git's
   identity on his Mac; never a placeholder.
 - `git status`, then each file staged by path; never `git add -A`.
+- Commands run as pasted, each line even after one fails: a verify
+  before a push is chained to it with `&&`, so a red verify stops the
+  push; a dry run Bob reads first is a step of its own.
 - One `git commit -m "…"`: a subject, a blank line, then wrapped
   paragraphs saying why. No backticks and no `!` inside the quotes,
   which zsh would read.
