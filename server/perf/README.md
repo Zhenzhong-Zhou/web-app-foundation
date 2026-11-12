@@ -298,20 +298,45 @@ What fails a run:
 - **A median over its budget**, or past its known miss's ceiling or date,
   or an error in any round: the median job.
 - **A round with no report**, most often because its job failed before
-  writing one: the median job refuses to judge two rounds, so its message
-  names the round to open.
+  writing one, or because GitHub's store for a job's files lost it: the
+  median job refuses to judge two rounds, so its message names the round
+  to open.
 - **A concurrency check that failed:** that round's job.
 - **The plan check:** the first round's job, as in the plans mode.
 
-A round that failed on its runner can be run again alone, "Re-run failed
-jobs", then the median job after it: the round's artifact is overwritten,
-so the run is judged without timing all three again.
+To start a timed run from the terminal and follow it:
+
+```bash
+gh workflow run perf.yml --ref <branch> -f mode=budgets
+gh run watch <run id> --exit-status
+```
+
+`gh workflow run` prints the new run's URL, and the number it ends in is
+the run id that `gh run watch` takes.
+
+A round that failed on its runner, or whose report GitHub's store lost, can
+be run again alone: "Re-run failed jobs" on the run's page, or
+
+```bash
+gh run rerun <run id> --failed
+```
+
+It repeats that round, then the median job after it. The round's artifact
+is overwritten, so the run is judged without timing all three again. The
+repeated round runs on another runner at another time, and the median takes
+its figure as it would have taken the first.
 
 Each round keeps its reports and the server's log as an artifact,
-`perf-<mode>-<scale>-<run>-round-<n>`, for 30 days. To judge a run again
-locally, from `server/`:
+`perf-<mode>-<scale>-<run>-round-<n>`, for 30 days. To read the medians
+from the rounds' reports, or to judge a run again locally, from `server/`:
 
 ```bash
 gh run download <run id> --dir ../tmp/perf-<run id>
 npm run perf:judge -- ../tmp/perf-<run id>
 ```
+
+Read the figures there, never from a job's log by a step's name. A step's
+name changes with the mode and the round (a full run's first round alone
+adds ", stress" to the budgets step's), so a search of the logs by name
+finds one round and misses the others. The reports hold the same figures
+whatever the job was called.
