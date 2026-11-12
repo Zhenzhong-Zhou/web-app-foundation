@@ -716,6 +716,11 @@ folder by folder; these check what is already in place.
   semaine, 本周活跃). Home's three moments (every day, the first two weeks,
   a new organization), Items' example paths such as Packaging › Bottles,
   and a row's stock on hand read as plain words, not bold.
+  `client/src/help/guides.test.ts` holds that each bold phrase is the
+  text of a message in the guide's language, and lists with why the few
+  kept on purpose: a chip's ×, Numbering's {YYYY}, the permissions' and
+  templates' names the server sends, and the glossary's words that Words
+  you’ll meet explains; by hand, that each is on the page the guide names.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -5696,3 +5701,5 @@ first.
   are the screen's; Home's three moments, Items' example paths and stock,
   and People's Active this week and this month, in each language that
   had them bold or cut short: MC-1415 added.
+- 2026-11-12: ADR-054's November amendment, R12: the guides' check
+  holds that each bold phrase is a message's text: MC-1415 extended.
