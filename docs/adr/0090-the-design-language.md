@@ -529,8 +529,9 @@ decisions.
   - #507's 48 plans a tonal button variant; its states are drawn with
     the buttons'.
   - Add item's buttons scroll away because a `<form>` sits between the
-    dialog and its parts, in 51 dialog files; 2 make the dialog itself
-    the form.
+    dialog and its parts: in 53 dialogs, as step 4 counted them on the
+    branch. The 2 that keep their buttons pinned put a flex-column form
+    inside the dialog, and are the only ones full screen on a phone.
   - A link to a new page leaves focus nowhere: the layout moves focus
     only after Remove or Delete.
   - Items' rows already make the name the link and open the item on a
@@ -586,8 +587,9 @@ browser test.
   check box, a figure with its status and its actions, are targets of
   their own, never inside the link.
 - **The figure beside a status is the figure it judges, or links to
-  where it is worked out** (item 1): Items' stock on hand beside Low or
-  Out, its badge opening "Where it stands", as built.
+  where it is worked out** (item 1): Items keeps its stock on hand beside
+  Low or Out, and the status opens "Where it stands", the figure it
+  judges.
 - **The name before the code everywhere a person reads** (D15, item 43):
   a table's Code column after its name; a picker's option "Vitamin C 500
   mg · VITC-100", the code grey after the name, a typed code still
@@ -762,3 +764,115 @@ switch stays a fix (#505's 56 and 92).
   the code rules and names → `/triage`'s new issue → the perf README
   and the README → the canvas row → the dependencies again → the reviews
   → the as-built and the pull request, closing #517 and part of #553.
+
+### As built (#568)
+
+Built on 11 November 2026 on `flows-and-states`, 23 commits with this
+one and the next, from its brief in `tmp/flows-and-states/`; pull request #568.
+
+**The requirements:**
+
+| R | Marked | How |
+| --- | --- | --- |
+| R1 | met | This amendment, 12b2a73 |
+| R2 | met | The States section, 89330aa; four rules said once and The look linked after the reviews, f44e976 and 03636de |
+| R3 | changed | The row "状态 第一版 · States v1", eight boards, drawn by the chat with its Artifact tool, not by the maintainer in Claude Design |
+| R4 | met | bed2643 |
+| R5 | met | ADR-088's amendment, 12b2a73; the skill, bed2643 |
+| R6 | met | Each item's fate above; the patterns, f62db64; the width switch, 20d154a, its exception written in `conventions.md`, dd4e5c6 |
+| R7 | changed | The README since v0.7.0 and the release routine's line, 53d9e5a; its Next a link to the handoff's order, not a copy of it, b4f424c |
+| R8 | met | 20d154a; the names' rule naming its decision, fe2063a |
+| R9 | met | bed2643; the timed run's line left to its README, ed17374 |
+| R10 | met | 3f6fb60 |
+| R11 | met | 12b2a73 and this commit |
+| R12 | deferred | After the merge, as the handoff says |
+| R13 | met | 9bacdb3; `engineering.md`'s new-issue line, 3364bfa |
+| R14 | met | d739148, closing #517 |
+| R15 | met | f62db64; #561 to #566 filed in step 4 |
+
+**Added, beyond R1 to R15:**
+
+- **`/code-review` checks a branch's new clones and its simplicity**
+  (0fe2aa1, a fix between steps 10 and 11): jscpd 5.4.2, pinned and run
+  with `--absolute`; `scripts/new-clones.mjs` and its test print only the
+  clones in the lines the branch changed (966e20c); `.jscpd.json` leaves
+  out `client/src/api/`, which `npm run api` writes (460c8c3);
+  `conventions.md` extracts a copied block of 20 lines or more at its
+  second copy. On 11 November the repository held 667 clones once the
+  generated types were left out, 4.1% of its lines, about 1.3% in the
+  client's and the server's own code.
+- **The planning skill closes a session** (the next commit): what no file
+  holds is filed first, only the rest carried into the next session's
+  prompt, from a fixed checklist; ADR-088's amendment says so.
+
+**Decided while building:**
+
+- **No gate in CI for duplication:** judged at review, since jscpd counts
+  the declarations `conventions.md` keeps on purpose.
+- **The clones already there:** one reading pass after the merge over
+  those of 20 lines or more in the client's and the server's code, 29 and
+  5, each marked extract or keep on #282, then fixed when its file is next
+  touched.
+- **A pressed state that looks like hover** (step 5): #561 is widened, at
+  `/triage` after the merge, so pressed gets a token of its own, tested
+  with the others.
+- **The reviews' fixes:** 11 of 20 findings, each a commit, 966e20c to
+  35a3f7b; one older finding filed as #567, the screens that switch with
+  `useMediaQuery` outside the exception.
+- **The one home for filing an issue** is a comment on #319 at `/triage`,
+  not a new issue.
+- **A disabled control is exempt from the contrast pairs,** as WCAG's
+  1.4.3 and 1.4.11 say and as Material, Carbon and Polaris do; the line
+  saying why stays at 4.5 : 1. Step 5 had held it to them, which would
+  have made every disabled control #561's first fix.
+- **A footnote's caption stays at 12.5 px,** as ADR-091's amendment
+  allows: "nothing at 12 or 13 px" in *Decision — targets and text* is
+  for text a person reads to decide.
+- **#562's three small points go to its build:** whether the lot switch
+  is kept, where focus goes once the form clears, and how the list behind
+  learns of the items added; its pull request says each.
+
+**Built differently from the text above:**
+
+- **Items' Low and Out do not yet open "Where it stands":** the status is
+  a plain chip, and only the stock beside it links, to Inventory for that
+  item alone. `/triage` files the issue after the merge; the design
+  language says so at Numbers.
+- **A row's one link is its name where the row has controls of its own;**
+  Home's Recently opened and Getting started rows stay one link, their
+  whole row (da775eb).
+- **The design language links `conventions.md`'s The look** for the
+  theme's density, focus ring and tokens, rather than saying them again
+  (03636de).
+- **A new issue `/triage` files is decided already,** so it carries its
+  labels and no `needs-triage` (3364bfa).
+
+**Measured:** steps 3 to 10 took 36 minutes against the brief's 205, on
+58,625 to 181,403 tokens a step; no Sonnet step ran again on Opus, so the
+model table holds. Steps 3 to 13 took about 76 minutes in all against the
+brief's 305, the reviews 9 minutes for the findings and 25 for the fixes;
+the full verify ran 490 browser tests in Chromium and 119 each in Linux
+Firefox and WebKit. Steps 3 and 12 found no dependency 7 days old; step
+12's summary advised waiting for 15 November, where the rule takes what
+is old enough on the day.
+
+**Found:**
+
+- Dependabot alerts 11 and 12 are #446's, waiting for their upstreams.
+- The 13 px "chip" the walkers measured is the quick filter, MUI's small
+  toggle button, which the theme gives its colour alone; a status chip is
+  already 14 px. For #566, at `/triage`.
+- Items' empty search offers "Clear search" and leaves a category on,
+  against *The five states*' no results; `/triage` files it.
+- The label brought into view and the long form's summary have no issue
+  of their own, so the design language cites #310, the shared hook; a
+  comment there at `/triage`.
+- Settings holds 6 links, and Members sits outside `/settings`, which
+  #513's highlight must count; a comment there at `/triage`.
+- #517's table counted bytes, 2,972 for `database.md`; the check counts
+  characters, 2,968.
+- `CLAUDE.md`'s line for `/triage` does not mention a new issue; it stays
+  true, and is left.
+
+**Deferred, added:** a gate in CI for duplication. Trigger: a clone that
+reaches `main` unread.

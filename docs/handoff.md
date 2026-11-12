@@ -17,9 +17,10 @@ On 11 November 2026:
 
 - **Flows and states,**
   [ADR-090's amendment](adr/0090-the-design-language.md), with short ones
-  in ADR-087 and ADR-088: planned on 11 November on
-  `flows-and-states`, a docs pull request, its requirements confirmed
-  before drafting and its decisions chosen as recommended. The five
+  in ADR-087 and ADR-088: planned and built on 11 November on
+  `flows-and-states`, 23 commits with the as-built, pull request [#568];
+  its requirements confirmed before drafting, its decisions chosen as
+  recommended, and the as-built marks each. The five
   states and each shared piece's own states drawn once, in the design
   language's States section and the canvas row "状态 第一版 · States
   v1"; the patterns Items' reviews and its as-built handed it, with
@@ -27,8 +28,10 @@ On 11 November 2026:
   asked for a wireflow, an interaction table and its five states; the
   playback in the planning skill; one Settings page designed for
   [#513]; and a code rules file held to 3,000 characters ([#517]). No
-  code, API or migration: each screen's build has its issue, six of them
-  filed on the branch. Then the translations, before 30 November.
+  code, API or migration: each screen's build has its issue, [#561] to
+  [#567] filed on the branch. With it, `/code-review` checks a branch's
+  new clones and its simplicity, and the planning skill closes a session.
+  Then the translations, before 30 November.
 - **[#547], the list search's plans,**
   [ADR-051's amendment](adr/0051-performance.md): planned on 10
   November and built on 10 and 11 November on `fix-547-search-plans`,
@@ -398,6 +401,22 @@ On 11 November 2026:
 
 ## Still to do, by hand
 
+- **After [#568]'s merge:** `gh pr merge 568 --merge`, never squashed;
+  `scripts/prune-branches.sh --yes`; `scripts/clean-local.sh`, then
+  `--yes`, which removes `tmp/flows-and-states/`, `dl-items.md` with it;
+  Project knowledge re-synced; the planning skill packed from `main` and
+  uploaded, and `evals.md`'s prompts 8 and 9 walked; `/triage` over `docs`
+  and `ui`: comments naming the patterns on [#159], [#170], [#473],
+  [#507], [#509], [#513], [#536], [#544], [#545] and [#548], [#513]'s
+  saying Settings holds 6 links and Members sits outside `/settings`;
+  comments on [#566] (the 13 px "chip" is the quick filter) and [#310]
+  (the label brought into view and the long form's summary); [#561]
+  widened so pressed gets a token of its own, a disabled control exempt;
+  issues so Items' Low and Out open "Where it stands", and so Items'
+  empty search clears its category too; and the one home for filing an
+  issue noted on [#319]. Then one reading pass over the clones of 20 lines or more in
+  the client's and the server's code, each marked extract or keep on
+  [#282].
 - **After [#558]'s and [#559]'s merges,** done on 11 November: the
   merges; the prune and the clean-up; Project knowledge re-synced;
   MC-R103 on the live site; and `/triage` over every open issue, its
@@ -713,6 +732,7 @@ Not repeated here; each list has one home:
 [#273]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/273
 [#276]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/276
 [#279]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/279
+[#282]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/282
 [#286]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/286
 [#287]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/287
 [#288]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/288
@@ -848,12 +868,15 @@ Not repeated here; each list has one home:
 [#470]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/470
 [#471]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/471
 [#472]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/472
+[#473]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/473
 [#476]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/476
 [#477]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/477
 [#478]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/478
 [#483]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/483
 [#505]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/505
 [#506]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/506
+[#507]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/507
+[#509]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/509
 [#513]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/513
 [#514]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/514
 [#515]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/515
@@ -872,8 +895,11 @@ Not repeated here; each list has one home:
 [#533]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/533
 [#536]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/536
 [#539]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/539
+[#544]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/544
+[#545]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/545
 [#546]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/546
 [#547]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/547
+[#548]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/548
 [#551]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/551
 [#552]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/552
 [#553]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/553
@@ -884,3 +910,7 @@ Not repeated here; each list has one home:
 [#558]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/558
 [#559]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/559
 [#560]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/560
+[#561]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/561
+[#566]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/566
+[#567]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/567
+[#568]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/568

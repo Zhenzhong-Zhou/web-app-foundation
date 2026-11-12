@@ -121,8 +121,10 @@ Each with what holds it in the code today, or the issue that will.
 - Numbers are right-aligned in tabular figures, and nothing covers them:
   a pinned column never sits over a cell.
 - The figure beside a status is the figure it judges, or links to where
-  it is worked out: Items' stock on hand beside Low or Out is a link to
-  Inventory for that item alone (`item-rows.tsx`).
+  it is worked out. Items' Low and Out are to open "Where it stands", the
+  figure they judge; today only the stock on hand beside them links, to
+  Inventory for that item alone (`item-rows.tsx`), as ADR-090's as-built
+  for flows and states says.
 
 ### Sorting and filters
 
@@ -428,8 +430,8 @@ refused.
   read through the theme as
   [conventions.md, The look](conventions.md#the-look-adr-055) says.
 - **Every state keeps its text at 4.5 : 1 and its edge and focus ring
-  at 3 : 1,** in light and dark, a disabled control's included, which
-  WCAG exempts.
+  at 3 : 1,** in light and dark. A disabled control is exempt, as WCAG's
+  1.4.3 and 1.4.11 say; the line beside it saying why stays at 4.5 : 1.
 - **A disabled control keeps its enabled size** (#170).
 - **Held today in part:** `tokens.test.ts` holds an entry hovered,
   focused or chosen and the tonal button, and `index.test.tsx` a
