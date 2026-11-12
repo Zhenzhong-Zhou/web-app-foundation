@@ -3753,6 +3753,13 @@ site, after a deploy that changes the setting, the route or the relay.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R103** *(A main button under the pointer fell to about 3.7 : 1 in
+  dark mode, #557)* In dark mode, on Items, rest the pointer on Add item
+  without pressing: the button turns lighter, not darker, and its dark
+  text reads at 4.5 : 1 or more with a contrast picker. In light mode it
+  still turns darker under the pointer. The same with another accent
+  chosen on Settings' Branding tab.
+
 - **MC-R102** *(Home's Receive stock and Plan a run opened their lists,
   not their dialogs, #502)* Signed in as a role that may move stock, on
   Home, press Receive stock: Inventory opens with Receive stock's dialog
@@ -5650,3 +5657,5 @@ first.
   leaves the rail, opened from Items' category filter, Manage
   categories, so every Settings link stays above the rail's foot at
   1440 × 900 under CI's two-line foot: MC-213 rewritten.
+- 2026-11-11: #557, a dark main button under the pointer turns lighter,
+  away from its dark text: MC-R103 added.

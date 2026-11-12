@@ -15,6 +15,7 @@ import { TOUCH } from './media';
 import { OptionGroup } from './option-group';
 import { rem } from './rem';
 import {
+  accentHover,
   CHOSEN_WEIGHT,
   DARK,
   DARK_ACCENT_WEIGHT,
@@ -65,10 +66,21 @@ declare module '@mui/material/styles' {
   }
 }
 
-function palette(scheme: Scheme, accent: string, onAccent: string, rail: Rail) {
+function palette(
+  scheme: Scheme,
+  accent: string,
+  onAccent: string,
+  mode: 'light' | 'dark',
+  rail: Rail,
+) {
   return {
     rail,
-    primary: { main: accent, contrastText: onAccent },
+    // dark: a main button under the pointer, moved away from its text (#557).
+    primary: {
+      main: accent,
+      dark: accentHover(accent, mode),
+      contrastText: onAccent,
+    },
     success: { main: scheme.intents.success },
     warning: { main: scheme.intents.warning },
     error: { main: scheme.intents.error },
@@ -139,6 +151,7 @@ const optionsFor = (brand: Brand, locale: Locale): ThemeOptions => ({
         LIGHT,
         brand.accent,
         ON_ACCENT.light,
+        'light',
         RAILS[brand.rail].light,
       ),
     },
@@ -147,6 +160,7 @@ const optionsFor = (brand: Brand, locale: Locale): ThemeOptions => ({
         DARK,
         towardWhite(brand.accent, DARK_ACCENT_WEIGHT),
         ON_ACCENT.dark,
+        'dark',
         RAILS[brand.rail].dark,
       ),
     },
