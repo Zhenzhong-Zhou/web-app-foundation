@@ -980,9 +980,10 @@ and the tokens lack becomes a token first.
   colour of the text around it is always underlined. **Buttons**: one filled per
   group, as above; the rest text weight.
 - **Density** is the theme's: compact with a mouse, 44px targets under a finger
-  (`pointer: coarse`). Don't set a control's height on the page.
-- **Focus** is one ring, drawn by the theme on everything that takes focus.
-  Never remove an outline.
+  (`pointer: coarse`, `TOUCH` in `theme/media.ts`), a button, an icon button and
+  a chip that does something today. Don't set a control's height on the page.
+- **Focus** is one ring, 2 px in the accent, drawn by the theme on everything
+  that takes focus (`MuiButtonBase`). Never remove an outline.
 - **Contrast.** `tokens.test.ts` checks WCAG AA for every pair a reader reads,
   in both modes; a new token adds its pair there.
 - **Paper** is a PDF the server draws (ADR-071), from its own sheet in

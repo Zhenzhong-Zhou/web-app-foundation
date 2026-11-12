@@ -333,10 +333,10 @@ and the places #337 names, each when its trigger comes.
   tall, and each control in it a 44 × 44 target by its padding, not a
   bigger glyph; with a mouse, compact rows (Items' rows; #170 for the
   rest).
-- The 44 px is held once, in the theme: a button, an icon button and a
-  chip that does something have it (`TOUCH`, `client/src/theme/media.ts`),
-  and a select, a field, a toggle, a switch, a check box, a radio and a
-  menu entry gain it, an inline link by its padding (#170).
+- The 44 px is the theme's touch density, held once
+  ([conventions.md, The look](conventions.md#the-look-adr-055)): a
+  select, a field, a toggle, a switch, a check box, a radio and a menu
+  entry gain it, an inline link by its padding (#170).
 - A touch check in the accessibility suite measures every target on the
   screens it walks, beside axe's 24 px (#170).
 
@@ -413,16 +413,18 @@ refused.
 - **Busy says what it is doing,** a button's word changing ("Add item",
   then "Adding…") and the dialog holding still while it saves
   (`DialogFooter`); Load more says "Loading…".
-- **Focus is one ring** for everything that takes it, 2 px in the
-  accent (`MuiButtonBase`); a dialog takes focus in, and gives it back
-  to what opened it when it closes.
+- **Focus is one ring,** as
+  [conventions.md, The look](conventions.md#the-look-adr-055) says; a
+  dialog takes focus in, and gives it back to what opened it when it
+  closes.
 - **Dragged lifts** with the lift's shadow and an accent edge, where it
   would drop a dashed box (`DraggableTile` in Customise Home).
 
 ### Their look
 
-- **Each state's look is a token** in `client/src/theme/tokens.ts`, as
-  Material 3's state layers are, read through the theme.
+- **Each state's look is a token,** as Material 3's state layers are,
+  read through the theme as
+  [conventions.md, The look](conventions.md#the-look-adr-055) says.
 - **Every state keeps its text at 4.5 : 1 and its edge and focus ring
   at 3 : 1,** in light and dark, a disabled control's included, which
   WCAG exempts.
