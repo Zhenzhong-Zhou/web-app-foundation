@@ -1404,6 +1404,16 @@ await fetch(`${api}/v1/files/product-image`, {
   Objects → `files/` holds the same three objects. The day after the upload,
   the file (never attached) is released; 30 days later its three objects are
   gone from `waf-files`.
+- **MC-1603** *(#249; on any storage)* A file past its limit is refused
+  as it arrives, in the reader's language, naming the limit and what to
+  do, never "File too large". On a phone in 中文, Settings →
+  Organization → Branding → Square logo, choose a 2.6 MB photo: the row
+  says 方形标志最大 2 MB。请选择更小的文件，或先压缩后再上传。, the
+  button still reads 上传方形标志 and no logo shows. In Français, the
+  main logo past 2 MB reads « Un logo peut faire jusqu’à 2 Mo. »; an
+  item's photo past 20 MB, « Une photo peut faire jusqu’à 20 Mo. ». In
+  English, your own photo on the Account page past 5 MB reads "A photo
+  can be up to 5 MB. Choose a smaller file, or save it smaller first."
 
 ## 17. Organization settings (ADR-061)
 
@@ -5761,3 +5771,6 @@ first.
   holds stock sends its stock to another location, an exchange rate is
   refused in words, and a run with no recipe says to promote one:
   MC-1418 added.
+- 2026-11-12: ADR-054's November amendment, R11 (#249): a file past its
+  limit on any upload route is refused in the reader's language, naming
+  the limit and what to do: MC-1603 added.

@@ -146,6 +146,43 @@ describe('People (e2e)', () => {
     );
   });
 
+  // Past 5 MB, cut off and refused naming the limit, in the reader's
+  // language (#249); the person keeps no photo.
+  it('refuses a photo past 5 MB in words, and keeps nothing', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const huge = Buffer.alloc(5 * 1024 * 1024 + 1, 1);
+    const refusals: [string, string][] = [
+      [
+        'en',
+        'A photo can be up to 5 MB. Choose a smaller file, or save it smaller first.',
+      ],
+      [
+        'fr-CA',
+        'Une photo peut faire jusqu’à 5 Mo. Choisissez un fichier plus petit, ou réduisez-en d’abord la taille.',
+      ],
+      ['zh-Hans', '头像最大 5 MB。请选择更小的文件，或先压缩后再上传。'],
+    ];
+
+    for (const [language, message] of refusals) {
+      const refused = await alpha.agent
+        .post('/v1/account/photo')
+        .set('Accept-Language', language)
+        .attach('file', huge, 'me.jpg')
+        .expect(413);
+      expect(body<{ error: string; message: string }>(refused)).toMatchObject({
+        error: 'PAYLOAD_TOO_LARGE',
+        message,
+      });
+    }
+
+    const [user] = await db
+      .select({ photoFileId: users.photoFileId })
+      .from(users)
+      .where(eq(users.id, alpha.userId));
+    expect(user.photoFileId).toBeNull();
+    expect(await db.select().from(files)).toEqual([]);
+  });
+
   it('keeps details at work per person, shown on People', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     await alpha.agent

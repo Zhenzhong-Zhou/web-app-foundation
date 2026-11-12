@@ -12,12 +12,11 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 
 import type { OrganizationFileKind } from '../../database/schema';
-import { t } from '../../i18n/translate';
+import { t, type Translatable } from '../../i18n/translate';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
 import { limit } from '../auth/throttle-limits';
@@ -31,16 +30,48 @@ import {
   type FileView,
   type UploadedBinary,
 } from './files.service';
+import { receiveFile } from './receive-file';
+
+/** Each kind's refusal past its limit, given in MB (#249). */
+const TOO_LARGE: Record<OrganizationFileKind, (limit: number) => Translatable> =
+  {
+    logo: (limit) =>
+      t(
+        {
+          id: 'files.logo.tooLarge',
+          defaultMessage:
+            'A logo can be up to {limit}\u00a0MB. Choose a smaller file, or save it smaller first.',
+        },
+        { limit },
+      ),
+    square_logo: (limit) =>
+      t(
+        {
+          id: 'files.squareLogo.tooLarge',
+          defaultMessage:
+            'A square logo can be up to {limit}\u00a0MB. Choose a smaller file, or save it smaller first.',
+        },
+        { limit },
+      ),
+    product_image: (limit) =>
+      t(
+        {
+          id: 'files.photo.tooLarge',
+          defaultMessage:
+            'A photo can be up to {limit}\u00a0MB. Choose a smaller file, or save it smaller first.',
+        },
+        { limit },
+      ),
+  };
 
 /**
  * The kind's size limit, enforced by multer while the upload arrives: past
- * it the request is cut off with 413, not read to the end. One route per
- * kind, so the limit and the permission are both known before a byte is.
+ * it nothing more is kept, and the request is refused with 413 in the
+ * kind's own words. One route per kind, so the limit and the permission
+ * are both known before a byte is.
  */
 function receive(kind: OrganizationFileKind) {
-  return FileInterceptor('file', {
-    limits: { fileSize: KIND_RULES[kind].maxBytes, files: 1 },
-  });
+  return receiveFile(KIND_RULES[kind].maxBytes, TOO_LARGE[kind]);
 }
 
 /**
