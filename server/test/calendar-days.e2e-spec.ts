@@ -206,7 +206,7 @@ describe('Calendar days (e2e)', () => {
       const res = await receive(ctx, '2026-10-10T00:00:00.000Z').expect(400);
 
       expect(messages(res)).toContain(
-        'lot.expiresAt must be a calendar day, YYYY-MM-DD',
+        'Enter a date as year-month-day, such as 2026-11-12.',
       );
     });
 

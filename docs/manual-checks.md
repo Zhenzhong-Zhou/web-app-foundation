@@ -772,7 +772,13 @@ folder by folder; these check what is already in place.
   no field name and nothing about strings; the same for an exchange rate
   of 0 in Set cost. Release a run whose item has no recipe: the dialog
   says to create one and promote it (mettez-la en vigueur, 启用), the
-  recipe's own button.
+  recipe's own button. Settings → Tax codes → a rate of 5.12345: "Enter
+  a rate as a percentage from 0 to 100, with up to 4 decimal places.",
+  never components.0.rate; Settings → Organization → a base currency of
+  C4D: "Enter the currency as three letters, such as CAD or USD."; an
+  address's Country of C: "Enter the country as two letters, such as CA
+  or US.". Each in Français and 中文 too, with no field name, index or
+  "sent as a string" in any.
 - **MC-1419** *(ADR-054's November 2026 amendment, R11; #501)* Latin
   names in a Chinese list keep a space from 和 and 或 (ADR-090). On a
   freshly seeded demo, in 中文, as Chloé Tremblay (Viewer): Account → 权限
@@ -5877,3 +5883,8 @@ first.
 - 2026-11-12: ADR-054's November amendment, R8: the glossary's Words not
   to use gains 账单地址 and 税务登记号, which the rules check refuses in
   every message and guide: MC-1417 extended.
+- 2026-11-12: ADR-054's November amendment, R11 (#148): every refusal
+  the server's own validation rules write says what to fix in words,
+  with no field path, index, type or "sent as a string": the tax rate,
+  a quantity or price, a date, a currency, a country, a time zone, the
+  lookup and Home's layout: MC-1418 extended.

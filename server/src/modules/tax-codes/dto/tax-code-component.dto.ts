@@ -24,7 +24,7 @@ export class TaxCodeComponentDto {
       defineMessage({
         id: 'validation.taxRate',
         defaultMessage:
-          'rate must be a percentage with at most 4 decimal places, sent as a string',
+          'Enter a rate as a percentage from 0 to 100, with up to 4 decimal places.',
       }),
     ),
   })

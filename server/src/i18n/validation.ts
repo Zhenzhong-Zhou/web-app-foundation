@@ -12,12 +12,15 @@ import { t as render, type Translatable } from './translate';
 /**
  * Validation messages in the request's language (ADR-054).
  *
- * The English a client or the e2e suite reads is class-validator's own,
- * flattened by Nest exactly as before ("lines.0.quantity must be …"): this
- * pipe changes none of it. Beside each sentence it keeps a message id and
- * its values, which AllExceptionsFilter renders in the request's language.
- * The screens check before sending, so a person seldom meets these; the
- * field's API name stays as it is, which is what an integrator reads.
+ * A built-in rule's English is class-validator's own, flattened by Nest
+ * exactly as before ("lines.0.name must be …"): the screens check before
+ * sending, so a person seldom meets these, and the field's API name stays
+ * as it is, which is what an integrator reads. A DTO's own rule (`rule`)
+ * says what to fix in words, with no field path, index or type, as
+ * design-language.md asks of a refusal (#148); its sentence stands alone,
+ * Nest's path in front of it dropped. Beside each sentence the pipe keeps
+ * a message id and its values, which AllExceptionsFilter renders in the
+ * request's language.
  */
 
 /** A descriptor the extractor reads into en.json; nothing more. */
@@ -130,8 +133,8 @@ const written = new Map<string, Translatable>();
 
 /**
  * A DTO rule's own message, for a decorator's `message` option. Its English
- * is the defaultMessage with the field's name for {property}, as
- * class-validator's `$property` gave before; the id goes with it.
+ * is the defaultMessage, what to fix in words, naming no field (#148); the
+ * id goes with it.
  */
 export function rule(descriptor: { id: string; defaultMessage: string }) {
   return (args: ValidationArguments): string => {
@@ -163,9 +166,11 @@ function translatable(
 ): Translatable {
   const property = pathIn(english, field);
 
+  // A DTO's own rule says what to fix in words, so its sentence stands
+  // alone: Nest's path in front (components.0.) is dropped (#148).
   for (const [sentence, message] of written) {
     if (english === sentence || english.endsWith(`.${sentence}`)) {
-      return { ...message, message: english, values: { property } };
+      return { ...message, message: sentence, values: { property } };
     }
   }
 

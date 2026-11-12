@@ -10,8 +10,8 @@ import { defineMessage, rule } from '../../i18n/validation';
  * Capitals only, not uppercased here: the client uppercases as it is typed,
  * so a lowercase code reaching the API is a caller's mistake worth a 400.
  *
- * `$property` names the field that failed, so `currency` and `baseCurrency`
- * get the same sentence about themselves.
+ * `currency` and `baseCurrency` get the same sentence: what to enter, with
+ * an example, never the field's path (#148).
  */
 export const CURRENCY_CODE = /^[A-Z]{3}$/;
 
@@ -20,7 +20,8 @@ export const IsCurrencyCode = () =>
     message: rule(
       defineMessage({
         id: 'validation.currencyCode',
-        defaultMessage: '{property} must be a 3-letter ISO code',
+        defaultMessage:
+          'Enter the currency as three letters, such as CAD or USD.',
       }),
     ),
   });
