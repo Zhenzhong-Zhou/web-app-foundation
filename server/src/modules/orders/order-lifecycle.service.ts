@@ -511,7 +511,8 @@ export class OrderLifecycleService {
     const unpriced = lines.filter((line) => line.unitPrice === null);
 
     if (unpriced.length > 0) {
-      const skus = unpriced.map((line) => line.sku).join(', ');
+      // A list, joined the way each language joins one.
+      const skus = unpriced.map((line) => line.sku);
 
       throw new ConflictException(
         t(

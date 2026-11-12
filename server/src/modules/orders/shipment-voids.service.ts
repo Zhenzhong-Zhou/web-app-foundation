@@ -317,13 +317,11 @@ export class ShipmentVoidsService {
           );
       }
 
-      // What was put back, for History. The reason stays on the shipment row
-      // rather than in the audit payload: free text is kept out of a two-year
-      // table (ADR-018).
+      // What was put back, for History, as a list its reader's language
+      // joins. The reason stays on the shipment row rather than in the audit
+      // payload: free text is kept out of a two-year table (ADR-018).
       recordContext({
-        items: moved
-          .map((movement) => `${movement.sku} ${movement.quantity}`)
-          .join(', '),
+        items: moved.map((movement) => `${movement.sku} ${movement.quantity}`),
         ...(reopened ? { reopened: true } : {}),
       });
 

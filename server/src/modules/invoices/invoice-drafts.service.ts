@@ -146,7 +146,8 @@ export class InvoiceDraftsService {
                     '{sku} {count, plural, one {has} other {have}} no price on the order — price the order line before invoicing',
                 },
                 {
-                  sku: unpriced.map((line) => line.sku).join(', '),
+                  // A list, joined the way each language joins one.
+                  sku: unpriced.map((line) => line.sku),
                   count: unpriced.length,
                 },
               ),

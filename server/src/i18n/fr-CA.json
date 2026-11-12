@@ -729,6 +729,7 @@
   "notifications.stockLow.oneBody": "{source, select, made {{name}. Planifiez un ordre de fabrication depuis Points de commande.} other {{name}. Créez un bon de commande depuis Points de commande.}}",
   "notifications.stockLow.several": "{count, plural, one {# article en stock bas} other {# articles en stock bas}}",
   "notifications.stockLow.severalBody": "{what, select, bought {{items}. Commandez-les depuis Points de commande.} made {{items}. Planifiez-les depuis Points de commande.} other {{items}. Commandez-les ou planifiez-les depuis Points de commande.}}",
+  "notifications.variance.body": "{lines}",
   "notifications.variance.lines": "Un ordre de fabrication a été clos avec {count, plural, one {# ligne} other {# lignes}} hors plan",
   "notifications.variance.output": "Un ordre de fabrication a produit {produced} pour un plan de {planned}",
   "numbering.dateOrder": "Les {kind, select, invoice {factures} other {notes de crédit}} suivent l’ordre des dates, et {number} est datée du {date}. Datez celle-ci du {date} ou plus tard.",

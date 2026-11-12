@@ -84,9 +84,10 @@ export function invoiceDocument(
               // When it was voided, in the organization's zone (ADR-072).
               date: invoice.voidedAt ? doc.dayOf(invoice.voidedAt) : '',
               reason: invoice.voidReason ?? '',
+              // A list, joined the way the document's language joins one.
               credits:
                 invoice.creditNotes.length > 0
-                  ? invoice.creditNotes.map((note) => note.number).join(', ')
+                  ? invoice.creditNotes.map((note) => note.number)
                   : 'none',
             },
           ),

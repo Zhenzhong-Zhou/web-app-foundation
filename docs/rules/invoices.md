@@ -92,7 +92,7 @@ is kept is in the [README](README.md).
 - **Every line needs a tax code.** "No tax" is a code too, Exempt, with
   no components; a blank is refused, and the draft stays as it was.
   [ADR-046](../adr/0046-invoicing.md#decision--tax-by-code-rounded-once-per-invoice) ·
-  [test](../../server/test/invoices.e2e-spec.ts) "refuses a line with no tax code, and leaves the draft as it was" ·
+  [test](../../server/test/invoices.e2e-spec.ts) "refuses lines with no tax code, naming them as a list, and leaves the draft as it was" ·
   [test](../../client/e2e/invoicing.spec.ts) "refuses to issue until every line is taxed, and deletes a draft" ·
   [Help](../../client/src/help/guides/en/invoices.md#if-something-is-refused-refused)
 - **A tax code retired since the draft was made is refused at issue.**

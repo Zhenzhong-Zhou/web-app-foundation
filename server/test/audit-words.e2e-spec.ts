@@ -178,6 +178,20 @@ describe('The audit log in words (e2e)', () => {
     });
   });
 
+  it('lists what a shipment carried as each language lists, in History', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    await shippedSale(alpha.agent);
+
+    const carried = async (language: string) => {
+      const [shipped] = await entries(alpha, language, '?action=order.shipped');
+      return shipped.details.map((detail) => detail.value?.text);
+    };
+    // Recorded as a list, which the reader's language joins (ADR-090):
+    // never "FOCUS-60CT 6, SCOOP 5" in every language.
+    expect(await carried('en')).toContain('FOCUS-60CT 6 and SCOOP 5');
+    expect(await carried('zh-Hans')).toContain('FOCUS-60CT 6 和 SCOOP 5');
+  });
+
   it('names the item whose list price was set, as a receipt names its line', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const variantId = await createVariant(alpha.agent, {

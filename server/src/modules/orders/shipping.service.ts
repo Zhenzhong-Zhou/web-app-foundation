@@ -285,14 +285,13 @@ export class ShippingService {
         }
       }
 
-      // What left, readable in History without opening the shipment.
+      // What left, readable in History without opening the shipment: a
+      // list, which History joins the way its reader's language joins one.
       recordContext({
-        items: input.lines
-          .map(
-            (requested) =>
-              `${lineFor(lines, requested.lineId).sku} ${requested.quantity}`,
-          )
-          .join(', '),
+        items: input.lines.map(
+          (requested) =>
+            `${lineFor(lines, requested.lineId).sku} ${requested.quantity}`,
+        ),
       });
 
       this.logger.log(

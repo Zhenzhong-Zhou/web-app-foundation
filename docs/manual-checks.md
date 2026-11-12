@@ -796,7 +796,12 @@ folder by folder; these check what is already in place.
   invitation's email in Mailpit, sent in 中文, names them Warehouse 和
   Sales too, since the server's lists join the same way. Every other
   list joins so: Roles → Delete on a made role two members hold names
-  them with a space each side of 和.
+  them with a space each side of 和. So do the server's refusals and
+  History: a new sale of two items with no price, confirmed in 中文, is
+  refused naming the two codes with a space each side of 和, and in
+  English with "and" between them, never a comma alone; ship two lines
+  of a confirmed sale together, and its History's 物品 joins each code
+  and quantity by 和 the same way.
 - **MC-1420** *(ADR-054's November 2026 amendment, R11; #486)* What a
   file may be, in plain words first, its size never broken from its
   unit. On the Account page, under your photo: A photo or picture, up to
@@ -5922,3 +5927,7 @@ first.
 - 2026-11-12: ADR-054's November amendment, R11 (#148): Work details'
   Work phone and Extension refuse letters in words naming the field, not
   class-validator's "is not in the expected form": MC-1418 extended.
+- 2026-11-12: ADR-054's November amendment, R11 (#501): the server's
+  own lists, in refusals, History, a voided invoice's credit notes and a
+  run's variances, join as each language joins one, not with a comma:
+  MC-1419 extended.

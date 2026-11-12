@@ -729,6 +729,7 @@
   "notifications.stockLow.oneBody": "{source, select, made {{name}。请在“库存下限”中计划生产订单。} other {{name}。请在“库存下限”中创建采购订单。}}",
   "notifications.stockLow.several": "{count, plural, other {# 个物品库存不足}}",
   "notifications.stockLow.severalBody": "{what, select, bought {{items}。请在“库存下限”中订购。} made {{items}。请在“库存下限”中计划生产。} other {{items}。请在“库存下限”中订购或计划生产。}}",
+  "notifications.variance.body": "{lines}",
   "notifications.variance.lines": "一个生产订单关闭时有 {count, plural, other {# 行}}偏离计划",
   "notifications.variance.output": "一个生产订单按计划 {planned} 实际产出 {produced}",
   "numbering.dateOrder": "{kind, select, invoice {发票} other {贷项通知单}}按日期顺序编号，而 {number} 的日期是 {date}。请将这张的日期设为 {date} 或之后。",

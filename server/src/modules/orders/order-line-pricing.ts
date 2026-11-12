@@ -248,7 +248,8 @@ export function assertOneSaleCurrency(
           defaultMessage:
             'This sale is in {currencies}, so {sku} cannot be priced in {currency}',
         },
-        { currencies: [...currencies].sort().join(', '), sku, currency },
+        // A list, joined the way each language joins one.
+        { currencies: [...currencies].sort(), sku, currency },
       ),
     );
   }

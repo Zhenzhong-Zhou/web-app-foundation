@@ -297,16 +297,29 @@ export class ProductionCloseService {
               { count: variances.length },
             );
 
+        // Each line off plan, as a list the reader's language joins.
+        const body =
+          variances.length > 0
+            ? t(
+                {
+                  id: 'notifications.variance.body',
+                  defaultMessage: '{lines}',
+                },
+                {
+                  lines: variances.map(
+                    (v) => `${v.sku}: ${Math.round(v.variance * 100)}%`,
+                  ),
+                },
+              )
+            : undefined;
+
         await this.notifications.emit(
           recipients.map((userId) => ({
             userId,
             organizationId,
             type: NOTIFICATION_TYPES.PRODUCTION_VARIANCE,
             title,
-            body:
-              variances
-                .map((v) => `${v.sku}: ${Math.round(v.variance * 100)}%`)
-                .join(', ') || undefined,
+            body,
             resourceType: 'production_order',
             resourceId: runId,
           })),
