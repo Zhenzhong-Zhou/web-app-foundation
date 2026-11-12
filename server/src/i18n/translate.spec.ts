@@ -1,4 +1,7 @@
+import { SUPPORTED_LOCALES } from '../common/locales';
 import {
+  languageName,
+  languageWord,
   localeOf,
   recipientLocale,
   t,
@@ -201,6 +204,41 @@ describe('values', () => {
       'les permissions de Lecteur et Warehouse lead; vous ne pouvez donc pas les attribuer.',
     );
     expect(translate(refused, 'zh-Hans')).toContain('查看者和Warehouse lead');
+  });
+
+  // ADR-054's November 2026 amendment: as the item's page names it, never
+  // in its own name, which ran English into Chinese.
+  it('names a language in the language of the sentence around it', () => {
+    const refused = t(
+      {
+        id: 'invoices.skuLanguageNameWhich',
+        defaultMessage:
+          '{which, select, variant {The variant {sku} ({variation}) of {product}} other {{product} ({sku})}} has no {language} name, which this organization requires on its documents. Add it on the item’s page, under Names in other languages.',
+      },
+      {
+        which: 'product',
+        sku: 'FOCUS-60CT',
+        product: 'Focus',
+        variation: '',
+        language: languageName('en'),
+      },
+    );
+
+    expect(refused.message).toContain('Focus (FOCUS-60CT) has no English name');
+    expect(translate(refused, 'fr-CA')).toContain('n’a pas de nom en anglais');
+    expect(translate(refused, 'zh-Hans')).toContain('没有英语名称');
+  });
+
+  it('names each language by its language alone, in each', () => {
+    expect(
+      SUPPORTED_LOCALES.map((reader) =>
+        SUPPORTED_LOCALES.map((language) => languageWord(language, reader)),
+      ),
+    ).toEqual([
+      ['English', 'French', 'Chinese'],
+      ['anglais', 'français', 'chinois'],
+      ['英语', '法语', '中文'],
+    ]);
   });
 
   it('words a verb with spaces in every language, the English unchanged', () => {

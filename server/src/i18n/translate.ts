@@ -37,9 +37,9 @@ import chinese from './zh-Hans.json';
 /**
  * A value a message can carry: data; a list, joined the way the language
  * joins a list ("CAD and USD", "CAD et USD", "CAD和USD"), whose items may
- * be messages of their own, as a built-in role's name is; or a whole
- * message of its own, rendered in the same language as the sentence
- * around it.
+ * be messages of their own, as a built-in role's name is; a whole message
+ * of its own, rendered in the same language as the sentence around it; or
+ * a language, named in that language too (`languageName`).
  */
 export type MessageValue =
   | string
@@ -48,7 +48,47 @@ export type MessageValue =
   | null
   | undefined
   | readonly (string | Translatable)[]
-  | Translatable;
+  | Translatable
+  | LanguageName;
+
+/** A language as a message's value, named as the sentence is rendered. */
+export interface LanguageName {
+  languageName: Locale;
+}
+
+/**
+ * A language for a message to name in the reader's language, as
+ * `languageWord` names it: has no Chinese name, n’a pas de nom en chinois,
+ * 没有中文名称.
+ */
+export function languageName(language: Locale): LanguageName {
+  return { languageName: language };
+}
+
+/**
+ * A language named in a reader's, from its language alone, by Intl's
+ * names: Chinese, chinois, 中文 for zh-Hans, never Simplified Chinese
+ * (ADR-054's November 2026 amendment). Never its own name inside a
+ * sentence, which ran English into Chinese and 简体中文 into French. The
+ * item's page names it from the same source (`languageWord` in the
+ * client's lib/locales.ts), so a refusal and the page it sends a person to
+ * say it alike, as client/e2e/document-refusals.spec.ts holds in a browser.
+ */
+export function languageWord(language: Locale, reader: Locale): string {
+  return (
+    new Intl.DisplayNames([reader], { type: 'language' }).of(
+      new Intl.Locale(language).language,
+    ) ?? language
+  );
+}
+
+function isLanguageName(value: unknown): value is LanguageName {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as LanguageName).languageName === 'string'
+  );
+}
 
 /**
  * What a translatable exception carries as its response body. `message` is
@@ -100,6 +140,7 @@ function flatValues(
   const nested = (value: Translatable) =>
     locale === DEFAULT_LOCALE ? value.message : translate(value, locale);
   const flatten = (value: MessageValue) => {
+    if (isLanguageName(value)) return languageWord(value.languageName, locale);
     if (isTranslatable(value)) return nested(value);
     if (Array.isArray(value)) {
       return joinList(

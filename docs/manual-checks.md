@@ -639,8 +639,12 @@ folder by folder; these check what is already in place.
   top names it and says orders and invoices holding the item cannot
   print. Add opens Edit names with that field focused, 简体中文 marked
   required, and its intro no longer says a blank prints the base name
-  there. Once added, the invoice issues, and its printed lines show the
-  Chinese names.
+  there. The line, the intro and the refusal name the language in the
+  reader's language, alike: the Chinese name and has no Chinese name, le
+  nom en chinois and n’a pas de nom en chinois, 物品的中文名称 and
+  没有中文名称; never 简体中文 inside an English or French sentence. Once
+  added, the invoice issues, and its printed lines show the Chinese
+  names.
 - **MC-1409** On a partner, Document languages: left alone, the first
   reads The organization's default and the second Nothing else, never a
   blank box. The first offers the
@@ -1825,7 +1829,7 @@ await fetch(`${api}/v1/files/product-image`, {
   variant has no English name. Press Print: a new tab shows a page, not
   the API's words, and in Chinese as the app is, not in the browser's
   English: 无法生成此 PDF, a sentence naming the variant by its code and
-  its name and the language in Chinese, 没有英文名称, never 没有English名称,
+  its name and the language in Chinese, 没有英语名称, never 没有English名称,
   打开物品, which opens the item where its names are, and
   返回订单, which opens the order. It is light or dark as the browser is,
   and on a phone its links are easy to tap. Download PDF shows the same
@@ -4099,11 +4103,11 @@ first.
 - **MC-R79** *(Edit names labelling every language's fields only 名称 or
   描述, #315)* As the demo Owner in 中文, on 专注胶囊 60 粒, 添加规格
   FOCUS-120CT named 120ct, then 编辑名称. With VoiceOver on (⌘ F5), Tab
-  through the dialog: each field is read with its language, 名称（English）,
-  描述（English） and FOCUS-120CT：120ct（English）, then the same for
-  Français (Canada) and 简体中文, no two alike. In English they read Name
-  in English, Description in English and FOCUS-120CT: 120ct, in English;
-  in Français, Nom en English.
+  through the dialog: each field is read with its language in Chinese,
+  名称（英语）, 描述（英语） and FOCUS-120CT：120ct（英语）, then the same for
+  法语 and 中文, no two alike, under headings that keep each language's
+  own name. In English they read Name in English, Description in English
+  and FOCUS-120CT: 120ct, in English; in Français, Nom en anglais.
 
 - **MC-R78** *(Grey placeholders flashing before a quick read, and a ⋯
   heard as a plain button, #358)* As the demo Owner on a fast connection:
@@ -5863,3 +5867,7 @@ first.
   writes one text for each row from ChatGPT's and Claude's reviews, set
   aside where the text changed since the export, each checked by the
   rules check and the meaning check before it goes in: MC-1405 extended.
+- 2026-11-12: ADR-054's November amendment, R11: the item's page and
+  Edit names name a language inside a sentence in the reader's language,
+  by Intl's names as the server's refusal now does too, 没有英语名称 for
+  没有英文名称: MC-1408 extended, MC-2513 and MC-R79 updated.

@@ -2,11 +2,10 @@ import { ConflictException } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
-import type { Locale } from '../../common/locales';
 import type { DocumentLanguages } from '../../core/organizations/document-languages';
 import type { Transaction } from '../../database/database.module';
 import { organizations } from '../../database/schema';
-import { t, type Translatable } from '../../i18n/translate';
+import { languageName, t } from '../../i18n/translate';
 import { itemName } from '../stock/item-name';
 
 /** What an issued line prints, in the invoice's one or two languages. */
@@ -30,18 +29,6 @@ type NameRow = {
   first_variant: string | null;
   second_product: string | null;
   second_variant: string | null;
-};
-
-/**
- * A language named in the reader's language, as the exports' columns name
- * it: 没有英文名称, n’a pas de nom en anglais (ADR-054's November 2026
- * amendment). Its own name, as the product page's columns write it, ran
- * Latin into a Chinese sentence and 简体中文 into a French one.
- */
-const LANGUAGE_WORDS: Record<Locale, Translatable> = {
-  en: t({ id: 'invoices.language.english', defaultMessage: 'English' }),
-  'fr-CA': t({ id: 'invoices.language.french', defaultMessage: 'French' }),
-  'zh-Hans': t({ id: 'invoices.language.chinese', defaultMessage: 'Chinese' }),
 };
 
 /**
@@ -175,7 +162,8 @@ export async function namedLines(
               sku: untranslated.sku,
               product: untranslated.product_name,
               variation: untranslated.variant_name ?? '',
-              language: LANGUAGE_WORDS[slot.language],
+              // In the reader's language, as the item's page names it.
+              language: languageName(slot.language),
             },
           ),
           ERROR_CODES.itemNameMissing,

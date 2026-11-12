@@ -18,7 +18,12 @@ import { useIntl } from 'react-intl';
 import type { ProductDetail } from '../api/types.gen';
 import { NO_VALUE, SEPARATOR } from '../lib/format';
 import { HIDDEN } from '../lib/hidden';
-import { LANGUAGE_NAMES, type Locale, SUPPORTED_LOCALES } from '../lib/locales';
+import {
+  LANGUAGE_NAMES,
+  languageWord,
+  type Locale,
+  SUPPORTED_LOCALES,
+} from '../lib/locales';
 import { openDialog } from '../lib/open-dialog';
 import { missingNames, type NameAt, rowsOf } from './name-rows';
 
@@ -69,7 +74,7 @@ export function ItemNames({
         id: 'products.names.which',
         defaultMessage: 'the {language} name of {row}',
       },
-      { language: LANGUAGE_NAMES[at.locale], row: rowWords(at.sku) },
+      { language: languageWord(at.locale, intl.locale), row: rowWords(at.sku) },
     );
 
   return (

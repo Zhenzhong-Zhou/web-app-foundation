@@ -38,7 +38,8 @@ describe('TranslationsDialog', () => {
    * Every language has a name, a description and each named variant's
    * name. A screen reader announces a field by its label, not the heading
    * above it, so each label names its language, and no two are alike
-   * (#315).
+   * (#315): in the reader's language, as the server's refusal does, the
+   * heading keeping its own name (ADR-054's November 2026 amendment).
    */
   it('names each field’s language in its label', () => {
     render(
@@ -50,7 +51,7 @@ describe('TranslationsDialog', () => {
       />,
     );
 
-    for (const language of ['English', 'Français (Canada)', '简体中文']) {
+    for (const language of ['English', 'French', 'Chinese']) {
       expect(
         screen.getByRole('textbox', { name: `Name in ${language}` }),
       ).toBeInTheDocument();

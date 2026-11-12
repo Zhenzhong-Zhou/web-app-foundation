@@ -45,6 +45,25 @@ export function pickerName(locale: Locale): string {
   return LANGUAGE_NAMES[locale] + (UNREVIEWED_MARK[locale] ?? '');
 }
 
+/**
+ * A language named in the reader's language inside a sentence, from its
+ * language alone, by Intl's names: Chinese, chinois, 中文 for zh-Hans
+ * (ADR-054's November 2026 amendment). Its own name there ran English into
+ * Chinese and 简体中文 into French; a heading or a choice of language keeps
+ * LANGUAGE_NAMES. The server names it from the same source in a refusal
+ * (`languageWord` in server/src/i18n/translate.ts), so the refusal and the
+ * item's page it sends a person to say it alike, as
+ * e2e/document-refusals.spec.ts holds in a browser. `reader` is
+ * `intl.locale`, read as the language the app is in.
+ */
+export function languageWord(language: Locale, reader: string): string {
+  return (
+    new Intl.DisplayNames([matchLocale(reader) ?? DEFAULT_LOCALE], {
+      type: 'language',
+    }).of(new Intl.Locale(language).language) ?? language
+  );
+}
+
 export function isLocale(value: unknown): value is Locale {
   return (SUPPORTED_LOCALES as readonly unknown[]).includes(value);
 }
