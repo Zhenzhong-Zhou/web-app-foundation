@@ -284,3 +284,97 @@ test("import refuses a correction to a message removed since the export, writing
   );
   assert.equal(readText(root, "client/src/locales/fr-CA.json"), before);
 });
+
+/** Every catalogue's text, to show an import refused wrote nothing. */
+const allCatalogues = (root) =>
+  Object.fromEntries(
+    Object.keys(CATALOGUES).map((file) => [file, readText(root, file)]),
+  );
+
+test("import refuses a correction whose English changed since the export, writing nothing", (t) => {
+  const root = fixture(t);
+  assert.equal(review(root, "export").status, 0);
+  correct(root, "review/fr-CA.xlsx", {
+    greeting: "Salut, {name}",
+    "mail.subject": "Facture no {number}",
+  });
+
+  // greeting's English is reworded after the export.
+  writeJson(root, "client/src/locales/en.json", {
+    ...CATALOGUES["client/src/locales/en.json"],
+    greeting: "Hi, {name}",
+  });
+  const before = allCatalogues(root);
+
+  const run = review(root, "import", path.join(root, "review/fr-CA.xlsx"));
+  assert.equal(run.status, 1);
+  assert.match(run.stderr, /^Nothing written\./);
+  assert.match(
+    run.stderr,
+    /row 3 greeting: its English changed since the export, so clear its Correction; the next round reads it/,
+  );
+  assert.doesNotMatch(run.stderr, /mail\.subject/);
+  assert.deepEqual(allCatalogues(root), before);
+});
+
+test("import refuses a correction whose translation changed since the export", (t) => {
+  const root = fixture(t);
+  assert.equal(review(root, "export").status, 0);
+  correct(root, "review/zh-Hans.xlsx", { "mail.subject": "发票 {number} 号" });
+
+  // Someone else's commit corrects the same message after the export.
+  writeJson(root, "server/src/i18n/zh-Hans.json", {
+    "mail.subject": "发票 #{number}",
+  });
+  const before = allCatalogues(root);
+
+  const run = review(root, "import", path.join(root, "review/zh-Hans.xlsx"));
+  assert.equal(run.status, 1);
+  assert.match(
+    run.stderr,
+    /row 4 mail\.subject: its translation changed since the export, so clear its Correction; the next round reads it/,
+  );
+  assert.deepEqual(allCatalogues(root), before);
+});
+
+test("import takes a correction whose English changed only in its apostrophes", (t) => {
+  const root = fixture(t);
+  assert.equal(review(root, "export").status, 0);
+  correct(root, "review/fr-CA.xlsx", { farewell: "Ne t’en va pas" });
+
+  // #184's kind of change: ' for ’, nothing a reviewer reads differently.
+  writeJson(root, "client/src/locales/en.json", {
+    ...CATALOGUES["client/src/locales/en.json"],
+    farewell: "Don’t go",
+  });
+
+  const run = review(root, "import", path.join(root, "review/fr-CA.xlsx"));
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(
+    readText(root, "client/src/locales/fr-CA.json"),
+    `${JSON.stringify({ farewell: "Ne t’en va pas", greeting: "Bonjour, {name}" }, null, 2)}\n`,
+  );
+});
+
+test("import refuses a workbook without the English or Translation title, naming it", (t) => {
+  const root = fixture(t);
+  assert.equal(review(root, "export").status, 0);
+
+  // The reviewer deletes the Translation column before returning it.
+  const file = "review/fr-CA.xlsx";
+  const { sheetName, rows } = sheet(root, file);
+  const at = HEADER.indexOf("Translation");
+  const kept = rows.map((row) => row.filter((_, index) => index !== at));
+  writeFileSync(
+    path.join(root, file),
+    workbook(
+      sheetName,
+      kept[0].map((title) => ({ title, width: 30 })),
+      kept,
+    ),
+  );
+
+  const run = review(root, "import", path.join(root, file));
+  assert.equal(run.status, 1);
+  assert.match(run.stderr, /^The first row has no Translation title\./);
+});

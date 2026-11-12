@@ -30,9 +30,12 @@
  * Correction, and writes it into the right catalogue. It refuses the whole
  * file, writing nothing, if any correction is not valid ICU, does not keep
  * exactly the English's placeholders, or belongs to a message removed
- * since the export (clear that row's Correction); the problems are listed
- * by row. Afterwards, run `npm run i18n:check` in client/ and server/ and
- * look at `git diff`.
+ * since the export or whose English or translation changed since (its row
+ * no longer what the catalogues say, English changed only in its quotes
+ * aside, as for --since); clear that row's Correction, and the next round
+ * reads the message at its new text. The problems are listed by row.
+ * Afterwards, run `npm run i18n:check` in client/ and server/ and look at
+ * `git diff`.
  *
  * No dependencies of its own: a workbook is a zip of XML, and Node has
  * zlib. It uses the FormatJS CLI and ICU parser each package already has,
@@ -319,14 +322,18 @@ function importWorkbook(file) {
   }
 
   const header = rows[0] ?? [];
-  const column = (title) => header.indexOf(title);
-  const [areaAt, idAt, correctionAt] = ["Area", "Id", "Correction"].map(column);
-  if ([areaAt, idAt, correctionAt].includes(-1)) {
+  const titles = ["Area", "Id", "English", "Translation", "Correction"];
+  const missing = titles.filter((title) => !header.includes(title));
+  if (missing.length > 0) {
     console.error(
-      "The first row must keep the Area, Id and Correction titles.",
+      `The first row has no ${missing.join(" or ")} title. ` +
+        `Keep the titles export wrote: ${titles.join(", ")}.`,
     );
     process.exit(1);
   }
+  const [areaAt, idAt, englishAt, translationAt, correctionAt] = titles.map(
+    (title) => header.indexOf(title),
+  );
 
   const catalogues = Object.fromEntries(
     AREAS.map((area) => [
@@ -357,6 +364,27 @@ function importWorkbook(file) {
     if (!(id in target.english)) {
       problems.push(
         `${at} ${id}: removed from ${row[areaAt]} since the export, so there is nothing to correct; clear the row's Correction`,
+      );
+      return;
+    }
+
+    // A correction is to the text the reviewer read; on newer text it would
+    // undo a change no round has seen (ADR-054's November 2026 amendment).
+    const englishChanged = !sameEnglish(
+      row[englishAt] ?? "",
+      target.english[id],
+    );
+    const translationChanged =
+      (row[translationAt] ?? "") !== (target.translated[id] ?? "");
+    if (englishChanged || translationChanged) {
+      const what =
+        englishChanged && translationChanged
+          ? "its English and its translation"
+          : englishChanged
+            ? "its English"
+            : "its translation";
+      problems.push(
+        `${at} ${id}: ${what} changed since the export, so clear its Correction; the next round reads it`,
       );
       return;
     }

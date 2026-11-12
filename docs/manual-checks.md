@@ -726,7 +726,11 @@ folder by folder; these check what is already in place.
   English changed only in its apostrophes or quotation marks is left out,
   and the count printed. A commit git cannot find is refused. Import reads
   either file, and names a corrected row whose message was removed since,
-  writing nothing until that row's Correction is cleared.
+  or whose English or translation changed since, English changed only in
+  its apostrophes or quotation marks aside, writing nothing until that
+  row's Correction is cleared; the next round reads that message at its
+  new text. A workbook without the English or Translation title is
+  refused, naming it.
 - **MC-1406** In Français and in 简体中文, every area converted so far
   reads entirely in that language, with no English left on it:
   - signed out: sign-in, register, forgot-password, reset and verify,
@@ -5663,3 +5667,6 @@ first.
   corrected.
 - 2026-11-11: #557, a dark main button under the pointer turns lighter,
   away from its dark text: MC-R103 added.
+- 2026-11-12: ADR-054's November amendment, R3: the review's import
+  refuses a correction whose English or translation changed since its
+  export: MC-1405 extended.
