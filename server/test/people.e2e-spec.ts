@@ -127,12 +127,23 @@ describe('People (e2e)', () => {
     await alpha.agent.get(`/v1/people/${alpha.userId}/photo`).expect(404);
   });
 
-  it('refuses a photo that is not an image', async () => {
+  it('refuses a photo that is not an image, a person’s picture 头像 in Chinese', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     await alpha.agent
       .post('/v1/account/photo')
       .attach('file', Buffer.from('%PDF-1.7\n'), 'cv.pdf')
       .expect(400);
+
+    // Its own message, not an item photo's 照片 (ADR-054's November 2026
+    // amendment).
+    const refused = await alpha.agent
+      .post('/v1/account/photo')
+      .set('Accept-Language', 'zh-Hans')
+      .attach('file', Buffer.from('%PDF-1.7\n'), 'cv.pdf')
+      .expect(400);
+    expect(body<{ message: string }>(refused).message).toBe(
+      '头像必须是 PNG、JPEG 或 WebP 图片',
+    );
   });
 
   it('keeps details at work per person, shown on People', async () => {

@@ -725,7 +725,8 @@ folder by folder; these check what is already in place.
   glossary's Words not to use and Quebec typography. In 中文, the Account
   page's button for a person's picture reads 添加头像, and Help on Account
   and on People says 头像 for it, never 照片; an item's photos still say
-  照片. Help on Items says 一个商品，两个市场, not 产品. In Français, Add
+  照片. A PDF chosen as your own photo is refused with 头像必须是 PNG、JPEG
+  或 WebP 图片, and one added to an item's images with 照片必须是…. Help on Items says 一个商品，两个市场, not 产品. In Français, Add
   item asks « Qu’est-ce que c’est? » with no space before the ?, and on a
   phone (390 px) no line of Help on Home or Items starts with a colon.
   `node scripts/i18n-rules.mjs` holds each, in both packages'
@@ -1720,7 +1721,7 @@ await fetch(`${api}/v1/files/product-image`, {
   返回订单, which opens the order. It is light or dark as the browser is,
   and on a phone its links are easy to tap. Download PDF shows the same
   page in place of the app, and 返回订单 brings the order back. Sign out
-  in another tab, then press Print on the order: the page says 您已退出登录
+  in another tab, then press Print on the order: the page says 您尚未登录
   with 登录, which signs you in and opens the order.
 
 ## 26. Each organization's time zone (ADR-072)

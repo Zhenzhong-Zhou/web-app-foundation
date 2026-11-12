@@ -6,6 +6,7 @@
   "account.password.noneSet": "Ce compte n’a pas de mot de passe. Utilisez plutôt le lien de réinitialisation.",
   "account.password.wrong": "Ce mot de passe est incorrect. Vérifiez-le et réessayez.",
   "account.photo.missing": "Choisissez une photo à téléverser",
+  "account.photo.type": "Une photo doit être une image PNG, JPEG ou WebP",
   "account.sessions.notFound": "Session introuvable",
   "account.sessions.useSignOut": "Utilisez Se déconnecter pour terminer la session en cours.",
   "audit.action.bomArchived": "Recette archivée",

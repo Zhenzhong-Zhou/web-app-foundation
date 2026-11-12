@@ -53,9 +53,11 @@ export class AccountPhotoService {
   ): Promise<{ photoFileId: string }> {
     const type = sniff(upload.buffer);
     if (!type || !ACCEPTS.includes(type)) {
+      // A message of its own, not an item photo's: Chinese names a
+      // person's picture 头像 (ADR-054's November 2026 amendment).
       throw new BadRequestException(
         t({
-          id: 'files.photo.type',
+          id: 'account.photo.type',
           defaultMessage: 'A photo must be a PNG, JPEG or WebP image',
         }),
       );

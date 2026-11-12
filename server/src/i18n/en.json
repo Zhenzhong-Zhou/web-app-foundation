@@ -6,6 +6,7 @@
   "account.password.noneSet": "This account has no password set. Use the reset link instead.",
   "account.password.wrong": "That password is not correct. Check it and try again.",
   "account.photo.missing": "Choose a photo to upload",
+  "account.photo.type": "A photo must be a PNG, JPEG or WebP image",
   "account.sessions.notFound": "No such session",
   "account.sessions.useSignOut": "Use sign out to end the current session.",
   "audit.action.bomArchived": "Recipe archived",
