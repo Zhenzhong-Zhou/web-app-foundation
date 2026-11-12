@@ -88,21 +88,57 @@ export function itemRank(
   );
 }
 
-/** The outer product's variants, in the organization. */
-export function variantsOf(organizationId: string): SQL {
-  return and(
-    eq(productVariants.organizationId, organizationId),
-    eq(productVariants.productId, products.id),
-  )!;
+/** A search over Items, worked out once for its statement (#547). */
+export interface ItemSearch {
+  /** The CTE, `matching`, for the statement's WITH (withOf). */
+  cte: SQL;
+  /** Whether a product is among those found. */
+  found: SQL;
+  /** Its closest variant's rank, from `join`. */
+  rank: SQL;
+  /** The join that brings `rank` to each product. */
+  join: SQL;
 }
 
 /**
- * The products a search finds, through any of their variants, as an item
- * is found everywhere: Items' list, its counts and its export.
+ * The items a search finds, worked out once for the statement that reads
+ * them (#547): each of the organization's items with a variant that
+ * matches (itemMatches), and its closest variant's rank (itemRank).
+ * Postgres works a `materialized` result out once and keeps it for its
+ * statement, so the match (`found`), the rank and the counts read it
+ * rather than the variants again. Everything that reads `matching` comes
+ * from here, so a statement that reads it has its CTE too; with no search
+ * there is none.
  */
-export function foundBy(terms: SearchTerms, organizationId: string): SQL {
-  return sql`exists (
-    select 1 from ${productVariants}
-    where ${variantsOf(organizationId)} and ${itemMatches(terms, organizationId)}
-  )`;
+export function itemSearch(
+  terms: SearchTerms | null,
+  locale: Locale,
+  organizationId: string,
+): ItemSearch | null {
+  if (!terms) return null;
+  return {
+    cte: sql`matching as materialized (
+      select ${productVariants.productId} as product_id,
+        min(${itemRank(terms, locale, organizationId)}) as rank
+      from ${productVariants}
+      join ${products} on ${and(
+        eq(products.id, productVariants.productId),
+        eq(products.organizationId, organizationId),
+      )}
+      where ${and(
+        eq(productVariants.organizationId, organizationId),
+        itemMatches(terms, organizationId),
+      )}
+      group by ${productVariants.productId}
+    )`,
+    found: sql`${products.id} in (select product_id from matching)`,
+    rank: sql`matching.rank`,
+    join: sql`left join matching on matching.product_id = ${products.id}`,
+  };
+}
+
+/** A statement's WITH, of the CTEs it has, or nothing when it has none. */
+export function withOf(...ctes: (SQL | undefined)[]): SQL {
+  const kept = ctes.filter((cte): cte is SQL => cte !== undefined);
+  return kept.length === 0 ? sql`` : sql`with ${sql.join(kept, sql`, `)}`;
 }

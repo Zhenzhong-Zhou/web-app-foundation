@@ -2,6 +2,7 @@
 status: accepted
 date: 2026-10-01
 areas: [database, ops]
+amends: [ADR-071]
 amended-by: [ADR-081, ADR-082, ADR-091, ADR-092]
 ---
 
@@ -176,6 +177,18 @@ so the timing is the evidence for the name lookup.
   plans are next: a search reads the variants about three times on a
   first page, the match, the rank and the counts (ADR-092's review,
   finding 67).
+  *On GitHub's runners, 10 November 2026* (run 42877776346, on
+  3d2eb4a6, small, the median of three rounds): 174 ms, from rounds of
+  174, 173 and 208, where it was 71 ms on 9 November, before Items
+  (42701373112, on 9021ba0a); `GET /products` went from 62 to 93 ms. The
+  reads Items did not touch ran about 22% faster in the same run, so the
+  runners do not explain it. On the Mac at large the same day, on a
+  fresh seed: 141 ms; plain 41, by type 28, by stock 63 and the
+  categories 10. Taken by the amendment for #547, below: the matching
+  variants read once.
+  *Closed on 11 November 2026 (#558):* 58 ms at large on the Mac, one
+  run, the variants read once; 111 ms, the median at small on GitHub's
+  runners (run 43089449940, on 075ab8bf).
 - **The low list** (ADR-085) works out every point's position on each
   page: 6.3× from small to large, 22 to 138 ms at p95 (1 November 2026,
   #361). Trigger: p95 over budget at small scale. Then the open lines
@@ -189,6 +202,38 @@ so the timing is the evidence for the name lookup.
   each count reads every row it counts. Trigger: `GET /home` over its
   300 ms budget at large in a weekly run. Then the counts kept ready
   rather than counted each time, which needs an ADR.
+  *10 November 2026:* 146 ms median p95 at small on GitHub's runners
+  (137 for a newcomer), and 215 and 210 at large on the Mac. Not fired.
+  *11 November 2026:* 147 and 135 ms at small on GitHub's runners, and
+  196 and 191 at large on the Mac. Not fired.
+- **Home's Expiring-soon count has two plans of nearly equal cost at
+  large** (ADR-071's as-built, 10 November 2026): 0.03 ms or about 24
+  ms, and a fresh `ANALYZE` picks one, so the same rows can take either.
+  Inside the budget either way. Trigger: the plan check's `home` probe at
+  small taking the slower plan, or Home's p95 at large past 240 ms. Then
+  a count whose plan does not hang on fresh statistics, its plans before
+  and after.
+- **Shipping on GitHub's runners,** `POST shipments (FEFO)`, the median
+  p95 at small: 113 ms on 9 November (rounds of 112 to 120,
+  42701373112), 180 ms on 10 November (rounds of 194, 180 and 144,
+  42877776346), across Items' merge and inside its 500 ms budget.
+  Trigger: the weekly run of 16 November, or a later timed run, still
+  over 150 ms. Then its plans, `shipping preview (FEFO)`, and its
+  writes, read before anything changes.
+  *Closed on 11 November 2026:* 99 ms, the median at small (rounds of
+  99, 135 and 86, run 43089449940), under its trigger: the 180 ms of 10
+  November read as the runners'.
+- **An invoice's PDF is drawn on the server's one thread** (the
+  amendment for #547, its review 13): 43 to 48 ms alone at large on the
+  Mac, while every other request waits. Ten at once queue: 438 ms p95 at
+  large on the Mac, and 931 ms, the median at small on GitHub's runners,
+  inside its 1,200 ms budget. The API runs on Render's Free web service,
+  with a part of one processor. Trigger: a person reports the app slow
+  while documents print or an export runs; one PDF on its own past 100
+  ms on the Mac; or, before the move to Render's paid plan, a read timed
+  while PDFs draw (`render.md`'s "Before real customers' data"). Then
+  drawing off the event loop, in a worker thread, and the reads timed
+  beside it.
 - **Valuation** reads every pool by definition. Trigger: an organization
   whose valuation no longer fits a screen. Then an export.
 - **Migrations on large live tables.** 0036 builds its index inside the
@@ -526,3 +571,298 @@ known miss removed in the commit that meets it. Prepared statements stay
 deferred, now until Home's median is over 240 ms in a weekly run on
 `main`. The Watch's "Home after ADR-085" is closed by ADR-091's as-built,
 with its figures.
+
+## Amendment (November 2026) — Items' search in one read, the category filter and an invoice's PDF timed (#547)
+
+The Watch's "one Chinese character on a large catalogue" fired on 9
+November 2026 at 128 ms (ADR-092's reviews, finding 67), and read 141
+ms on 10 November on a large seed made again from `main`. On GitHub's
+runners at small it went from 71 ms before Items to 174 ms after, while
+the reads Items did not touch ran about 22% faster in the same run. A
+search's first page reads the organization's matching variants more
+than once: for the match (`foundBy`), for the rank (`itemOrder`'s
+subquery) and for the counts (`countsOf`); Items' export reads the
+match and the rank the same way (#547).
+
+Three things owed to the budgets ride with it: the category filter,
+timed so far only by a script outside the repository (#547's comment of
+10 November); one invoice's PDF, whose budget ADR-071 deferred until a
+trigger that fired in October and was missed (ADR-071's amendment for
+issue #526, "Found while checking"); and two lines for the Watch from
+the last two branches, Home's Expiring-soon count (ADR-071's as-built) and
+shipping on GitHub's runners (the triage of 10 November). The
+maintainer confirmed the requirements and chose the decisions below on
+10 November 2026, as recommended.
+
+### Requirements, as confirmed
+
+The maintainer confirmed these on 10 November 2026, before drafting,
+with the assumptions, what is not included and the questions' answers.
+Each names its step in the brief, and the as-built marks each met,
+changed or deferred.
+
+| R | What | Done when | Step |
+| --- | --- | --- | --- |
+| R1 | A search reads the organization's matching variants once, for the match, the rank and the counts | `npm run perf:plans` at large shows the variants read once for "products: search" and "products: one character"; the list's, the counts' and the export's tests pass unchanged; the p95 at large and on GitHub's runners in the Watch, whose line closes only when the search is under 100 ms at large | 4, 7, 8 |
+| R2 | A timed read for the category filter, at a top-level and at a bottom-level category | Both in `npm run perf` at both scales, each under 300 ms, their figures here | 5, 7, 8 |
+| R3 | ADR-071's missed budget: one invoice's PDF, timed | Timed at both scales, its budget set as *Decision — an invoice's PDF timed* says; ADR-071 amended, the export keeping a trigger of its own | 1, 6, 7, 8, 9 |
+| R4 | GitHub's medians of 10 November, run 42877776346 | Judged again from the rounds' reports, and written into the Watch beside the Mac's figures of the same day | 1 |
+| R5 | The two rules lines out of date: the products file's plain tile and the search file's Partners export | Each says what `main` does, with its tests; `scripts/check-docs.mjs` passes | 2 |
+| R6 | Home's Expiring-soon count in the Watch | A line with both plans' costs at large, and its trigger | 1 |
+| R7 | The handoff: #556 merged, what is still owed after it, and the triage applied | `scripts/verify.sh --docs` passes, and the handoff says each | 1, 12 |
+
+- **Assumptions:**
+  - A1: this amendment is the first commit of `fix-547-search-plans`,
+    with ADR-071's amendment, a line in `render.md` and the handoff.
+  - A2: no API change and no migration; should the plans ask for an
+    index, the step stops for the maintainer.
+  - A3: the new reads find their ids at the run's start, as the orders'
+    are found, so nothing is seeded again: the top-level category with
+    the most items beneath it, as the plan check's "products: one
+    category" picks it; the bottom-level category under it with the
+    most items; and the organization's issued invoices.
+  - A4: the two category reads take the reads' budget, 300 ms, and the
+    plan check gains the bottom-level probe.
+  - A5: Items' export uses the same match and order, so it reads the
+    variants once too.
+  - A6: the dependencies taken are those 7 days old on the day; the
+    pins on Playwright 1.64.1 and jsdom 30.1.3 are kept.
+  - A7: `foundation_perf_large` is current, seeded on 10 November and
+    migrated through 0080; #554 and #556 added no migration.
+- **Not included:**
+  - N1: #533, #546 and #551's 68, 69 and 72 (Q1).
+  - N2: the other five PDF routes: they share the renderer, so one
+    invoice stands for them.
+  - N3: the search under 100 ms by other means, should one read not be
+    enough: the Watch's line stays open, its next step its plans again.
+  - N4: shipping and Expiring-soon changed: each is watched (Q5, Q6).
+  - N5: #226 and #551's new item, the stock list's joins: stock's, best
+    in one pull request with #226.
+- **The questions' answers:** Q1a, none of the neighbours rides: each
+  changes the API or a screen, and a change made for speed is proven by
+  nothing else changing. This corrects ADR-071's as-built, whose N7
+  called #533 and #546 "#547's own riders". Q2a, the small figures from
+  a timed run on GitHub, started by hand on the branch, and the large
+  from the Mac. Q3a to Q6a, as the decisions below say.
+
+Checked before drafting, for the areas products, search, home,
+invoices, documents, database and ops, on 10 November 2026, from
+`scripts/adr-check.mjs` and github.com's issue pages:
+
+- **Fired, and taken here:**
+  - the Watch's "one Chinese character on a large catalogue" (#547);
+  - ADR-071's Deferred "budgets for the PDF routes and the export": the
+    routes' part, the export's given a trigger of its own;
+  - the two rules lines that #306's and #308's comments of 10 November
+    leave to this branch;
+  - #547's comment of 10 November: the category filter, timed outside
+    the repository at large, 38 ms at a top category with 2,925 items
+    beneath it and 28 at a bottom one with 429.
+- **Not fired, and left:**
+  - #533, #546 and #551's 68, 69 and 72, each `when-touched`: each
+    changes the API (Q1).
+  - #551's 60, the second keyset engine: its trigger is the next list
+    sorted by a worked-out key, and this adds none.
+  - #226 and #551's new item: the plan check's rule, and the stock
+    list's joins; this adds probes only.
+  - #306's and #308's other findings, #154, #261 and #299 (search) and
+    #167 (products): their files are not changed.
+  - Home's `when-touched` issues, #482, #485, #489, #504, #505, #507,
+    #510, #511, #512 and #545: Home's code is not changed.
+  - #164, #264, #278, #282, #487 and #555 (invoices and documents): a
+    PDF is timed, not changed; #278 waits for a new document.
+  - #253 and #314 (ops and database): their files are not changed.
+  - The `later` issues of these areas, #553 among them, and the
+    `fix-now` ones, the translations' batch among them: their triggers
+    are not met, or they have branches of their own.
+  - This ADR's other Watch lines and Deferred, ADR-092's Deferred, and
+    Open decisions' "Performance budgets", which is about the bundle:
+    none bears on this.
+- **Found while checking:**
+  - MC-1801 says an item with no photo shows the plain tile on Items
+    too: corrected with R5.
+  - The medians of 10 November could not be read from the median job's
+    log by its step's name; the rounds' reports, downloaded and judged
+    again with `npm run perf:judge`, give the same table.
+
+### Decision — the matching variants read once
+
+- A search's page works out the organization's matching variants once,
+  each with its product and its rank, in one `with … as materialized`:
+  a named result Postgres works out once and reuses. The match, the rank
+  and the counts read it, and so does Items' export.
+- What a search finds, its order, its counts and its export do not
+  change: no API change and no migration, and the tests pass as they
+  are.
+- Met when the plan check at large shows the variants read once. The
+  Watch's line takes the figures after, at large and on GitHub's
+  runners, and closes only when the search is under 100 ms at large.
+
+### Decision — the category filter timed
+
+- Two reads, `GET /products?category` at a top-level and at a
+  bottom-level category, in `zh-Hans` as Items' other reads, each
+  organization's found at the run's start from `GET /products/categories`:
+  the top-level one with the most items beneath it, as the plan check
+  picks it, and the bottom-level one under it with the most items.
+- The reads' budget, 300 ms. The plan check gains the bottom-level probe
+  beside "products: one category".
+
+### Decision — an invoice's PDF timed, its budget from its first median
+
+- A read, `GET /invoices/:id/pdf`, each request the next of the
+  organization's issued invoices on the list's first page, found at the
+  run's start. Drawing is the processor's work (ADR-071), so ten at once
+  is the load to see.
+- Its budget is 300 ms, the reads', when its first median at small on
+  GitHub's runners is 240 ms or less, the headroom the typo lookup was
+  held to (*Decision — fixed means with headroom*, above); otherwise that
+  median ÷ 0.8, rounded up to the next 100 ms, so a median of 310 ms
+  gives 400.
+- One invoice stands for the six PDF routes, which share the renderer.
+  The export keeps a line of its own in ADR-071's Deferred, its trigger
+  rewritten in ADR-071's amendment of November 2026.
+
+### Decision — three lines for the Watch
+
+- GitHub's medians of 10 November beside the Mac's (R4), on the
+  search's line and on Home's.
+- Home's Expiring-soon count (R6), and shipping on GitHub's runners
+  (Q5): each a line of its own, with its trigger.
+
+### Considered and not done
+
+- **Items' counts asked only when they change (#551's 68), or the
+  category list's counts following the search (#533):** each changes the
+  API, and a change made for speed is proven by nothing else changing
+  (Q1).
+- **The Mac's small volume seeded again for the small figures:** GitHub's
+  runners seed fresh, and the budgets are enforced there (Q2).
+- **The PDF's budget at twice its first median, or 500 ms as a write:**
+  either would hide a slowdown of a half or more; the headroom rule is
+  the one the typo lookup was held to (Q3).
+- **The export timed now at large,** outside the ten connections: a
+  figure for a path no customer uses yet (Q4).
+- **Shipping and Expiring-soon changed now:** each rests on one run
+  inside its budget, which shared runners cannot tell from the machine
+  (the amendment for #342; Q5, Q6).
+
+### Deferred — each with what brings it in
+
+- **The export's budget** (ADR-071): a person reports an export slow,
+  or `render.md`'s "Before real customers' data" times one at large
+  first.
+- **The search under 100 ms by another means,** should one read fall
+  short: its plans again, the Watch's line keeping its trigger.
+
+### Consequences
+
+- **Server:** `item-search.ts`, `item-list.ts` and `products.service.ts`
+  read the matching variants once.
+- **Perf:** `perf/scenarios.ts` gains three reads and what `discover`
+  finds for them, and `perf/plans.ts` the bottom-level probe.
+- **Docs:** the two rules lines and MC-1801; ADR-071's amendment;
+  `render.md`'s "Before real customers' data"; the handoff.
+- No API change, no migration and no seed: the volume seed already holds
+  thirty categories three levels deep and issued invoices. Nothing a
+  person sees changes, so no walkthrough, no pictures and no manual
+  check beyond MC-1801's words.
+- Built on `fix-547-search-plans`, in this order: this amendment, with
+  the handoff; the rules lines; dependencies; the one read; the category
+  filter's reads; the PDF's read; the timings at large; a timed run on
+  GitHub; the PDF's budget; dependencies again; the reviews; the
+  as-built.
+
+### As built
+
+Built on 10 and 11 November 2026 on `fix-547-search-plans`, 19 commits
+with this as-built, pull request #558.
+
+- **The requirements,** each marked:
+
+  | R | Now |
+  | --- | --- |
+  | R1 | Met: the variants read once for the match in both search probes, at large (76 buffers) and at small (10), from 5 reads; the probe 85.3 to 19.6 ms at large, one character 83.9 to 25.4; the search 141 to 58 ms at large on the Mac and 174 to 111 ms at small on GitHub's runners; the tests unchanged, three new (c9e63b03, f5ec407a, b4826188); the Watch's line closed |
+  | R2 | Met: the top category 39 ms at large on the Mac and 106 at small on GitHub's runners, the bottom 29 and 97 (dbd229bb) |
+  | R3 | Met: 1,200 ms, from a first median of 931 ms (04fb0371, 8662ed7a); ADR-071 amended (1d12181d). The first weekly run on `main` after the merge judges it |
+  | R4 | Met, 1d12181d |
+  | R5 | Met, 9333ef8c, with MC-1801 |
+  | R6 | Met, 1d12181d |
+  | R7 | Met, 1d12181d and this as-built |
+
+- **Measured against the brief's guesses,** minutes and the tokens the
+  Agent tool counted:
+
+  | Step | Model | Minutes (guess) | Tokens |
+  | --- | --- | --- | --- |
+  | 3 | sonnet | 2 (5), no commit | 55,718 |
+  | 4 | opus | 12 (40) | 155,100 |
+  | 5 | sonnet | 8 (20) | 101,643 |
+  | 6 | sonnet | 6 (15) | 92,307 |
+  | 7 | sonnet | 19 (45), no commit | 96,339 |
+  | 9 | sonnet | 5 (5) | 82,894 |
+  | 10 | sonnet | 1 (10), no commit | 67,276 |
+  | 11, findings | opus | 15 (60, both prompts) | not shown |
+  | 11, fixes | opus | 40 | not shown |
+
+  The run took about half its guess, 108 minutes against 200, as on the
+  router's branch; step 4 a third of its own.
+- **Built differently:**
+  - `matching` holds one row per item, its rank the lowest of its
+    matching variants', where the decision said each matching variant.
+    The rank means what it did: only the code differs between variants,
+    and a variant whose code ranks also matches.
+  - One builder, `itemSearch` in `item-search.ts`, gives the result and
+    everything that reads it, the match, the rank and its join (6c56080e,
+    review 2), where each caller first wrote `withMatching` by hand.
+  - A first page's places are a result of their own, aggregated beside
+    its counts, so the statement answers one row whatever is found and
+    whatever a sort joins (f5ec407a, review 1). As first built, the
+    places were left-joined to the counts, and a sort's inner join would
+    have made a search that finds nothing a 500.
+  - The code rule's line is in `.claude/rules/search.md`, citing this
+    amendment, since `products.md` is at its 40-line limit.
+  - A bottom-level category is one with no category beneath it, at any
+    depth: the third level in the volume seed. `pickCategories`
+    (`server/perf/categories.ts`) is the one rule for the timed reads
+    and the plan check, with its spec, and the plan check stops when
+    there is none (a9d06c58).
+  - The PDF read sends no language: a document is drawn in its
+    customer's.
+  - The timed run on GitHub lost round 2's report to GitHub's store for
+    a job's files. Round 2 ran again two hours later, on a runner 30 to
+    40% slower, and the median took it, as the amendment for #342 meant.
+- **Riders, each its own commit:**
+  - Linux WebKit's run in the full verify keeps a failed test's trace
+    (7a5a7f35, part of #521). The chat's first patch missed
+    `scripts/verify.test.mjs`, which holds the run's exact command, and
+    the commit was amended with it before the push.
+  - Postgres in Docker gets 256 MB of shared memory, on the Mac
+    (075ab8bf) and on GitHub's runners (fedf5347): at the large seed's
+    stress pass, its parallel workers outgrew Docker's 64 MB and
+    answered 500s on `/stock/availability`, 349 and 330.
+  - `/review-step` runs `/simplify` with no argument, which it read as
+    what to review (360f5869, review 16). ADR-089's account of its own
+    reviews keeps the old words, as history.
+  - `server/perf/README.md` lists the category reads and the PDF's
+    budget (1d870f1b, review 10).
+- **The reviews:** no walkthrough panel, since nothing a person sees
+  changes; `/simplify`, `/code-review`, `/production-readiness` on
+  performance and `/doctor prompt-audit`, 17 findings. Fixed: 1, 2, 4, 5,
+  6, 9, 10, 11, 12, 15 and 16. Left: 3, the result hashed twice a
+  statement, about 0.03 ms; 7, the category pick's setup, once a run; 8,
+  the PDF's budget given beside `read()` until a third budget of its
+  own; 14, the 1,200 ms judged by the weekly run; and 17, `brief-step`'s
+  ten to fifteen lines, which ADR-089 chose. 13 is the Watch's line on
+  the PDF's thread.
+- **Found:**
+  - The full verify's one miss, in the Mac's WebKit, dark mode, "items,
+    Add item": axe measured the page's Add item button, hovered after its
+    click, before WebKit drew the dialog's backdrop. A main button's
+    hover in dark mode is about 3.7 : 1 under its dark text: #557,
+    `fix-now`, the theme's and not this branch's. Alone, the test passed
+    10 times in 10.
+  - Shipping's 180 ms of 10 November read as the runners': 99 ms here.
+  - Two releases newer than the handoff's Dates, prettier 3.10.0 and
+    `@aws-sdk/client-s3` 3.1167.0; the last now comes of age on 18
+    November, 13:10.

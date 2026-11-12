@@ -153,10 +153,20 @@ answers:
     pickers by pinyin, both asked in Chinese; and Partners by part of a
     name; and Products unsearched, asked in Chinese, which sorts and names
     every product by the name shown;
+  - Items' categories (ADR-092): the category tree with its counts, and
+    the list filtered by a category, at the top-level one with the most
+    items beneath it, which reads its whole branch, and at the
+    bottom-level one under it with the most items, both asked in Chinese;
   - Home (ADR-058), an owner's and a newcomer's, and Recently opened;
   - dates and sorting (ADR-057): the first page of the invoices by total,
     the orders by expected date and the stock by expiry, and the invoices
     and movements of the last thirty days.
+- **One invoice's PDF, p95 under 1,200 ms** (ADR-071), each request the
+  next of the first page of issued invoices. It stands for the six PDF
+  routes, which share the renderer. Drawing is the server's own work, one
+  at a time, so ten connections queue behind each other: its budget is
+  its first median on GitHub's runners, 931 ms, divided by 0.8 and rounded
+  up to the next 100 ms (ADR-051, amended for #547).
 - **Writes, p95 under 500 ms:** receiving into a new lot, shipping with
   lots chosen earliest expiry first, issuing an invoice, issuing a credit.
   Perf makes its own orders and invoices for these before timing, so it

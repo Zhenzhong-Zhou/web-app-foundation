@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-16
 areas: [invoices, orders, documents]
 amends: [ADR-046, ADR-054, ADR-055, ADR-070]
-amended-by: [ADR-072, ADR-073, ADR-080]
+amended-by: [ADR-051, ADR-072, ADR-073, ADR-080]
 ---
 
 # ADR-071 — Documents as PDF, drawn on the server (amends ADR-046, ADR-054, ADR-055 and ADR-070)
@@ -579,3 +579,20 @@ with this as-built, pull request #556.
     go with the translations' batch.
   - `gh` cannot put pictures into a pull request; the maintainer drags
     them in from Finder (engineering.md, "The review step").
+
+## Amendment (November 2026) — one invoice's PDF budgeted, and the export's own trigger (ADR-051)
+
+*Deferred*'s "budgets for the PDF routes and the export" fired at the
+first `npm run perf` after this ADR's merge, in October, and was missed
+(the amendment for #526, "Found while checking"). ADR-051's amendment
+for #547 takes the routes' part: one invoice's PDF is timed at both
+scales, its budget set from its first median on GitHub's runners, and
+it stands for the six routes, which share the renderer. The export stays
+deferred, now until a person reports an export slow, or `render.md`'s
+"Before real customers' data" times one at large first. The same
+amendment corrects the as-built's N7: neither #533 nor #546 rides with
+the branch for #547, since each changes the API. As built (#558): the
+budget is 1,200 ms, from a first median of 931 ms at small on GitHub's
+runners, the line ten requests make on the server's one thread, where
+one alone takes 43 to 48 ms on the Mac; ADR-051's Watch keeps that
+thread.

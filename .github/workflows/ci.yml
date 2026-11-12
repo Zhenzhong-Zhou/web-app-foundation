@@ -185,11 +185,14 @@ jobs:
           POSTGRES_DB: foundation
         ports:
           - 5432:5432
+        # Shared memory as docker-compose gives it: Postgres's parallel
+        # workers outgrew Docker's default 64 MB at the large seed (#547).
         options: >-
           --health-cmd "pg_isready -U app -d foundation"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+          --shm-size 256m
 
     steps:
       - uses: actions/checkout@v7
@@ -438,11 +441,14 @@ jobs:
           POSTGRES_DB: foundation
         ports:
           - 5432:5432
+        # Shared memory as docker-compose gives it: Postgres's parallel
+        # workers outgrew Docker's default 64 MB at the large seed (#547).
         options: >-
           --health-cmd "pg_isready -U app -d foundation"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+          --shm-size 256m
       # The mail server the dev stack has (docker-compose.yml). A flow
       # that waits for its email, as a reset request does, fails without
       # one, since a reset whose email could not be sent says so rather

@@ -1,4 +1,6 @@
 import type { VolumeManifest } from '../src/database/seed-volume';
+import type { ProductCategoryList } from '../src/modules/products/dto/product-category-response.dto';
+import { pickCategories } from './categories';
 import { calendarDay, type Session } from './client';
 import {
   inParallel,
@@ -12,6 +14,15 @@ import type { ConcurrencyResult, KnownMiss } from './report';
 
 export const READ_BUDGET_MS = 300;
 export const WRITE_BUDGET_MS = 500;
+
+/**
+ * One invoice's PDF (ADR-071), which the renderer draws one at a time, so ten
+ * connections queue behind each other. Its first median p95 at small on
+ * GitHub's runners was 931 ms (run 43089449940, rounds of 809, 1285 and 931
+ * ms): that median divided by 0.8, rounded up to the next 100 ms (ADR-051,
+ * amended for #547).
+ */
+const PDF_BUDGET_MS = 1200;
 
 /** Products with the most lots on one shelf, where FEFO has most to sort. */
 const HOT_VARIANTS = 10;
@@ -39,6 +50,12 @@ export interface Org {
   deepMovements: string;
   /** About a thousand rows into the stock list. */
   deepStock: string;
+  /** The top-level category with the most items beneath it (ADR-092). */
+  categoryTop: string;
+  /** The bottom-level category under it with the most items. */
+  categoryBottom: string;
+  /** The first page of the invoices issued, which the PDF read takes in turn. */
+  issuedInvoiceIds: string[];
 }
 
 export interface Scenario {
@@ -134,6 +151,26 @@ export async function discover(
   const orders = await walk(session, '/orders?status=all');
   const movements = await walk(session, '/stock/movements');
 
+  const { categories } = await session.json<ProductCategoryList>(
+    'GET',
+    '/products/categories',
+  );
+  const picked = pickCategories(categories);
+  if (!picked?.bottom) {
+    throw new Error(
+      `${session.label} has no category under a top-level one. Was it seeded with seed:volume?`,
+    );
+  }
+
+  // The invoices issued, on the list's first page: the PDF read takes each
+  // request the next, as the order read does (ADR-071, ADR-051).
+  const issued = await session.json<Page>('GET', '/invoices?status=issued');
+  if (issued.entries.length === 0) {
+    throw new Error(
+      `${session.label} has no issued invoices. Was it seeded with seed:volume?`,
+    );
+  }
+
   // Two weeks after seeding, the newcomer's Home is anyone's: still timed,
   // but no longer what its name says.
   const { welcome } = await newcomer.json<{ welcome: unknown }>('GET', '/home');
@@ -152,6 +189,9 @@ export async function discover(
     deepOrders: orders.cursor,
     deepMovements: movements.cursor,
     deepStock: deep,
+    categoryTop: picked.top,
+    categoryBottom: picked.bottom,
+    issuedInvoiceIds: issued.entries.map((entry) => entry.id),
   };
 }
 
@@ -240,6 +280,18 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       (org) => `/stock/movements?variantId=${org.hot[0].variantId}`,
     ),
     read('GET /invoices', () => '/invoices'),
+    // One invoice drawn as a PDF (ADR-071), each request the next of the
+    // issued ones: drawing is the server's own work, so ten at once is the
+    // load to see. It stands for the six PDF routes, which share the
+    // renderer.
+    {
+      ...read(
+        'GET /invoices/:id/pdf',
+        (org, n) =>
+          `/invoices/${org.issuedInvoiceIds[n % org.issuedInvoiceIds.length]}/pdf`,
+      ),
+      budgetMs: PDF_BUDGET_MS,
+    },
     // Search (ADR-056): the lookup as people type it, a code in part, a
     // name, and a typo that falls through to close matches; and a list
     // narrowed by its search.
@@ -264,6 +316,19 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // The category tree (ADR-092): every category with its items by type,
     // read each time Items opens, for its filter's counts.
     read('GET /products/categories', () => '/products/categories', 'zh-Hans'),
+    // Items' category filter (ADR-092), at the top-level category with the
+    // most items beneath it, which reads its whole branch, and at the
+    // bottom-level one under it, which reads that category alone.
+    read(
+      'GET /products?category, top',
+      (org) => `/products?category=${org.categoryTop}`,
+      'zh-Hans',
+    ),
+    read(
+      'GET /products?category, bottom',
+      (org) => `/products?category=${org.categoryBottom}`,
+      'zh-Hans',
+    ),
     read(
       'GET /products?search',
       () => `/products?search=${encodeURIComponent('专')}`,
