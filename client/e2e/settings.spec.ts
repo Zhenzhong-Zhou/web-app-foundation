@@ -154,6 +154,37 @@ test('gives the organization a square logo, which the folded rail shows', async 
     .toBe(128);
 });
 
+/**
+ * A square logo past its 2 MB, as a photo straight from a phone is, in
+ * 中文 (#249): refused as it arrives, in the reader's words, naming the
+ * limit and what to do, never "File too large"; and nothing kept, the row
+ * still offering its upload.
+ */
+test('refuses a square logo past 2 MB in the reader’s words, keeping nothing', async ({
+  page,
+  freshOrg,
+}) => {
+  await signInAs(page, freshOrg.api);
+  await page.addInitScript(() => localStorage.setItem('language', 'zh-Hans'));
+  await page.goto('/settings/organization?tab=branding');
+
+  const square = page.getByRole('group', { name: '方形标志' });
+  await square.locator('input[type="file"]').setInputFiles({
+    name: 'IMG_0412.jpg',
+    mimeType: 'image/jpeg',
+    buffer: Buffer.alloc(Math.round(2.6 * 1024 * 1024), 1),
+  });
+
+  await expect(square.getByRole('alert')).toHaveText(
+    '方形标志最大 2 MB。请选择更小的文件，或先压缩后再上传。',
+  );
+  await expect(
+    square.getByRole('button', { name: '上传方形标志' }),
+  ).toBeEnabled();
+  await expect(square.getByRole('button', { name: '更换' })).toHaveCount(0);
+  await expect(square.locator('img')).toHaveCount(0);
+});
+
 test('adds a two-tax code, changes a rate, and retires it', async ({
   page,
   freshOrg,
