@@ -1,0 +1,162 @@
+[
+  {
+    "language": "zh-Hans",
+    "id": "mail.deletion.cancelled.subject",
+    "error": "a not dropped",
+    "english": "Your account will not be deleted",
+    "translation": "您的账户不会被删除",
+    "planted": "您的账户会被删除"
+  },
+  {
+    "language": "zh-Hans",
+    "id": "home.noOrganization.start.nameHelp",
+    "error": "a not added",
+    "english": "As it appears on your invoices. You can change it later, in Settings.",
+    "translation": "会显示在发票上。以后可以在“设置”里修改。",
+    "planted": "会显示在发票上。以后不能在“设置”里修改。"
+  },
+  {
+    "language": "zh-Hans",
+    "id": "auth.byInvitation.start.body",
+    "error": "a number changed",
+    "english": "Open the link you were sent to set it up. Each link is for one email address and works for 7 days.",
+    "translation": "打开发给您的链接即可创建。每个链接只对应一个邮箱，有效期 7 天。",
+    "planted": "打开发给您的链接即可创建。每个链接只对应一个邮箱，有效期 14 天。"
+  },
+  {
+    "language": "zh-Hans",
+    "id": "settings.branding.logo.hint",
+    "error": "a number changed",
+    "english": "A picture at least 256 pixels wide, up to 2\u00a0MB (PNG, JPEG, WebP or SVG).",
+    "translation": "一张宽度至少 256 像素的图片，最大 2\u00a0MB（PNG、JPEG、WebP 或 SVG）。",
+    "planted": "一张宽度至少 128 像素的图片，最大 2\u00a0MB（PNG、JPEG、WebP 或 SVG）。"
+  },
+  {
+    "language": "zh-Hans",
+    "id": "mail.reset.expires",
+    "error": "a clause dropped",
+    "english": "The link expires in one hour and can be used once. If you did not request this, ignore this message — your password has not changed.",
+    "translation": "链接一小时后过期，且只能使用一次。如果您没有提出此请求，请忽略此邮件——您的密码没有改变。",
+    "planted": "链接一小时后过期。如果您没有提出此请求，请忽略此邮件——您的密码没有改变。"
+  },
+  {
+    "language": "zh-Hans",
+    "id": "settings.deletion.members",
+    "error": "a clause dropped",
+    "english": "Members keep their accounts and lose only this membership. Everyone is emailed now, 7 days before, if it’s cancelled, and when it’s done.",
+    "translation": "成员保留各自的账户，只是不再属于该组织。现在、删除前 7 天、取消时和删除完成时，都会发邮件通知每个人。",
+    "planted": "成员保留各自的账户，只是不再属于该组织。现在、删除前 7 天和删除完成时，都会发邮件通知每个人。"
+  },
+  {
+    "language": "zh-Hans",
+    "id": "orders.summary.orderValue",
+    "error": "before tax for including tax",
+    "english": "Order value, before tax",
+    "translation": "订单金额（税前）",
+    "planted": "订单金额（含税）"
+  },
+  {
+    "language": "zh-Hans",
+    "id": "orders.summary.invoiced",
+    "error": "including tax for before tax",
+    "english": "Invoiced, incl. tax",
+    "translation": "已开票（含税）",
+    "planted": "已开票（税前）"
+  },
+  {
+    "language": "zh-Hans",
+    "id": "account.work.intro",
+    "error": "a name changed",
+    "english": "The last 20 things you did here. Your sign-ins and password changes are on Your devices.",
+    "translation": "您在这里最近的 20 项操作。您的登录和密码更改记录在“我的设备”中。",
+    "planted": "您在这里最近的 20 项操作。您的登录和密码更改记录在“我的账户”中。"
+  },
+  {
+    "language": "zh-Hans",
+    "id": "members.changeRoles.ownerOnly",
+    "error": "a name changed",
+    "english": "Only an Owner can make someone an Owner.",
+    "translation": "只有所有者才能让别人成为所有者。",
+    "planted": "只有管理员才能让别人成为所有者。"
+  },
+  {
+    "language": "fr-CA",
+    "id": "mail.organizationDeletion.cancelled.withAccount",
+    "error": "a not dropped",
+    "english": "Your account will not be deleted either.",
+    "translation": "Votre compte ne sera pas supprimé non plus.",
+    "planted": "Votre compte sera supprimé lui aussi."
+  },
+  {
+    "language": "fr-CA",
+    "id": "invitation.organization.rename",
+    "error": "a not added",
+    "english": "You can change the name later, in Settings.",
+    "translation": "Vous pourrez changer le nom plus tard, dans Paramètres.",
+    "planted": "Vous ne pourrez pas changer le nom plus tard, dans Paramètres."
+  },
+  {
+    "language": "fr-CA",
+    "id": "account.deletion.explain.when",
+    "error": "a number changed",
+    "english": "Your account will be deleted 30 days from now. Until then you can sign in and work as usual, and keep your account from the banner on every page.",
+    "translation": "Votre compte sera supprimé dans 30 jours. D’ici là, vous pouvez vous connecter et travailler comme d’habitude, et conserver votre compte depuis le bandeau affiché sur chaque page.",
+    "planted": "Votre compte sera supprimé dans 60 jours. D’ici là, vous pouvez vous connecter et travailler comme d’habitude, et conserver votre compte depuis le bandeau affiché sur chaque page."
+  },
+  {
+    "language": "fr-CA",
+    "id": "validation.exchangeRate",
+    "error": "a number changed",
+    "english": "Enter an exchange rate greater than zero, with up to 8 decimal places.",
+    "translation": "Saisissez un taux de change supérieur à zéro, d’au plus 8 décimales.",
+    "planted": "Saisissez un taux de change supérieur à zéro, d’au plus 4 décimales."
+  },
+  {
+    "language": "fr-CA",
+    "id": "organization.deletion.exportRequired",
+    "error": "a clause dropped",
+    "english": "Download everything first, or say you do not need a copy. Once the organization is deleted, nothing can make one.",
+    "translation": "Téléchargez d’abord tout, ou indiquez que vous n’avez pas besoin de copie. Une fois l’organisation supprimée, plus rien ne permet d’en produire une.",
+    "planted": "Téléchargez d’abord tout. Une fois l’organisation supprimée, plus rien ne permet d’en produire une."
+  },
+  {
+    "language": "fr-CA",
+    "id": "files.image.unreadable",
+    "error": "a clause dropped",
+    "english": "This image could not be read. It may be damaged, or not the type its name says.",
+    "translation": "Cette image n’a pas pu être lue. Elle est peut-être endommagée, ou d’un autre type que celui qu’indique son nom.",
+    "planted": "Cette image n’a pas pu être lue. Elle est peut-être endommagée."
+  },
+  {
+    "language": "fr-CA",
+    "id": "orders.summary.notInvoiced",
+    "error": "before tax for including tax",
+    "english": "Not yet invoiced, before tax",
+    "translation": "Reste à facturer, avant taxes",
+    "planted": "Reste à facturer, taxes incluses"
+  },
+  {
+    "language": "fr-CA",
+    "id": "orders.summary.net",
+    "error": "including tax for before tax",
+    "english": "Net invoiced, incl. tax",
+    "translation": "Net facturé, taxes incluses",
+    "planted": "Net facturé, avant taxes"
+  },
+  {
+    "language": "fr-CA",
+    "id": "audit.yours.intro",
+    "error": "a name changed",
+    "english": "Everything you did in this organization, newest first. Your sign-ins and password changes are on Your devices.",
+    "translation": "Tout ce que vous avez fait dans cette organisation, du plus récent au plus ancien. Vos connexions et changements de mot de passe sont dans Vos appareils.",
+    "planted": "Tout ce que vous avez fait dans cette organisation, du plus récent au plus ancien. Vos connexions et changements de mot de passe sont dans Votre compte."
+  },
+  {
+    "language": "fr-CA",
+    "id": "members.invite.ownerOnly",
+    "error": "a name changed",
+    "english": "Only an Owner can invite an Owner.",
+    "translation": "Seul un propriétaire peut inviter un propriétaire.",
+    "planted": "Seul un administrateur peut inviter un propriétaire."
+  }
+]

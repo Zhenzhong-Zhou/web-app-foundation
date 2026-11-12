@@ -19,7 +19,9 @@ import {
   copyFileSync,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
+  rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -120,6 +122,7 @@ function fixture(t, extra = {}) {
   mkdirSync(path.join(root, "scripts"));
   for (const script of [
     "i18n-decide.mjs",
+    "i18n-decide.calibration.json",
     "i18n-review.mjs",
     "i18n-rules.mjs",
   ]) {
@@ -276,6 +279,7 @@ test("each message is decided by the amendment's table, ChatGPT leading", (t) =>
     `review/zh-Hans.decided.xlsx: 9 rows, zh-Hans.
 - Agreed 1, ChatGPT 2, Claude 1, today's 5, set aside 0.
 - Fallen back: 0 by rule, 0 by meaning.
+- Only Claude changed it: 2; today's found wrong in 1 by rule.
 - The meaning check: not run; --meaning runs it.
 `,
   );
@@ -457,7 +461,7 @@ test("a text that fails the rules check falls back to the other review's, else t
   });
 });
 
-test("--meaning asks about each text that differs from today's, 25 a request, and falls back on a changed meaning", (t) => {
+test("--meaning asks about each text that differs from today's, and today's where only Claude changed it, 25 a request, and falls back on a changed meaning", (t) => {
   // 30 more messages ChatGPT changed, so the texts take two requests.
   const more = Object.fromEntries(
     Array.from({ length: 30 }, (_, i) => [
@@ -480,7 +484,7 @@ test("--meaning asks about each text that differs from today's, 25 a request, an
   assert.equal(run.status, 0, run.stderr);
   assert.match(
     run.stdout,
-    /- Agreed 1, ChatGPT 31, Claude 2, today's 5, set aside 0\.\n- Fallen back: 0 by rule, 1 by meaning\.\n- The meaning check: 35 texts asked in 3 requests, 0 answered by an earlier run; 3,000 tokens in, 600 out\./,
+    /- Agreed 1, ChatGPT 31, Claude 2, today's 5, set aside 0\.\n- Fallen back: 0 by rule, 1 by meaning\.\n- Only Claude changed it: 2; today's found wrong in 1 by rule and 0 by meaning\.\n- The meaning check: 36 texts asked in 3 requests, 0 answered by an earlier run; 3,000 tokens in, 600 out\./,
   );
   assert.deepEqual(decided(root)["orders.delete"], {
     correction: "删掉订单",
@@ -492,7 +496,7 @@ test("--meaning asks about each text that differs from today's, 25 a request, an
   const sent = requests(root);
   assert.deepEqual(
     sent.map(({ body }) => JSON.parse(body.messages[0].content).items.length),
-    [25, 9, 1],
+    [25, 10, 1],
   );
   for (const { url, headers, body } of sent) {
     assert.equal(url, "https://api.anthropic.com/v1/messages");
@@ -501,15 +505,19 @@ test("--meaning asks about each text that differs from today's, 25 a request, an
     assert.equal(body.model, "claude-sonnet-5-5");
     assert.match(body.system, /Simplified Chinese \(zh-Hans\)/);
   }
-  // Only texts that differ from today's: Claude's Delete in the last.
+  // Texts that differ from today's, and today's List, which only Claude
+  // changed; not today's Saved, which the rules check found wrong. Claude's
+  // Delete in the last.
   const asked = sent.flatMap(({ body }) =>
     JSON.parse(body.messages[0].content).items.map((item) => item.translation),
   );
   assert.equal(asked.includes("保存"), false);
-  assert.deepEqual(asked.slice(0, 4), [
+  assert.equal(asked.includes("已保存,{name}"), false);
+  assert.deepEqual(asked.slice(0, 5), [
     "保存更改",
     "删除此订单",
     "库存",
+    "今天的订单",
     "已保存，{name}",
   ]);
   assert.deepEqual(
@@ -541,6 +549,158 @@ test("--meaning asks about each text that differs from today's, 25 a request, an
   ]);
 });
 
+test("where only Claude changed it, --meaning asks about today's too, and today's found wrong takes Claude's where it passes both checks", (t) => {
+  const { root } = fixture(t);
+  round2(root, SCREENS, { claude: { "orders.help": "帮助中心" } });
+  // Today's List and Help change the meaning; so does Claude's Help.
+  write(
+    root,
+    "not-same.json",
+    JSON.stringify(["今天的订单", "帮助", "帮助中心"]),
+  );
+
+  const run = decide(root, [...ROUND_2, "--meaning"], {
+    ANTHROPIC_API_KEY: KEY,
+  });
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(
+    run.stdout,
+    /- Agreed 1, ChatGPT 2, Claude 2, today's 4, set aside 0\.\n- Fallen back: 0 by rule, 1 by meaning\.\n- Only Claude changed it: 3; today's found wrong in 1 by rule and 2 by meaning\.\n- The meaning check: 8 texts asked in 2 requests,/,
+  );
+  const rows = decided(root);
+  assert.deepEqual(rows["orders.list"], {
+    correction: "订单列表",
+    reason:
+      "Only Claude changed it; today's fails the meaning check: It drops the order.",
+    fallback: "",
+  });
+  assert.deepEqual(rows["orders.help"], {
+    correction: "",
+    reason:
+      "Only Claude changed it; today's fails the meaning check: It drops the order.",
+    fallback:
+      "Claude's fails the meaning check: It drops the order. Today's stays.",
+  });
+  // Today's Saved fails the rules check, so only Claude's is asked about.
+  assert.deepEqual(rows["orders.saved"], {
+    correction: "已保存，{name}",
+    reason:
+      "Only Claude changed it; today's fails the rules check: half-width , beside Chinese, for ，",
+    fallback: "",
+  });
+
+  const asked = requests(root).map(({ body }) =>
+    JSON.parse(body.messages[0].content).items.map((item) => item.translation),
+  );
+  assert.deepEqual(asked, [
+    ["保存更改", "删除此订单", "库存", "今天的订单", "已保存，{name}", "帮助"],
+    ["订单列表", "帮助中心"],
+  ]);
+
+  // Today's passing both checks stays, and says so: asked afresh.
+  write(root, "not-same.json", "[]");
+  rmSync(path.join(root, "review/zh-Hans.meaning.json"));
+  const again = decide(root, [...ROUND_2, "--meaning"], {
+    ANTHROPIC_API_KEY: KEY,
+  });
+  assert.equal(again.status, 0, again.stderr);
+  assert.deepEqual(decided(root)["orders.list"], {
+    correction: "",
+    reason: "Only Claude changed it; today's passes both checks, so it stays",
+    fallback: "",
+  });
+});
+
+test("--calibrate asks about each planted text, a language a request, prints what it caught, and fails under 18 of 20", (t) => {
+  const { root } = fixture(t);
+  const items = JSON.parse(
+    readFileSync(
+      path.join(ROOT, "scripts/i18n-decide.calibration.json"),
+      "utf8",
+    ),
+  );
+  // Its texts: 20, ten a language, each with an error planted.
+  assert.equal(items.length, 20);
+  for (const language of ["zh-Hans", "fr-CA"]) {
+    assert.equal(items.filter((item) => item.language === language).length, 10);
+  }
+  for (const item of items) {
+    assert.notEqual(item.planted, item.translation, item.id);
+  }
+  const planted = (language) =>
+    items
+      .filter((item) => item.language === language)
+      .map((item) => item.planted);
+  const env = { ANTHROPIC_API_KEY: KEY };
+
+  // All caught but the first two.
+  write(
+    root,
+    "not-same.json",
+    JSON.stringify(items.slice(2).map((item) => item.planted)),
+  );
+  const passed = decide(root, ["--calibrate"], env);
+  assert.equal(passed.status, 0, passed.stderr);
+  const lines = passed.stdout.trim().split("\n");
+  assert.equal(lines.length, 23);
+  assert.equal(
+    lines[0],
+    "The meaning check's calibration, on claude-sonnet-5-5: 20 texts from the catalogues, each with one error planted.",
+  );
+  assert.equal(
+    lines[1],
+    `- Missed: zh-Hans ${items[0].id}, ${items[0].error}. It answered that the text says the same: ` +
+      `${JSON.stringify(items[0].planted)} for ${JSON.stringify(items[0].english)}.`,
+  );
+  assert.equal(
+    lines[3],
+    `- Caught: zh-Hans ${items[2].id}, ${items[2].error}. It drops the order.`,
+  );
+  assert.deepEqual(lines.slice(-2), [
+    "Caught 18 of 20, in 2 requests; 2,000 tokens in, 400 out.",
+    "At 18 or more, the meaning check can be trusted with the decide step: go on.",
+  ]);
+  const sent = requests(root);
+  assert.deepEqual(
+    sent.map(({ body }) =>
+      JSON.parse(body.messages[0].content).items.map(
+        (item) => item.translation,
+      ),
+    ),
+    [planted("zh-Hans"), planted("fr-CA")],
+  );
+  assert.match(sent[0].body.system, /Simplified Chinese \(zh-Hans\)/);
+  assert.match(sent[1].body.system, /French, as written in Canada \(fr-CA\)/);
+  // Nothing kept, and the key never printed.
+  assert.deepEqual(readdirSync(path.join(root, "review")), []);
+  for (const text of [passed.stdout, passed.stderr]) {
+    assert.equal(text.includes(KEY), false);
+  }
+
+  // All but three caught, on the model named: it stops.
+  write(
+    root,
+    "not-same.json",
+    JSON.stringify(items.slice(3).map((item) => item.planted)),
+  );
+  const failed = decide(
+    root,
+    ["--calibrate", "--model", "claude-opus-5-5"],
+    env,
+  );
+  assert.equal(failed.status, 1);
+  assert.equal(requests(root)[2].body.model, "claude-opus-5-5");
+  assert.deepEqual(failed.stdout.trim().split("\n").slice(-2), [
+    "Caught 17 of 20, in 2 requests; 2,000 tokens in, 400 out.",
+    "Under 18, the meaning check is not to be trusted with the decide step yet: stop here, and paste this output into the chat.",
+  ]);
+
+  // It runs alone.
+  const mixed = decide(root, ["--calibrate", "--meaning"], env);
+  assert.equal(mixed.status, 1);
+  assert.match(mixed.stderr, /^Usage:/);
+});
+
 test("a second run reuses the answers kept, asking only what is new", (t) => {
   const { root } = fixture(t);
   round2(root);
@@ -554,7 +714,7 @@ test("a second run reuses the answers kept, asking only what is new", (t) => {
   assert.equal(requests(root).length, 1);
   assert.match(
     again.stdout,
-    /- The meaning check: 0 texts asked in 0 requests, 4 answered by an earlier run; 0 tokens in, 0 out\./,
+    /- The meaning check: 0 texts asked in 0 requests, 5 answered by an earlier run; 0 tokens in, 0 out\./,
   );
 
   // ChatGPT's Stock changes: only it is asked, on the model named.
@@ -576,7 +736,7 @@ test("a second run reuses the answers kept, asking only what is new", (t) => {
   );
   assert.match(
     third.stdout,
-    /1 texts asked in 1 requests, 3 answered by an earlier run/,
+    /1 texts asked in 1 requests, 4 answered by an earlier run/,
   );
 });
 
@@ -617,11 +777,11 @@ test("a meaning check stopped part way keeps what it was answered, and the next 
   assert.equal(again.status, 0, again.stderr);
   assert.match(
     again.stdout,
-    /- The meaning check: 9 texts asked in 1 requests, 25 answered by an earlier run;/,
+    /- The meaning check: 10 texts asked in 1 requests, 25 answered by an earlier run;/,
   );
 });
 
-test("--meaning with no key is refused before anything is read, naming how to set it", (t) => {
+test("--meaning or --calibrate with no key is refused before anything is read, naming how to set it", (t) => {
   const { root } = fixture(t);
   round2(root);
 
@@ -634,6 +794,14 @@ test("--meaning with no key is refused before anything is read, naming how to se
   assert.equal(
     existsSync(path.join(root, "review/zh-Hans.decided.xlsx")),
     false,
+  );
+  assert.deepEqual(requests(root), []);
+
+  const calibrate = decide(root, ["--calibrate"]);
+  assert.equal(calibrate.status, 1);
+  assert.match(
+    calibrate.stderr,
+    /^--calibrate needs the API key in this terminal: run `read -s ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY`/,
   );
   assert.deepEqual(requests(root), []);
 });

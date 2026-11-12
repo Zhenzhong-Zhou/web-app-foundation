@@ -875,10 +875,19 @@ folder by folder; these check what is already in place.
   must pass `scripts/i18n-rules.mjs` and import's own checks, and, with
   `--meaning`, Claude's meaning check through the API, or it falls back to
   the other review's text, else today's; Reason and Fallback say why beside
-  each row, and the counts are printed. Without `ANTHROPIC_API_KEY`,
-  `--meaning` is refused, naming `read -s ANTHROPIC_API_KEY && export
-  ANTHROPIC_API_KEY`; its answers are kept in
+  each row, and the counts are printed. Where only Claude changed a
+  message, today's stays unless it fails the rules check or, with
+  `--meaning`, the meaning check; then Claude's goes in where it passes
+  both, and the counts say in how many today's was found wrong. Without
+  `ANTHROPIC_API_KEY`, `--meaning` is refused, naming `read -s
+  ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY`; its answers are kept in
   `review/<language>.meaning.json`, so a second run asks only what is new.
+  Before the first run, `node scripts/i18n-decide.mjs --calibrate` asks
+  the meaning check about 20 texts copied from the catalogues, each with
+  one error planted (a "not" dropped or added, a number, a clause, before
+  tax for including tax, a name), prints each caught or missed, and exits
+  1 under 18 of 20, keeping nothing; under 18, no decide step runs with
+  `--meaning`.
 - **MC-1406** In Français and in 简体中文, every area converted so far
   reads entirely in that language, with no English left on it:
   - signed out: sign-in, register, forgot-password, reset and verify,
@@ -5896,3 +5905,7 @@ first.
   screens join, and the server's, keeps the space between a Latin name
   and 和 or 或, not only Whom to ask and a member's roles: MC-1419
   extended.
+- 2026-11-12: ADR-054's November amendment, R2 and R5: where only Claude
+  changed a message, the decide step asks the meaning check about
+  today's text too, and `--calibrate` tries the meaning check on 20
+  planted errors before a run spends on it: MC-1405 extended.

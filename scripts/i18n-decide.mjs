@@ -7,6 +7,7 @@
  *     node scripts/i18n-decide.mjs --chatgpt <file> [--claude <file>] --out <file> [--meaning] [--model <id>]
  *     node scripts/i18n-decide.mjs --chatgpt review/zh-Hans.chatgpt.xlsx \
  *       --claude review/zh-Hans.claude.xlsx --out review/zh-Hans.decided.xlsx --meaning
+ *     node scripts/i18n-decide.mjs --calibrate [--model <id>]
  *
  * It reads each workbook with i18n-review.mjs's reader, a row by its Area
  * and Id and a column by its title: Area, Id, English, Translation and
@@ -17,8 +18,8 @@
  *
  * - the fix both reviews made, where they made the same one;
  * - ChatGPT's, where both changed it differently, or only ChatGPT did;
- * - today's, where only Claude changed it, unless the rules check finds
- *   today's wrong: then Claude's;
+ * - today's, where only Claude changed it, unless a check finds today's
+ *   wrong: then Claude's, where it passes both checks;
  * - today's, where neither did. With no --claude, a message ChatGPT kept
  *   stays today's.
  *
@@ -34,8 +35,9 @@
  * import's own checks, a message's ICU and placeholders and a section's
  * heading and links, so import takes the decided workbook whole. With
  * --meaning, the meaning check too, on each text that differs from
- * today's. A text that fails either falls back to the other review's,
- * where that one passes, else to today's.
+ * today's, and on today's where only Claude changed it. A text that fails
+ * either falls back to the other review's, where that one passes, else to
+ * today's.
  *
  * The meaning check asks Claude, through the Messages API, whether each
  * text says what its English says, with nothing added, dropped or
@@ -46,7 +48,18 @@
  * never printed or written; without it, --meaning is refused before
  * anything is read. Each answer is kept in review/<language>.meaning.json
  * by the English and the text, saved after each request, so a run stopped
- * part way, or a second one, asks only what has no answer yet.
+ * part way, or a second one, asks only what has no answer yet. Each answer
+ * comes back through structured outputs, the API's JSON schema, so it
+ * always parses; the API takes no temperature (it refuses one since
+ * version 2026-10-21) and no forced tool on claude-sonnet-5-5.
+ *
+ * --calibrate tries the meaning check before a run spends on it: the 20
+ * texts in i18n-decide.calibration.json, each copied from a catalogue on 12
+ * November 2026 with one error planted (a "not" dropped or added, a number
+ * changed, a clause dropped, before tax and including tax swapped, a name
+ * changed), are asked about, ten a language, with nothing kept. It prints
+ * each one caught or missed and how many it caught, and exits 1 under 18
+ * of 20: the meaning check is then not to be trusted with the decide step.
  *
  * It writes the decided workbook, its sheet named for the language as
  * export's is: Area, Id, Where, English, Translation and Placeholders to
@@ -56,7 +69,9 @@
  * scripts/i18n-review.mjs import <file>` reads it as any returned
  * workbook. It prints the counts: agreed, ChatGPT, Claude, today's and set
  * aside, which add up to the rows; those fallen back by rule and by
- * meaning; and what the meaning check asked and the tokens it used.
+ * meaning; with --claude, those only Claude changed and in how many a check
+ * found today's wrong; and what the meaning check asked and the tokens it
+ * used.
  *
  * Its tests, in i18n-decide.test.mjs, run it on a small catalogue and
  * guide in a temporary folder, fetch stubbed: `node --test scripts/`. Like
@@ -94,7 +109,15 @@ const COLUMNS = [
 ];
 
 const USAGE =
-  "Usage:\n  node scripts/i18n-decide.mjs --chatgpt <file> [--claude <file>] --out <file> [--meaning] [--model <id>]";
+  "Usage:\n  node scripts/i18n-decide.mjs --chatgpt <file> [--claude <file>] --out <file> [--meaning] [--model <id>]\n" +
+  "  node scripts/i18n-decide.mjs --calibrate [--model <id>]";
+
+/** The calibration's texts, and how many of them it must catch. */
+const CALIBRATION = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "i18n-decide.calibration.json",
+);
+const CALIBRATION_PASS = 18;
 
 /** A file as the repository names it, or in full outside it. */
 const shown = (file) => {
@@ -243,28 +266,65 @@ function decisionOf(row, claude, targets, language) {
     };
   }
   // One vote against one: ChatGPT read it and kept it, and ChatGPT leads.
+  // Today's stays unless a check finds it wrong: the rules check here, the
+  // meaning check in resolve.
+  const onlyClaude = {
+    ...decision,
+    onlyClaude: true,
+    tries: [from("Claude", theirs)],
+  };
   const wrong = decision.check(today.translation);
   if (wrong.length === 0) {
     return {
-      row,
-      source: "today",
+      ...onlyClaude,
+      kept: today.translation,
       reason:
         "Only Claude changed it; today's passes the rules check, so it stays",
     };
   }
   return {
-    ...decision,
+    ...onlyClaude,
+    wrong: "rule",
     reason: `Only Claude changed it; today's fails the rules check: ${wrong.join("; ")}`,
-    tries: [from("Claude", theirs)],
   };
 }
 
 /**
  * A decision's text: the first it tries that passes the rules check and,
- * with the meaning check, its answer; today's if none does. Pending, with
- * the text to ask about, where the meaning check has no answer yet.
+ * with the meaning check, its answer; today's if none does. Where only
+ * Claude changed it and today's passed the rules check, today's stays
+ * unless the meaning check finds it wrong. Pending, with the text to ask
+ * about, where the meaning check has no answer yet.
  */
 function resolve(decision, meaning) {
+  if (decision.kept !== undefined) {
+    const { kept, tries, ...rest } = decision;
+    const answer = meaning?.answer(decision.english, kept);
+    if (meaning && !answer) {
+      return {
+        ...decision,
+        pending: { english: decision.english, text: kept },
+      };
+    }
+    if (!answer || answer.same) {
+      return {
+        ...rest,
+        source: "today",
+        reason: meaning
+          ? "Only Claude changed it; today's passes both checks, so it stays"
+          : decision.reason,
+      };
+    }
+    return resolve(
+      {
+        ...rest,
+        tries,
+        wrong: "meaning",
+        reason: `Only Claude changed it; today's fails the meaning check: ${answer.why}`,
+      },
+      meaning,
+    );
+  }
   if (!decision.tries) return decision;
   const fallbacks = [];
   for (const { source, text } of decision.tries) {
@@ -340,11 +400,14 @@ const SCHEMA = {
   additionalProperties: false,
 };
 
-/** The meaning check in a language: its answers, kept and asked for. */
-function meaningCheck(language, model, key) {
-  const file = path.join(ROOT, "review", `${language}.meaning.json`);
+/**
+ * The meaning check in a language: its answers, asked for and kept in
+ * file, or in nothing where file is null, as for the calibration.
+ */
+function meaningCheck(language, model, key, file) {
   const keyOf = (english, text) => JSON.stringify([english, text]);
-  const kept = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : [];
+  const kept =
+    file && existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : [];
   const answers = new Map(
     kept.map((entry) => [keyOf(entry.english, entry.text), entry]),
   );
@@ -358,9 +421,12 @@ function meaningCheck(language, model, key) {
   const stop = (why) =>
     fail(
       `The meaning check stopped: ${why}. It used ${tokens()}. ` +
-        `The answers so far are kept in ${shown(file)}; run the same command again, and it asks only the rest.`,
+        (file
+          ? `The answers so far are kept in ${shown(file)}; run the same command again, and it asks only the rest.`
+          : "Nothing was kept; run the same command again."),
     );
   const save = () => {
+    if (!file) return;
     mkdirSync(path.dirname(file), { recursive: true });
     writeFileSync(file, `${JSON.stringify([...answers.values()], null, 2)}\n`);
   };
@@ -466,10 +532,61 @@ function meaningCheck(language, model, key) {
         stop(`it answered none of the ${items.length} texts asked`);
       }
     },
+    spent,
     summary: () =>
       `${asked.size} texts asked in ${spent.requests} requests, ` +
       `${[...used].filter((key) => earlier.has(key)).length} answered by an earlier run; ${tokens()}`,
   };
+}
+
+// ----------------------------------------------------------- calibration
+
+/**
+ * Asks the meaning check about each planted text, a language at a time,
+ * and prints each caught or missed. True where it caught enough.
+ */
+async function calibrate(model, key) {
+  const items = JSON.parse(readFileSync(CALIBRATION, "utf8"));
+  const languages = [...new Set(items.map((item) => item.language))];
+  const spent = { requests: 0, input: 0, output: 0 };
+  const lines = [];
+  let caught = 0;
+  for (const language of languages) {
+    const ours = items.filter((item) => item.language === language);
+    const check = meaningCheck(language, model, key, null);
+    await check.ask(
+      ours.map(({ english, planted }) => ({ english, text: planted })),
+    );
+    for (const name of Object.keys(spent)) spent[name] += check.spent[name];
+    for (const { id, error, english, planted } of ours) {
+      const answer = check.answer(english, planted);
+      const where = `${language} ${id}, ${error}`;
+      if (answer && !answer.same) {
+        caught += 1;
+        lines.push(
+          `- Caught: ${where}. ${answer.why.trim() || "It gave no reason."}`,
+        );
+      } else {
+        lines.push(
+          `- Missed: ${where}. ${answer ? "It answered that the text says the same" : "It gave no answer"}: ` +
+            `${JSON.stringify(planted)} for ${JSON.stringify(english)}.`,
+        );
+      }
+    }
+  }
+  const enough = caught >= CALIBRATION_PASS;
+  console.log(
+    [
+      `The meaning check's calibration, on ${model}: ${items.length} texts from the catalogues, each with one error planted.`,
+      ...lines,
+      `Caught ${caught} of ${items.length}, in ${spent.requests} requests; ` +
+        `${spent.input.toLocaleString("en")} tokens in, ${spent.output.toLocaleString("en")} out.`,
+      enough
+        ? `At ${CALIBRATION_PASS} or more, the meaning check can be trusted with the decide step: go on.`
+        : `Under ${CALIBRATION_PASS}, the meaning check is not to be trusted with the decide step yet: stop here, and paste this output into the chat.`,
+    ].join("\n"),
+  );
+  return enough;
 }
 
 // ------------------------------------------------------------------- main
@@ -478,8 +595,11 @@ function meaningCheck(language, model, key) {
 function optionsOf(args) {
   const options = {};
   for (let at = 0; at < args.length; at += 1) {
-    if (args[at] === "--meaning" && !options.meaning) {
-      options.meaning = true;
+    const flag = { "--meaning": "meaning", "--calibrate": "calibrate" }[
+      args[at]
+    ];
+    if (flag && !options[flag]) {
+      options[flag] = true;
       continue;
     }
     const name = {
@@ -495,6 +615,13 @@ function optionsOf(args) {
     options[name] = value;
     at += 1;
   }
+  if (options.calibrate) {
+    return Object.keys(options).every((name) =>
+      ["calibrate", "model"].includes(name),
+    )
+      ? options
+      : null;
+  }
   return options.chatgpt && options.out ? options : null;
 }
 
@@ -502,106 +629,132 @@ const options = optionsOf(process.argv.slice(2));
 if (!options) fail(USAGE);
 
 const key = process.env.ANTHROPIC_API_KEY;
-if (options.meaning && !key) {
+if ((options.meaning || options.calibrate) && !key) {
   fail(
-    "--meaning needs the API key in this terminal: run `read -s ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY`, " +
+    `${options.calibrate ? "--calibrate" : "--meaning"} needs the API key in this terminal: ` +
+      "run `read -s ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY`, " +
       "paste the key and press Return, then this command again.",
   );
 }
 
-const out = path.resolve(options.out);
-if (
-  [options.chatgpt, options.claude].some(
-    (file) => file && path.resolve(file) === out,
-  )
-) {
-  fail(
-    "--out names a review's own workbook. Write the decided one beside it, as review/<language>.decided.xlsx.",
-  );
-}
+/** The decide step itself, on the reviews' workbooks the options name. */
+async function decide(options, key) {
+  const out = path.resolve(options.out);
+  if (
+    [options.chatgpt, options.claude].some(
+      (file) => file && path.resolve(file) === out,
+    )
+  ) {
+    fail(
+      "--out names a review's own workbook. Write the decided one beside it, as review/<language>.decided.xlsx.",
+    );
+  }
 
-const chatgpt = reviewOf(path.resolve(options.chatgpt), "ChatGPT");
-const language = chatgpt.language;
-if (!Object.hasOwn(LANGUAGES, language)) {
-  fail(
-    `ChatGPT's workbook's sheet is named "${language}", not one of ${Object.keys(LANGUAGES).join(", ")}. ` +
-      "Keep the sheet name export wrote.",
-  );
-}
-const claude =
-  options.claude && reviewOf(path.resolve(options.claude), "Claude");
-if (claude && claude.language !== language) {
-  fail(
-    `Claude's workbook is for ${claude.language} and ChatGPT's for ${language}: give two of one language.`,
-  );
-}
+  const chatgpt = reviewOf(path.resolve(options.chatgpt), "ChatGPT");
+  const language = chatgpt.language;
+  if (!Object.hasOwn(LANGUAGES, language)) {
+    fail(
+      `ChatGPT's workbook's sheet is named "${language}", not one of ${Object.keys(LANGUAGES).join(", ")}. ` +
+        "Keep the sheet name export wrote.",
+    );
+  }
+  const claude =
+    options.claude && reviewOf(path.resolve(options.claude), "Claude");
+  if (claude && claude.language !== language) {
+    fail(
+      `Claude's workbook is for ${claude.language} and ChatGPT's for ${language}: give two of one language.`,
+    );
+  }
 
-const theirs = new Map(
-  claude ? claude.rows.map((row) => [rowKey(row), row]) : [],
-);
-const targets = targetsFor(language);
-const decisions = chatgpt.rows.map((row) =>
-  decisionOf(
-    row,
-    claude ? (theirs.get(rowKey(row)) ?? null) : undefined,
-    targets,
-    language,
-  ),
-);
-const ours = new Set(chatgpt.rows.map(rowKey));
-const unmatched = claude
-  ? claude.rows.filter((row) => !ours.has(rowKey(row))).length
-  : 0;
-
-const meaning =
-  options.meaning && meaningCheck(language, options.model ?? MODEL, key);
-let results;
-for (;;) {
-  results = decisions.map((decision) => resolve(decision, meaning));
-  const pending = new Map(
-    results
-      .filter((result) => result.pending)
-      .map(({ pending }) => [JSON.stringify(pending), pending]),
+  const theirs = new Map(
+    claude ? claude.rows.map((row) => [rowKey(row), row]) : [],
   );
-  if (pending.size === 0) break;
-  await meaning.ask([...pending.values()]);
-}
+  const targets = targetsFor(language);
+  const decisions = chatgpt.rows.map((row) =>
+    decisionOf(
+      row,
+      claude ? (theirs.get(rowKey(row)) ?? null) : undefined,
+      targets,
+      language,
+    ),
+  );
+  const ours = new Set(chatgpt.rows.map(rowKey));
+  const unmatched = claude
+    ? claude.rows.filter((row) => !ours.has(rowKey(row))).length
+    : 0;
 
-mkdirSync(path.dirname(out), { recursive: true });
-writeFileSync(
-  out,
-  workbook(language, COLUMNS, [
-    COLUMNS.map((column) => column.title),
-    ...results.map((result) => [
-      result.row.area,
-      result.row.id,
-      result.row.where,
-      result.row.english,
-      result.row.translation,
-      result.text ?? "",
-      result.row.keep,
-      result.reason,
-      fallbackCell(result),
+  const meaning =
+    options.meaning &&
+    meaningCheck(
+      language,
+      options.model ?? MODEL,
+      key,
+      path.join(ROOT, "review", `${language}.meaning.json`),
+    );
+  let results;
+  for (;;) {
+    results = decisions.map((decision) => resolve(decision, meaning));
+    const pending = new Map(
+      results
+        .filter((result) => result.pending)
+        .map(({ pending }) => [JSON.stringify(pending), pending]),
+    );
+    if (pending.size === 0) break;
+    await meaning.ask([...pending.values()]);
+  }
+
+  mkdirSync(path.dirname(out), { recursive: true });
+  writeFileSync(
+    out,
+    workbook(language, COLUMNS, [
+      COLUMNS.map((column) => column.title),
+      ...results.map((result) => [
+        result.row.area,
+        result.row.id,
+        result.row.where,
+        result.row.english,
+        result.row.translation,
+        result.text ?? "",
+        result.row.keep,
+        result.reason,
+        fallbackCell(result),
+      ]),
     ]),
-  ]),
-);
+  );
 
-const count = (source) =>
-  results.filter((result) => result.source === source).length;
-const fellBack = (by) =>
-  results.filter((result) => result.fallbacks?.some((f) => f.by === by)).length;
-console.log(
-  [
-    `${shown(out)}: ${results.length} rows, ${language}.`,
-    `- Agreed ${count("agreed")}, ChatGPT ${count("ChatGPT")}, Claude ${count("Claude")}, today's ${count("today")}, set aside ${count("set aside")}.`,
-    `- Fallen back: ${fellBack("rule")} by rule, ${fellBack("meaning")} by meaning.`,
-    meaning
-      ? `- The meaning check: ${meaning.summary()}.`
-      : "- The meaning check: not run; --meaning runs it.",
-    ...(unmatched > 0
-      ? [
-          `- ${unmatched} rows of Claude's workbook are not in ChatGPT's, and were left out.`,
-        ]
-      : []),
-  ].join("\n"),
-);
+  const count = (source) =>
+    results.filter((result) => result.source === source).length;
+  const fellBack = (by) =>
+    results.filter((result) => result.fallbacks?.some((f) => f.by === by))
+      .length;
+  const onlyClaude = results.filter((result) => result.onlyClaude);
+  const foundWrong = (by) =>
+    onlyClaude.filter((result) => result.wrong === by).length;
+  console.log(
+    [
+      `${shown(out)}: ${results.length} rows, ${language}.`,
+      `- Agreed ${count("agreed")}, ChatGPT ${count("ChatGPT")}, Claude ${count("Claude")}, today's ${count("today")}, set aside ${count("set aside")}.`,
+      `- Fallen back: ${fellBack("rule")} by rule, ${fellBack("meaning")} by meaning.`,
+      ...(claude
+        ? [
+            `- Only Claude changed it: ${onlyClaude.length}; today's found wrong in ${foundWrong("rule")} by rule` +
+              (meaning ? ` and ${foundWrong("meaning")} by meaning.` : "."),
+          ]
+        : []),
+      meaning
+        ? `- The meaning check: ${meaning.summary()}.`
+        : "- The meaning check: not run; --meaning runs it.",
+      ...(unmatched > 0
+        ? [
+            `- ${unmatched} rows of Claude's workbook are not in ChatGPT's, and were left out.`,
+          ]
+        : []),
+    ].join("\n"),
+  );
+}
+
+if (options.calibrate) {
+  process.exitCode = (await calibrate(options.model ?? MODEL, key)) ? 0 : 1;
+} else {
+  await decide(options, key);
+}
