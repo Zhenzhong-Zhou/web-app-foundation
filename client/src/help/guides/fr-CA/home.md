@@ -6,6 +6,14 @@ L’accueil est la première page que vous voyez : ce qui vous attend aujourd�
 - Dans vos deux premières semaines, après votre arrivée sur invitation : votre carte de bienvenue en plus.
 - Pendant la mise en place d’une nouvelle organisation : Premiers pas en plus.
 
+## Les mots que vous verrez {#words}
+
+- **Lot** : une quantité d’un article produite ou reçue en une fois, avec son propre code et sa date de péremption.
+- **En retard** : une commande qui reste à expédier ou à recevoir, passé le jour où elle était attendue, selon la date de l’organisation.
+- **Épuisé** : un article dont il ne reste rien à vendre.
+- **Expire bientôt** : un lot qui périme dans le nombre de jours fixé par l’organisation.
+- **Licences qui expirent** : une licence à moins de 60 jours de son dernier jour, ou au-delà.
+
 ## Chaque jour {#today}
 
 - En haut : la salutation avec **Actualiser** à côté, la date et l’heure de l’organisation, et sa ligne Ce que nous faisons, dans ses propres mots.
@@ -21,15 +29,15 @@ L’accueil relit ses nombres quand vous y revenez après une minute d’absence
 
 Une tuile ouvre sa liste avec seulement ce qu’elle compte, le plus urgent d’abord :
 
-- **À expédier** et **À recevoir** : Commandes, les ventes qui restent à expédier ou les achats qui restent à recevoir, les commandes en retard d’abord.
-- **Commandes · Brouillon** : Commandes, les commandes en brouillon, la plus ancienne d’abord, avec **Brouillon** et **Les plus anciennes d’abord** choisis. Elle reste masquée tant que vous ne l’affichez pas dans Personnaliser l’accueil.
+- **À expédier** et **À recevoir** : Commandes, les commandes en retard d’abord.
+- **Commandes · Brouillon** : Commandes, les commandes en brouillon, la plus ancienne d’abord. Elle reste masquée tant que vous ne l’affichez pas dans Personnaliser l’accueil.
 - **Stock bas** : Points de commande, dans [Inventaire](/inventory#reorder-points), les plus loin sous leur point d’abord.
-- **Expire bientôt** : Inventaire, les lots qui périment dans le nombre de jours fixé par l’organisation, le plus proche d’abord.
+- **Expire bientôt** : Inventaire, les lots qui périment le plus tôt.
 - **Valeur du stock · En attente d’un coût** : Valeur du stock, où vous fixez le coût du stock arrivé sans coût.
 - **Factures · À émettre** : Factures, les brouillons.
 - **Retours en cours** : Retours, ceux qui sont en cours.
 - **Production · En cours** : Production, les ordres de fabrication lancés et pas encore clos.
-- **Licences qui expirent** : Licences, celles qui expirent d’ici 60 jours ou ont expiré, la plus proche d’abord.
+- **Licences qui expirent** : Licences, celles qui expirent le plus tôt d’abord.
 
 La liste garde ce choix pendant que vous y travaillez : en revenant d’une fiche, vous la retrouvez telle quelle.
 
@@ -93,10 +101,3 @@ Sur un téléphone ou une tablette, chaque icône de la barre du haut a son mot 
 ## Sans organisation {#no-organization}
 
 Demandez à quelqu’un d’une organisation d’inviter votre adresse, puis ouvrez son lien en étant connecté : vous la rejoignez avec ce compte. Un lien pour créer votre propre organisation s’ouvre de la même façon. Là où l’accueil offre **Créer une organisation**, vous pouvez aussi en créer une, dont vous serez propriétaire.
-
-## Les mots que vous verrez {#words}
-
-- **En retard** : une commande qui reste à expédier ou à recevoir, passé le jour où elle était attendue, selon la date de l’organisation.
-- **Expire bientôt** : un lot qui périme dans le nombre de jours fixé par l’organisation.
-- **Licences qui expirent** : une licence à moins de 60 jours de son dernier jour, ou au-delà.
-- **Épuisé** : un article avec un point de commande dont il ne reste rien : ce que les ventes requièrent encore prend tout ce qui est utilisable et à venir, ou plus.

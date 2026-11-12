@@ -804,6 +804,16 @@ folder by folder; these check what is already in place.
   runs, plainly. Home's welcome card (MC-3207) and a role's page say the
   same, in Français and 中文 alike, such as
   每个批次（一个物品的一批货，有自己的编码）的历史记录.
+- **MC-1423** *(ADR-054's November 2026 amendment, R11; #511)* Help on
+  Home starts with its words. As the demo Owner on Home, open Help: under
+  the three moments, Words you’ll meet comes first, ahead of Every day.
+  It says a Lot is one batch of an item, with its own code and expiry,
+  and Out is an item with none left to sell, with no reorder point or
+  usable and coming in it; Late, Expiring soon and Licences expiring
+  follow. Where each tile leads gives each tile one short line, and each
+  still opens the page it names. At 390 px the first screen of Help on
+  Home reaches the words before any tile. In Français (Les mots que
+  vous verrez: Lot, Épuisé) and 中文 (常见词: 批次, 缺货) the same.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -2427,9 +2437,10 @@ The pages, in a private window unless a check says otherwise.
   line, and You may do everything here, in one line.
 - **MC-3213** *(ADR-091)* Home's guide. As the demo Owner on Home, open
   Help: Home's guide names Home's three moments (every day, the first two
-  weeks, a new organization), then Every day, Where each tile leads, What
-  is late, Customise Home, Your first two weeks, Getting started, The top bar, With no
-  organization and Words you’ll meet. Every word it puts in bold reads
+  weeks, a new organization), then Words you’ll meet, Every day, Where
+  each tile leads, What is late, Customise Home, Your first two weeks,
+  Getting started, The top bar and With no organization. Every word it
+  puts in bold reads
   the same on the screen: What needs you today, 2 late, Raise an order,
   Recently opened, Refresh; each tile's name, and where the guide says it
   leads is where the tile opens; 2 late orders to ship, and Late, Out and
@@ -5828,3 +5839,6 @@ first.
 - 2026-11-12: ADR-054's November amendment, R11 (#505): What you can do
   here explains a lot, recipes, production runs, credit notes and return
   authorizations the first time it names them: MC-1422 added.
+- 2026-11-12: ADR-054's November amendment, R11 (#511): Help on Home
+  starts with Words you’ll meet, which now explains a lot and Out, and
+  keeps each tile to a short line: MC-1423 added, MC-3213 updated.
