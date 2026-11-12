@@ -45,15 +45,10 @@ export function pickCategories(
     own(category) +
     childrenOf(category.id).reduce((sum, child) => sum + branch(child), 0);
 
-  const bottomsUnder = (category: PickableCategory): PickableCategory[] => {
-    const children = childrenOf(category.id);
-
-    return children.length === 0
-      ? []
-      : children.flatMap((child) =>
-          childrenOf(child.id).length === 0 ? [child] : bottomsUnder(child),
-        );
-  };
+  const bottomsUnder = (category: PickableCategory): PickableCategory[] =>
+    childrenOf(category.id).flatMap((child) =>
+      childrenOf(child.id).length ? bottomsUnder(child) : [child],
+    );
 
   const mostOf = (
     categories: PickableCategory[],
