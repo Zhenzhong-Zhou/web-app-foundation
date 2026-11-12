@@ -563,6 +563,58 @@ describe('Costs (e2e)', () => {
         .send({ currency: 'USD', rateDate: '2026-02-31', rate: '1.37' })
         .expect(400);
     });
+
+    /**
+     * A rate the dialog lets through, zero or past 8 places, is refused in
+     * words a person acts on, never the field's API name (#148), and so is
+     * one given with a cost.
+     */
+    it('refuses a rate of zero, or past 8 decimal places, in words', async () => {
+      const s = await setup('alpha');
+
+      const refusals: [string, string][] = [
+        ['en', 'Enter a rate greater than zero, with up to 8 decimal places.'],
+        ['fr-CA', 'Saisissez un taux supérieur à zéro, d’au plus 8 décimales.'],
+        ['zh-Hans', '请输入大于零、最多 8 位小数的汇率。'],
+      ];
+      for (const [language, message] of refusals) {
+        for (const rate of ['0', '1.123456789']) {
+          const refused = await s.agent
+            .put('/v1/costs/exchange-rates')
+            .set('Accept-Language', language)
+            .send({ currency: 'USD', rateDate: '2026-09-28', rate })
+            .expect(400);
+          expect(body<{ message: string[] }>(refused).message).toEqual([
+            message,
+          ]);
+        }
+      }
+
+      const extract = await variant(s, 'EXTRACT');
+      const valuation = await valuationOf(
+        db,
+        await buy(s, extract, '100', usd('0.25')),
+      );
+      const withCost: [string, string][] = [
+        [
+          'en',
+          'Enter an exchange rate greater than zero, with up to 8 decimal places.',
+        ],
+        [
+          'fr-CA',
+          'Saisissez un taux de change supérieur à zéro, d’au plus 8 décimales.',
+        ],
+        ['zh-Hans', '请输入大于零、最多 8 位小数的汇率。'],
+      ];
+      for (const [language, message] of withCost) {
+        const refused = await s.agent
+          .put(`/v1/costs/valuations/${valuation.id}`)
+          .set('Accept-Language', language)
+          .send({ ...usd('0.25'), exchangeRate: '0' })
+          .expect(400);
+        expect(body<{ message: string[] }>(refused).message).toEqual([message]);
+      }
+    });
   });
 
   describe('stock valuation', () => {

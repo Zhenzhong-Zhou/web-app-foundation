@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
@@ -41,6 +42,21 @@ describe('LocationsPage', () => {
     expect(
       screen.queryByRole('button', { name: 'Edit' }),
     ).not.toBeInTheDocument();
+  });
+
+  // Its stock moves to another location: none can be added inside one
+  // that holds stock (#148).
+  it('says, adding inside a location, that its stock moves elsewhere first', async () => {
+    renderAs(['locations.view', 'locations.create']);
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: 'Add inside' }));
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Add inside Richmond' }),
+    ).toHaveTextContent(
+      'Richmond will stop holding stock directly. Anything already there has to move to another location first.',
+    );
   });
 
   it('keeps Add inside from someone who may only change locations', async () => {

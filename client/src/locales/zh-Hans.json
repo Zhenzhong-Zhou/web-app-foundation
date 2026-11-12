@@ -1051,7 +1051,7 @@
   "locations.code": "编码",
   "locations.code.help": "标签上的编码——如 H5、A-01-03。在同一上级库位下须唯一。",
   "locations.create.leavesHoldStock": "库存存放在不再包含其他库位的位置。单个房间本身即可作为一个库位——日后需要时可在其中添加货位。",
-  "locations.create.parentStopsHolding": "{name} 将不再直接存放库存。其中已有的库存须先移入下级库位。",
+  "locations.create.parentStopsHolding": "{name} 将不再直接存放库存。其中已有的库存须先移至另一个库位。",
   "locations.create.title": "添加库位",
   "locations.create.titleInside": "在 {name} 中添加",
   "locations.edit.availableForPicking": "可用于拣货",

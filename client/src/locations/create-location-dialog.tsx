@@ -115,15 +115,16 @@ export function CreateLocationDialog({
 
             {/* The refusal the server will give, said before it is given. A
                 location holding stock cannot gain children until that stock
-                moves down (ADR-024), and being told after typing a name is
-                worse than being told before. */}
+                moves to another location (ADR-024; not inside it, where
+                nothing can be added yet, #148), and being told after typing
+                a name is worse than being told before. */}
             {parent && (
               <Alert severity="info">
                 {intl.formatMessage(
                   {
                     id: 'locations.create.parentStopsHolding',
                     defaultMessage:
-                      '{name} will stop holding stock directly. Anything already there has to move into a child location first.',
+                      '{name} will stop holding stock directly. Anything already there has to move to another location first.',
                   },
                   { name: parent.name },
                 )}

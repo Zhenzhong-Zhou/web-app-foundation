@@ -253,8 +253,10 @@ export class LocationsService {
       throw new ConflictException(
         t({
           id: 'locations.locationHoldsStockMove',
+          // Not to a location inside it: none can be added while it holds
+          // stock (#148).
           defaultMessage:
-            'This location holds stock. Move it to a child location first.',
+            'This location holds stock. Move its stock to another location first.',
         }),
       );
     }

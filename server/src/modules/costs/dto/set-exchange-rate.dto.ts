@@ -31,7 +31,7 @@ export class SetExchangeRateDto {
       defineMessage({
         id: 'validation.rate',
         defaultMessage:
-          'rate must be greater than zero with at most 8 decimal places, sent as a string',
+          'Enter a rate greater than zero, with up to 8 decimal places.',
       }),
     ),
   })

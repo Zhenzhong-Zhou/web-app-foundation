@@ -751,6 +751,19 @@ folder by folder; these check what is already in place.
   as the menu does. Help in 中文 on Inventory, Locations, Lots, Partners,
   Price lists, Tax codes, Invoices, Returns and Organization uses the
   same words.
+- **MC-1418** *(ADR-054's November 2026 amendment, R11; #148)* A refusal
+  says what to do next, in words the screens use, in English, Français
+  and 中文. Locations → a shelf that holds stock → Add inside: the dialog
+  says anything already there has to move to another location first,
+  and adding one anyway is refused with "Move its stock to another
+  location first" (Déplacez d’abord son stock vers un autre emplacement,
+  请先将其库存移至另一个库位), as Help on Locations says; never a child
+  location. Settings → Exchange rates → Set a rate of 0, or 1.123456789:
+  "Enter a rate greater than zero, with up to 8 decimal places.", with
+  no field name and nothing about strings; the same for an exchange rate
+  of 0 in Set cost. Release a run whose item has no recipe: the dialog
+  says to create one and promote it (mettez-la en vigueur, 启用), the
+  recipe's own button.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -5744,3 +5757,7 @@ first.
 - 2026-11-12: ADR-054's November amendment, R4: scripts/i18n-rules.mjs
   holds the glossary's words and punctuation, the French guillemets and
   colons among them, moved from the catalogue checks: MC-1416 extended.
+- 2026-11-12: ADR-054's November amendment, R11 (#148): a location that
+  holds stock sends its stock to another location, an exchange rate is
+  refused in words, and a run with no recipe says to promote one:
+  MC-1418 added.

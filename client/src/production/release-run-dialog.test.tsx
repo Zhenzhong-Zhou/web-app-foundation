@@ -246,6 +246,31 @@ describe('ReleaseRunDialog without a recipe', () => {
     ).toHaveTextContent('v2 — active, makes 1,000 per batch');
   });
 
+  // Promote, the word the recipe's own button says, since a draft is not
+  // offered here (#148).
+  it('says to create a recipe and promote it when the item has none', async () => {
+    serve({ licence: null, status: 'none', outcome: 'allow' });
+    server.use(http.get('/api/v1/boms', () => HttpResponse.json([])));
+
+    renderWithAuth(
+      <ReleaseRunDialog
+        open
+        run={{ ...RUN, bomId: null }}
+        canOverrideLicence={false}
+        canAttachRecipe
+        onClose={() => undefined}
+        onReleased={() => undefined}
+      />,
+    );
+
+    expect(
+      await screen.findByText(
+        'There is no recipe for this item yet. Create one on the item’s page and promote it, then release.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Release' })).toBeDisabled();
+  });
+
   /**
    * The recipes are read as Plan a run reads them (#290): while they come,
    * nothing says there is none, and a read that fails says so, with Try

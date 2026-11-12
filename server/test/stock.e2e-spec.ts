@@ -456,10 +456,27 @@ describe('Stock (e2e)', () => {
           .send(receipt(variant.id, locationId, '40'))
           .expect(201);
 
-        await agent
-          .post('/v1/locations')
-          .send({ type: 'bin', name: 'Bin 1', parentId: locationId })
-          .expect(409);
+        // Its stock goes to another location, since none can be added
+        // inside it while it holds some (#148), in each language.
+        const refusals: [string, string][] = [
+          [
+            'en',
+            'This location holds stock. Move its stock to another location first.',
+          ],
+          [
+            'fr-CA',
+            'Cet emplacement contient du stock. Déplacez d’abord son stock vers un autre emplacement.',
+          ],
+          ['zh-Hans', '此库位存有库存。请先将其库存移至另一个库位。'],
+        ];
+        for (const [language, message] of refusals) {
+          const refused = await agent
+            .post('/v1/locations')
+            .set('Accept-Language', language)
+            .send({ type: 'bin', name: 'Bin 1', parentId: locationId })
+            .expect(409);
+          expect(body<{ message: string }>(refused).message).toBe(message);
+        }
       });
 
       it('allows a child once the stock is gone', async () => {
