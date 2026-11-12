@@ -315,3 +315,36 @@ planning skill:
   steps run in a row until one needs a person, so the chat reads the
   stops and, at the end, the summaries file beside the brief, rather than
   every summary.
+
+## Amendment (November 2026) — the playback, a feature's flows and states, and the chat's notes
+
+Written into the skill with
+[ADR-090's flows-and-states amendment](0090-the-design-language.md):
+
+- **The playback** (decided on 10 November 2026, first used for #547 in
+  ADR-051's amendment): before planning a feature or a long request,
+  the chat restates it as numbered requirements, R1, R2 and on, each
+  with how it is shown done; then its assumptions, what is not included,
+  and its questions, each with its options and one recommended. It
+  waits for the maintainer's confirmation before drafting. The list is
+  kept in the ADR under "Requirements, as confirmed", each requirement
+  naming its step in the brief, and the as-built marks each met, changed
+  or deferred.
+- **A feature's flows and states,** ADR-092's decision: its plan asks for
+  a wireflow board on the canvas, an interaction table in its ADR and
+  each screen's five states, drawn only where they differ from the
+  design language's States; its brief turns each row of the table into a
+  browser test.
+- **A script changed with its test:** a patch to a script in `scripts/`
+  reads and updates its test, `scripts/<name>.test.mjs`, in the same
+  patch. #558's first patch to `verify.sh` missed `verify.test.mjs`,
+  which pins the Linux run's command, and broke three tests.
+- **Commands run as pasted,** each line even after one fails, so a
+  verify before a push is chained to it with `&&` and a red verify stops
+  the push.
+- **markdownlint reads text between two dollar signs as maths,** so a
+  link reference inside such a span, as between two amounts in US
+  dollars on one line, counts as unused.
+- **A timed run's medians** come from its rounds' reports, downloaded
+  and judged with `npm run perf:judge`, as `server/perf/README.md` says,
+  not from a job's log by a step's name.

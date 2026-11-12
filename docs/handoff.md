@@ -15,10 +15,25 @@ as-built amendments, [the working agreements](engineering.md),
 
 On 11 November 2026:
 
+- **Flows and states,**
+  [ADR-090's amendment](adr/0090-the-design-language.md), with short ones
+  in ADR-087 and ADR-088: planned on 11 November on
+  `flows-and-states`, a docs pull request, its requirements confirmed
+  before drafting and its decisions chosen as recommended. The five
+  states and each shared piece's own states drawn once, in the design
+  language's States section and the canvas row "状态 第一版 · States
+  v1"; the patterns Items' reviews and its as-built handed it, with
+  [#170]'s dense rows and [#536]'s adding several in a row; each feature
+  asked for a wireflow, an interaction table and its five states; the
+  playback in the planning skill; one Settings page designed for
+  [#513]; and a code rules file held to 3,000 characters ([#517]). No
+  code, API or migration: each screen's build has its issue, six of them
+  filed on the branch. Then the translations, before 30 November.
 - **[#547], the list search's plans,**
   [ADR-051's amendment](adr/0051-performance.md): planned on 10
   November and built on 10 and 11 November on `fix-547-search-plans`,
-  19 commits with the as-built, pull request [#558]; its requirements
+  19 commits with the as-built, merged on 11 November as [#558]
+  (06cff0b4), a merge commit, and deployed; its requirements
   were confirmed before drafting, the playback's first use, and the
   as-built marks each met. A search reads Items' matching variants once,
   for the match, the rank and the counts, where it read them five times:
@@ -31,7 +46,8 @@ On 11 November 2026:
   keeps a failed test's trace ([#521]), and Postgres in Docker gets 256 MB
   of shared memory, on the Mac and on GitHub's runners. The full verify's
   one WebKit miss was the theme's: [#557], a main button's hover in dark
-  mode at about 3.7 : 1, `fix-now`, through the fix runner.
+  mode at about 3.7 : 1, `fix-now`, through the fix runner, merged the
+  same evening as [#559] and deployed; MC-R103 passed on the live site.
 - **[#526]'s first half, a refused document's page,**
   [ADR-071's amendment](adr/0071-documents-as-pdf-drawn-on-the-server.md):
   planned and built on 10 November on `fix-526-refused-document-page`,
@@ -217,7 +233,11 @@ On 11 November 2026:
   rounds judged by their median ([#342]); on 3 November the typo lookup's
   was 248 ms and Home's 237, each under its 300 ms budget, with one round
   in three over it.
-- **The last merges:** on 10 November, [#532] (Items), squashed by
+- **The last merges:** on 11 November, [#558] ([#547]) as a merge
+  commit, then [#559] ([#557]), the runner's, as a merge commit too
+  (c1f7b6d0), by mistake: its branch took `main` in GitHub's conflict
+  editor, and a runner's pull request is squashed, with the two lines it
+  prints. On 10 November, [#532] (Items), squashed by
   mistake, then [#554] ([#529]) and [#556] ([#526]'s first half), each
   as a merge commit. On 9 November, as a
   merge commit, [#523] (the runner in the repository). On 8 November, as merge commits, [#518] (the
@@ -378,23 +398,22 @@ On 11 November 2026:
 
 ## Still to do, by hand
 
-- **After [#558]'s merge:** `gh pr merge 558 --merge`, never squashed;
-  `scripts/prune-branches.sh --yes`; `scripts/clean-local.sh`, then
-  `--yes`, which removes the branch's `tmp/` folder, its reports and
-  brief among them; Project knowledge re-synced; `/triage` over the areas
-  it touched, products, search, documents, invoices, database and ops,
-  with a comment on [#521] that a failed Linux WebKit test now keeps its
-  trace; and the first weekly Performance run on `main` after it, which
-  judges the PDF's 1,200 ms budget.
+- **After [#558]'s and [#559]'s merges,** done on 11 November: the
+  merges; the prune and the clean-up; Project knowledge re-synced;
+  MC-R103 on the live site; and `/triage` over every open issue, its
+  choices applied the same day: comments on [#306], [#308] and [#521],
+  and [#560] filed, a WebKit flake on `main`'s CI, its report kept in
+  the ignored `tmp/flake-43062369884/`. Still to do: the first weekly
+  Performance run on `main` after them, Monday 16 November, which judges
+  the PDF's 1,200 ms budget.
 - **After [#556]'s merge,** done on 10 November: the merge, as a merge
   commit; the prune and the clean-up; Project knowledge re-synced; and
   `/triage` over every open issue, its choices applied the same day: a
   kind label on each of the 142 that had none, so every open issue has
   one, one kind each for [#162], [#170] and [#310], [#551]'s list brought
-  up to date, and comments on [#226] and [#547]. Still to do: after the
-  deploy, on the live site, an order whose item lacks a required name:
-  its Print shows the page in the app's language, with the way to the
-  item.
+  up to date, and comments on [#226] and [#547]. On 11 November, on the
+  live site, an order whose item lacks a required name: its Print showed
+  the page in the app's language, with the way to the item.
 - **After [#554]'s merge,** done on 10 November: the merge, as a merge
   commit; the prune and the clean-up; `../waf-fix` back on `main`, with
   `npm ci` in its `server/` and `client/`; and Project knowledge
@@ -538,47 +557,15 @@ request or a set of them:
       in the app's language, the links staying plain; with it, [#551]'s
       item 91 and what the 30-minute look at [#521] asked for: [#556];
       then the
-      list search's plans ([#547]), planned on 10 November as
-      [ADR-051's amendment](adr/0051-performance.md) and built as [#558], since its watch on a large
-      catalogue's search fired at 128 ms (ADR-092's review, finding 67),
-      with a timed scenario for the category filter, the budget for a PDF
-      that ADR-071 deferred, whose trigger fired in October and was
-      missed, one invoice's PDF timed at both scales, and the two rules
-      lines out of date that [#306]'s and [#308]'s comments of 10
-      November name; its watch closes only when the search is back under
-      100 ms, and it gains Home's Expiring-soon count, whose two plans of
-      nearly equal cost at large a fresh `ANALYZE` chooses between
-      (ADR-071's as-built); then a docs pull request for
-      flows and states, ADR-092's decision: the pieces every screen
-      shares, their states drawn once in the design language and one
-      canvas row, and the planning skill asking each feature for a
-      wireflow, an interaction table and five states, ADR-090 amended.
-      Its inputs: ADR-092's decision 17a, and the ignored
-      `tmp/flows-and-states/dl-items.md`, attached to the chat that plans
-      it, which holds ADR-092's review items 4, 7, 10, 15, 17, 18, 21,
-      22, 28, 30, 35, 39 and 43; the figure beside a status (finding 1);
-      the width switched by `useMediaQuery`, against
-      `.claude/rules/ui.md`; one Settings page for the setup links, with
-      [#513]; and no rail highlight on Settings › Categories. With it,
-      three commits of their own: the README's roadmap since v0.7.0,
-      Items' name and CSV import moved to [#552], with a line in
-      engineering.md's release routine that the README's status and
-      roadmap change at every tag; the code's names for Items written
-      down, `product` for any item and `good` for the Products type, in
-      the glossary and `.claude/rules/products.md`, no file renamed
-      ([#553] holds the full rename); and the playback, decided on 10
-      November, a step of the planning skill and of
-      `.claude/chat-skills/plan-feature/reference/brief.md`: before
-      planning a feature or a long request, the chat restates it as
-      numbered requirements, each with how it is shown done, then its
-      assumptions, what is not included and its questions, and waits
-      for the maintainer's confirmation; the list is kept in the ADR,
-      each requirement mapped to its step in the brief and marked met,
-      changed or deferred in the as-built. With it, in the skill's
-      delivery reference: markdownlint reads text between two dollar
-      signs as maths, so a link reference inside such a span, as between
-      two amounts in US dollars on one line, counts as unused. After its
-      merge, the planning skill packed from `main` and uploaded;
+      list search's plans ([#547]),
+      [ADR-051's amendment](adr/0051-performance.md), merged on 11
+      November as [#558]; then flows and states, a docs pull request,
+      [ADR-090's amendment](adr/0090-the-design-language.md), planned on
+      11 November on `flows-and-states`, with the README's roadmap
+      since v0.7.0 (CSV import moved to [#552]), the code's names for
+      Items ([#553]'s first part), the playback in the planning skill and
+      [#517]; after its merge, the planning skill packed from `main` and
+      uploaded;
    5. the translations, before 30 November, moved ahead of Movements on
       10 November to keep the date: first a second review by
       ChatGPT on the website, one chat per language, on the workbooks
@@ -883,6 +870,7 @@ Not repeated here; each list has one home:
 [#531]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/531
 [#532]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/532
 [#533]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/533
+[#536]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/536
 [#539]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/539
 [#546]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/546
 [#547]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/547
@@ -894,3 +882,5 @@ Not repeated here; each list has one home:
 [#556]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/556
 [#557]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/557
 [#558]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/558
+[#559]: https://github.com/Zhenzhong-Zhou/web-app-foundation/pull/559
+[#560]: https://github.com/Zhenzhong-Zhou/web-app-foundation/issues/560

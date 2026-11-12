@@ -250,3 +250,24 @@ What building and review settled:
   belongs in; no test checks which of the three forms a write returns;
   and none shows a role an organization makes issuing an invoice, which
   the general permission mechanism covers.
+
+## Amendment (November 2026) — a code rules file held to 3,000 characters (#517)
+
+`scripts/check-docs.mjs` held each file in `.claude/rules/` to 40 lines
+after its front matter (ADR-089's review, finding 91), and a file could
+meet that by joining its lines without shortening them: `ui.md` did,
+with lines of 131 to 158 characters (#517). What a file costs is its
+length, since it loads with every file its paths match. #517's trigger,
+the next file grown, fired with
+[ADR-090's flows-and-states amendment](0090-the-design-language.md),
+which grows `products.md` and `ui.md`, both at 40 lines.
+
+- **The check counts characters after the front matter,** at most
+  3,000: 40 lines of about 75 characters, the width these files wrap
+  at. On 11 November 2026 the longest, `database.md`, held 2,968.
+- **`/rules-file` says the same,** in place of "at most 40 lines".
+- **The check's test** holds a file of 3,000 characters passing and one
+  of 3,001 failing.
+
+"Code rules only" above stands: the cap keeps a file short, and what it
+holds is still decided by that decision.
