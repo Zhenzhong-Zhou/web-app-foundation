@@ -782,6 +782,15 @@ folder by folder; these check what is already in place.
   一张图片，最大 5 MB（PNG、JPEG 或 WebP）。 In each language, on a phone
   (390 px) and on the laptop at Larger text, 5 MB, 2 MB and 20 MB (5 Mo
   in Français) each stay on one line. The rail's foot in 中文 is MC-3511.
+- **MC-1421** *(ADR-054's November 2026 amendment, R11; #512)* An empty
+  date field shows no format the reader cannot read. In 中文, in a
+  browser set to English (Canada), Orders' 预计日期（起） and 预计日期（止）
+  are empty boxes with their calendar icon, with no yyyy-mm-dd. Click
+  one: the browser's own format appears, to type into; choose a day and
+  it shows; clear it and leave the field: the box is empty again. The
+  same for every date field left empty, such as Invoices', the audit
+  log's and a new licence's; in Safari, an empty one shows no grey date
+  of today.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -5800,3 +5809,6 @@ first.
   in plain words first, its size kept whole by a no-break space, and no
   gap after a Chinese name in the rail's foot: MC-1420 added, MC-3511
   extended.
+- 2026-11-12: ADR-054's November amendment, R11 (#512): an empty date
+  field shows none of the browser's format until it is typed in:
+  MC-1421 added.
