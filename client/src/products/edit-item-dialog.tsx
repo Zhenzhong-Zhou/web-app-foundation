@@ -21,6 +21,7 @@ import {
   PRODUCT_TYPES,
   productTypeLabel,
   productTypeLine,
+  productTypeSingular,
 } from './product-types';
 
 /**
@@ -207,7 +208,8 @@ export function EditItemDialog({
               // The box shows the type's name; its line is in the list.
               slotProps={{
                 select: {
-                  renderValue: (value) => productTypeLabel(String(value), intl),
+                  renderValue: (value) =>
+                    productTypeSingular(String(value), intl),
                 },
               }}
             >
@@ -218,7 +220,7 @@ export function EditItemDialog({
               {PRODUCT_TYPES.map((type) => (
                 <MenuItem key={type} value={type}>
                   <ListItemText
-                    primary={productTypeLabel(type, intl)}
+                    primary={productTypeSingular(type, intl)}
                     secondary={productTypeLine(type, intl)}
                   />
                 </MenuItem>

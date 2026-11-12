@@ -214,7 +214,10 @@ describe('ProductDetailPage', () => {
     ).toBeVisible();
   });
 
-  /** Its type and its category's path under its name (ADR-092). */
+  /**
+   * Its type, in the singular for the one item (#548), and its category's
+   * path under its name (ADR-092).
+   */
   it('shows its type and category under its name', async () => {
     renderPage({ ...PRODUCT, type: 'packaging', categoryId: 'caps' });
 
@@ -226,13 +229,15 @@ describe('ProductDetailPage', () => {
   it('says Uncategorised under its name when it is in no category', async () => {
     renderPage({ ...PRODUCT, type: 'supply' });
 
-    expect(await screen.findByText('Supplies · Uncategorised')).toBeVisible();
+    expect(await screen.findByText('Supply · Uncategorised')).toBeVisible();
   });
 
   /**
    * Edit changes its name, description, category and type (#306's 30),
    * starting from the base name, and sends only what changed, so History
-   * records what the person changed; a new type says where it moves.
+   * records what the person changed; a new type says where it moves. The
+   * types are each one item's, in the singular, and where it moves is the
+   * tab's, in the plural (#548).
    */
   it('edits its name, description, category and type, sending only what changed', async () => {
     const sent: UpdateProductDto[] = [];
@@ -259,6 +264,9 @@ describe('ProductDetailPage', () => {
       ),
     ).toBeVisible();
 
+    expect(screen.getByRole('combobox', { name: 'Type' })).toHaveTextContent(
+      /^Supply$/,
+    );
     await user.click(screen.getByRole('combobox', { name: 'Type' }));
     // Each type with Add item's line under it (ADR-092's review, 9).
     expect(
@@ -266,9 +274,11 @@ describe('ProductDetailPage', () => {
         name: 'Packaging Bottles, boxes and labels',
       }),
     ).toBeVisible();
-    await user.click(screen.getByRole('option', { name: /^Packaging/ }));
+    await user.click(
+      screen.getByRole('option', { name: 'Sample Given away, not sold' }),
+    );
     expect(screen.getByRole('combobox', { name: 'Type' })).toHaveTextContent(
-      /^Packaging$/,
+      /^Sample$/,
     );
     await user.click(screen.getByRole('combobox', { name: 'Category' }));
     await user.click(
@@ -277,8 +287,9 @@ describe('ProductDetailPage', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(dialog).not.toBeInTheDocument());
-    expect(sent).toEqual([{ type: 'packaging', categoryId: 'caps' }]);
-    // Where it went, not only "Item saved" (ADR-092's review, 24).
-    expect(await screen.findByText('Moved to Packaging.')).toBeVisible();
+    expect(sent).toEqual([{ type: 'sample', categoryId: 'caps' }]);
+    // Where it went, not only "Item saved" (ADR-092's review, 24): the
+    // tab's name.
+    expect(await screen.findByText('Moved to Samples.')).toBeVisible();
   });
 });

@@ -133,7 +133,8 @@ a second organization.
 
 - **MC-201** Items, at `/items` (`/products` and its pages send there, with
   their query): Add item asks What is it? first, the six types each with
-  a line in everyday words. From the Raw materials tab Raw materials is
+  a line in everyday words, each named for one item (Raw material,
+  Matière première; #548). From the Raw materials tab Raw material is
   chosen; from All none is, and Add item then says "Choose what it is."
   under the types and adds nothing. Under Code a line says it is the
   organization's own code, unique in it, not a barcode, its example the
@@ -251,9 +252,11 @@ a second organization.
   Viewer the tree has no Actions and no Add category, and a
   line says whom to ask. In French and Chinese every word is translated.
 - **MC-214** An item's page, as the demo Owner: under its name, its type
-  and its category's path ("Packaging · Bottles › Caps"), or
+  in the singular and its category's path ("Packaging · Bottles › Caps",
+  "Raw material · Herbs", in Français « Matière première · … »; #548), or
   Uncategorised. Edit opens with its base name, description, category
-  and type; each type has Add item's line under it, and the type says
+  and type; each type is named in the singular with Add item's line
+  under it, and the type says
   the item then shows under its new type, its stock, lots and History as
   they are. Change the
   type and the category and save: "Moved to Packaging." (a save that

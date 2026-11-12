@@ -81,12 +81,13 @@ describe('CreateProductDialog', () => {
 
     const user = renderDialog(null);
     const types = screen.getByRole('radiogroup');
+    // Each in the singular, for the one item being added (#548).
     for (const name of [
-      /^Products/,
-      /^Raw materials/,
+      /^Product(?!s)/,
+      /^Raw material(?!s)/,
       /^Packaging/,
-      /^Supplies/,
-      /^Samples/,
+      /^Supply/,
+      /^Sample(?!s)/,
       /^Equipment/,
     ]) {
       expect(within(types).getByRole('radio', { name })).not.toBeChecked();
@@ -101,7 +102,7 @@ describe('CreateProductDialog', () => {
 
     expect(screen.getByText('Choose what it is.')).toBeVisible();
     expect(
-      within(types).getByRole('radio', { name: /^Products/ }),
+      within(types).getByRole('radio', { name: /^Product(?!s)/ }),
     ).toHaveFocus();
     expect(sent).toBe(false);
   });
@@ -109,7 +110,9 @@ describe('CreateProductDialog', () => {
   it('starts on the open tab’s type', () => {
     renderDialog('material');
 
-    expect(screen.getByRole('radio', { name: /^Raw materials/ })).toBeChecked();
+    expect(
+      screen.getByRole('radio', { name: /^Raw material(?!s)/ }),
+    ).toBeChecked();
   });
 
   // Only Help said it could not be changed later (ADR-092's review, 5).
