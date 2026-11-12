@@ -603,7 +603,7 @@ const CLAUDE_RULE = /^\.claude\/rules\/.+\.md$/;
  * The `paths` list in a file of Claude Code's rules, each pattern with its
  * line, written one to a line as - "pattern", quoted or not; or why there
  * is none. With it, the file's `characters`: those after its front
- * matter, line breaks and blank lines included. The front matter is not
+ * matter, line breaks included. The front matter is not
  * counted, since its paths list grows with its area; a file without
  * front matter counts whole. Read once, for claudeRules and the notice.
  */
