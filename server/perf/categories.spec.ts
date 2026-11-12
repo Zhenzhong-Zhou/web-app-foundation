@@ -10,7 +10,10 @@ function category(
   return {
     id,
     parentId,
-    items: active + discontinued === 0 ? [] : [{ active, discontinued }],
+    items:
+      active + discontinued === 0
+        ? []
+        : [{ type: 'good', active, discontinued }],
   };
 }
 

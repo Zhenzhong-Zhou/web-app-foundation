@@ -1,5 +1,6 @@
 import type { VolumeManifest } from '../src/database/seed-volume';
-import { type PickableCategory, pickCategories } from './categories';
+import type { ProductCategoryList } from '../src/modules/products/dto/product-category-response.dto';
+import { pickCategories } from './categories';
 import { calendarDay, type Session } from './client';
 import {
   inParallel,
@@ -150,9 +151,10 @@ export async function discover(
   const orders = await walk(session, '/orders?status=all');
   const movements = await walk(session, '/stock/movements');
 
-  const { categories } = await session.json<{
-    categories: PickableCategory[];
-  }>('GET', '/products/categories');
+  const { categories } = await session.json<ProductCategoryList>(
+    'GET',
+    '/products/categories',
+  );
   const picked = pickCategories(categories);
   if (!picked?.bottom) {
     throw new Error(

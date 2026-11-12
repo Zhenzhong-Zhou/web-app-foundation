@@ -3,14 +3,13 @@
  * #547), written once for `npm run perf` and `npm run perf:plans`.
  */
 
+import type { ProductCategory } from '../src/modules/products/dto/product-category-response.dto';
+
 /** The part of a category of `GET /products/categories` the pick reads. */
-export interface PickableCategory {
-  id: string;
-  /** Null at the top. */
-  parentId: string | null;
-  /** What it holds itself, by type, not counting the categories under it. */
-  items: { active: number; discontinued: number }[];
-}
+export type PickableCategory = Pick<
+  ProductCategory,
+  'id' | 'parentId' | 'items'
+>;
 
 export interface PickedCategories {
   /** The top-level category with the most items beneath it, itself included. */
