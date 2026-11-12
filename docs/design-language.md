@@ -85,10 +85,12 @@ Each with what holds it in the code today, or the issue that will.
 
 ### Rows
 
-- A row's one link is its name; a click or tap elsewhere in the row
-  opens it too, without being a second link, so a screen reader hears
-  the name, not the whole row (Items' rows, `item-rows.tsx`; #473 for
-  every list).
+- A list's row with controls of its own has one link, its name; a click
+  or tap elsewhere in the row opens it too, without being a second link,
+  so a screen reader hears the name, not the whole row (Items' rows,
+  `item-rows.tsx`; #473 for every list).
+- A row with nothing in it but what it opens, as Home's Recently opened
+  and Getting started's steps are, is one link, its whole row.
 - A row's own controls, a check box, a figure with its status and its
   actions, are targets of their own, never inside the link
   ([Text and targets](#text-and-targets)).
