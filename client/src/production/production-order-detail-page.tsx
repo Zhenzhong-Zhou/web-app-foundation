@@ -16,7 +16,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Fragment, type ReactNode, useState } from 'react';
-import { useIntl } from 'react-intl';
+import { defineMessage, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import type { LineVariance, OutputVariance, RunDetail } from '../api/types.gen';
@@ -27,6 +27,7 @@ import { PageHeader } from '../components/page-header';
 import { Reference } from '../components/reference';
 import { RunCostPanel } from '../costs/run-cost-panel';
 import { LoadFailure } from '../errors/load-failure';
+import { listNameParts } from '../i18n/list-names';
 import { displayQuantity, NO_VALUE, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
@@ -40,6 +41,12 @@ import { CloseRunDialog } from './close-run-dialog';
 import { RecordOutputDialog } from './record-output-dialog';
 import { ReleaseRunDialog } from './release-run-dialog';
 import { runStatusLabel } from './status';
+
+/** One component well off plan, in the warning that lists them. */
+const VARIANCE_ITEM: MessageDescriptor = defineMessage({
+  id: 'production.variance.item',
+  defaultMessage: '{sku} at {percent}',
+});
 
 export function ProductionOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -241,22 +248,27 @@ export function ProductionOrderDetailPage() {
             },
             {
               count: variances.length,
-              list: intl.formatList(
-                variances.map((variance) => (
-                  <Fragment key={variance.lineId}>
-                    {intl.formatMessage(
-                      {
-                        id: 'production.variance.item',
-                        defaultMessage: '{sku} at {percent}',
-                      },
-                      {
+              list: listNameParts(
+                intl,
+                // Each as read, for the join; then drawn with its code.
+                variances.map((variance) =>
+                  intl.formatMessage(VARIANCE_ITEM, {
+                    sku: variance.sku,
+                    percent: percent(variance.variance),
+                  }),
+                ),
+                { type: 'conjunction', style: 'narrow' },
+                (_, index) => {
+                  const variance = variances[index];
+                  return (
+                    <Fragment key={variance.lineId}>
+                      {intl.formatMessage(VARIANCE_ITEM, {
                         sku: <Reference>{variance.sku}</Reference>,
                         percent: percent(variance.variance),
-                      },
-                    )}
-                  </Fragment>
-                )),
-                { type: 'conjunction', style: 'narrow' },
+                      })}
+                    </Fragment>
+                  );
+                },
               ),
             },
           )}

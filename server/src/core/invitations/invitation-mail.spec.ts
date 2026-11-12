@@ -58,7 +58,7 @@ describe('invitationMail', () => {
       'Warehouse lead et Sales',
     );
     expect(invitationMail({ ...both, locale: 'zh-Hans' }).text).toContain(
-      'Warehouse lead和Sales',
+      'Warehouse lead 和 Sales',
     );
   });
 

@@ -1,5 +1,6 @@
 import { SUPPORTED_LOCALES } from '../common/locales';
 import {
+  joinList,
   languageName,
   languageWord,
   localeOf,
@@ -149,6 +150,36 @@ describe('recipientLocale', () => {
   });
 });
 
+// ADR-090, #501: a space between a Latin name and 和, none between two
+// Chinese ones, as the client's lists have (makeIntl).
+describe('joinList in Chinese', () => {
+  it('spaces two Latin names from 和', () => {
+    expect(joinList(['Mei Lin', 'David Park'], 'zh-Hans')).toBe(
+      'Mei Lin 和 David Park',
+    );
+  });
+
+  it('runs two Chinese names into 和', () => {
+    expect(joinList(['李明', '王芳'], 'zh-Hans')).toBe('李明和王芳');
+  });
+
+  it('spaces only the side a Latin name is on, and never 、', () => {
+    expect(joinList(['李明', 'David Park'], 'zh-Hans')).toBe(
+      '李明和 David Park',
+    );
+    expect(joinList(['Owner', 'Olu Ade', '王芳'], 'zh-Hans')).toBe(
+      'Owner、Olu Ade 和王芳',
+    );
+  });
+
+  it('leaves English and French as they join', () => {
+    const names = ['Mei Lin', 'David Park', 'Ada Byrne'];
+
+    expect(joinList(names, 'en')).toBe('Mei Lin, David Park and Ada Byrne');
+    expect(joinList(names, 'fr-CA')).toBe('Mei Lin, David Park et Ada Byrne');
+  });
+});
+
 describe('values', () => {
   it('joins a list the way each language joins one', () => {
     const mixed = t(
@@ -162,7 +193,7 @@ describe('values', () => {
 
     expect(mixed.message).toContain('this one has CAD and USD.');
     expect(translate(mixed, 'fr-CA')).toContain('CAD et USD');
-    expect(translate(mixed, 'zh-Hans')).toContain('CAD和USD');
+    expect(translate(mixed, 'zh-Hans')).toContain('CAD 和 USD');
   });
 
   it('joins three in British English, with no comma before the and', () => {
@@ -203,7 +234,7 @@ describe('values', () => {
     expect(translate(refused, 'fr-CA')).toContain(
       'les permissions de Lecteur et Warehouse lead; vous ne pouvez donc pas les attribuer.',
     );
-    expect(translate(refused, 'zh-Hans')).toContain('查看者和Warehouse lead');
+    expect(translate(refused, 'zh-Hans')).toContain('查看者和 Warehouse lead');
   });
 
   // ADR-054's November 2026 amendment: as the item's page names it, never

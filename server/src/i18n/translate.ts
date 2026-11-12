@@ -107,15 +107,45 @@ const CATALOGUES: Record<Locale, Record<string, string>> = {
   'zh-Hans': chinese,
 };
 
+/** Chinese text, as 和 is. */
+const HAN = /\p{Script=Han}/u;
+
+/**
+ * What an item may end or start with and still meet 和 with no space:
+ * Chinese, the full-width punctuation that sits beside it, or a space
+ * already.
+ */
+const NO_SPACE = /[\s\p{Script=Han}\u3000-\u303f\uff00-\uffef]/u;
+
 /**
  * A list joined the way the language joins one. English is British, as
  * the copy is, so no comma before the "and": "Owner, Olu Ade and Ada
- * Byrne". The client's lists say the same (`makeIntl`).
+ * Byrne". In Chinese, 和 keeps a space from an item that is not Chinese
+ * where they meet (ADR-090, #501): "Olu Ade 和 Ada Byrne", "李明和王芳";
+ * 、 takes none, being full-width. The client's lists say the same
+ * (`makeIntl`).
  */
 export function joinList(items: readonly string[], locale: Locale): string {
-  return new Intl.ListFormat(locale === 'en' ? 'en-GB' : locale, {
+  const parts = new Intl.ListFormat(locale === 'en' ? 'en-GB' : locale, {
     type: 'conjunction',
-  }).format(items);
+  }).formatToParts(items);
+  if (locale !== 'zh-Hans') return parts.map(({ value }) => value).join('');
+
+  const text = (at: number) =>
+    parts[at]?.type === 'element' ? Array.from(parts[at].value) : [];
+  return parts
+    .map(({ type, value }, at) => {
+      if (type !== 'literal') return value;
+      const words = Array.from(value);
+      const last = text(at - 1).at(-1);
+      const first = text(at + 1).at(0);
+      const before =
+        !!last && HAN.test(words.at(0) ?? '') && !NO_SPACE.test(last);
+      const after =
+        !!first && HAN.test(words.at(-1) ?? '') && !NO_SPACE.test(first);
+      return `${before ? ' ' : ''}${value}${after ? ' ' : ''}`;
+    })
+    .join('');
 }
 
 /** Parsed once per language and message, then reused. */

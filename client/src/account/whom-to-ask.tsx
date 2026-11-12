@@ -2,7 +2,6 @@ import { Typography } from '@mui/material';
 import { type MessageDescriptor, useIntl } from 'react-intl';
 
 import type { MemberAccess } from '../api/types.gen';
-import { listNames } from '../i18n/list-names';
 import { useResource } from '../lib/use-resource';
 
 /**
@@ -30,7 +29,7 @@ export function WhomToAsk({
     <Typography sx={{ color: 'text.secondary' }}>
       {names.length > 0
         ? intl.formatMessage(ask, {
-            names: listNames(intl, names, 'disjunction'),
+            names: intl.formatList(names, { type: 'disjunction' }),
           })
         : intl.formatMessage(none)}
     </Typography>

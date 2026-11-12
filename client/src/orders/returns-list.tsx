@@ -25,6 +25,7 @@ import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
+import { listNameParts } from '../i18n/list-names';
 import { api, ApiError } from '../lib/api';
 import { formatDay, formatQuantity, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -275,18 +276,24 @@ function LinkToRmaDialog({
                     {
                       date: formatDay(organizationDayOf(entry.createdAt)),
                       // "A, B, C" in English and French, "A、B、C" in Chinese.
-                      items: intl.formatList(
+                      items: listNameParts(
+                        intl,
+                        entry.items.map(
+                          (item) =>
+                            `${item.sku} ${formatQuantity(item.quantity)}`,
+                        ),
+                        { type: 'conjunction', style: 'narrow' },
                         // By place: a return's items have no id of their own,
                         // and never move.
-                        entry.items.map((item, index) => {
-                          const quantity = formatQuantity(item.quantity);
+                        (_, index) => {
+                          const { sku, quantity } = entry.items[index];
+                          const amount = formatQuantity(quantity);
                           return (
                             <Fragment key={index}>
-                              <Reference>{item.sku}</Reference> {quantity}
+                              <Reference>{sku}</Reference> {amount}
                             </Fragment>
                           );
-                        }),
-                        { type: 'conjunction', style: 'narrow' },
+                        },
                       ),
                     },
                   )

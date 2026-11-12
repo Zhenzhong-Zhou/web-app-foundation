@@ -1012,7 +1012,7 @@ describe('Roles (e2e)', () => {
         `Votre rôle, Packers, ne comprend pas «\u00a0${french['permissions.costs.view']}\u00a0». Owner, Olu Ade et Ada Byrne peuvent modifier vos rôles.`,
       );
       expect(await refused(packer.agent, 'zh-Hans')).toBe(
-        `您的角色（Packers）不包含“${chinese['permissions.costs.view']}”。Owner、Olu Ade和Ada Byrne 可以更改您的角色。`,
+        `您的角色（Packers）不包含“${chinese['permissions.costs.view']}”。Owner、Olu Ade 和 Ada Byrne 可以更改您的角色。`,
       );
 
       // An Admin may change roles, and is told of the Owners, who can give

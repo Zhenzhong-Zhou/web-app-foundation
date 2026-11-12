@@ -17,6 +17,7 @@ import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { Reference } from '../components/reference';
+import { listNameParts } from '../i18n/list-names';
 import { api, hasCode } from '../lib/api';
 import { formatMoney } from '../lib/format';
 import { OFFER_BACK } from '../lib/offer-back';
@@ -181,11 +182,13 @@ export function IssueInvoiceDialog({
                       '{skus} {count, plural, one {has} other {have}} no tax code yet.',
                   },
                   {
-                    skus: intl.formatList(
-                      untaxed.map((line) => (
-                        <Reference key={line.id}>{line.sku}</Reference>
-                      )),
+                    skus: listNameParts(
+                      intl,
+                      untaxed.map((line) => line.sku),
                       { type: 'conjunction', style: 'narrow' },
+                      (sku, index) => (
+                        <Reference key={untaxed[index].id}>{sku}</Reference>
+                      ),
                     ),
                     count: untaxed.length,
                   },

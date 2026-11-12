@@ -64,7 +64,7 @@ export function WhatYouCanDo({
               names: listNameParts(
                 intl,
                 access.whomToAsk.map((person) => person.name),
-                'disjunction',
+                { type: 'disjunction' },
                 (name, index) => {
                   const person = access.whomToAsk[index];
                   return can('users.view') ? (

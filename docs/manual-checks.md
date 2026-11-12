@@ -787,7 +787,11 @@ folder by folder; these check what is already in place.
   action would be, and Orders' where a new order would be, name them the
   same way. As the demo Owner, invite someone as Warehouse and Sales:
   Members' Invited lists the invitation's roles as Warehouse 和 Sales,
-  while one as Admin and Viewer reads 管理员和查看者, with no space.
+  while one as Admin and Viewer reads 管理员和查看者, with no space; the
+  invitation's email in Mailpit, sent in 中文, names them Warehouse 和
+  Sales too, since the server's lists join the same way. Every other
+  list joins so: Roles → Delete on a made role two members hold names
+  them with a space each side of 和.
 - **MC-1420** *(ADR-054's November 2026 amendment, R11; #486)* What a
   file may be, in plain words first, its size never broken from its
   unit. On the Account page, under your photo: A photo or picture, up to
@@ -5888,3 +5892,7 @@ first.
   with no field path, index, type or "sent as a string": the tax rate,
   a quantity or price, a date, a currency, a country, a time zone, the
   lookup and Home's layout: MC-1418 extended.
+- 2026-11-12: ADR-054's November amendment, R11 (#501): every list the
+  screens join, and the server's, keeps the space between a Latin name
+  and 和 or 或, not only Whom to ask and a member's roles: MC-1419
+  extended.
