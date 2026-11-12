@@ -57,6 +57,25 @@ allows, refuses and works out there.
   line, so no notice is left unanswered.
 - A client type change fixes the test fixtures that build that type in
   the same commit.
+- **Duplication,** as `docs/conventions.md`'s
+  [Duplication](../../../docs/conventions.md#duplication) says. From the
+  repository's root, run
+  `npx --yes jscpd@5.4.2 --absolute --reporters json --output tmp/jscpd`,
+  and read only the clones that touch a file in
+  `git diff --name-only origin/main...HEAD` (`--absolute`, since the
+  report otherwise names each file from its folder in `.jscpd.json`, not
+  from the root):
+  - a rule or a fact defined twice is Should fix;
+  - a third copy of the same shape is Worth considering;
+  - a copied block of 20 lines or more is Should fix even at its second
+    copy: extracted, or kept with a comment saying why the copies differ;
+  - two small alike shapes, and the pairs under
+    [Reviewed and kept](../../../docs/conventions.md#reviewed-and-kept),
+    are fine.
+- **Simplicity,** as `CLAUDE.md`'s "Simplicity first" and "Surgical
+  changes" say: an option nobody asked for, an abstraction with one
+  caller, a parameter always given the same value, or code restyled
+  beside the change is Should fix.
 
 ### The API contract (ADR-068)
 

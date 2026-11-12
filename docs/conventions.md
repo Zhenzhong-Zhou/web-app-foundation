@@ -221,6 +221,11 @@ Two near-identical shapes are fine; three is a signal. Extracting at two usually
 costs more than it saves — the abstraction has to guess which parts are shared,
 and one of the two then needs an escape hatch.
 
+- A copied block of 20 lines or more is extracted at its second copy, or kept
+  with a comment saying why.
+- Each branch's new clones are checked by `/code-review`; the whole
+  repository's report stays a by-hand `npx jscpd`.
+
 Pairs currently being watched rather than extracted:
 
 - `AuthenticatedUser` and `CurrentSession.user` share four fields and differ in
