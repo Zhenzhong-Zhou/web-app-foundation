@@ -348,3 +348,10 @@ Written into the skill with
 - **A timed run's medians** come from its rounds' reports, downloaded
   and judged with `npm run perf:judge`, as `server/perf/README.md` says,
   not from a job's log by a step's name.
+- **Closing a session** (11 November 2026): at a brief's end, when the
+  maintainer asks, or when a chat grows long, the chat files what no file
+  holds yet in its home first, walks a fixed checklist, and writes the
+  next session's prompt with only what no file could hold.
+- **The canvas is drawn by the chat,** with its Artifact tool: a brief's
+  canvas step is the chat's, as step 11 of flows and states found when
+  the brief named the maintainer and Claude Design.

@@ -122,3 +122,17 @@ finding for the as-built and one question for him.*
   design language's States.
 - Each step of the brief names the requirements it meets, and each row
   of the interaction table is a browser test in a step on Opus.
+
+## 9. A session closed
+
+> That's all for this branch; I need the next session's prompt.
+
+- Each decision and finding the session holds that no file has is filed
+  first, in the as-built, the handoff, an issue or a line for `/triage`,
+  and the reply says where.
+- The checklist is walked: decisions, findings, changes from the brief,
+  issues filed and to file, steps owed, dates, corrections to earlier
+  advice.
+- The prompt is whole, carries only what no file could hold yet, and
+  marks each blank Bob fills with `<…>`.
+- Five parts, Decisions needed present.

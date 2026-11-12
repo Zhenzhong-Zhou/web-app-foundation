@@ -24,7 +24,7 @@ repeat; a brief holds only its decisions and its steps.
    step: what it builds, its files, the test that proves it, one commit
    unless it says otherwise. Who is `Claude Code`; `Claude Code, main
    session` for the reviews, which `/build-from-brief` refuses and
-   `/review-step` runs; `Chat`; or `Bob`. Model is `opus`, `sonnet` or
+   `/review-step` runs; `Chat`, a canvas row among its steps; or `Bob`. Model is `opus`, `sonnet` or
    `haiku` for each Claude Code step, from `docs/engineering.md`'s
    "Which model runs a step", and a dash for the others; the loop
    refuses a run whose Claude Code step has none. A run stops at every

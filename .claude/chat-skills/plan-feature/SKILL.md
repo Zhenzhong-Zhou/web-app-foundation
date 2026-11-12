@@ -107,8 +107,10 @@ checking**. Each item names its issue or ADR.
 - Outside the numbered ADRs, a path in backticks that starts with a
   tracked folder must exist (`scripts/check-docs.mjs`); a file still to
   be written is named in plain words.
-- Designs go on the Claude Design canvas `docs/engineering.md` names,
-  never as mockups in the chat. A changed design is a new row of boards,
+- Designs go on the canvas `docs/engineering.md` names, drawn by the
+  chat itself with its Artifact tool (its index read again just before
+  each publish), never as mockups in the chat; a brief's canvas step is
+  the chat's. A changed design is a new row of boards,
   titled with its version, never drawn over the old one: every earlier
   version stays as the design's history.
 
@@ -205,3 +207,20 @@ branch instead (#310 stopped for nine dialogs); and no commit on
 `git log --oneline -E --grep '#<N>([^0-9]|$)' origin/main` on a clone with
 its whole history. A session's DONE or BLOCKED comes back here as a
 step's stop does.
+
+## 9. Closing a session
+
+At a brief's end, when Bob asks, or when a chat has grown long, which
+the chat offers then (ADR-088's amendment):
+
+1. **File first.** Each decision, finding or change from the plan that
+   no file holds yet goes to its home now: the as-built amendment, the
+   handoff, an issue, or a line for `/triage` after the merge.
+2. **The checklist,** each item with its home: decisions answered;
+   findings; changes from the brief; issues filed, and those still to
+   file; steps owed, by hand and after the merge; dates; and corrections
+   to earlier advice, said plainly.
+3. **The next session's prompt,** whole and ready to paste: its task and
+   the branch to clone; where things stand; the notes no file could hold
+   yet, each with its home; and the first thing to do. A blank Bob must
+   fill is marked `<…>`, with what goes there.
