@@ -14,14 +14,34 @@ import { confirmEmailInDatabase } from './support/mail';
  * Text cut by its box on a newcomer's first screens (ADR-054's November
  * 2026 amendment, R9): signing in, accepting an invitation, Home with its
  * welcome and Getting started, Help and the Account page, at a phone's
- * 390 × 844, in French, Chinese and en-XA, the pseudo-language, which is
- * about 40 % longer than English. A cut is text wider than its box with
- * the box's overflow hidden, or ended by an ellipsis. Each is fixed, or
- * listed in KNOWN with its issue.
+ * 390 × 844, at the Standard and the Larger text size (ADR-075), in
+ * English, French, Chinese and en-XA, the pseudo-language, which is about
+ * 40 % longer than English. A cut is text wider than its box with the
+ * box's overflow hidden, or ended by an ellipsis; or the page, or Help's
+ * dialog, wider than the screen, so it scrolls sideways (WCAG 1.4.10,
+ * Reflow), as en-XA's top bar once did. Each is fixed, or listed in KNOWN
+ * with its issue.
  */
+
+/** Each screen size walked: a phone's. */
+const WIDTHS = [{ width: 390, height: 844 }] as const;
+
+/** Each text size walked, as kept on the device (ADR-075), and its 1rem. */
+const TEXT_SIZES = [
+  { name: 'Standard', stored: null, rem: '16px' },
+  { name: 'Larger', stored: 'larger', rem: '20px' },
+] as const;
 
 /** Each language, the account's own beside it, and the words waited for. */
 const LANGUAGES = [
+  {
+    tag: 'en',
+    account: 'en',
+    signIn: 'Sign in',
+    start: 'Getting started',
+    help: 'Help',
+    title: 'Account',
+  },
   {
     tag: 'fr-CA',
     account: 'fr-CA',
@@ -168,23 +188,83 @@ function cutsIn(root: Element): Cut[] {
 }
 
 /**
+ * What makes `root` wider than the screen, measured in the page, so it is
+ * self-contained: the page scrolling sideways, or, for a dialog, the dialog
+ * itself, WCAG 1.4.10's loss. Each named by the innermost boxes past the
+ * edge, leaving out what sits in a box that scrolls on its own and is
+ * itself in view, as a wide table in its container does. Empty when it fits.
+ */
+function widerIn(root: Element): string[] {
+  const page = root === document.body;
+  const box = page ? document.documentElement : root;
+  if (box.scrollWidth <= box.clientWidth + 1) return [];
+
+  const left = page ? 0 : box.getBoundingClientRect().left + box.clientLeft;
+  const right = left + box.clientWidth;
+  const past = (element: Element) => {
+    const { left: from, right: to, width } = element.getBoundingClientRect();
+    return width > 0 && (to > right + 1 || from < left - 1);
+  };
+  const scrollsOnItsOwn = (element: Element) => {
+    for (
+      let up = element.parentElement;
+      up && up !== box;
+      up = up.parentElement
+    ) {
+      if (getComputedStyle(up).overflowX !== 'visible' && !past(up))
+        return true;
+    }
+    return false;
+  };
+
+  const what = [...root.querySelectorAll('*')]
+    .filter(
+      (element) =>
+        element.checkVisibility() &&
+        past(element) &&
+        !scrollsOnItsOwn(element) &&
+        ![...element.children].some(past),
+    )
+    .slice(0, 3)
+    .map((element) => {
+      const named = [...element.classList].find((name) =>
+        /^Mui\w+-root$/.test(name),
+      );
+      const words = (
+        element.getAttribute('aria-label') ??
+        (element instanceof HTMLElement ? element.innerText : '')
+      )
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 40);
+      return `${named ?? element.tagName.toLowerCase()} “${words}”`;
+    });
+  return [
+    `${Math.round(box.scrollWidth)} px wide in ${box.clientWidth}, past its edge: ${what.join(', ') || 'something'}`,
+  ];
+}
+
+/**
  * Once the screen has its words and the fonts that draw them: the cuts
- * under `root`, but those KNOWN, each said with the screen it is on.
+ * under `root`, but those KNOWN, and what makes it wider than the screen,
+ * each said with the screen it is on.
  */
 async function cuts(
   page: Page,
   screen: string,
   organization: string,
-  root?: Locator,
+  root: Locator = page.locator('body'),
 ): Promise<string[]> {
   await page.waitForLoadState('networkidle');
   await page.evaluate(() => document.fonts.ready);
-  const found = root
-    ? await root.evaluate(cutsIn)
-    : await page.locator('body').evaluate(cutsIn);
-  return found
-    .filter((cut) => !KNOWN.some((known) => known.is(cut, organization)))
-    .map((cut) => `${screen}: ${cut.where}: “${cut.text}”`);
+  const found = await root.evaluate(cutsIn);
+  const wider = await root.evaluate(widerIn);
+  return [
+    ...found
+      .filter((cut) => !KNOWN.some((known) => known.is(cut, organization)))
+      .map((cut) => `${screen}: ${cut.where}: “${cut.text}”`),
+    ...wider.map((what) => `${screen}: ${what}`),
+  ];
 }
 
 test('the measure finds text cut by its box, and none a screen reader alone reads', async ({
@@ -213,79 +293,135 @@ test('the measure finds text cut by its box, and none a screen reader alone read
   ]);
 });
 
+test('the measure finds a page or a dialog wider than the screen, and none a box scrolling on its own', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  /** A page that fits, wide things scrolling in their own boxes, and `more`. */
+  const content = (more = '', dialog = '<p>Fits</p>') => `
+    <body style="margin: 0; font: 16px sans-serif">
+      <div style="overflow-x: auto"><table><tr><td style="white-space: nowrap">A wide table, scrolled in its own box</td><td style="width: 400px">Qty</td></tr></table></div>
+      <div id="dialog" role="dialog" style="width: 300px; overflow: auto">
+        <div style="overflow-x: auto"><span style="display: inline-block; width: 500px">Scrolled in its own box</span></div>
+        ${dialog}
+      </div>
+      ${more}
+    </body>
+  `;
+
+  await page.setContent(content());
+  expect(await page.locator('body').evaluate(widerIn)).toEqual([]);
+  expect(await page.locator('#dialog').evaluate(widerIn)).toEqual([]);
+
+  await page.setContent(
+    content(
+      '<header style="display: flex"><button style="flex: none; width: 523px">Account</button></header>',
+      '<p style="width: 420px">Notifications de la semaine</p>',
+    ),
+  );
+  expect(await page.locator('body').evaluate(widerIn)).toEqual([
+    '523 px wide in 320, past its edge: button “Account”',
+  ]);
+  expect(await page.locator('#dialog').evaluate(widerIn)).toEqual([
+    expect.stringMatching(
+      /^\d+ px wide in 300, past its edge: p “Notifications de la semaine/,
+    ),
+  ]);
+});
+
 for (const language of LANGUAGES) {
-  test(`cuts no text on a newcomer's first screens at 390 × 844, in ${language.tag}`, async ({
-    browser,
-    baseURL,
-  }) => {
-    // An organization of its own whose Owner is confirmed, as inviting needs.
-    const org = await registerOrganization('cut');
-    await confirmEmailInDatabase(org.email);
-    const { token } = await inviteByLink(
-      org.api,
-      uniqueEmail('newcomer'),
-      'Admin',
-      {
-        locale: language.account,
-      },
-    );
-
-    // The newcomer's phone, in the language, with no session.
-    const context = await browser.newContext({
-      viewport: { width: 390, height: 844 },
-      storageState: {
-        cookies: [],
-        origins: [
+  for (const size of TEXT_SIZES) {
+    for (const { width, height } of WIDTHS) {
+      test(`cuts no text on a newcomer's first screens at ${width} × ${height}, ${size.name} text, in ${language.tag}`, async ({
+        browser,
+        baseURL,
+      }) => {
+        // An organization of its own whose Owner is confirmed, as inviting needs.
+        const org = await registerOrganization('cut');
+        await confirmEmailInDatabase(org.email);
+        const { token } = await inviteByLink(
+          org.api,
+          uniqueEmail('newcomer'),
+          'Admin',
           {
-            origin: new URL(baseURL!).origin,
-            localStorage: [{ name: 'language', value: language.tag }],
+            locale: language.account,
           },
-        ],
-      },
-    });
-    const page = await context.newPage();
-    const found: string[] = [];
+        );
 
-    await page.goto('/login');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-      language.signIn,
-    );
-    found.push(...(await cuts(page, 'Sign in', org.organizationName)));
+        // The newcomer's phone, in the language and at the text size, with no
+        // session.
+        const context = await browser.newContext({
+          viewport: { width, height },
+          storageState: {
+            cookies: [],
+            origins: [
+              {
+                origin: new URL(baseURL!).origin,
+                localStorage: [
+                  { name: 'language', value: language.tag },
+                  ...(size.stored
+                    ? [{ name: 'textSize', value: size.stored }]
+                    : []),
+                ],
+              },
+            ],
+          },
+        });
+        const page = await context.newPage();
+        const found: string[] = [];
 
-    await page.goto(`/invitation?token=${token}`);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(
-      org.organizationName,
-    );
-    found.push(...(await cuts(page, 'The invitation', org.organizationName)));
+        await page.goto('/login');
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+          language.signIn,
+        );
+        await expect(page.locator('html')).toHaveCSS('font-size', size.rem);
+        found.push(...(await cuts(page, 'Sign in', org.organizationName)));
 
-    const member = await joinByLink(token, 'Wang Fang');
-    await signInAs(page, member);
-    await page.goto('/');
-    await expect(
-      page.getByRole('region', { name: org.organizationName, exact: false }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: language.start, exact: true }),
-    ).toBeVisible();
-    found.push(...(await cuts(page, 'Home', org.organizationName)));
+        await page.goto(`/invitation?token=${token}`);
+        await expect(page.getByRole('heading', { level: 1 })).toContainText(
+          org.organizationName,
+        );
+        found.push(
+          ...(await cuts(page, 'The invitation', org.organizationName)),
+        );
 
-    await page
-      .getByRole('button', { name: language.help, exact: true })
-      .click();
-    const help = page.getByRole('dialog');
-    await expect(help.getByRole('heading').first()).toBeVisible();
-    found.push(...(await cuts(page, 'Help', org.organizationName, help)));
-    await page.keyboard.press('Escape');
-    await expect(help).toBeHidden();
+        const member = await joinByLink(token, 'Wang Fang');
+        await signInAs(page, member);
+        await page.goto('/');
+        await expect(
+          page.getByRole('region', {
+            name: org.organizationName,
+            exact: false,
+          }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole('heading', { name: language.start, exact: true }),
+        ).toBeVisible();
+        found.push(...(await cuts(page, 'Home', org.organizationName)));
 
-    await page.goto('/account');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-      language.title,
-    );
-    found.push(...(await cuts(page, 'The Account page', org.organizationName)));
+        await page
+          .getByRole('button', { name: language.help, exact: true })
+          .click();
+        const help = page.getByRole('dialog');
+        await expect(help.getByRole('heading').first()).toBeVisible();
+        found.push(...(await cuts(page, 'Help', org.organizationName, help)));
+        await page.keyboard.press('Escape');
+        await expect(help).toBeHidden();
 
-    await context.close();
-    await member.dispose();
-    expect(found, 'text cut by its box').toEqual([]);
-  });
+        await page.goto('/account');
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+          language.title,
+        );
+        found.push(
+          ...(await cuts(page, 'The Account page', org.organizationName)),
+        );
+
+        await context.close();
+        await member.dispose();
+        expect(found, 'text cut by its box, or wider than the screen').toEqual(
+          [],
+        );
+      });
+    }
+  }
 }
