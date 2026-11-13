@@ -677,7 +677,7 @@ describe('Roles (e2e)', () => {
           'fr-CA',
           'Vos rôles n’incluent pas toutes les permissions de Finance; vous ne pouvez donc pas l’attribuer.',
         ],
-        ['zh-Hans', '您的角色不包含Finance的全部权限，因此您不能授予此角色。'],
+        ['zh-Hans', '您的角色没有 Finance 的全部权限，因此不能授予该角色。'],
       ]) {
         const refused = body<Refusal>(
           await admin.agent

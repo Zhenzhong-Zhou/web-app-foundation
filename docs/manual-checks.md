@@ -2192,7 +2192,7 @@ Mailpit open.
 - **MC-3009** *(ADR-077)* At 390 px wide in 中文: Invited's rows are cards,
   each with 重新发送, 复制链接 and 收回, its line ending 有效至 and the last
   day, and 邀请 opens the dialog full screen,
-  a close button before its title and 发送邀请 and 复制链接，自己发送 at its foot.
+  a close button before its title and 发送邀请 and 复制链接 at its foot.
   At Larger text (ADR-075), neither Members nor the dialog scrolls
   sideways.
 
@@ -2203,7 +2203,7 @@ The invitation page, in a private window unless a check says otherwise:
   it. It shows the organization's logo and name, 加入 …, who invited you,
   by name and by address as the email does, as 管理员 with what an Admin
   does, the note under 来自 … 的留言, and the address, read-only; at its
-  foot, 此邀请的有效期到 … 结束, the same last day as the email's. The
+  foot, 此邀请有效期至 …, the same last day as the email's. The
   logo is sharp, and the Network tab shows no
   request to `/api/v1/files`. Type a name, then change the page's
   language: the name stays, and the page reads in the new one. Change it
@@ -2338,7 +2338,7 @@ The pages, in a private window unless a check says otherwise.
   How to get one, which opens Accounts here start from an invitation, with
   Joining where you work, Starting a new organization and Sign in; in
   Français « Ici, on ouvre un compte sur invitation », in 中文
-  这里的账户通过邀请创建, never a word-for-word « commencent par » or
+  创建账户需要邀请, never a word-for-word « commencent par » or
   从邀请开始 (#380). On a phone, an invitation's page names the invited
   address in full under its locked Email field, the domain too, however
   the field cuts it. `/register` typed in the address bar shows the same page; on a slow
@@ -2501,9 +2501,9 @@ The pages, in a private window unless a check says otherwise.
   the first week's items, each a row to tap, then 您在这里可以做什么, each
   area's name a link, then the foot about 帮助, and 隐藏. Nothing scrolls
   sideways at Larger text either. 收起 folds it back to its one line.
-  隐藏 shows 欢迎卡片已隐藏。“您在这里可以做什么”仍保留在“我的账户”中。 with
+  隐藏 shows 欢迎卡片已隐藏。您仍可在“账户”页面查看“您在这里可以做什么”。 with
   撤销. As MC-3209's founder, 您在这里可以做所有事情 in one line. What you can do here lists 查看采购订单、销售订单和订单价格, one 和, and
-  我的账户 in the account menu opens a page headed 我的账户.
+  我的账户 in the account menu opens a page headed 账户.
 - **MC-3211** *(ADR-079)* The demo's newcomer, and People's New. On a
   freshly seeded demo, the Owner's Home has no welcome, nor has any of the
   team's but Fatima Haddad's: she joined three days ago by the Owner's
@@ -3386,7 +3386,7 @@ and the light rail (Branding → Sidebar); MC-3609 walks them.
   the 600 × 400 one: the initials line again. Put the 512 × 512 back, with
   no square logo, Save, and reload with DevTools' Network on Slow 4G:
   while the main logo loads, the first sentence alone, then the
-  about-square line, never the initials first. In 中文, 未设置时，那里显示缩写 …
+  about-square line, never the initials first. In 中文, 未设置时，那里会显示首字母缩写 …
   and 您的标志接近正方形…, each on a line of its own under
   用于小空间，例如折叠的侧栏。, with no space where the sentences meet.
 - **MC-3603** Uploading, heard. VoiceOver on, DevTools' Network on Slow
@@ -3860,7 +3860,7 @@ site, after a deploy that changes the setting, the route or the relay.
   as soon as the maximum is typed above 200, even after a Save. Add a point
   for D3-1000-120, which has one: under the item, "D3-1000-120 already has
   a reorder point. Edit it", the last two words a link, in 中文 "去编辑",
-  never "请改为修改它" before it, with focus
+  never "请修改现有的库存下限" before it, with focus
   back in the item, where a screen reader reads the refusal with it; Edit
   it opens Edit with what is kept, 240, A fixed quantity of 48, focus in
   the reorder point, as Edit from a row's ⋯ opens.

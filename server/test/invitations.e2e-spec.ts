@@ -564,7 +564,7 @@ describe('Invitations (e2e)', () => {
       expect(email.subject).toBe('Owner 邀请您加入 alpha Co');
       expect(email.text).toContain('加入 alpha Co');
       expect(email.text).toContain(
-        `Owner（${alpha.email}）邀请您以管理员身份加入。`,
+        `Owner（${alpha.email}）邀请您以 管理员 的身份加入。`,
       );
       expect(email.text).toContain(
         '日常工作：库存、订单、生产和起草发票。可以邀请和移除成员。',

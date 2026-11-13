@@ -363,7 +363,7 @@ describe('Licence at release (e2e)', () => {
           .expect(409),
       );
       expect(inChinese).toContain(
-        `且没有例外批准——角色包含“${chinese['permissions.production.overrideLicence']}”的人可以下达`,
+        `未经例外批准不能下达；拥有“${chinese['permissions.production.overrideLicence']}”权限的人员可以下达该生产订单`,
       );
       for (const each of [inFrench, inChinese]) {
         expect(each).not.toContain('override_licence');

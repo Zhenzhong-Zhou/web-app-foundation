@@ -217,7 +217,7 @@ describe('a language that won’t load', () => {
 
       const toast = await screen.findByRole('status');
       expect(toast).toHaveTextContent(
-        '无法加载简体中文，因为此标签页打开期间推出了新版本。重新加载即可使用，不会丢失任何内容。',
+        '无法加载简体中文：您打开此标签页期间有新版本发布。刷新页面即可使用该语言，内容不会丢失。',
       );
       expect(within(toast).queryByRole('button', { name: '重试' })).toBeNull();
       await user.click(within(toast).getByRole('button', { name: '重新加载' }));
