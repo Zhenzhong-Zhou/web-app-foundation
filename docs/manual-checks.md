@@ -876,9 +876,12 @@ folder by folder; these check what is already in place.
   catalogue lacks, and a text missing a bracket is cut by its box. A
   server message, such as a wrong password's refusal, stays plain
   English; signed in, the account is saved as English, and en-XA stays on
-  the screens. Choosing another language puts it back. The deployed app,
-  or `npm run build` then `npm run preview` in client/, offers no en-XA,
-  and the build stops if a change would ship it.
+  the screens. Choosing another language puts it back. On a phone the
+  top bar's words give way by en-XA's own width, as each language's do
+  (MC-1561): at 390 px its icons stand alone, and nothing scrolls
+  sideways; from about 529 px wide its words are back under them. The
+  deployed app, or `npm run build` then `npm run preview` in client/,
+  offers no en-XA, and the build stops if a change would ship it.
 - **MC-1405** *Skipped for now (6 October 2026), and still owed (13
   November 2026): no fluent reader yet. In its place, as ADR-054's
   November 2026 amendment decided, ChatGPT's review rounds went in, round
@@ -6098,3 +6101,6 @@ first.
   to use gains 退出该组织 and 退出组织, which the rules check refuses in
   every message and guide; 退出 alone is no row, since 退出登录 is Sign
   out: MC-3013 extended.
+- 2026-11-13: ADR-054's November amendment, R9: the top bar's words give
+  way in en-XA by its own width, where English's let them run past a
+  390 px phone: MC-1424 extended.

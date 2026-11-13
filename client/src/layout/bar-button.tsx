@@ -23,8 +23,9 @@ export function BarButton({
   icon: ReactNode;
   word: string;
 }) {
-  // The app's language, not Intl's tag, which carries the browser's region.
-  const fit = wordsFit(useLanguage().locale);
+  // The language the screens show, en-XA included, not Intl's tag, which
+  // carries the browser's region.
+  const fit = wordsFit(useLanguage().shown);
   return (
     <IconButton
       {...props}

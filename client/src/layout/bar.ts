@@ -1,4 +1,9 @@
-import type { Locale } from '../lib/locales';
+import {
+  type Locale,
+  PSEUDO_LOCALE,
+  type ScreenLocale,
+  serverLocale,
+} from '../lib/locales';
 import { rem } from '../theme/rem';
 
 /**
@@ -27,16 +32,24 @@ const BAR_CONTAINER = 'bar';
  * French's, left the icons alone (ADR-091's review). Narrower, the icons
  * stand alone, each named as before, and every target keeps its 44 px
  * (ADR-079).
+ *
+ * en-XA, the pseudo-language, has its own, measured as the others are,
+ * since its words are about 40 % longer than English's (ADR-054's November
+ * 2026 amendment, R9): with English's, its bar ran past a 390 px phone. In
+ * development and the browser tests only, as the language is: a production
+ * build drops the entry with it (vite.config.ts's `withoutPseudoLanguage`).
  */
-const WORDS_NEED: Record<Locale, number> = {
+const WORDS_NEED: Record<Locale, number> &
+  Partial<Record<ScreenLocale, number>> = {
   en: 316,
   'fr-CA': 340,
   'zh-Hans': 262,
+  ...(import.meta.env.DEV ? { [PSEUDO_LOCALE]: 497 } : {}),
 };
 
-/** The container query under which a language's words show. */
-export function wordsFit(locale: Locale): string {
-  const need = WORDS_NEED[locale];
+/** The container query under which the words of the screens' language show. */
+export function wordsFit(shown: ScreenLocale): string {
+  const need = WORDS_NEED[shown] ?? WORDS_NEED[serverLocale(shown)];
   return `@container ${BAR_CONTAINER} (min-width: ${rem(need)})`;
 }
 
