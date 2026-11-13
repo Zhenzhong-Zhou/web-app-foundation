@@ -254,10 +254,42 @@ test("a text with no word of its own outside its placeholders and tags is not co
   assert.deepEqual(problemsOf("Save", "a.b", "zh-Hans"), []);
 });
 
+test("a settled message is refused where its text is not the glossary's, in its language only", () => {
+  // The glossary's own rows: what the Chinese extra round changed.
+  for (const [id, text] of [
+    ["documents.refusal.signedOut", "您已退出登录"],
+    [
+      "mail.invitation.expires",
+      "链接只能用一次，有效期至 {date}（{zone} 时区）当天结束。密码由您自己设置。",
+    ],
+  ]) {
+    const [problem, ...more] = problemsOf(text, id, "zh-Hans");
+    assert.match(problem, /^not its settled text, .+ \(Settled messages\)$/);
+    assert.deepEqual(more, [], id);
+  }
+  assert.deepEqual(
+    problemsOf("您已退出登录", "documents.refusal.signedOut", "zh-Hans"),
+    ["not its settled text, 您尚未登录 (Settled messages)"],
+  );
+  assert.deepEqual(
+    problemsOf("您尚未登录", "documents.refusal.signedOut", "zh-Hans"),
+    [],
+  );
+  // Settled in Chinese, so not in French.
+  assert.deepEqual(
+    problemsOf("Vous êtes déconnecté", "documents.refusal.signedOut", "fr-CA"),
+    [],
+  );
+});
+
 // ------------------------------------------------------------------ the run
+
+const SETTLED =
+  "| `licences.none` | 简体中文 | `暂无产品许可证。` | A test’s |";
 
 const GLOSSARY = (
   where = "Everywhere but `licences.*` and `licences.md`",
+  settled = SETTLED,
 ) => `# Glossary
 
 ## Words not to use
@@ -265,6 +297,12 @@ const GLOSSARY = (
 | Language | Not | Instead | Where |
 | --- | --- | --- | --- |
 | 简体中文 | 产品 | 商品 | ${where} |
+
+## Settled messages
+
+| Id | Language | Text | Decided in |
+| --- | --- | --- | --- |
+${settled}
 
 ## Writing conventions
 `;
@@ -324,6 +362,14 @@ test("the run prints each problem by file and id, a guide's by section, and fail
     }),
     "client/src/help/guides/fr-CA/home.md": `# Accueil\n\nLa première page.\n\n## Chaque jour {#today}\n\nAppuyez sur **Actualiser** :\n`,
     "client/src/help/guides/zh-Hans/home.md": `# 首页\n\n第一个页面。\n\n## Every day {#today}\n\nPress **Refresh**.\n`,
+    // A settled message reworded, and one settled that no catalogue has.
+    "server/src/i18n/zh-Hans.json": JSON.stringify({
+      "licences.none": "暂无许可证。",
+    }),
+    "docs/glossary.md": GLOSSARY(
+      undefined,
+      `${SETTLED}\n| \`home.gone\` | 简体中文 | \`已删除\` | A test’s |`,
+    ),
   });
   assert.equal(run.status, 1);
   assert.equal(
@@ -332,9 +378,11 @@ test("the run prints each problem by file and id, a guide's by section, and fail
 client/src/help/guides/fr-CA/home.md: home#today: a colon without a no-break space (U+00A0) before it
 client/src/locales/zh-Hans.json: home.title: 产品, for 商品 (Words not to use)
 client/src/locales/zh-Hans.json: home.title: half-width , beside Chinese, for ，
+server/src/i18n/zh-Hans.json: licences.none: not its settled text, 暂无产品许可证。 (Settled messages)
 client/src/help/guides/zh-Hans/home.md: home#today: ${LEFT_IN_ENGLISH[0]}
+docs/glossary.md: home.gone: settled in zh-Hans, but in neither of its catalogues; take its row out of Settled messages
 
-5 problems: change each by docs/glossary.md's Words not to use and Writing conventions; a translation meant to be its English goes in scripts/i18n-rules.mjs's SAME_AS_ENGLISH, with why.
+7 problems: change each by docs/glossary.md's Words not to use, Settled messages and Writing conventions; a translation meant to be its English goes in scripts/i18n-rules.mjs's SAME_AS_ENGLISH, with why.
 `,
   );
 });
@@ -357,6 +405,35 @@ test("the run refuses a Words not to use row it cannot read, naming it", (t) => 
       run.stderr,
       `docs/glossary.md: Words not to use, the row 产品: ${why}.\n`,
       where,
+    );
+  }
+});
+
+test("the run refuses a Settled messages row it cannot read, naming it", (t) => {
+  for (const [row, why] of [
+    [
+      "| licences.none | 简体中文 | `暂无产品许可证。` | A test’s |",
+      "the row licences.none: its Id is not one message id in backquotes",
+    ],
+    [
+      "| `licences.none` | Chinese | `暂无产品许可证。` | A test’s |",
+      "the row licences.none: its language is neither Français (Canada) nor 简体中文",
+    ],
+    [
+      "| `licences.none` | 简体中文 | 暂无产品许可证。 | A test’s |",
+      "the row licences.none: its Text is not in backquotes",
+    ],
+    [
+      "| `licences.none` | 简体中文 | `暂无产品许可证。` | |",
+      "the row licences.none: it names no decision it comes from",
+    ],
+  ]) {
+    const run = fixture(t, { "docs/glossary.md": GLOSSARY(undefined, row) });
+    assert.equal(run.status, 1, row);
+    assert.equal(
+      run.stderr,
+      `docs/glossary.md: Settled messages, ${why}.\n`,
+      row,
     );
   }
 });

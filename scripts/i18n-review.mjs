@@ -41,11 +41,12 @@
  * whose English or translation changed since (its row no longer what the
  * files say, English changed only in its quotes aside, as for --since);
  * clear that row's Correction, and the next round reads it at its new
- * text. A message's correction is refused too if it is not valid ICU or
- * does not keep exactly the English's placeholders; a section's, if its
- * first line is not its heading with the same {#id} (the opening's, the
- * guide's # title), another line is a heading, or it does not link to
- * exactly what the English links to. The problems are listed by row.
+ * text. A message's correction is refused too if the glossary's Settled
+ * messages hold its text, if it is not valid ICU, or if it does not keep
+ * exactly the English's placeholders; a section's, if its first line is
+ * not its heading with the same {#id} (the opening's, the guide's #
+ * title), another line is a heading, or it does not link to exactly what
+ * the English links to. The problems are listed by row.
  * Afterwards, run `npm run i18n:check` in client/ and server/ for the
  * catalogues, and `npx vitest run src/help/guides.test.ts` in client/ for
  * the guides, which checks their Markdown and bold labels, and look at
@@ -57,7 +58,8 @@
  *
  * No dependencies of its own: a workbook is a zip of XML, and Node has
  * zlib. It uses the FormatJS CLI and ICU parser each package already has,
- * so run `npm install` in client/ and server/ first.
+ * so run `npm install` in client/ and server/ first, and reads the
+ * glossary's Settled messages through i18n-rules.mjs.
  *
  * Its tests, in i18n-review.test.mjs, run it on a small catalogue in a
  * temporary folder: `node --test scripts/`.
@@ -80,6 +82,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { deflateRawSync, inflateRawSync } from "node:zlib";
+
+import { settledMessages } from "./i18n-rules.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const LANGUAGES = ["fr-CA", "zh-Hans"];
@@ -116,7 +120,7 @@ const AREAS = [
 
 /** Help's guides (ADR-079): guides/<language>/<guide>.md. */
 const GUIDES = "client/src/help/guides";
-const GUIDE_AREA = "Guides";
+export const GUIDE_AREA = "Guides";
 
 const COLUMNS = [
   { title: "Area", width: 10 },
@@ -655,6 +659,13 @@ function importWorkbook(file) {
   );
 
   const targets = targetsFor(language);
+  let settled;
+  try {
+    settled = settledMessages().get(language);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
 
   const problems = [];
 
@@ -674,6 +685,18 @@ function importWorkbook(file) {
     if (!today) {
       problems.push(
         `${at} ${id}: removed from ${row[areaAt]} since the export, so there is nothing to correct; clear the row's Correction`,
+      );
+      return;
+    }
+
+    // The glossary settled its text, so no review changes it.
+    if (
+      row[areaAt] !== GUIDE_AREA &&
+      settled.has(id) &&
+      correction !== today.translation
+    ) {
+      problems.push(
+        `${at} ${id}: settled, its text held by docs/glossary.md's Settled messages, so clear its Correction, or change its row there first`,
       );
       return;
     }
@@ -1018,7 +1041,7 @@ function exportOptions(args) {
 }
 
 // Run, not imported: its tests import the workbook's writer, reader and
-// zip, and the decide step the reader and targetsFor.
+// zip, and the decide step the reader, targetsFor and GUIDE_AREA.
 if (import.meta.main) {
   const [command, ...args] = process.argv.slice(2);
   const options = command === "export" && exportOptions(args);

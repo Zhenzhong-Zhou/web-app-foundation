@@ -48,7 +48,8 @@ const TERMS = `## Terms
 | --- | --- | --- | --- |
 | Stock | Stock | 库存 | |`;
 
-const GLOSSARY = `# Glossary
+/** The glossary, its Settled messages those rows, none by default. */
+const glossary = (settled = "") => `# Glossary
 
 ${TERMS}
 
@@ -57,6 +58,12 @@ ${TERMS}
 | Language | Not | Instead | Where |
 | --- | --- | --- | --- |
 | 简体中文 | 再订货点 | 库存下限 | Everywhere |
+
+## Settled messages
+
+| Id | Language | Text | Decided in |
+| --- | --- | --- | --- |
+${settled}
 `;
 
 /** Each message: its English and today's Chinese, by package. */
@@ -158,7 +165,7 @@ function fixture(t, extra = {}) {
     );
   }
   const screens = { ...SCREENS, ...extra };
-  write(root, "docs/glossary.md", GLOSSARY);
+  write(root, "docs/glossary.md", glossary());
   write(root, "client/src/locales/en.json", catalogue(screens, 0));
   write(root, "client/src/locales/zh-Hans.json", catalogue(screens, 1));
   write(root, "server/src/i18n/en.json", catalogue(SERVER, 0));
@@ -296,7 +303,7 @@ test("each message is decided by the amendment's table, ChatGPT leading", (t) =>
   assert.equal(
     run.stdout,
     `review/zh-Hans.decided.xlsx: 9 rows, zh-Hans.
-- Agreed 1, ChatGPT 2, Claude 1, today's 5, set aside 0.
+- Agreed 1, ChatGPT 2, Claude 1, today's 5, settled 0, set aside 0.
 - Fallen back: 0 by rule, 0 by meaning.
 - Only Claude changed it: 2; today's found wrong in 1 by rule.
 - The meaning check: not run; --meaning runs it.
@@ -363,7 +370,7 @@ test("with no --claude, a message ChatGPT kept stays today's", (t) => {
   assert.equal(run.status, 0, run.stderr);
   assert.match(
     run.stdout,
-    /- Agreed 0, ChatGPT 3, Claude 0, today's 6, set aside 0\./,
+    /- Agreed 0, ChatGPT 3, Claude 0, today's 6, settled 0, set aside 0\./,
   );
   const rows = decided(root);
   assert.deepEqual(rows["orders.save"], {
@@ -399,7 +406,7 @@ test("a message changed since the export is set aside, its Correction cleared", 
   assert.equal(run.status, 0, run.stderr);
   assert.match(
     run.stdout,
-    /- Agreed 0, ChatGPT 0, Claude 1, today's 5, set aside 3\./,
+    /- Agreed 0, ChatGPT 0, Claude 1, today's 5, settled 0, set aside 3\./,
   );
   const rows = decided(root);
   assert.deepEqual(
@@ -451,7 +458,7 @@ test("a text that fails the rules check falls back to the other review's, else t
   assert.equal(run.status, 0, run.stderr);
   assert.match(
     run.stdout,
-    /- Agreed 1, ChatGPT 0, Claude 2, today's 6, set aside 0\.\n- Fallen back: 4 by rule, 0 by meaning\./,
+    /- Agreed 1, ChatGPT 0, Claude 2, today's 6, settled 0, set aside 0\.\n- Fallen back: 4 by rule, 0 by meaning\./,
   );
   const rows = decided(root);
   assert.deepEqual(rows["orders.delete"], {
@@ -509,6 +516,55 @@ test("a correction the same as its English falls back as for any rule", (t) => {
   });
 });
 
+test("a settled message keeps today's whatever a review says, its Reason Settled, and is not asked about", (t) => {
+  const { root } = fixture(t);
+  // Stock and List settled in Chinese; Help in French only.
+  write(
+    root,
+    "docs/glossary.md",
+    glossary(
+      [
+        "| `orders.stock` | 简体中文 | `存货` | A test’s |",
+        "| `orders.list` | 简体中文 | `今天的订单` | A test’s |",
+        "| `orders.help` | Français (Canada) | `Aide` | A test’s |",
+      ].join("\n"),
+    ),
+  );
+  // ChatGPT changes Stock and Claude List, as the extra round changed the
+  // words settled; ChatGPT changes Help too.
+  round2(root, SCREENS, { chatgpt: { "orders.help": "帮助中心" } });
+
+  const run = decide(root, [...ROUND_2, "--meaning"], {
+    ANTHROPIC_API_KEY: KEY,
+  });
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(
+    run.stdout,
+    /- Agreed 1, ChatGPT 2, Claude 1, today's 3, settled 2, set aside 0\./,
+  );
+  const rows = decided(root);
+  const settled = {
+    correction: "",
+    reason:
+      "Settled: the glossary's Settled messages hold its text, so today's stays",
+    fallback: "",
+  };
+  assert.deepEqual(rows["orders.stock"], settled);
+  assert.deepEqual(rows["orders.list"], settled);
+  assert.equal(rows["orders.help"].correction, "帮助中心");
+
+  // Neither settled message, nor what a review made of it, is asked about.
+  const asked = requests(root).flatMap(({ body }) =>
+    JSON.parse(body.messages[0].content).items.map((item) => item.id),
+  );
+  assert.deepEqual(asked.sort(), [
+    "orders.delete",
+    "orders.help",
+    "orders.save",
+    "orders.saved",
+  ]);
+});
+
 test("--meaning asks about each text that differs from today's, and today's where only Claude changed it, 25 a request, and falls back on a changed meaning", (t) => {
   // 30 more messages ChatGPT changed, so the texts take two requests.
   const more = Object.fromEntries(
@@ -532,7 +588,7 @@ test("--meaning asks about each text that differs from today's, and today's wher
   assert.equal(run.status, 0, run.stderr);
   assert.match(
     run.stdout,
-    /- Agreed 1, ChatGPT 31, Claude 2, today's 5, set aside 0\.\n- Fallen back: 0 by rule, 1 by meaning\.\n- Only Claude changed it: 2; today's found wrong in 1 by rule and 0 by meaning\.\n- The meaning check: 36 texts asked in 3 requests, 0 answered by an earlier run; 3,000 tokens in, 600 out\./,
+    /- Agreed 1, ChatGPT 31, Claude 2, today's 5, settled 0, set aside 0\.\n- Fallen back: 0 by rule, 1 by meaning\.\n- Only Claude changed it: 2; today's found wrong in 1 by rule and 0 by meaning\.\n- The meaning check: 36 texts asked in 3 requests, 0 answered by an earlier run; 3,000 tokens in, 600 out\./,
   );
   assert.deepEqual(decided(root)["orders.delete"], {
     correction: "删掉订单",
@@ -648,7 +704,7 @@ test("where only Claude changed it, --meaning asks about today's too, and today'
   assert.equal(run.status, 0, run.stderr);
   assert.match(
     run.stdout,
-    /- Agreed 1, ChatGPT 2, Claude 2, today's 4, set aside 0\.\n- Fallen back: 0 by rule, 1 by meaning\.\n- Only Claude changed it: 3; today's found wrong in 1 by rule and 2 by meaning\.\n- The meaning check: 8 texts asked in 2 requests,/,
+    /- Agreed 1, ChatGPT 2, Claude 2, today's 4, settled 0, set aside 0\.\n- Fallen back: 0 by rule, 1 by meaning\.\n- Only Claude changed it: 3; today's found wrong in 1 by rule and 2 by meaning\.\n- The meaning check: 8 texts asked in 2 requests,/,
   );
   const rows = decided(root);
   assert.deepEqual(rows["orders.list"], {

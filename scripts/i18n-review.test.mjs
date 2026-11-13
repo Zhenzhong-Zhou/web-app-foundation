@@ -4,11 +4,12 @@
  *
  *     node --test scripts/
  *
- * Each test copies the script into a temporary folder laid out as the
- * repository is, with a small catalogue in each package and two small
- * guides, and runs it there, since the script reads the files beside it. Both packages'
- * node_modules are linked in for their FormatJS, so run `npm install` in
- * client/ and server/ first.
+ * Each test copies the script, with the rules check whose Settled
+ * messages import reads, into a temporary folder laid out as the
+ * repository is, with a small catalogue in each package, two small guides
+ * and a glossary, and runs it there, since the script reads the files
+ * beside it. Both packages' node_modules are linked in for their
+ * FormatJS, so run `npm install` in client/ and server/ first.
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -106,6 +107,16 @@ Appuyez sur **Créer une commande**.
 `,
 };
 
+/** The glossary's Settled messages: the Chinese farewell. */
+const GLOSSARY = `# Glossary
+
+## Settled messages
+
+| Id | Language | Text | Decided in |
+| --- | --- | --- | --- |
+| \`farewell\` | 简体中文 | \`别走\` | A test’s |
+`;
+
 /** Where each message is defined, which export's Where column names. */
 const SOURCES = {
   "client/src/app.tsx": `intl.formatMessage({ id: "farewell", defaultMessage: "Don't go" });
@@ -137,10 +148,12 @@ const sheet = (root, file) => readWorkbook(readFileSync(path.join(root, file)));
 function fixture(t) {
   const root = repository(t, "i18n-review");
   mkdirSync(path.join(root, "scripts"));
-  copyFileSync(
-    path.join(ROOT, "scripts/i18n-review.mjs"),
-    path.join(root, "scripts/i18n-review.mjs"),
-  );
+  for (const script of ["i18n-review.mjs", "i18n-rules.mjs"]) {
+    copyFileSync(
+      path.join(ROOT, "scripts", script),
+      path.join(root, "scripts", script),
+    );
+  }
   for (const area of ["client", "server"]) {
     mkdirSync(path.join(root, area));
     symlinkSync(
@@ -151,7 +164,11 @@ function fixture(t) {
   for (const [file, messages] of Object.entries(CATALOGUES)) {
     writeJson(root, file, messages);
   }
-  for (const [file, text] of Object.entries({ ...SOURCES, ...GUIDES })) {
+  for (const [file, text] of Object.entries({
+    ...SOURCES,
+    ...GUIDES,
+    "docs/glossary.md": GLOSSARY,
+  })) {
     write(root, file, text);
   }
   return root;
@@ -414,6 +431,47 @@ test("import takes a correction whose English changed only in its apostrophes", 
   assert.equal(
     readText(root, "client/src/locales/fr-CA.json"),
     `${JSON.stringify({ farewell: "Ne t’en va pas", greeting: "Bonjour, {name}" }, null, 2)}\n`,
+  );
+});
+
+test("import refuses a correction to a settled message, naming it, and takes one that keeps its text", (t) => {
+  const root = fixture(t);
+  assert.equal(review(root, "export").status, 0);
+  correct(root, "review/zh-Hans.xlsx", {
+    farewell: "不要走",
+    greeting: "您好，{name}",
+  });
+  const before = allCatalogues(root);
+
+  const run = review(root, "import", path.join(root, "review/zh-Hans.xlsx"));
+  assert.equal(run.status, 1);
+  assert.match(run.stderr, /^Nothing written\./);
+  assert.match(
+    run.stderr,
+    /row 2 farewell: settled, its text held by docs\/glossary\.md's Settled messages, so clear its Correction, or change its row there first/,
+  );
+  assert.doesNotMatch(run.stderr, /greeting/);
+  assert.deepEqual(allCatalogues(root), before);
+
+  // Settled in Chinese only, and a Correction that is today's text is no
+  // change to it.
+  correct(root, "review/zh-Hans.xlsx", { farewell: "别走" });
+  correct(root, "review/fr-CA.xlsx", { farewell: "Ne t’en va pas" });
+  for (const language of ["zh-Hans", "fr-CA"]) {
+    const again = review(
+      root,
+      "import",
+      path.join(root, `review/${language}.xlsx`),
+    );
+    assert.equal(again.status, 0, again.stderr);
+  }
+  assert.deepEqual(
+    JSON.parse(readText(root, "client/src/locales/zh-Hans.json")),
+    { farewell: "别走", greeting: "您好，{name}" },
+  );
+  assert.equal(
+    JSON.parse(readText(root, "client/src/locales/fr-CA.json")).farewell,
+    "Ne t’en va pas",
   );
 });
 

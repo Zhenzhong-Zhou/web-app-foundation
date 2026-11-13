@@ -23,6 +23,11 @@
  * - today's, where neither did. With no --claude, a message ChatGPT kept
  *   stays today's.
  *
+ * A message the glossary's Settled messages hold keeps today's text,
+ * whatever either review says, its Reason Settled, and is not checked:
+ * the words settled in ADR-054's November 2026 amendment, which import
+ * refuses to correct and the rules check holds.
+ *
  * Today's is the translation in the catalogue or guide now. A message a
  * review changed is set aside where its English or translation is no
  * longer what the workbook says, or it is gone, as import would refuse
@@ -83,8 +88,8 @@
  * where today's stays; and beside them Reason, the table's row, and
  * Fallback, each text that failed a check and why. `node
  * scripts/i18n-review.mjs import <file>` reads it as any returned
- * workbook. It prints the counts: agreed, ChatGPT, Claude, today's and set
- * aside, which add up to the rows; those fallen back by rule and by
+ * workbook. It prints the counts: agreed, ChatGPT, Claude, today's, settled
+ * and set aside, which add up to the rows; those fallen back by rule and by
  * meaning; with --claude, those only Claude changed and in how many a check
  * found today's wrong; and what the meaning check asked and the tokens it
  * used.
@@ -97,8 +102,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { readWorkbook, targetsFor, workbook } from "./i18n-review.mjs";
-import { problemsOf } from "./i18n-rules.mjs";
+import {
+  GUIDE_AREA,
+  readWorkbook,
+  targetsFor,
+  workbook,
+} from "./i18n-review.mjs";
+import { problemsOf, settledMessages } from "./i18n-rules.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -204,13 +214,22 @@ const WHOSE = {
 };
 
 /**
- * A row's decision before the meaning check: decided already (today's, or
- * set aside), or the texts to try in turn, today's after the last.
- * `claude` is Claude's row, null where its workbook has none, undefined
- * with no --claude.
+ * A row's decision before the meaning check: decided already (today's,
+ * settled or set aside), or the texts to try in turn, today's after the
+ * last. `claude` is Claude's row, null where its workbook has none,
+ * undefined with no --claude; `settled`, the language's Settled messages.
  */
-function decisionOf(row, claude, targets, language) {
+function decisionOf(row, claude, targets, language, settled) {
   const withClaude = claude !== undefined;
+  // The glossary settled its text: no review changes it.
+  if (row.area !== GUIDE_AREA && settled.has(row.id)) {
+    return {
+      row,
+      source: "settled",
+      reason:
+        "Settled: the glossary's Settled messages hold its text, so today's stays",
+    };
+  }
   const target = targets.get(row.area);
   const cell = (text) => (target ? target.cell(text) : text);
   // A review's text where it changed the message, as import reads it.
@@ -844,12 +863,19 @@ async function decide(options, key) {
     claude ? claude.rows.map((row) => [rowKey(row), row]) : [],
   );
   const targets = targetsFor(language);
+  let settled;
+  try {
+    settled = settledMessages().get(language);
+  } catch (error) {
+    fail(error.message);
+  }
   const decisions = chatgpt.rows.map((row) =>
     decisionOf(
       row,
       claude ? (theirs.get(rowKey(row)) ?? null) : undefined,
       targets,
       language,
+      settled,
     ),
   );
   const ours = new Set(chatgpt.rows.map(rowKey));
@@ -907,7 +933,7 @@ async function decide(options, key) {
   console.log(
     [
       `${shown(out)}: ${results.length} rows, ${language}.`,
-      `- Agreed ${count("agreed")}, ChatGPT ${count("ChatGPT")}, Claude ${count("Claude")}, today's ${count("today")}, set aside ${count("set aside")}.`,
+      `- Agreed ${count("agreed")}, ChatGPT ${count("ChatGPT")}, Claude ${count("Claude")}, today's ${count("today")}, settled ${count("settled")}, set aside ${count("set aside")}.`,
       `- Fallen back: ${fellBack("rule")} by rule, ${fellBack("meaning")} by meaning.`,
       ...(claude
         ? [

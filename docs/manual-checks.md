@@ -756,8 +756,13 @@ folder by folder; these check what is already in place.
   still reads 发货 (Expédier); the Organization page's tax field and an
   invoice's PDF both say 税号. `node scripts/i18n-rules.mjs` refuses
   账单地址 and 税务登记号 in any message or guide, by the glossary's Words
-  not to use, so a later round cannot bring them back. In every
-  language, the top bar's lookup
+  not to use, so a later round cannot bring them back. The glossary's
+  Settled messages hold three whole texts in 中文: the refused page's
+  您尚未登录, the refusal's 没有{language}名称 and the invitation email's
+  有效期到 {date}结束. The rules check fails where a catalogue's text for
+  one differs from its row, the decide step keeps today's for each, its
+  Reason Settled, and import refuses a correction to one, naming it. In
+  every language, the top bar's lookup
   for a lot ends with Show all in Inventory (Tout afficher dans
   Inventaire, 在库存中查看全部), the page it opens, and Help's list of
   guides names the page at `/lots` Trace a lot (Tracer un lot, 追溯批次),
@@ -892,7 +897,9 @@ folder by folder; these check what is already in place.
   its English, and import's own checks, and, with `--meaning`, Claude's
   meaning check through the API, or it falls back to the other review's
   text, else today's; Reason and Fallback say why beside each row, and
-  the counts are printed. Where only Claude changed a
+  the counts are printed. A message the glossary's Settled messages hold
+  keeps today's text whatever a review says, its Reason Settled, and
+  import refuses a correction to one. Where only Claude changed a
   message, today's stays unless it fails the rules check or, with
   `--meaning`, the meaning check; then Claude's goes in where it passes
   both, and the counts say in how many today's was found wrong. The
@@ -5970,3 +5977,8 @@ first.
   and punctuation, but those its list names with why, and the decide
   step falls back from one as from any rule: MC-1416 and MC-1405
   extended.
+- 2026-11-13: ADR-054's November amendment, R8 and R10: the glossary's
+  Settled messages hold the three Chinese texts settled here; the rules
+  check fails where a catalogue differs from one, the decide step keeps
+  today's for each and import refuses a correction to one: MC-1417 and
+  MC-1405 extended.

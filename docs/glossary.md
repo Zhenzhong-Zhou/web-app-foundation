@@ -244,6 +244,23 @@ fails on each word a translation uses where its row holds.
 | 简体中文 | 账单地址 | 开票地址, as Billing address says: 账单地址 sat beside 开票, one address under two names | Everywhere |
 | 简体中文 | 税务登记号 | 税号, as Tax number says: the PDF said 税务登记号 where the screens say 税号, one number under two names | Everywhere |
 
+## Settled messages
+
+A message whose whole text was decided here, so no round of review
+changes it: the decide step (`scripts/i18n-decide.mjs`) keeps its text
+whatever a review says, its Reason Settled; `import` refuses a
+correction to it, naming it; and `scripts/i18n-rules.mjs` fails where a
+catalogue's text for it differs from its row's. A message is named by
+its id, in either package's catalogue, and its text is in backquotes,
+exactly as the catalogue holds it. A settled message changes only with
+its row here, in the same commit as its catalogue.
+
+| Id | Language | Text | Decided in |
+| --- | --- | --- | --- |
+| `documents.refusal.signedOut` | 简体中文 | `您尚未登录` | [ADR-054's November 2026 amendment](adr/0054-languages.md#decision--the-words-settled-here): the refused document's page, signed out |
+| `invoices.skuLanguageNameWhich` | 简体中文 | `{which, select, variant {{product} 的规格 {sku}（{variation}）} other {{product}（{sku}）}}没有{language}名称，而本组织要求单据上必须有。请在物品页面的“其他语言名称”中添加。` | [ADR-054's November 2026 amendment](adr/0054-languages.md#decision--the-words-settled-here): a missing name's language, in Chinese |
+| `mail.invitation.expires` | 简体中文 | `链接只能用一次，有效期到 {date}结束，{zone}。密码由您自己设置。` | [ADR-054's November 2026 amendment](adr/0054-languages.md#decision--the-words-settled-here): the invitation email's last day |
+
 ## Writing conventions
 
 - **Apostrophes:** use ’ (U+2019) in translations, never '. An ASCII
@@ -273,9 +290,10 @@ fails on each word a translation uses where its row holds.
   the English has no word outside its placeholders, as
   `{count} / {max}`, and for the messages its `SAME_AS_ENGLISH` lists by
   language and id, each with why: Total, Code or Lot in French, a unit's
-  symbol, a paper size's name. The space beside Latin letters and
-  digits, and how a sentence reads, are left to whoever writes and
-  reviews it.
+  symbol, a paper size's name. And it fails where a settled message's
+  text is not its row's in Settled messages. The space beside Latin
+  letters and digits, and how a sentence reads, are left to whoever
+  writes and reviews it.
 
 ### How it reads
 

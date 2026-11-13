@@ -10,6 +10,9 @@
  *
  * - each row of the glossary's Words not to use, in its language and
  *   where it holds;
+ * - each row of its Settled messages: the message's text in either
+ *   package's catalogue, in the row's language, not the row's, or no
+ *   catalogue holding the message;
  * - a translation the same as its English, ignoring case, spaces and
  *   punctuation: English left in, as "Deleted User" was in a French
  *   review. Not where the English has no word of its own outside its
@@ -31,7 +34,9 @@
  *
  * It exports problemsOf(text, id, language, english), one text's
  * problems, which the decide step runs on each text it decides; with no
- * English, a text is not compared with it. No dependencies:
+ * English, a text is not compared with it. And settledMessages(), the
+ * Settled messages, which the decide step keeps and import refuses to
+ * correct. No dependencies:
  * scripts/verify.sh and the Docs workflow run it with Node alone. Its
  * tests are in i18n-rules.test.mjs: `node --test scripts/`.
  */
@@ -95,12 +100,22 @@ function scopeOf(where, row) {
   };
 }
 
-/** The glossary's Words not to use, each row's language, words and scope. */
-function readWordsNotToUse() {
+/** A language's code, by the name the glossary's tables give it. */
+const CODES = Object.fromEntries(
+  Object.entries(LANGUAGES).map(([code, name]) => [name, code]),
+);
+const NEITHER = `its language is neither ${Object.values(LANGUAGES).join(" nor ")}`;
+
+/**
+ * The rows of the glossary's table in its section of that name, each its
+ * cells, after the table's heading and the line under it. A cell's \| is
+ * a | in its text.
+ */
+function tableIn(section) {
   const lines = readFileSync(path.join(ROOT, GLOSSARY), "utf8").split("\n");
-  const start = lines.indexOf("## Words not to use");
+  const start = lines.indexOf(`## ${section}`);
   if (start === -1) {
-    throw new Error(`${GLOSSARY} has no section ## Words not to use.`);
+    throw new Error(`${GLOSSARY} has no section ## ${section}.`);
   }
   const table = [];
   for (const line of lines.slice(start + 1)) {
@@ -108,24 +123,26 @@ function readWordsNotToUse() {
     else if (table.length > 0 || line.startsWith("#")) break;
   }
   if (table.length === 0) {
-    throw new Error(`${GLOSSARY}: Words not to use has no table.`);
+    throw new Error(`${GLOSSARY}: ${section} has no table.`);
   }
-  const codes = Object.fromEntries(
-    Object.entries(LANGUAGES).map(([code, name]) => [name, code]),
-  );
-  // After its heading and the line under it.
-  return table.slice(2).map((line) => {
-    const [language, word, instead, where] = line
-      .split("|")
+  return table.slice(2).map((line) =>
+    line
+      .split(/(?<!\\)\|/)
       .slice(1, -1)
-      .map((cell) => cell.trim());
-    if (!codes[language]) {
+      .map((cell) => cell.trim().replace(/\\\|/g, "|")),
+  );
+}
+
+/** The glossary's Words not to use, each row's language, words and scope. */
+function readWordsNotToUse() {
+  return tableIn("Words not to use").map(([language, word, instead, where]) => {
+    if (!CODES[language]) {
       throw new Error(
-        `${GLOSSARY}: Words not to use, the row ${word}: its language is neither ${Object.values(LANGUAGES).join(" nor ")}.`,
+        `${GLOSSARY}: Words not to use, the row ${word}: ${NEITHER}.`,
       );
     }
     return {
-      language: codes[language],
+      language: CODES[language],
       word,
       instead,
       holdsFor: scopeOf(where ?? "", word),
@@ -134,6 +151,46 @@ function readWordsNotToUse() {
 }
 
 let wordsNotToUse;
+
+// ------------------------------------------------------ settled messages
+
+/**
+ * The glossary's Settled messages: each language's, by id, its text. A
+ * row names one message id and its whole text, each in backquotes, and
+ * the decision it comes from.
+ */
+function readSettled() {
+  const settled = new Map(
+    Object.keys(LANGUAGES).map((code) => [code, new Map()]),
+  );
+  for (const [idCell = "", language, textCell = "", from] of tableIn(
+    "Settled messages",
+  )) {
+    const id = /^`([^`\s]+)`$/.exec(idCell)?.[1];
+    const refused = (why) =>
+      new Error(
+        `${GLOSSARY}: Settled messages, the row ${id ?? idCell}: ${why}.`,
+      );
+    if (!id) throw refused("its Id is not one message id in backquotes");
+    if (!CODES[language]) throw refused(NEITHER);
+    const text = /^`(.+)`$/.exec(textCell)?.[1];
+    if (text === undefined) throw refused("its Text is not in backquotes");
+    if (!from) throw refused("it names no decision it comes from");
+    settled.get(CODES[language]).set(id, text);
+  }
+  return settled;
+}
+
+let settled;
+
+/**
+ * The glossary's Settled messages, a Map by language, then id, of each
+ * one's text: what the decide step keeps and import refuses to correct.
+ */
+export function settledMessages() {
+  settled ??= readSettled();
+  return settled;
+}
 
 // ------------------------------------------------------ same as the English
 
@@ -405,6 +462,11 @@ export function problemsOf(text, id, language, english) {
     }
   }
 
+  const settledText = settledMessages().get(language)?.get(id);
+  if (settledText !== undefined && text !== settledText) {
+    problems.push(`not its settled text, ${settledText} (Settled messages)`);
+  }
+
   if (
     english !== undefined &&
     /\p{L}/u.test(ownWords(english)) &&
@@ -511,11 +573,24 @@ if (import.meta.main) {
   let sections = 0;
   try {
     for (const language of Object.keys(LANGUAGES)) {
-      for (const { file, id, text, english } of textsIn(language)) {
+      const texts = textsIn(language);
+      for (const { file, id, text, english } of texts) {
         if (id.includes(".")) messages++;
         else sections++;
         for (const problem of problemsOf(text, id, language, english)) {
           failures.push(`${file}: ${id}: ${problem}`);
+        }
+      }
+      const inCatalogues = new Set(
+        texts
+          .filter(({ file }) => catalogues(language).includes(file))
+          .map(({ id }) => id),
+      );
+      for (const id of settledMessages().get(language).keys()) {
+        if (!inCatalogues.has(id)) {
+          failures.push(
+            `${GLOSSARY}: ${id}: settled in ${language}, but in neither of its catalogues; take its row out of Settled messages`,
+          );
         }
       }
     }
@@ -526,7 +601,7 @@ if (import.meta.main) {
   if (failures.length > 0) {
     console.error(failures.join("\n"));
     console.error(
-      `\n${failures.length} problems: change each by ${GLOSSARY}'s Words not to use and Writing conventions; ` +
+      `\n${failures.length} problems: change each by ${GLOSSARY}'s Words not to use, Settled messages and Writing conventions; ` +
         "a translation meant to be its English goes in scripts/i18n-rules.mjs's SAME_AS_ENGLISH, with why.",
     );
     process.exit(1);
