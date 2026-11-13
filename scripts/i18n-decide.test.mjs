@@ -480,6 +480,35 @@ test("a text that fails the rules check falls back to the other review's, else t
   });
 });
 
+test("a correction the same as its English falls back as for any rule", (t) => {
+  const { root } = fixture(t);
+  round2(root, SCREENS, {
+    chatgpt: {
+      // The English in another case, and with its punctuation changed:
+      // left in English, as "Deleted User" was in a French review.
+      "orders.delete": "Delete the Order",
+      "orders.help": "HELP!",
+    },
+  });
+
+  const run = decide(root, ROUND_2);
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /- Fallen back: 2 by rule, 0 by meaning\./);
+  const rows = decided(root);
+  const leftIn =
+    "fails the rules check: the same as its English, so left in English (SAME_AS_ENGLISH lists those meant to be).";
+  assert.deepEqual(rows["orders.delete"], {
+    correction: "删掉订单",
+    reason: "Both changed it, differently; ChatGPT's leads",
+    fallback: `ChatGPT's ${leftIn} Claude's goes in.`,
+  });
+  assert.deepEqual(rows["orders.help"], {
+    correction: "",
+    reason: "Only ChatGPT changed it",
+    fallback: `ChatGPT's ${leftIn} Today's stays.`,
+  });
+});
+
 test("--meaning asks about each text that differs from today's, and today's where only Claude changed it, 25 a request, and falls back on a changed meaning", (t) => {
   // 30 more messages ChatGPT changed, so the texts take two requests.
   const more = Object.fromEntries(

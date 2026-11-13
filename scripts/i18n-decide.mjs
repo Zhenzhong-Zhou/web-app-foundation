@@ -31,13 +31,13 @@
  * marks counts as the same, as it does for import.
  *
  * Each text decided is checked before it goes in. The rules check:
- * i18n-rules.mjs's problemsOf, the glossary's words and punctuation, and
- * import's own checks, a message's ICU and placeholders and a section's
- * heading and links, so import takes the decided workbook whole. With
- * --meaning, the meaning check too, on each text that differs from
- * today's, and on today's where only Claude changed it. A text that fails
- * either falls back to the other review's, where that one passes, else to
- * today's.
+ * i18n-rules.mjs's problemsOf, the glossary's words and punctuation and a
+ * text left in English, and import's own checks, a message's ICU and
+ * placeholders and a section's heading and links, so import takes the
+ * decided workbook whole. With --meaning, the meaning check too, on each
+ * text that differs from today's, and on today's where only Claude
+ * changed it. A text that fails either falls back to the other review's,
+ * where that one passes, else to today's.
  *
  * The meaning check asks Claude, through the Messages API, whether each
  * text makes a serious change to what its English says, as an LLM judge is
@@ -262,7 +262,7 @@ function decisionOf(row, claude, targets, language) {
     row,
     english: today.english,
     check: (text) => [
-      ...problemsOf(text, row.id, language),
+      ...problemsOf(text, row.id, language, today.english),
       ...[target.check(row.id, text)].filter(Boolean),
     ],
   };

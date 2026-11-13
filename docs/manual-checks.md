@@ -740,7 +740,11 @@ folder by folder; these check what is already in place.
   phone (390 px) no line of Help on Home or Items starts with a colon.
   `node scripts/i18n-rules.mjs` holds each, in both packages'
   catalogues and every guide; by hand, that 头像 reads as the person's
-  picture where it stands.
+  picture where it stands. It refuses too a translation the same as its
+  English, ignoring case, spaces and punctuation, unless the English has
+  no word outside its placeholders or the script's `SAME_AS_ENGLISH`
+  lists the message with why, so Inventory → Movements in Français names
+  a deleted member Utilisateur supprimé, never Deleted User.
 - **MC-1417** *(ADR-054's November 2026 amendment, R10 and R11; #149)*
   The words settled for the reviewer who reads only Chinese. In 中文: a
   shipment's Create invoice reads 创建发票, and the draft's Issue still
@@ -884,10 +888,11 @@ folder by folder; these check what is already in place.
   ChatGPT's review and Claude's, ChatGPT leading, and writes a workbook
   import takes whole: a row a review changed whose English or translation
   changed since the export is set aside, its Correction cleared; each text
-  must pass `scripts/i18n-rules.mjs` and import's own checks, and, with
-  `--meaning`, Claude's meaning check through the API, or it falls back to
-  the other review's text, else today's; Reason and Fallback say why beside
-  each row, and the counts are printed. Where only Claude changed a
+  must pass `scripts/i18n-rules.mjs`, which refuses one left the same as
+  its English, and import's own checks, and, with `--meaning`, Claude's
+  meaning check through the API, or it falls back to the other review's
+  text, else today's; Reason and Fallback say why beside each row, and
+  the counts are printed. Where only Claude changed a
   message, today's stays unless it fails the rules check or, with
   `--meaning`, the meaning check; then Claude's goes in where it passes
   both, and the counts say in how many today's was found wrong. The
@@ -5960,3 +5965,8 @@ first.
   also asks about 20 of ChatGPT's correct rewrites, and stops over 2 of
   them flagged; the workbook reader takes tags with a namespace prefix:
   MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R4 and R5: the rules check
+  refuses a translation the same as its English, ignoring case, spaces
+  and punctuation, but those its list names with why, and the decide
+  step falls back from one as from any rule: MC-1416 and MC-1405
+  extended.

@@ -186,6 +186,74 @@ test("French: guillemets take a no-break space inside", () => {
   );
 });
 
+const LEFT_IN_ENGLISH = [
+  "the same as its English, so left in English (SAME_AS_ENGLISH lists those meant to be)",
+];
+
+test("a translation the same as its English is refused, ignoring case, spaces and punctuation", () => {
+  // A French review's correction that was the English, in another case.
+  assert.deepEqual(
+    problemsOf(
+      "Deleted User",
+      "inventory.movements.deletedUser",
+      "fr-CA",
+      "Deleted user",
+    ),
+    LEFT_IN_ENGLISH,
+  );
+  assert.deepEqual(
+    problemsOf("SAVE  changes!", "a.b", "zh-Hans", "Save changes."),
+    LEFT_IN_ENGLISH,
+  );
+  // A plural's words are its own, and a guide's section is compared too.
+  const plural = "{count, plural, one {# item} other {# items}}";
+  assert.deepEqual(problemsOf(plural, "a.b", "fr-CA", plural), LEFT_IN_ENGLISH);
+  const section = "## Every day {#today}\n\nPress **Refresh**.";
+  assert.deepEqual(
+    problemsOf(section, "home#today", "fr-CA", section),
+    LEFT_IN_ENGLISH,
+  );
+  // Translated, it passes.
+  assert.deepEqual(
+    problemsOf(
+      "Utilisateur supprimé",
+      "inventory.movements.deletedUser",
+      "fr-CA",
+      "Deleted user",
+    ),
+    [],
+  );
+});
+
+test("a translation listed in SAME_AS_ENGLISH may be its English, in its language only", () => {
+  assert.deepEqual(
+    problemsOf("Total", "documents.total", "fr-CA", "Total"),
+    [],
+  );
+  assert.deepEqual(
+    problemsOf("Letter", "audit.value.paper.letter", "zh-Hans", "Letter"),
+    [],
+  );
+  // The French Total is listed; the Chinese one is not.
+  assert.deepEqual(
+    problemsOf("Total", "documents.total", "zh-Hans", "Total"),
+    LEFT_IN_ENGLISH,
+  );
+});
+
+test("a text with no word of its own outside its placeholders and tags is not compared, nor one with no English", () => {
+  for (const text of [
+    "{count} / {max}",
+    "{name}, {count}",
+    "{value}%",
+    "{title} <muted>{count}</muted>",
+    "{amount, number} · {day, date, short}",
+  ]) {
+    assert.deepEqual(problemsOf(text, "a.b", "fr-CA", text), [], text);
+  }
+  assert.deepEqual(problemsOf("Save", "a.b", "zh-Hans"), []);
+});
+
 // ------------------------------------------------------------------ the run
 
 const GLOSSARY = (
@@ -211,6 +279,11 @@ function fixture(t, files = {}) {
   );
   const clean = {
     "docs/glossary.md": GLOSSARY(),
+    "client/src/locales/en.json": JSON.stringify({ "home.title": "Home" }),
+    "server/src/i18n/en.json": JSON.stringify({
+      "licences.none": "No licence: add one.",
+    }),
+    "client/src/help/guides/en/home.md": `# Home\n\nThe first page.\n\n## Every day {#today}\n\nPress **Refresh**.\n`,
     "client/src/locales/fr-CA.json": JSON.stringify({
       "home.title": "Accueil",
     }),
@@ -245,19 +318,23 @@ test("the run passes clean translations, counting what it read", (t) => {
 
 test("the run prints each problem by file and id, a guide's by section, and fails", (t) => {
   const run = fixture(t, {
+    "client/src/locales/fr-CA.json": JSON.stringify({ "home.title": "HOME" }),
     "client/src/locales/zh-Hans.json": JSON.stringify({
       "home.title": "产品首页,",
     }),
     "client/src/help/guides/fr-CA/home.md": `# Accueil\n\nLa première page.\n\n## Chaque jour {#today}\n\nAppuyez sur **Actualiser** :\n`,
+    "client/src/help/guides/zh-Hans/home.md": `# 首页\n\n第一个页面。\n\n## Every day {#today}\n\nPress **Refresh**.\n`,
   });
   assert.equal(run.status, 1);
   assert.equal(
     run.stderr,
-    `client/src/help/guides/fr-CA/home.md: home#today: a colon without a no-break space (U+00A0) before it
+    `client/src/locales/fr-CA.json: home.title: ${LEFT_IN_ENGLISH[0]}
+client/src/help/guides/fr-CA/home.md: home#today: a colon without a no-break space (U+00A0) before it
 client/src/locales/zh-Hans.json: home.title: 产品, for 商品 (Words not to use)
 client/src/locales/zh-Hans.json: home.title: half-width , beside Chinese, for ，
+client/src/help/guides/zh-Hans/home.md: home#today: ${LEFT_IN_ENGLISH[0]}
 
-3 problems: change each by docs/glossary.md's Words not to use and Writing conventions.
+5 problems: change each by docs/glossary.md's Words not to use and Writing conventions; a translation meant to be its English goes in scripts/i18n-rules.mjs's SAME_AS_ENGLISH, with why.
 `,
   );
 });

@@ -267,9 +267,15 @@ fails on each word a translation uses where its row holds.
 - **The check:** `scripts/i18n-rules.mjs`, which `scripts/verify.sh` and
   the Docs workflow run, fails on the apostrophes, the ellipsis, Quebec
   typography and the half-width punctuation beside Chinese above, in
-  both packages' French and Chinese catalogues and the guides. The space
-  beside Latin letters and digits, and how a sentence reads, are left to
-  whoever writes and reviews it.
+  both packages' French and Chinese catalogues and the guides. It fails
+  too on a translation the same as its English, ignoring case, spaces
+  and punctuation, as "Deleted User" was in a French review, but where
+  the English has no word outside its placeholders, as
+  `{count} / {max}`, and for the messages its `SAME_AS_ENGLISH` lists by
+  language and id, each with why: Total, Code or Lot in French, a unit's
+  symbol, a paper size's name. The space beside Latin letters and
+  digits, and how a sentence reads, are left to whoever writes and
+  reviews it.
 
 ### How it reads
 
