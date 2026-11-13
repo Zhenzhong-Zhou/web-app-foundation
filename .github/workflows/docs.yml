@@ -59,8 +59,9 @@ jobs:
       # The glossary's words and punctuation in the French and Chinese
       # catalogues and guides (ADR-054's November 2026 amendment): here,
       # since a row added to the glossary's Words not to use is Markdown
-      # alone, which ci.yml skips. Node, nothing to install. Its test runs
-      # in ci.yml, with the other scripts'.
+      # alone, which ci.yml skips; ci.yml runs it too, as a required check.
+      # Node, nothing to install. Its test runs in ci.yml, with the other
+      # scripts'.
       - run: node scripts/i18n-rules.mjs
 
       # The chat's planning skill, checked as claude.ai checks an upload

@@ -327,8 +327,8 @@ spacing.
 - **Placeholders:** `{name}` and tags like `<link>` are kept exactly, in
   whatever position the sentence needs; `npm run i18n:check` fails
   otherwise.
-- **The check:** `scripts/i18n-rules.mjs`, which `scripts/verify.sh` and
-  the Docs workflow run, fails on the apostrophes, the ellipsis, Quebec
+- **The check:** `scripts/i18n-rules.mjs`, which `scripts/verify.sh`, CI
+  and the Docs workflow run, fails on the apostrophes, the ellipsis, Quebec
   typography and the half-width punctuation beside Chinese above, in
   both packages' French and Chinese catalogues and the guides. It fails
   too on a translation the same as its English, ignoring case, spaces
