@@ -65,7 +65,7 @@ describe("a hidden tile's late line", () => {
       'La tuile À expédier est masquée; 1 commande en retard reste ici',
     );
     expect(said('zh-Hans', zh, 'toShip', 1)).toBe(
-      '“待发货”已隐藏，它的 1 个逾期订单仍然在这里',
+      '“待发货”已隐藏，但其 1 个逾期订单仍会显示在这里',
     );
   });
 
@@ -77,7 +77,7 @@ describe("a hidden tile's late line", () => {
       'La tuile À expédier est masquée; ses 2 commandes en retard restent ici',
     );
     expect(said('zh-Hans', zh, 'toShip', 2)).toBe(
-      '“待发货”已隐藏，它的 2 个逾期订单仍然在这里',
+      '“待发货”已隐藏，但其 2 个逾期订单仍会显示在这里',
     );
   });
 });

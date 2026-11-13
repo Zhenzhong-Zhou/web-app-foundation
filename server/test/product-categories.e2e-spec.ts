@@ -369,7 +369,7 @@ describe('Product categories (e2e)', () => {
         .set('Accept-Language', 'zh-Hans')
         .expect(409);
       expect(body<{ message: string }>(categories).message).toBe(
-        'Vitamins 还有 2 个下级分类，不能删除。请先把它们移出 Vitamins，再删除。',
+        'Vitamins 还有 2 个下级分类。请先把它们移出 Vitamins，再删除该分类。',
       );
 
       const fishOil = await add(alpha.agent, 'Fish oil');

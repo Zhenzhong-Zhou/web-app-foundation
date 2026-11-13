@@ -1385,9 +1385,9 @@ Paper is checked first because it must not change at all.
   below, the line saying To ship hidden: under Hidden tiles, below, focus
   on the next tile's handle, its late orders still in the red panel, and a
   red line under the panel says To ship is hidden, and that its late
-  orders still show here (in 中文 “待发货”已隐藏，它的 … 个逾期订单仍然在这里),
+  orders still show here (in 中文 “待发货”已隐藏，但其 … 个逾期订单仍会显示在这里),
   one late order as its 1 late order still shows here (La tuile À
-  expédier est masquée; 1 commande en retard reste ici; 它的 1 个逾期订单);
+  expédier est masquée; 1 commande en retard reste ici; 但其 1 个逾期订单);
   the line is Customise Home's alone, gone from Home after Done. Show
   Orders · Draft: it comes back in its place, after To receive, the line
   saying Orders · Draft shown, 2 of 9, focus on its handle. Under the switch a
