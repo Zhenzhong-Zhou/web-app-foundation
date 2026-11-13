@@ -2261,7 +2261,9 @@ The invitation page, in a private window unless a check says otherwise:
   open a link to that address: You can't join with this account yet,
   saying why and until when, with Go to your account. In 中文 it says to
   离开该组织 on the “我的账户”页面, as the Account page's button says, never
-  退出, which reads as signing out.
+  退出, which reads as signing out. `node scripts/i18n-rules.mjs` refuses
+  退出该组织 and 退出组织 in any message or guide, by the glossary's Words
+  not to use, so a later round cannot bring them back.
 - **MC-3014** *(ADR-077, ADR-069)* With that account's deletion set on
   Account, open a link to it: Keep your account to join, naming the
   deletion day; Keep my account, and Join appears.
@@ -6092,3 +6094,7 @@ first.
   and Invoices with none says to 创建发票 from a shipment, where 开具 is
   the glossary's Issue: round 1's findings, the glossary over any round.
   MC-3013 and MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R8: the glossary's Words not
+  to use gains 退出该组织 and 退出组织, which the rules check refuses in
+  every message and guide; 退出 alone is no row, since 退出登录 is Sign
+  out: MC-3013 extended.

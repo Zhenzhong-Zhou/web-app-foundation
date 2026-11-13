@@ -243,6 +243,8 @@ fails on each word a translation uses where its row holds.
 | 简体中文 | 照片 | 头像 | Only where it means a person's picture, not an item's photos: `account.*`, `people.*`, `account.md` and `people.md` |
 | 简体中文 | 账单地址 | 开票地址, as Billing address says: 账单地址 sat beside 开票, one address under two names | Everywhere |
 | 简体中文 | 税务登记号 | 税号, as Tax number says: the PDF said 税务登记号 where the screens say 税号, one number under two names | Everywhere |
+| 简体中文 | 退出该组织 | 离开该组织: a member's own Leave is 离开, as the Account page's button says; 退出 is Sign out's word, 退出登录, where it stays right | Everywhere |
+| 简体中文 | 退出组织 | 离开组织, as 退出该组织 says | Everywhere |
 
 ## Settled messages
 

@@ -86,6 +86,25 @@ test("账单地址 and 税务登记号 are refused everywhere, for the words set
   );
 });
 
+test("退出该组织 and 退出组织 are refused everywhere, and 退出登录 is not", () => {
+  for (const id of ["invitation.otherOrganization.next", "account#leave"]) {
+    assert.deepEqual(
+      problemsOf("请在“我的账户”页面退出该组织", id, "zh-Hans"),
+      [
+        "退出该组织, for 离开该组织: a member's own Leave is 离开, as the Account page's button says; 退出 is Sign out's word, 退出登录, where it stays right (Words not to use)",
+      ],
+    );
+    assert.deepEqual(problemsOf("请先退出组织", id, "zh-Hans"), [
+      "退出组织, for 离开组织, as 退出该组织 says (Words not to use)",
+    ]);
+  }
+  // Sign out is 退出登录, so 退出 alone is no row.
+  assert.deepEqual(
+    problemsOf("闲置后自动退出登录", "settings.security.title", "zh-Hans"),
+    [],
+  );
+});
+
 test("Chinese: a half-width , ? : ; or ! beside Chinese is refused, each once", () => {
   assert.deepEqual(problemsOf("邮箱:请检查,然后重试,好吗?", "a.b", "zh-Hans"), [
     "half-width : , ? beside Chinese, for ： ， ？",
