@@ -75,9 +75,7 @@ export function roleLabel(name: string): string {
 export function roleList(roles: readonly { name: string }[]): string {
   return intl().formatList(
     roles.map((role) => roleLabel(role.name)),
-    {
-      type: 'conjunction',
-    },
+    { type: 'conjunction' },
   );
 }
 
