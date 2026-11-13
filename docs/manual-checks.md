@@ -2520,7 +2520,7 @@ The pages, in a private window unless a check says otherwise.
   the first week's items, each a row to tap, then 您在这里可以做什么, each
   area's name a link, then the foot about 帮助, and 隐藏. Nothing scrolls
   sideways at Larger text either. 收起 folds it back to its one line.
-  隐藏 shows 欢迎卡片已隐藏。您仍可在“账户”页面查看“您在这里可以做什么”。 with
+  隐藏 shows 欢迎卡片已隐藏。您仍可在“我的账户”页面查看“您在这里可以做什么”。 with
   撤销. As MC-3209's founder, 您在这里可以做所有事情 in one line. What you can do here lists 查看采购订单、销售订单和订单价格, one 和, and
   我的账户 in the account menu opens a page headed 我的账户.
 - **MC-3211** *(ADR-079)* The demo's newcomer, and People's New. On a
@@ -6039,3 +6039,8 @@ first.
 - 2026-11-13: ADR-054's November amendment, R2 and R8: the glossary's
   Settled messages hold the Account page's title in 中文, 我的账户, so no
   later round renames it again: MC-1417 extended.
+- 2026-11-13: ADR-054's November amendment, R2: in 中文 the eight
+  messages that send a person to the Account page, the welcome's hidden
+  note, two deletion emails, two refusals to delete an organization and
+  three lines of an invitation's page, name it by its title in quotes,
+  “我的账户”页面, where they said “账户”页面: MC-3210's quote follows.
