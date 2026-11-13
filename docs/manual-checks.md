@@ -2348,10 +2348,12 @@ The pages, in a private window unless a check says otherwise.
   sentence, a screen reader reading the card's heading out. With Home
   open in two tabs, schedule the account's deletion in one; in the other,
   Start an organization is refused and the deletion banner, with Keep my
-  account, appears. In 中文 the first card reads 加入组织, and the
-  sentence 创建新组织需要邀请; in Français it reads « Les nouvelles
-  organisations se créent sur invitation », and the card's line ends
-  « rien d’une organisation précédente n’est repris » (#380).
+  account, appears. In 中文 the first card reads 加入组织, the
+  sentence 创建新组织需要邀请, and the line before 前往您的账户
+  您的资料、设备和个人数据都在“我的账户”页面。; in Français it reads
+  « Les nouvelles organisations se créent sur invitation », and the
+  card's line ends « rien d’une organisation précédente n’est repris »
+  (#380).
 - **MC-3110** *(ADR-078)* With `REGISTRATION=invitation`, sign-in has no
   Create an account: New here? Accounts start from an invitation, with
   How to get one, which opens Accounts here start from an invitation, with
@@ -2447,8 +2449,10 @@ The pages, in a private window unless a check says otherwise.
   订单).
   The guide reads in Chinese, 创建订单 and the other sections, bold and
   links in place, with no space added between Chinese words; All guides
-  reads 所有指南, grouped 工作, 资料, 设置 and 我. Learn more reads 了解更多,
-  right after the words it follows, with no space before it.
+  reads 所有指南, grouped 工作, 资料, 设置 and 我, then
+  “您在这里可以做什么”可在我的账户页面查看。, 我的账户 a link to the page
+  headed 我的账户. Learn more reads 了解更多, right after the words it
+  follows, with no space before it.
 - **MC-3207** *(ADR-079)* The welcome as a Viewer, on a computer: as the
   demo Owner, invite an address as a Viewer with a note of two lines, and
   accept it from Mailpit in a private window, at 900 px wide or more.
@@ -6044,3 +6048,7 @@ first.
   note, two deletion emails, two refusals to delete an organization and
   three lines of an invitation's page, name it by its title in quotes,
   “我的账户”页面, where they said “账户”页面: MC-3210's quote follows.
+- 2026-11-13: ADR-054's November amendment, R2: in 中文 Help's foot names
+  the Account page 我的账户, its link's text, and Home with no organization
+  sends a person to the “我的账户”页面, where both said 账户: MC-3206 and
+  MC-3109 extended.
