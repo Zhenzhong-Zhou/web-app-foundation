@@ -895,9 +895,11 @@ folder by folder; these check what is already in place.
   Before the first run, `node scripts/i18n-decide.mjs --calibrate` asks
   the meaning check about 20 texts copied from the catalogues, each with
   one error planted (a "not" dropped or added, a number, a clause, before
-  tax for including tax, a name), prints each caught or missed, and exits
-  1 under 18 of 20, keeping nothing; under 18, no decide step runs with
-  `--meaning`.
+  tax for including tax, a name) and again unchanged, never both of one
+  message in a request; it prints each caught or missed and passed or
+  flagged, with both scores, and exits 1 under 18 of 20 caught or over 2
+  of 20 flagged, a text it leaves unanswered counted as flagged, keeping
+  nothing; then no decide step runs with `--meaning`.
 - **MC-1406** In Français and in 简体中文, every area converted so far
   reads entirely in that language, with no English left on it:
   - signed out: sign-in, register, forgot-password, reset and verify,
@@ -5931,3 +5933,7 @@ first.
   own lists, in refusals, History, a voided invoice's credit notes and a
   run's variances, join as each language joins one, not with a comma:
   MC-1419 extended.
+- 2026-11-12: ADR-054's November amendment, R5: `--calibrate` also asks
+  the meaning check about its 20 texts unchanged, and stops over 2 of
+  them flagged as well as under 18 of the planted errors caught, so a
+  check that flags too much never drops a correction: MC-1405 extended.

@@ -80,8 +80,9 @@ const guide = (at) =>
 
 /**
  * Logs each request to requests.jsonl beside it, and answers each text
- * the same, but those listed in not-same.json; the request fail-at.json
- * numbers, if any, is refused as the API refuses one when it is busy.
+ * the same, but those listed in not-same.json, leaving out those listed in
+ * unanswered.json; the request fail-at.json numbers, if any, is refused as
+ * the API refuses one when it is busy.
  */
 const STUB = `import { appendFileSync, existsSync, readFileSync } from "node:fs";
 const here = new URL(".", import.meta.url);
@@ -98,8 +99,11 @@ globalThis.fetch = async (url, init) => {
   const notSame = existsSync(new URL("not-same.json", here))
     ? JSON.parse(readFileSync(new URL("not-same.json", here), "utf8"))
     : [];
+  const unanswered = existsSync(new URL("unanswered.json", here))
+    ? JSON.parse(readFileSync(new URL("unanswered.json", here), "utf8"))
+    : [];
   const { items } = JSON.parse(body.messages[0].content);
-  const answers = items.map(({ n, translation }) =>
+  const answers = items.filter(({ translation }) => !unanswered.includes(translation)).map(({ n, translation }) =>
     notSame.includes(translation)
       ? { n, same: false, why: "It drops the order." }
       : { n, same: true, why: "" },
@@ -611,7 +615,7 @@ test("where only Claude changed it, --meaning asks about today's too, and today'
   });
 });
 
-test("--calibrate asks about each planted text, a language a request, prints what it caught, and fails under 18 of 20", (t) => {
+test("--calibrate asks about each text planted and unchanged, half of each a request, prints both scores, and fails under 18 of 20 caught or over 2 of 20 flagged", (t) => {
   const { root } = fixture(t);
   const items = JSON.parse(
     readFileSync(
@@ -627,73 +631,126 @@ test("--calibrate asks about each planted text, a language a request, prints wha
   for (const item of items) {
     assert.notEqual(item.planted, item.translation, item.id);
   }
-  const planted = (language) =>
-    items
-      .filter((item) => item.language === language)
-      .map((item) => item.planted);
-  const env = { ANTHROPIC_API_KEY: KEY };
-
-  // All caught but the first two.
-  write(
-    root,
-    "not-same.json",
-    JSON.stringify(items.slice(2).map((item) => item.planted)),
+  const planted = items.map((item) => item.planted);
+  const unchanged = items.map((item) => item.translation);
+  const languageOf = new Map(
+    items.flatMap((item) => [
+      [item.planted, item.language],
+      [item.translation, item.language],
+    ]),
   );
-  const passed = decide(root, ["--calibrate"], env);
+  const env = { ANTHROPIC_API_KEY: KEY };
+  /** A run where the texts in notSame are flagged and those in unanswered get no answer. */
+  const calibrate = (notSame, { args = [], unanswered = [] } = {}) => {
+    write(root, "not-same.json", JSON.stringify(notSame));
+    write(root, "unanswered.json", JSON.stringify(unanswered));
+    return decide(root, ["--calibrate", ...args], env);
+  };
+
+  // All planted caught but the first two, and the first two unchanged
+  // flagged: it passes, just.
+  const passed = calibrate([...planted.slice(2), ...unchanged.slice(0, 2)]);
   assert.equal(passed.status, 0, passed.stderr);
   const lines = passed.stdout.trim().split("\n");
-  assert.equal(lines.length, 23);
+  assert.equal(lines.length, 45);
+  assert.deepEqual(lines.slice(0, 2), [
+    "The meaning check's calibration, on claude-sonnet-5-5: 20 texts from the catalogues, each asked about with one error planted and unchanged.",
+    "With one error planted, to be caught:",
+  ]);
   assert.equal(
-    lines[0],
-    "The meaning check's calibration, on claude-sonnet-5-5: 20 texts from the catalogues, each with one error planted.",
-  );
-  assert.equal(
-    lines[1],
+    lines[2],
     `- Missed: zh-Hans ${items[0].id}, ${items[0].error}. It answered that the text says the same: ` +
       `${JSON.stringify(items[0].planted)} for ${JSON.stringify(items[0].english)}.`,
   );
   assert.equal(
-    lines[3],
+    lines[4],
     `- Caught: zh-Hans ${items[2].id}, ${items[2].error}. It drops the order.`,
   );
-  assert.deepEqual(lines.slice(-2), [
-    "Caught 18 of 20, in 2 requests; 2,000 tokens in, 400 out.",
-    "At 18 or more, the meaning check can be trusted with the decide step: go on.",
-  ]);
-  const sent = requests(root);
-  assert.deepEqual(
-    sent.map(({ body }) =>
-      JSON.parse(body.messages[0].content).items.map(
-        (item) => item.translation,
-      ),
-    ),
-    [planted("zh-Hans"), planted("fr-CA")],
+  assert.equal(lines[22], "Unchanged, to be passed:");
+  assert.equal(
+    lines[23],
+    `- Flagged: zh-Hans ${items[0].id}, unchanged. It drops the order. ` +
+      `${JSON.stringify(items[0].translation)} for ${JSON.stringify(items[0].english)}.`,
   );
-  assert.match(sent[0].body.system, /Simplified Chinese \(zh-Hans\)/);
-  assert.match(sent[1].body.system, /French, as written in Canada \(fr-CA\)/);
+  assert.equal(lines[25], `- Passed: zh-Hans ${items[2].id}, unchanged.`);
+  assert.deepEqual(lines.slice(-2), [
+    "Caught 18 of 20 planted errors, and flagged 2 of 20 unchanged texts, in 4 requests; 4,000 tokens in, 800 out.",
+    "At least 18 caught and at most 2 flagged: the meaning check can be trusted with the decide step. Go on.",
+  ]);
+
+  // Two requests a language, each with five planted and five unchanged,
+  // never one message twice; every text asked about once.
+  const sent = requests(root).map(({ body }) => ({
+    system: body.system,
+    texts: JSON.parse(body.messages[0].content).items,
+  }));
+  assert.equal(sent.length, 4);
+  sent.forEach(({ system, texts }, at) => {
+    const language = at < 2 ? "zh-Hans" : "fr-CA";
+    assert.match(
+      system,
+      at < 2
+        ? /Simplified Chinese \(zh-Hans\)/
+        : /French, as written in Canada \(fr-CA\)/,
+    );
+    assert.equal(texts.length, 10);
+    assert.equal(new Set(texts.map((item) => item.english)).size, 10);
+    assert.equal(
+      texts.filter((item) => planted.includes(item.translation)).length,
+      5,
+    );
+    for (const item of texts) {
+      assert.equal(languageOf.get(item.translation), language);
+    }
+  });
+  assert.deepEqual(
+    sent.flatMap(({ texts }) => texts.map((item) => item.translation)).sort(),
+    [...planted, ...unchanged].sort(),
+  );
   // Nothing kept, and the key never printed.
   assert.deepEqual(readdirSync(path.join(root, "review")), []);
   for (const text of [passed.stdout, passed.stderr]) {
     assert.equal(text.includes(KEY), false);
   }
 
-  // All but three caught, on the model named: it stops.
-  write(
-    root,
-    "not-same.json",
-    JSON.stringify(items.slice(3).map((item) => item.planted)),
-  );
-  const failed = decide(
-    root,
-    ["--calibrate", "--model", "claude-opus-5-5"],
-    env,
-  );
-  assert.equal(failed.status, 1);
-  assert.equal(requests(root)[2].body.model, "claude-opus-5-5");
-  assert.deepEqual(failed.stdout.trim().split("\n").slice(-2), [
-    "Caught 17 of 20, in 2 requests; 2,000 tokens in, 400 out.",
-    "Under 18, the meaning check is not to be trusted with the decide step yet: stop here, and paste this output into the chat.",
+  const verdict = (run) => run.stdout.trim().split("\n").slice(-2);
+  const stop =
+    ": the meaning check is not to be trusted with the decide step yet. Stop here, and paste this output into the chat.";
+
+  // All but three caught, none flagged, on the model named: it stops.
+  const missed = calibrate(planted.slice(3), {
+    args: ["--model", "claude-opus-5-5"],
+  });
+  assert.equal(missed.status, 1);
+  assert.equal(requests(root)[4].body.model, "claude-opus-5-5");
+  assert.deepEqual(verdict(missed), [
+    "Caught 17 of 20 planted errors, and flagged 0 of 20 unchanged texts, in 4 requests; 4,000 tokens in, 800 out.",
+    `Fewer than 18 caught${stop}`,
   ]);
+
+  // All caught, two unchanged flagged and a third unanswered, which counts
+  // as flagged: it stops.
+  const flagged = calibrate([...planted, ...unchanged.slice(10, 12)], {
+    unanswered: [unchanged[19]],
+  });
+  assert.equal(flagged.status, 1);
+  assert.equal(
+    flagged.stdout.trim().split("\n")[42],
+    `- Flagged: fr-CA ${items[19].id}, unchanged. It gave no answer, which counts as flagged. ` +
+      `${JSON.stringify(items[19].translation)} for ${JSON.stringify(items[19].english)}.`,
+  );
+  assert.deepEqual(verdict(flagged), [
+    "Caught 20 of 20 planted errors, and flagged 3 of 20 unchanged texts, in 4 requests; 4,000 tokens in, 800 out.",
+    `More than 2 flagged${stop}`,
+  ]);
+
+  // Both at once: it says both.
+  const both = calibrate([...planted.slice(3), ...unchanged.slice(0, 3)]);
+  assert.equal(both.status, 1);
+  assert.equal(
+    verdict(both)[1],
+    `Fewer than 18 caught and more than 2 flagged${stop}`,
+  );
 
   // It runs alone.
   const mixed = decide(root, ["--calibrate", "--meaning"], env);

@@ -53,13 +53,18 @@
  * always parses; the API takes no temperature (it refuses one since
  * version 2026-10-21) and no forced tool on claude-sonnet-5-5.
  *
- * --calibrate tries the meaning check before a run spends on it: the 20
- * texts in i18n-decide.calibration.json, each copied from a catalogue on 12
- * November 2026 with one error planted (a "not" dropped or added, a number
- * changed, a clause dropped, before tax and including tax swapped, a name
- * changed), are asked about, ten a language, with nothing kept. It prints
- * each one caught or missed and how many it caught, and exits 1 under 18
- * of 20: the meaning check is then not to be trusted with the decide step.
+ * --calibrate tries the meaning check before a run spends on it, on the 20
+ * texts in i18n-decide.calibration.json, ten a language, each copied from a
+ * catalogue on 12 November 2026: each is asked about with one error planted
+ * (a "not" dropped or added, a number changed, a clause dropped, before tax
+ * and including tax swapped, a name changed), to be caught, and unchanged,
+ * to be passed. A language's ten go in two requests, each with five planted
+ * and five unchanged and never one message twice, so no answer comes from
+ * comparing the two. Nothing is kept. It prints each one caught or missed,
+ * passed or flagged, and both scores, and exits 1 under 18 of 20 caught or
+ * over 2 of 20 flagged: the meaning check is then not to be trusted with
+ * the decide step, for what it misses, or for the corrections that say the
+ * same that it would drop.
  *
  * It writes the decided workbook, its sheet named for the language as
  * export's is: Area, Id, Where, English, Translation and Placeholders to
@@ -112,12 +117,16 @@ const USAGE =
   "Usage:\n  node scripts/i18n-decide.mjs --chatgpt <file> [--claude <file>] --out <file> [--meaning] [--model <id>]\n" +
   "  node scripts/i18n-decide.mjs --calibrate [--model <id>]";
 
-/** The calibration's texts, and how many of them it must catch. */
+/**
+ * The calibration's texts; how many of their planted errors it must catch,
+ * at least; and how many of them, unchanged, it may flag, at most.
+ */
 const CALIBRATION = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   "i18n-decide.calibration.json",
 );
-const CALIBRATION_PASS = 18;
+const CALIBRATION_CAUGHT = 18;
+const CALIBRATION_FLAGGED = 2;
 
 /** A file as the repository names it, or in full outside it. */
 const shown = (file) => {
@@ -542,51 +551,86 @@ function meaningCheck(language, model, key, file) {
 // ----------------------------------------------------------- calibration
 
 /**
- * Asks the meaning check about each planted text, a language at a time,
- * and prints each caught or missed. True where it caught enough.
+ * Asks the meaning check about each text with its error planted and
+ * unchanged, a language at a time, and prints each caught or missed and
+ * passed or flagged. True where it caught enough and flagged few enough.
  */
 async function calibrate(model, key) {
   const items = JSON.parse(readFileSync(CALIBRATION, "utf8"));
   const languages = [...new Set(items.map((item) => item.language))];
   const spent = { requests: 0, input: 0, output: 0 };
-  const lines = [];
+  const plantedLines = [];
+  const unchangedLines = [];
   let caught = 0;
+  let flagged = 0;
   for (const language of languages) {
     const ours = items.filter((item) => item.language === language);
     const check = meaningCheck(language, model, key, null);
-    await check.ask(
-      ours.map(({ english, planted }) => ({ english, text: planted })),
-    );
+    // Two requests, each the texts planted and unchanged by turns: half of
+    // each, as a run mixes texts to catch with texts to pass, and never one
+    // message twice, so no answer comes from comparing the two.
+    for (const half of [0, 1]) {
+      await check.ask(
+        ours.map((item, at) => ({
+          english: item.english,
+          text: at % 2 === half ? item.planted : item.translation,
+        })),
+      );
+    }
     for (const name of Object.keys(spent)) spent[name] += check.spent[name];
-    for (const { id, error, english, planted } of ours) {
+    for (const { id, error, english, translation, planted } of ours) {
       const answer = check.answer(english, planted);
       const where = `${language} ${id}, ${error}`;
       if (answer && !answer.same) {
         caught += 1;
-        lines.push(
+        plantedLines.push(
           `- Caught: ${where}. ${answer.why.trim() || "It gave no reason."}`,
         );
       } else {
-        lines.push(
+        plantedLines.push(
           `- Missed: ${where}. ${answer ? "It answered that the text says the same" : "It gave no answer"}: ` +
             `${JSON.stringify(planted)} for ${JSON.stringify(english)}.`,
         );
       }
+      // Unanswered counts as flagged: only a text it passes passes.
+      const plain = check.answer(english, translation);
+      if (plain?.same) {
+        unchangedLines.push(`- Passed: ${language} ${id}, unchanged.`);
+      } else {
+        flagged += 1;
+        unchangedLines.push(
+          `- Flagged: ${language} ${id}, unchanged. ` +
+            `${plain ? plain.why.trim() || "It gave no reason." : "It gave no answer, which counts as flagged."} ` +
+            `${JSON.stringify(translation)} for ${JSON.stringify(english)}.`,
+        );
+      }
     }
   }
-  const enough = caught >= CALIBRATION_PASS;
+  const short = [
+    ...(caught < CALIBRATION_CAUGHT
+      ? [`fewer than ${CALIBRATION_CAUGHT} caught`]
+      : []),
+    ...(flagged > CALIBRATION_FLAGGED
+      ? [`more than ${CALIBRATION_FLAGGED} flagged`]
+      : []),
+  ].join(" and ");
   console.log(
     [
-      `The meaning check's calibration, on ${model}: ${items.length} texts from the catalogues, each with one error planted.`,
-      ...lines,
-      `Caught ${caught} of ${items.length}, in ${spent.requests} requests; ` +
-        `${spent.input.toLocaleString("en")} tokens in, ${spent.output.toLocaleString("en")} out.`,
-      enough
-        ? `At ${CALIBRATION_PASS} or more, the meaning check can be trusted with the decide step: go on.`
-        : `Under ${CALIBRATION_PASS}, the meaning check is not to be trusted with the decide step yet: stop here, and paste this output into the chat.`,
+      `The meaning check's calibration, on ${model}: ${items.length} texts from the catalogues, each asked about with one error planted and unchanged.`,
+      "With one error planted, to be caught:",
+      ...plantedLines,
+      "Unchanged, to be passed:",
+      ...unchangedLines,
+      `Caught ${caught} of ${items.length} planted errors, and flagged ${flagged} of ${items.length} unchanged texts, ` +
+        `in ${spent.requests} requests; ${spent.input.toLocaleString("en")} tokens in, ${spent.output.toLocaleString("en")} out.`,
+      short
+        ? `${short[0].toUpperCase()}${short.slice(1)}: the meaning check is not to be trusted with the decide step yet. ` +
+          "Stop here, and paste this output into the chat."
+        : `At least ${CALIBRATION_CAUGHT} caught and at most ${CALIBRATION_FLAGGED} flagged: ` +
+          "the meaning check can be trusted with the decide step. Go on.",
     ].join("\n"),
   );
-  return enough;
+  return !short;
 }
 
 // ------------------------------------------------------------------- main
