@@ -583,6 +583,77 @@ test("a space beside a placeholder filled with Chinese words, a text's only prob
   assert.deepEqual(asked, ["在{tab}里看看"]);
 });
 
+test("a plural's branch its language never shows is dropped, a space beside it or not, its Reason saying so", (t) => {
+  const { root, screens } = fixture(t, {
+    "orders.count": [
+      "{count, plural, one {# order} other {# orders}}",
+      "{count, plural, other {# 个订单}}",
+    ],
+    "orders.gone": [
+      "{count, plural, one {It is gone} other {They are gone}}",
+      "{count, plural, =1 {它已删除} other {它们已删除}}",
+    ],
+    "orders.seeCount": [
+      "See {count, plural, one {# order} other {# orders}} in {tab}",
+      "在{tab}里查看 {count, plural, other {# 个订单}}",
+    ],
+  });
+  review(root, "review/zh-Hans.chatgpt.xlsx", screens, {
+    // Only a one added: today's, once it is dropped.
+    "orders.count": "{count, plural, one {# 个订单} other {# 个订单}}",
+    // Reworded, with one for =1: the words go in, the one does not.
+    "orders.gone": "{count, plural, one {这个已删除} other {这些已删除}}",
+    // Reworded, spaced and with a one: both mended.
+    "orders.seeCount":
+      "在 {tab} 里查看 {count, plural, one {# 个订单} other {共 # 个订单}}",
+  });
+
+  const run = decide(
+    root,
+    [
+      "--chatgpt",
+      "review/zh-Hans.chatgpt.xlsx",
+      "--out",
+      "review/zh-Hans.decided.xlsx",
+      "--meaning",
+    ],
+    { ANTHROPIC_API_KEY: KEY },
+  );
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(
+    run.stdout,
+    /- Agreed 0, ChatGPT 2, Claude 0, today's 10, settled 0, set aside 0\.\n- Fallen back: 0 by rule, 0 by meaning\./,
+  );
+  const rows = decided(root);
+  const dropped =
+    "its plural's one dropped, which zh-Hans never shows (Intl.PluralRules)";
+  assert.deepEqual(rows["orders.count"], {
+    correction: "",
+    reason:
+      "ChatGPT changed it; with its plural's one dropped, it is today's, which stays",
+    fallback: "",
+  });
+  assert.deepEqual(rows["orders.gone"], {
+    correction: "{count, plural, other {这些已删除}}",
+    reason: `ChatGPT changed it; ${dropped}`,
+    fallback: "",
+  });
+  assert.deepEqual(rows["orders.seeCount"], {
+    correction: "在{tab}里查看 {count, plural, other {共 # 个订单}}",
+    reason: `ChatGPT changed it; the space beside {tab} taken out, as the glossary's Placeholders filled with Chinese words asks; ${dropped}`,
+    fallback: "",
+  });
+
+  // The meaning check is asked about the texts that go in.
+  const asked = requests(root).flatMap(({ body }) =>
+    JSON.parse(body.messages[0].content).items.map((item) => item.translation),
+  );
+  assert.deepEqual(asked, [
+    "{count, plural, other {这些已删除}}",
+    "在{tab}里查看 {count, plural, other {共 # 个订单}}",
+  ]);
+});
+
 test("a settled message keeps today's whatever a review says, its Reason Settled, and is not asked about", (t) => {
   const { root } = fixture(t);
   // Stock and List settled in Chinese; Help in French only.

@@ -23,6 +23,11 @@
  *   filled with Chinese words lists where its row holds, a tag between or
  *   not: 由{name}提供支持, never 由 {name} 提供支持, where {name} is the
  *   product's Chinese name;
+ * - a message's plural branch for a category its language never uses, by
+ *   Intl.PluralRules: one in Chinese, whose plurals have other alone, so
+ *   that branch is never shown. =1, exactly one, is no category: it says
+ *   one where one's words differ on purpose, 它 beside 它们. A
+ *   selectordinal's likewise, by the language's ordinal categories;
  * - French and Chinese: three full stops, for …, and an ASCII
  *   apostrophe, for ’. In a message, ICU's quote of a brace, '{', is not
  *   one;
@@ -41,8 +46,10 @@
  * English, a text is not compared with it. And settledMessages(), the
  * Settled messages, which the decide step keeps and import refuses to
  * correct; and unspaced(text, id, language), a text without the spaces
- * beside the placeholders filled with Chinese words, which the decide
- * step takes where they are a text's only problem. No dependencies:
+ * beside the placeholders filled with Chinese words, and
+ * withoutUnusedPlurals(text, id, language), a message without those
+ * plural branches, which the decide step takes where they and the spaces
+ * are a text's only problems. No dependencies:
  * scripts/verify.sh and the Docs workflow run it with Node alone. Its
  * tests are in i18n-rules.test.mjs: `node --test scripts/`.
  */
@@ -501,6 +508,83 @@ export function unspaced(text, id, language) {
   return { text: without, names };
 }
 
+// ------------------------------------------------------ plural categories
+
+/**
+ * Where the brace opened just before `from` closes: the index after its },
+ * or -1. ICU's quote, '{' or '}', hides a brace.
+ */
+function closing(text, from) {
+  let depth = 1;
+  for (let at = from; at < text.length; at++) {
+    if (text[at] === "'" && /[{}#|]/.test(text[at + 1] ?? "")) {
+      at = text.indexOf("'", at + 1);
+      if (at === -1) return -1;
+    } else if (text[at] === "{") depth++;
+    else if (text[at] === "}" && --depth === 0) return at + 1;
+  }
+  return -1;
+}
+
+/**
+ * Each branch of a message's plurals and selectordinals for a category its
+ * language never uses, by Intl.PluralRules: one in Chinese, whose plurals
+ * have other alone. Each its kind, its key, the categories the language
+ * does use, and where it stands in the text, the space before it included.
+ * =1, exactly one, is no category, and is never one of them.
+ */
+function unusedBranches(text, language) {
+  const branches = [];
+  for (const match of text.matchAll(
+    /\{\s*\w+\s*,\s*(plural|selectordinal)\s*,/g,
+  )) {
+    const kind = match[1];
+    const used = new Intl.PluralRules(language, {
+      type: kind === "plural" ? "cardinal" : "ordinal",
+    }).resolvedOptions().pluralCategories;
+    const option = /\s*(=\d+|\w+)\s*\{/y;
+    option.lastIndex = match.index + match[0].length;
+    for (let key; (key = option.exec(text));) {
+      const end = closing(text, option.lastIndex);
+      if (end === -1) break;
+      if (!key[1].startsWith("=") && !used.includes(key[1])) {
+        branches.push({ kind, key: key[1], used, start: key.index, end });
+      }
+      option.lastIndex = end;
+    }
+  }
+  return branches;
+}
+
+/**
+ * A message without its plurals' branches for a category its language
+ * never uses, which no reader is ever shown, and those categories:
+ * `{ text, categories }`. A guide's section, and a message with none, as
+ * it is.
+ */
+export function withoutUnusedPlurals(text, id, language) {
+  if (!id.includes(".")) return { text, categories: [] };
+  const unused = unusedBranches(text, language);
+  let without = text;
+  // From the last, so each branch's place still holds; one inside another
+  // dropped goes with it.
+  for (const { start, end } of unused.toSorted((a, b) => b.start - a.start)) {
+    if (!unused.some((outer) => outer.start < start && end <= outer.end)) {
+      without = without.slice(0, start) + without.slice(end);
+    }
+  }
+  return {
+    text: without,
+    categories: [...new Set(unused.map(({ key }) => key))],
+  };
+}
+
+/** Words joined as a sentence lists them: one, many and other. */
+const listed = (words) =>
+  words.length > 1
+    ? `${words.slice(0, -1).join(", ")} and ${words.at(-1)}`
+    : words.join("");
+
 /** Each different match of the pattern in the text, in order. */
 const found = (text, pattern) => [
   ...new Set([...text.matchAll(pattern)].map((match) => match[0])),
@@ -539,6 +623,19 @@ export function problemsOf(text, id, language, english) {
     problems.push(
       "the same as its English, so left in English (SAME_AS_ENGLISH lists those meant to be)",
     );
+  }
+
+  if (id.includes(".")) {
+    const unused = unusedBranches(text, language);
+    for (const kind of ["plural", "selectordinal"]) {
+      const branches = unused.filter((branch) => branch.kind === kind);
+      if (branches.length > 0) {
+        const keys = [...new Set(branches.map(({ key }) => key))];
+        problems.push(
+          `${kind} ${listed(keys)}, which ${language} never shows: its ${kind}s have ${listed(branches[0].used)} only (Intl.PluralRules); =1 is exactly one`,
+        );
+      }
+    }
   }
 
   if (language === "zh-Hans") {

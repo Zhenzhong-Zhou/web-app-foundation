@@ -750,7 +750,11 @@ folder by folder; these check what is already in place.
   says 如需调整管理员; the check refuses a space between Chinese and
   each placeholder the glossary's Placeholders filled with Chinese words
   lists, where its row holds. A person's or an item's name keeps its
-  message's spacing (#573).
+  message's spacing (#573). In 中文, Items → tick one item → Set category
+  → its own category: the field's help reads 它已经在这个分类里了。, and
+  with two ticked, 这些物品已经都在这个分类里了。: a plural says exactly
+  one with =1, since the check refuses its one, a category Chinese never
+  uses (Intl.PluralRules), so never shown.
 - **MC-1417** *(ADR-054's November 2026 amendment, R10 and R11; #149)*
   The words settled for the reviewer who reads only Chinese. In 中文: a
   shipment's Create invoice reads 创建发票, and the draft's Issue still
@@ -909,10 +913,12 @@ folder by folder; these check what is already in place.
   must pass `scripts/i18n-rules.mjs`, which refuses one left the same as
   its English, and import's own checks, and, with `--meaning`, Claude's
   meaning check through the API, or it falls back to the other review's
-  text, else today's, but a Chinese text whose only problem is a space
-  beside a placeholder the glossary's Placeholders filled with Chinese
-  words lists has that space taken out instead, and is today's where the
-  space was all a review changed; Reason and Fallback say why beside each
+  text, else today's, but a text whose only problems are a space beside
+  a placeholder the glossary's Placeholders filled with Chinese words
+  lists, or a plural's branch for a category its language never uses
+  (one in Chinese), has that space taken out and that branch dropped
+  instead, and is today's where they were all a review changed; Reason
+  and Fallback say why beside each
   row, and the counts are printed. A message the glossary's Settled messages hold
   keeps today's text whatever a review says, its Reason Settled, and
   import refuses a correction to one. Where only Claude changed a
@@ -6007,3 +6013,8 @@ first.
   rounds are in, with no fluent reader yet; French and Chinese stay beta,
   and the labels shown together are held apart in every language: MC-1405
   extended.
+- 2026-11-13: ADR-054's November amendment, R4 and R5: a Chinese plural
+  has its other branch alone, or =1 where one reads otherwise; the rules
+  check refuses a plural's category its language never uses, by
+  Intl.PluralRules, and the decide step drops one where it is a text's
+  only problem: MC-1416 and MC-1405 extended.

@@ -18,7 +18,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { folder, write } from "./git-fixture.mjs";
-import { problemsOf, unspaced } from "./i18n-rules.mjs";
+import { problemsOf, unspaced, withoutUnusedPlurals } from "./i18n-rules.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const NBSP = " ";
@@ -183,6 +183,97 @@ test("unspaced takes out only the spaces the rule refuses, naming the placeholde
     ["在 {list} 中", "search.showAll", "fr-CA"],
   ]) {
     assert.deepEqual(unspaced(text, id, language), { text, names: [] }, text);
+  }
+});
+
+const UNUSED = (kind, keys, language, used) =>
+  `${kind} ${keys}, which ${language} never shows: its ${kind}s have ${used} only (Intl.PluralRules); =1 is exactly one`;
+
+test("a plural's branch for a category its language never uses is refused, by Intl.PluralRules", () => {
+  for (const [text, problem] of [
+    // Chinese has other alone, so one is never shown.
+    [
+      "{count, plural, one {# 个物品} other {# 个物品}}",
+      UNUSED("plural", "one", "zh-Hans", "other"),
+    ],
+    // Inside a tag and a select, beside =0, two at once.
+    [
+      "<b>{kind, select, item {{count, plural, =0 {没有} zero {零} one {它} other {它们}}} other {}}</b>",
+      UNUSED("plural", "zero and one", "zh-Hans", "other"),
+    ],
+    // A selectordinal by the language's ordinal categories.
+    [
+      "{place, selectordinal, one {第 # 名} other {第 # 名}}",
+      UNUSED("selectordinal", "one", "zh-Hans", "other"),
+    ],
+  ]) {
+    assert.deepEqual(problemsOf(text, "a.b", "zh-Hans"), [problem], text);
+  }
+  assert.deepEqual(
+    problemsOf(
+      "{count, plural, few {# articles} other {# articles}}",
+      "a.b",
+      "fr-CA",
+    ),
+    [UNUSED("plural", "few", "fr-CA", "one, many and other")],
+  );
+  for (const [text, language] of [
+    // =1 is exactly one, in any language: kept where one's words differ.
+    ["请先把{items, plural, =1 {它} other {它们}}移出", "zh-Hans"],
+    ["{count, plural, other {# 个物品}}", "zh-Hans"],
+    // French uses one.
+    ["{count, plural, one {# article} other {# articles}}", "fr-CA"],
+    // A select's keys are no plural's.
+    ["{kind, select, one {一个} other {其他}}", "zh-Hans"],
+    // ICU's quote hides a brace in a branch.
+    ["{count, plural, other {写 '{'YYYY'}'}}", "zh-Hans"],
+  ]) {
+    assert.deepEqual(problemsOf(text, "a.b", language), [], text);
+  }
+  // A guide is Markdown, with no plurals.
+  assert.deepEqual(
+    problemsOf(
+      "{count, plural, one {它} other {它们}}",
+      "home#today",
+      "zh-Hans",
+    ),
+    [],
+  );
+});
+
+test("withoutUnusedPlurals drops only those branches, naming their categories", () => {
+  for (const [text, without] of [
+    [
+      "{count, plural, =0 {} one {另有 # 台} other {另有 # 台}}",
+      "{count, plural, =0 {} other {另有 # 台}}",
+    ],
+    // The second plural's one, the first's =1 kept.
+    [
+      "{count, plural, =1 {它} other {它们}}：{count, plural, one {一行} other {# 行}}",
+      "{count, plural, =1 {它} other {它们}}：{count, plural, other {# 行}}",
+    ],
+    // One inside another dropped goes with it; one inside a kept branch goes alone.
+    [
+      "{a, plural, one {{b, plural, one {x} other {y}}} other {{b, plural, one {x} other {z}}}}",
+      "{a, plural, other {{b, plural, other {z}}}}",
+    ],
+  ]) {
+    assert.deepEqual(
+      withoutUnusedPlurals(text, "a.b", "zh-Hans"),
+      { text: without, categories: ["one"] },
+      text,
+    );
+  }
+  for (const [text, id, language] of [
+    ["{count, plural, one {# article} other {# articles}}", "a.b", "fr-CA"],
+    ["{count, plural, =1 {它} other {它们}}", "a.b", "zh-Hans"],
+    ["{count, plural, one {它} other {它们}}", "home#today", "zh-Hans"],
+  ]) {
+    assert.deepEqual(
+      withoutUnusedPlurals(text, id, language),
+      { text, categories: [] },
+      text,
+    );
   }
 });
 

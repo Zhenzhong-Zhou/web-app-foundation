@@ -313,7 +313,11 @@ spacing.
   inside a date as the reader's calendar writes it, 2026年11月30日, or
   beside a placeholder that Placeholders filled with Chinese words lists,
   由{name}提供支持. A list joins with 、 and its last item with 和, a
-  space beside a Latin name.
+  space beside a Latin name. A plural has its other branch alone, since
+  Chinese has no singular form (Intl.PluralRules gives it other only):
+  `{count, plural, other {# 个物品}}`. A one branch is never shown,
+  whatever it says; =1, exactly one, stands only where the words for one
+  differ on purpose, 请先把{items, plural, =1 {它} other {它们}}移到其他分类.
 - **Ellipsis:** the single character … in every language, as the English
   uses for "Saving…", never three full stops.
 - **Placeholders:** `{name}` and tags like `<link>` are kept exactly, in
@@ -329,10 +333,14 @@ spacing.
   `{count} / {max}`, and for the messages its `SAME_AS_ENGLISH` lists by
   language and id, each with why: Total, Code or Lot in French, a unit's
   symbol, a paper size's name. It fails where a settled message's
-  text is not its row's in Settled messages, and on a space between
+  text is not its row's in Settled messages, on a space between
   Chinese and a placeholder that Placeholders filled with Chinese words
-  lists. The space beside Latin letters and digits, and how a sentence
-  reads, are left to whoever writes and reviews it.
+  lists, and on a message's plural branch for a category its language
+  never uses, by Intl.PluralRules: one in Chinese. The decide step drops
+  such a branch from a text where it, and those spaces, are the text's
+  only problems, saying so in Reason. The space beside Latin letters and
+  digits, and how a sentence reads, are left to whoever writes and
+  reviews it.
 
 ### How it reads
 
