@@ -300,6 +300,7 @@ spacing.
 | `{first}` | Only `settings.numbering.clash` | A document's name: 发票, 装箱单 | A document's name is the app's own |
 | `{second}` | Only `settings.numbering.clash` | A document's name | As `{first}` |
 | `{problem}` | Only `production.licence.*` | A sentence of the app's about the licence, ending in 。 | Chinese takes no space after 。 |
+| `{row}` | Only `products.names.*` | The item or a variant, as the item's page names it: 物品, 规格 {sku} | The app names the row. A variant's ends in its code, whose space beside 的 waits for #573 |
 
 ## Writing conventions
 

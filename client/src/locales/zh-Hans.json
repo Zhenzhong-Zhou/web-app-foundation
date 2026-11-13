@@ -1731,7 +1731,7 @@
   "products.names.row.item": "物品",
   "products.names.row.variant": "规格 {sku}",
   "products.names.unnamed": "没有自己名称的规格用物品的名称打印，所以这里不列出来。",
-  "products.names.which": "{row} 的{language}名称",
+  "products.names.which": "{row}的{language}名称",
   "products.perCase": "每箱数量",
   "products.reactivate": "重新启用",
   "products.row.codes": "{count, plural, =1 {{code}} other {# 个规格 · {code}，…}}",

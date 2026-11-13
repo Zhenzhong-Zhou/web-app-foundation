@@ -610,9 +610,10 @@ The error tracker hears of real faults only (ADR-084).
 - **A test checks which message was sent, by its id** (13 November
   2026): a refusal or a line in French or Chinese, and its English beside
   them, is read through the catalogue (`said()` in
-  `server/test/utils/said.ts`), never a typed copy of its words, so a
-  review's import changes no test; five server tests broke on
-  fix-ups-i18n's imports. Only a test whose point is the exact
+  `server/test/utils/said.ts`; `saidOn()` for a screen's and `saidBy()`
+  for the server's in `client/e2e/support/said.ts`), never a typed copy
+  of its words, so a review's import changes no test; five server tests
+  and a browser test broke on fix-ups-i18n's imports. Only a test whose point is the exact
   words keeps them, as a mail's text part does. Whether the words are
   right stays the catalogue checks' job (`npm run i18n:check`,
   `scripts/i18n-rules.mjs`).

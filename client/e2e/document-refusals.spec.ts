@@ -2,6 +2,7 @@ import type { APIRequestContext } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 import { created, signInAs } from './support/api';
+import { type Language, saidBy, saidOn } from './support/said';
 
 /**
  * A refused PDF opened from its link (ADR-071, amended for #526): Print
@@ -140,8 +141,7 @@ test('a refused PDF shows a page in the app’s language, with the item and the 
 });
 
 /** The languages, as the app's settings and the account write them. */
-const LANGUAGES = ['en', 'fr-CA', 'zh-Hans'] as const;
-type Language = (typeof LANGUAGES)[number];
+const LANGUAGES = ['en', 'fr-CA', 'zh-Hans'] as const satisfies Language[];
 
 /**
  * Each language named in each, by its language alone, as Intl names it,
@@ -155,23 +155,23 @@ const WORDS: Record<Language, Record<Language, string>> = {
   'zh-Hans': { en: '英文', 'fr-CA': '法文', 'zh-Hans': '中文' },
 };
 
-/** Where each says it: the item's page's line, and the refusal. */
-const SAID: Record<
-  Language,
-  { page: (word: string) => string; refusal: (word: string) => string }
-> = {
-  en: {
-    page: (word) => `the ${word} name of the item`,
-    refusal: (word) => `Focus (FOCUS-60CT) has no ${word} name`,
-  },
-  'fr-CA': {
-    page: (word) => `le nom en ${word} de l’article`,
-    refusal: (word) => `Focus (FOCUS-60CT) n’a pas de nom en ${word}`,
-  },
-  'zh-Hans': {
-    page: (word) => `物品的${word}名称`,
-    refusal: (word) => `Focus（FOCUS-60CT）没有${word}名称`,
-  },
+/**
+ * Where each says it, read by the message's id (conventions.md, Tests):
+ * the item's page's line, and the refusal.
+ */
+const SAID = {
+  page: (reader: Language, word: string) =>
+    saidOn(reader, 'products.names.which', {
+      row: saidOn(reader, 'products.names.row.item'),
+      language: word,
+    }),
+  refusal: (reader: Language, word: string) =>
+    saidBy(reader, 'invoices.skuLanguageNameWhich', {
+      which: 'item',
+      product: 'Focus',
+      sku: 'FOCUS-60CT',
+      language: word,
+    }),
 };
 
 /**
@@ -239,7 +239,7 @@ test('the item’s page and a refused document name a missing name’s language 
     for (const language of LANGUAGES) {
       const word = WORDS[reader][language];
       await expect(
-        page.getByRole('alert').filter({ hasText: SAID[reader].page(word) }),
+        page.getByRole('alert').filter({ hasText: SAID.page(reader, word) }),
       ).toBeVisible();
 
       const refused = await api.get(`/v1/orders/${orders[language]}/pdf`, {
@@ -248,7 +248,7 @@ test('the item’s page and a refused document name a missing name’s language 
       expect(refused.status()).toBe(409);
       const { message } = (await refused.json()) as { message: string };
       expect(message, `${language} read in ${reader}`).toContain(
-        SAID[reader].refusal(word),
+        SAID.refusal(reader, word),
       );
     }
   }
