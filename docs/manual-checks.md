@@ -868,6 +868,17 @@ folder by folder; these check what is already in place.
   still opens the page it names. At 390 px the first screen of Help on
   Home reaches the words before any tile. In Français (Les mots que
   vous verrez: Lot, Épuisé) and 中文 (常见词: 批次, 缺货) the same.
+- **MC-1424** *(ADR-054's November 2026 amendment, R9)* The
+  pseudo-language. With `npm run dev`, the sign-in page's and the account
+  menu's language picker offer en-XA last, by its tag. Choosing it turns
+  every screen into longer, accented English, each text bracketed, as
+  [Šíğñ íñ one], on the same page: a word in plain English is one the
+  catalogue lacks, and a text missing a bracket is cut by its box. A
+  server message, such as a wrong password's refusal, stays plain
+  English; signed in, the account is saved as English, and en-XA stays on
+  the screens. Choosing another language puts it back. The deployed app,
+  or `npm run build` then `npm run preview` in client/, offers no en-XA,
+  and the build stops if a change would ship it.
 - **MC-1405** *Skipped for now (6 October 2026), and still owed (13
   November 2026): no fluent reader yet. In its place, as ADR-054's
   November 2026 amendment decided, ChatGPT's review rounds went in, round
@@ -6064,3 +6075,6 @@ first.
   sentence no later round changed, where each still held, such as
   离开了组织 in the account's activity, 库存变动 for a movement and
   例外批准 in Production's guide: MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R9: en-XA, English with
+  accents, about 40 % longer and bracketed, offered by the language
+  picker in development and the browser tests only: MC-1424.

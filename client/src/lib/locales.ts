@@ -15,6 +15,35 @@ export type { Locale };
 export const DEFAULT_LOCALE: Locale = 'en';
 
 /**
+ * The pseudo-language (ADR-054's November 2026 amendment, R9): English with
+ * accents, about 40 % longer and bracketed at each end (i18n/pseudo.ts), so
+ * a word the catalogue lacks, or a box too narrow for a longer language,
+ * shows without waiting for a translation. In development and the browser
+ * tests only: a production build neither has it nor offers it, which
+ * vite.config.ts's `withoutPseudoLanguage` holds, so it is named only
+ * where `import.meta.env.DEV` guards it. To the server, the account, the
+ * guides and anything else the screens ask for, it is English.
+ */
+export const PSEUDO_LOCALE = 'en-XA';
+
+/** A language the screens can be in: one of the app's, or en-XA. */
+export type ScreenLocale = Locale | typeof PSEUDO_LOCALE;
+
+/** What the language picker offers: the app's, and en-XA in development. */
+export const SCREEN_LOCALES: readonly ScreenLocale[] = import.meta.env.DEV
+  ? [...SUPPORTED_LOCALES, PSEUDO_LOCALE]
+  : SUPPORTED_LOCALES;
+
+export function isScreenLocale(value: unknown): value is ScreenLocale {
+  return (SCREEN_LOCALES as readonly unknown[]).includes(value);
+}
+
+/** The language the server is asked in: English for en-XA. */
+export function serverLocale(locale: ScreenLocale): Locale {
+  return isLocale(locale) ? locale : DEFAULT_LOCALE;
+}
+
+/**
  * Each language in its own name, never translated: someone looking for
  * 简体中文 in a French menu should find it as they would write it.
  */
@@ -40,8 +69,9 @@ export const UNREVIEWED_MARK: Partial<Record<Locale, string>> = {
   'zh-Hans': '（测试版）',
 };
 
-/** A language's name as the picker offers it. */
-export function pickerName(locale: Locale): string {
+/** A language's name as the picker offers it; en-XA by its tag. */
+export function pickerName(locale: ScreenLocale): string {
+  if (!isLocale(locale)) return locale;
   return LANGUAGE_NAMES[locale] + (UNREVIEWED_MARK[locale] ?? '');
 }
 
@@ -131,7 +161,7 @@ export function browserLocale(languages: readonly string[]): Locale {
  * as before ADR-054; otherwise the language itself.
  */
 export function formattingLocale(
-  locale: Locale,
+  locale: ScreenLocale,
   languages: readonly string[],
 ): string {
   const wanted = maximized(locale);

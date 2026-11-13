@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-import type { Locale } from '../lib/locales';
+import type { Locale, ScreenLocale } from '../lib/locales';
 import type { ChunkFailure } from '../version/load-chunk';
 
 /** A language whose catalogue would not load (ADR-081). */
@@ -21,8 +21,13 @@ export interface LanguageFailure {
 }
 
 export interface LanguageState {
-  /** The language the screens are in now. */
+  /**
+   * The language the screens are in now, as the server, the account and
+   * the guides know it: English while they show en-XA.
+   */
   locale: Locale;
+  /** What the screens show: `locale`, or en-XA in development. */
+  shown: ScreenLocale;
   /**
    * Switches the screens once the language's catalogue has loaded, and only
    * then remembers the choice on this device, so a load that fails changes
@@ -30,9 +35,14 @@ export interface LanguageState {
    * false if another choice took its place or its failure was closed; a
    * failure waits for Try again. Saving it to the account is the picker's
    * business, once this resolves true: signing in applies the account's
-   * choice through here too, and must not echo it back to the server.
+   * choice through `follow`, and must not echo it back to the server.
    */
-  setLocale: (locale: Locale) => Promise<boolean>;
+  setLocale: (locale: ScreenLocale) => Promise<boolean>;
+  /**
+   * The account's language applied on this device, as setLocale, except
+   * that English leaves en-XA on the screens: to the account it is English.
+   */
+  follow: (locale: Locale) => Promise<boolean>;
   /** A language that would not load, until it does or is closed. */
   failure: LanguageFailure | null;
   /** Loads the failed language again. */
