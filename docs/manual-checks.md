@@ -749,7 +749,11 @@ folder by folder; these check what is already in place.
   the top bar's lookup ends 在物品中查看全部, a built-in role's page
   says 如需调整管理员, and in Mailpit an invitation sent as Admin reads
   邀请您以管理员的身份加入, while one as Warehouse, a role made here,
-  keeps a space each side, 以 Warehouse 的身份加入; the check refuses a
+  keeps a space each side, 以 Warehouse 的身份加入. The inviter's
+  notification, once it is accepted, says the role the same way,
+  并以管理员的身份加入了, and Members → Invite, given a member's address or
+  after a link is copied, says 角色为管理员 for a built-in role and
+  角色为 Warehouse for a made one; the check refuses a
   space between Chinese and each placeholder the glossary's Placeholders
   filled with Chinese words lists, where its row holds. A person's or an item's name keeps its
   message's spacing (#573). In 中文, Items → tick one item → Set category
@@ -6027,3 +6031,8 @@ first.
   email names a built-in role with no space beside the Chinese,
   以管理员的身份加入, and a role made here with one each side: MC-1416
   extended.
+- 2026-11-13: ADR-054's November amendment, R11: in 中文 the inviter's
+  notification that an invitation was accepted, and the Invite dialog's
+  lines for a member already here and a copied link, name a built-in role
+  with no space beside the Chinese, as the invitation email does, and a
+  role made here with one: MC-1416 extended.
