@@ -730,6 +730,7 @@
   "notifications.stockLow.several": "{count, plural, one {# item is low on stock} other {# items are low on stock}}",
   "notifications.stockLow.severalBody": "{what, select, bought {{items}. Order them from Reorder points.} made {{items}. Plan them from Reorder points.} other {{items}. Order or plan them from Reorder points.}}",
   "notifications.variance.body": "{lines}",
+  "notifications.variance.line": "{sku}: {percent, number, percent}",
   "notifications.variance.lines": "A production run closed with {count, plural, one {# line} other {# lines}} off plan",
   "notifications.variance.output": "A production run made {produced} against a plan of {planned}",
   "numbering.dateOrder": "{kind, select, invoice {Invoices} other {Credit notes}} are kept in date order, and {number} is dated {date}. Date this one {date} or later.",

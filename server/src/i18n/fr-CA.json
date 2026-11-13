@@ -730,6 +730,7 @@
   "notifications.stockLow.several": "{count, plural, one {Stock bas pour # article} other {Stock bas pour # articles}}",
   "notifications.stockLow.severalBody": "{what, select, bought {{items}. Commandez-les depuis Points de commande.} made {{items}. Planifiez-les depuis Points de commande.} other {{items}. Commandez-les ou planifiez-les depuis Points de commande.}}",
   "notifications.variance.body": "{lines}",
+  "notifications.variance.line": "{sku} : {percent, number, percent}",
   "notifications.variance.lines": "Un ordre de fabrication a été clos avec {count, plural, one {# ligne non conforme au plan} other {# lignes non conformes au plan}}",
   "notifications.variance.output": "Un ordre de fabrication a produit {produced} au lieu des {planned} prévus",
   "numbering.dateOrder": "Les {kind, select, invoice {factures} other {notes de crédit}} suivent l’ordre des dates, et {number} est datée du {date}. Datez celle-ci du {date} ou plus tard.",

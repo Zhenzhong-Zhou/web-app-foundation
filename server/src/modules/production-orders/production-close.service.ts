@@ -297,7 +297,9 @@ export class ProductionCloseService {
               { count: variances.length },
             );
 
-        // Each line off plan, as a list the reader's language joins.
+        // Each line off plan, written as the reader's language writes a
+        // label and a percentage (CODE : 50 % in French), as a list the
+        // reader's language joins.
         const body =
           variances.length > 0
             ? t(
@@ -306,8 +308,14 @@ export class ProductionCloseService {
                   defaultMessage: '{lines}',
                 },
                 {
-                  lines: variances.map(
-                    (v) => `${v.sku}: ${Math.round(v.variance * 100)}%`,
+                  lines: variances.map((v) =>
+                    t(
+                      {
+                        id: 'notifications.variance.line',
+                        defaultMessage: '{sku}: {percent, number, percent}',
+                      },
+                      { sku: v.sku, percent: v.variance },
+                    ),
                   ),
                 },
               )

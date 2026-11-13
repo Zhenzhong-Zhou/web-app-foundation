@@ -826,7 +826,10 @@ folder by folder; these check what is already in place.
   refused naming the two codes with a space each side of 和, and in
   English with "and" between them, never a comma alone; ship two lines
   of a confirmed sale together, and its History's 物品 joins each code
-  and quantity by 和 the same way.
+  and quantity by 和 the same way. Close a run with two components used
+  well over plan: in Français, the bell lists them as BLEND-D3 : 50 % et
+  CAPS-D3 : 50 %, a no-break space before each colon and each %; in
+  English and 中文, BLEND-D3: 50%.
 - **MC-1420** *(ADR-054's November 2026 amendment, R11; #486)* What a
   file may be, in plain words first, its size never broken from its
   unit. On the Account page, under your photo: A photo or picture, up to
@@ -6110,3 +6113,6 @@ first.
 - 2026-11-13: ADR-054's November amendment, R9: a password field's label
   sits above the field from the start, where at rest inside it a long one
   ran under the eye button on a 320 px phone: MC-1550 extended.
+- 2026-11-13: ADR-054's November amendment, R11: the variance bell writes
+  each line off plan as its reader's language writes a label and a
+  percentage, CODE : 50 % in French: MC-1419 extended.

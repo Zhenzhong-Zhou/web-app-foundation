@@ -1299,8 +1299,9 @@ describe('Production orders (e2e)', () => {
     });
 
     /**
-     * Each line off plan, joined as the reader's language joins a list: two
-     * components consumed half again over plan, read in Chinese.
+     * Each line off plan, written and joined as the reader's language does:
+     * two components consumed half again over plan, read in Chinese, and
+     * in French, which writes CODE : 50 %.
      */
     it('lists each line off plan in the reader’s language', async () => {
       const alpha = await registerOrganization(app, 'alpha');
@@ -1371,20 +1372,27 @@ describe('Production orders (e2e)', () => {
         })
         .expect(200);
 
-      const [entry] = body<{ entries: { title: string; body: string }[] }>(
-        await alpha.agent
-          .get('/v1/notifications')
-          .set('Accept-Language', 'zh-Hans')
-          .expect(200),
-      ).entries;
-      expect(entry.title).toBe(
-        said('zh-Hans', 'notifications.variance.lines', { count: 2 }),
-      );
-      expect(entry.body).toBe(
-        said('zh-Hans', 'notifications.variance.body', {
-          lines: ['BLEND-D3: 50%', 'CAPS-D3: 50%'],
-        }),
-      );
+      for (const language of ['zh-Hans', 'fr-CA'] as const) {
+        const [entry] = body<{ entries: { title: string; body: string }[] }>(
+          await alpha.agent
+            .get('/v1/notifications')
+            .set('Accept-Language', language)
+            .expect(200),
+        ).entries;
+        expect(entry.title).toBe(
+          said(language, 'notifications.variance.lines', { count: 2 }),
+        );
+        expect(entry.body).toBe(
+          said(language, 'notifications.variance.body', {
+            lines: ['BLEND-D3', 'CAPS-D3'].map((sku) =>
+              said(language, 'notifications.variance.line', {
+                sku,
+                percent: 0.5,
+              }),
+            ),
+          }),
+        );
+      }
     });
 
     it('says nothing when everything went to plan', async () => {
