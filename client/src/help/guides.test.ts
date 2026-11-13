@@ -216,7 +216,7 @@ const NOT_MESSAGES: { words: Record<Locale, string[]>; why: string }[] = [
         'Voir les prix des commandes',
         'Recevoir du stock sur une commande',
       ],
-      'zh-Hans': ['查看订单价格', '按订单收货'],
+      'zh-Hans': ['查看订单价格'],
     },
     why: "A permission's name, which the server sends from its own catalogue.",
   },
@@ -224,7 +224,7 @@ const NOT_MESSAGES: { words: Record<Locale, string[]>; why: string }[] = [
     words: {
       en: ['Warehouse', 'Sales'],
       'fr-CA': ['Entrepôt', 'Ventes'],
-      'zh-Hans': ['仓库', '销售'],
+      'zh-Hans': ['仓库'],
     },
     why: "A role template's name, which the server sends from its own catalogue.",
   },
@@ -373,6 +373,18 @@ describe('the guides', () => {
     );
 
     expect(unused).toEqual([]);
+  });
+
+  it('list as kept only bold words that are no client message', () => {
+    // A word that is a client message's whole text passes as that message.
+    const messages = { en, 'fr-CA': fr, 'zh-Hans': zh };
+    const shown = SUPPORTED_LOCALES.flatMap((locale) =>
+      NOT_MESSAGES.flatMap(({ words }) => words[locale])
+        .filter((words) => Object.values(messages[locale]).includes(words))
+        .map((words) => `${locale}: ${words}`),
+    );
+
+    expect(shown).toEqual([]);
   });
 });
 
