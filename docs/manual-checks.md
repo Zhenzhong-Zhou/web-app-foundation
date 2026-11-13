@@ -858,9 +858,16 @@ folder by folder; these check what is already in place.
   still opens the page it names. At 390 px the first screen of Help on
   Home reaches the words before any tile. In Français (Les mots que
   vous verrez: Lot, Épuisé) and 中文 (常见词: 批次, 缺货) the same.
-- **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
-  available, so French and Chinese ship as unreviewed drafts, and release
-  notes say so.* When one is: someone fluent in each language reads every
+- **MC-1405** *Skipped for now (6 October 2026), and still owed (13
+  November 2026): no fluent reader yet. In its place, as ADR-054's
+  November 2026 amendment decided, ChatGPT's review rounds went in, round
+  2 and an extra round in each language and the guides, each text
+  through the decide step's two checks, the rules check and the meaning
+  check, before import; French and Chinese stay beta, and release notes
+  say so. `client/src/i18n/label-groups.test.ts` holds that the labels a
+  screen shows together, a status set, a filter's choices or a select's
+  options, by their messages' ids, are worded apart in every language.*
+  When one is: someone fluent in each language reads every
   message, screens and server both, Help's guides, and `docs/glossary.md`,
   and their corrections are in the catalogues and the guides:
   `node scripts/i18n-review.mjs export` writes `review/fr-CA.xlsx` and
@@ -5996,3 +6003,7 @@ first.
   its own words; the rules check refuses a space between one and
   Chinese, and the decide step takes that space out where it is a text's
   only problem: MC-1416 and MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R2, R6 and R14: ChatGPT's
+  rounds are in, with no fluent reader yet; French and Chinese stay beta,
+  and the labels shown together are held apart in every language: MC-1405
+  extended.
