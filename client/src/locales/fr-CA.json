@@ -1594,7 +1594,7 @@
   "production.planned": "Ordre planifié",
   "production.plannedOn": "Planifié",
   "production.plannedTitle": "{quantity} prévu",
-  "production.produced": "Produit",
+  "production.produced": "Quantité produite",
   "production.producedSoFar": "Quantité produite à ce jour",
   "production.recipe": "Recette",
   "production.recipesFailed": "Impossible de charger les recettes de l’article.",

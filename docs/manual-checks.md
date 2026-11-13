@@ -886,8 +886,10 @@ folder by folder; these check what is already in place.
   through the decide step's two checks, the rules check and the meaning
   check, before import; round 1's glossary findings went in, in each
   language, only on a message no later round changed, where each still
-  held against today's text, and its other suggestions are overtaken; French
-  and Chinese stay beta, and release notes say so.
+  held against today's text, and, in French, its finding on a message
+  that still broke the glossary, whichever round had read it, since the
+  glossary wins over any round; its other suggestions are overtaken;
+  French and Chinese stay beta, and release notes say so.
   `client/src/i18n/label-groups.test.ts` holds that the labels a
   screen shows together, a status set, a filter's choices or a select's
   options, by their messages' ids, are worded apart in every language.*
@@ -6078,3 +6080,7 @@ first.
 - 2026-11-13: ADR-054's November amendment, R9: en-XA, English with
   accents, about 40 % longer and bracketed, offered by the language
   picker in development and the browser tests only: MC-1424.
+- 2026-11-13: ADR-054's November amendment, R7 and A2: in Français the
+  production orders' Produced column reads Quantité produite, where
+  Produit read as the glossary's Product, round 1's finding that no
+  later round took: MC-1405 extended.
