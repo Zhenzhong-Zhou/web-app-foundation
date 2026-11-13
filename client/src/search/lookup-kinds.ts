@@ -28,11 +28,13 @@ export const KIND_LABELS: Record<LookupKind, MessageDescriptor> =
 
 /**
  * What each kind's "Show all" names: the page it opens, as the menu names
- * it (#149). A lot's opens Inventory, so it says Inventory, not Lots.
+ * it (#149). A lot's opens Inventory, so it says Inventory, not Lots; a
+ * production run's, Production, not Production runs.
  */
 export const LIST_LABELS: Record<LookupKind, MessageDescriptor> = {
   ...KIND_LABELS,
   lot: NAV_LABELS.inventory,
+  productionRun: NAV_LABELS.production,
 };
 
 /** Where a result opens. */

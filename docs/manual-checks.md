@@ -780,7 +780,9 @@ folder by folder; these check what is already in place.
   Reason Settled, and import refuses a correction to one, naming it. In
   every language, the top bar's lookup
   for a lot ends with Show all in Inventory (Tout afficher dans
-  Inventaire, 在库存中查看全部), the page it opens, and Help's list of
+  Inventaire, 在库存中查看全部), the page it opens, and for a production
+  run with Show all in Production (Tout afficher dans Production,
+  在生产中查看全部), as the menu names it; Help's list of
   guides names the page at `/lots` Trace a lot (Tracer un lot, 追溯批次),
   as the menu does. That guide's own title says it too, and so do the
   links to it at the foot of the Inventory, Movements and Production
@@ -6116,3 +6118,6 @@ first.
 - 2026-11-13: ADR-054's November amendment, R11: the variance bell writes
   each line off plan as its reader's language writes a label and a
   percentage, CODE : 50 % in French: MC-1419 extended.
+- 2026-11-13: ADR-054's November amendment, R11 (#149): the top bar's
+  lookup names a production run's Show all after the page it opens,
+  Production, as the menu does: MC-1417 extended.

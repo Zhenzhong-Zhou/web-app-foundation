@@ -167,6 +167,30 @@ describe('LookupBox', () => {
     );
   });
 
+  // A run's opens Production, as the menu names the page, not the group.
+  it('names a production run’s Show all after Production', async () => {
+    server.use(
+      http.get('/api/v1/lookup', () =>
+        HttpResponse.json({
+          groups: [
+            {
+              kind: 'productionRun',
+              results: [{ ...ANSWER.groups[0].results[0], id: 'run-1' }],
+            },
+          ],
+        } satisfies LookupResponse),
+      ),
+    );
+    const user = userEvent.setup();
+    renderBox();
+
+    await user.type(await openLookup(user), 'bf');
+    await user.click(await screen.findByText('Show all in Production'));
+    expect(screen.getByTestId('where').textContent).toBe(
+      '/production?search=bf',
+    );
+  });
+
   // Close matches are the lookup's alone (ADR-056): their list finds none.
   it('offers Show all only for a group with a match that is not a close one', async () => {
     server.use(http.get('/api/v1/lookup', () => HttpResponse.json(ANSWER)));
