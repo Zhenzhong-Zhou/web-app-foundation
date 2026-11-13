@@ -54,7 +54,7 @@ Un rôle que vous créez s’affiche tel que vous l’avez nommé, dans toutes l
 - **Intégré** : Propriétaire, Administrateur et Lecteur, les mêmes dans toutes les organisations.
 - **Créé ici** : un rôle que l’organisation a créé, à partir d’un modèle ou d’une copie.
 - **Modèle** : un point de départ pour un nouveau rôle, comme Entrepôt ou Ventes. Il ne fait que cocher des cases.
-- **Aussi avisé** : ce dont les détenteurs d’un rôle sont avisés, comme une ligne de commande close incomplète.
+- **Également avisés** : ce dont les détenteurs d’un rôle sont avisés, comme une ligne de commande close incomplète.
 
 ## Si quelque chose est refusé {#refused}
 

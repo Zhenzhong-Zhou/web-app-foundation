@@ -22,7 +22,7 @@ Sur la ligne d’un article, **Modifier** et **Retirer** corrigent la liste. Une
 ## Donner une liste à un partenaire {#partner}
 
 1. Ouvrez le partenaire dans [Partenaires](/partners).
-2. Choisissez sa liste sous **Ventes à eux**, **Achats auprès d’eux**, ou les deux.
+2. Choisissez sa liste sous **Ventes à ce partenaire**, **Achats auprès d’eux**, ou les deux.
 3. Appuyez sur **Enregistrer les listes de prix**.
 
 > Seule une personne qui peut modifier les partenaires voit **Enregistrer les listes de prix**.

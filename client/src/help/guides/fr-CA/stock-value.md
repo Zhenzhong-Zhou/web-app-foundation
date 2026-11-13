@@ -13,7 +13,7 @@ Le stock reçu sans information suffisante pour calculer sa valeur figure sous *
 3. Pour une autre devise que celle de base, saisissez le **Taux de change**, ou laissez-le vide pour utiliser le taux en dossier pour le jour de l’arrivée.
 4. Appuyez sur **Fixer le coût**.
 
-Un lot fabriqué par un ordre encore ouvert attend plutôt son ordre : **Ouvrir l’ordre** y mène, et le lot prend son coût à la clôture de l’ordre.
+Un lot fabriqué par un ordre encore ouvert attend plutôt son ordre : **Voir l’ordre de fabrication** y mène, et le lot prend son coût à la clôture de l’ordre.
 
 > Seule une personne qui peut modifier les coûts voit **Fixer le coût**.
 

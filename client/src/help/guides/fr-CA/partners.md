@@ -23,7 +23,7 @@ Une facture n’est émise qu’à un client qui a une adresse de facturation; a
 
 ## Prix et langues des documents {#settings}
 
-Sur la page du partenaire, **Ventes à eux** et **Achats auprès d’eux** choisissent la liste de prix qui donne un prix à une ligne ajoutée sans prix. **Langues des documents** détermine les langues dans lesquelles ses bordereaux d’expédition, ses factures et ses notes de crédit seront imprimés, à compter des prochains documents.
+Sur la page du partenaire, **Ventes à ce partenaire** et **Achats auprès d’eux** choisissent la liste de prix qui donne un prix à une ligne ajoutée sans prix. **Langues des documents** détermine les langues dans lesquelles ses bordereaux d’expédition, ses factures et ses notes de crédit seront imprimés, à compter des prochains documents.
 
 > Seule une personne qui peut modifier les partenaires voit **Modifier**, **Ajouter une adresse**, **Ajouter un contact** et **Retirer**, et peut enregistrer les listes de prix et les langues.
 

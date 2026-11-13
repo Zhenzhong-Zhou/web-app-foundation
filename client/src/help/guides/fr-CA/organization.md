@@ -31,7 +31,7 @@ Sous **Documents**, chaque type de document a sa propre série. Une modification
 Sous **Stock**, choisissez ce que fait le lancement d’un ordre quand la licence de sa recette n’est pas encore en vigueur, ou a expiré. Une licence retirée est toujours refusée.
 
 1. Pour **Pas encore en vigueur** et pour **Expirée**, choisissez **Refuser**, **Refuser sauf dérogation, avec un motif**, ou **Permettre, et l’enregistrer**.
-2. Cochez **Une recette doit porter une licence pour être lancée** si chaque ordre en a besoin, puis appuyez sur **Enregistrer la politique de licences**.
+2. Cochez **La recette doit avoir une licence pour permettre le lancement d’un ordre de fabrication** si chaque ordre en a besoin, puis appuyez sur **Enregistrer la politique de licences**.
 
 ## Image de marque {#branding}
 
@@ -39,7 +39,7 @@ Sous **Image de marque**, choisissez l’apparence de l’application pour tout 
 
 1. Sous **Logo**, appuyez sur **Téléverser un logo**. Horizontal ou carré, il s’affiche en haut de la barre latérale, et s’imprime sur les factures, les notes de crédit et les bordereaux d’expédition, sauf si **Documents** en décide autrement.
 2. Sous **Logo carré**, appuyez sur **Téléverser un logo carré** pour les petits espaces, comme la barre latérale repliée. La ligne en dessous indique ce qui s’y affiche sans lui.
-3. Choisissez une **Couleur** et la teinte de la **Barre latérale**, puis appuyez sur **Enregistrer l’image de marque**.
+3. Choisissez une **Couleur** et la teinte de la **Barre latérale**, puis appuyez sur **Enregistrer l’apparence**.
 
 ## Déconnexion après inactivité {#idle-sign-out}
 

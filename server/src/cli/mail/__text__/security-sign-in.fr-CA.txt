@@ -2,7 +2,7 @@ Panivo
 
 Bonjour Mei Lin,
 
-Votre compte a été utilisé pour une connexion depuis un navigateur jamais utilisé auparavant.
+Une connexion à votre compte a été effectuée depuis un navigateur que vous n’aviez jamais utilisé auparavant.
 
 Quand: lundi 26 octobre 2026 à 22 h 41 min 07 s UTC
 Navigateur: Chrome sur macOS

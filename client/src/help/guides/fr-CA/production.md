@@ -15,14 +15,14 @@ Un ordre de fabrication consomme des composants et produit un article fini, fabr
 ## Lancer un ordre {#release}
 
 1. Ouvrez l’ordre planifié et appuyez sur **Lancer**.
-2. Sous **Prendre les composants à**, choisissez l’emplacement de prélèvement. Les lots sont pris par péremption la plus proche, ou **Choisir les lots** pour les choisir vous-même.
+2. Sous **Prélever les composants dans**, choisissez l’emplacement de prélèvement. Les lots sont pris par péremption la plus proche, ou **Choisir les lots** pour les choisir vous-même.
 3. Appuyez sur **Lancer**. La recette est copiée sur l’ordre et les composants sont déplacés vers le lieu de fabrication; modifier la recette ensuite ne peut donc pas changer cet ordre.
 
 > Seule une personne qui peut lancer des ordres voit **Lancer** et **Annuler l’ordre**.
 
 ## Enregistrer la production et clore {#close}
 
-1. À mesure que des unités sont terminées, appuyez sur **Enregistrer la production** et saisissez ce qui est **Terminé cette fois-ci**, dans le même lot ou un nouveau. Un lot fabriqué sur plusieurs jours s’enregistre petit à petit.
+1. À mesure que des unités sont terminées, appuyez sur **Enregistrer la production** et saisissez la **Quantité produite cette fois**, dans le même lot ou un nouveau. Un lot fabriqué sur plusieurs jours s’enregistre petit à petit.
 2. Quand l’ordre est terminé, appuyez sur **Clore l’ordre** et saisissez ce qui a été **Réellement utilisé**. Plus que prévu ne pose pas de problème; les composants inutilisés restent à l’emplacement de fabrication et doivent être rangés manuellement.
 
 > Seule une personne qui peut terminer des ordres voit **Enregistrer la production** et **Clore l’ordre**.

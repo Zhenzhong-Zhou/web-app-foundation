@@ -6,7 +6,7 @@ Le journal d’audit liste chaque modification faite dans cette organisation, de
 
 1. Choisissez une **Action**, ou gardez **Toutes les actions**.
 2. Indiquez des dates dans **Depuis** et **Jusqu’au** pour limiter la liste à une période.
-3. Appuyez sur **Charger plus** pour les entrées plus anciennes.
+3. Appuyez sur **Afficher plus** pour les entrées plus anciennes.
 
 Quand une entrée présente un champ avec une flèche, la valeur est passée de la première à la seconde; une seule valeur indique celle qui a été donnée au champ. **Exporter** télécharge au format CSV les entrées correspondant à vos filtres.
 

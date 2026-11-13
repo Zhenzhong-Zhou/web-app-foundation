@@ -8,7 +8,7 @@ import { RecordingTracker } from './utils/recording-tracker';
 const TOO_LARGE = {
   en: 'That is too much to send at once. Shorten it, then try again.',
   'fr-CA':
-    'C’est trop à envoyer en une fois. Raccourcissez-le, puis réessayez.',
+    'Il y a trop de données à envoyer d’un coup. Réduisez leur taille, puis réessayez.',
   'zh-Hans': '一次发送的内容过多。请缩短后重试。',
 };
 

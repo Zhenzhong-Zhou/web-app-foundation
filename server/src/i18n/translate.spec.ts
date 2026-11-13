@@ -287,7 +287,9 @@ describe('values', () => {
     expect(refused.message).toBe(
       'A draft run cannot be credited with output — it must be released',
     );
-    expect(translate(refused, 'fr-CA')).toContain('crédité d’une production');
+    expect(translate(refused, 'fr-CA')).toContain(
+      'recevoir une quantité produite',
+    );
     expect(translate(refused, 'zh-Hans')).toContain('记录产出');
   });
 });

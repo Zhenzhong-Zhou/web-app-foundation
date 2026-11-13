@@ -17,7 +17,7 @@ Un brouillon que personne à l’extérieur n’a vu peut être retiré avec **S
 
 1. Ouvrez la facture émise et appuyez sur **Créditer**.
 2. Saisissez ce qui est crédité sur chaque ligne. Le prix peut être réduit, pour des frais de remise en stock ou un geste commercial, mais jamais augmenté.
-3. Indiquez un **Motif**, que le client lit sur la note de crédit, et appuyez sur **Émettre la note de crédit**.
+3. Indiquez un **Motif**, que le client lit sur la note de crédit, et appuyez sur **Émettre une note de crédit**.
 
 Pour une facture qui ne sera jamais payée, **Tout créditer — irrécouvrable** remplit chaque ligne en entier, avec ce motif. Toutes les notes de crédit sont listées sous **Notes de crédit**.
 
