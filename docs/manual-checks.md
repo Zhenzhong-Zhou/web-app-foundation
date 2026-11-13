@@ -773,9 +773,9 @@ folder by folder; these check what is already in place.
   invoice's PDF both say 税号. `node scripts/i18n-rules.mjs` refuses
   账单地址 and 税务登记号 in any message or guide, by the glossary's Words
   not to use, so a later round cannot bring them back. The glossary's
-  Settled messages hold three whole texts in 中文: the refused page's
-  您尚未登录, the refusal's 没有{language}名称 and the invitation email's
-  有效期到 {date}结束. The rules check fails where a catalogue's text for
+  Settled messages hold four whole texts in 中文: the Account page's
+  title 我的账户, the refused page's 您尚未登录, the refusal's
+  没有{language}名称 and the invitation email's 有效期到 {date}结束. The rules check fails where a catalogue's text for
   one differs from its row, the decide step keeps today's for each, its
   Reason Settled, and import refuses a correction to one, naming it. In
   every language, the top bar's lookup
@@ -6036,3 +6036,6 @@ first.
   lines for a member already here and a copied link, name a built-in role
   with no space beside the Chinese, as the invitation email does, and a
   role made here with one: MC-1416 extended.
+- 2026-11-13: ADR-054's November amendment, R2 and R8: the glossary's
+  Settled messages hold the Account page's title in 中文, 我的账户, so no
+  later round renames it again: MC-1417 extended.

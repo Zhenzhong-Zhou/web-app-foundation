@@ -257,6 +257,7 @@ its row here, in the same commit as its catalogue.
 
 | Id | Language | Text | Decided in |
 | --- | --- | --- | --- |
+| `account.title` | 简体中文 | `我的账户` | [ADR-054's November 2026 amendment](adr/0054-languages.md#amendment-november-2026--the-translations-settled-with-no-fluent-reader-chatgpt-leads-two-checks-stand-in): the Account page's title, as its menu item and the guides name it |
 | `documents.refusal.signedOut` | 简体中文 | `您尚未登录` | [ADR-054's November 2026 amendment](adr/0054-languages.md#decision--the-words-settled-here): the refused document's page, signed out |
 | `invoices.skuLanguageNameWhich` | 简体中文 | `{which, select, variant {{product} 的规格 {sku}（{variation}）} other {{product}（{sku}）}}没有{language}名称，而本组织要求单据上必须有。请在物品页面的“其他语言名称”中添加。` | [ADR-054's November 2026 amendment](adr/0054-languages.md#decision--the-words-settled-here): a missing name's language, in Chinese |
 | `mail.invitation.expires` | 简体中文 | `链接只能用一次，有效期到 {date}结束，{zone}。密码由您自己设置。` | [ADR-054's November 2026 amendment](adr/0054-languages.md#decision--the-words-settled-here): the invitation email's last day |
