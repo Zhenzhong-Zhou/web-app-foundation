@@ -77,4 +77,12 @@ describe('TranslatingValidationPipe', () => {
       expect(french[index]).not.toBe(message.message),
     );
   });
+
+  it('gives a DTO rule no value, since its sentence names no field', async () => {
+    const { messages } = await refusal(new TranslatingValidationPipe(OPTIONS));
+    const rule = messages!.find((message) => message.message === QUANTITY);
+
+    expect(rule).toBeDefined();
+    expect(rule!.values).toBeUndefined();
+  });
 });

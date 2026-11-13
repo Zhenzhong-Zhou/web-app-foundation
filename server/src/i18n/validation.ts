@@ -3,7 +3,6 @@ import {
   type ValidationError,
   ValidationPipe,
 } from '@nestjs/common';
-import type { ValidationArguments } from 'class-validator';
 
 // Aliased: the extractor reads every t() call as a message definition, and
 // this one passes a descriptor through rather than defining one.
@@ -137,8 +136,8 @@ const written = new Map<string, Translatable>();
  * id goes with it.
  */
 export function rule(descriptor: { id: string; defaultMessage: string }) {
-  return (args: ValidationArguments): string => {
-    const message = render(descriptor, { property: args.property });
+  return (): string => {
+    const message = render(descriptor);
     written.set(message.message, message);
     return message.message;
   };
@@ -170,7 +169,7 @@ function translatable(
   // alone: Nest's path in front (components.0.) is dropped (#148).
   for (const [sentence, message] of written) {
     if (english === sentence || english.endsWith(`.${sentence}`)) {
-      return { ...message, message: sentence, values: { property } };
+      return { ...message, message: sentence };
     }
   }
 
