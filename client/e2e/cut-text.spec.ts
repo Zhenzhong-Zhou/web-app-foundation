@@ -13,18 +13,22 @@ import { confirmEmailInDatabase } from './support/mail';
 /**
  * Text cut by its box on a newcomer's first screens (ADR-054's November
  * 2026 amendment, R9): signing in, accepting an invitation, Home with its
- * welcome and Getting started, Help and the Account page, at a phone's
- * 390 × 844, at the Standard and the Larger text size (ADR-075), in
- * English, French, Chinese and en-XA, the pseudo-language, which is about
- * 40 % longer than English. A cut is text wider than its box with the
- * box's overflow hidden, or ended by an ellipsis; or the page, or Help's
+ * welcome and Getting started, Help, and the Account page with its Change
+ * password dialog, at a phone's 390 × 844 and at 320 × 640, WCAG 1.4.10's
+ * reflow width, each at the Standard and the Larger text size (ADR-075),
+ * in English, French, Chinese and en-XA, the pseudo-language, which is
+ * about 40 % longer than English. A cut is text wider than its box with the
+ * box's overflow hidden, or ended by an ellipsis; or the page, or a
  * dialog, wider than the screen, so it scrolls sideways (WCAG 1.4.10,
  * Reflow), as en-XA's top bar once did. Each is fixed, or listed in KNOWN
  * with its issue.
  */
 
-/** Each screen size walked: a phone's. */
-const WIDTHS = [{ width: 390, height: 844 }] as const;
+/** Each screen size walked: a phone's, and WCAG 1.4.10's reflow width. */
+const WIDTHS = [
+  { width: 390, height: 844 },
+  { width: 320, height: 640 },
+] as const;
 
 /** Each text size walked, as kept on the device (ADR-075), and its 1rem. */
 const TEXT_SIZES = [
@@ -41,6 +45,7 @@ const LANGUAGES = [
     start: 'Getting started',
     help: 'Help',
     title: 'Account',
+    changePassword: 'Change password',
   },
   {
     tag: 'fr-CA',
@@ -49,6 +54,7 @@ const LANGUAGES = [
     start: 'Premiers pas',
     help: 'Aide',
     title: 'Compte',
+    changePassword: 'Changer le mot de passe',
   },
   {
     tag: 'zh-Hans',
@@ -57,6 +63,7 @@ const LANGUAGES = [
     start: '入门指引',
     help: '帮助',
     title: '我的账户',
+    changePassword: '修改密码',
   },
   {
     // To the server and the account, en-XA is English.
@@ -66,6 +73,7 @@ const LANGUAGES = [
     start: '[Ğéťťíñğ šťáŕťéď one two]',
     help: '[Ĥéĺp one]',
     title: '[Áççóúñť one]',
+    changePassword: '[Çĥáñğé páššŵóŕď one two]',
   },
 ] as const;
 
@@ -79,17 +87,42 @@ interface Cut {
   landmark: string;
 }
 
+/** Where a cut was measured: the screen, on which walk. */
+interface Where {
+  screen: string;
+  /** The walk's organization, whose name the top bar shows. */
+  organization: string;
+  width: number;
+  textSize: (typeof TEXT_SIZES)[number]['name'];
+}
+
 /** Cuts filed to be designed, each with its issue. */
 const KNOWN: {
   issue: string;
-  is: (cut: Cut, organization: string) => boolean;
+  is: (cut: Cut, where: Where) => boolean;
 }[] = [
   {
     // The top bar's organization name gives way on a phone, by the design
     // language's Screen sizes; the design that replaces it is #490's.
     issue: '#490',
-    is: (cut, organization) =>
+    is: (cut, { organization }) =>
       cut.landmark === 'banner' && cut.text === organization,
+  },
+  {
+    // Raised above its field, Confirm new password is still wider than the
+    // field in Change password's dialog at 320 px and Larger text, in
+    // French and en-XA: its label and the outline's gap for it. #566's
+    // 14 px raised label would cut more; labels above the field that wrap,
+    // an ADR-090 amendment, would clear both.
+    issue: '#566',
+    is: (cut, { screen, width, textSize }) =>
+      screen === 'Change password' &&
+      width === 320 &&
+      textSize === 'Larger' &&
+      [
+        'Confirmer le nouveau mot de passe *',
+        '[Çóñfíŕm ñéŵ páššŵóŕď one two] *',
+      ].includes(cut.text),
   },
 ];
 
@@ -245,25 +278,34 @@ function widerIn(root: Element): string[] {
 }
 
 /**
- * Once the screen has its words and the fonts that draw them: the cuts
- * under `root`, but those KNOWN, and what makes it wider than the screen,
- * each said with the screen it is on.
+ * Once the screen has its words and the fonts that draw them, and `root`
+ * has appeared: the cuts under `root`, but those KNOWN, and what makes it
+ * wider than the screen, each said with the screen it is on.
  */
 async function cuts(
   page: Page,
-  screen: string,
-  organization: string,
+  where: Where,
   root: Locator = page.locator('body'),
 ): Promise<string[]> {
   await page.waitForLoadState('networkidle');
   await page.evaluate(() => document.fonts.ready);
+  // A dialog is visible to Playwright from its first frame, while it is
+  // still at opacity 0, where the measure would pass its text over as
+  // unseen and find nothing.
+  await expect
+    .poll(() =>
+      root.evaluate((element) =>
+        element.checkVisibility({ opacityProperty: true }),
+      ),
+    )
+    .toBe(true);
   const found = await root.evaluate(cutsIn);
   const wider = await root.evaluate(widerIn);
   return [
     ...found
-      .filter((cut) => !KNOWN.some((known) => known.is(cut, organization)))
-      .map((cut) => `${screen}: ${cut.where}: “${cut.text}”`),
-    ...wider.map((what) => `${screen}: ${what}`),
+      .filter((cut) => !KNOWN.some((known) => known.is(cut, where)))
+      .map((cut) => `${where.screen}: ${cut.where}: “${cut.text}”`),
+    ...wider.map((what) => `${where.screen}: ${what}`),
   ];
 }
 
@@ -352,6 +394,9 @@ for (const language of LANGUAGES) {
         // session.
         const context = await browser.newContext({
           viewport: { width, height },
+          // Transitions end at once (ADR-075), so nothing is measured while
+          // it slides or fades in.
+          reducedMotion: 'reduce',
           storageState: {
             cookies: [],
             origins: [
@@ -369,20 +414,25 @@ for (const language of LANGUAGES) {
         });
         const page = await context.newPage();
         const found: string[] = [];
+        const walk = {
+          organization: org.organizationName,
+          width,
+          textSize: size.name,
+        };
 
         await page.goto('/login');
         await expect(page.getByRole('heading', { level: 1 })).toHaveText(
           language.signIn,
         );
         await expect(page.locator('html')).toHaveCSS('font-size', size.rem);
-        found.push(...(await cuts(page, 'Sign in', org.organizationName)));
+        found.push(...(await cuts(page, { ...walk, screen: 'Sign in' })));
 
         await page.goto(`/invitation?token=${token}`);
         await expect(page.getByRole('heading', { level: 1 })).toContainText(
           org.organizationName,
         );
         found.push(
-          ...(await cuts(page, 'The invitation', org.organizationName)),
+          ...(await cuts(page, { ...walk, screen: 'The invitation' })),
         );
 
         const member = await joinByLink(token, 'Wang Fang');
@@ -397,14 +447,14 @@ for (const language of LANGUAGES) {
         await expect(
           page.getByRole('heading', { name: language.start, exact: true }),
         ).toBeVisible();
-        found.push(...(await cuts(page, 'Home', org.organizationName)));
+        found.push(...(await cuts(page, { ...walk, screen: 'Home' })));
 
         await page
           .getByRole('button', { name: language.help, exact: true })
           .click();
         const help = page.getByRole('dialog');
         await expect(help.getByRole('heading').first()).toBeVisible();
-        found.push(...(await cuts(page, 'Help', org.organizationName, help)));
+        found.push(...(await cuts(page, { ...walk, screen: 'Help' }, help)));
         await page.keyboard.press('Escape');
         await expect(help).toBeHidden();
 
@@ -413,7 +463,23 @@ for (const language of LANGUAGES) {
           language.title,
         );
         found.push(
-          ...(await cuts(page, 'The Account page', org.organizationName)),
+          ...(await cuts(page, { ...walk, screen: 'The Account page' })),
+        );
+
+        // Its three password fields, the longest labels on the walk.
+        await page
+          .getByRole('button', { name: language.changePassword, exact: true })
+          .click();
+        const changing = page.getByRole('dialog');
+        await expect(
+          changing.getByRole('heading', { name: language.changePassword }),
+        ).toBeVisible();
+        found.push(
+          ...(await cuts(
+            page,
+            { ...walk, screen: 'Change password' },
+            changing,
+          )),
         );
 
         await context.close();
