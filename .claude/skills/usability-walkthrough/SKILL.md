@@ -116,7 +116,10 @@ given, which git ignores.
    the panel's own takes ports neither the browser suite (3100, 5273)
    nor the screenshots (3200, 5373) use: its API also with `PORT=3300`
    and `CLIENT_URL=http://localhost:5473`, so the mail's links open the
-   panel's client; its client with `VITE_API_TARGET=http://localhost:3300`,
+   panel's client, run from the build the dev server's watcher keeps
+   (`node --enable-source-maps dist/main` in `server/`) when one runs,
+   since a second `nest start --watch` empties `server/dist` under it
+   (`deleteOutDir`); its client with `VITE_API_TARGET=http://localhost:3300`,
    as `npm run dev -- --port 5473 --strictPort`, or for the production
    build `npm run preview -- --port 5473 --strictPort`.
    Then `npm run seed:demo` in `server/` once per persona, one after
