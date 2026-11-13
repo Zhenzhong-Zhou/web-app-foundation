@@ -5,8 +5,8 @@ Les emplacements sont les endroits où le stock est gardé, d’un site entier j
 ## Ajouter un emplacement {#add}
 
 1. Appuyez sur **Ajouter un emplacement** pour un emplacement au niveau supérieur, comme un site, ou sur **Ajouter à l’intérieur** sur un emplacement pour en ajouter un dedans.
-2. Choisissez son type : un site, une zone, une allée, une tablette ou un casier. C’est une étiquette pour la lecture, pas une règle.
-3. Donnez son nom, et son code tel que sur l’étiquette, comme A-01-03. Un code n’est utilisé qu’une fois dans le même emplacement.
+2. Choisissez son type : un site, une zone, une allée, une tablette ou un casier. Ce type sert à nommer l’emplacement; il n’impose aucune règle.
+3. Donnez son nom, et son code tel que sur l’étiquette, comme A-01-03. Un code ne peut être utilisé qu’une fois à l’intérieur du même emplacement.
 4. Appuyez sur **Ajouter un emplacement**.
 
 Une seule pièce peut être un emplacement à part entière : vous pourrez y ajouter des casiers plus tard au besoin.
@@ -28,7 +28,7 @@ Appuyez sur **Adresse** sur un site pour dire où il se trouve. Les bons de comm
 ## Les mots que vous verrez {#words}
 
 - **Site**, **Zone**, **Allée**, **Tablette** et **Casier** : le type d’un emplacement, du plus extérieur au plus intérieur.
-- **Contient du stock** : un emplacement qui n’en contient aucun autre, où le stock peut se trouver.
+- **Contient du stock** : un emplacement sans sous-emplacement, dans lequel on peut entreposer du stock.
 - **Non disponible** : son stock n’est pas à expédier.
 - **Retiré** : plus en usage, conservé pour son historique.
 

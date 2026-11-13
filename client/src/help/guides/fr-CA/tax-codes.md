@@ -1,11 +1,11 @@
 # Codes de taxe
 
-Chaque ligne de facture porte un code de taxe, qui dit quelle taxe elle perçoit. Un code peut percevoir deux taxes sur le même montant, comme la TPS et la TVQ ensemble; un code qui ne perçoit rien est exonéré.
+Chaque ligne de facture porte un code de taxe, qui dit quelle taxe elle perçoit. Un code peut percevoir deux taxes sur le même montant, comme la TPS et la TVP ensemble; un code qui ne perçoit rien est exonéré.
 
 ## Ajouter un code de taxe {#add}
 
 1. Appuyez sur **Ajouter un code de taxe**.
-2. Donnez-lui un **Nom**, tel que la ligne de facture l’affichera : TPS, TPS + TVQ, Exonéré.
+2. Donnez-lui un **Nom**, tel que la ligne de facture l’affichera : TPS, TPS + TVP (C.-B.), Exonéré.
 3. Sous **Taxes perçues**, appuyez sur **Ajouter une taxe** pour chaque taxe, avec son nom et son **Taux %**. N’en mettez aucune pour un code qui ne perçoit rien.
 4. Appuyez sur **Enregistrer**.
 

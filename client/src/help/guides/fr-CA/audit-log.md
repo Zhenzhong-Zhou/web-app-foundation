@@ -5,10 +5,10 @@ Le journal d’audit liste chaque modification faite dans cette organisation, de
 ## Trouver une modification {#find}
 
 1. Choisissez une **Action**, ou gardez **Toutes les actions**.
-2. Remplissez **Depuis** et **Jusqu’au** pour la limiter à quelques jours.
+2. Indiquez des dates dans **Depuis** et **Jusqu’au** pour limiter la liste à une période.
 3. Appuyez sur **Charger plus** pour les entrées plus anciennes.
 
-Là où une entrée montre un champ avec une flèche, il est passé de la première valeur à la seconde; une valeur seule est celle donnée au champ. **Exporter** télécharge les entrées que vos filtres montrent, en fichier CSV.
+Quand une entrée présente un champ avec une flèche, la valeur est passée de la première à la seconde; une seule valeur indique celle qui a été donnée au champ. **Exporter** télécharge au format CSV les entrées correspondant à vos filtres.
 
 ## Une fiche, ou une personne {#record}
 

@@ -4,12 +4,12 @@ Les articles sont tout ce que votre entreprise garde : ce qu’elle vend, les m
 
 ## Les types {#types}
 
-Chaque article est d’un de six types. Chaque type est un onglet de la page Articles, avec son total, et un type sans article n’a pas d’onglet tant qu’il n’en a pas.
+Chaque article appartient à l’un des six types. Chaque type est un onglet de la page Articles, avec son total, et un type sans article n’a pas d’onglet tant qu’il n’en a pas.
 
 - **Produits** : ce que vous vendez à vos clients.
 - **Matières premières** : consommées en production.
 - **Emballages** : flacons, boîtes et étiquettes.
-- **Fournitures** : consommées par l’entreprise elle-même, comme les gants. Votre comptable peut les classer parmi les biens de faible valeur à consommer; les comptes chinois les appellent 低值易耗品.
+- **Fournitures** : consommées par l’entreprise elle-même, comme les gants. Votre comptable peut les classer parmi les consommables de faible valeur; les comptes chinois les appellent 低值易耗品.
 - **Échantillons** : donnés, pas vendus.
 - **Équipement** : machines et outils. L’équipement est reçu, déplacé et compté là où il se trouve, mais il ne fait pas partie de la valeur du stock, car c’est un actif, pas un stock à vendre.
 
@@ -19,12 +19,12 @@ Le type peut être changé à tout moment avec **Modifier** sur la page de l’a
 
 La page Articles s’ouvre sur Produits, ou sur le premier type qui a des articles. **Tous** montre tous les types à la fois.
 
-- Le champ **Rechercher** trouve un article par une partie d’un code, ou de son nom ou de celui d’une variante dans n’importe quelle langue, avec ou sans accents; un nom chinois aussi par son pinyin, ou par un seul caractère. Le total de chaque onglet suit la recherche. Quand cet onglet n’a aucun résultat, la liste dit où sont les résultats, avec un bouton qui y mène.
+- Le champ **Rechercher** trouve un article par une partie d’un code, ou de son nom ou de celui d’une variante dans n’importe quelle langue, avec ou sans accents; un nom chinois aussi par son pinyin, ou par un seul caractère. Le nombre d’articles sur chaque onglet change selon la recherche. Quand un onglet ne donne aucun résultat, la liste indique où se trouvent les résultats, avec un bouton pour les voir.
 - La liste **Catégorie** propose les catégories qui ont des articles dans cet onglet, avec leur total, et **Sans catégorie** pour les articles qui n’en ont aucune. En choisir une montre ses articles et ceux de toutes les catégories qu’elle contient, et une pastille la nomme; le **×** de la pastille montre de nouveau toutes les catégories.
 - **Abandonné** montre seuls les articles abandonnés, avec leur total. Autrement, ils sont masqués. **Tout afficher dans Articles**, dans la barre du haut, ouvre Tous avec la recherche et les articles abandonnés inclus, et une pastille qui le dit.
 - Appuyez sur **Nom**, **Catégorie**, **En stock** ou la date en tête d’une colonne pour trier selon elle; appuyez de nouveau pour inverser. La colonne de date montre la date selon laquelle la liste est triée, et son menu permet de passer de **Dernière modification** à **Date d’ajout**.
-- La liste lit cinquante articles à la fois. **Afficher 50 de plus** ajoute les cinquante suivants.
-- **Exporter** écrit ce que la liste montre, pas seulement les lignes chargées, dans un fichier CSV.
+- La liste charge cinquante articles à la fois. **Afficher 50 de plus** ajoute les cinquante suivants.
+- **Exporter** télécharge dans un fichier CSV tous les résultats de la liste, pas seulement les lignes déjà chargées.
 
 Sur un téléphone, chaque article est une carte, et **Filtres** ouvre la catégorie, le tri et Abandonné depuis le bas de l’écran.
 
@@ -39,11 +39,11 @@ Appuyez sur la ligne pour ouvrir l’article. Appuyez sur son stock pour ouvrir 
 
 ## Catégories {#categories}
 
-Un article est dans une catégorie, ou dans aucune. Les catégories forment un seul arbre : une catégorie peut être au premier niveau ou sous une autre, jusqu’à 10 niveaux, comme Emballages › Flacons.
+Un article appartient à une catégorie ou n’en a aucune. Les catégories forment un seul arbre : une catégorie peut être au premier niveau ou sous une autre, jusqu’à 10 niveaux, comme Emballages › Flacons.
 
 L’arbre, avec les articles de chaque catégorie, s’ouvre avec **Gérer les catégories** au bas de la liste Catégorie.
 
-1. Appuyez sur **Ajouter une catégorie**, saisissez son nom et choisissez ce sous quoi elle se trouve (**Sous**), ou aucune pour la mettre au premier niveau.
+1. Appuyez sur **Ajouter une catégorie**, saisissez son nom, puis dans **Sous**, choisissez la catégorie qui la contiendra, ou aucune pour la mettre au premier niveau.
 2. **Actions** sur une ligne propose **Renommer**, **Déplacer** et **Supprimer**. Une catégorie ne peut pas aller sous elle-même : sa propre branche n’est donc pas proposée.
 3. Choisissez la catégorie d’un article avec **Modifier** sur sa page, ou celle de plusieurs avec **Définir la catégorie**.
 
@@ -56,7 +56,7 @@ L’arbre, avec les articles de chaque catégorie, s’ouvre avec **Gérer les c
 3. Saisissez son nom, et choisissez sa **Catégorie**, ou **Aucune**.
 4. Saisissez le **Code** : votre propre code pour cet article, unique dans l’organisation, par exemple RM-VITC pour une matière première. Ce n’est pas un code-barres.
 5. Choisissez son unité, ce dans quoi son stock est compté.
-6. S’il existe en plusieurs formats, indiquez le format ou la variante de celui-ci, comme 60 unités.
+6. S’il existe en plusieurs formats, indiquez le format ou la particularité de cette variante, par exemple 60ct.
 7. Activez **Suivre les numéros de lot et les dates de péremption** si chaque livraison porte un code de lot. Ce choix ne peut pas être modifié par la suite, et l’équipement ne l’offre jamais.
 8. Appuyez sur **Ajouter un article**.
 
@@ -84,7 +84,7 @@ Sur la page d’un article, son type et sa catégorie sont sous le nom.
 - **Ajouter des images** accepte jusqu’à 8 photos. La première est la couverture, affichée à côté du nom dans les listes.
 - **Modifier les noms** donne son nom dans d’autres langues, pour les documents imprimés dans ces langues.
 
-Le tableau **Noms dans d’autres langues** a une ligne pour l’article, et une pour chaque variante qui a un nom à elle, avec une colonne par langue. La ligne de l’article commence par le nom donné à l’ajout, utilisé dans toute langue qui n’a pas le sien; un nom dans la langue de ce nom ne sert qu’à imprimer autre chose. Les langues que vos documents exigent sont marquées. Un nom exigé qui manque affiche **Manquant**, et **Ajouter** ouvre **Modifier les noms** à cette ligne. Une ligne en haut de la page dit que les commandes et les factures contenant l’article ne peuvent pas s’imprimer tant que le nom n’est pas ajouté.
+Le tableau **Noms dans d’autres langues** comporte une ligne pour l’article et une pour chaque variante ayant son propre nom, avec une colonne par langue. La ligne de l’article commence par le nom donné lors de son ajout. Ce nom sert dans toutes les langues qui n’ont pas de nom particulier; un autre nom dans la langue d’origine sert seulement si vous voulez imprimer un nom différent. Les langues dans lesquelles vos documents exigent un nom sont indiquées. Un nom exigé mais absent est indiqué par **Manquant**. **Ajouter** ouvre **Modifier les noms** à cette ligne. Une ligne en haut de la page dit que les commandes et les factures contenant l’article ne peuvent pas s’imprimer tant que le nom n’est pas ajouté.
 
 > Seule une personne qui peut ajouter des articles voit **Ajouter un article**, et seule une personne qui peut les modifier voit **Ajouter une variante**, **Modifier**, **Modifier les noms** et **Abandonner**.
 

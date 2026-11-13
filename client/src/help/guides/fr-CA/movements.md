@@ -12,7 +12,7 @@ Chaque ligne dit quand, l’article et son lot, la variation, où, pourquoi et p
 
 ## Exporter la liste {#export}
 
-Appuyez sur **Exporter** pour télécharger les mouvements que montrent vos filtres, dans un fichier CSV, pour un tableur.
+Appuyez sur **Exporter** pour télécharger les mouvements que montrent vos filtres, dans un fichier CSV que vous pourrez ouvrir dans un tableur.
 
 ## Corriger une erreur {#correct}
 

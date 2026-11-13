@@ -1,6 +1,6 @@
 # Taux de change
 
-Ce que vaut une unité d’une autre devise dans votre devise de base, jour par jour. Un achat dont le prix est dans une autre devise est évalué au dernier taux en date du jour de son arrivée ou avant.
+Ce que vaut une unité d’une autre devise dans votre devise de base, jour par jour. Un achat facturé dans une autre devise est évalué au taux le plus récent disponible le jour de sa réception ou avant.
 
 ## Définir un taux {#add}
 
@@ -9,7 +9,7 @@ Ce que vaut une unité d’une autre devise dans votre devise de base, jour par 
 3. Saisissez le **Taux** : combien d’unités de la devise de base vaut une unité de cette devise ce jour-là.
 4. Appuyez sur **Enregistrer le taux**.
 
-Un achat qui arrive sans taux en dossier pour sa devise attend un coût dans [Valeur du stock](/costs#costs) jusqu’à ce qu’on lui en donne un.
+Un achat reçu sans taux de change enregistré pour sa devise reste en attente d’un coût dans [Valeur du stock](/costs#costs) jusqu’à ce qu’un taux soit ajouté.
 
 ## Corriger un taux {#correct}
 
@@ -28,7 +28,7 @@ Corriger un taux ne change rien à ce qui est déjà évalué : il s’applique
 ## Si quelque chose est refusé {#refused}
 
 - Aucune devise de base n’est encore définie. Définissez-en une d’abord dans [Organisation](/settings/organization), puisqu’un taux convertit dans cette devise.
-- La devise de base elle-même ne prend pas de taux. Un taux convertit les autres devises vers elle.
+- Il n’y a pas de taux à définir pour la devise de base elle-même. Les taux servent à convertir les autres devises dans celle-ci.
 - Un taux doit être supérieur à zéro.
 
 Voir aussi [Valeur du stock](/costs).

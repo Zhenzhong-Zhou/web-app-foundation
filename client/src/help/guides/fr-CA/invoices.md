@@ -1,6 +1,6 @@
 # Factures
 
-Une facture facture une expédition, et se crée à partir de celle-ci sur la commande. Une fois émise, elle ne change plus : une erreur s’annule par une note de crédit et se refacture. Une note de crédit rembourse tout ou partie d’une facture, et s’émet depuis celle-ci.
+Une facture porte sur une expédition et se crée à partir de celle-ci, dans la commande. Une fois émise, elle ne change plus : en cas d’erreur, elle est annulée par une note de crédit, puis une nouvelle facture est créée. Une note de crédit crédite une partie ou la totalité d’une facture et est émise à partir de celle-ci.
 
 ## Créer et émettre une facture {#issue}
 

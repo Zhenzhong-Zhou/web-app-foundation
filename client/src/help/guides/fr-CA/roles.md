@@ -16,7 +16,7 @@ Propriétaire, Administrateur et Lecteur sont intégrés. À côté d’eux, une
 4. Cochez ce qu’il permet, domaine par domaine. **Tout cocher** et **Tout décocher** traitent un domaine entier d’un coup.
 5. Appuyez sur **Enregistrer le rôle**.
 
-Un modèle ne fait que cocher des cases, et vous pouvez changer chacune d’elles. Cocher une permission coche aussi ce dont elle a besoin, comme voir les commandes pour recevoir sur une commande, et en décocher une décoche ce qui en a besoin; une ligne au-dessus des domaines dit ce qui a changé avec elle. Ce que permet le rôle s’affiche à côté des cases, ou sous elles sur un téléphone, et suit chaque case.
+Un modèle ne fait que cocher des cases, et vous pouvez changer chacune d’elles. Cocher une permission coche aussi les permissions dont elle dépend, par exemple voir les commandes pour pouvoir recevoir des marchandises sur une commande. Décocher une permission décoche aussi celles qui en dépendent; une ligne au-dessus des domaines dit ce qui a changé avec elle. Ce que permet le rôle s’affiche à côté des cases, ou en dessous sur un téléphone, et se met à jour quand vous cochez ou décochez une case.
 
 > Chaque rôle voit qui travaille ici, les rôles et les paramètres de l’organisation : ces trois permissions restent cochées. Créer et modifier des rôles, et fermer l’organisation, restent réservés aux propriétaires et ne font jamais partie d’un rôle.
 
@@ -38,7 +38,7 @@ Propriétaire, Administrateur et Lecteur ne peuvent être ni renommés, ni modif
 
 ## Nommer les rôles dans la langue de votre équipe {#naming}
 
-Un rôle que vous créez s’affiche tel que vous l’avez nommé, dans toutes les langues : un rôle nommé Warehouse se lit Warehouse pour une personne qui utilise l’application en français. Nommez donc les rôles dans la langue que lit votre équipe. Deux rôles ne peuvent pas porter le même nom, majuscules ou non, et aucun ne peut se lire comme Propriétaire, Administrateur ou Lecteur dans l’une des langues de l’application.
+Un rôle que vous créez s’affiche tel que vous l’avez nommé, dans toutes les langues : un rôle nommé 仓库 s’affiche 仓库 même pour une personne qui utilise l’application en anglais. Nommez donc les rôles dans la langue que lit votre équipe. Deux rôles ne peuvent pas porter le même nom, majuscules ou non, et aucun ne peut se lire comme Propriétaire, Administrateur ou Lecteur dans l’une des langues de l’application.
 
 ## Modifier, vider ou supprimer un rôle {#change}
 
@@ -46,7 +46,7 @@ Un rôle que vous créez s’affiche tel que vous l’avez nommé, dans toutes l
 2. Appuyez sur **Déplacer tout le monde vers…** pour déplacer chaque membre qui le détient vers un autre rôle, qu’il détient à la place.
 3. Appuyez sur **Supprimer** pour supprimer un rôle que personne ne détient et qu’aucune invitation en attente ne nomme.
 
-> Seuls les propriétaires voient **Modifier** et **Supprimer**, et seulement sur un rôle créé ici. **Déplacer tout le monde vers…** est pour qui peut changer les rôles des membres, et ne propose que les rôles que cette personne peut attribuer.
+> Seuls les propriétaires voient **Modifier** et **Supprimer**, et seulement sur un rôle créé ici. **Déplacer tout le monde vers…** est accessible aux personnes qui peuvent modifier les rôles des membres et ne propose que les rôles qu’elles peuvent attribuer.
 
 ## Les mots que vous verrez {#words}
 

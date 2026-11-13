@@ -6,12 +6,12 @@ Membres liste qui fait partie de l’organisation et les rôles de chacun, et c�
 
 1. Appuyez sur **Inviter**.
 2. Saisissez son adresse courriel, et cochez ses rôles.
-3. Choisissez la langue dans laquelle lui écrire, et ajoutez un mot si vous voulez. Il paraît dans le courriel, et sur la page où la personne accepte.
+3. Choisissez la langue dans laquelle lui écrire, et ajoutez un mot si vous voulez. Il apparaît dans le courriel et sur la page où la personne accepte l’invitation.
 4. Appuyez sur **Envoyer l’invitation**, ou sur **Copier le lien** pour envoyer le lien vous-même, à elle seule.
 
 Le lien ne sert qu’une fois, pendant 7 jours, et personne n’est membre avant d’avoir accepté. D’ici là, l’invitation attend sous **Invitations**, où vous pouvez la **Renvoyer**, **Copier le lien** de nouveau ou la **Révoquer**.
 
-Dès que l’organisation a créé un rôle bien à elle, aucun rôle n’est coché au départ : personne ne se joint comme lecteur sans que vous le choisissiez.
+Dès que l’organisation a créé un rôle bien à elle, aucun rôle n’est coché au départ : personne ne devient Lecteur à moins que vous choisissiez ce rôle.
 
 > Seule une personne qui peut inviter voit **Inviter**, et seul un propriétaire peut inviter un propriétaire. Un rôle que vous ne pouvez pas attribuer est grisé, avec la raison.
 
@@ -47,7 +47,7 @@ Son compte reste le sien, et son travail ici garde son nom. Son accès ici prend
 
 - Vous confirmez votre propre adresse courriel avant d’inviter qui que ce soit, puisque les invitations partent en votre nom. Utilisez le lien que nous vous avons envoyé, ou appuyez sur **Renvoyer la confirmation**.
 - Une adresse qui appartient déjà à un membre n’est pas invitée. Modifiez plutôt ses rôles.
-- Une adresse déjà invitée ne l’est pas deux fois. Renvoyez plutôt l’invitation.
+- Une adresse déjà invitée ne l’est pas deux fois. Utilisez plutôt **Renvoyer** pour l’invitation.
 - Une organisation crée au plus 50 liens d’invitation en 24 heures. Le refus dit quand vous pourrez inviter de nouveau.
 - Un membre garde au moins un rôle.
 - Un rôle qui permet plus que vos propres rôles n’est pas attribué, et un membre dont les rôles permettent plus que les vôtres n’est ni modifié ni retiré. Un propriétaire le peut.

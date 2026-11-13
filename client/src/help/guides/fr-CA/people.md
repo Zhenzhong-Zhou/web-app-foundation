@@ -7,7 +7,7 @@ Personnes liste tout le monde dans votre organisation, avec sa photo ou ses init
 1. Cherchez par nom, poste, service ou courriel.
 2. Ouvrez la personne pour voir son service, son lieu, son téléphone professionnel et son poste téléphonique, son courriel, et depuis quand elle est membre.
 
-Chaque personne montre à peu près quand elle a été active pour la dernière fois. Qui est arrivé dans les deux dernières semaines est marqué **Nouveau**, avec le jour de son arrivée, pour que vous sachiez qui accueillir, et la page dit combien sont arrivés.
+La page indique approximativement la dernière activité de chaque personne. Les personnes arrivées dans les deux dernières semaines portent la mention **Nouveau**, avec leur date d’arrivée, pour que vous sachiez qui accueillir. La page indique aussi combien de personnes sont arrivées.
 
 ## Ce que quelqu’un a fait {#activity}
 

@@ -1,10 +1,10 @@
 # Votre compte
 
-Votre compte réunit ce qui est à vous plutôt qu’à l’organisation : votre nom, votre photo et votre langue, vos coordonnées au travail, votre mot de passe et vos appareils, et ce que vous avez fait ici. Vous seul pouvez le changer.
+Votre compte réunit ce qui est à vous plutôt qu’à l’organisation : votre nom, votre photo et votre langue, vos coordonnées au travail, votre mot de passe et vos appareils, et ce que vous avez fait ici. Vous êtes la seule personne à pouvoir le modifier.
 
 ## Votre accès {#your-access}
 
-Votre accès dans l’organisation montre vos rôles, chacun avec une ligne qui dit à quoi il sert, et ce que vous pouvez faire ici avec eux tous, domaine par domaine. Il se termine par les personnes à qui demander davantage : jusqu’à trois personnes qui peuvent changer les rôles, chaque nom ouvrant sa page dans [Personnes](/people). Une personne qui peut tout faire le lit en une ligne.
+Votre accès dans l’organisation montre vos rôles, et explique en une ligne à quoi sert chacun. Vous voyez aussi ce que ces rôles vous permettent de faire ensemble, domaine par domaine. Il se termine par les personnes à qui demander davantage : jusqu’à trois personnes qui peuvent changer les rôles, et chaque nom ouvre sa page dans [Personnes](/people). Si vous pouvez tout faire, cela est indiqué en une seule ligne.
 
 ## Dites qui vous êtes {#profile}
 
@@ -23,7 +23,7 @@ Vos connexions et vos changements de mot de passe des quatre-vingt-dix derniers 
 
 1. Appuyez d’abord sur **Télécharger vos données** si vous voulez une copie de ce qui est à vous.
 2. **Quitter** l’organisation : vous perdez l’accès aussitôt, votre compte reste, et votre travail y garde votre nom.
-3. **Supprimer mon compte** demande votre mot de passe, et le supprime après 30 jours. D’ici là, conservez-le depuis le bandeau affiché sur chaque page. Si vous êtes le seul membre de l’organisation, on vous propose de supprimer les deux ensemble.
+3. **Supprimer mon compte** demande votre mot de passe, et le supprime après 30 jours. D’ici là, vous pouvez conserver votre compte à l’aide du bandeau affiché sur chaque page. Si vous êtes le seul membre de l’organisation, on vous demande de supprimer les deux ensemble.
 
 ## Les mots que vous verrez {#words}
 
