@@ -873,9 +873,9 @@ folder by folder; these check what is already in place.
   November 2026 amendment decided, ChatGPT's review rounds went in, round
   2 and an extra round in each language and the guides, each text
   through the decide step's two checks, the rules check and the meaning
-  check, before import; round 1's glossary findings went in, in French,
-  only on a message no later round changed, where each still held
-  against today's text, and its other suggestions are overtaken; French
+  check, before import; round 1's glossary findings went in, in each
+  language, only on a message no later round changed, where each still
+  held against today's text, and its other suggestions are overtaken; French
   and Chinese stay beta, and release notes say so.
   `client/src/i18n/label-groups.test.ts` holds that the labels a
   screen shows together, a status set, a filter's choices or a select's
@@ -6059,3 +6059,8 @@ first.
   glossary findings went in on the six messages no later round changed,
   where each still held, such as Compte corrigé for a corrected count
   and Date de péremption for a lot's expiry: MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R7: in 中文 round 1's
+  glossary findings went in on the nine messages and the one guide
+  sentence no later round changed, where each still held, such as
+  离开了组织 in the account's activity, 库存变动 for a movement and
+  例外批准 in Production's guide: MC-1405 extended.
