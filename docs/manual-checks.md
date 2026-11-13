@@ -746,10 +746,12 @@ folder by folder; these check what is already in place.
   lists the message with why, so Inventory → Movements in Français names
   a deleted member Utilisateur supprimé, never Deleted User. In 中文, a
   word the app fills in itself meets the Chinese around it with no space:
-  the top bar's lookup ends 在物品中查看全部, and a built-in role's page
-  says 如需调整管理员; the check refuses a space between Chinese and
-  each placeholder the glossary's Placeholders filled with Chinese words
-  lists, where its row holds. A person's or an item's name keeps its
+  the top bar's lookup ends 在物品中查看全部, a built-in role's page
+  says 如需调整管理员, and in Mailpit an invitation sent as Admin reads
+  邀请您以管理员的身份加入, while one as Warehouse, a role made here,
+  keeps a space each side, 以 Warehouse 的身份加入; the check refuses a
+  space between Chinese and each placeholder the glossary's Placeholders
+  filled with Chinese words lists, where its row holds. A person's or an item's name keeps its
   message's spacing (#573). In 中文, Items → tick one item → Set category
   → its own category: the field's help reads 它已经在这个分类里了。, and
   with two ticked, 这些物品已经都在这个分类里了。: a plural says exactly
@@ -6021,3 +6023,7 @@ first.
 - 2026-11-13: ADR-054's November amendment, R2: in 中文 the Account page
   is headed 我的账户 again, as its menu item and the guides name it, after
   round 2 had made it 账户: MC-3210 as it was.
+- 2026-11-13: ADR-054's November amendment, R11: in 中文 the invitation
+  email names a built-in role with no space beside the Chinese,
+  以管理员的身份加入, and a role made here with one each side: MC-1416
+  extended.

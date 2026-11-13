@@ -62,6 +62,32 @@ describe('invitationMail', () => {
     );
   });
 
+  // ADR-090: Chinese writes no space beside its own words, so a built-in
+  // role, translated, meets 以 and 的身份 with none; a made role, as typed
+  // and maybe in Latin letters, keeps a space each side (#573).
+  it('spaces a made role from the Chinese beside it in Chinese, and a built-in one not', () => {
+    const zh = { ...context, locale: 'zh-Hans' as const, appName: null };
+    const admin = { ...zh, roles: [{ name: '管理员', description: null }] };
+    expect(invitationMail(admin).text).toContain(
+      'Mei Lin（mei.lin@example.com）邀请您以管理员的身份加入。',
+    );
+    expect(invitationMail({ ...admin, inviter: null }).text).toContain(
+      'Northside Naturals 邀请您以管理员的身份加入。',
+    );
+
+    const made = {
+      ...zh,
+      system: 'other' as const,
+      roles: [{ name: 'Warehouse lead', description: null }],
+    };
+    expect(invitationMail(made).text).toContain(
+      '邀请您以 Warehouse lead 的身份加入。',
+    );
+    expect(invitationMail({ ...made, inviter: null }).text).toContain(
+      'Northside Naturals 邀请您以 Warehouse lead 的身份加入。',
+    );
+  });
+
   it('puts the link under its action, with no colon to write in each language', () => {
     expect(
       invitationMail({ ...context, locale: 'zh-Hans', appName: null }).text,
