@@ -2516,7 +2516,7 @@ The pages, in a private window unless a check says otherwise.
   sideways at Larger text either. 收起 folds it back to its one line.
   隐藏 shows 欢迎卡片已隐藏。您仍可在“账户”页面查看“您在这里可以做什么”。 with
   撤销. As MC-3209's founder, 您在这里可以做所有事情 in one line. What you can do here lists 查看采购订单、销售订单和订单价格, one 和, and
-  我的账户 in the account menu opens a page headed 账户.
+  我的账户 in the account menu opens a page headed 我的账户.
 - **MC-3211** *(ADR-079)* The demo's newcomer, and People's New. On a
   freshly seeded demo, the Owner's Home has no welcome, nor has any of the
   team's but Fatima Haddad's: she joined three days ago by the Owner's
@@ -6018,3 +6018,6 @@ first.
   check refuses a plural's category its language never uses, by
   Intl.PluralRules, and the decide step drops one where it is a text's
   only problem: MC-1416 and MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R2: in 中文 the Account page
+  is headed 我的账户 again, as its menu item and the guides name it, after
+  round 2 had made it 账户: MC-3210 as it was.
