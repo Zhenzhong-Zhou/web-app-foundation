@@ -1252,7 +1252,10 @@ Paper is checked first because it must not change at all.
   name becomes "Hide password" (显示密码 / 隐藏密码 in Chinese); pressing again hides
   it. On Change password, showing the new password leaves the current one
   hidden. Leave the page and come back: hidden again. A password manager still
-  fills the sign-in fields.
+  fills the sign-in fields. Each field's label sits above it from the start,
+  empty or not, never inside it under the eye: on a 320 px phone at Larger
+  text, in Français, the invitation's « Choisissez un mot de passe » shows
+  whole, with its asterisk.
 - **MC-1551** On Sign in, show the password, then sign in with a wrong one:
   the error appears and the password is dots again. The same on Change
   password when the current password is wrong: every field shown goes back to
@@ -6104,3 +6107,6 @@ first.
 - 2026-11-13: ADR-054's November amendment, R9: the top bar's words give
   way in en-XA by its own width, where English's let them run past a
   390 px phone: MC-1424 extended.
+- 2026-11-13: ADR-054's November amendment, R9: a password field's label
+  sits above the field from the start, where at rest inside it a long one
+  ran under the eye button on a 320 px phone: MC-1550 extended.

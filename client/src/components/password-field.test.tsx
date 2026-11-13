@@ -45,6 +45,25 @@ describe('PasswordField', () => {
     ).toHaveAttribute('type', 'password');
   });
 
+  // A label at rest inside the field ran under the eye button, and was cut
+  // by it, on a narrow phone (e2e/cut-text.spec.ts).
+  it('raises its label above the field from the start, clear of the eye', () => {
+    render(<PasswordField id="pw" label="Choisissez un mot de passe" />, {
+      wrapper: TestProviders,
+    });
+
+    expect(
+      screen.getByLabelText('Choisissez un mot de passe', {
+        selector: 'input',
+      }),
+    ).toHaveValue('');
+    expect(
+      screen.getByText('Choisissez un mot de passe', {
+        selector: '.MuiInputLabel-root',
+      }),
+    ).toHaveAttribute('data-shrink', 'true');
+  });
+
   it('hides again when its form is submitted', async () => {
     const user = userEvent.setup();
     render(
