@@ -44,7 +44,7 @@ const LANGUAGES = [
     signIn: 'Sign in',
     start: 'Getting started',
     help: 'Help',
-    title: 'Account',
+    title: 'Your account',
     changePassword: 'Change password',
   },
   {
@@ -53,7 +53,7 @@ const LANGUAGES = [
     signIn: 'Se connecter',
     start: 'Premiers pas',
     help: 'Aide',
-    title: 'Compte',
+    title: 'Votre compte',
     changePassword: 'Changer le mot de passe',
   },
   {
@@ -72,7 +72,7 @@ const LANGUAGES = [
     signIn: '[Šíğñ íñ one]',
     start: '[Ğéťťíñğ šťáŕťéď one two]',
     help: '[Ĥéĺp one]',
-    title: '[Áççóúñť one]',
+    title: '[Ýóúŕ áççóúñť one two]',
     changePassword: '[Çĥáñğé páššŵóŕď one two]',
   },
 ] as const;

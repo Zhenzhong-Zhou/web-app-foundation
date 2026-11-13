@@ -153,7 +153,7 @@
   "account.sessions.thisDevice": "Cet appareil",
   "account.sessions.title": "Vos appareils",
   "account.sessions.unknownDevice": "Appareil inconnu",
-  "account.title": "Compte",
+  "account.title": "Votre compte",
   "account.work.intro": "Vos 20 dernières actions ici. Vos connexions et changements de mot de passe se trouvent dans la section Vos appareils.",
   "account.work.seeAll": "Voir tout votre travail",
   "account.work.title": "Votre travail récent chez {organization}",

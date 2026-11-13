@@ -2557,7 +2557,9 @@ The pages, in a private window unless a check says otherwise.
   sideways at Larger text either. 收起 folds it back to its one line.
   隐藏 shows 欢迎卡片已隐藏。您仍可在“我的账户”页面查看“您在这里可以做什么”。 with
   撤销. As MC-3209's founder, 您在这里可以做所有事情 in one line. What you can do here lists 查看采购订单、销售订单和订单价格, one 和, and
-  我的账户 in the account menu opens a page headed 我的账户.
+  我的账户 in the account menu opens a page headed 我的账户. So in English
+  Your account opens a page headed Your account, and in Français Votre
+  compte one headed Votre compte, as their menus name it.
 - **MC-3211** *(ADR-079)* The demo's newcomer, and People's New. On a
   freshly seeded demo, the Owner's Home has no welcome, nor has any of the
   team's but Fatima Haddad's: she joined three days ago by the Owner's
@@ -6121,3 +6123,7 @@ first.
 - 2026-11-13: ADR-054's November amendment, R11 (#149): the top bar's
   lookup names a production run's Show all after the page it opens,
   Production, as the menu does: MC-1417 extended.
+- 2026-11-13: ADR-054's November amendment, R11: the Account page is
+  headed Your account in English and Votre compte in French, as the
+  account menu names it, as 我的账户 already was in Chinese: MC-3210
+  extended.

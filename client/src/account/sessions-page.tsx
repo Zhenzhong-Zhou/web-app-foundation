@@ -160,7 +160,7 @@ export function SessionsPage() {
           {
             label: intl.formatMessage({
               id: 'account.title',
-              defaultMessage: 'Account',
+              defaultMessage: 'Your account',
             }),
             to: '/account',
           },
