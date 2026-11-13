@@ -803,10 +803,16 @@ export function workbook(sheetName, columns, rows) {
   ]);
 }
 
-/** The sheet name and every row's cell text, from a workbook Excel or Sheets saved. */
+/**
+ * The sheet name and every row's cell text, from a workbook Excel or Sheets
+ * saved, or one whose tags carry a namespace prefix (x:row, x:c), as some
+ * of ChatGPT's do.
+ */
 export function readWorkbook(buffer) {
   const files = unzip(buffer);
   const text = (name) => files.get(name)?.toString("utf8");
+  // A tag's name, with or without a namespace prefix.
+  const tag = (name) => `(?:[\\w.-]+:)?${name}`;
 
   const unescapeXml = (value) =>
     value
@@ -821,23 +827,33 @@ export function readWorkbook(buffer) {
       .replace(/&amp;/g, "&");
   // A cell's text, rich text runs joined.
   const runs = (xml) =>
-    [...xml.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g)]
+    [
+      ...xml.matchAll(
+        new RegExp(`<${tag("t")}(?:\\s[^>]*)?>([\\s\\S]*?)</${tag("t")}>`, "g"),
+      ),
+    ]
       .map((match) => unescapeXml(match[1]))
       .join("");
 
   const shared = [
-    ...(text("xl/sharedStrings.xml") ?? "").matchAll(/<si>([\s\S]*?)<\/si>/g),
+    ...(text("xl/sharedStrings.xml") ?? "").matchAll(
+      new RegExp(`<${tag("si")}>([\\s\\S]*?)</${tag("si")}>`, "g"),
+    ),
   ].map((match) => runs(match[1]));
 
   const workbookXml = text("xl/workbook.xml") ?? "";
   const sheetName = unescapeXml(
-    /<sheet\s[^>]*name="([^"]*)"/.exec(workbookXml)?.[1] ?? "",
+    new RegExp(`<${tag("sheet")}\\s[^>]*name="([^"]*)"`).exec(
+      workbookXml,
+    )?.[1] ?? "",
   );
 
   // The first sheet, wherever the relationships put it.
-  const relationId = /<sheet\s[^>]*r:id="([^"]*)"/.exec(workbookXml)?.[1];
+  const relationId = new RegExp(`<${tag("sheet")}\\s[^>]*r:id="([^"]*)"`).exec(
+    workbookXml,
+  )?.[1];
   const target = new RegExp(
-    `<Relationship[^>]*Id="${relationId}"[^>]*Target="([^"]*)"`,
+    `<${tag("Relationship")}[^>]*Id="${relationId}"[^>]*Target="([^"]*)"`,
   ).exec(text("xl/_rels/workbook.xml.rels") ?? "")?.[1];
   const sheetPath = target
     ? path.posix.join("xl", target.replace(/^\/?xl\//, ""))
@@ -851,16 +867,23 @@ export function readWorkbook(buffer) {
     ) - 1;
 
   const rows = [];
-  for (const rowMatch of sheet.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
+  for (const rowMatch of sheet.matchAll(
+    new RegExp(`<${tag("row")}\\b[^>]*>([\\s\\S]*?)</${tag("row")}>`, "g"),
+  )) {
     const row = [];
     for (const cell of rowMatch[1].matchAll(
-      /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g,
+      new RegExp(
+        `<${tag("c")}\\b([^>]*?)(?:/>|>([\\s\\S]*?)</${tag("c")}>)`,
+        "g",
+      ),
     )) {
       const attributes = cell[1];
       const body = cell[2] ?? "";
       const reference = /\br="([A-Z]+\d+)"/.exec(attributes)?.[1];
       const type = /\bt="([^"]*)"/.exec(attributes)?.[1];
-      const value = /<v>([\s\S]*?)<\/v>/.exec(body)?.[1];
+      const value = new RegExp(`<${tag("v")}>([\\s\\S]*?)</${tag("v")}>`).exec(
+        body,
+      )?.[1];
 
       const content =
         type === "s"
@@ -892,7 +915,8 @@ function crc32(buffer) {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-function zip(entries) {
+/** A zip of [name, text] entries; its tests write a workbook another program saved with it. */
+export function zip(entries) {
   const locals = [];
   const centrals = [];
   let offset = 0;
@@ -993,8 +1017,8 @@ function exportOptions(args) {
   return options;
 }
 
-// Run, not imported: its tests import the workbook's writer and reader,
-// and the decide step the reader and targetsFor.
+// Run, not imported: its tests import the workbook's writer, reader and
+// zip, and the decide step the reader and targetsFor.
 if (import.meta.main) {
   const [command, ...args] = process.argv.slice(2);
   const options = command === "export" && exportOptions(args);

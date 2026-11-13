@@ -40,31 +40,42 @@
  * today's.
  *
  * The meaning check asks Claude, through the Messages API, whether each
- * text says what its English says, with nothing added, dropped or
- * reversed (numbers, names, a "not" and "before tax" among them), style
- * never judged: 25 texts a request, on claude-sonnet-5-5 unless --model
- * names another, the API's default fallback model taking a request the
- * model declines. The key is read from ANTHROPIC_API_KEY alone and is
- * never printed or written; without it, --meaning is refused before
- * anything is read. Each answer is kept in review/<language>.meaning.json
- * by the English and the text, saved after each request, so a run stopped
- * part way, or a second one, asks only what has no answer yet. Each answer
- * comes back through structured outputs, the API's JSON schema, so it
- * always parses; the API takes no temperature (it refuses one since
- * version 2026-10-21) and no forced tool on claude-sonnet-5-5.
+ * text makes a serious change to what its English says, as an LLM judge is
+ * built: each item its message's id, its English and its text, and the
+ * glossary's Terms with every request; the answer's reason first, then its
+ * verdict. It rejects only a serious change: the meaning reversed or
+ * contradicted; a number, date, amount, name, role, screen label or tax
+ * wording changed; information the reader needs dropped; a claim the
+ * English and the message's id do not support. It passes a text that
+ * states what the context implies, uses the glossary's word, or says it
+ * more plainly, and never judges style. 25 texts a request, on
+ * claude-sonnet-5-5 unless --model names another, the API's default
+ * fallback model taking a request the model declines. The key is read from
+ * ANTHROPIC_API_KEY alone and is never printed or written; without it,
+ * --meaning is refused before anything is read. Each answer is kept in
+ * review/<language>.meaning.json by the model, the check's version, the
+ * id, the English and the text, saved after each request, so a run
+ * stopped part way, or a second one, asks only what has no answer yet,
+ * and a new model or version asks every text again. Each answer comes back
+ * through structured outputs, the API's JSON schema, so it always parses;
+ * the API takes no temperature (it refuses one since version 2026-10-21)
+ * and no forced tool on claude-sonnet-5-5.
  *
- * --calibrate tries the meaning check before a run spends on it, on the 20
- * texts in i18n-decide.calibration.json, ten a language, each copied from a
- * catalogue on 12 November 2026: each is asked about with one error planted
- * (a "not" dropped or added, a number changed, a clause dropped, before tax
- * and including tax swapped, a name changed), to be caught, and unchanged,
- * to be passed. A language's ten go in two requests, each with five planted
- * and five unchanged and never one message twice, so no answer comes from
- * comparing the two. Nothing is kept. It prints each one caught or missed,
- * passed or flagged, and both scores, and exits 1 under 18 of 20 caught or
- * over 2 of 20 flagged: the meaning check is then not to be trusted with
- * the decide step, for what it misses, or for the corrections that say the
- * same that it would drop.
+ * --calibrate tries the meaning check before a run spends on it, ten texts
+ * a language in three sets. The 20 in i18n-decide.calibration.json's
+ * planted, each copied from a catalogue on 12 November 2026, are asked
+ * about with one error planted (a "not" dropped or added, a number changed,
+ * a clause dropped, before tax and including tax swapped, a name changed),
+ * to be caught, and unchanged, to be passed. Its rewrites name 20 of
+ * ChatGPT's corrections in round 2's workbooks, each correct in a way the
+ * check once flagged, to be passed: read from review/ by their ids, since
+ * no text of a review is committed. A language's go in two requests, each
+ * with five of each set and never one message twice, so no answer comes
+ * from comparing the two. Nothing is kept. It prints each one caught or
+ * missed, passed or flagged, and the three scores, and exits 1 under 18 of
+ * 20 caught, or over 2 of 20 unchanged or of 20 rewrites flagged: the
+ * meaning check is then not to be trusted with the decide step, for what
+ * it misses, or for the corrections it would drop.
  *
  * It writes the decided workbook, its sheet named for the language as
  * export's is: Area, Id, Where, English, Translation and Placeholders to
@@ -119,7 +130,8 @@ const USAGE =
 
 /**
  * The calibration's texts; how many of their planted errors it must catch,
- * at least; and how many of them, unchanged, it may flag, at most.
+ * at least; and how many of them unchanged, and of ChatGPT's rewrites, it
+ * may flag, at most, each.
  */
 const CALIBRATION = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -127,6 +139,9 @@ const CALIBRATION = path.join(
 );
 const CALIBRATION_CAUGHT = 18;
 const CALIBRATION_FLAGGED = 2;
+
+/** The glossary, whose Terms each request of the meaning check gives. */
+const GLOSSARY = path.join(ROOT, "docs", "glossary.md");
 
 /** A file as the repository names it, or in full outside it. */
 const shown = (file) => {
@@ -306,16 +321,17 @@ function decisionOf(row, claude, targets, language) {
  * about, where the meaning check has no answer yet.
  */
 function resolve(decision, meaning) {
+  const { id } = decision.row;
   if (decision.kept !== undefined) {
     const { kept, tries, ...rest } = decision;
-    const answer = meaning?.answer(decision.english, kept);
+    const answer = meaning?.answer(id, decision.english, kept);
     if (meaning && !answer) {
       return {
         ...decision,
-        pending: { english: decision.english, text: kept },
+        pending: { id, english: decision.english, text: kept },
       };
     }
-    if (!answer || answer.same) {
+    if (!answer || answer.verdict === "pass") {
       return {
         ...rest,
         source: "today",
@@ -329,7 +345,7 @@ function resolve(decision, meaning) {
         ...rest,
         tries,
         wrong: "meaning",
-        reason: `Only Claude changed it; today's fails the meaning check: ${answer.why}`,
+        reason: `Only Claude changed it; today's fails the meaning check: ${answer.reason}`,
       },
       meaning,
     );
@@ -346,14 +362,17 @@ function resolve(decision, meaning) {
       continue;
     }
     if (meaning) {
-      const answer = meaning.answer(decision.english, text);
+      const answer = meaning.answer(id, decision.english, text);
       if (!answer) {
-        return { ...decision, pending: { english: decision.english, text } };
+        return {
+          ...decision,
+          pending: { id, english: decision.english, text },
+        };
       }
-      if (!answer.same) {
+      if (answer.verdict !== "pass") {
         fallbacks.push({
           by: "meaning",
-          why: `${WHOSE[source]} fails the meaning check: ${answer.why}`,
+          why: `${WHOSE[source]} fails the meaning check: ${answer.reason}`,
         });
         continue;
       }
@@ -379,14 +398,32 @@ const API = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-5-5";
 const BATCH = 25;
 
-const SYSTEM = (language) =>
-  `You check translations for a small business's app for its stock, orders and invoices, from English into ${LANGUAGES[language]}. Each item is a message from the app's screens, emails or printed documents, or a section of its Help guides in Markdown, with its translation.
+/**
+ * The meaning check's version, kept with each answer beside its model: an
+ * answer is reused only by the same model and version, so a change to the
+ * question asks every text again. 2 (13 November 2026): the reason before
+ * the verdict, only a serious change rejected, each item's id and the
+ * glossary's Terms given. The first, unnumbered, was wrong about 4 times
+ * in 5 that it flagged a text, in the chat's reading of 50.
+ */
+const VERSION = 2;
 
-For each item, decide whether the translation says what the English says. It does not when it adds something the English does not say, drops something the English says, or reverses it: a number or amount, a name, a date or period, a "not", a condition such as "before tax", who does what, or what happens next.
+const SYSTEM = (language, terms) =>
+  `You check translations for a small business's app for its stock, orders and invoices, from English into ${LANGUAGES[language]}. Each item is a message from the app's screens, emails or printed documents, or a section of its Help guides in Markdown: its id, which says where the app shows it and what it is about; its English; and its translation.
 
-Judge meaning only. Wording, word choice, tone, style, punctuation and how natural the translation reads are checked elsewhere: a free translation that says the same is the same. Placeholders in braces, such as {count}, and tags such as <link>…</link> stand for what is filled in later. ICU plural and select forms say the same when each form says what the English's does, and a language with fewer plural forms may merge them. Markdown, such as bold and links, is not meaning.
+For each item, decide whether the translation makes a serious change to what the English says. Only these are serious:
+- it reverses or contradicts the English, as by dropping or adding a "not";
+- it changes a number, a date or period, an amount, a name, a role, a screen label, or tax wording such as "before tax" or "incl. tax";
+- it drops information the reader needs, such as a condition, a limit, who does what, or what happens next;
+- it claims something that neither the English nor the message's id supports.
 
-Answer every item by its n: same, and why, one short sentence in English saying what was added, dropped or reversed, or an empty string when the translation says the same.`;
+Anything else passes. A translation passes when it states what the context implies, what the id and the English together make plain; when it uses the glossary's word for a term, below, where the English has a shorter or plainer one; and when it says the same more plainly, more fully or in another order. Wording, tone, style, punctuation and how natural it reads are checked elsewhere: never reject for them. Placeholders in braces, such as {count}, and tags such as <b>…</b> stand for what is filled in later. ICU plural and select forms say the same when each form says what the English's does; a language with fewer plural forms may merge them, or repeat one. Markdown, such as bold and links, is not meaning.
+
+Answer every item by its n, the reason first, then the verdict. The reason: one or two short sentences in English saying what differs from the English, if anything, and whether it is one of the serious changes above. The verdict: "reject" for a serious change, "pass" for anything else.
+
+The glossary's Terms, the words the app uses for its domain in each language:
+
+${terms}`;
 
 const SCHEMA = {
   type: "object",
@@ -395,12 +432,13 @@ const SCHEMA = {
       type: "array",
       items: {
         type: "object",
+        // The reason before the verdict: the answer is written in this order.
         properties: {
           n: { type: "integer" },
-          same: { type: "boolean" },
-          why: { type: "string" },
+          reason: { type: "string" },
+          verdict: { type: "string", enum: ["pass", "reject"] },
         },
-        required: ["n", "same", "why"],
+        required: ["n", "reason", "verdict"],
         additionalProperties: false,
       },
     },
@@ -409,17 +447,39 @@ const SCHEMA = {
   additionalProperties: false,
 };
 
+/** The glossary's Terms: its section of that name, to the next of its level. */
+function glossaryTerms() {
+  const text = existsSync(GLOSSARY) ? readFileSync(GLOSSARY, "utf8") : "";
+  const terms = /^## Terms\n[\s\S]*?(?=^## |(?![\s\S]))/m.exec(text)?.[0];
+  if (!terms) {
+    fail(
+      `The meaning check gives the glossary's Terms with each request, and ${shown(GLOSSARY)} has no "## Terms" section.`,
+    );
+  }
+  return terms.trim();
+}
+
 /**
  * The meaning check in a language: its answers, asked for and kept in
  * file, or in nothing where file is null, as for the calibration.
  */
 function meaningCheck(language, model, key, file) {
-  const keyOf = (english, text) => JSON.stringify([english, text]);
+  const system = SYSTEM(language, glossaryTerms());
+  // An answer kept by an earlier version has no model, version or id, so
+  // it is never this one's.
+  const keyOf = (entry) =>
+    JSON.stringify([
+      entry.model ?? null,
+      entry.version ?? null,
+      entry.id ?? null,
+      entry.english,
+      entry.text,
+    ]);
+  const ours = (id, english, text) =>
+    keyOf({ model, version: VERSION, id, english, text });
   const kept =
     file && existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : [];
-  const answers = new Map(
-    kept.map((entry) => [keyOf(entry.english, entry.text), entry]),
-  );
+  const answers = new Map(kept.map((entry) => [keyOf(entry), entry]));
   const earlier = new Set(answers.keys());
   const used = new Set();
   const asked = new Set();
@@ -440,7 +500,7 @@ function meaningCheck(language, model, key, file) {
     writeFileSync(file, `${JSON.stringify([...answers.values()], null, 2)}\n`);
   };
 
-  /** One request: up to BATCH texts, each with its English. */
+  /** One request: up to BATCH texts, each with its id and English. */
   async function request(batch) {
     let response;
     try {
@@ -460,13 +520,14 @@ function meaningCheck(language, model, key, file) {
             effort: "medium",
             format: { type: "json_schema", schema: SCHEMA },
           },
-          system: SYSTEM(language),
+          system,
           messages: [
             {
               role: "user",
               content: JSON.stringify({
-                items: batch.map(({ english, text }, i) => ({
+                items: batch.map(({ id, english, text }, i) => ({
                   n: i + 1,
+                  id,
                   english,
                   translation: text,
                 })),
@@ -505,12 +566,15 @@ function meaningCheck(language, model, key, file) {
     }
     for (const answer of Array.isArray(given) ? given : []) {
       const item = batch[answer?.n - 1];
-      if (item && typeof answer.same === "boolean") {
-        answers.set(keyOf(item.english, item.text), {
+      if (item && ["pass", "reject"].includes(answer.verdict)) {
+        answers.set(ours(item.id, item.english, item.text), {
+          model,
+          version: VERSION,
+          id: item.id,
           english: item.english,
           text: item.text,
-          same: answer.same,
-          why: String(answer.why ?? ""),
+          reason: String(answer.reason ?? ""),
+          verdict: answer.verdict,
         });
       }
     }
@@ -518,19 +582,21 @@ function meaningCheck(language, model, key, file) {
   }
 
   return {
-    answer(english, text) {
-      const key = keyOf(english, text);
+    /** The answer about a text, by this model and version; none if not asked yet. */
+    answer(id, english, text) {
+      const key = ours(id, english, text);
       const found = answers.get(key);
       if (found) used.add(key);
       return found;
     },
     /**
-     * Asks about each text, BATCH a request, saying on stderr how far it
-     * has gone; stops if none is answered.
+     * Asks about each text, its id, English and text, BATCH a request,
+     * saying on stderr how far it has gone; stops if none is answered.
      */
     async ask(items) {
       const before = answers.size;
-      for (const item of items) asked.add(keyOf(item.english, item.text));
+      for (const item of items)
+        asked.add(ours(item.id, item.english, item.text));
       for (let at = 0; at < items.length; at += BATCH) {
         await request(items.slice(at, at + BATCH));
         console.error(
@@ -551,82 +617,146 @@ function meaningCheck(language, model, key, file) {
 // ----------------------------------------------------------- calibration
 
 /**
+ * ChatGPT's rewrites the calibration names, read from round 2's workbooks
+ * by their ids, each its language, id, English and correction; refused,
+ * naming what is missing, before anything is asked.
+ */
+function rewritesOf(sources) {
+  const again =
+    "Keep round 2's workbooks in review/ as ChatGPT returned them, then run --calibrate again.";
+  return sources.flatMap(({ file, ids }) => {
+    if (!existsSync(path.join(ROOT, file))) {
+      fail(
+        `--calibrate reads ${ids.length} of ChatGPT's rewrites from ${file}, which is not there. ${again}`,
+      );
+    }
+    const { language, rows } = reviewOf(path.join(ROOT, file), "ChatGPT");
+    return ids.map((id) => {
+      const [row, ...more] = rows.filter((candidate) => candidate.id === id);
+      const rewrite = row?.correction.trim();
+      if (!rewrite || more.length > 0 || rewrite === row.translation.trim()) {
+        fail(
+          `--calibrate reads ChatGPT's rewrite of ${id} from ${file}, which has no one row of it with a correction. ${again}`,
+        );
+      }
+      return { language, id, english: row.english, rewrite };
+    });
+  });
+}
+
+/** "a", "a and b", "a, b and c". */
+const listed = (parts) =>
+  parts.length > 1
+    ? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`
+    : (parts[0] ?? "");
+
+/**
  * Asks the meaning check about each text with its error planted and
- * unchanged, a language at a time, and prints each caught or missed and
- * passed or flagged. True where it caught enough and flagged few enough.
+ * unchanged, and about each of ChatGPT's rewrites, a language at a time,
+ * and prints each caught or missed and passed or flagged. True where it
+ * caught enough and flagged few enough of each set to pass.
  */
 async function calibrate(model, key) {
-  const items = JSON.parse(readFileSync(CALIBRATION, "utf8"));
+  const { planted: items, rewrites: sources } = JSON.parse(
+    readFileSync(CALIBRATION, "utf8"),
+  );
+  const rewrites = rewritesOf(sources);
   const languages = [...new Set(items.map((item) => item.language))];
   const spent = { requests: 0, input: 0, output: 0 };
   const plantedLines = [];
   const unchangedLines = [];
+  const rewriteLines = [];
   let caught = 0;
   let flagged = 0;
+  let rewritesFlagged = 0;
+  const said = (answer) => answer.reason.trim() || "It gave no reason.";
   for (const language of languages) {
     const ours = items.filter((item) => item.language === language);
+    const theirs = rewrites.filter((item) => item.language === language);
     const check = meaningCheck(language, model, key, null);
-    // Two requests, each the texts planted and unchanged by turns: half of
-    // each, as a run mixes texts to catch with texts to pass, and never one
-    // message twice, so no answer comes from comparing the two.
+    // Two requests, each the texts planted and unchanged by turns and half
+    // the rewrites, as a run mixes texts to catch with texts to pass, and
+    // never one message twice, so no answer comes from comparing the two.
     for (const half of [0, 1]) {
-      await check.ask(
-        ours.map((item, at) => ({
+      await check.ask([
+        ...ours.map((item, at) => ({
+          id: item.id,
           english: item.english,
           text: at % 2 === half ? item.planted : item.translation,
         })),
-      );
+        ...theirs
+          .filter((_, at) => at % 2 === half)
+          .map(({ id, english, rewrite }) => ({ id, english, text: rewrite })),
+      ]);
     }
     for (const name of Object.keys(spent)) spent[name] += check.spent[name];
     for (const { id, error, english, translation, planted } of ours) {
-      const answer = check.answer(english, planted);
+      const answer = check.answer(id, english, planted);
       const where = `${language} ${id}, ${error}`;
-      if (answer && !answer.same) {
+      if (answer?.verdict === "reject") {
         caught += 1;
-        plantedLines.push(
-          `- Caught: ${where}. ${answer.why.trim() || "It gave no reason."}`,
-        );
+        plantedLines.push(`- Caught: ${where}. ${said(answer)}`);
       } else {
         plantedLines.push(
-          `- Missed: ${where}. ${answer ? "It answered that the text says the same" : "It gave no answer"}: ` +
+          `- Missed: ${where}. ${answer ? `It passed it: ${said(answer)}` : "It gave no answer."} ` +
             `${JSON.stringify(planted)} for ${JSON.stringify(english)}.`,
         );
       }
       // Unanswered counts as flagged: only a text it passes passes.
-      const plain = check.answer(english, translation);
-      if (plain?.same) {
+      const plain = check.answer(id, english, translation);
+      if (plain?.verdict === "pass") {
         unchangedLines.push(`- Passed: ${language} ${id}, unchanged.`);
       } else {
         flagged += 1;
         unchangedLines.push(
           `- Flagged: ${language} ${id}, unchanged. ` +
-            `${plain ? plain.why.trim() || "It gave no reason." : "It gave no answer, which counts as flagged."} ` +
+            `${plain ? said(plain) : "It gave no answer, which counts as flagged."} ` +
             `${JSON.stringify(translation)} for ${JSON.stringify(english)}.`,
         );
       }
     }
+    for (const { id, english, rewrite } of theirs) {
+      const answer = check.answer(id, english, rewrite);
+      if (answer?.verdict === "pass") {
+        rewriteLines.push(`- Passed: ${language} ${id}, ChatGPT's rewrite.`);
+      } else {
+        rewritesFlagged += 1;
+        rewriteLines.push(
+          `- Flagged: ${language} ${id}, ChatGPT's rewrite. ` +
+            `${answer ? said(answer) : "It gave no answer, which counts as flagged."} ` +
+            `${JSON.stringify(rewrite)} for ${JSON.stringify(english)}.`,
+        );
+      }
+    }
   }
-  const short = [
+  const short = listed([
     ...(caught < CALIBRATION_CAUGHT
       ? [`fewer than ${CALIBRATION_CAUGHT} caught`]
       : []),
     ...(flagged > CALIBRATION_FLAGGED
-      ? [`more than ${CALIBRATION_FLAGGED} flagged`]
+      ? [`more than ${CALIBRATION_FLAGGED} unchanged texts flagged`]
       : []),
-  ].join(" and ");
+    ...(rewritesFlagged > CALIBRATION_FLAGGED
+      ? [`more than ${CALIBRATION_FLAGGED} rewrites flagged`]
+      : []),
+  ]);
   console.log(
     [
-      `The meaning check's calibration, on ${model}: ${items.length} texts from the catalogues, each asked about with one error planted and unchanged.`,
+      `The meaning check's calibration, on ${model}: ${items.length} texts from the catalogues, each asked about with one error planted and unchanged, ` +
+        `and ${rewrites.length} of ChatGPT's rewrites, each correct.`,
       "With one error planted, to be caught:",
       ...plantedLines,
       "Unchanged, to be passed:",
       ...unchangedLines,
-      `Caught ${caught} of ${items.length} planted errors, and flagged ${flagged} of ${items.length} unchanged texts, ` +
-        `in ${spent.requests} requests; ${spent.input.toLocaleString("en")} tokens in, ${spent.output.toLocaleString("en")} out.`,
+      "ChatGPT's rewrites, to be passed:",
+      ...rewriteLines,
+      `Caught ${caught} of ${items.length} planted errors; flagged ${flagged} of ${items.length} unchanged texts ` +
+        `and ${rewritesFlagged} of ${rewrites.length} rewrites; in ${spent.requests} requests, ` +
+        `${spent.input.toLocaleString("en")} tokens in, ${spent.output.toLocaleString("en")} out.`,
       short
         ? `${short[0].toUpperCase()}${short.slice(1)}: the meaning check is not to be trusted with the decide step yet. ` +
           "Stop here, and paste this output into the chat."
-        : `At least ${CALIBRATION_CAUGHT} caught and at most ${CALIBRATION_FLAGGED} flagged: ` +
+        : `At least ${CALIBRATION_CAUGHT} caught, and at most ${CALIBRATION_FLAGGED} unchanged texts and ${CALIBRATION_FLAGGED} rewrites flagged: ` +
           "the meaning check can be trusted with the decide step. Go on.",
     ].join("\n"),
   );

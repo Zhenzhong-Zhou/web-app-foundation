@@ -35,7 +35,22 @@ import { readWorkbook, workbook } from "./i18n-review.mjs";
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const KEY = "sk-test-not-a-real-key";
 
+/** The glossary's Terms, which each request of the meaning check gives. */
+const TERMS = `## Terms
+
+| English | Français (Canada) | 简体中文 | Notes |
+| --- | --- | --- | --- |
+| Order | Commande | 订单 | |
+
+### Stock
+
+| English | Français (Canada) | 简体中文 | Notes |
+| --- | --- | --- | --- |
+| Stock | Stock | 库存 | |`;
+
 const GLOSSARY = `# Glossary
+
+${TERMS}
 
 ## Words not to use
 
@@ -79,10 +94,10 @@ const guide = (at) =>
     .join("\n\n")}\n`;
 
 /**
- * Logs each request to requests.jsonl beside it, and answers each text
- * the same, but those listed in not-same.json, leaving out those listed in
- * unanswered.json; the request fail-at.json numbers, if any, is refused as
- * the API refuses one when it is busy.
+ * Logs each request to requests.jsonl beside it, and passes each text but
+ * those listed in not-same.json, which it rejects, leaving out those
+ * listed in unanswered.json; the request fail-at.json numbers, if any, is
+ * refused as the API refuses one when it is busy.
  */
 const STUB = `import { appendFileSync, existsSync, readFileSync } from "node:fs";
 const here = new URL(".", import.meta.url);
@@ -105,8 +120,8 @@ globalThis.fetch = async (url, init) => {
   const { items } = JSON.parse(body.messages[0].content);
   const answers = items.filter(({ translation }) => !unanswered.includes(translation)).map(({ n, translation }) =>
     notSame.includes(translation)
-      ? { n, same: false, why: "It drops the order." }
-      : { n, same: true, why: "" },
+      ? { n, reason: "It drops the order.", verdict: "reject" }
+      : { n, reason: "It says the same.", verdict: "pass" },
   );
   return new Response(
     JSON.stringify({
@@ -508,6 +523,21 @@ test("--meaning asks about each text that differs from today's, and today's wher
     assert.equal(headers["anthropic-version"], "2026-10-21");
     assert.equal(body.model, "claude-sonnet-5-5");
     assert.match(body.system, /Simplified Chinese \(zh-Hans\)/);
+    // Only a serious change rejected, and the glossary's Terms, to the
+    // next section, given with each request.
+    assert.match(body.system, /Only these are serious:/);
+    assert.ok(body.system.endsWith(`\n\n${TERMS}`));
+    // The reason before the verdict, as the answer is written.
+    assert.deepEqual(
+      body.output_config.format.schema.properties.answers.items.required,
+      ["n", "reason", "verdict"],
+    );
+    assert.deepEqual(
+      Object.keys(
+        body.output_config.format.schema.properties.answers.items.properties,
+      ),
+      ["n", "reason", "verdict"],
+    );
   }
   // Texts that differ from today's, and today's List, which only Claude
   // changed; not today's Saved, which the rules check found wrong. Claude's
@@ -524,10 +554,18 @@ test("--meaning asks about each text that differs from today's, and today's wher
     "今天的订单",
     "已保存，{name}",
   ]);
+  // Each item its message's id, its English and its text.
   assert.deepEqual(
     sent[2].body.messages[0].content,
     JSON.stringify({
-      items: [{ n: 1, english: "Delete the order", translation: "删掉订单" }],
+      items: [
+        {
+          n: 1,
+          id: "orders.delete",
+          english: "Delete the order",
+          translation: "删掉订单",
+        },
+      ],
     }),
   );
 
@@ -542,13 +580,25 @@ test("--meaning asks about each text that differs from today's, and today's wher
   for (const text of [run.stdout, run.stderr, kept, written]) {
     assert.equal(text.includes(KEY), false);
   }
+  // Each answer kept by the model and the check's version.
   assert.deepEqual(JSON.parse(kept).slice(0, 2), [
-    { english: "Save", text: "保存更改", same: true, why: "" },
     {
+      model: "claude-sonnet-5-5",
+      version: 2,
+      id: "orders.save",
+      english: "Save",
+      text: "保存更改",
+      reason: "It says the same.",
+      verdict: "pass",
+    },
+    {
+      model: "claude-sonnet-5-5",
+      version: 2,
+      id: "orders.delete",
       english: "Delete the order",
       text: "删除此订单",
-      same: false,
-      why: "It drops the order.",
+      reason: "It drops the order.",
+      verdict: "reject",
     },
   ]);
 });
@@ -615,15 +665,47 @@ test("where only Claude changed it, --meaning asks about today's too, and today'
   });
 });
 
-test("--calibrate asks about each text planted and unchanged, half of each a request, prints both scores, and fails under 18 of 20 caught or over 2 of 20 flagged", (t) => {
+/**
+ * ChatGPT's round 2 workbooks as the calibration reads them: a row for
+ * each rewrite it names, its English, translation and correction made up
+ * here, as no text of a review is committed. A rewrite in skip is left
+ * with no correction.
+ */
+function rewriteWorkbooks(root, sources, skip = []) {
+  for (const { file, ids } of sources) {
+    const language = path.basename(file).split(".")[0];
+    const rows = ids.map((id, at) => [
+      "Screens",
+      id,
+      "",
+      `The English of ${id}`,
+      `${language} translation ${at + 1}`,
+      skip.includes(id) ? "" : `${language} rewrite ${at + 1}`,
+      "",
+      "",
+      "",
+    ]);
+    writeFileSync(
+      path.join(root, file),
+      workbook(
+        language,
+        HEADER.map((title) => ({ title, width: 30 })),
+        [HEADER, ...rows],
+      ),
+    );
+  }
+}
+
+test("--calibrate asks about each text planted and unchanged and each of ChatGPT's rewrites, a half of each set a request, prints the three scores, and fails under 18 of 20 caught or over 2 of 20 of either set flagged", (t) => {
   const { root } = fixture(t);
-  const items = JSON.parse(
+  const { planted: items, rewrites: sources } = JSON.parse(
     readFileSync(
       path.join(ROOT, "scripts/i18n-decide.calibration.json"),
       "utf8",
     ),
   );
-  // Its texts: 20, ten a language, each with an error planted.
+  // Its texts: 20, ten a language, each with an error planted; and 20 of
+  // ChatGPT's rewrites, ten from each language's workbook, named by id.
   assert.equal(items.length, 20);
   for (const language of ["zh-Hans", "fr-CA"]) {
     assert.equal(items.filter((item) => item.language === language).length, 10);
@@ -631,14 +713,34 @@ test("--calibrate asks about each text planted and unchanged, half of each a req
   for (const item of items) {
     assert.notEqual(item.planted, item.translation, item.id);
   }
+  assert.deepEqual(
+    sources.map(({ file, ids }) => [file, ids.length]),
+    [
+      ["review/zh-Hans.chatgpt.xlsx", 10],
+      ["review/fr-CA.chatgpt.xlsx", 10],
+    ],
+  );
+  rewriteWorkbooks(root, sources);
+  const rewrites = sources.flatMap(({ file, ids }) => {
+    const language = path.basename(file).split(".")[0];
+    return ids.map((id, at) => ({
+      language,
+      id,
+      english: `The English of ${id}`,
+      text: `${language} rewrite ${at + 1}`,
+    }));
+  });
+
   const planted = items.map((item) => item.planted);
   const unchanged = items.map((item) => item.translation);
-  const languageOf = new Map(
-    items.flatMap((item) => [
+  const rewritten = rewrites.map((item) => item.text);
+  const languageOf = new Map([
+    ...items.flatMap((item) => [
       [item.planted, item.language],
       [item.translation, item.language],
     ]),
-  );
+    ...rewrites.map((item) => [item.text, item.language]),
+  ]);
   const env = { ANTHROPIC_API_KEY: KEY };
   /** A run where the texts in notSame are flagged and those in unanswered get no answer. */
   const calibrate = (notSame, { args = [], unanswered = [] } = {}) => {
@@ -647,19 +749,23 @@ test("--calibrate asks about each text planted and unchanged, half of each a req
     return decide(root, ["--calibrate", ...args], env);
   };
 
-  // All planted caught but the first two, and the first two unchanged
-  // flagged: it passes, just.
-  const passed = calibrate([...planted.slice(2), ...unchanged.slice(0, 2)]);
+  // All planted caught but the first two, and the first two unchanged and
+  // the first two rewrites flagged: it passes, just.
+  const passed = calibrate([
+    ...planted.slice(2),
+    ...unchanged.slice(0, 2),
+    ...rewritten.slice(0, 2),
+  ]);
   assert.equal(passed.status, 0, passed.stderr);
   const lines = passed.stdout.trim().split("\n");
-  assert.equal(lines.length, 45);
+  assert.equal(lines.length, 66);
   assert.deepEqual(lines.slice(0, 2), [
-    "The meaning check's calibration, on claude-sonnet-5-5: 20 texts from the catalogues, each asked about with one error planted and unchanged.",
+    "The meaning check's calibration, on claude-sonnet-5-5: 20 texts from the catalogues, each asked about with one error planted and unchanged, and 20 of ChatGPT's rewrites, each correct.",
     "With one error planted, to be caught:",
   ]);
   assert.equal(
     lines[2],
-    `- Missed: zh-Hans ${items[0].id}, ${items[0].error}. It answered that the text says the same: ` +
+    `- Missed: zh-Hans ${items[0].id}, ${items[0].error}. It passed it: It says the same. ` +
       `${JSON.stringify(items[0].planted)} for ${JSON.stringify(items[0].english)}.`,
   );
   assert.equal(
@@ -673,13 +779,23 @@ test("--calibrate asks about each text planted and unchanged, half of each a req
       `${JSON.stringify(items[0].translation)} for ${JSON.stringify(items[0].english)}.`,
   );
   assert.equal(lines[25], `- Passed: zh-Hans ${items[2].id}, unchanged.`);
+  assert.equal(lines[43], "ChatGPT's rewrites, to be passed:");
+  assert.equal(
+    lines[44],
+    `- Flagged: zh-Hans ${rewrites[0].id}, ChatGPT's rewrite. It drops the order. ` +
+      `${JSON.stringify(rewrites[0].text)} for ${JSON.stringify(rewrites[0].english)}.`,
+  );
+  assert.equal(
+    lines[46],
+    `- Passed: zh-Hans ${rewrites[2].id}, ChatGPT's rewrite.`,
+  );
   assert.deepEqual(lines.slice(-2), [
-    "Caught 18 of 20 planted errors, and flagged 2 of 20 unchanged texts, in 4 requests; 4,000 tokens in, 800 out.",
-    "At least 18 caught and at most 2 flagged: the meaning check can be trusted with the decide step. Go on.",
+    "Caught 18 of 20 planted errors; flagged 2 of 20 unchanged texts and 2 of 20 rewrites; in 4 requests, 4,000 tokens in, 800 out.",
+    "At least 18 caught, and at most 2 unchanged texts and 2 rewrites flagged: the meaning check can be trusted with the decide step. Go on.",
   ]);
 
-  // Two requests a language, each with five planted and five unchanged,
-  // never one message twice; every text asked about once.
+  // Two requests a language, each with five of each set, never one
+  // message twice; every text asked about once, with its message's id.
   const sent = requests(root).map(({ body }) => ({
     system: body.system,
     texts: JSON.parse(body.messages[0].content).items,
@@ -693,22 +809,36 @@ test("--calibrate asks about each text planted and unchanged, half of each a req
         ? /Simplified Chinese \(zh-Hans\)/
         : /French, as written in Canada \(fr-CA\)/,
     );
-    assert.equal(texts.length, 10);
-    assert.equal(new Set(texts.map((item) => item.english)).size, 10);
-    assert.equal(
-      texts.filter((item) => planted.includes(item.translation)).length,
-      5,
-    );
+    assert.ok(system.endsWith(`\n\n${TERMS}`));
+    assert.equal(texts.length, 15);
+    assert.equal(new Set(texts.map((item) => item.id)).size, 15);
+    for (const set of [planted, unchanged, rewritten]) {
+      assert.equal(
+        texts.filter((item) => set.includes(item.translation)).length,
+        5,
+      );
+    }
     for (const item of texts) {
       assert.equal(languageOf.get(item.translation), language);
     }
   });
   assert.deepEqual(
-    sent.flatMap(({ texts }) => texts.map((item) => item.translation)).sort(),
-    [...planted, ...unchanged].sort(),
+    sent
+      .flatMap(({ texts }) => texts.map((item) => [item.id, item.translation]))
+      .sort(),
+    [
+      ...items.flatMap((item) => [
+        [item.id, item.planted],
+        [item.id, item.translation],
+      ]),
+      ...rewrites.map((item) => [item.id, item.text]),
+    ].sort(),
   );
   // Nothing kept, and the key never printed.
-  assert.deepEqual(readdirSync(path.join(root, "review")), []);
+  assert.deepEqual(readdirSync(path.join(root, "review")).sort(), [
+    "fr-CA.chatgpt.xlsx",
+    "zh-Hans.chatgpt.xlsx",
+  ]);
   for (const text of [passed.stdout, passed.stderr]) {
     assert.equal(text.includes(KEY), false);
   }
@@ -724,7 +854,7 @@ test("--calibrate asks about each text planted and unchanged, half of each a req
   assert.equal(missed.status, 1);
   assert.equal(requests(root)[4].body.model, "claude-opus-5-5");
   assert.deepEqual(verdict(missed), [
-    "Caught 17 of 20 planted errors, and flagged 0 of 20 unchanged texts, in 4 requests; 4,000 tokens in, 800 out.",
+    "Caught 17 of 20 planted errors; flagged 0 of 20 unchanged texts and 0 of 20 rewrites; in 4 requests, 4,000 tokens in, 800 out.",
     `Fewer than 18 caught${stop}`,
   ]);
 
@@ -740,17 +870,51 @@ test("--calibrate asks about each text planted and unchanged, half of each a req
       `${JSON.stringify(items[19].translation)} for ${JSON.stringify(items[19].english)}.`,
   );
   assert.deepEqual(verdict(flagged), [
-    "Caught 20 of 20 planted errors, and flagged 3 of 20 unchanged texts, in 4 requests; 4,000 tokens in, 800 out.",
-    `More than 2 flagged${stop}`,
+    "Caught 20 of 20 planted errors; flagged 3 of 20 unchanged texts and 0 of 20 rewrites; in 4 requests, 4,000 tokens in, 800 out.",
+    `More than 2 unchanged texts flagged${stop}`,
   ]);
 
-  // Both at once: it says both.
-  const both = calibrate([...planted.slice(3), ...unchanged.slice(0, 3)]);
-  assert.equal(both.status, 1);
+  // All caught, no unchanged text flagged, but three of ChatGPT's correct
+  // rewrites: it stops, as it would drop corrections that say the same.
+  const dropped = calibrate([...planted, ...rewritten.slice(9, 12)]);
+  assert.equal(dropped.status, 1);
+  assert.deepEqual(verdict(dropped), [
+    "Caught 20 of 20 planted errors; flagged 0 of 20 unchanged texts and 3 of 20 rewrites; in 4 requests, 4,000 tokens in, 800 out.",
+    `More than 2 rewrites flagged${stop}`,
+  ]);
+
+  // All three at once: it says all three.
+  const all = calibrate([
+    ...planted.slice(3),
+    ...unchanged.slice(0, 3),
+    ...rewritten.slice(0, 3),
+  ]);
+  assert.equal(all.status, 1);
   assert.equal(
-    verdict(both)[1],
-    `Fewer than 18 caught and more than 2 flagged${stop}`,
+    verdict(all)[1],
+    `Fewer than 18 caught, more than 2 unchanged texts flagged and more than 2 rewrites flagged${stop}`,
   );
+
+  // A rewrite its workbook no longer corrects, or a workbook not there, is
+  // refused before anything is asked.
+  const before = requests(root).length;
+  rewriteWorkbooks(root, sources, [sources[0].ids[3]]);
+  const uncorrected = calibrate([]);
+  assert.equal(uncorrected.status, 1);
+  assert.equal(
+    uncorrected.stderr,
+    `--calibrate reads ChatGPT's rewrite of ${sources[0].ids[3]} from review/zh-Hans.chatgpt.xlsx, which has no one row of it with a correction. ` +
+      "Keep round 2's workbooks in review/ as ChatGPT returned them, then run --calibrate again.\n",
+  );
+  rmSync(path.join(root, "review/fr-CA.chatgpt.xlsx"));
+  rewriteWorkbooks(root, sources.slice(0, 1));
+  const gone = calibrate([]);
+  assert.equal(gone.status, 1);
+  assert.match(
+    gone.stderr,
+    /^--calibrate reads 10 of ChatGPT's rewrites from review\/fr-CA\.chatgpt\.xlsx, which is not there\./,
+  );
+  assert.equal(requests(root).length, before);
 
   // It runs alone.
   const mixed = decide(root, ["--calibrate", "--meaning"], env);
@@ -758,10 +922,14 @@ test("--calibrate asks about each text planted and unchanged, half of each a req
   assert.match(mixed.stderr, /^Usage:/);
 });
 
-test("a second run reuses the answers kept, asking only what is new", (t) => {
+test("a second run reuses the answers kept by the same model and version, asking only what is new", (t) => {
   const { root } = fixture(t);
   round2(root);
   const env = { ANTHROPIC_API_KEY: KEY };
+  const asked = (at) =>
+    JSON.parse(requests(root)[at].body.messages[0].content).items.map(
+      (item) => item.translation,
+    );
 
   assert.equal(decide(root, [...ROUND_2, "--meaning"], env).status, 0);
   assert.equal(requests(root).length, 1);
@@ -774,26 +942,56 @@ test("a second run reuses the answers kept, asking only what is new", (t) => {
     /- The meaning check: 0 texts asked in 0 requests, 5 answered by an earlier run; 0 tokens in, 0 out\./,
   );
 
-  // ChatGPT's Stock changes: only it is asked, on the model named.
+  // ChatGPT's Stock changes: only it is asked.
   round2(root, SCREENS, { chatgpt: { "orders.stock": "现有库存" } });
-  const third = decide(
+  const third = decide(root, [...ROUND_2, "--meaning"], env);
+  assert.equal(third.status, 0, third.stderr);
+  assert.equal(requests(root).length, 2);
+  assert.deepEqual(asked(1), ["现有库存"]);
+  assert.match(
+    third.stdout,
+    /1 texts asked in 1 requests, 4 answered by an earlier run/,
+  );
+
+  // Another model's answers are its own: every text is asked again.
+  const opus = decide(
     root,
     [...ROUND_2, "--meaning", "--model", "claude-opus-5-5"],
     env,
   );
-  assert.equal(third.status, 0, third.stderr);
-  const sent = requests(root);
-  assert.equal(sent.length, 2);
-  assert.equal(sent[1].body.model, "claude-opus-5-5");
-  assert.deepEqual(
-    JSON.parse(sent[1].body.messages[0].content).items.map(
-      (item) => item.translation,
-    ),
-    ["现有库存"],
-  );
+  assert.equal(opus.status, 0, opus.stderr);
+  assert.equal(requests(root).length, 3);
+  assert.equal(requests(root)[2].body.model, "claude-opus-5-5");
+  assert.equal(asked(2).length, 5);
   assert.match(
-    third.stdout,
-    /1 texts asked in 1 requests, 4 answered by an earlier run/,
+    opus.stdout,
+    /5 texts asked in 1 requests, 0 answered by an earlier run/,
+  );
+
+  // So are an earlier version's, kept as the first saved them, by the
+  // English and the text alone: every text is asked again.
+  const file = path.join(root, "review/zh-Hans.meaning.json");
+  write(
+    root,
+    "review/zh-Hans.meaning.json",
+    JSON.stringify(
+      JSON.parse(readFileSync(file, "utf8")).map(
+        ({ english, text, verdict }) => ({
+          english,
+          text,
+          same: verdict === "pass",
+          why: "",
+        }),
+      ),
+    ),
+  );
+  const earlier = decide(root, [...ROUND_2, "--meaning"], env);
+  assert.equal(earlier.status, 0, earlier.stderr);
+  assert.equal(requests(root).length, 4);
+  assert.equal(asked(3).length, 5);
+  assert.match(
+    earlier.stdout,
+    /5 texts asked in 1 requests, 0 answered by an earlier run/,
   );
 });
 

@@ -866,8 +866,10 @@ folder by folder; these check what is already in place.
   its apostrophes or quotation marks aside, writing nothing until that
   row's Correction is cleared; the next round reads that message at its
   new text. A workbook without the English or Translation title is
-  refused, naming it. The guides' workbook (#150) has a row per section,
-  Id `home#today`, and the guide's title and opening as `home`, each the
+  refused, naming it; one whose tags carry a namespace prefix (`x:row`,
+  `x:c`), as some of ChatGPT's do, is read as any other. The guides'
+  workbook (#150) has a row per section, Id `home#today`, and the guide's
+  title and opening as `home`, each the
   Markdown as written, its heading line included, its id and links listed
   as what to keep; with `--since`, the sections new or changed since, in
   `review/fr-CA.guides.since-<commit>.xlsx`. `export --only catalogues` or
@@ -888,18 +890,30 @@ folder by folder; these check what is already in place.
   each row, and the counts are printed. Where only Claude changed a
   message, today's stays unless it fails the rules check or, with
   `--meaning`, the meaning check; then Claude's goes in where it passes
-  both, and the counts say in how many today's was found wrong. Without
+  both, and the counts say in how many today's was found wrong. The
+  meaning check rejects only a serious change: the meaning reversed or
+  contradicted; a number, date, amount, name, role, screen label or tax
+  wording changed; information the reader needs dropped; a claim the
+  English and the message's id do not support. It passes a text that
+  states what the context implies, uses the glossary's word, or says it
+  more plainly; each request gives the message's id and the glossary's
+  Terms, and each answer its reason before its verdict. Without
   `ANTHROPIC_API_KEY`, `--meaning` is refused, naming `read -s
   ANTHROPIC_API_KEY && export ANTHROPIC_API_KEY`; its answers are kept in
-  `review/<language>.meaning.json`, so a second run asks only what is new.
-  Before the first run, `node scripts/i18n-decide.mjs --calibrate` asks
-  the meaning check about 20 texts copied from the catalogues, each with
-  one error planted (a "not" dropped or added, a number, a clause, before
-  tax for including tax, a name) and again unchanged, never both of one
-  message in a request; it prints each caught or missed and passed or
-  flagged, with both scores, and exits 1 under 18 of 20 caught or over 2
-  of 20 flagged, a text it leaves unanswered counted as flagged, keeping
-  nothing; then no decide step runs with `--meaning`.
+  `review/<language>.meaning.json` by the model and the check's version,
+  so a second run asks only what is new, and another model or version
+  asks every text again. Before the first run, `node
+  scripts/i18n-decide.mjs --calibrate` asks the meaning check about 20
+  texts copied from the catalogues, each with one error planted (a "not"
+  dropped or added, a number, a clause, before tax for including tax, a
+  name) and again unchanged, and about 20 of ChatGPT's correct rewrites,
+  read by their ids from round 2's `review/zh-Hans.chatgpt.xlsx` and
+  `review/fr-CA.chatgpt.xlsx`, never one message twice in a request; it
+  prints each caught or missed and passed or flagged, with the three
+  scores, and exits 1 under 18 of 20 caught, or over 2 of 20 unchanged or
+  over 2 of 20 rewrites flagged, a text it leaves unanswered counted as
+  flagged, keeping nothing; a workbook or a rewrite not there is refused
+  before anything is asked. Then no decide step runs with `--meaning`.
 - **MC-1406** In Français and in 简体中文, every area converted so far
   reads entirely in that language, with no English left on it:
   - signed out: sign-in, register, forgot-password, reset and verify,
@@ -5937,3 +5951,12 @@ first.
   the meaning check about its 20 texts unchanged, and stops over 2 of
   them flagged as well as under 18 of the planted errors caught, so a
   check that flags too much never drops a correction: MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R5: the meaning check
+  rejects only a serious change, and passes a text that states what the
+  context implies, uses the glossary's word or says it more plainly; each
+  request gives the message's id and the glossary's Terms, each answer
+  its reason before its verdict, and the answers are kept by the model
+  and the check's version, so every text is asked again. `--calibrate`
+  also asks about 20 of ChatGPT's correct rewrites, and stops over 2 of
+  them flagged; the workbook reader takes tags with a namespace prefix:
+  MC-1405 extended.

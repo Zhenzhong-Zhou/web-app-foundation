@@ -25,7 +25,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { git, repository, write } from "./git-fixture.mjs";
-import { readWorkbook, workbook } from "./i18n-review.mjs";
+import { readWorkbook, workbook, zip } from "./i18n-review.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -438,6 +438,39 @@ test("import refuses a workbook without the English or Translation title, naming
   const run = review(root, "import", path.join(root, file));
   assert.equal(run.status, 1);
   assert.match(run.stderr, /^The first row has no Translation title\./);
+});
+
+test("the reader reads a workbook whose tags carry a namespace prefix, as some of ChatGPT's do", () => {
+  const main = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+  const book = zip([
+    [
+      "xl/workbook.xml",
+      `<x:workbook xmlns:x="${main}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><x:sheets><x:sheet name="zh-Hans" sheetId="1" r:id="rId1"/></x:sheets></x:workbook>`,
+    ],
+    [
+      "xl/_rels/workbook.xml.rels",
+      `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+    ],
+    [
+      "xl/sharedStrings.xml",
+      `<x:sst xmlns:x="${main}"><x:si><x:t>Correction</x:t></x:si><x:si><x:r><x:t>别</x:t></x:r><x:r><x:t>走开</x:t></x:r></x:si></x:sst>`,
+    ],
+    [
+      "xl/worksheets/sheet1.xml",
+      `<x:worksheet xmlns:x="${main}"><x:sheetData>` +
+        `<x:row r="1"><x:c r="A1" t="inlineStr"><x:is><x:t>Id</x:t></x:is></x:c><x:c r="C1" t="s"><x:v>0</x:v></x:c></x:row>` +
+        `<x:row r="2"><x:c r="A2" t="inlineStr"><x:is><x:t xml:space="preserve">farewell</x:t></x:is></x:c><x:c r="B2"/><x:c r="C2" t="s"><x:v>1</x:v></x:c></x:row>` +
+        `</x:sheetData></x:worksheet>`,
+    ],
+  ]);
+
+  assert.deepEqual(readWorkbook(book), {
+    sheetName: "zh-Hans",
+    rows: [
+      ["Id", "", "Correction"],
+      ["farewell", "", "别走开"],
+    ],
+  });
 });
 
 // ------------------------------------------------------------------ guides
