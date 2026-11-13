@@ -19,6 +19,10 @@
  *   placeholders and tags, as {count} / {max}, nor for a message listed
  *   in SAME_AS_ENGLISH below, by language and id, each with why;
  * - Chinese: a half-width , ? : ; or ! beside Chinese, for ，？：；！;
+ * - Chinese: a space between Chinese and a placeholder its Placeholders
+ *   filled with Chinese words lists where its row holds, a tag between or
+ *   not: 由{name}提供支持, never 由 {name} 提供支持, where {name} is the
+ *   product's Chinese name;
  * - French and Chinese: three full stops, for …, and an ASCII
  *   apostrophe, for ’. In a message, ICU's quote of a brace, '{', is not
  *   one;
@@ -36,7 +40,9 @@
  * problems, which the decide step runs on each text it decides; with no
  * English, a text is not compared with it. And settledMessages(), the
  * Settled messages, which the decide step keeps and import refuses to
- * correct. No dependencies:
+ * correct; and unspaced(text, id, language), a text without the spaces
+ * beside the placeholders filled with Chinese words, which the decide
+ * step takes where they are a text's only problem. No dependencies:
  * scripts/verify.sh and the Docs workflow run it with Node alone. Its
  * tests are in i18n-rules.test.mjs: `node --test scripts/`.
  */
@@ -64,9 +70,9 @@ const catalogues = (language) => [
  * out; or Only, then all it holds for. Each pattern in backquotes: `x.*`
  * every message id under `x.`, `x.md` a guide, anything else one id.
  */
-function scopeOf(where, row) {
+function scopeOf(where, row, table = "Words not to use") {
   const refused = (why) =>
-    new Error(`${GLOSSARY}: Words not to use, the row ${row}: ${why}.`);
+    new Error(`${GLOSSARY}: ${table}, the row ${row}: ${why}.`);
   const [start, mode] =
     [
       ["Everywhere but", "but"],
@@ -191,6 +197,29 @@ export function settledMessages() {
   settled ??= readSettled();
   return settled;
 }
+
+// --------------------------------------- placeholders filled with Chinese
+
+const FILLED = "Placeholders filled with Chinese words";
+
+/**
+ * The glossary's Placeholders filled with Chinese words: each row's
+ * placeholder, by its name, and where the row holds, read as Words not to
+ * use reads its Where.
+ */
+function readFilledWithChinese() {
+  return tableIn(FILLED).map(([cell = "", where]) => {
+    const name = /^`\{(\w+)\}`$/.exec(cell)?.[1];
+    if (!name) {
+      throw new Error(
+        `${GLOSSARY}: ${FILLED}, the row ${cell}: its Placeholder is not one {name} in backquotes.`,
+      );
+    }
+    return { name, holdsFor: scopeOf(where ?? "", `{${name}}`, FILLED) };
+  });
+}
+
+let filledWithChinese;
 
 // ------------------------------------------------------ same as the English
 
@@ -438,6 +467,40 @@ const HALF_WIDTH = new RegExp(
 );
 const FULL_WIDTH = { ",": "，", "?": "？", ":": "：", ";": "；", "!": "！" };
 
+/** A tag's start or end, which a space may stand outside of. */
+const TAGS = "(?:</?[\\w-]+>)*";
+
+/**
+ * A Chinese text without its spaces between Chinese and a placeholder the
+ * glossary's Placeholders filled with Chinese words lists where its row
+ * holds, a tag between or not, and those placeholders: `{ text, names }`.
+ * Any other text, and a Chinese one with no such space, as it is.
+ */
+export function unspaced(text, id, language) {
+  if (language !== "zh-Hans") return { text, names: [] };
+  filledWithChinese ??= readFilledWithChinese();
+  const names = [];
+  let without = text;
+  for (const { name, holdsFor } of filledWithChinese) {
+    if (!holdsFor(id)) continue;
+    const placeholder = `\\{${name}\\}`;
+    const next = without
+      .replace(
+        new RegExp(`(?<=${CHINESE})\\s+(?=${TAGS}${placeholder})`, "gu"),
+        "",
+      )
+      .replace(
+        new RegExp(`(?<=${placeholder}${TAGS})\\s+(?=${CHINESE})`, "gu"),
+        "",
+      );
+    if (next !== without) {
+      names.push(`{${name}}`);
+      without = next;
+    }
+  }
+  return { text: without, names };
+}
+
 /** Each different match of the pattern in the text, in order. */
 const found = (text, pattern) => [
   ...new Set([...text.matchAll(pattern)].map((match) => match[0])),
@@ -483,6 +546,12 @@ export function problemsOf(text, id, language, english) {
     if (half.length > 0) {
       problems.push(
         `half-width ${half.join(" ")} beside Chinese, for ${half.map((mark) => FULL_WIDTH[mark]).join(" ")}`,
+      );
+    }
+    const { names } = unspaced(text, id, language);
+    if (names.length > 0) {
+      problems.push(
+        `a space between Chinese and ${names.join(" ")}, which Chinese fills with Chinese words (${FILLED})`,
       );
     }
   }
@@ -601,7 +670,7 @@ if (import.meta.main) {
   if (failures.length > 0) {
     console.error(failures.join("\n"));
     console.error(
-      `\n${failures.length} problems: change each by ${GLOSSARY}'s Words not to use, Settled messages and Writing conventions; ` +
+      `\n${failures.length} problems: change each by ${GLOSSARY}'s Words not to use, Settled messages, ${FILLED} and Writing conventions; ` +
         "a translation meant to be its English goes in scripts/i18n-rules.mjs's SAME_AS_ENGLISH, with why.",
     );
     process.exit(1);

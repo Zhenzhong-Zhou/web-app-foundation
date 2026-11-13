@@ -744,7 +744,13 @@ folder by folder; these check what is already in place.
   English, ignoring case, spaces and punctuation, unless the English has
   no word outside its placeholders or the script's `SAME_AS_ENGLISH`
   lists the message with why, so Inventory → Movements in Français names
-  a deleted member Utilisateur supprimé, never Deleted User.
+  a deleted member Utilisateur supprimé, never Deleted User. In 中文, a
+  word the app fills in itself meets the Chinese around it with no space:
+  the top bar's lookup ends 在物品中查看全部, and a built-in role's page
+  says 如需调整管理员; the check refuses a space between Chinese and
+  each placeholder the glossary's Placeholders filled with Chinese words
+  lists, where its row holds. A person's or an item's name keeps its
+  message's spacing (#573).
 - **MC-1417** *(ADR-054's November 2026 amendment, R10 and R11; #149)*
   The words settled for the reviewer who reads only Chinese. In 中文: a
   shipment's Create invoice reads 创建发票, and the draft's Issue still
@@ -896,8 +902,11 @@ folder by folder; these check what is already in place.
   must pass `scripts/i18n-rules.mjs`, which refuses one left the same as
   its English, and import's own checks, and, with `--meaning`, Claude's
   meaning check through the API, or it falls back to the other review's
-  text, else today's; Reason and Fallback say why beside each row, and
-  the counts are printed. A message the glossary's Settled messages hold
+  text, else today's, but a Chinese text whose only problem is a space
+  beside a placeholder the glossary's Placeholders filled with Chinese
+  words lists has that space taken out instead, and is today's where the
+  space was all a review changed; Reason and Fallback say why beside each
+  row, and the counts are printed. A message the glossary's Settled messages hold
   keeps today's text whatever a review says, its Reason Settled, and
   import refuses a correction to one. Where only Claude changed a
   message, today's stays unless it fails the rules check or, with
@@ -5982,3 +5991,8 @@ first.
   check fails where a catalogue differs from one, the decide step keeps
   today's for each and import refuses a correction to one: MC-1417 and
   MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R4 and R5: the glossary's
+  Placeholders filled with Chinese words lists those Chinese fills with
+  its own words; the rules check refuses a space between one and
+  Chinese, and the decide step takes that space out where it is a text's
+  only problem: MC-1416 and MC-1405 extended.

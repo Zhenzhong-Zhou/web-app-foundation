@@ -42,7 +42,11 @@
  * decided workbook whole. With --meaning, the meaning check too, on each
  * text that differs from today's, and on today's where only Claude
  * changed it. A text that fails either falls back to the other review's,
- * where that one passes, else to today's.
+ * where that one passes, else to today's. But a Chinese text whose only
+ * problem is a space between Chinese and a placeholder the glossary's
+ * Placeholders filled with Chinese words lists has that space taken out,
+ * and goes on without it, its Reason saying so: today's, where that is
+ * all the review changed.
  *
  * The meaning check asks Claude, through the Messages API, whether each
  * text makes a serious change to what its English says, as an LLM judge is
@@ -108,7 +112,7 @@ import {
   targetsFor,
   workbook,
 } from "./i18n-review.mjs";
-import { problemsOf, settledMessages } from "./i18n-rules.mjs";
+import { problemsOf, settledMessages, unspaced } from "./i18n-rules.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -280,10 +284,12 @@ function decisionOf(row, claude, targets, language, settled) {
   const decision = {
     row,
     english: today.english,
+    today: today.translation,
     check: (text) => [
       ...problemsOf(text, row.id, language, today.english),
       ...[target.check(row.id, text)].filter(Boolean),
     ],
+    unspaced: (text) => unspaced(text, row.id, language),
   };
   const from = (source, text) => ({ source, text });
 
@@ -371,8 +377,31 @@ function resolve(decision, meaning) {
   }
   if (!decision.tries) return decision;
   const fallbacks = [];
-  for (const { source, text } of decision.tries) {
-    const problems = decision.check(text);
+  for (const tried of decision.tries) {
+    const { source } = tried;
+    let { text } = tried;
+    let reason = decision.reason;
+    let problems = decision.check(text);
+    // Its only problem a space beside a placeholder filled with Chinese
+    // words: taken out, and the text goes on.
+    const without = problems.length > 0 ? decision.unspaced(text) : null;
+    if (
+      without?.names.length > 0 &&
+      decision.check(without.text).length === 0
+    ) {
+      const beside = without.names.join(" and ");
+      text = without.text;
+      problems = [];
+      if (text === decision.today) {
+        return {
+          ...decision,
+          source: "today",
+          reason: `${reason}; with the space beside ${beside} taken out, it is today's, which stays`,
+          fallbacks,
+        };
+      }
+      reason = `${reason}; the space beside ${beside} taken out, as the glossary's Placeholders filled with Chinese words asks`;
+    }
     if (problems.length > 0) {
       fallbacks.push({
         by: "rule",
@@ -396,7 +425,7 @@ function resolve(decision, meaning) {
         continue;
       }
     }
-    return { ...decision, source, text, fallbacks };
+    return { ...decision, source, text, reason, fallbacks };
   }
   return { ...decision, source: "today", fallbacks };
 }

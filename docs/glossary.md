@@ -261,6 +261,43 @@ its row here, in the same commit as its catalogue.
 | `invoices.skuLanguageNameWhich` | 简体中文 | `{which, select, variant {{product} 的规格 {sku}（{variation}）} other {{product}（{sku}）}}没有{language}名称，而本组织要求单据上必须有。请在物品页面的“其他语言名称”中添加。` | [ADR-054's November 2026 amendment](adr/0054-languages.md#decision--the-words-settled-here): a missing name's language, in Chinese |
 | `mail.invitation.expires` | 简体中文 | `链接只能用一次，有效期到 {date}结束，{zone}。密码由您自己设置。` | [ADR-054's November 2026 amendment](adr/0054-languages.md#decision--the-words-settled-here): the invitation email's last day |
 
+## Placeholders filled with Chinese words
+
+A placeholder that Chinese always fills with Chinese words, the app's
+own, never a word a person types. ADR-090's space stands only between
+Chinese and Latin letters or digits, so a Chinese message writes none
+between its words and one of these: 由{name}提供支持, 无法加载{language},
+在{list}中查看全部. Where says where a row holds, as Words not to use
+reads it, since one name can mean another value elsewhere: `{list}` in
+an order is a price list's name, as typed. `scripts/i18n-rules.mjs`
+fails on a space between Chinese and a placeholder listed here, a tag
+between or not, and the decide step takes that space out of a text where
+it is the text's only problem, saying so in Reason. A placeholder that a
+person's or an item's name fills, in Latin letters or Chinese, is not
+listed: its message keeps its writer's spacing until #573 settles it. A
+guide has no placeholders; where it quotes one of these labels in bold,
+`client/src/help/guides.test.ts` holds the quote to the message's
+spacing.
+
+| Placeholder | Where | What fills it | Why |
+| --- | --- | --- | --- |
+| `{language}` | Everywhere | A language's name: 英文, 法文 or 中文 in a sentence, or 简体中文 where Chinese failed to load | The app names a language in the reader's words, as English / French / Chinese (a name's language) above |
+| `{languages}` | Everywhere | Languages' names, joined: 英文和法文 | As `{language}` |
+| `{role}` | Only `roles.builtIn.note`, `invitation.organization.owner` and `invitation.organization.keep.body` | A built-in role's name: 所有者, 管理员 or 查看者 | The app translates its built-in roles, and these name only one. Elsewhere `{role}` may be a role made here, named as typed |
+| `{list}` | Only `search.showAll` and `status.goToList` | A page's name: 物品, 销售订单 | A page's name is the app's own. Elsewhere `{list}` is a price list's name |
+| `{tab}` | Everywhere | An item tab's name: 商品, 原材料 | A tab's name is the app's own |
+| `{other}` | Only `products.empty.elsewhere` | Another item tab's name | As `{tab}` |
+| `{type}` | Only `products.edit.movedTo` and `products.row.type` | An item's type: 商品, 原材料 | A type's name is the app's own |
+| `{name}` | Only `brand.poweredBy` | The product's name in Chinese: 品桥 | Set for Chinese on its own, as `VITE_APP_NAME_ZH_HANS` (ADR-082); the rail's foot spaces a Latin one itself (#486) |
+| `{lines}` | Only `roles.editor.*` | Permissions' names, each in “ ”, joined | The app names its permissions |
+| `{line}` | Only `roles.editor.*` | A permission's name, in “ ” | As `{lines}` |
+| `{area}` | Only `roles.editor.*` | An area's name in the role editor: 库存, 订单 | An area's name is the app's own |
+| `{permission}` | Only `production.licence.needsOverride` and `roles.permissionRequires` | A permission's name, in “ ” | As `{lines}` |
+| `{needs}` | Only `roles.permissionRequires` | Permissions' names, each in “ ”, joined | As `{lines}` |
+| `{first}` | Only `settings.numbering.clash` | A document's name: 发票, 装箱单 | A document's name is the app's own |
+| `{second}` | Only `settings.numbering.clash` | A document's name | As `{first}` |
+| `{problem}` | Only `production.licence.*` | A sentence of the app's about the licence, ending in 。 | Chinese takes no space after 。 |
+
 ## Writing conventions
 
 - **Apostrophes:** use ’ (U+2019) in translations, never '. An ASCII
@@ -272,10 +309,11 @@ its row here, in the same commit as its catalogue.
 - **Simplified Chinese:** full-width punctuation (，。？：；！), never a
   half-width , ? : ; or ! beside Chinese. A space between Chinese and
   Latin letters or digits, as in 逾期 2 天, 批次 VC-0301 and 我在
-  {organization} 的权限 (ADR-090), and none beside full-width punctuation
-  or inside a date as the reader's calendar writes it, 2026年11月30日. A
-  list joins with 、 and its last item with 和, a space beside a Latin
-  name.
+  {organization} 的权限 (ADR-090), and none beside full-width punctuation,
+  inside a date as the reader's calendar writes it, 2026年11月30日, or
+  beside a placeholder that Placeholders filled with Chinese words lists,
+  由{name}提供支持. A list joins with 、 and its last item with 和, a
+  space beside a Latin name.
 - **Ellipsis:** the single character … in every language, as the English
   uses for "Saving…", never three full stops.
 - **Placeholders:** `{name}` and tags like `<link>` are kept exactly, in
@@ -290,10 +328,11 @@ its row here, in the same commit as its catalogue.
   the English has no word outside its placeholders, as
   `{count} / {max}`, and for the messages its `SAME_AS_ENGLISH` lists by
   language and id, each with why: Total, Code or Lot in French, a unit's
-  symbol, a paper size's name. And it fails where a settled message's
-  text is not its row's in Settled messages. The space beside Latin
-  letters and digits, and how a sentence reads, are left to whoever
-  writes and reviews it.
+  symbol, a paper size's name. It fails where a settled message's
+  text is not its row's in Settled messages, and on a space between
+  Chinese and a placeholder that Placeholders filled with Chinese words
+  lists. The space beside Latin letters and digits, and how a sentence
+  reads, are left to whoever writes and reviews it.
 
 ### How it reads
 

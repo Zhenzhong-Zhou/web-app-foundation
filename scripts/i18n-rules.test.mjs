@@ -5,7 +5,8 @@
  *     node --test scripts/
  *
  * problemsOf is tested on its own, against the repository's glossary, so
- * its Words not to use rows are the ones held. The run is tested on a
+ * its Words not to use and Placeholders filled with Chinese words rows are
+ * the ones held. The run is tested on a
  * copy of the script in a temporary folder laid out as the repository
  * is, with a small glossary, a catalogue in each package and a guide.
  */
@@ -17,7 +18,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { folder, write } from "./git-fixture.mjs";
-import { problemsOf } from "./i18n-rules.mjs";
+import { problemsOf, unspaced } from "./i18n-rules.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const NBSP = " ";
@@ -109,6 +110,80 @@ test("Chinese: full-width punctuation, half-width beside Latin, and ICU's syntax
   }
   // A French text is not held to Chinese punctuation.
   assert.deepEqual(problemsOf("Bas, Épuisé", "a.b", "fr-CA"), []);
+});
+
+const FILLED = (names) =>
+  `a space between Chinese and ${names}, which Chinese fills with Chinese words (Placeholders filled with Chinese words)`;
+
+test("Chinese: a space between Chinese and a placeholder filled with Chinese words is refused, a tag between or not", () => {
+  for (const [text, id, names] of [
+    // The product's name, on either side of it.
+    ["由 {name} 提供支持", "brand.poweredBy", "{name}"],
+    ["由{name} 提供支持", "brand.poweredBy", "{name}"],
+    // A built-in role's name, in bold, and before full-width punctuation.
+    [
+      "您将成为它的 <b>{role}</b> ：{description}",
+      "invitation.organization.owner",
+      "{role}",
+    ],
+    // Two placeholders, inside a plural.
+    [
+      "{count, plural, other {已同时取消勾选 {lines}，因为它们需要 {line}。}}",
+      "roles.editor.alsoUnticked",
+      "{lines} {line}",
+    ],
+    // A permission's name in “ ”, beside Chinese.
+    [
+      "拥有 {permission} 权限",
+      "production.licence.needsOverride",
+      "{permission}",
+    ],
+  ]) {
+    assert.deepEqual(problemsOf(text, id, "zh-Hans"), [FILLED(names)], text);
+  }
+  for (const [text, id] of [
+    ["由{name}提供支持", "brand.poweredBy"],
+    [
+      "您将成为它的<b>{role}</b>：{description}",
+      "invitation.organization.owner",
+    ],
+    // A person's name, and a price list's, may be Latin: not listed there.
+    ["由 {name} 提供支持", "home.welcome.wrote"],
+    ["来自 {list}", "orders.lines.fromList"],
+    // Beside Latin letters or digits, a space stays.
+    ["在{list} 3 个结果", "search.showAll"],
+    // Only Chinese is held to it.
+    ["Propulsé par {name}", "brand.poweredBy"],
+  ]) {
+    for (const language of ["zh-Hans", "fr-CA"]) {
+      assert.deepEqual(
+        problemsOf(text, id, language),
+        [],
+        `${language} ${text}`,
+      );
+    }
+  }
+});
+
+test("unspaced takes out only the spaces the rule refuses, naming the placeholders", () => {
+  assert.deepEqual(
+    unspaced("在 {list} 中查看全部 {count} 个", "search.showAll", "zh-Hans"),
+    { text: "在{list}中查看全部 {count} 个", names: ["{list}"] },
+  );
+  assert.deepEqual(
+    unspaced(
+      "您将成为它的 <b>{role}</b> ：",
+      "invitation.organization.owner",
+      "zh-Hans",
+    ),
+    { text: "您将成为它的<b>{role}</b>：", names: ["{role}"] },
+  );
+  for (const [text, id, language] of [
+    ["来自 {list}", "orders.lines.fromList", "zh-Hans"],
+    ["在 {list} 中", "search.showAll", "fr-CA"],
+  ]) {
+    assert.deepEqual(unspaced(text, id, language), { text, names: [] }, text);
+  }
 });
 
 test("three full stops are refused for …, in French and in Chinese", () => {
@@ -287,9 +362,12 @@ test("a settled message is refused where its text is not the glossary's, in its 
 const SETTLED =
   "| `licences.none` | 简体中文 | `暂无产品许可证。` | A test’s |";
 
+const FILLED_ROW = "| `{tab}` | Only `home.*` | A tab's name | A test’s |";
+
 const GLOSSARY = (
   where = "Everywhere but `licences.*` and `licences.md`",
   settled = SETTLED,
+  filled = FILLED_ROW,
 ) => `# Glossary
 
 ## Words not to use
@@ -304,6 +382,12 @@ const GLOSSARY = (
 | --- | --- | --- | --- |
 ${settled}
 
+## Placeholders filled with Chinese words
+
+| Placeholder | Where | What fills it | Why |
+| --- | --- | --- | --- |
+${filled}
+
 ## Writing conventions
 `;
 
@@ -317,15 +401,22 @@ function fixture(t, files = {}) {
   );
   const clean = {
     "docs/glossary.md": GLOSSARY(),
-    "client/src/locales/en.json": JSON.stringify({ "home.title": "Home" }),
+    "client/src/locales/en.json": JSON.stringify({
+      "home.title": "Home",
+      "home.seeIn": "See in {tab}",
+    }),
     "server/src/i18n/en.json": JSON.stringify({
       "licences.none": "No licence: add one.",
     }),
     "client/src/help/guides/en/home.md": `# Home\n\nThe first page.\n\n## Every day {#today}\n\nPress **Refresh**.\n`,
     "client/src/locales/fr-CA.json": JSON.stringify({
       "home.title": "Accueil",
+      "home.seeIn": "Voir dans {tab}",
     }),
-    "client/src/locales/zh-Hans.json": JSON.stringify({ "home.title": "首页" }),
+    "client/src/locales/zh-Hans.json": JSON.stringify({
+      "home.title": "首页",
+      "home.seeIn": "在{tab}里查看",
+    }),
     "server/src/i18n/fr-CA.json": JSON.stringify({
       "licences.none": `Aucune licence${NBSP}: ajoutez-en une.`,
     }),
@@ -350,15 +441,19 @@ test("the run passes clean translations, counting what it read", (t) => {
   assert.equal(run.status, 0);
   assert.equal(
     run.stdout,
-    "Translations keep the glossary's words and punctuation: 4 messages and 4 guide sections in fr-CA and zh-Hans.\n",
+    "Translations keep the glossary's words and punctuation: 6 messages and 4 guide sections in fr-CA and zh-Hans.\n",
   );
 });
 
 test("the run prints each problem by file and id, a guide's by section, and fails", (t) => {
   const run = fixture(t, {
-    "client/src/locales/fr-CA.json": JSON.stringify({ "home.title": "HOME" }),
+    "client/src/locales/fr-CA.json": JSON.stringify({
+      "home.title": "HOME",
+      "home.seeIn": "Voir dans {tab}",
+    }),
     "client/src/locales/zh-Hans.json": JSON.stringify({
       "home.title": "产品首页,",
+      "home.seeIn": "在 {tab} 里查看",
     }),
     "client/src/help/guides/fr-CA/home.md": `# Accueil\n\nLa première page.\n\n## Chaque jour {#today}\n\nAppuyez sur **Actualiser** :\n`,
     "client/src/help/guides/zh-Hans/home.md": `# 首页\n\n第一个页面。\n\n## Every day {#today}\n\nPress **Refresh**.\n`,
@@ -378,11 +473,12 @@ test("the run prints each problem by file and id, a guide's by section, and fail
 client/src/help/guides/fr-CA/home.md: home#today: a colon without a no-break space (U+00A0) before it
 client/src/locales/zh-Hans.json: home.title: 产品, for 商品 (Words not to use)
 client/src/locales/zh-Hans.json: home.title: half-width , beside Chinese, for ，
+client/src/locales/zh-Hans.json: home.seeIn: a space between Chinese and {tab}, which Chinese fills with Chinese words (Placeholders filled with Chinese words)
 server/src/i18n/zh-Hans.json: licences.none: not its settled text, 暂无产品许可证。 (Settled messages)
 client/src/help/guides/zh-Hans/home.md: home#today: ${LEFT_IN_ENGLISH[0]}
 docs/glossary.md: home.gone: settled in zh-Hans, but in neither of its catalogues; take its row out of Settled messages
 
-7 problems: change each by docs/glossary.md's Words not to use, Settled messages and Writing conventions; a translation meant to be its English goes in scripts/i18n-rules.mjs's SAME_AS_ENGLISH, with why.
+8 problems: change each by docs/glossary.md's Words not to use, Settled messages, Placeholders filled with Chinese words and Writing conventions; a translation meant to be its English goes in scripts/i18n-rules.mjs's SAME_AS_ENGLISH, with why.
 `,
   );
 });
@@ -433,6 +529,29 @@ test("the run refuses a Settled messages row it cannot read, naming it", (t) => 
     assert.equal(
       run.stderr,
       `docs/glossary.md: Settled messages, ${why}.\n`,
+      row,
+    );
+  }
+});
+
+test("the run refuses a Placeholders filled with Chinese words row it cannot read, naming it", (t) => {
+  for (const [row, why] of [
+    [
+      "| {tab} | Only `home.*` | A tab's name | A test’s |",
+      "the row {tab}: its Placeholder is not one {name} in backquotes",
+    ],
+    [
+      "| `{tab}` | Somewhere | A tab's name | A test’s |",
+      "the row {tab}: its Where starts with none of Everywhere, Everywhere but and Only",
+    ],
+  ]) {
+    const run = fixture(t, {
+      "docs/glossary.md": GLOSSARY(undefined, undefined, row),
+    });
+    assert.equal(run.status, 1, row);
+    assert.equal(
+      run.stderr,
+      `docs/glossary.md: Placeholders filled with Chinese words, ${why}.\n`,
       row,
     );
   }

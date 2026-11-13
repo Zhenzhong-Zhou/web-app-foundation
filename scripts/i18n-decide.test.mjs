@@ -48,7 +48,10 @@ const TERMS = `## Terms
 | --- | --- | --- | --- |
 | Stock | Stock | 库存 | |`;
 
-/** The glossary, its Settled messages those rows, none by default. */
+/**
+ * The glossary, its Settled messages those rows, none by default, and
+ * {tab} filled with Chinese words in the orders' messages.
+ */
 const glossary = (settled = "") => `# Glossary
 
 ${TERMS}
@@ -64,6 +67,12 @@ ${TERMS}
 | Id | Language | Text | Decided in |
 | --- | --- | --- | --- |
 ${settled}
+
+## Placeholders filled with Chinese words
+
+| Placeholder | Where | What fills it | Why |
+| --- | --- | --- | --- |
+| \`{tab}\` | Only \`orders.*\` | A tab's name | A test’s |
 `;
 
 /** Each message: its English and today's Chinese, by package. */
@@ -514,6 +523,64 @@ test("a correction the same as its English falls back as for any rule", (t) => {
     reason: "Only ChatGPT changed it",
     fallback: `ChatGPT's ${leftIn} Today's stays.`,
   });
+});
+
+test("a space beside a placeholder filled with Chinese words, a text's only problem, is taken out, its Reason saying so", (t) => {
+  const { root, screens } = fixture(t, {
+    "orders.seeIn": ["See in {tab}", "在{tab}里查看"],
+    "orders.moved": ["Moved to {tab}", "已移到{tab}"],
+    "orders.none": ["None in {tab}", "{tab}中没有"],
+  });
+  review(root, "review/zh-Hans.chatgpt.xlsx", screens, {
+    // Reworded, and spaced: the words go in, the space does not.
+    "orders.seeIn": "在 {tab} 里看看",
+    // Only spaced: today's, once the space is out.
+    "orders.moved": "已移到 {tab}",
+    // Spaced, and a half-width comma: it falls back, as for any rule.
+    "orders.none": "{tab} 中没有,好吗",
+  });
+
+  const run = decide(
+    root,
+    [
+      "--chatgpt",
+      "review/zh-Hans.chatgpt.xlsx",
+      "--out",
+      "review/zh-Hans.decided.xlsx",
+      "--meaning",
+    ],
+    { ANTHROPIC_API_KEY: KEY },
+  );
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(
+    run.stdout,
+    /- Agreed 0, ChatGPT 1, Claude 0, today's 11, settled 0, set aside 0\.\n- Fallen back: 1 by rule, 0 by meaning\./,
+  );
+  const rows = decided(root);
+  assert.deepEqual(rows["orders.seeIn"], {
+    correction: "在{tab}里看看",
+    reason:
+      "ChatGPT changed it; the space beside {tab} taken out, as the glossary's Placeholders filled with Chinese words asks",
+    fallback: "",
+  });
+  assert.deepEqual(rows["orders.moved"], {
+    correction: "",
+    reason:
+      "ChatGPT changed it; with the space beside {tab} taken out, it is today's, which stays",
+    fallback: "",
+  });
+  assert.deepEqual(rows["orders.none"], {
+    correction: "",
+    reason: "ChatGPT changed it",
+    fallback:
+      "ChatGPT's fails the rules check: half-width , beside Chinese, for ，; a space between Chinese and {tab}, which Chinese fills with Chinese words (Placeholders filled with Chinese words). Today's stays.",
+  });
+
+  // The meaning check is asked about the text that goes in, not the spaced one.
+  const asked = requests(root).flatMap(({ body }) =>
+    JSON.parse(body.messages[0].content).items.map((item) => item.translation),
+  );
+  assert.deepEqual(asked, ["在{tab}里看看"]);
 });
 
 test("a settled message keeps today's whatever a review says, its Reason Settled, and is not asked about", (t) => {
