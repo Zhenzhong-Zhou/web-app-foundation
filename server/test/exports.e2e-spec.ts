@@ -14,6 +14,7 @@ import {
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import { said } from './utils/said';
 
 /**
  * CSV exports (ADR-057, step 5): every row the list's filters match, as a
@@ -332,22 +333,28 @@ describe('Exports (e2e)', () => {
     ).map((line) => line.split(','));
     expect(
       Object.fromEntries(header.map((name, at) => [name, row[at]])),
-    ).toEqual({
-      编码: 'ASH-60',
-      物品: 'Ashwagandha',
-      规格: '60ct',
-      类型: '原材料',
-      分类: 'Herbs › Adaptogens',
-      单位: 'each',
-      批次管理: 'false',
-      已停用: 'false',
-      英文名称: 'Ashwagandha root',
-      法文名称: '',
-      中文名称: '南非醉茄',
-      英文规格名称: '',
-      法文规格名称: '',
-      中文规格名称: '60粒',
-    });
+    ).toEqual(
+      Object.fromEntries(
+        (
+          [
+            ['exports.column.sku', 'ASH-60'],
+            ['exports.column.item', 'Ashwagandha'],
+            ['exports.column.variant', '60ct'],
+            ['exports.column.type', said('zh-Hans', 'products.type.material')],
+            ['exports.column.category', 'Herbs › Adaptogens'],
+            ['exports.column.unit', 'each'],
+            ['exports.column.tracksLots', 'false'],
+            ['exports.column.discontinued', 'false'],
+            ['exports.column.nameEnglish', 'Ashwagandha root'],
+            ['exports.column.nameFrench', ''],
+            ['exports.column.nameChinese', '南非醉茄'],
+            ['exports.column.variantEnglish', ''],
+            ['exports.column.variantFrench', ''],
+            ['exports.column.variantChinese', '60粒'],
+          ] as const
+        ).map(([id, value]) => [said('zh-Hans', id), value]),
+      ),
+    );
   });
 
   // Past 50,000 rows the refusal names what narrows this list, which has

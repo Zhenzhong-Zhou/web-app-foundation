@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 
+import { SUPPORTED_LOCALES } from '../src/common/locales';
 import { NOTIFICATION_TYPES } from '../src/core/notifications/notification-types';
 import { NotificationsService } from '../src/core/notifications/notifications.service';
 import {
@@ -21,6 +22,7 @@ import { RecordingMailService } from './utils/recording-mail';
 import { RecordingTracker } from './utils/recording-tracker';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
+import { said } from './utils/said';
 
 interface Notification {
   id: string;
@@ -217,15 +219,11 @@ describe('Notifications (e2e)', () => {
       });
       await signInFromNewBrowser(alpha);
 
-      expect((await listIn(alpha, 'en'))[0].title).toBe(
-        'A new sign-in to your account',
-      );
-      expect((await listIn(alpha, 'zh-Hans'))[0].title).toBe(
-        '您的账户有新的登录',
-      );
-      expect((await listIn(alpha, 'fr-CA'))[0].title).toBe(
-        'Une nouvelle connexion à votre compte',
-      );
+      for (const language of SUPPORTED_LOCALES) {
+        expect((await listIn(alpha, language))[0].title).toBe(
+          said(language, 'notifications.account.signIn'),
+        );
+      }
     });
 
     it('shows a notification written before as it was stored', async () => {

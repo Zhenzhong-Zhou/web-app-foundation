@@ -607,6 +607,15 @@ The error tracker hears of real faults only (ADR-084).
   an email's words on purpose, as #255 or a translation corrected, runs
   `npm run mail:text -- --update` in `server/` and commits the files with
   the words, in a commit that changes nothing else and names them.
+- **A test checks which message was sent, by its id** (13 November
+  2026): a refusal or a line in French or Chinese, and its English beside
+  them, is read through the catalogue (`said()` in
+  `server/test/utils/said.ts`), never a typed copy of its words, so a
+  review's import changes no test; five server tests broke on
+  fix-ups-i18n's imports. Only a test whose point is the exact
+  words keeps them, as a mail's text part does. Whether the words are
+  right stays the catalogue checks' job (`npm run i18n:check`,
+  `scripts/i18n-rules.mjs`).
 - **The client's unit tests run in Tokyo**, `TZ` set in
   `vitest.config.ts`, so a test that assumes the computer is in UTC, or in
   the organization's zone, fails everywhere, not only on someone else's

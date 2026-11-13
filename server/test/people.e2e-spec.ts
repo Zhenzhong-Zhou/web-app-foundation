@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import sharp from 'sharp';
 
+import { SUPPORTED_LOCALES } from '../src/common/locales';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -15,6 +16,7 @@ import {
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import { said } from './utils/said';
 
 type Org = Awaited<ReturnType<typeof registerOrganization>>;
 type Agent = Org['agent'];
@@ -222,28 +224,15 @@ describe('People (e2e)', () => {
    */
   it('refuses a work phone with letters in words naming it, in each language', async () => {
     const alpha = await registerOrganization(app, 'alpha');
-    const refusals: [string, string][] = [
-      [
-        'en',
-        'Enter the work phone in digits, such as +1 604-555-0100, and put an extension in Extension.',
-      ],
-      [
-        'fr-CA',
-        'Saisissez le numéro de téléphone professionnel en chiffres, comme +1 604 555-0100, et indiquez le poste dans Poste téléphonique.',
-      ],
-      [
-        'zh-Hans',
-        '请用数字填写工作电话，例如 +1 604-555-0100；分机号请填在“分机”中。',
-      ],
-    ];
-
-    for (const [language, message] of refusals) {
+    for (const language of SUPPORTED_LOCALES) {
       const refused = await alpha.agent
         .patch('/v1/account/details')
         .set('Accept-Language', language)
         .send({ jobTitle: 'Buyer', workPhone: '604-555-0100 ext 12' })
         .expect(400);
-      expect(body<{ message: string[] }>(refused).message).toEqual([message]);
+      expect(body<{ message: string[] }>(refused).message).toEqual([
+        said(language, 'validation.workPhone'),
+      ]);
     }
 
     expect(
