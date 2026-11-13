@@ -1117,7 +1117,7 @@
   "validation.nested": "嵌套属性 {property} 必须是对象或数组",
   "validation.nonNegativeDecimal": "请输入大于或等于零、最多 4 位小数的数字。",
   "validation.positiveDecimal": "请输入大于零、最多 4 位小数的数字。",
-  "validation.rate": "请输入大于零、最多保留 8 位小数的比率。",
+  "validation.rate": "请输入大于零、最多保留 8 位小数的汇率。",
   "validation.realDate": "该日期不存在。请检查月和日。",
   "validation.returnLineTwice": "同一次退货中有明细行重复出现，请合计该行数量后只提交一次。",
   "validation.rmaLineTwice": "同一退货授权中有明细行重复出现，请合计该行数量后只提交一次。",

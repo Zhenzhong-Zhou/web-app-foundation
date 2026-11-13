@@ -1125,5 +1125,5 @@
   "validation.taxRate": "Saisissez un taux en pourcentage, de 0 à 100, d’au plus 4 décimales.",
   "validation.timeZone": "Choisissez un fuseau horaire par son nom, comme America/Vancouver.",
   "validation.whitelist": "la propriété {property} ne doit pas exister",
-  "validation.workPhone": "Saisissez le numéro de téléphone au travail en chiffres, comme +1 604-555-0100, et indiquez le poste dans Poste téléphonique."
+  "validation.workPhone": "Saisissez le numéro de téléphone professionnel en chiffres, comme +1 604 555-0100, et indiquez le poste dans Poste téléphonique."
 }
