@@ -199,11 +199,20 @@ export class TranslatingValidationPipe extends ValidationPipe {
         .flatMap((error) => this.mapChildrenToValidationErrors(error))
         .filter((error) => error.constraints);
 
-      const messages = leaves.flatMap((error) =>
-        Object.entries(error.constraints ?? {}).map(([key, english]) =>
-          translatable(key, english, error.property),
-        ),
-      );
+      // A DTO rule's sentence names no field, so two lines it refuses
+      // would say the same sentence twice: each sentence once.
+      const said = new Set<string>();
+      const messages = leaves
+        .flatMap((error) =>
+          Object.entries(error.constraints ?? {}).map(([key, english]) =>
+            translatable(key, english, error.property),
+          ),
+        )
+        .filter((message) => {
+          if (said.has(message.message)) return false;
+          said.add(message.message);
+          return true;
+        });
 
       return new BadRequestException({
         message: messages.map((message) => message.message),

@@ -28,9 +28,9 @@ const OPTIONS = {
 };
 const BAD = { reference: 'TOO-LONG', lines: [{ quantity: '-1' }], stray: 1 };
 
-async function refusal(pipe: ValidationPipe) {
+async function refusal(pipe: ValidationPipe, bad: object = BAD) {
   try {
-    await pipe.transform(BAD, { type: 'body', metatype: OrderDto });
+    await pipe.transform(bad, { type: 'body', metatype: OrderDto });
   } catch (error) {
     return (error as BadRequestException).getResponse() as {
       message: string[];
@@ -76,6 +76,16 @@ describe('TranslatingValidationPipe', () => {
     messages!.forEach((message, index) =>
       expect(french[index]).not.toBe(message.message),
     );
+  });
+
+  it('says a DTO rule once, however many lines it refuses', async () => {
+    const { message, messages } = await refusal(
+      new TranslatingValidationPipe(OPTIONS),
+      { reference: 'A-1', lines: [{ quantity: '-1' }, { quantity: '0' }] },
+    );
+
+    expect(message).toEqual([QUANTITY]);
+    expect(messages).toHaveLength(1);
   });
 
   it('gives a DTO rule no value, since its sentence names no field', async () => {
