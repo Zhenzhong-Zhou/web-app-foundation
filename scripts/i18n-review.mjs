@@ -83,7 +83,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { deflateRawSync, inflateRawSync } from "node:zlib";
 
-import { settledMessages } from "./i18n-rules.mjs";
+import { SECTION, sectionsOf, settledMessages } from "./i18n-rules.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const LANGUAGES = ["fr-CA", "zh-Hans"];
@@ -199,9 +199,6 @@ function placeholders(message) {
 
 // ------------------------------------------------------------------ guides
 
-/** A section's heading, as client/src/help/markdown.ts reads it. */
-const SECTION = /^## \S.*? \{#([a-z0-9]+(?:-[a-z0-9]+)*)\}$/;
-
 /** Every guide, by the English files' names. */
 const guideNames = () =>
   readdirSync(path.join(ROOT, GUIDES, "en"))
@@ -213,26 +210,6 @@ const guideFile = (language, guide) => `${GUIDES}/${language}/${guide}.md`;
 
 /** A guide's text as the review compares it: \n line ends, no trailing blank. */
 const asSection = (text) => text.replace(/\r\n?/g, "\n").trimEnd();
-
-/**
- * A guide in parts: its opening (the title and what comes before the first
- * section), id "", then each section from its heading, by its id. Each
- * keeps the lines it spans, start to end, blank lines after it left out.
- */
-function sectionsOf(text) {
-  const lines = text.replace(/\r\n?/g, "\n").split("\n");
-  const starts = [{ id: "", start: 0 }];
-  lines.forEach((line, index) => {
-    const heading = SECTION.exec(line);
-    if (heading) starts.push({ id: heading[1], start: index });
-  });
-  const parts = starts.map(({ id, start }, i) => {
-    let end = starts[i + 1]?.start ?? lines.length;
-    while (end > start && lines[end - 1].trim() === "") end -= 1;
-    return { id, start, end, text: lines.slice(start, end).join("\n") };
-  });
-  return { lines, parts };
-}
 
 /** A row's Id: <guide> for the opening, <guide>#<id> for a section. */
 const sectionRowId = (guide, id) => (id ? `${guide}#${id}` : guide);

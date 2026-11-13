@@ -682,19 +682,37 @@ export function problemsOf(text, id, language, english) {
 
 // ------------------------------------------------------------------- main
 
-/** A guide's heading, as client/src/help/markdown.ts reads it. */
-const SECTION = /^## \S.*? \{#([a-z0-9]+(?:-[a-z0-9]+)*)\}$/;
+/** A guide's section heading, as client/src/help/markdown.ts reads it. */
+export const SECTION = /^## \S.*? \{#([a-z0-9]+(?:-[a-z0-9]+)*)\}$/;
+
+/**
+ * A guide in parts: its opening (the title and what comes before the first
+ * section), id "", then each section from its heading, by its id. Each
+ * keeps the lines it spans, start to end, blank lines after it left out.
+ * The one splitter, this check's and i18n-review.mjs's, which writes a
+ * corrected section back between the lines it spans.
+ */
+export function sectionsOf(text) {
+  const lines = text.replace(/\r\n?/g, "\n").split("\n");
+  const starts = [{ id: "", start: 0 }];
+  lines.forEach((line, index) => {
+    const heading = SECTION.exec(line);
+    if (heading) starts.push({ id: heading[1], start: index });
+  });
+  const parts = starts.map(({ id, start }, i) => {
+    let end = starts[i + 1]?.start ?? lines.length;
+    while (end > start && lines[end - 1].trim() === "") end -= 1;
+    return { id, start, end, text: lines.slice(start, end).join("\n") };
+  });
+  return { lines, parts };
+}
 
 /** A guide's opening, as <guide>, then each section as <guide>#<id>. */
-function sectionsOf(guide, text) {
-  const parts = [{ id: guide, lines: [] }];
-  for (const line of text.replace(/\r\n?/g, "\n").split("\n")) {
-    const heading = SECTION.exec(line);
-    if (heading) parts.push({ id: `${guide}#${heading[1]}`, lines: [] });
-    parts.at(-1).lines.push(line);
-  }
-  return parts.map(({ id, lines }) => ({ id, text: lines.join("\n") }));
-}
+const guideTexts = (guide, text) =>
+  sectionsOf(text).parts.map(({ id, text }) => ({
+    id: id ? `${guide}#${id}` : guide,
+    text,
+  }));
 
 const readText = (file) =>
   existsSync(path.join(ROOT, file))
@@ -724,10 +742,10 @@ function textsIn(language) {
     const english = new Map(
       englishText === null
         ? []
-        : sectionsOf(guide, englishText).map((part) => [part.id, part.text]),
+        : guideTexts(guide, englishText).map((part) => [part.id, part.text]),
     );
     const text = readFileSync(path.join(ROOT, file), "utf8");
-    for (const section of sectionsOf(guide, text)) {
+    for (const section of guideTexts(guide, text)) {
       texts.push({ file, ...section, english: english.get(section.id) });
     }
   }
