@@ -886,10 +886,10 @@ folder by folder; these check what is already in place.
   through the decide step's two checks, the rules check and the meaning
   check, before import; round 1's glossary findings went in, in each
   language, only on a message no later round changed, where each still
-  held against today's text, and, in French, its finding on a message
-  that still broke the glossary, whichever round had read it, since the
-  glossary wins over any round; its other suggestions are overtaken;
-  French and Chinese stay beta, and release notes say so.
+  held against today's text, and its findings on a message that still
+  broke the glossary, whichever round had read it, since the glossary
+  wins over any round; its other suggestions are overtaken; French and
+  Chinese stay beta, and release notes say so.
   `client/src/i18n/label-groups.test.ts` holds that the labels a
   screen shows together, a status set, a filter's choices or a select's
   options, by their messages' ids, are worded apart in every language.*
@@ -2259,7 +2259,9 @@ The invitation page, in a private window unless a check says otherwise:
   language, never switched to the invitation's.
 - **MC-3013** *(ADR-077)* Signed in as a member of another organization,
   open a link to that address: You can't join with this account yet,
-  saying why and until when, with Go to your account.
+  saying why and until when, with Go to your account. In 中文 it says to
+  离开该组织 on the “我的账户”页面, as the Account page's button says, never
+  退出, which reads as signing out.
 - **MC-3014** *(ADR-077, ADR-069)* With that account's deletion set on
   Account, open a link to it: Keep your account to join, naming the
   deletion day; Keep my account, and Join appears.
@@ -6084,3 +6086,9 @@ first.
   production orders' Produced column reads Quantité produite, where
   Produit read as the glossary's Product, round 1's finding that no
   later round took: MC-1405 extended.
+- 2026-11-13: ADR-054's November amendment, R7 and A2: in 中文 the
+  invitation's page tells a member of another organization to 离开该组织,
+  as the Account page's button says, where 退出该组织 read as signing out,
+  and Invoices with none says to 创建发票 from a shipment, where 开具 is
+  the glossary's Issue: round 1's findings, the glossary over any round.
+  MC-3013 and MC-1405 extended.
