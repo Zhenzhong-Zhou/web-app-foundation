@@ -6127,3 +6127,8 @@ first.
   headed Your account in English and Votre compte in French, as the
   account menu names it, as 我的账户 already was in Chinese: MC-3210
   extended.
+- 2026-11-13: ADR-054's November amendment, R8 and R11: French says
+  Numéro de taxe for a partner's tax number and its export column, the
+  glossary's word; Délivrée le for a licence's date in History; 120
+  unités in a variation's examples; and dans Paramètres, the page's
+  name, on Home with no organization. No check quoted the old words.
