@@ -873,8 +873,11 @@ folder by folder; these check what is already in place.
   November 2026 amendment decided, ChatGPT's review rounds went in, round
   2 and an extra round in each language and the guides, each text
   through the decide step's two checks, the rules check and the meaning
-  check, before import; French and Chinese stay beta, and release notes
-  say so. `client/src/i18n/label-groups.test.ts` holds that the labels a
+  check, before import; round 1's glossary findings went in, in French,
+  only on a message no later round changed, where each still held
+  against today's text, and its other suggestions are overtaken; French
+  and Chinese stay beta, and release notes say so.
+  `client/src/i18n/label-groups.test.ts` holds that the labels a
   screen shows together, a status set, a filter's choices or a select's
   options, by their messages' ids, are worded apart in every language.*
   When one is: someone fluent in each language reads every
@@ -6052,3 +6055,7 @@ first.
   the Account page 我的账户, its link's text, and Home with no organization
   sends a person to the “我的账户”页面, where both said 账户: MC-3206 and
   MC-3109 extended.
+- 2026-11-13: ADR-054's November amendment, R7: in Français round 1's
+  glossary findings went in on the six messages no later round changed,
+  where each still held, such as Compte corrigé for a corrected count
+  and Date de péremption for a lot's expiry: MC-1405 extended.
