@@ -666,8 +666,10 @@ export function problemsOf(text, id, language, english) {
         `a space before ${spaced.join(" ")}, where Quebec typography has none`,
       );
     }
-    // A colon a space follows, or nothing: not 14:30, nor a skeleton's ::.
-    if (/(?<! ):(?=\s|$)/.test(text)) {
+    // A colon a space follows, or nothing, not 14:30; and any colon a
+    // plain space comes before, as in Note :{x} or **Note :**, but a
+    // skeleton's ::.
+    if (/(?<! ):(?=\s|$)| :(?!:)/.test(text)) {
       problems.push("a colon without a no-break space (U+00A0) before it");
     }
     if (/«(?! )|(?<! )»/.test(text)) {

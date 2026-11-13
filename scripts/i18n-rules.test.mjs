@@ -345,6 +345,11 @@ test("French: a colon takes a no-break space before it", () => {
     problemsOf("- **Code** :\nson code", "items", "fr-CA"),
     colon,
   );
+  // A plain space before it, whatever follows: a placeholder, a tag's end
+  // or bold's.
+  for (const text of ["Note :{x}", "<b>Note :</b>", "**Note :** ceci"]) {
+    assert.deepEqual(problemsOf(text, "a.b", "fr-CA"), colon, text);
+  }
   for (const text of [
     `Prix${NBSP}: 3 $`,
     "De 9:00 à 17:30",
