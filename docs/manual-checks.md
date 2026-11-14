@@ -6137,3 +6137,7 @@ first.
   2 had dropped; a credit note dated too early names 其冲减的发票; and a
   language that failed for a new version says 重新加载, as its button
   does. No check quoted the old words.
+- 2026-11-13: ADR-054's November amendment, R8: the Chinese Movements
+  guide says 库存变动, the glossary's word, where three of its lines said
+  变动 alone, and the Organization guide's idle section says 退出登录,
+  its heading 闲置后自动退出登录 as the screen's title.
