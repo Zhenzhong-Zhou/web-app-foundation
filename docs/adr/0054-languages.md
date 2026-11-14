@@ -755,7 +755,7 @@ change to a translation went in through `import`, never by hand (A1).
 | R10 | Each word settled as the table says, but a missing name's language, below; the phone checks in 中文 stay owed in MC-2406 and MC-2710 | met, changed |
 | R11 | #148, #149, #150, #249, #501 and #511 closed; #486's two, #505's 13, #512's placeholder and #548's singulars in part | met, changed |
 | R12 | `client/src/help/guides.test.ts` holds each bold phrase to a client message in the guide's language, the phrases bold on purpose listed with why | met |
-| R13 | #531 on a branch of its own, next; `adr-check.mjs`'s folder filed under docs as `when-touched` | met |
+| R13 | #531 on a branch of its own, next; `adr-check.mjs`'s folder filed as #571, `when-touched` under docs | met |
 | R14 | Both languages beta; MC-1405 says no fluent reader yet, and how the rounds went in | met |
 
 ### Built differently
