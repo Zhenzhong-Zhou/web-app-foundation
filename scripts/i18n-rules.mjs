@@ -456,13 +456,29 @@ const sameAsEnglishAllowed = new Set(
 const bare = (text) => text.toLowerCase().replace(/[\s\p{P}]/gu, "");
 
 /**
+ * A text without its tags, taken out again until none is left, so a
+ * nested one, <b<b>>, leaves no <b> behind (CodeQL's
+ * js/incomplete-multi-character-sanitization).
+ */
+function withoutTags(text) {
+  let before;
+  let after = text;
+  do {
+    before = after;
+    after = before.replace(/<\/?[\w-]+>/g, "");
+  } while (after !== before);
+  return after;
+}
+
+/**
  * The English's own words: without its placeholders, {name} or
  * {amount, number}, and its tags. A plural's or a select's words stay.
  */
 const ownWords = (english) =>
-  english
-    .replace(/<\/?[\w-]+>/g, "")
-    .replace(/\{\s*[\w.]+\s*(?:,\s*(?:number|date|time)\b[^{}]*)?\}/g, "");
+  withoutTags(english).replace(
+    /\{\s*[\w.]+\s*(?:,\s*(?:number|date|time)\b[^{}]*)?\}/g,
+    "",
+  );
 
 // ------------------------------------------------------------ the rules
 

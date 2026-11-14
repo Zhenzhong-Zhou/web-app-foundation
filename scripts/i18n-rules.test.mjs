@@ -444,6 +444,13 @@ test("a text with no word of its own outside its placeholders and tags is not co
   assert.deepEqual(problemsOf("Save", "a.b", "zh-Hans"), []);
 });
 
+test("a nested tag is taken out whole, however deep, before the English's own words are read", () => {
+  // Once, <b<b>> would leave <b>, and its b read as a word of its own.
+  for (const text of ["<b<b>>{count}</b</b>>", "<b<i<u>>>{count}"]) {
+    assert.deepEqual(problemsOf(text, "a.b", "fr-CA", text), [], text);
+  }
+});
+
 test("a settled message is refused where its text is not the glossary's, in its language only", () => {
   // The glossary's own rows: what the Chinese extra round changed.
   for (const [id, text] of [
