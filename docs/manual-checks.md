@@ -6132,3 +6132,8 @@ first.
   glossary's word; Délivrée le for a licence's date in History; 120
   unités in a variation's examples; and dans Paramètres, the page's
   name, on Home with no organization. No check quoted the old words.
+- 2026-11-13: ADR-054's November amendment, R11: Chinese says an
+  invitation's page works 到 {date}结束, to the end of that day, as round
+  2 had dropped; a credit note dated too early names 其冲减的发票; and a
+  language that failed for a new version says 重新加载, as its button
+  does. No check quoted the old words.

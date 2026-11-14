@@ -6,12 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LanguageSelect } from '../components/language-select';
 import { reportFault } from '../errors/report-fault';
+import zh from '../locales/zh-Hans.json';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { serveVersion } from '../test/version';
 import { ChunkLoadError, loadChunkOrReload } from '../version/load-chunk';
 import { reloadPage } from '../version/reload-page';
 import { loadMessages } from './catalogues';
+import { makeIntl } from './intl';
 import {
   LanguageFailureBanner,
   LanguageFailureToast,
@@ -216,8 +218,16 @@ describe('a language that won’t load', () => {
       );
 
       const toast = await screen.findByRole('status');
+      // The message by its id (conventions.md, Tests).
       expect(toast).toHaveTextContent(
-        '无法加载简体中文：您打开此标签页期间有新版本发布。刷新页面即可使用该语言，内容不会丢失。',
+        String(
+          makeIntl('zh-Hans', {})
+            .formatters.getMessageFormat(
+              zh['language.failedNewVersion'],
+              'zh-Hans',
+            )
+            .format({ language: '简体中文' }),
+        ),
       );
       expect(within(toast).queryByRole('button', { name: '重试' })).toBeNull();
       await user.click(within(toast).getByRole('button', { name: '重新加载' }));

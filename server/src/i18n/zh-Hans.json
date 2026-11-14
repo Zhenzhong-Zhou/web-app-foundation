@@ -583,7 +583,7 @@
   "invitations.ownerInvite": "只有所有者才能邀请他人成为所有者",
   "invitations.signInFirst": "该电子邮箱已注册账户。请先登录，再接受邀请。",
   "invoices.creditNoteDatedBefore": "贷项通知单的日期不能早于被冲减发票的开具日期（{issuedOn}）。",
-  "invoices.creditNoteDatedBefore2": "贷项通知单的日期不能早于被作废发票的开具日期（{issuedOn}）。",
+  "invoices.creditNoteDatedBefore2": "贷项通知单的日期不能早于其冲减的发票的开具日期（{issuedOn}）。",
   "invoices.draftDeletedVoidedNobody": "草稿尚未对外展示，应直接删除，而不是作废。",
   "invoices.draftOwesNothingYet": "发票草稿尚未产生应收款，因此不能开具贷项通知单；请直接修改草稿。",
   "invoices.dueDateBeforeInvoice": "到期日早于发票日期",
